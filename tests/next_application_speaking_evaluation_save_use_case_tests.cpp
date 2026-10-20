@@ -7,10 +7,40 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next;
+
+static_assert(!std::is_same_v<
+              Application::SpeakingEvaluationValidationIssueRowIndex,
+              Application::SpeakingEvaluationValidationIssueColumnIndex
+              >);
+static_assert(!std::is_convertible_v<
+              Application::SpeakingEvaluationValidationIssueRowIndex,
+              Application::SpeakingEvaluationValidationIssueColumnIndex
+              >);
+static_assert(!std::is_convertible_v<
+              Application::SpeakingEvaluationValidationIssueColumnIndex,
+              Application::SpeakingEvaluationValidationIssueRowIndex
+              >);
+static_assert(!std::is_convertible_v<
+              Application::SpeakingEvaluationValidationIssueRowIndex,
+              int
+              >);
+static_assert(!std::is_convertible_v<
+              Application::SpeakingEvaluationValidationIssueColumnIndex,
+              int
+              >);
+static_assert(!std::is_convertible_v<
+              int,
+              Application::SpeakingEvaluationValidationIssueRowIndex
+              >);
+static_assert(!std::is_convertible_v<
+              int,
+              Application::SpeakingEvaluationValidationIssueColumnIndex
+              >);
 
 namespace
 {
@@ -96,8 +126,8 @@ bool hasIssue(
         {
             return issue.code == code
                 && (field.empty() || issue.field == field)
-                && (row < 0 || issue.row == row)
-                && (column < 0 || issue.column == column)
+                && (row < 0 || issue.row.rawValue() == row)
+                && (column < 0 || issue.column.rawValue() == column)
                 && issue.severity == severity;
         }
         );
@@ -212,8 +242,8 @@ rejectsNoncanonicalLeadingZeroClassIdDirectly()
         Application::SpeakingEvaluationValidationCode::SpeakingEvaluationClassIdInvalid
         );
     QCOMPARE(issue.field, std::string("classId"));
-    QCOMPARE(issue.row, -1);
-    QCOMPARE(issue.column, -1);
+    QCOMPARE(issue.row.rawValue(), -1);
+    QCOMPARE(issue.column.rawValue(), -1);
     QCOMPARE(
         issue.severity,
         Application::SpeakingEvaluationValidationSeverity::Error
@@ -299,6 +329,17 @@ rejectsOversizedMatrixRowsAndCellsBeforeCallingPort()
         Application::SpeakingEvaluationValidationCode::SpeakingEvaluationRowsTooMany,
         "rows"
         ));
+    const auto rowsIssue = std::ranges::find_if(
+        rowsValidation.issues,
+        [](const auto& issue)
+        {
+            return issue.code
+                == Application::SpeakingEvaluationValidationCode::SpeakingEvaluationRowsTooMany;
+        }
+        );
+    QVERIFY(rowsIssue != rowsValidation.issues.end());
+    QCOMPARE(rowsIssue->row.rawValue(), -1);
+    QCOMPARE(rowsIssue->column.rawValue(), -1);
     QCOMPARE(port.callCount, 0);
 
     Application::SpeakingEvaluationSaveRequest tooManyCells = request("42");
@@ -317,6 +358,17 @@ rejectsOversizedMatrixRowsAndCellsBeforeCallingPort()
         "rows[6]",
         6
         ));
+    const auto cellsIssue = std::ranges::find_if(
+        cellsValidation.issues,
+        [](const auto& issue)
+        {
+            return issue.code
+                == Application::SpeakingEvaluationValidationCode::SpeakingEvaluationRowTooManyCells;
+        }
+        );
+    QVERIFY(cellsIssue != cellsValidation.issues.end());
+    QCOMPARE(cellsIssue->row.rawValue(), 6);
+    QCOMPARE(cellsIssue->column.rawValue(), -1);
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());
 }
@@ -615,8 +667,8 @@ groupsDuplicateNamesAfterUnicodeTrimmingInFirstSeenOrder()
         Application::SpeakingEvaluationValidationCode::SpeakingEvaluationStudentNameRequired
         );
     QCOMPARE(incompleteEnglish.field, std::string("rows[4].Korean Name"));
-    QCOMPARE(incompleteEnglish.row, 4);
-    QCOMPARE(incompleteEnglish.column, 2);
+    QCOMPARE(incompleteEnglish.row.rawValue(), 4);
+    QCOMPARE(incompleteEnglish.column.rawValue(), 2);
     QCOMPARE(
         incompleteEnglish.severity,
         Application::SpeakingEvaluationValidationSeverity::Error
@@ -629,8 +681,8 @@ groupsDuplicateNamesAfterUnicodeTrimmingInFirstSeenOrder()
         Application::SpeakingEvaluationValidationCode::SpeakingEvaluationStudentNameRequired
         );
     QCOMPARE(incompleteKorean.field, std::string("rows[7].English Name"));
-    QCOMPARE(incompleteKorean.row, 7);
-    QCOMPARE(incompleteKorean.column, 1);
+    QCOMPARE(incompleteKorean.row.rawValue(), 7);
+    QCOMPARE(incompleteKorean.column.rawValue(), 1);
     QCOMPARE(
         incompleteKorean.severity,
         Application::SpeakingEvaluationValidationSeverity::Error
@@ -650,8 +702,8 @@ groupsDuplicateNamesAfterUnicodeTrimmingInFirstSeenOrder()
             Application::SpeakingEvaluationValidationCode::StudentNameDuplicatePair
             );
         QCOMPARE(issue.field, expectedField);
-        QCOMPARE(issue.row, expected.row);
-        QCOMPARE(issue.column, expected.column);
+        QCOMPARE(issue.row.rawValue(), expected.row);
+        QCOMPARE(issue.column.rawValue(), expected.column);
         QCOMPARE(
             issue.severity,
             Application::SpeakingEvaluationValidationSeverity::Error

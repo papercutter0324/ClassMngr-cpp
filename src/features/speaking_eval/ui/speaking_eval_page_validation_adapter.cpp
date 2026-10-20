@@ -181,8 +181,8 @@ ValidationResult toFormValidation(
         issues.append({
             .code = validationCodeKey(issue.code),
             .field = QString::fromStdString(issue.field),
-            .row = issue.row,
-            .column = issue.column,
+            .row = issue.row.rawValue(),
+            .column = issue.column.rawValue(),
             .severity = issue.severity
                     == SpeakingEvaluationValidationSeverity::Warning
                 ? ValidationSeverity::Warning

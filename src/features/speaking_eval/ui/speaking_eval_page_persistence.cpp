@@ -157,22 +157,23 @@ QStringList SpeakingEvalPage::questionableKoreanNameRows(
     QList<int> questionableRows;
     for (const auto& issue : validation.issues)
     {
+        const int row = issue.row.rawValue();
         if ((issue.code
                  != ClassMngr::Next::Application::SpeakingEvaluationValidationCode::StudentNameKoreanTooShort
              && issue.code
                  != ClassMngr::Next::Application::SpeakingEvaluationValidationCode::StudentNameKoreanTooLong)
-            || issue.row < 0
-            || issue.row >= rows.size()
-            || questionableRows.contains(issue.row))
+            || row < 0
+            || row >= rows.size()
+            || questionableRows.contains(row))
         {
             continue;
         }
 
-        questionableRows.append(issue.row);
-        const QString koreanName = rows[issue.row].value(koreanColumn);
+        questionableRows.append(row);
+        const QString koreanName = rows[row].value(koreanColumn);
         names.append(
             tr("Row %1: %2")
-                .arg(issue.row + 1)
+                .arg(row + 1)
                 .arg(koreanName)
             );
     }

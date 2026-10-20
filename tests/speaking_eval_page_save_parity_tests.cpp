@@ -93,6 +93,7 @@ class SpeakingEvalPageSaveParityTests final : public QObject
 private slots:
     void manualSavePreservesVisibleAndPersistedValues();
     void toFormValidationPreservesValidationCodeKeys();
+    void toFormValidationPreservesIssueCoordinates();
 };
 
 void SpeakingEvalPageSaveParityTests::
@@ -281,8 +282,12 @@ toFormValidationPreservesValidationCodeKeys()
         input.issues.push_back({
             .code = codes[index],
             .field = "field-" + std::to_string(index),
-            .row = static_cast<int>(100 + index),
-            .column = static_cast<int>(200 + index),
+            .row = ClassMngr::Next::Application::SpeakingEvaluationValidationIssueRowIndex{
+                static_cast<int>(100 + index)
+            },
+            .column = ClassMngr::Next::Application::SpeakingEvaluationValidationIssueColumnIndex{
+                static_cast<int>(200 + index)
+            },
             .severity = index % 2 == 0 ? Severity::Error : Severity::Warning,
             .arguments = {
                 {"count", static_cast<std::int64_t>(1000 + index)},
@@ -349,6 +354,62 @@ toFormValidationPreservesValidationCodeKeys()
             token + QStringLiteral("-second")
             );
     }
+}
+
+void SpeakingEvalPageSaveParityTests::
+toFormValidationPreservesIssueCoordinates()
+{
+    using namespace ClassMngr::Next::Application;
+
+    const auto classId = ClassMngr::Next::Domain::ClassId::fromString("42");
+    QVERIFY(classId.has_value());
+
+    SpeakingEvaluationValidationResult input{
+        .normalizedRequest = SpeakingEvaluationSaveRequest{
+            .classId = *classId,
+            .evaluationName = u"Evaluation",
+            .evaluation = {},
+            .allowQuestionableKoreanNameLengths = false
+        },
+        .issues = {
+            {
+                .code = SpeakingEvaluationValidationCode::SpeakingEvaluationRowsTooMany,
+                .field = "rows",
+                .severity = SpeakingEvaluationValidationSeverity::Error
+            },
+            {
+                .code = SpeakingEvaluationValidationCode::SpeakingEvaluationRowTooManyCells,
+                .field = "rows[31]",
+                .row = SpeakingEvaluationValidationIssueRowIndex{31},
+                .severity = SpeakingEvaluationValidationSeverity::Error
+            },
+            {
+                .code = SpeakingEvaluationValidationCode::ValidationEnumInvalidValue,
+                .field = "rows[0].Grammar",
+                .column = SpeakingEvaluationValidationIssueColumnIndex{12},
+                .severity = SpeakingEvaluationValidationSeverity::Error
+            },
+            {
+                .code = SpeakingEvaluationValidationCode::ValidationEnumInvalidValue,
+                .field = "rows[100].Grammar",
+                .row = SpeakingEvaluationValidationIssueRowIndex{100},
+                .column = SpeakingEvaluationValidationIssueColumnIndex{200},
+                .severity = SpeakingEvaluationValidationSeverity::Error
+            }
+        }
+    };
+
+    const ValidationResult converted =
+        SpeakingEvalPageValidationAdapter::toFormValidation(input);
+    QCOMPARE(converted.issues().size(), qsizetype(4));
+    QCOMPARE(converted.issues().at(0).row, -1);
+    QCOMPARE(converted.issues().at(0).column, -1);
+    QCOMPARE(converted.issues().at(1).row, 31);
+    QCOMPARE(converted.issues().at(1).column, -1);
+    QCOMPARE(converted.issues().at(2).row, -1);
+    QCOMPARE(converted.issues().at(2).column, 12);
+    QCOMPARE(converted.issues().at(3).row, 100);
+    QCOMPARE(converted.issues().at(3).column, 200);
 }
 
 QTEST_MAIN(SpeakingEvalPageSaveParityTests)

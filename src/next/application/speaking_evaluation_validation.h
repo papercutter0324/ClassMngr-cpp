@@ -80,6 +80,58 @@ private:
     int m_value = -1;
 };
 
+class SpeakingEvaluationValidationIssueRowIndex final
+{
+public:
+    constexpr SpeakingEvaluationValidationIssueRowIndex() noexcept = default;
+
+    explicit constexpr SpeakingEvaluationValidationIssueRowIndex(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const SpeakingEvaluationValidationIssueRowIndex&,
+        const SpeakingEvaluationValidationIssueRowIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = -1;
+};
+
+class SpeakingEvaluationValidationIssueColumnIndex final
+{
+public:
+    constexpr SpeakingEvaluationValidationIssueColumnIndex() noexcept = default;
+
+    explicit constexpr SpeakingEvaluationValidationIssueColumnIndex(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const SpeakingEvaluationValidationIssueColumnIndex&,
+        const SpeakingEvaluationValidationIssueColumnIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = -1;
+};
+
 struct SpeakingEvaluationCellChange final
 {
     SpeakingEvaluationCellChangeRowIndex row;
@@ -150,8 +202,8 @@ struct SpeakingEvaluationValidationIssue final
 {
     SpeakingEvaluationValidationCode code;
     std::string field;
-    int row = -1;
-    int column = -1;
+    SpeakingEvaluationValidationIssueRowIndex row;
+    SpeakingEvaluationValidationIssueColumnIndex column;
     SpeakingEvaluationValidationSeverity severity =
         SpeakingEvaluationValidationSeverity::Error;
     std::map<std::string, SpeakingEvaluationValidationArgument> arguments;
@@ -647,8 +699,8 @@ inline void appendIssue(
     result.issues.push_back({
         .code = code,
         .field = std::move(field),
-        .row = row,
-        .column = column,
+        .row = SpeakingEvaluationValidationIssueRowIndex{row},
+        .column = SpeakingEvaluationValidationIssueColumnIndex{column},
         .severity = severity,
         .arguments = std::move(arguments)
     });

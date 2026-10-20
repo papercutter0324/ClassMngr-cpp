@@ -426,8 +426,8 @@ appValidationMatchesLegacySpeakingEvaluationRules()
             legacy.issues().at(static_cast<qsizetype>(index));
         QCOMPARE(validationCodeKey(appIssue.code), legacyIssue.code);
         QCOMPARE(QString::fromStdString(appIssue.field), legacyIssue.field);
-        QCOMPARE(appIssue.row, legacyIssue.row);
-        QCOMPARE(appIssue.column, legacyIssue.column);
+        QCOMPARE(appIssue.row.rawValue(), legacyIssue.row);
+        QCOMPARE(appIssue.column.rawValue(), legacyIssue.column);
         QCOMPARE(
             appIssue.severity == Application::SpeakingEvaluationValidationSeverity::Warning,
             legacyIssue.severity == ValidationSeverity::Warning
@@ -478,8 +478,8 @@ questionableKoreanNameFlagMatchesLegacySeverityAndSaveDecision()
         const ValidationIssue& legacyIssue = legacy.issues().front();
         QCOMPARE(validationCodeKey(appIssue.code), legacyIssue.code);
         QCOMPARE(QString::fromStdString(appIssue.field), legacyIssue.field);
-        QCOMPARE(appIssue.row, legacyIssue.row);
-        QCOMPARE(appIssue.column, legacyIssue.column);
+        QCOMPARE(appIssue.row.rawValue(), legacyIssue.row);
+        QCOMPARE(appIssue.column.rawValue(), legacyIssue.column);
         QCOMPARE(
             appIssue.severity == Application::SpeakingEvaluationValidationSeverity::Warning,
             legacyIssue.severity == ValidationSeverity::Warning
@@ -488,8 +488,8 @@ questionableKoreanNameFlagMatchesLegacySeverityAndSaveDecision()
             QStringLiteral("student_name.korean.too_short"));
         QCOMPARE(QString::fromStdString(appIssue.field),
             QStringLiteral("rows[0].Korean Name"));
-        QCOMPARE(appIssue.row, 0);
-        QCOMPARE(appIssue.column, 2);
+        QCOMPARE(appIssue.row.rawValue(), 0);
+        QCOMPARE(appIssue.column.rawValue(), 2);
 
         const bool expectedWarning = allowQuestionableLength;
         QCOMPARE(
