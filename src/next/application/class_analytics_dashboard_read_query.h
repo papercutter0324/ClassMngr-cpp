@@ -587,17 +587,17 @@ namespace ClassAnalyticsDashboardReadDetail
 
     const auto extrema = selectClassAnalyticsCriterionExtrema(
         snapshot.criteria);
-    for (const std::size_t index : extrema.strongestIndices)
+    for (const ClassAnalyticsCriterionIndex index : extrema.strongestIndices)
     {
         const ClassAnalyticsCriterionSlice& criterion =
-            snapshot.criteria[index];
+            snapshot.criteria[index.rawValue()];
         snapshot.strongestNames.push_back(criterion.name);
         snapshot.strongestLabels.push_back(criterionLabel(criterion));
     }
-    for (const std::size_t index : extrema.focusIndices)
+    for (const ClassAnalyticsCriterionIndex index : extrema.focusIndices)
     {
         const ClassAnalyticsCriterionSlice& criterion =
-            snapshot.criteria[index];
+            snapshot.criteria[index.rawValue()];
         snapshot.focusNames.push_back(criterion.name);
         snapshot.focusLabels.push_back(criterionLabel(criterion));
     }

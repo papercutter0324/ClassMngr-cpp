@@ -9,10 +9,36 @@
 namespace ClassMngr::Next::Application
 {
 
+class ClassAnalyticsCriterionIndex final
+{
+public:
+    constexpr ClassAnalyticsCriterionIndex() noexcept = default;
+
+    explicit constexpr ClassAnalyticsCriterionIndex(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ClassAnalyticsCriterionIndex&,
+        const ClassAnalyticsCriterionIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
 struct ClassAnalyticsCriterionExtremaSelection final
 {
-    std::vector<std::size_t> strongestIndices;
-    std::vector<std::size_t> focusIndices;
+    std::vector<ClassAnalyticsCriterionIndex> strongestIndices;
+    std::vector<ClassAnalyticsCriterionIndex> focusIndices;
 };
 
 // Criteria must already contain the hasData and rounded average facts.
@@ -86,11 +112,13 @@ selectClassAnalyticsCriterionExtrema(const Criteria& criteria)
             const Key average = keyFor(criterion.average3);
             if (tied(average, *strongestAverage))
             {
-                selection.strongestIndices.push_back(index);
+                selection.strongestIndices.push_back(
+                    ClassAnalyticsCriterionIndex{ index });
             }
             if (tied(average, *focusAverage))
             {
-                selection.focusIndices.push_back(index);
+                selection.focusIndices.push_back(
+                    ClassAnalyticsCriterionIndex{ index });
             }
         }
         ++index;

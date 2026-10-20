@@ -300,17 +300,19 @@ Snapshot compute(
 
     const auto extrema = ClassMngr::Next::Application::
         selectClassAnalyticsCriterionExtrema(snapshot.criteria);
-    for (const std::size_t index : extrema.strongestIndices)
+    for (const ClassMngr::Next::Application::ClassAnalyticsCriterionIndex index :
+         extrema.strongestIndices)
     {
         const CriterionSlice& slice = snapshot.criteria.at(
-            static_cast<qsizetype>(index));
+            static_cast<qsizetype>(index.rawValue()));
         snapshot.strongestNames.append(slice.name);
         snapshot.strongestLabels.append(criterionLabel(slice));
     }
-    for (const std::size_t index : extrema.focusIndices)
+    for (const ClassMngr::Next::Application::ClassAnalyticsCriterionIndex index :
+         extrema.focusIndices)
     {
         const CriterionSlice& slice = snapshot.criteria.at(
-            static_cast<qsizetype>(index));
+            static_cast<qsizetype>(index.rawValue()));
         snapshot.focusNames.append(slice.name);
         snapshot.focusLabels.append(criterionLabel(slice));
     }

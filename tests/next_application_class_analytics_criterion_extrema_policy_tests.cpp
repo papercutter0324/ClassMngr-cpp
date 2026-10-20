@@ -3,6 +3,8 @@
 
 #include <cassert>
 #include <cstddef>
+#include <initializer_list>
+#include <type_traits>
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
@@ -22,6 +24,42 @@ struct ThousandthsCriterionFacts final
     ClassAnalyticsAverageThousandths average3;
 };
 
+std::vector<ClassAnalyticsCriterionIndex> criterionIndices(
+    const std::initializer_list<std::size_t> rawIndices
+)
+{
+    std::vector<ClassAnalyticsCriterionIndex> indices;
+    indices.reserve(rawIndices.size());
+    for (const std::size_t rawIndex : rawIndices)
+    {
+        indices.emplace_back(rawIndex);
+    }
+    return indices;
+}
+
+void criterionIndexHasExplicitValueSemantics()
+{
+    using Index = ClassAnalyticsCriterionIndex;
+
+    static_assert(std::is_default_constructible_v<Index>);
+    static_assert(std::is_constructible_v<Index, std::size_t>);
+    static_assert(!std::is_convertible_v<std::size_t, Index>);
+    static_assert(!std::is_convertible_v<Index, std::size_t>);
+    static_assert(std::is_same_v<
+        decltype(ClassAnalyticsCriterionExtremaSelection::strongestIndices),
+        std::vector<Index>>);
+    static_assert(std::is_same_v<
+        decltype(ClassAnalyticsCriterionExtremaSelection::focusIndices),
+        std::vector<Index>>);
+
+    const Index defaultIndex;
+    const Index explicitIndex{ 7 };
+    assert(defaultIndex.rawValue() == 0);
+    assert(explicitIndex.rawValue() == 7);
+    assert(Index{ 7 } == explicitIndex);
+    assert(Index{ 8 } != explicitIndex);
+}
+
 void strongestAndFocusTiesPreserveInputOrderAndSkipMissing()
 {
     const std::vector<CriterionFacts> criteria{
@@ -34,8 +72,8 @@ void strongestAndFocusTiesPreserveInputOrderAndSkipMissing()
     };
 
     const auto selection = selectClassAnalyticsCriterionExtrema(criteria);
-    assert((selection.strongestIndices == std::vector<std::size_t>{ 0, 3 }));
-    assert((selection.focusIndices == std::vector<std::size_t>{ 2, 5 }));
+    assert(selection.strongestIndices == criterionIndices({ 0, 3 }));
+    assert(selection.focusIndices == criterionIndices({ 2, 5 }));
 }
 
 void emptyAndAllMissingInputsHaveNoSelections()
@@ -62,8 +100,8 @@ void adjacentThousandthsRemainDistinct()
     };
 
     const auto selection = selectClassAnalyticsCriterionExtrema(criteria);
-    assert((selection.strongestIndices == std::vector<std::size_t>{ 1 }));
-    assert((selection.focusIndices == std::vector<std::size_t>{ 0 }));
+    assert(selection.strongestIndices == criterionIndices({ 1 }));
+    assert(selection.focusIndices == criterionIndices({ 0 }));
 }
 
 void equalThousandthsPreserveCriterionOrder()
@@ -76,8 +114,8 @@ void equalThousandthsPreserveCriterionOrder()
     };
 
     const auto selection = selectClassAnalyticsCriterionExtrema(criteria);
-    assert((selection.strongestIndices == std::vector<std::size_t>{ 0, 2 }));
-    assert((selection.focusIndices == std::vector<std::size_t>{ 1, 3 }));
+    assert(selection.strongestIndices == criterionIndices({ 0, 2 }));
+    assert(selection.focusIndices == criterionIndices({ 1, 3 }));
 }
 
 void strictToleranceKeepsOnlyNearTies()
@@ -89,8 +127,8 @@ void strictToleranceKeepsOnlyNearTies()
     };
 
     const auto selection = selectClassAnalyticsCriterionExtrema(criteria);
-    assert((selection.focusIndices == std::vector<std::size_t>{ 0, 1 }));
-    assert((selection.strongestIndices == std::vector<std::size_t>{ 2 }));
+    assert(selection.focusIndices == criterionIndices({ 0, 1 }));
+    assert(selection.strongestIndices == criterionIndices({ 2 }));
 }
 
 void strictToleranceExcludesTheExactBoundary()
@@ -101,14 +139,15 @@ void strictToleranceExcludesTheExactBoundary()
     };
 
     const auto selection = selectClassAnalyticsCriterionExtrema(criteria);
-    assert((selection.focusIndices == std::vector<std::size_t>{ 0 }));
-    assert((selection.strongestIndices == std::vector<std::size_t>{ 1 }));
+    assert(selection.focusIndices == criterionIndices({ 0 }));
+    assert(selection.strongestIndices == criterionIndices({ 1 }));
 }
 
 } // namespace
 
 int main()
 {
+    criterionIndexHasExplicitValueSemantics();
     strongestAndFocusTiesPreserveInputOrderAndSkipMissing();
     emptyAndAllMissingInputsHaveNoSelections();
     adjacentThousandthsRemainDistinct();
