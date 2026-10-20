@@ -62,6 +62,7 @@ private slots:
     void rejectsNonPaddedMonthLikeQtDateFormat();
     void mapsPreferredNamesAndTrimsStaffValues();
     void ordersNonAsciiNamesAndPositionsUsingQtLocale();
+    void invalidReferenceDateReturnsEmptySchedule();
     void dialogCentersTodayAndShowsWeeklyEmptyState();
     void actionIsCreatedWithTeacherMenuText();
 };
@@ -312,6 +313,32 @@ void UpcomingBirthdaysTests::ordersNonAsciiNamesAndPositionsUsingQtLocale()
         QVERIFY(actual.group == expected[index].group);
         QCOMPARE(actual.position, expected[index].position);
     }
+}
+
+void UpcomingBirthdaysTests::invalidReferenceDateReturnsEmptySchedule()
+{
+    const QList<Teacher> teachers{
+        teacher(QStringLiteral("Valid birthday"), QStringLiteral("08-18"))
+    };
+    const UpcomingBirthdaySchedule invalidDateSchedule =
+        UpcomingBirthdaySchedule::build(
+            teachers,
+            {},
+            {},
+            QDate{}
+            );
+    QVERIFY(invalidDateSchedule.isEmpty());
+
+    const QDate outOfDomainDate(10000, 1, 1);
+    QVERIFY(outOfDomainDate.isValid());
+    const UpcomingBirthdaySchedule outOfDomainSchedule =
+        UpcomingBirthdaySchedule::build(
+            teachers,
+            {},
+            {},
+            outOfDomainDate
+            );
+    QVERIFY(outOfDomainSchedule.isEmpty());
 }
 
 void UpcomingBirthdaysTests::dialogCentersTodayAndShowsWeeklyEmptyState()

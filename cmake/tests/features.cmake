@@ -745,10 +745,19 @@ qt_add_executable(ClassMngrClassTransferTests
     set_tests_properties(UpcomingBirthdaysLeapDayFallbackBehavior
         PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
+    add_test(
+        NAME UpcomingBirthdaysInvalidReferenceDate
+        COMMAND ClassMngrUpcomingBirthdaysTests
+            invalidReferenceDateReturnsEmptySchedule
+    )
+    set_tests_properties(UpcomingBirthdaysInvalidReferenceDate
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
     if(WIN32)
         set_tests_properties(
             UpcomingBirthdaysLocaleAwareOrderingTests
             UpcomingBirthdaysLeapDayFallbackBehavior
+            UpcomingBirthdaysInvalidReferenceDate
             PROPERTIES ENVIRONMENT_MODIFICATION
                 "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
         )

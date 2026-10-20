@@ -1333,9 +1333,15 @@ add_test(
     COMMAND ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests
         sortsEveryBucketByDateNameGroupAndPosition
 )
+add_test(
+    NAME NextApplicationUpcomingBirthdayScheduleUseCaseInvalidReferenceDate
+    COMMAND ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests
+        invalidReferenceDateReturnsEmptySchedule
+)
 if(WIN32)
     set_tests_properties(
         NextApplicationUpcomingBirthdayScheduleUseCaseOrdering
+        NextApplicationUpcomingBirthdayScheduleUseCaseInvalidReferenceDate
         PROPERTIES ENVIRONMENT_MODIFICATION
             "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
     )

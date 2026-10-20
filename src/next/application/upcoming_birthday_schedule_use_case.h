@@ -11,22 +11,11 @@
 #include <vector>
 
 #include "next/domain/birthday_month_day.h"
+#include "next/domain/gregorian_date.h"
 #include "qt_compatible_text.h"
 
 namespace ClassMngr::Next::Application
 {
-
-struct UpcomingBirthdayDate final
-{
-    int year = 0;
-    int month = 0;
-    int day = 0;
-
-    friend bool operator==(
-        const UpcomingBirthdayDate&,
-        const UpcomingBirthdayDate&
-        ) = default;
-};
 
 enum class UpcomingBirthdayStaffGroup
 {
@@ -104,25 +93,29 @@ class UpcomingBirthdayScheduleUseCase final
 public:
     [[nodiscard]] static UpcomingBirthdaySchedule build(
         const std::vector<UpcomingBirthdayCandidate>& candidates,
-        const UpcomingBirthdayDate& referenceDate,
+        const std::optional<Domain::GregorianDate>& referenceDate,
         UpcomingBirthdayTextComparator& compareText
         )
     {
         using namespace std::chrono;
 
         UpcomingBirthdaySchedule schedule;
-        const std::optional<sys_days> reference = toSysDays(referenceDate);
-        if (!reference)
+        if (!referenceDate)
         {
             return schedule;
         }
 
-        const int dayOfWeek = weekday{*reference}.iso_encoding();
+        const sys_days reference = sys_days{
+            year{referenceDate->year()}
+            / month{static_cast<unsigned>(referenceDate->month())}
+            / day{static_cast<unsigned>(referenceDate->day())}
+        };
+        const int dayOfWeek = weekday{reference}.iso_encoding();
         constexpr sys_days maximumDate = sys_days{
             year{9999} / month{12} / day{31}
         };
         const sys_days thisWeekEnd = std::min(
-            *reference + days{7 - dayOfWeek},
+            reference + days{7 - dayOfWeek},
             maximumDate
             );
         const sys_days nextWeekEnd = std::min(
@@ -152,7 +145,7 @@ public:
             const std::optional<sys_days> occurrence = nextOccurrence(
                 birthday->month(),
                 birthday->day(),
-                *reference,
+                reference,
                 nextWeekEnd
                 );
             if (!occurrence)
@@ -175,7 +168,7 @@ public:
                 .group = candidate.group
             };
 
-            if (*occurrence == *reference)
+            if (*occurrence == reference)
             {
                 schedule.today.push_back(std::move(entry));
             }
@@ -266,32 +259,6 @@ private:
         }
 
         return false;
-    }
-
-    [[nodiscard]] static std::optional<SysDays> toSysDays(
-        const UpcomingBirthdayDate& date
-        )
-    {
-        using namespace std::chrono;
-
-        if (date.year < 1 || date.year > 9999
-            || date.month < 1 || date.month > 12
-            || date.day < 1 || date.day > 31)
-        {
-            return std::nullopt;
-        }
-
-        const year_month_day value{
-            year{date.year},
-            month{static_cast<unsigned>(date.month)},
-            day{static_cast<unsigned>(date.day)}
-        };
-        if (!value.ok())
-        {
-            return std::nullopt;
-        }
-
-        return sys_days{value};
     }
 
     [[nodiscard]] static std::optional<Domain::GregorianDate> fromSysDays(

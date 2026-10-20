@@ -3,6 +3,7 @@
 #include <QtTest/QtTest>
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -29,7 +30,7 @@ int compareUtf16(
 
 UpcomingBirthdaySchedule buildSchedule(
     const std::vector<UpcomingBirthdayCandidate>& candidates,
-    const UpcomingBirthdayDate& referenceDate
+    const std::optional<GregorianDate>& referenceDate
     )
 {
     return UpcomingBirthdayScheduleUseCase::build(
@@ -88,7 +89,7 @@ bucketsTodayThisWeekAndNextWeekThroughSunday()
                 birthday("08-30", u"Next week Sunday"),
                 birthday("08-31", u"After range")
             },
-            {2026, 8, 18}
+            gregorianDate(2026, 8, 18)
             );
 
     QCOMPARE(schedule.today.size(), std::size_t{1});
@@ -119,7 +120,7 @@ selectsOccurrencesAcrossCalendarYearRollover()
                 birthday("01-10", u"Next week Sunday"),
                 birthday("01-11", u"After range")
             },
-            {2026, 12, 28}
+            gregorianDate(2026, 12, 28)
             );
 
     QCOMPARE(schedule.thisWeek.size(), std::size_t{1});
@@ -135,7 +136,7 @@ mapsLeapDayToFebruaryTwentyEighthInNonLeapYear()
     const UpcomingBirthdaySchedule schedule =
         buildSchedule(
             {birthday("02-29", u"Leap Day")},
-            {2027, 2, 22}
+            gregorianDate(2027, 2, 22)
             );
 
     QCOMPARE(schedule.thisWeek.size(), std::size_t{1});
@@ -164,7 +165,7 @@ acceptsOpaqueBirthdayBytesAndSkipsThem()
             malformedBirthday,
             birthday("08-18", u"Valid birthday")
         },
-        {2026, 8, 18}
+        gregorianDate(2026, 8, 18)
         );
 
     QCOMPARE(schedule.today.size(), std::size_t{1});
@@ -185,7 +186,7 @@ omitsInvalidBirthdaysAndBlankNames()
                 birthday("08-18", u"\u0085"),
                 birthday("08-18", u"Visible")
             },
-            {2026, 8, 18}
+            gregorianDate(2026, 8, 18)
             );
 
     QCOMPARE(schedule.today.size(), std::size_t{1});
@@ -202,7 +203,7 @@ trimsOnlyAsciiWhitespaceAtBirthdayEdges()
                 birthday("\xC2\xA0" "08-18", u"Unicode prefix space"),
                 birthday("08-18" "\xC2\xA0", u"Unicode suffix space")
             },
-            {2026, 8, 18}
+            gregorianDate(2026, 8, 18)
             );
 
     QCOMPARE(schedule.today.size(), std::size_t{1});
@@ -222,7 +223,7 @@ omitsCandidatesWithUnknownStaffGroups()
                     ),
                 birthday("08-18", u"Known group")
             },
-            {2026, 8, 18}
+            gregorianDate(2026, 8, 18)
             );
 
     QCOMPARE(schedule.today.size(), std::size_t{1});
@@ -249,7 +250,7 @@ preservesEveryDeclaredStaffGroup()
                     ),
                 birthday("08-18", u"Same name", UpcomingBirthdayStaffGroup::GsTeam)
             },
-            {2026, 8, 18}
+            gregorianDate(2026, 8, 18)
             );
 
     QCOMPARE(schedule.today.size(), std::size_t{3});
@@ -264,7 +265,7 @@ preservesNonAsciiUtf16DisplayName()
     const UpcomingBirthdaySchedule schedule =
         buildSchedule(
             {birthday("08-18", u"\uAE40\uBBFC\uC9C0")},
-            {2026, 8, 18}
+            gregorianDate(2026, 8, 18)
             );
 
     QCOMPARE(schedule.today.size(), std::size_t{1});
@@ -290,7 +291,7 @@ sortsEveryBucketByDateNameGroupAndPosition()
             birthday("08-24", u"B next week"),
             birthday("08-24", u"A next week")
         },
-        {2026, 8, 18}
+        gregorianDate(2026, 8, 18)
         );
 
     QCOMPARE(schedule.today.size(), std::size_t{2});
@@ -327,7 +328,7 @@ capsRangesAtMaximumDate()
                 birthday("12-31", u"Partial next week"),
                 birthday("01-01", u"Beyond maximum")
             },
-            {9999, 12, 20}
+            gregorianDate(9999, 12, 20)
             );
 
     QCOMPARE(partialNextWeek.today.size(), std::size_t{1});
@@ -344,7 +345,7 @@ capsRangesAtMaximumDate()
                 birthday("12-31", u"Partial current week"),
                 birthday("01-01", u"Beyond maximum")
             },
-            {9999, 12, 30}
+            gregorianDate(9999, 12, 30)
             );
 
     QCOMPARE(partialCurrentWeek.today.size(), std::size_t{1});
@@ -354,7 +355,7 @@ capsRangesAtMaximumDate()
 
     const UpcomingBirthdaySchedule maxYearLeapDay = buildSchedule(
         {birthday("02-29", u"Leap Day")},
-        {9999, 2, 22}
+        gregorianDate(9999, 2, 22)
         );
     QCOMPARE(maxYearLeapDay.thisWeek.size(), std::size_t{1});
     QVERIFY((maxYearLeapDay.thisWeek.front().date == gregorianDate(9999, 2, 28)));
@@ -367,9 +368,7 @@ invalidReferenceDateReturnsEmptySchedule()
         birthday("08-18", u"Valid birthday")
     };
 
-    QVERIFY(buildSchedule(candidates, {0, 8, 18}).isEmpty());
-    QVERIFY(buildSchedule(candidates, {10000, 8, 18}).isEmpty());
-    QVERIFY(buildSchedule(candidates, {2026, 2, 29}).isEmpty());
+    QVERIFY(buildSchedule(candidates, std::nullopt).isEmpty());
 }
 
 QTEST_APPLESS_MAIN(NextApplicationUpcomingBirthdayScheduleUseCaseTests)

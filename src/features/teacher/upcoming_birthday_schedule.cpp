@@ -5,6 +5,7 @@
 #include <QByteArray>
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -13,11 +14,11 @@ namespace
 {
 
 using ClassMngr::Next::Application::UpcomingBirthdayCandidate;
-using ClassMngr::Next::Application::UpcomingBirthdayDate;
 using ClassMngr::Next::Application::UpcomingBirthdayMonthDayInput;
 using ClassMngr::Next::Application::UpcomingBirthdayOccurrence;
 using ClassMngr::Next::Application::UpcomingBirthdayStaffGroup;
 using ClassMngr::Next::Application::UpcomingBirthdayScheduleUseCase;
+using ClassMngr::Next::Domain::GregorianDate;
 
 std::string utf8(const QString& value)
 {
@@ -158,11 +159,14 @@ UpcomingBirthdaySchedule UpcomingBirthdaySchedule::build(
         });
     }
 
-    const UpcomingBirthdayDate applicationReferenceDate{
-        referenceDate.year(),
-        referenceDate.month(),
-        referenceDate.day()
-    };
+    const std::optional<GregorianDate> applicationReferenceDate =
+        referenceDate.isValid()
+        ? GregorianDate::fromComponents(
+              referenceDate.year(),
+              referenceDate.month(),
+              referenceDate.day()
+              )
+        : std::nullopt;
     const ClassMngr::Next::Application::UpcomingBirthdaySchedule schedule =
         UpcomingBirthdayScheduleUseCase::build(
             candidates,
