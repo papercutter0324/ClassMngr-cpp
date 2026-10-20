@@ -57910,3 +57910,34 @@ full-suite result is claimed.
 
 Batch500 remains active with F1243–F1245 complete, F1246 accepted awaiting
 implementation, and F1247–F1252 discovered.
+
+### F1246 Calendar parser skipped count complete - 2026-10-21
+
+F1246 completed at implementation commit
+`61a91b87e7eaa4aff86e883c8e056b09b17e4b4d`, following acceptance commit
+`e5880372c5d9653ca8f2132c413c32751c19050e`. The four scoped source/test
+paths were `src/features/calendar/academic_calendar_event_parser.h`,
+`src/features/calendar/calendar_event_import_service.cpp`,
+`tests/calendar_import_tests.cpp`, and
+`tests/next_feature_calendar_event_import_parity_tests.cpp`.
+
+`ParsedCalendarImport::skippedCount` now uses the existing typed
+`CalendarEventImportCount`, which passes directly into the Application plan.
+The service unwraps the count only for StartupProfiler and the legacy Qt
+`importFinished(int, int)` signal, including the zero-event early return.
+Parser skipped-count behavior is preserved: the zero-event ignored-Weekend
+case reports one skipped item, and the parity aggregate still reports 3
+imported / 2 skipped (one ignored legend and one existing-event duplicate).
+The legacy signal remains integer-based.
+
+The focused build succeeded for `ClassMngr`,
+`ClassMngrCalendarImportTests`, and
+`ClassMngrCalendarEventImportParityTests`; both accepted CTests passed (2/2),
+and `git diff --check` passed. The initial parity attempt was blocked before
+assertions when the sandbox denied the test's `QTcpServer` localhost bind.
+The focused parity retry passed after auto-review permitted a narrowly
+escalated local-loopback bind. No broader network tests were implied. Windows
+x64 and the full suite were not run.
+
+Batch500 remains active with F1243–F1246 complete, F1247 next for acceptance,
+and F1248–F1252 discovered.
