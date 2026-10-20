@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/calendar_event_import_candidate_index.h"
 #include "next/application/calendar_event_import_count.h"
 #include "next/application/calendar_event_import_signature.h"
 
@@ -22,7 +23,7 @@ struct CalendarEventImportPlanRequest
 
 struct CalendarEventImportPlan
 {
-    std::vector<std::size_t> acceptedCandidateIndices;
+    std::vector<CalendarEventImportCandidateIndex> acceptedCandidateIndices;
     CalendarEventImportCount skippedCount;
 };
 
@@ -66,7 +67,9 @@ struct CalendarEventImportPlan
             continue;
         }
 
-        plan.acceptedCandidateIndices.push_back(index);
+        plan.acceptedCandidateIndices.push_back(
+            CalendarEventImportCandidateIndex{index}
+            );
     }
 
     return plan;

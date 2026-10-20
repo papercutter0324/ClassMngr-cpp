@@ -300,11 +300,11 @@ public:
 
         CalendarEventImportSaveRequest saveRequest;
         saveRequest.events.reserve(plan.acceptedCandidateIndices.size());
-        for (const std::size_t candidateIndex :
+        for (const CalendarEventImportCandidateIndex candidateIndex :
              plan.acceptedCandidateIndices)
         {
             saveRequest.events.push_back(
-                preparedSaveRequests.at(candidateIndex)
+                preparedSaveRequests.at(candidateIndex.rawValue())
                 );
         }
 

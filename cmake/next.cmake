@@ -64,6 +64,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/calendar_event_by_id_query_use_case.h
     src/next/application/calendar_event_title_validation.h
     src/next/application/calendar_event_edit_draft.h
+    src/next/application/calendar_event_import_candidate_index.h
     src/next/application/calendar_event_import_count.h
     src/next/application/calendar_event_import_plan.h
     src/next/application/calendar_event_import_signature.h

@@ -19,6 +19,14 @@ static_assert(std::is_same_v<
     decltype(CalendarEventImportPlan{}.skippedCount),
     CalendarEventImportCount
     >);
+static_assert(std::is_same_v<
+    decltype(CalendarEventImportPlan{}.acceptedCandidateIndices),
+    std::vector<CalendarEventImportCandidateIndex>
+    >);
+static_assert(std::is_same_v<
+    typename decltype(CalendarEventImportPlan{}.acceptedCandidateIndices)::value_type,
+    CalendarEventImportCandidateIndex
+    >);
 
 namespace
 {
@@ -43,6 +51,7 @@ class NextApplicationCalendarEventImportPlanTests final : public QObject
 
 private slots:
     void countWrapsSignedIntWithoutImplicitConversions();
+    void candidateIndexWrapsSizeTWithoutImplicitConversions();
     void emptyInputProducesEmptyPlan();
     void noCandidatesRetainParserSkippedCount();
     void existingSignaturesSkipMatchingCandidates();
@@ -76,6 +85,30 @@ countWrapsSignedIntWithoutImplicitConversions()
     QVERIFY(&incremented == &count);
     QCOMPARE(count.rawValue(), 1);
     QVERIFY(count == CalendarEventImportCount{1});
+}
+
+void NextApplicationCalendarEventImportPlanTests::
+candidateIndexWrapsSizeTWithoutImplicitConversions()
+{
+    static_assert(
+        !std::is_convertible_v<std::size_t, CalendarEventImportCandidateIndex>
+        );
+    static_assert(
+        !std::is_convertible_v<CalendarEventImportCandidateIndex, std::size_t>
+        );
+    static_assert(std::is_constructible_v<
+        CalendarEventImportCandidateIndex,
+        std::size_t
+        >);
+
+    const CalendarEventImportCandidateIndex zero;
+    const CalendarEventImportCandidateIndex positive{6};
+
+    QCOMPARE(zero.rawValue(), std::size_t(0));
+    QCOMPARE(positive.rawValue(), std::size_t(6));
+    QVERIFY(zero == CalendarEventImportCandidateIndex{});
+    QVERIFY(positive == CalendarEventImportCandidateIndex{6});
+    QVERIFY(zero != positive);
 }
 
 void NextApplicationCalendarEventImportPlanTests::emptyInputProducesEmptyPlan()
@@ -117,7 +150,8 @@ existingSignaturesSkipMatchingCandidates()
     const CalendarEventImportPlan plan =
         planCalendarEventImport(request);
 
-    const std::vector<std::size_t> expectedAcceptedIndices = {1};
+    const std::vector<CalendarEventImportCandidateIndex>
+        expectedAcceptedIndices = {CalendarEventImportCandidateIndex{1}};
     QVERIFY(plan.acceptedCandidateIndices == expectedAcceptedIndices);
     QCOMPARE(plan.skippedCount.rawValue(), 1);
 }
@@ -140,7 +174,12 @@ duplicateCandidatesAreAcceptedOnlyOnceInInputOrder()
     const CalendarEventImportPlan plan =
         planCalendarEventImport(request);
 
-    const std::vector<std::size_t> expectedAcceptedIndices = {0, 2, 4};
+    const std::vector<CalendarEventImportCandidateIndex>
+        expectedAcceptedIndices = {
+            CalendarEventImportCandidateIndex{0},
+            CalendarEventImportCandidateIndex{2},
+            CalendarEventImportCandidateIndex{4}
+        };
     QVERIFY(plan.acceptedCandidateIndices == expectedAcceptedIndices);
     // One match in the existing set plus two repeated candidate keys.
     QCOMPARE(plan.skippedCount.rawValue(), 10);
@@ -161,7 +200,11 @@ opaqueSignaturesUseExactStringEquality()
     const CalendarEventImportPlan plan =
         planCalendarEventImport(request);
 
-    const std::vector<std::size_t> expectedAcceptedIndices = {1, 2};
+    const std::vector<CalendarEventImportCandidateIndex>
+        expectedAcceptedIndices = {
+            CalendarEventImportCandidateIndex{1},
+            CalendarEventImportCandidateIndex{2}
+        };
     QVERIFY(plan.acceptedCandidateIndices == expectedAcceptedIndices);
     QCOMPARE(plan.skippedCount.rawValue(), 2);
 }
@@ -183,7 +226,8 @@ distinctLoneSurrogateKeysRemainDistinct()
     const CalendarEventImportPlan plan =
         planCalendarEventImport(request);
 
-    const std::vector<std::size_t> expectedAcceptedIndices = {1};
+    const std::vector<CalendarEventImportCandidateIndex>
+        expectedAcceptedIndices = {CalendarEventImportCandidateIndex{1}};
     QVERIFY(plan.acceptedCandidateIndices == expectedAcceptedIndices);
     QCOMPARE(plan.skippedCount.rawValue(), 1);
 }
