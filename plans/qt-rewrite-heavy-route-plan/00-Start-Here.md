@@ -38,7 +38,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch489 — Active; nine candidates, seven complete and two discovered:**
+**Batch489 — Active; nine candidates, seven complete, one accepted/in progress, and one discovered:**
 
 1. **F1162 — Complete:** Keep raw cutoff text in an Application Input boundary, then use `Domain::GregorianDate` for repeat planning; preserve frequency/seed-before-cutoff validation, inclusive cutoff, range, and no-port-call-on-failure behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1162-calendar-repeat-create-cutoff-date-complete-2026-10-20)).
 2. **F1163 — Complete:** Type the shared save request's date pair while retaining raw dates at the Input boundary; migrate single save, import, repeat-create, and Platform adapters with validation and persistence behavior preserved (see the [completion record](03-Phase-2-Progress-Log.md#f1163-calendar-single-event-save-date-pair-complete-2026-10-20)).
@@ -47,10 +47,10 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 5. **F1166 — Complete:** Use optional `Domain::GregorianDate` for Upcoming Birthday reference input; preserve the empty-schedule behavior for invalid references, supported date buckets, rollover, ordering, and leap-day fallback (see the [completion record](03-Phase-2-Progress-Log.md#f1166-upcoming-birthday-reference-date-complete-2026-10-20)).
 6. **F1167 — Complete:** Type the grouped Application create/update/unchanged totals with non-converting signed-int `TeacherImportCount`; preserve zero defaults, successful-branch counts, and explicit raw-value extraction for the legacy summary (see the [completion record](03-Phase-2-Progress-Log.md#f1167-teacher-import-count-complete-2026-10-20)).
 7. **F1168 — Complete:** Use shared exact-string `Application::UpdateArtifactSha256` for manual/startup artifacts and preserve arbitrary text through both Platform adapters and UI/controller boundaries (see the [completion record](03-Phase-2-Progress-Log.md#f1168-update-artifact-sha-256-complete-2026-10-20)).
-8. **F1169 — Discovered:** Type Sub Prep navigation weekdays and optional minutes; preserve unknown-day ignore, guards 0–6 and 0–1439, and earliest-day-without-time behavior.
+8. **F1169 — Accepted/in progress:** Type Sub Prep navigation weekdays and optional minutes; preserve unknown-day ignore, guards 0–6 and 0–1439, and earliest-day-without-time behavior.
 9. **F1170 — Discovered:** Type Sub Prep print ordering weekday/start-minute keys; preserve explicit unknown-sentinel ordering.
 
-Batch489 has nine candidates: F1162–F1168 are complete and F1169–F1170 remain discovered in order; F1169 is next. See the [Batch489 discovery record](03-Phase-2-Progress-Log.md#batch489-discovery-at-f1160-start-2026-10-20) for evidence and the excluded low-confidence student-name peer-row idea. Batch489 is active and its push remains deferred until F1170. Batch488 is closed and pushed; see its [push receipt](03-Phase-2-Progress-Log.md#batch488-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+Batch489 has nine candidates: F1162–F1168 are complete, F1169 is accepted/in progress, and F1170 remains discovered; F1169 is next. See the [Batch489 discovery record](03-Phase-2-Progress-Log.md#batch489-discovery-at-f1160-start-2026-10-20) for evidence and the excluded low-confidence student-name peer-row idea. Batch489 is active and its push remains deferred until F1170. Batch490 is discovered and inactive until Batch489 closes (see the [Batch490 discovery record](03-Phase-2-Progress-Log.md#batch490-discovery-at-f1169-start-2026-10-20)). Batch488 is closed and pushed; see its [push receipt](03-Phase-2-Progress-Log.md#batch488-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.

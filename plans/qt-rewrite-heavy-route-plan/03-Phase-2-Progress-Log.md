@@ -52457,3 +52457,105 @@ Batch489 remains active with nine candidates: F1162–F1168 complete and
 F1169–F1170 discovered in order; F1169 is next. Batch489 remains unpushed
 until F1170. F629 awaits source-bound Windows x64 layout evidence; the user
 cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+
+### Batch490 discovery at F1169 start - 2026-10-20
+
+Batch490 is provisionally discovered and inactive until Batch489 closes. The
+seven ordered candidates below are discovery leads, not accepted work:
+
+1. **F1171 - Updater artifact size. Confidence: medium-high.** Consider typing
+   the manual/startup artifact `int64` sizes. Preserve signed values and zero
+   defaults; positivity remains parser/updater policy. Evidence:
+   `src/next/application/manual_update_check.h`,
+   `src/next/application/startup_update_check.h`, update-service adapters and
+   updater consumers; tests include both Application use cases,
+   `UpdateControllerAutomaticStartup`, and `ClassMngrUpdaterTests`.
+2. **F1172 - Update-check UTC milliseconds. Confidence: medium.** Consider a
+   typed value for the duplicated `checkedAtUtcMilliseconds` fields in
+   update-check results while preserving signed milliseconds and a zero
+   default; keep UTC conversion at the adapter/UI boundary. This is distinct
+   from F1168's artifact SHA-256 text. Evidence: the same update-check result
+   contracts and adapters, plus the automatic-startup controller test.
+3. **F1173 - Calendar Import counts. Confidence: medium.** Consider typed
+   counts in the import plan/use case, preserving defaults and count
+   transitions without adding range policy. Evidence:
+   `src/next/application/calendar_event_import_plan.h`,
+   `src/next/application/calendar_event_import_use_case.h`, and their plan and
+   use-case tests.
+4. **F1174 - Class Transfer export timestamp input. Confidence: medium.**
+   Consider typing the export timestamp input while preserving epoch and
+   serialization behavior (`1234ms` becomes
+   `1970-01-01T00:00:01.234Z`). This has no overlap with F618's deferred
+   export-memory investigation. Evidence:
+   `src/next/application/class_transfer_export_query.h`,
+   `src/next/platform/application_services_class_transfer_export_source_read_port.h`,
+   and `tests/next_application_class_transfer_export_query_tests.cpp`.
+5. **F1175 - Class Transfer package version. Confidence: medium.** Consider a
+   typed version while preserving the serialized integer and unsupported-
+   version diagnostics. Evidence:
+   `src/next/application/class_transfer_package.h`,
+   `src/next/platform/class_transfer_json_codec.cpp`, and export-query/codec
+   parity tests.
+6. **F1176 - Schedule-slot canonical hour. Confidence: medium-low.** Consider
+   typing the canonical hour while preserving the 15/16 cutoff and absence;
+   do not broaden parser behavior. Evidence:
+   `src/next/application/schedule_slot_policy.h`,
+   `src/features/schedule/ui/schedule_view_model.cpp`, and
+   `tests/next_application_schedule_slot_policy_tests.cpp`.
+7. **F1177 - Academic-term week count. Confidence: low.** Consider the week
+   count contract only after careful policy/input review; preserve invalid-
+   input rejection and four-term cardinality. Evidence:
+   `src/next/application/academic_year_schedule_policy.h`,
+   `src/features/calendar/academic_calendar_schedule.cpp`,
+   `src/features/calendar/ui/calendar_preferences_panel.cpp`, and
+   `tests/next_application_academic_year_schedule_policy_tests.cpp`.
+
+Excluded prior/deferred work remains separate: F629 awaits source-bound
+Windows x64 evidence; F285 and F1103 await policy clarification; F579/F598
+await elevated captures; F614/F618/F626 await owner-specific evidence or a
+safe lifecycle contract; and F707/F709 await a live consumer or an input seam.
+The Class Analytics allocation cap and Dense Speaking Evaluation row-limit
+ideas remain deferred pending product policy. No Batch490 candidate is
+accepted or implemented here.
+
+No other slices were found.
+
+### F1169 Sub Prep navigation weekday and start-minute facts accepted - 2026-10-20
+
+F1169 is accepted/in progress. Change only
+`SubPrepNavigationScheduleOrderFact.weekdayOrder` from `std::int32_t` to
+`Domain::Weekday` (Monday=0 through Sunday=6), and `startMinute` from
+`std::optional<std::int32_t>` to
+`std::optional<Application::SubPrepNavigationStartMinute>`. Define the
+non-converting minute value in the existing navigation policy header, with an
+explicit integer constructor, `value()` accessor, zero default, and exact
+equality; do not validate on construction. Preserve the fact's
+`Domain::Weekday::Monday` default and absent optional-minute default. Keep the
+result pair and `ClassSummary` integer output unchanged.
+
+Preserve reducer guards for weekdays 0–6 and minutes 0–1439, so invalid enum
+casts and out-of-range minutes are ignored; retain the unknown-order sentinel
+1000, earliest valid weekday then earliest valid minute selection, and the
+earliest recognized weekday when it has no valid time. The Platform producer
+must keep exact canonical raw-day recognition and ignore unknown/noncanonical
+days; invalid parsed times remain absent, and valid `QTime` seconds continue
+to truncate to hour/minute. Do not change `ClassSummary` integer output or
+validation, visible-class ordering, navigation labels, meeting text, raw parser
+behavior, or other uses of `weekdayOrder`.
+
+Tests must cover the typed value's default, equality, and non-conversion;
+weekday/minute boundaries; invalid enum casts and out-of-range minute handling;
+and a Platform fixture proving that earlier times on unknown or noncanonical
+raw-day rows do not alter navigation order while current presentation is
+preserved. Build `ClassMngr`,
+`ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests`, and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`; run the
+full focused binaries and matching CTests with `QT_QPA_PLATFORM=offscreen` for
+Qt, then `git diff --check`. Do not claim a full-suite or Windows run; no
+ClassSummary target is needed because its contract remains unchanged.
+
+Batch489 remains active with F1162–F1168 complete, F1169 accepted/in progress,
+and F1170 discovered. F1170 follows F1169; Batch489 remains unpushed until
+F1170. Batch490 remains discovered/inactive until Batch489 closes. F629
+awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2
+gates remain open. Implementation and verification have not started.

@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (Batch488 pushed; F1168 complete; F1169 next; F629 open)
+### Current checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 
 Batch487 (F1144–F1153) is closed and pushed to `origin/Qt-Rewrite` at
 `c3c06e2f5432933a0e8b7df629e25b2afa920e2c`. Batch488 is active: F1154–F1158
@@ -71,8 +71,10 @@ incremental macOS Debug build covered `ClassMngr` and the Application,
 Platform, and Calendar Page parity targets; all three focused CTests passed,
 and `git diff --check` passed. No full suite or Windows build ran. Batch488 is
 closed and pushed at `138c2cf86f3bac153d948649980798fbfd066dd6`; the Phase 2
-progress log has the push receipt. Batch489 is active with F1162–F1168 complete
-and F1169–F1170 discovered in order; F1169 is next.
+progress log has the push receipt. Batch489 is active with F1162–F1168 complete,
+F1169 accepted/in progress, and F1170 discovered. Batch490 is discovered and
+inactive until Batch489 closes; its ordered candidates are in the Phase 2
+progress log.
 F1163's acceptance commit is `c7660c884420ec2a8cdcb674b8788fc69982d336`, and
 its source/test commit is `030e9752ec581b8013c27eef37a4ef5e36af6531`. It
 types the shared Calendar save request while preserving raw input at the
@@ -128,9 +130,13 @@ covered `ClassMngr` and four focused test targets. Independent review accepted
 the change; all four focused binaries and matching CTests passed, including 24
 controller tests and 30 updater/parser tests. Local loopback access was needed
 for the test servers. `git diff --check` passed. No full suite or Windows build
-ran. Phase 0 and Phase 2 gates remain open. The Phase 2 progress log records
-prior focused evidence, including outstanding ClassesPage assertions and the
-ScheduleWidget CTest timeout.
+ran. F1169 is accepted/in progress to type Sub Prep navigation weekday and
+optional start-minute facts while preserving unknown-day filtering, range
+guards, unknown ordering, and the earliest-day behavior. Batch490 is discovered
+for after F1170, with seven ordered candidates and a recorded discovery
+shortfall. Phase 0 and Phase 2 gates remain open. The Phase 2 progress log
+records prior focused evidence, including outstanding ClassesPage assertions
+and the ScheduleWidget CTest timeout.
 
 F1148 completed at source/test commit
 `5a1756f54173affb33853f3e5dd0b8d8b3ce793d`, after acceptance commit
