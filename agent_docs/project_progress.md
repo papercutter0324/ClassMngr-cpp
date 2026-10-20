@@ -6425,6 +6425,7 @@ minute still precedes a class with no meeting.
 The incremental macOS Debug build passed for `ClassMngr` and all three focused
 test targets; all three focused CTests passed 3/3 offscreen. The independent
 Tester accepted the change, and `git diff --check` passed. No full suite or
-Windows build ran. Batch489 is closed locally and awaits its push. Batch490 is
-active with seven candidates and F1171 next. F629 and both phase gates remain
-open.
+Windows build ran. Batch489 was pushed to origin at `e329f92b`; the push
+receipt is in the [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20).
+Batch490 is active with seven candidates and F1171 next. F629 and both phase
+gates remain open.
