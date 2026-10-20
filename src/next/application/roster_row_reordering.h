@@ -10,6 +10,58 @@
 namespace ClassMngr::Next::Application
 {
 
+class RosterRowReorderingSourceIndex final
+{
+public:
+    constexpr RosterRowReorderingSourceIndex() noexcept = default;
+
+    explicit constexpr RosterRowReorderingSourceIndex(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const RosterRowReorderingSourceIndex&,
+        const RosterRowReorderingSourceIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = 0;
+};
+
+class RosterRowReorderingDestinationIndex final
+{
+public:
+    constexpr RosterRowReorderingDestinationIndex() noexcept = default;
+
+    explicit constexpr RosterRowReorderingDestinationIndex(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const RosterRowReorderingDestinationIndex&,
+        const RosterRowReorderingDestinationIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = 0;
+};
+
 enum class RosterRowReorderingErrorCode
 {
     InvalidSourceIndex,
@@ -36,10 +88,12 @@ using RosterRowReorderingResult =
 // depending on Qt at the Application boundary.
 [[nodiscard]] inline RosterRowReorderingResult reorderRosterRows(
     const RosterSnapshot& roster,
-    const int sourceRow,
-    const int destinationRow
+    const RosterRowReorderingSourceIndex sourceIndex,
+    const RosterRowReorderingDestinationIndex destinationIndex
     )
 {
+    const int sourceRow = sourceIndex.rawValue();
+    const int destinationRow = destinationIndex.rawValue();
     const std::size_t rowCount = roster.rows.size();
     if (sourceRow < 0 || static_cast<std::size_t>(sourceRow) >= rowCount)
     {

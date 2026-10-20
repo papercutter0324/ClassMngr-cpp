@@ -252,8 +252,12 @@ bool RosterModel::canMoveRow(
     const auto result =
         ClassMngr::Next::Application::reorderRosterRows(
             applicationSnapshot(m_columns, m_rows),
-            sourceRow,
-            destinationRow
+            ClassMngr::Next::Application::RosterRowReorderingSourceIndex{
+                sourceRow
+            },
+            ClassMngr::Next::Application::RosterRowReorderingDestinationIndex{
+                destinationRow
+            }
             );
     const auto* error =
         std::get_if<
@@ -295,8 +299,12 @@ bool RosterModel::moveRosterRow(
     auto result =
         ClassMngr::Next::Application::reorderRosterRows(
             applicationSnapshot(m_columns, m_rows),
-            sourceRow,
-            destinationRow
+            ClassMngr::Next::Application::RosterRowReorderingSourceIndex{
+                sourceRow
+            },
+            ClassMngr::Next::Application::RosterRowReorderingDestinationIndex{
+                destinationRow
+            }
             );
     auto* reordered =
         std::get_if<ClassMngr::Next::Application::RosterSnapshot>(&result);

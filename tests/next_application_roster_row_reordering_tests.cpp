@@ -1,13 +1,42 @@
 #include "next/application/roster_row_reordering.h"
 
 #include <cstdlib>
+#include <type_traits>
 #include <variant>
 
 using ClassMngr::Next::Application::RosterRowReorderingError;
 using ClassMngr::Next::Application::RosterRowReorderingErrorCode;
+using ClassMngr::Next::Application::RosterRowReorderingDestinationIndex;
 using ClassMngr::Next::Application::RosterRowReorderingResult;
+using ClassMngr::Next::Application::RosterRowReorderingSourceIndex;
 using ClassMngr::Next::Application::RosterSnapshot;
 using ClassMngr::Next::Application::reorderRosterRows;
+
+static_assert(!std::is_convertible_v<int, RosterRowReorderingSourceIndex>);
+static_assert(!std::is_convertible_v<RosterRowReorderingSourceIndex, int>);
+static_assert(!std::is_convertible_v<int, RosterRowReorderingDestinationIndex>);
+static_assert(!std::is_convertible_v<RosterRowReorderingDestinationIndex, int>);
+static_assert(!std::is_convertible_v<
+    RosterRowReorderingSourceIndex,
+    RosterRowReorderingDestinationIndex
+    >);
+static_assert(!std::is_convertible_v<
+    RosterRowReorderingDestinationIndex,
+    RosterRowReorderingSourceIndex
+    >);
+
+constexpr RosterRowReorderingSourceIndex DefaultSourceIndex{};
+constexpr RosterRowReorderingSourceIndex ZeroSourceIndex{0};
+constexpr RosterRowReorderingSourceIndex NonzeroSourceIndex{7};
+constexpr RosterRowReorderingDestinationIndex DefaultDestinationIndex{};
+constexpr RosterRowReorderingDestinationIndex ZeroDestinationIndex{0};
+constexpr RosterRowReorderingDestinationIndex NonzeroDestinationIndex{9};
+static_assert(DefaultSourceIndex.rawValue() == 0);
+static_assert(DefaultSourceIndex == ZeroSourceIndex);
+static_assert(NonzeroSourceIndex.rawValue() == 7);
+static_assert(DefaultDestinationIndex.rawValue() == 0);
+static_assert(DefaultDestinationIndex == ZeroDestinationIndex);
+static_assert(NonzeroDestinationIndex.rawValue() == 9);
 
 namespace
 {
@@ -39,7 +68,11 @@ bool movesCompleteRowsInBothDirections()
 {
     const RosterSnapshot original = sampleRoster();
 
-    const auto forward = reorderRosterRows(original, 0, 2);
+    const auto forward = reorderRosterRows(
+        original,
+        RosterRowReorderingSourceIndex{0},
+        RosterRowReorderingDestinationIndex{2}
+        );
     RosterSnapshot expectedForward = original;
     expectedForward.rows = {
         original.rows[1],
@@ -56,7 +89,11 @@ bool movesCompleteRowsInBothDirections()
         return false;
     }
 
-    const auto backward = reorderRosterRows(original, 3, 1);
+    const auto backward = reorderRosterRows(
+        original,
+        RosterRowReorderingSourceIndex{3},
+        RosterRowReorderingDestinationIndex{1}
+        );
     RosterSnapshot expectedBackward = original;
     expectedBackward.rows = {
         original.rows[0],
@@ -73,24 +110,52 @@ bool rejectsInvalidAndIdenticalIndexes()
 {
     const RosterSnapshot roster = sampleRoster();
     return isError(
-               reorderRosterRows(roster, -1, 1),
+               reorderRosterRows(
+                   roster,
+                   RosterRowReorderingSourceIndex{-1},
+                   RosterRowReorderingDestinationIndex{1}
+                   ),
                RosterRowReorderingErrorCode::InvalidSourceIndex
                )
         && isError(
-               reorderRosterRows(roster, 4, 1),
+               reorderRosterRows(
+                   roster,
+                   RosterRowReorderingSourceIndex{4},
+                   RosterRowReorderingDestinationIndex{1}
+                   ),
                RosterRowReorderingErrorCode::InvalidSourceIndex
                )
         && isError(
-               reorderRosterRows(roster, 1, -1),
+               reorderRosterRows(
+                   roster,
+                   RosterRowReorderingSourceIndex{1},
+                   RosterRowReorderingDestinationIndex{-1}
+                   ),
                RosterRowReorderingErrorCode::InvalidDestinationIndex
                )
         && isError(
-               reorderRosterRows(roster, 1, 4),
+               reorderRosterRows(
+                   roster,
+                   RosterRowReorderingSourceIndex{1},
+                   RosterRowReorderingDestinationIndex{4}
+                   ),
                RosterRowReorderingErrorCode::InvalidDestinationIndex
                )
         && isError(
-               reorderRosterRows(roster, 2, 2),
+               reorderRosterRows(
+                   roster,
+                   RosterRowReorderingSourceIndex{2},
+                   RosterRowReorderingDestinationIndex{2}
+                   ),
                RosterRowReorderingErrorCode::SameRow
+               )
+        && isError(
+               reorderRosterRows(
+                   roster,
+                   RosterRowReorderingSourceIndex{-1},
+                   RosterRowReorderingDestinationIndex{4}
+                   ),
+               RosterRowReorderingErrorCode::InvalidSourceIndex
                );
 }
 
@@ -102,7 +167,11 @@ bool rejectsEmptyAndUnicodeWhitespaceOnlyRows()
         .rows = {{}, {u"Target", u"Keep"}}
     };
     if (!isError(
-            reorderRosterRows(emptySource, 0, 1),
+            reorderRosterRows(
+                emptySource,
+                RosterRowReorderingSourceIndex{0},
+                RosterRowReorderingDestinationIndex{1}
+                ),
             RosterRowReorderingErrorCode::SourceRowHasNoData
             ))
     {
@@ -120,7 +189,11 @@ bool rejectsEmptyAndUnicodeWhitespaceOnlyRows()
         }
     };
     return isError(
-        reorderRosterRows(whitespaceOnlySource, 0, 1),
+        reorderRosterRows(
+            whitespaceOnlySource,
+            RosterRowReorderingSourceIndex{0},
+            RosterRowReorderingDestinationIndex{1}
+            ),
         RosterRowReorderingErrorCode::SourceRowHasNoData
         );
 }
@@ -134,7 +207,11 @@ bool preservesNonBlankWhitespaceAndEveryCell()
         u"\tReview\u2028"
     };
 
-    const auto result = reorderRosterRows(original, 0, 3);
+    const auto result = reorderRosterRows(
+        original,
+        RosterRowReorderingSourceIndex{0},
+        RosterRowReorderingDestinationIndex{3}
+        );
     RosterSnapshot expected = original;
     expected.rows = {
         original.rows[1],
