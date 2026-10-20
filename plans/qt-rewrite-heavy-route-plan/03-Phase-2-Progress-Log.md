@@ -54566,3 +54566,57 @@ sequential indices for 33 rows, mapping source row 2 to filtered report index
 `git diff --check`. No full-suite or Windows gate is claimed. This acceptance
 was recorded before implementation; no F1198 implementation or verification
 result is claimed here.
+
+### F1198 Speaking Evaluation report source row complete - 2026-10-20
+
+F1198 completed at source/test commit
+`a691169c75cf71c0889e50fda23dad7b40ca85b3` (`Phase2 - Type Speaking
+Evaluation report source row`). The three changed paths were
+`src/next/application/speaking_evaluation_report_content.h`,
+`src/features/speaking_eval/ui/speaking_eval_report_dialog.cpp`, and
+`tests/next_application_speaking_evaluation_report_content_tests.cpp`.
+Application now carries source positions in Qt-free
+`SpeakingEvaluationReportSourceRow`, backed by `std::size_t` with zero default,
+explicit construction, `.rawValue()`, and equality. Filtering keeps original
+source positions through the 33-row behavior; Feature unwraps to legacy `int`,
+and report-index `-1`, edit-to-source mapping, and AI batch fields are
+unchanged.
+
+The independent tester built `ClassMngr`,
+`ClassMngrNextApplicationSpeakingEvaluationReportContentTests`, and
+`ClassMngrSpeakingEvalBatchReportServiceTests` in the existing
+`build/macos-clang-debug`. With `QT_QPA_PLATFORM=offscreen`, the focused CTests
+`ClassMngrNextApplicationSpeakingEvaluationReportContentTests`,
+`ClassMngrSpeakingEvalBatchReportServiceTests`, and
+`ClassMngrSpeakingEvalReportProjectionAdapterTests` passed; `git diff --check`
+passed. No full suite or Windows run occurred.
+
+### F1199 AI accepted-comment overwrite count accepted before implementation - 2026-10-20
+
+F1199 is accepted/current before implementation, based on the two independent
+read-only discovery reports recorded in the Batch493 discovery entry above. In
+`src/next/application/speaking_evaluation_ai_batch_accepted_comment_plan.h`,
+type only `overwriteCount` as a Qt-free Application value, suggested as
+`SpeakingEvaluationAiBatchOverwriteCount`. It should use `std::size_t`, zero
+default, explicit construction, `.rawValue()`, equality, and support count
+increments; no suitable generic value type exists.
+
+Preserve candidate filtering order: checked and valid, in-range `reportIndex`,
+then exact old/new UTF-16 inequality. Increment the count only when
+`trimQtWhitespace(oldComment)` is nonempty, while retaining changed assignments
+whose old comment is whitespace-only. Preserve exact old/new assignment text,
+order, `sourceRow`, and prompt behavior; unwrap only for Feature UI display and
+keep `qt_compatible_text.h`'s whitespace set. Do not change F1200's raw
+`reportIndex`, `-1` sentinel, range filter, assignment order, or raw `sourceRow`,
+or F1201 roster-save issue coordinates. Existing Application tests should
+assert typed zero, one, and multiple counts.
+
+Build `ClassMngr`,
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests`,
+and `ClassMngrSpeakingEvalBatchReportServiceTests`; run the matching
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests`
+and `ClassMngrSpeakingEvalBatchReportServiceTests` CTests, plus
+`git diff --check`. No F1199 implementation or verification has started.
+Batch493 has ten ordered candidates: F1192–F1198 complete, F1199
+accepted/current, and F1200–F1201 discovered. Batch493 remains unpushed;
+F629 and the Phase 0 and Phase 2 gates remain open.
