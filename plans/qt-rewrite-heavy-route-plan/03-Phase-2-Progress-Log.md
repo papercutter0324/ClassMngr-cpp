@@ -56011,3 +56011,30 @@ Focused CTests are `NextApplicationClassTransfer`,
 `ClassMngrClassTransferTests`, and
 `NextPlatformApplicationServicesClassTransferApplyPort`; build the app and
 these affected targets. No F1222 implementation or verification has started.
+
+### F1222 Class Transfer schedule-conflict positions complete - 2026-10-21
+
+F1222 completed at implementation commit `af7fc4fe` (`Phase2 - Type Class
+Transfer schedule-conflict positions`), following acceptance-record commit
+`7eb383ce`. `ClassTransferScheduleConflict::incomingIndex` and `otherIndex`
+now use distinct explicit `std::size_t` wrappers with zero defaults,
+`.rawValue()`, equality, and no implicit conversions. Conflict generation
+retains the same ordered offsets. The repository unwraps the values only at
+the `.at()` calls; `otherIsIncoming` still chooses between incoming and
+existing vectors. Message formatting and preflight behavior are unchanged.
+The Platform test fixture now explicitly constructs its existing
+`ClassTransferPackageClassIndex{0}` input so its target compiles; behavior is
+unchanged.
+
+The Executor built `ClassMngr` and all three focused test targets in the
+existing `build/macos-clang-debug` tree. The independent Tester reran the build
+(Ninja reported no work) and passed the Application and Platform focused CTests
+2/2. Four Application schedule-policy cases and five repository preflight
+cases passed, including ordered incoming/existing conflicts, Sunday overnight,
+skip/replace filtering, and no writes on conflict. `git diff --check` passed.
+The full `ClassMngrClassTransferTests` target was also run offscreen and
+reported 63 passed, 1 failed: the existing teacher-label assertion at
+`tests/class_transfer_tests.cpp:5192` expected “Keep local: Romanized One” but
+got “Keep local: New Teacher.” That unrelated case remains visible and was not
+changed. This was incremental macOS arm64 Debug verification; no full-suite or
+Windows run is claimed.
