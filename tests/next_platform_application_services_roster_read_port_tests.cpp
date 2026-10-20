@@ -1060,19 +1060,19 @@ readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit()
     QCOMPARE(result.value().size(), std::size_t(5));
     QCOMPARE(result.value()[0].classId.value(), std::to_string(fullId));
     QVERIFY(result.value()[0].firstEmptyRowResult);
-    QCOMPARE(result.value()[0].firstEmptyRowResult.value(), -1);
+    QVERIFY(result.value()[0].firstEmptyRowResult.value().isFull());
     QCOMPARE(result.value()[1].classId.value(), std::to_string(emptyId));
     QVERIFY(result.value()[1].firstEmptyRowResult);
-    QCOMPARE(result.value()[1].firstEmptyRowResult.value(), 0);
+    QCOMPARE(result.value()[1].firstEmptyRowResult.value().rawValue(), 0);
     QCOMPARE(result.value()[2].classId.value(), std::to_string(aliasId));
     QVERIFY(result.value()[2].firstEmptyRowResult);
-    QCOMPARE(result.value()[2].firstEmptyRowResult.value(), 1);
+    QCOMPARE(result.value()[2].firstEmptyRowResult.value().rawValue(), 1);
     QCOMPARE(result.value()[3].classId.value(), std::to_string(customId));
     QVERIFY(result.value()[3].firstEmptyRowResult);
-    QCOMPARE(result.value()[3].firstEmptyRowResult.value(), 1);
+    QCOMPARE(result.value()[3].firstEmptyRowResult.value().rawValue(), 1);
     QCOMPARE(result.value()[4].classId.value(), std::to_string(overflowId));
     QVERIFY(result.value()[4].firstEmptyRowResult);
-    QCOMPARE(result.value()[4].firstEmptyRowResult.value(), 0);
+    QCOMPARE(result.value()[4].firstEmptyRowResult.value().rawValue(), 0);
 
     std::vector<std::tuple<int, int, int>> streamedOrder;
     const Status streamed =
@@ -1211,9 +1211,9 @@ preservesMixedParentProvenanceOutcomesInRequestOrder()
         QCOMPARE(result.value()[index].classId, typedIds[index]);
     }
     QVERIFY(result.value()[0].firstEmptyRowResult);
-    QCOMPARE(result.value()[0].firstEmptyRowResult.value(), 1);
+    QCOMPARE(result.value()[0].firstEmptyRowResult.value().rawValue(), 1);
     QVERIFY(result.value()[1].firstEmptyRowResult);
-    QCOMPARE(result.value()[1].firstEmptyRowResult.value(), 0);
+    QCOMPARE(result.value()[1].firstEmptyRowResult.value().rawValue(), 0);
     for (const std::size_t missingIndex : {2U, 3U, 4U})
     {
         QVERIFY(!result.value()[missingIndex].firstEmptyRowResult);
@@ -1224,7 +1224,7 @@ preservesMixedParentProvenanceOutcomesInRequestOrder()
         QVERIFY(result.value()[missingIndex].firstEmptyRowResult.error().recoverable);
     }
     QVERIFY(result.value()[5].firstEmptyRowResult);
-    QCOMPARE(result.value()[5].firstEmptyRowResult.value(), -1);
+    QVERIFY(result.value()[5].firstEmptyRowResult.value().isFull());
 }
 
 void NextPlatformApplicationServicesRosterReadPortTests::

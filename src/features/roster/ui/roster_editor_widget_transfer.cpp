@@ -490,7 +490,7 @@ void RosterEditorWidget::showRosterContextMenu(
                         targets.at(static_cast<qsizetype>(index));
                     if (firstEmptyRowResult)
                     {
-                        target.full = firstEmptyRowResult.value() < 0;
+                        target.full = firstEmptyRowResult.value().isFull();
                     }
                     targetsWithAvailability.append(std::move(target));
                 }

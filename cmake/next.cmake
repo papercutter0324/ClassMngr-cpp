@@ -143,6 +143,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/roster_row_availability.h
     src/next/application/roster_column_projection.h
     src/next/application/roster_availability_accumulator.h
+    src/next/application/roster_availability_first_empty_row.h
     src/next/application/roster_availability_batch_read_snapshot.h
     src/next/application/roster_availability_batch_read_port.h
     src/next/application/roster_availability_batch_read_query.h

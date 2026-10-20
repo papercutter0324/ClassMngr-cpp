@@ -768,9 +768,12 @@ sharedAvailabilityProjectionMatchesModelNameCellOccupancy()
                 Ui::QtTextAdapter::toUtf16String(rawName)
                 );
 
-            QCOMPARE(model.firstEmptyRow(), availability.firstEmptyRow());
             QCOMPARE(
-                availability.firstEmptyRow(),
+                model.firstEmptyRow(),
+                availability.firstEmptyRow().rawValue()
+                );
+            QCOMPARE(
+                availability.firstEmptyRow().rawValue(),
                 rawName.trimmed().isEmpty() ? 0 : 1
                 );
         }

@@ -13,6 +13,8 @@ using namespace ClassMngr::Next;
 namespace
 {
 
+using FirstEmptyRow = Application::RosterAvailabilityFirstEmptyRow;
+
 bool asciiCaseInsensitiveEquals(
     const std::u16string_view left,
     const std::u16string_view right
@@ -165,11 +167,11 @@ accumulatorCountsOnlyRetainedCellsInsideModeledRows()
     accumulator.observeCell(1, 2, u" ");
     accumulator.observeCell(25, 2, u"beyond the model");
     accumulator.observeCell(-1, 2, u"invalid source row");
-    QCOMPARE(accumulator.firstEmptyRow(), 0);
+    QCOMPARE(accumulator.firstEmptyRow().rawValue(), 0);
 
     accumulator.observeCell(0, 2, u"Custom column occupancy");
     accumulator.observeCell(1, 1, u"Alias maps to the Fall base column");
-    QCOMPARE(accumulator.firstEmptyRow(), 2);
+    QCOMPARE(accumulator.firstEmptyRow().rawValue(), 2);
 
     for (int row = 2;
          row < static_cast<int>(Application::RosterModeledRowCount);
@@ -178,7 +180,7 @@ accumulatorCountsOnlyRetainedCellsInsideModeledRows()
         accumulator.observeCell(row, 0, u"student");
     }
     accumulator.observeCell(25, 0, u"ignored overflow row");
-    QCOMPARE(accumulator.firstEmptyRow(), -1);
+    QVERIFY(accumulator.firstEmptyRow().isFull());
 }
 
 void NextApplicationRosterAvailabilityBatchReadQueryTests::
@@ -246,10 +248,15 @@ batchQueryValidatesResponseShapeAndAvailabilityRange()
         classId("7"),
         classId("8")
     };
+    const Application::RosterAvailabilityReadSnapshot defaultSnapshot{
+        .classId = classId("7")
+    };
+    QCOMPARE(defaultSnapshot.firstEmptyRowResult.value().rawValue(), 0);
 
     port.records = {{
         .classId = classId("8"),
-        .firstEmptyRowResult = Domain::Result<int>::success(1)
+        .firstEmptyRowResult =
+            Domain::Result<FirstEmptyRow>::success(FirstEmptyRow(1))
     }};
     auto result = query.execute(requested, {});
     QVERIFY(!result);
@@ -258,11 +265,13 @@ batchQueryValidatesResponseShapeAndAvailabilityRange()
     port.records = {
         {
             .classId = classId("8"),
-            .firstEmptyRowResult = Domain::Result<int>::success(1)
+            .firstEmptyRowResult =
+                Domain::Result<FirstEmptyRow>::success(FirstEmptyRow(1))
         },
         {
             .classId = classId("7"),
-            .firstEmptyRowResult = Domain::Result<int>::success(-1)
+            .firstEmptyRowResult =
+                Domain::Result<FirstEmptyRow>::success(FirstEmptyRow(-1))
         }
     };
     result = query.execute(requested, {});
@@ -272,11 +281,13 @@ batchQueryValidatesResponseShapeAndAvailabilityRange()
     port.records = {
         {
             .classId = classId("7"),
-            .firstEmptyRowResult = Domain::Result<int>::success(25)
+            .firstEmptyRowResult =
+                Domain::Result<FirstEmptyRow>::success(FirstEmptyRow(25))
         },
         {
             .classId = classId("8"),
-            .firstEmptyRowResult = Domain::Result<int>::success(-1)
+            .firstEmptyRowResult =
+                Domain::Result<FirstEmptyRow>::success(FirstEmptyRow(-1))
         }
     };
     result = query.execute(requested, {});
@@ -286,11 +297,13 @@ batchQueryValidatesResponseShapeAndAvailabilityRange()
     port.records = {
         {
             .classId = classId("7"),
-            .firstEmptyRowResult = Domain::Result<int>::success(-2)
+            .firstEmptyRowResult =
+                Domain::Result<FirstEmptyRow>::success(FirstEmptyRow(-2))
         },
         {
             .classId = classId("8"),
-            .firstEmptyRowResult = Domain::Result<int>::success(24)
+            .firstEmptyRowResult =
+                Domain::Result<FirstEmptyRow>::success(FirstEmptyRow(24))
         }
     };
     result = query.execute(requested, {});
@@ -300,17 +313,19 @@ batchQueryValidatesResponseShapeAndAvailabilityRange()
     port.records = {
         {
             .classId = classId("7"),
-            .firstEmptyRowResult = Domain::Result<int>::success(0)
+            .firstEmptyRowResult =
+                Domain::Result<FirstEmptyRow>::success(FirstEmptyRow(0))
         },
         {
             .classId = classId("8"),
-            .firstEmptyRowResult = Domain::Result<int>::success(-1)
+            .firstEmptyRowResult =
+                Domain::Result<FirstEmptyRow>::success(FirstEmptyRow(-1))
         }
     };
     result = query.execute(requested, {u"English"});
     QVERIFY(result);
-    QCOMPARE(result.value()[0].firstEmptyRowResult.value(), 0);
-    QCOMPARE(result.value()[1].firstEmptyRowResult.value(), -1);
+    QCOMPARE(result.value()[0].firstEmptyRowResult.value().rawValue(), 0);
+    QVERIFY(result.value()[1].firstEmptyRowResult.value().isFull());
     QCOMPARE(port.receivedBaseColumnNames, (std::vector<std::u16string>{u"English"}));
 
     const std::vector<Domain::ClassId> mixedRequested{
@@ -326,16 +341,18 @@ batchQueryValidatesResponseShapeAndAvailabilityRange()
     port.records = {
         {
             .classId = classId("7"),
-            .firstEmptyRowResult = Domain::Result<int>::success(24)
+            .firstEmptyRowResult =
+                Domain::Result<FirstEmptyRow>::success(FirstEmptyRow(24))
         },
         {
             .classId = classId("8"),
             .firstEmptyRowResult =
-                Domain::Result<int>::failure(missingParent)
+                Domain::Result<FirstEmptyRow>::failure(missingParent)
         },
         {
             .classId = classId("9"),
-            .firstEmptyRowResult = Domain::Result<int>::success(-1)
+            .firstEmptyRowResult =
+                Domain::Result<FirstEmptyRow>::success(FirstEmptyRow(-1))
         }
     };
     result = query.execute(mixedRequested, {});
@@ -343,7 +360,7 @@ batchQueryValidatesResponseShapeAndAvailabilityRange()
     QCOMPARE(result.value().size(), std::size_t(3));
     QCOMPARE(result.value()[0].classId, mixedRequested[0]);
     QVERIFY(result.value()[0].firstEmptyRowResult);
-    QCOMPARE(result.value()[0].firstEmptyRowResult.value(), 24);
+    QCOMPARE(result.value()[0].firstEmptyRowResult.value().rawValue(), 24);
     QCOMPARE(result.value()[1].classId, mixedRequested[1]);
     QVERIFY(!result.value()[1].firstEmptyRowResult);
     QCOMPARE(
@@ -352,7 +369,7 @@ batchQueryValidatesResponseShapeAndAvailabilityRange()
         );
     QCOMPARE(result.value()[2].classId, mixedRequested[2]);
     QVERIFY(result.value()[2].firstEmptyRowResult);
-    QCOMPARE(result.value()[2].firstEmptyRowResult.value(), -1);
+    QVERIFY(result.value()[2].firstEmptyRowResult.value().isFull());
 }
 
 QTEST_APPLESS_MAIN(NextApplicationRosterAvailabilityBatchReadQueryTests)

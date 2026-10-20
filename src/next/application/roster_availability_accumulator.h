@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/qt_compatible_text.h"
+#include "next/application/roster_availability_first_empty_row.h"
 #include "next/application/roster_column_projection.h"
 #include "next/application/roster_row_availability.h"
 
@@ -68,17 +69,19 @@ public:
         }
     }
 
-    // Returns -1 when all modeled rows contain data.
-    [[nodiscard]] int firstEmptyRow() const noexcept
+    // Returns a full sentinel when all modeled rows contain data.
+    [[nodiscard]] RosterAvailabilityFirstEmptyRow firstEmptyRow() const noexcept
     {
         for (std::size_t row = 0; row < m_rows.size(); ++row)
         {
             if (!m_rows[row])
             {
-                return static_cast<int>(row);
+                return RosterAvailabilityFirstEmptyRow(
+                    static_cast<int>(row)
+                    );
             }
         }
-        return -1;
+        return RosterAvailabilityFirstEmptyRow(-1);
     }
 
 private:

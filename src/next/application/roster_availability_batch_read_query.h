@@ -76,11 +76,12 @@ public:
                     "A roster availability batch returned records in a different identifier order."
                     );
             }
-            const Domain::Result<int>& firstEmptyRowResult =
+            const Domain::Result<RosterAvailabilityFirstEmptyRow>&
+                firstEmptyRowResult =
                 snapshots[index].firstEmptyRowResult;
             if (firstEmptyRowResult
-                && (firstEmptyRowResult.value() < -1
-                    || firstEmptyRowResult.value()
+                && (firstEmptyRowResult.value().rawValue() < -1
+                    || firstEmptyRowResult.value().rawValue()
                         >= static_cast<int>(RosterModeledRowCount)))
             {
                 return validationFailure(

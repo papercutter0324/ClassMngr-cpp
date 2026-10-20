@@ -221,8 +221,9 @@ public:
                 {
                     snapshots.push_back({
                         .classId = classIds[index],
-                        .firstEmptyRowResult =
-                            Domain::Result<int>::failure({
+                        .firstEmptyRowResult = Domain::Result<
+                            Application::RosterAvailabilityFirstEmptyRow
+                            >::failure({
                                 .code = Domain::ErrorCode::NotFound,
                                 .message = "The requested class does not exist.",
                                 .recoverable = true
@@ -233,9 +234,9 @@ public:
                 {
                     snapshots.push_back({
                         .classId = classIds[index],
-                        .firstEmptyRowResult = Domain::Result<int>::success(
-                            accumulators[index].firstEmptyRow()
-                            )
+                        .firstEmptyRowResult = Domain::Result<
+                            Application::RosterAvailabilityFirstEmptyRow
+                            >::success(accumulators[index].firstEmptyRow())
                     });
                 }
             }
