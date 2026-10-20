@@ -55648,3 +55648,75 @@ The push included eight local commits through the Batch494 closeout and
 Batch495/F1210 activation. The local `origin/Qt-Rewrite` tracking ref matched
 `HEAD` after the push, and the worktree was clean. No tests were run for the
 push.
+
+### F1217 Roster projection source-column index accepted before implementation - 2026-10-21
+
+F1217 is accepted/current based on two independent read-only Explorer reports.
+Add an explicit Application `RosterSourceColumnIndex` backed by
+`std::size_t`, defaulting to zero, with `.rawValue()`, equality, and no implicit
+conversions. Change only `RosterProjectedColumn::sourceColumnIndex` to
+`std::optional<RosterSourceColumnIndex>`; keep absence represented by
+`std::nullopt`, since source-column index zero is valid. Preserve base-column
+caller order, first matching stored-header alias, normalized custom-column
+stored order, and skipped blank/base/duplicate headers.
+
+Unwrap the index only at the existing Application/Feature consumers:
+`RosterAvailabilityAccumulator`, `RosterRowTransferUseCase::projectTargetRoster`,
+and `RosterModel::rebuildRows`. Preserve their independent source-row bounds
+checks and all current projection behavior. Update direct projection assertions
+to inspect the typed raw value while retaining absent, zero, and displayed-order
+coverage. Add a focused `RosterModel` assertion that checks cell contents are
+read from the expected stored columns when displayed columns are reordered or
+aliased; the Explorer review found no current assertion covering that mapping.
+
+Focused targets are `ClassMngr`,
+`ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests`,
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`, and
+`ClassMngrRosterModelTests`. No F1217 implementation or verification has
+started.
+
+### Batch496 discovery started - 2026-10-21
+
+Discovery started while F1217 was the second-last candidate in Batch495, as
+required by the phase plan. Two independent read-only Explorer scans surfaced
+eight candidates; the scan also confirmed the prior Batch495 discovery note
+left F1219 unassigned. The ordered discovery list is recorded in the plan.
+
+- F1219: `SpeakingEvaluationAiBatchAcceptedCommentCandidate::sourceRow` and
+  `SpeakingEvaluationAiBatchAcceptedCommentAssignment::sourceRow` are `int`
+  fields defaulting to `-1`; the planner propagates values in input order, and
+  Feature application skips negative/past-end rows. Existing tests are in
+  `next_application_speaking_evaluation_ai_batch_accepted_comment_plan_tests.cpp`
+  and `speaking_eval_batch_report_service_tests.cpp`.
+- F1220: `ScheduleImportMatchingClassProjection::candidateIndex` is a
+  `std::size_t` candidate position narrowed by a Feature adapter to `int`;
+  order and positions are covered by
+  `next_application_schedule_import_matching_projection_tests.cpp` and
+  `schedule_import_tests.cpp`.
+- F1221: `RosterAvailabilityAccumulator::observeCell` accepts raw row and
+  source-column coordinates; existing Application/Platform tests cover
+  invalid rows and filtered columns in
+  `next_application_roster_availability_batch_read_query_tests.cpp` and
+  `next_platform_application_services_roster_read_port_tests.cpp`.
+- F1222: `ClassTransferScheduleConflict` exposes `incomingIndex` and
+  `otherIndex`, with `otherIsIncoming` selecting which vector `otherIndex`
+  addresses. Existing policy and repository tests cover ordered index pairs in
+  `next_application_class_transfer_tests.cpp` and `class_transfer_tests.cpp`.
+- F1223: `ScheduleImportStateClassResolution::candidateIndex` is a raw
+  `std::size_t` candidate position; validation range-checks it for relevant
+  actions and existing state-validation tests cover shifted candidate order in
+  `next_application_schedule_import_state_validation_tests.cpp`.
+- F1224: `orderTestingClassesRows` returns raw row positions consumed by the
+  Feature page; policy tests are in
+  `next_application_testing_classes_ordering_policy_tests.cpp`.
+- F1225: Analytics criterion-extrema results expose index vectors consumed by
+  the Feature service; policy and integration tests are in
+  `next_application_class_analytics_criterion_extrema_policy_tests.cpp` and
+  `speaking_analytics_tests.cpp`.
+- F1226: `SubPrepPrintGroupOrder` exposes teacher and class indexes consumed by
+  the Feature model; policy/model tests are in
+  `next_application_sub_prep_print_order_policy_tests.cpp` and
+  `sub_prep_class_information_model_tests.cpp`.
+
+These are discovery candidates, not accepted scopes. No files were changed and
+no builds or tests were run during discovery.
