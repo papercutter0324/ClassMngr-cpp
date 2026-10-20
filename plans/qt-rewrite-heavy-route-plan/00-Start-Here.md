@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batches 481–490 are complete and pushed, with Batch490 at `69be43a7`. Batch491 is active with eight provisionally discovered candidates and F1178 next. F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batches 481–490 are complete and pushed, with Batch490 at `69be43a7`. Batch491 is active with eight candidates; F1178 is accepted/in progress, and F1179 follows. F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,9 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch491 — Active; eight provisionally discovered candidates, none complete or accepted, with F1178 next:**
+**Batch491 — Active; eight candidates, one accepted/in progress, with F1179 next after F1178:**
 
-1. **F1178 — Discovered; next:** Schedule Import review summary counts; preserve zero and action-derived counts, with exact scope to be decided at acceptance.
+1. **F1178 — Accepted/in progress:** Type the eight Application Schedule Import review summary counts and two projection inputs while preserving action-derived mappings and existing Feature behavior (see the [acceptance record](03-Phase-2-Progress-Log.md#f1178-schedule-import-review-count-accepted-before-implementation-2026-10-20)).
 2. **F1179 — Discovered:** Speaking Evaluation AI grade band; preserve 4–6 eligibility, `Other`, and exact prompt text.
 3. **F1180 — Discovered:** Class Transfer skipped-class count; preserve zero and exact count without range policy.
 4. **F1181 — Discovered:** Class Transfer package-class index; preserve the `-1` sentinel, out-of-range values, and validation issue order.
@@ -49,7 +49,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 7. **F1184 — Discovered:** Import/report job generation tokens; preserve initial 1, exact values, stale rejection, and exhaustion behavior.
 8. **F1185 — Discovered; lower confidence:** Class Analytics criterion student count; preserve zero and count only when criterion data exists, with contract to confirm at acceptance.
 
-Batch490 is complete and pushed at `69be43a7`; see its [push receipt](03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20). Batch491 is active with eight provisionally discovered candidates, F1178 next, and no accepted slices. Batch489 is complete and pushed at `e329f92b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch490 is complete and pushed at `69be43a7`; see its [push receipt](03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20). Batch491 is active with eight candidates, F1178 accepted/in progress, and F1179 next after it closes. Batch489 is complete and pushed at `e329f92b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.

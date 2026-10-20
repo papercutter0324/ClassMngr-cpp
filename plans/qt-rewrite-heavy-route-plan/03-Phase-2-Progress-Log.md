@@ -53163,3 +53163,41 @@ closeout. Batch490 is complete and pushed at `69be43a7`. Batch491 is active
 with eight provisionally discovered candidates and F1178 next. F629 awaits
 source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1178 Schedule Import review count accepted before implementation - 2026-10-20
+
+F1178 is accepted/in progress. Add Qt-free
+`Application::ScheduleImportReviewCount` with exact signed-`int` storage, a
+zero default, explicit construction, `rawValue()`, pre-increment, and equality.
+It has no implicit conversion or range policy. Type the eight fields of
+`ScheduleImportReviewSummary` and the two count inputs to
+`projectScheduleImportReviewSummary` in
+`src/next/application/schedule_import_review_summary_projection.h`.
+
+At the Feature boundary, explicitly wrap the diagnostic size and the existing
+schedule-cleared projection result; unwrap the typed values only when
+formatting existing visible text. Preserve the six action-derived mappings:
+teacher Create, UpdateRoom, and Skip; class CreateNew, UpdateExisting, and
+Skip. Keep Reuse, Unselected, and Invalid actions non-counting. Add no
+validation, filtering, or deduplication. Exclude the separate applied-result
+`ScheduleImportApplySummary` in
+`src/next/application/schedule_import_apply_request.h`, `candidateIndex` and
+other positions, and changes to `projectScheduleImportSchedulesCleared`
+behavior.
+
+Acceptance coverage adds wrapper exact-value, zero-default,
+explicitness/non-conversion, and pre-increment checks while retaining existing
+assertions for all eight review-summary values and action mappings. Build
+`ClassMngr`, `ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests`,
+`ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests`, and
+`ClassMngrScheduleImportDialogTests`; run focused CTests
+`ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests` and
+`ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests`, plus
+the dialog QtTest selector `reviewSummaryUsesApplicationProjection`. Require
+`git diff --check`; no full-suite or Windows run is in scope. Implementation
+and verification have not started.
+
+Batch491 has one accepted/in-progress slice, F1178, and seven discovered
+candidates, F1179–F1185. Batch490 remains complete and pushed at `69be43a7`.
+F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase
+2 gates remain open.

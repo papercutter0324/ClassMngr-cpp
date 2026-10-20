@@ -67,9 +67,9 @@ restore-defaults name `ClassMngrCalendarPreferencesRestoreDefaultsTests`; the
 Tester build was up to date, and `git diff --check` passed. No full suite or
 Windows build ran. Batch490 is complete and pushed to `origin/Qt-Rewrite` at
 `69be43a7`; see the [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20).
-Batch491 is active with eight provisional candidates and F1178 next. F1175's
-Class Transfer test still has one unresolved teacher-fallback label failure
-among 64 cases;
+Batch491 is active with F1178 accepted/in progress, F1179 next, and seven
+discovered candidates remaining. F1175's Class Transfer test still has one
+unresolved teacher-fallback label failure among 64 cases;
 no clean baseline proves it pre-existing. F629 awaits source-bound Windows x64
 layout evidence. Phase 0 and Phase 2 gates remain open.
 
@@ -6600,3 +6600,17 @@ Windows build ran. Batch490 is complete and pushed at `69be43a7`; see the
 Batch491 is active with eight provisional candidates and F1178 next. F1175's one
 teacher-fallback label failure remains unresolved and is not
 claimed to be pre-existing. F629 and the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1178 accepted; Batch491 active - 2026-10-20
+
+F1178 is accepted to add Qt-free `Application::ScheduleImportReviewCount` and
+type the eight fields of `ScheduleImportReviewSummary` plus its two count
+inputs. Preserve exact signed `int` values, zero default, explicit construction,
+`rawValue()`, pre-increment, equality, and the absence of conversion or range
+policy. Preserve action-to-count mappings, non-counting actions, and existing
+review text. The Feature boundary wraps diagnostics and schedule-clear counts
+and unwraps summary values for display. The applied-result
+`ScheduleImportApplySummary` and collection positions remain separate.
+Implementation and verification have not started. Batch490 is pushed at
+`69be43a7`; Batch491 has seven other discovered candidates with F1179 next.
+F629 and both phase gates remain open.
