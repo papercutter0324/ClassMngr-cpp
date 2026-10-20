@@ -327,9 +327,9 @@ ValidationResult legacyValidationResult(
             duplicateRows.reserve(
                 static_cast<qsizetype>(issue.duplicateRows.size())
                 );
-            for (const int row : issue.duplicateRows)
+            for (const auto row : issue.duplicateRows)
             {
-                duplicateRows.append(row);
+                duplicateRows.append(static_cast<int>(row.rawValue()));
             }
             arguments.insert(QStringLiteral("duplicateRows"), duplicateRows);
         }

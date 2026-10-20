@@ -139,7 +139,7 @@ struct ClassDetailsValidationIssue final
     std::optional<std::u16string> start;
     std::optional<std::u16string> end;
     std::vector<std::u16string> allowedValues;
-    std::vector<int> duplicateRows;
+    std::vector<ClassDetailsScheduleValidationRowIndex> duplicateRows;
     std::optional<int> length;
     std::optional<int> minimum;
     std::optional<int> maximum;
@@ -204,7 +204,7 @@ private:
         int weekday = 0;
         int startMinute = 0;
         int endMinute = 0;
-        std::vector<int> rows;
+        std::vector<ClassDetailsScheduleValidationRowIndex> rows;
     };
 
     [[nodiscard]] static char16_t asciiLower(char16_t value) noexcept
@@ -553,7 +553,7 @@ private:
         std::optional<std::u16string> start = std::nullopt,
         std::optional<std::u16string> end = std::nullopt,
         std::vector<std::u16string> allowedValues = {},
-        std::vector<int> duplicateRows = {},
+        std::vector<ClassDetailsScheduleValidationRowIndex> duplicateRows = {},
         std::optional<int> length = std::nullopt,
         std::optional<int> minimum = std::nullopt,
         std::optional<int> maximum = std::nullopt,
@@ -891,12 +891,16 @@ private:
                         .weekday = *weekday,
                         .startMinute = start->minutes,
                         .endMinute = end->minutes,
-                        .rows = {static_cast<int>(index)}
+                        .rows = {
+                            ClassDetailsScheduleValidationRowIndex(index)
+                        }
                     });
                 }
                 else
                 {
-                    group->rows.push_back(static_cast<int>(index));
+                    group->rows.push_back(
+                        ClassDetailsScheduleValidationRowIndex(index)
+                        );
                 }
             }
         }
@@ -910,7 +914,7 @@ private:
             {
                 continue;
             }
-            for (const int row : group.rows)
+            for (const ClassDetailsScheduleValidationRowIndex row : group.rows)
             {
                 add(
                     output,
@@ -926,9 +930,7 @@ private:
                     std::nullopt,
                     std::nullopt,
                     schedule,
-                    ClassDetailsScheduleValidationRowIndex(
-                        static_cast<std::size_t>(row)
-                        )
+                    row
                     );
             }
         }

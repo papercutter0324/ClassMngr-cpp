@@ -851,26 +851,17 @@ invalidScheduleUiSavesMatchCommonBaselineInputs()
                     QStringLiteral("classTimes[%1].startTime").arg(issue.row)
                     );
 
-                QSet<int> groupRows;
                 const QVariantList group = issue.arguments
                     .value(QStringLiteral("duplicateRows"))
                     .toList();
-                for (const QVariant& row : group)
-                {
-                    groupRows.insert(row.toInt());
-                }
-                QVERIFY(groupRows.size() == 2);
-                if (issue.row == 0 || issue.row == 1)
-                {
-                    QVERIFY(groupRows.contains(0));
-                    QVERIFY(groupRows.contains(1));
-                }
-                else
-                {
-                    QVERIFY(issue.row == 2 || issue.row == 3);
-                    QVERIFY(groupRows.contains(2));
-                    QVERIFY(groupRows.contains(3));
-                }
+                const QVariantList expectedGroupRows =
+                    issue.row == 0 || issue.row == 1
+                    ? QVariantList{0, 1}
+                    : QVariantList{2, 3};
+                QCOMPARE(group, expectedGroupRows);
+                QVERIFY(expectedGroupRows.contains(
+                    QVariant::fromValue(issue.row)
+                    ));
             }
             QCOMPARE(duplicateIssueCount, 4);
             QCOMPARE(reportedRows.size(), expectedDuplicateRows.size());

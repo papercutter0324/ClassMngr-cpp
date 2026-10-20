@@ -299,20 +299,42 @@ reportsDuplicateGroupsInDeterministicFirstSeenOrder()
             static_cast<std::size_t>(expectedRows[index])
             );
     }
-    const int expectedFirstGroup[] = {0, 2};
-    const int expectedSecondGroup[] = {1, 3, 4};
+    const ClassDetailsScheduleValidationRowIndex expectedFirstGroup[] = {
+        ClassDetailsScheduleValidationRowIndex{0},
+        ClassDetailsScheduleValidationRowIndex{2}
+    };
+    const ClassDetailsScheduleValidationRowIndex expectedSecondGroup[] = {
+        ClassDetailsScheduleValidationRowIndex{1},
+        ClassDetailsScheduleValidationRowIndex{3},
+        ClassDetailsScheduleValidationRowIndex{4}
+    };
     for (std::size_t index = 0; index < 2; ++index)
     {
         QCOMPARE(output.issues[index].duplicateRows.size(), std::size_t(2));
-        QCOMPARE(output.issues[index].duplicateRows[0], expectedFirstGroup[0]);
-        QCOMPARE(output.issues[index].duplicateRows[1], expectedFirstGroup[1]);
+        QCOMPARE(
+            output.issues[index].duplicateRows[0].rawValue(),
+            expectedFirstGroup[0].rawValue()
+            );
+        QCOMPARE(
+            output.issues[index].duplicateRows[1].rawValue(),
+            expectedFirstGroup[1].rawValue()
+            );
     }
     for (std::size_t index = 2; index < 5; ++index)
     {
         QCOMPARE(output.issues[index].duplicateRows.size(), std::size_t(3));
-        QCOMPARE(output.issues[index].duplicateRows[0], expectedSecondGroup[0]);
-        QCOMPARE(output.issues[index].duplicateRows[1], expectedSecondGroup[1]);
-        QCOMPARE(output.issues[index].duplicateRows[2], expectedSecondGroup[2]);
+        QCOMPARE(
+            output.issues[index].duplicateRows[0].rawValue(),
+            expectedSecondGroup[0].rawValue()
+            );
+        QCOMPARE(
+            output.issues[index].duplicateRows[1].rawValue(),
+            expectedSecondGroup[1].rawValue()
+            );
+        QCOMPARE(
+            output.issues[index].duplicateRows[2].rawValue(),
+            expectedSecondGroup[2].rawValue()
+            );
     }
 }
 
