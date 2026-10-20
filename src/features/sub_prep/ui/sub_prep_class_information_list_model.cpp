@@ -154,7 +154,7 @@ QVariant SubPrepClassInformationListModel::data(
     case TeacherDisplayNameRole:
         return teacherDisplayName(*summary);
     case StudentCountRole:
-        return static_cast<qulonglong>(summary->studentCount);
+        return static_cast<qulonglong>(summary->studentCount.rawValue());
     default:
         return {};
     }

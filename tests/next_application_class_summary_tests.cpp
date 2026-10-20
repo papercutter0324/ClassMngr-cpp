@@ -59,7 +59,7 @@ ClassSummary classSummary(
         "Level A",
         "Class label",
         "Mon 10:00",
-        studentCount,
+        ClassSummaryStudentCount{studentCount},
         order
     };
 }
@@ -120,6 +120,7 @@ private slots:
     void unicodeRequiredTextOptionalWhitespaceAndOpaqueIdentifiersArePreserved();
     void collectionAndStudentCountBoundsAreRejected();
     void projectionsAreCopyableEqualAndIndependentlyReleasable();
+    void classSummaryStudentCountHasExplicitValueSemantics();
     void contractSurfaceHasTypedValuesAndNoPointerLookups();
 };
 
@@ -179,7 +180,10 @@ void NextApplicationClassSummaryTests::valid96ClassScaleProjectionIsBoundedAndRe
         projection.classes().front().displayLabel,
         std::string("Visible class 1")
         );
-    QCOMPARE(projection.classes().front().studentCount, std::size_t(0));
+    QCOMPARE(
+        projection.classes().front().studentCount.rawValue(),
+        std::size_t(0)
+        );
     QCOMPARE(projection.classes().front().order, std::int32_t(0));
     QVERIFY(!projection.classes().front().hasTeacher());
     const auto class42 = projection.findClass(classId("class-42"));
@@ -225,7 +229,7 @@ void NextApplicationClassSummaryTests::lookupsReturnIndependentValueCopies()
     auto classCopy = projection.findClass(classId("class-1"));
     QVERIFY(classCopy.has_value());
     classCopy->displayLabel = "Changed outside projection";
-    classCopy->studentCount = 1;
+    classCopy->studentCount = ClassSummaryStudentCount{1};
 
     auto teacherCopy = projection.findTeacher(teacherId("teacher-1"));
     QVERIFY(teacherCopy.has_value());
@@ -237,7 +241,7 @@ void NextApplicationClassSummaryTests::lookupsReturnIndependentValueCopies()
     QVERIFY(storedClass.has_value());
     QVERIFY(storedTeacher.has_value());
     QCOMPARE(storedClass->displayLabel, std::string("Teacher One / Grade 3"));
-    QCOMPARE(storedClass->studentCount, std::size_t(24));
+    QCOMPARE(storedClass->studentCount.rawValue(), std::size_t(24));
     QCOMPARE(storedTeacher->displayName, std::string("Teacher One"));
     QCOMPARE(storedTeacher->notes, std::string("Notes One"));
     QVERIFY(!projection.findClass(classId("unknown-class")).has_value());
@@ -498,9 +502,25 @@ void NextApplicationClassSummaryTests::collectionAndStudentCountBoundsAreRejecte
         ClassSummaryProjection::create(std::move(tooManyClasses))
         );
 
+    auto maximumStudentCount = validInput();
+    maximumStudentCount.classes.front().studentCount =
+        ClassSummaryStudentCount{kClassSummaryMaxStudentCount};
+    const auto maximumStudentCountResult = ClassSummaryProjection::create(
+        std::move(maximumStudentCount)
+        );
+    QVERIFY(maximumStudentCountResult);
+    QCOMPARE(
+        maximumStudentCountResult.value()
+            .classes()
+            .front()
+            .studentCount
+            .rawValue(),
+        kClassSummaryMaxStudentCount
+        );
+
     auto tooManyStudents = validInput();
     tooManyStudents.classes.front().studentCount =
-        kClassSummaryMaxStudentCount + 1;
+        ClassSummaryStudentCount{kClassSummaryMaxStudentCount + 1};
     verifyInvalid(
         ClassSummaryProjection::create(std::move(tooManyStudents))
         );
@@ -508,6 +528,35 @@ void NextApplicationClassSummaryTests::collectionAndStudentCountBoundsAreRejecte
     auto negativeOrder = validInput();
     negativeOrder.classes.front().order = -1;
     verifyInvalid(ClassSummaryProjection::create(std::move(negativeOrder)));
+}
+
+void NextApplicationClassSummaryTests::
+classSummaryStudentCountHasExplicitValueSemantics()
+{
+    static_assert(
+        std::is_same_v<
+            decltype(ClassSummary::studentCount),
+            ClassSummaryStudentCount
+            >
+        );
+    static_assert(
+        std::is_same_v<
+            decltype(std::declval<ClassSummaryStudentCount>().rawValue()),
+            std::size_t
+            >
+        );
+    static_assert(std::is_default_constructible_v<ClassSummaryStudentCount>);
+    static_assert(std::is_constructible_v<ClassSummaryStudentCount, std::size_t>);
+    static_assert(!std::is_convertible_v<std::size_t, ClassSummaryStudentCount>);
+    static_assert(!std::is_convertible_v<ClassSummaryStudentCount, std::size_t>);
+
+    const ClassSummaryStudentCount defaultCount;
+    const ClassSummaryStudentCount zero{0};
+    const ClassSummaryStudentCount positive{37};
+    QVERIFY(defaultCount == zero);
+    QVERIFY(defaultCount != positive);
+    QCOMPARE(defaultCount.rawValue(), std::size_t(0));
+    QCOMPARE(positive.rawValue(), std::size_t(37));
 }
 
 void NextApplicationClassSummaryTests::projectionsAreCopyableEqualAndIndependentlyReleasable()
@@ -542,6 +591,12 @@ void NextApplicationClassSummaryTests::contractSurfaceHasTypedValuesAndNoPointer
 {
     static_assert(std::is_same_v<decltype(TeacherSummary::id), TeacherId>);
     static_assert(std::is_same_v<decltype(ClassSummary::id), ClassId>);
+    static_assert(
+        std::is_same_v<
+            decltype(ClassSummary::studentCount),
+            ClassSummaryStudentCount
+            >
+        );
     static_assert(std::is_same_v<decltype(ClassSummary::order), std::int32_t>);
     static_assert(
         std::is_same_v<

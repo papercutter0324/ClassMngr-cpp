@@ -39,7 +39,7 @@ ClassSummary classSummary(
         "Level B",
         "Class " + displayId,
         "Mon 09:00",
-        18,
+        ClassSummaryStudentCount{18},
         0
     };
 }

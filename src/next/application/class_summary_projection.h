@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/class_summary_student_count.h"
 #include "next/application/qt_compatible_text.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
@@ -81,7 +82,7 @@ struct ClassSummary final
     std::string level;
     std::string displayLabel;
     std::string meetingText;
-    std::size_t studentCount = 0;
+    ClassSummaryStudentCount studentCount;
     std::int32_t order = 0;
     // Compact legacy class-tab presentation and ordering values. The platform
     // adapter computes these from the raw preferred schedule before releasing
@@ -358,7 +359,7 @@ template <typename TypedId>
             );
     }
 
-    if (classSummary.studentCount > kClassSummaryMaxStudentCount)
+    if (classSummary.studentCount.rawValue() > kClassSummaryMaxStudentCount)
     {
         return Domain::Result<void>::failure(
             invalidInput("Class student count exceeds its bounded limit.")

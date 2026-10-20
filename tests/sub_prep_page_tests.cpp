@@ -133,7 +133,9 @@ public:
                 .meetingText = fridayClass
                     ? "Fri 6pm"
                     : secondClass ? "Thurs 5pm" : "Tues 4pm",
-                .studentCount = 9,
+                .studentCount = ClassSummaryStudentCount{
+                    legacyId == 42 ? 0U : 9U
+                },
                 .order = sortedFallbackFixture
                     ? legacyId == 43 ? 0 : legacyId == 42 ? 1 : 2
                     : static_cast<std::int32_t>(index),
@@ -854,6 +856,19 @@ void SubPrepPageTests
             );
     QVERIFY(gradeTabs);
     QCOMPARE(gradeTabs->count(), 2);
+    auto* classTabs = page.findChild<SubPrepClassInformationTabSelector*>(
+        QStringLiteral("subPrepClassTabStrip")
+        );
+    QVERIFY(classTabs);
+    QVERIFY(classTabs->model());
+    QCOMPARE(classTabs->model()->rowCount(), 1);
+    QCOMPARE(
+        classTabs->model()
+            ->data(classTabs->model()->index(0, 0),
+                   SubPrepClassInformationListModel::StudentCountRole)
+            .toULongLong(),
+        qulonglong(0)
+        );
     auto* detailsCard = page.findChild<SectionCard*>(
         QStringLiteral("subPrepTeacherSectionCard")
         );
@@ -885,10 +900,6 @@ void SubPrepPageTests
     QCOMPARE(harness.detailsReadPort.loadCount, 2);
     QCOMPARE(harness.detailsReadPort.loadedClassIds.back(), std::string("43"));
 
-    auto* classTabs = page.findChild<SubPrepClassInformationTabSelector*>(
-        QStringLiteral("subPrepClassTabStrip")
-        );
-    QVERIFY(classTabs);
     QVERIFY(classTabs->model());
     QCOMPARE(classTabs->model()->rowCount(), 1);
     QCOMPARE(
@@ -910,6 +921,13 @@ void SubPrepPageTests
         classTabs->model()->data(classTabs->model()->index(0, 0))
             .toString()
             .contains(QStringLiteral("Athena"))
+        );
+    QCOMPARE(
+        classTabs->model()
+            ->data(classTabs->model()->index(classTabs->currentRow(), 0),
+                   SubPrepClassInformationListModel::StudentCountRole)
+            .toULongLong(),
+        qulonglong(9)
         );
 
     QCOMPARE(

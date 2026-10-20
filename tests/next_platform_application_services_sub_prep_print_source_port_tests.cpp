@@ -409,10 +409,10 @@ projectsVisibleScheduleSummariesAndAggregatesRosterCounts()
     QCOMPARE(result.value().classes()[0].grade, std::string("E5"));
     QCOMPARE(result.value().classes()[0].level, std::string("Apollo"));
     QCOMPARE(result.value().classes()[0].displayLabel, std::string("E5 Apollo"));
-    QCOMPARE(result.value().classes()[0].studentCount, std::size_t(1));
+    QCOMPARE(result.value().classes()[0].studentCount.rawValue(), std::size_t(1));
     QCOMPARE(result.value().classes()[1].id, classId(firstClass));
     QCOMPARE(result.value().classes()[1].order, std::int32_t(1));
-    QCOMPARE(result.value().classes()[1].studentCount, std::size_t(2));
+    QCOMPARE(result.value().classes()[1].studentCount.rawValue(), std::size_t(2));
     QCOMPARE(result.value().classes()[1].meetingText, std::string("MonWed 9am"));
     QCOMPARE(
         result.value().classes()[1].navigationLabel,
@@ -539,7 +539,7 @@ scheduleSummaryDoesNotAliasFractionalRosterRows()
     QVERIFY(result);
     QCOMPARE(result.value().classes.size(), std::size_t(1));
     QCOMPARE(result.value().classes.front().id, classId(selectedClass));
-    QCOMPARE(result.value().classes.front().studentCount, std::size_t(0));
+    QCOMPARE(result.value().classes.front().studentCount.rawValue(), std::size_t(0));
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
@@ -825,7 +825,7 @@ rosterAggregateFailureKeepsLegacyZeroCountFallback()
 
     QVERIFY(result);
     QCOMPARE(result.value().classes.size(), std::size_t(1));
-    QCOMPARE(result.value().classes.front().studentCount, std::size_t(0));
+    QCOMPARE(result.value().classes.front().studentCount.rawValue(), std::size_t(0));
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::

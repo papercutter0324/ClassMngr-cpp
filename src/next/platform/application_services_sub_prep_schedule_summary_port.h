@@ -475,7 +475,9 @@ public:
                     .level = *levelText,
                     .displayLabel = *displayLabel,
                     .meetingText = *meetingText,
-                    .studentCount = static_cast<std::size_t>(record.studentCount),
+                    .studentCount = Application::ClassSummaryStudentCount{
+                        static_cast<std::size_t>(record.studentCount)
+                    },
                     .order = static_cast<std::int32_t>(requestIndex),
                     .navigationLabel = *navigationLabel,
                     .navigationTeacherLabel = *navigationTeacherLabel,

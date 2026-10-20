@@ -599,7 +599,7 @@ void SubPrepPage::rebuildClassInformation()
         for (const auto& summary : summaries)
         {
             m_classInformationRosterStudentResultCount +=
-                static_cast<int>(summary.studentCount);
+                static_cast<int>(summary.studentCount.rawValue());
         }
     }
 
@@ -964,7 +964,9 @@ void SubPrepPage::renderSelectedClassInformation()
     setInlineField(
         m_classInformationStudentCountValue,
         tr("# of Students"),
-        QString::number(static_cast<qulonglong>(summary.studentCount))
+        QString::number(
+            static_cast<qulonglong>(summary.studentCount.rawValue())
+            )
         );
 
     const QString room = details.has_value()
