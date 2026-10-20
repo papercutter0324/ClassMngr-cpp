@@ -52030,3 +52030,42 @@ pushed successfully to `origin/Qt-Rewrite`. The local HEAD and remote
 worktree was clean and status was `## Qt-Rewrite...origin/Qt-Rewrite`.
 Batch488 is closed and pushed; Batch489 is active with F1162 next. F629 and
 the Phase 0 and Phase 2 gates remain open.
+
+### F1162 Calendar repeat-create cutoff date accepted before implementation - 2026-10-20
+
+F1162 is accepted/in progress. Add an explicit Application Input boundary
+that retains raw cutoff text; convert it to `Domain::GregorianDate` only
+after preserving the current validation precedence: supported frequency,
+seed validity, then seed-date and cutoff parsing and cutoff-before-start
+validation. Change `planCalendarEventRepeatOccurrences` to take a typed
+`Domain::GregorianDate` cutoff. The UI/use-case path carries the Input, and
+only a valid plan reaches the Platform port; malformed raw text must not
+cross the port.
+
+Preserve the existing malformed or empty cutoff failure:
+`Domain::ErrorCode::InvalidInput`, message
+`Calendar repeat seed and until dates must be canonical ISO dates.`,
+`recoverable=false`. Keep all existing frequency, seed, cutoff/range,
+overflow, request-validation, and port-failure errors and their precedence.
+No port call may occur for any Input or planning failure. Preserve inclusive
+generation (`occurrenceStart <= cutoff`), `GregorianDate`'s 0001–9999 range,
+monthly clamping, the 366-entry limit, generated fields and IDs, recurrence
+order, and the repository's transactional creation behavior. Do not change
+repository or SQL policy.
+
+Acceptance evidence: `src/next/application/calendar_event_series_create_use_case.h`,
+`src/next/application/calendar_event_repeat_occurrence_plan.h`,
+`src/next/application/calendar_event_series_create_port.h`,
+`src/next/domain/gregorian_date.h`,
+`src/features/calendar/ui/calendar_event_dialog.cpp`,
+`src/features/calendar/ui/calendar_page_events.cpp`,
+`src/next/platform/application_services_calendar_event_series_create_port.h`,
+`src/data/repositories/calendar_event_repository.cpp`,
+`tests/next_application_calendar_event_tests.cpp` and
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
+The UI supplies a `QDate` cutoff as ISO text and exposes no raw
+text editor; the new Input boundary keeps invalid text diagnosable in the
+Application contract. Existing tests cover inclusive generation and cutoff-
+before-start no-port behavior; add use-case coverage for malformed/empty
+cutoff, exact error metadata, and no port call. Implementation and
+verification have not started.

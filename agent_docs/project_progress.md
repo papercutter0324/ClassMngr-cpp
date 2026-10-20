@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (Batch488 closed and pushed; Batch489 F1162 next; F629 open)
+### Current checkpoint - 2026-10-20 (Batch488 pushed; F1162 accepted and in progress; F629 open)
 
 Batch487 (F1144–F1153) is closed and pushed to `origin/Qt-Rewrite` at
 `c3c06e2f5432933a0e8b7df629e25b2afa920e2c`. Batch488 is active: F1154–F1158
@@ -69,11 +69,11 @@ targets built incrementally, both Application and Platform CTests passed
 (2/2), and `git diff --check` passed. No full suite or Windows build ran.
 Batch488 is closed and pushed at `138c2cf86f3bac153d948649980798fbfd066dd6`;
 the Phase 2 progress log has the push receipt. Batch489 is active with nine
-ordered candidates and F1162 next. F629 still awaits source-bound Windows x64
-layout evidence; the user cannot run Windows now. Phase 0 and Phase 2 gates
-remain open. The Phase 2 progress log records prior focused evidence,
-including outstanding ClassesPage assertions and the ScheduleWidget CTest
-timeout.
+ordered candidates; F1162 is accepted and in progress. F629 still awaits
+source-bound Windows x64 layout evidence; the user cannot run Windows now.
+Phase 0 and Phase 2 gates remain open. The Phase 2 progress log records prior
+focused evidence, including outstanding ClassesPage assertions and the
+ScheduleWidget CTest timeout.
 
 F1148 completed at source/test commit
 `5a1756f54173affb33853f3e5dd0b8d8b3ce793d`, after acceptance commit
