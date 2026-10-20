@@ -57462,3 +57462,113 @@ macOS Clang verification; Windows x64 and the full suite were not run.
 Batch499 remains active with F1237–F1240 complete. F1241 is next for
 acceptance; F1242 remains discovered. When F1241 starts, it will trigger the
 ordered Batch500 discovery required for this second-last slice.
+
+### Batch500 discovery started at F1241 start - 2026-10-21
+
+Starting F1241, the second-last Batch499 slice, triggered discovery for the
+next ordered batch. Three read-only Explorer passes produced ten candidates
+with no shortfall. Batch499 remains active and Batch500 is discovered but
+inactive until Batch499 closes at F1242. Order candidates by the reviewed
+confidence and cohesion:
+
+1. **F1243 - GregorianDate day number.** Type the `std::int64_t` DayNumber
+   contract at `src/next/domain/gregorian_date.h:28`. Preserve
+   `0001-01-01 == 0`, the maximum-date boundary, ordering, and formatting;
+   cover typed ordinal round trips and out-of-range rejection. High confidence.
+   Focused CTest: `ClassMngrNextDomainContractTests`.
+2. **F1244 - Schedule Import destination IDs.** Review the raw destination-ID
+   path at `src/domain/models/schedule_import.h:134` and validator's
+   `decisionTargetId(int)` conversion; the Application review decisions
+   already use optional `Domain::ClassId` at
+   `src/next/application/schedule_import_review_decisions.h`. Preserve absent
+   (`-1`) and create/update/skip/invalid/duplicate decision rules. High
+   confidence. Focused CTests: `ClassMngrScheduleImportDialogTests`,
+   `ClassMngrScheduleImportTests`, and
+   `ClassMngrNextApplicationScheduleImportPlanValidationTests`.
+3. **F1245 - Sub Prep print grade and level order.** Evidence:
+   `src/next/application/sub_prep_print_order_policy.h:133`, producer
+   `src/features/sub_prep/ui/sub_prep_class_information_model.cpp:445`, and
+   test assertions at
+   `tests/next_application_sub_prep_print_order_policy_tests.cpp:487`.
+   Preserve configured ranks and `INT_MAX` for unknown values, comparator
+   order by grade, level, weekday, minute, then numeric-aware class ID. High
+   confidence. Focused CTests:
+   `ClassMngrNextApplicationSubPrepPrintOrderPolicyTests`,
+   `ClassMngrSubPrepClassInformationModelTests`, and
+   `ClassMngrSubPrepPrintPdfTests`.
+4. **F1246 - Calendar parser skipped count.** Evidence:
+   `src/features/calendar/academic_calendar_event_parser.h:15`; the parser
+   increments the count for ignored legend labels and the service wraps it as
+   `Application::CalendarEventImportCount`. Preserve parser count plus
+   duplicate-skip aggregation; the Qt signal stays separate. Medium-high
+   confidence. Focused CTests: `ClassMngrCalendarImportTests` and
+   `ClassMngrCalendarEventImportParityTests`.
+5. **F1247 - Teacher Import result counts across Platform.** Evidence:
+   `src/domain/models/teacher_import.h:65`; Application already has
+   `TeacherImportCount`, which the repository adapter unwraps at
+   `src/data/repositories/teacher_import_repository.cpp:142`. Preserve
+   created/updated/unchanged category totals and no-op semantics across the
+   boundary; the flow reaches TeacherService, sidebar, and Initial Setup.
+   Medium-high confidence. Focused CTests: `ClassMngrTeacherImportTests` and
+   `ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests`.
+6. **F1248 - Class Summary navigation ranks.** Evidence:
+   `src/next/application/class_summary_projection.h:92,343` and existing
+   `src/next/application/navigation_order_rank.h:8`. Preserve default `1000`,
+   day rank `0..6` or its sentinel, and time rank `0..1439` or its sentinel.
+   Medium-high confidence. Focused CTests:
+   `ClassMngrNextApplicationClassSummaryTests`,
+   `ClassMngrSubPrepClassInformationListModelTests`, and
+   `ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`.
+7. **F1249 - Testing Classes grade and level ranks.** Evidence:
+   `src/next/application/testing_classes_ordering_policy.h:17`, producer
+   `src/features/classes/ui/testing_classes_page.cpp:1265`, and assertions at
+   `tests/next_application_testing_classes_ordering_policy_tests.cpp:64`.
+   Preserve configured list indexes, `1000` for unknown values,
+   grade-before-level ordering, text comparisons, and unspecified exact ties.
+   Confirm whether `ClassTabNavigationOrderRank` fits this contract at
+   acceptance. Medium-high confidence. Focused CTest:
+   `ClassMngrNextApplicationTestingClassesOrderingPolicyTests`.
+8. **F1250 - ScheduleTime endpoint minute values.** Evidence:
+   `src/next/domain/schedule_time.h:23` and existing assertions in
+   `tests/next_domain_contract_tests.cpp:29,234`. Preserve minute range
+   `0..1439`, strict `start < end`, and half-open overlap. This is adjacent to
+   F1241 time work but remains a separate contract. Medium confidence.
+   Focused CTest: `ClassMngrNextDomainContractTests`.
+9. **F1251 - Class Transfer export roster widths.** Evidence:
+   `src/next/application/class_transfer_package.h:24`; the adapter copies
+   widths directly and the codec serializes integer values. The existing
+   adapter test preserves `{-1, 400}` at
+   `tests/class_transfer_apply_package_adapter_tests.cpp:223`. Preserve values
+   and order; add no range checks or clamping. Medium confidence. Focused
+   CTests: `ClassMngrClassTransferApplyPackageAdapterTests`,
+   `ClassMngrClassTransferExportCodecParityTests`, and
+   `ClassMngrNextPlatformClassTransferExportSourceTests`.
+10. **F1252 - Document Catalog folder/document order.** Evidence:
+    `src/next/application/document_catalog_projection.h:64,237,296`.
+    Preserve metadata fields' default zero, negative-value rejection, and
+    input order without sorting or uniqueness requirements. Medium confidence.
+    Focused CTests: `ClassMngrNextApplicationDocumentCatalogTests` and
+    `ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests`.
+
+### F1241 Calendar Event clock time accepted before implementation - 2026-10-21
+
+F1241 is accepted before implementation. Add a Qt-free Domain value type
+`CalendarEventClockTime` with strict canonical `HH:MM` parsing, minute-of-day
+semantics, canonical formatting, and value comparison. Keep optional raw
+strings on Application request, draft, and input paths so malformed text
+remains representable and existing error precedence is preserved.
+
+`CalendarEventTiming` validates by parsing those strings into the semantic
+type and uses typed values for same-date ordering. Preserve exact paired-time
+presence, invalid-text, time-status, all-day/timed, and validation behavior;
+same-day timed events still require end strictly after start, while cross-day
+events continue accepting earlier or equal end-clock values. Do not tighten
+`CalendarEventProjection`'s opaque-text rules.
+
+Add focused type, parse, format, and bounds coverage, including malformed
+separator, whitespace, non-ASCII digit, and minute-overflow inputs if absent.
+Build `ClassMngr` and run `ClassMngrNextDomainContractTests` and
+`ClassMngrNextApplicationCalendarEventTests`. At acceptance, F1241
+implementation and verification had not started. Batch499 remains active with
+F1237–F1240 complete, F1241 accepted, and F1242 discovered. Batch500 remains
+inactive with ten queued candidates; F1243 is first after Batch499 closes.
