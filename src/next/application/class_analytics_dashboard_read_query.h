@@ -120,11 +120,61 @@ inline constexpr std::array<std::u16string_view,
         u"Content", u"Overall Effort"
     };
 
+class ClassAnalyticsGradeDistribution final
+{
+public:
+    using Grade = Domain::SpeakingEvaluationGrade;
+
+    static constexpr std::array<Grade, 5> gradesInOrder{
+        Grade::C, Grade::B, Grade::BPlus, Grade::A, Grade::APlus
+    };
+
+    [[nodiscard]] constexpr std::optional<int> countFor(
+        const Grade grade
+        ) const noexcept
+    {
+        const std::optional<std::size_t> index = indexFor(grade);
+        if (!index) return std::nullopt;
+        return m_counts[*index];
+    }
+
+    constexpr bool increment(const Grade grade) noexcept
+    {
+        const std::optional<std::size_t> index = indexFor(grade);
+        if (!index) return false;
+        ++m_counts[*index];
+        return true;
+    }
+
+    friend constexpr bool operator==(
+        const ClassAnalyticsGradeDistribution&,
+        const ClassAnalyticsGradeDistribution&
+        ) noexcept = default;
+
+private:
+    [[nodiscard]] static constexpr std::optional<std::size_t> indexFor(
+        const Grade grade
+        ) noexcept
+    {
+        switch (grade)
+        {
+        case Grade::C: return 0;
+        case Grade::B: return 1;
+        case Grade::BPlus: return 2;
+        case Grade::A: return 3;
+        case Grade::APlus: return 4;
+        }
+        return std::nullopt;
+    }
+
+    std::array<int, gradesInOrder.size()> m_counts{};
+};
+
 struct ClassAnalyticsCriterionSlice final
 {
     std::u16string name;
     ClassAnalyticsCriterionStudentCount students;
-    std::array<int, 5> distribution{};
+    ClassAnalyticsGradeDistribution distribution;
     ClassAnalyticsAverageThousandths average3;
     bool hasData = false;
 };
@@ -443,7 +493,8 @@ namespace ClassAnalyticsDashboardReadDetail
     std::array<double, kClassAnalyticsCriterionCount> criterionSums{};
     std::array<int, kClassAnalyticsCriterionCount> criterionCounts{};
     std::array<int, kClassAnalyticsCriterionCount> criterionStudentCounts{};
-    std::array<std::array<int, 5>, kClassAnalyticsCriterionCount> distributions{};
+    std::array<ClassAnalyticsGradeDistribution,
+               kClassAnalyticsCriterionCount> distributions{};
     std::int64_t classSumThousandths = 0;
     int classCount = 0;
 
@@ -468,11 +519,13 @@ namespace ClassAnalyticsDashboardReadDetail
             const double average = roundTo3(
                 student.sums[criterion] / student.counts[criterion]);
             const int letterValue = roundAverageToGrade(average);
-            letters[criterion] = numberToGrade(letterValue);
+            const Domain::SpeakingEvaluationGrade letter =
+                numberToGrade(letterValue);
+            letters[criterion] = letter;
             criterionSums[criterion] += student.sums[criterion];
             criterionCounts[criterion] += student.counts[criterion];
             ++criterionStudentCounts[criterion];
-            ++distributions[criterion][static_cast<std::size_t>(letterValue - 1)];
+            (void)distributions[criterion].increment(letter);
             scoreSum += student.sums[criterion];
             scoreCount += student.counts[criterion];
         }

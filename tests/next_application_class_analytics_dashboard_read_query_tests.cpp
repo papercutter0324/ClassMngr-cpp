@@ -1,6 +1,7 @@
 #include "next/application/class_analytics_dashboard_read_query.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
@@ -292,6 +293,33 @@ void criterionStudentCountValueSemantics()
     assert(value != Count(125));
 }
 
+void classAnalyticsGradeDistributionUsesValidatedGradeKeys()
+{
+    using Distribution = ClassAnalyticsGradeDistribution;
+    using Grade = Domain::SpeakingEvaluationGrade;
+
+    static_assert(Distribution::gradesInOrder.size() == 5);
+    static_assert(std::is_same_v<
+        decltype(Distribution{}.countFor(Grade::C)), std::optional<int>>);
+
+    const Distribution empty;
+    for (const Grade grade : Distribution::gradesInOrder)
+    {
+        const std::optional<int> count = empty.countFor(grade);
+        assert(count.has_value());
+        assert(*count == 0);
+    }
+
+    assert(!empty.countFor(static_cast<Grade>(0)).has_value());
+    assert(!empty.countFor(static_cast<Grade>(255)).has_value());
+
+    Distribution distribution;
+    assert(!distribution.increment(static_cast<Grade>(0)));
+    assert(distribution.increment(Grade::BPlus));
+    assert(distribution.countFor(Grade::BPlus) == 1);
+    assert(distribution.countFor(Grade::B) == 0);
+}
+
 void classAnalyticsCountValueSemantics()
 {
     using RosterCount = ClassAnalyticsRosterRowCount;
@@ -444,6 +472,40 @@ void strongestAndFocusCriteriaPreserveOrderAndLabels()
     assert(selected.criteria[0].hasData);
     assert(selected.criteria[3].students.rawValue() == 0);
     assert(!selected.criteria[3].hasData);
+}
+
+void criterionGradeDistributionCountsConsolidatedAndRoundedStudents()
+{
+    FakeReadPort port;
+    port.evaluations[0] = {
+        row(u"C student", u"", u"C"),
+        row(u"B student", u"", u"B"),
+        row(u"B+ student", u"", u"B+"),
+        row(u"A student", u"", u"A"),
+        row(u"A+ student", u"", u"A+"),
+        row(u"Consolidated", u"", u"C"),
+        row(u"Consolidated", u"", u"A+"),
+        row(u"Rounded", u"", u"B"),
+        row(u"Rounded", u"", u"B+")
+    };
+    const TestNameSemantics names;
+
+    const auto result = run(port, names,
+        ClassAnalyticsEvaluationSelection::exactName(u"Winter"));
+    assert(result);
+    const auto& selected = result.value().selectedSnapshot;
+    assert(selected.criteria.size() == kClassAnalyticsCriterionCount);
+    assert(selected.criteria[0].students.rawValue() == 7);
+
+    const auto& distribution = selected.criteria[0].distribution;
+    using Grade = Domain::SpeakingEvaluationGrade;
+    assert(distribution.countFor(Grade::C) == 1);
+    assert(distribution.countFor(Grade::B) == 1);
+    // The two duplicate-row students count once each after their criterion
+    // averages are rounded to grades.
+    assert(distribution.countFor(Grade::BPlus) == 3);
+    assert(distribution.countFor(Grade::A) == 1);
+    assert(distribution.countFor(Grade::APlus) == 1);
 }
 
 void currentRosterUsesNormalizedEnglishAndKoreanIdentities()
@@ -847,6 +909,7 @@ int main()
 {
     averageThousandthsValueSemantics();
     criterionStudentCountValueSemantics();
+    classAnalyticsGradeDistributionUsesValidatedGradeKeys();
     classAnalyticsCountValueSemantics();
     evaluationSelectionDefaultsAndLegacyTextConversion();
     numericPolicyBoundaries();
@@ -855,6 +918,7 @@ int main()
     roundedClassAverageAtGradeBoundaryAdvances();
     canonicalOrderLatestClassShapeAndYtd();
     strongestAndFocusCriteriaPreserveOrderAndLabels();
+    criterionGradeDistributionCountsConsolidatedAndRoundedStudents();
     currentRosterUsesNormalizedEnglishAndKoreanIdentities();
     queryCountWrappersPreserveDistinctRosterAndScoredStudentMeanings();
     duplicateRowsConsolidateAndRankingTiesUseNamePort();

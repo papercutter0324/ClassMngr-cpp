@@ -94,14 +94,15 @@ SpeakingAnalytics::Snapshot toUiSnapshot(
         slice.students = sourceSlice.students.rawValue();
         slice.average3 = sourceSlice.average3.toDouble();
         slice.hasData = sourceSlice.hasData;
-        for (int grade = 1; grade <= 5; ++grade)
+        for (const AnalyticsDomain::SpeakingEvaluationGrade grade
+             : ApplicationAnalytics::ClassAnalyticsGradeDistribution::gradesInOrder)
         {
-            const int count = sourceSlice.distribution[
-                static_cast<std::size_t>(grade - 1)];
-            if (count > 0)
+            const std::optional<int> count =
+                sourceSlice.distribution.countFor(grade);
+            if (count && *count > 0)
             {
                 slice.distribution.insert(
-                    SpeakingAnalytics::numberToGrade(grade), count);
+                    toQString(grade), *count);
             }
         }
         snapshot.criteria.append(std::move(slice));
