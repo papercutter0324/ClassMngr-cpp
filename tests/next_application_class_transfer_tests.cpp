@@ -22,6 +22,54 @@ using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
 using namespace ClassMngr::Next::Domain;
 
+static_assert(
+    ClassTransferScheduleConflictIncomingIndex{}
+        == ClassTransferScheduleConflictIncomingIndex{0}
+    );
+static_assert(
+    ClassTransferScheduleConflictIncomingIndex{0}.rawValue() == std::size_t(0)
+    );
+static_assert(std::is_constructible_v<
+    ClassTransferScheduleConflictIncomingIndex,
+    std::size_t
+    >);
+static_assert(!std::is_convertible_v<
+    std::size_t,
+    ClassTransferScheduleConflictIncomingIndex
+    >);
+static_assert(!std::is_convertible_v<
+    ClassTransferScheduleConflictIncomingIndex,
+    std::size_t
+    >);
+static_assert(
+    ClassTransferScheduleConflictOtherIndex{}
+        == ClassTransferScheduleConflictOtherIndex{0}
+    );
+static_assert(
+    ClassTransferScheduleConflictOtherIndex{0}.rawValue() == std::size_t(0)
+    );
+static_assert(std::is_constructible_v<
+    ClassTransferScheduleConflictOtherIndex,
+    std::size_t
+    >);
+static_assert(!std::is_convertible_v<
+    std::size_t,
+    ClassTransferScheduleConflictOtherIndex
+    >);
+static_assert(!std::is_convertible_v<
+    ClassTransferScheduleConflictOtherIndex,
+    std::size_t
+    >);
+static_assert(
+    ClassTransferScheduleConflict{}.incomingIndex
+        == ClassTransferScheduleConflictIncomingIndex{0}
+    );
+static_assert(
+    ClassTransferScheduleConflict{}.otherIndex
+        == ClassTransferScheduleConflictOtherIndex{0}
+    );
+static_assert(!ClassTransferScheduleConflict{}.otherIsIncoming);
+
 namespace
 {
 
@@ -1450,18 +1498,48 @@ void NextApplicationClassTransferTests::
     // Monday 9–10 and 10–11 only touch. Conflicts are ordered by incoming
     // row, later incoming first, then existing; categories stay isolated.
     const std::vector<ClassTransferScheduleConflict> expected{
-        {0, 2, true},
-        {0, 0, false},
-        {1, 2, true},
-        {1, 0, false},
-        {2, 0, false},
-        {3, 1, false}
+        {
+            ClassTransferScheduleConflictIncomingIndex{0},
+            ClassTransferScheduleConflictOtherIndex{2},
+            true
+        },
+        {
+            ClassTransferScheduleConflictIncomingIndex{0},
+            ClassTransferScheduleConflictOtherIndex{0},
+            false
+        },
+        {
+            ClassTransferScheduleConflictIncomingIndex{1},
+            ClassTransferScheduleConflictOtherIndex{2},
+            true
+        },
+        {
+            ClassTransferScheduleConflictIncomingIndex{1},
+            ClassTransferScheduleConflictOtherIndex{0},
+            false
+        },
+        {
+            ClassTransferScheduleConflictIncomingIndex{2},
+            ClassTransferScheduleConflictOtherIndex{0},
+            false
+        },
+        {
+            ClassTransferScheduleConflictIncomingIndex{3},
+            ClassTransferScheduleConflictOtherIndex{1},
+            false
+        }
     };
     QCOMPARE(conflicts.size(), expected.size());
     for (std::size_t index = 0; index < expected.size(); ++index)
     {
-        QCOMPARE(conflicts[index].incomingIndex, expected[index].incomingIndex);
-        QCOMPARE(conflicts[index].otherIndex, expected[index].otherIndex);
+        QCOMPARE(
+            conflicts[index].incomingIndex.rawValue(),
+            expected[index].incomingIndex.rawValue()
+            );
+        QCOMPARE(
+            conflicts[index].otherIndex.rawValue(),
+            expected[index].otherIndex.rawValue()
+            );
         QCOMPARE(
             conflicts[index].otherIsIncoming,
             expected[index].otherIsIncoming
@@ -1505,14 +1583,28 @@ void NextApplicationClassTransferTests::
         existing
         );
     const std::vector<ClassTransferScheduleConflict> expected{
-        {0, 1, true},
-        {1, 0, false}
+        {
+            ClassTransferScheduleConflictIncomingIndex{0},
+            ClassTransferScheduleConflictOtherIndex{1},
+            true
+        },
+        {
+            ClassTransferScheduleConflictIncomingIndex{1},
+            ClassTransferScheduleConflictOtherIndex{0},
+            false
+        }
     };
     QCOMPARE(conflicts.size(), expected.size());
     for (std::size_t index = 0; index < expected.size(); ++index)
     {
-        QCOMPARE(conflicts[index].incomingIndex, expected[index].incomingIndex);
-        QCOMPARE(conflicts[index].otherIndex, expected[index].otherIndex);
+        QCOMPARE(
+            conflicts[index].incomingIndex.rawValue(),
+            expected[index].incomingIndex.rawValue()
+            );
+        QCOMPARE(
+            conflicts[index].otherIndex.rawValue(),
+            expected[index].otherIndex.rawValue()
+            );
         QCOMPARE(
             conflicts[index].otherIsIncoming,
             expected[index].otherIsIncoming

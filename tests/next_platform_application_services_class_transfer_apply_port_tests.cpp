@@ -64,7 +64,7 @@ Application::ClassTransferApplyCommand createCommand(
 {
     Application::ClassTransferApplyRequest choices;
     choices.classes.push_back({
-        0,
+        Application::ClassTransferPackageClassIndex{0},
         Application::ClassTransferReviewClassAction::Create,
         std::nullopt
     });

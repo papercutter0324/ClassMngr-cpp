@@ -157,10 +157,62 @@ private:
     std::int64_t m_endMinuteOfWeek;
 };
 
+class ClassTransferScheduleConflictIncomingIndex final
+{
+public:
+    constexpr ClassTransferScheduleConflictIncomingIndex() noexcept = default;
+
+    explicit constexpr ClassTransferScheduleConflictIncomingIndex(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ClassTransferScheduleConflictIncomingIndex&,
+        const ClassTransferScheduleConflictIncomingIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
+class ClassTransferScheduleConflictOtherIndex final
+{
+public:
+    constexpr ClassTransferScheduleConflictOtherIndex() noexcept = default;
+
+    explicit constexpr ClassTransferScheduleConflictOtherIndex(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ClassTransferScheduleConflictOtherIndex&,
+        const ClassTransferScheduleConflictOtherIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
 struct ClassTransferScheduleConflict final
 {
-    std::size_t incomingIndex = 0;
-    std::size_t otherIndex = 0;
+    ClassTransferScheduleConflictIncomingIndex incomingIndex;
+    ClassTransferScheduleConflictOtherIndex otherIndex;
     bool otherIsIncoming = false;
 
     friend bool operator==(
@@ -222,7 +274,11 @@ findClassTransferScheduleConflicts(
                     && classTransferScheduleIntervalsOverlap(
                         incoming[first], incoming[second]))
                 {
-                    conflicts.push_back({first, second, true});
+                    conflicts.push_back({
+                        ClassTransferScheduleConflictIncomingIndex{first},
+                        ClassTransferScheduleConflictOtherIndex{second},
+                        true
+                    });
                 }
             }
 
@@ -232,7 +288,11 @@ findClassTransferScheduleConflicts(
                     && classTransferScheduleIntervalsOverlap(
                         incoming[first], existing[second]))
                 {
-                    conflicts.push_back({first, second, false});
+                    conflicts.push_back({
+                        ClassTransferScheduleConflictIncomingIndex{first},
+                        ClassTransferScheduleConflictOtherIndex{second},
+                        false
+                    });
                 }
             }
         }

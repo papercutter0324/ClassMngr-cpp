@@ -461,10 +461,12 @@ QStringList findScheduleConflicts(
              existingCandidates))
     {
         const ScheduledTime& first = imported.at(
-            static_cast<qsizetype>(conflict.incomingIndex));
+            static_cast<qsizetype>(conflict.incomingIndex.rawValue()));
         const ScheduledTime& second = conflict.otherIsIncoming
-            ? imported.at(static_cast<qsizetype>(conflict.otherIndex))
-            : existing.at(static_cast<qsizetype>(conflict.otherIndex));
+            ? imported.at(
+                static_cast<qsizetype>(conflict.otherIndex.rawValue()))
+            : existing.at(
+                static_cast<qsizetype>(conflict.otherIndex.rawValue()));
         const QString scheduleLabel =
             first.candidate.category() == TransferTimeCategory::Regular
             ? QObject::tr("Regular schedule")
