@@ -4,9 +4,35 @@
 
 #include <array>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 using namespace ClassMngr::Next;
+
+using GsTeamDirectorySaveValidationRowIndex =
+    Application::GsTeamDirectorySaveValidationRowIndex;
+
+static_assert(std::is_same_v<
+    decltype(Application::GsTeamDirectorySaveValidation{}.rowIndex),
+    GsTeamDirectorySaveValidationRowIndex
+    >);
+static_assert(std::is_same_v<
+    decltype(GsTeamDirectorySaveValidationRowIndex{}.rawValue()),
+    std::size_t
+    >);
+static_assert(std::is_constructible_v<
+    GsTeamDirectorySaveValidationRowIndex,
+    std::size_t
+    >);
+static_assert(!std::is_convertible_v<
+    std::size_t,
+    GsTeamDirectorySaveValidationRowIndex
+    >);
+static_assert(!std::is_convertible_v<
+    GsTeamDirectorySaveValidationRowIndex,
+    std::size_t
+    >);
+static_assert(!std::is_aggregate_v<GsTeamDirectorySaveValidationRowIndex>);
 
 namespace
 {
@@ -74,6 +100,7 @@ class NextApplicationGsTeamDirectorySaveTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void validationRowIndexHasTypedValueSemantics();
     void requiresAtLeastOneNameAndEnforcesEnglishUniqueness();
     void enforcesKoreanUniquenessWithinItsOwnNamespace();
     void allowsMatchingKeysAcrossNameNamespaces();
@@ -86,6 +113,19 @@ private slots:
 };
 
 void NextApplicationGsTeamDirectorySaveTests::
+validationRowIndexHasTypedValueSemantics()
+{
+    const GsTeamDirectorySaveValidationRowIndex zero;
+    const GsTeamDirectorySaveValidationRowIndex positive{7};
+
+    QCOMPARE(zero.rawValue(), std::size_t(0));
+    QCOMPARE(positive.rawValue(), std::size_t(7));
+    QVERIFY(zero == GsTeamDirectorySaveValidationRowIndex{});
+    QVERIFY(positive == GsTeamDirectorySaveValidationRowIndex{7});
+    QVERIFY(zero != positive);
+}
+
+void NextApplicationGsTeamDirectorySaveTests::
 requiresAtLeastOneNameAndEnforcesEnglishUniqueness()
 {
     Application::GsTeamDirectorySaveRequest noNames;
@@ -96,7 +136,7 @@ requiresAtLeastOneNameAndEnforcesEnglishUniqueness()
     QCOMPARE(
         validation.issue,
         Application::GsTeamDirectorySaveIssue::MissingNames);
-    QCOMPARE(validation.rowIndex, std::size_t(0));
+    QCOMPARE(validation.rowIndex.rawValue(), std::size_t(0));
 
     Application::GsTeamDirectorySaveRequest duplicateEnglish;
     duplicateEnglish.rows = {
@@ -109,7 +149,7 @@ requiresAtLeastOneNameAndEnforcesEnglishUniqueness()
     QCOMPARE(
         validation.issue,
         Application::GsTeamDirectorySaveIssue::DuplicateEnglishName);
-    QCOMPARE(validation.rowIndex, std::size_t(1));
+    QCOMPARE(validation.rowIndex.rawValue(), std::size_t(1));
 }
 
 void NextApplicationGsTeamDirectorySaveTests::
@@ -128,7 +168,7 @@ enforcesKoreanUniquenessWithinItsOwnNamespace()
     QCOMPARE(
         validation.issue,
         Application::GsTeamDirectorySaveIssue::DuplicateKoreanName);
-    QCOMPARE(validation.rowIndex, std::size_t(1));
+    QCOMPARE(validation.rowIndex.rawValue(), std::size_t(1));
 }
 
 void NextApplicationGsTeamDirectorySaveTests::
@@ -147,6 +187,7 @@ allowsMatchingKeysAcrossNameNamespaces()
     QCOMPARE(
         validation.issue,
         Application::GsTeamDirectorySaveIssue::None);
+    QCOMPARE(validation.rowIndex.rawValue(), std::size_t(0));
 }
 
 void NextApplicationGsTeamDirectorySaveTests::
@@ -162,6 +203,7 @@ acceptsBlankAndLeapDayBirthdayText()
         request,
         testNameKey);
     QVERIFY(validation.isValid());
+    QCOMPARE(validation.rowIndex.rawValue(), std::size_t(0));
 }
 
 void NextApplicationGsTeamDirectorySaveTests::
@@ -176,7 +218,7 @@ rejectsInvalidCalendarDay()
     QCOMPARE(
         validation.issue,
         Application::GsTeamDirectorySaveIssue::InvalidBirthday);
-    QCOMPARE(validation.rowIndex, std::size_t(0));
+    QCOMPARE(validation.rowIndex.rawValue(), std::size_t(0));
 }
 
 void NextApplicationGsTeamDirectorySaveTests::reportsTheFirstInvalidRow()
@@ -195,7 +237,7 @@ void NextApplicationGsTeamDirectorySaveTests::reportsTheFirstInvalidRow()
     QCOMPARE(
         validation.issue,
         Application::GsTeamDirectorySaveIssue::DuplicateEnglishName);
-    QCOMPARE(validation.rowIndex, std::size_t(2));
+    QCOMPARE(validation.rowIndex.rawValue(), std::size_t(2));
 }
 
 void NextApplicationGsTeamDirectorySaveTests::
@@ -220,6 +262,7 @@ callsThePortOnceForValidInputAndNeverForInvalidInput()
             testNameKey);
     QVERIFY(outcome.saved);
     QVERIFY(outcome.validation.isValid());
+    QCOMPARE(outcome.validation.rowIndex.rawValue(), std::size_t(0));
     QVERIFY(!outcome.error.has_value());
     QCOMPARE(port.calls, 1);
     QVERIFY(port.received == valid);
@@ -268,7 +311,7 @@ rejectsInvalidRowAndDeletedIdsBeforeCallingPort()
         QCOMPARE(
             outcome.validation.issue,
             Application::GsTeamDirectorySaveIssue::InvalidRowId);
-        QCOMPARE(outcome.validation.rowIndex, std::size_t(0));
+        QCOMPARE(outcome.validation.rowIndex.rawValue(), std::size_t(0));
         QCOMPARE(port.calls, 0);
     }
 
@@ -287,7 +330,7 @@ rejectsInvalidRowAndDeletedIdsBeforeCallingPort()
     QCOMPARE(
         outcome.validation.issue,
         Application::GsTeamDirectorySaveIssue::DuplicateRowId);
-    QCOMPARE(outcome.validation.rowIndex, std::size_t(1));
+    QCOMPARE(outcome.validation.rowIndex.rawValue(), std::size_t(1));
     QCOMPARE(port.calls, 0);
 
     invalid.rows = {row(u"valid insert", u"\uC0C8\uB85C")};
@@ -303,6 +346,7 @@ rejectsInvalidRowAndDeletedIdsBeforeCallingPort()
         QCOMPARE(
             outcome.validation.issue,
             Application::GsTeamDirectorySaveIssue::InvalidDeletedId);
+        QCOMPARE(outcome.validation.rowIndex.rawValue(), std::size_t(0));
         QCOMPARE(port.calls, 0);
     }
 }
@@ -325,7 +369,7 @@ usesRawNamesForValidationBeforeCallingPort()
     QCOMPARE(
         outcome.validation.issue,
         Application::GsTeamDirectorySaveIssue::DuplicateEnglishName);
-    QCOMPARE(outcome.validation.rowIndex, std::size_t(1));
+    QCOMPARE(outcome.validation.rowIndex.rawValue(), std::size_t(1));
     QCOMPARE(port.calls, 0);
 
     request.rows = {
@@ -340,7 +384,7 @@ usesRawNamesForValidationBeforeCallingPort()
     QCOMPARE(
         outcome.validation.issue,
         Application::GsTeamDirectorySaveIssue::DuplicateKoreanName);
-    QCOMPARE(outcome.validation.rowIndex, std::size_t(1));
+    QCOMPARE(outcome.validation.rowIndex.rawValue(), std::size_t(1));
     QCOMPARE(port.calls, 0);
 
     request.rows = {row(u" \t ", u"\r\n ")};
@@ -352,7 +396,7 @@ usesRawNamesForValidationBeforeCallingPort()
     QCOMPARE(
         outcome.validation.issue,
         Application::GsTeamDirectorySaveIssue::MissingNames);
-    QCOMPARE(outcome.validation.rowIndex, std::size_t(0));
+    QCOMPARE(outcome.validation.rowIndex.rawValue(), std::size_t(0));
     QCOMPARE(port.calls, 0);
 }
 

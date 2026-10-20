@@ -27,14 +27,14 @@ validateGsTeamDirectorySave(
             {
                 return {
                     .issue = GsTeamDirectorySaveIssue::InvalidRowId,
-                    .rowIndex = index
+                    .rowIndex = GsTeamDirectorySaveValidationRowIndex{index}
                 };
             }
             if (!rowIds.insert(id).second)
             {
                 return {
                     .issue = GsTeamDirectorySaveIssue::DuplicateRowId,
-                    .rowIndex = index
+                    .rowIndex = GsTeamDirectorySaveValidationRowIndex{index}
                 };
             }
         }
@@ -44,7 +44,7 @@ validateGsTeamDirectorySave(
         {
             return {
                 .issue = GsTeamDirectorySaveIssue::MissingNames,
-                .rowIndex = index
+                .rowIndex = GsTeamDirectorySaveValidationRowIndex{index}
             };
         }
         if (!englishNameKey.empty()
@@ -52,7 +52,7 @@ validateGsTeamDirectorySave(
         {
             return {
                 .issue = GsTeamDirectorySaveIssue::DuplicateEnglishName,
-                .rowIndex = index
+                .rowIndex = GsTeamDirectorySaveValidationRowIndex{index}
             };
         }
         if (!koreanNameKey.empty()
@@ -60,7 +60,7 @@ validateGsTeamDirectorySave(
         {
             return {
                 .issue = GsTeamDirectorySaveIssue::DuplicateKoreanName,
-                .rowIndex = index
+                .rowIndex = GsTeamDirectorySaveValidationRowIndex{index}
             };
         }
         if (!isBirthdayTextBlank(row.birthday)
@@ -68,7 +68,7 @@ validateGsTeamDirectorySave(
         {
             return {
                 .issue = GsTeamDirectorySaveIssue::InvalidBirthday,
-                .rowIndex = index
+                .rowIndex = GsTeamDirectorySaveValidationRowIndex{index}
             };
         }
     }
