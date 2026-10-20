@@ -262,8 +262,11 @@ private:
             {
                 const std::u16string_view value = row < stored.rows.size()
                     && column.sourceColumnIndex
-                    && *column.sourceColumnIndex < stored.rows[row].size()
-                    ? std::u16string_view(stored.rows[row][*column.sourceColumnIndex])
+                    && column.sourceColumnIndex->rawValue()
+                        < stored.rows[row].size()
+                    ? std::u16string_view(stored.rows[row][
+                        column.sourceColumnIndex->rawValue()
+                        ])
                     : std::u16string_view{};
                 values.push_back(std::invoke(equals,
                         std::u16string_view(column.name), u"English")

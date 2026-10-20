@@ -398,10 +398,10 @@ void RosterModel::rebuildRows(
 
             const QString value =
                 projectedColumn.sourceColumnIndex
-                    && *projectedColumn.sourceColumnIndex
+                    && projectedColumn.sourceColumnIndex->rawValue()
                         < static_cast<std::size_t>(sourceRow.size())
                     ? sourceRow[static_cast<qsizetype>(
-                        *projectedColumn.sourceColumnIndex
+                        projectedColumn.sourceColumnIndex->rawValue()
                         )]
                     : QString();
 

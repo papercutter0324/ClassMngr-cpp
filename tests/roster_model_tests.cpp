@@ -30,6 +30,7 @@ private slots:
     void moveRosterRowRefreshesValidationAndEmitsModelChanges();
     void firstEmptyRowUsesLowestBlankAndReturnsNoRowWhenFull();
     void sharedAvailabilityProjectionMatchesModelNameCellOccupancy();
+    void reorderedAliasedStoredColumnsMapToDisplayedCells();
     void insertTransferredRowUsesFirstEmptyRow();
     void insertTransferredRowCopiesOnlyMatchingColumns();
     void insertTransferredRowRejectsFullTargetRoster();
@@ -778,6 +779,47 @@ sharedAvailabilityProjectionMatchesModelNameCellOccupancy()
                 );
         }
     }
+}
+
+void RosterModelTests::reorderedAliasedStoredColumnsMapToDisplayedCells()
+{
+    Roster roster;
+    roster.columns = {
+        QStringLiteral("Review"),
+        QStringLiteral("Autumn"),
+        QStringLiteral("Winter"),
+        QStringLiteral("English"),
+        QStringLiteral("Korean"),
+        QStringLiteral("Speech Contest"),
+        QStringLiteral("Summer"),
+        QStringLiteral("Fall")
+    };
+    roster.rows = {{
+        QStringLiteral("Stored review"),
+        QStringLiteral("First fall value"),
+        QStringLiteral("Stored winter"),
+        QStringLiteral("Stored English"),
+        QStringLiteral("Stored Korean"),
+        QStringLiteral("Stored speech"),
+        QStringLiteral("Stored summer"),
+        QStringLiteral("Second fall value")
+    }};
+
+    RosterModel model;
+    model.setRoster(roster);
+
+    QCOMPARE(model.columnNames(), Roster::BaseColumns + QStringList{
+        QStringLiteral("Review")
+    });
+    QCOMPARE(model.rowValues(0), QStringList({
+        QStringLiteral("Stored English"),
+        QStringLiteral("Stored Korean"),
+        QStringLiteral("Stored winter"),
+        QStringLiteral("Stored speech"),
+        QStringLiteral("Stored summer"),
+        QStringLiteral("First fall value"),
+        QStringLiteral("Stored review")
+    }));
 }
 
 void RosterModelTests::insertTransferredRowUsesFirstEmptyRow()

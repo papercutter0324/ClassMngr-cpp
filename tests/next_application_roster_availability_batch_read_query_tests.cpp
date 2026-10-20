@@ -3,12 +3,31 @@
 
 #include <QtTest/QtTest>
 
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 using namespace ClassMngr::Next;
+
+static_assert(
+    Application::RosterSourceColumnIndex{}
+        == Application::RosterSourceColumnIndex{0}
+    );
+static_assert(std::is_constructible_v<
+    Application::RosterSourceColumnIndex,
+    std::size_t
+    >);
+static_assert(!std::is_convertible_v<
+    std::size_t,
+    Application::RosterSourceColumnIndex
+    >);
+static_assert(!std::is_convertible_v<
+    Application::RosterSourceColumnIndex,
+    std::size_t
+    >);
 
 namespace
 {
@@ -98,6 +117,9 @@ private slots:
 void NextApplicationRosterAvailabilityBatchReadQueryTests::
 projectionNormalizesAliasesAndFiltersIgnoredHeaders()
 {
+    const Application::RosterSourceColumnIndex defaultSourceColumnIndex;
+    QCOMPARE(defaultSourceColumnIndex.rawValue(), std::size_t(0));
+
     const std::vector<std::u16string> storedColumns{
         u" Note ",
         u"English",
@@ -124,7 +146,10 @@ projectionNormalizesAliasesAndFiltersIgnoredHeaders()
     QCOMPARE(projection.columns().size(), std::size_t(6));
     QCOMPARE(projection.columns()[0].name, std::u16string(u"English"));
     QVERIFY(projection.columns()[0].sourceColumnIndex.has_value());
-    QCOMPARE(*projection.columns()[0].sourceColumnIndex, std::size_t(1));
+    QCOMPARE(
+        projection.columns()[0].sourceColumnIndex->rawValue(),
+        std::size_t(1)
+        );
     QCOMPARE(projection.columns()[1].name, std::u16string(u"Korean"));
     QVERIFY(!projection.columns()[1].sourceColumnIndex.has_value());
     QCOMPARE(projection.columns()[2].name, std::u16string(u"Winter"));
@@ -132,11 +157,20 @@ projectionNormalizesAliasesAndFiltersIgnoredHeaders()
     QCOMPARE(projection.columns()[3].name, std::u16string(u"Fall"));
     // Autumn aliases Fall; RosterModel maps the first matching stored header.
     QVERIFY(projection.columns()[3].sourceColumnIndex.has_value());
-    QCOMPARE(*projection.columns()[3].sourceColumnIndex, std::size_t(2));
+    QCOMPARE(
+        projection.columns()[3].sourceColumnIndex->rawValue(),
+        std::size_t(2)
+        );
     QCOMPARE(projection.columns()[4].name, std::u16string(u"Note"));
-    QCOMPARE(*projection.columns()[4].sourceColumnIndex, std::size_t(0));
+    QCOMPARE(
+        projection.columns()[4].sourceColumnIndex->rawValue(),
+        std::size_t(0)
+        );
     QCOMPARE(projection.columns()[5].name, std::u16string(u"Second"));
-    QCOMPARE(*projection.columns()[5].sourceColumnIndex, std::size_t(6));
+    QCOMPARE(
+        projection.columns()[5].sourceColumnIndex->rawValue(),
+        std::size_t(6)
+        );
 }
 
 void NextApplicationRosterAvailabilityBatchReadQueryTests::

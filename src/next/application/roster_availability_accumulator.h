@@ -36,7 +36,9 @@ public:
         {
             if (column.sourceColumnIndex)
             {
-                m_retainedSourceColumns[*column.sourceColumnIndex] = true;
+                m_retainedSourceColumns[
+                    column.sourceColumnIndex->rawValue()
+                    ] = true;
             }
         }
     }

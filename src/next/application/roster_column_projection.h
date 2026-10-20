@@ -13,10 +13,36 @@
 namespace ClassMngr::Next::Application
 {
 
+class RosterSourceColumnIndex final
+{
+public:
+    constexpr RosterSourceColumnIndex() noexcept = default;
+
+    explicit constexpr RosterSourceColumnIndex(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const RosterSourceColumnIndex&,
+        const RosterSourceColumnIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
 struct RosterProjectedColumn final
 {
     std::u16string name;
-    std::optional<std::size_t> sourceColumnIndex;
+    std::optional<RosterSourceColumnIndex> sourceColumnIndex;
 
     friend bool operator==(
         const RosterProjectedColumn&,
@@ -81,7 +107,7 @@ public:
 
             projection.m_columns.push_back({
                 .name = std::move(normalizedName),
-                .sourceColumnIndex = sourceIndex
+                .sourceColumnIndex = RosterSourceColumnIndex{sourceIndex}
             });
         }
 
@@ -119,7 +145,7 @@ private:
     }
 
     template <typename CaseInsensitiveEquals>
-    [[nodiscard]] static std::optional<std::size_t>
+    [[nodiscard]] static std::optional<RosterSourceColumnIndex>
     findFirstMatchingStoredColumn(
         const std::u16string_view requestedName,
         const std::vector<std::u16string>& storedColumnNames,
@@ -134,7 +160,7 @@ private:
                     caseInsensitiveEquals
                     ))
             {
-                return index;
+                return RosterSourceColumnIndex{index};
             }
         }
         return std::nullopt;
