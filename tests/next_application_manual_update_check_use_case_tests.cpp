@@ -1,7 +1,9 @@
 #include "next/application/manual_update_check_use_case.h"
 
 #include <cstdlib>
+#include <cstdint>
 #include <iostream>
+#include <limits>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -130,6 +132,59 @@ std::vector<std::string> eventNames(const std::vector<ManualUpdateCheckEvent>& e
 
 int main()
 {
+    static_assert(!std::is_convertible_v<std::int64_t, UpdateArtifactSizeBytes>);
+    static_assert(!std::is_convertible_v<UpdateArtifactSizeBytes, std::int64_t>);
+
+    const UpdateArtifactSizeBytes defaultSize;
+    if (!require(defaultSize.value() == 0
+            && ManualUpdateArtifact{}.sizeBytes.value() == 0
+            && UpdateArtifactSizeBytes(-17) == UpdateArtifactSizeBytes(-17)
+            && UpdateArtifactSizeBytes(-17) != UpdateArtifactSizeBytes(17),
+            "Artifact size value default or exact equality changed"))
+    {
+        return EXIT_FAILURE;
+    }
+
+    const std::vector<std::int64_t> artifactSizes{
+        std::numeric_limits<std::int64_t>::min(),
+        std::numeric_limits<std::int64_t>::min() + 1,
+        -17,
+        0,
+        23,
+        std::numeric_limits<std::int64_t>::max() - 1,
+        std::numeric_limits<std::int64_t>::max()
+    };
+    for (const std::int64_t sizeBytes : artifactSizes)
+    {
+        FakePort port;
+        ManualUpdateCheckUseCase useCase(port);
+        std::vector<std::int64_t> observedSizes;
+        useCase.setObserver([&](ManualUpdateCheckEvent event)
+        {
+            if (const auto* result = std::get_if<ManualUpdateCheckResult>(&event))
+            {
+                observedSizes.push_back(result->artifact.sizeBytes.value());
+            }
+        });
+        if (!require(useCase.retry() == ManualUpdateCheckDispatch::Started,
+                "Manual artifact-size check did not start"))
+        {
+            return EXIT_FAILURE;
+        }
+
+        port.finish(ManualUpdateCheckResult{
+            .artifact = {.sizeBytes = UpdateArtifactSizeBytes(sizeBytes)}
+        });
+        const auto cached = port.snapshot().cachedResult;
+        if (!require(observedSizes == std::vector{sizeBytes}
+                && cached.has_value()
+                && cached->artifact.sizeBytes.value() == sizeBytes,
+                "Manual result or cached state changed a signed artifact size"))
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
     static_assert(!std::is_convertible_v<std::string, UpdateArtifactSha256>);
     static_assert(!std::is_convertible_v<UpdateArtifactSha256, std::string>);
 

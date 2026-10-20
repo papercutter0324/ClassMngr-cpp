@@ -30,6 +30,8 @@
 #include <QVariant>
 #include <QtTest/QtTest>
 
+#include <cstdint>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -327,6 +329,7 @@ private slots:
     void failedAutomaticSkipKeepsDialogOpenAndAllowsRetry();
     void bridgeMapsSuccessAndForcesFreshCheck_data();
     void bridgeMapsSuccessAndForcesFreshCheck();
+    void adaptersPreserveArtifactSizeExactly();
     void adaptersPreserveSha256TextExactly();
     void parserMatchesPlatformKeysExactlyAndKeepsLinuxAliases();
     void bridgeMapsFailures_data();
@@ -991,7 +994,7 @@ void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck
     QCOMPARE(result.artifact.url, legacy->artifact.url.toEncoded().toStdString());
     QCOMPARE(result.artifact.fileName, legacy->artifact.fileName.toStdString());
     QCOMPARE(result.artifact.sha256.value(), legacy->artifact.sha256.toUtf8().toStdString());
-    QCOMPARE(result.artifact.sizeBytes, legacy->artifact.sizeBytes);
+    QCOMPARE(result.artifact.sizeBytes.value(), legacy->artifact.sizeBytes);
     QCOMPARE(result.releaseDateIso, std::string("2026-08-05"));
     QCOMPARE(result.releaseUrl, legacy->releaseUrl.toEncoded().toStdString());
     QCOMPARE(result.checkedAtUtcMilliseconds, legacy->checkedAtUtc.toMSecsSinceEpoch());
@@ -1032,6 +1035,30 @@ void UpdateControllerAutomaticStartupTests::adaptersPreserveSha256TextExactly()
         const auto startup = ClassMngr::Next::Platform::toStartupUpdateCheckResult(source);
         QCOMPARE(manual.artifact.sha256.value(), sha256);
         QCOMPARE(startup.artifact.sha256.value(), sha256);
+    }
+}
+
+void UpdateControllerAutomaticStartupTests::adaptersPreserveArtifactSizeExactly()
+{
+    const std::vector<std::int64_t> sizes{
+        std::numeric_limits<std::int64_t>::min(),
+        std::numeric_limits<std::int64_t>::min() + 1,
+        -123,
+        0,
+        456,
+        std::numeric_limits<std::int64_t>::max() - 1,
+        std::numeric_limits<std::int64_t>::max()
+    };
+
+    for (const std::int64_t sizeBytes : sizes)
+    {
+        UpdateCheckResult source;
+        source.artifact.sizeBytes = static_cast<qint64>(sizeBytes);
+
+        const auto manual = ClassMngr::Next::Platform::toManualUpdateCheckResult(source);
+        const auto startup = ClassMngr::Next::Platform::toStartupUpdateCheckResult(source);
+        QCOMPARE(manual.artifact.sizeBytes.value(), sizeBytes);
+        QCOMPARE(startup.artifact.sizeBytes.value(), sizeBytes);
     }
 }
 
@@ -1231,10 +1258,14 @@ void UpdateControllerAutomaticStartupTests::manualAdapterDistinguishesFreshBusyF
         firstLegacyResult->artifact.platformKey.toUtf8().toStdString());
     QCOMPARE(lastResult->artifact.sha256.value(),
         firstLegacyResult->artifact.sha256.toUtf8().toStdString());
+    QCOMPARE(lastResult->artifact.sizeBytes.value(),
+        firstLegacyResult->artifact.sizeBytes);
     QCOMPARE(port.snapshot().cachedResult->artifact.platformKey.value(),
         firstLegacyResult->artifact.platformKey.toUtf8().toStdString());
     QCOMPARE(port.snapshot().cachedResult->artifact.sha256.value(),
         firstLegacyResult->artifact.sha256.toUtf8().toStdString());
+    QCOMPARE(port.snapshot().cachedResult->artifact.sizeBytes.value(),
+        firstLegacyResult->artifact.sizeBytes);
 
     QCOMPARE(port.check(ManualUpdateCheckPolicy::IfStale,
         [&](ManualUpdateCheckOutcome) { ++busyCompletions; }),

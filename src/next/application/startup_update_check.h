@@ -3,6 +3,7 @@
 #include "next/application/skipped_update_version_policy.h"
 #include "next/application/update_artifact_platform_key.h"
 #include "next/application/update_artifact_sha256.h"
+#include "next/application/update_artifact_size_bytes.h"
 
 #include <cstdint>
 #include <functional>
@@ -18,7 +19,7 @@ struct StartupUpdateArtifact final
     std::string url;
     std::string fileName;
     UpdateArtifactSha256 sha256;
-    std::int64_t sizeBytes = 0;
+    UpdateArtifactSizeBytes sizeBytes;
 };
 
 struct StartupUpdateCheckResult final

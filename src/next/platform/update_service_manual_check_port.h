@@ -32,7 +32,9 @@ namespace ClassMngr::Next::Platform
             .sha256 = Application::UpdateArtifactSha256(
                 result.artifact.sha256.toUtf8().toStdString()
                 ),
-            .sizeBytes = result.artifact.sizeBytes
+            .sizeBytes = Application::UpdateArtifactSizeBytes(
+                result.artifact.sizeBytes
+                )
         },
         .releaseDateIso = result.releaseDate.toString(Qt::ISODate).toStdString(),
         .releaseUrl = result.releaseUrl.toEncoded().toStdString(),

@@ -98,7 +98,7 @@ void UpdateController::handleCheckSucceeded(
         .url = QUrl::fromEncoded(QByteArray::fromStdString(result.artifact.url)),
         .fileName = QString::fromStdString(result.artifact.fileName),
         .sha256 = QString::fromStdString(result.artifact.sha256.value()),
-        .sizeBytes = result.artifact.sizeBytes
+        .sizeBytes = result.artifact.sizeBytes.value()
     };
     UpdateDownloader::cleanupDownloads(
         result.updateAvailable

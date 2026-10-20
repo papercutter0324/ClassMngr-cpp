@@ -31,6 +31,8 @@
 #include <QTcpSocket>
 #include <QTest>
 
+#include <cstdint>
+#include <limits>
 #include <utility>
 
 namespace
@@ -472,6 +474,7 @@ private slots:
     void dialogShowsDisabledResourcePackSection();
     void dialogOpenWithoutCacheStartsIfStaleCheck();
     void dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale();
+    void dialogPassesTypedArtifactSizeToLegacyProgress();
     void dialogShowsInvalidResponseFailure();
     void dialogShowsNetworkFailure();
     void dialogRetryForcesCheckWithFreshCache();
@@ -820,7 +823,7 @@ void UpdaterTests::dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale()
             .sha256 = ManualUpdate::UpdateArtifactSha256(
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                 ),
-            .sizeBytes = 123
+            .sizeBytes = ManualUpdate::UpdateArtifactSizeBytes(123)
         },
         .releaseDateIso = "2026-08-05",
         .releaseUrl = "https://example.com/releases/2.0.0",
@@ -856,6 +859,46 @@ void UpdaterTests::dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale()
     QVERIFY(!notes->isHidden());
     QVERIFY(notes->text().contains(QStringLiteral("https://example.com/releases/2.0.0")));
     QVERIFY(!progress->isHidden());
+}
+
+void UpdaterTests::dialogPassesTypedArtifactSizeToLegacyProgress()
+{
+    RecordingManualUpdateCheckPort port;
+    const std::int64_t sizeBytes = std::numeric_limits<std::int64_t>::max();
+    port.m_snapshot.cachedResult = ManualUpdate::ManualUpdateCheckResult{
+        .currentVersion = {1, 0, 0},
+        .latestVersion = {2, 0, 0},
+        .artifact = {
+            .platformKey = ManualUpdate::UpdateArtifactPlatformKey("windows-x64"),
+            .url = "https://example.com/ClassMngr-size-boundary.bin",
+            .fileName = "ClassMngr-size-boundary.bin",
+            .sha256 = ManualUpdate::UpdateArtifactSha256(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ),
+            .sizeBytes = ManualUpdate::UpdateArtifactSizeBytes(sizeBytes)
+        },
+        .releaseDateIso = "2026-08-05",
+        .releaseUrl = "https://example.com/releases/2.0.0",
+        .checkedAtUtcMilliseconds = 0,
+        .updateAvailable = true
+    };
+    port.m_snapshot.resultFresh = true;
+
+    UpdateDialog dialog(port, true);
+    dialog.refreshForOpen();
+    QVERIFY(QMetaObject::invokeMethod(
+        &dialog,
+        "handleDownloadStarted",
+        Qt::DirectConnection
+        ));
+
+    QLabel* const progressText = dialog.findChild<QLabel*>(
+        QStringLiteral("programUpdateProgressText"));
+    QVERIFY(progressText);
+    QVERIFY(!progressText->isHidden());
+    QCOMPARE(progressText->text(), QStringLiteral("%1 of %2").arg(
+        QLocale::system().formattedDataSize(0),
+        QLocale::system().formattedDataSize(static_cast<qint64>(sizeBytes))));
 }
 
 void UpdaterTests::dialogShowsInvalidResponseFailure()

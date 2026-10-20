@@ -1,7 +1,9 @@
 #include "next/application/startup_update_check_use_case.h"
 
 #include <cstdlib>
+#include <cstdint>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -54,6 +56,54 @@ bool require(bool condition, const char* message)
 
 int main()
 {
+    static_assert(!std::is_convertible_v<std::int64_t, UpdateArtifactSizeBytes>);
+    static_assert(!std::is_convertible_v<UpdateArtifactSizeBytes, std::int64_t>);
+
+    const UpdateArtifactSizeBytes defaultSize;
+    if (!require(defaultSize.value() == 0
+            && StartupUpdateArtifact{}.sizeBytes.value() == 0
+            && UpdateArtifactSizeBytes(-17) == UpdateArtifactSizeBytes(-17)
+            && UpdateArtifactSizeBytes(-17) != UpdateArtifactSizeBytes(17),
+            "Artifact size value default or exact equality changed"))
+    {
+        return EXIT_FAILURE;
+    }
+
+    const std::vector<std::int64_t> artifactSizes{
+        std::numeric_limits<std::int64_t>::min(),
+        std::numeric_limits<std::int64_t>::min() + 1,
+        -17,
+        0,
+        23,
+        std::numeric_limits<std::int64_t>::max() - 1,
+        std::numeric_limits<std::int64_t>::max()
+    };
+    for (const std::int64_t sizeBytes : artifactSizes)
+    {
+        FakePort port;
+        StartupUpdateCheckUseCase useCase(port);
+        bool preserved = false;
+        if (!require(useCase.start(Eligible, [&](StartupUpdateCheckOutcome outcome)
+                {
+                    const auto* result = std::get_if<StartupUpdateCheckResult>(&outcome);
+                    preserved = result
+                        && result->artifact.sizeBytes.value() == sizeBytes;
+                }) == StartupUpdateCheckDisposition::Started,
+                "Startup artifact-size check did not start"))
+        {
+            return EXIT_FAILURE;
+        }
+
+        port.pending(StartupUpdateCheckResult{
+            .artifact = {.sizeBytes = UpdateArtifactSizeBytes(sizeBytes)}
+        });
+        if (!require(preserved,
+                "Startup result changed a signed artifact size"))
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
     static_assert(!std::is_convertible_v<std::string, UpdateArtifactSha256>);
     static_assert(!std::is_convertible_v<UpdateArtifactSha256, std::string>);
 
