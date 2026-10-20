@@ -56798,3 +56798,74 @@ ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNext
 `Could not use disabled preset "windows-x64-debug"`; Windows x64 and the full
 suite remain unverified. Batch497 remains active with F1227–F1232 complete,
 F1233 next for acceptance, and F1234 discovered.
+
+### Batch498 discovery started at F1233 start - 2026-10-21
+
+Starting F1233, the second-last slice in Batch497, triggered the next-batch
+discovery. Two independent read-only Explorer passes from Application and
+Feature angles, followed by validation of each candidate, converged on two
+ordered candidates. Batch498 is discovered but does not become active until
+Batch497 closes.
+
+1. **F1235 - Domain ScheduleTime weekday ordinal boundary.** Replace the raw
+   `int` factory/accessor boundary with existing `Domain::Weekday` where
+   appropriate. Preserve Monday `0` through Sunday `6`, out-of-range rejection,
+   minute bounds, invalid Schedule Import projection becoming absent,
+   half-open overlap and no-overnight behavior, labels, and ordering.
+   `Weekday` is already stored internally; caller migration spans Class Details,
+   Schedule Import, the setup wizard, the schedule repository, and the conflict
+   adapter. Evidence: `src/next/domain/schedule_time.h:9,23`, with consumers in
+   `src/next/application/class_details_save_workflow.h`,
+   `src/next/application/schedule_import_overlap_projection.h`,
+   `src/features/setup/ui/initial_setup_wizard.cpp`,
+   `src/data/repositories/schedule_import_repository.cpp`, and
+   `src/next/platform/application_services_class_details_schedule_conflict_port.h`.
+2. **F1236 - Shared calendar workbook cell coordinates.** Type cell row and
+   column as a coordinate pair and represent range endpoints and containment
+   parameters consistently. Preserve one-based valid coordinates, zero invalid
+   or default state, negative and out-of-limit checks, inclusive containment,
+   worksheet order, duplicate-coordinate last-cell-wins lookup, merged-range
+   values, and diagnostic/parser ordering. Scope spans the shared reader and
+   Calendar, Schedule Import, and Teacher Import consumers; focused coverage
+   includes `ClassMngrCalendarImportTests`, `ClassMngrScheduleImportTests`,
+   `ClassMngrTeacherImportTests`, and calendar parity as needed. Evidence:
+   `src/features/calendar/calendar_workbook_reader.h:12,29-45`,
+   `calendar_workbook_reader.cpp:97,892-915,1053-1078`, and consumers in
+   `src/features/calendar/academic_calendar_event_parser.cpp`,
+   `src/features/schedule/import/schedule_workbook_parser.cpp`, and
+   `src/features/teacher/import/sectioned_contact_list_template.cpp`.
+
+No other slices were found.
+
+### F1233 GS Team save validation row position accepted before implementation - 2026-10-21
+
+F1233 is accepted based on the Application and Domain Explorer review. Add
+Application-owned `GsTeamDirectorySaveValidationRowIndex` with explicit
+construction, zero default, private storage, `.rawValue()`, equality, and no
+implicit conversions, and use it for `GsTeamDirectorySaveValidation::rowIndex`,
+which is currently raw `std::size_t`. Keep this semantically distinct from
+`DuplicateStudentNamePairRowIndex` and
+`ClassDetailsScheduleValidationRowIndex`.
+
+Preserve first-failure behavior in input order: per row check invalid ID,
+duplicate ID, missing both names, duplicate English, duplicate Korean, then
+invalid birthday. Only after rows pass, check deleted IDs in order. Keep the
+use case from calling its port on validation failure, retain all issue codes
+and first-row positions, and preserve collection-level `InvalidDeletedId` and
+successful validation at default zero (not `-1`). Tests assert the typed
+wrapper value, first-failure position on a later row, zero defaults for success
+and collection-level deleted-ID failure, and non-conversion semantics. The
+optional Feature parity test checks only the generic warning path, which stays
+unchanged.
+
+Focused build targets and generated CTest names are
+`ClassMngrNextApplicationGsTeamDirectorySaveTests` and
+`ClassMngrStaffDirectoryGsTeamSaveParityTests` (plus `ClassMngr`). Their raw
+`classmngr_add_qt_test(NAME ...)` values are `NextApplicationGsTeamDirectorySave`
+and `StaffDirectoryGsTeamSaveParity`, respectively; the CMake helper generates
+the `ClassMngr${NAME}Tests` target and CTest name. Use the documented
+`build/windows-x64-debug` folder and preset if supported. It was disabled on
+this host during F1230–F1232; if still unavailable, report the blocker
+`Could not use disabled preset "windows-x64-debug"` and scoped macOS
+verification without claiming Windows coverage. At acceptance time, no F1233
+code change or verification has started.
