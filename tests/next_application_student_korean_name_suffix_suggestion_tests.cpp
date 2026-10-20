@@ -4,11 +4,33 @@
 #include <cstdlib>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
+using ClassMngr::Next::Application::StudentKoreanNameSuffixSelectedRowIndex;
 using ClassMngr::Next::Application::StudentKoreanNameSuggestionRow;
 using ClassMngr::Next::Application::suggestStudentKoreanNameSuffix;
+
+static_assert(std::is_default_constructible_v<
+    StudentKoreanNameSuffixSelectedRowIndex
+    >);
+static_assert(!std::is_convertible_v<
+    int,
+    StudentKoreanNameSuffixSelectedRowIndex
+    >);
+static_assert(!std::is_convertible_v<
+    StudentKoreanNameSuffixSelectedRowIndex,
+    int
+    >);
+static_assert(StudentKoreanNameSuffixSelectedRowIndex{}.rawValue() == -1);
+static_assert(
+    StudentKoreanNameSuffixSelectedRowIndex{100}.rawValue() == 100
+    );
+static_assert(
+    StudentKoreanNameSuffixSelectedRowIndex{100}
+        == StudentKoreanNameSuffixSelectedRowIndex{100}
+    );
 
 namespace
 {
@@ -31,19 +53,39 @@ bool invalidRowsColumnsAndIncompleteNamesReturnEmpty()
     const std::vector<StudentKoreanNameSuggestionRow> rows{
         student(u"Amy", u"\uAE40\uBBFC\uC9C0")
     };
-    return suggestStudentKoreanNameSuffix(rows, -1, true, true).empty()
-        && suggestStudentKoreanNameSuffix(rows, 1, true, true).empty()
-        && suggestStudentKoreanNameSuffix(rows, 0, false, true).empty()
-        && suggestStudentKoreanNameSuffix(rows, 0, true, false).empty()
+    return suggestStudentKoreanNameSuffix(
+               rows,
+               StudentKoreanNameSuffixSelectedRowIndex{-1},
+               true,
+               true
+               ).empty()
+        && suggestStudentKoreanNameSuffix(
+               rows,
+               StudentKoreanNameSuffixSelectedRowIndex{1},
+               true,
+               true
+               ).empty()
+        && suggestStudentKoreanNameSuffix(
+               rows,
+               StudentKoreanNameSuffixSelectedRowIndex{0},
+               false,
+               true
+               ).empty()
+        && suggestStudentKoreanNameSuffix(
+               rows,
+               StudentKoreanNameSuffixSelectedRowIndex{0},
+               true,
+               false
+               ).empty()
         && suggestStudentKoreanNameSuffix(
                {student(u"", u"\uAE40\uBBFC\uC9C0")},
-               0,
+               StudentKoreanNameSuffixSelectedRowIndex{0},
                true,
                true
                ).empty()
         && suggestStudentKoreanNameSuffix(
                {student(u"Amy", {})},
-               0,
+               StudentKoreanNameSuffixSelectedRowIndex{0},
                true,
                true
                ).empty();
@@ -55,7 +97,12 @@ bool englishMatchingTrimsButRemainsCaseSensitive()
         student(u"  Amy\u00a0", u"\uAE40\uBBFC\uC9C0"),
         student(u"amy", u"\uAE40\uBBFC\uC9C0", u'A')
     };
-    return suggestStudentKoreanNameSuffix(rows, 0, true, true)
+    return suggestStudentKoreanNameSuffix(
+               rows,
+               StudentKoreanNameSuffixSelectedRowIndex{0},
+               true,
+               true
+               )
         == u"\uAE40\uBBFC\uC9C0(A)";
 }
 
@@ -69,7 +116,12 @@ bool normalizedKoreanBasesAndSuffixesUseTheFirstUnusedLetter()
         student(u"Alex", u"\uAE40\uBBFC\uC9C0", u'a'),
         student(u"Other", u"\uAE40\uBBFC\uC9C0", u'B')
     };
-    return suggestStudentKoreanNameSuffix(rows, 0, true, true)
+    return suggestStudentKoreanNameSuffix(
+               rows,
+               StudentKoreanNameSuffixSelectedRowIndex{0},
+               true,
+               true
+               )
         == u"\uAE40\uBBFC\uC9C0(B)";
 }
 
@@ -80,7 +132,12 @@ bool onlyUppercaseSingleLetterSuffixesAreMarked()
         student(u"Alex", u"\uAE40\uBBFC\uC9C0", u'a'),
         student(u"Alex", u"\uAE40\uBBFC\uC9C0", u'[')
     };
-    return suggestStudentKoreanNameSuffix(rows, 0, true, true)
+    return suggestStudentKoreanNameSuffix(
+               rows,
+               StudentKoreanNameSuffixSelectedRowIndex{0},
+               true,
+               true
+               )
         == u"\uAE40\uBBFC\uC9C0(A)";
 }
 
@@ -91,7 +148,12 @@ bool malformedKoreanTextKeepsLegacyBaseSemantics()
         student(u"Alex", u"invalid", u'B'),
         student(u"Alex", u"invalid(a)")
     };
-    return suggestStudentKoreanNameSuffix(rows, 0, true, true)
+    return suggestStudentKoreanNameSuffix(
+               rows,
+               StudentKoreanNameSuffixSelectedRowIndex{0},
+               true,
+               true
+               )
         == u"invalid(C)";
 }
 
@@ -101,7 +163,12 @@ bool malformedLowercaseSuffixDoesNotChangeTheBase()
         student(u"Alex", u"invalid"),
         student(u"Alex", u"invalid(a)")
     };
-    return suggestStudentKoreanNameSuffix(rows, 0, true, true)
+    return suggestStudentKoreanNameSuffix(
+               rows,
+               StudentKoreanNameSuffixSelectedRowIndex{0},
+               true,
+               true
+               )
         == u"invalid(A)";
 }
 
@@ -114,7 +181,12 @@ bool exhaustedAlphabetReturnsEmpty()
     {
         rows.push_back(student(u"Alex", u"\uAE40\uBBFC\uC9C0", suffix));
     }
-    return suggestStudentKoreanNameSuffix(rows, 0, true, true).empty();
+    return suggestStudentKoreanNameSuffix(
+        rows,
+        StudentKoreanNameSuffixSelectedRowIndex{0},
+        true,
+        true
+        ).empty();
 }
 
 } // namespace

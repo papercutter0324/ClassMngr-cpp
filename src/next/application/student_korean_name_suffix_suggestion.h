@@ -18,6 +18,32 @@ struct StudentKoreanNameSuggestionRow final
     std::optional<char16_t> koreanNameSuffix;
 };
 
+class StudentKoreanNameSuffixSelectedRowIndex final
+{
+public:
+    constexpr StudentKoreanNameSuffixSelectedRowIndex() noexcept = default;
+
+    explicit constexpr StudentKoreanNameSuffixSelectedRowIndex(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const StudentKoreanNameSuffixSelectedRowIndex&,
+        const StudentKoreanNameSuffixSelectedRowIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = -1;
+};
+
 // Suggests the first unused uppercase suffix for the selected student's exact
 // trimmed English name and legacy-projected Korean base. The caller supplies
 // the base and suffix from StudentNameUtils so Qt regex edge cases remain at
@@ -25,21 +51,22 @@ struct StudentKoreanNameSuggestionRow final
 // produce an empty result.
 [[nodiscard]] inline std::u16string suggestStudentKoreanNameSuffix(
     const std::vector<StudentKoreanNameSuggestionRow>& rows,
-    const int selectedRow,
+    const StudentKoreanNameSuffixSelectedRowIndex selectedRow,
     const bool hasEnglishColumn,
     const bool hasKoreanColumn
     )
 {
+    const int selectedRowValue = selectedRow.rawValue();
     if (!hasEnglishColumn
         || !hasKoreanColumn
-        || selectedRow < 0
-        || static_cast<std::size_t>(selectedRow) >= rows.size())
+        || selectedRowValue < 0
+        || static_cast<std::size_t>(selectedRowValue) >= rows.size())
     {
         return {};
     }
 
     const StudentKoreanNameSuggestionRow& selected =
-        rows[static_cast<std::size_t>(selectedRow)];
+        rows[static_cast<std::size_t>(selectedRowValue)];
     const std::u16string englishName = trimQtWhitespace(selected.englishName);
     if (englishName.empty() || selected.koreanBaseName.empty())
     {

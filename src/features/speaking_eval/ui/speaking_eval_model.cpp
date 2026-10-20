@@ -486,7 +486,9 @@ QString SpeakingEvalModel::suggestedKoreanNameWithSuffix(
     return Ui::QtTextAdapter::fromUtf16String(
         ClassMngr::Next::Application::suggestStudentKoreanNameSuffix(
             nameRows,
-            row,
+            ClassMngr::Next::Application::StudentKoreanNameSuffixSelectedRowIndex{
+                row
+            },
             englishColumn >= 0,
             koreanColumn >= 0
         )
