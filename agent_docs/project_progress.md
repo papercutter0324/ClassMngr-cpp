@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: `phase2-b486-resume-20261020`. Route: Heavy.
+Current deployment: `phase2-batch490-f1172-20261020`. Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -53,7 +53,26 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
+### Current checkpoint - 2026-10-20 (Batch490 locally complete; Batch491 active)
+
+F1177 completed at source/test commit `d3e8ca01`, after acceptance commit
+`914b5316` and CTest-name correction `80ea5513`. Qt-free
+`Application::AcademicTermWeekCount` now types only the Application policy
+boundary; the Feature model still stores four raw integers, and JSON v1
+parsing, UI behavior, four-term cardinality, 1–53 validation, and date-distance
+rules remain unchanged. `AcademicTermPosition::week` remains a separate
+one-based position. The executor's four-target build passed. The independent
+Tester confirmed all eight focused CTests passed using the actual registered
+restore-defaults name `ClassMngrCalendarPreferencesRestoreDefaultsTests`; the
+Tester build was up to date, and `git diff --check` passed. No full suite or
+Windows build ran. Batch490 is complete locally, with its closeout and push
+receipt pending; Batch491 is active with eight provisional candidates and
+F1178 next. F1175's Class Transfer test still has one unresolved
+teacher-fallback label failure among 64 cases; no clean baseline proves it
+pre-existing. F629 awaits source-bound Windows x64 layout evidence. Phase 0 and
+Phase 2 gates remain open.
+
+### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 
 Batch487 (F1144–F1153) is closed and pushed to `origin/Qt-Rewrite` at
 `c3c06e2f5432933a0e8b7df629e25b2afa920e2c`. Batch488 is active: F1154–F1158
@@ -6563,3 +6582,19 @@ Implementation and verification have not started. Batch490 has F1171–F1176
 complete and F1177 accepted/in progress as its final slice; it remains
 unpushed until F1177 closes. Batch491 has eight provisional candidates and
 remains inactive until Batch490 closes. F629 and both phase gates remain open.
+
+## Phase 2 update - F1177 complete; Batch490 locally complete - 2026-10-20
+
+F1177 completed at source/test commit `d3e8ca01`, after acceptance commit
+`914b5316` and CTest-name correction `80ea5513`. Qt-free
+`Application::AcademicTermWeekCount` now types the Application policy boundary
+while preserving Feature storage, JSON v1 parsing, UI behavior, cardinality,
+range checks, and date-distance rules. The executor's four-target build
+passed; the independent Tester confirmed eight focused CTests passed 8/8 using
+the actual registered restore-defaults name
+`ClassMngrCalendarPreferencesRestoreDefaultsTests`. Its build reported no work
+because targets were current, and `git diff --check` passed. No full suite or
+Windows build ran. Batch490 is complete locally; closeout docs and push receipt
+are pending. Batch491 is active with eight provisional candidates and F1178
+next. F1175's one teacher-fallback label failure remains unresolved and is not
+claimed to be pre-existing. F629 and the Phase 0 and Phase 2 gates remain open.

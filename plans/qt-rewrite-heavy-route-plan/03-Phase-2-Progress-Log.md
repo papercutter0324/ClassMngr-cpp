@@ -53108,3 +53108,48 @@ Batch490 remains unpushed until F1177 implementation and closeout complete.
 Batch491 remains provisional/inactive with eight candidates until Batch490
 closes. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0
 and Phase 2 gates remain open.
+
+### F1177 Academic-term week count complete - 2026-10-20
+
+F1177 completed at source/test commit `d3e8ca01`, following acceptance commit
+`914b5316`; CTest-name correction commit `80ea5513` records the verified
+restore-defaults test registration as
+`ClassMngrCalendarPreferencesRestoreDefaultsTests`.
+`Application::AcademicTermWeekCount` now stores exact signed `int`, defaults
+to zero, and has explicit construction, `.value()`, and equality, with no
+implicit conversion or range policy. Only the Application policy contract uses
+the type: `termWeeksFromDayDistance` returns an optional typed count after the
+same day-distance checks, and `isAcademicYearScheduleValid` accepts a span of
+typed counts while preserving year, Monday, four-entry, and 1–53 validation.
+
+The Feature boundary explicitly wraps the four existing raw schedule counts
+before Application validation and unwraps derived results when storing them.
+The Feature model remains `std::array<int, 4>`; JSON v1 four-number
+serialization and `toInt()` parsing, UI controls and zero rollback, defaults,
+and error messages are unchanged. No JSON element-type check or other parsing
+or range policy was added. `AcademicTermPosition::week` remains a separate
+one-based position; term years and indices remain untyped. Normal Elementary
+and Middle defaults remain `{11, 19, 11, 11}` and `{11, 19, 4, 18}`; early-year
+lookup still returns the default-initialized invalid schedule. No direct
+zero-entry UI case or new display behavior was added.
+
+The Executor's four-target build passed: `ClassMngr`,
+`ClassMngrNextApplicationAcademicYearSchedulePolicyTests`,
+`ClassMngrAcademicCalendarTests`, and
+`ClassMngrCalendarPreferencesRestoreDefaultsTests`. The independent Tester's
+same target build reported up to date/no work, and its eight focused offscreen
+CTests passed (8/8):
+`ClassMngrNextApplicationAcademicYearSchedulePolicyTests`,
+`AcademicYearScheduleDayDistancePolicy`,
+`AcademicCalendarScheduleValidityPolicy`,
+`AcademicCalendarJsonRoundTripAndMalformedFallback`,
+`AcademicCalendarInvalidWinterContinuityIsAtomic`,
+`ClassMngrCalendarPreferencesRestoreDefaultsTests`,
+`CalendarPreferencesRejectsOutOfRangeWinterStart`, and
+`CalendarPreferencesRejectsOutOfRangeInternalTermStart`. `git diff --check`
+passed. No full-suite or Windows run occurred.
+
+Batch490 is complete locally with F1171–F1177 complete; push is pending.
+Batch491 is now active with eight provisionally discovered candidates and
+F1178 next. F629 awaits source-bound Windows x64 layout evidence, and the
+Phase 0 and Phase 2 gates remain open.
