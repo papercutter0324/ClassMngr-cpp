@@ -2,6 +2,8 @@
 
 #include <QtTest/QtTest>
 
+#include <limits>
+#include <type_traits>
 #include <utility>
 
 using namespace ClassMngr::Next;
@@ -49,9 +51,33 @@ class NextApplicationClassTransferApplyUseCaseTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void skippedClassCountPreservesSignedIntAndExplicitType();
     void forwardsPackageChoicesAndSummary();
     void preservesPortFailure();
 };
+
+void NextApplicationClassTransferApplyUseCaseTests::
+skippedClassCountPreservesSignedIntAndExplicitType()
+{
+    using Count = Application::ClassTransferSkippedClassCount;
+    static_assert(std::is_default_constructible_v<Count>);
+    static_assert(std::is_constructible_v<Count, int>);
+    static_assert(!std::is_convertible_v<int, Count>);
+    static_assert(!std::is_convertible_v<Count, int>);
+
+    const Count defaultCount;
+    QCOMPARE(defaultCount.rawValue(), 0);
+
+    constexpr int minimum = std::numeric_limits<int>::min();
+    constexpr int maximum = std::numeric_limits<int>::max();
+    const Count minimumCount{minimum};
+    const Count maximumCount{maximum};
+    QCOMPARE(minimumCount.rawValue(), minimum);
+    QCOMPARE(maximumCount.rawValue(), maximum);
+    QVERIFY(minimumCount == Count{minimum});
+    QVERIFY(maximumCount == Count{maximum});
+    QVERIFY(minimumCount != maximumCount);
+}
 
 void NextApplicationClassTransferApplyUseCaseTests::
 forwardsPackageChoicesAndSummary()
@@ -60,7 +86,7 @@ forwardsPackageChoicesAndSummary()
     port.result = Application::ClassTransferApplyResult::success({
         .createdClassIds = {*Domain::ClassId::fromString("14")},
         .replacedClassIds = {*Domain::ClassId::fromString("22")},
-        .skippedClassCount = 3
+        .skippedClassCount = Application::ClassTransferSkippedClassCount{3}
     });
     auto request = command();
 
@@ -81,7 +107,9 @@ forwardsPackageChoicesAndSummary()
     QCOMPARE(result.value().createdClassIds.size(), std::size_t(1));
     QCOMPARE(result.value().createdClassIds.front().value(), std::string("14"));
     QCOMPARE(result.value().replacedClassIds.front().value(), std::string("22"));
-    QCOMPARE(result.value().skippedClassCount, 3);
+    QCOMPARE(result.value().skippedClassCount.rawValue(), 3);
+    QVERIFY(result.value().skippedClassCount
+        == Application::ClassTransferSkippedClassCount{3});
 }
 
 void NextApplicationClassTransferApplyUseCaseTests::preservesPortFailure()

@@ -300,6 +300,6 @@ void SidebarController::importClasses()
         tr("Import complete. Created: %1, replaced: %2, skipped: %3.")
             .arg(importedSummary.createdClassIds.size())
             .arg(importedSummary.replacedClassIds.size())
-            .arg(importedSummary.skippedClassCount)
+            .arg(importedSummary.skippedClassCount.rawValue())
         );
 }

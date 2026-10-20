@@ -69,7 +69,7 @@ Application::ClassTransferApplyCommand createCommand(
         std::nullopt
     });
     choices.teachers.push_back({
-        "teacher-1",
+        Application::ClassTransferTeacherKey{"teacher-1"},
         Application::ClassTransferReviewTeacherAction::Create,
         std::nullopt
     });
@@ -141,6 +141,7 @@ private slots:
     void keepsMalformedPersistedScheduleTechnicalBeforeWrites();
     void normalizesOwnedPackageWithoutChangingArrayOrder();
     void createsWithNormalizedPayloadAndTypedSummary();
+    void skipsClassAndPreservesPositiveCount();
     void createNewRejectsGeneratedClassIdOutsideIntAndRollsBack();
     void createNewAcceptsIntMaxGeneratedClassId();
     void replacesClassAndTeacherThroughRepository();
@@ -337,7 +338,7 @@ createsWithNormalizedPayloadAndTypedSummary()
     QVERIFY2(result, result ? "" : result.error().message.c_str());
     QCOMPARE(result.value().createdClassIds.size(), std::size_t(1));
     QVERIFY(result.value().replacedClassIds.empty());
-    QCOMPARE(result.value().skippedClassCount, 0);
+    QCOMPARE(result.value().skippedClassCount.rawValue(), 0);
     const auto parsed = Application::classTransferApplyDestinationId(
         result.value().createdClassIds.front());
     QVERIFY(parsed.has_value());
@@ -352,6 +353,28 @@ createsWithNormalizedPayloadAndTypedSummary()
     QVERIFY2(createCommand().package.teachers.front().teacher.teacherEn
         != stored->teacherEn.toStdU16String(),
         "fixture should require normalization");
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+skipsClassAndPreservesPositiveCount()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+
+    auto command = createCommand();
+    command.choices.classes.front().action =
+        Application::ClassTransferReviewClassAction::Skip;
+    const auto result = port.apply(std::move(command));
+
+    QVERIFY2(result, result ? "" : result.error().message.c_str());
+    QVERIFY(result.value().createdClassIds.empty());
+    QVERIFY(result.value().replacedClassIds.empty());
+    QCOMPARE(result.value().skippedClassCount.rawValue(), 1);
+    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("teachers")), 0);
+    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("classes")), 0);
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::

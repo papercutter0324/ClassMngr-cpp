@@ -98,7 +98,10 @@ public:
             }
 
             Application::ClassTransferApplySummary summary;
-            summary.skippedClassCount = imported->skippedClassCount;
+            summary.skippedClassCount =
+                Application::ClassTransferSkippedClassCount{
+                    imported->skippedClassCount
+                };
             for (const int id : imported->createdClassIds)
             {
                 auto typedId = Domain::ClassId::fromString(std::to_string(id));
