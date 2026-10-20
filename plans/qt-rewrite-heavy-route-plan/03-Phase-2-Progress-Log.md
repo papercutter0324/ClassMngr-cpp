@@ -56107,3 +56107,31 @@ cover wrapper semantics, invalid-action precedence, Create/Update bounds,
 out-of-range Skip behavior, multi-candidate source mapping and projection
 order, repository ordering, and dialog indexes 0–95. This was incremental
 macOS arm64 Debug verification; no full-suite or Windows run is claimed.
+
+### F1224 Testing Classes ordered row positions accepted before implementation - 2026-10-21
+
+F1224 is accepted/current based on two independent read-only Explorer reports.
+Add an explicit Application value type
+`TestingClassesOrderedRowIndex`, backed by `std::size_t`, with default zero,
+explicit construction, `.rawValue()`, equality, and no implicit conversions.
+Change `orderTestingClassesRows` to return a vector of this type. These are
+positions in the input `TestingClass`/ordering-facts vector, generated as the
+`0..N-1` permutation; there is no sentinel or range-validation policy.
+
+Keep the comparator and its behavior unchanged: grade rank, level rank, level
+text comparator, then class-name comparator. Retain unknown-rank value 1000
+and the injected locale-aware text comparator. Exact comparator ties currently
+have no promised order because the policy uses `std::sort`; do not make it
+stable or add a class-ID tie-break. At the page boundary, unwrap positions only
+when indexing the ordered row collection. Preserve original choice order,
+class-ID storage on visible items, and preferred selection by class ID.
+
+Extend `next_application_testing_classes_ordering_policy_tests.cpp` with
+default/explicit/equality/raw-value/non-conversion and return-type assertions.
+Retain grade/level/text ordering and verify exact ties remain only a valid
+permutation without asserting their sequence. Preserve the page integration
+case `testingClassOrderingUsesRanksLocaleTextAndPreservesSelection` in
+`testing_classes_page_tests.cpp`. Focused CTests are
+`ClassMngrNextApplicationTestingClassesOrderingPolicyTests` and
+`ClassMngrTestingClassesPageTests`; build the app and these targets. No F1224
+implementation or verification has started.
