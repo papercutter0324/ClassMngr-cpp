@@ -55435,6 +55435,28 @@ Coverage includes invalid/out-of-range, empty/whitespace, compaction and final
 slot clearing, Feature messages/dirty state, and transfer rejection ordering.
 No full suite or Windows run is claimed.
 
+### F1213 Roster custom-column removal index accepted before implementation - 2026-10-20
+
+F1213 is accepted/current based on two independent read-only Explorer reports.
+Add a dedicated explicit Application `RosterCustomColumnRemovalIndex` backed
+by `int`, defaulting to `-1`, with `.rawValue()`, equality, and no implicit
+conversions. Change only the selected-column parameter of
+`canRemoveRosterCustomColumn`. Unwrap before its existing bounds check and
+preserve range-before-required-column rejection order, required-name and
+`Autumn`/`Fall` normalization, and caller-supplied case-insensitive comparison.
+
+Wrap the Qt-selected column at the single Application call in
+`src/features/roster/ui/roster_model_columns.cpp`; keep model/widget APIs and
+column mutation inputs as `int`. Extend
+`tests/next_application_roster_custom_column_removal_policy_tests.cpp` for
+default, exact signed raw values, equality, and non-conversion while preserving
+`-1`, past-end, required-name/alias, and removable-custom-column cases. Preserve
+model-level messages, data/dirty-state, and signal checks in
+`tests/roster_model_tests.cpp`. Focused targets are
+`ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests`,
+`ClassMngrRosterModelTests`, and affected production target `ClassMngr`. No
+F1213 implementation or verification has started.
+
 ### Batch494 push receipt - 2026-10-20
 
 Batch494 is complete and pushed to `origin/Qt-Rewrite`. The normal push
