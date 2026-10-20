@@ -52365,3 +52365,38 @@ Batch489 remains active with F1162–F1166 complete and F1167–F1170 discovered
 in order; F1167 is next. Batch489 remains unpushed until F1170. F629 awaits
 source-bound Windows x64 layout evidence; the user cannot run Windows now, and
 the Phase 0 and Phase 2 gates remain open.
+
+### F1167 Teacher Import count accepted before implementation - 2026-10-20
+
+F1167 is accepted/in progress. Introduce one Qt-free,
+non-converting `Application::TeacherImportCount` scalar backed by signed
+`int`, defaulting to zero, with an explicit raw-value accessor, equality, and
+increment support. Type `Application::TeacherImportCounts.created`,
+`.updated`, and `.unchanged` with it while keeping the grouped result shape.
+`total()` returns the same typed count and preserves existing integer-sum
+behavior. Add no range checks, normalization, clamping, or overflow safety;
+negative-value semantics remain unadjudicated.
+
+Keep the separate legacy `ClassMngr::Domain::TeacherImportCounts` raw-int
+structure as the compatibility boundary; `TeacherImportRepository::legacySummary`
+explicitly extracts typed values. Leave UI, controllers, preview counters,
+persistence, and the legacy displayed summary shape unchanged. Counts advance
+only at existing successful create/update and unchanged branches; failures and
+rollback continue to return errors instead of partial counts.
+
+Scope evidence is `src/next/application/teacher_import_use_case.h`,
+`src/data/repositories/teacher_import_repository.cpp`,
+`src/domain/models/teacher_import.h`, the Apply port, setup wizard/sidebar
+display, and existing use-case/Apply-port/repository/dialog/UI tests. Cover
+typed fields and zero defaults, non-convertibility, all three counter
+transitions across namespaces, typed total aggregation, and existing raw
+adapter/repository/dialog/sidebar values. Build `ClassMngr` and the focused
+Application, Apply-port, repository, dialog, and sidebar targets; run relevant
+focused CTests and obtain independent Tester review. Run `git diff --check`.
+No full-suite or Windows claim is implied. Implementation has not started.
+
+Batch489 remains active with nine candidates: F1162–F1166 complete, F1167
+accepted/in progress, and F1168–F1170 discovered in order. F1168 is next after
+F1167 closes. Batch489 remains unpushed until F1170. F629 awaits source-bound
+Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0
+and Phase 2 gates remain open.
