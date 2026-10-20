@@ -1,9 +1,12 @@
 #include "next/application/class_tab_navigation_ordering_policy.h"
 
 #include <array>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <string_view>
+#include <type_traits>
+#include <utility>
 
 using namespace ClassMngr::Next::Application;
 using ClassId = ClassMngr::Next::Domain::ClassId;
@@ -12,10 +15,52 @@ namespace
 {
 
 using Fact = ClassTabNavigationOrderingFact;
+using Rank = ClassTabNavigationOrderRank;
+
+static_assert(std::is_same_v<decltype(Fact{}.gradeRank), Rank>);
+static_assert(std::is_same_v<decltype(Fact{}.levelRank), Rank>);
+static_assert(std::is_same_v<decltype(Fact{}.earliestScheduleDayRank), Rank>);
+static_assert(std::is_same_v<decltype(Fact{}.earliestStartMinuteRank), Rank>);
+static_assert(std::is_same_v<decltype(Rank{}.rawValue()), std::int32_t>);
+static_assert(std::is_constructible_v<Rank, std::int32_t>);
+static_assert(!std::is_convertible_v<std::int32_t, Rank>);
+static_assert(!std::is_convertible_v<Rank, std::int32_t>);
 
 ClassId classId(const std::string_view value)
 {
     return ClassId::fromString(value).value();
+}
+
+Fact fact(
+    const std::int32_t gradeRank,
+    const std::int32_t levelRank,
+    const std::int32_t scheduleDayRank,
+    const std::int32_t startMinuteRank,
+    const std::u16string_view baseLabel,
+    ClassId id
+    )
+{
+    return {
+        .gradeRank = Rank{gradeRank},
+        .levelRank = Rank{levelRank},
+        .earliestScheduleDayRank = Rank{scheduleDayRank},
+        .earliestStartMinuteRank = Rank{startMinuteRank},
+        .baseLabel = std::u16string(baseLabel),
+        .classId = std::move(id)
+    };
+}
+
+bool rankHasExpectedValueSemantics()
+{
+    const Rank defaultRank;
+    const Rank sentinel{1'000};
+    const Rank validMinute{1'000};
+    const Rank precedingMinute{999};
+    return defaultRank.rawValue() == 1'000
+        && defaultRank == sentinel
+        && sentinel == validMinute
+        && precedingMinute.rawValue() == 999
+        && precedingMinute != sentinel;
 }
 
 int compareLabels(
@@ -41,17 +86,17 @@ bool tupleFieldsCompareInPriorityOrder()
         return classTabNavigationFactLessThan(left, right, compareLabels);
     };
 
-    const Fact baseline{1, 1, 1, 1, u"Z", classId("9")};
-    return less(Fact{0, 9, 9, 9, u"Z", classId("9")}, baseline)
-        && less(Fact{1, 0, 9, 9, u"Z", classId("9")}, baseline)
-        && less(Fact{1, 1, 0, 9, u"Z", classId("9")}, baseline)
-        && less(Fact{1, 1, 1, 0, u"Z", classId("9")}, baseline);
+    const Fact baseline = fact(1, 1, 1, 1, u"Z", classId("9"));
+    return less(fact(0, 9, 9, 9, u"Z", classId("9")), baseline)
+        && less(fact(1, 0, 9, 9, u"Z", classId("9")), baseline)
+        && less(fact(1, 1, 0, 9, u"Z", classId("9")), baseline)
+        && less(fact(1, 1, 1, 0, u"Z", classId("9")), baseline);
 }
 
 bool injectedLabelComparatorControlsLabelOrder()
 {
-    const Fact left{1, 2, 3, 4, u"Alpha", classId("1")};
-    const Fact right{1, 2, 3, 4, u"Zulu", classId("9")};
+    const Fact left = fact(1, 2, 3, 4, u"Alpha", classId("1"));
+    const Fact right = fact(1, 2, 3, 4, u"Zulu", classId("9"));
     bool comparatorWasCalled = false;
     const auto reverseLabels = [&comparatorWasCalled](
                                   const std::u16string_view leftLabel,
@@ -71,8 +116,8 @@ bool injectedLabelComparatorControlsLabelOrder()
 
 bool classIdIsNumericFinalTieBreaker()
 {
-    const Fact largerId{1, 2, 3, 4, u"Same", classId("10")};
-    const Fact smallerId{1, 2, 3, 4, u"Same", classId("2")};
+    const Fact largerId = fact(1, 2, 3, 4, u"Same", classId("10"));
+    const Fact smallerId = fact(1, 2, 3, 4, u"Same", classId("2"));
     return classTabNavigationFactLessThan(
                smallerId,
                largerId,
@@ -87,8 +132,12 @@ bool classIdIsNumericFinalTieBreaker()
 
 bool literalSentinelCollisionFallsThroughToLabelComparator()
 {
-    const Fact validSixForty{1, 2, 1'000, 1'000, u"16:40", classId("9")};
-    const Fact unknownMinute{1, 2, 1'000, 1'000, u"unknown", classId("2")};
+    const Fact validSixForty = fact(
+        1, 2, 1'000, 1'000, u"16:40", classId("9")
+        );
+    const Fact unknownMinute = fact(
+        1, 2, 1'000, 1'000, u"unknown", classId("2")
+        );
     return classTabNavigationFactLessThan(
                validSixForty,
                unknownMinute,
@@ -103,8 +152,8 @@ bool literalSentinelCollisionFallsThroughToLabelComparator()
 
 bool identicalFactsCompareFalseInBothDirections()
 {
-    const Fact left{1, 2, 3, 4, u"Same", classId("5")};
-    const Fact right{1, 2, 3, 4, u"Same", classId("5")};
+    const Fact left = fact(1, 2, 3, 4, u"Same", classId("5"));
+    const Fact right = fact(1, 2, 3, 4, u"Same", classId("5"));
     return !classTabNavigationFactLessThan(left, right, compareLabels)
         && !classTabNavigationFactLessThan(right, left, compareLabels);
 }
@@ -169,20 +218,20 @@ bool malformedAndOutOfRangeIdsUseDeterministicLexicalOrder()
 bool representativeIdsFormStrictWeakOrdering()
 {
     const std::array<Fact, 14> facts{
-        Fact{0, 9, 9, 9, u"Zulu", classId("alpha")},
-        Fact{1, 0, 9, 9, u"Zulu", classId("alpha")},
-        Fact{1, 2, 0, 9, u"Zulu", classId("alpha")},
-        Fact{1, 2, 3, 0, u"Zulu", classId("alpha")},
-        Fact{1, 2, 3, 4, u"Alpha", classId("2147483648")},
-        Fact{1, 2, 3, 4, u"Same", classId("-2147483648")},
-        Fact{1, 2, 3, 4, u"Same", classId("-1")},
-        Fact{1, 2, 3, 4, u"Same", classId("02")},
-        Fact{1, 2, 3, 4, u"Same", classId("2")},
-        Fact{1, 2, 3, 4, u"Same", classId("2147483647")},
-        Fact{1, 2, 3, 4, u"Same", classId("2147483648")},
-        Fact{1, 2, 3, 4, u"Same", classId("alpha")},
-        Fact{1, 2, 3, 4, u"Zulu", classId("-2147483648")},
-        Fact{1, 2, 1'000, 1'000, u"16:40", classId("9")}
+        fact(0, 9, 9, 9, u"Zulu", classId("alpha")),
+        fact(1, 0, 9, 9, u"Zulu", classId("alpha")),
+        fact(1, 2, 0, 9, u"Zulu", classId("alpha")),
+        fact(1, 2, 3, 0, u"Zulu", classId("alpha")),
+        fact(1, 2, 3, 4, u"Alpha", classId("2147483648")),
+        fact(1, 2, 3, 4, u"Same", classId("-2147483648")),
+        fact(1, 2, 3, 4, u"Same", classId("-1")),
+        fact(1, 2, 3, 4, u"Same", classId("02")),
+        fact(1, 2, 3, 4, u"Same", classId("2")),
+        fact(1, 2, 3, 4, u"Same", classId("2147483647")),
+        fact(1, 2, 3, 4, u"Same", classId("2147483648")),
+        fact(1, 2, 3, 4, u"Same", classId("alpha")),
+        fact(1, 2, 3, 4, u"Zulu", classId("-2147483648")),
+        fact(1, 2, 1'000, 1'000, u"16:40", classId("9"))
     };
     const auto less = [](const Fact& left, const Fact& right)
     {
@@ -235,6 +284,11 @@ bool representativeIdsFormStrictWeakOrdering()
 
 int main()
 {
+    if (!rankHasExpectedValueSemantics())
+    {
+        std::cerr << "Class tab order ranks should retain their raw values.\n";
+        return EXIT_FAILURE;
+    }
     if (!tupleFieldsCompareInPriorityOrder())
     {
         std::cerr << "Class tab ordering tuple priorities are incorrect.\n";

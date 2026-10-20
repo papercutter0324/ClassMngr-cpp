@@ -16,6 +16,9 @@
 
 namespace
 {
+using ClassTabNavigationOrderRank =
+    ClassMngr::Next::Application::ClassTabNavigationOrderRank;
+
 constexpr int UnknownOrder = 1000;
 
 struct TabCandidate
@@ -618,10 +621,16 @@ ClassMngr::Next::Application::ClassTabNavigationOrderingFact orderingFact(
     )
 {
     return {
-        .gradeRank = gradeOrder(entry.grade),
-        .levelRank = levelOrder(entry.grade, entry.level),
-        .earliestScheduleDayRank = firstDayOrder(entry),
-        .earliestStartMinuteRank = firstTimeOrder(entry),
+        .gradeRank = ClassTabNavigationOrderRank{gradeOrder(entry.grade)},
+        .levelRank = ClassTabNavigationOrderRank{
+            levelOrder(entry.grade, entry.level)
+        },
+        .earliestScheduleDayRank = ClassTabNavigationOrderRank{
+            firstDayOrder(entry)
+        },
+        .earliestStartMinuteRank = ClassTabNavigationOrderRank{
+            firstTimeOrder(entry)
+        },
         .baseLabel = baseLabel(entry, true).toStdU16String(),
         .classId = ClassMngr::Next::Domain::ClassId::fromString(
             std::to_string(entry.classId)

@@ -11,15 +11,41 @@
 namespace ClassMngr::Next::Application
 {
 
+class ClassTabNavigationOrderRank final
+{
+public:
+    constexpr ClassTabNavigationOrderRank() noexcept = default;
+
+    explicit constexpr ClassTabNavigationOrderRank(
+        const std::int32_t rawValue
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::int32_t rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const ClassTabNavigationOrderRank&,
+        const ClassTabNavigationOrderRank&
+        ) noexcept = default;
+
+private:
+    std::int32_t m_rawValue = 1'000;
+};
+
 // Rank and label preparation stay at the feature edge. This policy compares
 // only the prepared tuple, with the feature supplying its locale-aware label
 // comparator.
 struct ClassTabNavigationOrderingFact final
 {
-    std::int32_t gradeRank = 1'000;
-    std::int32_t levelRank = 1'000;
-    std::int32_t earliestScheduleDayRank = 1'000;
-    std::int32_t earliestStartMinuteRank = 1'000;
+    ClassTabNavigationOrderRank gradeRank;
+    ClassTabNavigationOrderRank levelRank;
+    ClassTabNavigationOrderRank earliestScheduleDayRank;
+    ClassTabNavigationOrderRank earliestStartMinuteRank;
     std::u16string baseLabel;
     Domain::ClassId classId = Domain::ClassId::fromString("-1").value();
 };
@@ -69,29 +95,29 @@ template <typename CompareBaseLabels>
     const CompareBaseLabels& compareBaseLabels
     )
 {
-    if (left.gradeRank != right.gradeRank)
+    if (left.gradeRank.rawValue() != right.gradeRank.rawValue())
     {
-        return left.gradeRank < right.gradeRank;
+        return left.gradeRank.rawValue() < right.gradeRank.rawValue();
     }
-    if (left.levelRank != right.levelRank)
+    if (left.levelRank.rawValue() != right.levelRank.rawValue())
     {
-        return left.levelRank < right.levelRank;
-    }
-    if (
-        left.earliestScheduleDayRank
-        != right.earliestScheduleDayRank
-        )
-    {
-        return left.earliestScheduleDayRank
-            < right.earliestScheduleDayRank;
+        return left.levelRank.rawValue() < right.levelRank.rawValue();
     }
     if (
-        left.earliestStartMinuteRank
-        != right.earliestStartMinuteRank
+        left.earliestScheduleDayRank.rawValue()
+        != right.earliestScheduleDayRank.rawValue()
         )
     {
-        return left.earliestStartMinuteRank
-            < right.earliestStartMinuteRank;
+        return left.earliestScheduleDayRank.rawValue()
+            < right.earliestScheduleDayRank.rawValue();
+    }
+    if (
+        left.earliestStartMinuteRank.rawValue()
+        != right.earliestStartMinuteRank.rawValue()
+        )
+    {
+        return left.earliestStartMinuteRank.rawValue()
+            < right.earliestStartMinuteRank.rawValue();
     }
 
     const int labelComparison = compareBaseLabels(
