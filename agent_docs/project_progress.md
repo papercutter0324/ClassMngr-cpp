@@ -59,10 +59,10 @@ Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
 records the handoff. Batch491 is complete and pushed to `origin/Qt-Rewrite`
 at `56bd1973`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)
-records the handoff. F1178–F1188 are complete. Batch492 is active with six
-candidates: F1186–F1188 are complete, F1189 is accepted and in progress, and
-F1190–F1191 remain discovered. Acceptance, completion, and verification
-details are in the [Phase 2 progress
+records the handoff. F1178–F1189 are complete. Batch492 is active with six
+candidates: F1186–F1189 are complete, F1190 is accepted and in progress, and
+F1191 remains discovered. Acceptance, completion, and verification details
+are in the [Phase 2 progress
 log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
 F1186 completed at source/test commit `32eb56e4`, after acceptance commit
@@ -85,7 +85,16 @@ F1188 completed at source/test commit `37b73c6a`. The distinct
 10,000 maximum in projection validation. Seven affected targets built and
 five focused CTests passed; the direct changed-page case passed. The full page
 CTest timed out in `unavailablePreferenceLoadsPreservePageValues`; no full
-suite or Windows build ran. F1189 is accepted and in progress.
+suite or Windows build ran.
+
+F1189 completed at source/test commit `db5e3d86`. The shared
+`Application::UpdateArtifactFileName` preserves empty and UTF-8 filename
+values across the startup/manual paths. Five affected targets built, both
+Application CTests passed, and the focused adapter and UI roundtrip cases
+passed. Broader Qt CTests hit sandbox-denied localhost binds; no full suite or
+Windows build ran. F1190 is accepted and in progress. Batch493's provisional
+discovery found four candidates, F1192–F1195, with a shortfall of six against
+the ten-slice target; no deferred trigger became actionable.
 
 Batch492's discovery found six candidates against the ten-candidate target;
 see its [discovery record](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch492-provisional-discovery-at-f1184-start-2026-10-20).
