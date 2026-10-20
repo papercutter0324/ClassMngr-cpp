@@ -366,6 +366,10 @@ void NextApplicationScheduleViewTests::orderingAndSafeValueLookupsAreDeterminist
         ScheduleViewRowOrder{999},
         ScheduleViewCellOrder{7}
         ).has_value());
+    QVERIFY(!projection.findCell(
+        ScheduleViewRowOrder{10},
+        ScheduleViewCellOrder{999}
+        ).has_value());
     QVERIFY(!projection.lookupCellBySlot(
         ScheduleViewRowOrder{10},
         ScheduleViewSlotKey{999}
