@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (Batch488 pushed; F1163 complete; F1164 next; F629 open)
+### Current checkpoint - 2026-10-20 (Batch488 pushed; F1164 accepted/in progress; F629 open)
 
 Batch487 (F1144–F1153) is closed and pushed to `origin/Qt-Rewrite` at
 `c3c06e2f5432933a0e8b7df629e25b2afa920e2c`. Batch488 is active: F1154–F1158
@@ -72,18 +72,21 @@ Platform, and Calendar Page parity targets; all three focused CTests passed,
 and `git diff --check` passed. No full suite or Windows build ran. Batch488 is
 closed and pushed at `138c2cf86f3bac153d948649980798fbfd066dd6`; the Phase 2
 progress log has the push receipt. Batch489 is active with F1162 and F1163
-complete and F1164–F1170 discovered in order; F1164 is next. F1163's
-acceptance commit is `c7660c884420ec2a8cdcb674b8788fc69982d336`, and its
-source/test commit is `030e9752ec581b8013c27eef37a4ef5e36af6531`. The shared
-Calendar save request now carries `Domain::GregorianDate`, with raw input
-preserved at an Application boundary across single-save, import, and repeat
-creation. The incremental macOS Debug build ran 40 Ninja steps; independent
-focused CTests passed 4/4, and the Domain contract CTest passed 1/1 after its
-target was rebuilt. The independent `git diff --check` passed. No full suite
-or Windows build ran. F629 still awaits source-bound Windows x64 layout
-evidence; the user cannot run Windows now. Phase 0 and Phase 2 gates remain
-open. The Phase 2 progress log records prior focused evidence, including
-outstanding ClassesPage assertions and the ScheduleWidget CTest timeout.
+complete, F1164 accepted/in progress, and F1165–F1170 discovered in order.
+F1163's acceptance commit is `c7660c884420ec2a8cdcb674b8788fc69982d336`, and
+its source/test commit is `030e9752ec581b8013c27eef37a4ef5e36af6531`. It
+types the shared Calendar save request while preserving raw input at the
+Application boundary across single-save, import, and repeat creation. The
+incremental macOS Debug build ran 40 Ninja steps; independent focused CTests
+passed 4/4, and the Domain contract CTest passed 1/1 after its target was
+rebuilt. `git diff --check` passed; no full suite or Windows build ran.
+F1164 types persisted Calendar series-edit snapshot dates as optional domain
+dates so malformed persisted values retain their Technical failure while
+ordered planning and date shifts remain unchanged. F629 still awaits
+source-bound Windows x64 layout evidence; the user cannot run Windows now.
+Phase 0 and Phase 2 gates remain open. The Phase 2 progress log records prior
+focused evidence, including outstanding ClassesPage assertions and the
+ScheduleWidget CTest timeout.
 
 F1148 completed at source/test commit
 `5a1756f54173affb33853f3e5dd0b8d8b3ce793d`, after acceptance commit

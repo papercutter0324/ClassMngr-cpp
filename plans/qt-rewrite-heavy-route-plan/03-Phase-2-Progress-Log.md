@@ -52178,3 +52178,40 @@ Batch489 remains active with F1162 and F1163 complete and F1164–F1170
 discovered in order; F1164 is next. Batch489 remains unpushed until F1170.
 F629 awaits source-bound Windows x64 layout evidence; the user cannot run
 Windows now, and the Phase 0 and Phase 2 gates remain open.
+
+### F1164 Calendar series-edit occurrence start date accepted before implementation - 2026-10-20
+
+F1164 is accepted/in progress. Change only
+`CalendarEventSeriesEditOccurrenceSnapshot.startDate` from raw text to
+`std::optional<Domain::GregorianDate>`. Keep it optional so malformed persisted
+dates remain representable and the planner can report the existing source
+validation failure. The Platform adapter maps valid repository `QDate`
+components to `GregorianDate`; invalid or out-of-domain values map to
+`std::nullopt`. The planner handles that value at the existing source-validation
+point.
+
+Preserve the Technical error, exact message
+`A calendar repeat-series occurrence has an invalid start date.`,
+`recoverable=false`, and precedence after request validation. Preserve
+repository order without sorting, date-offset and duration arithmetic,
+shifted-date range failure, fields and IDs, and Platform no-write behavior.
+Keep `CalendarEventSeriesEditInput` raw UI date strings and `toRequest()`
+conversion unchanged; make no schema, query, or persistence change. Retain the
+repository adapter's existing selection and ordering contract.
+
+Acceptance evidence is the existing typed plan output, raw-text snapshot,
+planner diagnostic, QDate-to-text Platform mapping, and corruption test using
+`2026-12-40`, which verifies the exact Technical error before persistence.
+Focused verification is expected from
+`ClassMngrNextApplicationCalendarEventTests` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, covering the
+optional typed snapshot, exact malformed-source failure, unsorted order and
+date shift, overflow, and no persistence. Record only actual evidence; obtain
+independent Tester review and run `git diff --check`. No full-suite or Windows
+claim is implied. Implementation and verification have not started.
+
+Batch489 remains active with nine candidates: F1162 and F1163 complete, F1164
+accepted/in progress, and F1165–F1170 discovered in order. F1165 is next after
+F1164 closes. Batch489 remains unpushed until F1170. F629 awaits source-bound
+Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0
+and Phase 2 gates remain open.
