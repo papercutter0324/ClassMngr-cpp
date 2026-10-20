@@ -53053,3 +53053,58 @@ Batch490 now has F1171–F1176 complete and F1177 discovered next; it remains
 unpushed until F1177 closes. Batch491 remains provisional/inactive with eight
 candidates. F629 awaits source-bound Windows x64 layout evidence, and the Phase
 0 and Phase 2 gates remain open.
+
+### F1177 Academic-term week count accepted before implementation - 2026-10-20
+
+F1177 is accepted/in progress as Batch490's final candidate. In
+`src/next/application/academic_year_schedule_policy.h`, retain
+`FirstTermYear=2026`, `MaximumTermWeeks=53`, and
+`AcademicYearScheduleTermCount=4`. Add Qt-free
+`Application::AcademicTermWeekCount` with exact signed-`int` storage, zero
+default, explicit construction, `.value()`, equality, no implicit conversion,
+and no range policy. Type only the Application policy contract:
+`termWeeksFromDayDistance` returns
+`std::optional<AcademicTermWeekCount>` after the existing day-distance checks;
+`isAcademicYearScheduleValid` accepts
+`std::span<const AcademicTermWeekCount>` and keeps its existing year, Monday,
+four-count, and 1–53 validation.
+
+At the Feature boundary, explicitly wrap the four raw ints from
+`AcademicYearSchedule::weeks` before Application validation and unwrap derived
+counts when storing them. Keep the Feature model's `std::array<int, 4>` in
+`src/features/calendar/academic_calendar_schedule.h`, JSON v1 four-number array
+and `toInt()` parsing in `src/features/calendar/academic_calendar_schedule.cpp`,
+UI controls and zero rollback, defaults, and error messages unchanged. Add no
+JSON element-type checks or other parsing/range policy. Keep
+`AcademicTermPosition::week` as a separate one-based position; do not type term
+years or indices. Normal defaults remain Elementary `{11, 19, 11, 11}` and
+Middle `{11, 19, 4, 18}`; early-year lookup returns the default-initialized
+invalid schedule. No alternate acceptance for 0/54, direct zero-entry UI test,
+or new zero-entry display behavior is specified.
+
+Acceptance coverage verifies wrapper value, zero default, equality,
+explicitness/non-conversion, and that constructing 0 or 54 leaves policy
+rejection to the existing contract. Update
+`tests/next_application_academic_year_schedule_policy_tests.cpp` to use typed
+counts while retaining valid 1/53, invalid 0/54, invalid three/five-entry count arrays, and
+day-distance boundaries. Preserve
+`tests/academic_calendar_tests.cpp` JSON round-trip, invalid-zero/cardinality,
+and preference date-span coverage. Build `ClassMngr`,
+`ClassMngrNextApplicationAcademicYearSchedulePolicyTests`,
+`ClassMngrAcademicCalendarTests`, and
+`ClassMngrCalendarPreferencesRestoreDefaultsTests`; run these focused offscreen
+CTests: `ClassMngrNextApplicationAcademicYearSchedulePolicyTests`,
+`AcademicYearScheduleDayDistancePolicy`,
+`AcademicCalendarScheduleValidityPolicy`,
+`AcademicCalendarJsonRoundTripAndMalformedFallback`,
+`AcademicCalendarInvalidWinterContinuityIsAtomic`,
+`CalendarPreferencesRestoreDefaults`,
+`CalendarPreferencesRejectsOutOfRangeWinterStart`, and
+`CalendarPreferencesRejectsOutOfRangeInternalTermStart`. Require independent
+Tester review and `git diff --check`. Implementation and verification have not
+started; no full-suite or Windows claim is in scope.
+
+Batch490 remains unpushed until F1177 implementation and closeout complete.
+Batch491 remains provisional/inactive with eight candidates until Batch490
+closes. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0
+and Phase 2 gates remain open.

@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch490 F1176 is complete and F1177 is next; the batch remains unpushed until F1177 closes, Batch491 remains provisional/inactive with eight candidates, and F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch490 F1177 is accepted/in progress as its final candidate; the batch remains unpushed until F1177 implementation and closeout complete, Batch491 remains provisional/inactive with eight candidates until Batch490 closes, and F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1176 complete at source/test commit `d3935c2f`, following acceptance commit `ff39e21a`: type only the optional Application policy hour and feature helper result with Qt-free `Application::ScheduleSlotCanonicalHour` (see the [completion record](03-Phase-2-Progress-Log.md#f1176-schedule-slot-canonical-hour-complete-2026-10-20)).
+F1177 accepted/in progress as Batch490's final candidate: type only the Application academic-term week count, preserving four-term cardinality and existing invalid-input rejection (see the [acceptance record](03-Phase-2-Progress-Log.md#f1177-academic-term-week-count-accepted-before-implementation-2026-10-20)).
 
 ### Slice discovery batches
 
@@ -72,7 +72,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch490 (7 candidates; 6 complete; 1 discovered)
+#### Active batch: Batch490 (7 candidates; 6 complete; 1 accepted/in progress)
 
 1. F1171 - **Complete.** Use `Application::UpdateArtifactSizeBytes` for manual/startup artifact sizes; preserve exact signed values and existing parser/downloader positivity policy (see the [completion record](03-Phase-2-Progress-Log.md#f1171-updater-artifact-size-complete-2026-10-20)).
 2. F1172 - **Complete.** Add the typed update-check UTC millisecond value, preserving signed values, ordinary zero defaults, and adapter/UI conversion boundaries (see the [completion record](03-Phase-2-Progress-Log.md#f1172-update-check-utc-milliseconds-complete-2026-10-20)).
@@ -80,9 +80,9 @@ Treat this plan as an operational summary, not a history:
 4. F1174 - **Complete.** Type the Class Transfer export timestamp input; preserve epoch and serialized timestamp formatting (see the [completion record](03-Phase-2-Progress-Log.md#f1174-class-transfer-export-utc-milliseconds-complete-2026-10-20)).
 5. F1175 - **Complete.** Type only the Application Class Transfer package version; preserve integer JSON output and legacy parser diagnostics (see the [completion record](03-Phase-2-Progress-Log.md#f1175-class-transfer-package-version-complete-2026-10-20)).
 6. F1176 - **Complete.** Type only the optional Application Schedule-slot policy hour and feature helper result as `Application::ScheduleSlotCanonicalHour`, preserving the 15/16 cutoff, absence, weekend/intensive precedence, toggling, and canonical-label parsing (see the [completion record](03-Phase-2-Progress-Log.md#f1176-schedule-slot-canonical-hour-complete-2026-10-20)).
-7. F1177 - **Discovered; next.** Review Academic-term week-count typing carefully; preserve invalid-input rejection and four-term cardinality.
+7. F1177 - **Accepted/in progress; final candidate.** Type only the Application academic-term week count, preserving invalid-input rejection, four-term cardinality, JSON v1 behavior, and UI rollback semantics (see the [acceptance record](03-Phase-2-Progress-Log.md#f1177-academic-term-week-count-accepted-before-implementation-2026-10-20)).
 
-Batch490 has F1171–F1176 complete and F1177 discovered next; it remains unpushed until F1177 closes. Batch491 remains provisional/inactive with eight candidates. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch490 has F1171–F1176 complete and F1177 accepted/in progress as its final candidate; it remains unpushed until F1177 implementation and closeout complete. Batch491 remains provisional/inactive with eight candidates until Batch490 closes. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 

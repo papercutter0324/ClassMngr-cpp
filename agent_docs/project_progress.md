@@ -6550,3 +6550,16 @@ full suite or Windows build ran. Batch490 has F1171–F1176 complete and F1177
 next; it remains unpushed until F1177 closes. Batch491 has eight provisional
 candidates and remains inactive until Batch490 closes. F629 and both phase
 gates remain open.
+
+## Phase 2 update - F1177 accepted; Batch490 active - 2026-10-20
+
+F1177 is accepted to add Qt-free `Application::AcademicTermWeekCount` with
+exact signed-int storage, zero default, explicit construction, `.value()`,
+equality, and no range policy. It types only the Application policy boundary;
+the Feature model keeps its four raw integers, and JSON v1 parsing, UI
+behavior, four-term cardinality, 1–53 validation, and date-distance rules stay
+unchanged. `AcademicTermPosition::week` remains the separate one-based position.
+Implementation and verification have not started. Batch490 has F1171–F1176
+complete and F1177 accepted/in progress as its final slice; it remains
+unpushed until F1177 closes. Batch491 has eight provisional candidates and
+remains inactive until Batch490 closes. F629 and both phase gates remain open.
