@@ -54645,6 +54645,47 @@ remaining. With `QT_QPA_PLATFORM=offscreen`, the focused CTests
 and `ClassMngrSpeakingEvalBatchReportServiceTests` passed 2/2.
 `git diff --check` passed. No full suite or Windows run occurred.
 
+### Batch494 discovery finalized at F1200 start - 2026-10-20
+
+At F1200 start, two independent read-only scans found seven contract-focused
+candidates and two Feature-boundary candidates; Class Transfer export ordinal
+appeared in both and is counted once. A follow-up resolved the Sub Prep
+schedule-rank overlap: F1191's `ClassTabNavigationOrderRank` and Sub Prep use
+the same signed `int32_t` value with default `1000` and no embedded policy, so
+Sub Prep can reuse it from a neutral Application header while retaining its
+separate tuple comparator and upstream weekday/minute types.
+
+The eight unique ordered provisional candidates are:
+
+1. **F1202 - Class Transfer export ordinal / `selectedIndex`.** Preserve request order and zero-based selection to one-based class-key mapping.
+2. **F1203 - Roster-row transfer positions.** Type source request row and destination result; preserve `-1`/range failure order and destination semantics.
+3. **F1204 - Roster-row reorder arguments.** Type source/destination positions; preserve validation order, same-row rejection, and move behavior.
+4. **F1205 - Speaking Evaluation score-assignment roster row.** Preserve zero-based assignment order and changed-grade filtering.
+5. **F1206 - Speaking Evaluation roster-name import positions.** Type source/target positions; preserve filtering, order, and caller-supplied target values, with source and target semantics assessed separately.
+6. **F1207 - Class Details schedule-validation row.** Preserve zero-based schedule row and duplicate-group ordering; keep `duplicateRows` raw pending acceptance.
+7. **F1208 - Speaking Evaluation save-cell coordinates.** Keep separate from F1201; preserve the 25×11 zero-based grid and `-1` absence sentinels.
+8. **F1209 - Reuse `ClassTabNavigationOrderRank` for Sub Prep schedule ranks.** Move it to a neutral Application header; preserve sentinel `1000` including its collision with valid 16:40, comparisons, tuple tie rules, and separate Sub Prep weekday/minute preparation. Keep the Sub Prep comparator distinct.
+
+F1209's audit evidence: the value is defined in
+`src/next/application/class_tab_navigation_ordering_policy.h`; see the
+[F1191 acceptance](#f1191-class-tab-navigation-order-rank-accepted-before-implementation-2026-10-20).
+Sub Prep validation is in `src/next/application/class_summary_projection.h`,
+with the separate comparator in
+`src/next/application/sub_prep_visible_class_ordering_policy.h`. Its adapters
+are `src/next/platform/application_services_sub_prep_schedule_summary_port.h`
+and `src/features/sub_prep/ui/sub_prep_class_information_list_model.cpp`.
+Future F1209 acceptance should add a direct valid-16:40 versus unknown-time
+collision assertion.
+
+Schedule View order/day/slot remains unselected because no Feature or Platform
+caller was found. No standalone AI `sourceRow` candidate is added. F1201 remains
+limited to roster-save issue coordinates; F1208 is a separate Speaking
+Evaluation contract. Explorers found eight actionable candidates, two below
+the ten-candidate target. Batch494 is inactive/provisional until Batch493
+closes.
+
+No other slices were found.
+
 ### F1200 Speaking Evaluation AI batch report index accepted before implementation - 2026-10-20
 
 F1200 is accepted/current before implementation, based on two independent
@@ -54675,3 +54716,60 @@ and `git diff --check`. No F1200 implementation or verification has started.
 Batch493 has ten ordered candidates: F1192–F1199 complete, F1200
 accepted/current, and F1201 discovered. Batch493 remains unpushed; F629 and the
 Phase 0 and Phase 2 gates remain open.
+
+### F1200 Speaking Evaluation AI batch report index complete - 2026-10-20
+
+F1200 completed at source/test commit
+`70a56012e59a9a813e0243996c843ee740819b21` (`Phase2 - Type AI batch report
+index`). The three changed paths were
+`src/next/application/speaking_evaluation_ai_batch_accepted_comment_plan.h`,
+`src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.cpp`, and
+`tests/next_application_speaking_evaluation_ai_batch_accepted_comment_plan_tests.cpp`.
+Only Application candidate `reportIndex` is now
+`SpeakingEvaluationAiBatchReportIndex` (`int`, default `-1`, explicit
+construction, `.rawValue()`, equality, no implicit conversion). Feature wraps
+the existing raw UI index; planner validation still rejects every negative
+index and every index `>= reportCount` before indexing. Raw UI roles and lists
+and all `sourceRow` fields are unchanged.
+
+The assigned targets built successfully in the existing macOS Debug tree; the
+independent Tester rerun reported Ninja had no work remaining. With
+`QT_QPA_PLATFORM=offscreen`, the focused CTests
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests`
+and `ClassMngrSpeakingEvalBatchReportServiceTests` passed 2/2.
+`git diff --check` passed. No full suite or Windows run occurred.
+
+### F1201 Roster-save issue coordinate values accepted before implementation - 2026-10-20
+
+F1201 is accepted/current before implementation, based on two independent
+read-only Explorer reports. In
+`src/next/application/roster_save_preparation.h`, `RosterSaveIssue.row` and
+`.column` are independent raw `int` values defaulting to `-1`; present
+coordinates are zero-based. Replace only those fields with distinct Qt-free
+Application values, recommended as `RosterSaveIssueRowIndex` and
+`RosterSaveIssueColumnIndex`, each with `int` storage, default `-1`, explicit
+construction, `.rawValue()`, equality, and no implicit conversion. Preserve
+arbitrary values and each sentinel independently; do not make the coordinate
+pair optional or all-or-none.
+
+Preserve issue order and warning/error severity, class-ID-first use-case
+failure priority, formatted error text, one-based human-facing display, and
+special `rows[0].Korean` index text. Unwrap at the raw-int consumer boundaries:
+`RosterSaveUseCase` formatting, `RosterSaveValidationAdapter` to generic
+`ValidationIssue` (keep its integers), `roster_editor_widget.cpp`, and
+`roster_editor_widget_transfer.cpp` at the target-roster boundary. Keep raw
+`duplicateRows` argument vectors and unrelated transfer `sourceRow` unchanged.
+
+An existing Application test covers row-present/column-absent. Add direct type
+and value assertions for defaults, explicit raw values, equality, and
+independent row-only, column-only, and both-absent cases. Build `ClassMngr`,
+`ClassMngrNextApplicationRosterSaveUseCaseTests`,
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`,
+`ClassMngrRosterEditorWidgetSaveTests`, `ClassMngrRosterTransferMenuTests`,
+and `ClassMngrRosterModelTests`; run those six matching CTests and
+`git diff --check`. No F1201 implementation or verification is claimed.
+Batch493 has ten ordered candidates: F1192–F1200 complete and F1201
+accepted/current. Batch494 has eight provisional candidates and remains
+inactive until Batch493 closes. Batch493 remains unpushed; F629 and the Phase 0
+and Phase 2 gates remain open.
