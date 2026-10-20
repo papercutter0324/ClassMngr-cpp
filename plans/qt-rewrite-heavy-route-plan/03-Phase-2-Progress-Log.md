@@ -57941,3 +57941,44 @@ x64 and the full suite were not run.
 
 Batch500 remains active with F1243–F1246 complete, F1247 next for acceptance,
 and F1248–F1252 discovered.
+
+### F1247 Teacher Import result counts across Platform accepted before implementation - 2026-10-21
+
+F1247 is accepted before implementation. Change
+`ApplicationServicesTeacherImportApplyPort::apply` to return
+`Result<Next::Application::TeacherImportUseCaseResult>` directly after its
+existing error translation, removing `legacySummary()` only from this
+Platform path. Keep `TeacherImportRepository::legacySummary`,
+`TeacherImportSummary`, `TeacherService`, and `DataService` legacy return path
+unchanged; this slice does not introduce Domain-to-Application coupling or a
+broader legacy migration.
+
+Update the sidebar controller and Initial Setup consumers to use `.rawValue()`
+only for the Korean updated comparison and UI formatting. Preserve created,
+updated, and unchanged categories across Korean, Native English, and GS
+groups; same-input successful reapply reports unchanged without create/update.
+Keep repository/service no-op behavior, transaction and error semantics, and
+source-date handling unchanged. Preserve sidebar refresh and Teacher Info
+reload only when Korean teachers were updated. Initial Setup continues to
+mark a successful import complete even when all result counts are zero.
+
+Add a Platform port return-type assertion and extend its integration test with
+typed category assertions, including same-input no-op reapply. Evidence:
+Phase 2 discovery around this log's earlier F1247 entry; legacy summary in
+`src/domain/models/teacher_import.h:65`, Application result count in
+`src/next/application/teacher_import_use_case.h:200`, repository adapter in
+`src/data/repositories/teacher_import_repository.cpp:142`, port in
+`src/next/platform/application_services_teacher_import_apply_port.h:26`,
+consumers in `src/features/sidebar/sidebar_controller_teacher_import.cpp:91-153`
+and `src/features/setup/ui/initial_setup_wizard.cpp:289-309`, existing
+Platform test in
+`tests/next_platform_application_services_teacher_import_apply_port_tests.cpp:76`,
+and legacy no-op coverage in `tests/teacher_import_tests.cpp:2196`.
+
+Build `ClassMngr`, `ClassMngrTeacherImportTests`, and
+`ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests`; run
+only the two focused CTests. At acceptance, no implementation, build, or tests
+had started. No Windows or full-suite result is claimed.
+
+Batch500 remains active with F1243–F1246 complete, F1247 accepted awaiting
+implementation, and F1248–F1252 discovered.
