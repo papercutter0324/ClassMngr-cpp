@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is active and unpushed: F1219–F1223 are complete, F1224 is accepted/current before implementation, and F1225–F1226 remain discovered (see [F1224 acceptance](03-Phase-2-Progress-Log.md#f1224-testing-classes-ordered-row-positions-accepted-before-implementation-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is active and unpushed: F1219–F1224 are complete, F1225 is under acceptance, and F1226 remains discovered (see [F1224 completion](03-Phase-2-Progress-Log.md#f1224-testing-classes-ordered-row-positions-complete-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,18 +38,18 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch496 — Active and unpushed; eight candidates, with F1219–F1223 complete, F1224 accepted/current, and F1225–F1226 discovered:**
+**Batch496 — Active and unpushed; eight candidates, with F1219–F1224 complete, F1225 under acceptance, and F1226 discovered:**
 
 1. **F1219 — Complete:** Type the AI accepted-comment planner source-row coordinates; preserve `-1` propagation, input order, and downstream invalid-row skips (see [completion](03-Phase-2-Progress-Log.md#f1219-ai-accepted-comment-source-row-complete-2026-10-21)).
 2. **F1220 — Complete:** Type Schedule Import matching candidate positions; preserve candidate order and projection behavior (see [completion](03-Phase-2-Progress-Log.md#f1220-schedule-import-matching-candidate-index-complete-2026-10-21)).
 3. **F1221 — Complete:** Type Roster Availability accumulator row and source-column coordinates as distinct signed values; preserve bounds checks, no-mutation failures, and projection filtering (see [completion](03-Phase-2-Progress-Log.md#f1221-roster-availability-accumulator-coordinates-complete-2026-10-21)).
 4. **F1222 — Complete:** Type Class Transfer schedule-conflict positions with distinct incoming/other types; preserve the conditional vector meaning of `otherIndex` and conflict order (see [completion](03-Phase-2-Progress-Log.md#f1222-class-transfer-schedule-conflict-positions-complete-2026-10-21)).
 5. **F1223 — Complete:** Reuse the explicit Schedule Import state candidate index for resolutions and candidate references; preserve action-specific validation and candidate/projection ordering (see [completion](03-Phase-2-Progress-Log.md#f1223-schedule-import-state-resolution-candidate-index-complete-2026-10-21)).
-6. **F1224 — Accepted/current:** Type Testing Classes ordered row positions; preserve grade/level/text ordering and the existing unspecified exact-tie order (see [acceptance](03-Phase-2-Progress-Log.md#f1224-testing-classes-ordered-row-positions-accepted-before-implementation-2026-10-21)).
-7. **F1225 — Discovered:** Type Analytics criterion-extrema positions; preserve empty results and tied-index order.
+6. **F1224 — Complete:** Type Testing Classes ordered row positions; preserve grade/level/text ordering and the existing unspecified exact-tie order (see [completion](03-Phase-2-Progress-Log.md#f1224-testing-classes-ordered-row-positions-complete-2026-10-21)).
+7. **F1225 — Under acceptance:** Type Analytics criterion-extrema positions; preserve empty results and tied-index order.
 8. **F1226 — Discovered:** Type Sub Prep print group/class positions; preserve original input positions and group/class ordering.
 
-Batch495 is complete and pushed (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is active and unpushed; its [discovery record](03-Phase-2-Progress-Log.md#batch496-discovery-started-2026-10-21) and completed slices F1219–F1223 are in the progress log. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch495 is complete and pushed (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is active and unpushed; its [discovery record](03-Phase-2-Progress-Log.md#batch496-discovery-started-2026-10-21) and completed slices F1219–F1224 are in the progress log. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 

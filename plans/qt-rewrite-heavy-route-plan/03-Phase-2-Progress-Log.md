@@ -56134,4 +56134,30 @@ case `testingClassOrderingUsesRanksLocaleTextAndPreservesSelection` in
 `testing_classes_page_tests.cpp`. Focused CTests are
 `ClassMngrNextApplicationTestingClassesOrderingPolicyTests` and
 `ClassMngrTestingClassesPageTests`; build the app and these targets. No F1224
-implementation or verification has started.
+implementation or verification had started when this acceptance was recorded.
+
+### F1224 Testing Classes ordered row positions complete - 2026-10-21
+
+F1224 completed at implementation commit `00c5b5e0` (`Phase2 - Type Testing
+Classes ordered row index`), following acceptance-record commit `8d5577f0`.
+`TestingClassesOrderedRowIndex` is an explicit `std::size_t` value type with
+default zero, private storage, `.rawValue()`, equality, and no implicit
+conversions. The ordering policy now returns typed positions for the original
+input rows; the page unwraps each position only at row collection access.
+
+The grade-rank, level-rank, injected level-text, and class-name comparator
+sequence remains unchanged, including unknown rank `1000`. Exact comparator
+ties still have no guaranteed order. The page preserves original choice order,
+class IDs on visible items, and preferred selection by class ID.
+
+The Executor built `ClassMngr` and the ordering-policy and Testing Classes page
+test targets in the existing `build/macos-clang-debug` tree. The independent
+Tester confirmed the ordering-policy CTest passed and the targeted page case
+`testingClassOrderingUsesRanksLocaleTextAndPreservesSelection` passed 3/3.
+The combined focused CTest run reported 43 page cases passed and 3 failed:
+`rosterKeyboardTriggerOpensInAppPalette` (keyboard visibility),
+`rosterKeyboardWritesToKoreanNameCell` (keyboard target), and
+`outputAvailabilityFollowsRosterTabAndLoadedClass` (print availability). The
+Tester reproduced these failures and found no evidence connecting them to the
+typed-index change. `git diff --check` passed. Verification used incremental
+macOS arm64 Debug; no full-suite or Windows result is claimed.
