@@ -608,6 +608,54 @@ int main()
         }
         {
             auto request = validRequest();
+            request.classes[0] = {
+                CandidateIndex{0}, ClassAction::UpdateExisting, classId(21)
+            };
+            request.classes[1] = {
+                CandidateIndex{1}, ClassAction::Skip, classId(21)
+            };
+            const auto result =
+                validateScheduleImportReviewDecisions(request);
+            require(
+                !result.accepted()
+                    && result.issues.size() == 1
+                    && result.issues.front().code
+                        == IssueCode::DuplicateSkippedClassTarget
+                    && result.issues.front().targetClassId == classId(21)
+                    && result.issues.front().candidateIndexes
+                        == std::vector<CandidateIndex>{
+                            CandidateIndex{0}, CandidateIndex{1}
+                        },
+                "Update then targeted Skip did not choose the later Skip issue code"
+                );
+            ++cases;
+        }
+        {
+            auto request = validRequest();
+            request.classes[0] = {
+                CandidateIndex{0}, ClassAction::Skip, classId(21)
+            };
+            request.classes[1] = {
+                CandidateIndex{1}, ClassAction::UpdateExisting, classId(21)
+            };
+            const auto result =
+                validateScheduleImportReviewDecisions(request);
+            require(
+                !result.accepted()
+                    && result.issues.size() == 1
+                    && result.issues.front().code
+                        == IssueCode::DuplicateUpdatedClassTarget
+                    && result.issues.front().targetClassId == classId(21)
+                    && result.issues.front().candidateIndexes
+                        == std::vector<CandidateIndex>{
+                            CandidateIndex{0}, CandidateIndex{1}
+                        },
+                "targeted Skip then Update did not choose the later Update issue code"
+                );
+            ++cases;
+        }
+        {
+            auto request = validRequest();
             request.teachers[0].action = TeacherAction::Create;
             request.teachers[0].selectedRoom = ReviewRoom{};
             expectRejected(
