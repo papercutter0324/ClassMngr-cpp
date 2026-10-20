@@ -56427,4 +56427,33 @@ Focused targets are `ClassMngr`,
 `ClassMngrNextApplicationScheduleImportPlanValidationTests`,
 `ClassMngrNextApplicationScheduleImportApplyUseCaseTests`,
 `ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`.
-No F1227 implementation or verification has started.
+At acceptance time, no F1227 implementation or verification had started.
+
+### F1227 Schedule Import eligibility issue position complete - 2026-10-21
+
+F1227 completed at implementation commit `e9bad115` (`Phase2 - Type Schedule
+Import eligibility issue index`), following acceptance-record commit `2527bb47`.
+`ScheduleImportPlanEligibilityIssue::candidateIndex` now uses the distinct
+explicit `ScheduleImportPlanEligibilityCandidateIndex`, backed by
+`std::size_t`, with default zero, private storage, `.rawValue()`, equality,
+and no implicit conversions. Candidate-specific issues preserve their exact
+first-failing position; global issue codes retain zero. The separate signed
+`ScheduleImportCandidateIndex` remains the class-color/review input type.
+
+The Application policy retains global-check priority, candidate-order basic
+checks before weekday/pattern/color checks, and first-failure behavior. Both
+Feature grade/level lookups unwrap only at collection access and preserve their
+empty-value fallback. Tests cover nonzero candidate mapping through the policy,
+ApplyUseCase, repository, and both Feature validator paths, as well as default
+zero and rejection before writes.
+
+The Executor built `ClassMngr` and the four focused Application, repository,
+and dialog test targets in `build/macos-clang-debug`. The independent Tester
+confirmed the build and passed all four focused CTests:
+`ClassMngrNextApplicationScheduleImportPlanValidationTests`,
+`ClassMngrNextApplicationScheduleImportApplyUseCaseTests`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`.
+`git diff --check` passed. Linking emitted macOS minimum-version warnings
+because Qt dylibs were built for macOS 14.4 while the target is macOS 13.0;
+linking succeeded. This was incremental macOS `arm64;x86_64` Debug
+verification; no full-suite or Windows run is claimed.
