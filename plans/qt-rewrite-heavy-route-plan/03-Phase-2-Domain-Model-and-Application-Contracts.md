@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch499 is complete locally with push pending; active Batch500 has F1243 next for acceptance, and F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch499 is complete and pushed at `cc38c959`; active Batch500 has F1243 next for acceptance, and F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1242 completed the standalone Schedule View Application contract with distinct explicit values for row order, cell order, and slot key; no non-test production consumer or legacy UI integration is claimed (see [F1242 verification](03-Phase-2-Progress-Log.md#f1242-schedule-view-order-and-slot-keys-complete-2026-10-21)). Batch499 is complete locally with push pending; Batch500 is active with F1243 next for acceptance and nine discovered candidates following. F629 and the Phase 0 and Phase 2 gates remain open.
+Batch499 was pushed to `origin/Qt-Rewrite` at `cc38c959` (see its [push receipt](03-Phase-2-Progress-Log.md#batch499-push-receipt-2026-10-21)); Batch500 is active with F1243 next for acceptance and F1244–F1252 discovered. F1242's standalone Application scope and verification are recorded in the [F1242 closeout](03-Phase-2-Progress-Log.md#f1242-schedule-view-order-and-slot-keys-complete-2026-10-21). F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
