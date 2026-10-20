@@ -55920,3 +55920,36 @@ the dialog suite reported 58 passes. Assertions cover typed value semantics,
 indexes 0/1 in projection order, existing 0/1/2 repository mapping, and dialog
 resolution/apply indexes. `git diff --check` passed. No full suite or Windows
 run is claimed.
+
+### F1221 Roster Availability accumulator coordinates accepted before implementation - 2026-10-21
+
+F1221 is accepted/current based on two independent read-only Explorer reports.
+Add distinct explicit Application wrappers
+`RosterAvailabilityAccumulatorRowIndex` and
+`RosterAvailabilityAccumulatorSourceColumnIndex`, both backed by `int`, with
+explicit construction, `.rawValue()`, equality, and no implicit conversions.
+The streamed row and source-column inputs can be negative, so they must retain
+their signed values until the accumulator's existing negative-coordinate checks
+run. Do not reuse `RosterSourceColumnIndex`, whose `std::size_t` representation
+is for valid projected source columns and cannot represent a negative input.
+
+Type `RosterAvailabilityAccumulator::observeCell` inputs with the distinct
+wrappers and wrap the platform stream callback's existing `int` values at the
+Application boundary. Preserve validation order and no-mutation behavior for
+negative row, row 25 or greater, negative source column, source column outside
+the stored header range, and non-retained columns. Preserve whitespace-only
+cell handling, the 25-row model limit, retained-column projection, and the
+legacy `RosterAvailabilityFirstEmptyRow` `int`/`-1` result.
+
+Extend the existing Application batch-read query test with wrapper
+default/explicit/equality/non-conversion assertions and direct invalid
+source-column coverage for `-1` and an out-of-range positive index, asserting
+that invalid input does not mark a row occupied. Retain existing direct row
+boundary and retained/alias/custom-column assertions. Preserve Platform read
+port coverage for out-of-range source column 99 and streamed row limits; no
+extra Platform test is required if the Application test exercises the signed
+negative boundary. Focused targets are
+`ClassMngr`,
+`ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`. No F1221
+implementation or verification has started.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch495 is complete and pushed at `e84c332d`; Batch496 is active with F1219–F1220 complete and F1221 next for acceptance, while F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch496 is active with F1219–F1220 complete and F1221 accepted/current before implementation; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
@@ -76,7 +76,7 @@ Treat this plan as an operational summary, not a history:
 
 1. F1219 - **Complete.** Type AI accepted-comment planner source-row coordinates; preserve `-1` propagation, input order, and downstream invalid-row skips (see [completion](03-Phase-2-Progress-Log.md#f1219-ai-accepted-comment-source-row-complete-2026-10-21)).
 2. F1220 - **Complete.** Type Schedule Import matching candidate positions; preserve candidate order and projection behavior (see [completion](03-Phase-2-Progress-Log.md#f1220-schedule-import-matching-candidate-index-complete-2026-10-21)).
-3. F1221 - **Discovered.** Type Roster Availability accumulator row and source-column coordinates; preserve bounds checks and projection filtering.
+3. F1221 - **Accepted/current.** Type Roster Availability accumulator row and source-column coordinates as distinct signed values; preserve bounds checks, no-mutation failures, and projection filtering (see [acceptance](03-Phase-2-Progress-Log.md#f1221-roster-availability-accumulator-coordinates-accepted-before-implementation-2026-10-21)).
 4. F1222 - **Discovered.** Type Class Transfer schedule-conflict positions; preserve each index's conditional vector meaning and conflict order.
 5. F1223 - **Discovered.** Type Schedule Import state-resolution candidate positions; preserve candidate-order validation and projection behavior.
 6. F1224 - **Discovered.** Type Testing Classes ordered row positions; preserve grade/level/text ordering and existing tie behavior.
