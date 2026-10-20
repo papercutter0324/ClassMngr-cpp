@@ -48819,43 +48819,6 @@ bounded scans found no further candidates within their respective scanned
 surfaces; F1127 remains lower confidence pending acceptance screening. F629
 and the Phase 0 and Phase 2 gates remain open.
 
-### F1161 Calendar repeat-series edit event type accepted before implementation - 2026-10-20
-
-F1161 is accepted/in progress as Batch488's final candidate. Type
-`CalendarEventSeriesEditRequest.eventType` and
-`CalendarEventSeriesEditOccurrenceUpdate.eventType` as
-`Domain::CalendarEventType`; keep raw `std::string` only in
-`CalendarEventSeriesEditInput`. `toRequest()` recognizes the ASCII-trimmed
-input using the Domain event-type parser, while enforcing the existing
-64-byte bound against the original raw UTF-8 input. Preserve the exact
-`Domain::ErrorCode::InvalidInput`, message
-`Calendar repeat-series edit text fields must be non-blank and bounded.`, and
-`recoverable=false` for invalid or oversized event type input, including the
-current validation precedence. Requests and plans carry the enum; validation
-rejects invalid enum casts. The planner propagates the value to each update,
-and Platform serializes it with the Domain name helper to the same canonical
-persisted string. Keep selection, order, date, time, error, and persistence
-semantics unchanged; make no repository or SQL changes.
-
-Evidence: `src/next/application/calendar_event_series_edit_port.h`,
-`src/next/application/calendar_event_series_edit_use_case.h`,
-`src/next/domain/calendar_event_timing.h`,
-`src/next/platform/application_services_calendar_event_series_edit_port.h`,
-`src/features/calendar/ui/calendar_page_events.cpp`,
-`tests/next_application_calendar_event_tests.cpp`, and
-`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
-The existing Application test
-`calendarEventTypeValidationUsesDomainClassifiersAndPreservesRawText`
-accepts padded `" \tWorkshop \n"` after trim-based recognition while
-preserving the raw input; the Platform currently canonicalizes recognized
-values before persistence. Implementation and verification have not started.
-
-Batch488 remains active with seven complete, F1161 accepted/in progress, and
-none discovered. Batch489 remains provisional and inactive until Batch488
-closes. The batch has no push receipt and is not closed. F629 awaits
-source-bound Windows x64 layout evidence; the user cannot run Windows now,
-and the Phase 0 and Phase 2 gates remain open.
-
 ### Batch483 push receipt 2026-10-20
 
 Batch483 closeout commit `0f47ad3241c727002c2cdb68a81c38145141dc03` was
@@ -51987,3 +51950,72 @@ and next in order. Batch489 remains provisional and inactive until Batch488
 closes. Batch488 has no push receipt and is not closed. F629 awaits
 source-bound Windows x64 layout evidence; the user cannot run Windows now,
 and the Phase 0 and Phase 2 gates remain open.
+
+### F1161 Calendar repeat-series edit event type accepted before implementation - 2026-10-20
+
+F1161 is accepted/in progress as Batch488's final candidate. Type
+`CalendarEventSeriesEditRequest.eventType` and
+`CalendarEventSeriesEditOccurrenceUpdate.eventType` as
+`Domain::CalendarEventType`; keep raw `std::string` only in
+`CalendarEventSeriesEditInput`. `toRequest()` recognizes the ASCII-trimmed
+input using the Domain event-type parser, while enforcing the existing
+64-byte bound against the original raw UTF-8 input. Preserve the exact
+`Domain::ErrorCode::InvalidInput`, message
+`Calendar repeat-series edit text fields must be non-blank and bounded.`, and
+`recoverable=false` for invalid or oversized event type input, including the
+current validation precedence. Requests and plans carry the enum; validation
+rejects invalid enum casts. The planner propagates the value to each update,
+and Platform serializes it with the Domain name helper to the same canonical
+persisted string. Keep selection, order, date, time, error, and persistence
+semantics unchanged; make no repository or SQL changes.
+
+Evidence: `src/next/application/calendar_event_series_edit_port.h`,
+`src/next/application/calendar_event_series_edit_use_case.h`,
+`src/next/domain/calendar_event_timing.h`,
+`src/next/platform/application_services_calendar_event_series_edit_port.h`,
+`src/features/calendar/ui/calendar_page_events.cpp`,
+`tests/next_application_calendar_event_tests.cpp`, and
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
+The existing Application test
+`calendarEventTypeValidationUsesDomainClassifiersAndPreservesRawText`
+accepts padded `" \tWorkshop \n"` after trim-based recognition while
+preserving the raw input; the Platform currently canonicalizes recognized
+values before persistence. Implementation and verification have not started.
+
+### F1161 Calendar repeat-series edit event type complete - 2026-10-20
+
+F1161 completed in source/test commit
+`81a1fc256fa7e7d32b589fe2bef193e1a213864e`, following acceptance docs
+commit `8162b27b22c5ace992ab129b149849572dbeac73`. The
+`CalendarEventSeriesEditRequest` and
+`CalendarEventSeriesEditOccurrenceUpdate` carry
+`Domain::CalendarEventType`; raw `std::string` remains in the Input boundary.
+Input conversion retains ASCII-trimmed recognition and the 64-byte raw UTF-8
+limit, with the existing invalid-input error and validation precedence.
+Requests/plans reject invalid enum casts, the planner propagates the enum to
+each occurrence update, and Platform serializes it through the Domain name
+helper to the existing canonical persisted string. Other selection, ordering,
+date, time, error, and persistence behavior is unchanged.
+
+Executor's incremental macOS Debug target builds for
+`ClassMngrNextApplicationCalendarEventTests` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` succeeded.
+The independent rerun reported Ninja had no work, and source timestamps
+preceded both executables. The focused Application and Platform CTests passed
+1/1 each; `git diff --check` passed. No full suite or Windows run occurred.
+
+### Batch488 local closeout after F1161 - 2026-10-20
+
+All eight Batch488 slices, F1154–F1161, are complete locally at F1161
+source/test commit `81a1fc256fa7e7d32b589fe2bef193e1a213864e`; F1161's
+acceptance docs commit is `8162b27b22c5ace992ab129b149849572dbeac73`. This
+documentation closeout commit must precede any push. No push receipt exists;
+Batch488 is not reported as pushed.
+
+Batch489 is now active with nine discovered candidates in the recorded order,
+starting with F1162. The [active candidate list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch489-9-candidates-0-complete-0-acceptedin-progress-9-discovered)
+retains the original scopes; the [Batch489 discovery record](#batch489-discovery-at-f1160-start-2026-10-20)
+continues to hold its evidence, lower-confidence peer-row exclusion, and the
+standalone `No other slices were found.` line. F629 awaits source-bound
+Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0
+and Phase 2 gates remain open.

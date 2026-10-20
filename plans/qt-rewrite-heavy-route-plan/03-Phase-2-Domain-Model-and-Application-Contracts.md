@@ -53,12 +53,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch488 is active with seven complete and F1161 accepted/in progress as its final candidate; F629 awaits source-bound Windows x64 layout evidence, the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch489 is active with nine discovered candidates and F1162 next; F629 awaits source-bound Windows x64 layout evidence, the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1160 completed at `14d2c957cbcd8ebbf21a652408fada85ea13e924`; see the
-[completion record](03-Phase-2-Progress-Log.md#f1160-calendar-repeat-series-delete-date-complete-2026-10-20).
+F1161 completed at `81a1fc256fa7e7d32b589fe2bef193e1a213864e`; see the
+[completion record](03-Phase-2-Progress-Log.md#f1161-calendar-repeat-series-edit-event-type-complete-2026-10-20).
 
 ### Slice discovery batches
 
@@ -73,18 +73,19 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch488 (8 candidates; 7 complete; 1 accepted/in progress; 0 discovered)
+#### Active batch: Batch489 (9 candidates; 0 complete; 0 accepted/in progress; 9 discovered)
 
-1. F1154 - **Complete.** Type RosterAvailability's first-empty row output; preserve values 0–24, -1 as the full sentinel, and per-row `Result` errors (see the [completion record](03-Phase-2-Progress-Log.md#f1154-rosteravailability-first-empty-row-complete-2026-10-20)).
-2. F1155 - **Complete.** Type My Classes' nonnegative student-count output; preserve per-row `Result` errors (see the [completion record](03-Phase-2-Progress-Log.md#f1155-my-classes-student-count-complete-2026-10-20)).
-3. F1156 - **Complete.** Add an opaque UTF-8 Application grade value; preserve exact bytes, whitespace, and empty/missing values, with interpretation confined to existing consumers (see the [completion record](03-Phase-2-Progress-Log.md#f1156-selected-class-grade-complete-2026-10-20)).
-4. F1157 - **Complete.** Type Schedule Builder source day/start/end text as opaque UTF-16 values; preserve raw content, vector order, and current UI interpretation behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1157-schedule-builder-source-text-complete-2026-10-20)).
-5. F1158 - **Complete.** Give Co-Teacher schedule day/start identity its own `ClassCoTeacherPageScheduleSlot` value; preserve raw pair values and source order (see the [completion record](03-Phase-2-Progress-Log.md#f1158-co-teacher-schedule-slot-complete-2026-10-20)).
-6. F1159 - **Complete.** Add `ScheduleSlotStateReadIdentity` for raw UTF-16 day/start text; preserve state text, row order, and existing UI interpretation, without reusing F1151's testing key (see the [completion record](03-Phase-2-Progress-Log.md#f1159-schedule-slot-state-read-identity-complete-2026-10-20)).
-7. F1160 - **Complete.** Type the repeat-series delete request date as `Domain::GregorianDate`; retain raw input at the UI/use-case boundary and preserve exact validation behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1160-calendar-repeat-series-delete-date-complete-2026-10-20)).
-8. F1161 - **Accepted/in progress.** Type repeat-series edit request and occurrence-update `eventType` as `Domain::CalendarEventType`, retaining raw text at the Input boundary and preserving trimmed recognition, raw byte bounds, and validation behavior (see the [acceptance record](03-Phase-2-Progress-Log.md#f1161-calendar-repeat-series-edit-event-type-accepted-before-implementation-2026-10-20)).
+1. F1162 - **Discovered.** Type Calendar repeat-create `until` as `Domain::GregorianDate` through the use case/planner; preserve inclusive cutoff, range and invalid-input/no-port-call behavior, keeping raw invalid text at an Input boundary.
+2. F1163 - **Discovered.** Consider `Domain::GregorianDate` start/end fields for Calendar single-event save; preserve validation/order and decide how default-built requests retain raw invalid input at an Input boundary.
+3. F1164 - **Discovered.** Type the persisted Calendar series-edit occurrence date in `CalendarEventSeriesEditPlan`; preserve Technical failure on malformed persisted data, ordering, and shift behavior.
+4. F1165 - **Discovered.** Type Schedule Import projected `dayIndex`, `startMinute`, and `endMinute`; preserve `-1` unknown and invalid-projection error labels.
+5. F1166 - **Discovered.** Type the Upcoming Birthday reference date/input; preserve invalid-reference behavior that produces an empty schedule.
+6. F1167 - **Discovered.** Consider a Teacher Import count value for created, updated, and unchanged; preserve defaults, increments, and totals; negative values remain unadjudicated.
+7. F1168 - **Discovered.** Consider a shared opaque SHA-256 value for manual/startup Update contracts; preserve exact text without normalization.
+8. F1169 - **Discovered.** Type Sub Prep navigation weekdays and optional minutes; preserve unknown-day ignore, guards 0–6 and 0–1439, and earliest-day-without-time behavior.
+9. F1170 - **Discovered.** Type Sub Prep print ordering weekday/start-minute keys; preserve explicit unknown-sentinel ordering.
 
-Batch488 has eight candidates: F1154–F1160 are complete, F1161 is accepted/in progress, and none remain discovered. The original candidate list is in the [Batch488 discovery record](03-Phase-2-Progress-Log.md#batch488-discovery-at-f1152-start-2026-10-20). The batch has no push receipt and is not closed. F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+Batch489 has nine discovered candidates with F1162 next. See its [discovery record](03-Phase-2-Progress-Log.md#batch489-discovery-at-f1160-start-2026-10-20) for evidence and the excluded low-confidence student-name peer-row idea. Batch488 is complete locally; its documentation closeout commit must precede any push, and no push receipt exists (see the [local closeout record](03-Phase-2-Progress-Log.md#batch488-local-closeout-after-f1161-2026-10-20)). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 
