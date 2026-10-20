@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is active with F1235 next for acceptance and F1236 discovered (see [Batch498 discovery](03-Phase-2-Progress-Log.md#batch498-discovery-started-at-f1233-start-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). In active Batch498, F1235 is complete and F1236 is next for acceptance (see [F1235 completion](03-Phase-2-Progress-Log.md#f1235-scheduletime-weekday-ordinal-boundary-complete-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,10 +38,10 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch498 — Active (F1235–F1236 discovered):**
+**Batch498 — Active (F1235 complete; F1236 discovered):**
 
-1. **F1235 — Discovered; next for acceptance:** Use `Domain::Weekday` at the `ScheduleTime` boundary where appropriate; preserve weekday, minute, overlap, projection, label, and ordering behavior.
-2. **F1236 — Discovered:** Type shared calendar workbook cell coordinates and ranges; preserve one-based validation, inclusive containment, lookup precedence, merged values, and consumer ordering.
+1. **F1235 — Complete:** Use typed `Domain::Weekday` values in `ScheduleTime` and migrate boundary callers with explicit mappings; preserve weekday, minute, overlap, projection, label, and ordering behavior.
+2. **F1236 — Discovered; next for acceptance:** Type shared calendar workbook cell coordinates and ranges; preserve one-based validation, inclusive containment, lookup precedence, merged values, and consumer ordering.
 
 Batch495 and Batch496 are complete and pushed (see the [Batch495](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21) and [Batch496](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21) receipts). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is active with the two ordered candidates above. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 

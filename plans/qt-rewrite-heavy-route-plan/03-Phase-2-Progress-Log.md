@@ -57028,3 +57028,39 @@ suffix; raw registration names are not the CTest names. Use the documented
 disabled on this macOS host, report that blocker and scoped incremental
 `build/macos-clang-debug` verification without claiming Windows or full-suite
 coverage. At acceptance time, no implementation, tests, or build had started.
+
+### F1235 ScheduleTime weekday ordinal boundary complete - 2026-10-21
+
+F1235 completed with acceptance commit `e8868a74` and implementation/test
+commit `c7b3c2f5`. `Domain::ScheduleTime::fromMinutes` now accepts a typed
+`Domain::Weekday`, validates even cast-invalid enum values, and exposes the
+typed weekday accessor without `weekdayIndex()`. The stable Schedule Import
+projection helper accepts an optional typed weekday; invalid input keeps its
+source labels and projects no `scheduleTime`. Boundary callers explicitly map
+their own weekday enums. The accepted Class Details, Schedule Import, setup
+wizard, conflict mapping, ordering, overlap, and validation behavior remains
+preserved.
+
+The independent Tester reused the incremental `build/macos-clang-debug` tree
+and issued this build command; Ninja reported no work because the Executor had
+already built the affected targets:
+
+```text
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextDomainContractTests ClassMngrNextApplicationClassDetailsSaveUseCaseTests ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests ClassMngrNextApplicationScheduleImportStateValidationTests ClassMngrNextApplicationClassDetailsValidationPolicyTests ClassMngrScheduleImportTests ClassMngrScheduleImportDialogTests ClassMngrClassDetailsSavePageTests ClassMngrInitialSetupWizardClassCreateSaveParityTests --parallel 8
+```
+
+Ten focused CTests passed (10/10) with the offscreen platform:
+
+```text
+QT_QPA_PLATFORM=offscreen ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextDomainContractTests|ClassMngrNextApplicationClassDetailsSaveUseCaseTests|ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests|ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests|ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests|ClassMngrNextApplicationScheduleImportStateValidationTests|ClassMngrNextApplicationClassDetailsValidationPolicyTests|ClassMngrScheduleImportTests|ClassMngrScheduleImportDialogTests|ClassMngrClassDetailsSavePageTests)$'
+```
+
+The separate offscreen `ClassMngrInitialSetupWizardClassCreateSaveParityTests`
+run aborted during `WizardFixture::open()` / `QWizard::restart()` before save
+behavior, with `NSInvalidArgumentException: -[NSBundle initWithURL:]: nil URL
+argument`. Treat this as an unavailable test observation, not a product
+failure; setup-wizard parity remains an explicit verification gap.
+`git diff --check` passed. `cmake --preset windows-x64-debug` failed with
+`Could not use disabled preset "windows-x64-debug"`. Windows x64 and the full
+suite remain unverified.
+Batch498 remains active with F1235 complete and F1236 next for acceptance.
