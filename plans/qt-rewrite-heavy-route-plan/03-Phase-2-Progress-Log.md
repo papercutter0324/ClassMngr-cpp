@@ -57982,3 +57982,30 @@ had started. No Windows or full-suite result is claimed.
 
 Batch500 remains active with F1243–F1246 complete, F1247 accepted awaiting
 implementation, and F1248–F1252 discovered.
+
+### F1247 Teacher Import result counts across Platform complete - 2026-10-21
+
+F1247 completed at implementation commit
+`13199fe06c65e211ad6fbef903da8414f847a3b2`, following acceptance commit
+`398188529cf519889fa29cb15bef9e37149a11b7`. The four scoped source/test
+paths were `src/next/platform/application_services_teacher_import_apply_port.h`,
+`src/app/controllers/sidebar_controller_teacher_import.cpp`,
+`src/features/setup/ui/initial_setup_wizard.cpp`, and
+`tests/next_platform_application_services_teacher_import_apply_port_tests.cpp`.
+
+The Platform ApplyPort now carries the typed Application result after its
+existing error translation. The sidebar and Initial Setup unwrap with
+`.rawValue()` only for the Korean updated comparison and UI display. The
+legacy `TeacherImportRepository` summary, `TeacherService`, and `DataService`
+return path remain unchanged. Typed created/updated/unchanged category totals
+are preserved across teacher groups, and a successful same-input reapply
+reports unchanged counts.
+
+The incremental build succeeded for `ClassMngr`,
+`ClassMngrTeacherImportTests`, and
+`ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests`; both
+focused CTests passed (2/2), and `git diff --check` passed. No full UI runtime
+test, Windows build, or full-suite run was performed.
+
+Batch500 remains active with F1243–F1247 complete, F1248 next for acceptance,
+and F1249–F1252 discovered.
