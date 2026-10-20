@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (Batch488 pushed; F1165 complete; F629 open)
+### Current checkpoint - 2026-10-20 (Batch488 pushed; F1166 accepted/in progress; F629 open)
 
 Batch487 (F1144–F1153) is closed and pushed to `origin/Qt-Rewrite` at
 `c3c06e2f5432933a0e8b7df629e25b2afa920e2c`. Batch488 is active: F1154–F1158
@@ -71,8 +71,8 @@ incremental macOS Debug build covered `ClassMngr` and the Application,
 Platform, and Calendar Page parity targets; all three focused CTests passed,
 and `git diff --check` passed. No full suite or Windows build ran. Batch488 is
 closed and pushed at `138c2cf86f3bac153d948649980798fbfd066dd6`; the Phase 2
-progress log has the push receipt. Batch489 is active with F1162–F1165 complete
-and F1166–F1170 discovered in order; F1166 is next.
+progress log has the push receipt. Batch489 is active with F1162–F1165 complete,
+F1166 accepted/in progress, and F1167–F1170 discovered in order.
 F1163's acceptance commit is `c7660c884420ec2a8cdcb674b8788fc69982d336`, and
 its source/test commit is `030e9752ec581b8013c27eef37a4ef5e36af6531`. It
 types the shared Calendar save request while preserving raw input at the
@@ -99,7 +99,10 @@ macOS Debug targets built, and independent focused CTests passed 3/3. Tests
 cover typed values, invalid components, labels and precedence, plus Apply and
 review diagnostics. `git diff --check` passed. No full suite or Windows build
 ran. F629 still awaits source-bound Windows x64 layout evidence; the user
-cannot run Windows now.
+cannot run Windows now. F1166 is accepted/in progress to replace the Upcoming
+Birthday schedule's raw reference-date components with optional
+`Domain::GregorianDate`, retaining the empty-schedule result for invalid or
+absent reference dates.
 Phase 0 and Phase 2 gates remain open. The Phase 2 progress log records prior
 focused evidence, including outstanding ClassesPage assertions and the
 ScheduleWidget CTest timeout.

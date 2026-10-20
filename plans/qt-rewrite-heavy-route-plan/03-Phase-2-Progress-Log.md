@@ -52304,3 +52304,41 @@ Batch489 remains active with F1162–F1165 complete and F1166–F1170 discovered
 order; F1166 is next. Batch489 remains unpushed until F1170. F629 awaits
 source-bound Windows x64 layout evidence; the user cannot run Windows now, and
 the Phase 0 and Phase 2 gates remain open.
+
+### F1166 Upcoming Birthday reference date accepted before implementation - 2026-10-20
+
+F1166 is accepted/in progress. Replace `UpcomingBirthdayDate`'s raw
+year/month/day Application input with `std::optional<Domain::GregorianDate>`
+for `UpcomingBirthdayScheduleUseCase::build`, removing the raw integer
+boundary and conversion. The Feature adapter converts `QDate` components with
+`GregorianDate::fromComponents`; invalid Qt dates and values outside the
+Domain's 0001–9999 range map to `std::nullopt`. A missing reference date still
+returns an ordinary empty schedule before candidate processing, without an
+error.
+
+Preserve the supported year range, today/this-week/next-week boundaries,
+calendar-year rollover, maximum-year window cap, Feb 29 fallback to Feb 28 in
+non-leap years, deterministic ordering and locale comparator, Feature `QDate`
+output mapping, candidate filtering, and raw MM-dd birthday parsing/skip
+semantics. Do not change staff directory loading or failure warnings, UI,
+persistence, or other candidate fields.
+
+Acceptance evidence is `src/next/application/upcoming_birthday_schedule_use_case.h`,
+`src/features/teacher/upcoming_birthday_schedule.cpp`, Application and Feature
+tests, and their CMake test registrations. Migrate Application test helpers
+and callers to valid `GregorianDate`; cover nullopt returning empty. Add
+Feature coverage for invalid reference `QDate` returning empty. Add dedicated
+focused CTest registrations for both invalid-reference selectors, including
+the WIN32 Qt PATH setup used by neighboring tests. Preserve and run ordering
+and leap-day regression selectors. Build `ClassMngr`,
+`ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests`, and
+`ClassMngrUpcomingBirthdaysTests`; Executor and Tester will run all tests in
+those focused binaries and the focused CTests. Obtain independent Tester
+review and run `git diff --check`. No full-suite or Windows verification is
+implied. Implementation has not started.
+
+Batch489 remains active with nine candidates: F1162–F1165 complete, F1166
+accepted/in progress, and F1167–F1170 discovered in order. F1167 is next after
+F1166 closes. Batch489 remains unpushed until F1170. F629 awaits source-bound
+Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0
+and Phase 2 gates remain open.
