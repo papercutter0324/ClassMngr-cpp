@@ -56571,3 +56571,27 @@ Focused targets are `ClassMngr`,
 `ClassMngrCalendarImportTests`, and
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`. At
 acceptance time, no F1229 implementation or verification had started.
+
+### F1229 Calendar Event import accepted-candidate positions complete - 2026-10-21
+
+F1229 completed at implementation commit `493497ef` (`Phase2 - Type Calendar
+Event import candidate indexes`), following acceptance-record commit
+`96eef2c5`. `CalendarEventImportCandidateIndex` is a distinct explicit
+`std::size_t` value type with zero default, private storage, `.rawValue()`,
+equality, and no implicit conversions. `CalendarEventImportPlan` returns
+typed positions into the original candidate-signature vector, and the use
+case unwraps only when indexing the aligned prepared save requests with
+`.at()`. First-seen duplicate filtering, accepted input order, skipped counts,
+empty-input behavior, duplicate-only empty save behavior, the accepted-batch
+limit, exact signature identity, and query/save failure handling remain
+unchanged.
+
+The Executor built `ClassMngr` and all four focused test targets. The
+independent Tester repeated the build and passed all four focused CTests:
+`ClassMngrNextApplicationCalendarEventImportPlanTests`,
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`,
+`ClassMngrCalendarImportTests`, and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`.
+`git diff --check` passed. This was incremental macOS `arm64;x86_64` Debug
+verification; no full-suite or Windows run is claimed. Batch497 remains
+active, and F1230 is next for acceptance.

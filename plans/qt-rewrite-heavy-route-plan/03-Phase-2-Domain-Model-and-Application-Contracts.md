@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch497 is active; F1227 and F1228 are complete, F1229 is accepted, and F1230 is next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch497 is active; F1227 through F1229 are complete, and F1230 is next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1228 completed at implementation commit `4d9a7047`; its policy, list-model, and selected page fallback checks passed (see [F1228 completion](03-Phase-2-Progress-Log.md#f1228-sub-prep-visible-class-ordering-positions-complete-2026-10-21)). F1229 is accepted before implementation, and Batch497 remains active. F629 plus the Phase 0 and Phase 2 gates remain open.
+F1229 completed at implementation commit `493497ef`; its planner, use-case, calendar import, and Platform save-port checks passed (see [F1229 completion](03-Phase-2-Progress-Log.md#f1229-calendar-event-import-accepted-candidate-positions-complete-2026-10-21)). Batch497 remains active, with F1230 next for acceptance. F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,11 +72,11 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch497 (8 candidates; 2 complete, 1 accepted, 5 discovered)
+#### Active batch: Batch497 (8 candidates; 3 complete, 5 discovered)
 
 1. F1227 - **Complete.** Add a distinct zero-based typed position to Schedule Import eligibility issues; first-failure ordering, default-zero global issues, and Feature grade/level lookup are verified.
 2. F1228 - **Complete.** Type positions in the Sub Prep visible-class ordering facts; comparator, stable ties, and filtered-to-projection mapping are verified.
-3. F1229 - **Accepted.** Type Calendar Event import accepted-candidate positions; preserve first-seen filtering, prepared-request mapping, input order, and skipped counts.
+3. F1229 - **Complete.** Type Calendar Event import accepted-candidate positions; preserve first-seen filtering, prepared-request mapping, input order, and skipped counts.
 4. F1230 - **Discovered.** Type Teacher Import review selection positions; preserve validation, group order, and candidate order.
 5. F1231 - **Discovered.** Type duplicate student-name row positions across Domain and Speaking Evaluation/Roster Save diagnostics; preserve group, row, and issue order.
 6. F1232 - **Discovered.** Type Class Details duplicate schedule-row positions; preserve diagnostic and row ordering.
