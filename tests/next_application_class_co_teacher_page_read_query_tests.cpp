@@ -1,9 +1,11 @@
 #include "next/application/class_co_teacher_page_read_query.h"
+#include "next/application/schedule_testing_assignment_read_query.h"
 
 #include <QtTest/QtTest>
 
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -12,6 +14,23 @@ using namespace ClassMngr::Next::Application;
 
 namespace
 {
+
+static_assert(!std::is_same_v<
+    ClassCoTeacherPageScheduleSlot,
+    ScheduleTestingAssignmentKey
+    >);
+static_assert(!std::is_convertible_v<
+    ClassCoTeacherPageScheduleSlot,
+    ScheduleTestingAssignmentKey
+    >);
+static_assert(!std::is_convertible_v<
+    ScheduleTestingAssignmentKey,
+    ClassCoTeacherPageScheduleSlot
+    >);
+static_assert(std::is_same_v<
+    decltype(ClassCoTeacherPageFields::regularSchedule)::value_type,
+    ClassCoTeacherPageScheduleSlot
+    >);
 
 Domain::ClassId classId(const std::string& value)
 {
@@ -60,10 +79,52 @@ class NextApplicationClassCoTeacherPageReadQueryTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void scheduleSlotPreservesExactPairAndEquality();
     void rejectsNonCanonicalClassIdsBeforePortCall();
     void callsPortOnceWithTypedIdAndPreservesPageFields();
     void propagatesPortErrorAndRejectsIdentityMismatch();
 };
+
+void NextApplicationClassCoTeacherPageReadQueryTests::
+scheduleSlotPreservesExactPairAndEquality()
+{
+    const ClassCoTeacherPageScheduleSlot exact(
+        u" Monday ",
+        u"not a time:99 "
+        );
+    const ClassCoTeacherPageScheduleSlot samePair(
+        u" Monday ",
+        u"not a time:99 "
+        );
+    const ClassCoTeacherPageScheduleSlot differentDay(
+        u"Monday",
+        u"not a time:99 "
+        );
+    const ClassCoTeacherPageScheduleSlot differentTime(
+        u" Monday ",
+        u"not a time:99"
+        );
+    const ClassCoTeacherPageScheduleSlot empty;
+
+    QCOMPARE(exact.day(), std::u16string(u" Monday "));
+    QCOMPARE(exact.startTime(), std::u16string(u"not a time:99 "));
+    QVERIFY(exact == samePair);
+    QVERIFY(!(exact == differentDay));
+    QVERIFY(!(exact == differentTime));
+    QVERIFY(empty.day().empty());
+    QVERIFY(empty.startTime().empty());
+
+    ClassCoTeacherPageFields fields;
+    fields.regularSchedule = {
+        ClassCoTeacherPageScheduleSlot(u" Wednesday ", u"raw slot "),
+        ClassCoTeacherPageScheduleSlot(u"not-a-day", u"99:99")
+    };
+    QCOMPARE(fields.regularSchedule.size(), std::size_t(2));
+    QCOMPARE(fields.regularSchedule[0].day(), std::u16string(u" Wednesday "));
+    QCOMPARE(fields.regularSchedule[0].startTime(), std::u16string(u"raw slot "));
+    QCOMPARE(fields.regularSchedule[1].day(), std::u16string(u"not-a-day"));
+    QCOMPARE(fields.regularSchedule[1].startTime(), std::u16string(u"99:99"));
+}
 
 void NextApplicationClassCoTeacherPageReadQueryTests::
 rejectsNonCanonicalClassIdsBeforePortCall()
@@ -105,8 +166,8 @@ callsPortOnceWithTypedIdAndPreservesPageFields()
     fields.classGrade = u"E4";
     fields.classLevel = u"Theseus";
     fields.regularSchedule = {
-        {u"Monday", u"4:00 PM"},
-        {u"Wednesday", u"4:00 PM"}
+        ClassCoTeacherPageScheduleSlot(u"Monday", u"4:00 PM"),
+        ClassCoTeacherPageScheduleSlot(u"Wednesday", u"4:00 PM")
     };
     const auto expected = fields;
     port.result = ClassCoTeacherPageReadResult::success(snapshot(

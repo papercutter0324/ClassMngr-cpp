@@ -427,8 +427,8 @@ void ClassCoTeacherPage::updateTitle()
             for (const auto& row : classFields.value().regularSchedule)
             {
                 ClassTime time;
-                time.day = QString::fromStdU16String(row.day);
-                time.startTime = QString::fromStdU16String(row.startTime);
+                time.day = QString::fromStdU16String(row.day());
+                time.startTime = QString::fromStdU16String(row.startTime());
                 info.classTimes.append(std::move(time));
             }
 

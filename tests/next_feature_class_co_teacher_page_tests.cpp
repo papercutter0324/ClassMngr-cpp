@@ -144,7 +144,9 @@ Application::ClassCoTeacherPageFields readFields(
     }
     fields.classGrade = std::move(grade);
     fields.classLevel = std::move(level);
-    fields.regularSchedule = {{u"Monday", u"4:00 PM"}};
+    fields.regularSchedule = {
+        Application::ClassCoTeacherPageScheduleSlot(u"Monday", u"4:00 PM")
+    };
     return fields;
 }
 

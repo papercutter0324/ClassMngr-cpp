@@ -287,10 +287,10 @@ private:
             );
         for (const ClassPageDetailsRegularTime& time : info.regularTimes)
         {
-            fields.regularSchedule.push_back({
-                .day = time.day.toStdU16String(),
-                .startTime = time.startTime.toStdU16String()
-            });
+            fields.regularSchedule.emplace_back(
+                time.day.toStdU16String(),
+                time.startTime.toStdU16String()
+                );
         }
         return fields;
     }

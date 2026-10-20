@@ -228,9 +228,15 @@ mapsAssignedClassAndPreferredTeacherFromActiveSession()
     QVERIFY(fields.classGrade == u"E4");
     QVERIFY(fields.classLevel == u"Theseus");
     QVERIFY((fields.regularSchedule == std::vector<
-        Application::ClassCoTeacherPageScheduleRow>{
-            {u"Monday", u"4:00 PM"},
-            {u"Wednesday", u"4:00 PM"}
+        Application::ClassCoTeacherPageScheduleSlot>{
+            Application::ClassCoTeacherPageScheduleSlot(
+                u"Monday",
+                u"4:00 PM"
+                ),
+            Application::ClassCoTeacherPageScheduleSlot(
+                u"Wednesday",
+                u"4:00 PM"
+                )
         }));
     QVERIFY(result.value().teacherDisplayName.value() == u"Preferred Display");
 
@@ -301,9 +307,15 @@ treatsNonpositiveTeacherIdsAsUnassignedAndPreservesClassFields()
     QVERIFY(result.value().classFields.value().classGrade == u"E4");
     QVERIFY(result.value().classFields.value().classLevel == u"Theseus");
     QVERIFY((result.value().classFields.value().regularSchedule == std::vector<
-        Application::ClassCoTeacherPageScheduleRow>{
-            {u"Monday", u"4:00 PM"},
-            {u"Wednesday", u"4:00 PM"}
+        Application::ClassCoTeacherPageScheduleSlot>{
+            Application::ClassCoTeacherPageScheduleSlot(
+                u"Monday",
+                u"4:00 PM"
+                ),
+            Application::ClassCoTeacherPageScheduleSlot(
+                u"Wednesday",
+                u"4:00 PM"
+                )
         }));
     QVERIFY(result.value().teacherDisplayName);
     QVERIFY(result.value().teacherDisplayName.value().empty());
@@ -316,9 +328,15 @@ treatsNonpositiveTeacherIdsAsUnassignedAndPreservesClassFields()
     QVERIFY(result.value().classFields.value().classGrade == u"E4");
     QVERIFY(result.value().classFields.value().classLevel == u"Theseus");
     QVERIFY((result.value().classFields.value().regularSchedule == std::vector<
-        Application::ClassCoTeacherPageScheduleRow>{
-            {u"Monday", u"4:00 PM"},
-            {u"Wednesday", u"4:00 PM"}
+        Application::ClassCoTeacherPageScheduleSlot>{
+            Application::ClassCoTeacherPageScheduleSlot(
+                u"Monday",
+                u"4:00 PM"
+                ),
+            Application::ClassCoTeacherPageScheduleSlot(
+                u"Wednesday",
+                u"4:00 PM"
+                )
         }));
     QVERIFY(result.value().teacherDisplayName);
     QVERIFY(result.value().teacherDisplayName.value().empty());
@@ -581,8 +599,14 @@ missingClassInfoKeepsScheduleAndDefaults()
     QVERIFY(insertRegularTime(
         services,
         id,
-        QStringLiteral("Wednesday"),
-        QStringLiteral("2:00 PM")
+        QStringLiteral(" Wednesday "),
+        QStringLiteral("2:00 PM ")
+        ));
+    QVERIFY(insertRegularTime(
+        services,
+        id,
+        QStringLiteral("not-a-day"),
+        QStringLiteral("not a time:99")
         ));
     QVERIFY(insertRegularTime(
         services,
@@ -601,10 +625,25 @@ missingClassInfoKeepsScheduleAndDefaults()
     QVERIFY(fields.classGrade.empty());
     QVERIFY(fields.classLevel.empty());
     QVERIFY((fields.regularSchedule == std::vector<
-        Application::ClassCoTeacherPageScheduleRow>{
-            {u"Wednesday", u"2:00 PM"},
-            {u"Monday", u"1:00 PM"}
+        Application::ClassCoTeacherPageScheduleSlot>{
+            Application::ClassCoTeacherPageScheduleSlot(
+                u" Wednesday ",
+                u"2:00 PM "
+                ),
+            Application::ClassCoTeacherPageScheduleSlot(
+                u"not-a-day",
+                u"not a time:99"
+                ),
+            Application::ClassCoTeacherPageScheduleSlot(
+                u"Monday",
+                u"1:00 PM"
+                )
         }));
+    QCOMPARE(fields.regularSchedule[0].day(), std::u16string(u" Wednesday "));
+    QCOMPARE(fields.regularSchedule[0].startTime(), std::u16string(u"2:00 PM "));
+    QCOMPARE(fields.regularSchedule[1].day(), std::u16string(u"not-a-day"));
+    QCOMPARE(fields.regularSchedule[1].startTime(), std::u16string(u"not a time:99"));
+    QCOMPARE(fields.regularSchedule[2].day(), std::u16string(u"Monday"));
     QVERIFY(scheduled.value().teacherDisplayName.value().empty());
 }
 
