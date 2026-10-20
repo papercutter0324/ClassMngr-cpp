@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batches 481–492 are complete and pushed, with Batch492 at `3e6c09d9` (see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)). Batch493 is complete and pushed at `78989f8b` (see its [push receipt](03-Phase-2-Progress-Log.md#batch493-push-receipt-2026-10-20)). Batch494 is active with F1202 accepted/current and F1203–F1209 discovered (see [Batch494 discovery](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20) and [F1202 acceptance](03-Phase-2-Progress-Log.md#f1202-class-transfer-export-selection-ordinal-accepted-before-implementation-2026-10-20)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batches 481–492 are complete and pushed, with Batch492 at `3e6c09d9` (see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)). Batch493 is complete and pushed at `78989f8b` (see its [push receipt](03-Phase-2-Progress-Log.md#batch493-push-receipt-2026-10-20)). Batch494 is active and unpushed: F1202 is complete at `20edbe1c`, F1203 is accepted/current before implementation, and F1204–F1209 remain discovered (see [F1202 completion](03-Phase-2-Progress-Log.md#f1202-class-transfer-export-selection-ordinal-complete-2026-10-20) and [F1203 acceptance](03-Phase-2-Progress-Log.md#f1203-roster-row-transfer-position-types-accepted-before-implementation-2026-10-20)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,10 +38,10 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch494 — Active; eight candidates, with F1202 accepted/current and F1203–F1209 discovered:**
+**Batch494 — Active and unpushed; eight candidates, with F1202 complete, F1203 accepted/current, and F1204–F1209 discovered:**
 
-1. **F1202 — Accepted/current:** Type `ClassExportSourceClass::selectedIndex` as `ClassTransferExportSelectionOrdinal`; preserve request order and zero-based selection to one-based class-key mapping (see [acceptance](03-Phase-2-Progress-Log.md#f1202-class-transfer-export-selection-ordinal-accepted-before-implementation-2026-10-20)).
-2. **F1203 — Discovered:** Type roster-row transfer source-request and destination-result positions; preserve `-1`/range failure order and destination semantics.
+1. **F1202 — Complete:** `ClassExportSourceClass::selectedIndex` is typed as `ClassTransferExportSelectionOrdinal`; request order and zero-based selection to one-based class-key mapping are preserved (see [completion](03-Phase-2-Progress-Log.md#f1202-class-transfer-export-selection-ordinal-complete-2026-10-20)).
+2. **F1203 — Accepted/current:** Type transfer source-request and destination-result positions with distinct signed-source and `std::size_t` destination wrappers; preserve `-1`/range failure order and destination semantics (see [acceptance](03-Phase-2-Progress-Log.md#f1203-roster-row-transfer-position-types-accepted-before-implementation-2026-10-20)). No implementation or verification has started.
 3. **F1204 — Discovered:** Type roster-row reorder source/destination arguments; preserve validation order, same-row rejection, and move behavior.
 4. **F1205 — Discovered:** Type the Speaking Evaluation score-assignment roster row; preserve zero-based assignment order and changed-grade filtering.
 5. **F1206 — Discovered:** Type Speaking Evaluation roster-name import source/target positions; preserve filtering, order, and caller-supplied target values, and assess source/target semantics separately.
@@ -49,7 +49,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 7. **F1208 — Discovered:** Type Speaking Evaluation save-cell row/column, separately from F1201; preserve 25×11 zero-based coordinates and `-1` absence sentinels.
 8. **F1209 — Discovered:** Reuse `ClassTabNavigationOrderRank` for Sub Prep day/time schedule ranks from a neutral Application header; preserve sentinel 1000 including the valid 16:40 collision, comparisons, tuple tie rules, and separate Sub Prep weekday/minute preparation while keeping the comparator distinct.
 
-Batch492 remains complete and pushed at `3e6c09d9`; see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20). Batch493 is complete and pushed at `78989f8b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch493-push-receipt-2026-10-20). Batch494's [discovery record](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20) and [F1202 acceptance](03-Phase-2-Progress-Log.md#f1202-class-transfer-export-selection-ordinal-accepted-before-implementation-2026-10-20) are in the progress log. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch492 remains complete and pushed at `3e6c09d9`; see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20). Batch493 is complete and pushed at `78989f8b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch493-push-receipt-2026-10-20). Batch494's [discovery record](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20), [F1202 completion](03-Phase-2-Progress-Log.md#f1202-class-transfer-export-selection-ordinal-complete-2026-10-20), and [F1203 acceptance](03-Phase-2-Progress-Log.md#f1203-roster-row-transfer-position-types-accepted-before-implementation-2026-10-20) are in the progress log; Batch494 remains unpushed and open. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 

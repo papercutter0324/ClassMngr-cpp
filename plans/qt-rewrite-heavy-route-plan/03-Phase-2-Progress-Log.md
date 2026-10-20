@@ -54855,3 +54855,58 @@ Build `ClassMngr`, `ClassMngrNextApplicationClassTransferExportQueryTests`,
 `ClassMngrClassTransferExportCodecParityTests`; run those three focused CTests
 and `git diff --check`. No new test target is needed. No F1202 implementation
 or verification has started.
+
+### F1202 Class Transfer export selection ordinal complete - 2026-10-20
+
+F1202 completed at source/test commit
+`20edbe1c9baf30b4d8c3051622bb3fa18ffd9aa0` (`Phase2 - Type Class Transfer
+export selection ordinal`), following acceptance-doc commit
+`788632f2005a44fb443b9c93c4953036156bc13a`. The four changed paths were
+`src/next/application/class_transfer_export_query.h`,
+`src/next/platform/application_services_class_transfer_export_source_read_port.h`,
+`tests/next_application_class_transfer_export_query_tests.cpp`, and
+`tests/next_platform_class_transfer_export_source_tests.cpp`.
+
+In `build/macos-clang-debug`, the independent Tester built `ClassMngr`,
+`ClassMngrNextApplicationClassTransferExportQueryTests`,
+`ClassMngrNextPlatformClassTransferExportSourceTests`, and
+`ClassMngrClassTransferExportCodecParityTests`; Ninja reported no work to do,
+so this was incremental verification with no recompilation. With
+`QT_QPA_PLATFORM=offscreen`, the three focused CTests passed 3/3, and
+`git diff --check` passed. No full-suite or Windows check is claimed. The
+worktree was clean after the source commit; Batch494 remains open and unpushed.
+
+### F1203 Roster-row transfer position types accepted before implementation - 2026-10-20
+
+F1203 is accepted/current before implementation, based on two independent
+read-only Explorer reports. Add distinct Application wrappers:
+`RosterRowTransferSourceIndex` uses signed `int` with default `-1` on
+`RosterRowTransferRequest::sourceRow`; `RosterRowTransferDestinationIndex`
+uses `std::size_t` with default zero on the preparation and success
+`destinationRow` fields. Both expose `.rawValue()` and equality, with no
+implicit conversions. Adapt the clicked UI `int` and unwrap at existing
+helper/index boundaries.
+
+Preserve the current sequence and outcomes: class-ID checks run first;
+`removeRosterRow` rejects negative and out-of-range source rows before blank
+row checks; width/source validation follows, then target loading. Preparation
+maps the row, rejects an empty source, rejects a full roster when its first
+empty slot equals target size before duplicate checks, and returns the first
+empty slot. The use case writes to and returns that same slot, and
+`RosterModel::insertTransferredRow` also consumes the preparation result.
+Keep shared `removeRosterRow`, general
+`RosterAvailabilityFirstEmptyRow`, the reorder API, repository API, validation
+ordering, and failure behavior unchanged. F1204 reorder remains separate.
+
+Relevant sources are
+`src/next/application/roster_row_transfer_use_case.h`,
+`src/next/application/roster_row_transfer_preparation.h`,
+`src/next/application/roster_row_removal.h`,
+`src/next/application/roster_row_availability.h`,
+`src/features/roster/ui/roster_editor_widget_transfer.cpp`, and
+`src/features/roster/ui/roster_model_rows.cpp`. Update the existing tests in
+`tests/next_application_roster_row_transfer_use_case_tests.cpp`,
+`tests/next_application_roster_row_transfer_preparation_tests.cpp`, and
+`tests/roster_transfer_menu_tests.cpp`. No F1203 implementation or
+verification has started. Batch494 remains open and unpushed; F1204–F1209
+remain discovered.
