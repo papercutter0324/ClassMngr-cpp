@@ -54405,3 +54405,54 @@ order; retain blank-entry bypass coverage. Focused verification is to build
 `ClassMngrInitialSetupWizardTests` CTests and `git diff --check`. This
 acceptance was recorded before F1195 implementation; no F1195 implementation
 or verification result is claimed here.
+
+### F1195 Initial Setup identity requirements complete - 2026-10-20
+
+F1195 completed at source/test commit
+`6a2919a9d2786871aad40c19dbf09fb51ba9da95` (`Phase2 - Complete F1195 Initial
+Setup identity requirements`). The commit contains exactly the four authorized
+Application contract, Feature caller, Application test, and Wizard test files.
+The invariant-preserving Qt-free result, caller update, all-eight-combination
+consistency coverage, and exact prompt-order/Add Another assertion are present.
+
+The test harness uses a transparent 1x1 `QWizard::BackgroundPixmap` before
+showing test wizards, preventing Qt's lazy macOS bundle lookup. This is a
+test-only change; production code and acceptance assertions are unchanged.
+The focused build passed for `ClassMngr`,
+`ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests`, and
+`ClassMngrInitialSetupWizardTests` in `build/macos-clang-debug`. Independent
+verification passed both focused CTests (2/2), the direct changed selector
+(3 cases, 0 failures), and the full Wizard CTest including blank-entry bypass.
+`git diff --check` passed. No full suite or Windows run occurred.
+
+F1196 is accepted/current; F1197–F1201 remain discovered. F629 awaits
+source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates
+remain open.
+
+### F1196 Schedule Import schedules-cleared count accepted before implementation - 2026-10-20
+
+F1196 is accepted/current before implementation. Type only the pre-apply
+Schedule Import schedules-cleared count by returning the existing
+`Application::ScheduleImportReviewCount` from
+`projectScheduleImportSchedulesCleared` and carrying that typed count through
+the review-dialog preview local into `ScheduleImportReviewSummary`. Unwrap
+with `.rawValue()` only at the existing display boundary. Reuse the existing
+count type; do not add another.
+
+Preserve exact semantics: return zero for Intensive + UpdateExisting;
+otherwise count once per snapshot class whose selected-mode schedule list is
+nonempty and whose full-parsed persisted class ID is absent from the set of
+positive full-parsed target IDs, without filtering targets by class action.
+Normal mode ignores intensive mode. Preserve leading-zero ID equivalence
+(`0005` -> 5), reject trailing text (`5suffix`), map invalid IDs to -1, return
+zero when no state snapshot is available, and preserve displayed text. Do not
+change persisted/post-apply legacy `ScheduleImportSummary::schedulesCleared` or
+`ScheduleImportAppliedCount`.
+
+Build `ClassMngr`,
+`ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests`,
+`ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests` in the
+existing `build/macos-clang-debug`; run the matching four focused CTests and
+`git diff --check`. No full-suite or Windows gate is claimed. F1196
+implementation and verification have not started.

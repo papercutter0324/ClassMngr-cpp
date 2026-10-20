@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1195 accepted; Batch492 pushed)
+### Current checkpoint - 2026-10-20 (F1195 complete; F1196 accepted; Batch492 pushed)
 
 Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
@@ -64,8 +64,15 @@ pushed to `origin/Qt-Rewrite` at
 `3e6c09d9e5a82bc23281a76970683e4372dcec9d`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)
 records the handoff. Batch493 is active with ten ordered candidates; F1192
 through F1194 are complete, with F1194 at source/test commit `107531bc`.
-F1195 is accepted/current and F1196–F1201 are discovered. Acceptance,
-discovery, and verification evidence are in the [Phase 2 progress
+F1195 completed at source/test commit
+`6a2919a9d2786871aad40c19dbf09fb51ba9da95`; independent verification passed
+the Application and Wizard CTests 2/2, the changed Wizard selector, and the
+full Wizard target, including the blank-entry bypass. The test harness sets a
+transparent QWizard background pixmap to avoid macOS's lazy bundle lookup;
+production behavior and assertions are unchanged. F1196 is accepted/current,
+and F1197–F1201 remain discovered. Batch493 remains unpushed until all ten
+slices and its closeout are committed. Acceptance, discovery, and verification
+evidence are in the [Phase 2 progress
 log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
 F1194 completed at source/test commit `107531bc`. A signed Application

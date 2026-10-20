@@ -8447,3 +8447,14 @@ the two selectors emitted non-failing font-alias and size-hint warnings.
 `git diff --check` passed. No full suite or Windows run occurred. Batch487 is
 complete locally; Batch488 is active with F1154 next. The push will follow the
 Batch487 closeout commit, and no push receipt exists yet.
+
+## 2026-10-20 — macOS QWizard test background lookup
+
+In this test environment, showing a `QWizard` without an explicit
+`BackgroundPixmap` can trigger Qt's lazy lookup for the macOS
+`com.apple.KeyboardSetupAssistant` image; a nil LaunchServices URL then aborts
+with `NSBundle initWithURL:nil` before the test's page logic runs. Setting a
+transparent 1×1 `QWizard::BackgroundPixmap` in the test-only show helper avoids
+the lookup. Offscreen and minimal platform selection alone did not. Keep this
+workaround inside test harnesses; the focused selector and full Wizard CTest
+passed with assertions intact.

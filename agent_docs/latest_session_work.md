@@ -6136,3 +6136,30 @@ acceptance reassessment; F1113 and F1114 remain discovered, not accepted. The
 combined Phase 0 gate remains open because F629 still needs source-bound
 Windows x64 layout evidence, which the user cannot run right now; the Phase 2
 gate also remains open.
+
+## Current continuation - 2026-10-20 (F1195 complete; F1196 accepted; Batch493 active)
+
+The current deployment is `phase2-batch490-f1172-20261020`, on the Heavy route
+and `Qt-Rewrite`. Batch492 is complete and pushed at
+`3e6c09d9e5a82bc23281a76970683e4372dcec9d`. Batch493's ordered ten-slice list
+is current in the Phase 2 plan; F1192–F1195 are complete and F1196 is accepted
+as current. F1197–F1201 remain discovered. F629 still awaits source-bound
+Windows x64 layout evidence; the Phase 0 and Phase 2 gates remain open.
+
+F1195 completed at source/test commit
+`6a2919a9d2786871aad40c19dbf09fb51ba9da95`. The incremental macOS Debug build
+passed for `ClassMngr` and both focused targets. Independent verification
+passed the Application and Wizard CTests 2/2, the changed selector (3 cases),
+and the full Wizard CTest, including blank-entry bypass coverage. The
+test-only wizard helper supplies a transparent 1×1 BackgroundPixmap before
+showing each wizard, preventing Qt's lazy macOS system-bundle lookup; it does
+not alter production behavior or weaken assertions. `git diff --check` passed.
+No full suite or Windows run occurred.
+
+F1196 reuses `Application::ScheduleImportReviewCount` for the pre-apply
+schedules-cleared projection and review-dialog preview count. Preserve mode,
+full ID parsing, leading-zero equivalence, trailing-text rejection, per-class
+counting, and zero when no state snapshot is available. The post-apply legacy
+summary remains unchanged. Next: implement F1196 and run its four accepted
+focused CTests. Continue committing each slice; push Batch493 only after all
+ten slices and the batch closeout are committed.
