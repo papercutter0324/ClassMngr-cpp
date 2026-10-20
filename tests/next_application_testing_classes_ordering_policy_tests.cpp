@@ -1,6 +1,7 @@
 #include "next/application/testing_classes_ordering_policy.h"
 
 #include <cstdlib>
+#include <cstdint>
 #include <iostream>
 #include <string_view>
 #include <type_traits>
@@ -9,6 +10,21 @@
 
 using namespace ClassMngr::Next::Application;
 
+using TestingClassesRank = TestingClassesOrderingRank;
+
+static_assert(std::is_default_constructible_v<TestingClassesRank>);
+static_assert(std::is_constructible_v<TestingClassesRank, std::int32_t>);
+static_assert(!std::is_convertible_v<std::int32_t, TestingClassesRank>);
+static_assert(!std::is_convertible_v<TestingClassesRank, std::int32_t>);
+static_assert(std::is_same_v<
+    decltype(TestingClassesOrderingFact{}.gradeRank),
+    TestingClassesRank
+    >);
+static_assert(std::is_same_v<
+    decltype(TestingClassesOrderingFact{}.levelRank),
+    TestingClassesRank
+    >);
+static_assert(TestingClassesRank{}.rawValue() == 1'000);
 static_assert(std::is_default_constructible_v<TestingClassesOrderedRowIndex>);
 static_assert(std::is_constructible_v<TestingClassesOrderedRowIndex, std::size_t>);
 static_assert(!std::is_convertible_v<std::size_t, TestingClassesOrderedRowIndex>);
@@ -25,6 +41,32 @@ namespace
 {
 
 using Fact = TestingClassesOrderingFact;
+
+Fact fact(
+    const std::int32_t gradeRank,
+    const std::int32_t levelRank,
+    std::u16string levelText,
+    std::u16string className
+    )
+{
+    return {
+        .gradeRank = TestingClassesRank{gradeRank},
+        .levelRank = TestingClassesRank{levelRank},
+        .levelText = std::move(levelText),
+        .className = std::move(className)
+    };
+}
+
+bool rankHasValueSemantics()
+{
+    constexpr TestingClassesRank defaultRank;
+    constexpr TestingClassesRank explicitRank{7};
+
+    return defaultRank.rawValue() == 1'000
+        && explicitRank.rawValue() == 7
+        && explicitRank == TestingClassesRank{7}
+        && explicitRank != TestingClassesRank{8};
+}
 
 bool orderedRowIndexHasValueSemantics()
 {
@@ -64,8 +106,8 @@ int compareUtf16Descending(
 bool gradeRankPrecedesLevelRankAndText()
 {
     const std::vector<Fact> rows{
-        {1, 0, u"Alpha", u"Alpha"},
-        {0, 1, u"Zulu", u"Zulu"}
+        fact(1, 0, u"Alpha", u"Alpha"),
+        fact(0, 1, u"Zulu", u"Zulu")
     };
 
     return orderTestingClassesRows(rows, compareUtf16)
@@ -78,8 +120,8 @@ bool gradeRankPrecedesLevelRankAndText()
 bool levelRankPrecedesLevelAndClassText()
 {
     const std::vector<Fact> rows{
-        {0, 2, u"Alpha", u"Alpha"},
-        {0, 1, u"Zulu", u"Zulu"}
+        fact(0, 2, u"Alpha", u"Alpha"),
+        fact(0, 1, u"Zulu", u"Zulu")
     };
 
     return orderTestingClassesRows(rows, compareUtf16)
@@ -92,8 +134,8 @@ bool levelRankPrecedesLevelAndClassText()
 bool injectedComparatorOrdersLevelText()
 {
     const std::vector<Fact> rows{
-        {0, 1000, u"Alpha", u"Zulu"},
-        {0, 1000, u"Zulu", u"Alpha"}
+        fact(0, 1000, u"Alpha", u"Zulu"),
+        fact(0, 1000, u"Zulu", u"Alpha")
     };
 
     return orderTestingClassesRows(rows, compareUtf16Descending)
@@ -106,8 +148,8 @@ bool injectedComparatorOrdersLevelText()
 bool injectedComparatorOrdersClassNameAfterEqualLevelText()
 {
     const std::vector<Fact> rows{
-        {0, 0, u"Major", u"Alpha"},
-        {0, 0, u"Major", u"Zulu"}
+        fact(0, 0, u"Major", u"Alpha"),
+        fact(0, 0, u"Major", u"Zulu")
     };
 
     return orderTestingClassesRows(rows, compareUtf16Descending)
@@ -120,9 +162,9 @@ bool injectedComparatorOrdersClassNameAfterEqualLevelText()
 bool unknownRankSentinelComparesAfterKnownRanks()
 {
     const std::vector<Fact> rows{
-        {1000, 0, u"Alpha", u"Unknown grade"},
-        {2, 1000, u"Alpha", u"Unknown level"},
-        {2, 1, u"Zulu", u"Known grade and level"}
+        fact(1000, 0, u"Alpha", u"Unknown grade"),
+        fact(2, 1000, u"Alpha", u"Unknown level"),
+        fact(2, 1, u"Zulu", u"Known grade and level")
     };
 
     return orderTestingClassesRows(rows, compareUtf16)
@@ -136,9 +178,9 @@ bool unknownRankSentinelComparesAfterKnownRanks()
 bool exactTiesHaveNoPromisedOrder()
 {
     const std::vector<Fact> rows{
-        {0, 0, u"Major", u"Same"},
-        {0, 0, u"Major", u"Same"},
-        {0, 0, u"Major", u"Same"}
+        fact(0, 0, u"Major", u"Same"),
+        fact(0, 0, u"Major", u"Same"),
+        fact(0, 0, u"Major", u"Same")
     };
     const auto rowOrder = orderTestingClassesRows(rows, compareUtf16);
     if (rowOrder.size() != rows.size())
@@ -163,6 +205,11 @@ bool exactTiesHaveNoPromisedOrder()
 
 int main()
 {
+    if (!rankHasValueSemantics())
+    {
+        std::cerr << "Testing Classes ranks should preserve their value semantics.\n";
+        return EXIT_FAILURE;
+    }
     if (!orderedRowIndexHasValueSemantics())
     {
         std::cerr << "Ordered row indexes should have value semantics.\n";

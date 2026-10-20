@@ -57,6 +57,8 @@
 namespace
 {
 constexpr int TeacherRoomRole = Qt::UserRole + 1;
+using TestingClassesOrderingRank =
+    ClassMngr::Next::Application::TestingClassesOrderingRank;
 
 QString classListLabel(
     const TestingClass& testingClass
@@ -1269,8 +1271,12 @@ void TestingClassesPage::rebuildClassList(
     for (const TestingClass& testingClass : std::as_const(testingClasses))
     {
         orderingFacts.push_back({
-            .gradeRank = gradeOrder(testingClass.grade),
-            .levelRank = levelOrder(testingClass.grade, testingClass.level),
+            .gradeRank = TestingClassesOrderingRank{
+                gradeOrder(testingClass.grade)
+            },
+            .levelRank = TestingClassesOrderingRank{
+                levelOrder(testingClass.grade, testingClass.level)
+            },
             .levelText = testingClass.level.toStdU16String(),
             .className = testingClass.name.toStdU16String()
         });

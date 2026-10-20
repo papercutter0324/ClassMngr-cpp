@@ -12,12 +12,38 @@
 namespace ClassMngr::Next::Application
 {
 
+class TestingClassesOrderingRank final
+{
+public:
+    constexpr TestingClassesOrderingRank() noexcept = default;
+
+    explicit constexpr TestingClassesOrderingRank(
+        const std::int32_t rawValue
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::int32_t rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const TestingClassesOrderingRank&,
+        const TestingClassesOrderingRank&
+        ) noexcept = default;
+
+private:
+    std::int32_t m_rawValue = 1'000;
+};
+
 // Rank resolution and locale-aware text comparison stay with the feature
 // edge. This policy orders the prepared facts and returns their input indexes.
 struct TestingClassesOrderingFact final
 {
-    std::int32_t gradeRank;
-    std::int32_t levelRank;
+    TestingClassesOrderingRank gradeRank;
+    TestingClassesOrderingRank levelRank;
     std::u16string levelText;
     std::u16string className;
 };
@@ -71,13 +97,13 @@ orderTestingClassesRows(
         {
             const auto& left = rows[leftIndex];
             const auto& right = rows[rightIndex];
-            if (left.gradeRank != right.gradeRank)
+            if (left.gradeRank.rawValue() != right.gradeRank.rawValue())
             {
-                return left.gradeRank < right.gradeRank;
+                return left.gradeRank.rawValue() < right.gradeRank.rawValue();
             }
-            if (left.levelRank != right.levelRank)
+            if (left.levelRank.rawValue() != right.levelRank.rawValue())
             {
-                return left.levelRank < right.levelRank;
+                return left.levelRank.rawValue() < right.levelRank.rawValue();
             }
 
             const int levelComparison = compareText(
