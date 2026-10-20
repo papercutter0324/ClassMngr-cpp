@@ -55742,3 +55742,31 @@ availability batch-read target reported 6 passing cases. The Executor's
 self-check also built the same four targets. `git diff --check` passed. This
 was incremental macOS arm64 Debug verification; no full suite or Windows run
 is claimed.
+
+### F1218 Roster first-empty-row result accepted before implementation - 2026-10-21
+
+F1218 is accepted/current based on two independent read-only Explorer reports.
+Add a dedicated explicit Application `RosterFirstEmptyRowIndex` backed by
+`std::size_t`, defaulting to zero, with `.rawValue()`, equality, and no implicit
+conversions. Change `firstEmptyRosterRow` to return this type without adding
+range validation. Preserve `rows.size()` as the full sentinel, including for an
+empty vector; the modeled roster capacity is 25.
+
+Unwrap where existing callers compare or adapt the result. In
+`prepareRosterRowTransfer`, keep rejecting the full target when the result
+equals `targetRows.size()` and bridge a valid position to
+`RosterRowTransferDestinationIndex` for insertion. In `RosterModel::firstEmptyRow`,
+continue returning the row as `int` and mapping a full roster to legacy `-1`.
+Keep the batch `RosterAvailabilityFirstEmptyRow` contract separate: it uses
+`int` and `-1`, so it is not changed or unified with the row-count sentinel.
+
+Extend `next_application_roster_row_availability_tests.cpp` with default,
+explicit-value, equality, and non-conversion checks plus a 25-row full sentinel
+assertion; preserve empty, partially filled, whitespace, and existing vector-
+size sentinel cases. Preserve transfer-preparation first-empty insertion and
+full-target rejection, model empty/partial/full result mapping, insertion
+behavior, and the disabled-full-target transfer-menu behavior. Focused targets
+are `ClassMngr`, `ClassMngrNextApplicationRosterRowAvailabilityTests`,
+`ClassMngrNextApplicationRosterRowTransferPreparationTests`,
+`ClassMngrRosterModelTests`, and `ClassMngrRosterTransferMenuTests`. No F1218
+implementation or verification has started.
