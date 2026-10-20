@@ -56960,6 +56960,22 @@ this macOS host; Windows x64 and the full suite remain unverified.
 ### Batch497 complete locally; push pending - 2026-10-21
 
 All eight ordered slices F1227–F1234 are complete, and their scoped
-verification is recorded above. Batch497 is complete locally, but no push
-receipt has been recorded yet. Batch498 remains discovered and queued, with
-F1235 then F1236, until the Batch497 push succeeds.
+verification is recorded above. At this checkpoint Batch497 was complete
+locally; the subsequent push receipt below records its remote update. Batch498
+was discovered and queued until the Batch497 push succeeded.
+
+### Batch497 push receipt - 2026-10-21
+
+Batch497 was pushed to `origin/Qt-Rewrite`. The normal push advanced the remote
+branch from `c6fd2458f7113530b7ad7e9fb643cf5ba4235a5a` to
+`75788b646c66b9b6e6f8669dd9f7113c7633ca95`:
+
+```text
+c6fd2458..75788b64  Qt-Rewrite -> Qt-Rewrite
+```
+
+`git ls-remote` confirmed the remote tip is exactly
+`75788b646c66b9b6e6f8669dd9f7113c7633ca95`. The worktree was clean and the
+local branch was synchronized with its upstream after the push. This closes
+Batch497 and activates the previously discovered Batch498: F1235 is next for
+acceptance and F1236 remains discovered. No tests were run for the push.

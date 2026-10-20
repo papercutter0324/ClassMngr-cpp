@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch497 is complete locally and awaiting push; Batch498 remains queued with F1235 then F1236 until the push succeeds; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch498 is active with F1235 next for acceptance and F1236 discovered; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1234 completed at implementation commit `39345d56`; both focused macOS CTests passed in the incremental build (see [F1234 completion](03-Phase-2-Progress-Log.md#f1234-native-english-teacher-save-validation-row-position-complete-2026-10-21)). Windows x64 and the full suite remain unverified. Batch497 is complete locally and awaiting push; Batch498 stays queued until that push succeeds. F629 plus the Phase 0 and Phase 2 gates remain open.
+Batch497 was pushed to `origin/Qt-Rewrite`, advancing it to `75788b64` (see the [Batch497 push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)); Batch498 is now active with F1235 next for acceptance and F1236 discovered. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,23 +72,12 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Batch497 complete locally; push pending (8 candidates; 8 complete)
+#### Active batch: Batch498 (2 candidates; 0 complete, 2 discovered)
 
-1. F1227 - **Complete.** Add a distinct zero-based typed position to Schedule Import eligibility issues; first-failure ordering, default-zero global issues, and Feature grade/level lookup are verified.
-2. F1228 - **Complete.** Type positions in the Sub Prep visible-class ordering facts; comparator, stable ties, and filtered-to-projection mapping are verified.
-3. F1229 - **Complete.** Type Calendar Event import accepted-candidate positions; preserve first-seen filtering, prepared-request mapping, input order, and skipped counts.
-4. F1230 - **Complete.** Type Teacher Import review selection positions with signed requested and size-based resolved indexes; preserve validation, group order, and candidate order.
-5. F1231 - **Complete.** Type Domain duplicate-name row positions through Speaking Evaluation and Roster Save diagnostics; preserve grouping, row and issue order, adapter parity, and signed validation-issue row contracts.
-6. F1232 - **Complete.** Reuse `ClassDetailsScheduleValidationRowIndex` for duplicate schedule-row positions; preserve deterministic grouping, diagnostic order, and the Feature payload contract.
-7. F1233 - **Complete.** Add an Application-owned GS Team validation row index; preserve first-failure order, collection-level and success defaults, and no-save-on-failure behavior.
-8. F1234 - **Complete.** Add a distinct Application-owned Native English Teacher save validation row index; preserve first-failure order, default-zero collection and success values, and no-port-call on validation errors.
+1. F1235 - **Discovered; next for acceptance.** Use `Domain::Weekday` at the `ScheduleTime` boundary where appropriate; preserve weekday, minute, overlap, projection, label, and ordering behavior.
+2. F1236 - **Discovered.** Type shared calendar workbook cell coordinates and ranges; preserve one-based validation, inclusive containment, lookup precedence, merged values, and consumer ordering.
 
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
-
-#### Queued discovered batch: Batch498 (2 candidates; activate after Batch497 push)
-
-1. F1235 - **Discovered.** Use `Domain::Weekday` at the `ScheduleTime` boundary where appropriate; preserve weekday, minute, overlap, projection, label, and ordering behavior.
-2. F1236 - **Discovered.** Type shared calendar workbook cell coordinates and ranges; preserve one-based validation, inclusive containment, lookup precedence, merged values, and consumer ordering.
 
 #### Deferred candidates
 
