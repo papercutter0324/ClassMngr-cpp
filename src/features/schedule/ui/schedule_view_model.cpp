@@ -11,10 +11,11 @@
 namespace
 {
 using ClassMngr::Next::Application::ScheduleSlotPolicy;
+using ClassMngr::Next::Application::ScheduleSlotCanonicalHour;
 using ClassMngr::Next::Application::ScheduleSlotState;
 using ClassMngr::Next::Application::scheduleSlotPolicy;
 
-std::optional<int> canonicalScheduleHour(
+std::optional<ScheduleSlotCanonicalHour> canonicalScheduleHour(
     const QString& timeLabel
     )
 {
@@ -26,7 +27,7 @@ std::optional<int> canonicalScheduleHour(
         return std::nullopt;
     }
 
-    return parsedTime->value.hour();
+    return ScheduleSlotCanonicalHour{parsedTime->value.hour()};
 }
 
 ScheduleSlotPolicy resolvedScheduleSlotPolicy(

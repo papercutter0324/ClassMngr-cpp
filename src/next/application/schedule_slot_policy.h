@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <optional>
 
+#include "next/application/schedule_slot_canonical_hour.h"
+
 namespace ClassMngr::Next::Application
 {
 
@@ -21,7 +23,7 @@ struct ScheduleSlotPolicy final
 // The feature edge resolves raw day and time labels into these policy facts.
 [[nodiscard]] constexpr ScheduleSlotPolicy scheduleSlotPolicy(
     bool canonicalWeekend,
-    std::optional<int> canonicalHour,
+    std::optional<ScheduleSlotCanonicalHour> canonicalHour,
     bool useIntensiveTimes,
     bool regularWeekdayTogglingEnabled
     ) noexcept
@@ -30,7 +32,7 @@ struct ScheduleSlotPolicy final
         ? ScheduleSlotState::Empty
         : (useIntensiveTimes
             ? ScheduleSlotState::Essay
-            : (canonicalHour && *canonicalHour <= 15
+            : (canonicalHour && canonicalHour->value() <= 15
                 ? ScheduleSlotState::Empty
                 : ScheduleSlotState::Essay));
 

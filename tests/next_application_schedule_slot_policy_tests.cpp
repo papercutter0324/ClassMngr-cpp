@@ -2,15 +2,35 @@
 
 #include <cstdlib>
 #include <optional>
+#include <type_traits>
 
+using ClassMngr::Next::Application::ScheduleSlotCanonicalHour;
 using ClassMngr::Next::Application::ScheduleSlotState;
 using ClassMngr::Next::Application::scheduleSlotPolicy;
 
+static_assert(std::is_constructible_v<ScheduleSlotCanonicalHour, int>);
+static_assert(!std::is_convertible_v<int, ScheduleSlotCanonicalHour>);
+static_assert(!std::is_convertible_v<ScheduleSlotCanonicalHour, int>);
+static_assert(std::is_same_v<
+    decltype(ScheduleSlotCanonicalHour{0}.value()),
+    int
+    >);
+
 int main()
 {
+    const ScheduleSlotCanonicalHour negativeHour{-23};
+    const ScheduleSlotCanonicalHour equalHour{-23};
+    const ScheduleSlotCanonicalHour differentHour{23};
+    if (negativeHour.value() != -23
+        || negativeHour != equalHour
+        || negativeHour == differentHour)
+    {
+        return EXIT_FAILURE;
+    }
+
     const auto weekendPrecedence = scheduleSlotPolicy(
         true,
-        9,
+        ScheduleSlotCanonicalHour{9},
         true,
         false
         );
@@ -22,7 +42,7 @@ int main()
 
     const auto intensiveWeekday = scheduleSlotPolicy(
         false,
-        9,
+        ScheduleSlotCanonicalHour{9},
         true,
         false
         );
@@ -34,13 +54,13 @@ int main()
 
     const auto hour15 = scheduleSlotPolicy(
         false,
-        15,
+        ScheduleSlotCanonicalHour{15},
         false,
         false
         );
     const auto after15 = scheduleSlotPolicy(
         false,
-        16,
+        ScheduleSlotCanonicalHour{16},
         false,
         false
         );
@@ -59,13 +79,13 @@ int main()
 
     const auto regularWeekdayDisabled = scheduleSlotPolicy(
         false,
-        9,
+        ScheduleSlotCanonicalHour{9},
         false,
         false
         );
     const auto regularWeekdayEnabled = scheduleSlotPolicy(
         false,
-        9,
+        ScheduleSlotCanonicalHour{9},
         false,
         true
         );
