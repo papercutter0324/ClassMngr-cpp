@@ -2,6 +2,7 @@
 
 #include "next/domain/gregorian_date.h"
 
+#include <compare>
 #include <cstddef>
 #include <initializer_list>
 #include <optional>
@@ -27,6 +28,79 @@ enum class CalendarEventTimeStatus
     Timed,
     Unknown,
     Unconfirmed
+};
+
+// A minute-resolution clock time in the range 00:00 through 23:59.
+class CalendarEventClockTime final
+{
+public:
+    [[nodiscard]] static std::optional<CalendarEventClockTime>
+    fromCanonicalString(
+        const std::string_view value
+        ) noexcept
+    {
+        if (value.size() != 5 || value[2] != ':')
+        {
+            return std::nullopt;
+        }
+
+        for (const std::size_t index : {0U, 1U, 3U, 4U})
+        {
+            if (value[index] < '0' || value[index] > '9')
+            {
+                return std::nullopt;
+            }
+        }
+
+        const int hour =
+            (value[0] - '0') * 10 + value[1] - '0';
+        const int minute =
+            (value[3] - '0') * 10 + value[4] - '0';
+        if (hour > 23 || minute > 59)
+        {
+            return std::nullopt;
+        }
+
+        return CalendarEventClockTime(hour * 60 + minute);
+    }
+
+    [[nodiscard]] constexpr int minuteOfDay() const noexcept
+    {
+        return m_minuteOfDay;
+    }
+
+    [[nodiscard]] std::string toCanonicalString() const
+    {
+        const int hour = m_minuteOfDay / 60;
+        const int minute = m_minuteOfDay % 60;
+        std::string result(5, '0');
+        result[0] = static_cast<char>('0' + hour / 10);
+        result[1] = static_cast<char>('0' + hour % 10);
+        result[2] = ':';
+        result[3] = static_cast<char>('0' + minute / 10);
+        result[4] = static_cast<char>('0' + minute % 10);
+        return result;
+    }
+
+    friend bool operator==(
+        const CalendarEventClockTime&,
+        const CalendarEventClockTime&
+        ) = default;
+
+    friend auto operator<=>(
+        const CalendarEventClockTime&,
+        const CalendarEventClockTime&
+        ) = default;
+
+private:
+    explicit constexpr CalendarEventClockTime(
+        const int minuteOfDay
+        ) noexcept
+        : m_minuteOfDay(minuteOfDay)
+    {
+    }
+
+    int m_minuteOfDay;
 };
 
 // These classifiers recognize canonical persisted names. Callers that accept
@@ -212,8 +286,14 @@ public:
             return CalendarEventTimingIssue::TimesMustBePaired;
         }
 
-        if ((hasStartTime && !isCanonicalTime(*m_startTime))
-            || (hasEndTime && !isCanonicalTime(*m_endTime)))
+        const std::optional<CalendarEventClockTime> startClock = hasStartTime
+            ? CalendarEventClockTime::fromCanonicalString(*m_startTime)
+            : std::nullopt;
+        const std::optional<CalendarEventClockTime> endClock = hasEndTime
+            ? CalendarEventClockTime::fromCanonicalString(*m_endTime)
+            : std::nullopt;
+        if ((hasStartTime && !startClock.has_value())
+            || (hasEndTime && !endClock.has_value()))
         {
             return CalendarEventTimingIssue::InvalidTime;
         }
@@ -248,8 +328,7 @@ public:
                 return CalendarEventTimingIssue::TimedRequiresBothTimes;
             }
 
-            if (*startDate == *endDate
-                && *m_endTime <= *m_startTime)
+            if (*startDate == *endDate && *endClock <= *startClock)
             {
                 return CalendarEventTimingIssue::EndTimeMustFollowStartTime;
             }
@@ -298,30 +377,6 @@ public:
         ) = default;
 
 private:
-    [[nodiscard]] static bool isCanonicalTime(
-        const std::string_view value
-        ) noexcept
-    {
-        if (value.size() != 5 || value.at(2) != ':')
-        {
-            return false;
-        }
-
-        for (const std::size_t index : {0U, 1U, 3U, 4U})
-        {
-            if (value.at(index) < '0' || value.at(index) > '9')
-            {
-                return false;
-            }
-        }
-
-        const int hour =
-            (value.at(0) - '0') * 10 + value.at(1) - '0';
-        const int minute =
-            (value.at(3) - '0') * 10 + value.at(4) - '0';
-        return hour <= 23 && minute <= 59;
-    }
-
     std::string m_startDate;
     std::string m_endDate;
     std::optional<std::string> m_startTime;

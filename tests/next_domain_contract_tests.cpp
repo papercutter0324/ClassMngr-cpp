@@ -85,6 +85,7 @@ private slots:
     void scheduleTimesRejectInvalidDaysAndIntervals();
     void scheduleTimesHaveValueAndOverlapSemantics();
     void calendarEventNamesClassifyKnownValuesAndRejectUnknownTokens();
+    void calendarEventClockTimesParseCanonicalValuesAndCompareSemantically();
     void calendarEventTimingsValidateGregorianDateBoundaries();
     void calendarEventTimingsEnforceDateAndClockOrdering();
     void calendarEventTimingsEnforceTimeAndStatusPolicy();
@@ -414,6 +415,49 @@ calendarEventTimingsValidateGregorianDateBoundaries()
 }
 
 void NextDomainContractTests::
+calendarEventClockTimesParseCanonicalValuesAndCompareSemantically()
+{
+    const auto midnight = CalendarEventClockTime::fromCanonicalString("00:00");
+    const auto morning = CalendarEventClockTime::fromCanonicalString("09:00");
+    const auto lastMinute =
+        CalendarEventClockTime::fromCanonicalString("23:59");
+    QVERIFY(midnight.has_value());
+    QVERIFY(morning.has_value());
+    QVERIFY(lastMinute.has_value());
+
+    QCOMPARE(midnight->minuteOfDay(), 0);
+    QCOMPARE(morning->minuteOfDay(), 9 * 60);
+    QCOMPARE(lastMinute->minuteOfDay(), 23 * 60 + 59);
+    QCOMPARE(midnight->toCanonicalString(), std::string("00:00"));
+    QCOMPARE(morning->toCanonicalString(), std::string("09:00"));
+    QCOMPARE(lastMinute->toCanonicalString(), std::string("23:59"));
+
+    const auto sameMorning =
+        CalendarEventClockTime::fromCanonicalString("09:00");
+    QVERIFY(sameMorning.has_value());
+    QVERIFY(*morning == *sameMorning);
+    QVERIFY(*midnight < *morning);
+    QVERIFY(*morning < *lastMinute);
+    QVERIFY(*lastMinute > *midnight);
+
+    for (const std::string_view malformed : {
+             "9:00",
+             "09-00",
+             " 09:00",
+             "09:00 ",
+             "09 :00",
+             "\xD9\xA0\xD9\x99:00",
+             "09:60",
+             "24:00"
+         })
+    {
+        QVERIFY(
+            !CalendarEventClockTime::fromCanonicalString(malformed).has_value()
+            );
+    }
+}
+
+void NextDomainContractTests::
 calendarEventTimingsEnforceDateAndClockOrdering()
 {
     const CalendarEventTiming reversedDates(
@@ -504,6 +548,28 @@ calendarEventTimingsEnforceTimeAndStatusPolicy()
         malformedTime.validate()
         == CalendarEventTimingIssue::InvalidTime
         );
+
+    for (const std::string_view malformedClock : {
+             "09-00",
+             " 09:00",
+             "09:00 ",
+             "\xD9\xA0\xD9\x99:00",
+             "09:60"
+         })
+    {
+        const CalendarEventTiming invalidClock(
+            "2026-09-20",
+            "2026-09-20",
+            std::optional<std::string>(malformedClock),
+            std::optional<std::string>("10:00"),
+            false,
+            CalendarEventTimeStatus::Timed
+            );
+        QVERIFY(
+            invalidClock.validate()
+            == CalendarEventTimingIssue::InvalidTime
+            );
+    }
 
     const CalendarEventTiming outOfRangeTime(
         "2026-09-20",
