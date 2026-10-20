@@ -58009,3 +58009,50 @@ test, Windows build, or full-suite run was performed.
 
 Batch500 remains active with F1243–F1247 complete, F1248 next for acceptance,
 and F1249–F1252 discovered.
+
+### F1248 Class Summary navigation ranks accepted before implementation - 2026-10-21
+
+F1248 is accepted before implementation. Reuse the existing
+`Application::ClassTabNavigationOrderRank` for both
+`ClassSummary::navigationFirstDayOrder` and
+`ClassSummary::navigationFirstTimeOrder`; do not add another wrapper. This
+type already has explicit `std::int32_t` construction, `.rawValue()`,
+equality, and default value `1000`. Initialize both fields to preserve
+`kClassSummaryUnknownNavigationOrder` (`1000`).
+
+Keep projection validation on raw values: day orders accept `0..6` or the
+sentinel, and minute orders accept `0..1439` or the sentinel; day `7` and
+minute `1440` remain invalid input. The Platform schedule summary adapter
+explicitly wraps producer integers, while the Sub Prep class-info list model
+passes typed fields into the existing ordering policy without restoring raw
+integers. Preserve adapter calculations and invalid fallback, query order,
+and the numeric comparator order: configured level, day, minute, label, then
+class ID. Keep the literal sentinel behavior: `1000` compares numerically,
+so it collides with valid `16:40` and falls through to later fields, while
+sorting before valid minute values above `1000`.
+
+Add compile-time field-type and no-conversion assertions, verify the default
+`1000`, cover accepted projection boundaries and rejection of day `7` and
+minute `1440`, and retain list-model ordering for the sentinel collision.
+Evidence: the Batch500 discovery entry above; existing rank type in
+`src/next/application/navigation_order_rank.h:8`, projection fields and
+validation in `src/next/application/class_summary_projection.h:38,92-95,343-359`,
+producer in
+`src/next/platform/application_services_sub_prep_schedule_summary_port.h:480-510`,
+list model in
+`src/features/sub_prep/ui/sub_prep_class_information_list_model.cpp:311-331`,
+sentinel collision coverage in
+`tests/next_application_sub_prep_visible_class_ordering_policy_tests.cpp:148-186`,
+and invalid query cases in
+`tests/next_application_sub_prep_schedule_summary_query_tests.cpp:634-637`.
+
+Build `ClassMngr` and run only the focused CTests
+`ClassMngrNextApplicationClassSummaryTests`,
+`ClassMngrSubPrepClassInformationListModelTests`,
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`. At
+acceptance, no implementation, build, or tests had started. No Windows or
+full-suite result is claimed.
+
+Batch500 remains active with F1243–F1247 complete, F1248 accepted awaiting
+implementation, and F1249–F1252 discovered.

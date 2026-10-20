@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch499 is complete and pushed at `cc38c959`; active Batch500 has F1243–F1247 complete and F1248 next for acceptance, and F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch499 is complete and pushed at `cc38c959`; active Batch500 has F1243–F1247 complete and F1248 accepted awaiting implementation, and F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1247 is complete at `13199fe0`; the incremental build and two focused CTests passed, and F1248 is next for acceptance (see [F1247 verification](03-Phase-2-Progress-Log.md#f1247-teacher-import-result-counts-across-platform-complete-2026-10-21)). Batch499 is complete and pushed at `cc38c959`; Batch500 remains active with F1249–F1252 discovered. F629 and the Phase 0 and Phase 2 gates remain open.
+F1248 is accepted before implementation: reuse the existing typed navigation rank for Class Summary day and time fields, preserving validation and numeric sentinel behavior (see [F1248 acceptance](03-Phase-2-Progress-Log.md#f1248-class-summary-navigation-ranks-accepted-before-implementation-2026-10-21)). Batch499 is complete and pushed at `cc38c959`; Batch500 remains active with F1249–F1252 discovered. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,14 +72,14 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch500 (10 candidates; 5 complete, 0 accepted, 5 discovered)
+#### Active batch: Batch500 (10 candidates; 5 complete, 1 accepted, 4 discovered)
 
 1. F1243 - **Complete.** Replace the `GregorianDate::DayNumber` alias with an explicit typed ordinal; preserve epoch, maximum date, formatting, and factory range validation.
 2. F1244 - **Complete.** Type only the legacy Schedule Import target class ID as optional `Domain::ClassId`; preserve UI raw integers, absent-value handling, action semantics, and validation behavior.
 3. F1245 - **Complete.** Add distinct typed Sub Prep print grade and level orders, preserving configured ranks, unknown sentinels, and comparator order.
 4. F1246 - **Complete.** Type the Calendar parser's skipped-row count while preserving parser count and duplicate-skip aggregation.
 5. F1247 - **Complete.** Preserve Teacher Import created/updated/unchanged result counts across the Platform boundary.
-6. F1248 - **Discovered.** Type Class Summary day and time navigation ranks while preserving default and invalid-value sentinels.
+6. F1248 - **Accepted; awaiting implementation.** Reuse the existing navigation rank type for Class Summary day and time fields while preserving validation and numeric sentinel behavior.
 7. F1249 - **Discovered.** Type Testing Classes grade and level ranks while preserving configured indexes, unknown values, and comparator behavior.
 8. F1250 - **Discovered.** Type ScheduleTime endpoint minute values while preserving bounds, strict start-before-end, and half-open overlap.
 9. F1251 - **Discovered.** Type Class Transfer export roster widths while preserving values and order without range checks or clamping.
