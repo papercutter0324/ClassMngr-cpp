@@ -56362,9 +56362,69 @@ Tester confirmed the build (Ninja reported no work), passed all three focused
 CTests, and confirmed `git diff --check`. This was incremental macOS
 `arm64;x86_64` Debug verification; no full-suite or Windows result is claimed.
 
-### Batch496 complete locally - 2026-10-21
+### Batch496 complete - 2026-10-21
 
 Batch496 is complete with all eight slices F1219–F1226 implemented and their
 focused verification recorded. Batch497 is now the active batch with eight
-discovered candidates, F1227–F1234; its first slice is ready for acceptance.
-The Batch496 push receipt follows.
+discovered candidates, F1227–F1234; F1227 is accepted and awaiting
+implementation. The Batch496 push receipt follows.
+
+### Batch496 push receipt - 2026-10-21
+
+Batch496 was pushed to `origin/Qt-Rewrite` after the destination was verified
+as `github.com/papercutter0324/ClassMngr-cpp`. The normal push advanced the
+remote branch from `3f5d8d7c4ff0e4cc94b6c0f534fbc34779af25e` to
+`c6fd2458f7113530b7ad7e9fb643cf5ba4235a5a`:
+
+```text
+3f5d8d7c..c6fd2458  Qt-Rewrite -> Qt-Rewrite
+```
+
+The push included Batch496 closeout at `c6fd2458`. No tests were run for the
+push.
+
+### F1227 Schedule Import eligibility issue position accepted before implementation - 2026-10-21
+
+F1227 is accepted based on two independent read-only Explorer reports and a
+main-owned contract decision. Add a distinct explicit Application value type
+`ScheduleImportPlanEligibilityCandidateIndex`, backed by `std::size_t`, with
+default zero, private storage, `.rawValue()`, equality, and no implicit
+conversions. Change
+`ScheduleImportPlanEligibilityIssue::candidateIndex` to this type. These
+positions address the eligibility request's candidate vector. Do not reuse
+`ScheduleImportCandidateIndex`, which is the signed `int`/`-1` review and
+class-color input position; do not add a sentinel or range-validation policy.
+
+Preserve zero for issues without a candidate: invalid intensive mode,
+unacknowledged diagnostics, and invalid review decisions. Preserve issue
+priority and first-failure behavior: global checks first; then all candidate
+course, teacher-key, and meeting-time checks in candidate order; then weekday,
+meeting-pattern, and color checks in candidate order. Candidate-specific issues
+must retain the position of the exact candidate that first fails.
+
+Update both Feature consumers in
+`schedule_import_plan_validator.cpp`. Unwrap the typed position only at the
+existing grade/level lookup boundaries in `validate()` and
+`policyFailureMessage()`. Preserve their existing out-of-range fallback to
+empty grade and level, and do not narrow the position to `int`. The resulting
+meeting-pattern diagnostic must still name the failing candidate's grade and
+level.
+
+Extend `next_application_schedule_import_plan_validation_tests.cpp` with exact
+field-type and wrapper default/explicit/equality/raw-value/non-conversion
+assertions. Assert zero on each global issue, retain typed positions for the
+existing multi-candidate first-failure cases, and cover a nonzero meeting
+failure. In `next_application_schedule_import_apply_use_case_tests.cpp`, assert
+zero survives a global policy failure and a nonzero candidate position
+survives Application validation without invoking the write port. In
+`schedule_import_tests.cpp`, retain repository rejection-before-write
+coverage and assert typed issue positions through the apply boundary. In
+`schedule_import_dialog_tests.cpp`, cover nonzero grade/level selection from
+`validate()` and `policyFailureMessage()`; retain legacy text parity and
+empty-candidate fallback behavior.
+
+Focused targets are `ClassMngr`,
+`ClassMngrNextApplicationScheduleImportPlanValidationTests`,
+`ClassMngrNextApplicationScheduleImportApplyUseCaseTests`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`.
+No F1227 implementation or verification has started.

@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch497 is active with eight discovered candidates and F1227 next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch497 is active; F1227 is accepted and awaiting implementation, with F1228 next after it closes; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1226 completed at implementation commit `9a31f744`; its three focused policy, model, and mapper CTests passed (see [F1226 completion](03-Phase-2-Progress-Log.md#f1226-sub-prep-print-group-and-class-positions-complete-2026-10-21)). Batch496 is complete locally and Batch497 is now active with F1227 next for acceptance. F629 plus the Phase 0 and Phase 2 gates remain open.
+F1226 completed at implementation commit `9a31f744`; its three focused policy, model, and mapper CTests passed (see [F1226 completion](03-Phase-2-Progress-Log.md#f1226-sub-prep-print-group-and-class-positions-complete-2026-10-21)). Batch496 is complete and pushed; Batch497 is active with F1227 accepted before implementation. F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,9 +72,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch497 (8 candidates; 8 discovered)
+#### Active batch: Batch497 (8 candidates; 1 accepted, 7 discovered)
 
-1. F1227 - **Discovered.** Type Schedule Import eligibility issue candidate positions; preserve first-failing-candidate mapping and default-zero issue behavior.
+1. F1227 - **Accepted.** Add a distinct zero-based typed position to Schedule Import eligibility issues; preserve first-failing-candidate mapping, default-zero global issues, and Feature grade/level lookup.
 2. F1228 - **Discovered.** Type Sub Prep visible-class ordering positions; preserve configured ordering, stable ties, and source-row mapping.
 3. F1229 - **Discovered.** Type Calendar Event import accepted-candidate positions; preserve duplicate filtering, input order, and skipped counts.
 4. F1230 - **Discovered.** Type Teacher Import review selection positions; preserve validation, group order, and candidate order.
