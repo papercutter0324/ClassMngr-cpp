@@ -57704,3 +57704,28 @@ At acceptance, no implementation, build, or tests had started.
 Batch499 is complete and pushed at `cc38c959`. Batch500 remains active with
 F1243 accepted awaiting implementation, F1244 next for acceptance, and
 F1245–F1252 discovered.
+
+### F1243 GregorianDate day numbers complete - 2026-10-21
+
+F1243 completed at implementation commit
+`f519840f124f77b65ed28b7eb5c99855b31d16b0`, following acceptance commit
+`9fe6c2a2b4cef37a54f24c8e04fe157c8761ebcf`. The nested
+`GregorianDate::DayNumber` is now an explicit `std::int64_t` value type with
+ordinal equality and ordering; date accessors and factories use it. Callers
+explicitly unwrap at signed date-offset and duration arithmetic boundaries
+and wrap resulting ordinals before conversion. The factory remains the range
+validation boundary, while out-of-range wrapper values remain representable.
+
+The existing `gregorianDateConvertsOrdinalsAndWeekdaysAcrossRange` coverage
+continues to verify the epoch, leap day, maximum date and ordinal,
+round-tripping, and rejection below and above range. New assertions check the
+typed signatures, explicit/no-conversion semantics, and ordinal ordering.
+
+The independent Tester used the existing incremental macOS Clang build for
+`ClassMngr`, `ClassMngrNextDomainContractTests`, and
+`ClassMngrNextApplicationCalendarEventTests`; Ninja reported no work to do.
+Both focused CTests passed (2/2), and the committed diff passed
+`git diff --check`. Windows x64 and the full suite were not run.
+
+Batch500 remains active with F1243 complete, F1244 next for acceptance, and
+F1245–F1252 discovered.
