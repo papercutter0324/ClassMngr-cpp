@@ -41,6 +41,33 @@ using DayNumber = GregorianDate::DayNumber;
     return false;
 }
 
+[[nodiscard]] inline Domain::Result<void> validateSeedAndFrequency(
+    const CalendarEventSaveRequest& seed,
+    const CalendarEventRepeatFrequency frequency
+    )
+{
+    if (!isSupportedFrequency(frequency))
+    {
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::InvalidInput,
+            .message = "Calendar repeat frequency is invalid.",
+            .recoverable = false
+        });
+    }
+
+    const Domain::Result<void> seedValidation = seed.validate();
+    if (!seedValidation)
+    {
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::InvalidInput,
+            .message = seedValidation.error().message,
+            .recoverable = false
+        });
+    }
+
+    return Domain::Result<void>::success();
+}
+
 [[nodiscard]] inline std::optional<GregorianDate> nextOccurrenceDate(
     const GregorianDate current,
     const CalendarEventRepeatFrequency frequency
@@ -131,29 +158,23 @@ planCalendarEventRepeatOccurrences(
     const CalendarEventSaveRequest& seed,
     std::optional<Domain::CalendarEventSeriesId> repeatSeriesId,
     const CalendarEventRepeatFrequency frequency,
-    const std::string_view untilDate
+    const Domain::GregorianDate finalStartDate
     )
 {
     using namespace CalendarEventRepeatOccurrencePlanDetail;
 
-    if (!isSupportedFrequency(frequency))
+    const Domain::Result<void> seedAndFrequencyValidation =
+        validateSeedAndFrequency(seed, frequency);
+    if (!seedAndFrequencyValidation)
     {
-        return invalid("Calendar repeat frequency is invalid.");
-    }
-
-    const Domain::Result<void> seedValidation = seed.validate();
-    if (!seedValidation)
-    {
-        return invalid(seedValidation.error().message);
+        return invalid(seedAndFrequencyValidation.error().message);
     }
 
     const std::optional<GregorianDate> startDate =
         GregorianDate::fromIsoString(seed.startDate);
     const std::optional<GregorianDate> seedEndDate =
         GregorianDate::fromIsoString(seed.endDate);
-    const std::optional<GregorianDate> finalStartDate =
-        GregorianDate::fromIsoString(untilDate);
-    if (!startDate || !seedEndDate || !finalStartDate)
+    if (!startDate || !seedEndDate)
     {
         return invalid(
             "Calendar repeat seed and until dates must be canonical ISO dates."
@@ -161,7 +182,7 @@ planCalendarEventRepeatOccurrences(
     }
 
     const DayNumber firstDayNumber = startDate->dayNumber();
-    const DayNumber lastDayNumber = finalStartDate->dayNumber();
+    const DayNumber lastDayNumber = finalStartDate.dayNumber();
     if (lastDayNumber < firstDayNumber)
     {
         return invalid(

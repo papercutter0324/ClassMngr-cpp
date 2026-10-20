@@ -55,6 +55,8 @@ using CalendarEventEditDraft =
     ClassMngr::Next::Application::CalendarEventEditDraft;
 using CalendarEventSaveRequest =
     ClassMngr::Next::Application::CalendarEventSaveRequest;
+using CalendarEventSeriesCreateInput =
+    ClassMngr::Next::Application::CalendarEventSeriesCreateInput;
 using CalendarEventId =
     ClassMngr::Next::Domain::CalendarEventId;
 using CalendarEventSeriesId =
@@ -947,6 +949,16 @@ void CalendarPage::openCalendarDialog(
             {
                 if (dialog.repeatEnabled())
                 {
+                    const CalendarEventSeriesCreateInput input{
+                        saveRequestFromDraft(savedDraft),
+                        newRepeatSeriesId(),
+                        applicationRepeatFrequency(
+                            dialog.repeatFrequency()
+                            ),
+                        dialog.repeatUntilDate()
+                            .toString(Qt::ISODate)
+                            .toStdString()
+                    };
                     ClassMngr::Next::Platform::
                         ApplicationServicesCalendarEventSeriesCreatePort
                         createPort(*m_services);
@@ -954,14 +966,7 @@ void CalendarPage::openCalendarDialog(
                         ClassMngr::Next::Application::
                             CalendarEventSeriesCreateUseCase::execute(
                                 createPort,
-                                saveRequestFromDraft(savedDraft),
-                                newRepeatSeriesId(),
-                                applicationRepeatFrequency(
-                                    dialog.repeatFrequency()
-                                    ),
-                                dialog.repeatUntilDate()
-                                    .toString(Qt::ISODate)
-                                    .toStdString()
+                                input
                                 );
                     if (!typedSaved)
                     {

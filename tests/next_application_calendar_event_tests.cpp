@@ -55,6 +55,13 @@ CalendarEventSeriesId calendarEventSeriesId(
     return *CalendarEventSeriesId::fromString(value);
 }
 
+GregorianDate gregorianDate(
+    const std::string_view isoDate
+    )
+{
+    return *GregorianDate::fromIsoString(isoDate);
+}
+
 ClassId classId(
     std::string value
     )
@@ -491,6 +498,8 @@ private slots:
     void repeatSeriesCreateUseCasePlansAndForwardsExactlyOnce();
     void repeatSeriesCreateUseCasePropagatesPortFailure();
     void repeatSeriesCreateUseCaseRejectsInvalidPlanWithoutCallingPort();
+    void repeatSeriesCreateUseCaseRejectsMalformedUntilWithoutCallingPort();
+    void repeatSeriesCreateUseCasePreservesValidationPrecedence();
     void repeatSeriesCreateUseCaseRejectsUnicodeWhitespaceIdWithoutCallingPort();
     void repeatSeriesCreateUseCaseRejectsAbsentIdWithoutCallingPort();
     void seriesDeleteRequestValidationIsTypedAndQtFree();
@@ -2608,7 +2617,7 @@ repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil()
         seed,
         calendarEventSeriesId("daily-series"),
         CalendarEventRepeatFrequency::Daily,
-        "2026-09-22"
+        gregorianDate("2026-09-22")
         );
     QVERIFY(daily);
     QCOMPARE(daily.value().repeatSeriesId->value(), std::string("daily-series"));
@@ -2621,7 +2630,7 @@ repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil()
         seed,
         calendarEventSeriesId("weekly-series"),
         CalendarEventRepeatFrequency::Weekly,
-        "2026-10-11"
+        gregorianDate("2026-10-11")
         );
     QVERIFY(weekly);
     verifyOccurrenceStartDates(
@@ -2633,7 +2642,7 @@ repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil()
         seed,
         calendarEventSeriesId("inclusive-start"),
         CalendarEventRepeatFrequency::Daily,
-        seed.startDate
+        gregorianDate(seed.startDate)
         );
     QVERIFY(untilStart);
     QCOMPARE(untilStart.value().occurrences.size(), std::size_t(1));
@@ -2649,7 +2658,7 @@ repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil()
         lowerBoundarySeed,
         calendarEventSeriesId("lower-date-boundary"),
         CalendarEventRepeatFrequency::Daily,
-        "0001-01-01"
+        gregorianDate("0001-01-01")
         );
     QVERIFY(lowerBoundary);
     QCOMPARE(
@@ -2664,7 +2673,7 @@ repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil()
         upperBoundarySeed,
         calendarEventSeriesId("upper-date-boundary"),
         CalendarEventRepeatFrequency::Daily,
-        "9999-12-31"
+        gregorianDate("9999-12-31")
         );
     QVERIFY(upperBoundary);
     QCOMPARE(
@@ -2683,7 +2692,7 @@ repeatOccurrencePlanClampsMonthlyDatesFromPreviousOccurrence()
         nonLeapSeed,
         calendarEventSeriesId("non-leap-months"),
         CalendarEventRepeatFrequency::Monthly,
-        "2025-04-30"
+        gregorianDate("2025-04-30")
         );
     QVERIFY(nonLeap);
     verifyOccurrenceStartDates(
@@ -2698,7 +2707,7 @@ repeatOccurrencePlanClampsMonthlyDatesFromPreviousOccurrence()
         leapSeed,
         calendarEventSeriesId("leap-months"),
         CalendarEventRepeatFrequency::Monthly,
-        "2024-04-30"
+        gregorianDate("2024-04-30")
         );
     QVERIFY(leap);
     verifyOccurrenceStartDates(
@@ -2725,7 +2734,7 @@ repeatOccurrencePlanPreservesSeedFieldsAndDateDuration()
         seed,
         calendarEventSeriesId("caller-generated-series-id"),
         CalendarEventRepeatFrequency::Daily,
-        "2026-09-21"
+        gregorianDate("2026-09-21")
         );
     QVERIFY(plan);
     QCOMPARE(
@@ -2765,7 +2774,7 @@ repeatOccurrencePlanRejectsInvalidSeedRangeUntilAndFrequency()
         invalidSeed,
         calendarEventSeriesId("invalid-seed"),
         CalendarEventRepeatFrequency::Daily,
-        "2026-09-22"
+        gregorianDate("2026-09-22")
         ));
 
     auto reversedSeedRange = validSaveRequest();
@@ -2775,27 +2784,21 @@ repeatOccurrencePlanRejectsInvalidSeedRangeUntilAndFrequency()
         reversedSeedRange,
         calendarEventSeriesId("reversed-seed-range"),
         CalendarEventRepeatFrequency::Daily,
-        "2026-09-22"
+        gregorianDate("2026-09-22")
         ));
 
     const auto validSeed = validSaveRequest();
     verifyInvalidRepeatPlan(planCalendarEventRepeatOccurrences(
         validSeed,
-        calendarEventSeriesId("invalid-until"),
-        CalendarEventRepeatFrequency::Daily,
-        "2026-02-30"
-        ));
-    verifyInvalidRepeatPlan(planCalendarEventRepeatOccurrences(
-        validSeed,
         calendarEventSeriesId("until-before-start"),
         CalendarEventRepeatFrequency::Daily,
-        "2026-09-19"
+        gregorianDate("2026-09-19")
         ));
     verifyInvalidRepeatPlan(planCalendarEventRepeatOccurrences(
         validSeed,
         calendarEventSeriesId("invalid-frequency"),
         static_cast<CalendarEventRepeatFrequency>(99),
-        "2026-09-22"
+        gregorianDate("2026-09-22")
         ));
 
     auto endOfRangeSeed = validSaveRequest();
@@ -2805,7 +2808,7 @@ repeatOccurrencePlanRejectsInvalidSeedRangeUntilAndFrequency()
         endOfRangeSeed,
         calendarEventSeriesId("end-of-range"),
         CalendarEventRepeatFrequency::Daily,
-        "9999-12-31"
+        gregorianDate("9999-12-31")
         ));
 }
 
@@ -2819,7 +2822,7 @@ repeatOccurrencePlanAccepts366AndRejects367Occurrences()
         seed,
         calendarEventSeriesId("exact-limit"),
         CalendarEventRepeatFrequency::Daily,
-        "2024-01-01"
+        gregorianDate("2024-01-01")
         );
     QVERIFY(exactLimit);
     QCOMPARE(
@@ -2837,7 +2840,7 @@ repeatOccurrencePlanAccepts366AndRejects367Occurrences()
         seed,
         calendarEventSeriesId("over-limit"),
         CalendarEventRepeatFrequency::Daily,
-        "2025-01-01"
+        gregorianDate("2025-01-01")
         );
     verifyInvalidRepeatPlan(overLimit);
 }
@@ -2849,7 +2852,7 @@ repeatOccurrencePlanHasTypedQtFreeContract()
         std::declval<const CalendarEventSaveRequest&>(),
         std::declval<std::optional<CalendarEventSeriesId>>(),
         std::declval<CalendarEventRepeatFrequency>(),
-        std::declval<std::string_view>()
+        std::declval<GregorianDate>()
         ));
     static_assert(std::is_same_v<
         PlanResult,
@@ -2870,15 +2873,30 @@ repeatSeriesCreateUseCasePlansAndForwardsExactlyOnce()
     using UseCaseResult = decltype(
         CalendarEventSeriesCreateUseCase::execute(
             std::declval<CalendarEventSeriesCreatePort&>(),
-            std::declval<const CalendarEventSaveRequest&>(),
-            std::declval<std::optional<CalendarEventSeriesId>>(),
-            std::declval<CalendarEventRepeatFrequency>(),
-            std::declval<std::string_view>()
+            std::declval<const CalendarEventSeriesCreateInput&>()
             )
         );
     static_assert(std::is_same_v<
         UseCaseResult,
         CalendarEventSeriesCreateResult
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesCreateInput>().seed),
+        CalendarEventSaveRequest
+        >);
+    static_assert(std::is_same_v<
+        decltype(
+            std::declval<CalendarEventSeriesCreateInput>().repeatSeriesId
+            ),
+        std::optional<CalendarEventSeriesId>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesCreateInput>().frequency),
+        CalendarEventRepeatFrequency
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesCreateInput>().untilDate),
+        std::string
         >);
 
     CalendarEventSaveRequest seed = validSaveRequest();
@@ -2902,10 +2920,12 @@ repeatSeriesCreateUseCasePlansAndForwardsExactlyOnce()
     const CalendarEventSeriesCreateResult result =
         CalendarEventSeriesCreateUseCase::execute(
             port,
-            seed,
-            calendarEventSeriesId("generated-series-123"),
-            CalendarEventRepeatFrequency::Daily,
-            "2026-09-21"
+            CalendarEventSeriesCreateInput{
+                seed,
+                calendarEventSeriesId("generated-series-123"),
+                CalendarEventRepeatFrequency::Daily,
+                "2026-09-21"
+            }
             );
 
     QVERIFY(result);
@@ -2944,10 +2964,12 @@ repeatSeriesCreateUseCasePropagatesPortFailure()
     const CalendarEventSeriesCreateResult result =
         CalendarEventSeriesCreateUseCase::execute(
             port,
-            validSaveRequest(),
-            calendarEventSeriesId("series-with-failure"),
-            CalendarEventRepeatFrequency::Weekly,
-            "2026-09-20"
+            CalendarEventSeriesCreateInput{
+                validSaveRequest(),
+                calendarEventSeriesId("series-with-failure"),
+                CalendarEventRepeatFrequency::Weekly,
+                "2026-09-20"
+            }
             );
 
     QVERIFY(!result);
@@ -2968,10 +2990,12 @@ repeatSeriesCreateUseCaseRejectsInvalidPlanWithoutCallingPort()
     const CalendarEventSeriesCreateResult result =
         CalendarEventSeriesCreateUseCase::execute(
             port,
-            validSaveRequest(),
-            calendarEventSeriesId("series-with-invalid-range"),
-            CalendarEventRepeatFrequency::Daily,
-            "2026-09-19"
+            CalendarEventSeriesCreateInput{
+                validSaveRequest(),
+                calendarEventSeriesId("series-with-invalid-range"),
+                CalendarEventRepeatFrequency::Daily,
+                "2026-09-19"
+            }
             );
 
     QVERIFY(!result);
@@ -2988,6 +3012,96 @@ repeatSeriesCreateUseCaseRejectsInvalidPlanWithoutCallingPort()
 }
 
 void NextApplicationCalendarEventTests::
+repeatSeriesCreateUseCaseRejectsMalformedUntilWithoutCallingPort()
+{
+    FakeCalendarEventSeriesCreatePort port;
+    const CalendarEventSaveRequest seed = validSaveRequest();
+    const std::vector<std::string> malformedUntilDates{
+        "",
+        "2026-02-30",
+        "2026-2-01",
+        " 2026-09-20"
+    };
+
+    for (const std::string& untilDate : malformedUntilDates)
+    {
+        const CalendarEventSeriesCreateInput input{
+            seed,
+            calendarEventSeriesId("series-with-malformed-until"),
+            CalendarEventRepeatFrequency::Daily,
+            untilDate
+        };
+        QCOMPARE(input.untilDate, untilDate);
+
+        const CalendarEventSeriesCreateResult result =
+            CalendarEventSeriesCreateUseCase::execute(port, input);
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Calendar repeat seed and until dates must be "
+                "canonical ISO dates."
+                )
+            );
+        QVERIFY(!result.error().recoverable);
+    }
+
+    QCOMPARE(port.createCalls, 0);
+    QVERIFY(!port.receivedRequest.has_value());
+}
+
+void NextApplicationCalendarEventTests::
+repeatSeriesCreateUseCasePreservesValidationPrecedence()
+{
+    FakeCalendarEventSeriesCreatePort port;
+    CalendarEventSaveRequest invalidSeed = validSaveRequest();
+    invalidSeed.startDate = "2026-02-30";
+
+    const CalendarEventSeriesCreateResult invalidFrequencyResult =
+        CalendarEventSeriesCreateUseCase::execute(
+            port,
+            CalendarEventSeriesCreateInput{
+                invalidSeed,
+                calendarEventSeriesId("series-invalid-frequency"),
+                static_cast<CalendarEventRepeatFrequency>(99),
+                ""
+            }
+            );
+    QVERIFY(!invalidFrequencyResult);
+    QCOMPARE(invalidFrequencyResult.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        invalidFrequencyResult.error().message,
+        std::string("Calendar repeat frequency is invalid.")
+        );
+    QVERIFY(!invalidFrequencyResult.error().recoverable);
+
+    const CalendarEventSeriesCreateResult invalidSeedResult =
+        CalendarEventSeriesCreateUseCase::execute(
+            port,
+            CalendarEventSeriesCreateInput{
+                invalidSeed,
+                calendarEventSeriesId("series-invalid-seed"),
+                CalendarEventRepeatFrequency::Daily,
+                ""
+            }
+            );
+    QVERIFY(!invalidSeedResult);
+    QCOMPARE(invalidSeedResult.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        invalidSeedResult.error().message,
+        std::string(
+            "Calendar event dates must be valid canonical ISO dates."
+            )
+        );
+    QVERIFY(!invalidSeedResult.error().recoverable);
+
+    QCOMPARE(port.createCalls, 0);
+    QVERIFY(!port.receivedRequest.has_value());
+}
+
+void NextApplicationCalendarEventTests::
 repeatSeriesCreateUseCaseRejectsUnicodeWhitespaceIdWithoutCallingPort()
 {
     FakeCalendarEventSeriesCreatePort port;
@@ -3001,10 +3115,12 @@ repeatSeriesCreateUseCaseRejectsUnicodeWhitespaceIdWithoutCallingPort()
         const CalendarEventSeriesCreateResult result =
             CalendarEventSeriesCreateUseCase::execute(
                 port,
-                validSaveRequest(),
-                calendarEventSeriesId(repeatSeriesId),
-                CalendarEventRepeatFrequency::Daily,
-                "2026-09-20"
+                CalendarEventSeriesCreateInput{
+                    validSaveRequest(),
+                    calendarEventSeriesId(repeatSeriesId),
+                    CalendarEventRepeatFrequency::Daily,
+                    "2026-09-20"
+                }
                 );
 
         QVERIFY(!result);
@@ -3030,10 +3146,12 @@ repeatSeriesCreateUseCaseRejectsAbsentIdWithoutCallingPort()
     const CalendarEventSeriesCreateResult result =
         CalendarEventSeriesCreateUseCase::execute(
             port,
-            validSaveRequest(),
-            CalendarEventSeriesId::fromString(""),
-            CalendarEventRepeatFrequency::Daily,
-            "2026-09-20"
+            CalendarEventSeriesCreateInput{
+                validSaveRequest(),
+                CalendarEventSeriesId::fromString(""),
+                CalendarEventRepeatFrequency::Daily,
+                "2026-09-20"
+            }
             );
 
     QVERIFY(!result);

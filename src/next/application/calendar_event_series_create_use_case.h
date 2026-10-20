@@ -6,11 +6,20 @@
 
 #include <optional>
 #include <string>
-#include <string_view>
-#include <utility>
 
 namespace ClassMngr::Next::Application
 {
+
+// Preserve the dialog's raw cutoff text until frequency and seed validation
+// have completed. The UseCase converts it to a domain date before planning.
+struct CalendarEventSeriesCreateInput final
+{
+    CalendarEventSaveRequest seed;
+    std::optional<Domain::CalendarEventSeriesId> repeatSeriesId;
+    CalendarEventRepeatFrequency frequency =
+        CalendarEventRepeatFrequency::Daily;
+    std::string untilDate;
+};
 
 // Own the decision to plan a repeat series before asking persistence to
 // create it. Invalid seeds and repeat settings therefore never reach the port.
@@ -19,18 +28,38 @@ class CalendarEventSeriesCreateUseCase final
 public:
     [[nodiscard]] static CalendarEventSeriesCreateResult execute(
         CalendarEventSeriesCreatePort& createPort,
-        const CalendarEventSaveRequest& seed,
-        std::optional<Domain::CalendarEventSeriesId> repeatSeriesId,
-        const CalendarEventRepeatFrequency frequency,
-        const std::string_view untilDate
+        const CalendarEventSeriesCreateInput& input
         )
     {
+        const Domain::Result<void> seedAndFrequencyValidation =
+            CalendarEventRepeatOccurrencePlanDetail::
+                validateSeedAndFrequency(input.seed, input.frequency);
+        if (!seedAndFrequencyValidation)
+        {
+            return CalendarEventSeriesCreateResult::failure(
+                seedAndFrequencyValidation.error()
+                );
+        }
+
+        const std::optional<Domain::GregorianDate> finalStartDate =
+            Domain::GregorianDate::fromIsoString(input.untilDate);
+        if (!finalStartDate)
+        {
+            return CalendarEventSeriesCreateResult::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message =
+                    "Calendar repeat seed and until dates must be "
+                    "canonical ISO dates.",
+                .recoverable = false
+            });
+        }
+
         const Domain::Result<CalendarEventSeriesCreateRequest> plannedSeries =
             planCalendarEventRepeatOccurrences(
-                seed,
-                std::move(repeatSeriesId),
-                frequency,
-                untilDate
+                input.seed,
+                input.repeatSeriesId,
+                input.frequency,
+                *finalStartDate
                 );
         if (!plannedSeries)
         {
