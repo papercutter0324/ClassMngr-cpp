@@ -1,8 +1,11 @@
 #include "next/application/report_job_coordinator.h"
+#include "next/application/import_job_generation.h"
 
 #include <QtTest/QtTest>
 
 #include <atomic>
+#include <cstdint>
+#include <limits>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -113,7 +116,7 @@ public:
     int startCalls = 0;
     int cancellationCalls = 0;
     UnitCount lastTotalUnits = 0;
-    Generation lastGeneration = 0;
+    Generation lastGeneration;
     ReportJobEventSink* sink = nullptr;
     WorkerStartBehavior startBehavior = WorkerStartBehavior::Succeed;
     CancellationBehavior cancellationBehavior = CancellationBehavior::Succeed;
@@ -147,7 +150,31 @@ private slots:
     void zeroCapacityQueueRejectsWithoutChangingState();
     void terminalStateRemainsImmutableForLateEvents();
     void workerBoundaryIsAbstractAndCopyableEventsCarryNoWorkerState();
+    void generationValueHasExactUnsignedStorageAndIsDistinct();
 };
+
+void NextApplicationReportJobCoordinatorTests::generationValueHasExactUnsignedStorageAndIsDistinct()
+{
+    using Generation = ReportJobGeneration;
+    using OtherGeneration = ImportJobGeneration;
+
+    static_assert(std::is_same_v<decltype(Generation{}.value()), std::uint64_t>);
+    static_assert(std::is_constructible_v<Generation, std::uint64_t>);
+    static_assert(!std::is_convertible_v<std::uint64_t, Generation>);
+    static_assert(!std::is_convertible_v<Generation, std::uint64_t>);
+    static_assert(!std::is_constructible_v<Generation, OtherGeneration>);
+    static_assert(!std::is_convertible_v<Generation, OtherGeneration>);
+    static_assert(!std::is_constructible_v<OtherGeneration, Generation>);
+    static_assert(!std::is_convertible_v<OtherGeneration, Generation>);
+
+    const Generation zero;
+    QCOMPARE(zero.value(), std::uint64_t{0});
+
+    const std::uint64_t maximum = std::numeric_limits<std::uint64_t>::max();
+    const Generation largest{maximum};
+    QCOMPARE(largest.value(), maximum);
+    QVERIFY(largest == Generation{maximum});
+}
 
 void NextApplicationReportJobCoordinatorTests::workerOnlyPublishesEventsUntilOwnerPumps()
 {
@@ -156,9 +183,10 @@ void NextApplicationReportJobCoordinatorTests::workerOnlyPublishesEventsUntilOwn
 
     const auto start = coordinator.startJob(3);
     QVERIFY(start);
+    QCOMPARE(coordinator.generation().value(), std::uint64_t{1});
     QVERIFY(worker.sink != nullptr);
     QCOMPARE(worker.lastTotalUnits, ReportJobSnapshot::UnitCount{3});
-    QCOMPARE(worker.lastGeneration, ReportJobGeneration{1});
+    QVERIFY(worker.lastGeneration == ReportJobGeneration{1});
 
     QVERIFY(worker.post(ReportJobEvent::progress(start.value(), 1)));
     QCOMPARE(coordinator.snapshot().completedUnits(), ReportJobSnapshot::UnitCount{0});
@@ -185,7 +213,7 @@ void NextApplicationReportJobCoordinatorTests::duplicateStartPreservesStateAndQu
     QCOMPARE(duplicate.error().code, ErrorCode::Conflict);
     QVERIFY(duplicate.error().recoverable);
     QCOMPARE(worker.startCalls, 1);
-    QCOMPARE(coordinator.generation(), first.value());
+    QVERIFY(coordinator.generation() == first.value());
     QCOMPARE(coordinator.pendingEventCount(), std::size_t{1});
     QCOMPARE(coordinator.snapshot(), before);
     QVERIFY(coordinator.pump());
@@ -210,7 +238,7 @@ void NextApplicationReportJobCoordinatorTests::startResetsStateAndClearsQueuedEv
     const auto second = coordinator.startJob(4);
 
     QVERIFY(second);
-    QCOMPARE(second.value(), ReportJobGeneration{2});
+    QVERIFY(second.value() == ReportJobGeneration{2});
     QCOMPARE(worker.startCalls, 2);
     QCOMPARE(coordinator.pendingEventCount(), std::size_t{0});
     const ReportJobSnapshot snapshot = coordinator.snapshot();
@@ -415,7 +443,7 @@ void NextApplicationReportJobCoordinatorTests::workerStartFailureBecomesExplicit
     worker.startError.reset();
     const auto restarted = coordinator.startJob(1);
     QVERIFY(restarted);
-    QCOMPARE(restarted.value(), ReportJobGeneration{2});
+    QVERIFY(restarted.value() == ReportJobGeneration{2});
     QCOMPARE(coordinator.snapshot().phase(), ReportJobPhase::Running);
 }
 
@@ -457,7 +485,7 @@ void NextApplicationReportJobCoordinatorTests::staleGenerationCannotMutateRestar
     QVERIFY(worker.post(ReportJobEvent::failed(first.value(), workerError("old"))));
     const auto second = coordinator.startJob(4);
     QVERIFY(second);
-    QCOMPARE(second.value(), ReportJobGeneration{2});
+    QVERIFY(second.value() == ReportJobGeneration{2});
     QCOMPARE(coordinator.pendingEventCount(), std::size_t{0});
 
     // An old worker may still publish after the new worker has started.
@@ -479,10 +507,10 @@ void NextApplicationReportJobCoordinatorTests::queueOverflowIsBoundedAndThreadSa
 {
     ReportJobEventQueue queue(2);
     QCOMPARE(queue.capacity(), std::size_t{2});
-    QVERIFY(queue.post(ReportJobEvent::progress(1, 1)));
-    QVERIFY(queue.post(ReportJobEvent::progress(1, 2)));
+    QVERIFY(queue.post(ReportJobEvent::progress(ReportJobGeneration{1}, 1)));
+    QVERIFY(queue.post(ReportJobEvent::progress(ReportJobGeneration{1}, 2)));
 
-    const auto overflow = queue.post(ReportJobEvent::progress(1, 3));
+    const auto overflow = queue.post(ReportJobEvent::progress(ReportJobGeneration{1}, 3));
     QVERIFY(!overflow);
     QCOMPARE(overflow.error().code, ErrorCode::Conflict);
     QVERIFY(overflow.error().recoverable);
@@ -505,7 +533,7 @@ void NextApplicationReportJobCoordinatorTests::queueOverflowIsBoundedAndThreadSa
                 {
                     if (concurrentQueue.post(
                             ReportJobEvent::progress(
-                                1,
+                                ReportJobGeneration{1},
                                 static_cast<ReportJobSnapshot::UnitCount>(
                                     producer * 4 + event
                                     )
@@ -530,12 +558,12 @@ void NextApplicationReportJobCoordinatorTests::queueOverflowIsBoundedAndThreadSa
 void NextApplicationReportJobCoordinatorTests::invalidEventKindIsRejectedWithoutChangingQueuedEvents()
 {
     ReportJobEventQueue queue(4);
-    QVERIFY(queue.post(ReportJobEvent::progress(1, 1)));
-    QVERIFY(queue.post(ReportJobEvent::cancellationAcknowledged(1)));
-    QVERIFY(queue.post(ReportJobEvent::completed(1, "report.pdf")));
-    QVERIFY(queue.post(ReportJobEvent::failed(1, workerError("failure"))));
+    QVERIFY(queue.post(ReportJobEvent::progress(ReportJobGeneration{1}, 1)));
+    QVERIFY(queue.post(ReportJobEvent::cancellationAcknowledged(ReportJobGeneration{1})));
+    QVERIFY(queue.post(ReportJobEvent::completed(ReportJobGeneration{1}, "report.pdf")));
+    QVERIFY(queue.post(ReportJobEvent::failed(ReportJobGeneration{1}, workerError("failure"))));
 
-    ReportJobEvent invalidEvent = ReportJobEvent::progress(1, 99);
+    ReportJobEvent invalidEvent = ReportJobEvent::progress(ReportJobGeneration{1}, 99);
     invalidEvent.kind = static_cast<ReportJobEventKind>(255);
     const auto result = queue.post(std::move(invalidEvent));
 
@@ -556,7 +584,7 @@ void NextApplicationReportJobCoordinatorTests::invalidEventKindIsRejectedWithout
 void NextApplicationReportJobCoordinatorTests::zeroCapacityQueueRejectsWithoutChangingState()
 {
     ReportJobEventQueue queue(0);
-    const ReportJobEvent event = ReportJobEvent::progress(1, 1);
+    const ReportJobEvent event = ReportJobEvent::progress(ReportJobGeneration{1}, 1);
 
     const auto result = queue.post(event);
 
@@ -608,8 +636,8 @@ void NextApplicationReportJobCoordinatorTests::workerBoundaryIsAbstractAndCopyab
     static_assert(std::is_copy_constructible_v<ReportJobSnapshot>);
     static_assert(std::is_copy_assignable_v<ReportJobSnapshot>);
 
-    const ReportJobEvent event = ReportJobEvent::completed(7, "report.pdf");
-    QCOMPARE(event.generation, ReportJobGeneration{7});
+    const ReportJobEvent event = ReportJobEvent::completed(ReportJobGeneration{7}, "report.pdf");
+    QVERIFY(event.generation == ReportJobGeneration{7});
     QCOMPARE(event.kind, ReportJobEventKind::Completed);
     QCOMPARE(event.outputReference, std::string("report.pdf"));
     QCOMPARE(event.completedUnits, ReportJobSnapshot::UnitCount{0});

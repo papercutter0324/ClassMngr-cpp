@@ -305,6 +305,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/skipped_update_version_preferences.h
     src/next/application/powerpoint_data_access_notice_preferences.h
     src/next/application/import_job_coordinator.h
+    src/next/application/import_job_generation.h
     src/next/application/import_review_session.h
     src/next/application/import_job_state.h
     src/next/application/korean_teacher_import_update.h
@@ -344,6 +345,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/teacher_profile_read_query.h
     src/next/application/preferred_name_selection_policy.h
     src/next/application/report_job_coordinator.h
+    src/next/application/report_job_generation.h
     src/next/application/report_job_state.h
     src/next/application/recent_workspace_history.h
     src/next/application/recent_workspace_history_use_case.h

@@ -75,7 +75,7 @@ void NextPlatformQtJobWorkerTests::
     const Qt::HANDLE callerThread = QThread::currentThreadId();
     Qt::HANDLE workerThread = callerThread;
     ImportJobSnapshot::ItemCount receivedCount = 0;
-    ImportJobGeneration receivedGeneration = 0;
+    ImportJobGeneration receivedGeneration;
 
     QtImportJobWorker worker(
         [&](const auto count, const auto generation, auto&, const auto&)
@@ -95,7 +95,7 @@ void NextPlatformQtJobWorkerTests::
 
     QVERIFY(workerThread != callerThread);
     QCOMPARE(receivedCount, ImportJobSnapshot::ItemCount{3});
-    QCOMPARE(receivedGeneration, start.value());
+    QVERIFY(receivedGeneration == start.value());
     QCOMPARE(coordinator.pendingEventCount(), std::size_t{2});
     const auto pump = coordinator.pump();
     QVERIFY(pump);
@@ -113,7 +113,7 @@ void NextPlatformQtJobWorkerTests::
     const Qt::HANDLE callerThread = QThread::currentThreadId();
     Qt::HANDLE workerThread = callerThread;
     ReportJobSnapshot::UnitCount receivedCount = 0;
-    ReportJobGeneration receivedGeneration = 0;
+    ReportJobGeneration receivedGeneration;
     const std::string outputReference = "reports/worker-output.pdf";
 
     QtReportJobWorker worker(
@@ -134,7 +134,7 @@ void NextPlatformQtJobWorkerTests::
 
     QVERIFY(workerThread != callerThread);
     QCOMPARE(receivedCount, ReportJobSnapshot::UnitCount{4});
-    QCOMPARE(receivedGeneration, start.value());
+    QVERIFY(receivedGeneration == start.value());
     QCOMPARE(coordinator.pendingEventCount(), std::size_t{2});
     QVERIFY(coordinator.pump());
     const ReportJobSnapshot snapshot = coordinator.snapshot();
@@ -463,9 +463,9 @@ void NextPlatformQtJobWorkerTests::
         }
         );
 
-    QVERIFY(worker.start(1, 11, queue));
+    QVERIFY(worker.start(1, ImportJobGeneration{11}, queue));
     QVERIFY(waitForFlag(mutex, condition, entered));
-    const auto duplicate = worker.start(1, 12, queue);
+    const auto duplicate = worker.start(1, ImportJobGeneration{12}, queue);
     QVERIFY(!duplicate);
     QCOMPARE(duplicate.error().code, ErrorCode::Conflict);
 
@@ -477,14 +477,14 @@ void NextPlatformQtJobWorkerTests::
     QTRY_VERIFY_WITH_TIMEOUT(!worker.isRunning(), kTimeoutMs);
     worker.waitForFinished();
 
-    QVERIFY(worker.start(2, 12, queue));
+    QVERIFY(worker.start(2, ImportJobGeneration{12}, queue));
     QTRY_VERIFY_WITH_TIMEOUT(!worker.isRunning(), kTimeoutMs);
     worker.waitForFinished();
     QCOMPARE(invocationCount, 2);
     const auto events = queue.drain();
     QCOMPARE(events.size(), std::size_t{4});
-    QCOMPARE(events[0].generation, ImportJobGeneration{11});
-    QCOMPARE(events[2].generation, ImportJobGeneration{12});
+    QVERIFY(events[0].generation == ImportJobGeneration{11});
+    QVERIFY(events[2].generation == ImportJobGeneration{12});
 }
 
 void NextPlatformQtJobWorkerTests::
@@ -537,7 +537,7 @@ void NextPlatformQtJobWorkerTests::
             }
             );
 
-        QVERIFY(worker.start(1, 1, queue));
+        QVERIFY(worker.start(1, ImportJobGeneration{1}, queue));
         QVERIFY(waitForFlag(mutex, condition, entered));
     }
 

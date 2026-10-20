@@ -1,8 +1,11 @@
 #include "next/application/import_job_coordinator.h"
+#include "next/application/report_job_generation.h"
 
 #include <QtTest/QtTest>
 
 #include <atomic>
+#include <cstdint>
+#include <limits>
 #include <optional>
 #include <stdexcept>
 #include <thread>
@@ -96,7 +99,7 @@ public:
     int startCalls = 0;
     int cancellationCalls = 0;
     ItemCount lastTotalItems = 0;
-    Generation lastGeneration = 0;
+    Generation lastGeneration;
     ImportJobEventSink* sink = nullptr;
     std::optional<OperationError> startError;
     std::optional<OperationError> cancellationError;
@@ -127,7 +130,31 @@ private slots:
     void zeroCapacityQueueRejectsWithoutChangingState();
     void terminalStateRemainsImmutableForLateEvents();
     void workerBoundaryIsAbstractAndCopyableEventsCarryNoWorkerState();
+    void generationValueHasExactUnsignedStorageAndIsDistinct();
 };
+
+void NextApplicationImportJobCoordinatorTests::generationValueHasExactUnsignedStorageAndIsDistinct()
+{
+    using Generation = ImportJobGeneration;
+    using OtherGeneration = ReportJobGeneration;
+
+    static_assert(std::is_same_v<decltype(Generation{}.value()), std::uint64_t>);
+    static_assert(std::is_constructible_v<Generation, std::uint64_t>);
+    static_assert(!std::is_convertible_v<std::uint64_t, Generation>);
+    static_assert(!std::is_convertible_v<Generation, std::uint64_t>);
+    static_assert(!std::is_constructible_v<Generation, OtherGeneration>);
+    static_assert(!std::is_convertible_v<Generation, OtherGeneration>);
+    static_assert(!std::is_constructible_v<OtherGeneration, Generation>);
+    static_assert(!std::is_convertible_v<OtherGeneration, Generation>);
+
+    const Generation zero;
+    QCOMPARE(zero.value(), std::uint64_t{0});
+
+    const std::uint64_t maximum = std::numeric_limits<std::uint64_t>::max();
+    const Generation largest{maximum};
+    QCOMPARE(largest.value(), maximum);
+    QVERIFY(largest == Generation{maximum});
+}
 
 void NextApplicationImportJobCoordinatorTests::workerOnlyPublishesEventsUntilOwnerPumps()
 {
@@ -136,8 +163,9 @@ void NextApplicationImportJobCoordinatorTests::workerOnlyPublishesEventsUntilOwn
 
     const auto start = coordinator.startJob(3);
     QVERIFY(start);
+    QCOMPARE(coordinator.generation().value(), std::uint64_t{1});
     QVERIFY(worker.sink != nullptr);
-    QCOMPARE(worker.lastGeneration, ImportJobGeneration{1});
+    QVERIFY(worker.lastGeneration == ImportJobGeneration{1});
 
     QVERIFY(worker.post(ImportJobEvent::progress(start.value(), 1)));
     QCOMPARE(coordinator.snapshot().completedItems(), ImportJobSnapshot::ItemCount{0});
@@ -163,7 +191,7 @@ void NextApplicationImportJobCoordinatorTests::duplicateStartLeavesQueuedEventsA
     QCOMPARE(duplicate.error().code, ErrorCode::Conflict);
     QVERIFY(duplicate.error().recoverable);
     QCOMPARE(worker.startCalls, 1);
-    QCOMPARE(coordinator.generation(), first.value());
+    QVERIFY(coordinator.generation() == first.value());
     QCOMPARE(coordinator.pendingEventCount(), std::size_t{1});
     QVERIFY(coordinator.pump());
     QCOMPARE(coordinator.snapshot().totalItems(), ImportJobSnapshot::ItemCount{3});
@@ -340,7 +368,7 @@ void NextApplicationImportJobCoordinatorTests::workerStartFailureBecomesExplicit
     worker.startError.reset();
     const auto restarted = coordinator.startJob(1);
     QVERIFY(restarted);
-    QCOMPARE(restarted.value(), ImportJobGeneration{2});
+    QVERIFY(restarted.value() == ImportJobGeneration{2});
     QCOMPARE(coordinator.snapshot().phase(), ImportJobPhase::Running);
 }
 
@@ -358,7 +386,7 @@ void NextApplicationImportJobCoordinatorTests::staleGenerationCannotMutateRestar
     QVERIFY(worker.post(ImportJobEvent::failed(first.value(), workerError("old"))));
     const auto second = coordinator.startJob(4);
     QVERIFY(second);
-    QCOMPARE(second.value(), ImportJobGeneration{2});
+    QVERIFY(second.value() == ImportJobGeneration{2});
     QCOMPARE(coordinator.pendingEventCount(), std::size_t{0});
 
     // An old worker may still publish after the new worker has started.
@@ -377,10 +405,10 @@ void NextApplicationImportJobCoordinatorTests::queueOverflowIsBoundedAndThreadSa
 {
     ImportJobEventQueue queue(2);
     QCOMPARE(queue.capacity(), std::size_t{2});
-    QVERIFY(queue.post(ImportJobEvent::progress(1, 1)));
-    QVERIFY(queue.post(ImportJobEvent::progress(1, 2)));
+    QVERIFY(queue.post(ImportJobEvent::progress(ImportJobGeneration{1}, 1)));
+    QVERIFY(queue.post(ImportJobEvent::progress(ImportJobGeneration{1}, 2)));
 
-    const auto overflow = queue.post(ImportJobEvent::progress(1, 3));
+    const auto overflow = queue.post(ImportJobEvent::progress(ImportJobGeneration{1}, 3));
     QVERIFY(!overflow);
     QCOMPARE(overflow.error().code, ErrorCode::Conflict);
     QVERIFY(overflow.error().recoverable);
@@ -403,7 +431,7 @@ void NextApplicationImportJobCoordinatorTests::queueOverflowIsBoundedAndThreadSa
                 {
                     if (concurrentQueue.post(
                             ImportJobEvent::progress(
-                                1,
+                                ImportJobGeneration{1},
                                 static_cast<ImportJobSnapshot::ItemCount>(
                                     producer * 4 + event
                                     )
@@ -428,12 +456,12 @@ void NextApplicationImportJobCoordinatorTests::queueOverflowIsBoundedAndThreadSa
 void NextApplicationImportJobCoordinatorTests::invalidEventKindIsRejectedWithoutChangingQueuedEvents()
 {
     ImportJobEventQueue queue(4);
-    QVERIFY(queue.post(ImportJobEvent::progress(1, 1)));
-    QVERIFY(queue.post(ImportJobEvent::cancellationAcknowledged(1)));
-    QVERIFY(queue.post(ImportJobEvent::completed(1)));
-    QVERIFY(queue.post(ImportJobEvent::failed(1, workerError("failure"))));
+    QVERIFY(queue.post(ImportJobEvent::progress(ImportJobGeneration{1}, 1)));
+    QVERIFY(queue.post(ImportJobEvent::cancellationAcknowledged(ImportJobGeneration{1})));
+    QVERIFY(queue.post(ImportJobEvent::completed(ImportJobGeneration{1})));
+    QVERIFY(queue.post(ImportJobEvent::failed(ImportJobGeneration{1}, workerError("failure"))));
 
-    ImportJobEvent invalidEvent = ImportJobEvent::progress(1, 99);
+    ImportJobEvent invalidEvent = ImportJobEvent::progress(ImportJobGeneration{1}, 99);
     invalidEvent.kind = static_cast<ImportJobEventKind>(255);
     const auto result = queue.post(std::move(invalidEvent));
 
@@ -454,7 +482,7 @@ void NextApplicationImportJobCoordinatorTests::invalidEventKindIsRejectedWithout
 void NextApplicationImportJobCoordinatorTests::zeroCapacityQueueRejectsWithoutChangingState()
 {
     ImportJobEventQueue queue(0);
-    const ImportJobEvent event = ImportJobEvent::progress(1, 1);
+    const ImportJobEvent event = ImportJobEvent::progress(ImportJobGeneration{1}, 1);
 
     const auto result = queue.post(event);
 
@@ -493,8 +521,8 @@ void NextApplicationImportJobCoordinatorTests::workerBoundaryIsAbstractAndCopyab
     static_assert(std::is_copy_constructible_v<ImportJobEvent>);
     static_assert(std::is_copy_assignable_v<ImportJobEvent>);
 
-    const ImportJobEvent event = ImportJobEvent::progress(7, 3);
-    QCOMPARE(event.generation, ImportJobGeneration{7});
+    const ImportJobEvent event = ImportJobEvent::progress(ImportJobGeneration{7}, 3);
+    QVERIFY(event.generation == ImportJobGeneration{7});
     QCOMPARE(event.completedItems, ImportJobSnapshot::ItemCount{3});
     QCOMPARE(event.kind, ImportJobEventKind::Progress);
 }

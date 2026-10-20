@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/import_job_generation.h"
 #include "next/application/import_job_state.h"
 
 #include <cstddef>
@@ -15,7 +16,6 @@
 namespace ClassMngr::Next::Application
 {
 
-using ImportJobGeneration = std::uint64_t;
 using ImportJobSessionToken = ImportJobGeneration;
 
 // The default is deliberately small. Callers can choose a smaller bound for
@@ -41,7 +41,7 @@ struct ImportJobEvent final
     using ItemCount = ImportJobSnapshot::ItemCount;
 
     ImportJobEventKind kind = ImportJobEventKind::Progress;
-    Generation generation = 0;
+    Generation generation;
     ItemCount completedItems = 0;
     std::optional<Domain::OperationError> error;
 
@@ -270,7 +270,7 @@ public:
         const ItemCount totalItems
         )
     {
-        if (m_generation == std::numeric_limits<Generation>::max())
+        if (m_generation.value() == std::numeric_limits<std::uint64_t>::max())
         {
             return Domain::Result<Generation>::failure(
                 generationExhausted()
@@ -286,7 +286,7 @@ public:
         // Incrementing and clearing happen together at the successful start
         // boundary. A rejected duplicate start leaves both state and queue
         // untouched.
-        ++m_generation;
+        m_generation = Generation{m_generation.value() + 1};
         m_eventQueue.clear();
 
         const auto workerResult = invokeWorkerStart(totalItems, m_generation);
@@ -492,7 +492,7 @@ private:
     ImportJobWorkerPort& m_worker;
     ImportJobState m_state;
     ImportJobEventQueue m_eventQueue;
-    Generation m_generation = 0;
+    Generation m_generation;
 };
 
 } // namespace ClassMngr::Next::Application

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/report_job_generation.h"
 #include "next/application/report_job_state.h"
 
 #include <cstddef>
@@ -15,7 +16,6 @@
 namespace ClassMngr::Next::Application
 {
 
-using ReportJobGeneration = std::uint64_t;
 using ReportJobSessionToken = ReportJobGeneration;
 
 // The default is deliberately small. Callers can choose a smaller bound for
@@ -42,7 +42,7 @@ struct ReportJobEvent final
     using OutputReference = ReportJobSnapshot::OutputReference;
 
     ReportJobEventKind kind = ReportJobEventKind::Progress;
-    Generation generation = 0;
+    Generation generation;
     UnitCount completedUnits = 0;
     OutputReference outputReference;
     std::optional<Domain::OperationError> error;
@@ -274,7 +274,7 @@ public:
         const UnitCount totalUnits
         )
     {
-        if (m_generation == std::numeric_limits<Generation>::max())
+        if (m_generation.value() == std::numeric_limits<std::uint64_t>::max())
         {
             return Domain::Result<Generation>::failure(
                 generationExhausted()
@@ -290,7 +290,7 @@ public:
         // Incrementing and clearing happen together at the successful start
         // boundary. A rejected duplicate start leaves both state and queue
         // untouched.
-        ++m_generation;
+        m_generation = Generation{m_generation.value() + 1};
         m_eventQueue.clear();
 
         const auto workerResult = invokeWorkerStart(totalUnits, m_generation);
@@ -496,7 +496,7 @@ private:
     ReportJobWorkerPort& m_worker;
     ReportJobState m_state;
     ReportJobEventQueue m_eventQueue;
-    Generation m_generation = 0;
+    Generation m_generation;
 };
 
 } // namespace ClassMngr::Next::Application
