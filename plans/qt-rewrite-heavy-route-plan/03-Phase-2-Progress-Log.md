@@ -51794,3 +51794,116 @@ original discovery order and boundaries are unchanged. The batch has no push
 receipt and is not closed. F629 awaits source-bound Windows x64 layout
 evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1160 Calendar repeat-series delete date accepted before implementation - 2026-10-20
+
+F1160 is accepted/in progress. Change
+`CalendarEventSeriesDeleteRequest.startDate` from UTF-8 text to
+`Domain::GregorianDate`. Introduce `CalendarEventSeriesDeleteInput` with raw
+`startDate` text and a `toRequest()` boundary; the UseCase accepts this Input
+so malformed dates and invalid IDs retain the existing validation error
+without calling the port. Keep typed Request/Port dates valid by construction,
+preserve the Platform direct invalid-ID guard and result behavior, and map the
+date components to `QDate`.
+
+Preserve the exact current error for an invalid ID or date:
+`InvalidInput`, message `Calendar repeat-series delete request must contain a non-blank bounded series identifier and a valid ISO start date.`, `recoverable=false`. The date parser remains `GregorianDate::fromIsoString`,
+the strict parser used by `CalendarEventTiming::isCanonicalDate`. Keep the UI
+draft's raw ISO date at the Input boundary. Platform validates before session
+lookup; the repository continues deleting the repeat-series suffix with
+`start_date >= selected date`. Make no repository or SQL changes.
+
+Evidence: `src/next/application/calendar_event_series_delete_port.h`,
+`src/next/application/calendar_event_series_delete_use_case.h`,
+`src/next/application/calendar_event_series_edit_port.h` (neighboring raw
+Input pattern), `src/next/domain/gregorian_date.h`,
+`src/next/domain/calendar_event_timing.h`,
+`src/next/platform/application_services_calendar_event_series_delete_port.h`,
+`src/features/calendar/ui/calendar_page_events.cpp`,
+`src/data/repositories/calendar_event_repository.cpp`,
+`tests/next_application_calendar_event_tests.cpp`,
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`, and
+`cmake/tests/next.cmake`.
+
+Focused acceptance gate: in the existing `build/macos-clang-debug` tree,
+incrementally build `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`; run both
+focused Application and Platform CTests, then run `git diff --check`. Tests
+must cover the typed Request field, exact raw-Input validation code/message/
+recoverability and no port call for malformed date or invalid ID, valid leap-
+date conversion and forwarding, and unchanged Platform suffix date,
+invalid-ID precedence, unavailable-session, and repository-failure behavior.
+The `ClassMngr` build covers the feature caller compile. No full-suite or
+Windows pass is claimed. Implementation and verification have not started.
+
+### Batch489 discovery at F1160 start - 2026-10-20
+
+Batch489 is provisionally discovered and inactive until Batch488 closes. The
+nine candidates below retain this order:
+
+1. **F1162 - Calendar repeat-create cutoff date.** Type the `until` date as
+   `Domain::GregorianDate` through the use case/planner; preserve inclusive
+   cutoff, range rules, and invalid-input/no-port-call behavior. Evidence:
+   `src/next/application/calendar_event_series_create_use_case.h`,
+   `src/next/application/calendar_event_repeat_occurrence_plan.h`,
+   `src/features/calendar/ui/calendar_page_events.cpp`, and
+   `tests/next_application_calendar_event_tests.cpp`. Keep raw invalid input
+   at an Input boundary.
+2. **F1163 - Calendar single-event save date pair.** Consider
+   `GregorianDate` request fields for start/end while preserving validation,
+   ordering, and invalid-input representation. Evidence:
+   `src/next/application/calendar_event_save_port.h`,
+   `src/next/application/calendar_event_repeat_occurrence_plan.h`,
+   `src/next/platform/application_services_calendar_event_save_port.h`, and
+   Application/Platform calendar tests. Default-built requests and raw invalid
+   input need an explicit redesign/Input decision.
+3. **F1164 - Calendar series-edit occurrence start date.** Type the persisted
+   `CalendarEventSeriesEditPlan` date; preserve Technical failure for malformed
+   persisted data, ordering, and shift behavior. Evidence:
+   `src/next/application/calendar_event_series_edit_plan.h`,
+   `src/next/platform/application_services_calendar_event_series_edit_port.h`,
+   and `tests/next_application_calendar_event_tests.cpp`. The producer is
+   already source-bound to `QDate`.
+4. **F1165 - Schedule Import projected state time.** Type `dayIndex`,
+   `startMinute`, and `endMinute`; preserve `-1` as unknown and invalid-
+   projection error labels. Evidence:
+   `src/next/application/schedule_import_overlap_projection.h`,
+   `src/next/application/schedule_import_state_validation.h`, repository and
+   feature adapters, and
+   `tests/next_application_schedule_import_state_validation_tests.cpp`.
+   Confidence: high.
+5. **F1166 - Upcoming Birthday reference date.** Replace year/month/day ints
+   with a typed date/optional Input while preserving invalid-reference
+   behavior that yields an empty schedule. Evidence:
+   `src/next/application/upcoming_birthday_schedule_use_case.h`,
+   `src/features/teacher/upcoming_birthday_schedule.cpp`, and
+   `tests/next_application_upcoming_birthday_schedule_use_case_tests.cpp`.
+6. **F1167 - Teacher Import counters.** Consider a count value for created,
+   updated, and unchanged; preserve zero defaults, increments, and total.
+   Evidence: `src/next/application/teacher_import_use_case.h`,
+   `src/features/setup/ui/initial_setup_wizard.cpp`, and
+   `tests/next_application_teacher_import_use_case_tests.cpp`. Negative
+   manually built values are unadjudicated.
+7. **F1168 - Update artifact SHA-256.** Consider a shared opaque digest value
+   for manual/startup contracts; preserve exact text without normalization.
+   Evidence: `src/next/application/manual_update_check.h`,
+   `src/next/application/startup_update_check.h`, platform adapters,
+   `tests/update_controller_automatic_startup_tests.cpp`, and their Application
+   tests.
+8. **F1169 - Sub Prep navigation weekday/minute facts.** Type weekdays and
+   optional minutes while preserving unknown-day ignore, guards 0–6 and
+   0–1439, and earliest-day-without-time behavior. Evidence:
+   `src/next/application/sub_prep_navigation_schedule_order_policy.h`, the
+   platform producer, and
+   `tests/next_application_sub_prep_navigation_schedule_order_policy_tests.cpp`.
+   Confidence: medium.
+9. **F1170 - Sub Prep print ordering keys.** Type weekday/start-minute while
+   preserving explicit unknown-sentinel ordering. Evidence:
+   `src/next/application/sub_prep_print_order_policy.h`, the feature producer,
+   and `tests/next_application_sub_prep_print_order_policy_tests.cpp`.
+   Confidence: medium.
+
+The low-confidence student-name peer row-position idea is excluded: values are
+inherently UI positions and a domain-type benefit is unestablished.
+No other slices were found.
