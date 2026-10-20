@@ -274,6 +274,23 @@ void averageThousandthsValueSemantics()
     assert(Average(6000).thousandths() == 6000);
 }
 
+void criterionStudentCountValueSemantics()
+{
+    using Count = ClassAnalyticsCriterionStudentCount;
+    static_assert(std::is_constructible_v<Count, int>);
+    static_assert(!std::is_convertible_v<int, Count>);
+    static_assert(!std::is_convertible_v<Count, int>);
+    static_assert(std::is_same_v<decltype(Count{}.rawValue()), int>);
+
+    const Count zero{};
+    assert(zero.rawValue() == 0);
+
+    const Count value(-125);
+    assert(value.rawValue() == -125);
+    assert(value == Count(-125));
+    assert(value != Count(125));
+}
+
 void evaluationSelectionDefaultsAndLegacyTextConversion()
 {
     const TestNameSemantics names;
@@ -384,6 +401,10 @@ void strongestAndFocusCriteriaPreserveOrderAndLabels()
     assert(!criterionGrades[5].has_value());
     assert(!selected.criteria[3].hasData);
     assert(!selected.criteria[5].hasData);
+    assert(selected.criteria[0].students.rawValue() == 1);
+    assert(selected.criteria[0].hasData);
+    assert(selected.criteria[3].students.rawValue() == 0);
+    assert(!selected.criteria[3].hasData);
 }
 
 void currentRosterUsesNormalizedEnglishAndKoreanIdentities()
@@ -433,6 +454,7 @@ void duplicateRowsConsolidateAndRankingTiesUseNamePort()
     assert(selected.rankings[1].englishName == u"J. P. Kim");
     assert(selected.rankings[0].overall3.thousandths() == 3000);
     assert(selected.rankings[1].overall3.thousandths() == 3000);
+    assert(selected.criteria[0].students.rawValue() == 2);
 }
 
 void adjacentRoundedScoresRankBeforeNamePort()
@@ -754,6 +776,7 @@ void roundedClassAverageAtGradeBoundaryAdvances()
 int main()
 {
     averageThousandthsValueSemantics();
+    criterionStudentCountValueSemantics();
     evaluationSelectionDefaultsAndLegacyTextConversion();
     numericPolicyBoundaries();
     partialScoringPreservesWeightedAveragesAndYtdInputs();

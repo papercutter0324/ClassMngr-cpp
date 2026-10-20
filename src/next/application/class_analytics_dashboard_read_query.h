@@ -3,6 +3,7 @@
 #include "next/application/class_analytics_average_thousandths.h"
 #include "next/application/class_analytics_dashboard_read_port.h"
 #include "next/application/class_analytics_criterion_extrema_policy.h"
+#include "next/application/class_analytics_criterion_student_count.h"
 #include "next/application/class_analytics_numeric_policy.h"
 #include "next/application/class_analytics_ranking_order_policy.h"
 #include "next/application/positive_decimal_id_validation.h"
@@ -122,7 +123,7 @@ inline constexpr std::array<std::u16string_view,
 struct ClassAnalyticsCriterionSlice final
 {
     std::u16string name;
-    int students = 0;
+    ClassAnalyticsCriterionStudentCount students;
     std::array<int, 5> distribution{};
     ClassAnalyticsAverageThousandths average3;
     bool hasData = false;
@@ -461,7 +462,9 @@ namespace ClassAnalyticsDashboardReadDetail
     {
         ClassAnalyticsCriterionSlice slice;
         slice.name = std::u16string(kClassAnalyticsCriterionNames[criterion]);
-        slice.students = criterionStudentCounts[criterion];
+        slice.students = ClassAnalyticsCriterionStudentCount{
+            criterionStudentCounts[criterion]
+        };
         slice.distribution = distributions[criterion];
         slice.hasData = criterionCounts[criterion] > 0;
         if (slice.hasData)

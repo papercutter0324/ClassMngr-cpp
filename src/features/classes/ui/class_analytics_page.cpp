@@ -89,7 +89,7 @@ SpeakingAnalytics::Snapshot toUiSnapshot(
         SpeakingAnalytics::CriterionSlice slice;
         slice.order = static_cast<int>(snapshot.criteria.size());
         slice.name = toQString(sourceSlice.name);
-        slice.students = sourceSlice.students;
+        slice.students = sourceSlice.students.rawValue();
         slice.average3 = sourceSlice.average3.toDouble();
         slice.hasData = sourceSlice.hasData;
         for (int grade = 1; grade <= 5; ++grade)
