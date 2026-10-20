@@ -40,7 +40,7 @@ ClassSummary classSummary(
         "Class " + displayId,
         "Mon 09:00",
         ClassSummaryStudentCount{18},
-        0
+        ClassSummaryOrder{0}
     };
 }
 

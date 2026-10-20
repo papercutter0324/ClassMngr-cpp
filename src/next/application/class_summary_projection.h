@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/class_summary_order.h"
 #include "next/application/class_summary_student_count.h"
 #include "next/application/navigation_order_rank.h"
 #include "next/application/qt_compatible_text.h"
@@ -84,7 +85,7 @@ struct ClassSummary final
     std::string displayLabel;
     std::string meetingText;
     ClassSummaryStudentCount studentCount;
-    std::int32_t order = 0;
+    ClassSummaryOrder order;
     // Compact legacy class-tab presentation and ordering values. The platform
     // adapter computes these from the raw preferred schedule before releasing
     // repository records; consumers do not need to retain per-meeting rows.
@@ -365,7 +366,7 @@ template <typename TypedId>
             );
     }
 
-    if (classSummary.order < 0)
+    if (classSummary.order.rawValue() < 0)
     {
         return Domain::Result<void>::failure(
             invalidInput("Class summary order must not be negative.")

@@ -397,7 +397,11 @@ projectsVisibleScheduleSummariesAndAggregatesRosterCounts()
     ApplicationServicesSubPrepScheduleSummaryPort port(services);
     const SubPrepScheduleSummaryQuery query(port);
     const auto result = query.execute(summaryRequestFor(
-        {classId(secondClass), classId(firstClass), classId(outsideSelectedDays)},
+        {
+            classId(outsideSelectedDays),
+            classId(secondClass),
+            classId(firstClass)
+        },
         {SubPrepWeekday::Monday, SubPrepWeekday::Wednesday},
         ScheduleViewMode::Regular
         ));
@@ -405,13 +409,19 @@ projectsVisibleScheduleSummariesAndAggregatesRosterCounts()
     QVERIFY(result);
     QCOMPARE(result.value().classes().size(), std::size_t(2));
     QCOMPARE(result.value().classes()[0].id, classId(secondClass));
-    QCOMPARE(result.value().classes()[0].order, std::int32_t(0));
+    QCOMPARE(
+        result.value().classes()[0].order.rawValue(),
+        std::int32_t(1)
+        );
     QCOMPARE(result.value().classes()[0].grade, std::string("E5"));
     QCOMPARE(result.value().classes()[0].level, std::string("Apollo"));
     QCOMPARE(result.value().classes()[0].displayLabel, std::string("E5 Apollo"));
     QCOMPARE(result.value().classes()[0].studentCount.rawValue(), std::size_t(1));
     QCOMPARE(result.value().classes()[1].id, classId(firstClass));
-    QCOMPARE(result.value().classes()[1].order, std::int32_t(1));
+    QCOMPARE(
+        result.value().classes()[1].order.rawValue(),
+        std::int32_t(2)
+        );
     QCOMPARE(result.value().classes()[1].studentCount.rawValue(), std::size_t(2));
     QCOMPARE(result.value().classes()[1].meetingText, std::string("MonWed 9am"));
     QCOMPARE(

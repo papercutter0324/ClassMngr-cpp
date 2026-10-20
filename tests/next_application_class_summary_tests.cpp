@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -60,7 +61,7 @@ ClassSummary classSummary(
         "Class label",
         "Mon 10:00",
         ClassSummaryStudentCount{studentCount},
-        order
+        ClassSummaryOrder{order}
     };
 }
 
@@ -122,6 +123,7 @@ private slots:
     void classSummaryNavigationRanksHaveTypedValuesAndBoundaries();
     void projectionsAreCopyableEqualAndIndependentlyReleasable();
     void classSummaryStudentCountHasExplicitValueSemantics();
+    void classSummaryOrderHasExplicitValueSemantics();
     void contractSurfaceHasTypedValuesAndNoPointerLookups();
 };
 
@@ -185,11 +187,14 @@ void NextApplicationClassSummaryTests::valid96ClassScaleProjectionIsBoundedAndRe
         projection.classes().front().studentCount.rawValue(),
         std::size_t(0)
         );
-    QCOMPARE(projection.classes().front().order, std::int32_t(0));
+    QCOMPARE(
+        projection.classes().front().order.rawValue(),
+        std::int32_t(0)
+        );
     QVERIFY(!projection.classes().front().hasTeacher());
     const auto class42 = projection.findClass(classId("class-42"));
     QVERIFY(class42.has_value());
-    QCOMPARE(class42->order, std::int32_t(41));
+    QCOMPARE(class42->order.rawValue(), std::int32_t(41));
     QVERIFY(projection.findTeacher(teacherId("teacher-2")).has_value());
     QVERIFY(projection.selectedDetails().has_value());
     QCOMPARE(
@@ -527,8 +532,28 @@ void NextApplicationClassSummaryTests::collectionAndStudentCountBoundsAreRejecte
         );
 
     auto negativeOrder = validInput();
-    negativeOrder.classes.front().order = -1;
-    verifyInvalid(ClassSummaryProjection::create(std::move(negativeOrder)));
+    negativeOrder.classes.front().order = ClassSummaryOrder{-1};
+    const auto negativeOrderResult = ClassSummaryProjection::create(
+        std::move(negativeOrder)
+        );
+    verifyInvalid(negativeOrderResult);
+    QCOMPARE(
+        negativeOrderResult.error().message,
+        std::string("Class summary order must not be negative.")
+        );
+
+    auto maximumOrder = validInput();
+    maximumOrder.classes.front().order = ClassSummaryOrder{
+        std::numeric_limits<std::int32_t>::max()
+    };
+    const auto maximumOrderResult = ClassSummaryProjection::create(
+        std::move(maximumOrder)
+        );
+    QVERIFY(maximumOrderResult);
+    QCOMPARE(
+        maximumOrderResult.value().classes().front().order.rawValue(),
+        std::numeric_limits<std::int32_t>::max()
+        );
 }
 
 void NextApplicationClassSummaryTests::
@@ -629,6 +654,33 @@ classSummaryStudentCountHasExplicitValueSemantics()
     QCOMPARE(positive.rawValue(), std::size_t(37));
 }
 
+void NextApplicationClassSummaryTests::
+classSummaryOrderHasExplicitValueSemantics()
+{
+    static_assert(
+        std::is_same_v<decltype(ClassSummary::order), ClassSummaryOrder>
+        );
+    static_assert(
+        std::is_same_v<
+            decltype(std::declval<ClassSummaryOrder>().rawValue()),
+            std::int32_t
+            >
+        );
+    static_assert(std::is_default_constructible_v<ClassSummaryOrder>);
+    static_assert(std::is_constructible_v<ClassSummaryOrder, std::int32_t>);
+    static_assert(!std::is_convertible_v<std::int32_t, ClassSummaryOrder>);
+    static_assert(!std::is_convertible_v<ClassSummaryOrder, std::int32_t>);
+
+    const ClassSummaryOrder defaultOrder;
+    const ClassSummaryOrder zero{0};
+    const ClassSummaryOrder positive{37};
+    QVERIFY(defaultOrder == zero);
+    QVERIFY(defaultOrder != positive);
+    QVERIFY(ClassSummaryOrder{37} == positive);
+    QCOMPARE(defaultOrder.rawValue(), std::int32_t(0));
+    QCOMPARE(positive.rawValue(), std::int32_t(37));
+}
+
 void NextApplicationClassSummaryTests::projectionsAreCopyableEqualAndIndependentlyReleasable()
 {
     static_assert(std::is_copy_constructible_v<TeacherSummary>);
@@ -667,7 +719,7 @@ void NextApplicationClassSummaryTests::contractSurfaceHasTypedValuesAndNoPointer
             ClassSummaryStudentCount
             >
         );
-    static_assert(std::is_same_v<decltype(ClassSummary::order), std::int32_t>);
+    static_assert(std::is_same_v<decltype(ClassSummary::order), ClassSummaryOrder>);
     static_assert(
         std::is_same_v<
             decltype(std::declval<const TeacherSummaryIndex>().find(

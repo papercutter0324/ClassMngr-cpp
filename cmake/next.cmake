@@ -100,6 +100,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/calendar_event_projection.h
     src/next/application/sub_prep_calendar_event_intervals_query.h
     src/next/application/campus_directory_projection.h
+    src/next/application/class_summary_order.h
     src/next/application/class_summary_student_count.h
     src/next/application/class_summary_projection.h
     src/next/application/positive_decimal_id_validation.h

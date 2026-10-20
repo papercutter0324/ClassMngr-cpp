@@ -43,7 +43,7 @@ ClassSummary summary(
         "Class " + displayId,
         "Mon 09:00",
         ClassSummaryStudentCount{18},
-        order
+        ClassSummaryOrder{order}
     };
 }
 
@@ -453,14 +453,14 @@ forwardsExactScopeAndReturns96ClassProjection()
     QCOMPARE(result.value().classes().size(), std::size_t(96));
     QCOMPARE(result.value().teacherIndex().summaries().size(), std::size_t(2));
     QCOMPARE(result.value().classes().front().id.value(), std::string("class-1"));
-    QCOMPARE(result.value().classes().front().order, std::int32_t(0));
+    QCOMPARE(result.value().classes().front().order.rawValue(), std::int32_t(0));
     QCOMPARE(result.value().classes().front().grade, std::string("Grade 4"));
     QCOMPARE(
         result.value().classes().front().studentCount.rawValue(),
         std::size_t(18)
         );
     QCOMPARE(result.value().classes().back().id.value(), std::string("class-96"));
-    QCOMPARE(result.value().classes().back().order, std::int32_t(95));
+    QCOMPARE(result.value().classes().back().order.rawValue(), std::int32_t(95));
     QCOMPARE(
         result.value().teacherIndex().summaries().front().id.value(),
         std::string("teacher-1")

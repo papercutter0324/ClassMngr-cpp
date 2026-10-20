@@ -150,9 +150,9 @@ public:
             input.classes.end(),
             [](const ClassSummary& left, const ClassSummary& right)
             {
-                if (left.order != right.order)
+                if (left.order.rawValue() != right.order.rawValue())
                 {
-                    return left.order < right.order;
+                    return left.order.rawValue() < right.order.rawValue();
                 }
 
                 return left.id < right.id;

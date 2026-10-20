@@ -478,7 +478,9 @@ public:
                     .studentCount = Application::ClassSummaryStudentCount{
                         static_cast<std::size_t>(record.studentCount)
                     },
-                    .order = static_cast<std::int32_t>(requestIndex),
+                    .order = Application::ClassSummaryOrder{
+                        static_cast<std::int32_t>(requestIndex)
+                    },
                     .navigationLabel = *navigationLabel,
                     .navigationTeacherLabel = *navigationTeacherLabel,
                     .navigationFirstDayOrder =

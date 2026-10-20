@@ -137,8 +137,10 @@ public:
                     legacyId == 42 ? 0U : 9U
                 },
                 .order = sortedFallbackFixture
-                    ? legacyId == 43 ? 0 : legacyId == 42 ? 1 : 2
-                    : static_cast<std::int32_t>(index),
+                    ? ClassSummaryOrder{
+                        legacyId == 43 ? 0 : legacyId == 42 ? 1 : 2
+                    }
+                    : ClassSummaryOrder{static_cast<std::int32_t>(index)},
                 .navigationFirstDayOrder = sortedFallbackFixture
                     ? ClassTabNavigationOrderRank{fridayClass ? 6 : 0}
                     : ClassTabNavigationOrderRank{
