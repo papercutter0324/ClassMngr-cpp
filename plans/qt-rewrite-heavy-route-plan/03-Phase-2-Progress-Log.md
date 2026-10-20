@@ -56457,3 +56457,46 @@ confirmed the build and passed all four focused CTests:
 because Qt dylibs were built for macOS 14.4 while the target is macOS 13.0;
 linking succeeded. This was incremental macOS `arm64;x86_64` Debug
 verification; no full-suite or Windows run is claimed.
+
+### F1228 Sub Prep visible-class ordering positions accepted before implementation - 2026-10-21
+
+F1228 is accepted based on two independent read-only Explorer reports and a
+main-owned contract decision. Add a distinct explicit Application value type
+`SubPrepVisibleClassRowIndex`, backed by `std::size_t`, with default zero,
+private storage, `.rawValue()`, equality, and no implicit conversions. Change
+`orderSubPrepVisibleClassRows` to return
+`std::vector<SubPrepVisibleClassRowIndex>`. Each value is a zero-based position
+in the policy's input ordering-facts vector, not a visible output row or a
+projection-row index. Do not reuse F1226's `SubPrepPrintClassIndex`, whose
+positions address prepared print facts. Add no sentinel or range validation.
+
+Preserve the policy's full ascending comparison tuple: configured-level
+order, navigation day rank, navigation minute rank, injected base-label
+comparison, then class ID. Keep `std::stable_sort`, so complete tuple ties
+retain input order. Numeric unknown-rank sentinels continue to compare
+literally, and the caller continues to provide the non-empty label comparator;
+do not add comparator validation or change locale-aware comparison.
+
+In `SubPrepClassInformationListModel::rebuildVisibleRows`, unwrap only when
+indexing the aligned ordering facts, filtered projection rows, and base-label
+list. Preserve the mapping from filtered fact position through `filteredRows`
+to the original projection row. Keep `m_visibleRows`, Qt visible-row indexes,
+class-ID selection, grade filtering, and page behavior unchanged.
+
+Extend `next_application_sub_prep_visible_class_ordering_policy_tests.cpp`
+with wrapper default/explicit/equality/raw-value/non-conversion checks and a
+return-element type assertion. Retain tuple precedence, injected comparator,
+literal unknown-sentinel behavior, class-ID ordering, and stable exact ties;
+add an explicit empty-input result assertion. Preserve filtered-fact to
+projection-row, ID/role, and `rowForClassId()` coverage in
+`sub_prep_class_information_list_model_tests.cpp`. In
+`sub_prep_page_tests.cpp`, retain
+`removedSelectionFallsBackToSortedFirstClassAndLoadsItsDetails`, which checks
+source order, sorted visible order, and selection fallback by class ID.
+
+Focused targets are `ClassMngr`,
+`ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests`,
+`ClassMngrSubPrepClassInformationListModelTests`, and
+`ClassMngrSubPrepPageTests` (run the selected fallback case above for the page
+integration). At acceptance time, no F1228 implementation or verification had
+started.
