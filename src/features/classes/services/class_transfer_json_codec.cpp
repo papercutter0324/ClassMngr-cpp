@@ -712,7 +712,7 @@ QJsonObject rosterToJson(const ClassExportRoster& value)
 {
     QJsonArray columns, widths;
     for (const auto& column : value.columns) columns.append(exportText(column));
-    for (const int width : value.columnWidths) widths.append(width);
+    for (const auto& width : value.columnWidths) widths.append(width.rawValue());
     return {{QStringLiteral("columns"), columns}, {QStringLiteral("column_widths"), widths},
         {QStringLiteral("rows"), exportRows(value.rows)}};
 }

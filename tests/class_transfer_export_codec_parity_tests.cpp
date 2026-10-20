@@ -205,7 +205,8 @@ void ClassTransferExportCodecParityTests::completeExportPreservesSchemaOrderAndE
     const auto first = classes[1].toObject();
     const auto roster = first.value(QStringLiteral("roster")).toObject();
     QCOMPARE(roster.value(QStringLiteral("columns")).toArray().size(), 9);
-    QCOMPARE(roster.value(QStringLiteral("column_widths")).toArray().last().toInt(), 159);
+    QCOMPARE(roster.value(QStringLiteral("column_widths")).toArray(),
+        (QJsonArray{71, 82, 93, 104, 115, 126, 137, 148, 159}));
     QCOMPARE(roster.value(QStringLiteral("rows")).toArray().size(), 29);
     QCOMPARE(roster.value(QStringLiteral("rows")).toArray()[28].toArray()[8].toString(), QStringLiteral("Sparse last"));
     const auto evaluations = first.value(QStringLiteral("speaking_evaluations")).toArray(); QCOMPARE(evaluations.size(), 2);

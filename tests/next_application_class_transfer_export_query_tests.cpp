@@ -26,6 +26,14 @@ static_assert(std::is_same_v<
 static_assert(std::is_same_v<
     decltype(std::declval<ClassTransferPackageVersion>().value()),
     int>);
+static_assert(std::is_same_v<
+    decltype(std::declval<ClassExportRoster>().columnWidths),
+    std::vector<ClassExportRosterColumnWidth>>);
+static_assert(std::is_same_v<
+    decltype(std::declval<ClassExportRosterColumnWidth>().rawValue()),
+    int>);
+static_assert(!std::is_convertible_v<int, ClassExportRosterColumnWidth>);
+static_assert(!std::is_convertible_v<ClassExportRosterColumnWidth, int>);
 static_assert(!std::is_convertible_v<int, ClassTransferPackageVersion>);
 static_assert(!std::is_convertible_v<ClassTransferPackageVersion, int>);
 static_assert(std::is_same_v<
@@ -60,6 +68,14 @@ static_assert(DefaultSelectionOrdinal.rawValue() == 0);
 static_assert(ExplicitSelectionOrdinal.rawValue() == 4);
 static_assert(ExplicitSelectionOrdinal == EqualSelectionOrdinal);
 static_assert(ExplicitSelectionOrdinal != DifferentSelectionOrdinal);
+constexpr ClassExportRosterColumnWidth DefaultRosterColumnWidth{};
+constexpr ClassExportRosterColumnWidth MinimumRosterColumnWidth{std::numeric_limits<int>::min()};
+constexpr ClassExportRosterColumnWidth MaximumRosterColumnWidth{std::numeric_limits<int>::max()};
+static_assert(DefaultRosterColumnWidth.rawValue() == 0);
+static_assert(MinimumRosterColumnWidth.rawValue() == std::numeric_limits<int>::min());
+static_assert(MaximumRosterColumnWidth.rawValue() == std::numeric_limits<int>::max());
+static_assert(MinimumRosterColumnWidth == ClassExportRosterColumnWidth{std::numeric_limits<int>::min()});
+static_assert(MinimumRosterColumnWidth != MaximumRosterColumnWidth);
 namespace
 {
 Domain::ClassId id(int value) { return *Domain::ClassId::fromString(std::to_string(value)); }
@@ -78,7 +94,10 @@ ClassExportSourceClass item(int value, std::optional<Domain::TeacherId> teacher 
     info.sourceClassId = value; info.sourceTeacherId = 99;
     info.teacherEn = u"private teacher metadata"; info.wifiPassword = u"private password";
     result.info = ClassExportStage<ClassExportSourceInfo>::value(info);
-    result.roster = ClassExportStage<ClassExportRoster>::value({{u"English", u"Korean", u"Notes"}, {70, 80, 90}, {{u"Alex", u"\uAE40\uBBFC\uC218", u"full cell"}}});
+    result.roster = ClassExportStage<ClassExportRoster>::value({
+        {u"English", u"Korean", u"Notes"},
+        {ClassExportRosterColumnWidth{70}, ClassExportRosterColumnWidth{80}, ClassExportRosterColumnWidth{90}},
+        {{u"Alex", u"\uAE40\uBBFC\uC218", u"full cell"}}});
     result.teacher = ClassExportStage<std::optional<Domain::TeacherId>>::value(teacher);
     result.evaluations = ClassExportStage<std::vector<ClassExportEvaluation>>::value({{u"Second", {{u"sparse", u"value"}}}, {u"First", {}}});
     return result;
@@ -101,6 +120,7 @@ class ClassTransferExportQueryTests : public QObject
     Q_OBJECT
 private slots:
     void preservesRequestAndAssemblesFirstSeenKeysAndFullPayload();
+    void rosterWidthsKeepSignedValuesAndOrder();
     void packageVersionIsAnExactSignedIntValue();
     void utcMillisecondsValuePreservesFullSignedRangeAndIsOpaque();
     void formatsUnixEpochAndNegativeMillisecondsInUtc();
@@ -141,11 +161,31 @@ void ClassTransferExportQueryTests::preservesRequestAndAssemblesFirstSeenKeysAnd
     for (std::size_t i = 0; i < output.classes.size(); ++i)
         QVERIFY(output.classes[i].key.value() == (u"class-" + std::u16string(1, char16_t(u'1' + i))));
     QVERIFY(output.classes[0].name == exactPayload);
-    QVERIFY(output.classes[0].roster.columnWidths == std::vector<int>({70, 80, 90}));
+    QVERIFY(output.classes[0].roster.columnWidths == (std::vector<ClassExportRosterColumnWidth>{
+        ClassExportRosterColumnWidth{70}, ClassExportRosterColumnWidth{80}, ClassExportRosterColumnWidth{90}}));
     QVERIFY(output.classes[0].roster.rows[0][2] == u"full cell");
     QVERIFY(output.classes[0].evaluations[0].name == u"Second" && output.classes[0].evaluations[1].name == u"First");
     port.source.classes[0].name = u"mutated";
     QVERIFY(output.classes[0].name == exactPayload);
+}
+void ClassTransferExportQueryTests::rosterWidthsKeepSignedValuesAndOrder()
+{
+    Port port;
+    port.source.classes = {item(1)};
+    ClassExportRoster roster;
+    roster.columns = {u"first", u"second", u"third", u"fourth"};
+    const std::vector<int> expected{
+        std::numeric_limits<int>::min(), -17, 0, std::numeric_limits<int>::max()};
+    for (const int width : expected)
+        roster.columnWidths.push_back(ClassExportRosterColumnWidth{width});
+    port.source.classes.front().roster = ClassExportStage<ClassExportRoster>::value(std::move(roster));
+
+    const auto result = ClassTransferExportQuery(port).execute({{id(1)}});
+    QVERIFY(result);
+    const auto& widths = result.value().classes.front().roster.columnWidths;
+    QCOMPARE(widths.size(), expected.size());
+    for (std::size_t index = 0; index < expected.size(); ++index)
+        QCOMPARE(widths[index].rawValue(), expected[index]);
 }
 void ClassTransferExportQueryTests::packageVersionIsAnExactSignedIntValue()
 {

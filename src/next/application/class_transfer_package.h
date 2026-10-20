@@ -15,6 +15,30 @@ namespace ClassMngr::Next::Application
 using ClassExportText = std::u16string;
 using ClassExportRows = std::vector<std::vector<ClassExportText>>;
 struct ClassExportTime { ClassExportText day, startTime, endTime; };
+class ClassExportRosterColumnWidth final
+{
+public:
+    constexpr ClassExportRosterColumnWidth() noexcept = default;
+
+    explicit constexpr ClassExportRosterColumnWidth(int value) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ClassExportRosterColumnWidth&,
+        const ClassExportRosterColumnWidth&
+        ) noexcept = default;
+
+private:
+    int m_value = 0;
+};
+
 struct ClassExportInfo
 {
     ClassExportText classGrade, classLevel, readingBook, essayBook, classColor, fontColor;
@@ -24,7 +48,7 @@ struct ClassExportInfo
 struct ClassExportRoster
 {
     std::vector<ClassExportText> columns;
-    std::vector<int> columnWidths;
+    std::vector<ClassExportRosterColumnWidth> columnWidths;
     ClassExportRows rows;
 };
 struct ClassExportEvaluation { ClassExportText name; ClassExportRows rows; };

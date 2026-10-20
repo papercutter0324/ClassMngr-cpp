@@ -112,7 +112,9 @@ toPortableClassTransferPackage(::ClassTransferPackage package)
         output.roster.columns.reserve(source.roster.columns.size());
         for (const auto& column : source.roster.columns)
             output.roster.columns.push_back(column.toStdU16String());
-        output.roster.columnWidths.assign(source.roster.columnWidths.begin(), source.roster.columnWidths.end());
+        output.roster.columnWidths.reserve(source.roster.columnWidths.size());
+        for (const int width : source.roster.columnWidths)
+            output.roster.columnWidths.push_back(Application::ClassExportRosterColumnWidth{width});
         output.roster.rows = portableRows(source.roster.rows);
         output.evaluations.reserve(source.evaluations.size());
         for (const auto& evaluation : source.evaluations)
@@ -171,7 +173,9 @@ toPortableClassTransferPackage(::ClassTransferPackage package)
         output.roster.columns.reserve(source.roster.columns.size());
         for (const auto& column : source.roster.columns)
             output.roster.columns.append(QString::fromStdU16String(column));
-        output.roster.columnWidths.assign(source.roster.columnWidths.begin(), source.roster.columnWidths.end());
+        output.roster.columnWidths.reserve(source.roster.columnWidths.size());
+        for (const auto& width : source.roster.columnWidths)
+            output.roster.columnWidths.push_back(width.rawValue());
         output.roster.rows = legacyRows(source.roster.rows);
         output.evaluations.reserve(source.evaluations.size());
         for (const auto& evaluation : source.evaluations)

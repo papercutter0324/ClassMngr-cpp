@@ -109,8 +109,8 @@ public:
                 ClassExportRoster value;
                 for (const auto& column : source.roster.columns)
                     value.columns.push_back(column.toStdU16String());
-                for (int width : source.roster.columnWidths)
-                    value.columnWidths.push_back(width);
+                for (const int width : source.roster.columnWidths)
+                    value.columnWidths.push_back(ClassExportRosterColumnWidth{width});
                 value.rows = rows(source.roster.rows);
                 item.roster = ClassExportStage<ClassExportRoster>::value(std::move(value));
             }

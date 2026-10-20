@@ -5,6 +5,7 @@
 #include <QJsonArray>
 #include <QtTest/QtTest>
 
+#include <limits>
 #include <type_traits>
 #include <utility>
 
@@ -28,8 +29,15 @@ static_assert(std::is_same_v<decltype(std::declval<Application::ClassTransferCla
     const std::string&>);
 static_assert(std::is_same_v<decltype(std::declval<Application::ClassTransferPortablePackage>().version),
     Application::ClassTransferPackageVersion>);
+static_assert(std::is_same_v<decltype(std::declval<Application::ClassExportRoster>().columnWidths),
+    std::vector<Application::ClassExportRosterColumnWidth>>);
+static_assert(std::is_same_v<decltype(std::declval<Application::ClassExportRosterColumnWidth>().rawValue()), int>);
+static_assert(!std::is_convertible_v<int, Application::ClassExportRosterColumnWidth>);
+static_assert(!std::is_convertible_v<Application::ClassExportRosterColumnWidth, int>);
 static_assert(!std::is_convertible_v<int, Application::ClassTransferPackageVersion>);
 static_assert(!std::is_convertible_v<Application::ClassTransferPackageVersion, int>);
+constexpr Application::ClassExportRosterColumnWidth DefaultRosterColumnWidth{};
+static_assert(DefaultRosterColumnWidth.rawValue() == 0);
 
 namespace
 {
@@ -102,7 +110,8 @@ QJsonObject packageJson()
             {QStringLiteral("info"), info},
             {QStringLiteral("roster"), QJsonObject{
                 {QStringLiteral("columns"), QJsonArray{marker(QStringLiteral("col-B"), item), QString{}, marker(QStringLiteral("col-A"), item)}},
-                {QStringLiteral("column_widths"), QJsonArray{317, 0, 91}},
+                {QStringLiteral("column_widths"), QJsonArray{
+                    std::numeric_limits<int>::min(), -1, std::numeric_limits<int>::max()}},
                 {QStringLiteral("rows"), QJsonArray{
                     QJsonArray{marker(QStringLiteral("row-2-B"), item), QString{}, marker(QStringLiteral("row-2-A"), item)},
                     QJsonArray{QString{}, marker(QStringLiteral("row-1-blank-column"), item), QString{}}}}}},
@@ -185,7 +194,10 @@ void ClassTransferApplyPackageAdapterTests::preservesEveryImportedFieldAndOrderi
         QCOMPARE(QString::fromStdU16String(output.roster.columns[0]), marker(QStringLiteral("col-B"), item));
         QVERIFY(output.roster.columns[1].empty());
         QCOMPARE(QString::fromStdU16String(output.roster.columns[2]), marker(QStringLiteral("col-A"), item));
-        QVERIFY(output.roster.columnWidths == std::vector<int>({317, 0, 91}));
+        QVERIFY(output.roster.columnWidths == (std::vector<Application::ClassExportRosterColumnWidth>{
+            Application::ClassExportRosterColumnWidth{std::numeric_limits<int>::min()},
+            Application::ClassExportRosterColumnWidth{-1},
+            Application::ClassExportRosterColumnWidth{std::numeric_limits<int>::max()}}));
         QCOMPARE(output.roster.rows.size(), std::size_t(2));
         QCOMPARE(output.roster.rows[0].size(), std::size_t(3));
         QCOMPARE(output.roster.rows[1].size(), std::size_t(3));
@@ -238,7 +250,8 @@ void ClassTransferApplyPackageAdapterTests::preservesUtf16CodeUnitsAndUnboundedR
     output.teacherKey = teacher.key;
     output.info.notes = teacher.key;
     output.roster.columns = {teacher.key};
-    output.roster.columnWidths = {-1, 400};
+    output.roster.columnWidths = {
+        std::numeric_limits<int>::min(), -1, 0, std::numeric_limits<int>::max()};
     output.roster.rows = {{teacher.key, QString{}}, {}, {teacher.key}};
     output.evaluations.append({teacher.key, {{}, {teacher.key}}});
     source.classes.append(output);
@@ -249,7 +262,10 @@ void ClassTransferApplyPackageAdapterTests::preservesUtf16CodeUnitsAndUnboundedR
     QVERIFY(value.key.value() == units && value.name == units
         && value.teacherKey.value() == units && value.info.notes == units);
     QVERIFY(value.roster.columns.front() == units);
-    QVERIFY(value.roster.columnWidths == std::vector<int>({-1, 400}));
+    QVERIFY(value.roster.columnWidths == (std::vector<Application::ClassExportRosterColumnWidth>{
+        Application::ClassExportRosterColumnWidth{std::numeric_limits<int>::min()},
+        Application::ClassExportRosterColumnWidth{-1}, Application::ClassExportRosterColumnWidth{0},
+        Application::ClassExportRosterColumnWidth{std::numeric_limits<int>::max()}}));
     QVERIFY(value.roster.rows == Application::ClassExportRows({{units, {}}, {}, {units}}));
     QVERIFY(value.evaluations.front().name == units);
     QVERIFY(value.evaluations.front().rows == Application::ClassExportRows({{}, {units}}));
