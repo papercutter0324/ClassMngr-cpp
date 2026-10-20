@@ -52520,42 +52520,38 @@ accepted or implemented here.
 
 No other slices were found.
 
-### F1169 Sub Prep navigation weekday and start-minute facts accepted - 2026-10-20
+### F1169 Sub Prep navigation weekday and start-minute facts complete - 2026-10-20
 
-F1169 is accepted/in progress. Change only
-`SubPrepNavigationScheduleOrderFact.weekdayOrder` from `std::int32_t` to
-`Domain::Weekday` (Monday=0 through Sunday=6), and `startMinute` from
-`std::optional<std::int32_t>` to
-`std::optional<Application::SubPrepNavigationStartMinute>`. Define the
-non-converting minute value in the existing navigation policy header, with an
-explicit integer constructor, `value()` accessor, zero default, and exact
-equality; do not validate on construction. Preserve the fact's
-`Domain::Weekday::Monday` default and absent optional-minute default. Keep the
-result pair and `ClassSummary` integer output unchanged.
+F1169 completed at source/test commit `63ec8f89`, following acceptance commit
+`2139a070`. `SubPrepNavigationScheduleOrderFact.weekdayOrder` now uses
+`Domain::Weekday` (Monday=0 through Sunday=6), and its optional
+`startMinute` uses `Application::SubPrepNavigationStartMinute`. The typed
+minute has an explicit non-converting integer constructor, `value()` accessor,
+zero default, and exact equality; construction does not validate. The weekday
+default remains `Domain::Weekday::Monday`, the optional minute defaults absent,
+and the reducer/result and `ClassSummary` integer output remain unchanged.
 
-Preserve reducer guards for weekdays 0–6 and minutes 0–1439, so invalid enum
-casts and out-of-range minutes are ignored; retain the unknown-order sentinel
-1000, earliest valid weekday then earliest valid minute selection, and the
-earliest recognized weekday when it has no valid time. The Platform producer
-must keep exact canonical raw-day recognition and ignore unknown/noncanonical
-days; invalid parsed times remain absent, and valid `QTime` seconds continue
-to truncate to hour/minute. Do not change `ClassSummary` integer output or
-validation, visible-class ordering, navigation labels, meeting text, raw parser
-behavior, or other uses of `weekdayOrder`.
+The reducer retains weekday bounds 0–6, minute bounds 0–1439, unknown-order
+sentinel 1000, earliest valid weekday/minute selection, and the earliest
+recognized weekday when no valid time exists. Its optional minimum state fixes
+the prior sentinel collision: valid minutes above 1000, through 1439, remain
+eligible. Platform day recognition/filtering, invalid-time absence, seconds
+truncation, visible-class ordering, navigation labels, and meeting text remain
+unchanged. No other `weekdayOrder` use or raw parser behavior changed.
 
-Tests must cover the typed value's default, equality, and non-conversion;
-weekday/minute boundaries; invalid enum casts and out-of-range minute handling;
-and a Platform fixture proving that earlier times on unknown or noncanonical
-raw-day rows do not alter navigation order while current presentation is
-preserved. Build `ClassMngr`,
-`ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests`, and
-`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`; run the
-full focused binaries and matching CTests with `QT_QPA_PLATFORM=offscreen` for
-Qt, then `git diff --check`. Do not claim a full-suite or Windows run; no
-ClassSummary target is needed because its contract remains unchanged.
+The incremental macOS Debug build succeeded for `ClassMngr` and both focused
+test targets. Both matching CTests passed 2/2 with `QT_QPA_PLATFORM=offscreen`;
+the Platform focused binary passed all 40 test entries. `git diff --check`
+passed, and the independent Tester accepted the implementation. No full suite
+or Windows build ran.
 
-Batch489 remains active with F1162–F1168 complete, F1169 accepted/in progress,
-and F1170 discovered. F1170 follows F1169; Batch489 remains unpushed until
-F1170. Batch490 remains discovered/inactive until Batch489 closes. F629
+Evidence limitation: the repository filters unknown/noncanonical day rows
+before the Platform producer, so the fixture verifies the public port and
+preserved presentation but does not directly exercise the producer's day
+guard.
+
+Batch489 remains active with F1162–F1169 complete and F1170 discovered/next;
+the batch remains unpushed until F1170 closes. F1170 acceptance has not
+started. Batch490 remains discovered/inactive until Batch489 closes. F629
 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2
-gates remain open. Implementation and verification have not started.
+gates remain open.

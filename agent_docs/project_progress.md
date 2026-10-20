@@ -6381,3 +6381,19 @@ selector. `git diff --check` passed. No full suite or Windows build ran.
 Batch487 is complete locally; its push follows the closeout commit, with no
 push receipt yet. Batch488 is now active with eight candidates and F1154 next.
 F629 and both phase gates remain open.
+
+## Phase 2 update - F1169 complete; Batch489 active - 2026-10-20
+
+F1169 completed at source/test commit `63ec8f89`, following acceptance commit
+`2139a070`. Sub Prep navigation facts now use `Domain::Weekday` and an optional
+typed start minute; the reducer preserves the 1000 no-time sentinel while
+correctly retaining valid minutes through 1439. Unknown/noncanonical weekday
+filtering, invalid-time absence, second truncation, and presentation remain
+unchanged.
+
+The incremental macOS Debug build passed for `ClassMngr` and both focused test
+targets. The focused binaries passed, including 40 Platform test entries, and
+both matching CTests passed 2/2 offscreen. `git diff --check` passed. No full
+suite or Windows build ran. Batch489 has eight complete slices and F1170 next;
+the batch remains unpushed until F1170 closes. Batch490 is discovered and
+inactive until Batch489 closes. F629 and both phase gates remain open.
