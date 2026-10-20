@@ -59014,3 +59014,47 @@ hash. The worktree was clean before and after the push.
 Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`. Batch502 is
 active with five discovered candidates and F1257 next for acceptance. F629
 and the Phase 0 and Phase 2 gates remain open.
+
+### F1257 ClassSummaryOrder accepted before implementation - 2026-10-21
+
+F1257 is accepted for implementation as the first Batch502 slice. Add the
+distinct Application value type `ClassSummaryOrder`, backed by signed
+`std::int32_t`, with explicit construction, a zero default, `.rawValue()`,
+equality, and no implicit conversions. Replace only `ClassSummary::order`;
+add the new header to the explicit source manifest. At the Platform schedule
+summary adapter, explicitly map the request index to `ClassSummaryOrder`.
+Use `.rawValue()` for validation and comparison. Preserve negative-value
+rejection and its current error, with no upper-bound, contiguity, or uniqueness
+policy. Preserve the existing query sort by order and then class ID, and keep
+this source position distinct from `ClassTabNavigationOrderRank` navigation
+fields. Projection input order remains unchanged except for the existing
+query sort.
+
+The source review covered `src/next/application/class_summary_projection.h`
+(field and negative validation),
+`src/next/application/sub_prep_schedule_summary_query.h` (sort and tie-break),
+and `src/next/platform/application_services_sub_prep_schedule_summary_port.h`
+(request-index mapping). The existing distinct navigation type is
+`src/next/application/navigation_order_rank.h`. CMake registrations for the
+three accepted focused CTests were checked in `cmake/tests/next.cmake`.
+
+Focused coverage will assert the exact type, zero default, wrapper traits and
+raw value, and the nonnegative validation boundary in
+`next_application_class_summary_tests.cpp`; query ordering and class-ID tie
+behavior in `next_application_sub_prep_schedule_summary_query_tests.cpp`; and
+adapter request-position mapping in
+`next_platform_application_services_sub_prep_print_source_port_tests.cpp`.
+Only aggregate fixtures requiring this API change may be updated in
+`next_application_sub_prep_class_information_state_tests.cpp`,
+`sub_prep_page_tests.cpp`, and the primary Application test helpers.
+
+The accepted incremental macOS build targets are `ClassMngr`,
+`ClassMngrNextApplicationClassSummaryTests`,
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`; the
+focused CTest names are `NextApplicationClassSummary`,
+`NextApplicationSubPrepScheduleSummaryQuery`, and
+`NextPlatformApplicationServicesSubPrepPrintSourcePort`. No implementation,
+build, or tests have started. No clean build, Windows build, or full-suite
+verification is claimed. The existing Batch502 discovery record remains the
+upcoming queue; no new batch search was performed for this slice.

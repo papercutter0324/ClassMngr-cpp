@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`; active Batch502 has five discovered candidates with F1257 next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`; active Batch502 has F1257 accepted for implementation, with F1258 next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-Batch501 was pushed to `origin/Qt-Rewrite` at `7f8ca958` (see the [push receipt](03-Phase-2-Progress-Log.md#batch501-push-receipt-2026-10-21)); Batch502 is active with F1257 next for acceptance. F1256's incremental macOS build and ten focused CTests passed (10/10) (see [F1256 verification](03-Phase-2-Progress-Log.md#f1256-rostersnapshot-column-width-complete-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
+F1257 is accepted for implementation in active Batch502; F1258 is next for acceptance (see [F1257 acceptance](03-Phase-2-Progress-Log.md#f1257-classsummaryorder-accepted-before-implementation-2026-10-21)). No F1257 implementation, build, or tests have started. Batch501 remains pushed at `7f8ca958` (see the [push receipt](03-Phase-2-Progress-Log.md#batch501-push-receipt-2026-10-21)); F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,10 +72,10 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch502 (5 candidates; 0 complete, 0 accepted, 5 discovered)
+#### Active batch: Batch502 (5 candidates; 0 complete, 1 accepted, 4 discovered)
 
-1. F1257 - **Discovered; next for acceptance.** Type `ClassSummary::order`, preserving default zero, nonnegative validation, and position-then-class-ID ordering; keep distinct from F1248 navigation ranks.
-2. F1258 - **Discovered.** Type weekday-group classification values while preserving the 0/1/2 categories, trim/fold behavior, equality, and empty-existing eligibility; keep separate from legacy F729 parser work.
+1. F1257 - **Accepted; awaiting implementation.** Add `ClassSummaryOrder` as a distinct signed int32 value and use it for `ClassSummary::order`; preserve default zero, negative rejection, and position-then-class-ID ordering, distinct from F1248 navigation ranks.
+2. F1258 - **Discovered; next for acceptance.** Type weekday-group classification values while preserving the 0/1/2 categories, trim/fold behavior, equality, and empty-existing eligibility; keep separate from legacy F729 parser work.
 3. F1259 - **Discovered.** Consider distinct Document Catalog folder/entry key types while preserving exact text, validation, ordering, and independent keys; add no equality or uniqueness policy.
 4. F1260 - **Discovered.** Consider an open-text Calendar Event summary event-type value, preserving unknown names and current validation/trimming.
 5. F1261 - **Discovered.** Type Calendar event projection order while preserving nonnegative int32 values, source sequence, and no sorting/uniqueness rule.
