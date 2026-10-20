@@ -51714,3 +51714,46 @@ original discovery order and boundaries are unchanged. The batch has no push
 receipt and is not closed. F629 awaits source-bound Windows x64 layout
 evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1159 Schedule Slot State read identity accepted before implementation - 2026-10-20
+
+F1159 is accepted/in progress. Introduce the dedicated Application read
+identity `ScheduleSlotStateReadIdentity`: an owning UTF-16 day/start pair with
+default-empty state, explicit pair construction, const accessors, equality,
+and no implicit conversion, parsing, or normalization. Keep
+`ScheduleSlotStateReadRow`'s existing raw UTF-16 `state` alongside the new
+identity. Preserve snapshot vector order and error results.
+
+Platform maps every database row to the identity unchanged and in repository
+order. The ScheduleWidget unwraps the pair at the existing QString boundary,
+preserving UI map, error, and state interpretation. Keep this concept distinct
+from F1151's testing-specific `ScheduleTestingAssignmentKey`; the validated
+save contract uses weekday/minute/state types and cannot represent arbitrary
+raw read text. Make no repository, SQL, save-contract, or persistence changes.
+
+Evidence: `src/next/application/schedule_slot_state_read_query.h`,
+`src/next/application/schedule_testing_assignment_read_query.h`,
+`src/next/application/schedule_slot_state_save.h`,
+`src/next/platform/application_services_schedule_slot_state_read_port.h`,
+`src/features/schedule/ui/schedule_widget.cpp`,
+`src/features/schedule/ui/schedule_view_model.cpp`,
+`src/features/schedule/ui/schedule_interaction_state.cpp`,
+`src/data/repositories/intensive_slot_state_repository.cpp`,
+`src/data/database/database_schema_manager.cpp`,
+`tests/next_application_schedule_slot_state_read_query_tests.cpp`,
+`tests/next_platform_application_services_schedule_slot_state_read_port_tests.cpp`,
+`tests/schedule_widget_tests.cpp`, `cmake/tests/next.cmake`, and
+`cmake/tests/features.cmake`. Existing repository ordering and raw-string
+behavior are retained; `ScheduleTestingAssignmentKey` is not a shared read
+identity.
+
+Focused acceptance gate: in the existing `build/macos-clang-debug` tree,
+incrementally build `ClassMngr`,
+`ClassMngrNextApplicationScheduleSlotStateReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleSlotStateReadPortTests`, and
+`ClassMngrScheduleWidgetTests`; run the two focused registered Application and
+Platform CTests; run QtTest selector
+`slotStateSuccessReplacesAndClearsOverrides` directly from the ScheduleWidget
+test executable with `QT_QPA_PLATFORM=offscreen`; then run `git diff --check`.
+No full-suite or Windows pass is claimed. Implementation and verification have
+not started.
