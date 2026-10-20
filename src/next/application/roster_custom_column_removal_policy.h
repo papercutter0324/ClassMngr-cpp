@@ -13,6 +13,32 @@
 namespace ClassMngr::Next::Application
 {
 
+class RosterCustomColumnRemovalIndex final
+{
+public:
+    constexpr RosterCustomColumnRemovalIndex() noexcept = default;
+
+    explicit constexpr RosterCustomColumnRemovalIndex(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const RosterCustomColumnRemovalIndex&,
+        const RosterCustomColumnRemovalIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = -1;
+};
+
 enum class RosterCustomColumnRemovalRejection
 {
     InvalidColumnIndex,
@@ -35,11 +61,12 @@ template <typename CaseInsensitiveEquals>
 [[nodiscard]] inline RosterCustomColumnRemovalEligibility
 canRemoveRosterCustomColumn(
     const RosterSnapshot& roster,
-    const int column,
+    const RosterCustomColumnRemovalIndex columnIndex,
     const std::vector<std::u16string>& requiredColumnNames,
     CaseInsensitiveEquals&& caseInsensitiveEquals
     )
 {
+    const int column = columnIndex.rawValue();
     if (column < 0 || static_cast<std::size_t>(column) >= roster.columns.size())
     {
         return {

@@ -3,10 +3,22 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string_view>
+#include <type_traits>
 
+using ClassMngr::Next::Application::RosterCustomColumnRemovalIndex;
 using ClassMngr::Next::Application::RosterCustomColumnRemovalRejection;
 using ClassMngr::Next::Application::RosterSnapshot;
 using ClassMngr::Next::Application::canRemoveRosterCustomColumn;
+
+static_assert(!std::is_convertible_v<int, RosterCustomColumnRemovalIndex>);
+static_assert(!std::is_convertible_v<RosterCustomColumnRemovalIndex, int>);
+
+constexpr RosterCustomColumnRemovalIndex DefaultRemovalIndex;
+constexpr RosterCustomColumnRemovalIndex ExplicitRemovalIndex{7};
+static_assert(DefaultRemovalIndex.rawValue() == -1);
+static_assert(DefaultRemovalIndex == RosterCustomColumnRemovalIndex{-1});
+static_assert(ExplicitRemovalIndex.rawValue() == 7);
+static_assert(ExplicitRemovalIndex == RosterCustomColumnRemovalIndex{7});
 
 namespace
 {
@@ -48,13 +60,13 @@ bool rejectsInvalidIndexes()
     };
     const auto negative = canRemoveRosterCustomColumn(
         roster,
-        -1,
+        RosterCustomColumnRemovalIndex{-1},
         {u"English", u"Fall"},
         asciiCaseInsensitiveEquals
         );
     const auto pastEnd = canRemoveRosterCustomColumn(
         roster,
-        3,
+        RosterCustomColumnRemovalIndex{3},
         {u"English", u"Fall"},
         asciiCaseInsensitiveEquals
         );
@@ -71,13 +83,13 @@ bool rejectsRequiredColumnsAndTheirAliases()
     };
     const auto required = canRemoveRosterCustomColumn(
         roster,
-        0,
+        RosterCustomColumnRemovalIndex{0},
         {u"English", u"Fall"},
         asciiCaseInsensitiveEquals
         );
     const auto alias = canRemoveRosterCustomColumn(
         roster,
-        1,
+        RosterCustomColumnRemovalIndex{1},
         {u"English", u"Fall"},
         asciiCaseInsensitiveEquals
         );
@@ -94,7 +106,7 @@ bool acceptsCustomColumn()
     };
     return canRemoveRosterCustomColumn(
                roster,
-               2,
+               RosterCustomColumnRemovalIndex{2},
                {u"English", u"Korean", u"Winter", u"Speech Contest", u"Summer", u"Fall"},
                asciiCaseInsensitiveEquals
                )

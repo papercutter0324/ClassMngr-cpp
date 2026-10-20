@@ -237,7 +237,9 @@ bool RosterModel::canRemoveColumn(
     const auto eligibility =
         ClassMngr::Next::Application::canRemoveRosterCustomColumn(
             roster,
-            column,
+            ClassMngr::Next::Application::RosterCustomColumnRemovalIndex(
+                column
+                ),
             toUtf16(Roster::BaseColumns),
             qtCaseInsensitiveEquals
             );
