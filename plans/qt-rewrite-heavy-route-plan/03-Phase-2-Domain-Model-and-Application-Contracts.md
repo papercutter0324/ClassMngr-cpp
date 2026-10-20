@@ -57,7 +57,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ### Latest Progress Update
 
-Batch494 closed locally after F1209 at `81a4cdda`; its closeout record is ready to push, and F1207–F1209 now have focused verification evidence. Batch495 is active, and F1210 is accepted/current (see the [F1210 acceptance](03-Phase-2-Progress-Log.md#f1210-speaking-evaluation-validation-issue-coordinates-accepted-before-implementation-2026-10-20)). F629 plus the Phase 0 and Phase 2 gates remain open.
+Batch494 is complete and pushed at `fc626d56` (see the [push receipt](03-Phase-2-Progress-Log.md#batch494-push-receipt-2026-10-20)); F1207–F1209 have focused verification evidence. Batch495 is active, and F1210 is accepted/current (see the [F1210 acceptance](03-Phase-2-Progress-Log.md#f1210-speaking-evaluation-validation-issue-coordinates-accepted-before-implementation-2026-10-20)). F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 

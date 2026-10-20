@@ -55285,8 +55285,8 @@ F1207 verification follow-up and F1209 focused verification recorded above.
 Batch495's nine-candidate discovery was finalized when F1208 began; it is one
 candidate below the ten-candidate target, and F1219 remains unassigned. The
 existing F1206 output-directory test limitation remains documented in its
-completion entry. Batch494 is ready to push with this closeout record; no
-project-wide test result is claimed.
+completion entry. Batch494 was pushed with this closeout record; see the push
+receipt below. No project-wide test result is claimed.
 
 ### F1210 Speaking Evaluation validation issue coordinates accepted before implementation - 2026-10-20
 
@@ -55315,4 +55315,19 @@ Focused targets are `ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`
 `NextPlatformApplicationServicesSpeakingEvaluationSavePort`, and
 `SpeakingEvalPageSaveParity`; `ClassMngr` builds the affected Feature adapter.
 `SpeakingEvalPageSave` is an optional UI-flow check. No F1210 implementation or
-verification has started. Batch495 is active and Batch494 remains unpushed.
+verification has started. Batch495 is active; Batch494 is complete and pushed.
+
+### Batch494 push receipt - 2026-10-20
+
+Batch494 is complete and pushed to `origin/Qt-Rewrite`. The normal push
+advanced the branch from `28616f62` to commit
+`fc626d56d44aa8dfb25b5faf1061cf153228847f`:
+
+```text
+28616f62..fc626d56  Qt-Rewrite -> Qt-Rewrite
+```
+
+The push included eight local commits through the Batch494 closeout and
+Batch495/F1210 activation. The local `origin/Qt-Rewrite` tracking ref matched
+`HEAD` after the push, and the worktree was clean. No tests were run for the
+push.
