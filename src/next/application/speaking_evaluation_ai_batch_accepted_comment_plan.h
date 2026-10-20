@@ -9,11 +9,37 @@
 namespace ClassMngr::Next::Application
 {
 
+class SpeakingEvaluationAiBatchReportIndex final
+{
+public:
+    constexpr SpeakingEvaluationAiBatchReportIndex() noexcept = default;
+
+    explicit constexpr SpeakingEvaluationAiBatchReportIndex(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const SpeakingEvaluationAiBatchReportIndex&,
+        const SpeakingEvaluationAiBatchReportIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = -1;
+};
+
 struct SpeakingEvaluationAiBatchAcceptedCommentCandidate final
 {
     bool checked = false;
     bool valid = false;
-    int reportIndex = -1;
+    SpeakingEvaluationAiBatchReportIndex reportIndex;
     int sourceRow = -1;
     std::u16string oldComment;
     std::u16string newComment;
@@ -87,8 +113,9 @@ planSpeakingEvaluationAiBatchAcceptedComments(
             continue;
         }
         if (
-            candidate.reportIndex < 0
-            || static_cast<std::size_t>(candidate.reportIndex) >= reportCount
+            candidate.reportIndex.rawValue() < 0
+            || static_cast<std::size_t>(candidate.reportIndex.rawValue())
+                >= reportCount
             )
         {
             continue;

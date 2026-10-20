@@ -1142,7 +1142,8 @@ void SpeakingEvalAiBatchDialog::applyComments()
             {
                 .checked = checked,
                 .valid = valid,
-                .reportIndex = reportIndex,
+                .reportIndex = ClassMngr::Next::Application::
+                    SpeakingEvaluationAiBatchReportIndex{reportIndex},
                 .sourceRow = sourceRow,
                 .oldComment = oldComment.toStdU16String(),
                 .newComment = newComment.toStdU16String()
