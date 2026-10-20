@@ -2126,10 +2126,11 @@ void ScheduleImportReviewDialog::updateReviewState()
         }
     }
 
-    int cleared = 0;
+    ClassMngr::Next::Application::ScheduleImportReviewCount
+        schedulesClearedPreview;
     if (stateSnapshotsAvailable)
     {
-        cleared =
+        schedulesClearedPreview =
             ClassMngr::Next::Application::
                 projectScheduleImportSchedulesCleared(
                     *stateSnapshot,
@@ -2168,7 +2169,7 @@ void ScheduleImportReviewDialog::updateReviewState()
             ClassMngr::Next::Application::ScheduleImportReviewCount{
                 static_cast<int>(m_preview.user.diagnostics.size())
             },
-            ClassMngr::Next::Application::ScheduleImportReviewCount{cleared}
+            schedulesClearedPreview
             );
     m_reviewSummary->setText(
         tr("Proposed import: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; "

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/schedule_import_review_decisions.h"
+#include "next/application/schedule_import_review_summary_projection.h"
 #include "next/application/schedule_import_state_snapshot.h"
 
 #include <charconv>
@@ -31,7 +32,8 @@ namespace schedule_import_schedules_cleared_projection_detail
 }
 } // namespace schedule_import_schedules_cleared_projection_detail
 
-[[nodiscard]] inline int projectScheduleImportSchedulesCleared(
+[[nodiscard]] inline ScheduleImportReviewCount
+projectScheduleImportSchedulesCleared(
     const ScheduleImportStateSnapshot& snapshot,
     const ScheduleImportReviewDecisionRequest& decisions,
     const ScheduleImportStateKind kind,
@@ -41,7 +43,7 @@ namespace schedule_import_schedules_cleared_projection_detail
     if (kind == ScheduleImportStateKind::Intensive
         && intensiveMode == ScheduleImportStateIntensiveMode::UpdateExisting)
     {
-        return 0;
+        return {};
     }
 
     std::set<int> selectedPositiveTargets;
@@ -64,7 +66,7 @@ namespace schedule_import_schedules_cleared_projection_detail
         }
     }
 
-    int cleared = 0;
+    ScheduleImportReviewCount cleared;
     for (const ScheduleImportStateReadClassSnapshot& classroom :
          snapshot.classes)
     {

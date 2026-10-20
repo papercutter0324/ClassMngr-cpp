@@ -3011,21 +3011,19 @@ void ScheduleImportDialogTests::reviewSummaryUsesApplicationProjection()
             &snapshotOutcome
             );
     QVERIFY(snapshot);
-    const int expectedCleared =
+    const auto expectedCleared =
         ClassMngr::Next::Application::projectScheduleImportSchedulesCleared(
             *snapshot,
             decisions,
             ImportState::ScheduleImportStateKind::Normal,
             ImportState::ScheduleImportStateIntensiveMode::ReplaceWithNew
             );
-    QVERIFY(expectedCleared > 0);
+    QVERIFY(expectedCleared.rawValue() > 0);
     const auto expected =
         ClassMngr::Next::Application::projectScheduleImportReviewSummary(
             decisions,
             ClassMngr::Next::Application::ScheduleImportReviewCount{0},
-            ClassMngr::Next::Application::ScheduleImportReviewCount{
-                expectedCleared
-            }
+            expectedCleared
             );
     const QString expectedActionSummary =
         QStringLiteral(

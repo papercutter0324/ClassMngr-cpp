@@ -3,12 +3,25 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
 using ClassMngr::Next::Domain::ClassId;
 using ClassMngr::Next::Domain::TeacherId;
+
+using ScheduleImportSchedulesClearedProjection =
+    ScheduleImportReviewCount (*)(
+        const ScheduleImportStateSnapshot&,
+        const ScheduleImportReviewDecisionRequest&,
+        ScheduleImportStateKind,
+        ScheduleImportStateIntensiveMode
+        );
+static_assert(std::is_same_v<
+    decltype(&projectScheduleImportSchedulesCleared),
+    ScheduleImportSchedulesClearedProjection
+    >);
 
 namespace
 {
@@ -80,13 +93,13 @@ int main()
                 decisions,
                 ScheduleImportStateKind::Normal,
                 ScheduleImportStateIntensiveMode::ReplaceWithNew
-                ) == 2);
+                ) == ScheduleImportReviewCount{2});
     require(projectScheduleImportSchedulesCleared(
                 snapshot,
                 decisions,
                 ScheduleImportStateKind::Intensive,
                 ScheduleImportStateIntensiveMode::ReplaceWithNew
-                ) == 1);
+                ) == ScheduleImportReviewCount{1});
 
     const ScheduleImportReviewDecisionRequest noTargets;
     require(projectScheduleImportSchedulesCleared(
@@ -94,17 +107,17 @@ int main()
                 noTargets,
                 ScheduleImportStateKind::Normal,
                 ScheduleImportStateIntensiveMode::ReplaceWithNew
-                ) == 4);
+                ) == ScheduleImportReviewCount{4});
     require(projectScheduleImportSchedulesCleared(
                 snapshot,
                 noTargets,
                 ScheduleImportStateKind::Normal,
                 ScheduleImportStateIntensiveMode::UpdateExisting
-                ) == 4);
+                ) == ScheduleImportReviewCount{4});
     require(projectScheduleImportSchedulesCleared(
                 snapshot,
                 noTargets,
                 ScheduleImportStateKind::Intensive,
                 ScheduleImportStateIntensiveMode::UpdateExisting
-                ) == 0);
+                ) == ScheduleImportReviewCount{0});
 }
