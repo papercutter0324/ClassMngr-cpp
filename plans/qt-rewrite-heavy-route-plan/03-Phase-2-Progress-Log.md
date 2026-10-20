@@ -52894,3 +52894,32 @@ Batch490 has F1171–F1173 complete, F1174 accepted/in progress, and F1175–F11
 discovered, with F1175 next; it remains unpushed until F1177 closes. F629
 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2
 gates remain open.
+
+### F1174 Class Transfer export UTC milliseconds complete - 2026-10-20
+
+F1174 completed at source/test commit `d5450e3c`, following acceptance commit
+`a678d01c`. `Application::ClassTransferExportUtcMilliseconds` now stores only
+the exact signed `std::int64_t` value, with a zero default, explicit
+constructor, `.value()`, and equality; it adds no range policy. Only
+`ClassTransferExportSource::exportedAtUtcMilliseconds` uses the wrapper. The
+repository sources `QDateTime::currentDateTimeUtc()`; the Platform adapter
+converts that repository value using `toMSecsSinceEpoch()` and wraps the
+result, while the query unwraps only for chrono formatting.
+The existing `YYYY-MM-DDTHH:MM:SS.mmmZ` representation and JSON string output
+remain unchanged; the codec was not changed.
+
+Wrapper tests cover signed extrema, default, equality, and non-convertibility.
+Query tests pin 0 and 1,234 ms to `1970-01-01T00:00:00.000Z` and
+`1970-01-01T00:00:01.234Z`, and -1 ms to
+`1969-12-31T23:59:59.999Z`. The Platform test brackets its real current UTC
+timestamp with before/after clock reads; this is a representative interval
+check, not deterministic fixed-clock injection. Builds passed for `ClassMngr`,
+`ClassMngrNextApplicationClassTransferExportQueryTests`,
+`ClassMngrNextPlatformClassTransferExportSourceTests`, and
+`ClassMngrClassTransferExportCodecParityTests`; the three focused offscreen
+CTests passed 3/3. Codec parity passed, independent Tester review accepted,
+and `git diff --check` passed. No full suite or Windows build ran.
+
+Batch490 now has F1171–F1174 complete and F1175–F1177 discovered, with F1175
+next; it remains unpushed until F1177 closes. F629 awaits source-bound Windows
+x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
