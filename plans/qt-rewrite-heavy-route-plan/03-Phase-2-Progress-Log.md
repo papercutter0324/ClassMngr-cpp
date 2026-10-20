@@ -57260,3 +57260,30 @@ Focused targets and generated CTest names are `ClassMngr`,
 `build/macos-clang-debug` folder if the documented `windows-x64-debug` preset
 is unavailable, and run GUI targets offscreen if needed. At acceptance time,
 no implementation, tests, or build had started.
+
+### F1237 Class Analytics roster names row count complete - 2026-10-21
+
+F1237 completed at implementation commit
+`0ff4313fe23f82b9934c33805bdc938811942836`. The Application contract now
+uses the existing explicit `ClassAnalyticsRosterRowCount` for
+`ClassAnalyticsRosterNames::rowCount`, with the wrapper declared in the read
+port header before the names record and reused for snapshot fields. Query code
+explicitly unwraps at calculation boundaries. Platform count remains maximum
+physical roster row index plus one, including sparse gaps, blank rows, and
+unrelated-column cells; existing validation and vector sizing remain intact.
+Queries stay unfiltered for zero rows, absent headers, or positive row counts
+with headers but blank names, and continue filtering against available
+languages. Roster row counts remain distinct from scored-student counts.
+
+The Executor's full focused build passed on the existing
+`build/macos-clang-debug` tree. The independent build also used that tree and
+Ninja reported no work to do. All four focused offscreen CTests passed:
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`,
+`ClassMngrClassAnalyticsPageTests`, and
+`ClassMngrClassAnalyticsPageReadParityTests`. `git diff --check` passed.
+
+The `windows-x64-debug` preset is disabled on this macOS host. Windows x64 and
+the full suite remain unverified. Batch499 remains active with F1237 complete
+and F1238 next for acceptance; F1239–F1242 remain in the ordered discovered
+queue.
