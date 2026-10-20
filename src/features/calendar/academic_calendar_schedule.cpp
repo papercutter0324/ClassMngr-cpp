@@ -8,6 +8,7 @@
 namespace
 {
 constexpr int DaysPerWeek = 7;
+using ClassMngr::Next::Application::AcademicTermYear;
 using ClassMngr::Next::Application::AcademicTermWeekCount;
 
 std::array<AcademicTermWeekCount, AcademicTermCount> applicationWeekCounts(
@@ -84,7 +85,7 @@ bool scheduleFromJson(
     }
 
     if (!ClassMngr::Next::Application::isAcademicYearScheduleValid(
-            termYear,
+            AcademicTermYear{termYear},
             winterStart.isValid() && winterStart.dayOfWeek() == Qt::Monday,
             applicationWeekCounts(parsed.weeks)
             ))
@@ -158,7 +159,7 @@ QJsonObject profileToJson(
 bool AcademicYearSchedule::isValid() const
 {
     return ClassMngr::Next::Application::isAcademicYearScheduleValid(
-        termYear,
+        ClassMngr::Next::Application::AcademicTermYear{termYear},
         winterStart.isValid() && winterStart.dayOfWeek() == Qt::Monday,
         applicationWeekCounts(weeks)
         );

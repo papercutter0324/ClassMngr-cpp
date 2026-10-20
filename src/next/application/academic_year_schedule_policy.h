@@ -1,5 +1,6 @@
 #pragma once
 
+#include "academic_term_year.h"
 #include "academic_term_week_count.h"
 
 #include <algorithm>
@@ -37,13 +38,13 @@ termWeeksFromDayDistance(
 
 // Validate resolved schedule facts without depending on Qt date types.
 [[nodiscard]] inline bool isAcademicYearScheduleValid(
-    const int termYear,
+    const AcademicTermYear termYear,
     const bool winterStartIsValidMonday,
     const std::span<const AcademicTermWeekCount> termWeekCounts
     ) noexcept
 {
     if (
-        termYear < FirstTermYear
+        termYear.value() < FirstTermYear
         || !winterStartIsValidMonday
         || termWeekCounts.size() != AcademicYearScheduleTermCount
         )

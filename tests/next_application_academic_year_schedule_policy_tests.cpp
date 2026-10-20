@@ -3,9 +3,12 @@
 #include <array>
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
+#include <span>
 #include <string_view>
 #include <type_traits>
 
+using ClassMngr::Next::Application::AcademicTermYear;
 using ClassMngr::Next::Application::AcademicTermWeekCount;
 using ClassMngr::Next::Application::
     isAcademicYearScheduleValid;
@@ -14,6 +17,34 @@ using ClassMngr::Next::Application::
 
 namespace
 {
+bool academicTermYearIsValid()
+{
+    constexpr AcademicTermYear defaultYear;
+    constexpr AcademicTermYear firstTermYear{2026};
+    constexpr AcademicTermYear anotherFirstTermYear{2026};
+    constexpr AcademicTermYear previousYear{2025};
+
+    static_assert(std::is_constructible_v<AcademicTermYear, int>);
+    static_assert(
+        std::is_same_v<decltype(defaultYear.value()), int>
+        );
+    static_assert(!std::is_convertible_v<int, AcademicTermYear>);
+    static_assert(!std::is_convertible_v<AcademicTermYear, int>);
+    static_assert(std::is_same_v<
+        decltype(&isAcademicYearScheduleValid),
+        bool (*)(
+            AcademicTermYear,
+            bool,
+            std::span<const AcademicTermWeekCount>
+            ) noexcept
+        >);
+
+    return defaultYear.value() == 0
+        && firstTermYear.value() == 2026
+        && firstTermYear == anotherFirstTermYear
+        && firstTermYear != previousYear;
+}
+
 bool academicTermWeekCountIsValid()
 {
     constexpr AcademicTermWeekCount defaultCount;
@@ -92,16 +123,19 @@ bool academicYearScheduleValidityIsValid()
         AcademicTermWeekCount{1}
     };
 
-    return !(
-        isAcademicYearScheduleValid(2025, true, boundaryCounts)
-        || !isAcademicYearScheduleValid(2026, true, boundaryCounts)
-        || isAcademicYearScheduleValid(2026, false, boundaryCounts)
-        || !isAcademicYearScheduleValid(2026, true, allMaximumCounts)
-        || isAcademicYearScheduleValid(2026, true, zeroCount)
-        || isAcademicYearScheduleValid(2026, true, excessiveCount)
-        || isAcademicYearScheduleValid(2026, true, tooFewCounts)
-        || isAcademicYearScheduleValid(2026, true, tooManyCounts)
-    );
+    constexpr AcademicTermYear firstTermYear{2026};
+    constexpr AcademicTermYear previousYear{2025};
+    constexpr AcademicTermYear maximumYear{std::numeric_limits<int>::max()};
+
+    return !isAcademicYearScheduleValid(previousYear, true, boundaryCounts)
+        && isAcademicYearScheduleValid(firstTermYear, true, boundaryCounts)
+        && isAcademicYearScheduleValid(maximumYear, true, boundaryCounts)
+        && !isAcademicYearScheduleValid(firstTermYear, false, boundaryCounts)
+        && isAcademicYearScheduleValid(firstTermYear, true, allMaximumCounts)
+        && !isAcademicYearScheduleValid(firstTermYear, true, zeroCount)
+        && !isAcademicYearScheduleValid(firstTermYear, true, excessiveCount)
+        && !isAcademicYearScheduleValid(firstTermYear, true, tooFewCounts)
+        && !isAcademicYearScheduleValid(firstTermYear, true, tooManyCounts);
 }
 }
 
@@ -123,6 +157,7 @@ int main(const int argc, char* argv[])
     }
 
     if (!academicYearScheduleValidityIsValid()
+        || !academicTermYearIsValid()
         || !academicTermWeekCountIsValid()
         || !termWeeksFromDayDistanceIsValid())
     {
