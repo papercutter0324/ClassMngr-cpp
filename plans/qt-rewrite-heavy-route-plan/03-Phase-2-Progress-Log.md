@@ -52924,50 +52924,33 @@ Batch490 now has F1171–F1174 complete and F1175–F1177 discovered, with F1175
 next; it remains unpushed until F1177 closes. F629 awaits source-bound Windows
 x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
-### F1175 Class Transfer package version accepted before implementation - 2026-10-20
+### F1175 Class Transfer package version complete - 2026-10-20
 
-F1175 is accepted/in progress. Source HEAD `d5450e3c` confirms the legacy
-Domain `ClassTransferPackage::version` is raw `int` defaulting to
-`CurrentVersion=1`, while Application
-`ClassTransferPortablePackage::version` is raw `int` defaulting to 1. The
-export query's package also defaults to version 1. The legacy package adapter
-copies the raw version in both directions, and the Application codec overload
-writes it as a JSON integer. The parser returns a legacy Domain package and
-accepts only version 1: missing or noninteger values report exactly
-`package.version must be an integer.`, while unsupported integers report
-`Unsupported class package version: %1`. The field is nonoptional. There is no
-version migration or range policy; adapter passthrough of arbitrary raw int 37
-is already covered. The Use Case passes its package through unchanged.
+F1175 completed at implementation commit `176df257`, following acceptance
+commit `1e8b70cc`. Added Qt-free
+`Application::ClassTransferPackageVersion`, an exact signed-`int` value with
+explicit construction, accessor, equality, and no implicit conversion or range
+policy. Only `ClassTransferPortablePackage::version` changed, retaining default
+1; the legacy adapter explicitly wraps and unwraps at its boundary, and the
+Application JSON codec emits an integer. The Domain package field, parser
+behavior, and diagnostics remain unchanged. Missing/fractional versions still
+report `package.version must be an integer.`; version 99 still reports
+`Unsupported class package version: 99`. No migration or range policy was
+added. The Apply Use Case fixture was updated to the current `ClassExportClassKey`
+API so the accepted target builds.
 
-Add Qt-free `Application::ClassTransferPackageVersion` (for example,
-`src/next/application/class_transfer_package_version.h`) and register the
-header in `cmake/next.cmake`. Store the exact signed `int`, with explicit
-construction, `.value()`, exact equality, and no implicit conversion or
-policy. Replace only `ClassTransferPortablePackage::version`, keeping its
-default at 1. Explicitly wrap and unwrap the legacy Domain integer at adapter
-boundaries, and unwrap the Application value as a JSON integer in the typed
-`ClassTransferJsonCodec::toJson` overload.
+All six accepted build targets built in the existing
+`build/macos-clang-debug` configuration. Four focused offscreen CTests passed
+(export query, adapter, codec parity, and Apply Use Case); direct
+`ClassTransferTests::codecRejectsMalformedAndUnsupportedPackages` passed.
+The broader `ClassMngrClassTransferTests` CTest reported 63 passed and one
+teacher-choice fallback failure (`Keep local: New Teacher`, expected
+`Keep local: Romanized One`, at `tests/class_transfer_tests.cpp:5181`). The
+independent Tester confirmed that failing case does not access package version
+or call the adapter, but no clean baseline was run, so it is not established as
+pre-existing. Tester accepted F1175 and `git diff --check` passed. No full-suite
+or Windows run occurred.
 
-Keep Domain `ClassTransferPackage::version`, `CurrentVersion=1`, parser raw
-integer/equality policy, errors, and unsupported-version behavior unchanged;
-do not type the Domain field. Preserve arbitrary integer adapter round-trip,
-version-1 default/export, JSON number format, and the absence of migration or
-range policy. Coverage verifies exact wrapper storage, explicitness,
-non-conversion and equality; Application default 1; adapter round-trip of 37;
-typed package JSON integer 1; missing/fractional parser values with the exact
-integer diagnostic; and version 99 with exact error
-`Unsupported class package version: 99`.
-
-Build `ClassMngr`, `ClassMngrNextApplicationClassTransferExportQueryTests`,
-`ClassMngrClassTransferApplyPackageAdapterTests`,
-`ClassMngrClassTransferTests`,
-`ClassMngrNextApplicationClassTransferApplyUseCaseTests`, and
-`ClassMngrClassTransferExportCodecParityTests`; run their matching focused
-offscreen CTests, independent Tester review, and `git diff --check`. No
-full-suite or Windows claim is in scope. Implementation and verification have
-not started.
-
-Batch490 now has F1171–F1174 complete, F1175 accepted/in progress, and
-F1176–F1177 discovered, with F1176 next; it remains unpushed until F1177
-closes. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0
-and Phase 2 gates remain open.
+Batch490 now has F1171–F1175 complete and F1176–F1177 discovered, with F1176
+next; it remains unpushed until F1177 closes. F629 awaits source-bound Windows
+x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
