@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batches 481–492 are complete and pushed, with Batch492 at `3e6c09d9` (see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)). Batch493 is complete and pushed at `78989f8b` (see its [push receipt](03-Phase-2-Progress-Log.md#batch493-push-receipt-2026-10-20)). Batch494 is active with eight discovered candidates: F1202 is next but unaccepted, and F1203–F1209 remain discovered (see [Batch494 discovery](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batches 481–492 are complete and pushed, with Batch492 at `3e6c09d9` (see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)). Batch493 is complete and pushed at `78989f8b` (see its [push receipt](03-Phase-2-Progress-Log.md#batch493-push-receipt-2026-10-20)). Batch494 is active with F1202 accepted/current and F1203–F1209 discovered (see [Batch494 discovery](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20) and [F1202 acceptance](03-Phase-2-Progress-Log.md#f1202-class-transfer-export-selection-ordinal-accepted-before-implementation-2026-10-20)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,9 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch494 — Active; eight discovered candidates, with F1202 next and still unaccepted:**
+**Batch494 — Active; eight candidates, with F1202 accepted/current and F1203–F1209 discovered:**
 
-1. **F1202 — Discovered/next:** Class Transfer export ordinal / `selectedIndex`; preserve request order and zero-based selection to one-based class-key mapping.
+1. **F1202 — Accepted/current:** Type `ClassExportSourceClass::selectedIndex` as `ClassTransferExportSelectionOrdinal`; preserve request order and zero-based selection to one-based class-key mapping (see [acceptance](03-Phase-2-Progress-Log.md#f1202-class-transfer-export-selection-ordinal-accepted-before-implementation-2026-10-20)).
 2. **F1203 — Discovered:** Type roster-row transfer source-request and destination-result positions; preserve `-1`/range failure order and destination semantics.
 3. **F1204 — Discovered:** Type roster-row reorder source/destination arguments; preserve validation order, same-row rejection, and move behavior.
 4. **F1205 — Discovered:** Type the Speaking Evaluation score-assignment roster row; preserve zero-based assignment order and changed-grade filtering.
@@ -49,7 +49,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 7. **F1208 — Discovered:** Type Speaking Evaluation save-cell row/column, separately from F1201; preserve 25×11 zero-based coordinates and `-1` absence sentinels.
 8. **F1209 — Discovered:** Reuse `ClassTabNavigationOrderRank` for Sub Prep day/time schedule ranks from a neutral Application header; preserve sentinel 1000 including the valid 16:40 collision, comparisons, tuple tie rules, and separate Sub Prep weekday/minute preparation while keeping the comparator distinct.
 
-Batch492 remains complete and pushed at `3e6c09d9`; see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20). Batch493 is complete and pushed at `78989f8b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch493-push-receipt-2026-10-20). Batch494's discovery record is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch492 remains complete and pushed at `3e6c09d9`; see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20). Batch493 is complete and pushed at `78989f8b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch493-push-receipt-2026-10-20). Batch494's [discovery record](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20) and [F1202 acceptance](03-Phase-2-Progress-Log.md#f1202-class-transfer-export-selection-ordinal-accepted-before-implementation-2026-10-20) are in the progress log. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 

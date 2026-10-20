@@ -54824,3 +54824,34 @@ pushed range was `3ea3959f..78989f8b` (20 commits). Local `HEAD`, the local
 `origin/Qt-Rewrite` tracking ref, and remote `Qt-Rewrite` all equal
 `78989f8bbd1a83f0eed19a399bf2a4428af79612`. The worktree is clean on
 `Qt-Rewrite`; the push had no limitations.
+
+### F1202 Class Transfer export selection ordinal accepted before implementation - 2026-10-20
+
+F1202 is accepted/current before implementation, based on two independent
+read-only Explorer reports. In the Qt-free Application contract,
+type only `ClassExportSourceClass::selectedIndex` as the dedicated
+`ClassTransferExportSelectionOrdinal`, with `std::size_t` storage, zero default,
+explicit construction, `.rawValue()`, equality, and no implicit conversion.
+Adapt the Platform repository `int` at the existing boundary. Preserve the
+zero-based request ordinal and exact source iteration/request order; the query
+uses the ordinal to generate one-based `class-(ordinal+1)` keys. Preserve the
+accepted 4,097-class query behavior; add no cap or validation.
+
+The export dialog sorts displayed classes and returns checked IDs in visible
+order; the sidebar preserves that request order. The repository records each
+successful request's zero-based ordinal, Platform transfers it, and the query
+uses that explicit ordinal. No Application-side sentinel or validation is
+present; successful Platform records receive nonnegative ordinals after lookup.
+Keep the legacy builder and selection sorting/order unchanged. Do not reuse
+`ClassTransferPackageClassIndex` (an import-package row with signed `int` and
+`-1` semantics), or type the UI class-ID request list, raw repository
+`selectedIndex` `int`/`-1` field, or unrelated indexes.
+
+Update Application tests with type, default, value, and non-conversion
+assertions, plus a nonsequential explicit-ordinal fixture if compatible.
+Platform tests should continue asserting ordinal and keys in request order.
+Build `ClassMngr`, `ClassMngrNextApplicationClassTransferExportQueryTests`,
+`ClassMngrNextPlatformClassTransferExportSourceTests`, and
+`ClassMngrClassTransferExportCodecParityTests`; run those three focused CTests
+and `git diff --check`. No new test target is needed. No F1202 implementation
+or verification has started.
