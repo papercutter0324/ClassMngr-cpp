@@ -6137,13 +6137,13 @@ combined Phase 0 gate remains open because F629 still needs source-bound
 Windows x64 layout evidence, which the user cannot run right now; the Phase 2
 gate also remains open.
 
-## Current continuation - 2026-10-20 (F1195 complete; F1196 accepted; Batch493 active)
+## Current continuation - 2026-10-20 (F1196 complete; F1197 accepted; Batch493 active)
 
 The current deployment is `phase2-batch490-f1172-20261020`, on the Heavy route
 and `Qt-Rewrite`. Batch492 is complete and pushed at
 `3e6c09d9e5a82bc23281a76970683e4372dcec9d`. Batch493's ordered ten-slice list
-is current in the Phase 2 plan; F1192–F1195 are complete and F1196 is accepted
-as current. F1197–F1201 remain discovered. F629 still awaits source-bound
+is current in the Phase 2 plan; F1192–F1196 are complete and F1197 is accepted
+as current. F1198–F1201 remain discovered. F629 still awaits source-bound
 Windows x64 layout evidence; the Phase 0 and Phase 2 gates remain open.
 
 F1195 completed at source/test commit
@@ -6156,10 +6156,16 @@ showing each wizard, preventing Qt's lazy macOS system-bundle lookup; it does
 not alter production behavior or weaken assertions. `git diff --check` passed.
 No full suite or Windows run occurred.
 
-F1196 reuses `Application::ScheduleImportReviewCount` for the pre-apply
-schedules-cleared projection and review-dialog preview count. Preserve mode,
-full ID parsing, leading-zero equivalence, trailing-text rejection, per-class
-counting, and zero when no state snapshot is available. The post-apply legacy
-summary remains unchanged. Next: implement F1196 and run its four accepted
-focused CTests. Continue committing each slice; push Batch493 only after all
-ten slices and the batch closeout are committed.
+F1196 completed at source/test commit
+`1298c4449903c0bf7048ba844a78e248f411b055`. It reuses
+`Application::ScheduleImportReviewCount` for the pre-apply schedules-cleared
+projection and review-dialog preview; the post-apply legacy summary remains
+unchanged. The incremental macOS Debug build covered five targets; four
+focused CTests passed 4/4 and diff-check passed. No full suite or Windows run.
+
+F1197 is accepted to reuse `Application::ClassSummaryStudentCount` for the
+Sub Prep print-source count. Preserve zero and missing/error fallbacks,
+negative-to-zero Platform clamping, the 10,000 cap, and downstream printed
+count; keep renderer-facing integer models unchanged. Next: implement F1197 and
+run its five accepted focused CTests. Continue committing each slice; push
+Batch493 only after all ten slices and the batch closeout are committed.

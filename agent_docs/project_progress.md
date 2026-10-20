@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1195 complete; F1196 accepted; Batch492 pushed)
+### Current checkpoint - 2026-10-20 (F1196 complete; F1197 accepted; Batch492 pushed)
 
 Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
@@ -67,12 +67,13 @@ through F1194 are complete, with F1194 at source/test commit `107531bc`.
 F1195 completed at source/test commit
 `6a2919a9d2786871aad40c19dbf09fb51ba9da95`; independent verification passed
 the Application and Wizard CTests 2/2, the changed Wizard selector, and the
-full Wizard target, including the blank-entry bypass. The test harness sets a
-transparent QWizard background pixmap to avoid macOS's lazy bundle lookup;
-production behavior and assertions are unchanged. F1196 is accepted/current,
-and F1197–F1201 remain discovered. Batch493 remains unpushed until all ten
-slices and its closeout are committed. Acceptance, discovery, and verification
-evidence are in the [Phase 2 progress
+full Wizard target, including blank-entry bypass coverage. F1196 completed at
+source/test commit `1298c4449903c0bf7048ba844a78e248f411b055`; independent
+verification passed its four focused CTests. F1197 is accepted/current, using
+`ClassSummaryStudentCount` for the Sub Prep print-source count; F1198–F1201
+remain discovered. Batch493 remains unpushed until all ten slices and its
+closeout are committed. Acceptance, discovery, and verification evidence are
+in the [Phase 2 progress
 log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
 F1194 completed at source/test commit `107531bc`. A signed Application

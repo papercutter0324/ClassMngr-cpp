@@ -54454,5 +54454,63 @@ Build `ClassMngr`,
 `ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests`,
 `ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests` in the
 existing `build/macos-clang-debug`; run the matching four focused CTests and
-`git diff --check`. No full-suite or Windows gate is claimed. F1196
-implementation and verification have not started.
+`git diff --check`. No full-suite or Windows gate is claimed. This acceptance
+was recorded before implementation; no F1196 implementation or verification
+result is claimed here.
+
+### F1196 Schedule Import schedules-cleared count complete - 2026-10-20
+
+F1196 completed at source/test commit
+`1298c4449903c0bf7048ba844a78e248f411b055` (`Phase2 - Type Schedule Import
+schedules-cleared count`). The existing `Application::ScheduleImportReviewCount`
+now types the pre-apply projection and review-dialog preview; post-apply legacy
+summary behavior remains unchanged. The source commit contains exactly the
+four authorized F1196 production/test paths.
+
+Independent verification built all five assigned targets in
+`build/macos-clang-debug`: `ClassMngr`,
+`ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests`,
+`ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`. The
+four focused CTests passed 4/4:
+`ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests`,
+`ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`.
+`git diff --check` passed. No full suite or Windows run occurred.
+
+### F1197 Sub Prep print student count accepted before implementation - 2026-10-20
+
+F1197 is accepted/current before implementation. Reuse the existing
+`Application::ClassSummaryStudentCount` for `SubPrepPrintClass::studentCount`;
+do not add another count wrapper. Type only the Application print-source
+count. Adapt the Platform assignment, query cap validation, and Feature mapper
+to explicit typed construction and `.rawValue()` conversion. Keep
+renderer-facing legacy `SourceClass` and `ClassDetails.studentCount` as `int`.
+
+Preserve zero default and missing/error count fallback, the existing Platform
+negative-to-zero clamp, current roster-row counting, the accepted 10,000 cap
+and rejection above the cap, and the exact downstream printed count. The count
+type does not enforce the cap; retain query validation. Narrow to `int` in the
+Feature mapper only after the validated source path. Preserve the existing
+Sub Prep print behavior.
+
+Discovery evidence: `ClassSummaryStudentCount` wraps `std::size_t`, defaults to
+zero, and exposes `.rawValue()` in
+`src/next/application/class_summary_student_count.h`. The query cap is 10,000;
+Application tests cover zero, 10,000 accepted, and 10,001 rejected. Platform
+tests cover zero/positive values and failed roster reads falling back per
+class. Add a mapper zero pass-through assertion alongside a direct type
+assertion; the existing mapper test covers positive values. Preserve PDF text
+and value (`12 Students`).
+
+Build in `build/macos-clang-debug`: `ClassMngr`,
+`ClassMngrNextApplicationSubPrepPrintSourceQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`,
+`ClassMngrSubPrepPrintSourceMapperTests`, `ClassMngrSubPrepPrintPdfTests`, and
+`ClassMngrSubPrepPageTests`. Run the five matching focused CTests:
+`NextApplicationSubPrepPrintSourceQuery`,
+`NextPlatformApplicationServicesSubPrepPrintSourcePort`,
+`ClassMngrSubPrepPrintSourceMapperTests`, `ClassMngrSubPrepPrintPdfTests`, and
+`ClassMngrSubPrepPageTests`; run `git diff --check`. No full-suite or Windows
+gate is claimed. This acceptance was recorded before implementation; no F1197
+implementation or verification result is claimed here.
