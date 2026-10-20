@@ -58828,3 +58828,42 @@ Batch501 remains the active batch with F1255 accepted and F1256 next for
 acceptance. Batch502's F1257–F1261 queue is discovered only and remains
 inactive until Batch501 closes. F629 and the Phase 0 and Phase 2 gates remain
 open.
+
+### F1255 AcademicTermYear complete - 2026-10-21
+
+F1255 completed in source/test commit
+`907d050eeed64865ec83b62516257622797af9ed`. The five changed paths were
+`src/next/application/academic_term_year.h`,
+`src/next/application/academic_year_schedule_policy.h`,
+`src/features/calendar/academic_calendar_schedule.cpp`,
+`tests/next_application_academic_year_schedule_policy_tests.cpp`, and
+`cmake/next.cmake`.
+
+The Application policy now accepts the explicit `AcademicTermYear` wrapper
+over `int` with explicit construction, zero default, `.value()`, equality,
+and no implicit int conversions. Only the
+`isAcademicYearScheduleValid` input changed. The existing int is explicitly
+wrapped at JSON parsing and `AcademicYearSchedule::isValid()` boundaries.
+The 2026 lower bound remains. The policy rejects 2025 and accepts `INT_MAX`
+with valid schedule facts, with no upper bound or constructor validation.
+Schedule storage, maps, JSON shape,
+and persisted opaque JSON remain unchanged. Policy acceptance of `INT_MAX`
+does not establish safe full schedule generation through that year.
+
+The Executor incrementally built `ClassMngr`,
+`ClassMngrNextApplicationAcademicYearSchedulePolicyTests`, and
+`ClassMngrAcademicCalendarTests` in `build/macos-clang-debug`; all three
+targets succeeded. The accepted focused CTests
+`ClassMngrNextApplicationAcademicYearSchedulePolicyTests`,
+`AcademicCalendarScheduleValidityPolicy`, and
+`AcademicCalendarJsonRoundTripAndMalformedFallback` passed (3/3). The
+independent Tester rechecked the same incremental targets and Ninja reported
+no work to do; it ran the three CTests with `QT_QPA_PLATFORM=offscreen` and
+all passed (3/3). `git diff --check` passed in both reviews. No clean build,
+Windows build, or full-suite run was performed.
+
+Batch501 remains active with F1253–F1255 complete and F1256 next for
+acceptance (3 complete, 0 accepted, 1 discovered). Batch502's five ordered
+candidates F1257–F1261 remain discovered and inactive until Batch501 closes;
+its discovery record and shortfall are preserved above. F629 and the Phase 0
+and Phase 2 gates remain open.
