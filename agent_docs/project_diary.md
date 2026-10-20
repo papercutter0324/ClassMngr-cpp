@@ -20,6 +20,10 @@
 - The repository is intentionally layered: domain models and validation are
   separate from SQLite repositories, feature services, and shared Qt UI. Keep
   new work at the narrowest appropriate layer.
+- Give row-position values distinct Application types when they identify
+  different collections or validation roles. Preserve signed no-row defaults
+  where callers rely on them, retain original ordering/validation precedence,
+  and unwrap only at existing UI or legacy boundaries.
 - Verify UI save behavior through the actual button route as well as direct save
   APIs: a Manual button can be enabled and emit an interactive request while a
   separate confirmation argument still defaults off. Likewise, test each

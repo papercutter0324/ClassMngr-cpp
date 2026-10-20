@@ -1,33 +1,30 @@
 # Latest Session Work
 
-## Current Deployment Handoff
+## Current Deployment Handoff — phase2_batch493_resume_20261020 (paused)
 
-- Active deployment: `phase2-f1094-20261019`; Heavy route; branch `Qt-Rewrite`;
-  current checkpoint 2026-10-19.
-- Batch474 is complete with F1091-F1094 committed and pushed to
-  `origin/Qt-Rewrite` at `fbcbb6c987eb21196d8e0fd0b87583f85335a9d3`. F1094
-  source/test commit is `5c4201aedbcc47e55e4b095e3b4066bbb07423a6`.
-  Batch475 has one accepted slice, F1095, to use `CalendarEventTimeStatus`
-  through Calendar Application contracts while retaining legacy serialization
-  and UI behavior.
-- F1094 makes both reset-policy ports distinguish technical repository errors
-  from missing/invalid values. ClassesPage applies each hide-time reset only
-  after that policy loads successfully; Navigation Preferences avoids hydration
-  writes and restores the latest known radio choice after a save and follow-up
-  read both fail.
-- Incremental `build/macos-clang-debug` built `ClassMngr` and both port,
-  ClassesPage, and MainWindow failure targets. Focused port CTests passed 2/2;
-  the ClassesPage regression and two MainWindow failure/retry cases passed;
-  `git diff --check` passed. Evidence is macOS arm64 only; no full suite ran.
-  The user cannot currently run Windows, so Windows x64 remains unavailable.
-- F1095 acceptance is recorded before implementation. It covers five typed
-  Application contracts, boundary-only text conversion, canonical persisted
-  values, legacy normalization, existing all-day write rules, and unchanged
-  read projection semantics. The next action is implementation followed by
-  focused existing-target verification.
-- The combined Phase 0 gate remains Open pending Windows x64 full-matrix
-  evidence. Phase 2 remains Open; Gates 1/2 are Partial and F1007 awaits policy
-  reconciliation.
+- Heavy route; branch `Qt-Rewrite`. The user requested a pause on 2026-10-20;
+  this handoff is recorded in the canonical deployment-state documents.
+- Batch493 is complete and pushed at `78989f8b`. Batch494 is active but
+  unpushed: F1202–F1206 are complete; F1207 is accepted/current; F1208–F1209
+  are discovered. F1206 closeout and F1207 acceptance are committed in
+  `08f4eaa4`. The complete ordered slice list and evidence are in the
+  [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
+  and [progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
+- Source commits: F1202 `20edbe1c`, F1203 `2dff4c78`, F1204 `f6e02a7b`,
+  F1205 `75739bef`, and F1206 `60561d69`. All were committed after focused
+  independent verification. F1202 passed 3/3 tests; F1203 passed 5/5; F1204
+  passed 2/2; F1205 passed 2/2. F1206's planner and four direct name-import
+  UI selectors passed. Its broader page-save target had 35 passes and one
+  reproducible output-directory assertion failure in
+  `outputReportsUsesProjectedRegularSchedule()`; the failing path does not
+  call the changed name-import code, but no baseline was established. No full
+  suite or Windows build ran.
+- Resume with F1207 implementation, then complete and commit each slice. Since
+  F1208 is Batch494's second-last slice, discover Batch495 when starting F1208.
+  Close Batch494 and push it only after F1209 and the batch closeout commit.
+- F629 still awaits source-bound Windows x64 layout evidence; Phase 0 and Phase
+  2 gates remain open. The older F1175 teacher-fallback label failure remains
+  in the Phase 2 progress log.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 

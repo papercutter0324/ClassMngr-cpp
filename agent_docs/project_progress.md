@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: `phase2-batch490-f1172-20261020`. Route: Heavy.
+Current deployment: `phase2_batch493_resume_20261020`. Route: Heavy; paused at the user's request.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -53,43 +53,31 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1197 complete; F1198 accepted; Batch492 pushed)
+### Current checkpoint - 2026-10-20 (F1206 complete; F1207 accepted; Batch494 paused)
 
-Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
-[push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
-records the handoff. Batch491 is complete and pushed to `origin/Qt-Rewrite`
-at `56bd1973`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)
-records the handoff. F1178–F1191 are complete. Batch492 is complete and
-pushed to `origin/Qt-Rewrite` at
-`3e6c09d9e5a82bc23281a76970683e4372dcec9d`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)
-records the handoff. Batch493 is active with ten ordered candidates; F1192
-through F1194 are complete, with F1194 at source/test commit `107531bc`.
-F1195 completed at source/test commit
-`6a2919a9d2786871aad40c19dbf09fb51ba9da95`; independent verification passed
-the Application and Wizard CTests 2/2, the changed Wizard selector, and the
-full Wizard target, including blank-entry bypass coverage. F1196 completed at
-source/test commit `1298c4449903c0bf7048ba844a78e248f411b055`; independent
-verification passed its four focused CTests. F1197 completed at source/test
-commit `ff4625ace4f2a608c61575c10d1e51f837d64b08`; four focused CTests passed
-and both affected page-generation selectors passed directly. The full page
-CTest timed out in the unrelated preference-refresh case, which prior Phase 2
-evidence also reproduced unchanged. F1198 is accepted/current for typing only
-the Application report source-row position; F1199–F1201 remain discovered.
-Batch493 remains unpushed until all ten slices and its closeout are committed.
-Acceptance, discovery, and verification evidence are in the [Phase 2 progress
+Batch493 is complete and pushed to `origin/Qt-Rewrite` at `78989f8b`. Batch494
+has F1202–F1206 complete at source commits `20edbe1c`, `2dff4c78`, `f6e02a7b`,
+`75739bef`, and `60561d69`. F1207 is accepted/current; F1208 and F1209 remain
+discovered. The F1206 closeout/F1207 acceptance documentation is committed at
+`08f4eaa4`. Batch494 remains open and unpushed; this deployment is paused at
+the user's request.
+
+Focused macOS verification passed for F1202 (3/3), F1203 (5/5, including
+Roster Model), F1204 (2/2), and F1205 (2/2). F1206's planner test and four
+direct name-import UI selectors passed. The broader
+`ClassMngrSpeakingEvalPageSaveTests` result was 35 passed and 1 failed at
+`outputReportsUsesProjectedRegularSchedule()` on its output-directory
+assertion; the failure reproduced alone, its path does not call the changed
+name-import planner, and no baseline was established. No full suite or Windows
+build ran. Acceptance and verification details are in the [Phase 2 progress
 log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
-F1194 completed at source/test commit `107531bc`. A signed Application
-candidate-index value preserves the `-1` sentinel and arbitrary invalid inputs
-through review/apply validation; adapter boundaries extract it for indexing
-only after validation. The incremental macOS build covered ClassMngr and nine
-affected test targets; all nine focused CTests and `git diff --check` passed.
-No full suite or Windows build ran.
-
-F1175's Class Transfer test still has one unresolved teacher-fallback label
-failure among 64 cases; no clean baseline proves it pre-existing. F629 awaits
-source-bound Windows x64 layout evidence. The Phase 0 and Phase 2 gates remain
-open.
+On resume, implement F1207. Starting F1208 requires discovery of the next
+batch because F1208 is Batch494's second-last slice. Complete F1208–F1209 and
+Batch494 closeout before pushing the batch. F1175's unresolved Class Transfer
+teacher-fallback label failure remains tracked in the Phase 2 log. F629 still
+awaits source-bound Windows x64 layout evidence; the Phase 0 and Phase 2 gates
+remain open.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 
