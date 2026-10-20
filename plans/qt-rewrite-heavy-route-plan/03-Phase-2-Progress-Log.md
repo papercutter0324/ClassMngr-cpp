@@ -55187,3 +55187,55 @@ and `tests/speaking_eval_page_save_tests.cpp`; the focused CMake targets are
 `ClassMngrSpeakingEvalPageSaveTests`, and `ClassMngr`. No F1208 implementation
 or verification has started. Batch494 remains open and unpushed; F1209 remains
 discovered.
+
+### F1208 Speaking Evaluation changed-cell coordinates complete - 2026-10-20
+
+F1208 completed at source commit `59c32659839005b9ed7e8637093824032b6e72f7`
+(`Phase2 - Type speaking evaluation cell coordinates`) and verification-support
+commit `b0b46e4a` (`Phase2 - Repair Speaking Evaluation save test keys`). The
+changed-cell row and column use distinct explicit `int` value types, default to
+`-1`, and are unwrapped at the existing Feature and Platform legacy boundaries.
+The follow-up fixes the pre-existing validation-enum display mismatch in the
+Platform parity test using the existing validation key names; its comparisons
+and the explicit Korean too-short assertion remain intact.
+
+The independent Tester built the affected Application, Platform, and page test
+targets in the existing `build/macos-clang-debug` tree. The focused Application
+and Platform CTests each passed 1/1. Page selectors
+`automaticSavePersistsMatrixWithoutInteractiveNotices` and
+`manualValidationAndConfirmedSaveKeepTheirCurrentTiming` both passed (QtTest
+reported 4 passes including setup/cleanup). This is focused macOS evidence;
+no full-suite or Windows result is claimed. Batch494 remains open and unpushed.
+
+### F1209 Sub Prep shared navigation rank accepted before implementation - 2026-10-20
+
+F1209 is accepted/current based on two independent read-only Explorer reports.
+Move the shared `ClassTabNavigationOrderRank` value to a neutral Application
+header and use it only for `SubPrepVisibleClassOrderingFact`'s day and time rank
+fields. Keep `configuredLevelOrder` unchanged and keep the Sub Prep comparator
+separate from Class Tab ordering.
+
+Preserve the rank's explicit `int32_t` value semantics, default and unknown
+sentinel `1000`, raw-value comparison, equality, and no implicit conversion.
+Valid minute `1000` (16:40) must remain equal to unknown `1000` and continue to
+fall through to the existing label, class-ID, and stable-input tie rules. Keep
+the Sub Prep comparator sequence (configured level, day, time, injected base
+label comparison, then `ClassId`) and stable exact-tie behavior. Do not alter
+the separate weekday/minute preparation path, including
+`SubPrepNavigationStartMinute`, adapter parsing, reducer, or raw-valued
+`ClassSummary` projection.
+
+Evidence includes `class_tab_navigation_ordering_policy.h` (shared rank and
+Class Tab uses), `sub_prep_visible_class_ordering_policy.h` (prepared fact and
+comparator), and
+`src/features/sub_prep/ui/sub_prep_class_information_list_model.cpp` (fact
+construction and sort consumption). Existing policy coverage is in
+`tests/next_application_sub_prep_visible_class_ordering_policy_tests.cpp` and
+`tests/next_application_class_tab_navigation_ordering_policy_tests.cpp`; add
+the valid-16:40-versus-unknown fallback assertion to the existing Sub Prep
+policy test. Verify the focused targets
+`ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests`,
+`ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests`, and
+`ClassMngrSubPrepClassInformationListModelTests`, along with affected production
+target `ClassMngr`. No F1209 implementation or verification has started.
+Batch494 remains open and unpushed.
