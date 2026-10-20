@@ -24,10 +24,78 @@
 namespace ClassMngr::Next::Application
 {
 
+class ClassAnalyticsEvaluationSelection final
+{
+public:
+    enum class Kind
+    {
+        All,
+        ExactName
+    };
+
+    ClassAnalyticsEvaluationSelection() noexcept = default;
+
+    [[nodiscard]] static ClassAnalyticsEvaluationSelection all()
+        noexcept
+    {
+        return {};
+    }
+
+    [[nodiscard]] static ClassAnalyticsEvaluationSelection exactName(
+        std::u16string name
+        )
+    {
+        return {Kind::ExactName, std::move(name)};
+    }
+
+    [[nodiscard]] static ClassAnalyticsEvaluationSelection fromLegacyText(
+        const std::u16string_view text,
+        const ClassAnalyticsNameSemanticsPort& names
+        )
+    {
+        const std::u16string trimmed = names.trimmed(text);
+        if (trimmed.empty()
+            || names.equalsCaseInsensitive(trimmed, u"All"))
+        {
+            return all();
+        }
+        // Keep the original text; execute() trims only its comparison copy.
+        return exactName(std::u16string(text));
+    }
+
+    [[nodiscard]] Kind kind() const noexcept
+    {
+        return m_kind;
+    }
+
+    [[nodiscard]] bool isAll() const noexcept
+    {
+        return m_kind == Kind::All;
+    }
+
+    [[nodiscard]] const std::u16string& name() const noexcept
+    {
+        return m_exactName;
+    }
+
+private:
+    ClassAnalyticsEvaluationSelection(
+        const Kind kind,
+        std::u16string name
+        )
+        : m_kind(kind)
+        , m_exactName(std::move(name))
+    {
+    }
+
+    Kind m_kind = Kind::All;
+    std::u16string m_exactName;
+};
+
 struct ClassAnalyticsDashboardReadRequest final
 {
     Domain::ClassId classId;
-    std::u16string evaluationSelection;
+    ClassAnalyticsEvaluationSelection evaluationSelection;
 };
 
 enum class ClassAnalyticsCriterion : std::size_t
@@ -433,14 +501,6 @@ namespace ClassAnalyticsDashboardReadDetail
     return snapshot;
 }
 
-[[nodiscard]] inline bool isAllSelection(
-    const std::u16string_view selection,
-    const ClassAnalyticsNameSemanticsPort& names
-    )
-{
-    return names.equalsCaseInsensitive(selection, u"All");
-}
-
 [[nodiscard]] inline std::optional<ClassAnalyticsYearToDatePoint>
 yearToDatePoint(
     const std::u16string_view evaluationName,
@@ -527,11 +587,10 @@ public:
                 view.rawRows, roster.value().rowCount, names);
         }
 
-        const std::u16string selection = names.trimmed(query.evaluationSelection);
-        const bool allEvaluations = selection.empty()
-            || isAllSelection(selection, names);
+        const ClassAnalyticsEvaluationSelection& selection =
+            query.evaluationSelection;
         ClassAnalyticsDashboard dashboard;
-        if (allEvaluations)
+        if (selection.isAll())
         {
             ClassAnalyticsEvaluationRows currentRows;
             for (const EvaluationView& view : evaluations)
@@ -557,9 +616,12 @@ public:
         }
         else
         {
+            const std::u16string trimmedSelection =
+                names.trimmed(selection.name());
             for (const EvaluationView& view : evaluations)
             {
-                if (selection != classAnalyticsEvaluationName(view.evaluation))
+                if (trimmedSelection
+                    != classAnalyticsEvaluationName(view.evaluation))
                     continue;
                 dashboard.selectedSnapshot = view.filteredSnapshot;
                 dashboard.classShapeEvaluationName = std::u16string(

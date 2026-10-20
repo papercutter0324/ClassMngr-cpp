@@ -36,10 +36,15 @@ public:
         const std::u16string_view value
         ) const override
     {
+        const auto isWhitespace = [](const char16_t character)
+        {
+            return character == u' ' || character == u'\t'
+                || character == u'\r' || character == u'\n';
+        };
         std::size_t first = 0;
         std::size_t last = value.size();
-        while (first < last && value[first] == u' ') ++first;
-        while (last > first && value[last - 1] == u' ') --last;
+        while (first < last && isWhitespace(value[first])) ++first;
+        while (last > first && isWhitespace(value[last - 1])) --last;
         return std::u16string(value.substr(first, last - first));
     }
 
@@ -197,13 +202,31 @@ public:
 
 [[nodiscard]] ClassAnalyticsDashboardResult run(
     FakeReadPort& port,
-    const TestNameSemantics& names,
-    const std::u16string_view selection = {}
+    const TestNameSemantics& names
     )
 {
     return ClassAnalyticsDashboardReadQuery::execute(
-        { .classId = classId(), .evaluationSelection = std::u16string(selection) },
-        port, names);
+        { .classId = classId() }, port, names);
+}
+
+[[nodiscard]] ClassAnalyticsDashboardResult run(
+    FakeReadPort& port,
+    const TestNameSemantics& names,
+    const ClassAnalyticsEvaluationSelection& selection
+    )
+{
+    return ClassAnalyticsDashboardReadQuery::execute(
+        { .classId = classId(), .evaluationSelection = selection }, port, names);
+}
+
+[[nodiscard]] ClassAnalyticsDashboardResult runLegacyText(
+    FakeReadPort& port,
+    const TestNameSemantics& names,
+    const std::u16string_view selection
+    )
+{
+    return run(port, names,
+        ClassAnalyticsEvaluationSelection::fromLegacyText(selection, names));
 }
 
 void appendScoresForAverage(
@@ -251,6 +274,43 @@ void averageThousandthsValueSemantics()
     assert(Average(6000).thousandths() == 6000);
 }
 
+void evaluationSelectionDefaultsAndLegacyTextConversion()
+{
+    const TestNameSemantics names;
+    const ClassAnalyticsDashboardReadRequest defaultRequest{
+        .classId = classId()
+    };
+    assert(defaultRequest.evaluationSelection.isAll());
+    assert(defaultRequest.evaluationSelection.kind()
+        == ClassAnalyticsEvaluationSelection::Kind::All);
+
+    const auto blank = ClassAnalyticsEvaluationSelection::fromLegacyText(
+        u" \t\r\n ", names);
+    assert(blank.isAll());
+    const auto legacyAll = ClassAnalyticsEvaluationSelection::fromLegacyText(
+        u" aLl ", names);
+    assert(legacyAll.isAll());
+
+    std::u16string mutableName = u"Winter";
+    const auto owningExactName =
+        ClassAnalyticsEvaluationSelection::exactName(mutableName);
+    mutableName.clear();
+    assert(!owningExactName.isAll());
+    assert(owningExactName.kind()
+        == ClassAnalyticsEvaluationSelection::Kind::ExactName);
+    assert(owningExactName.name() == u"Winter");
+
+    const auto exactAll = ClassAnalyticsEvaluationSelection::exactName(u"All");
+    assert(!exactAll.isAll());
+    assert(exactAll.kind() == ClassAnalyticsEvaluationSelection::Kind::ExactName);
+    assert(exactAll.name() == u"All");
+
+    const auto legacyPaddedName =
+        ClassAnalyticsEvaluationSelection::fromLegacyText(u" Winter ", names);
+    assert(!legacyPaddedName.isAll());
+    assert(legacyPaddedName.name() == u" Winter ");
+}
+
 void canonicalOrderLatestClassShapeAndYtd()
 {
     FakeReadPort port;
@@ -275,6 +335,16 @@ void canonicalOrderLatestClassShapeAndYtd()
     assert(result.value().yearToDatePoints.size() == 2);
     assert(result.value().yearToDatePoints[0].evaluationName == u"Winter");
     assert(result.value().yearToDatePoints[1].evaluationName == u"Speech Contest");
+
+    const auto legacyAll = runLegacyText(port, names, u" aLl ");
+    assert(legacyAll);
+    assert(legacyAll.value().selectedSnapshot.rankings.size() == 1);
+    assert(legacyAll.value().selectedSnapshot.rankings.front().overall3
+        == result.value().selectedSnapshot.rankings.front().overall3);
+    assert(legacyAll.value().classShapeEvaluationName
+        == result.value().classShapeEvaluationName);
+    assert(legacyAll.value().yearToDatePoints.size()
+        == result.value().yearToDatePoints.size());
 }
 
 void strongestAndFocusCriteriaPreserveOrderAndLabels()
@@ -290,7 +360,8 @@ void strongestAndFocusCriteriaPreserveOrderAndLabels()
     port.evaluations[0].push_back(std::move(student));
     const TestNameSemantics names;
 
-    const auto result = run(port, names, u"Winter");
+    const auto result = run(port, names,
+        ClassAnalyticsEvaluationSelection::exactName(u"Winter"));
     assert(result);
     const auto& selected = result.value().selectedSnapshot;
     assert((selected.strongestNames == std::vector<std::u16string>{
@@ -320,7 +391,8 @@ void currentRosterUsesNormalizedEnglishAndKoreanIdentities()
     };
     const TestNameSemantics names;
 
-    const auto result = run(port, names, u"Winter");
+    const auto result = run(port, names,
+        ClassAnalyticsEvaluationSelection::exactName(u"Winter"));
     assert(result);
     const auto& selected = result.value().selectedSnapshot;
     assert(selected.rankings.size() == 2);
@@ -342,7 +414,8 @@ void duplicateRowsConsolidateAndRankingTiesUseNamePort()
     };
     const TestNameSemantics names;
 
-    const auto result = run(port, names, u"Winter");
+    const auto result = run(port, names,
+        ClassAnalyticsEvaluationSelection::exactName(u"Winter"));
     assert(result);
     const auto& selected = result.value().selectedSnapshot;
     assert(selected.rankings.size() == 2);
@@ -367,7 +440,8 @@ void adjacentRoundedScoresRankBeforeNamePort()
     }
     const TestNameSemantics names;
 
-    const auto result = run(port, names, u"Winter");
+    const auto result = run(port, names,
+        ClassAnalyticsEvaluationSelection::exactName(u"Winter"));
     assert(result);
     const auto& rankings = result.value().selectedSnapshot.rankings;
     assert(rankings.size() == 2);
@@ -386,7 +460,8 @@ void emptyRosterLeavesEvaluationRowsUnfilteredAndPartialScoresDoNotMakeYtd()
     port.evaluations[3].push_back(row(u"Former", u"", u"A", false));
     const TestNameSemantics names;
 
-    const auto result = run(port, names, u"Fall");
+    const auto result = run(port, names,
+        ClassAnalyticsEvaluationSelection::exactName(u"Fall"));
     assert(result);
     assert(result.value().selectedSnapshot.rankings.size() == 1);
     assert(!result.value().selectedSnapshot.rankings.front().fullyScored);
@@ -396,17 +471,52 @@ void emptyRosterLeavesEvaluationRowsUnfilteredAndPartialScoresDoNotMakeYtd()
 void missingAndUnknownSelectionKeepGlobalYtdWhileUnknownSelectionIsEmpty()
 {
     FakeReadPort port;
-    // Missing Winter/Speech Contest/Summer rows are successful empty inputs.
+    port.evaluations[0].push_back(row(u"Current", u"", u"B"));
     port.evaluations[3].push_back(row(u"Current", u"", u"A"));
     const TestNameSemantics names;
 
-    const auto result = run(port, names, u"Unknown selection");
-    assert(result);
-    assert(!result.value().selectedSnapshot.hasData);
-    assert(!result.value().classShapeSnapshot.hasData);
-    assert(result.value().classShapeEvaluationName.empty());
-    assert(result.value().yearToDatePoints.size() == 1);
-    assert(result.value().yearToDatePoints.front().evaluationName == u"Fall");
+    for (const std::u16string_view unknown : {
+             u"winter", u"Unknown selection", u"All" })
+    {
+        const auto result = run(port, names,
+            ClassAnalyticsEvaluationSelection::exactName(
+                std::u16string(unknown)));
+        assert(result);
+        assert(!result.value().selectedSnapshot.hasData);
+        assert(result.value().selectedSnapshot.rankings.empty());
+        assert(!result.value().classShapeSnapshot.hasData);
+        assert(result.value().classShapeSnapshot.rankings.empty());
+        assert(result.value().classShapeEvaluationName.empty());
+        assert(result.value().yearToDatePoints.size() == 2);
+        assert(result.value().yearToDatePoints[0].evaluationName == u"Winter");
+        assert(result.value().yearToDatePoints[1].evaluationName == u"Fall");
+    }
+}
+
+void typedAndPaddedExactNamesSelectAfterTrimmedComparison()
+{
+    FakeReadPort port;
+    port.evaluations[0].push_back(row(u"Current", u"", u"B"));
+    port.evaluations[3].push_back(row(u"Current", u"", u"A"));
+    const TestNameSemantics names;
+
+    const auto exactWinter =
+        ClassAnalyticsEvaluationSelection::exactName(u"Winter");
+    const auto exactResult = run(port, names, exactWinter);
+    assert(exactResult);
+    assert(exactResult.value().selectedSnapshot.classAverageLetter == u"B");
+    assert(exactResult.value().classShapeEvaluationName == u"Winter");
+    assert(exactResult.value().classShapeSnapshot.hasData);
+    assert(exactResult.value().yearToDatePoints.size() == 2);
+
+    const auto paddedWinter =
+        ClassAnalyticsEvaluationSelection::exactName(u"  Winter  ");
+    assert(paddedWinter.name() == u"  Winter  ");
+    const auto paddedResult = run(port, names, paddedWinter);
+    assert(paddedResult);
+    assert(paddedResult.value().selectedSnapshot.classAverageLetter == u"B");
+    assert(paddedResult.value().classShapeEvaluationName == u"Winter");
+    assert(paddedResult.value().yearToDatePoints.size() == 2);
 }
 
 void selectedEvaluationStillReadsEveryYtdInputInOneBatch()
@@ -416,7 +526,8 @@ void selectedEvaluationStillReadsEveryYtdInputInOneBatch()
     port.evaluations[3].push_back(row(u"Current", u"", u"A"));
     const TestNameSemantics names;
 
-    const auto result = run(port, names, u"Winter");
+    const auto result = run(port, names,
+        ClassAnalyticsEvaluationSelection::exactName(u"Winter"));
     assert(result);
     assert(port.evaluationBatchReadCount == 1);
     assert((port.calls == std::vector<std::u16string>{
@@ -514,7 +625,8 @@ void partialScoringPreservesWeightedAveragesAndYtdInputs()
     };
     const TestNameSemantics names;
 
-    const auto result = run(port, names, u"Winter");
+    const auto result = run(port, names,
+        ClassAnalyticsEvaluationSelection::exactName(u"Winter"));
     assert(result);
     const auto& selected = result.value().selectedSnapshot;
     assert(selected.rankings.size() == 2);
@@ -548,7 +660,8 @@ void queryGradeBoundaryRoundsPositiveHalfUpAtThousandths()
     appendScoresForAverage(port.evaluations[0], u"HalfUp", 2000, 799);
     const TestNameSemantics names;
 
-    const auto result = run(port, names, u"Winter");
+    const auto result = run(port, names,
+        ClassAnalyticsEvaluationSelection::exactName(u"Winter"));
     assert(result);
     const auto& selected = result.value().selectedSnapshot;
     assert(selected.rankings.size() == 2);
@@ -574,7 +687,8 @@ void roundedClassAverageAtGradeBoundaryAdvances()
     };
     const TestNameSemantics names;
 
-    const auto result = run(port, names, u"Winter");
+    const auto result = run(port, names,
+        ClassAnalyticsEvaluationSelection::exactName(u"Winter"));
     assert(result);
     assert(result.value().selectedSnapshot.classAverage3.thousandths() == 2400);
     assert(result.value().selectedSnapshot.classAverageLetter == u"B+");
@@ -585,6 +699,7 @@ void roundedClassAverageAtGradeBoundaryAdvances()
 int main()
 {
     averageThousandthsValueSemantics();
+    evaluationSelectionDefaultsAndLegacyTextConversion();
     numericPolicyBoundaries();
     partialScoringPreservesWeightedAveragesAndYtdInputs();
     queryGradeBoundaryRoundsPositiveHalfUpAtThousandths();
@@ -596,6 +711,7 @@ int main()
     adjacentRoundedScoresRankBeforeNamePort();
     emptyRosterLeavesEvaluationRowsUnfilteredAndPartialScoresDoNotMakeYtd();
     missingAndUnknownSelectionKeepGlobalYtdWhileUnknownSelectionIsEmpty();
+    typedAndPaddedExactNamesSelectAfterTrimmedComparison();
     selectedEvaluationStillReadsEveryYtdInputInOneBatch();
     readFailureReturnsNoPartialDashboard();
     invalidClassIdDoesNotRead();

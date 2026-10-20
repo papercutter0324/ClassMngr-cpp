@@ -181,7 +181,8 @@ readsOnlyRosterNamesAndExactEvaluationScoreProjection()
     const auto dashboard = Application::ClassAnalyticsDashboardReadQuery::execute(
         {
             .classId = *typedClassId,
-            .evaluationSelection = u"All"
+            .evaluationSelection =
+                Application::ClassAnalyticsEvaluationSelection::all()
         },
         port,
         port);

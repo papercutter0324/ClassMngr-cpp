@@ -644,11 +644,18 @@ void ClassAnalyticsPage::rebuild()
             std::to_string(m_classId));
         if (classId && readPort && names)
         {
+            const QString selectionData = selectedEvaluationName();
+            const ApplicationAnalytics::ClassAnalyticsEvaluationSelection
+                evaluationSelection = selectionData.isEmpty()
+                    ? ApplicationAnalytics::
+                        ClassAnalyticsEvaluationSelection::all()
+                    : ApplicationAnalytics::
+                        ClassAnalyticsEvaluationSelection::exactName(
+                            selectionData.toStdU16String());
             const ApplicationAnalytics::ClassAnalyticsDashboardReadRequest
                 request{
                     .classId = *classId,
-                    .evaluationSelection =
-                        selectedEvaluationName().toStdU16String()
+                    .evaluationSelection = evaluationSelection
                 };
             const auto result =
                 ApplicationAnalytics::ClassAnalyticsDashboardReadQuery::execute(
