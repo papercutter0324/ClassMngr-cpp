@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch498 is complete and pushed at `2348ee37`; F1237 is complete and F1238 is accepted awaiting implementation in active Batch499, while F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch498 is complete and pushed at `2348ee37`; F1238 is complete and F1239 is next for acceptance in active Batch499, while F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1238 is accepted before implementation: introduce distinct ISO weekday semantics for `GregorianDate::weekday()` and explicitly map at the recurrence boundary (see [F1238 acceptance](03-Phase-2-Progress-Log.md#f1238-gregoriandate-weekday-ordinal-accepted-before-implementation-2026-10-21)). Batch499 remains active; F1239–F1242 stay in the ordered discovered queue. F629 and the Phase 0 and Phase 2 gates remain open.
+F1238 is complete: `GregorianDate::weekday()` now returns distinct ISO weekday semantics with explicit mapping at the recurrence boundary (see [F1238 verification](03-Phase-2-Progress-Log.md#f1238-gregoriandate-weekday-ordinal-complete-2026-10-21)). Batch499 remains active; F1239 is next for acceptance and F1240–F1242 remain in the ordered discovered queue. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,11 +72,11 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch499 (6 candidates; 1 complete, 1 accepted, 4 discovered)
+#### Active batch: Batch499 (6 candidates; 2 complete, 0 accepted, 4 discovered)
 
 1. F1237 - **Complete.** Type `ClassAnalyticsRosterNames::rowCount` with the existing `ClassAnalyticsRosterRowCount`; preserve physical sparse-row counts, vector sizing, and unfiltered empty-name query behavior.
-2. F1238 - **Accepted; awaiting implementation.** Add `Domain::IsoWeekday` for `GregorianDate::weekday()` and explicitly map it to zero-based `Domain::Weekday` at the calendar recurrence boundary.
-3. F1239 - **Discovered.** Type Class Transfer weekly weekday candidates; preserve invalid-day rejection, half-open overlap, and Sunday overnight wrapping.
+2. F1238 - **Complete.** Type `GregorianDate::weekday()` as `Domain::IsoWeekday`; explicitly map it to zero-based `Domain::Weekday` at the calendar recurrence boundary.
+3. F1239 - **Discovered; next for acceptance.** Type Class Transfer weekly weekday candidates; preserve invalid-day rejection, half-open overlap, and Sunday overnight wrapping.
 4. F1240 - **Discovered.** Type Speaking Evaluation UTF-16 text-match spans; preserve matching and extraction behavior.
 5. F1241 - **Discovered.** Give `CalendarEventTiming` clock values a semantic representation while preserving same-day and cross-day rules.
 6. F1242 - **Discovered.** Distinguish Schedule View row order, cell order, and slot keys; preserve validation scopes and lookup behavior.

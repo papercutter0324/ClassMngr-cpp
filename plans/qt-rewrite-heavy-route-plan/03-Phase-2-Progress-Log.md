@@ -57318,3 +57318,27 @@ Focused build targets and generated CTest names are
 available; otherwise use the existing `build/macos-clang-debug` folder and
 `QT_QPA_PLATFORM=offscreen` as needed. At acceptance time, no implementation,
 build, or tests had started.
+
+### F1238 GregorianDate weekday ordinal complete - 2026-10-21
+
+F1238 completed at implementation commit
+`5ba0f72724c1e18767faf360583231a0d037fbb4`. `Domain::IsoWeekday` now models
+Monday=`1` through Sunday=`7`, and `GregorianDate::weekday()` returns this
+typed value. The recurrence boundary uses an explicit exhaustive mapping to
+zero-based `Domain::Weekday`; forged invalid ISO values return `std::nullopt`.
+
+Tests assert all seven ISO ordinal values, public GregorianDate weekday values,
+all seven valid mappings, and invalid mapping inputs. Existing leap-year,
+year-boundary, date, and recurrence assertions remain in place.
+
+The Executor built `ClassMngr` and both focused test targets in the existing
+`build/macos-clang-debug` tree. After an assertion-only test follow-up, both
+focused targets were built and their CTests passed 2/2. The independent Tester
+reran the same two CTests and they passed 2/2; `git diff --check` passed. The
+independent build reported Ninja had no work to do, so this is incremental
+focused verification rather than a fresh or full build. Windows x64 and the
+full suite remain unverified; the Windows preset is disabled on this macOS
+host.
+
+Batch499 remains active with F1237 and F1238 complete. F1239 is next for
+acceptance; F1240–F1242 remain in the ordered discovered queue.
