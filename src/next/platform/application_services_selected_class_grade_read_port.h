@@ -116,7 +116,10 @@ public:
         const QByteArray gradeBytes = source->record.classGrade.toUtf8();
         Application::SelectedClassGradeReadSnapshot snapshot{
             *loadedClassId,
-            gradeBytes.toStdString()
+            Application::SelectedClassGradeValue(std::string(
+                gradeBytes.constData(),
+                static_cast<std::size_t>(gradeBytes.size())
+                ))
         };
         return Application::SelectedClassGradeReadResult::success(
             std::move(snapshot)

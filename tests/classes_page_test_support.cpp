@@ -22,6 +22,17 @@ ClassInfoRepository::loadClassDetailsPageRecord(const int classId)
 Result<SelectedClassGradeReadRecord>
 ClassInfoRepository::loadSelectedClassGradeRecord(const int classId)
 {
+    const auto loaded = loadSelectedClassGradeRecordDetailed(classId);
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+    return loaded->record;
+}
+
+Result<SelectedClassGradeReadOutcome>
+ClassInfoRepository::loadSelectedClassGradeRecordDetailed(const int classId)
+{
     ++ScheduleWidgetTestStubs::selectedClassGradeReadCount;
     if (ScheduleWidgetTestStubs::selectedClassGradeReadWillFail())
     {
@@ -30,8 +41,10 @@ ClassInfoRepository::loadSelectedClassGradeRecord(const int classId)
             );
     }
 
-    SelectedClassGradeReadRecord record;
-    record.classId = classId;
-    record.classGrade = ScheduleWidgetTestStubs::selectedClassGrade(classId);
-    return record;
+    SelectedClassGradeReadOutcome outcome;
+    outcome.record.classId = classId;
+    outcome.record.classGrade = ScheduleWidgetTestStubs::selectedClassGrade(
+        classId
+        );
+    return outcome;
 }

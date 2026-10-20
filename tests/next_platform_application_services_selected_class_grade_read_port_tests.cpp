@@ -65,7 +65,7 @@ readsSelectedClassGradeFromActiveRepository()
 
     ClassInfo info;
     info.classId = id;
-    info.classGrade = QStringLiteral(" M2 ");
+    info.classGrade = QStringLiteral(" \u3042 \U0001F30C M2 \t");
     QVERIFY(services.databaseSession()->classInfoRepository()
         ->saveClassInfo(info));
 
@@ -74,7 +74,14 @@ readsSelectedClassGradeFromActiveRepository()
 
     QVERIFY(result);
     QVERIFY(result.value().classId == typedClassId(id));
-    QVERIFY(result.value().classGrade == " M2 ");
+    const QByteArray expectedGradeBytes = info.classGrade.toUtf8();
+    QCOMPARE(
+        result.value().classGrade.value(),
+        std::string(
+            expectedGradeBytes.constData(),
+            static_cast<std::size_t>(expectedGradeBytes.size())
+            )
+        );
     const auto& metrics = services.databaseSession()
         ->classInfoRepository()->selectedClassGradeReadMetrics();
     QCOMPARE(metrics.callCount, 1);
@@ -119,8 +126,8 @@ preservesMissingOrEmptyGrade()
     QVERIFY(empty);
     QVERIFY(missing.value().classId == typedClassId(missingId));
     QVERIFY(empty.value().classId == typedClassId(emptyId));
-    QVERIFY(missing.value().classGrade.empty());
-    QVERIFY(empty.value().classGrade.empty());
+    QVERIFY(missing.value().classGrade.value().empty());
+    QVERIFY(empty.value().classGrade.value().empty());
     const auto& metrics = services.databaseSession()
         ->classInfoRepository()->selectedClassGradeReadMetrics();
     QCOMPARE(metrics.callCount, 2);

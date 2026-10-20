@@ -57,7 +57,14 @@ contractUsesQtFreeTypedValues()
 {
     static_assert(std::is_same_v<
         decltype(SelectedClassGradeReadSnapshot::classGrade),
-        std::string
+        SelectedClassGradeValue
+        >);
+    static_assert(std::is_constructible_v<SelectedClassGradeValue, std::string>);
+    static_assert(!std::is_convertible_v<std::string, SelectedClassGradeValue>);
+    static_assert(!std::is_convertible_v<SelectedClassGradeValue, std::string>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<const SelectedClassGradeValue&>().value()),
+        const std::string&
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<SelectedClassGradeReadPort&>()
@@ -67,10 +74,16 @@ contractUsesQtFreeTypedValues()
 
     SelectedClassGradeReadSnapshot snapshot{
         classId("42"),
-        "M2"
+        SelectedClassGradeValue("M2")
     };
     QVERIFY(snapshot.classId == classId("42"));
-    QVERIFY(snapshot.classGrade == "M2");
+    QVERIFY(snapshot.classGrade == SelectedClassGradeValue("M2"));
+    QVERIFY(SelectedClassGradeValue{}.value().empty());
+
+    const std::string arbitraryUtf8("\xE3\x81\x82\0\xF0\x9F\x8C\x8C", 8);
+    const SelectedClassGradeValue preserved(arbitraryUtf8);
+    QCOMPARE(preserved.value(), arbitraryUtf8);
+    QVERIFY(preserved == SelectedClassGradeValue(arbitraryUtf8));
 }
 
 void NextApplicationSelectedClassGradeReadQueryTests::
@@ -112,7 +125,7 @@ mapsTypedIdAndPreservesEmptyOrPopulatedGrade()
     const Domain::ClassId requested = classId("42");
     port.result = SelectedClassGradeReadResult::success({
         requested,
-        " M1 "
+        SelectedClassGradeValue(" M1 ")
     });
 
     const SelectedClassGradeReadQuery query(port);
@@ -123,14 +136,27 @@ mapsTypedIdAndPreservesEmptyOrPopulatedGrade()
     QVERIFY(port.lastRequest.has_value());
     QVERIFY(*port.lastRequest == requested);
     QVERIFY(result.value().classId == requested);
-    QVERIFY(result.value().classGrade == " M1 ");
+    QCOMPARE(result.value().classGrade.value(), std::string(" M1 "));
 
-    port.result = SelectedClassGradeReadResult::success({requested, {}});
+    const std::string arbitraryUtf8("\xE3\x81\x82\0\xF0\x9F\x8C\x8C", 8);
+    port.result = SelectedClassGradeReadResult::success({
+        requested,
+        SelectedClassGradeValue(arbitraryUtf8)
+        });
     result = query.execute(requested);
 
     QVERIFY(result);
-    QVERIFY(result.value().classGrade.empty());
-    QCOMPARE(port.callCount, 2);
+    QCOMPARE(result.value().classGrade.value(), arbitraryUtf8);
+
+    port.result = SelectedClassGradeReadResult::success({
+        requested,
+        SelectedClassGradeValue{}
+        });
+    result = query.execute(requested);
+
+    QVERIFY(result);
+    QVERIFY(result.value().classGrade.value().empty());
+    QCOMPARE(port.callCount, 3);
 }
 
 void NextApplicationSelectedClassGradeReadQueryTests::
@@ -153,7 +179,7 @@ propagatesReadFailureAndRejectsMismatchedIdentity()
 
     port.result = SelectedClassGradeReadResult::success({
         classId("43"),
-        "M3"
+        SelectedClassGradeValue("M3")
     });
     result = query.execute(classId("42"));
 

@@ -66,7 +66,7 @@ QString forClass(
         return {};
     }
 
-    const std::string& gradeUtf8 = classGrade.value().classGrade;
+    const std::string& gradeUtf8 = classGrade.value().classGrade.value();
     const SchoolLevel schoolLevel = Private::schoolLevelForClassGrade(
         QString::fromUtf8(
             gradeUtf8.data(),

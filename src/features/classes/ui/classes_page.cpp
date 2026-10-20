@@ -1610,7 +1610,7 @@ void ClassesPage::rebuildSectionTabs()
             {
                 hideMiddleSchoolAnalyticsAndEvaluations =
                     isMiddleSchoolGrade(QString::fromStdString(
-                        grade.value().classGrade
+                        grade.value().classGrade.value()
                         ));
             }
         }
