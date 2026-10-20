@@ -52707,3 +52707,44 @@ run occurred.
 Batch490 now has F1171 complete and F1172–F1177 discovered, with F1172 next.
 Batch489 remains complete and pushed at `e329f92b`. F629 awaits source-bound
 Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+
+### F1172 Update-check UTC milliseconds accepted before implementation - 2026-10-20
+
+F1172 is accepted/in progress. Add Qt-free
+`Application::UpdateCheckUtcMilliseconds` in
+`src/next/application/update_check_utc_milliseconds.h` and register it in
+`cmake/next.cmake` as needed. The value stores exact signed `std::int64_t`,
+defaults to zero, has an explicit constructor, `.value()` accessor, and exact
+equality, with no validation, clamping, or implicit conversions. Replace only
+`checkedAtUtcMilliseconds` in `ManualUpdateCheckResult` and
+`StartupUpdateCheckResult`.
+
+Preserve zero as an ordinary timestamp value, all statuses, artifacts and
+messages, service freshness state, and legacy `QDateTime`. Manual and startup
+Platform adapters must wrap their existing `QDateTime::toMSecsSinceEpoch()`
+results; manual UI must unwrap and reconstruct UTC at the existing boundary.
+The startup consumer currently ignores the timestamp. Do not include F1168's
+SHA-256 field or F1171's artifact size in this slice.
+
+The relevant boundaries are `src/next/application/manual_update_check.h`,
+`src/next/application/startup_update_check.h`, both named Platform ports,
+`src/ui/shared/dialogs/update_dialog.cpp`, and
+`src/app/controllers/update_controller.cpp`. Preserve signed extremes in the
+value and both use-case pass-throughs; adapter tests must cover representative
+Qt-representable negative, zero, and positive milliseconds. Manual UI UTC
+conversion tests must use values representable by `QDateTime`. Qt date
+boundaries are narrower than `std::int64_t`, so no full-int64 preservation is
+claimed through `QDateTime` boundaries.
+
+Build `ClassMngr`,
+`ClassMngrNextApplicationManualUpdateCheckUseCaseTests`,
+`ClassMngrNextApplicationStartupUpdateCheckUseCaseTests`,
+`ClassMngrUpdateControllerAutomaticStartupTests`, and `ClassMngrUpdaterTests`;
+run the matching focused CTests with `QT_QPA_PLATFORM=offscreen`, independent
+Tester review, and `git diff --check`. No full-suite or Windows claim is in
+scope. Implementation and verification have not started.
+
+Batch490 has F1171 complete, F1172 accepted/in progress, and F1173–F1177
+discovered, with F1173 next. Batch490 remains unpushed until F1177 closes.
+F629 awaits source-bound Windows x64 layout evidence; the Phase 0 and Phase 2
+gates remain open.

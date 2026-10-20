@@ -6461,3 +6461,16 @@ controller suite reported 25/25 and updater suite 31/31. Four focused CTests
 passed 4/4 offscreen after a loopback-enabled retry. `git diff --check` passed.
 No full suite or Windows build ran. Batch490 has one complete slice and F1172
 next; Batch489 is pushed. F629 and both phase gates remain open.
+
+## Phase 2 update - F1172 accepted; Batch490 active - 2026-10-20
+
+F1172 is accepted to type the manual and startup update-check UTC millisecond
+fields with a Qt-free `Application::UpdateCheckUtcMilliseconds`, preserving
+exact signed values and zero defaults. Existing timestamp sourcing, service
+freshness state, legacy `QDateTime`, and UTC conversion boundaries remain in
+place; zero remains an ordinary value. Adapter/UI boundary verification will
+use representative values within Qt's date range and will not claim that
+`QDateTime` can represent the full `int64` range. Implementation and
+verification have not started. F1171 is complete; F1173 is next after F1172.
+Batch490 remains unpushed until F1177 closes. F629 and both phase gates remain
+open.
