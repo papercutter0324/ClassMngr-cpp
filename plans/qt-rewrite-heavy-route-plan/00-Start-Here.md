@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). Batch499 is complete and pushed at `cc38c959` (see its [push receipt](03-Phase-2-Progress-Log.md#batch499-push-receipt-2026-10-21)). Batch500 (F1243–F1252) is complete and pushed at `029a17e8` (see [push receipt](03-Phase-2-Progress-Log.md#batch500-push-receipt-2026-10-21)); Batch501 (F1253–F1256) is complete and pushed at `7f8ca958` (see [push receipt](03-Phase-2-Progress-Log.md#batch501-push-receipt-2026-10-21)); Batch502 remains active and unpushed with F1257–F1260 complete and F1261 next for acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). Batch499 is complete and pushed at `cc38c959` (see its [push receipt](03-Phase-2-Progress-Log.md#batch499-push-receipt-2026-10-21)). Batch500 (F1243–F1252) is complete and pushed at `029a17e8` (see [push receipt](03-Phase-2-Progress-Log.md#batch500-push-receipt-2026-10-21)); Batch501 (F1253–F1256) is complete and pushed at `7f8ca958` (see [push receipt](03-Phase-2-Progress-Log.md#batch501-push-receipt-2026-10-21)); Batch502 remains active and unpushed with F1257–F1260 complete and F1261 accepted for implementation, including both source-index producers. F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,17 +38,17 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch502 — Active (4 complete, 0 accepted, 1 discovered):**
+**Batch502 — Active (4 complete, 1 accepted, 0 discovered):**
 
 1. **F1257 — Complete:** `ClassSummary::order` uses distinct `ClassSummaryOrder`; preserve default zero, negative rejection, position-then-class-ID ordering, and distinction from F1248 navigation ranks.
 2. **F1258 — Complete:** `dayGroup()` returns the closed weekday-group classification enum; preserve existing normalization and matching behavior, separate from legacy F729 parser work.
 3. **F1259 — Complete:** Application folder and entry metadata use distinct key values; exact stored bytes, existing validation, and independent keys are preserved.
 4. **F1260 — Complete:** `CalendarEventSummary::eventType` uses explicit open-text `CalendarEventTypeName`; projection validation preserves nonblank/64-byte rules and repository normalization is unchanged.
-5. **F1261 — Discovered; next for acceptance:** Type Calendar event projection order; preserve nonnegative int32 values, source order, and no sorting or uniqueness policy.
+5. **F1261 — Accepted for implementation:** Add explicit Application `CalendarEventOrder` to `CalendarEventSummary::order`; preserve zero default, nonnegative signed-32 values, vector sequence, and no sorting or uniqueness policy across the Platform and feature-query producers.
 
 Batch495 and Batch496 are complete and pushed (see the [Batch495](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21) and [Batch496](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21) receipts). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
-Batch500 (F1243–F1252) is complete and pushed at `029a17e8`. Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`. Batch502 is active and unpushed with F1257–F1260 complete and F1261 next for acceptance. F1256 keeps generic snapshot widths distinct from the Class Transfer package width type. No broad Schedule Import feature completion is claimed for F1244.
+Batch500 (F1243–F1252) is complete and pushed at `029a17e8`. Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`. Batch502 is active and unpushed with F1257–F1260 complete and F1261 accepted for implementation. F1261 keeps source-index order explicit at both Calendar Event producers. F1256 keeps generic snapshot widths distinct from the Class Transfer package width type. No broad Schedule Import feature completion is claimed for F1244.
 
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 

@@ -59386,6 +59386,10 @@ CalendarEventTypeName projection value`). The ten changed paths are
 `src/next/platform/application_services_calendar_event_port.h`,
 `tests/next_application_calendar_event_tests.cpp`, and
 `tests/next_platform_application_services_calendar_event_port_tests.cpp`.
+The follow-up test-consumer repair changed only
+`tests/calendar_event_cache_tests.cpp` and
+`tests/next_application_calendar_event_query_port_tests.cpp`; its separate
+commit and verification are recorded below.
 
 `Application::CalendarEventTypeName` is a default-empty, explicit
 `std::string`-backed value with `.value()` returning a const string reference
@@ -59410,6 +59414,89 @@ no work, then the three focused registered CTests
 The independent diff check and committed-diff check passed. No clean build,
 Windows build, or full-suite verification is claimed.
 
+### F1260 follow-up Calendar Event Type Name test consumers - 2026-10-21
+
+Follow-up commit `b4009a9f9f3b1a1d632b032ec999cb9a426055d4` (`Phase2 - Adapt
+CalendarEventTypeName projection tests`) corrected missed summary fixtures and
+read sites by explicitly constructing or unwrapping `CalendarEventTypeName`.
+It changed only `tests/calendar_event_cache_tests.cpp` and
+`tests/next_application_calendar_event_query_port_tests.cpp`; the legacy
+`CalendarEvent` string field remains unchanged. This repairs test consumers
+for F1260 and is not a new slice.
+
+The incremental macOS build targets were `ClassMngr`,
+`ClassMngrCalendarEventCacheTests`, and
+`ClassMngrNextApplicationCalendarEventQueryPortTests`. The independent Tester
+confirmed Ninja had no work in the existing build and both focused CTests,
+`ClassMngrCalendarEventCacheTests` and
+`ClassMngrNextApplicationCalendarEventQueryPortTests`, passed 2/2.
+`git diff --check` passed. No clean, Windows, or full-suite verification is
+claimed.
+
 Batch502 remains active and unpushed: F1257–F1260 are complete and F1261 is
 next for acceptance. The Batch503 discovery shortfall remains unactivated.
 F629 and the Phase 0 and Phase 2 gates remain open.
+
+### Superseded latest progress update - 2026-10-21 (F1260 complete)
+
+F1260 is complete in active, unpushed Batch502 as `4cbc8614` (see [F1260 closeout](03-Phase-2-Progress-Log.md#f1260-calendar-event-type-name-projection-value-complete-2026-10-21)). The incremental macOS build covered `ClassMngr` and the three affected test targets; the three focused CTests passed 3/3. No clean, Windows, or full-suite verification is claimed. F1257–F1260 are complete and F1261 is next for acceptance; Batch503 remains inactive, and F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1261 CalendarEventOrder accepted before implementation - 2026-10-21
+
+F1261 is accepted as the fifth and final Batch502 slice. Add the
+Application-owned `CalendarEventOrder` value in
+`src/next/application/calendar_event_projection.h`, local to the Calendar
+Event projection contract. Follow the adjacent integer-wrapper convention:
+default zero, explicit `constexpr std::int32_t` construction,
+`rawValue() const noexcept`, and same-type value equality. Change only
+`CalendarEventSummary::order` to this type. No new header or source-manifest
+entry is needed.
+
+Preserve negative-order rejection and the exact error text
+`Calendar event order must not be negative.` Accept every nonnegative signed
+32-bit value, including `INT32_MAX`; do not add an upper bound. Preserve the
+input vector sequence and add no sorting, deduplication, or uniqueness rule.
+At the Platform boundary explicitly wrap the current source index in
+`CalendarEventOrder`, after the existing 4,096-event cap check. Preserve index
+assignment after that check and the by-id lookup's index zero. The feature
+query producer in `src/features/calendar/calendar_event_projection_query.cpp`
+uses the retained input vector size as its order index; preserve visit order
+and the source sequence through that conversion as well.
+
+Keep `CalendarEventOrder` distinct from F1242 ScheduleView order, F1252
+Document Catalog orders, F1257 `ClassSummaryOrder`, and F1260
+`CalendarEventTypeName`. Do not change any other Calendar Event summary field
+or producer/consumer contract.
+
+The reviewed evidence is `src/next/application/calendar_event_projection.h:98-112,338-342`
+for the summary field and negative validation,
+`src/next/platform/application_services_calendar_event_port.h:258-283` for
+the raw-row-count cap and source-index assignment, and
+`src/features/calendar/calendar_event_projection_query.cpp:282-326` for
+retained-vector-index assignment and visitation order. Focused Application
+tests in `tests/next_application_calendar_event_tests.cpp:601,1041-1062,1173`
+will assert the exact field type, explicit construction/no implicit integer
+conversion, default zero, maximum signed-32 acceptance, negative rejection,
+arbitrary and repeated order values, and unchanged input sequence. Platform
+tests in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp:973-995,1066`
+will assert source indexes 0/1/2 and by-id index zero while preserving the cap.
+`tests/calendar_event_cache_tests.cpp` will cover the feature-query producer's
+source indexes and preserved visit sequence.
+
+The accepted incremental macOS build targets are `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarEventCacheTests`. Run only the focused CTests
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarEventCacheTests` in the existing `build/macos-clang-debug`
+folder.
+No implementation, build, or test execution has started. No clean build,
+Windows build, or full-suite verification is claimed. Batch502 remains active
+and unpushed with F1257–F1260 complete and F1261 accepted; the Batch503
+shortfall remains inactive. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### Superseded latest progress update - 2026-10-21 (F1261 accepted)
+
+F1261 is accepted as the final Batch502 slice for implementation (see [F1261 acceptance](03-Phase-2-Progress-Log.md#f1261-calendareventorder-accepted-before-implementation-2026-10-21)). F1257–F1260 are complete; F1261 implementation, build, and test execution have not started. Batch502 remains active and unpushed, Batch503 remains inactive, and F629 and the Phase 0 and Phase 2 gates remain open.
