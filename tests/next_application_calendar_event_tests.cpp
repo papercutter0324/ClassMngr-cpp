@@ -515,6 +515,7 @@ private slots:
     void seriesCreateRequestBoundsAndOccurrencesRemainTyped();
     void seriesCreateRequestContractHasNoQtOrLegacySurface();
     void defaultRepeatUntilDateUsesLastMatchingWeekdayOfYear();
+    void repeatUntilWeekdayMappingRejectsInvalidIsoValues();
     void repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil();
     void repeatOccurrencePlanClampsMonthlyDatesFromPreviousOccurrence();
     void repeatOccurrencePlanPreservesSeedFieldsAndDateDuration();
@@ -2132,17 +2133,17 @@ void NextApplicationCalendarEventTests::
     const auto firstDay = GregorianDate::fromIsoString("0001-01-01");
     QVERIFY(firstDay.has_value());
     QCOMPARE(firstDay->dayNumber(), DayNumber{0});
-    QCOMPARE(firstDay->weekday(), 1); // Monday
+    QVERIFY(firstDay->weekday() == IsoWeekday::Monday);
 
     const auto millenniumDay = GregorianDate::fromIsoString("2000-01-01");
     QVERIFY(millenniumDay.has_value());
     QCOMPARE(millenniumDay->dayNumber(), DayNumber{730119});
-    QCOMPARE(millenniumDay->weekday(), 6); // Saturday
+    QVERIFY(millenniumDay->weekday() == IsoWeekday::Saturday);
 
     const auto leapDay = GregorianDate::fromIsoString("2000-02-29");
     QVERIFY(leapDay.has_value());
     QCOMPARE(leapDay->dayNumber(), DayNumber{730178});
-    QCOMPARE(leapDay->weekday(), 2); // Tuesday
+    QVERIFY(leapDay->weekday() == IsoWeekday::Tuesday);
 
     const auto leapDayFromOrdinal = GregorianDate::fromDayNumber(
         DayNumber{730178}
@@ -2153,29 +2154,29 @@ void NextApplicationCalendarEventTests::
     struct WeekdayCase final
     {
         std::string_view date;
-        int weekday;
+        IsoWeekday weekday;
     };
     constexpr WeekdayCase weekdays[] = {
-        {"2024-02-26", 1}, // Monday
-        {"2024-02-27", 2}, // Tuesday
-        {"2024-02-28", 3}, // Wednesday
-        {"2024-02-29", 4}, // Thursday
-        {"2024-03-01", 5}, // Friday
-        {"2024-03-02", 6}, // Saturday
-        {"2024-03-03", 7}  // Sunday
+        {"2024-02-26", IsoWeekday::Monday},
+        {"2024-02-27", IsoWeekday::Tuesday},
+        {"2024-02-28", IsoWeekday::Wednesday},
+        {"2024-02-29", IsoWeekday::Thursday},
+        {"2024-03-01", IsoWeekday::Friday},
+        {"2024-03-02", IsoWeekday::Saturday},
+        {"2024-03-03", IsoWeekday::Sunday}
     };
     for (const WeekdayCase& testCase : weekdays)
     {
         const auto date = GregorianDate::fromIsoString(testCase.date);
         QVERIFY(date.has_value());
-        QCOMPARE(date->weekday(), testCase.weekday);
+        QVERIFY(date->weekday() == testCase.weekday);
     }
 
     const auto lastDay = GregorianDate::fromIsoString("9999-12-31");
     QVERIFY(lastDay.has_value());
     QCOMPARE(GregorianDate::maximumDayNumber(), DayNumber{3652058});
     QCOMPARE(lastDay->dayNumber(), GregorianDate::maximumDayNumber());
-    QCOMPARE(lastDay->weekday(), 5); // Friday
+    QVERIFY(lastDay->weekday() == IsoWeekday::Friday);
 
     const auto firstFromOrdinal = GregorianDate::fromDayNumber(DayNumber{0});
     QVERIFY(firstFromOrdinal.has_value());
@@ -2701,6 +2702,30 @@ defaultRepeatUntilDateUsesLastMatchingWeekdayOfYear()
     {
         QVERIFY(!defaultCalendarEventRepeatUntilDate(invalidDate).has_value());
     }
+}
+
+void NextApplicationCalendarEventTests::
+repeatUntilWeekdayMappingRejectsInvalidIsoValues()
+{
+    using CalendarEventRepeatOccurrencePlanDetail::domainWeekdayForIsoWeekday;
+
+    const auto mapsTo = [](const IsoWeekday isoWeekday, const Weekday weekday)
+    {
+        const std::optional<Weekday> mapped =
+            domainWeekdayForIsoWeekday(isoWeekday);
+        return mapped.has_value() && *mapped == weekday;
+    };
+
+    QVERIFY(mapsTo(IsoWeekday::Monday, Weekday::Monday));
+    QVERIFY(mapsTo(IsoWeekday::Tuesday, Weekday::Tuesday));
+    QVERIFY(mapsTo(IsoWeekday::Wednesday, Weekday::Wednesday));
+    QVERIFY(mapsTo(IsoWeekday::Thursday, Weekday::Thursday));
+    QVERIFY(mapsTo(IsoWeekday::Friday, Weekday::Friday));
+    QVERIFY(mapsTo(IsoWeekday::Saturday, Weekday::Saturday));
+    QVERIFY(mapsTo(IsoWeekday::Sunday, Weekday::Sunday));
+
+    QVERIFY(!domainWeekdayForIsoWeekday(static_cast<IsoWeekday>(0)));
+    QVERIFY(!domainWeekdayForIsoWeekday(static_cast<IsoWeekday>(8)));
 }
 
 void NextApplicationCalendarEventTests::

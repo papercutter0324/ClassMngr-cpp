@@ -4,6 +4,7 @@
 #include "next/domain/course_catalog_identity.h"
 #include "next/domain/document_content_reference.h"
 #include "next/domain/domain_types.h"
+#include "next/domain/gregorian_date.h"
 #include "next/domain/korean_teacher_key.h"
 #include "next/domain/operation_result.h"
 #include "next/domain/schedule_entry.h"
@@ -36,6 +37,17 @@ static_assert(std::is_same_v<
     decltype(std::declval<const ScheduleTime&>().weekday()),
     Weekday
     >);
+static_assert(std::is_same_v<
+    decltype(std::declval<const GregorianDate&>().weekday()),
+    IsoWeekday
+    >);
+static_assert(static_cast<int>(IsoWeekday::Monday) == 1);
+static_assert(static_cast<int>(IsoWeekday::Tuesday) == 2);
+static_assert(static_cast<int>(IsoWeekday::Wednesday) == 3);
+static_assert(static_cast<int>(IsoWeekday::Thursday) == 4);
+static_assert(static_cast<int>(IsoWeekday::Friday) == 5);
+static_assert(static_cast<int>(IsoWeekday::Saturday) == 6);
+static_assert(static_cast<int>(IsoWeekday::Sunday) == 7);
 
 static_assert(std::is_same_v<
     decltype(std::declval<DuplicateStudentNamePairGroup&>().rowIndexes),

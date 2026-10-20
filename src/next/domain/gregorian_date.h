@@ -9,6 +9,17 @@
 namespace ClassMngr::Next::Domain
 {
 
+enum class IsoWeekday
+{
+    Monday = 1,
+    Tuesday = 2,
+    Wednesday = 3,
+    Thursday = 4,
+    Friday = 5,
+    Saturday = 6,
+    Sunday = 7
+};
+
 // A valid date in the proleptic Gregorian calendar, represented independently
 // of platform date libraries. Day numbers are zero-based with 0001-01-01 as 0.
 class GregorianDate final
@@ -169,10 +180,9 @@ public:
         return m_dayNumber;
     }
 
-    // 0001-01-01 is Monday, so weekday numbering is Monday=1 through Sunday=7.
-    [[nodiscard]] constexpr int weekday() const noexcept
+    [[nodiscard]] constexpr IsoWeekday weekday() const noexcept
     {
-        return static_cast<int>(m_dayNumber % 7) + 1;
+        return static_cast<IsoWeekday>(m_dayNumber % 7 + 1);
     }
 
     [[nodiscard]] std::string toIsoString() const

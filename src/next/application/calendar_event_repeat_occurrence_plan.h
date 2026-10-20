@@ -3,6 +3,7 @@
 #include "next/application/calendar_event_series_create_port.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/gregorian_date.h"
+#include "next/domain/schedule_time.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -26,6 +27,31 @@ namespace CalendarEventRepeatOccurrencePlanDetail
 
 using GregorianDate = Domain::GregorianDate;
 using DayNumber = GregorianDate::DayNumber;
+
+[[nodiscard]] inline std::optional<Domain::Weekday> domainWeekdayForIsoWeekday(
+    const Domain::IsoWeekday weekday
+    ) noexcept
+{
+    switch (weekday)
+    {
+    case Domain::IsoWeekday::Monday:
+        return Domain::Weekday::Monday;
+    case Domain::IsoWeekday::Tuesday:
+        return Domain::Weekday::Tuesday;
+    case Domain::IsoWeekday::Wednesday:
+        return Domain::Weekday::Wednesday;
+    case Domain::IsoWeekday::Thursday:
+        return Domain::Weekday::Thursday;
+    case Domain::IsoWeekday::Friday:
+        return Domain::Weekday::Friday;
+    case Domain::IsoWeekday::Saturday:
+        return Domain::Weekday::Saturday;
+    case Domain::IsoWeekday::Sunday:
+        return Domain::Weekday::Sunday;
+    }
+
+    return std::nullopt;
+}
 
 [[nodiscard]] inline bool isSupportedFrequency(
     const CalendarEventRepeatFrequency frequency
@@ -139,8 +165,18 @@ defaultCalendarEventRepeatUntilDate(
         return std::nullopt;
     }
 
+    const std::optional<Domain::Weekday> finalWeekday =
+        domainWeekdayForIsoWeekday(finalDayOfYear->weekday());
+    const std::optional<Domain::Weekday> requestedWeekday =
+        domainWeekdayForIsoWeekday(parsedDate->weekday());
+    if (!finalWeekday || !requestedWeekday)
+    {
+        return std::nullopt;
+    }
+
     const int daysBack =
-        (finalDayOfYear->weekday() - parsedDate->weekday() + 7) % 7;
+        (static_cast<int>(*finalWeekday)
+            - static_cast<int>(*requestedWeekday) + 7) % 7;
     const std::optional<GregorianDate> defaultUntilDate =
         GregorianDate::fromDayNumber(
             finalDayOfYear->dayNumber() - daysBack
