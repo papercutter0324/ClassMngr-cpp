@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch495 is complete and awaiting its batch push; Batch496 is active with F1219 next for acceptance, and F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch495 is complete and pushed at `e84c332d`; Batch496 is active with F1219 next for acceptance, and F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-Batch494 is complete and pushed at `fc626d56` (see the [push receipt](03-Phase-2-Progress-Log.md#batch494-push-receipt-2026-10-20)). Batch495 is complete through F1218 (see the [F1218 completion](03-Phase-2-Progress-Log.md#f1218-roster-first-empty-row-result-complete-2026-10-21)); its batch push follows this closeout record. Batch496 is active with F1219 next for acceptance (see the [Batch496 discovery record](03-Phase-2-Progress-Log.md#batch496-discovery-started-2026-10-21)). F629 plus the Phase 0 and Phase 2 gates remain open.
+Batch494 is complete and pushed at `fc626d56` (see the [push receipt](03-Phase-2-Progress-Log.md#batch494-push-receipt-2026-10-20)). Batch495 is complete through F1218 (see the [F1218 completion](03-Phase-2-Progress-Log.md#f1218-roster-first-empty-row-result-complete-2026-10-21)) and pushed at `e84c332d` (see the [Batch495 push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is active with F1219 next for acceptance (see the [Batch496 discovery record](03-Phase-2-Progress-Log.md#batch496-discovery-started-2026-10-21)). F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 

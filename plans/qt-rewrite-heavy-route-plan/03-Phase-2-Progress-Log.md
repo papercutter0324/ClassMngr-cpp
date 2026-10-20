@@ -55795,5 +55795,16 @@ no full suite or Windows run is claimed.
 
 Batch495 is complete with all nine discovered slices F1210–F1218 implemented
 and verified. Batch496 is now the active batch with eight discovered
-candidates, F1219–F1226. The Batch495 push is the next operation; its receipt
-will be recorded after the remote update.
+candidates, F1219–F1226 (see the push receipt below).
+
+### Batch495 push receipt - 2026-10-21
+
+Batch495 is complete and pushed to `origin/Qt-Rewrite`. The normal push
+advanced the branch from `47e86451` to `e84c332d`:
+
+```text
+47e86451..e84c332d  Qt-Rewrite -> Qt-Rewrite
+```
+
+The push included the Batch495 closeout through `e84c332d`. No tests were run
+for the push.
