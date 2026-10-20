@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e`; see its [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20). Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96`; see its [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20). Batch486 is complete locally at F1143 source/test commit `686bdc2a5000709c6b5ab6cd6b632552d62577d6`; this update records Batch486's local closure, and the completed-batch push follows this closure commit (no push receipt yet). Batch487 is complete and pushed at `c3c06e2f5432933a0e8b7df629e25b2afa920e2c`; see its [push receipt](03-Phase-2-Progress-Log.md#batch487-push-receipt-2026-10-20). Batch488 is active with eight discovered candidates and F1154 next (see its [discovery record](03-Phase-2-Progress-Log.md#batch488-discovery-at-f1152-start-2026-10-20)). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e`; see its [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20). Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96`; see its [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20). Batch486 is complete locally at F1143 source/test commit `686bdc2a5000709c6b5ab6cd6b632552d62577d6`; this update records Batch486's local closure, and the completed-batch push follows this closure commit (no push receipt yet). Batch487 is complete and pushed at `c3c06e2f5432933a0e8b7df629e25b2afa920e2c`; see its [push receipt](03-Phase-2-Progress-Log.md#batch487-push-receipt-2026-10-20). Batch488 is active with eight candidates and F1154 accepted/in progress (see its [acceptance record](03-Phase-2-Progress-Log.md#f1154-rosteravailability-first-empty-row-accepted-before-implementation-2026-10-20)). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,9 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch488 — Active; eight candidates, none complete or accepted/in progress, and eight discovered:**
+**Batch488 — Active; eight candidates, none complete, one accepted/in progress, and seven discovered:**
 
-1. **F1154 — Discovered; next:** Type RosterAvailability's first-empty row output; preserve values 0–24, -1 as the full sentinel, and per-row `Result` errors.
+1. **F1154 — Accepted/in progress:** Type RosterAvailability's first-empty row output; preserve values 0–24, -1 as the full sentinel, and per-row `Result` errors.
 2. **F1155 — Discovered:** Type My Classes' nonnegative student-count output; preserve per-row `Result` errors.
 3. **F1156 — Discovered:** Keep selected-class grade as opaque UTF-8, including whitespace and empty values; do not parse through Course.
 4. **F1157 — Discovered:** Type Schedule Builder source-time rows; preserve raw UTF-16 day/start/end text and row order without parsing.
@@ -49,7 +49,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 7. **F1160 — Discovered:** Type Calendar repeat-series delete start date with `Domain::GregorianDate`; preserve validation and error behavior.
 8. **F1161 — Discovered:** Reassess Calendar repeat-series edit `eventType` against `Domain::CalendarEventType`; resolve trimmed recognition versus raw-forwarding compatibility before acceptance.
 
-Batch488 is active with eight discovered candidates and F1154 next. Its full boundaries and evidence are in the [Batch488 discovery record](03-Phase-2-Progress-Log.md#batch488-discovery-at-f1152-start-2026-10-20); F1153's completion and Batch487 closeout are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#f1153-class-analytics-grade-outputs-complete-and-batch487-local-closeout-2026-10-20).
+Batch488 is active with eight candidates and F1154 accepted/in progress. Its discovery evidence is in the [Batch488 discovery record](03-Phase-2-Progress-Log.md#batch488-discovery-at-f1152-start-2026-10-20), and F1154's scope is in its [acceptance record](03-Phase-2-Progress-Log.md#f1154-rosteravailability-first-empty-row-accepted-before-implementation-2026-10-20); F1153's completion and Batch487 closeout are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#f1153-class-analytics-grade-outputs-complete-and-batch487-local-closeout-2026-10-20).
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.

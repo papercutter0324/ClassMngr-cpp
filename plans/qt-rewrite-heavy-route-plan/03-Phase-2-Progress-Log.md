@@ -51311,3 +51311,45 @@ Windows x64 evidence; the Phase 0 and Phase 2 gates remain open.
 Batch487 closeout commit `c3c06e2f5432933a0e8b7df629e25b2afa920e2c` was pushed
 to `origin/Qt-Rewrite`. At verification, local HEAD matched `origin/Qt-Rewrite`
 and the working tree was clean. Batch487 is complete and pushed.
+
+### F1154 RosterAvailability first-empty row accepted before implementation - 2026-10-20
+
+F1154 is accepted/in progress. Add a Qt-free Application semantic value
+`RosterAvailabilityFirstEmptyRow`, explicit from an integer, defaulting to row
+0, with `rawValue()` for boundary validation, `isFull()` for the named -1 full
+sentinel, and equality. Retain raw malformed values for Query validation; do not
+add implicit integer conversion. No equivalent Domain row type exists.
+
+Use the value for `RosterAvailabilityAccumulator::firstEmptyRow()` and
+`RosterAvailabilityReadSnapshot::firstEmptyRowResult` as
+`Domain::Result<RosterAvailabilityFirstEmptyRow>`. Update Platform construction,
+Query range checks through `rawValue()`, and transfer UI consumption through
+`isFull()`. Preserve the outer batch `Result`, snapshot equality,
+request/response validation and ordering, exact validation errors, values 0–24,
+-1, and per-row `Result` errors including full `OperationError` detail. Preserve
+missing parents as per-row recoverable `NotFound` errors and the default snapshot
+as success(0). Do not reuse or change `firstEmptyRosterRow`, the separate
+`size_t` helper whose full sentinel is the vector length. Leave the occupancy
+projection/algorithm, storage, and other flows unchanged.
+
+Evidence: `src/next/application/roster_availability_batch_read_snapshot.h`,
+`src/next/application/roster_availability_batch_read_query.h`,
+`src/next/application/roster_availability_accumulator.h`,
+`src/next/application/roster_row_availability.h`,
+`src/next/platform/application_services_roster_availability_batch_read_port.h`,
+`src/features/roster/ui/roster_editor_widget_transfer.cpp`, and
+`tests/next_application_roster_availability_batch_read_query_tests.cpp`.
+
+Focused acceptance gate: incrementally build in the existing
+`build/macos-clang-debug` tree for `ClassMngr`,
+`ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`, and
+`ClassMngrRosterTransferMenuTests`; run Application and Platform CTests; run UI
+selectors `fullSameGradeTargetIsLabeledAndDisabled`,
+`targetRosterReadFailureBehavesLikeEmptyRoster`, and
+`targetRosterCellReadFailureBehavesLikeEmptyRoster` (Qt offscreen if needed);
+then run `git diff --check`. Existing tests must retain invalid -2/25 range
+coverage, 0/24/-1 behavior, mixed per-row errors and full error detail, Platform
+full/empty/projection/order behavior, and UI full/failure behavior. No full-suite
+or Windows pass is claimed. Implementation and verification had not started at
+acceptance.
