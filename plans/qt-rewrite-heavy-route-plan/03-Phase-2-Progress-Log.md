@@ -55499,9 +55499,36 @@ self-exclusion, and ordered-result checks. Preserve model coverage in
 `tests/roster_model_tests.cpp` and first-peer locate behavior in
 `tests/speaking_eval_page_save_tests.cpp`. Focused targets are
 `ClassMngrNextApplicationStudentNamePairLookupTests`,
-`ClassMngrRosterModelTests`, `ClassMngrSpeakingEvalPageSaveTests` (CTest name
-`SpeakingEvalPageSave`), and affected production target `ClassMngr`. No F1214
+`ClassMngrRosterModelTests`, `ClassMngrSpeakingEvalPageSaveTests` (matching
+CTest name), and affected production target `ClassMngr`. No F1214
 implementation or verification has started.
+
+### F1214 Student name-pair lookup row positions complete - 2026-10-21
+
+F1214 completed at commit `7b5b8e8d` (`Phase2 - Type student name pair row
+positions`). The Application lookup now accepts
+`StudentNamePairSelectedRowIndex` and returns distinct
+`StudentNamePairPeerRowIndex` values. Both are explicit `int` wrappers with
+default `-1`, `.rawValue()`, equality, and no implicit conversions. Selected-row
+range checks precede conversion to `std::size_t`; empty results, self-exclusion,
+peer order, and existing name/key behavior remain intact. Roster and Speaking
+Evaluation Feature methods keep `int`/`QList<int>` APIs and unwrap peer values
+at their Application boundaries.
+
+The independent Tester built `ClassMngr`,
+`ClassMngrNextApplicationStudentNamePairLookupTests`,
+`ClassMngrRosterModelTests`, and `ClassMngrSpeakingEvalPageSaveTests` in
+`build/macos-clang-debug`. The Application lookup and roster model CTests
+passed; the model suite reported 34 Qt cases. The focused page selector
+`duplicateLocateSelectsFirstPeerRow` passed 3 Qt cases including setup and
+cleanup, confirming ordered peers and that Locate selects the first peer.
+The full page CTest (`ClassMngrSpeakingEvalPageSaveTests`) reported 35 passed
+and 1 failed in `outputReportsUsesProjectedRegularSchedule`, an output-directory
+assertion at `tests/speaking_eval_page_save_tests.cpp:2466`. The independent
+Tester reproduced the same failure and 35/36 result on pre-F1214 baseline
+`0f2539a71725664047547b1fd14b7e43793adcd3`; it was already present before this
+slice. No cause beyond the matching baseline result is claimed. No full suite
+or Windows run is claimed.
 
 ### Batch494 push receipt - 2026-10-20
 
