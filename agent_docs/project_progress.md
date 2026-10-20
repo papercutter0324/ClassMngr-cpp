@@ -6271,5 +6271,24 @@ The incremental macOS Debug build passed for `ClassMngr` and the Application,
 Platform, and Class Analytics Page parity targets. Application and Platform
 CTests passed 2/2; the UI selector passed under Qt offscreen after the native
 launch could not find a screen. `git diff --check` passed. No full, clean, or
-Windows build ran. Batch487 has nine complete slices with F1153 remaining;
-Batch488 is discovered but inactive. F629 and both phase gates remain open.
+Windows build ran. Batch487 has nine complete slices and F1153 accepted/in
+progress; Batch488 is discovered but inactive. F629 and both phase gates
+remain open.
+
+## Phase 2 update - F1153 accepted; Batch487 active - 2026-10-20
+
+F1153 will reuse `Domain::SpeakingEvaluationGrade` for the pure grade outputs
+in the Class Analytics Application snapshot. Keep absent snapshot and
+per-criterion grades optional so empty and partial states remain blank in the
+Qt UI adapter. Preserve existing grade labels, the unknown numeric-label to C
+fallback, `numberToGrade()` clamping, and the separate rule that unknown raw
+score text is ignored. Composite criterion labels, raw score inputs, numeric
+distributions, aggregation, and display-model text remain unchanged.
+
+The focused gate builds `ClassMngr`, the Application Class Analytics query
+tests, and Class Analytics Page parity tests; it covers all five grades,
+fallback and clamping paths, optional blank states, and the existing visible
+and no-scored-data UI selectors. No implementation results are recorded yet.
+Batch487 has nine complete slices and one accepted/in-progress slice; F1153 is
+its final candidate. Batch488 remains inactive. F629 and both phase gates
+remain open.

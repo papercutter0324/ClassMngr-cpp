@@ -51236,3 +51236,48 @@ accepted/in progress, and F1153 as its sole discovered remaining slice; it is
 not closed or pushed. Batch488 remains discovered and inactive with its
 provisional list unchanged. F629 remains active pending source-bound Windows
 x64 evidence; the Phase 0 and Phase 2 gates remain open.
+
+### F1153 Class Analytics closed grade-label outputs accepted before implementation - 2026-10-20
+
+F1153 is accepted/in progress. Reuse `Domain::SpeakingEvaluationGrade` for
+these pure grade-valued Application outputs: `ClassAnalyticsStudentRank::overallLetter`,
+optional per-criterion letters, optional `ClassAnalyticsSnapshot::classAverageLetter`,
+`ClassAnalyticsSnapshot::overallLetters`, and
+`ClassAnalyticsYearToDatePoint::classAverageLetter`. Keep optional values so
+empty snapshots and unscored criteria remain blank. Convert the grade values
+to the existing text-only Qt DTOs in `class_analytics_page.cpp`, preserving
+label strings and UI consumers.
+
+Preserve the exact C/B/B+/A/A+ scale. The source distinguishes three paths:
+`gradeLabel(int)` returns C in its default branch for unknown numeric values;
+`numberToGrade(int)` clamps to 1–5 first, so `numberToGrade(6)` is A+; and
+unknown raw persisted score text is skipped by `gradeValue()`. Reuse
+`Domain::SpeakingEvaluationGrade`, which already has the same five-label
+scale. Keep raw score input, numeric distributions, composite strongest/focus
+criterion label strings, calculations, aggregation, ordering, and
+query-selection behavior unchanged.
+
+Evidence: `src/next/application/class_analytics_dashboard_read_query.h:131-163,
+197-219,238-242,262-276,374-383,412-451,524-528`;
+`src/next/domain/speaking_evaluation_grade.h:26-102`;
+`src/features/classes/ui/class_analytics_page.cpp:59-109,123-129,689-711`;
+`tests/next_application_class_analytics_dashboard_read_query_tests.cpp:593-609`;
+`tests/class_analytics_page_read_parity_tests.cpp:292-422`; and
+`cmake/tests/next.cmake:97-126`.
+
+Focused verification gate: incrementally build `ClassMngr`,
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`, and
+`ClassMngrClassAnalyticsPageReadParityTests` in the existing
+`build/macos-clang-debug` tree. Run the Application query CTest and UI
+selectors `visibleSummaryShapeAndYearToDateMatchFixture` and
+`noScoredDataShowsEmptyStateAndBlankCharts`; use Qt offscreen if the host
+cannot create a screen, then run `git diff --check`. Application tests must
+cover all five labels, the default fallback and `numberToGrade()` clamping,
+absent class-average grade, and unscored criterion grades. No Platform
+production change is expected. This is an acceptance gate only; implementation
+and verification have not started.
+
+Batch487 remains active with nine complete candidates (F1144–F1152) and one
+accepted/in progress (F1153); Batch488 remains discovered and inactive with
+its provisional list unchanged. F629 remains active pending source-bound
+Windows x64 evidence; the Phase 0 and Phase 2 gates remain open.

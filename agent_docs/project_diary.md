@@ -8410,3 +8410,16 @@ passed under Qt offscreen. A native UI launch could not find a screen, so the
 selector was rerun offscreen. No full or Windows suite ran. Batch487 has nine
 complete slices and F1153 is next; Batch488 remains inactive. The separate
 Batch486 push is still pending exact-payload approval.
+
+## 2026-10-20 - F1153 accepted
+
+F1153 reuses `Domain::SpeakingEvaluationGrade` for the pure Class Analytics
+grade outputs and converts to the existing Qt text DTOs at the feature
+adapter. Optional grades preserve the current blank output for empty snapshots
+and unscored criteria. Keep composite criterion labels, raw score text, and
+numeric distributions unchanged.
+
+Preserve the distinct conversion paths: `gradeLabel()` maps unknown numeric
+values to C; `numberToGrade()` clamps to 1–5 before mapping (so 6 remains A+);
+and unknown persisted score text is skipped. The focused Application and UI
+parity selectors will cover those paths and the visible/empty states.
