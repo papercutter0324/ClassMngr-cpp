@@ -1,6 +1,8 @@
 #include "next/application/class_transfer_export_query.h"
 #include "next/application/class_transfer_keys.h"
 #include <QtTest/QtTest>
+#include <cstdint>
+#include <limits>
 #include <type_traits>
 #include <utility>
 using namespace ClassMngr::Next;
@@ -20,6 +22,11 @@ static_assert(std::is_same_v<
 static_assert(std::is_same_v<
     decltype(std::declval<ClassTransferExportedAtUtc>().value()),
     const std::string&>);
+static_assert(std::is_same_v<
+    decltype(std::declval<ClassTransferExportUtcMilliseconds>().value()),
+    std::int64_t>);
+static_assert(!std::is_convertible_v<std::int64_t, ClassTransferExportUtcMilliseconds>);
+static_assert(!std::is_convertible_v<ClassTransferExportUtcMilliseconds, std::int64_t>);
 namespace
 {
 Domain::ClassId id(int value) { return *Domain::ClassId::fromString(std::to_string(value)); }
@@ -56,6 +63,8 @@ class ClassTransferExportQueryTests : public QObject
     Q_OBJECT
 private slots:
     void preservesRequestAndAssemblesFirstSeenKeysAndFullPayload();
+    void utcMillisecondsValuePreservesFullSignedRangeAndIsOpaque();
+    void formatsUnixEpochAndNegativeMillisecondsInUtc();
     void sourceFailuresPropagate();
     void errorsReplayInOriginalClassOrder_data();
     void errorsReplayInOriginalClassOrder();
@@ -66,7 +75,7 @@ private slots:
 void ClassTransferExportQueryTests::preservesRequestAndAssemblesFirstSeenKeysAndFullPayload()
 {
     Port port;
-    port.source.exportedAtUtcMilliseconds = 1'234;
+    port.source.exportedAtUtcMilliseconds = ClassTransferExportUtcMilliseconds{1'234};
     port.source.classes = {item(2, teacherId(9)), item(1, teacherId(3)), item(4, teacherId(9)), item(3)};
     for (std::size_t i = 0; i < port.source.classes.size(); ++i) port.source.classes[i].selectedIndex = i;
     const std::u16string exactPayload{u'A', char16_t(0), char16_t(0xD800), u'B',
@@ -96,6 +105,43 @@ void ClassTransferExportQueryTests::preservesRequestAndAssemblesFirstSeenKeysAnd
     QVERIFY(output.classes[0].evaluations[0].name == u"Second" && output.classes[0].evaluations[1].name == u"First");
     port.source.classes[0].name = u"mutated";
     QVERIFY(output.classes[0].name == exactPayload);
+}
+void ClassTransferExportQueryTests::utcMillisecondsValuePreservesFullSignedRangeAndIsOpaque()
+{
+    const ClassTransferExportUtcMilliseconds zero;
+    const ClassTransferExportUtcMilliseconds minimum{
+        std::numeric_limits<std::int64_t>::min()};
+    const ClassTransferExportUtcMilliseconds maximum{
+        std::numeric_limits<std::int64_t>::max()};
+    QVERIFY(zero.value() == 0);
+    QVERIFY(minimum.value() == std::numeric_limits<std::int64_t>::min());
+    QVERIFY(maximum.value() == std::numeric_limits<std::int64_t>::max());
+    QVERIFY(zero == ClassTransferExportUtcMilliseconds{0});
+    QVERIFY(minimum == ClassTransferExportUtcMilliseconds{
+        std::numeric_limits<std::int64_t>::min()});
+    QVERIFY(maximum == ClassTransferExportUtcMilliseconds{
+        std::numeric_limits<std::int64_t>::max()});
+    QVERIFY(minimum != maximum);
+}
+void ClassTransferExportQueryTests::formatsUnixEpochAndNegativeMillisecondsInUtc()
+{
+    const auto exportedAt = [](const std::int64_t milliseconds) {
+        Port port;
+        port.source.exportedAtUtcMilliseconds = ClassTransferExportUtcMilliseconds{milliseconds};
+        return ClassTransferExportQuery(port).execute({});
+    };
+
+    const auto epoch = exportedAt(0);
+    QVERIFY(epoch);
+    QVERIFY(epoch.value().exportedAtUtc.value() == "1970-01-01T00:00:00.000Z");
+
+    const auto positive = exportedAt(1'234);
+    QVERIFY(positive);
+    QVERIFY(positive.value().exportedAtUtc.value() == "1970-01-01T00:00:01.234Z");
+
+    const auto negative = exportedAt(-1);
+    QVERIFY(negative);
+    QVERIFY(negative.value().exportedAtUtc.value() == "1969-12-31T23:59:59.999Z");
 }
 void ClassTransferExportQueryTests::sourceFailuresPropagate()
 {

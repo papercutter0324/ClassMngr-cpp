@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/class_transfer_package.h"
+#include "next/application/class_transfer_export_utc_milliseconds.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -61,7 +62,7 @@ struct ClassExportSourceTeacher
 };
 struct ClassTransferExportSource
 {
-    std::int64_t exportedAtUtcMilliseconds = 0;
+    ClassTransferExportUtcMilliseconds exportedAtUtcMilliseconds;
     std::vector<ClassExportSourceClass> classes;
     std::vector<ClassExportSourceTeacher> teachers;
     std::optional<Domain::OperationError> teacherBatchError;
@@ -147,7 +148,7 @@ public:
         // Successful source snapshots contain every attempted value. Projection
         // performs no additional validation or reads after the transaction.
         ClassTransferPortablePackage result;
-        result.exportedAtUtc = ClassTransferExportDetail::utcTimestamp(source.exportedAtUtcMilliseconds);
+        result.exportedAtUtc = ClassTransferExportDetail::utcTimestamp(source.exportedAtUtcMilliseconds.value());
         std::map<Domain::TeacherId, ClassExportTeacherKey> teacherKeys;
         for (const auto& item : source.classes)
         {

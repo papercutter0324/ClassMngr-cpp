@@ -32,7 +32,8 @@ public:
         if (!read)
             return ClassTransferExportSourceResult::failure(error(read.error()));
         ClassTransferExportSource output;
-        output.exportedAtUtcMilliseconds = read->exportedAtUtc.toMSecsSinceEpoch();
+        output.exportedAtUtcMilliseconds = Application::ClassTransferExportUtcMilliseconds{
+            read->exportedAtUtc.toMSecsSinceEpoch()};
         if (!read->selectionOrReadError.isEmpty())
             output.deferredSelectionOrLookupError = error(read->selectionOrReadError);
         if (!read->teacherBatchError.isEmpty())

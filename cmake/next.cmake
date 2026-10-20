@@ -244,6 +244,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/sub_prep_class_information_selection_policy.h
     src/next/application/class_transfer_package.h
     src/next/application/class_transfer_export_keys.h
+    src/next/application/class_transfer_export_utc_milliseconds.h
     src/next/application/class_transfer_export_query.h
     src/next/application/class_transfer_keys.h
     src/next/application/class_transfer_projection.h

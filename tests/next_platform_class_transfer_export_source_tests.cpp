@@ -3,6 +3,7 @@
 #include "data/database/database_session.h"
 #include "features/classes/services/class_transfer_json_codec.h"
 #include "next/platform/application_services_class_transfer_export_source_read_port.h"
+#include <QDateTime>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QSqlError>
@@ -42,7 +43,11 @@ void ClassTransferExportSourceTests::successfulSourceHasEveryRequiredStageAndSan
     QVERIFY(insert.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Unassigned')")));
     const int value = insert.lastInsertId().toInt();
     Platform::ApplicationServicesClassTransferExportSourceReadPort port(services);
+    const qint64 earliestExportTimestamp = QDateTime::currentDateTimeUtc().toMSecsSinceEpoch();
     auto source = port.readSource({{id(value)}}); QVERIFY(source);
+    const qint64 latestExportTimestamp = QDateTime::currentDateTimeUtc().toMSecsSinceEpoch();
+    QVERIFY(source.value().exportedAtUtcMilliseconds.value() >= earliestExportTimestamp);
+    QVERIFY(source.value().exportedAtUtcMilliseconds.value() <= latestExportTimestamp);
     QCOMPARE(source.value().classes.size(), std::size_t(1));
     const auto& item = source.value().classes.front();
     QVERIFY(item.id == id(value)); QCOMPARE(item.info.state(), ClassExportStageState::Value);
