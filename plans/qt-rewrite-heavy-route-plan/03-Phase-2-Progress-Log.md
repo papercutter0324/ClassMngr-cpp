@@ -55808,3 +55808,42 @@ advanced the branch from `47e86451` to `e84c332d`:
 
 The push included the Batch495 closeout through `e84c332d`. No tests were run
 for the push.
+
+### F1219 AI accepted-comment source row accepted before implementation - 2026-10-21
+
+F1219 is accepted/current based on two independent read-only Explorer reports
+and a targeted test-seam review. Add an explicit Application
+`SpeakingEvaluationAiBatchAcceptedCommentSourceRow` backed by `int`, defaulting
+to `-1`, with `.rawValue()`, equality, and no implicit conversions. Use it for
+both candidate and assignment `sourceRow` fields. Do not add range validation
+or reuse `SpeakingEvaluationReportSourceRow`, whose `std::size_t` representation
+and default zero cannot represent this contract's `-1` value.
+
+Preserve the planner's existing checked/valid/report-index/changed-comment
+filters and input order. Copy source-row values unchanged, including `-1` and
+past-end values; source row is distinct from the validated report-list index.
+In the Feature dialog, wrap the existing `int` source row at candidate
+construction and unwrap assignment results into the existing Feature DTO. Keep
+the Feature DTO and page APIs `int`. Preserve the page action's
+`sourceRow < 0 || sourceRow >= rowCount()` skip before constructing cell edits.
+
+Extend `next_application_speaking_evaluation_ai_batch_accepted_comment_plan_tests.cpp`
+with default/explicit/equality/non-conversion checks and exact unchanged
+propagation of `-1` and a past-end value such as 25 through the planner. Keep
+the existing order, filter, UTF-16 comment, overwrite, and valid-coordinate
+checks. Preserve accepted-comment dialog row propagation in
+`speaking_eval_batch_report_service_tests.cpp` and valid-row page integration in
+`speaking_eval_page_save_tests.cpp`. The Explorer found no practical page-test
+seam for injecting an invalid accepted result: the page constructs a concrete
+private dialog path from fixed 25-row model data. Therefore, do not introduce a
+new factory or filtering abstraction solely to test the unchanged skip; verify
+that guard by focused code review and retain the existing page integration
+test.
+
+Focused targets are `ClassMngr`,
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests`,
+`ClassMngrSpeakingEvalBatchReportServiceTests`, and
+`ClassMngrSpeakingEvalPageSaveTests` (run
+`generateCommentsAppliesToOriginalRowAndUndoesAsOneAction` rather than the full
+page suite, which has a separately documented baseline failure).
+No F1219 implementation or verification has started.
