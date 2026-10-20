@@ -4,9 +4,14 @@
 #include <cstdio>
 #include <optional>
 #include <string_view>
+#include <type_traits>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
+
+static_assert(std::is_constructible_v<RosterRowTransferSourceIndex, int>);
+static_assert(!std::is_convertible_v<int, RosterRowTransferSourceIndex>);
+static_assert(!std::is_convertible_v<RosterRowTransferSourceIndex, int>);
 
 namespace
 {
@@ -73,7 +78,17 @@ RosterRowTransferRequest request()
     RosterSnapshot source{.columns = base, .columnWidths = {101,102,103,104,105,106},
         .rows = {{u"John", u"\uAE40\uBBFC\uC9C0", u"", u"", u"", u"Fall value"},
                  {u"Next", u"\uBC15\uC9C0\uBBFC"}, {}}};
-    return {id("1"), id("2"), source, 0, base};
+    return {id("1"), id("2"), source, RosterRowTransferSourceIndex{0}, base};
+}
+
+bool sourceIndexHasExplicitSignedValueSemantics()
+{
+    const RosterRowTransferSourceIndex defaultIndex;
+    const RosterRowTransferSourceIndex negativeIndex{-3};
+    return defaultIndex.rawValue() == -1
+        && negativeIndex.rawValue() == -3
+        && negativeIndex == RosterRowTransferSourceIndex{-3}
+        && negativeIndex != defaultIndex;
 }
 
 bool successProjectsAndCompactsWithoutMutatingInputs()
@@ -94,7 +109,7 @@ bool successProjectsAndCompactsWithoutMutatingInputs()
     const auto targetBefore = ports.target;
     const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
     const auto* ok = std::get_if<RosterRowTransferSuccess>(&result);
-    if (!ok || ok->destinationRow != 1 || !ports.saved) return false;
+    if (!ok || ok->destinationRow.rawValue() != 1 || !ports.saved) return false;
     const auto& saved = *ports.saved;
     const auto removedSource = removeRosterRow(sourceBefore, 0);
     if (!std::holds_alternative<RosterSnapshot>(removedSource)) return false;
@@ -128,13 +143,13 @@ bool invalidSourcePreventsReadAndSave()
 {
     for (int row : {-1,3})
     {
-        auto req = request(); req.sourceRow = row; Ports ports;
+        auto req = request(); req.sourceRow = RosterRowTransferSourceIndex{row}; Ports ports;
         const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
         const auto* error = std::get_if<RosterRowRemovalError>(&result);
         if (!error || error->code != RosterRowRemovalErrorCode::InvalidRowIndex
             || !ports.calls.empty()) return false;
     }
-    auto req = request(); req.sourceRow = 2; Ports ports;
+    auto req = request(); req.sourceRow = RosterRowTransferSourceIndex{2}; Ports ports;
     const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
     const auto* error = std::get_if<RosterRowRemovalError>(&result);
     return error && error->code == RosterRowRemovalErrorCode::RowHasNoData && ports.calls.empty();
@@ -272,7 +287,7 @@ bool emptyTargetUsesCanonicalBaseAndRowZero()
     Ports ports;
     const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
     const auto* ok = std::get_if<RosterRowTransferSuccess>(&result);
-    if (!ok || ok->destinationRow != 0 || !ports.saved
+    if (!ok || ok->destinationRow.rawValue() != 0 || !ports.saved
         || ports.calls != std::vector<std::string>{"read", "save"})
         return false;
 
@@ -320,8 +335,8 @@ bool warningOnlySnapshotPreparationStillSaves()
             || confirmation.target->rows[0][1] != name
             || *confirmation.target != ports.saved->targetRoster)
             return false;
-        if (ok->destinationRow >= ports.saved->targetRoster.rows.size()
-            || ports.saved->targetRoster.rows[ok->destinationRow][1] != name)
+        if (ok->destinationRow.rawValue() >= ports.saved->targetRoster.rows.size()
+            || ports.saved->targetRoster.rows[ok->destinationRow.rawValue()][1] != name)
             return false;
 
         const auto prepared = prepareRosterSaveText(
@@ -427,6 +442,11 @@ bool propagatesPortErrorsAndKeepsSnapshots()
 
 int main()
 {
+    if (!sourceIndexHasExplicitSignedValueSemantics())
+    {
+        std::fprintf(stderr, "Source transfer index lost its signed value semantics.\n");
+        return EXIT_FAILURE;
+    }
     const std::pair<const char*, bool(*)()> cases[]{
         {"success projection and immutable inputs",successProjectsAndCompactsWithoutMutatingInputs},
         {"invalid and empty source",invalidSourcePreventsReadAndSave},

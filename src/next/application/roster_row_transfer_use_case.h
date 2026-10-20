@@ -7,6 +7,7 @@
 #include "next/application/roster_row_transfer_preparation.h"
 #include "next/application/roster_save_preparation.h"
 
+#include <cstddef>
 #include <functional>
 #include <string>
 #include <string_view>
@@ -16,12 +17,36 @@
 namespace ClassMngr::Next::Application
 {
 
+class RosterRowTransferSourceIndex final
+{
+public:
+    constexpr RosterRowTransferSourceIndex() noexcept = default;
+
+    explicit constexpr RosterRowTransferSourceIndex(const int value) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const RosterRowTransferSourceIndex&,
+        const RosterRowTransferSourceIndex&
+        ) = default;
+
+private:
+    int m_value = -1;
+};
+
 struct RosterRowTransferRequest final
 {
     Domain::ClassId sourceClassId;
     Domain::ClassId targetClassId;
     RosterSnapshot sourceRoster;
-    int sourceRow = -1;
+    RosterRowTransferSourceIndex sourceRow;
     std::vector<std::u16string> baseColumnNames;
     bool sourceQuestionableKoreanNameLengthsConfirmed = false;
 };
@@ -58,7 +83,7 @@ public:
 
 struct RosterRowTransferSuccess final
 {
-    std::size_t destinationRow = 0;
+    RosterRowTransferDestinationIndex destinationRow;
 };
 
 using RosterRowTransferResult = std::variant<
@@ -91,11 +116,12 @@ public:
             };
         }
 
-        auto removed = removeRosterRow(request.sourceRoster, request.sourceRow);
+        const int sourceRow = request.sourceRow.rawValue();
+        auto removed = removeRosterRow(request.sourceRoster, sourceRow);
         if (const auto* error = std::get_if<RosterRowRemovalError>(&removed))
             return *error;
 
-        const auto selectedRowIndex = static_cast<std::size_t>(request.sourceRow);
+        const auto selectedRowIndex = static_cast<std::size_t>(sourceRow);
         if (request.sourceRoster.rows[selectedRowIndex].size()
             > request.sourceRoster.columns.size())
             return validationError("Source");
@@ -123,15 +149,16 @@ public:
             decodedTargetSnapshot(loaded.value()), request.baseColumnNames, equals);
         auto prepared = prepareRosterRowTransfer(
             target.columns, target.rows, request.sourceRoster.columns,
-            request.sourceRoster.rows[static_cast<std::size_t>(request.sourceRow)],
+            request.sourceRoster.rows[selectedRowIndex],
             equals);
         if (const auto* error =
                 std::get_if<RosterRowTransferPreparationError>(&prepared))
             return *error;
 
         auto& insertion = std::get<RosterRowTransferPreparation>(prepared);
-        const std::size_t destinationRow = insertion.destinationRow;
-        target.rows[destinationRow] = std::move(insertion.mappedRow);
+        const RosterRowTransferDestinationIndex destinationRow =
+            insertion.destinationRow;
+        target.rows[destinationRow.rawValue()] = std::move(insertion.mappedRow);
         auto preparedTarget = prepareRosterSaveText(
             target, true, validationEquals);
         if (preparedTarget.hasErrors())

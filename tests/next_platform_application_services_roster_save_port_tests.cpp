@@ -509,7 +509,7 @@ rowTransferPersistsPreparedRostersAndConfirmedKoreanLength()
             .sourceClassId = *sourceId,
             .targetClassId = *targetId,
             .sourceRoster = source,
-            .sourceRow = 0,
+            .sourceRow = Application::RosterRowTransferSourceIndex{0},
             .baseColumnNames = transferBaseColumns,
             .sourceQuestionableKoreanNameLengthsConfirmed = true
         },
@@ -521,7 +521,7 @@ rowTransferPersistsPreparedRostersAndConfirmedKoreanLength()
     const auto* transferred =
         std::get_if<Application::RosterRowTransferSuccess>(&result);
     QVERIFY(transferred);
-    QCOMPARE(transferred->destinationRow, std::size_t{1});
+    QCOMPARE(transferred->destinationRow.rawValue(), std::size_t{1});
 
     const auto savedSource = repository->loadRoster(*sourceClass);
     const auto savedTarget = repository->loadRoster(*targetClass);

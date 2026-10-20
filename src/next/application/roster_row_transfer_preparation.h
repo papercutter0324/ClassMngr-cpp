@@ -18,6 +18,32 @@
 namespace ClassMngr::Next::Application
 {
 
+class RosterRowTransferDestinationIndex final
+{
+public:
+    constexpr RosterRowTransferDestinationIndex() noexcept = default;
+
+    explicit constexpr RosterRowTransferDestinationIndex(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const RosterRowTransferDestinationIndex&,
+        const RosterRowTransferDestinationIndex&
+        ) = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
 enum class RosterRowTransferPreparationRejection
 {
     SourceRowHasNoData,
@@ -37,7 +63,7 @@ struct RosterRowTransferPreparationError final
 
 struct RosterRowTransferPreparation final
 {
-    std::size_t destinationRow = 0;
+    RosterRowTransferDestinationIndex destinationRow;
     std::vector<std::u16string> mappedRow;
 
     friend bool operator==(
@@ -215,9 +241,10 @@ prepareRosterRowTransfer(
         };
     }
 
-    const std::size_t destinationRow =
-        firstEmptyRosterRow(targetRows);
-    if (destinationRow == targetRows.size())
+    const RosterRowTransferDestinationIndex destinationRow{
+        firstEmptyRosterRow(targetRows)
+    };
+    if (destinationRow.rawValue() == targetRows.size())
     {
         return RosterRowTransferPreparationError{
             .rejection = Rejection::TargetRosterIsFull

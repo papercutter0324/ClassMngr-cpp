@@ -590,7 +590,7 @@ void RosterEditorWidget::transferRosterRow(
         .sourceClassId = *sourceId,
         .targetClassId = *targetId,
         .sourceRoster = applicationSnapshot(currentRosterForSave()),
-        .sourceRow = row,
+        .sourceRow = ClassMngr::Next::Application::RosterRowTransferSourceIndex{row},
         .baseColumnNames = std::move(baseColumns),
         .sourceQuestionableKoreanNameLengthsConfirmed = true
     };

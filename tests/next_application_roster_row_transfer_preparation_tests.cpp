@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string_view>
+#include <type_traits>
 #include <variant>
 #include <vector>
 
@@ -10,7 +11,12 @@ using ClassMngr::Next::Application::RosterRowTransferPreparation;
 using ClassMngr::Next::Application::RosterRowTransferPreparationError;
 using ClassMngr::Next::Application::RosterRowTransferPreparationRejection;
 using ClassMngr::Next::Application::RosterRowTransferPreparationResult;
+using ClassMngr::Next::Application::RosterRowTransferDestinationIndex;
 using ClassMngr::Next::Application::prepareRosterRowTransfer;
+
+static_assert(std::is_constructible_v<RosterRowTransferDestinationIndex, std::size_t>);
+static_assert(!std::is_convertible_v<std::size_t, RosterRowTransferDestinationIndex>);
+static_assert(!std::is_convertible_v<RosterRowTransferDestinationIndex, std::size_t>);
 
 namespace
 {
@@ -62,6 +68,16 @@ RosterRowTransferPreparationResult prepare(
         );
 }
 
+bool destinationIndexHasExplicitUnsignedValueSemantics()
+{
+    const RosterRowTransferDestinationIndex defaultIndex;
+    const RosterRowTransferDestinationIndex valueIndex{7};
+    return defaultIndex.rawValue() == 0
+        && valueIndex.rawValue() == 7
+        && valueIndex == RosterRowTransferDestinationIndex{7}
+        && valueIndex != defaultIndex;
+}
+
 bool mapsAndNormalizesWithoutChangingTheTarget()
 {
     const std::vector<std::u16string> targetColumns{
@@ -100,7 +116,7 @@ bool mapsAndNormalizesWithoutChangingTheTarget()
 
     const auto* prepared = std::get_if<RosterRowTransferPreparation>(&result);
     return prepared
-        && prepared->destinationRow == 1
+        && prepared->destinationRow.rawValue() == 1
         && prepared->mappedRow == std::vector<std::u16string>{
             u"John Smith",
             u"\uAE40\uBBFC\uC9C0(A)",
@@ -201,7 +217,7 @@ bool incompletePairsRemainAllowedAndFirstEmptySlotWins()
         );
     const auto* prepared = std::get_if<RosterRowTransferPreparation>(&result);
     return prepared
-        && prepared->destinationRow == 1
+        && prepared->destinationRow.rawValue() == 1
         && prepared->mappedRow
             == std::vector<std::u16string>{u"Amy", u"", u"note"};
 }
@@ -225,6 +241,11 @@ bool legacyNamePairDelimiterCollisionStillRejects()
 
 int main()
 {
+    if (!destinationIndexHasExplicitUnsignedValueSemantics())
+    {
+        std::fprintf(stderr, "Destination transfer index lost its unsigned value semantics.\n");
+        return EXIT_FAILURE;
+    }
     if (!mapsAndNormalizesWithoutChangingTheTarget())
     {
         std::fprintf(stderr, "Transfer preparation lost mapping or normalization behavior.\n");

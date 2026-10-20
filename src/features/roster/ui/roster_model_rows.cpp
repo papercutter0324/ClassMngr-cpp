@@ -448,7 +448,7 @@ bool RosterModel::insertTransferredRow(
             );
     }
 
-    m_rows[static_cast<qsizetype>(prepared->destinationRow)] =
+    m_rows[static_cast<qsizetype>(prepared->destinationRow.rawValue())] =
         qtStrings(prepared->mappedRow);
 
     validateAll();

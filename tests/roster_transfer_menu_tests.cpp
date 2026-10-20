@@ -1345,7 +1345,9 @@ void RosterTransferMenuTests::workflowProjectionMatchesRosterModel()
     source.rows = {sourceRow};
     const auto result = RosterRowTransferUseCase::execute({
         *Domain::ClassId::fromString("1"), *Domain::ClassId::fromString("2"),
-        snapshot(source), 0, snapshot(source).columns}, ports, ports, equals,
+        snapshot(source),
+        ClassMngr::Next::Application::RosterRowTransferSourceIndex{0},
+        snapshot(source).columns}, ports, ports, equals,
         &confirmation);
     QVERIFY(std::holds_alternative<RosterRowTransferSuccess>(result));
     QVERIFY(ports.saved);
