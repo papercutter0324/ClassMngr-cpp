@@ -145,19 +145,19 @@ TeacherImportSummary TeacherImportRepository::legacySummary(
 {
     return {
         .koreanTeachers = {
-            .created = result.koreanTeachers.created,
-            .updated = result.koreanTeachers.updated,
-            .unchanged = result.koreanTeachers.unchanged
+            .created = result.koreanTeachers.created.rawValue(),
+            .updated = result.koreanTeachers.updated.rawValue(),
+            .unchanged = result.koreanTeachers.unchanged.rawValue()
         },
         .nativeEnglishTeachers = {
-            .created = result.nativeEnglishTeachers.created,
-            .updated = result.nativeEnglishTeachers.updated,
-            .unchanged = result.nativeEnglishTeachers.unchanged
+            .created = result.nativeEnglishTeachers.created.rawValue(),
+            .updated = result.nativeEnglishTeachers.updated.rawValue(),
+            .unchanged = result.nativeEnglishTeachers.unchanged.rawValue()
         },
         .gsTeamMembers = {
-            .created = result.gsTeamMembers.created,
-            .updated = result.gsTeamMembers.updated,
-            .unchanged = result.gsTeamMembers.unchanged
+            .created = result.gsTeamMembers.created.rawValue(),
+            .updated = result.gsTeamMembers.updated.rawValue(),
+            .unchanged = result.gsTeamMembers.unchanged.rawValue()
         }
     };
 }

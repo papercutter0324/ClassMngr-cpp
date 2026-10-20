@@ -16,6 +16,20 @@
 using namespace ClassMngr::Next::Application;
 
 static_assert(std::is_same_v<
+    decltype(TeacherImportCounts{}.created),
+    TeacherImportCount>);
+static_assert(std::is_same_v<
+    decltype(TeacherImportCounts{}.updated),
+    TeacherImportCount>);
+static_assert(std::is_same_v<
+    decltype(TeacherImportCounts{}.unchanged),
+    TeacherImportCount>);
+static_assert(!std::is_convertible_v<int, TeacherImportCount>);
+static_assert(!std::is_convertible_v<TeacherImportCount, int>);
+static_assert(std::is_same_v<
+    decltype(std::declval<const TeacherImportCounts&>().total()),
+    TeacherImportCount>);
+static_assert(std::is_same_v<
     decltype(std::declval<TeacherImportUseCaseRequest>().sourceDateIso),
     std::string>);
 static_assert(std::is_same_v<
@@ -56,6 +70,29 @@ void require(const bool condition, const char* message)
     {
         throw std::runtime_error(message);
     }
+}
+
+void teacherImportCountDefaultsAndAggregatesTypedTotal()
+{
+    TeacherImportCount count;
+    require(count.rawValue() == 0,
+            "standalone teacher import count did not default to zero");
+    require(count == TeacherImportCount{},
+            "default teacher import counts are not equal");
+    ++count;
+    require(count == TeacherImportCount{1},
+            "teacher import count did not support increment");
+
+    TeacherImportCounts counts;
+    require(counts.created == TeacherImportCount{}
+                && counts.updated == TeacherImportCount{}
+                && counts.unchanged == TeacherImportCount{},
+            "grouped teacher import counts did not default to zero");
+    counts.created = TeacherImportCount{1};
+    counts.updated = TeacherImportCount{2};
+    counts.unchanged = TeacherImportCount{3};
+    require(counts.total() == TeacherImportCount{6},
+            "typed teacher import total did not aggregate the counters");
 }
 
 ClassMngr::Next::Domain::GregorianDate gregorianDate(const std::string_view iso)
@@ -473,15 +510,22 @@ void successfulOrchestrationAcrossNamespaces()
     auto koreanUpdate = koreanSource("selected-korean", u"김하늘");
     koreanUpdate.roomNumber = u"M3";
     auto koreanCreate = koreanSource("new-korean", u"이서연");
-    request.koreanTeachers = {koreanUpdate, koreanCreate};
+    auto koreanUnchanged = koreanSource("unchanged-korean", u"윤수진");
+    request.koreanTeachers = {
+        koreanUpdate,
+        koreanCreate,
+        koreanUnchanged
+    };
     request.validation.koreanTeacherKeys =
-        sourceKeys({"selected-korean", "new-korean"});
+        sourceKeys({"selected-korean", "new-korean", "unchanged-korean"});
     request.review = TeacherImportReview{
         .candidateGroups = {
             reviewGroup(
                 TeacherImportGroupKey("M1"),
                 {"not-selected", "selected-korean"}),
-            reviewGroup(TeacherImportGroupKey("M2"), {"new-korean"})
+            reviewGroup(
+                TeacherImportGroupKey("M2"),
+                {"new-korean", "unchanged-korean"})
         },
         .decisions = {
             {TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {1}},
@@ -509,7 +553,8 @@ void successfulOrchestrationAcrossNamespaces()
     FakeTeacherImportPersistence persistence;
     persistence.state.koreanTeachers = {
         storedKorean("11", u"김하늘 A", u"M1", u"03-07", u"010-1111") ,
-        storedKorean("12", u"박지민", u"M2")
+        storedKorean("12", u"박지민", u"M2"),
+        storedKorean("13", u"윤수진")
     };
     persistence.state.nativeEnglishTeachers = {
         {
@@ -557,14 +602,26 @@ void successfulOrchestrationAcrossNamespaces()
 
     const auto result = runUseCase(request, persistence);
     require(result.has_value(), "valid cross-namespace plan did not apply");
-    require(result->koreanTeachers == TeacherImportCounts{1, 1, 0},
-            "Korean create/update counts are incorrect");
-    require(result->nativeEnglishTeachers == TeacherImportCounts{1, 1, 1},
+    require(result->koreanTeachers == TeacherImportCounts{
+                TeacherImportCount{1},
+                TeacherImportCount{1},
+                TeacherImportCount{1}
+            },
+            "Korean create/update/unchanged counts are incorrect");
+    require(result->nativeEnglishTeachers == TeacherImportCounts{
+                TeacherImportCount{1},
+                TeacherImportCount{1},
+                TeacherImportCount{1}
+            },
             "Native English create/update/unchanged counts are incorrect");
-    require(result->gsTeamMembers == TeacherImportCounts{1, 1, 1},
+    require(result->gsTeamMembers == TeacherImportCounts{
+                TeacherImportCount{1},
+                TeacherImportCount{1},
+                TeacherImportCount{1}
+            },
             "GS Team create/update/unchanged counts are incorrect");
-    require(persistence.state.koreanTeachers.size() == 3,
-            "Korean create was not persisted");
+    require(persistence.state.koreanTeachers.size() == 4,
+            "Korean create or unchanged match was handled incorrectly");
     require(persistence.state.koreanTeachers[0].teacherId.value() == "11"
                 && persistence.state.koreanTeachers[0].teacherKr == u"김하늘"
                 && persistence.state.koreanTeachers[0].roomNumber == u"M3"
@@ -624,7 +681,11 @@ void exactUtf8ReviewKeysKeepCandidateOrderInUseCase()
     const auto result = runUseCase(request, persistence);
     require(result.has_value(),
             "exact non-ASCII review keys were rejected by the use case");
-    require(result->koreanTeachers == TeacherImportCounts{2, 0, 0},
+    require(result->koreanTeachers == TeacherImportCounts{
+                TeacherImportCount{2},
+                TeacherImportCount{},
+                TeacherImportCount{}
+            },
             "reviewed Korean sources were not both created");
     require(request.koreanTeachers[0].validationKey.value() == exactBytes
                 && request.review->candidateGroups[0]
@@ -648,9 +709,21 @@ void noMatchCreatesAcrossAllNamespaces()
     FakeTeacherImportPersistence persistence;
     const auto result = runUseCase(request, persistence);
     require(result.has_value(), "no-match plan did not create records");
-    require(result->koreanTeachers == TeacherImportCounts{1, 0, 0}
-                && result->nativeEnglishTeachers == TeacherImportCounts{1, 0, 0}
-                && result->gsTeamMembers == TeacherImportCounts{1, 0, 0},
+    require(result->koreanTeachers == TeacherImportCounts{
+                TeacherImportCount{1},
+                TeacherImportCount{},
+                TeacherImportCount{}
+            }
+                && result->nativeEnglishTeachers == TeacherImportCounts{
+                       TeacherImportCount{1},
+                       TeacherImportCount{},
+                       TeacherImportCount{}
+                   }
+                && result->gsTeamMembers == TeacherImportCounts{
+                       TeacherImportCount{1},
+                       TeacherImportCount{},
+                       TeacherImportCount{}
+                   },
             "no-match decisions did not increment create counts");
 }
 
@@ -834,7 +907,11 @@ void nativeEnglishSourceNameOwnsValidationAndMatching()
 
         const auto result = runUseCase(request, persistence);
         require(result.has_value()
-                    && result->nativeEnglishTeachers == TeacherImportCounts{0, 1, 0},
+                    && result->nativeEnglishTeachers == TeacherImportCounts{
+                           TeacherImportCount{},
+                           TeacherImportCount{1},
+                           TeacherImportCount{}
+                       },
                 "source-name derived key did not produce the unique Jamie match");
         const NativeEnglishTeacherImportProfile expectedJamie{
             .id = 41,
@@ -881,7 +958,11 @@ void nativeEnglishSourceNameOwnsValidationAndMatching()
 
         const auto result = runUseCase(request, persistence);
         require(result.has_value()
-                    && result->nativeEnglishTeachers == TeacherImportCounts{1, 0, 0},
+                    && result->nativeEnglishTeachers == TeacherImportCounts{
+                           TeacherImportCount{1},
+                           TeacherImportCount{},
+                           TeacherImportCount{}
+                       },
                 "source name without a stored match did not create a teacher");
         require(persistence.state.nativeEnglishTeachers.size() == 2,
                 "Native English no-match create changed the stored row count incorrectly");
@@ -1222,6 +1303,7 @@ int main()
 {
     try
     {
+        teacherImportCountDefaultsAndAggregatesTypedTotal();
         successfulOrchestrationAcrossNamespaces();
         exactUtf8ReviewKeysKeepCandidateOrderInUseCase();
         noMatchCreatesAcrossAllNamespaces();

@@ -197,15 +197,47 @@ public:
     virtual TeacherImportPersistenceResult<void> rollbackTransaction() = 0;
 };
 
+class TeacherImportCount final
+{
+public:
+    constexpr TeacherImportCount() noexcept = default;
+
+    explicit constexpr TeacherImportCount(const int value) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    constexpr TeacherImportCount& operator++() noexcept
+    {
+        ++m_value;
+        return *this;
+    }
+
+    friend constexpr bool operator==(
+        const TeacherImportCount&,
+        const TeacherImportCount&
+        ) noexcept = default;
+
+private:
+    int m_value = 0;
+};
+
 struct TeacherImportCounts final
 {
-    int created = 0;
-    int updated = 0;
-    int unchanged = 0;
+    TeacherImportCount created;
+    TeacherImportCount updated;
+    TeacherImportCount unchanged;
 
-    [[nodiscard]] int total() const noexcept
+    [[nodiscard]] TeacherImportCount total() const noexcept
     {
-        return created + updated + unchanged;
+        return TeacherImportCount{
+            created.rawValue() + updated.rawValue() + unchanged.rawValue()
+        };
     }
 
     friend bool operator==(
