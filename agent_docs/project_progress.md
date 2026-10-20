@@ -82,7 +82,18 @@ and the existing `QUrl::toEncoded()`/`QUrl::fromEncoded()` behavior. Independent
 clean builds passed for `ClassMngr` and both updater test targets; both focused
 CTests and all three selected cases passed. Socket tests used local loopback
 permission only. No full suite or Windows build ran. Batch491 is active and
-unpushed with F1178–F1182 complete, F1183 next, and F1184–F1185 discovered.
+unpushed with F1178–F1182 complete, F1183 accepted/in progress, and F1184–F1185
+discovered.
+
+F1183 is accepted to add Qt-free `Application::ReleaseDateIsoText` with exact
+string storage, empty default, explicit construction, `.value()`, `.empty()`,
+equality, and no validation or canonicalization. Type only the startup and
+manual updater result fields; Platform adapters wrap their existing
+`QDate::toString(Qt::ISODate)` text, and the UI unwraps it at the existing ISO
+parser. Preserve empty/invalid handling and localized short-date display.
+Implementation and verification have not started. Batch491 remains unpushed
+until all eight slices close; F629 and the Phase 0 and Phase 2 gates remain
+open.
 F1175's Class Transfer test still has one unresolved teacher-fallback label
 failure among 64 cases; no clean baseline proves it pre-existing. F629 awaits
 source-bound Windows x64 layout evidence. Phase 0 and Phase 2 gates remain

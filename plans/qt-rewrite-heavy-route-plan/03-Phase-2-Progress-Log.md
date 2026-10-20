@@ -53509,3 +53509,43 @@ Batch491 has F1178–F1182 complete, F1183 next, and F1183–F1185 discovered.
 Batch491 remains unpushed. Batch490 is complete and pushed at `69be43a7`. F629
 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2
 gates remain open.
+
+### F1183 Updater release-date ISO text accepted before implementation - 2026-10-20
+
+F1183 is accepted/in progress. Add Qt-free `Application::ReleaseDateIsoText`
+in a dedicated header with exact `std::string` storage, empty default, explicit
+construction, `value()`, `empty()`, and equality, without implicit string
+conversion, validation, or canonicalization; register the new header in the
+`cmake/next.cmake` source ownership manifest. Type only
+`StartupUpdateCheckResult::releaseDateIso` and
+`ManualUpdateCheckResult::releaseDateIso`.
+
+At the Platform adapters, explicitly wrap
+`QDate::toString(Qt::ISODate).toStdString()`; at the UI boundary, explicitly
+unwrap before the existing `QDate::fromString(..., Qt::ISODate)`. Preserve
+exact ISO text, empty/invalid parsing behavior, and localized
+`QLocale::ShortFormat` display. Other date fields and updater behavior remain
+out of scope.
+
+Acceptance coverage extends
+`tests/update_controller_automatic_startup_tests.cpp` for wrapper semantics
+and exact startup/manual adapter mapping. In `tests/updater_tests.cpp`, update
+typed fixtures and add a focused presentation regression: a valid date remains
+in system short format, while empty or malformed ISO text suppresses the
+released-date clause. Build `ClassMngr`,
+`ClassMngrUpdateControllerAutomaticStartupTests`, and
+`ClassMngrUpdaterTests`; run the registered CTests
+`ClassMngrUpdateControllerAutomaticStartupTests` and
+`ClassMngrUpdaterTests`. Run selectors
+`bridgeMapsSuccessAndForcesFreshCheck` and
+`manualAdapterDistinguishesFreshBusyForceAndFailure` for bridge mapping, plus
+the new focused date-presentation regression selector in
+`ClassMngrUpdaterTests`. The independent Tester will clean and rebuild affected
+targets. Implementation and verification have not started; no full-suite or
+Windows run is in scope.
+
+Batch491 remains unpushed; GitHub has not received these local changes.
+F1178–F1182 are complete, F1183 is accepted/in progress, and F1184 is next;
+F1184–F1185 remain discovered. Batch490 is complete and pushed at `69be43a7`.
+F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and
+Phase 2 gates remain open.
