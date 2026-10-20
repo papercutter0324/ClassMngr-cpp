@@ -44,8 +44,8 @@ ScheduleViewCell scheduleCell(
     )
 {
     ScheduleViewCell cell;
-    cell.order = order;
-    cell.slot = slot;
+    cell.order = ScheduleViewCellOrder{order};
+    cell.slot = ScheduleViewSlotKey{slot};
     cell.classId = std::move(classReference);
     cell.teacherId = std::move(teacherReference);
     cell.startText = std::move(start);
@@ -67,7 +67,7 @@ ScheduleViewRow scheduleRow(
     )
 {
     ScheduleViewRow row;
-    row.order = order;
+    row.order = ScheduleViewRowOrder{order};
     row.day = day;
     row.dayLabel = std::move(dayLabel);
     row.rowLabel = std::move(rowLabel);
@@ -147,8 +147,10 @@ class NextApplicationScheduleViewTests final : public QObject
 
 private slots:
     void validVisibleAnd96ScaleRowsRetainCompactData();
+    void scheduleKeysAreDistinctExplicitAndZeroDefaulted();
     void typedReferencesAndModesRemainDistinctAndOptional();
     void orderingAndSafeValueLookupsAreDeterministic();
+    void cellOrderAndSlotValuesMayBeReusedAcrossRows();
     void emptyProjectionRowsAndCellsFollowExplicitPolicy();
     void duplicateNegativeAndInvalidValuesAreRejected();
     void blankAndOversizedFieldsAreRejected();
@@ -217,8 +219,8 @@ void NextApplicationScheduleViewTests::validVisibleAnd96ScaleRowsRetainCompactDa
     const auto& projection = result.value();
     QCOMPARE(projection.rowCount(), std::size_t(96));
     QCOMPARE(projection.cellCount(), std::size_t(768));
-    QCOMPARE(projection.rows().front().order, std::int32_t(0));
-    QCOMPARE(projection.rows().back().order, std::int32_t(190));
+    QCOMPARE(projection.rows().front().order.rawValue(), std::int32_t(0));
+    QCOMPARE(projection.rows().back().order.rawValue(), std::int32_t(190));
     QCOMPARE(projection.rows().at(41).day, std::int32_t(1));
     QCOMPARE(projection.rows().at(41).cells.size(), std::size_t(8));
     QCOMPARE(
@@ -230,6 +232,51 @@ void NextApplicationScheduleViewTests::validVisibleAnd96ScaleRowsRetainCompactDa
         projection.rows().at(41).cells.at(1).mode,
         ScheduleViewMode::Intensive
         );
+}
+
+void NextApplicationScheduleViewTests::scheduleKeysAreDistinctExplicitAndZeroDefaulted()
+{
+    static_assert(!std::is_same_v<ScheduleViewRowOrder, ScheduleViewCellOrder>);
+    static_assert(!std::is_same_v<ScheduleViewRowOrder, ScheduleViewSlotKey>);
+    static_assert(!std::is_same_v<ScheduleViewCellOrder, ScheduleViewSlotKey>);
+
+    static_assert(std::is_constructible_v<ScheduleViewRowOrder, std::int32_t>);
+    static_assert(std::is_constructible_v<ScheduleViewCellOrder, std::int32_t>);
+    static_assert(std::is_constructible_v<ScheduleViewSlotKey, std::int32_t>);
+    static_assert(!std::is_convertible_v<std::int32_t, ScheduleViewRowOrder>);
+    static_assert(!std::is_convertible_v<std::int32_t, ScheduleViewCellOrder>);
+    static_assert(!std::is_convertible_v<std::int32_t, ScheduleViewSlotKey>);
+    static_assert(!std::is_convertible_v<ScheduleViewRowOrder, std::int32_t>);
+    static_assert(!std::is_convertible_v<ScheduleViewCellOrder, std::int32_t>);
+    static_assert(!std::is_convertible_v<ScheduleViewSlotKey, std::int32_t>);
+    static_assert(!std::is_convertible_v<ScheduleViewRowOrder, ScheduleViewCellOrder>);
+    static_assert(!std::is_convertible_v<ScheduleViewRowOrder, ScheduleViewSlotKey>);
+    static_assert(!std::is_convertible_v<ScheduleViewCellOrder, ScheduleViewRowOrder>);
+    static_assert(!std::is_convertible_v<ScheduleViewCellOrder, ScheduleViewSlotKey>);
+    static_assert(!std::is_convertible_v<ScheduleViewSlotKey, ScheduleViewRowOrder>);
+    static_assert(!std::is_convertible_v<ScheduleViewSlotKey, ScheduleViewCellOrder>);
+    static_assert(sizeof(ScheduleViewRowOrder) == sizeof(std::int32_t));
+    static_assert(sizeof(ScheduleViewCellOrder) == sizeof(std::int32_t));
+    static_assert(sizeof(ScheduleViewSlotKey) == sizeof(std::int32_t));
+    static_assert(std::is_same_v<
+        decltype(std::declval<ScheduleViewRowOrder>().rawValue()),
+        std::int32_t
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<ScheduleViewCellOrder>().rawValue()),
+        std::int32_t
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<ScheduleViewSlotKey>().rawValue()),
+        std::int32_t
+        >);
+
+    QVERIFY(ScheduleViewRowOrder{} == ScheduleViewRowOrder{0});
+    QVERIFY(ScheduleViewCellOrder{} == ScheduleViewCellOrder{0});
+    QVERIFY(ScheduleViewSlotKey{} == ScheduleViewSlotKey{0});
+    QCOMPARE(ScheduleViewRowOrder{10}.rawValue(), std::int32_t(10));
+    QCOMPARE(ScheduleViewCellOrder{7}.rawValue(), std::int32_t(7));
+    QCOMPARE(ScheduleViewSlotKey{3}.rawValue(), std::int32_t(3));
 }
 
 void NextApplicationScheduleViewTests::typedReferencesAndModesRemainDistinctAndOptional()
@@ -272,23 +319,94 @@ void NextApplicationScheduleViewTests::orderingAndSafeValueLookupsAreDeterminist
     const auto result = ScheduleViewProjection::create(std::move(input));
     QVERIFY(result);
     const auto& projection = result.value();
-    QCOMPARE(projection.rows().front().order, std::int32_t(10));
-    QCOMPARE(projection.rows().front().cells.front().order, std::int32_t(42));
-    QCOMPARE(projection.rows().front().cells.at(1).order, std::int32_t(7));
+    QCOMPARE(projection.rows().front().order.rawValue(), std::int32_t(10));
+    QCOMPARE(
+        projection.rows().front().cells.front().order.rawValue(),
+        std::int32_t(42)
+        );
+    QCOMPARE(
+        projection.rows().front().cells.at(1).order.rawValue(),
+        std::int32_t(7)
+        );
 
-    auto rowCopy = projection.findRow(20);
+    auto rowCopy = projection.findRow(ScheduleViewRowOrder{20});
     QVERIFY(rowCopy.has_value());
     rowCopy->rowLabel = "Changed outside projection";
-    QCOMPARE(projection.findRow(20)->rowLabel, std::string("Afternoon"));
+    QCOMPARE(
+        projection.findRow(ScheduleViewRowOrder{20})->rowLabel,
+        std::string("Afternoon")
+        );
 
-    auto cellCopy = projection.findCell(10, 7);
+    auto cellCopy = projection.findCell(
+        ScheduleViewRowOrder{10},
+        ScheduleViewCellOrder{7}
+        );
     QVERIFY(cellCopy.has_value());
     cellCopy->meetingText = "Changed outside projection";
-    QCOMPARE(projection.findCell(10, 7)->meetingText, std::string("Class One"));
-    QVERIFY(projection.findCellBySlot(10, 3).has_value());
-    QVERIFY(!projection.lookupRow(999).has_value());
-    QVERIFY(!projection.lookupCell(999, 7).has_value());
-    QVERIFY(!projection.lookupCellBySlot(10, 999).has_value());
+    QCOMPARE(
+        projection.findCell(
+            ScheduleViewRowOrder{10},
+            ScheduleViewCellOrder{7}
+            )->meetingText,
+        std::string("Class One")
+        );
+    auto slotCell = projection.findCellBySlot(
+        ScheduleViewRowOrder{10},
+        ScheduleViewSlotKey{3}
+        );
+    QVERIFY(slotCell.has_value());
+    QCOMPARE(slotCell->order.rawValue(), std::int32_t(7));
+    QCOMPARE(slotCell->slot.rawValue(), std::int32_t(3));
+    QVERIFY(slotCell == projection.findCell(
+        ScheduleViewRowOrder{10},
+        ScheduleViewCellOrder{7}
+        ));
+    QVERIFY(!projection.lookupRow(ScheduleViewRowOrder{999}).has_value());
+    QVERIFY(!projection.lookupCell(
+        ScheduleViewRowOrder{999},
+        ScheduleViewCellOrder{7}
+        ).has_value());
+    QVERIFY(!projection.lookupCellBySlot(
+        ScheduleViewRowOrder{10},
+        ScheduleViewSlotKey{999}
+        ).has_value());
+}
+
+void NextApplicationScheduleViewTests::cellOrderAndSlotValuesMayBeReusedAcrossRows()
+{
+    auto input = validInput();
+    input.rows.front().cells = {scheduleCell(7, 3, "08:00", "09:00", "First row")};
+    input.rows.at(1).cells = {scheduleCell(7, 3, "14:00", "15:00", "Second row")};
+
+    const auto result = ScheduleViewProjection::create(std::move(input));
+
+    QVERIFY(result);
+    const auto& projection = result.value();
+    const auto firstByOrder = projection.findCell(
+        ScheduleViewRowOrder{10},
+        ScheduleViewCellOrder{7}
+        );
+    const auto secondByOrder = projection.lookupCell(
+        ScheduleViewRowOrder{20},
+        ScheduleViewCellOrder{7}
+        );
+    const auto firstBySlot = projection.lookupCellBySlot(
+        ScheduleViewRowOrder{10},
+        ScheduleViewSlotKey{3}
+        );
+    const auto secondBySlot = projection.findCellBySlot(
+        ScheduleViewRowOrder{20},
+        ScheduleViewSlotKey{3}
+        );
+
+    QVERIFY(firstByOrder.has_value());
+    QVERIFY(secondByOrder.has_value());
+    QVERIFY(firstBySlot.has_value());
+    QVERIFY(secondBySlot.has_value());
+    QCOMPARE(firstByOrder->meetingText, std::string("First row"));
+    QCOMPARE(secondByOrder->meetingText, std::string("Second row"));
+    QCOMPARE(firstBySlot->meetingText, std::string("First row"));
+    QCOMPARE(secondBySlot->meetingText, std::string("Second row"));
 }
 
 void NextApplicationScheduleViewTests::emptyProjectionRowsAndCellsFollowExplicitPolicy()
@@ -361,7 +479,7 @@ void NextApplicationScheduleViewTests::duplicateNegativeAndInvalidValuesAreRejec
         auto input = validInput();
         if (mutate == 0)
         {
-            input.rows.front().order = -1;
+            input.rows.front().order = ScheduleViewRowOrder{-1};
         }
         else if (mutate == 1)
         {
@@ -369,11 +487,11 @@ void NextApplicationScheduleViewTests::duplicateNegativeAndInvalidValuesAreRejec
         }
         else if (mutate == 2)
         {
-            input.rows.front().cells.front().order = -1;
+            input.rows.front().cells.front().order = ScheduleViewCellOrder{-1};
         }
         else
         {
-            input.rows.front().cells.front().slot = -1;
+            input.rows.front().cells.front().slot = ScheduleViewSlotKey{-1};
         }
         verifyInvalid(ScheduleViewProjection::create(std::move(input)));
     }
@@ -829,17 +947,27 @@ void NextApplicationScheduleViewTests::contractHasNoMutablePointerOrRichRecordSu
         decltype(std::declval<const ScheduleViewProjection>().rows())
         >);
     static_assert(!std::is_pointer_v<
-        decltype(std::declval<const ScheduleViewProjection>().findRow(0))
+        decltype(std::declval<const ScheduleViewProjection>().findRow(
+            ScheduleViewRowOrder{}
+            ))
         >);
     static_assert(!std::is_pointer_v<
-        decltype(std::declval<const ScheduleViewProjection>().findCell(0, 0))
+        decltype(std::declval<const ScheduleViewProjection>().findCell(
+            ScheduleViewRowOrder{},
+            ScheduleViewCellOrder{}
+            ))
         >);
     static_assert(std::is_same_v<
-        decltype(std::declval<const ScheduleViewProjection>().findRow(0)),
+        decltype(std::declval<const ScheduleViewProjection>().findRow(
+            ScheduleViewRowOrder{}
+            )),
         std::optional<ScheduleViewRow>
         >);
     static_assert(std::is_same_v<
-        decltype(std::declval<const ScheduleViewProjection>().findCell(0, 0)),
+        decltype(std::declval<const ScheduleViewProjection>().findCell(
+            ScheduleViewRowOrder{},
+            ScheduleViewCellOrder{}
+            )),
         std::optional<ScheduleViewCell>
         >);
 

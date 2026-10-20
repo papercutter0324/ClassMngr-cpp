@@ -37,6 +37,84 @@ enum class ScheduleViewMode
     Intensive
 };
 
+class ScheduleViewRowOrder final
+{
+public:
+    constexpr ScheduleViewRowOrder() noexcept = default;
+
+    explicit constexpr ScheduleViewRowOrder(
+        const std::int32_t rawValue
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::int32_t rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const ScheduleViewRowOrder&,
+        const ScheduleViewRowOrder&
+        ) noexcept = default;
+
+private:
+    std::int32_t m_rawValue = 0;
+};
+
+class ScheduleViewCellOrder final
+{
+public:
+    constexpr ScheduleViewCellOrder() noexcept = default;
+
+    explicit constexpr ScheduleViewCellOrder(
+        const std::int32_t rawValue
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::int32_t rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const ScheduleViewCellOrder&,
+        const ScheduleViewCellOrder&
+        ) noexcept = default;
+
+private:
+    std::int32_t m_rawValue = 0;
+};
+
+class ScheduleViewSlotKey final
+{
+public:
+    constexpr ScheduleViewSlotKey() noexcept = default;
+
+    explicit constexpr ScheduleViewSlotKey(
+        const std::int32_t rawValue
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::int32_t rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const ScheduleViewSlotKey&,
+        const ScheduleViewSlotKey&
+        ) noexcept = default;
+
+private:
+    std::int32_t m_rawValue = 0;
+};
+
 [[nodiscard]] inline bool isValidScheduleViewMode(
     const ScheduleViewMode mode
     ) noexcept
@@ -50,8 +128,8 @@ enum class ScheduleViewMode
 // projection does not own or resolve a class/teacher record graph.
 struct ScheduleViewCell final
 {
-    std::int32_t order = 0;
-    std::int32_t slot = 0;
+    ScheduleViewCellOrder order;
+    ScheduleViewSlotKey slot;
     std::optional<Domain::ClassId> classId;
     std::optional<Domain::TeacherId> teacherId;
     std::string startText;
@@ -88,7 +166,7 @@ struct ScheduleViewCell final
 // preserve an intentionally empty visible scope without manufacturing cells.
 struct ScheduleViewRow final
 {
-    std::int32_t order = 0;
+    ScheduleViewRowOrder order;
     std::int32_t day = 0;
     std::string dayLabel;
     std::string rowLabel;
@@ -198,21 +276,21 @@ template <typename TypedId>
     const std::vector<std::int32_t>& existingSlots
     )
 {
-    if (cell.order < 0 || cell.slot < 0)
+    if (cell.order.rawValue() < 0 || cell.slot.rawValue() < 0)
     {
         return Domain::Result<void>::failure(
             invalidInput("Schedule cell order and slot must not be negative.")
             );
     }
 
-    if (contains(existingOrders, cell.order))
+    if (contains(existingOrders, cell.order.rawValue()))
     {
         return Domain::Result<void>::failure(
             invalidInput("Schedule cell orders must be unique within a row.")
             );
     }
 
-    if (contains(existingSlots, cell.slot))
+    if (contains(existingSlots, cell.slot.rawValue()))
     {
         return Domain::Result<void>::failure(
             invalidInput("Schedule cell slots must be unique within a row.")
@@ -262,14 +340,14 @@ template <typename TypedId>
     const std::vector<std::int32_t>& existingOrders
     )
 {
-    if (row.order < 0 || row.day < 0)
+    if (row.order.rawValue() < 0 || row.day < 0)
     {
         return Domain::Result<void>::failure(
             invalidInput("Schedule row order and day must not be negative.")
             );
     }
 
-    if (contains(existingOrders, row.order))
+    if (contains(existingOrders, row.order.rawValue()))
     {
         return Domain::Result<void>::failure(
             invalidInput("Schedule row orders must be unique.")
@@ -305,8 +383,8 @@ template <typename TypedId>
             return validation;
         }
 
-        cellOrders.push_back(cell.order);
-        cellSlots.push_back(cell.slot);
+        cellOrders.push_back(cell.order.rawValue());
+        cellSlots.push_back(cell.slot.rawValue());
     }
 
     return Domain::Result<void>::success();
@@ -344,7 +422,7 @@ template <typename TypedId>
         }
 
         totalCells += row.cells.size();
-        rowOrders.push_back(row.order);
+        rowOrders.push_back(row.order.rawValue());
     }
 
     return Domain::Result<void>::success();
@@ -412,7 +490,7 @@ public:
     }
 
     [[nodiscard]] std::optional<Row> findRow(
-        const std::int32_t order
+        const ScheduleViewRowOrder order
         ) const
     {
         const auto row = std::find_if(
@@ -432,15 +510,15 @@ public:
     }
 
     [[nodiscard]] std::optional<Row> lookupRow(
-        const std::int32_t order
+        const ScheduleViewRowOrder order
         ) const
     {
         return findRow(order);
     }
 
     [[nodiscard]] std::optional<Cell> findCell(
-        const std::int32_t rowOrder,
-        const std::int32_t cellOrder
+        const ScheduleViewRowOrder rowOrder,
+        const ScheduleViewCellOrder cellOrder
         ) const
     {
         const auto row = std::find_if(
@@ -473,16 +551,16 @@ public:
     }
 
     [[nodiscard]] std::optional<Cell> lookupCell(
-        const std::int32_t rowOrder,
-        const std::int32_t cellOrder
+        const ScheduleViewRowOrder rowOrder,
+        const ScheduleViewCellOrder cellOrder
         ) const
     {
         return findCell(rowOrder, cellOrder);
     }
 
     [[nodiscard]] std::optional<Cell> findCellBySlot(
-        const std::int32_t rowOrder,
-        const std::int32_t slot
+        const ScheduleViewRowOrder rowOrder,
+        const ScheduleViewSlotKey slot
         ) const
     {
         const auto row = std::find_if(
@@ -515,8 +593,8 @@ public:
     }
 
     [[nodiscard]] std::optional<Cell> lookupCellBySlot(
-        const std::int32_t rowOrder,
-        const std::int32_t slot
+        const ScheduleViewRowOrder rowOrder,
+        const ScheduleViewSlotKey slot
         ) const
     {
         return findCellBySlot(rowOrder, slot);
