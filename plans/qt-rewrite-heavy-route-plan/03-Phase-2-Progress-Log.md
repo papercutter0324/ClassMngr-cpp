@@ -57287,3 +57287,34 @@ The `windows-x64-debug` preset is disabled on this macOS host. Windows x64 and
 the full suite remain unverified. Batch499 remains active with F1237 complete
 and F1238 next for acceptance; F1239–F1242 remain in the ordered discovered
 queue.
+
+### F1238 GregorianDate weekday ordinal accepted before implementation - 2026-10-21
+
+F1238 is accepted as a distinct ISO weekday contract. Introduce scoped
+`Domain::IsoWeekday` with Monday=`1` through Sunday=`7`, and change
+`GregorianDate::weekday()` to return it. Keep zero-based
+`Domain::Weekday` (Monday=`0` through Sunday=`6`) separate; do not use it as
+the GregorianDate return type.
+
+At the calendar repeat-until Application boundary, add a small exhaustive
+mapping from each `IsoWeekday` to the same-named `Domain::Weekday`. Handle
+forged invalid enum values safely by returning `std::nullopt` from the optional
+mapping, then use the mapped zero-based value in the existing
+modulo-days-back calculation. Preserve valid `GregorianDate` construction,
+year range `1..9999`, leap-year behavior, weekday values, repeat-until
+last-same-weekday-of-year behavior, invalid-date `nullopt`, and occurrence
+inclusion/overflow behavior. Do not change unrelated ScheduleTime or
+recurrence policy contracts.
+
+Focused assertions cover the public return type and Monday-through-Sunday
+values `1..7`, explicit mapping to `Domain::Weekday`, valid date range endpoints
+and leap dates, all seven default repeat-until weekday results, leap/non-leap
+and year `0001`/`9999` cases, and invalid-date behavior.
+
+Focused build targets and generated CTest names are
+`ClassMngrNextDomainContractTests` and
+`ClassMngrNextApplicationCalendarEventTests`, plus production target
+`ClassMngr`. Use the standard `build/windows-x64-debug` folder if the preset is
+available; otherwise use the existing `build/macos-clang-debug` folder and
+`QT_QPA_PLATFORM=offscreen` as needed. At acceptance time, no implementation,
+build, or tests had started.
