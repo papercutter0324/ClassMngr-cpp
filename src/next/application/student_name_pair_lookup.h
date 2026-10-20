@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -13,6 +14,54 @@ struct StudentNamePairText final
 {
     std::u16string englishName;
     std::u16string koreanName;
+};
+
+class StudentNamePairSelectedRowIndex final
+{
+public:
+    constexpr explicit StudentNamePairSelectedRowIndex(
+        int rawValue = -1
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const StudentNamePairSelectedRowIndex&,
+        const StudentNamePairSelectedRowIndex&
+        ) noexcept = default;
+
+private:
+    int m_rawValue;
+};
+
+class StudentNamePairPeerRowIndex final
+{
+public:
+    constexpr explicit StudentNamePairPeerRowIndex(
+        int rawValue = -1
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const StudentNamePairPeerRowIndex&,
+        const StudentNamePairPeerRowIndex&
+        ) noexcept = default;
+
+private:
+    int m_rawValue;
 };
 
 [[nodiscard]] inline StudentNamePairText trimStudentNamePairText(
@@ -44,20 +93,27 @@ struct StudentNamePairText final
 
 // Rows are positional: the selected row is the index into namePairs, and
 // matching peers are returned in their original row order.
-[[nodiscard]] inline std::vector<int> lookupStudentNamePairPeers(
+[[nodiscard]] inline std::vector<StudentNamePairPeerRowIndex>
+lookupStudentNamePairPeers(
     const std::vector<StudentNamePairText>& namePairs,
-    const int selectedRow
+    const StudentNamePairSelectedRowIndex selectedRow
     )
 {
-    std::vector<int> peers;
-    if (selectedRow < 0
-        || static_cast<std::size_t>(selectedRow) >= namePairs.size())
+    std::vector<StudentNamePairPeerRowIndex> peers;
+    const int selectedRowValue = selectedRow.rawValue();
+    if (selectedRowValue < 0
+        || std::cmp_greater_equal(selectedRowValue, namePairs.size()))
     {
         return peers;
     }
 
+    const std::size_t selectedRowIndex =
+        static_cast<std::size_t>(selectedRowValue);
+
     const std::u16string selectedKey =
-        studentNamePairLookupKey(namePairs[static_cast<std::size_t>(selectedRow)]);
+        studentNamePairLookupKey(
+            namePairs[selectedRowIndex]
+            );
     if (selectedKey.empty())
     {
         return peers;
@@ -65,14 +121,14 @@ struct StudentNamePairText final
 
     for (std::size_t row = 0; row < namePairs.size(); ++row)
     {
-        if (row == static_cast<std::size_t>(selectedRow))
+        if (row == selectedRowIndex)
         {
             continue;
         }
 
         if (studentNamePairLookupKey(namePairs[row]) == selectedKey)
         {
-            peers.push_back(static_cast<int>(row));
+            peers.emplace_back(static_cast<int>(row));
         }
     }
 

@@ -432,16 +432,20 @@ QList<int> SpeakingEvalModel::duplicateNameRows(
         });
     }
 
-    const std::vector<int> peerRows =
+    const std::vector<
+        ClassMngr::Next::Application::StudentNamePairPeerRowIndex
+        > peerRows =
         ClassMngr::Next::Application::lookupStudentNamePairPeers(
             namePairs,
-            row
+            ClassMngr::Next::Application::StudentNamePairSelectedRowIndex{
+                row
+            }
             );
     QList<int> result;
     result.reserve(static_cast<qsizetype>(peerRows.size()));
-    for (const int peerRow : peerRows)
+    for (const auto peerRow : peerRows)
     {
-        result.append(peerRow);
+        result.append(peerRow.rawValue());
     }
     return result;
 }

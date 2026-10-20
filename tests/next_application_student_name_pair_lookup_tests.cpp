@@ -3,12 +3,24 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
+using ClassMngr::Next::Application::StudentNamePairPeerRowIndex;
+using ClassMngr::Next::Application::StudentNamePairSelectedRowIndex;
 using ClassMngr::Next::Application::StudentNamePairText;
 using ClassMngr::Next::Application::lookupStudentNamePairPeers;
 using ClassMngr::Next::Application::studentNamePairLookupKey;
+
+static_assert(!std::is_same_v<
+    StudentNamePairSelectedRowIndex,
+    StudentNamePairPeerRowIndex
+    >);
+static_assert(!std::is_convertible_v<int, StudentNamePairSelectedRowIndex>);
+static_assert(!std::is_convertible_v<StudentNamePairSelectedRowIndex, int>);
+static_assert(!std::is_convertible_v<int, StudentNamePairPeerRowIndex>);
+static_assert(!std::is_convertible_v<StudentNamePairPeerRowIndex, int>);
 
 namespace
 {
@@ -24,6 +36,33 @@ StudentNamePairText names(
     };
 }
 
+StudentNamePairSelectedRowIndex selectedRow(int value)
+{
+    return StudentNamePairSelectedRowIndex{value};
+}
+
+StudentNamePairPeerRowIndex peerRow(int value)
+{
+    return StudentNamePairPeerRowIndex{value};
+}
+
+bool rowIndexTypesKeepDistinctRawValues()
+{
+    const StudentNamePairSelectedRowIndex defaultSelectedRow;
+    const StudentNamePairPeerRowIndex defaultPeerRow;
+
+    return defaultSelectedRow.rawValue() == -1
+        && defaultPeerRow.rawValue() == -1
+        && selectedRow(7).rawValue() == 7
+        && peerRow(8).rawValue() == 8
+        && selectedRow(-9).rawValue() == -9
+        && peerRow(-10).rawValue() == -10
+        && selectedRow(7) == selectedRow(7)
+        && selectedRow(7) != selectedRow(8)
+        && peerRow(8) == peerRow(8)
+        && peerRow(8) != peerRow(9);
+}
+
 bool invalidSelectedRowsReturnNoPeers()
 {
     const std::vector<StudentNamePairText> rows{
@@ -31,9 +70,9 @@ bool invalidSelectedRowsReturnNoPeers()
         names(u"Alex", u"\uAE40\uBBFC\uC9C0")
     };
 
-    return lookupStudentNamePairPeers({}, 0).empty()
-        && lookupStudentNamePairPeers(rows, -1).empty()
-        && lookupStudentNamePairPeers(rows, 2).empty();
+    return lookupStudentNamePairPeers({}, selectedRow(0)).empty()
+        && lookupStudentNamePairPeers(rows, selectedRow(-1)).empty()
+        && lookupStudentNamePairPeers(rows, selectedRow(2)).empty();
 }
 
 bool incompleteSelectedAndCandidatePairsDoNotMatch()
@@ -45,9 +84,10 @@ bool incompleteSelectedAndCandidatePairsDoNotMatch()
         names(u"", u"\uAE40\uBBFC\uC9C0")
     };
 
-    return lookupStudentNamePairPeers(rows, 0).empty()
-        && lookupStudentNamePairPeers(rows, 3).empty()
-        && lookupStudentNamePairPeers(rows, 1) == std::vector<int>{2};
+    return lookupStudentNamePairPeers(rows, selectedRow(0)).empty()
+        && lookupStudentNamePairPeers(rows, selectedRow(3)).empty()
+        && lookupStudentNamePairPeers(rows, selectedRow(1))
+            == std::vector<StudentNamePairPeerRowIndex>{peerRow(2)};
 }
 
 bool keyTrimsQtWhitespaceAndKeepsNameEqualityCaseSensitive()
@@ -61,7 +101,11 @@ bool keyTrimsQtWhitespaceAndKeepsNameEqualityCaseSensitive()
 
     return studentNamePairLookupKey(rows[0])
             == u"Alex\u001f\uAE40\uBBFC\uC9C0"
-        && lookupStudentNamePairPeers(rows, 0) == std::vector<int>{1, 3};
+        && lookupStudentNamePairPeers(rows, selectedRow(0))
+            == std::vector<StudentNamePairPeerRowIndex>{
+                peerRow(1),
+                peerRow(3)
+            };
 }
 
 bool delimiterCollisionsAndSelectedRowExclusionMatchLegacyBehavior()
@@ -73,13 +117,23 @@ bool delimiterCollisionsAndSelectedRowExclusionMatchLegacyBehavior()
         names(u"A", u"B\u001fC")
     };
 
-    return lookupStudentNamePairPeers(rows, 2) == std::vector<int>{0, 1, 3};
+    return lookupStudentNamePairPeers(rows, selectedRow(2))
+        == std::vector<StudentNamePairPeerRowIndex>{
+            peerRow(0),
+            peerRow(1),
+            peerRow(3)
+        };
 }
 
 } // namespace
 
 int main()
 {
+    if (!rowIndexTypesKeepDistinctRawValues())
+    {
+        std::fprintf(stderr, "Name-pair row index types lost their raw values.\n");
+        return EXIT_FAILURE;
+    }
     if (!invalidSelectedRowsReturnNoPeers())
     {
         std::fprintf(stderr, "Invalid selected rows unexpectedly returned peers.\n");
