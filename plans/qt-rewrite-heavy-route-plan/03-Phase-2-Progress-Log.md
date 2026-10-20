@@ -56292,3 +56292,44 @@ wrapper semantics, missing-position behavior, empty results, tie order,
 adjacent-thousandths distinction, and strict-tolerance boundaries, plus the
 existing query and service regressions. This was incremental macOS
 `arm64;x86_64` Debug verification; no full-suite or Windows result is claimed.
+
+### F1226 Sub Prep print group and class positions accepted before implementation - 2026-10-21
+
+F1226 is accepted/current based on two independent read-only Explorer reports
+and a main-owned contract decision. Add separate explicit Application value
+types `SubPrepPrintTeacherIndex` and `SubPrepPrintClassIndex`, each backed by
+`std::size_t`, defaulting to zero, with private storage, `.rawValue()`,
+equality, and no implicit conversions. Use the teacher type for
+`SubPrepPrintGroupOrder::teacherIndex` and for both positions passed to
+`SubPrepPrintTeacherNameComparator`; use the class type for each element of
+`SubPrepPrintGroupOrder::classIndexes`. The returned vector order is the group
+order; there is no separate group-position field to type.
+
+Define these positions against the policy inputs: teacher indexes address the
+`teachers` fact vector, and class indexes address the `classes` fact vector.
+The Feature model filters source classes before constructing aligned class
+facts/details and derives teacher facts and trimmed-name lists from its prepared
+teacher list. Preserve that existing mapping; do not treat the wrappers as
+indexes into unfiltered source records. Unwrap only at collection access
+boundaries in the policy implementation, Feature model, and policy tests.
+
+Preserve policy behavior: unmatched class teacher IDs are skipped; every input
+teacher produces a group, including an empty class-index list when it has no
+matching classes; empty teacher input returns no groups. The default teacher
+position remains zero, and no sentinel or range validation is added. Preserve
+teacher ordering by English-name presence, injected English comparison,
+injected Korean comparison, then teacher ID; preserve class ordering by grade,
+level, weekday, start minute, then class ID. Keep `std::sort` and its current
+unspecified order for exact comparator ties.
+
+Extend `next_application_sub_prep_print_order_policy_tests.cpp` with both
+wrappers' default/explicit/equality/raw-value/non-conversion checks, distinct
+type assertions, and field/callback type assertions. Retain the existing
+ordering and source-position coverage, including input-permutation checks.
+Preserve model filtering and group ordering in
+`SubPrepClassInformationModelTests` and ordered print details in
+`SubPrepPrintSourceMapperTests`. Focused CTests are
+`ClassMngrNextApplicationSubPrepPrintOrderPolicyTests`,
+`ClassMngrSubPrepClassInformationModelTests`, and
+`ClassMngrSubPrepPrintSourceMapperTests`; build the app and these targets. No
+F1226 implementation or verification has started.
