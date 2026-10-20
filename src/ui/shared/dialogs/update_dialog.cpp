@@ -49,7 +49,7 @@ UpdateCheckResult toPresentationResult(
             .sizeBytes = result.artifact.sizeBytes.value()
         },
         .releaseDate = QDate::fromString(
-            QString::fromStdString(result.releaseDateIso), Qt::ISODate
+            QString::fromStdString(result.releaseDateIso.value()), Qt::ISODate
             ),
         .releaseUrl = QUrl::fromEncoded(QByteArray::fromStdString(
             result.releaseUrl.value())),

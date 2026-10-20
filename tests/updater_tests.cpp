@@ -9,6 +9,7 @@
 
 #include <QCoreApplication>
 #include <QCryptographicHash>
+#include <QDate>
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
@@ -476,6 +477,7 @@ private slots:
     void dialogShowsDisabledResourcePackSection();
     void dialogOpenWithoutCacheStartsIfStaleCheck();
     void dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale();
+    void dialogReleaseDateUsesLocalizedShortFormatAndSuppressesInvalid();
     void dialogPassesTypedArtifactSizeToLegacyProgress();
     void manualUpdatePresentationReconstructsUtcCheckTime();
     void dialogShowsInvalidResponseFailure();
@@ -829,7 +831,7 @@ void UpdaterTests::dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale()
                 ),
             .sizeBytes = ManualUpdate::UpdateArtifactSizeBytes(123)
         },
-        .releaseDateIso = "2026-08-05",
+        .releaseDateIso = ManualUpdate::ReleaseDateIsoText{"2026-08-05"},
         .releaseUrl = ManualUpdate::EncodedUrlText{
             "https://example.com/releases/2.0.0"},
         .checkedAtUtcMilliseconds = ManualUpdate::UpdateCheckUtcMilliseconds(0),
@@ -866,6 +868,63 @@ void UpdaterTests::dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale()
     QVERIFY(!progress->isHidden());
 }
 
+void UpdaterTests::dialogReleaseDateUsesLocalizedShortFormatAndSuppressesInvalid()
+{
+    const std::vector<std::string> releaseDateTexts{
+        "2026-08-05",
+        "not-an-iso-date",
+        ""
+    };
+    for (const std::string& releaseDateIso : releaseDateTexts)
+    {
+        RecordingManualUpdateCheckPort port;
+        port.m_snapshot.cachedResult = ManualUpdate::ManualUpdateCheckResult{
+            .currentVersion = {1, 0, 0},
+            .latestVersion = {2, 0, 0},
+            .artifact = {
+                .platformKey = ManualUpdate::UpdateArtifactPlatformKey(
+                    "windows-x64"),
+                .url = ManualUpdate::EncodedUrlText{
+                    "https://example.com/ClassMngr-2.0.0-win-x64.exe"},
+                .fileName = "ClassMngr-2.0.0-win-x64.exe",
+                .sha256 = ManualUpdate::UpdateArtifactSha256(
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    ),
+                .sizeBytes = ManualUpdate::UpdateArtifactSizeBytes(123)
+            },
+            .releaseDateIso = ManualUpdate::ReleaseDateIsoText{releaseDateIso},
+            .releaseUrl = ManualUpdate::EncodedUrlText{
+                "https://example.com/releases/2.0.0"},
+            .checkedAtUtcMilliseconds =
+                ManualUpdate::UpdateCheckUtcMilliseconds(0),
+            .updateAvailable = true
+        };
+        port.m_snapshot.resultFresh = true;
+
+        UpdateDialog dialog(port, true);
+        dialog.refreshForOpen();
+
+        QLabel* const details = dialog.findChild<QLabel*>(
+            QStringLiteral("programUpdateDetails"));
+        QVERIFY(details);
+        const QDate parsedDate = QDate::fromString(
+            QString::fromStdString(releaseDateIso), Qt::ISODate);
+        const QString releasedLabel = QCoreApplication::translate(
+            "UpdateDialog", "Released:");
+        if (parsedDate.isValid())
+        {
+            const QString expectedDate = QLocale::system().toString(
+                parsedDate, QLocale::ShortFormat);
+            QVERIFY(details->text().contains(releasedLabel));
+            QVERIFY(details->text().contains(expectedDate));
+        }
+        else
+        {
+            QVERIFY(!details->text().contains(releasedLabel));
+        }
+    }
+}
+
 void UpdaterTests::dialogPassesTypedArtifactSizeToLegacyProgress()
 {
     RecordingManualUpdateCheckPort port;
@@ -883,7 +942,7 @@ void UpdaterTests::dialogPassesTypedArtifactSizeToLegacyProgress()
                 ),
             .sizeBytes = ManualUpdate::UpdateArtifactSizeBytes(sizeBytes)
         },
-        .releaseDateIso = "2026-08-05",
+        .releaseDateIso = ManualUpdate::ReleaseDateIsoText{"2026-08-05"},
         .releaseUrl = ManualUpdate::EncodedUrlText{
             "https://example.com/releases/2.0.0"},
         .checkedAtUtcMilliseconds = ManualUpdate::UpdateCheckUtcMilliseconds(0),

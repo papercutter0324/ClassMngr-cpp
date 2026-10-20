@@ -265,6 +265,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/update_artifact_sha256.h
     src/next/application/update_artifact_size_bytes.h
     src/next/application/encoded_url_text.h
+    src/next/application/release_date_iso_text.h
     src/next/application/update_check_utc_milliseconds.h
     src/next/application/startup_update_check.h
     src/next/application/startup_update_check_use_case.h

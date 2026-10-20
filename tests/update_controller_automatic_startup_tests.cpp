@@ -11,6 +11,7 @@
 
 #include <QApplication>
 #include <QCoreApplication>
+#include <QDate>
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
@@ -330,9 +331,11 @@ private slots:
     void failedStaleCleanupRetainsValueAndDisplayAndAllowsPrompt();
     void failedAutomaticSkipKeepsDialogOpenAndAllowsRetry();
     void encodedUrlTextPreservesExactBytes();
+    void releaseDateIsoTextPreservesExactText();
     void bridgeMapsSuccessAndForcesFreshCheck_data();
     void bridgeMapsSuccessAndForcesFreshCheck();
     void adaptersPreserveEncodedUrlTextExactly();
+    void adaptersPreserveReleaseDateIsoTextExactly();
     void adaptersPreserveArtifactSizeExactly();
     void adaptersPreserveCheckedAtMilliseconds();
     void adaptersPreserveSha256TextExactly();
@@ -987,6 +990,34 @@ void UpdateControllerAutomaticStartupTests::encodedUrlTextPreservesExactBytes()
         != EncodedUrlText{"https://example.invalid/%2F"});
 }
 
+void UpdateControllerAutomaticStartupTests::releaseDateIsoTextPreservesExactText()
+{
+    using ClassMngr::Next::Application::ReleaseDateIsoText;
+
+    static_assert(std::is_default_constructible_v<ReleaseDateIsoText>);
+    static_assert(std::is_constructible_v<ReleaseDateIsoText, std::string>);
+    static_assert(!std::is_convertible_v<std::string, ReleaseDateIsoText>);
+    static_assert(!std::is_convertible_v<ReleaseDateIsoText, std::string>);
+
+    const ReleaseDateIsoText defaultText;
+    QVERIFY(defaultText.empty());
+    QCOMPARE(defaultText.value(), std::string{});
+    QVERIFY(defaultText == ReleaseDateIsoText{std::string{}});
+
+    const std::vector<std::string> dateTexts{
+        "2026-08-05",
+        "not-an-iso-date",
+        std::string{"x\0y", 3}
+    };
+    for (const std::string& value : dateTexts)
+    {
+        const ReleaseDateIsoText text(value);
+        QCOMPARE(text.value(), value);
+        QVERIFY(!text.empty());
+        QVERIFY(text == ReleaseDateIsoText{value});
+    }
+}
+
 void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck()
 {
     QFETCH(bool, updateAvailable);
@@ -1032,11 +1063,13 @@ void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck
     QCOMPARE(result.artifact.fileName, legacy->artifact.fileName.toStdString());
     QCOMPARE(result.artifact.sha256.value(), legacy->artifact.sha256.toUtf8().toStdString());
     QCOMPARE(result.artifact.sizeBytes.value(), legacy->artifact.sizeBytes);
-    QCOMPARE(result.releaseDateIso, std::string("2026-08-05"));
+    QCOMPARE(result.releaseDateIso.value(), std::string("2026-08-05"));
     QCOMPARE(result.releaseUrl.value(),
         legacy->releaseUrl.toEncoded().toStdString());
     const auto manual =
         ClassMngr::Next::Platform::toManualUpdateCheckResult(*legacy);
+    QCOMPARE(manual.releaseDateIso.value(),
+        legacy->releaseDate.toString(Qt::ISODate).toStdString());
     QCOMPARE(manual.artifact.url.value(),
         legacy->artifact.url.toEncoded().toStdString());
     QCOMPARE(manual.releaseUrl.value(),
@@ -1078,6 +1111,28 @@ void UpdateControllerAutomaticStartupTests::adaptersPreserveEncodedUrlTextExactl
     QCOMPARE(manual.releaseUrl.value(), releaseUrl);
     QCOMPARE(startup.artifact.url.value(), artifactUrl);
     QCOMPARE(startup.releaseUrl.value(), releaseUrl);
+}
+
+void UpdateControllerAutomaticStartupTests::adaptersPreserveReleaseDateIsoTextExactly()
+{
+    const std::vector<QDate> releaseDates{
+        QDate(2026, 8, 5),
+        QDate{}
+    };
+    for (const QDate& releaseDate : releaseDates)
+    {
+        UpdateCheckResult source;
+        source.releaseDate = releaseDate;
+        const std::string expected =
+            source.releaseDate.toString(Qt::ISODate).toStdString();
+
+        const auto manual =
+            ClassMngr::Next::Platform::toManualUpdateCheckResult(source);
+        const auto startup =
+            ClassMngr::Next::Platform::toStartupUpdateCheckResult(source);
+        QCOMPARE(manual.releaseDateIso.value(), expected);
+        QCOMPARE(startup.releaseDateIso.value(), expected);
+    }
 }
 
 void UpdateControllerAutomaticStartupTests::adaptersPreserveSha256TextExactly()
@@ -1348,6 +1403,8 @@ void UpdateControllerAutomaticStartupTests::manualAdapterDistinguishesFreshBusyF
         firstLegacyResult->artifact.url.toEncoded().toStdString());
     QCOMPARE(lastResult->releaseUrl.value(),
         firstLegacyResult->releaseUrl.toEncoded().toStdString());
+    QCOMPARE(lastResult->releaseDateIso.value(),
+        firstLegacyResult->releaseDate.toString(Qt::ISODate).toStdString());
     QCOMPARE(lastResult->artifact.platformKey.value(),
         firstLegacyResult->artifact.platformKey.toUtf8().toStdString());
     QCOMPARE(lastResult->artifact.sha256.value(),
@@ -1360,6 +1417,8 @@ void UpdateControllerAutomaticStartupTests::manualAdapterDistinguishesFreshBusyF
         firstLegacyResult->artifact.url.toEncoded().toStdString());
     QCOMPARE(manualSnapshot.cachedResult->releaseUrl.value(),
         firstLegacyResult->releaseUrl.toEncoded().toStdString());
+    QCOMPARE(manualSnapshot.cachedResult->releaseDateIso.value(),
+        firstLegacyResult->releaseDate.toString(Qt::ISODate).toStdString());
     QCOMPARE(manualSnapshot.cachedResult->artifact.platformKey.value(),
         firstLegacyResult->artifact.platformKey.toUtf8().toStdString());
     QCOMPARE(manualSnapshot.cachedResult->artifact.sha256.value(),

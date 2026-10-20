@@ -37,7 +37,9 @@ namespace ClassMngr::Next::Platform
                 result.artifact.sizeBytes
                 )
         },
-        .releaseDateIso = result.releaseDate.toString(Qt::ISODate).toStdString(),
+        .releaseDateIso = Application::ReleaseDateIsoText(
+            result.releaseDate.toString(Qt::ISODate).toStdString()
+            ),
         .releaseUrl = Application::EncodedUrlText(
             result.releaseUrl.toEncoded().toStdString()
             ),

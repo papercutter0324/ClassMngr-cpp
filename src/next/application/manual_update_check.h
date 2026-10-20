@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/encoded_url_text.h"
+#include "next/application/release_date_iso_text.h"
 #include "next/application/skipped_update_version_policy.h"
 #include "next/application/update_artifact_platform_key.h"
 #include "next/application/update_artifact_sha256.h"
@@ -29,7 +30,7 @@ struct ManualUpdateCheckResult final
     UpdateVersion currentVersion;
     UpdateVersion latestVersion;
     ManualUpdateArtifact artifact;
-    std::string releaseDateIso;
+    ReleaseDateIsoText releaseDateIso;
     EncodedUrlText releaseUrl;
     UpdateCheckUtcMilliseconds checkedAtUtcMilliseconds;
     bool updateAvailable = false;
