@@ -772,7 +772,9 @@ QString SpeakingEvalReportDialog::currentAiPrompt() const
 
     ClassMngr::Next::Application::SpeakingEvaluationAiCommentPromptRequest
         input;
-    input.grade = report->report.grade;
+    input.grade = Application::speakingEvaluationCourseGradeBandFromInteger(
+        report->report.grade
+        );
     input.englishName = Ui::QtTextAdapter::toUtf16String(
         report->report.englishName
         );

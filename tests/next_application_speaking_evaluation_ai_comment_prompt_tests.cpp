@@ -9,6 +9,7 @@
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
+namespace Domain = ClassMngr::Next::Domain;
 
 namespace
 {
@@ -170,7 +171,7 @@ bool singlePromptTextAndVoiceAreExact()
 {
     const AsciiTextMatcher matcher;
     SpeakingEvaluationAiCommentPromptRequest request;
-    request.grade = 5;
+    request.grade = Domain::CourseGradeBand::E5;
     request.didWell = u"Strong vocabulary\r\n\n- Clear ideas";
     request.needsImprovement = u"Use examples\n* Practice pronunciation";
 
@@ -207,7 +208,7 @@ bool singlePromptTextAndVoiceAreExact()
         );
 }
 
-bool singlePromptKeepsIntegerGradesAndOrdinalWording()
+bool singlePromptKeepsTypedGradeBandsAndOrdinalWording()
 {
     const AsciiTextMatcher matcher;
     SpeakingEvaluationAiCommentPromptRequest request;
@@ -215,9 +216,18 @@ bool singlePromptKeepsIntegerGradesAndOrdinalWording()
     request.needsImprovement = u"Use details";
 
     for (const auto& [grade, ordinal] : {
-             std::pair{4, std::u16string_view(u"4th-grade")},
-             std::pair{5, std::u16string_view(u"5th-grade")},
-             std::pair{6, std::u16string_view(u"6th-grade")}
+             std::pair{
+                 Domain::CourseGradeBand::E4,
+                 std::u16string_view(u"4th-grade")
+                 },
+             std::pair{
+                 Domain::CourseGradeBand::E5,
+                 std::u16string_view(u"5th-grade")
+                 },
+             std::pair{
+                 Domain::CourseGradeBand::E6,
+                 std::u16string_view(u"6th-grade")
+                 }
          })
     {
         request.grade = grade;
@@ -233,8 +243,7 @@ bool singlePromptKeepsIntegerGradesAndOrdinalWording()
         {
             std::fprintf(
                 stderr,
-                "Integer grade %d did not produce the expected ordinal prefix.\n",
-                grade
+                "Typed grade band did not produce the expected ordinal prefix.\n"
                 );
             if (!result.valid)
             {
@@ -270,12 +279,12 @@ bool batchRedactionUsesAliasesAndLongestFirstWithoutBoundaries()
     SpeakingEvaluationAiBatchCommentPromptRequest request;
     request.students = {
         {
-            u"STUDENT_01", 4, u"Ann", {},
+            u"STUDENT_01", Domain::CourseGradeBand::E4, u"Ann", {},
             u"Ann praised Anna, then Unchecked and XAnn!",
             u"Add an example"
         },
         {
-            u"STUDENT_02", 5, u"Anna", {},
+            u"STUDENT_02", Domain::CourseGradeBand::E5, u"Anna", {},
             u"Anna spoke clearly", u"Use details"
         }
     };
@@ -351,6 +360,11 @@ bool batchPromptHasNoStudentCountCap()
 {
     const AsciiTextMatcher matcher;
     SpeakingEvaluationAiBatchCommentPromptRequest request;
+    constexpr Domain::CourseGradeBand gradeBands[] = {
+        Domain::CourseGradeBand::E4,
+        Domain::CourseGradeBand::E5,
+        Domain::CourseGradeBand::E6
+    };
     for (int index = 1; index <= 30; ++index)
     {
         const std::u16string number = index < 10
@@ -359,7 +373,7 @@ bool batchPromptHasNoStudentCountCap()
                 + static_cast<char16_t>(u'0' + index % 10);
         request.students.push_back({
             u"STUDENT_" + number,
-            4 + (index % 3),
+            gradeBands[(index - 1) % 3],
             u"Name" + number,
             {},
             u"Strong speaking",
@@ -379,11 +393,25 @@ bool batchPromptHasNoStudentCountCap()
         );
 }
 
+bool promptRequestGradeFieldsDefaultToOther()
+{
+    const SpeakingEvaluationAiCommentPromptRequest single{};
+    const SpeakingEvaluationAiBatchPromptStudent batchStudent{};
+    return check(
+            single.grade == Domain::CourseGradeBand::Other,
+            "A default single-prompt grade was not Other."
+            )
+        && check(
+            batchStudent.grade == Domain::CourseGradeBand::Other,
+            "A default batch-prompt grade was not Other."
+            );
+}
+
 bool invalidInputsFollowTheExistingEligibilityPolicy()
 {
     const AsciiTextMatcher matcher;
     SpeakingEvaluationAiCommentPromptRequest single;
-    single.grade = 5;
+    single.grade = Domain::CourseGradeBand::E5;
     single.didWell = u"Strong vocabulary";
     single.needsImprovement = u"Use details";
     if (!check(
@@ -393,7 +421,7 @@ bool invalidInputsFollowTheExistingEligibilityPolicy()
     {
         return false;
     }
-    single.grade = 3;
+    single.grade = Domain::CourseGradeBand::Other;
     if (!check(
             !buildSpeakingEvaluationAiCommentPrompt(single, matcher).valid,
             "An unsupported single-prompt grade was accepted."
@@ -403,7 +431,14 @@ bool invalidInputsFollowTheExistingEligibilityPolicy()
     }
 
     SpeakingEvaluationAiBatchCommentPromptRequest batch;
-    batch.students = {{u"STUDENT_01", 5, u"A", {}, u"Good", u"Improve"}};
+    batch.students = {{
+        u"STUDENT_01",
+        Domain::CourseGradeBand::E5,
+        u"A",
+        {},
+        u"Good",
+        u"Improve"
+    }};
     if (!check(
             buildSpeakingEvaluationAiBatchCommentPrompt(batch, matcher).valid,
             "A valid batch record was rejected."
@@ -426,7 +461,7 @@ bool invalidInputsFollowTheExistingEligibilityPolicy()
         return false;
     }
     invalid = batch;
-    invalid.students.front().grade = 7;
+    invalid.students.front().grade = Domain::CourseGradeBand::Other;
     if (!check(!buildSpeakingEvaluationAiBatchCommentPrompt(invalid, matcher).valid,
             "An unsupported batch grade was accepted."))
     {
@@ -456,9 +491,10 @@ int main()
     if (!observationsNormalizeLineEndingsAndRepeatedPrefixes()
         || !elementaryGradeConversionPreservesLegacyAcceptedForms()
         || !singlePromptTextAndVoiceAreExact()
-        || !singlePromptKeepsIntegerGradesAndOrdinalWording()
+        || !singlePromptKeepsTypedGradeBandsAndOrdinalWording()
         || !batchRedactionUsesAliasesAndLongestFirstWithoutBoundaries()
         || !batchPromptHasNoStudentCountCap()
+        || !promptRequestGradeFieldsDefaultToOther()
         || !invalidInputsFollowTheExistingEligibilityPolicy())
     {
         return EXIT_FAILURE;

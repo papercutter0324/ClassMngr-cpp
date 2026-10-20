@@ -719,7 +719,10 @@ void SpeakingEvalAiBatchDialog::createPrompt()
                 Ui::QtTextAdapter::toUtf16String(
                     item->data(StudentIdRole).toString()
                     ),
-                report.report.grade,
+                ClassMngr::Next::Application::
+                    speakingEvaluationCourseGradeBandFromInteger(
+                        report.report.grade
+                        ),
                 Ui::QtTextAdapter::toUtf16String(report.report.englishName),
                 Ui::QtTextAdapter::toUtf16String(report.report.koreanName),
                 notes.didWell,

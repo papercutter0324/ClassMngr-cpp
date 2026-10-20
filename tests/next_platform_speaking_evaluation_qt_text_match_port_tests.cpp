@@ -125,7 +125,7 @@ void NextPlatformSpeakingEvaluationQtTextMatchPortTests::
     using namespace ClassMngr::Next::Application;
     const SpeakingEvaluationQtTextMatchPort matcher;
     SpeakingEvaluationAiCommentPromptRequest request;
-    request.grade = 4;
+    request.grade = ClassMngr::Next::Domain::CourseGradeBand::E4;
     request.englishName = u"K";
     request.didWell = u"k made progress";
     request.needsImprovement = u"Add details";

@@ -4,6 +4,7 @@
 #include "next/application/qt_compatible_text.h"
 #include "next/application/speaking_evaluation_ai_batch_eligibility.h"
 #include "next/application/speaking_evaluation_text_match_port.h"
+#include "next/domain/course.h"
 #include "domain/models/speaking_evaluation_comment_limits.h"
 
 #include <algorithm>
@@ -20,7 +21,7 @@ namespace ClassMngr::Next::Application
 
 struct SpeakingEvaluationAiCommentPromptRequest final
 {
-    int grade = 0;
+    Domain::CourseGradeBand grade = Domain::CourseGradeBand::Other;
     std::u16string englishName;
     std::u16string koreanName;
     std::u16string didWell;
@@ -31,7 +32,7 @@ struct SpeakingEvaluationAiCommentPromptRequest final
 struct SpeakingEvaluationAiBatchPromptStudent final
 {
     std::u16string id;
-    int grade = 0;
+    Domain::CourseGradeBand grade = Domain::CourseGradeBand::Other;
     std::u16string englishName;
     std::u16string koreanName;
     std::u16string didWell;
@@ -165,15 +166,17 @@ struct RedactionCandidate final
     std::u16string replacement;
 };
 
-[[nodiscard]] inline std::u16string ordinalGrade(const int grade)
+[[nodiscard]] inline std::u16string ordinalGrade(
+    const Domain::CourseGradeBand grade
+    )
 {
     switch (grade)
     {
-    case 4:
+    case Domain::CourseGradeBand::E4:
         return u"4th";
-    case 5:
+    case Domain::CourseGradeBand::E5:
         return u"5th";
-    case 6:
+    case Domain::CourseGradeBand::E6:
         return u"6th";
     default:
         return {};
@@ -370,7 +373,7 @@ inline void appendDecimal(std::u16string& destination, const int value)
 }
 
 [[nodiscard]] inline bool isEligible(
-    const int grade,
+    const Domain::CourseGradeBand grade,
     const std::u16string_view englishName,
     const std::u16string_view koreanName,
     const std::u16string_view didWell,
@@ -381,7 +384,7 @@ inline void appendDecimal(std::u16string& destination, const int value)
         .hasTrimmedStudentName =
             !trimQtWhitespace(englishName).empty()
             || !trimQtWhitespace(koreanName).empty(),
-        .grade = speakingEvaluationCourseGradeBandFromInteger(grade),
+        .grade = grade,
         .hasDidWellItem = !speakingEvaluationAiObservationItems(didWell).empty(),
         .hasNeedsImprovementItem =
             !speakingEvaluationAiObservationItems(needsImprovement).empty()
@@ -389,7 +392,7 @@ inline void appendDecimal(std::u16string& destination, const int value)
 }
 
 [[nodiscard]] inline bool singlePromptInputsAreValid(
-    const int grade,
+    const Domain::CourseGradeBand grade,
     const std::u16string_view didWell,
     const std::u16string_view needsImprovement
     )
@@ -398,7 +401,7 @@ inline void appendDecimal(std::u16string& destination, const int value)
     // shared eligibility policy still requires a name before enabling it.
     return speakingEvaluationAiBatchEligibilityReason({
         .hasTrimmedStudentName = true,
-        .grade = speakingEvaluationCourseGradeBandFromInteger(grade),
+        .grade = grade,
         .hasDidWellItem = !speakingEvaluationAiObservationItems(didWell).empty(),
         .hasNeedsImprovementItem =
             !speakingEvaluationAiObservationItems(needsImprovement).empty()
