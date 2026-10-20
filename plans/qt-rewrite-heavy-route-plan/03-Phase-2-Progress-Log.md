@@ -59050,11 +59050,14 @@ Only aggregate fixtures requiring this API change may be updated in
 
 The accepted incremental macOS build targets are `ClassMngr`,
 `ClassMngrNextApplicationClassSummaryTests`,
-`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`, and
-`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`; the
-focused CTest names are `NextApplicationClassSummary`,
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrNextApplicationSubPrepClassInformationStateTests`. Also build
+`ClassMngrSubPrepPageTests` to compile its aggregate fixtures only; do not run
+its broader UI CTest. The focused CTest names are `NextApplicationClassSummary`,
 `NextApplicationSubPrepScheduleSummaryQuery`, and
-`NextPlatformApplicationServicesSubPrepPrintSourcePort`. No implementation,
-build, or tests have started. No clean build, Windows build, or full-suite
+`NextPlatformApplicationServicesSubPrepPrintSourcePort`, plus
+`NextApplicationSubPrepClassInformationState`. No implementation, build, or
+test execution has started. No clean build, Windows build, or full-suite
 verification is claimed. The existing Batch502 discovery record remains the
 upcoming queue; no new batch search was performed for this slice.
