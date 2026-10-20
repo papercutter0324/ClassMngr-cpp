@@ -134,6 +134,61 @@ int main()
 {
     static_assert(!std::is_convertible_v<std::int64_t, UpdateArtifactSizeBytes>);
     static_assert(!std::is_convertible_v<UpdateArtifactSizeBytes, std::int64_t>);
+    static_assert(!std::is_convertible_v<
+        std::int64_t, UpdateCheckUtcMilliseconds>);
+    static_assert(!std::is_convertible_v<
+        UpdateCheckUtcMilliseconds, std::int64_t>);
+
+    const UpdateCheckUtcMilliseconds defaultCheckedAt;
+    if (!require(defaultCheckedAt.value() == 0
+            && ManualUpdateCheckResult{}.checkedAtUtcMilliseconds.value() == 0
+            && UpdateCheckUtcMilliseconds(-17) == UpdateCheckUtcMilliseconds(-17)
+            && UpdateCheckUtcMilliseconds(-17) != UpdateCheckUtcMilliseconds(17),
+            "Update-check timestamp default or exact equality changed"))
+    {
+        return EXIT_FAILURE;
+    }
+
+    const std::vector<std::int64_t> checkedAtValues{
+        std::numeric_limits<std::int64_t>::min(),
+        std::numeric_limits<std::int64_t>::min() + 1,
+        -17,
+        0,
+        23,
+        std::numeric_limits<std::int64_t>::max() - 1,
+        std::numeric_limits<std::int64_t>::max()
+    };
+    for (const std::int64_t checkedAt : checkedAtValues)
+    {
+        FakePort port;
+        ManualUpdateCheckUseCase useCase(port);
+        std::vector<std::int64_t> observedCheckedAt;
+        useCase.setObserver([&](ManualUpdateCheckEvent event)
+        {
+            if (const auto* result = std::get_if<ManualUpdateCheckResult>(&event))
+            {
+                observedCheckedAt.push_back(
+                    result->checkedAtUtcMilliseconds.value());
+            }
+        });
+        if (!require(useCase.retry() == ManualUpdateCheckDispatch::Started,
+                "Manual timestamp check did not start"))
+        {
+            return EXIT_FAILURE;
+        }
+
+        port.finish(ManualUpdateCheckResult{
+            .checkedAtUtcMilliseconds = UpdateCheckUtcMilliseconds(checkedAt)
+        });
+        const auto cached = port.snapshot().cachedResult;
+        if (!require(observedCheckedAt == std::vector{checkedAt}
+                && cached.has_value()
+                && cached->checkedAtUtcMilliseconds.value() == checkedAt,
+                "Manual result or cached state changed signed check milliseconds"))
+        {
+            return EXIT_FAILURE;
+        }
+    }
 
     const UpdateArtifactSizeBytes defaultSize;
     if (!require(defaultSize.value() == 0

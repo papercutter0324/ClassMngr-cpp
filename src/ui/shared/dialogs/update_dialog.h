@@ -14,6 +14,15 @@ class QLabel;
 class QProgressBar;
 class QPushButton;
 
+namespace ClassMngr::Next::UiShared::Details
+{
+
+[[nodiscard]] UpdateCheckResult toPresentationResult(
+    const ClassMngr::Next::Application::ManualUpdateCheckResult& result
+    );
+
+} // namespace ClassMngr::Next::UiShared::Details
+
 class UpdateDialog : public DialogShell
 {
     Q_OBJECT

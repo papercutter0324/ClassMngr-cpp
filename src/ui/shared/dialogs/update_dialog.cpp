@@ -22,7 +22,7 @@
 
 #include <type_traits>
 
-namespace
+namespace ClassMngr::Next::UiShared::Details
 {
 
 UpdateCheckResult toPresentationResult(
@@ -52,13 +52,13 @@ UpdateCheckResult toPresentationResult(
             ),
         .releaseUrl = QUrl::fromEncoded(QByteArray::fromStdString(result.releaseUrl)),
         .checkedAtUtc = QDateTime::fromMSecsSinceEpoch(
-            result.checkedAtUtcMilliseconds, QTimeZone::utc()
+            result.checkedAtUtcMilliseconds.value(), QTimeZone::utc()
             ),
         .updateAvailable = result.updateAvailable
     };
 }
 
-} // namespace
+} // namespace ClassMngr::Next::UiShared::Details
 
 UpdateDialog::UpdateDialog(
     ClassMngr::Next::Application::ManualUpdateCheckPort& manualUpdateCheckPort,
@@ -255,7 +255,9 @@ void UpdateDialog::handleManualCheckEvent(
             ClassMngr::Next::Application::ManualUpdateCheckResult
             >)
         {
-            handleCheckSucceeded(toPresentationResult(value));
+            handleCheckSucceeded(
+                ClassMngr::Next::UiShared::Details::toPresentationResult(value)
+                );
         }
         else
         {

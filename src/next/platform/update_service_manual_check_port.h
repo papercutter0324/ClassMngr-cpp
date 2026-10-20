@@ -38,7 +38,9 @@ namespace ClassMngr::Next::Platform
         },
         .releaseDateIso = result.releaseDate.toString(Qt::ISODate).toStdString(),
         .releaseUrl = result.releaseUrl.toEncoded().toStdString(),
-        .checkedAtUtcMilliseconds = result.checkedAtUtc.toMSecsSinceEpoch(),
+        .checkedAtUtcMilliseconds = Application::UpdateCheckUtcMilliseconds(
+            result.checkedAtUtc.toMSecsSinceEpoch()
+            ),
         .updateAvailable = result.updateAvailable
     };
 }

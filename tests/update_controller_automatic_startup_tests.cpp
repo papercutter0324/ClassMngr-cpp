@@ -330,6 +330,7 @@ private slots:
     void bridgeMapsSuccessAndForcesFreshCheck_data();
     void bridgeMapsSuccessAndForcesFreshCheck();
     void adaptersPreserveArtifactSizeExactly();
+    void adaptersPreserveCheckedAtMilliseconds();
     void adaptersPreserveSha256TextExactly();
     void parserMatchesPlatformKeysExactlyAndKeepsLinuxAliases();
     void bridgeMapsFailures_data();
@@ -997,7 +998,8 @@ void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck
     QCOMPARE(result.artifact.sizeBytes.value(), legacy->artifact.sizeBytes);
     QCOMPARE(result.releaseDateIso, std::string("2026-08-05"));
     QCOMPARE(result.releaseUrl, legacy->releaseUrl.toEncoded().toStdString());
-    QCOMPARE(result.checkedAtUtcMilliseconds, legacy->checkedAtUtc.toMSecsSinceEpoch());
+    QCOMPARE(result.checkedAtUtcMilliseconds.value(),
+        legacy->checkedAtUtc.toMSecsSinceEpoch());
     // Repeated terminal signals are not a second completion for this request.
     service.checkSucceeded(*legacy);
     service.checkFailedWithCategory(UpdateService::FailureCategory::Network,
@@ -1059,6 +1061,30 @@ void UpdateControllerAutomaticStartupTests::adaptersPreserveArtifactSizeExactly(
         const auto startup = ClassMngr::Next::Platform::toStartupUpdateCheckResult(source);
         QCOMPARE(manual.artifact.sizeBytes.value(), sizeBytes);
         QCOMPARE(startup.artifact.sizeBytes.value(), sizeBytes);
+    }
+}
+
+void UpdateControllerAutomaticStartupTests::adaptersPreserveCheckedAtMilliseconds()
+{
+    // QDateTime represents each selected value; int64 extremes are covered by
+    // the Qt-free use-case tests instead.
+    const std::vector<std::int64_t> checkedAtValues{
+        -1'700'000'000'123LL,
+        0,
+        1'700'000'000'123LL
+    };
+
+    for (const std::int64_t checkedAt : checkedAtValues)
+    {
+        UpdateCheckResult source;
+        source.checkedAtUtc = QDateTime::fromMSecsSinceEpoch(
+            static_cast<qint64>(checkedAt), QTimeZone::utc());
+        QVERIFY(source.checkedAtUtc.isValid());
+
+        const auto manual = ClassMngr::Next::Platform::toManualUpdateCheckResult(source);
+        const auto startup = ClassMngr::Next::Platform::toStartupUpdateCheckResult(source);
+        QCOMPARE(manual.checkedAtUtcMilliseconds.value(), checkedAt);
+        QCOMPARE(startup.checkedAtUtcMilliseconds.value(), checkedAt);
     }
 }
 

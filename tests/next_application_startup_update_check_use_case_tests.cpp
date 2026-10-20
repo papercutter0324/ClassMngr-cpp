@@ -69,6 +69,41 @@ int main()
         return EXIT_FAILURE;
     }
 
+    const std::vector<std::int64_t> checkedAtValues{
+        std::numeric_limits<std::int64_t>::min(),
+        std::numeric_limits<std::int64_t>::min() + 1,
+        -17,
+        0,
+        23,
+        std::numeric_limits<std::int64_t>::max() - 1,
+        std::numeric_limits<std::int64_t>::max()
+    };
+    for (const std::int64_t checkedAt : checkedAtValues)
+    {
+        FakePort port;
+        StartupUpdateCheckUseCase useCase(port);
+        bool preserved = false;
+        if (!require(useCase.start(Eligible, [&](StartupUpdateCheckOutcome outcome)
+                {
+                    const auto* result = std::get_if<StartupUpdateCheckResult>(&outcome);
+                    preserved = result
+                        && result->checkedAtUtcMilliseconds.value() == checkedAt;
+                }) == StartupUpdateCheckDisposition::Started,
+                "Startup timestamp check did not start"))
+        {
+            return EXIT_FAILURE;
+        }
+
+        port.pending(StartupUpdateCheckResult{
+            .checkedAtUtcMilliseconds = UpdateCheckUtcMilliseconds(checkedAt)
+        });
+        if (!require(preserved,
+                "Startup result changed signed check milliseconds"))
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
     const std::vector<std::int64_t> artifactSizes{
         std::numeric_limits<std::int64_t>::min(),
         std::numeric_limits<std::int64_t>::min() + 1,

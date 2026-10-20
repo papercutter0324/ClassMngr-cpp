@@ -4,8 +4,8 @@
 #include "next/application/update_artifact_platform_key.h"
 #include "next/application/update_artifact_sha256.h"
 #include "next/application/update_artifact_size_bytes.h"
+#include "next/application/update_check_utc_milliseconds.h"
 
-#include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
@@ -30,7 +30,7 @@ struct ManualUpdateCheckResult final
     ManualUpdateArtifact artifact;
     std::string releaseDateIso;
     std::string releaseUrl;
-    std::int64_t checkedAtUtcMilliseconds = 0;
+    UpdateCheckUtcMilliseconds checkedAtUtcMilliseconds;
     bool updateAvailable = false;
 };
 

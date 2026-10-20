@@ -26,6 +26,7 @@
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QStandardPaths>
+#include <QTimeZone>
 #include <QTemporaryDir>
 #include <QTcpServer>
 #include <QTcpSocket>
@@ -34,6 +35,7 @@
 #include <cstdint>
 #include <limits>
 #include <utility>
+#include <vector>
 
 namespace
 {
@@ -475,6 +477,7 @@ private slots:
     void dialogOpenWithoutCacheStartsIfStaleCheck();
     void dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale();
     void dialogPassesTypedArtifactSizeToLegacyProgress();
+    void manualUpdatePresentationReconstructsUtcCheckTime();
     void dialogShowsInvalidResponseFailure();
     void dialogShowsNetworkFailure();
     void dialogRetryForcesCheckWithFreshCache();
@@ -827,7 +830,7 @@ void UpdaterTests::dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale()
         },
         .releaseDateIso = "2026-08-05",
         .releaseUrl = "https://example.com/releases/2.0.0",
-        .checkedAtUtcMilliseconds = 0,
+        .checkedAtUtcMilliseconds = ManualUpdate::UpdateCheckUtcMilliseconds(0),
         .updateAvailable = true
     };
     port.m_snapshot.resultFresh = false;
@@ -879,7 +882,7 @@ void UpdaterTests::dialogPassesTypedArtifactSizeToLegacyProgress()
         },
         .releaseDateIso = "2026-08-05",
         .releaseUrl = "https://example.com/releases/2.0.0",
-        .checkedAtUtcMilliseconds = 0,
+        .checkedAtUtcMilliseconds = ManualUpdate::UpdateCheckUtcMilliseconds(0),
         .updateAvailable = true
     };
     port.m_snapshot.resultFresh = true;
@@ -899,6 +902,31 @@ void UpdaterTests::dialogPassesTypedArtifactSizeToLegacyProgress()
     QCOMPARE(progressText->text(), QStringLiteral("%1 of %2").arg(
         QLocale::system().formattedDataSize(0),
         QLocale::system().formattedDataSize(static_cast<qint64>(sizeBytes))));
+}
+
+void UpdaterTests::manualUpdatePresentationReconstructsUtcCheckTime()
+{
+    // These representative timestamps are within QDateTime's supported range.
+    const std::vector<std::int64_t> checkedAtValues{
+        -1'700'000'000'123LL,
+        0,
+        1'700'000'000'123LL
+    };
+
+    for (const std::int64_t checkedAt : checkedAtValues)
+    {
+        ManualUpdate::ManualUpdateCheckResult source;
+        source.checkedAtUtcMilliseconds =
+            ManualUpdate::UpdateCheckUtcMilliseconds(checkedAt);
+
+        const UpdateCheckResult presentation =
+            ClassMngr::Next::UiShared::Details::toPresentationResult(source);
+        QVERIFY(presentation.checkedAtUtc.isValid());
+        QCOMPARE(presentation.checkedAtUtc.toMSecsSinceEpoch(),
+            static_cast<qint64>(checkedAt));
+        QVERIFY(presentation.checkedAtUtc.timeZone() == QTimeZone::utc());
+        QCOMPARE(presentation.checkedAtUtc.timeZone().id(), QByteArrayLiteral("UTC"));
+    }
 }
 
 void UpdaterTests::dialogShowsInvalidResponseFailure()
