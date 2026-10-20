@@ -51593,3 +51593,44 @@ incrementally build `ClassMngr`,
 four corresponding focused CTests (Qt offscreen as required), then run
 `git diff --check`. No full-suite or Windows pass is claimed. Implementation
 and verification have not started.
+
+### F1157 Schedule Builder source text complete - 2026-10-20
+
+F1157 completed in source/test commit
+`feff2bc14bea524550832a466208645869ef82ca`, following acceptance commit
+`0070b9488cb1e18e56536e6de317c7efac280b5f`. The Qt-free Application value
+`ScheduleBuilderSourceScheduleText` owns a `std::u16string`, defaults empty,
+exposes `value()` and equality, and has no implicit conversion. The existing
+row `day`, `startTime`, and `endTime` fields are typed; regular and intensive
+vectors preserve row order. Application continues validating class IDs only
+and returns rows unchanged. Platform wraps each `QString::toStdU16String()`
+directly. The UI unwraps only at its existing parse point, preserving day
+trim/default, visibility filtering, start/end parsing, and invalid-end
+behavior. Repository and persistence behavior did not change.
+
+Application tests cover the value's type, nonconvertibility, empty default,
+exact whitespace and invalid text, supplementary Unicode, and vector order.
+Platform tests cover row order, a non-ASCII day, and an empty end field;
+`tests/schedule_builder_tests.cpp` updates its aggregate helper.
+
+Incremental builds passed for `ClassMngr`, the Application source test,
+Platform source-port test, ScheduleBuilder tests, and ScheduleWidget tests in
+`build/macos-clang-debug` on macOS 27.0.1 arm64 with Apple LLVM 17.0.0 and Qt
+6.12.0. Application, Platform, and ScheduleBuilder focused CTests passed 3/3.
+The offscreen selector
+`sourceQueryBuildsRegularIntensiveAndTestingSchedules` passed 3 QtTest cases.
+`git diff --check` passed.
+
+The full `ClassMngrScheduleWidgetTests` CTest (#46) timed out after 180.02
+seconds during
+`ScheduleWidgetTests::testingAssignmentWritesMapActionsAndReloadSuccessfulState`,
+after `QSqlQuery::exec: database not open`; prior cases passed and no assertion
+failure was reported. CTest exited 8. The full widget target did not pass, and
+no baseline attribution is established. No full suite or Windows build ran.
+
+Batch488 remains active with eight candidates: F1154–F1157 are complete, none
+are accepted/in progress, and four remain discovered with F1158 next. The
+original discovery order and boundaries are unchanged. The batch has no push
+receipt and is not closed. F629 awaits source-bound Windows x64 layout
+evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates
+remain open.

@@ -66,6 +66,10 @@
   adapter. When a feature path switches from a legacy repository read to its
   detailed result, update the fixture to supply, count, and fail that detailed
   call, and delegate the legacy stub through it when both paths remain tested.
+- Keep source schedule day and time text as exact UTF-16 values through the
+  Application read boundary, including malformed values and original row
+  order. Defer trimming and time parsing to the Schedule Builder consumer so
+  its established fallback and skip behavior remains the interpretation point.
 - The Sub Prep page test target uses settings-repository stubs for UI failure
   feedback; the focused preference-port CTest owns SQLite-trigger write-error
   coverage. Inject failures through the UI target's active stub/session rather
