@@ -56500,3 +56500,31 @@ Focused targets are `ClassMngr`,
 `ClassMngrSubPrepPageTests` (run the selected fallback case above for the page
 integration). At acceptance time, no F1228 implementation or verification had
 started.
+
+### F1228 Sub Prep visible-class ordering positions complete - 2026-10-21
+
+F1228 completed at implementation commit `4d9a7047` (`Phase2 - Type Sub Prep
+visible row indexes`), following acceptance-record commit `3e9287eb`.
+`SubPrepVisibleClassRowIndex` is a distinct explicit `std::size_t` value type
+with zero default, private storage, `.rawValue()`, equality, and no implicit
+conversions. `orderSubPrepVisibleClassRows` returns typed positions into its
+input facts. The policy's comparator tuple, literal sentinel behavior,
+`std::stable_sort`, and exact-tie input order remain unchanged.
+
+The Feature list model unwraps a position at aligned fact/label access and
+maps it through `filteredRows` to the original projection row. Grade filtering,
+visible order, class ID roles, `rowForClassId`, and class-ID selection fallback
+remain intact. The Application tests cover wrapper semantics, typed result
+positions, empty input, tuple ordering, sentinels, and exact ties. The list
+model assertions cover class IDs, roles, and row lookups; the selected page
+case covers projection input order, sorted visible order, and fallback after
+the selected class disappears.
+
+The Executor built `ClassMngr`, the policy, list-model, and page test targets
+in `build/macos-clang-debug`. The independent Tester confirmed those targets
+were up to date, passed both focused CTests (policy and list model), and passed
+`removedSelectionFallsBackToSortedFirstClassAndLoadsItsDetails` in
+`ClassMngrSubPrepPageTests`. `git diff --check` passed. The list-model run
+emitted macOS pasteboard and LaunchServices diagnostics but exited
+successfully. This was incremental macOS `arm64;x86_64` Debug verification; no
+full suite or Windows run is claimed.
