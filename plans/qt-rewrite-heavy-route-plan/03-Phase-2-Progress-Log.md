@@ -52246,3 +52246,41 @@ Batch489 remains active with F1162–F1164 complete and F1165–F1170 discovered
 order; F1165 is next. Batch489 remains unpushed until F1170. F629 awaits
 source-bound Windows x64 layout evidence; the user cannot run Windows now, and
 the Phase 0 and Phase 2 gates remain open.
+
+### F1165 Schedule Import projected state time accepted before implementation - 2026-10-20
+
+F1165 is accepted/in progress. Replace `ScheduleImportStateTime`'s raw
+`dayIndex`, `startMinute`, and `endMinute` integers with one
+`std::optional<Domain::ScheduleTime>`. Retain `dayLabel`, `startLabel`, and
+`endLabel` exactly for invalid-projection diagnostics. Both the repository and
+review-dialog producers construct the optional typed value from their parsed
+integers through `Domain::ScheduleTime::fromMinutes`; the `-1` parse sentinel,
+including default-initialized state, and any other invalid tuple map to
+`std::nullopt` and continue through `InvalidProjectedTime`. The existing
+`ScheduleImportProjectedTime` remains valid and carries `ScheduleTime`.
+
+Preserve the `InvalidProjectedTime` code, original class/day/start/end labels,
+label-rendered diagnostic format, and validation precedence: enum errors,
+candidate indexes, teacher resolution, class resolution, invalid projected
+times, then overlap. Preserve normal conflict ordering and Apply persistence
+from display labels. Do not change raw import text, file formats, schema,
+repository policy, or the separate conflict-presentation `INT_MAX` sentinel.
+
+Acceptance evidence is `schedule_import_overlap_projection.h`, the state
+validation/projection contracts, both producers in
+`schedule_import_repository.cpp` and `schedule_import_review_dialog.cpp`, the
+validation tests, and existing Schedule Import Apply/review-dialog tests.
+Focused verification is expected from
+`ClassMngrNextApplicationScheduleImportStateValidationTests`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests` as
+applicable. Cover the typed tuple, `-1` in each parsed component and default
+state, exact invalid-projection code/labels and precedence, and existing
+Apply/review behavior. Record only actual evidence; obtain independent Tester
+review and run `git diff --check`. No full-suite or Windows claim is implied.
+Implementation and verification have not started.
+
+Batch489 remains active with nine candidates: F1162–F1164 complete, F1165
+accepted/in progress, and F1166–F1170 discovered in order. F1166 is next after
+F1165 closes. Batch489 remains unpushed until F1170. F629 awaits source-bound
+Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0
+and Phase 2 gates remain open.
