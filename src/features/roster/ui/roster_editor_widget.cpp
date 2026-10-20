@@ -568,8 +568,10 @@ QStringList RosterEditorWidget::questionableKoreanNameRows() const
 
         names.append(
             tr("Row %1: %2")
-                .arg(issue.row + 1)
-                .arg(roster.rows.value(issue.row).value(issue.column))
+                .arg(issue.row.rawValue() + 1)
+                .arg(roster.rows.value(issue.row.rawValue()).value(
+                    issue.column.rawValue()
+                    ))
             );
     }
 

@@ -87,12 +87,60 @@ enum class RosterSaveIssueCode
 using RosterSaveIssueArgument =
     std::variant<std::int64_t, std::u16string, std::vector<int>>;
 
+class RosterSaveIssueRowIndex final
+{
+public:
+    constexpr RosterSaveIssueRowIndex() noexcept = default;
+
+    explicit constexpr RosterSaveIssueRowIndex(const int value) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const RosterSaveIssueRowIndex&,
+        const RosterSaveIssueRowIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = -1;
+};
+
+class RosterSaveIssueColumnIndex final
+{
+public:
+    constexpr RosterSaveIssueColumnIndex() noexcept = default;
+
+    explicit constexpr RosterSaveIssueColumnIndex(const int value) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const RosterSaveIssueColumnIndex&,
+        const RosterSaveIssueColumnIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = -1;
+};
+
 struct RosterSaveIssue final
 {
     RosterSaveIssueCode code;
     std::u16string field;
-    int row = -1;
-    int column = -1;
+    RosterSaveIssueRowIndex row;
+    RosterSaveIssueColumnIndex column;
     RosterSaveIssueSeverity severity = RosterSaveIssueSeverity::Error;
     std::map<std::string, RosterSaveIssueArgument> arguments;
 
@@ -208,7 +256,8 @@ inline void lengthIssue(RosterSavePreparation& result, const std::u16string_view
     {
         result.issues.push_back({
             .code = RosterSaveIssueCode::ValidationLengthOutOfBounds, .field = field,
-            .row = row, .column = column,
+            .row = RosterSaveIssueRowIndex{row},
+            .column = RosterSaveIssueColumnIndex{column},
             .arguments = {{"length", static_cast<std::int64_t>(value.size())},
                           {"minimum", static_cast<std::int64_t>(minimum)},
                           {"maximum", static_cast<std::int64_t>(maximum)}}
@@ -224,7 +273,14 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
                             const RosterSaveIssueSeverity severity = RosterSaveIssueSeverity::Error,
                             std::map<std::string, RosterSaveIssueArgument> arguments = {})
     {
-        result.issues.push_back({code, field, row, column, severity, std::move(arguments)});
+        result.issues.push_back({
+            code,
+            field,
+            RosterSaveIssueRowIndex{row},
+            RosterSaveIssueColumnIndex{column},
+            severity,
+            std::move(arguments)
+        });
     };
     if (!korean)
     {
@@ -312,7 +368,9 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
             {
                 result.issues.push_back({.code = RosterSaveIssueCode::RosterColumnDuplicate,
                     .field = field,
-                    .column = static_cast<int>(column),
+                    .column = RosterSaveIssueColumnIndex{
+                        static_cast<int>(column)
+                        },
                     .arguments = {{"duplicateColumn", static_cast<std::int64_t>(previous)}}});
                 break;
             }
@@ -339,7 +397,8 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
         if (row.size() > roster.columns.size())
         {
             result.issues.push_back({.code = RosterSaveIssueCode::RosterRowTooManyCells,
-                .field = rowField, .row = r,
+                .field = rowField,
+                .row = RosterSaveIssueRowIndex{r},
                 .arguments = {{"cellCount", static_cast<std::int64_t>(row.size())},
                               {"columnCount", static_cast<std::int64_t>(roster.columns.size())}}});
         }
@@ -361,7 +420,9 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
             {
                 result.issues.push_back({.code = RosterSaveIssueCode::RosterStudentNameRequired,
                     .field = field,
-                    .row = r, .column = column, .arguments = {{"field", field}}});
+                    .row = RosterSaveIssueRowIndex{r},
+                    .column = RosterSaveIssueColumnIndex{column},
+                    .arguments = {{"field", field}}});
             }
         }
         if (!trimQtWhitespace(Names::cell(row, english)).empty())
@@ -387,10 +448,14 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
             {
                 result.issues.push_back({.code = RosterSaveIssueCode::StudentNameDuplicatePair,
                     .field = u"English",
-                    .row = row, .column = english, .arguments = {{"duplicateRows", rows}}});
+                    .row = RosterSaveIssueRowIndex{row},
+                    .column = RosterSaveIssueColumnIndex{english},
+                    .arguments = {{"duplicateRows", rows}}});
                 result.issues.push_back({.code = RosterSaveIssueCode::StudentNameDuplicatePair,
                     .field = u"Korean",
-                    .row = row, .column = korean, .arguments = {{"duplicateRows", rows}}});
+                    .row = RosterSaveIssueRowIndex{row},
+                    .column = RosterSaveIssueColumnIndex{korean},
+                    .arguments = {{"duplicateRows", rows}}});
             }
         }
     }

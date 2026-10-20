@@ -46,7 +46,7 @@ inline ValidationResult validation(
         }
         result.add({.code = QString::fromStdString(
                 std::string(rosterSaveIssueCodeKey(source.code))), .field = text(source.field),
-            .row = source.row, .column = source.column,
+            .row = source.row.rawValue(), .column = source.column.rawValue(),
             .severity = source.severity == RosterSaveIssueSeverity::Error
                 ? ValidationSeverity::Error : ValidationSeverity::Warning,
             .arguments = std::move(arguments)});

@@ -136,8 +136,13 @@ private:
             if (!first)
                 result += "; ";
             first = false;
-            if (issue.row >= 0 && issue.field.find(u'[') == std::u16string::npos)
-                result += "row " + std::to_string(issue.row + 1) + ", ";
+            if (issue.row.rawValue() >= 0
+                && issue.field.find(u'[') == std::u16string::npos)
+            {
+                result += "row "
+                    + std::to_string(issue.row.rawValue() + 1)
+                    + ", ";
+            }
             if (!issue.field.empty())
                 result += utf8(issue.field) + ": ";
             result += std::string(rosterSaveIssueCodeKey(issue.code));

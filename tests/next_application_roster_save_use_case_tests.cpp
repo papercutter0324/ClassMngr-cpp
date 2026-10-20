@@ -16,6 +16,41 @@ static_assert(!std::is_same_v<
     Application::RosterSaveIssueCode,
     Application::SpeakingEvaluationValidationCode
     >);
+static_assert(std::is_same_v<
+    decltype(Application::RosterSaveIssue::row),
+    Application::RosterSaveIssueRowIndex
+    >);
+static_assert(std::is_same_v<
+    decltype(Application::RosterSaveIssue::column),
+    Application::RosterSaveIssueColumnIndex
+    >);
+static_assert(std::is_same_v<
+    decltype(Application::RosterSaveIssueRowIndex{}.rawValue()),
+    int
+    >);
+static_assert(std::is_same_v<
+    decltype(Application::RosterSaveIssueColumnIndex{}.rawValue()),
+    int
+    >);
+static_assert(!std::is_convertible_v<int, Application::RosterSaveIssueRowIndex>);
+static_assert(!std::is_convertible_v<Application::RosterSaveIssueRowIndex, int>);
+static_assert(!std::is_convertible_v<int, Application::RosterSaveIssueColumnIndex>);
+static_assert(!std::is_convertible_v<Application::RosterSaveIssueColumnIndex, int>);
+
+constexpr Application::RosterSaveIssueRowIndex DefaultRosterIssueRow{};
+constexpr Application::RosterSaveIssueColumnIndex DefaultRosterIssueColumn{};
+constexpr Application::RosterSaveIssueRowIndex ExplicitRosterIssueRow{14};
+constexpr Application::RosterSaveIssueColumnIndex ExplicitRosterIssueColumn{6};
+static_assert(DefaultRosterIssueRow.rawValue() == -1);
+static_assert(DefaultRosterIssueColumn.rawValue() == -1);
+static_assert(ExplicitRosterIssueRow.rawValue() == 14);
+static_assert(ExplicitRosterIssueColumn.rawValue() == 6);
+static_assert(
+    Application::RosterSaveIssueRowIndex{14} == ExplicitRosterIssueRow
+    );
+static_assert(
+    Application::RosterSaveIssueColumnIndex{6} == ExplicitRosterIssueColumn
+    );
 
 namespace
 {
@@ -294,10 +329,18 @@ void NextApplicationRosterSaveUseCaseTests::directPreparationPreservesStructureA
         "roster.column_widths.invalid_count", "roster.rows.too_many",
         "roster.row.too_many_cells", "validation.length.out_of_bounds",
         "roster.student_name.required", "student_name.english.invalid_characters"}));
+    const auto& bothCoordinatesAbsent = prepared.issues[0];
+    QVERIFY(bothCoordinatesAbsent.code == Application::RosterSaveIssueCode::RosterColumnRequired);
+    QVERIFY(bothCoordinatesAbsent.row == Application::RosterSaveIssueRowIndex{});
+    QVERIFY(bothCoordinatesAbsent.column == Application::RosterSaveIssueColumnIndex{});
+    const auto& columnOnly = prepared.issues[5];
+    QVERIFY(columnOnly.code == Application::RosterSaveIssueCode::RosterColumnDuplicate);
+    QVERIFY(columnOnly.row == Application::RosterSaveIssueRowIndex{});
+    QVERIFY(columnOnly.column == Application::RosterSaveIssueColumnIndex{1});
     const auto& required = prepared.issues[12];
     QCOMPARE(required.field, std::u16string(u"rows[0].Korean"));
-    QCOMPARE(required.row, 0);
-    QCOMPARE(required.column, -1);
+    QVERIFY(required.row == Application::RosterSaveIssueRowIndex{0});
+    QVERIFY(required.column == Application::RosterSaveIssueColumnIndex{});
     QCOMPARE(std::get<std::u16string>(required.arguments.at("field")), required.field);
     const auto& cell = prepared.issues[11];
     QCOMPARE(cell.field, std::u16string(u"rows[0].cells[4]"));

@@ -119,18 +119,20 @@ public:
         QStringList names;
         for (const auto& issue : issues)
         {
-            if (issue.row < 0 || issue.column < 0
-                || static_cast<std::size_t>(issue.row) >= preparedTarget.rows.size()
-                || static_cast<std::size_t>(issue.column)
-                    >= preparedTarget.rows[static_cast<std::size_t>(issue.row)].size())
+            const int row = issue.row.rawValue();
+            const int column = issue.column.rawValue();
+            if (row < 0 || column < 0
+                || static_cast<std::size_t>(row) >= preparedTarget.rows.size()
+                || static_cast<std::size_t>(column)
+                    >= preparedTarget.rows[static_cast<std::size_t>(row)].size())
             {
                 continue;
             }
 
-            const auto& name = preparedTarget.rows[static_cast<std::size_t>(issue.row)]
-                [static_cast<std::size_t>(issue.column)];
+            const auto& name = preparedTarget.rows[static_cast<std::size_t>(row)]
+                [static_cast<std::size_t>(column)];
             names.append(RosterModel::tr("Row %1: %2")
-                .arg(issue.row + 1)
+                .arg(row + 1)
                 .arg(Ui::QtTextAdapter::fromUtf16String(name)));
         }
         if (names.isEmpty())

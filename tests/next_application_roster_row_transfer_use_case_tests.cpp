@@ -313,8 +313,10 @@ bool warningOnlySnapshotPreparationStillSaves()
             || confirmation.issues.size() != 1)
             return false;
         const auto& issue = confirmation.issues.front();
-        if (rosterSaveIssueCodeKey(issue.code) != expectedCode || issue.row != 0
-            || issue.column != 1 || issue.severity != RosterSaveIssueSeverity::Warning
+        if (rosterSaveIssueCodeKey(issue.code) != expectedCode
+            || issue.row.rawValue() != 0
+            || issue.column.rawValue() != 1
+            || issue.severity != RosterSaveIssueSeverity::Warning
             || confirmation.target->rows[0][1] != name
             || *confirmation.target != ports.saved->targetRoster)
             return false;
