@@ -57176,3 +57176,34 @@ on this macOS host, use the existing incremental `build/macos-clang-debug`,
 run GUI tests offscreen if needed, and report focused results without claiming
 Windows or full-suite coverage. At acceptance time, no implementation, tests,
 or build had started.
+
+### F1236 Shared calendar workbook cell coordinates complete - 2026-10-21
+
+F1236 completed after acceptance commit `2788bf05` with code commit
+`12b6568df8aafac226d7f7eea13057b334775858`. The implementation adds bounded
+shared `CellPosition`/`CellRange` coordinates, uses typed positions for reader
+comment/note association and Calendar, Schedule Import, and Teacher Import
+lookup keys, and validates merged-range endpoints. It preserves worksheet/XML
+traversal and source-cell order, duplicate-coordinate last-wins lookup,
+diagnostic/parser order, single-cell references, merged top-left fallback,
+Schedule Import last-row extension, and high-row note association.
+The maximum-row note regression is covered at `A1048576`.
+
+The Executor's build passed using the existing `build/macos-clang-debug` tree.
+The independent Tester also ran its focused build there; Ninja reported no
+work to do. With `QT_QPA_PLATFORM=offscreen`, the default six-CTest run passed
+five tests. Calendar Event Import parity failed before assertions because
+`server.listen(QHostAddress::LocalHost, 0)` returned false in the sandbox.
+After loopback-only sandbox escalation was permitted, the isolated parity
+CTest passed 1/1. A Calendar Import rerun including the over-limit merge-row
+case also passed. Across those runs, all six focused tests passed:
+`ClassMngrCalendarImportTests`, `ClassMngrScheduleImportTests`,
+`ClassMngrTeacherImportTests`, `ClassMngrCalendarEventImportParityTests`,
+`ClassMngrScheduleImportDialogTests`, and
+`ClassMngrTeacherImportDialogTests`. `git diff --check` passed.
+
+The standard `windows-x64-debug` preset is disabled on this macOS host. Windows
+x64 and the full suite remain unverified. Both Batch498 slices, F1235 and
+F1236, are complete locally; Batch498's push is still pending. Batch499 stays
+queued, and F1237 is next for acceptance only after Batch498 closes and is
+pushed.

@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1235 is complete and F1236 is accepted awaiting implementation in active Batch498; Batch499 is discovered but queued until Batch498 closes, and F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: F1235 and F1236 are complete locally in Batch498 with its push pending; Batch499 remains queued, with F1237 next after Batch498 closes and is pushed, while F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1236 is accepted before implementation with `CalendarImport::CellPosition` as the shared coordinate-pair contract (see [F1236 acceptance](03-Phase-2-Progress-Log.md#f1236-shared-calendar-workbook-cell-coordinates-accepted-before-implementation-2026-10-21)). Batch498 remains active with F1235 complete; Batch499 is discovered and queued until Batch498 closes. F629 and the Phase 0 and Phase 2 gates remain open.
+F1236 completed at code commit `12b6568d`; the six focused CTests passed across the default and isolated offscreen runs (see [F1236 completion](03-Phase-2-Progress-Log.md#f1236-shared-calendar-workbook-cell-coordinates-complete-2026-10-21)). Windows x64 and the full suite remain unverified. Batch498 is complete locally with its push pending; Batch499 remains queued, with F1237 next after Batch498 closes and is pushed. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,16 +72,16 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch498 (2 candidates; 1 complete, 1 accepted, 0 discovered)
+#### Batch498 complete locally; push pending (2 candidates; 2 complete)
 
 1. F1235 - **Complete.** Use typed `Domain::Weekday` values in `ScheduleTime` and migrate boundary callers with explicit mappings; preserve weekday, minute, overlap, projection, label, and ordering behavior.
-2. F1236 - **Accepted; awaiting implementation.** Add shared `CalendarImport::CellPosition` row/column coordinates and typed range endpoints; preserve one-based bounds, inclusive containment, lookup precedence, worksheet order, and merged-cell behavior.
+2. F1236 - **Complete.** Add bounded shared `CalendarImport::CellPosition`/`CellRange` coordinates and typed lookup keys; preserve worksheet order, duplicate last-wins behavior, merge endpoint validation, and high-row note association.
 
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 #### Discovered batch: Batch499 (6 candidates; not active until Batch498 closes)
 
-1. F1237 - **Discovered.** Type Analytics roster-name row count; preserve physical sparse/blank row count and unfiltered query behavior.
+1. F1237 - **Discovered; next after Batch498 closes and is pushed.** Type Analytics roster-name row count; preserve physical sparse/blank row count and unfiltered query behavior.
 2. F1238 - **Discovered.** Type `GregorianDate::weekday()` while preserving ISO Monday=1 through Sunday=7 and explicit mapping to `Domain::Weekday`.
 3. F1239 - **Discovered.** Type Class Transfer weekly weekday candidates; preserve invalid-day rejection, half-open overlap, and Sunday overnight wrapping.
 4. F1240 - **Discovered.** Type Speaking Evaluation UTF-16 text-match spans; preserve matching and extraction behavior.
