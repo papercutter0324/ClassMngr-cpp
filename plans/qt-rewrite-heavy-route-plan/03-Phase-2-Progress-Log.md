@@ -54252,3 +54252,48 @@ documentation. The Git operator confirmed the local `origin/Qt-Rewrite`
 remote-tracking ref matches HEAD and the worktree is clean. An extra
 `git ls-remote` recheck could not resolve `github.com` because of DNS; the
 push itself reported the branch update. No tests were run for this push.
+
+### F1192 Class Analytics counts complete - 2026-10-20
+
+F1192 completed at source commit
+`f8cb7d31a69a38ee125b53c49f0415cf746ecf7f` (`Phase2 - Complete F1192 Class
+Analytics counts`). The query now exposes separate typed roster-row and
+fully-scored-student counts; Feature and the page preserve their existing
+row/student meaning and display.
+
+The accepted four-target macOS set in `build/macos-clang-debug` was
+`ClassMngr`,
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`,
+and `ClassMngrClassAnalyticsPageReadParityTests`. Independent verification's
+incremental build command reported no work remaining after the executor build,
+so it did not independently rebuild those targets. The three focused CTests
+passed: `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`,
+and `ClassMngrClassAnalyticsPageReadParityTests`. `git diff --check` passed.
+No full suite or Windows result is claimed.
+
+### F1193 Class Analytics grade distribution accepted before implementation - 2026-10-20
+
+F1193 is accepted/current before implementation. Add a Qt-free
+`Application::ClassAnalyticsGradeDistribution` containing exactly five `int`
+counts keyed by `Domain::SpeakingEvaluationGrade` in C/B/B+/A/A+ order.
+Preserve zero and empty behavior. Grade-based lookup must safely report invalid
+enum values without indexing beyond the five bins, and accumulation must use
+typed grades rather than duplicate numeric-position arithmetic.
+
+Preserve one bin increment per consolidated student per scored criterion,
+after existing duplicate-row averaging and rounding. Preserve roster filtering,
+evaluation selection, exclusion of unscored criteria, criterion count and
+average, and no-data behavior. The Class Analytics page adapter must use the
+same grade keys while retaining current legacy labels and displayed order.
+Add direct query coverage for exact counts in every grade bin, including
+zero/default behavior and invalid-lookup safety as appropriate.
+
+Focused verification is to build `ClassMngr`,
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`, and
+`ClassMngrClassAnalyticsPageReadParityTests` in `build/macos-clang-debug`; run
+the matching `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`
+and `ClassMngrClassAnalyticsPageReadParityTests` CTests and `git diff --check`.
+This acceptance was recorded before F1193 implementation; no F1193
+implementation or verification result is claimed here.

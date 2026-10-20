@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1192 accepted; Batch492 pushed)
+### Current checkpoint - 2026-10-20 (F1193 accepted; Batch492 pushed)
 
 Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
@@ -63,15 +63,18 @@ records the handoff. F1178–F1191 are complete. Batch492 is complete and
 pushed to `origin/Qt-Rewrite` at
 `3e6c09d9e5a82bc23281a76970683e4372dcec9d`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)
 records the handoff. Batch493 is active with ten ordered candidates; F1192 is
-accepted/current before implementation and F1193–F1201 are discovered.
-Acceptance, discovery, and verification evidence are in the [Phase 2 progress
+complete at source/test commit `f8cb7d31`, F1193 is accepted/current, and
+F1194–F1201 are discovered. Acceptance, discovery, and verification evidence
+are in the [Phase 2 progress
 log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
-F1191 completed at source/test commit `6a7cb2eb`. Its typed navigation rank
-preserves the 1000 sentinel, valid 16:40 collision, tuple order, label
-comparison, class-ID tie-break, and strict weak ordering. The incremental
-macOS build covered three affected targets; both focused CTests and
-`git diff --check` passed. No full suite or Windows build ran.
+F1192 completed at source/test commit `f8cb7d31`. Distinct Qt-free wrappers
+preserve roster-row and fully-scored-student counts, including zero values,
+while the Feature adapter retains its existing narrowing and display. The
+incremental macOS build covered four targets; the independent verification
+build found no work remaining, all three focused CTests passed, and
+`git diff --check` passed. Page parity remains `2 / 3`. No full suite or
+Windows build ran.
 
 F1175's Class Transfer test still has one unresolved teacher-fallback label
 failure among 64 cases; no clean baseline proves it pre-existing. F629 awaits
