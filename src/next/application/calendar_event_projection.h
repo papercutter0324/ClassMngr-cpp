@@ -62,6 +62,30 @@ inline constexpr std::size_t kCalendarEventMaxLocationLength =
 inline constexpr std::size_t kCalendarEventMaxNotesLength =
     kCalendarEventSummaryMaxNotesLength;
 
+class CalendarEventTypeName final
+{
+public:
+    CalendarEventTypeName() = default;
+
+    explicit CalendarEventTypeName(std::string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const std::string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const CalendarEventTypeName&,
+        const CalendarEventTypeName&
+        ) = default;
+
+private:
+    std::string m_value;
+};
+
 // A summary contains only event-list metadata. Dates and times are opaque
 // adapter-neutral text (ISO-like text is recommended at the boundary), so
 // this contract does not parse formats, time zones, or date ordering.
@@ -85,7 +109,7 @@ struct CalendarEventSummary final
     std::string notes;
     std::int32_t order = 0;
     bool allDay = false;
-    std::string eventType = "Other";
+    CalendarEventTypeName eventType{"Other"};
     Domain::CalendarEventTimeStatus timeStatus =
         Domain::CalendarEventTimeStatus::Timed;
     std::optional<Domain::CalendarEventSeriesId> repeatSeriesId;
@@ -252,7 +276,7 @@ template <typename TypedId>
     }
 
     if (!isRequiredText(
-            event.eventType,
+            event.eventType.value(),
             kCalendarEventSummaryMaxEventTypeLength
             ))
     {

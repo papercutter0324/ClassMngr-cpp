@@ -180,7 +180,7 @@ QVariantList CalendarEventModel::eventsForDate(
             );
         value.insert(
             QStringLiteral("eventType"),
-            projectionText(event.eventType)
+            projectionText(event.eventType.value())
             );
         value.insert(
             QStringLiteral("timeStatus"),

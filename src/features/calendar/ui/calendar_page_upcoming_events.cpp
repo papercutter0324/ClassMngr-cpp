@@ -1031,7 +1031,7 @@ std::vector<CalendarEventSummary> CalendarPage::filterUpcomingEvents(
         if (
             options.activeTypes.contains(
                 normalizedCalendarEventType(
-                    projectionText(event.eventType)
+                    projectionText(event.eventType.value())
                     )
                 )
             && calendarEventVisible(event, options)
@@ -1539,7 +1539,7 @@ QWidget* CalendarPage::createUpcomingEventRow(
     auto* type =
         new QPushButton(
             normalizedCalendarEventType(
-                projectionText(event.eventType)
+                projectionText(event.eventType.value())
                 ),
             row
             );
@@ -1558,13 +1558,13 @@ QWidget* CalendarPage::createUpcomingEventRow(
     type->setToolTip(
         tr("Choose %1 color").arg(
             normalizedCalendarEventType(
-                projectionText(event.eventType)
+                projectionText(event.eventType.value())
                 )
             )
         );
     type->setStyleSheet(
         eventTypeBadgeStyle(
-            projectionText(event.eventType),
+            projectionText(event.eventType.value()),
             eventFont
             )
         );
@@ -1607,7 +1607,7 @@ QWidget* CalendarPage::createUpcomingEventRow(
         [this, event]()
         {
             chooseCalendarEventTypeColor(
-                projectionText(event.eventType)
+                projectionText(event.eventType.value())
                 );
         }
         );

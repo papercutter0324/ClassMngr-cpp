@@ -203,7 +203,7 @@ std::optional<CalendarEvent> legacyEventFromProjection(
     CalendarEvent event;
     event.id = *id;
     event.title = projectionText(summary.title);
-    event.eventType = projectionText(summary.eventType);
+    event.eventType = projectionText(summary.eventType.value());
     event.timeStatus =
         ClassMngr::Next::Platform::calendarEventTimeStatusToLegacyText(
             summary.timeStatus

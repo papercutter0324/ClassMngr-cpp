@@ -966,7 +966,7 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
     QCOMPARE(events.at(0).endDate, std::string("2026-07-02"));
     QCOMPARE(events.at(0).startTime.value(), std::string("08:05"));
     QCOMPARE(events.at(0).endTime.value(), std::string("09:35"));
-    QCOMPARE(events.at(0).eventType, std::string("Workshop"));
+    QCOMPARE(events.at(0).eventType.value(), std::string("Workshop"));
     QCOMPARE(events.at(0).timeStatus, CalendarEventTimeStatus::Timed);
     QVERIFY(events.at(0).repeatSeriesId.has_value());
     QCOMPARE(events.at(0).repeatSeriesId->value(), std::string("series-july"));
@@ -982,14 +982,14 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
     QCOMPARE(events.at(1).endDate, std::string("2026-07-10"));
     QCOMPARE(events.at(1).startTime.value(), std::string("10:00"));
     QCOMPARE(events.at(1).endTime.value(), std::string("11:30"));
-    QCOMPARE(events.at(1).eventType, std::string("Meeting"));
+    QCOMPARE(events.at(1).eventType.value(), std::string("Meeting"));
     QCOMPARE(events.at(1).timeStatus, CalendarEventTimeStatus::Timed);
     QCOMPARE(events.at(1).repeatSeriesId->value(), std::string("series-july"));
     QCOMPARE(events.at(1).order, std::int32_t(1));
 
     QCOMPARE(events.at(2).id.value(), std::to_string(overlapsEndId));
     QCOMPARE(events.at(2).title, std::string("Overlap end"));
-    QCOMPARE(events.at(2).eventType, std::string("Holiday"));
+    QCOMPARE(events.at(2).eventType.value(), std::string("Holiday"));
     QCOMPARE(events.at(2).timeStatus, CalendarEventTimeStatus::Timed);
     QVERIFY(!events.at(2).repeatSeriesId.has_value());
     QCOMPARE(events.at(2).order, std::int32_t(2));
@@ -1049,7 +1049,7 @@ projectsByIdAsOwnedTypedMetadata()
     const CalendarEventSummary& projected = result.value();
     QCOMPARE(projected.id.value(), std::to_string(eventId));
     QCOMPARE(projected.title, std::string("Activation event"));
-    QCOMPARE(projected.eventType, std::string("Workshop"));
+    QCOMPARE(projected.eventType.value(), std::string("Workshop"));
     QCOMPARE(projected.timeStatus, CalendarEventTimeStatus::Unconfirmed);
     QCOMPARE(projected.repeatSeriesId, std::optional<CalendarEventSeriesId>(
         calendarEventSeriesId("series-activation")
@@ -3833,7 +3833,7 @@ preservesAllDayAndUnknownTimePolicy()
     QVERIFY(allDayProjection->allDay);
     QVERIFY(!allDayProjection->startTime.has_value());
     QVERIFY(!allDayProjection->endTime.has_value());
-    QCOMPARE(allDayProjection->eventType, std::string("Vacation"));
+    QCOMPARE(allDayProjection->eventType.value(), std::string("Vacation"));
     QCOMPARE(allDayProjection->timeStatus, CalendarEventTimeStatus::Timed);
     QCOMPARE(
         allDayProjection->repeatSeriesId->value(),
@@ -3847,7 +3847,7 @@ preservesAllDayAndUnknownTimePolicy()
     QVERIFY(!unknownProjection->allDay);
     QVERIFY(!unknownProjection->startTime.has_value());
     QVERIFY(!unknownProjection->endTime.has_value());
-    QCOMPARE(unknownProjection->eventType, std::string("Holiday"));
+    QCOMPARE(unknownProjection->eventType.value(), std::string("Holiday"));
     QCOMPARE(unknownProjection->timeStatus, CalendarEventTimeStatus::Unknown);
     QVERIFY(!unknownProjection->repeatSeriesId.has_value());
 
@@ -3859,7 +3859,7 @@ preservesAllDayAndUnknownTimePolicy()
     QVERIFY(allDayById.value().allDay);
     QVERIFY(!allDayById.value().startTime.has_value());
     QVERIFY(!allDayById.value().endTime.has_value());
-    QCOMPARE(allDayById.value().eventType, std::string("Vacation"));
+    QCOMPARE(allDayById.value().eventType.value(), std::string("Vacation"));
     QCOMPARE(allDayById.value().timeStatus, CalendarEventTimeStatus::Timed);
     QCOMPARE(
         allDayById.value().repeatSeriesId,
@@ -3873,7 +3873,7 @@ preservesAllDayAndUnknownTimePolicy()
     QVERIFY(!unknownById.value().allDay);
     QVERIFY(!unknownById.value().startTime.has_value());
     QVERIFY(!unknownById.value().endTime.has_value());
-    QCOMPARE(unknownById.value().eventType, std::string("Holiday"));
+    QCOMPARE(unknownById.value().eventType.value(), std::string("Holiday"));
     QCOMPARE(unknownById.value().timeStatus, CalendarEventTimeStatus::Unknown);
     QVERIFY(!unknownById.value().repeatSeriesId.has_value());
 
@@ -4668,7 +4668,7 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
     static_assert(!std::is_move_constructible_v<Port>);
     static_assert(std::is_same_v<
         decltype(std::declval<const CalendarEventSummary>().eventType),
-        std::string
+        CalendarEventTypeName
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<const CalendarEventSummary>().timeStatus),

@@ -87,7 +87,7 @@ CalendarEventEditDraft calendarEventDraftFromProjection(
     draft.startTime = summary.startTime;
     draft.endTime = summary.endTime;
     draft.allDay = summary.allDay;
-    draft.eventType = summary.eventType;
+    draft.eventType = summary.eventType.value();
     draft.timeStatus = summary.timeStatus;
     return draft;
 }

@@ -22,7 +22,7 @@ struct CalendarEventVisibilityPolicy final
     {
         if (CalendarEventStartOfTermPolicy::shouldHideEvent(
                 event.title,
-                event.eventType,
+                event.eventType.value(),
                 hideStartOfTermEvents
                 ))
         {

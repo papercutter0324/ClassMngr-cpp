@@ -249,7 +249,7 @@ SummaryConversionResult summaryFromEvent(
         std::string{},
         order,
         source.allDay,
-        *eventType,
+        ClassMngr::Next::Application::CalendarEventTypeName(*eventType),
         timeStatus,
         std::move(repeatSeriesId)
     });

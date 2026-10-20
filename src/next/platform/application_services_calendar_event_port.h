@@ -422,7 +422,7 @@ private:
             std::string{},
             order,
             source.allDay,
-            *eventType,
+            Application::CalendarEventTypeName(*eventType),
             timeStatus,
             std::move(repeatSeriesId)
         };

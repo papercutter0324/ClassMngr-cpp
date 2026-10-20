@@ -211,7 +211,7 @@ CalendarEventProjectionInput validInput()
     input.events[0].title = "Staff meeting";
     input.events[0].startDate = "2026-09-20";
     input.events[0].endDate = "2026-09-20";
-    input.events[0].eventType = "Meeting";
+    input.events[0].eventType = CalendarEventTypeName(std::string("Meeting"));
     input.events[0].timeStatus = CalendarEventTimeStatus::Timed;
     input.events[0].repeatSeriesId = calendarEventSeriesId("series-1");
     input.events[0].location = "Main campus";
@@ -219,7 +219,7 @@ CalendarEventProjectionInput validInput()
     input.events[1].title = "Campus holiday";
     input.events[1].startDate = "2026-09-21";
     input.events[1].endDate = "2026-09-22";
-    input.events[1].eventType = "Holiday";
+    input.events[1].eventType = CalendarEventTypeName(std::string("Holiday"));
     input.events[1].timeStatus = CalendarEventTimeStatus::Timed;
     input.events[1].repeatSeriesId.reset();
     input.events[1].location.clear();
@@ -615,6 +615,9 @@ void NextApplicationCalendarEventTests::typedReferencesAndTemporalFieldsRemainEx
     static_assert(!std::is_convertible_v<ClassId, CalendarEventId>);
     static_assert(!std::is_convertible_v<CampusId, CalendarEventId>);
     static_assert(!std::is_convertible_v<CalendarEventSeriesId, CalendarEventId>);
+    static_assert(std::is_constructible_v<CalendarEventTypeName, std::string>);
+    static_assert(!std::is_convertible_v<std::string, CalendarEventTypeName>);
+    static_assert(!std::is_convertible_v<const char*, CalendarEventTypeName>);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSummary>().id),
         CalendarEventId
@@ -641,7 +644,7 @@ void NextApplicationCalendarEventTests::typedReferencesAndTemporalFieldsRemainEx
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSummary>().eventType),
-        std::string
+        CalendarEventTypeName
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSummary>().timeStatus),
@@ -668,6 +671,16 @@ void NextApplicationCalendarEventTests::typedReferencesAndTemporalFieldsRemainEx
         std::optional<CalendarEventSeriesId>
         >);
 
+    const CalendarEventTypeName emptyType;
+    QCOMPARE(emptyType.value(), std::string{});
+    const CalendarEventTypeName equalType(std::string("Workshop"));
+    QVERIFY(equalType == CalendarEventTypeName(std::string("Workshop")));
+    QVERIFY(!(equalType == CalendarEventTypeName(std::string("Holiday"))));
+    QCOMPARE(
+        calendarEventSummary("default-event").eventType.value(),
+        std::string("Other")
+        );
+
     const auto result = CalendarEventProjection::create(validInput());
 
     QVERIFY(result);
@@ -681,7 +694,7 @@ void NextApplicationCalendarEventTests::typedReferencesAndTemporalFieldsRemainEx
     QCOMPARE(event->endDate, std::string("2026-09-20"));
     QCOMPARE(event->startTime.value(), std::string("09:00"));
     QCOMPARE(event->endTime.value(), std::string("10:00"));
-    QCOMPARE(event->eventType, std::string("Meeting"));
+    QCOMPARE(event->eventType.value(), std::string("Meeting"));
     QCOMPARE(event->timeStatus, CalendarEventTimeStatus::Timed);
     QVERIFY(event->hasRepeatSeries());
     QVERIFY(event->hasRepeatSeriesId());
@@ -744,16 +757,16 @@ eventClassificationAndRepeatSeriesFieldsRemainBounded()
     const auto result = CalendarEventProjection::create(validInput());
     QVERIFY(result);
     const auto event = result.value().events().front();
-    QCOMPARE(event.eventType, std::string("Meeting"));
+    QCOMPARE(event.eventType.value(), std::string("Meeting"));
     QCOMPARE(event.timeStatus, CalendarEventTimeStatus::Timed);
     QCOMPARE(event.repeatSeriesId->value(), std::string("series-1"));
 
     auto exactFields = validInput();
     auto& exactEvent = exactFields.events.front();
-    exactEvent.eventType = std::string(
+    exactEvent.eventType = CalendarEventTypeName(std::string(
         kCalendarEventSummaryMaxEventTypeLength,
         'e'
-        );
+        ));
     exactEvent.timeStatus = CalendarEventTimeStatus::Unconfirmed;
     exactEvent.repeatSeriesId = calendarEventSeriesId(std::string(
         kCalendarEventSummaryMaxRepeatSeriesIdLength,
@@ -764,7 +777,7 @@ eventClassificationAndRepeatSeriesFieldsRemainBounded()
         );
     QVERIFY(exactResult);
     QCOMPARE(
-        exactResult.value().events().front().eventType.size(),
+        exactResult.value().events().front().eventType.value().size(),
         kCalendarEventSummaryMaxEventTypeLength
         );
     QCOMPARE(
@@ -776,12 +789,25 @@ eventClassificationAndRepeatSeriesFieldsRemainBounded()
         kCalendarEventSummaryMaxRepeatSeriesIdLength
         );
 
+    const std::string arbitraryEventType = " Research colloquium ";
+    auto arbitraryTypeInput = validInput();
+    arbitraryTypeInput.events.front().eventType =
+        CalendarEventTypeName(arbitraryEventType);
+    const auto arbitraryTypeResult = CalendarEventProjection::create(
+        std::move(arbitraryTypeInput)
+        );
+    QVERIFY(arbitraryTypeResult);
+    QCOMPARE(
+        arbitraryTypeResult.value().events().front().eventType.value(),
+        arbitraryEventType
+        );
+
     {
         auto input = validInput();
-        input.events.front().eventType = std::string(
+        input.events.front().eventType = CalendarEventTypeName(std::string(
             kCalendarEventSummaryMaxEventTypeLength + 1,
             'e'
-            );
+            ));
         verifyInvalid(CalendarEventProjection::create(std::move(input)));
     }
 
@@ -796,7 +822,7 @@ eventClassificationAndRepeatSeriesFieldsRemainBounded()
 
     {
         auto input = validInput();
-        input.events.front().eventType = " \t";
+        input.events.front().eventType = CalendarEventTypeName(std::string(" \t"));
         verifyInvalid(CalendarEventProjection::create(std::move(input)));
     }
 
@@ -1026,7 +1052,7 @@ void NextApplicationCalendarEventTests::orderingAndSafeValueLookupsAreDeterminis
     eventCopy->title = "Changed outside projection";
     eventCopy->classId.reset();
     eventCopy->order = 99;
-    eventCopy->eventType = "Changed type";
+    eventCopy->eventType = CalendarEventTypeName(std::string("Changed type"));
     eventCopy->repeatSeriesId.reset();
 
     const auto stored = projection.findEvent(calendarEventId("event-1"));
@@ -1034,7 +1060,7 @@ void NextApplicationCalendarEventTests::orderingAndSafeValueLookupsAreDeterminis
     QCOMPARE(stored->title, std::string("Staff meeting"));
     QVERIFY(stored->classId.has_value());
     QCOMPARE(stored->order, std::int32_t(42));
-    QCOMPARE(stored->eventType, std::string("Meeting"));
+    QCOMPARE(stored->eventType.value(), std::string("Meeting"));
     QCOMPARE(stored->repeatSeriesId->value(), std::string("series-1"));
     QCOMPARE(
         projection.findById(calendarEventId("event-1"))->id.value(),
@@ -1123,7 +1149,7 @@ void NextApplicationCalendarEventTests::duplicateAndInvalidValuesReturnStructure
 
     {
         auto input = validInput();
-        input.events.front().eventType.clear();
+        input.events.front().eventType = CalendarEventTypeName{};
         verifyInvalid(CalendarEventProjection::create(std::move(input)));
     }
 
@@ -1212,10 +1238,10 @@ void NextApplicationCalendarEventTests::exactCapsAreAcceptedAndOverflowIsRejecte
     event.endDate = std::string(kCalendarEventSummaryMaxDateLength, 'e');
     event.startTime = std::string(kCalendarEventSummaryMaxTimeLength, 's');
     event.endTime = std::string(kCalendarEventSummaryMaxTimeLength, 'e');
-    event.eventType = std::string(
+    event.eventType = CalendarEventTypeName(std::string(
         kCalendarEventSummaryMaxEventTypeLength,
         'y'
-        );
+        ));
     event.timeStatus = CalendarEventTimeStatus::Unknown;
     event.repeatSeriesId = calendarEventSeriesId(std::string(
         kCalendarEventSummaryMaxRepeatSeriesIdLength,
@@ -1237,7 +1263,7 @@ void NextApplicationCalendarEventTests::exactCapsAreAcceptedAndOverflowIsRejecte
     QCOMPARE(exactEvent.startDate.size(), kCalendarEventSummaryMaxDateLength);
     QCOMPARE(exactEvent.startTime->size(), kCalendarEventSummaryMaxTimeLength);
     QCOMPARE(
-        exactEvent.eventType.size(),
+        exactEvent.eventType.value().size(),
         kCalendarEventSummaryMaxEventTypeLength
         );
     QCOMPARE(exactEvent.timeStatus, CalendarEventTimeStatus::Unknown);
@@ -4656,7 +4682,7 @@ calendarEventVisibilityPolicyComposesStartTermAndCampusRules()
     {
         CalendarEventSummary event = calendarEventSummary("visibility-case");
         event.title = testCase.title;
-        event.eventType = testCase.eventType;
+        event.eventType = CalendarEventTypeName(testCase.eventType);
 
         // The lowercase title models the feature adapter's preprocessed
         // title; normalization remains outside the Qt-free policy.
@@ -4681,7 +4707,7 @@ calendarEventVisibilityPolicyComposesStartTermAndCampusRules()
             campusCheckCalled,
             !CalendarEventStartOfTermPolicy::shouldHideEvent(
                 event.title,
-                event.eventType,
+                event.eventType.value(),
                 testCase.hideStartOfTermEvents
                 )
             );
