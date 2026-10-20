@@ -55477,6 +55477,32 @@ non-conversion, negative/past-end indexes, required names/alias, and accepted
 custom columns. The model suite retains message, data/state, success, and
 signal checks. No full suite or Windows run is claimed.
 
+### F1214 Student name-pair lookup row positions accepted before implementation - 2026-10-20
+
+F1214 is accepted/current based on two independent read-only Explorer reports.
+Give `lookupStudentNamePairPeers` distinct explicit Application types for its
+selected row and returned peer row: `StudentNamePairSelectedRowIndex` and
+`StudentNamePairPeerRowIndex`. Both are backed by `int`, default to `-1`, expose
+`.rawValue()` and equality, and have no implicit conversions. Preserve supplied
+values and do not add constructor range validation. Keep the selected-row
+negative/out-of-range and incomplete-name checks, self-exclusion, peer order,
+name trimming/case behavior, and the existing key/delimiter behavior. Check the
+selected row's range before any conversion to `std::size_t`.
+
+Keep `RosterModel::duplicateNameRows` and
+`SpeakingEvalModel::duplicateNameRows` signatures as `int` and `QList<int>`.
+Wrap the selected Qt row at each Application call and unwrap each typed peer at
+the Qt-list boundary. Update
+`tests/next_application_student_name_pair_lookup_tests.cpp` for distinct typed
+values and preserve its invalid-selection, incomplete-pair, trim/case,
+self-exclusion, and ordered-result checks. Preserve model coverage in
+`tests/roster_model_tests.cpp` and first-peer locate behavior in
+`tests/speaking_eval_page_save_tests.cpp`. Focused targets are
+`ClassMngrNextApplicationStudentNamePairLookupTests`,
+`ClassMngrRosterModelTests`, `ClassMngrSpeakingEvalPageSaveTests` (CTest name
+`SpeakingEvalPageSave`), and affected production target `ClassMngr`. No F1214
+implementation or verification has started.
+
 ### Batch494 push receipt - 2026-10-20
 
 Batch494 is complete and pushed to `origin/Qt-Rewrite`. The normal push
