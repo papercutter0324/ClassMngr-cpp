@@ -13,6 +13,32 @@ namespace ClassMngr::Next::Application
 // modeled range.
 inline constexpr std::size_t RosterModeledRowCount = 25;
 
+class RosterFirstEmptyRowIndex final
+{
+public:
+    constexpr RosterFirstEmptyRowIndex() noexcept = default;
+
+    explicit constexpr RosterFirstEmptyRowIndex(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const RosterFirstEmptyRowIndex&,
+        const RosterFirstEmptyRowIndex&
+        ) = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
 [[nodiscard]] inline bool rosterRowHasData(
     const std::vector<std::u16string>& row
     )
@@ -28,7 +54,7 @@ inline constexpr std::size_t RosterModeledRowCount = 25;
 }
 
 // Returns rows.size() when every row contains data, including an empty input.
-[[nodiscard]] inline std::size_t firstEmptyRosterRow(
+[[nodiscard]] inline RosterFirstEmptyRowIndex firstEmptyRosterRow(
     const std::vector<std::vector<std::u16string>>& rows
     )
 {
@@ -36,10 +62,10 @@ inline constexpr std::size_t RosterModeledRowCount = 25;
     {
         if (!rosterRowHasData(rows[rowIndex]))
         {
-            return rowIndex;
+            return RosterFirstEmptyRowIndex{rowIndex};
         }
     }
-    return rows.size();
+    return RosterFirstEmptyRowIndex{rows.size()};
 }
 
 } // namespace ClassMngr::Next::Application

@@ -121,10 +121,10 @@ QStringList RosterModel::rowValues(
 int RosterModel::firstEmptyRow() const
 {
     const auto rows = applicationRows(m_rows);
-    const std::size_t firstEmpty =
+    const auto firstEmpty =
         ClassMngr::Next::Application::firstEmptyRosterRow(rows);
-    return firstEmpty < rows.size()
-        ? static_cast<int>(firstEmpty)
+    return firstEmpty.rawValue() < rows.size()
+        ? static_cast<int>(firstEmpty.rawValue())
         : -1;
 }
 

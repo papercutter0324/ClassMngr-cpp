@@ -241,15 +241,17 @@ prepareRosterRowTransfer(
         };
     }
 
-    const RosterRowTransferDestinationIndex destinationRow{
-        firstEmptyRosterRow(targetRows)
-    };
-    if (destinationRow.rawValue() == targetRows.size())
+    const RosterFirstEmptyRowIndex firstEmptyRow =
+        firstEmptyRosterRow(targetRows);
+    if (firstEmptyRow.rawValue() == targetRows.size())
     {
         return RosterRowTransferPreparationError{
             .rejection = Rejection::TargetRosterIsFull
         };
     }
+    const RosterRowTransferDestinationIndex destinationRow{
+        firstEmptyRow.rawValue()
+    };
 
     const std::size_t englishColumn =
         RosterRowTransferPreparationDetail::findColumn(
