@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch496 is active with F1219–F1222 complete and F1223 accepted/current before implementation; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch496 is active with F1219–F1223 complete and F1224 next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1222 completed at implementation commit `af7fc4fe`; its focused Application and Platform CTests passed, with one unrelated repository-suite assertion failure recorded (see the [F1222 completion](03-Phase-2-Progress-Log.md#f1222-class-transfer-schedule-conflict-positions-complete-2026-10-21)). Batch496 remains active and unpushed, with F1223 next for acceptance. F629 plus the Phase 0 and Phase 2 gates remain open.
+F1223 completed at implementation commit `05101b22`; all three focused state-validation, repository, and dialog CTests passed (see the [F1223 completion](03-Phase-2-Progress-Log.md#f1223-schedule-import-state-resolution-candidate-index-complete-2026-10-21)). Batch496 remains active and unpushed, with F1224 next for acceptance. F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,13 +72,13 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch496 (8 candidates; 4 complete, 1 accepted/current, 3 discovered)
+#### Active batch: Batch496 (8 candidates; 5 complete, 3 discovered)
 
 1. F1219 - **Complete.** Type AI accepted-comment planner source-row coordinates; preserve `-1` propagation, input order, and downstream invalid-row skips (see [completion](03-Phase-2-Progress-Log.md#f1219-ai-accepted-comment-source-row-complete-2026-10-21)).
 2. F1220 - **Complete.** Type Schedule Import matching candidate positions; preserve candidate order and projection behavior (see [completion](03-Phase-2-Progress-Log.md#f1220-schedule-import-matching-candidate-index-complete-2026-10-21)).
 3. F1221 - **Complete.** Type Roster Availability accumulator row and source-column coordinates as distinct signed values; preserve bounds checks, no-mutation failures, and projection filtering (see [completion](03-Phase-2-Progress-Log.md#f1221-roster-availability-accumulator-coordinates-complete-2026-10-21)).
 4. F1222 - **Complete.** Type Class Transfer schedule-conflict positions with distinct incoming/other types; preserve the conditional vector meaning of `otherIndex` and conflict order (see [completion](03-Phase-2-Progress-Log.md#f1222-class-transfer-schedule-conflict-positions-complete-2026-10-21)).
-5. F1223 - **Accepted/current.** Reuse the explicit Schedule Import state candidate index for resolutions and candidate references; preserve action-specific validation and candidate/projection ordering (see [acceptance](03-Phase-2-Progress-Log.md#f1223-schedule-import-state-resolution-candidate-index-accepted-before-implementation-2026-10-21)).
+5. F1223 - **Complete.** Reuse the explicit Schedule Import state candidate index for resolutions and candidate references; preserve action-specific validation and candidate/projection ordering (see [completion](03-Phase-2-Progress-Log.md#f1223-schedule-import-state-resolution-candidate-index-complete-2026-10-21)).
 6. F1224 - **Discovered.** Type Testing Classes ordered row positions; preserve grade/level/text ordering and existing tie behavior.
 7. F1225 - **Discovered.** Type Analytics criterion-extrema positions; preserve empty results and tied-index order.
 8. F1226 - **Discovered.** Type Sub Prep print group/class positions; preserve original input positions and group/class ordering.

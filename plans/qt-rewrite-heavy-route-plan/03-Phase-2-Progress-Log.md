@@ -56080,3 +56080,30 @@ are `ClassMngrNextApplicationScheduleImportStateValidationTests`,
 `ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`; build
 the app and these affected targets. No F1223 implementation or verification
 has started.
+
+### F1223 Schedule Import state-resolution candidate index complete - 2026-10-21
+
+F1223 completed at implementation commit `05101b22` (`Phase2 - Type Schedule
+Import state candidate index`), following acceptance-record commit `5f657288`.
+The existing `ScheduleImportStateCandidateIndex` is now a distinct explicit
+`std::size_t` value type with default zero, private storage, `.rawValue()`,
+equality, and no implicit conversions. State resolutions and projected
+candidate references use the same type. The general `ScheduleImportCandidateIndex`
+and UI/domain `int`/`-1` fields remain unchanged.
+
+Enum-before-index validation remains intact. Create/Update resolutions still
+reject positions outside the candidate vector; Skip retains its existing
+conditional target/exact-match behavior, including no blanket range rejection.
+The dialog still validates display-sorted controls that refer to original
+candidate positions. Repository output remains in candidate order, and
+projection still maps candidate references to the original candidates and
+sorts them before existing IDs in descending candidate-index order.
+
+The Executor rebuilt `ClassMngr` and the state-validation, Schedule Import
+repository, and dialog test targets in the existing `build/macos-clang-debug`
+tree. The independent Tester reran the target build (Ninja reported no work),
+passed the three focused CTests, and confirmed `git diff --check`. Assertions
+cover wrapper semantics, invalid-action precedence, Create/Update bounds,
+out-of-range Skip behavior, multi-candidate source mapping and projection
+order, repository ordering, and dialog indexes 0–95. This was incremental
+macOS arm64 Debug verification; no full-suite or Windows run is claimed.
