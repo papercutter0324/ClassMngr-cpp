@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch492 is active and unpushed with F1186 accepted/in progress and F1187 next; Batch491 is complete and pushed at `56bd1973` (see its [push receipt](03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)), F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch492 is active and unpushed with F1186 complete and F1187 accepted/in progress and next; Batch491 is complete and pushed at `56bd1973` (see its [push receipt](03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)), F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1186 is accepted/in progress: introduce a distinct `Application::ScheduleImportAppliedCount` for the seven applied-result counts while preserving forwarding, telemetry, and UI messages (see its [acceptance record](03-Phase-2-Progress-Log.md#f1186-schedule-import-applied-result-counts-accepted-before-implementation-2026-10-20)).
+F1186 completed at source/test commit `32eb56e458ca501c68334b6abcf48b69d66919fc`; all five affected targets built in the existing macOS Debug tree and focused Application, Platform, dialog, and startup lifecycle checks passed, with no full-suite or Windows run (see its [closeout record](03-Phase-2-Progress-Log.md#f1186-schedule-import-applied-result-counts-complete-2026-10-20)).
 
 ### Slice discovery batches
 
@@ -72,16 +72,16 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch492 (6 candidates; 1 accepted/in progress, 5 discovered)
+#### Active batch: Batch492 (6 candidates; 1 complete, 1 accepted/in progress, 4 discovered)
 
-1. F1186 - **Accepted/in progress.** Add a distinct applied-count type for the seven Schedule Import apply counts; preserve exact and zero forwarding, telemetry, localized success text, and `profileNameUpdated`.
-2. F1187 - **Discovered; next.** Class Details Page student count; preserve zero, independent per-source errors, and F911 recoverable NotFound for a missing parent.
+1. F1186 - **Complete.** `Application::ScheduleImportAppliedCount` types the seven apply-result counts; preserves exact/zero forwarding, telemetry, localized success text, and `profileNameUpdated`.
+2. F1187 - **Accepted/in progress; next.** Add a distinct Class Details Page student count; preserve zero, independent per-source errors, F911 recoverable NotFound, and display fallback.
 3. F1188 - **Discovered.** ClassSummary student count; preserve zero, the 10,000-row cap, and semantics separate from MyClasses count.
 4. F1189 - **Discovered.** Updater artifact filename; preserve UTF-8 bytes, empty values, and display without path policy.
 5. F1190 - **Discovered.** Schedule Import matching counts; preserve exact values without a cap.
 6. F1191 - **Discovered; medium-low confidence.** Class Tab navigation ordering ranks; preserve the 1000 unknown sentinel, comparison order/ties, and Feature preparation.
 
-See the progress-log [Batch492 discovery record](03-Phase-2-Progress-Log.md#batch492-provisional-discovery-at-f1184-start-2026-10-20) for source/test evidence and acceptance questions. Batch491 is complete and pushed at `56bd1973`; see its [push receipt](03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20).
+See the progress-log [F1187 acceptance](03-Phase-2-Progress-Log.md#f1187-class-details-page-student-count-accepted-before-implementation-2026-10-20) and [Batch492 discovery record](03-Phase-2-Progress-Log.md#batch492-provisional-discovery-at-f1184-start-2026-10-20) for scope and source/test evidence. Batch491 is complete and pushed at `56bd1973`; see its [push receipt](03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20).
 
 #### Deferred candidates
 

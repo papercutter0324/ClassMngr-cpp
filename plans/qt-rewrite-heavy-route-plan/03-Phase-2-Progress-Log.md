@@ -53833,3 +53833,75 @@ existing StartupProfiler test if extended. Implementation and verification
 have not started; no full-suite or Windows result is claimed.
 
 Batch491 remains complete and pushed at `56bd1973`; see the [push receipt](#batch491-push-receipt-2026-10-20). Batch492 is active and unpushed: F1186 is accepted/in progress, F1187 is next, and F1188–F1191 remain discovered. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+
+### F1186 Schedule Import applied-result counts complete - 2026-10-20
+
+F1186 completed at source/test commit
+`32eb56e458ca501c68334b6abcf48b69d66919fc`. The Qt-free
+`Application::ScheduleImportAppliedCount` has exact signed-`int` storage,
+zero default, explicit construction, `.rawValue()`, and equality, with no
+implicit conversion or added range/negative policy. It types only the seven
+`ScheduleImportApplySummary` counts; `profileNameUpdated` remains `bool`.
+Application and Platform forward exact and zero values, while the Feature
+dialog unwraps for unchanged localized success text and optional name-update
+suffix. Applied counts remain distinct from review-only
+`ScheduleImportReviewCount`. All seven telemetry arguments and the existing
+nonnegative clamp/event behavior remain intact.
+
+Independent verification in the existing `build/macos-clang-debug` tree built
+`ClassMngr`, `ClassMngrNextApplicationScheduleImportApplyUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`,
+`ClassMngrScheduleImportDialogTests`, and
+`ClassMngrStartupPerformanceTests`. Focused Application, Platform, dialog,
+and startup lifecycle checks passed. The recorded telemetry counts were
+`teachersCreated=5`, `teachersUpdated=0`, `classesCreated=20`,
+`classesUpdated=0`, `classesSkipped=0`, `schedulesCleared=96`, and
+`ignoredCells=0`. `git diff --check` passed. No full-suite or Windows result
+is claimed.
+
+Batch492 remains active and unpushed: F1186 is complete, F1187 is accepted/in
+progress and next, and F1188–F1191 remain discovered. F629 awaits source-bound
+Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+
+### F1187 Class Details Page student count accepted before implementation - 2026-10-20
+
+F1187 is accepted/in progress. The Application snapshot currently stores
+`Domain::Result<int> studentCount` at
+`src/next/application/class_details_page_snapshot.h:51`; the Platform port
+maps repository outcomes at
+`src/next/platform/application_services_class_details_page_read_port.h:240-285`.
+The Feature displays zero when the count result is unavailable at
+`src/features/classes/ui/class_details_page.cpp:885-898`. Discovery evidence
+and related test locations are recorded in the [Batch492 discovery entry](#batch492-provisional-discovery-at-f1184-start-2026-10-20).
+
+Add Qt-free `Application::ClassDetailsStudentCount` in
+`src/next/application/class_details_student_count.h`, with exact signed-`int`
+storage, zero default, explicit construction, `.rawValue()`, and equality,
+without implicit conversion or new negative/range policy. Add its header to
+`cmake/next.cmake`. Change only
+`ClassDetailsPageReadSnapshot::studentCount` to
+`Domain::Result<ClassDetailsStudentCount>`; preserve `Domain::Result` error
+semantics. Explicitly wrap a successful repository count at the Platform
+boundary and unwrap it for the existing Feature display. Preserve zero and
+exact successful forwarding, independent per-source errors, F911 recoverable
+NotFound for a confirmed missing parent, and the Feature fallback to zero on a
+count error. Do not change repository behavior or add validation.
+
+Extend the existing tests
+`tests/next_application_class_details_page_query_tests.cpp`,
+`tests/next_platform_application_services_class_details_page_read_port_tests.cpp`,
+and `tests/class_details_page_display_tests.cpp` for wrapper semantics,
+zero/positive exact values, independent errors, missing-parent NotFound
+recovery, and display fallback. Build `ClassMngr`,
+`ClassMngrNextApplicationClassDetailsPageQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests`, and
+`ClassMngrClassDetailsPageDisplayTests`; run the corresponding focused CTests
+`ClassMngrNextApplicationClassDetailsPageQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests`, and
+`ClassMngrClassDetailsPageDisplayTests`. Use the existing standard macOS Debug
+tree and run `git diff --check`. Implementation and verification have not
+started; no full-suite or Windows build is claimed.
+
+Batch492 remains active and unpushed: F1186 is complete, F1187 is accepted/in
+progress and next, and F1188–F1191 remain discovered. F629 awaits source-bound
+Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.

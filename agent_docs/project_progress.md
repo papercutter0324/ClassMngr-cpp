@@ -53,35 +53,27 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (Batch491 pushed; Batch492 active)
+### Current checkpoint - 2026-10-20 (F1187 active; Batch492 unpushed)
 
 Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
 records the handoff. Batch491 is complete and pushed to `origin/Qt-Rewrite`
 at `56bd1973`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)
-records the handoff. F1178–F1185 are complete. Batch492 is active with six
-discovered candidates; F1186 is accepted/in progress and F1187 is next. Their acceptance, completion, and
-verification details are in the [Phase 2 progress
+records the handoff. F1178–F1186 are complete. Batch492 is active with six
+discovered candidates; F1187 is accepted and in progress, with F1188–F1191
+still discovered. Acceptance, completion, and verification details are in the [Phase 2 progress
 log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
-F1184 completed at source/test commit `bc23cf4c`, after acceptance commit
-`06da72ee`. It adds distinct Qt-free Import and Report generation types while
-preserving exact values, first generation 1, duplicate/failure sequencing,
-restart clearing, stale rejection, and the existing exhaustion guard. The
-independent Tester cleaned 382 outputs and rebuilt four affected targets in
-`build/macos-clang-debug`; all 367 build steps and three focused CTests passed.
-The exhaustion guard was inspected because the coordinator has no test
-injection seam. No full suite or Windows build ran.
+F1186 completed at source/test commit `32eb56e4`, after acceptance commit
+`94304544`. `Application::ScheduleImportAppliedCount` now types all seven
+applied-result counts while preserving exact and zero forwarding, telemetry,
+localized success text, and the optional profile-name suffix. The independent
+Tester built five affected targets in `build/macos-clang-debug`; the focused
+Application, Platform, dialog, and startup lifecycle checks passed. Startup
+metrics were `5,0,20,0,0,96,0`. No full suite or Windows build ran.
 
 Batch492's discovery found six candidates against the ten-candidate target;
 see its [discovery record](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch492-provisional-discovery-at-f1184-start-2026-10-20).
-F1185 completed at source/test commit `a34be1a8`, after acceptance commit
-`f9276a2a`. `Application::ClassAnalyticsCriterionStudentCount` now types the
-criterion count while preserving the distinct-student calculation, zero and
-`hasData` behavior, and the existing Feature integer boundary. The independent
-Tester incrementally built `ClassMngr` and the query test target in
-`build/macos-clang-debug`; its focused CTest passed 1/1. No full suite or
-Windows build ran.
 F1175's Class Transfer test still has one unresolved teacher-fallback label
 failure among 64 cases; no clean baseline proves it pre-existing. F629 awaits
 source-bound Windows x64 layout evidence. The Phase 0 and Phase 2 gates remain
