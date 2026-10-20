@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch501 (F1253–F1256) is complete locally with push pending; active Batch502 has five discovered candidates with F1257 next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`; active Batch502 has five discovered candidates with F1257 next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1256 is complete at `70f9003a`; the incremental macOS build and ten focused roster snapshot CTests passed (10/10) (see [F1256 verification](03-Phase-2-Progress-Log.md#f1256-rostersnapshot-column-width-complete-2026-10-21)). Batch501 is complete locally with push pending; Batch502 is active with F1257 next for acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
+Batch501 was pushed to `origin/Qt-Rewrite` at `7f8ca958` (see the [push receipt](03-Phase-2-Progress-Log.md#batch501-push-receipt-2026-10-21)); Batch502 is active with F1257 next for acceptance. F1256's incremental macOS build and ten focused CTests passed (10/10) (see [F1256 verification](03-Phase-2-Progress-Log.md#f1256-rostersnapshot-column-width-complete-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 

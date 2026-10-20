@@ -59002,3 +59002,15 @@ Batch501 (F1253–F1256) is complete locally and awaits push. Batch502 is now
 active with five discovered candidates: F1257 is next for acceptance, followed
 by F1258–F1261 in the recorded order. F629 and the Phase 0 and Phase 2 gates
 remain open.
+
+### Batch501 push receipt - 2026-10-21
+
+Batch501 was pushed successfully to `origin/Qt-Rewrite` from local branch
+`Qt-Rewrite` with `git push`. The remote advanced from
+`029a17e8c2e6716a3f6f894293a0a404bf29f50e` to
+`7f8ca9580fc6a6bf330ad7912d2b95894b7107d3`. The remote tip matches the new
+hash. The worktree was clean before and after the push.
+
+Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`. Batch502 is
+active with five discovered candidates and F1257 next for acceptance. F629
+and the Phase 0 and Phase 2 gates remain open.
