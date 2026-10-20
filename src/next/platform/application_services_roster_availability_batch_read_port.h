@@ -191,8 +191,16 @@ public:
                         }
 
                         const std::u16string text = value.toStdU16String();
+                        const Application::RosterAvailabilityAccumulatorRowIndex
+                            applicationRowIndex{rowIndex};
+                        const Application::RosterAvailabilityAccumulatorSourceColumnIndex
+                            applicationSourceColumnIndex{columnIndex};
                         accumulators[static_cast<std::size_t>(*recordIndex)]
-                            .observeCell(rowIndex, columnIndex, text);
+                            .observeCell(
+                                applicationRowIndex,
+                                applicationSourceColumnIndex,
+                                text
+                                );
                     }
                     );
             if (!streamed)

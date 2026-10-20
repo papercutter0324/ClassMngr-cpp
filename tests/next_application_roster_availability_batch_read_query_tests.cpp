@@ -28,6 +28,45 @@ static_assert(!std::is_convertible_v<
     Application::RosterSourceColumnIndex,
     std::size_t
     >);
+static_assert(
+    Application::RosterAvailabilityAccumulatorRowIndex{}
+        == Application::RosterAvailabilityAccumulatorRowIndex{0}
+    );
+static_assert(
+    Application::RosterAvailabilityAccumulatorRowIndex{-1}.rawValue() == -1
+    );
+static_assert(std::is_constructible_v<
+    Application::RosterAvailabilityAccumulatorRowIndex,
+    int
+    >);
+static_assert(!std::is_convertible_v<
+    int,
+    Application::RosterAvailabilityAccumulatorRowIndex
+    >);
+static_assert(!std::is_convertible_v<
+    Application::RosterAvailabilityAccumulatorRowIndex,
+    int
+    >);
+static_assert(
+    Application::RosterAvailabilityAccumulatorSourceColumnIndex{}
+        == Application::RosterAvailabilityAccumulatorSourceColumnIndex{0}
+    );
+static_assert(
+    Application::RosterAvailabilityAccumulatorSourceColumnIndex{-1}.rawValue()
+        == -1
+    );
+static_assert(std::is_constructible_v<
+    Application::RosterAvailabilityAccumulatorSourceColumnIndex,
+    int
+    >);
+static_assert(!std::is_convertible_v<
+    int,
+    Application::RosterAvailabilityAccumulatorSourceColumnIndex
+    >);
+static_assert(!std::is_convertible_v<
+    Application::RosterAvailabilityAccumulatorSourceColumnIndex,
+    int
+    >);
 
 namespace
 {
@@ -194,26 +233,86 @@ accumulatorCountsOnlyRetainedCellsInsideModeledRows()
         asciiCaseInsensitiveEquals
         );
 
-    accumulator.observeCell(0, 3, u"duplicate English header");
-    accumulator.observeCell(0, 4, u"blank header");
-    accumulator.observeCell(0, 1, u" \u2003\t ");
-    accumulator.observeCell(1, 0, u" \n\r ");
-    accumulator.observeCell(1, 2, u" ");
-    accumulator.observeCell(25, 2, u"beyond the model");
-    accumulator.observeCell(-1, 2, u"invalid source row");
+    using AccumulatorRowIndex =
+        Application::RosterAvailabilityAccumulatorRowIndex;
+    using AccumulatorSourceColumnIndex =
+        Application::RosterAvailabilityAccumulatorSourceColumnIndex;
+
+    accumulator.observeCell(
+        AccumulatorRowIndex{0},
+        AccumulatorSourceColumnIndex{3},
+        u"duplicate English header"
+        );
+    accumulator.observeCell(
+        AccumulatorRowIndex{0},
+        AccumulatorSourceColumnIndex{4},
+        u"blank header"
+        );
+    accumulator.observeCell(
+        AccumulatorRowIndex{0},
+        AccumulatorSourceColumnIndex{1},
+        u" \u2003\t "
+        );
+    accumulator.observeCell(
+        AccumulatorRowIndex{1},
+        AccumulatorSourceColumnIndex{0},
+        u" \n\r "
+        );
+    accumulator.observeCell(
+        AccumulatorRowIndex{1},
+        AccumulatorSourceColumnIndex{2},
+        u" "
+        );
+    accumulator.observeCell(
+        AccumulatorRowIndex{25},
+        AccumulatorSourceColumnIndex{2},
+        u"beyond the model"
+        );
+    accumulator.observeCell(
+        AccumulatorRowIndex{-1},
+        AccumulatorSourceColumnIndex{2},
+        u"invalid source row"
+        );
+    accumulator.observeCell(
+        AccumulatorRowIndex{0},
+        AccumulatorSourceColumnIndex{-1},
+        u"invalid negative source column"
+        );
+    QCOMPARE(accumulator.firstEmptyRow().rawValue(), 0);
+    accumulator.observeCell(
+        AccumulatorRowIndex{0},
+        AccumulatorSourceColumnIndex{99},
+        u"invalid out-of-range source column"
+        );
     QCOMPARE(accumulator.firstEmptyRow().rawValue(), 0);
 
-    accumulator.observeCell(0, 2, u"Custom column occupancy");
-    accumulator.observeCell(1, 1, u"Alias maps to the Fall base column");
+    accumulator.observeCell(
+        AccumulatorRowIndex{0},
+        AccumulatorSourceColumnIndex{2},
+        u"Custom column occupancy"
+        );
+    accumulator.observeCell(
+        AccumulatorRowIndex{1},
+        AccumulatorSourceColumnIndex{1},
+        u"Alias maps to the Fall base column"
+        );
     QCOMPARE(accumulator.firstEmptyRow().rawValue(), 2);
 
     for (int row = 2;
          row < static_cast<int>(Application::RosterModeledRowCount);
          ++row)
     {
-        accumulator.observeCell(row, 0, u"student");
+        accumulator.observeCell(
+            AccumulatorRowIndex{row},
+            AccumulatorSourceColumnIndex{0},
+            u"student"
+            );
     }
-    accumulator.observeCell(25, 0, u"ignored overflow row");
+    accumulator.observeCell(
+        AccumulatorRowIndex{25},
+        AccumulatorSourceColumnIndex{0},
+        u"ignored overflow row"
+        );
     QVERIFY(accumulator.firstEmptyRow().isFull());
 }
 

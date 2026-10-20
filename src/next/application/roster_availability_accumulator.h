@@ -15,6 +15,59 @@
 namespace ClassMngr::Next::Application
 {
 
+class RosterAvailabilityAccumulatorRowIndex final
+{
+public:
+    constexpr RosterAvailabilityAccumulatorRowIndex() noexcept = default;
+
+    explicit constexpr RosterAvailabilityAccumulatorRowIndex(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const RosterAvailabilityAccumulatorRowIndex&,
+        const RosterAvailabilityAccumulatorRowIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = 0;
+};
+
+class RosterAvailabilityAccumulatorSourceColumnIndex final
+{
+public:
+    constexpr RosterAvailabilityAccumulatorSourceColumnIndex() noexcept =
+        default;
+
+    explicit constexpr RosterAvailabilityAccumulatorSourceColumnIndex(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const RosterAvailabilityAccumulatorSourceColumnIndex&,
+        const RosterAvailabilityAccumulatorSourceColumnIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = 0;
+};
+
 class RosterAvailabilityAccumulator final
 {
 public:
@@ -44,19 +97,32 @@ public:
     }
 
     void observeCell(
-        const int rowIndex,
-        const int sourceColumnIndex,
+        const RosterAvailabilityAccumulatorRowIndex rowIndex,
+        const RosterAvailabilityAccumulatorSourceColumnIndex sourceColumnIndex,
         const std::u16string_view value
         ) noexcept
     {
-        if (rowIndex < 0
-            || static_cast<std::size_t>(rowIndex) >= RosterModeledRowCount
-            || sourceColumnIndex < 0
-            || static_cast<std::size_t>(sourceColumnIndex)
-                >= m_retainedSourceColumns.size()
-            || !m_retainedSourceColumns[
-                static_cast<std::size_t>(sourceColumnIndex)
-                ])
+        const int rawRowIndex = rowIndex.rawValue();
+        const int rawSourceColumnIndex = sourceColumnIndex.rawValue();
+        if (rawRowIndex < 0)
+        {
+            return;
+        }
+        if (static_cast<std::size_t>(rawRowIndex) >= RosterModeledRowCount)
+        {
+            return;
+        }
+        if (rawSourceColumnIndex < 0)
+        {
+            return;
+        }
+        const std::size_t sourceColumn =
+            static_cast<std::size_t>(rawSourceColumnIndex);
+        if (sourceColumn >= m_retainedSourceColumns.size())
+        {
+            return;
+        }
+        if (!m_retainedSourceColumns[sourceColumn])
         {
             return;
         }
@@ -65,7 +131,7 @@ public:
         {
             if (!isQtWhitespace(character))
             {
-                m_rows[static_cast<std::size_t>(rowIndex)] = true;
+                m_rows[static_cast<std::size_t>(rawRowIndex)] = true;
                 return;
             }
         }
