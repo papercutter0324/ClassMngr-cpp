@@ -4,6 +4,7 @@
 #include "next/application/class_transfer_package_class_index.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
+#include "next/domain/schedule_time.h"
 
 #include <algorithm>
 #include <cctype>
@@ -72,6 +73,36 @@ inline constexpr std::int64_t kClassTransferMinutesPerDay = 24 * 60;
 inline constexpr std::int64_t kClassTransferMinutesPerWeek =
     7 * kClassTransferMinutesPerDay;
 
+namespace ClassTransferScheduleCandidateDetail
+{
+
+[[nodiscard]] inline std::optional<std::int64_t> weekdayIndex(
+    const Domain::Weekday weekday
+    ) noexcept
+{
+    switch (weekday)
+    {
+    case Domain::Weekday::Monday:
+        return 0;
+    case Domain::Weekday::Tuesday:
+        return 1;
+    case Domain::Weekday::Wednesday:
+        return 2;
+    case Domain::Weekday::Thursday:
+        return 3;
+    case Domain::Weekday::Friday:
+        return 4;
+    case Domain::Weekday::Saturday:
+        return 5;
+    case Domain::Weekday::Sunday:
+        return 6;
+    }
+
+    return std::nullopt;
+}
+
+} // namespace ClassTransferScheduleCandidateDetail
+
 // The repository adapter owns legacy weekday and time parsing. Once parsed,
 // schedule intervals use absolute minutes from Monday at 00:00; an overnight
 // interval may end after the final minute of the week.
@@ -80,14 +111,16 @@ class ClassTransferScheduleCandidate final
 public:
     [[nodiscard]] static Domain::Result<ClassTransferScheduleCandidate> create(
         const TransferTimeCategory category,
-        const std::int64_t weekdayIndex,
+        const Domain::Weekday weekday,
         const std::int64_t startMinuteOfDay,
         const std::int64_t endMinuteOfDay
         )
     {
+        const std::optional<std::int64_t> weekdayOffset =
+            ClassTransferScheduleCandidateDetail::weekdayIndex(weekday);
         if ((category != TransferTimeCategory::Regular
                 && category != TransferTimeCategory::Intensive)
-            || weekdayIndex < 0 || weekdayIndex >= 7
+            || !weekdayOffset
             || startMinuteOfDay < 0
             || startMinuteOfDay >= kClassTransferMinutesPerDay
             || endMinuteOfDay < 0
@@ -103,9 +136,9 @@ public:
         }
 
         const std::int64_t startMinuteOfWeek =
-            weekdayIndex * kClassTransferMinutesPerDay + startMinuteOfDay;
+            *weekdayOffset * kClassTransferMinutesPerDay + startMinuteOfDay;
         std::int64_t endMinuteOfWeek =
-            weekdayIndex * kClassTransferMinutesPerDay + endMinuteOfDay;
+            *weekdayOffset * kClassTransferMinutesPerDay + endMinuteOfDay;
         if (endMinuteOfWeek <= startMinuteOfWeek)
         {
             endMinuteOfWeek += kClassTransferMinutesPerDay;

@@ -297,6 +297,32 @@ int dayIndex(
     return Days.indexOf(parsed->text);
 }
 
+std::optional<ClassMngr::Next::Domain::Weekday> weekdayForIndex(
+    const int weekdayIndex
+    )
+{
+    using Weekday = ClassMngr::Next::Domain::Weekday;
+    switch (weekdayIndex)
+    {
+    case 0:
+        return Weekday::Monday;
+    case 1:
+        return Weekday::Tuesday;
+    case 2:
+        return Weekday::Wednesday;
+    case 3:
+        return Weekday::Thursday;
+    case 4:
+        return Weekday::Friday;
+    case 5:
+        return Weekday::Saturday;
+    case 6:
+        return Weekday::Sunday;
+    }
+
+    return std::nullopt;
+}
+
 int timeToMinutes(
     const QString& value
     )
@@ -355,11 +381,12 @@ candidateForTime(
     const ClassMngr::Next::Application::TransferTimeCategory category
     )
 {
-    const int day = dayIndex(time.day);
+    const std::optional<ClassMngr::Next::Domain::Weekday> weekday =
+        weekdayForIndex(dayIndex(time.day));
     const int start = timeToMinutes(time.startTime);
     const int end = timeToMinutes(time.endTime);
 
-    if (day < 0 || start < 0 || end < 0)
+    if (!weekday || start < 0 || end < 0)
     {
         return std::nullopt;
     }
@@ -367,7 +394,7 @@ candidateForTime(
     const auto candidate =
         ClassMngr::Next::Application::ClassTransferScheduleCandidate::create(
             category,
-            day,
+            *weekday,
             start,
             end
             );

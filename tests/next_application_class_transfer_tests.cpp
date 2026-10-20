@@ -248,15 +248,16 @@ void verifyInvalidValidation(
 
 ClassTransferScheduleCandidate transferSchedule(
     const TransferTimeCategory category,
-    const std::int64_t startMinuteOfWeek,
-    const std::int64_t endMinuteOfWeek
+    const Weekday weekday,
+    const std::int64_t startMinuteOfDay,
+    const std::int64_t endMinuteOfDay
     )
 {
     const auto candidate = ClassTransferScheduleCandidate::create(
         category,
-        (startMinuteOfWeek / kClassTransferMinutesPerDay) % 7,
-        startMinuteOfWeek % kClassTransferMinutesPerDay,
-        endMinuteOfWeek % kClassTransferMinutesPerDay
+        weekday,
+        startMinuteOfDay,
+        endMinuteOfDay
         );
     Q_ASSERT(candidate);
     return candidate.value();
@@ -314,7 +315,7 @@ private slots:
     void teacherMatchingUsesBothOrEitherNameAndRequiresOneName();
     void classMatchingRequiresCourseAndTeacherIdentityOrUnassignedFallback();
     void classAndTeacherMatchListsRetainDestinationOrder();
-    void scheduleCandidateFactoryValidatesParsedDayAndClockFields();
+    void scheduleCandidateFactoryValidatesWeekdayAndClockFields();
     void scheduleOverlapPolicyUsesHalfOpenIntervalsAndStableCategoryOrder();
     void scheduleOverlapPolicyWrapsSundayOvernightIntoMonday();
     void scheduleOverlapPolicyTreatsEqualEndpointsAsTwentyFourHours();
@@ -1393,35 +1394,45 @@ void NextApplicationClassTransferTests::classAndTeacherMatchListsRetainDestinati
 }
 
 void NextApplicationClassTransferTests::
-    scheduleCandidateFactoryValidatesParsedDayAndClockFields()
+    scheduleCandidateFactoryValidatesWeekdayAndClockFields()
 {
     const auto invalidCategory = ClassTransferScheduleCandidate::create(
-        static_cast<TransferTimeCategory>(-1), 0, 0, 0);
-    const auto invalidNegativeDay = ClassTransferScheduleCandidate::create(
-        TransferTimeCategory::Regular, -1, 0, 0);
-    const auto invalidDayAfterSunday = ClassTransferScheduleCandidate::create(
-        TransferTimeCategory::Regular, 7, 0, 0);
+        static_cast<TransferTimeCategory>(-1), Weekday::Monday, 0, 0);
+    const auto invalidForgedWeekdayBelowRange =
+        ClassTransferScheduleCandidate::create(
+            TransferTimeCategory::Regular,
+            static_cast<Weekday>(-1),
+            0,
+            0
+            );
+    const auto invalidForgedWeekdayAboveRange =
+        ClassTransferScheduleCandidate::create(
+            TransferTimeCategory::Regular,
+            static_cast<Weekday>(7),
+            0,
+            0
+            );
     const auto invalidNegativeStart = ClassTransferScheduleCandidate::create(
-        TransferTimeCategory::Regular, 0, -1, 0);
+        TransferTimeCategory::Regular, Weekday::Monday, -1, 0);
     const auto invalidStartAfterDay = ClassTransferScheduleCandidate::create(
         TransferTimeCategory::Regular,
-        0,
+        Weekday::Monday,
         kClassTransferMinutesPerDay,
         0
         );
     const auto invalidNegativeEnd = ClassTransferScheduleCandidate::create(
-        TransferTimeCategory::Regular, 0, 0, -1);
+        TransferTimeCategory::Regular, Weekday::Monday, 0, -1);
     const auto invalidEndAfterDay = ClassTransferScheduleCandidate::create(
         TransferTimeCategory::Regular,
-        0,
+        Weekday::Monday,
         0,
         kClassTransferMinutesPerDay
         );
 
     for (const auto* invalid : {
              &invalidCategory,
-             &invalidNegativeDay,
-             &invalidDayAfterSunday,
+             &invalidForgedWeekdayBelowRange,
+             &invalidForgedWeekdayAboveRange,
              &invalidNegativeStart,
              &invalidStartAfterDay,
              &invalidNegativeEnd,
@@ -1432,21 +1443,62 @@ void NextApplicationClassTransferTests::
         QCOMPARE((*invalid).error().code, ErrorCode::InvalidInput);
     }
 
+    struct WeekdayOffset final
+    {
+        Weekday weekday;
+        std::int64_t minuteOfWeek;
+    };
+    constexpr WeekdayOffset weekdays[] = {
+        {Weekday::Monday, 0},
+        {Weekday::Tuesday, kClassTransferMinutesPerDay},
+        {Weekday::Wednesday, 2 * kClassTransferMinutesPerDay},
+        {Weekday::Thursday, 3 * kClassTransferMinutesPerDay},
+        {Weekday::Friday, 4 * kClassTransferMinutesPerDay},
+        {Weekday::Saturday, 5 * kClassTransferMinutesPerDay},
+        {Weekday::Sunday, 6 * kClassTransferMinutesPerDay}
+    };
+    for (const WeekdayOffset& weekday : weekdays)
+    {
+        const auto candidate = ClassTransferScheduleCandidate::create(
+            TransferTimeCategory::Regular,
+            weekday.weekday,
+            7,
+            8
+            );
+        QVERIFY(candidate);
+        QCOMPARE(
+            candidate.value().startMinuteOfWeek(),
+            weekday.minuteOfWeek + 7
+            );
+        QCOMPARE(
+            candidate.value().endMinuteOfWeek(),
+            weekday.minuteOfWeek + 8
+            );
+    }
+
     const auto startOfWeek = ClassTransferScheduleCandidate::create(
-        TransferTimeCategory::Regular, 0, 0, 1);
+        TransferTimeCategory::Regular, Weekday::Monday, 0, 1);
     QVERIFY(startOfWeek);
     QCOMPARE(startOfWeek.value().category(), TransferTimeCategory::Regular);
     QCOMPARE(startOfWeek.value().startMinuteOfWeek(), std::int64_t(0));
     QCOMPARE(startOfWeek.value().endMinuteOfWeek(), std::int64_t(1));
 
     const auto equalEndpoints = ClassTransferScheduleCandidate::create(
-        TransferTimeCategory::Intensive, 0, 1439, 1439);
+        TransferTimeCategory::Intensive,
+        Weekday::Monday,
+        1439,
+        1439
+        );
     QVERIFY(equalEndpoints);
     QCOMPARE(equalEndpoints.value().startMinuteOfWeek(), std::int64_t(1439));
     QCOMPARE(equalEndpoints.value().endMinuteOfWeek(), std::int64_t(2879));
 
     const auto sundayOvernight = ClassTransferScheduleCandidate::create(
-        TransferTimeCategory::Regular, 6, 23 * 60 + 59, 60);
+        TransferTimeCategory::Regular,
+        Weekday::Sunday,
+        23 * 60 + 59,
+        60
+        );
     QVERIFY(sundayOvernight);
     QCOMPARE(
         sundayOvernight.value().startMinuteOfWeek(),
@@ -1468,23 +1520,41 @@ void NextApplicationClassTransferTests::
     constexpr std::int64_t mondayEleven = 11 * 60;
 
     const std::vector<ClassTransferScheduleCandidate> incoming{
-        transferSchedule(TransferTimeCategory::Regular, mondayNine, mondayTen),
-        transferSchedule(TransferTimeCategory::Regular, mondayTen, mondayEleven),
         transferSchedule(
             TransferTimeCategory::Regular,
+            Weekday::Monday,
+            mondayNine,
+            mondayTen
+            ),
+        transferSchedule(
+            TransferTimeCategory::Regular,
+            Weekday::Monday,
+            mondayTen,
+            mondayEleven
+            ),
+        transferSchedule(
+            TransferTimeCategory::Regular,
+            Weekday::Monday,
             mondayNineThirty,
             mondayTenThirty
             ),
-        transferSchedule(TransferTimeCategory::Intensive, mondayNine, mondayTen)
+        transferSchedule(
+            TransferTimeCategory::Intensive,
+            Weekday::Monday,
+            mondayNine,
+            mondayTen
+            )
     };
     const std::vector<ClassTransferScheduleCandidate> existing{
         transferSchedule(
             TransferTimeCategory::Regular,
+            Weekday::Monday,
             mondayNine + 45,
             mondayTen + 15
             ),
         transferSchedule(
             TransferTimeCategory::Intensive,
+            Weekday::Monday,
             mondayNine,
             mondayTen
             )
@@ -1551,9 +1621,8 @@ void NextApplicationClassTransferTests::
     scheduleOverlapPolicyWrapsSundayOvernightIntoMonday()
 {
     constexpr std::int64_t sundayElevenPm =
-        6 * kClassTransferMinutesPerDay + 23 * 60;
-    constexpr std::int64_t mondayOneAm =
-        7 * kClassTransferMinutesPerDay + 60;
+        23 * 60;
+    constexpr std::int64_t mondayOneAm = 60;
     constexpr std::int64_t mondayTwelveThirtyAm = 30;
     constexpr std::int64_t mondayOneThirtyAm = 90;
     constexpr std::int64_t mondayTwoAm = 120;
@@ -1561,11 +1630,13 @@ void NextApplicationClassTransferTests::
     const std::vector<ClassTransferScheduleCandidate> incoming{
         transferSchedule(
             TransferTimeCategory::Regular,
+            Weekday::Sunday,
             sundayElevenPm,
             mondayOneAm
             ),
         transferSchedule(
             TransferTimeCategory::Regular,
+            Weekday::Monday,
             mondayTwelveThirtyAm,
             mondayOneThirtyAm
             )
@@ -1573,6 +1644,7 @@ void NextApplicationClassTransferTests::
     const std::vector<ClassTransferScheduleCandidate> existing{
         transferSchedule(
             TransferTimeCategory::Regular,
+            Weekday::Monday,
             60,
             mondayTwoAm
             )
@@ -1619,18 +1691,21 @@ void NextApplicationClassTransferTests::
     // interval by advancing the end by one day when end <= start.
     const ClassTransferScheduleCandidate fullDay = transferSchedule(
         TransferTimeCategory::Regular,
+        Weekday::Monday,
         16 * 60,
-        kClassTransferMinutesPerDay + 16 * 60
+        16 * 60
         );
     const ClassTransferScheduleCandidate crossingEnd = transferSchedule(
         TransferTimeCategory::Regular,
-        kClassTransferMinutesPerDay + 15 * 60 + 30,
-        kClassTransferMinutesPerDay + 16 * 60 + 30
+        Weekday::Tuesday,
+        15 * 60 + 30,
+        16 * 60 + 30
         );
     const ClassTransferScheduleCandidate touchingEnd = transferSchedule(
         TransferTimeCategory::Regular,
-        kClassTransferMinutesPerDay + 16 * 60,
-        kClassTransferMinutesPerDay + 17 * 60
+        Weekday::Tuesday,
+        16 * 60,
+        17 * 60
         );
 
     QVERIFY(classTransferScheduleIntervalsOverlap(fullDay, crossingEnd));
