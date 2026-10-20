@@ -65,12 +65,10 @@ public:
                 return unavailableSessionFailure();
             }
 
-            const QDate startDate = QDate::fromString(
-                QString::fromUtf8(
-                    request.startDate.data(),
-                    static_cast<qsizetype>(request.startDate.size())
-                    ),
-                Qt::ISODate
+            const QDate startDate(
+                request.startDate.year(),
+                request.startDate.month(),
+                request.startDate.day()
                 );
             const std::string& repeatSeriesIdValue =
                 request.repeatSeriesId->value();

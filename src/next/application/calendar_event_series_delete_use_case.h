@@ -12,6 +12,21 @@ class CalendarEventSeriesDeleteUseCase final
 public:
     [[nodiscard]] static CalendarEventSeriesDeleteResult execute(
         CalendarEventSeriesDeletePort& deletePort,
+        const CalendarEventSeriesDeleteInput& input
+        )
+    {
+        const Domain::Result<CalendarEventSeriesDeleteRequest> request =
+            input.toRequest();
+        if (!request)
+        {
+            return CalendarEventSeriesDeleteResult::failure(request.error());
+        }
+
+        return execute(deletePort, request.value());
+    }
+
+    [[nodiscard]] static CalendarEventSeriesDeleteResult execute(
+        CalendarEventSeriesDeletePort& deletePort,
         const CalendarEventSeriesDeleteRequest& request
         )
     {

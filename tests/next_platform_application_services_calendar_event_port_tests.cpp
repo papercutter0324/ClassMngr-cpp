@@ -66,6 +66,11 @@ using ClassMngr::Next::Platform::
 namespace
 {
 
+GregorianDate gregorianDate(const char* const isoDate)
+{
+    return *GregorianDate::fromIsoString(isoDate);
+}
+
 std::string repeatedHangulTitle(const std::size_t count)
 {
     QString title;
@@ -3442,9 +3447,9 @@ deletesValidRepeatSeriesSuffix()
     const QString repeatSeriesId = QStringLiteral("series-delete-suffix");
     QList<int> eventIds;
     for (const QDate& startDate : {
-             QDate(2026, 12, 1),
-             QDate(2026, 12, 8),
-             QDate(2026, 12, 15)
+             QDate(2024, 2, 28),
+             QDate(2024, 2, 29),
+             QDate(2024, 3, 1)
          })
     {
         CalendarEvent event = makeEvent(
@@ -3464,8 +3469,8 @@ deletesValidRepeatSeriesSuffix()
 
     CalendarEvent unrelatedSeriesEvent = makeEvent(
         QStringLiteral("Unrelated series event"),
-        QDate(2026, 12, 15),
-        QDate(2026, 12, 15)
+        QDate(2024, 3, 1),
+        QDate(2024, 3, 1)
         );
     unrelatedSeriesEvent.startTime = QTime(13, 0);
     unrelatedSeriesEvent.endTime = QTime(14, 0);
@@ -3477,8 +3482,8 @@ deletesValidRepeatSeriesSuffix()
 
     CalendarEvent unrelatedEvent = makeEvent(
         QStringLiteral("Unrelated one-time event"),
-        QDate(2026, 12, 10),
-        QDate(2026, 12, 10)
+        QDate(2024, 2, 29),
+        QDate(2024, 2, 29)
         );
     unrelatedEvent.startTime = QTime(15, 0);
     unrelatedEvent.endTime = QTime(16, 0);
@@ -3498,7 +3503,7 @@ deletesValidRepeatSeriesSuffix()
         calendarEventSeriesId(
             QStringLiteral("  series-delete-suffix  ").toUtf8().toStdString()
             ),
-        QStringLiteral("2026-12-08").toStdString()
+        gregorianDate("2024-02-29")
     };
     const auto deleted = port.deleteRepeatSeriesFromDate(request);
 
@@ -3510,8 +3515,8 @@ deletesValidRepeatSeriesSuffix()
     QVERIFY(repository->getCalendarEvent(*unrelatedSaved));
 
     const auto remaining = repository->loadCalendarEventsInRange(
-        QDate(2026, 12, 1),
-        QDate(2026, 12, 31)
+        QDate(2024, 2, 1),
+        QDate(2024, 3, 31)
         );
     QVERIFY(remaining);
     QCOMPARE(remaining->size(), 3);
@@ -3541,7 +3546,7 @@ deletesMissingRepeatSeriesSuffixSuccessfully()
     ApplicationServicesCalendarEventSeriesDeletePort port(services);
     const auto deleted = port.deleteRepeatSeriesFromDate({
         calendarEventSeriesId(repeatSeriesId.toUtf8().toStdString()),
-        "2026-12-08"
+        gregorianDate("2026-12-08")
     });
 
     QVERIFY(deleted);
@@ -3560,7 +3565,7 @@ reportsInvalidRepeatSeriesDeleteRequestStructurally()
     const auto invalidBeforeServiceLookup =
         unavailablePort.deleteRepeatSeriesFromDate({
             calendarEventSeriesId("   "),
-            "2026-12-08"
+            gregorianDate("2026-12-08")
         });
     verifyFailure(invalidBeforeServiceLookup, ErrorCode::InvalidInput);
     QCOMPARE(invalidBeforeServiceLookup.error().message, diagnostic);
@@ -3569,7 +3574,7 @@ reportsInvalidRepeatSeriesDeleteRequestStructurally()
     const auto absentBeforeServiceLookup =
         unavailablePort.deleteRepeatSeriesFromDate({
             emptyId,
-            "2026-12-08"
+            gregorianDate("2026-12-08")
         });
     verifyFailure(absentBeforeServiceLookup, ErrorCode::InvalidInput);
     QCOMPARE(absentBeforeServiceLookup.error().message, diagnostic);
@@ -3580,31 +3585,17 @@ reportsInvalidRepeatSeriesDeleteRequestStructurally()
     ApplicationServicesCalendarEventSeriesDeletePort port(services);
     const auto blankSeriesId = port.deleteRepeatSeriesFromDate({
         calendarEventSeriesId("   "),
-        "2026-12-08"
+        gregorianDate("2026-12-08")
     });
     verifyFailure(blankSeriesId, ErrorCode::InvalidInput);
     QCOMPARE(blankSeriesId.error().message, diagnostic);
-    verifyFailure(
-        port.deleteRepeatSeriesFromDate({
-            calendarEventSeriesId("series-delete-invalid"),
-            "2026-13-08"
-        }),
-        ErrorCode::InvalidInput
-        );
     verifyFailure(
         port.deleteRepeatSeriesFromDate({
             calendarEventSeriesId(std::string(
                 kCalendarEventSeriesDeleteMaxRepeatSeriesIdLength + 1,
                 'r'
                 )),
-            "2026-12-08"
-        }),
-        ErrorCode::InvalidInput
-        );
-    verifyFailure(
-        port.deleteRepeatSeriesFromDate({
-            calendarEventSeriesId("series-delete-impossible-date"),
-            "2026-04-31"
+            gregorianDate("2026-12-08")
         }),
         ErrorCode::InvalidInput
         );
@@ -3623,7 +3614,7 @@ reportsUnavailableRepeatSeriesDeleteSessionStructurally()
     verifyRecoverableFailure(
         port.deleteRepeatSeriesFromDate({
             calendarEventSeriesId("series-delete-unavailable"),
-            "2026-12-08"
+            gregorianDate("2026-12-08")
         }),
         ErrorCode::NotFound,
         "The calendar service is unavailable."
@@ -3639,7 +3630,7 @@ reportsUnavailableRepeatSeriesDeleteSessionStructurally()
     verifyRecoverableFailure(
         port.deleteRepeatSeriesFromDate({
             calendarEventSeriesId("series-delete-unavailable"),
-            "2026-12-08"
+            gregorianDate("2026-12-08")
         }),
         ErrorCode::NotFound,
         "The calendar service is unavailable."
@@ -3684,7 +3675,7 @@ reportsRepeatSeriesDeleteServiceFailureStructurally()
     ApplicationServicesCalendarEventSeriesDeletePort port(services);
     const auto deleted = port.deleteRepeatSeriesFromDate({
         calendarEventSeriesId("series-delete-failure"),
-        "2026-12-02"
+        gregorianDate("2026-12-02")
     });
 
     verifyFailure(deleted, ErrorCode::Technical);
@@ -4555,7 +4546,7 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesDeleteRequest>().startDate),
-        std::string
+        GregorianDate
         >);
     static_assert(std::is_base_of_v<
         SeriesEditPort,

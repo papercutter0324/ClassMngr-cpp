@@ -795,7 +795,7 @@ void CalendarPage::openCalendarDialog(
             if (thisAndFollowing)
             {
                 const ClassMngr::Next::Application::
-                    CalendarEventSeriesDeleteRequest request{
+                    CalendarEventSeriesDeleteInput input{
                         draft.repeatSeriesId,
                         draft.startDate
                     };
@@ -807,7 +807,7 @@ void CalendarPage::openCalendarDialog(
                     ClassMngr::Next::Application::
                         CalendarEventSeriesDeleteUseCase::execute(
                             deletePort,
-                            request
+                            input
                             );
                 if (!typedDeleted)
                 {
