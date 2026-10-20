@@ -55847,3 +55847,27 @@ Focused targets are `ClassMngr`,
 `generateCommentsAppliesToOriginalRowAndUndoesAsOneAction` rather than the full
 page suite, which has a separately documented baseline failure).
 No F1219 implementation or verification has started.
+
+### F1219 AI accepted-comment source row complete - 2026-10-21
+
+F1219 completed at commit `acec3a17` (`Phase2 - Type AI accepted comment
+source row`). The explicit `SpeakingEvaluationAiBatchAcceptedCommentSourceRow`
+wrapper now backs both planner candidate and assignment fields. It is an
+`int` value with default `-1`, explicit construction, `.rawValue()`, and
+equality, with no implicit conversion. The planner's existing checked, valid,
+report-index, and changed-comment filters and input order remain unchanged;
+source-row values, including `-1` and 25, pass through without validation.
+The Feature dialog wraps inputs and unwraps results to the existing `int` DTO.
+The page action's negative/past-end skip remains before cell-edit creation.
+
+The independent Tester built the app and three focused test targets in
+`build/qt-rewrite-phase0-macos-universal-debug`; CMake reconfigured and compiled
+the requested targets. The planner and report-service CTests passed 2/2; the
+report-service suite reported 81 passed, 0 failed, and 5 skipped opt-in
+PowerPoint cases. The selected page test
+`generateCommentsAppliesToOriginalRowAndUndoesAsOneAction` passed 3 Qt cases.
+The Tester confirmed exact type and `-1`/25 propagation assertions, checked the
+Feature boundaries and retained page guard, and `git diff --check` passed.
+Because the page constructs a concrete private dialog from fixed 25-row model
+data, no direct invalid-result injection test seam was added; this guard was
+verified by code review. No full page suite or Windows run is claimed.

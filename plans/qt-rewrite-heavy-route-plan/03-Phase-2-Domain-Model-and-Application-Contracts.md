@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch495 is complete and pushed at `e84c332d`; Batch496 is active with F1219 accepted/current, and F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch495 is complete and pushed at `e84c332d`; Batch496 is active with F1219 complete and F1220 next for acceptance, while F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-Batch494 is complete and pushed at `fc626d56` (see the [push receipt](03-Phase-2-Progress-Log.md#batch494-push-receipt-2026-10-20)). Batch495 is complete through F1218 (see the [F1218 completion](03-Phase-2-Progress-Log.md#f1218-roster-first-empty-row-result-complete-2026-10-21)) and pushed at `e84c332d` (see the [Batch495 push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is active with F1219 accepted/current (see the [F1219 acceptance](03-Phase-2-Progress-Log.md#f1219-ai-accepted-comment-source-row-accepted-before-implementation-2026-10-21) and [Batch496 discovery record](03-Phase-2-Progress-Log.md#batch496-discovery-started-2026-10-21)). F629 plus the Phase 0 and Phase 2 gates remain open.
+Batch494 is complete and pushed at `fc626d56` (see the [push receipt](03-Phase-2-Progress-Log.md#batch494-push-receipt-2026-10-20)). Batch495 is complete through F1218 (see the [F1218 completion](03-Phase-2-Progress-Log.md#f1218-roster-first-empty-row-result-complete-2026-10-21)) and pushed at `e84c332d` (see the [Batch495 push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is active; F1219 is complete (see the [F1219 completion](03-Phase-2-Progress-Log.md#f1219-ai-accepted-comment-source-row-complete-2026-10-21)) and F1220 is next for acceptance (see the [Batch496 discovery record](03-Phase-2-Progress-Log.md#batch496-discovery-started-2026-10-21)). F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,9 +72,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch496 (8 candidates; 1 accepted, 7 discovered)
+#### Active batch: Batch496 (8 candidates; 1 complete, 7 discovered)
 
-1. F1219 - **Accepted/current.** Type AI accepted-comment planner source-row coordinates; preserve `-1` propagation, input order, and downstream invalid-row skips (see [acceptance](03-Phase-2-Progress-Log.md#f1219-ai-accepted-comment-source-row-accepted-before-implementation-2026-10-21)).
+1. F1219 - **Complete.** Type AI accepted-comment planner source-row coordinates; preserve `-1` propagation, input order, and downstream invalid-row skips (see [completion](03-Phase-2-Progress-Log.md#f1219-ai-accepted-comment-source-row-complete-2026-10-21)).
 2. F1220 - **Discovered.** Type Schedule Import matching candidate positions; preserve candidate order and projection behavior.
 3. F1221 - **Discovered.** Type Roster Availability accumulator row and source-column coordinates; preserve bounds checks and projection filtering.
 4. F1222 - **Discovered.** Type Class Transfer schedule-conflict positions; preserve each index's conditional vector meaning and conflict order.
