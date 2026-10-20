@@ -58,13 +58,15 @@ Request validRequest(
         }
         );
     request.reviewDecisions.candidates.push_back(
-        {ReviewTeacherKey{"teacher-1"}, {"Room 101"}}
+        {ReviewTeacherKey{"teacher-1"}, {
+            ScheduleImportReviewRoomValue{"Room 101"}
+        }}
         );
     request.reviewDecisions.teachers.push_back(
         {ReviewTeacherKey{"teacher-1"}, ReviewTeacherAction::Reuse, {}}
         );
     request.reviewDecisions.classes.push_back(
-        {0, ReviewClassAction::CreateNew, std::nullopt}
+        {ScheduleImportCandidateIndex{0}, ReviewClassAction::CreateNew, std::nullopt}
         );
     request.classColors.push_back(
         {0, "#aabbcc", "#000000"}
@@ -107,10 +109,12 @@ void appendSecondCandidate(
         }
         );
     request.reviewDecisions.candidates.push_back(
-        {ReviewTeacherKey{"teacher-1"}, {"Room 101"}}
+        {ReviewTeacherKey{"teacher-1"}, {
+            ScheduleImportReviewRoomValue{"Room 101"}
+        }}
         );
     request.reviewDecisions.classes.push_back(
-        {1, ReviewClassAction::CreateNew, std::nullopt}
+        {ScheduleImportCandidateIndex{1}, ReviewClassAction::CreateNew, std::nullopt}
         );
     request.classColors.push_back(
         {1, "#112233", "#445566"}

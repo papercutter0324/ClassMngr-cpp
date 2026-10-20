@@ -77,13 +77,13 @@ int main()
         }
     };
     decisions.classes = {
-        {0, ScheduleImportReviewClassAction::CreateNew},
-        {1, ScheduleImportReviewClassAction::CreateNew},
-        {2, ScheduleImportReviewClassAction::UpdateExisting},
-        {3, ScheduleImportReviewClassAction::Skip},
-        {4, ScheduleImportReviewClassAction::Skip},
-        {5, ScheduleImportReviewClassAction::Unselected},
-        {6, ScheduleImportReviewClassAction::Invalid}
+        {ScheduleImportCandidateIndex{0}, ScheduleImportReviewClassAction::CreateNew},
+        {ScheduleImportCandidateIndex{1}, ScheduleImportReviewClassAction::CreateNew},
+        {ScheduleImportCandidateIndex{2}, ScheduleImportReviewClassAction::UpdateExisting},
+        {ScheduleImportCandidateIndex{3}, ScheduleImportReviewClassAction::Skip},
+        {ScheduleImportCandidateIndex{4}, ScheduleImportReviewClassAction::Skip},
+        {ScheduleImportCandidateIndex{5}, ScheduleImportReviewClassAction::Unselected},
+        {ScheduleImportCandidateIndex{6}, ScheduleImportReviewClassAction::Invalid}
     };
 
     const ScheduleImportReviewSummary summary =

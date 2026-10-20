@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/schedule_import_applied_count.h"
+#include "next/application/schedule_import_candidate_index.h"
 #include "next/application/schedule_import_plan_validation.h"
 #include "next/application/schedule_import_state_validation.h"
 
@@ -98,7 +99,7 @@ struct ScheduleImportApplyTeacher final
 
 struct ScheduleImportApplyClass final
 {
-    int candidateIndex = -1;
+    ScheduleImportCandidateIndex candidateIndex;
     ScheduleImportReviewClassAction action = ScheduleImportReviewClassAction::Unselected;
     std::optional<Domain::ClassId> targetClassId;
     std::u16string classColor;

@@ -316,7 +316,7 @@ ScheduleImportPlanEligibilityRequest eligibilityRequest(
             candidateClass.targetClassId
         });
         request.classColors.push_back({
-            candidateClass.candidateIndex,
+            candidateClass.candidateIndex.rawValue(),
             QString::fromStdU16String(candidateClass.classColor)
                 .trimmed()
                 .toStdString(),
@@ -473,7 +473,9 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
     {
         request.reviewDecisions.classes.push_back(
             ScheduleImportReviewClassResolution{
-                resolution.candidateIndex,
+                ClassMngr::Next::Application::ScheduleImportCandidateIndex{
+                    resolution.candidateIndex
+                },
                 decisionAction(resolution.action),
                 decisionTargetId(resolution.targetClassId)
             }

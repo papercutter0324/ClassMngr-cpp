@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/schedule_import_candidate_index.h"
 #include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/domain_types.h"
 
@@ -120,7 +121,7 @@ struct ScheduleImportReviewTeacherResolution final
 
 struct ScheduleImportReviewClassResolution final
 {
-    int candidateIndex = -1;
+    ScheduleImportCandidateIndex candidateIndex;
     ScheduleImportReviewClassAction action =
         ScheduleImportReviewClassAction::Unselected;
     std::optional<Domain::ClassId> targetClassId;
@@ -158,9 +159,9 @@ struct ScheduleImportReviewDecisionIssue final
 {
     ScheduleImportReviewDecisionIssueCode code;
     ScheduleImportReviewTeacherKey teacherKey;
-    int candidateIndex = -1;
+    ScheduleImportCandidateIndex candidateIndex;
     std::optional<Domain::ClassId> targetClassId;
-    std::vector<int> candidateIndexes;
+    std::vector<ScheduleImportCandidateIndex> candidateIndexes;
 };
 
 struct ScheduleImportReviewDecisionResult final
@@ -283,12 +284,13 @@ validateScheduleImportReviewDecisions(
         candidateCount,
         nullptr
         );
-    std::map<Domain::ClassId, std::vector<int>> claimedClassTargets;
+    std::map<Domain::ClassId, std::vector<ScheduleImportCandidateIndex>>
+        claimedClassTargets;
     std::map<Domain::ClassId, std::size_t> duplicateTargetIssueIndexes;
 
     const auto claimClassTarget = [&] (
         const Domain::ClassId& targetClassId,
-        int candidateIndex,
+        ScheduleImportCandidateIndex candidateIndex,
         ClassAction action
         )
     {
@@ -327,9 +329,9 @@ validateScheduleImportReviewDecisions(
 
     for (const auto& resolution : request.classes)
     {
-        if (resolution.candidateIndex < 0
-            || static_cast<std::size_t>(resolution.candidateIndex)
-                >= candidateCount)
+        const int rawCandidateIndex = resolution.candidateIndex.rawValue();
+        if (rawCandidateIndex < 0
+            || static_cast<std::size_t>(rawCandidateIndex) >= candidateCount)
         {
             Issue issue{IssueCode::CandidateIndexOutOfRange};
             issue.candidateIndex = resolution.candidateIndex;
@@ -338,7 +340,7 @@ validateScheduleImportReviewDecisions(
         }
 
         const auto candidateIndex =
-            static_cast<std::size_t>(resolution.candidateIndex);
+            static_cast<std::size_t>(rawCandidateIndex);
         if (classResolutionSeen[candidateIndex])
         {
             Issue issue{IssueCode::DuplicateClassResolution};
@@ -429,7 +431,9 @@ validateScheduleImportReviewDecisions(
         if (!classResolutionSeen[candidateIndex])
         {
             Issue issue{IssueCode::MissingClassResolution};
-            issue.candidateIndex = static_cast<int>(candidateIndex);
+            issue.candidateIndex = ScheduleImportCandidateIndex{
+                static_cast<int>(candidateIndex)
+            };
             result.issues.push_back(std::move(issue));
         }
     }
@@ -495,7 +499,9 @@ validateScheduleImportReviewDecisions(
         {
             Issue issue{IssueCode::ActiveClassAssignedToSkippedTeacher,
                         candidate.teacherKey};
-            issue.candidateIndex = static_cast<int>(candidateIndex);
+            issue.candidateIndex = ScheduleImportCandidateIndex{
+                static_cast<int>(candidateIndex)
+            };
             result.issues.push_back(std::move(issue));
         }
     }

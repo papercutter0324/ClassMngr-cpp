@@ -2,6 +2,7 @@
 #include "next/application/schedule_import_apply_use_case.h"
 
 #include <optional>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -21,6 +22,10 @@ static_assert(std::is_same_v<
 static_assert(std::is_same_v<
     decltype(ScheduleImportApplyTeacherTargetIssue{}.teacherKey),
     ScheduleImportApplyTeacherKey
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportApplyClass{}.candidateIndex),
+    ScheduleImportCandidateIndex
     >);
 static_assert(!std::is_convertible_v<
     std::u16string,
@@ -81,6 +86,12 @@ int main()
         );
 
     ScheduleImportApplyRequest request;
+    require(ScheduleImportCandidateIndex{}.rawValue() == -1);
+    require(ScheduleImportCandidateIndex{-9}.rawValue() == -9);
+    require(ScheduleImportCandidateIndex{9} == ScheduleImportCandidateIndex{9});
+    require(ScheduleImportCandidateIndex{9} != ScheduleImportCandidateIndex{10});
+    require(!std::is_convertible_v<int, ScheduleImportCandidateIndex>);
+    require(!std::is_convertible_v<ScheduleImportCandidateIndex, int>);
     ScheduleImportApplyCandidate firstCandidate;
     firstCandidate.teacherKey = ScheduleImportApplyTeacherKey{
         u"\uAE40\U0001F9EA"
@@ -137,21 +148,21 @@ int main()
     };
     request.classes = {
         {
-            1,
+            ScheduleImportCandidateIndex{1},
             ScheduleImportReviewClassAction::Skip,
             skippedClassId,
             u"",
             u""
         },
         {
-            0,
+            ScheduleImportCandidateIndex{0},
             ScheduleImportReviewClassAction::UpdateExisting,
             updatedClassId,
             u"",
             u""
         },
         {
-            2,
+            ScheduleImportCandidateIndex{2},
             ScheduleImportReviewClassAction::CreateNew,
             std::nullopt,
             u"",
@@ -199,20 +210,33 @@ int main()
     require(decisions.teachers[2].action == ScheduleImportReviewTeacherAction::Create);
 
     require(decisions.classes.size() == 3);
-    require(decisions.classes[0].candidateIndex == 1);
+    require(decisions.classes[0].candidateIndex.rawValue() == 1);
     require(
         decisions.classes[0].action == ScheduleImportReviewClassAction::Skip
         );
     require(decisions.classes[0].targetClassId == skippedClassId);
-    require(decisions.classes[1].candidateIndex == 0);
+    require(decisions.classes[1].candidateIndex.rawValue() == 0);
     require(
         decisions.classes[1].action
         == ScheduleImportReviewClassAction::UpdateExisting
         );
     require(decisions.classes[1].targetClassId == updatedClassId);
-    require(decisions.classes[2].candidateIndex == 2);
+    require(decisions.classes[2].candidateIndex.rawValue() == 2);
     require(
         decisions.classes[2].action == ScheduleImportReviewClassAction::CreateNew
         );
     require(!decisions.classes[2].targetClassId);
+
+    request.classes[0].candidateIndex = ScheduleImportCandidateIndex{
+        std::numeric_limits<int>::min()
+    };
+    const auto invalidIndexDecisions =
+        projectScheduleImportApplyReviewDecisions(request);
+    const auto invalidIndexResult =
+        validateScheduleImportReviewDecisions(invalidIndexDecisions);
+    require(!invalidIndexResult.accepted());
+    require(invalidIndexResult.issues.front().code
+            == ScheduleImportReviewDecisionIssueCode::CandidateIndexOutOfRange);
+    require(invalidIndexResult.issues.front().candidateIndex.rawValue()
+            == std::numeric_limits<int>::min());
 }

@@ -90,7 +90,9 @@ ScheduleImportApplyRequest validRequest()
         std::nullopt,
         u"413"
     });
-    request.classes.push_back({0, ScheduleImportReviewClassAction::CreateNew,
+    request.classes.push_back({
+        ScheduleImportCandidateIndex{0},
+        ScheduleImportReviewClassAction::CreateNew,
         std::nullopt, u"#FFFFFF", u"#000000"});
     return request;
 }

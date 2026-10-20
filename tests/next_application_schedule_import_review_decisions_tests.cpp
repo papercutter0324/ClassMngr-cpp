@@ -21,6 +21,7 @@ using IssueCode = ScheduleImportReviewDecisionIssueCode;
 using Request = ScheduleImportReviewDecisionRequest;
 using TeacherKey = ScheduleImportReviewTeacherKey;
 using ReviewRoom = ScheduleImportReviewRoomValue;
+using CandidateIndex = ScheduleImportCandidateIndex;
 using ClassId = ClassMngr::Next::Domain::ClassId;
 using TeacherId = ClassMngr::Next::Domain::TeacherId;
 
@@ -50,6 +51,24 @@ static_assert(std::is_same_v<
     const std::string&
     >);
 static_assert(!std::is_convertible_v<std::string, ReviewRoom>);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportReviewClassResolution{}.candidateIndex),
+    CandidateIndex
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportReviewDecisionIssue{}.candidateIndex),
+    CandidateIndex
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportReviewDecisionIssue{}.candidateIndexes),
+    std::vector<CandidateIndex>
+    >);
+static_assert(std::is_same_v<
+    decltype(std::declval<const CandidateIndex&>().rawValue()),
+    int
+    >);
+static_assert(!std::is_convertible_v<int, CandidateIndex>);
+static_assert(!std::is_convertible_v<CandidateIndex, int>);
 
 static_assert(std::is_same_v<
     decltype(ScheduleImportReviewClassResolution{}.targetClassId),
@@ -97,8 +116,8 @@ Request validRequest()
         {TeacherKey{"teacher-a"}, TeacherAction::Reuse, room("415")}
     };
     request.classes = {
-        {0, ClassAction::UpdateExisting, classId(21)},
-        {1, ClassAction::Skip, classId(22)}
+        {CandidateIndex{0}, ClassAction::UpdateExisting, classId(21)},
+        {CandidateIndex{1}, ClassAction::Skip, classId(22)}
     };
     return request;
 }
@@ -144,6 +163,20 @@ int main()
     try
     {
         {
+            const CandidateIndex defaultIndex;
+            require(defaultIndex.rawValue() == -1,
+                "default candidate index was not -1");
+            require(CandidateIndex{-17}.rawValue() == -17,
+                "candidate index construction changed a negative raw value");
+            require(CandidateIndex{23}.rawValue() == 23,
+                "candidate index construction changed a positive raw value");
+            require(CandidateIndex{23} == CandidateIndex{23},
+                "equal candidate indexes compared unequal");
+            require(CandidateIndex{23} != CandidateIndex{24},
+                "different candidate indexes compared equal");
+            ++cases;
+        }
+        {
             const TeacherKey empty;
             require(empty.empty(), "default teacher key was not empty");
             require(empty.value().empty(), "default teacher key lost its value");
@@ -169,8 +202,8 @@ int main()
                 {second, TeacherAction::Reuse, ReviewRoom{}}
             };
             request.classes = {
-                {0, ClassAction::CreateNew, std::nullopt},
-                {1, ClassAction::CreateNew, std::nullopt}
+                {CandidateIndex{0}, ClassAction::CreateNew, std::nullopt},
+                {CandidateIndex{1}, ClassAction::CreateNew, std::nullopt}
             };
             require(
                 validateScheduleImportReviewDecisions(request).accepted(),
@@ -218,9 +251,9 @@ int main()
                 {teacherA, TeacherAction::Invalid, ReviewRoom{}}
             };
             request.classes = {
-                {0, ClassAction::Invalid, std::nullopt},
-                {-1, ClassAction::CreateNew, std::nullopt},
-                {0, ClassAction::Skip, std::nullopt}
+                {CandidateIndex{0}, ClassAction::Invalid, std::nullopt},
+                {CandidateIndex{-1}, ClassAction::CreateNew, std::nullopt},
+                {CandidateIndex{0}, ClassAction::Skip, std::nullopt}
             };
 
             const auto result = validateScheduleImportReviewDecisions(request);
@@ -272,8 +305,8 @@ int main()
                 {teacher, TeacherAction::Reuse, ReviewRoom{}}
             };
             request.classes = {
-                {0, ClassAction::CreateNew, std::nullopt},
-                {1, ClassAction::CreateNew, std::nullopt}
+                {CandidateIndex{0}, ClassAction::CreateNew, std::nullopt},
+                {CandidateIndex{1}, ClassAction::CreateNew, std::nullopt}
             };
             require(
                 validateScheduleImportReviewDecisions(request).accepted(),
@@ -369,7 +402,7 @@ int main()
         {
             auto request = validRequest();
             request.classes.push_back(
-                {0, ClassAction::CreateNew, std::nullopt}
+                {CandidateIndex{0}, ClassAction::CreateNew, std::nullopt}
                 );
             expectRejected(
                 "duplicate class decision",
@@ -380,7 +413,9 @@ int main()
         }
         {
             auto request = validRequest();
-            request.classes.push_back({2, ClassAction::Skip, std::nullopt});
+            request.classes.push_back({
+                CandidateIndex{2}, ClassAction::Skip, std::nullopt
+            });
             expectRejected(
                 "out of range class decision",
                 request,
@@ -390,7 +425,31 @@ int main()
         }
         {
             auto request = validRequest();
-            request.classes[0] = {0, ClassAction::CreateNew, std::nullopt};
+            const int negativeRawValue = std::numeric_limits<int>::min();
+            const int positiveRawValue = std::numeric_limits<int>::max();
+            request.classes[0].candidateIndex = CandidateIndex{negativeRawValue};
+            request.classes[1].candidateIndex = CandidateIndex{positiveRawValue};
+            const auto result = validateScheduleImportReviewDecisions(request);
+            require(result.issues.size() == 4,
+                "invalid indexes changed the decision issue count");
+            require(result.issues[0].code == IssueCode::CandidateIndexOutOfRange
+                    && result.issues[0].candidateIndex.rawValue()
+                        == negativeRawValue,
+                "negative invalid index did not preserve its value and order");
+            require(result.issues[1].code == IssueCode::CandidateIndexOutOfRange
+                    && result.issues[1].candidateIndex.rawValue()
+                        == positiveRawValue,
+                "positive invalid index did not preserve its value and order");
+            require(result.issues[2].code == IssueCode::MissingClassResolution
+                    && result.issues[3].code == IssueCode::MissingClassResolution,
+                "missing class issues moved ahead of out-of-range issues");
+            ++cases;
+        }
+        {
+            auto request = validRequest();
+            request.classes[0] = {
+                CandidateIndex{0}, ClassAction::CreateNew, std::nullopt
+            };
             require(
                 validateScheduleImportReviewDecisions(request).accepted(),
                 "create without target was rejected"
@@ -438,7 +497,7 @@ int main()
                 );
             require(
                 issue != result.issues.end()
-                    && issue->candidateIndex == 0
+                    && issue->candidateIndex.rawValue() == 0
                     && issue->targetClassId == ClassId::fromString(invalidId),
                 "invalid existing class ID omitted its typed target detail"
                 );
@@ -469,7 +528,7 @@ int main()
         {
             auto request = validRequest();
             request.classes[0] = {
-                0,
+                CandidateIndex{0},
                 ClassAction::CreateNew,
                 ClassId::fromString("not-a-number")
             };
@@ -483,7 +542,7 @@ int main()
         {
             auto request = validRequest();
             request.classes[1] = {
-                1,
+                CandidateIndex{1},
                 ClassAction::UpdateExisting,
                 classId(21)
             };
@@ -506,15 +565,21 @@ int main()
             require(
                 issue != result.issues.end()
                     && issue->targetClassId == classId(21)
-                    && issue->candidateIndexes == std::vector<int>({0, 1}),
+                    && issue->candidateIndexes == std::vector<CandidateIndex>{
+                        CandidateIndex{0}, CandidateIndex{1}
+                    },
                 "duplicate target issue omitted its UI detail"
                 );
             ++cases;
         }
         {
             auto request = validRequest();
-            request.classes[0] = {0, ClassAction::Skip, classId(22)};
-            request.classes[1] = {1, ClassAction::Skip, classId(22)};
+            request.classes[0] = {
+                CandidateIndex{0}, ClassAction::Skip, classId(22)
+            };
+            request.classes[1] = {
+                CandidateIndex{1}, ClassAction::Skip, classId(22)
+            };
             expectRejected(
                 "duplicate skipped class target",
                 request,
@@ -534,7 +599,9 @@ int main()
             require(
                 issue != result.issues.end()
                     && issue->targetClassId == classId(22)
-                    && issue->candidateIndexes == std::vector<int>({0, 1}),
+                    && issue->candidateIndexes == std::vector<CandidateIndex>{
+                        CandidateIndex{0}, CandidateIndex{1}
+                    },
                 "duplicate skipped target issue omitted its UI detail"
                 );
             ++cases;
@@ -662,7 +729,7 @@ int main()
             request.teachers[0].action = TeacherAction::Skip;
             request.teachers[0].selectedRoom = room("foreign");
             request.classes[0] = {
-                0,
+                CandidateIndex{0},
                 ClassAction::CreateNew,
                 std::nullopt
             };
@@ -676,8 +743,12 @@ int main()
         {
             auto request = validRequest();
             request.teachers[0].action = TeacherAction::Skip;
-            request.classes[0] = {0, ClassAction::Skip, classId(21)};
-            request.classes[1] = {1, ClassAction::Skip, classId(22)};
+            request.classes[0] = {
+                CandidateIndex{0}, ClassAction::Skip, classId(21)
+            };
+            request.classes[1] = {
+                CandidateIndex{1}, ClassAction::Skip, classId(22)
+            };
             require(
                 validateScheduleImportReviewDecisions(request).accepted(),
                 "skipped classes lost their existing target meaning"

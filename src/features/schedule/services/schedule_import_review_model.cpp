@@ -148,7 +148,7 @@ ScheduleImportReviewModel::buildApplyRequest(
     for (const ScheduleImportClassResolution& candidateClass : classes)
     {
         request.classes.push_back({
-            candidateClass.candidateIndex,
+            ScheduleImportCandidateIndex{candidateClass.candidateIndex},
             applyClassAction(candidateClass.action),
             targetId<Domain::ClassId>(candidateClass.targetClassId),
             candidateClass.classColor.trimmed().toStdU16String(),

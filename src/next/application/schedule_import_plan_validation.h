@@ -153,7 +153,9 @@ validateScheduleImportPlanEligibility(
     for (const ScheduleImportReviewClassResolution& resolution :
          request.reviewDecisions.classes)
     {
-        classActions[static_cast<std::size_t>(resolution.candidateIndex)] =
+        classActions[static_cast<std::size_t>(
+            resolution.candidateIndex.rawValue()
+            )] =
             resolution.action;
     }
 

@@ -47,7 +47,7 @@ Application::ScheduleImportApplyRequest typedRequest()
         u"413"
     });
     request.classes.push_back({
-        0,
+        Application::ScheduleImportCandidateIndex{0},
         Application::ScheduleImportReviewClassAction::CreateNew,
         std::nullopt,
         u"#123456",
@@ -491,7 +491,7 @@ void ScheduleImportApplyPortTests::preservesStructuredRepositoryFailures()
         u"413"
     });
     overlappingRequest.classes.push_back({
-        1,
+        Application::ScheduleImportCandidateIndex{1},
         Application::ScheduleImportReviewClassAction::CreateNew,
         std::nullopt,
         u"#123456",

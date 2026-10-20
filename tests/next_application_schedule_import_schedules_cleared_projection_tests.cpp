@@ -70,9 +70,9 @@ int main()
 
     ScheduleImportReviewDecisionRequest decisions;
     decisions.classes = {
-        {0, ScheduleImportReviewClassAction::UpdateExisting, maybeClassId("1")},
-        {1, ScheduleImportReviewClassAction::Skip, maybeClassId("2")},
-        {2, ScheduleImportReviewClassAction::UpdateExisting, maybeClassId("5")}
+        {ScheduleImportCandidateIndex{0}, ScheduleImportReviewClassAction::UpdateExisting, maybeClassId("1")},
+        {ScheduleImportCandidateIndex{1}, ScheduleImportReviewClassAction::Skip, maybeClassId("2")},
+        {ScheduleImportCandidateIndex{2}, ScheduleImportReviewClassAction::UpdateExisting, maybeClassId("5")}
     };
 
     require(projectScheduleImportSchedulesCleared(

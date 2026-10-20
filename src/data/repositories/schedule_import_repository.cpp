@@ -210,7 +210,9 @@ ScheduleImportApplyRequest applyRequestFromLegacyPlan(
     for (const ScheduleImportClassResolution& source : plan.classes)
     {
         ScheduleImportApplyClass classroom;
-        classroom.candidateIndex = source.candidateIndex;
+        classroom.candidateIndex = ScheduleImportCandidateIndex{
+            source.candidateIndex
+        };
         classroom.action = applyClassAction(source.action);
         classroom.classColor = source.classColor.toStdU16String();
         classroom.fontColor = source.fontColor.toStdU16String();
@@ -666,7 +668,9 @@ ScheduleImportStateValidationRequest stateValidationRequest(
         );
     for (const ScheduleImportApplyClass& resolution : applyRequest.classes)
     {
-        classesByCandidate[static_cast<std::size_t>(resolution.candidateIndex)] =
+        classesByCandidate[static_cast<std::size_t>(
+            resolution.candidateIndex.rawValue()
+            )] =
             &resolution;
     }
     request.classResolutions.reserve(classesByCandidate.size());
@@ -1272,7 +1276,9 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
         );
     for (const ScheduleImportApplyClass& resolution : request.classes)
     {
-        classResolutions[static_cast<std::size_t>(resolution.candidateIndex)] =
+        classResolutions[static_cast<std::size_t>(
+            resolution.candidateIndex.rawValue()
+            )] =
             &resolution;
     }
 

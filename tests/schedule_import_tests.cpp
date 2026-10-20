@@ -134,7 +134,9 @@ ClassMngr::Next::Application::ScheduleImportApplyRequest typedCreateRequest(
             u"413"
         });
         request.classes.push_back({
-            static_cast<int>(request.classes.size()),
+            ScheduleImportCandidateIndex{
+                static_cast<int>(request.classes.size())
+            },
             ScheduleImportReviewClassAction::CreateNew,
             std::nullopt,
             u"#123456",
@@ -280,7 +282,7 @@ ScheduleImportPlan legacyPlanFromTypedRequest(
             Q_UNREACHABLE();
         }
         plan.classes.push_back({
-            source.candidateIndex,
+            source.candidateIndex.rawValue(),
             action,
             legacyTestId(source.targetClassId),
             QString::fromStdU16String(source.classColor),
@@ -7991,7 +7993,8 @@ void ScheduleImportTests::typedApplyRejectsMalformedResolutionShapesBeforeWrites
         auto outOfRangeCandidate = typedCreateRequest({
             typedCandidate(u"\uAE40", u"E5", u"Zeus")
         });
-        outOfRangeCandidate.classes[0].candidateIndex = 1;
+        outOfRangeCandidate.classes[0].candidateIndex =
+            ClassMngr::Next::Application::ScheduleImportCandidateIndex{1};
         const auto outOfRangeResult = repository.applyTyped(outOfRangeCandidate);
         QVERIFY(!outOfRangeResult.has_value());
         QVERIFY(outOfRangeResult.error().policyIssue.has_value());

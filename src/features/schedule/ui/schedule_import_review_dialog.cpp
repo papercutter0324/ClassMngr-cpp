@@ -1805,18 +1805,17 @@ void ScheduleImportReviewDialog::updateReviewState()
         }
 
         QStringList importedClasses;
-        for (int candidateIndex : issue.candidateIndexes)
+        for (const auto& candidateIndex : issue.candidateIndexes)
         {
-            if (
-                candidateIndex < 0
-                || candidateIndex >= m_preview.user.classes.size()
-                )
+            const int rawCandidateIndex = candidateIndex.rawValue();
+            if (rawCandidateIndex < 0
+                || rawCandidateIndex >= m_preview.user.classes.size())
             {
                 continue;
             }
             importedClasses.append(
                 importedClassConflictLabel(
-                    m_preview.user.classes[candidateIndex]
+                    m_preview.user.classes[rawCandidateIndex]
                     )
                 );
         }

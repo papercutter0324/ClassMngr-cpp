@@ -2994,7 +2994,7 @@ void ScheduleImportDialogTests::reviewSummaryUsesApplicationProjection()
         ClassMngr::Next::Application::ScheduleImportReviewTeacherAction::Create
     });
     decisions.classes.push_back({
-        0,
+        ClassMngr::Next::Application::ScheduleImportCandidateIndex{0},
         ClassMngr::Next::Application::ScheduleImportReviewClassAction::CreateNew
     });
     ClassMngr::Next::Platform::
@@ -3697,11 +3697,11 @@ resolutionBuilderBoundsRowsAndRestoresDecisions()
     QCOMPARE(completeApplyRequest.teachers.size(), std::size_t(1));
     QCOMPARE(completeApplyRequest.classes.size(),
         static_cast<std::size_t>(CandidateCount));
-    QCOMPARE(completeApplyRequest.classes.front().candidateIndex, 0);
+    QCOMPARE(completeApplyRequest.classes.front().candidateIndex.rawValue(), 0);
     QVERIFY(completeApplyRequest.classes.front().targetClassId.has_value());
     QCOMPARE(completeApplyRequest.classes.front().targetClassId->value(),
         std::string("1096"));
-    QCOMPARE(completeApplyRequest.classes.back().candidateIndex,
+    QCOMPARE(completeApplyRequest.classes.back().candidateIndex.rawValue(),
         CandidateCount - 1);
 
     auto uniqueValidationClasses = classResolutions;
