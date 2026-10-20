@@ -38,8 +38,9 @@ inline ValidationResult validation(
                 else
                 {
                     QVariantList rows;
-                    for (const int row : value)
-                        rows.append(row);
+                    for (const ClassMngr::Next::Domain::DuplicateStudentNamePairRowIndex row :
+                         value)
+                        rows.append(static_cast<int>(row.rawValue()));
                     return rows;
                 }
             }, argument));

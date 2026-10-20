@@ -25,6 +25,28 @@
 
 using namespace ClassMngr::Next::Domain;
 
+static_assert(std::is_same_v<
+    decltype(std::declval<DuplicateStudentNamePairGroup&>().rowIndexes),
+    std::vector<DuplicateStudentNamePairRowIndex>
+    >);
+static_assert(std::is_same_v<
+    decltype(DuplicateStudentNamePairRowIndex{}.rawValue()),
+    std::size_t
+    >);
+static_assert(std::is_constructible_v<
+    DuplicateStudentNamePairRowIndex,
+    std::size_t
+    >);
+static_assert(!std::is_convertible_v<
+    std::size_t,
+    DuplicateStudentNamePairRowIndex
+    >);
+static_assert(!std::is_convertible_v<
+    DuplicateStudentNamePairRowIndex,
+    std::size_t
+    >);
+static_assert(!std::is_aggregate_v<DuplicateStudentNamePairRowIndex>);
+
 class NextDomainContractTests final : public QObject
 {
     Q_OBJECT
@@ -61,6 +83,7 @@ private slots:
     void studentNamePairsRequireBothNames();
     void studentNamePairsCompareExactUtf16PartsAndOrder();
     void studentNamePairsPreserveValuesAcrossRvalueOperations();
+    void duplicateStudentNamePairRowIndexHasTypedValueSemantics();
     void duplicateStudentNamePairGroupsAreExactAndDeterministic();
     void studentNamePairsKeepPartsDistinctAcrossDelimiter();
     void teacherDisplayNamesSelectPreferredAndEnglishNames();
@@ -1335,6 +1358,19 @@ studentNamePairsPreserveValuesAcrossRvalueOperations()
 }
 
 void NextDomainContractTests::
+duplicateStudentNamePairRowIndexHasTypedValueSemantics()
+{
+    const DuplicateStudentNamePairRowIndex zero;
+    const DuplicateStudentNamePairRowIndex positive{9};
+
+    QCOMPARE(zero.rawValue(), std::size_t(0));
+    QCOMPARE(positive.rawValue(), std::size_t(9));
+    QVERIFY(zero == DuplicateStudentNamePairRowIndex{});
+    QVERIFY(positive == DuplicateStudentNamePairRowIndex{9});
+    QVERIFY(zero != positive);
+}
+
+void NextDomainContractTests::
 duplicateStudentNamePairGroupsAreExactAndDeterministic()
 {
     const auto alex = StudentNamePair::fromNames(
@@ -1377,10 +1413,22 @@ duplicateStudentNamePairGroupsAreExactAndDeterministic()
         };
 
     const auto groups = duplicateStudentNamePairGroups(rows);
-    const std::vector<std::size_t> alexRows{0, 2};
-    const std::vector<std::size_t> jamieRows{1, 4};
-    const std::vector<std::size_t> delimiterPairFirstRows{6, 8};
-    const std::vector<std::size_t> delimiterPairSecondRows{7, 9};
+    const std::vector<DuplicateStudentNamePairRowIndex> alexRows{
+        DuplicateStudentNamePairRowIndex{0},
+        DuplicateStudentNamePairRowIndex{2}
+    };
+    const std::vector<DuplicateStudentNamePairRowIndex> jamieRows{
+        DuplicateStudentNamePairRowIndex{1},
+        DuplicateStudentNamePairRowIndex{4}
+    };
+    const std::vector<DuplicateStudentNamePairRowIndex> delimiterPairFirstRows{
+        DuplicateStudentNamePairRowIndex{6},
+        DuplicateStudentNamePairRowIndex{8}
+    };
+    const std::vector<DuplicateStudentNamePairRowIndex> delimiterPairSecondRows{
+        DuplicateStudentNamePairRowIndex{7},
+        DuplicateStudentNamePairRowIndex{9}
+    };
     QCOMPARE(groups.size(), std::size_t{4});
     QVERIFY(groups[0].namePair == *alex);
     QVERIFY(groups[0].rowIndexes == alexRows);

@@ -229,6 +229,8 @@ toFormValidationPreservesValidationCodeKeys()
         ClassMngr::Next::Application::SpeakingEvaluationSaveRequest;
     using Severity =
         ClassMngr::Next::Application::SpeakingEvaluationValidationSeverity;
+    using DuplicateRowIndex =
+        ClassMngr::Next::Domain::DuplicateStudentNamePairRowIndex;
 
     const std::vector<Code> codes{
         Code::StudentNameEnglishTooLong,
@@ -292,9 +294,9 @@ toFormValidationPreservesValidationCodeKeys()
             .arguments = {
                 {"count", static_cast<std::int64_t>(1000 + index)},
                 {"text", token16},
-                {"rows", std::vector<int>{
-                    static_cast<int>(index + 1),
-                    static_cast<int>(index + 11)
+                {"rows", std::vector<DuplicateRowIndex>{
+                    DuplicateRowIndex{index + 1},
+                    DuplicateRowIndex{index + 11}
                 }},
                 {"labels", std::vector<std::u16string>{
                     token16,

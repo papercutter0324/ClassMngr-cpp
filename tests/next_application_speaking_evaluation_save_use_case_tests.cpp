@@ -643,21 +643,28 @@ groupsDuplicateNamesAfterUnicodeTrimmingInFirstSeenOrder()
     {
         int row;
         int column;
-        std::vector<int> duplicateRows;
+        const std::vector<Domain::DuplicateStudentNamePairRowIndex>* duplicateRows;
+    };
+    using DuplicateRowIndex = Domain::DuplicateStudentNamePairRowIndex;
+    const std::vector<DuplicateRowIndex> aliceRows{
+        DuplicateRowIndex{0}, DuplicateRowIndex{2}, DuplicateRowIndex{6}
+    };
+    const std::vector<DuplicateRowIndex> bobRows{
+        DuplicateRowIndex{1}, DuplicateRowIndex{3}, DuplicateRowIndex{5}
     };
     const std::vector<ExpectedDuplicateIssue> expectedDuplicateIssues{
-        {0, 1, {0, 2, 6}},
-        {0, 2, {0, 2, 6}},
-        {2, 1, {0, 2, 6}},
-        {2, 2, {0, 2, 6}},
-        {6, 1, {0, 2, 6}},
-        {6, 2, {0, 2, 6}},
-        {1, 1, {1, 3, 5}},
-        {1, 2, {1, 3, 5}},
-        {3, 1, {1, 3, 5}},
-        {3, 2, {1, 3, 5}},
-        {5, 1, {1, 3, 5}},
-        {5, 2, {1, 3, 5}}
+        {0, 1, &aliceRows},
+        {0, 2, &aliceRows},
+        {2, 1, &aliceRows},
+        {2, 2, &aliceRows},
+        {6, 1, &aliceRows},
+        {6, 2, &aliceRows},
+        {1, 1, &bobRows},
+        {1, 2, &bobRows},
+        {3, 1, &bobRows},
+        {3, 2, &bobRows},
+        {5, 1, &bobRows},
+        {5, 2, &bobRows}
     };
     QCOMPARE(validation.issues.size(), expectedDuplicateIssues.size() + 2);
 
@@ -710,16 +717,20 @@ groupsDuplicateNamesAfterUnicodeTrimmingInFirstSeenOrder()
             );
         QCOMPARE(issue.arguments.size(), std::size_t(1));
         QVERIFY(issue.arguments.contains("duplicateRows"));
-        const auto* duplicateRows = std::get_if<std::vector<int>>(
+        const auto* duplicateRows = std::get_if<std::vector<DuplicateRowIndex>>(
             &issue.arguments.at("duplicateRows")
             );
         QVERIFY(duplicateRows != nullptr);
-        QCOMPARE(duplicateRows->size(), expected.duplicateRows.size());
+        const auto& expectedRows = *expected.duplicateRows;
+        QCOMPARE(duplicateRows->size(), expectedRows.size());
         for (std::size_t rowIndex = 0;
-             rowIndex < expected.duplicateRows.size();
+             rowIndex < expectedRows.size();
              ++rowIndex)
         {
-            QCOMPARE((*duplicateRows)[rowIndex], expected.duplicateRows[rowIndex]);
+            QCOMPARE(
+                (*duplicateRows)[rowIndex].rawValue(),
+                expectedRows[rowIndex].rawValue()
+                );
         }
     }
 }

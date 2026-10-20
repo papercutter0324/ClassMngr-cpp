@@ -3,14 +3,28 @@
 #include <QtTest/QtTest>
 
 #include <array>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 using namespace ClassMngr::Next;
+
+using DuplicateStudentNamePairRowIndex =
+    Domain::DuplicateStudentNamePairRowIndex;
+
+static_assert(std::is_same_v<
+    Application::RosterSaveIssueArgument,
+    std::variant<
+        std::int64_t,
+        std::u16string,
+        std::vector<DuplicateStudentNamePairRowIndex>
+        >
+    >);
 
 static_assert(!std::is_same_v<
     Application::RosterSaveIssueCode,
@@ -115,6 +129,7 @@ private slots:
     void invalidRosterDoesNotReachPortAndIdTakesPriority();
     void preparesNormalizedSnapshotBeforePort();
     void directPreparationPreservesStructureAndIssueOrder();
+    void duplicateNamePairDiagnosticsKeepTypedRowsAndIssueOrder();
     void rawBomConversionDoesNotMutateRequestOrAddSentinels();
     void policyAcceptsBoundarySizesAndCountsUtf16Units();
 };
@@ -345,6 +360,91 @@ void NextApplicationRosterSaveUseCaseTests::directPreparationPreservesStructureA
     const auto& cell = prepared.issues[11];
     QCOMPARE(cell.field, std::u16string(u"rows[0].cells[4]"));
     QCOMPARE(std::get<std::int64_t>(cell.arguments.at("length")), std::int64_t(10001));
+}
+
+void NextApplicationRosterSaveUseCaseTests::
+duplicateNamePairDiagnosticsKeepTypedRowsAndIssueOrder()
+{
+    auto value = request("42");
+    value.roster.rows.assign(26, {});
+    value.roster.rows[0] = {u"Alice", u"\uAE40\uBBFC\uC9C0"};
+    value.roster.rows[1] = {u"Bob", u"\uBC15\uC9C0\uBBFC"};
+    value.roster.rows[3] = {u"Alice", u"\uAE40\uBBFC\uC9C0"};
+    value.roster.rows[4] = {u"Bob", u"\uBC15\uC9C0\uBBFC"};
+    value.roster.rows[5] = {u"Alice", u"\uAE40\uBBFC\uC9C0"};
+    value.roster.rows[6] = {u"Bob", u"\uBC15\uC9C0\uBBFC"};
+
+    const auto prepared = Application::prepareRosterSave(
+        value.roster,
+        value.allowQuestionableKoreanNameLengths,
+        equals
+        );
+    QVERIFY(prepared.hasErrors());
+    QCOMPARE(prepared.issues.size(), std::size_t(13));
+    QCOMPARE(
+        prepared.issues[0].code,
+        Application::RosterSaveIssueCode::RosterRowsTooMany
+        );
+    QCOMPARE(prepared.issues[0].row.rawValue(), -1);
+
+    const std::array<std::vector<DuplicateStudentNamePairRowIndex>, 2>
+        expectedGroups{{
+            {
+                DuplicateStudentNamePairRowIndex{0},
+                DuplicateStudentNamePairRowIndex{3},
+                DuplicateStudentNamePairRowIndex{5}
+            },
+            {
+                DuplicateStudentNamePairRowIndex{1},
+                DuplicateStudentNamePairRowIndex{4},
+                DuplicateStudentNamePairRowIndex{6}
+            }
+        }};
+    std::size_t issueIndex = 1;
+    for (const auto& expectedRows : expectedGroups)
+    {
+        for (const DuplicateStudentNamePairRowIndex duplicateRow : expectedRows)
+        {
+            for (const auto& [column, expectedField] : {
+                     std::pair{0, std::u16string(u"English")},
+                     std::pair{1, std::u16string(u"Korean")}
+                 })
+            {
+                const auto& issue = prepared.issues.at(issueIndex++);
+                QCOMPARE(
+                    issue.code,
+                    Application::RosterSaveIssueCode::StudentNameDuplicatePair
+                    );
+                QCOMPARE(
+                    issue.field,
+                    expectedField
+                    );
+                QCOMPARE(
+                    issue.row.rawValue(),
+                    static_cast<int>(duplicateRow.rawValue())
+                    );
+                QCOMPARE(issue.column.rawValue(), column);
+
+                const auto* duplicateRows = std::get_if<
+                    std::vector<DuplicateStudentNamePairRowIndex>
+                    >(&issue.arguments.at("duplicateRows"));
+                QVERIFY(duplicateRows != nullptr);
+                QVERIFY(*duplicateRows == expectedRows);
+            }
+        }
+    }
+    QCOMPARE(issueIndex, prepared.issues.size());
+
+    RecordingRosterSavePort port;
+    const auto result = Application::RosterSaveUseCase::execute(
+        value,
+        port,
+        equals
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(port.callCount, 0);
+    QVERIFY(!port.lastRequest.has_value());
 }
 
 

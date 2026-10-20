@@ -92,6 +92,15 @@ QVariant toVariant(
                     {
                         converted.append(item);
                     }
+                    else if constexpr (std::is_same_v<
+                                           typename Value::value_type,
+                                           ClassMngr::Next::Domain::DuplicateStudentNamePairRowIndex
+                                           >)
+                    {
+                        converted.append(
+                            static_cast<int>(item.rawValue())
+                            );
+                    }
                     else
                     {
                         converted.append(fromUtf16(item));

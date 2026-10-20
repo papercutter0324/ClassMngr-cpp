@@ -161,14 +161,16 @@ ValidationResult duplicateNamePairs(
         duplicateRows.reserve(
             static_cast<qsizetype>(duplicate.rowIndexes.size())
             );
-        for (const std::size_t rowIndex : duplicate.rowIndexes)
+        for (const ClassMngr::Next::Domain::DuplicateStudentNamePairRowIndex rowIndex :
+             duplicate.rowIndexes)
         {
-            duplicateRows.append(static_cast<int>(rowIndex));
+            duplicateRows.append(static_cast<int>(rowIndex.rawValue()));
         }
 
-        for (const std::size_t rowIndex : duplicate.rowIndexes)
+        for (const ClassMngr::Next::Domain::DuplicateStudentNamePairRowIndex rowIndex :
+             duplicate.rowIndexes)
         {
-            const int row = static_cast<int>(rowIndex);
+            const int row = static_cast<int>(rowIndex.rawValue());
             for (const ValidationLocation& location : {
                      ValidationLocation{
                          .field = englishField,

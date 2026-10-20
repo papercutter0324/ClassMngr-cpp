@@ -68,10 +68,36 @@ private:
     std::u16string m_koreanName;
 };
 
+class DuplicateStudentNamePairRowIndex final
+{
+public:
+    constexpr DuplicateStudentNamePairRowIndex() noexcept = default;
+
+    explicit constexpr DuplicateStudentNamePairRowIndex(
+        const std::size_t rawValue
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const DuplicateStudentNamePairRowIndex&,
+        const DuplicateStudentNamePairRowIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t m_rawValue = 0;
+};
+
 struct DuplicateStudentNamePairGroup final
 {
     StudentNamePair namePair;
-    std::vector<std::size_t> rowIndexes;
+    std::vector<DuplicateStudentNamePairRowIndex> rowIndexes;
 };
 
 // Groups complete row values by exact StudentNamePair equality. Empty optionals
@@ -105,7 +131,9 @@ duplicateStudentNamePairGroups(
             groups.push_back({*namePair, {}});
         }
 
-        groups[groupIndex->second].rowIndexes.push_back(rowIndex);
+        groups[groupIndex->second].rowIndexes.push_back(
+            DuplicateStudentNamePairRowIndex{rowIndex}
+            );
     }
 
     std::vector<DuplicateStudentNamePairGroup> duplicates;

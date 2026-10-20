@@ -194,7 +194,7 @@ enum class SpeakingEvaluationValidationCode
 using SpeakingEvaluationValidationArgument = std::variant<
     std::int64_t,
     std::u16string,
-    std::vector<int>,
+    std::vector<Domain::DuplicateStudentNamePairRowIndex>,
     std::vector<std::u16string>
     >;
 
@@ -868,15 +868,18 @@ inline void appendDuplicateNameIssues(
         );
     for (const auto& group : duplicateGroups)
     {
-        std::vector<int> duplicateRows;
+        std::vector<Domain::DuplicateStudentNamePairRowIndex> duplicateRows;
         duplicateRows.reserve(group.rowIndexes.size());
-        for (const std::size_t rowIndex : group.rowIndexes)
+        for (const Domain::DuplicateStudentNamePairRowIndex rowIndex :
+             group.rowIndexes)
         {
-            duplicateRows.push_back(static_cast<int>(rowIndex));
+            duplicateRows.push_back(rowIndex);
         }
 
-        for (const int row : duplicateRows)
+        for (const Domain::DuplicateStudentNamePairRowIndex rowIndex :
+             duplicateRows)
         {
+            const int row = static_cast<int>(rowIndex.rawValue());
             for (const int column : {1, 2})
             {
                 appendIssue(

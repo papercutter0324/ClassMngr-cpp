@@ -85,7 +85,11 @@ enum class RosterSaveIssueCode
 }
 
 using RosterSaveIssueArgument =
-    std::variant<std::int64_t, std::u16string, std::vector<int>>;
+    std::variant<
+        std::int64_t,
+        std::u16string,
+        std::vector<Domain::DuplicateStudentNamePairRowIndex>
+        >;
 
 class RosterSaveIssueRowIndex final
 {
@@ -441,11 +445,12 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
         }
         for (const auto& duplicate : Domain::duplicateStudentNamePairGroups(pairs))
         {
-            std::vector<int> rows;
+            std::vector<Domain::DuplicateStudentNamePairRowIndex> rows;
             for (const auto row : duplicate.rowIndexes)
-                rows.push_back(static_cast<int>(row));
-            for (const int row : rows)
+                rows.push_back(row);
+            for (const auto rowIndex : rows)
             {
+                const int row = static_cast<int>(rowIndex.rawValue());
                 result.issues.push_back({.code = RosterSaveIssueCode::StudentNameDuplicatePair,
                     .field = u"English",
                     .row = RosterSaveIssueRowIndex{row},

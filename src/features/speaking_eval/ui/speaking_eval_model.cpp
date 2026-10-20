@@ -834,14 +834,16 @@ void SpeakingEvalModel::validateDuplicateNames()
 
     for (const auto& duplicate : duplicateGroups)
     {
-        for (const std::size_t rowIndex : duplicate.rowIndexes)
+        for (const ClassMngr::Next::Domain::DuplicateStudentNamePairRowIndex rowIndex :
+             duplicate.rowIndexes)
         {
-            const int row = static_cast<int>(rowIndex);
+            const int row = static_cast<int>(rowIndex.rawValue());
             QStringList duplicateRows;
 
-            for (const std::size_t otherRowIndex : duplicate.rowIndexes)
+            for (const ClassMngr::Next::Domain::DuplicateStudentNamePairRowIndex otherRowIndex :
+                 duplicate.rowIndexes)
             {
-                const int otherRow = static_cast<int>(otherRowIndex);
+                const int otherRow = static_cast<int>(otherRowIndex.rawValue());
                 if (otherRow != row)
                 {
                     duplicateRows.append(
