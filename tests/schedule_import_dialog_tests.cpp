@@ -5420,6 +5420,44 @@ void ScheduleImportDialogTests
 
 void ScheduleImportDialogTests::applyUsesConfirmationAndReportsRepositoryOutcome()
 {
+    const auto expectedSuccessMessage = [](
+                                           const int teachersCreated,
+                                           const int teachersUpdated,
+                                           const int classesCreated,
+                                           const int classesUpdated,
+                                           const int classesSkipped,
+                                           const int schedulesCleared,
+                                           const int ignoredCells,
+                                           const bool profileNameUpdated
+                                           )
+    {
+        const QString profileNameSuffix = profileNameUpdated
+            ? QCoreApplication::translate(
+                  "ScheduleImportReviewDialog",
+                  "\nMy Information name was updated."
+                  )
+            : QString();
+        return QCoreApplication::translate(
+                   "ScheduleImportReviewDialog",
+                   "Schedule imported successfully.\n"
+                   "Korean teachers created: %1\n"
+                   "Korean teacher rooms updated: %2\n"
+                   "Classes created: %3\n"
+                   "Classes updated: %4\n"
+                   "Classes skipped: %5\n"
+                   "Schedules cleared: %6\n"
+                   "Ignored occupied cells: %7%8"
+                   )
+            .arg(teachersCreated)
+            .arg(teachersUpdated)
+            .arg(classesCreated)
+            .arg(classesUpdated)
+            .arg(classesSkipped)
+            .arg(schedulesCleared)
+            .arg(ignoredCells)
+            .arg(profileNameSuffix);
+    };
+
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
 
@@ -5629,8 +5667,10 @@ void ScheduleImportDialogTests::applyUsesConfirmationAndReportsRepositoryOutcome
     apply->click();
     QCOMPARE(prompts.confirmations.size(), 3);
     QCOMPARE(prompts.messages.size(), 2);
-    QVERIFY(prompts.messages.constLast().message.contains(
-        QStringLiteral("Schedule imported successfully.")));
+    QCOMPARE(
+        prompts.messages.constLast().message,
+        expectedSuccessMessage(1, 0, 1, 0, 0, 1, 0, true)
+        );
     QCOMPARE(review.result(), static_cast<int>(QDialog::Accepted));
     const QStringList importedDatabaseCounts = {
         QStringLiteral("1"), QStringLiteral("1"), QStringLiteral("1"),
@@ -5674,6 +5714,156 @@ void ScheduleImportDialogTests::applyUsesConfirmationAndReportsRepositoryOutcome
 
     const QStringList importedProfileName = {QStringLiteral("Alice")};
     QCOMPARE(persistedProfileNames(), importedProfileName);
+
+    ApplicationServices unchangedProfileServices;
+    const Status unchangedProfileOpened =
+        unchangedProfileServices.openDatabase(
+            directory.filePath(
+                QStringLiteral("schedule-import-profile-unchanged.sqlite")
+                )
+            );
+    QVERIFY2(
+        unchangedProfileOpened.has_value(),
+        qPrintable(
+            unchangedProfileOpened.has_value()
+                ? QString()
+                : unchangedProfileOpened.error()
+            )
+        );
+    const QSqlDatabase unchangedProfileDatabase =
+        unchangedProfileServices.databaseSession()->database();
+
+    ScheduleImportReviewRequest profileNameUnchangedRequest;
+    profileNameUnchangedRequest.kind = ScheduleImportKind::Normal;
+    profileNameUnchangedRequest.profileName = QStringLiteral("Existing Profile");
+    profileNameUnchangedRequest.user.name = QStringLiteral("Bob");
+    profileNameUnchangedRequest.user.classes = {candidate};
+
+    ScheduleImportReviewDialog profileNameUnchangedReview(
+        &unchangedProfileServices,
+        profileNameUnchangedRequest
+        );
+    QVERIFY(profileNameUnchangedReview.prepare());
+    profileNameUnchangedReview.show();
+    auto* secondTabs = profileNameUnchangedReview.findChild<QTabWidget*>(
+        QStringLiteral("scheduleImportResolutionTabs")
+        );
+    auto* secondTeacherScrollArea =
+        profileNameUnchangedReview.findChild<QScrollArea*>(
+            QStringLiteral("scheduleImportTeacherScrollArea")
+            );
+    auto* secondClassScrollArea =
+        profileNameUnchangedReview.findChild<QScrollArea*>(
+            QStringLiteral("scheduleImportClassScrollArea")
+            );
+    auto* secondApply = profileNameUnchangedReview.findChild<QPushButton*>(
+        QStringLiteral("scheduleImportAcceptButton")
+        );
+    auto* secondReviewStatus = profileNameUnchangedReview.findChild<QLabel*>(
+        QStringLiteral("scheduleImportReviewStatus")
+        );
+    QVERIFY(secondTabs);
+    QVERIFY(secondTeacherScrollArea);
+    QVERIFY(secondClassScrollArea);
+    QVERIFY(secondApply);
+    QVERIFY(secondReviewStatus);
+
+    secondTabs->setCurrentWidget(secondTeacherScrollArea);
+    QTRY_VERIFY(
+        secondTeacherScrollArea->viewport()->width() > 0
+        && secondTeacherScrollArea->viewport()->height() > 0
+        );
+    auto* secondTeacher = profileNameUnchangedReview.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportTeacherAction_0")
+        );
+    auto* secondTeacherRoom = profileNameUnchangedReview.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportTeacherRoom_0")
+        );
+    QTRY_VERIFY(secondTeacher && secondTeacher->isVisible());
+    QTRY_VERIFY(secondTeacherRoom && secondTeacherRoom->isVisible());
+    const int secondCreateTeacherIndex = secondTeacher->findData(
+        static_cast<int>(ScheduleImportTeacherAction::Create),
+        Qt::UserRole
+        );
+    QVERIFY(secondCreateTeacherIndex >= 0);
+    secondTeacher->setCurrentIndex(secondCreateTeacherIndex);
+    QCOMPARE(secondTeacherRoom->currentData().toString(), QStringLiteral("413"));
+
+    secondTabs->setCurrentWidget(secondClassScrollArea);
+    QTRY_VERIFY(
+        secondClassScrollArea->viewport()->width() > 0
+        && secondClassScrollArea->viewport()->height() > 0
+        );
+    auto* secondClassroom = profileNameUnchangedReview.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    QTRY_VERIFY(secondClassroom && secondClassroom->isVisible());
+    const int secondCreateClassIndex = actionIndex(
+        secondClassroom,
+        ScheduleImportClassAction::CreateNew
+        );
+    QVERIFY(secondCreateClassIndex >= 0);
+    secondClassroom->setCurrentIndex(secondCreateClassIndex);
+    QVERIFY2(
+        secondApply->isEnabled(),
+        qPrintable(secondReviewStatus->text())
+        );
+
+    QSqlQuery seedUnchangedProfileName(unchangedProfileDatabase);
+    QVERIFY2(
+        seedUnchangedProfileName.exec(QStringLiteral(
+            "INSERT INTO app_settings (key, value) "
+            "VALUES ('myInfo/name', 'Existing Profile')"
+            )),
+        qPrintable(seedUnchangedProfileName.lastError().text())
+        );
+    {
+        QSqlQuery unchangedProfileNameBeforeApply(unchangedProfileDatabase);
+        QVERIFY2(
+            unchangedProfileNameBeforeApply.exec(QStringLiteral(
+                "SELECT value FROM app_settings WHERE key='myInfo/name'"
+                )),
+            qPrintable(unchangedProfileNameBeforeApply.lastError().text())
+            );
+        QVERIFY(unchangedProfileNameBeforeApply.next());
+        QCOMPARE(
+            unchangedProfileNameBeforeApply.value(0).toString(),
+            QStringLiteral("Existing Profile")
+            );
+        QVERIFY(!unchangedProfileNameBeforeApply.next());
+    }
+
+    prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
+    secondApply->click();
+    QCOMPARE(prompts.confirmations.size(), 4);
+    QCOMPARE(prompts.messages.size(), 3);
+    QCOMPARE(
+        prompts.messages.constLast().message,
+        expectedSuccessMessage(1, 0, 1, 0, 0, 1, 0, false)
+        );
+    QCOMPARE(
+        profileNameUnchangedReview.result(),
+        static_cast<int>(QDialog::Accepted)
+        );
+    QSqlQuery unchangedProfileNameQuery(
+        unchangedProfileDatabase
+        );
+    QVERIFY2(
+        unchangedProfileNameQuery.exec(QStringLiteral(
+            "SELECT value FROM app_settings WHERE key='myInfo/name'"
+            )),
+        qPrintable(unchangedProfileNameQuery.lastError().text())
+        );
+    QVERIFY(unchangedProfileNameQuery.next());
+    QCOMPARE(
+        unchangedProfileNameQuery.value(0).toString(),
+        QStringLiteral("Existing Profile")
+        );
+    QVERIFY(!unchangedProfileNameQuery.next());
+    QCOMPARE(
+        persistedProfileNames(),
+        importedProfileName
+        );
 }
 
 void ScheduleImportDialogTests::applyDisplaysFreshStateValidationFailure()

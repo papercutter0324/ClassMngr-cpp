@@ -2413,13 +2413,13 @@ void ScheduleImportReviewDialog::applyImport()
     }
 
     StartupProfiler::recordScheduleImportApplied(
-        summary->teachersCreated,
-        summary->teachersUpdated,
-        summary->classesCreated,
-        summary->classesUpdated,
-        summary->classesSkipped,
-        summary->schedulesCleared,
-        summary->ignoredCells
+        summary->teachersCreated.rawValue(),
+        summary->teachersUpdated.rawValue(),
+        summary->classesCreated.rawValue(),
+        summary->classesUpdated.rawValue(),
+        summary->classesSkipped.rawValue(),
+        summary->schedulesCleared.rawValue(),
+        summary->ignoredCells.rawValue()
         );
 
     DialogServices::showInformation(
@@ -2433,13 +2433,13 @@ void ScheduleImportReviewDialog::applyImport()
            "Classes skipped: %5\n"
            "Schedules cleared: %6\n"
            "Ignored occupied cells: %7%8")
-            .arg(summary->teachersCreated)
-            .arg(summary->teachersUpdated)
-            .arg(summary->classesCreated)
-            .arg(summary->classesUpdated)
-            .arg(summary->classesSkipped)
-            .arg(summary->schedulesCleared)
-            .arg(summary->ignoredCells)
+            .arg(summary->teachersCreated.rawValue())
+            .arg(summary->teachersUpdated.rawValue())
+            .arg(summary->classesCreated.rawValue())
+            .arg(summary->classesUpdated.rawValue())
+            .arg(summary->classesSkipped.rawValue())
+            .arg(summary->schedulesCleared.rawValue())
+            .arg(summary->ignoredCells.rawValue())
             .arg(
                 summary->profileNameUpdated
                     ? tr("\nMy Information name was updated.")

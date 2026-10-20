@@ -382,6 +382,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/schedule_import_review_readiness.h
     src/next/application/schedule_import_plan_validation.h
     src/next/application/schedule_import_apply_review_decisions.h
+    src/next/application/schedule_import_applied_count.h
     src/next/application/schedule_import_apply_request.h
     src/next/application/schedule_import_apply_validation.h
     src/next/application/schedule_import_apply_use_case.h

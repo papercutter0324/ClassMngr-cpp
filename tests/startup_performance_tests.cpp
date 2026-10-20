@@ -8315,6 +8315,50 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
                 QStringLiteral("scheduleImportOperationsApplied")
                 ).toInt() >= 1
             );
+        // The deterministic apply workbook adds 5 teachers and 20 classes,
+        // replaces the 96 existing class schedules, and has no diagnostics.
+        QCOMPARE(
+            applyMetrics.value(
+                QStringLiteral("scheduleImportTeachersCreated")
+                ).toInt(),
+            5
+            );
+        QCOMPARE(
+            applyMetrics.value(
+                QStringLiteral("scheduleImportTeachersUpdated")
+                ).toInt(),
+            0
+            );
+        QCOMPARE(
+            applyMetrics.value(
+                QStringLiteral("scheduleImportClassesCreated")
+                ).toInt(),
+            20
+            );
+        QCOMPARE(
+            applyMetrics.value(
+                QStringLiteral("scheduleImportClassesUpdated")
+                ).toInt(),
+            0
+            );
+        QCOMPARE(
+            applyMetrics.value(
+                QStringLiteral("scheduleImportClassesSkipped")
+                ).toInt(),
+            0
+            );
+        QCOMPARE(
+            applyMetrics.value(
+                QStringLiteral("scheduleImportSchedulesCleared")
+                ).toInt(),
+            96
+            );
+        QCOMPARE(
+            applyMetrics.value(
+                QStringLiteral("scheduleImportIgnoredCells")
+                ).toInt(),
+            0
+            );
         QVERIFY(
             pageRefreshCheckpoint.value(QStringLiteral("metrics"))
                 .toObject()

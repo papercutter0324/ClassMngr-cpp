@@ -4,8 +4,48 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 
 using namespace ClassMngr::Next::Application;
+
+static_assert(std::is_constructible_v<ScheduleImportAppliedCount, int>);
+static_assert(!std::is_convertible_v<int, ScheduleImportAppliedCount>);
+static_assert(!std::is_convertible_v<ScheduleImportAppliedCount, int>);
+static_assert(
+    std::is_same_v<decltype(ScheduleImportAppliedCount{}.rawValue()), int>
+    );
+static_assert(std::is_same_v<
+    decltype(ScheduleImportApplySummary{}.teachersCreated),
+    ScheduleImportAppliedCount
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportApplySummary{}.teachersUpdated),
+    ScheduleImportAppliedCount
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportApplySummary{}.classesCreated),
+    ScheduleImportAppliedCount
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportApplySummary{}.classesUpdated),
+    ScheduleImportAppliedCount
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportApplySummary{}.classesSkipped),
+    ScheduleImportAppliedCount
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportApplySummary{}.schedulesCleared),
+    ScheduleImportAppliedCount
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportApplySummary{}.ignoredCells),
+    ScheduleImportAppliedCount
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportApplySummary{}.profileNameUpdated),
+    bool
+    >);
 
 namespace
 {
@@ -17,7 +57,16 @@ void require(bool condition)
 struct Port final : ScheduleImportApplyWritePort
 {
     mutable int calls = 0;
-    ScheduleImportApplyResult result = ScheduleImportApplySummary{1, 2, 3, 4, 5, 6, 7, true};
+    ScheduleImportApplyResult result = ScheduleImportApplySummary{
+        ScheduleImportAppliedCount{1},
+        ScheduleImportAppliedCount{2},
+        ScheduleImportAppliedCount{3},
+        ScheduleImportAppliedCount{4},
+        ScheduleImportAppliedCount{5},
+        ScheduleImportAppliedCount{6},
+        ScheduleImportAppliedCount{7},
+        true
+    };
 
     ScheduleImportApplyResult applyScheduleImport(
         const ScheduleImportApplyRequest&) const override
@@ -49,10 +98,23 @@ ScheduleImportApplyRequest validRequest()
 
 int main()
 {
+    const ScheduleImportAppliedCount defaultAppliedCount;
+    require(defaultAppliedCount.rawValue() == 0);
+    require(ScheduleImportAppliedCount{-17}.rawValue() == -17);
+    require(ScheduleImportAppliedCount{17} == ScheduleImportAppliedCount{17});
+    require(ScheduleImportAppliedCount{17} != ScheduleImportAppliedCount{18});
+
     Port port;
     const auto success = ScheduleImportApplyUseCase::execute(validRequest(), port);
-    require(success && success->teachersCreated == 1 && success->classesUpdated == 4
-        && success->ignoredCells == 7 && success->profileNameUpdated);
+    require(success
+        && success->teachersCreated.rawValue() == 1
+        && success->teachersUpdated.rawValue() == 2
+        && success->classesCreated.rawValue() == 3
+        && success->classesUpdated.rawValue() == 4
+        && success->classesSkipped.rawValue() == 5
+        && success->schedulesCleared.rawValue() == 6
+        && success->ignoredCells.rawValue() == 7
+        && success->profileNameUpdated);
     require(port.calls == 1);
 
     auto invalidNormalScheduleMode = validRequest();

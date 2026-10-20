@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/schedule_import_applied_count.h"
 #include "next/application/schedule_import_plan_validation.h"
 #include "next/application/schedule_import_state_validation.h"
 
@@ -121,13 +122,13 @@ struct ScheduleImportApplyRequest final
 
 struct ScheduleImportApplySummary final
 {
-    int teachersCreated = 0;
-    int teachersUpdated = 0;
-    int classesCreated = 0;
-    int classesUpdated = 0;
-    int classesSkipped = 0;
-    int schedulesCleared = 0;
-    int ignoredCells = 0;
+    ScheduleImportAppliedCount teachersCreated;
+    ScheduleImportAppliedCount teachersUpdated;
+    ScheduleImportAppliedCount classesCreated;
+    ScheduleImportAppliedCount classesUpdated;
+    ScheduleImportAppliedCount classesSkipped;
+    ScheduleImportAppliedCount schedulesCleared;
+    ScheduleImportAppliedCount ignoredCells;
     bool profileNameUpdated = false;
 };
 

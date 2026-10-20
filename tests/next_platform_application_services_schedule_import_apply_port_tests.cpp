@@ -130,13 +130,13 @@ appliesTypedRequestThroughActiveRepository()
         ? QString()
         : QString::fromStdU16String(result.error().message);
     QVERIFY2(result.has_value(), qPrintable(failureMessage));
-    QCOMPARE(result->teachersCreated, 1);
-    QCOMPARE(result->teachersUpdated, 0);
-    QCOMPARE(result->classesCreated, 1);
-    QCOMPARE(result->classesUpdated, 0);
-    QCOMPARE(result->classesSkipped, 0);
-    QCOMPARE(result->schedulesCleared, 0);
-    QCOMPARE(result->ignoredCells, 1);
+    QCOMPARE(result->teachersCreated.rawValue(), 1);
+    QCOMPARE(result->teachersUpdated.rawValue(), 0);
+    QCOMPARE(result->classesCreated.rawValue(), 1);
+    QCOMPARE(result->classesUpdated.rawValue(), 0);
+    QCOMPARE(result->classesSkipped.rawValue(), 0);
+    QCOMPARE(result->schedulesCleared.rawValue(), 0);
+    QCOMPARE(result->ignoredCells.rawValue(), 1);
     QVERIFY(result->profileNameUpdated);
 
     QSqlQuery query(services.databaseSession()->database());
@@ -273,8 +273,8 @@ void ScheduleImportApplyPortTests::acceptsGeneratedClassIdAtIntMax()
         ? QString()
         : QString::fromStdU16String(result.error().message);
     QVERIFY2(result.has_value(), qPrintable(failureMessage));
-    QCOMPARE(result->teachersCreated, 1);
-    QCOMPARE(result->classesCreated, 1);
+    QCOMPARE(result->teachersCreated.rawValue(), 1);
+    QCOMPARE(result->classesCreated.rawValue(), 1);
 
     requireQuery(query, QStringLiteral(R"(
         SELECT typeof(c.id), c.id, c.name, ci.class_grade, ci.class_level,
@@ -402,14 +402,26 @@ void ScheduleImportApplyPortTests::mapsSummaryAndFailure()
     summary.profileNameUpdated = true;
     const auto mapped = Platform::scheduleImportApplyResult(summary);
     QVERIFY(mapped);
-    QCOMPARE(mapped->teachersCreated, 1);
-    QCOMPARE(mapped->teachersUpdated, 2);
-    QCOMPARE(mapped->classesCreated, 3);
-    QCOMPARE(mapped->classesUpdated, 4);
-    QCOMPARE(mapped->classesSkipped, 5);
-    QCOMPARE(mapped->schedulesCleared, 6);
-    QCOMPARE(mapped->ignoredCells, 7);
+    QCOMPARE(mapped->teachersCreated.rawValue(), 1);
+    QCOMPARE(mapped->teachersUpdated.rawValue(), 2);
+    QCOMPARE(mapped->classesCreated.rawValue(), 3);
+    QCOMPARE(mapped->classesUpdated.rawValue(), 4);
+    QCOMPARE(mapped->classesSkipped.rawValue(), 5);
+    QCOMPARE(mapped->schedulesCleared.rawValue(), 6);
+    QCOMPARE(mapped->ignoredCells.rawValue(), 7);
     QVERIFY(mapped->profileNameUpdated);
+
+    const auto mappedZeroCounts =
+        Platform::scheduleImportApplyResult(ScheduleImportSummary{});
+    QVERIFY(mappedZeroCounts);
+    QCOMPARE(mappedZeroCounts->teachersCreated.rawValue(), 0);
+    QCOMPARE(mappedZeroCounts->teachersUpdated.rawValue(), 0);
+    QCOMPARE(mappedZeroCounts->classesCreated.rawValue(), 0);
+    QCOMPARE(mappedZeroCounts->classesUpdated.rawValue(), 0);
+    QCOMPARE(mappedZeroCounts->classesSkipped.rawValue(), 0);
+    QCOMPARE(mappedZeroCounts->schedulesCleared.rawValue(), 0);
+    QCOMPARE(mappedZeroCounts->ignoredCells.rawValue(), 0);
+    QVERIFY(!mappedZeroCounts->profileNameUpdated);
 
     const auto failed = Platform::scheduleImportApplyResult(
         Result<ScheduleImportSummary>(std::unexpected(QStringLiteral("database failed"))));

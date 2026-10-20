@@ -24,13 +24,13 @@ scheduleImportApplyResult(
     }
 
     return Application::ScheduleImportApplySummary{
-        result->teachersCreated,
-        result->teachersUpdated,
-        result->classesCreated,
-        result->classesUpdated,
-        result->classesSkipped,
-        result->schedulesCleared,
-        result->ignoredCells,
+        Application::ScheduleImportAppliedCount{result->teachersCreated},
+        Application::ScheduleImportAppliedCount{result->teachersUpdated},
+        Application::ScheduleImportAppliedCount{result->classesCreated},
+        Application::ScheduleImportAppliedCount{result->classesUpdated},
+        Application::ScheduleImportAppliedCount{result->classesSkipped},
+        Application::ScheduleImportAppliedCount{result->schedulesCleared},
+        Application::ScheduleImportAppliedCount{result->ignoredCells},
         result->profileNameUpdated
     };
 }
@@ -46,13 +46,13 @@ scheduleImportTypedApplyResult(
     }
 
     return Application::ScheduleImportApplySummary{
-        result->teachersCreated,
-        result->teachersUpdated,
-        result->classesCreated,
-        result->classesUpdated,
-        result->classesSkipped,
-        result->schedulesCleared,
-        result->ignoredCells,
+        Application::ScheduleImportAppliedCount{result->teachersCreated},
+        Application::ScheduleImportAppliedCount{result->teachersUpdated},
+        Application::ScheduleImportAppliedCount{result->classesCreated},
+        Application::ScheduleImportAppliedCount{result->classesUpdated},
+        Application::ScheduleImportAppliedCount{result->classesSkipped},
+        Application::ScheduleImportAppliedCount{result->schedulesCleared},
+        Application::ScheduleImportAppliedCount{result->ignoredCells},
         result->profileNameUpdated
     };
 }
