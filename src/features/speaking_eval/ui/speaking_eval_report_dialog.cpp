@@ -349,7 +349,7 @@ buildSpeakingEvalStudentReports(
         reports.append({
             displayName,
             report,
-            static_cast<int>(student.sourceRow)
+            static_cast<int>(student.sourceRow.rawValue())
         });
     }
     return reports;

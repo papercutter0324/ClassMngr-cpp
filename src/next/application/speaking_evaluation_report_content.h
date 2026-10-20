@@ -18,6 +18,32 @@ enum class SpeakingEvaluationReportTemplate
     Advanced
 };
 
+class SpeakingEvaluationReportSourceRow final
+{
+public:
+    constexpr SpeakingEvaluationReportSourceRow() noexcept = default;
+
+    explicit constexpr SpeakingEvaluationReportSourceRow(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const SpeakingEvaluationReportSourceRow&,
+        const SpeakingEvaluationReportSourceRow&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
 struct SpeakingEvaluationReportClassValues final
 {
     std::u16string grade;
@@ -44,7 +70,7 @@ struct SpeakingEvaluationReportContentRequest final
 
 struct SpeakingEvaluationReportStudentContent final
 {
-    std::size_t sourceRow = 0;
+    SpeakingEvaluationReportSourceRow sourceRow;
     std::u16string englishName;
     std::u16string koreanName;
     std::u16string displayEnglishName;
@@ -284,7 +310,7 @@ projectSpeakingEvaluationReportContent(
         }
 
         SpeakingEvaluationReportStudentContent student;
-        student.sourceRow = rowIndex;
+        student.sourceRow = SpeakingEvaluationReportSourceRow{rowIndex};
         student.englishName = takeCell(row, EnglishNameColumn);
         student.koreanName = takeCell(row, KoreanNameColumn);
         student.displayEnglishName = displayEnglishName;

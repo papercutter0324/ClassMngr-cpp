@@ -4,14 +4,32 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 using ClassMngr::Next::Application::SpeakingEvaluationReportClassValues;
 using ClassMngr::Next::Application::SpeakingEvaluationReportContentRequest;
+using ClassMngr::Next::Application::SpeakingEvaluationReportSourceRow;
+using ClassMngr::Next::Application::SpeakingEvaluationReportStudentContent;
 using ClassMngr::Next::Application::SpeakingEvaluationReportTemplate;
 using ClassMngr::Next::Application::projectSpeakingEvaluationReportContent;
 using ClassMngr::Next::Domain::CourseGradeBand;
+
+static_assert(std::is_same_v<
+    decltype(SpeakingEvaluationReportStudentContent::sourceRow),
+    SpeakingEvaluationReportSourceRow
+    >);
+static_assert(!std::is_convertible_v<std::size_t, SpeakingEvaluationReportSourceRow>);
+static_assert(!std::is_convertible_v<SpeakingEvaluationReportSourceRow, std::size_t>);
+
+constexpr SpeakingEvaluationReportSourceRow DefaultSourceRow{};
+constexpr SpeakingEvaluationReportSourceRow ZeroSourceRow{0};
+constexpr SpeakingEvaluationReportSourceRow NonzeroSourceRow{7};
+static_assert(DefaultSourceRow.rawValue() == 0);
+static_assert(DefaultSourceRow == ZeroSourceRow);
+static_assert(NonzeroSourceRow.rawValue() == 7);
+static_assert(NonzeroSourceRow != ZeroSourceRow);
 
 namespace
 {
@@ -71,8 +89,8 @@ bool filtersOnlyRowsWithBothNamesBlankAndPreservesRawContent()
         .koreanTeacher = u"Changed teacher"
     };
     if (result.students.size() != 2
-        || result.students[0].sourceRow != 2
-        || result.students[1].sourceRow != 3
+        || result.students[0].sourceRow.rawValue() != 2
+        || result.students[1].sourceRow.rawValue() != 3
         || result.students[0].displayEnglishName != u"Amy Smith"
         || result.students[0].displayKoreanName != u"\uAE40\uBBFC\uC9C0"
         || result.students[0].englishName != u"\u2003 Amy Smith \u3000"
@@ -181,7 +199,7 @@ bool shortRowsDefaultMissingColumnsAndThereIsNoArbitraryRowCap()
 
     const auto result = projectSpeakingEvaluationReportContent(request);
     if (result.students.size() != 33
-        || result.students.front().sourceRow != 0
+        || result.students.front().sourceRow.rawValue() != 0
         || result.students.front().englishName != u""
         || result.students.front().koreanName != u"Korean only"
         || result.students.front().scores
@@ -194,7 +212,7 @@ bool shortRowsDefaultMissingColumnsAndThereIsNoArbitraryRowCap()
 
     for (std::size_t index = 0; index < result.students.size(); ++index)
     {
-        if (result.students[index].sourceRow != index)
+        if (result.students[index].sourceRow.rawValue() != index)
         {
             return false;
         }
