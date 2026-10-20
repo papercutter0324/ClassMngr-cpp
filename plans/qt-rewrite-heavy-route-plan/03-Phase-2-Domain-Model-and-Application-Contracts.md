@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch502 (F1257–F1261) is complete and unpushed; no slice batch is active, and Phase 2 exit-gate work is next; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch502 (F1257–F1261) is complete and pushed at `20385114` (see the [push receipt](03-Phase-2-Progress-Log.md#batch502-push-receipt-2026-10-21)); no slice batch is active, and Phase 2 exit-gate work is next; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1261 is complete in unpushed Batch502 as `8e985ecdd21d561bc6088bac361ab20d8c85a6c3` (see [F1261 closeout](03-Phase-2-Progress-Log.md#f1261-calendareventorder-complete-2026-10-21)). The four focused CTests passed 4/4; after adding reverse non-convertibility and the 4,096th ordinal assertions, the Application and Platform tests passed again 2/2. No clean, Windows, or full-suite verification is claimed. Batch502 is complete and unpushed, no slice batch is active, and Phase 2 exit-gate work is next; F629 and the Phase 0 and Phase 2 gates remain open.
+F1261 is complete in pushed Batch502 as `8e985ecdd21d561bc6088bac361ab20d8c85a6c3` (see [F1261 closeout](03-Phase-2-Progress-Log.md#f1261-calendareventorder-complete-2026-10-21)). The four focused CTests passed 4/4; after adding reverse non-convertibility and the 4,096th ordinal assertions, the Application and Platform tests passed again 2/2. No clean, Windows, or full-suite verification is claimed. Batch502 was pushed at `20385114` (see the [push receipt](03-Phase-2-Progress-Log.md#batch502-push-receipt-2026-10-21)); no slice batch is active, and Phase 2 exit-gate work is next. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,9 +72,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-No slice batch is active. Batch502 (F1257–F1261) is complete and unpushed;
-Phase 2 exit-gate work is next. F629 awaits source-bound Windows x64 layout
-evidence, and the Phase 0 and Phase 2 gates remain open.
+No slice batch is active. Batch502 (F1257–F1261) is complete and pushed at
+`20385114`; Phase 2 exit-gate work is next. F629 awaits source-bound Windows
+x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 

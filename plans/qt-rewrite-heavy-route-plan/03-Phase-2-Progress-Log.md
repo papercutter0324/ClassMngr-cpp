@@ -59548,3 +59548,11 @@ Batch502 (F1257–F1261) is complete and remains unpushed; no push receipt is
 recorded here. The previously documented Batch503 discovery shortfall had no
 accepted candidates, so no slice batch is active and Phase 2 exit-gate work is
 next. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### Superseded latest progress update - 2026-10-21 (F1261 complete before Batch502 push)
+
+F1261 is complete in unpushed Batch502 as `8e985ecdd21d561bc6088bac361ab20d8c85a6c3` (see [F1261 closeout](03-Phase-2-Progress-Log.md#f1261-calendareventorder-complete-2026-10-21)). The four focused CTests passed 4/4; after adding reverse non-convertibility and the 4,096th ordinal assertions, the Application and Platform tests passed again 2/2. No clean, Windows, or full-suite verification is claimed. Batch502 is complete and unpushed, no slice batch is active, and Phase 2 exit-gate work is next; F629 and the Phase 0 and Phase 2 gates remain open.
+
+### Batch502 push receipt - 2026-10-21
+
+The Batch502 push succeeded with receipt `4ae7304b..20385114 Qt-Rewrite -> Qt-Rewrite`. The previous upstream tip was `4ae7304bc015af3420e85d3dd09e3dd1f8824b5e`; the new local and upstream tip is `203851147b2b973b9ab0a3715f52a46f9bf9100a`. At push completion, branch `Qt-Rewrite` was clean and up to date. No force push was used.
