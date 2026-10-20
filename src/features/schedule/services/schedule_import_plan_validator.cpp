@@ -39,19 +39,6 @@ using ClassMngr::Next::Application::ScheduleImportReviewDecisionCandidate;
 using ClassMngr::Next::Domain::Course;
 using ClassMngr::Next::Domain::Weekday;
 
-std::optional<ClassMngr::Next::Domain::ClassId> decisionTargetId(
-    int legacyTargetId
-    )
-{
-    if (legacyTargetId <= 0)
-    {
-        return std::nullopt;
-    }
-    return ClassMngr::Next::Domain::ClassId::fromString(
-        std::to_string(legacyTargetId)
-        );
-}
-
 QString meetingPatternExpectation(
     const Course::WeeklyMeetingDayRuleKind ruleKind
     )
@@ -477,7 +464,7 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
                     resolution.candidateIndex
                 },
                 decisionAction(resolution.action),
-                decisionTargetId(resolution.targetClassId)
+                resolution.targetClassId
             }
             );
         request.classColors.push_back(

@@ -2,10 +2,13 @@
 
 #include "domain/models/class_info.h"
 #include "domain/models/intensive_slot_state.h"
+#include "next/domain/domain_types.h"
 
 #include <QList>
 #include <QString>
 #include <QStringList>
+
+#include <optional>
 
 enum class ScheduleImportKind
 {
@@ -136,7 +139,7 @@ struct ScheduleImportClassResolution
     int candidateIndex = -1;
     ScheduleImportClassAction action =
         ScheduleImportClassAction::CreateNew;
-    int targetClassId = -1;
+    std::optional<ClassMngr::Next::Domain::ClassId> targetClassId;
     QString classColor = QStringLiteral("#FFFFFF");
     QString fontColor = QStringLiteral("#000000");
 };

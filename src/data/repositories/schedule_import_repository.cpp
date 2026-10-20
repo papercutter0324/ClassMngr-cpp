@@ -216,11 +216,7 @@ ScheduleImportApplyRequest applyRequestFromLegacyPlan(
         classroom.action = applyClassAction(source.action);
         classroom.classColor = source.classColor.toStdU16String();
         classroom.fontColor = source.fontColor.toStdU16String();
-        if (source.action == ScheduleImportClassAction::UpdateExisting
-            || source.targetClassId > 0)
-        {
-            classroom.targetClassId = classDomainId(source.targetClassId);
-        }
+        classroom.targetClassId = source.targetClassId;
         request.classes.push_back(std::move(classroom));
     }
     return request;

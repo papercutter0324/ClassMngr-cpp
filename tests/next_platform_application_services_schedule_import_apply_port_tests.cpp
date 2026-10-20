@@ -368,7 +368,7 @@ void ScheduleImportApplyPortTests::preservesLegacyScheduleServiceRoute()
     plan.classes = {{
         0,
         ScheduleImportClassAction::CreateNew,
-        -1,
+        std::nullopt,
         QStringLiteral("#223344"),
         QStringLiteral("#FFFFFF")
     }};

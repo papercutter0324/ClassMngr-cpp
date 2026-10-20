@@ -150,7 +150,7 @@ ScheduleImportReviewModel::buildApplyRequest(
         request.classes.push_back({
             ScheduleImportCandidateIndex{candidateClass.candidateIndex},
             applyClassAction(candidateClass.action),
-            targetId<Domain::ClassId>(candidateClass.targetClassId),
+            candidateClass.targetClassId,
             candidateClass.classColor.trimmed().toStdU16String(),
             candidateClass.fontColor.trimmed().toStdU16String()
         });

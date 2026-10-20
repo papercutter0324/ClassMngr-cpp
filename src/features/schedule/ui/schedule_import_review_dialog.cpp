@@ -1747,11 +1747,7 @@ void ScheduleImportReviewDialog::updateReviewState()
                 );
             const int legacyTarget = control.targetClassId;
             std::optional<ImportDomain::ClassId> targetClassId;
-            if (
-                action
-                    == ImportState::ScheduleImportStateClassAction::UpdateExisting
-                || legacyTarget > 0
-                )
+            if (legacyTarget > 0)
             {
                 targetClassId = stateClassId(legacyTarget);
             }

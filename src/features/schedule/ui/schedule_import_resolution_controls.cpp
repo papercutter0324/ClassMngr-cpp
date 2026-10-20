@@ -37,6 +37,7 @@ namespace
 using namespace ScheduleImportResolutionView;
 using namespace ScheduleImportReviewPresentation;
 namespace ImportState = ClassMngr::Next::Application;
+namespace ImportDomain = ClassMngr::Next::Domain;
 
 template <typename Id>
 int snapshotLegacyId(const Id& id)
@@ -1159,11 +1160,18 @@ QList<ScheduleImportClassResolution> classResolutions(
     result.reserve(state.classControls.size());
     for (const ClassControl& control : state.classControls)
     {
+        std::optional<ImportDomain::ClassId> targetClassId;
+        if (control.targetClassId > 0)
+        {
+            targetClassId = ImportDomain::ClassId::fromString(
+                std::to_string(control.targetClassId)
+                );
+        }
         result.append(
             {
                 control.candidateIndex,
                 static_cast<ScheduleImportClassAction>(control.actionValue),
-                control.targetClassId,
+                std::move(targetClassId),
                 control.color,
                 ColorUtils::getContrastingFontColor(QColor(control.color))
             }

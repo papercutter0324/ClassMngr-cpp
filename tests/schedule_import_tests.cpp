@@ -26,10 +26,16 @@
 #include <algorithm>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 #include <zlib.h>
+
+static_assert(std::is_same_v<
+    decltype(ScheduleImportClassResolution{}.targetClassId),
+    std::optional<ClassMngr::Next::Domain::ClassId>
+    >);
 
 class ScheduleImportTests : public QObject
 {
@@ -169,6 +175,17 @@ int legacyTestId(const std::optional<Id>& id)
     return ok ? value : -1;
 }
 
+std::optional<ClassMngr::Next::Domain::ClassId> planClassTargetId(
+    const int legacyTargetId
+    )
+{
+    return legacyTargetId > 0
+        ? ClassMngr::Next::Domain::ClassId::fromString(
+              std::to_string(legacyTargetId)
+              )
+        : std::nullopt;
+}
+
 ScheduleImportPlan legacyPlanFromTypedRequest(
     const ClassMngr::Next::Application::ScheduleImportApplyRequest& request
     )
@@ -286,7 +303,7 @@ ScheduleImportPlan legacyPlanFromTypedRequest(
         plan.classes.push_back({
             source.candidateIndex.rawValue(),
             action,
-            legacyTestId(source.targetClassId),
+            source.targetClassId,
             QString::fromStdU16String(source.classColor),
             QString::fromStdU16String(source.fontColor)
         });
@@ -1380,7 +1397,7 @@ void ScheduleImportTests::appliesIntensiveSlotStatesSnapshot()
             }
         };
         plan.classes = {
-            {0, ScheduleImportClassAction::CreateNew, -1}
+            {0, ScheduleImportClassAction::CreateNew, std::nullopt}
         };
 
         ScheduleImportRepository repository(database);
@@ -1501,7 +1518,7 @@ appliesIntensiveSlotStateTimesWithLegacyQtSemantics()
             }
         };
         plan.classes = {
-            {0, ScheduleImportClassAction::CreateNew, -1}
+            {0, ScheduleImportClassAction::CreateNew, std::nullopt}
         };
 
         ScheduleImportRepository repository(database);
@@ -2504,7 +2521,7 @@ previewsAndAppliesBaselineGeneratedWorkbookAgainstSeededDatabase()
             {
                 0,
                 ScheduleImportClassAction::CreateNew,
-                -1,
+                std::nullopt,
                 QStringLiteral("#6D9EEB"),
                 QStringLiteral("#000000")
             }
@@ -2859,7 +2876,7 @@ previewsAndAppliesBaselineGeneratedIntensiveWorkbookAgainstSeededDatabase()
             {
                 0,
                 ScheduleImportClassAction::UpdateExisting,
-                targetClassId,
+                planClassTargetId(targetClassId),
                 QStringLiteral("#112233"),
                 QStringLiteral("#FFFFFF")
             }
@@ -3348,21 +3365,21 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
             {
                 0,
                 ScheduleImportClassAction::CreateNew,
-                -1,
+                std::nullopt,
                 QStringLiteral("#778899"),
                 QStringLiteral("#000000")
             },
             {
                 1,
                 ScheduleImportClassAction::UpdateExisting,
-                43,
+                planClassTargetId(43),
                 QStringLiteral("#223344"),
                 QStringLiteral("#FFFFFF")
             },
             {
                 2,
                 ScheduleImportClassAction::CreateNew,
-                -1,
+                std::nullopt,
                 QStringLiteral("#556677"),
                 QStringLiteral("#000000")
             }
@@ -3554,7 +3571,7 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
                 )
             {
                 resolvedClassIds[static_cast<std::size_t>(candidateIndex)] =
-                    resolution.targetClassId;
+                    legacyTestId(resolution.targetClassId);
                 continue;
             }
 
@@ -3772,7 +3789,7 @@ rejectsInvalidCourseAndPatternAtApplyBoundaryBeforeWrites()
                 {
                     index,
                     ScheduleImportClassAction::CreateNew,
-                    -1
+                    std::nullopt
                 }
                 );
         }
@@ -4057,7 +4074,7 @@ previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites()
                 {
                     candidateIndex,
                     ScheduleImportClassAction::CreateNew,
-                    -1
+                    std::nullopt
                 }
                 );
             bool hasTeacher = false;
@@ -4625,7 +4642,7 @@ previewsAndAppliesSyntheticIntensiveWorkbookAgainstSeededDatabase()
             {
                 0,
                 ScheduleImportClassAction::UpdateExisting,
-                targetClassId,
+                planClassTargetId(targetClassId),
                 QStringLiteral("#112233"),
                 QStringLiteral("#FFFFFF")
             }
@@ -4882,7 +4899,7 @@ void ScheduleImportTests::intensiveModesPreserveOrReplaceAbsentHours()
             {
                 0,
                 ScheduleImportClassAction::UpdateExisting,
-                importedClass,
+                planClassTargetId(importedClass),
                 QStringLiteral("#123456"),
                 QStringLiteral("#FFFFFF")
             }
@@ -5119,7 +5136,7 @@ void ScheduleImportTests::fullSnapshotPreservesUnrelatedData()
             {
                 0,
                 ScheduleImportClassAction::UpdateExisting,
-                classOne,
+                planClassTargetId(classOne),
                 QStringLiteral("#123456"),
                 QStringLiteral("#FFFFFF")
             }
@@ -5323,7 +5340,7 @@ void ScheduleImportTests::skippedExactMatchPreservesItsSchedule()
             {
                 0,
                 ScheduleImportClassAction::Skip,
-                classId
+                planClassTargetId(classId)
             }
         };
 
@@ -5671,12 +5688,12 @@ void ScheduleImportTests::rejectsDuplicateExistingTargetsBeforeWrites()
             {
                 0,
                 ScheduleImportClassAction::UpdateExisting,
-                targetClassId
+                planClassTargetId(targetClassId)
             },
             {
                 1,
                 ScheduleImportClassAction::UpdateExisting,
-                targetClassId
+                planClassTargetId(targetClassId)
             }
         };
 
@@ -5783,7 +5800,7 @@ preservesNonpositiveExistingTeacherTargetsAtApply()
             }
         };
         plan.classes = {
-            {0, ScheduleImportClassAction::Skip, -1}
+            {0, ScheduleImportClassAction::Skip, std::nullopt}
         };
 
         const QStringList before = persistedScheduleImportSnapshot(database);
@@ -5912,7 +5929,7 @@ convertsNonpositiveCreateAndSkipTeacherTargetsAtApply()
             }
         };
         plan.classes = {
-            {0, ScheduleImportClassAction::Skip, -1}
+            {0, ScheduleImportClassAction::Skip, std::nullopt}
         };
 
         const QStringList before = persistedScheduleImportSnapshot(database);
@@ -6106,7 +6123,7 @@ void ScheduleImportTests::characterizesClassTargetsAtApply()
             {
                 0,
                 static_cast<ScheduleImportClassAction>(action),
-                targetClassId
+                planClassTargetId(targetClassId)
             }
         };
 
@@ -6276,7 +6293,7 @@ staleSelectedClassPreservesPersistedSnapshotBeforeWrites()
             {
                 0,
                 ScheduleImportClassAction::UpdateExisting,
-                classId + 1000
+                planClassTargetId(classId + 1000)
             }
         };
 
@@ -6395,8 +6412,8 @@ void ScheduleImportTests::conflictsRollBackBeforeWrites()
             }
         };
         plan.classes = {
-            {0, ScheduleImportClassAction::CreateNew, -1},
-            {1, ScheduleImportClassAction::CreateNew, -1}
+            {0, ScheduleImportClassAction::CreateNew, std::nullopt},
+            {1, ScheduleImportClassAction::CreateNew, std::nullopt}
         };
 
         ScheduleImportRepository repository(database);
@@ -6478,7 +6495,7 @@ void ScheduleImportTests::writeFailureRollsBackEveryChange()
             }
         };
         plan.classes = {
-            {0, ScheduleImportClassAction::CreateNew, -1}
+            {0, ScheduleImportClassAction::CreateNew, std::nullopt}
         };
 
         ScheduleImportRepository repository(database);
@@ -8320,7 +8337,7 @@ void ScheduleImportTests::seededWriteFailureRollsBackEveryChange()
             {
                 0,
                 ScheduleImportClassAction::UpdateExisting,
-                targetClassId,
+                planClassTargetId(targetClassId),
                 QStringLiteral("#AABBCC"),
                 QStringLiteral("#112233")
             }

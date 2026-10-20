@@ -118,6 +118,7 @@ private slots:
     void regularPreviewShowsFullEssayGrid();
     void possibleMatchIsPreselectedForUpdate();
     void resolutionChoicesUseTypedSnapshotAndPreserveOrdering();
+    void classResolutionTargetsConvertRawIdsAtUiBoundary();
     void reviewDisplaysProjectedAffectedClassCount();
     void reviewMatchingUsesNormalizedSnapshotFields();
     void reviewSummaryUsesApplicationProjection();
@@ -3678,10 +3679,18 @@ resolutionBuilderBoundsRowsAndRestoresDecisions()
         ScheduleImportResolutionControls::classResolutions(state);
     QCOMPARE(classResolutions.size(), CandidateCount);
     QCOMPARE(classResolutions.first().candidateIndex, 0);
-    QCOMPARE(classResolutions.first().targetClassId, 1096);
+    QVERIFY(classResolutions.first().targetClassId.has_value());
+    QCOMPARE(
+        classResolutions.first().targetClassId->value(),
+        std::string("1096")
+        );
     QCOMPARE(classResolutions.first().classColor, QStringLiteral("#123456"));
     QCOMPARE(classResolutions.last().candidateIndex, CandidateCount - 1);
-    QCOMPARE(classResolutions.last().targetClassId, 1096);
+    QVERIFY(classResolutions.last().targetClassId.has_value());
+    QCOMPARE(
+        classResolutions.last().targetClassId->value(),
+        std::string("1096")
+        );
 
     ScheduleImportReviewContext context;
     context.kind = ScheduleImportKind::Normal;
@@ -3705,7 +3714,7 @@ resolutionBuilderBoundsRowsAndRestoresDecisions()
 
     auto uniqueValidationClasses = classResolutions;
     uniqueValidationClasses.last().action = ScheduleImportClassAction::CreateNew;
-    uniqueValidationClasses.last().targetClassId = -1;
+    uniqueValidationClasses.last().targetClassId.reset();
     const auto uniqueApplyRequest =
         ScheduleImportReviewModel::buildApplyRequest(
             context,
@@ -3751,6 +3760,34 @@ resolutionBuilderBoundsRowsAndRestoresDecisions()
         static_cast<int>(ScheduleImportClassAction::Skip)
         );
     ScheduleImportResolutionControls::clearRealizedControls(&state);
+}
+
+void ScheduleImportDialogTests::
+classResolutionTargetsConvertRawIdsAtUiBoundary()
+{
+    using ScheduleImportResolutionControls::BuildResult;
+    using ScheduleImportResolutionControls::ClassControl;
+
+    BuildResult state;
+    for (const int rawTargetId : {-1, 0, 42})
+    {
+        ClassControl control;
+        control.candidateIndex = state.classControls.size();
+        control.actionValue = static_cast<int>(
+            ScheduleImportClassAction::UpdateExisting
+            );
+        control.targetClassId = rawTargetId;
+        control.color = QStringLiteral("#FFFFFF");
+        state.classControls.append(control);
+    }
+
+    const auto resolutions =
+        ScheduleImportResolutionControls::classResolutions(state);
+    QCOMPARE(resolutions.size(), 3);
+    QVERIFY(!resolutions.at(0).targetClassId.has_value());
+    QVERIFY(!resolutions.at(1).targetClassId.has_value());
+    QVERIFY(resolutions.at(2).targetClassId.has_value());
+    QCOMPARE(resolutions.at(2).targetClassId->value(), std::string("42"));
 }
 
 void ScheduleImportDialogTests::
@@ -6062,9 +6099,9 @@ void ScheduleImportDialogTests::
         QString()
     }};
     plan.classes = {
-        {0, ScheduleImportClassAction::CreateNew, -1,
+        {0, ScheduleImportClassAction::CreateNew, std::nullopt,
             QStringLiteral("#AABBCC"), QStringLiteral("#000000")},
-        {1, ScheduleImportClassAction::CreateNew, -1,
+        {1, ScheduleImportClassAction::CreateNew, std::nullopt,
             QStringLiteral("#112233"), QStringLiteral("#445566")}
     };
 
@@ -6117,7 +6154,7 @@ void ScheduleImportDialogTests::
     plan.classes = {{
         0,
         ScheduleImportClassAction::CreateNew,
-        -1,
+        std::nullopt,
         QStringLiteral("#AABBCC"),
         QStringLiteral("#000000")
     }};
@@ -6164,7 +6201,8 @@ void ScheduleImportDialogTests::reviewModelBuildsTypedApplyRequest()
         QStringLiteral(" 413 ")
     }};
     QList<ScheduleImportClassResolution> classes{{
-        0, ScheduleImportClassAction::UpdateExisting, 42,
+        0, ScheduleImportClassAction::UpdateExisting,
+        ImportDomain::ClassId::fromString("42"),
         QStringLiteral(" #FFFFFF "), QStringLiteral(" #000000 ")
     }};
 
