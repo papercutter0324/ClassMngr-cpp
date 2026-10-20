@@ -55555,6 +55555,28 @@ production target `ClassMngr`. Run the suffix-specific page selectors; the
 full Speaking Evaluation CTest has a separately confirmed pre-F1214
 output-directory failure documented above.
 
+### F1215 Korean-name suffix selected-row index complete - 2026-10-21
+
+F1215 completed at commit `ebf4f2d5` (`Phase2 - Type Korean name suffix row
+index`). The Application function now accepts explicit
+`StudentKoreanNameSuffixSelectedRowIndex`, an `int` wrapper defaulting to
+`-1`, with `.rawValue()`, equality, and no implicit conversions or constructor
+range validation. Missing-column and invalid-row checks remain before size
+conversion; incomplete selected names still return empty. Both Feature APIs
+remain `int` and wrap at the Application boundary. Name matching, trimming,
+case behavior, and first-unused uppercase suffix ordering remain unchanged.
+
+The independent Tester built `ClassMngr`,
+`ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests`,
+`ClassMngrRosterModelTests`, and `ClassMngrSpeakingEvalPageSaveTests` in
+`build/macos-clang-debug`. The Application and roster model CTests passed 2/2.
+Speaking Evaluation selectors `speakingEvalModelSuggestionMatchesLegacyHelper`
+and `suffixChoiceAppliesSuggestedNameThroughExistingPageFlow` each passed 3 Qt
+cases including setup and cleanup. The suffix UI test emitted a missing icon
+resource warning but passed. The full page CTest was omitted because its
+unrelated output-directory assertion is confirmed on the pre-F1214 baseline;
+no full suite or Windows run is claimed.
+
 ### Batch494 push receipt - 2026-10-20
 
 Batch494 is complete and pushed to `origin/Qt-Rewrite`. The normal push
