@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch499 is complete and pushed at `cc38c959`; active Batch500 has F1243–F1245 complete and F1246 next for acceptance, and F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch499 is complete and pushed at `cc38c959`; active Batch500 has F1243–F1245 complete and F1246 accepted awaiting implementation, and F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1245 is complete at `3c87bf47`; the incremental macOS build and three focused CTests passed, and F1246 is next for acceptance (see [F1245 verification](03-Phase-2-Progress-Log.md#f1245-sub-prep-print-grade-and-level-order-complete-2026-10-21)). Batch499 is complete and pushed at `cc38c959`; Batch500 remains active with F1247–F1252 discovered. F629 and the Phase 0 and Phase 2 gates remain open.
+F1246 is accepted before implementation: use the existing `CalendarEventImportCount` for the parser's skipped count, preserving parser behavior and unwrapping only at legacy `int` interfaces (see [F1246 acceptance](03-Phase-2-Progress-Log.md#f1246-calendar-parser-skipped-count-accepted-before-implementation-2026-10-21)). Batch499 is complete and pushed at `cc38c959`; Batch500 remains active with F1247–F1252 discovered. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,12 +72,12 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch500 (10 candidates; 3 complete, 0 accepted, 7 discovered)
+#### Active batch: Batch500 (10 candidates; 3 complete, 1 accepted, 6 discovered)
 
 1. F1243 - **Complete.** Replace the `GregorianDate::DayNumber` alias with an explicit typed ordinal; preserve epoch, maximum date, formatting, and factory range validation.
 2. F1244 - **Complete.** Type only the legacy Schedule Import target class ID as optional `Domain::ClassId`; preserve UI raw integers, absent-value handling, action semantics, and validation behavior.
 3. F1245 - **Complete.** Add distinct typed Sub Prep print grade and level orders, preserving configured ranks, unknown sentinels, and comparator order.
-4. F1246 - **Discovered.** Type the Calendar parser's skipped-row count while preserving parser count and duplicate-skip aggregation.
+4. F1246 - **Accepted; awaiting implementation.** Type the Calendar parser's skipped-row count while preserving parser count and duplicate-skip aggregation.
 5. F1247 - **Discovered.** Preserve Teacher Import created/updated/unchanged result counts across the Platform boundary.
 6. F1248 - **Discovered.** Type Class Summary day and time navigation ranks while preserving default and invalid-value sentinels.
 7. F1249 - **Discovered.** Type Testing Classes grade and level ranks while preserving configured indexes, unknown values, and comparator behavior.

@@ -57876,3 +57876,37 @@ The incremental macOS build succeeded for `ClassMngr`,
 
 Batch500 remains active with F1243–F1245 complete, F1246 next for acceptance,
 and F1247–F1252 discovered.
+
+### F1246 Calendar parser skipped count accepted before implementation - 2026-10-21
+
+F1246 is accepted before implementation. Change
+`CalendarImport::ParsedCalendarImport::skippedCount` from `int` to the
+existing `Next::Application::CalendarEventImportCount`, adding a direct
+include rather than defining another count type. Preserve parser increments,
+legend-ignore behavior, and duplicate-skip aggregation.
+
+In `CalendarEventImportService`, pass the typed parser count directly into
+`initiallySkippedCount`. Unwrap with `.rawValue()` only for StartupProfiler
+and the legacy `importFinished(int, int)` Qt signal, including the early
+return when no events were parsed. Keep Qt signal and panel APIs as `int`.
+
+Tests should assert the parser field's exact type, update raw parser count
+checks to `.rawValue()`, and verify that an ignored-Weekend/no-events import
+reports one skipped item. Retain parity golden assertions for one ignored
+legend, streamed/workbook equality, and the end-to-end signal total of 3
+imported / 2 skipped (one parser skip plus one existing-event duplicate).
+Evidence: `src/features/calendar/academic_calendar_event_parser.h:15,18`,
+the parser increment near `academic_calendar_event_parser.cpp:962`,
+`calendar_event_import_service.cpp:302-401`, the existing count wrapper in
+`calendar_event_import_count.h:6-34`, and the plan aggregate in
+`calendar_event_import_plan.h:53-66`; relevant test cases are in
+`tests/calendar_import_tests.cpp:608` and
+`tests/next_feature_calendar_event_import_parity_tests.cpp:108,152,233-252`.
+
+Build `ClassMngr`, `ClassMngrCalendarImportTests`, and
+`ClassMngrCalendarEventImportParityTests`; run only those two accepted CTests.
+At acceptance, no implementation, build, or tests had started. No Windows or
+full-suite result is claimed.
+
+Batch500 remains active with F1243–F1245 complete, F1246 accepted awaiting
+implementation, and F1247–F1252 discovered.
