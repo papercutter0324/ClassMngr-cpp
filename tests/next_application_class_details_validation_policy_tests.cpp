@@ -294,7 +294,10 @@ reportsDuplicateGroupsInDeterministicFirstSeenOrder()
         QCOMPARE(issue.code, ClassDetailsValidationCode::DuplicateSlot);
         QCOMPARE(issue.field, ClassDetailsValidationField::ScheduleStartTime);
         QCOMPARE(issue.schedule.value(), ClassDetailsValidationSchedule::Regular);
-        QCOMPARE(issue.row, static_cast<std::size_t>(expectedRows[index]));
+        QCOMPARE(
+            issue.row.rawValue(),
+            static_cast<std::size_t>(expectedRows[index])
+            );
     }
     const int expectedFirstGroup[] = {0, 2};
     const int expectedSecondGroup[] = {1, 3, 4};

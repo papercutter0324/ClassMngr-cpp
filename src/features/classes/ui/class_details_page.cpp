@@ -249,7 +249,7 @@ QString validationIssueField(
                 : QStringLiteral("endTime");
         return QStringLiteral("%1[%2].%3")
             .arg(prefix)
-            .arg(static_cast<qulonglong>(issue.row))
+            .arg(static_cast<qulonglong>(issue.row.rawValue()))
             .arg(suffix);
     }
     }
@@ -365,7 +365,9 @@ ValidationResult legacyValidationResult(
         result.add({
             .code = validationIssueCode(issue.code),
             .field = validationIssueField(issue),
-            .row = scheduleField ? static_cast<int>(issue.row) : -1,
+            .row = scheduleField
+                ? static_cast<int>(issue.row.rawValue())
+                : -1,
             .column = validationIssueColumn(issue.field),
             .severity = ValidationSeverity::Error,
             .arguments = std::move(arguments)

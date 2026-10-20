@@ -497,7 +497,7 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowInvalidWeekdayStopsBef
     QCOMPARE(issue.field, Application::ClassDetailsValidationField::ScheduleDay);
     QVERIFY(issue.schedule);
     QCOMPARE(*issue.schedule, Application::ClassDetailsValidationSchedule::Regular);
-    QCOMPARE(issue.row, std::size_t(0));
+    QCOMPARE(issue.row.rawValue(), std::size_t(0));
     QVERIFY(issue.value);
     QCOMPARE(*issue.value, std::u16string(u"Funday"));
     QCOMPARE(ports.calls, (std::vector<std::string>{"context"}));

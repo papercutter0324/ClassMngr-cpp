@@ -102,12 +102,38 @@ enum class ClassDetailsValidationSchedule
     Intensive
 };
 
+class ClassDetailsScheduleValidationRowIndex final
+{
+public:
+    constexpr ClassDetailsScheduleValidationRowIndex() noexcept = default;
+
+    explicit constexpr ClassDetailsScheduleValidationRowIndex(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ClassDetailsScheduleValidationRowIndex&,
+        const ClassDetailsScheduleValidationRowIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
 struct ClassDetailsValidationIssue final
 {
     ClassDetailsValidationCode code;
     ClassDetailsValidationField field;
     std::optional<ClassDetailsValidationSchedule> schedule;
-    std::size_t row = 0;
+    ClassDetailsScheduleValidationRowIndex row;
     std::optional<std::int64_t> integerValue;
     std::optional<std::u16string> value;
     std::optional<std::u16string> start;
@@ -532,7 +558,7 @@ private:
         std::optional<int> minimum = std::nullopt,
         std::optional<int> maximum = std::nullopt,
         std::optional<ClassDetailsValidationSchedule> schedule = std::nullopt,
-        std::size_t row = 0
+        ClassDetailsScheduleValidationRowIndex row = {}
         )
     {
         output.issues.push_back({
@@ -786,7 +812,7 @@ private:
                     std::nullopt,
                     std::nullopt,
                     schedule,
-                    index
+                    ClassDetailsScheduleValidationRowIndex(index)
                     );
             }
             if (!start)
@@ -805,7 +831,7 @@ private:
                     std::nullopt,
                     std::nullopt,
                     schedule,
-                    index
+                    ClassDetailsScheduleValidationRowIndex(index)
                     );
             }
             if (!end)
@@ -824,7 +850,7 @@ private:
                     std::nullopt,
                     std::nullopt,
                     schedule,
-                    index
+                    ClassDetailsScheduleValidationRowIndex(index)
                     );
             }
             if (start && end && end->minutes <= start->minutes)
@@ -843,7 +869,7 @@ private:
                     std::nullopt,
                     std::nullopt,
                     schedule,
-                    index
+                    ClassDetailsScheduleValidationRowIndex(index)
                     );
             }
 
@@ -900,7 +926,9 @@ private:
                     std::nullopt,
                     std::nullopt,
                     schedule,
-                    static_cast<std::size_t>(row)
+                    ClassDetailsScheduleValidationRowIndex(
+                        static_cast<std::size_t>(row)
+                        )
                     );
             }
         }
