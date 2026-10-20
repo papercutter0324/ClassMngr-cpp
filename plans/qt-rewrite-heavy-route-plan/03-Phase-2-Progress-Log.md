@@ -51556,3 +51556,40 @@ original discovery order and boundaries are unchanged. The batch has no push
 receipt and is not closed. F629 awaits source-bound Windows x64 layout
 evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1157 Schedule Builder source text accepted before implementation - 2026-10-20
+
+F1157 is accepted/in progress. Add the Qt-free Application value
+`ScheduleBuilderSourceScheduleText`, an owning `std::u16string` with an empty
+default, explicit construction, a const `value()` accessor, and equality. Do
+not add implicit conversions, validation, normalization, or parsing. Type the
+existing `ScheduleBuilderSourceScheduleRow::{day,startTime,endTime}` fields
+with this raw source-text value. Keep regular and intensive schedules as
+vectors so their row order remains exact.
+
+The Platform adapter wraps each existing `QString::toStdU16String()` directly.
+The Application Query continues returning rows unchanged and validates only
+canonical, unique class IDs. The Schedule Builder UI unwraps `.value()` at its
+current parsing boundary, preserving day trim/default, visibility filtering,
+time parse/skip, and invalid-end behavior. Do not add `ScheduleTime`
+conversion, sorting, repository changes, or persistence changes.
+
+Evidence: `src/next/application/schedule_builder_source_snapshot.h`,
+`src/next/platform/application_services_schedule_builder_source_port.h`,
+`src/data/repositories/class_info_repository.cpp:6375` (schedule row order),
+`src/features/schedule/ui/schedule_builder.cpp`,
+`tests/next_application_schedule_builder_source_snapshot_tests.cpp`,
+`tests/next_platform_application_services_schedule_builder_source_port_tests.cpp`,
+and `tests/schedule_builder_tests.cpp`. Existing Application tests cover raw
+whitespace and invalid text, supplementary Unicode, and vector order. Platform
+tests cover row order and ASCII raw text but need non-ASCII and empty schedule
+field cases. Existing consumer tests cover parsing behavior.
+
+Focused acceptance gate: in the existing `build/macos-clang-debug` tree,
+incrementally build `ClassMngr`,
+`ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`,
+`ClassMngrScheduleBuilderTests`, and `ClassMngrScheduleWidgetTests`; run the
+four corresponding focused CTests (Qt offscreen as required), then run
+`git diff --check`. No full-suite or Windows pass is claimed. Implementation
+and verification have not started.
