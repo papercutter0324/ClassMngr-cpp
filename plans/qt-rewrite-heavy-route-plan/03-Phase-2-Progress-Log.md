@@ -51634,3 +51634,44 @@ original discovery order and boundaries are unchanged. The batch has no push
 receipt and is not closed. F629 awaits source-bound Windows x64 layout
 evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1158 Co-Teacher schedule slot accepted before implementation - 2026-10-20
+
+F1158 is accepted/in progress. Replace the Application-only
+`ClassCoTeacherPageScheduleRow` pair with a dedicated
+`ClassCoTeacherPageScheduleSlot`: an owning UTF-16 day/start-time pair with
+default-empty state, explicit construction, `day()` and `startTime()`
+accessors, equality, and no implicit conversions, parsing, or normalization.
+Keep `ClassCoTeacherPageFields::regularSchedule` as an ordered vector of slots.
+Do not reuse F1151's `ScheduleTestingAssignmentKey`; tests must assert the
+concepts are distinct and non-convertible in both directions.
+
+The Platform adapter maps each repository row to the new slot unchanged and in
+source order. The Application Query preserves existing canonical class-ID,
+class-identity, and selected-teacher-ID validation, errors, and order, returning
+schedule slots unchanged. Update the Co-Teacher UI consumer to read both pair
+values while preserving current subtitle formatting and normalization. Make no
+repository changes. Add whitespace-pair assertions; existing Co-Teacher tests
+cover order but do not yet assert whitespace pair values. Update aggregate
+initializers as required.
+
+Evidence: `src/next/application/class_co_teacher_page_read_snapshot.h`,
+`src/next/application/class_co_teacher_page_read_query.h`,
+`src/next/application/class_co_teacher_page_read_port.h`,
+`src/next/application/schedule_testing_assignment_read_query.h` (the distinct
+F1151 key),
+`src/next/platform/application_services_class_co_teacher_page_read_port.h`,
+`src/features/classes/ui/class_co_teacher_page.cpp`,
+`tests/next_application_class_co_teacher_page_read_query_tests.cpp`,
+`tests/next_platform_application_services_class_co_teacher_page_read_port_tests.cpp`,
+`tests/next_feature_class_co_teacher_page_tests.cpp`, and
+`tests/class_co_teacher_page_read_parity_tests.cpp`.
+
+Focused acceptance gate: in the existing `build/macos-clang-debug` tree,
+incrementally build `ClassMngr`,
+`ClassMngrNextApplicationClassCoTeacherPageReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests`,
+`ClassMngrNextFeatureClassCoTeacherPageTests`, and
+`ClassMngrClassCoTeacherPageReadParityTests`; run the four matching focused
+CTests (offscreen for GUI), then run `git diff --check`. No full-suite or
+Windows pass is claimed. Implementation and verification have not started.
