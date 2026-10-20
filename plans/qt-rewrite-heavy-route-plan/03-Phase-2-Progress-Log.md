@@ -56326,6 +56326,9 @@ Extend `next_application_sub_prep_print_order_policy_tests.cpp` with both
 wrappers' default/explicit/equality/raw-value/non-conversion checks, distinct
 type assertions, and field/callback type assertions. Retain the existing
 ordering and source-position coverage, including input-permutation checks.
+Add a direct policy assertion that empty teacher input yields no groups and
+that unmatched classes leave the input teacher's group with teacher position
+zero and no class indexes.
 Preserve model filtering and group ordering in
 `SubPrepClassInformationModelTests` and ordered print details in
 `SubPrepPrintSourceMapperTests`. Focused CTests are
