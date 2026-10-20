@@ -55390,6 +55390,31 @@ environment and passed, and the targeted Feature/Skip slots passed when rerun
 with that environment (5 Qt cases including setup/cleanup). No full suite is
 claimed.
 
+### F1212 Roster row-removal index accepted before implementation - 2026-10-20
+
+F1212 is accepted/current based on two independent read-only Explorer reports.
+Add a dedicated explicit Application `RosterRowRemovalIndex` backed by `int`,
+defaulting to `-1`, with `.rawValue()`, equality, and no implicit conversions.
+Change only `removeRosterRow`'s row coordinate to this type. Unwrap once before
+the existing checks and preserve the rejection order: negative/out-of-range
+indexes return `InvalidRowIndex` before a valid row is inspected for data;
+empty or Qt-whitespace-only valid rows return `RowHasNoData`. Preserve the
+existing removal/compaction behavior.
+
+Wrap the Feature model's selected Qt row at its two Application call sites and
+explicitly bridge `RosterRowTransferSourceIndex` when the transfer use case
+calls row removal; keep both Feature APIs and the transfer request's own source
+index type unchanged. Update
+`tests/next_application_roster_row_removal_tests.cpp` with typed-value/default
+and non-conversion coverage while retaining invalid, empty, whitespace, and
+successful-row behavior. Preserve Feature message/dirty-state checks in
+`tests/roster_model_tests.cpp` and transfer rejection ordering in
+`tests/next_application_roster_row_transfer_use_case_tests.cpp`. Focused
+targets are `ClassMngrNextApplicationRosterRowRemovalTests`,
+`ClassMngrRosterModelTests`, `ClassMngrNextApplicationRosterRowTransferUseCaseTests`,
+and affected production target `ClassMngr`. No F1212 implementation or
+verification has started.
+
 ### Batch494 push receipt - 2026-10-20
 
 Batch494 is complete and pushed to `origin/Qt-Rewrite`. The normal push
