@@ -58129,3 +58129,27 @@ full-suite result is claimed.
 
 Batch500 remains active with F1243–F1248 complete, F1249 accepted awaiting
 implementation, and F1250–F1252 discovered.
+
+### F1249 Testing Classes grade and level ranks complete - 2026-10-21
+
+F1249 completed at implementation commit
+`2b7f5a925a13c014bdd69ff6b12e426e04271239`, following acceptance commit
+`fce63b3a600d084cc0d60f219e6ecec35a34c9b8`. The three scoped source/test
+paths were `src/next/application/testing_classes_ordering_policy.h`,
+`src/features/classes/ui/testing_classes_page.cpp`, and
+`tests/next_application_testing_classes_ordering_policy_tests.cpp`.
+
+The local `TestingClassesOrderingRank` uses explicit `std::int32_t`
+construction, `.rawValue()`, equality, and default `1000`. Configured grade
+and level lookups and unknown-rank mapping are unchanged. The policy still
+compares grade rank, level rank, injected locale-aware level text, then class
+name; exact ties remain unspecified and sentinel `1000` retains literal
+numeric ordering. No validation or range policy was added.
+
+The incremental build succeeded for `ClassMngr` and
+`ClassMngrNextApplicationTestingClassesOrderingPolicyTests`; its focused CTest
+passed (1/1), and `git diff --check` passed. No page test, Windows build, or
+full-suite run was performed.
+
+Batch500 remains active with F1243–F1249 complete, F1250 next for acceptance,
+and F1251–F1252 discovered.
