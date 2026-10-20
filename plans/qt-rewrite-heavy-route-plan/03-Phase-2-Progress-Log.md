@@ -58502,3 +58502,55 @@ push blocker was reported.
 Batch500 is complete and pushed. Batch501 is active with F1253 next for
 acceptance; F1254–F1256 remain discovered in the recorded order. F629 and the
 Phase 0 and Phase 2 gates remain open.
+
+### F1253 Teacher Import stored-record identities accepted before implementation - 2026-10-21
+
+F1253 is accepted before implementation. Replace the raw signed-64 `id = -1`
+fields in `NativeEnglishTeacherImportProfile` and `GsTeamImportProfile` with
+distinct explicit Application value types:
+`NativeEnglishTeacherImportStoredRecordId` and
+`GsTeamImportStoredRecordId`. Each type has an explicit `std::int64_t`
+constructor, default raw value `-1`, `.rawValue()`, equality, and no implicit
+conversion from `int`/`std::int64_t` or between identity types. These are
+separate table identities, not `Domain::TeacherId` and not the legacy
+directory/source IDs.
+
+Preserve merge behavior and each stored ID; keep ID excluded from changed/no-op
+value comparison, and leave use-case matching and update behavior unchanged.
+The SQL adapter explicitly wraps `toLongLong()` results and unwraps with
+`.rawValue()` when binding `qlonglong`. Do not change legacy
+`NativeEnglishTeacher` or `GsTeamMember` source IDs (`int`), schema, generated
+IDs, validation, narrowing, or sentinel policy.
+
+Acceptance coverage: assert exact distinct profile field types, no implicit
+conversion from `int`/`std::int64_t` or across the two identity types, and the
+default `-1`; retain merge ID preservation, no-op counts, and use-case ID
+targeting. Preserve the existing SQL cases at 2,147,483,648 and add a signed
+64-bit maximum round trip for each table, checking the exact persisted value,
+`typeof(id) == integer`, and a single-row update.
+
+Evidence: raw Application fields and defaults are in
+`src/next/application/gs_team_import_update.h:24` and
+`src/next/application/native_english_teacher_import_update.h:24`; profile and
+port methods are in `src/next/application/teacher_import_use_case.h:109,181-192`.
+Merge logic copies IDs at `gs_team_import_update.h:48` and
+`native_english_teacher_import_update.h:49`. SQL reads and bindings are in
+`src/data/repositories/teacher_import_sql_persistence_adapter.cpp:137,175,327,379`;
+the two AUTOINCREMENT tables are separate in
+`src/data/database/database_schema_manager.cpp:266`. Existing wide-ID tests
+are in `tests/teacher_import_tests.cpp:1197,1274`, merge tests in
+`tests/next_application_native_english_teacher_import_update_tests.cpp:20`
+and `tests/next_application_gs_team_import_update_tests.cpp:20`, and use-case
+targeting coverage in `tests/next_application_teacher_import_use_case_tests.cpp:561-586,633-644`.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationNativeEnglishTeacherImportUpdateTests`,
+`ClassMngrNextApplicationGsTeamImportUpdateTests`,
+`ClassMngrNextApplicationTeacherImportUseCaseTests`, and
+`ClassMngrTeacherImportTests`; run only these four focused CTests. At
+acceptance, no implementation, build, or tests had started. No Windows build
+or full-suite result is claimed.
+
+Batch500 (F1243–F1252) is complete and pushed at `029a17e8`. Batch501 remains
+active with F1253 accepted awaiting implementation and F1254–F1256 discovered
+in order. F629 and the Phase 0 and Phase 2 gates remain open.

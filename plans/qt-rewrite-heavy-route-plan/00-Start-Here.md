@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). Batch499 is complete and pushed at `cc38c959` (see its [push receipt](03-Phase-2-Progress-Log.md#batch499-push-receipt-2026-10-21)). Batch500 (F1243–F1252) is complete and pushed at `029a17e8` (see [push receipt](03-Phase-2-Progress-Log.md#batch500-push-receipt-2026-10-21)); Batch501 is active with F1253 next for acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). Batch499 is complete and pushed at `cc38c959` (see its [push receipt](03-Phase-2-Progress-Log.md#batch499-push-receipt-2026-10-21)). Batch500 (F1243–F1252) is complete and pushed at `029a17e8` (see [push receipt](03-Phase-2-Progress-Log.md#batch500-push-receipt-2026-10-21)); active Batch501 has F1253 accepted awaiting implementation and F1254–F1256 discovered (see [acceptance](03-Phase-2-Progress-Log.md#f1253-teacher-import-stored-record-identities-accepted-before-implementation-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,9 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch501 — Active (0 complete, 0 accepted, 4 discovered):**
+**Batch501 — Active (0 complete, 1 accepted, 3 discovered):**
 
-1. **F1253 — Discovered; next for acceptance:** Type Teacher Import stored-record identities while preserving distinct IDs, the `-1` default, and full signed-64 transport.
+1. **F1253 — Accepted:** Add distinct typed Application identities for GS Team and Native English Teacher stored profiles while preserving the `-1` default and signed-64 transport.
 2. **F1254 — Discovered:** Type Teacher Import review candidate count while preserving expansion, selection bounds, order, and validation behavior.
 3. **F1255 — Discovered:** Type the academic-year validation boundary while preserving the 2026 lower bound and absence of an upper bound.
 4. **F1256 — Discovered; rechecked after F1251:** Keep `RosterSnapshot` column widths as a separate Application projection candidate; preserve signed values and order.
