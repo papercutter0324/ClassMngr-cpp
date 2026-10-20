@@ -53574,3 +53574,42 @@ Batch491 remains unpushed; GitHub has not received these local changes.
 F1178–F1183 are complete, F1184 is next, and F1185 remains discovered. Batch490
 is complete and pushed at `69be43a7`. F629 awaits source-bound Windows x64
 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+
+### F1184 Import and report job generation accepted before implementation - 2026-10-20
+
+F1184 was discovered from the matching `std::uint64_t` generation aliases in
+the Import and Report Application coordinators. Accept distinct Qt-free
+`Application::ImportJobGeneration` and
+`Application::ReportJobGeneration` value types, each with exact
+`std::uint64_t` storage, default 0, explicit construction, `.value()`, and
+equality, without implicit conversion, validation, or range policy. Type all
+generation-bearing APIs, events, callbacks, and queue entries within the
+respective coordinators; retain `ImportJobSessionToken` and
+`ReportJobSessionToken` as aliases to their respective typed generation. The
+two job kinds must not accept one another's type. Add both headers to
+`cmake/next.cmake`'s source ownership manifest.
+
+Preserve first issued generation 1 and exact sequence values; duplicate starts
+do not increment, while worker-start failure consumes a generation. Preserve
+restart queue clearing, exact-equality stale-event rejection, and the existing
+max-generation Conflict/error messages before state or worker mutation. Do not
+add a production counter-injection seam: direct exhaustion runtime testing is
+out of scope because no seam exists. Retain and inspect the guard and test
+wrapper max-value round-trip.
+
+Acceptance coverage extends
+`tests/next_application_import_job_coordinator_tests.cpp` and
+`tests/next_application_report_job_coordinator_tests.cpp` with wrapper
+semantics, zero/first generation, distinct-type non-convertibility,
+sequence/failure/stale behavior, and explicit typed generation fixtures. Build
+`ClassMngr`, `ClassMngrNextApplicationImportJobCoordinatorTests`,
+`ClassMngrNextApplicationReportJobCoordinatorTests`, and the additional
+compile consumer `ClassMngrNextPlatformQtJobWorkerTests`; run these focused
+CTests. Inspect preservation of the exhaustion branches without a direct
+max-counter runtime test. Implementation and verification have not started;
+no full-suite or Windows build is in scope.
+
+Batch491 remains unpushed; GitHub has not received these local changes.
+F1178–F1183 are complete, F1184 is accepted/in progress, and F1185 is next.
+Batch490 is complete and pushed at `69be43a7`. F629 awaits source-bound Windows
+x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.

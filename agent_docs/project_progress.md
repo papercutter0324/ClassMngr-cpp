@@ -82,7 +82,8 @@ and the existing `QUrl::toEncoded()`/`QUrl::fromEncoded()` behavior. Independent
 clean builds passed for `ClassMngr` and both updater test targets; both focused
 CTests and all three selected cases passed. Socket tests used local loopback
 permission only. No full suite or Windows build ran. Batch491 is active and
-unpushed with F1178–F1183 complete, F1184 next, and F1185 discovered.
+unpushed with F1178–F1183 complete, F1184 accepted/in progress, and F1185
+discovered.
 
 F1183 completed at source/test commit `ba078193`, after acceptance commit
 `29e0156b`. Qt-free `Application::ReleaseDateIsoText` now types only the startup
@@ -95,6 +96,18 @@ a non-failing Qt font-alias warning. Local loopback permission only was used;
 no external network, full suite, or Windows build ran. Both diff checks passed.
 Batch491 remains unpushed with F1184 next and F1185 discovered; F629 and both
 phase gates remain open.
+
+F1184 is accepted to introduce distinct Qt-free `Application::ImportJobGeneration`
+and `Application::ReportJobGeneration` value types, preserving exact
+`std::uint64_t` values, zero default, explicit construction, `.value()`, and
+equality without implicit conversions or range policy. Each job's session token
+remains an alias of its generation type. Preserve first issued value 1, duplicate
+start and worker-start-failure sequencing, restart queue clearing, exact stale
+event rejection, and existing exhaustion errors before state or worker
+mutation. The private counter has no test injection seam, so no runtime
+exhaustion test will be added. Implementation and verification have not
+started. Batch491 remains unpushed with F1185 discovered; F629 and both phase
+gates remain open.
 F1175's Class Transfer test still has one unresolved teacher-fallback label
 failure among 64 cases; no clean baseline proves it pre-existing. F629 awaits
 source-bound Windows x64 layout evidence. Phase 0 and Phase 2 gates remain

@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batches 481–490 are complete and pushed, with Batch490 at `69be43a7`. Batch491 is active and unpushed with F1178–F1183 complete and F1184 next; one candidate remains discovered. F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batches 481–490 are complete and pushed, with Batch490 at `69be43a7`. Batch491 is active and unpushed with F1178–F1183 complete, F1184 accepted/in progress, and F1185 next. F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,7 +38,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch491 — Active and unpushed; eight candidates, six complete and two discovered, with F1184 next:**
+**Batch491 — Active and unpushed; eight candidates, six complete, one accepted/in progress, and one discovered, with F1185 next:**
 
 1. **F1178 — Complete:** Type the eight Application Schedule Import review summary counts and two projection inputs while preserving action-derived mappings and existing Feature behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1178-schedule-import-review-count-complete-2026-10-20)).
 2. **F1179 — Complete:** Reuse `Domain::CourseGradeBand` in the Application AI prompt requests and preserve grade eligibility, prompt formatting, and Feature integer boundaries (see the [completion record](03-Phase-2-Progress-Log.md#f1179-speaking-evaluation-ai-grade-band-complete-2026-10-20)).
@@ -46,10 +46,10 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 4. **F1181 — Complete:** Add `Application::ClassTransferPackageClassIndex` to the three Application review fields while preserving `-1`, unknown out-of-range classes, and issue order (see the [completion record](03-Phase-2-Progress-Log.md#f1181-class-transfer-package-class-index-complete-2026-10-20)).
 5. **F1182 — Complete:** Add `Application::EncodedUrlText` for the four startup/manual artifact and release URL fields, preserving encoded bytes and existing display/validation behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1182-updater-encoded-url-text-complete-2026-10-20)).
 6. **F1183 — Complete:** Add `Application::ReleaseDateIsoText` to only the startup and manual result `releaseDateIso` fields, preserving exact ISO text, invalid/empty handling, and localized short-date display (see the [completion record](03-Phase-2-Progress-Log.md#f1183-updater-release-date-iso-text-complete-2026-10-20)).
-7. **F1184 — Discovered; next:** Import/report job generation tokens; preserve initial 1, exact values, stale rejection, and exhaustion behavior.
-8. **F1185 — Discovered; lower confidence:** Class Analytics criterion student count; preserve zero and count only when criterion data exists, with contract to confirm at acceptance.
+7. **F1184 — Accepted/in progress:** Add distinct `Application::ImportJobGeneration` and `Application::ReportJobGeneration` types for their respective coordinators; preserve generation sequences, stale rejection, and exhaustion guards (see the [acceptance record](03-Phase-2-Progress-Log.md#f1184-import-and-report-job-generation-accepted-before-implementation-2026-10-20)).
+8. **F1185 — Discovered; next; lower confidence:** Class Analytics criterion student count; preserve zero and count only when criterion data exists, with contract to confirm at acceptance.
 
-Batch490 is complete and pushed at `69be43a7`; see its [push receipt](03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20). Batch491 is active and unpushed with F1178–F1183 complete, F1184 next, and F1185 discovered. GitHub has not received these local changes. Batch489 is complete and pushed at `e329f92b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch490 is complete and pushed at `69be43a7`; see its [push receipt](03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20). Batch491 is active and unpushed with F1178–F1183 complete, F1184 accepted/in progress, and F1185 next. GitHub has not received these local changes. Batch489 is complete and pushed at `e329f92b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.
