@@ -58056,3 +58056,37 @@ full-suite result is claimed.
 
 Batch500 remains active with F1243–F1247 complete, F1248 accepted awaiting
 implementation, and F1249–F1252 discovered.
+
+### F1248 Class Summary navigation ranks complete - 2026-10-21
+
+F1248 completed at implementation commit
+`674df5afe789fdfa5dbc8ca30699cd72c165cc93`, following acceptance commit
+`cd330faa284d57f985f0a66c6ecf19169fafed14`. The eight scoped source/test
+paths were `src/next/application/class_summary_projection.h`,
+`src/next/platform/application_services_sub_prep_schedule_summary_port.h`,
+`src/features/sub_prep/ui/sub_prep_class_information_list_model.cpp`,
+`tests/next_application_class_summary_tests.cpp`,
+`tests/next_application_sub_prep_schedule_summary_query_tests.cpp`,
+`tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp`,
+`tests/sub_prep_class_information_list_model_tests.cpp`, and
+`tests/sub_prep_page_tests.cpp`.
+
+The Class Summary day and time order fields now use the existing
+`ClassTabNavigationOrderRank`. Its zero-argument field initialization
+preserves the `1000` unknown sentinel; projection validation, adapter
+calculations and invalid fallback, query order, and comparator order are
+preserved. The sentinel remains a literal numeric rank: it collides with
+valid 16:40 and sorts before valid minute ranks greater than 1000.
+
+`ClassMngr` and the four accepted targets built, and the four focused CTests
+passed (4/4). The strengthened list-model CTest was rerun and passed (1/1).
+`ClassMngrSubPrepPageTests` also built, and the changed page slot passed direct
+QtTest execution (3 passes, 0 failures). The complete
+`ClassMngrSubPrepPageTests` CTest was bounded to 30 seconds and timed out at
+the unrelated `unavailablePreferenceLoadsPreservePageValues` case after
+earlier test cases had passed; that case and the full page target are
+unverified. `git diff --check` passed. Windows x64 and the full suite were not
+run.
+
+Batch500 remains active with F1243–F1248 complete, F1249 next for acceptance,
+and F1250–F1252 discovered.
