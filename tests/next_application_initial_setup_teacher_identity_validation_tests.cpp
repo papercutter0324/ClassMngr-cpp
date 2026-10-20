@@ -1,9 +1,24 @@
 #include "next/application/initial_setup_teacher_identity_validation.h"
 
 #include <cstdlib>
+#include <type_traits>
 
 using ClassMngr::Next::Application::
+    InitialSetupTeacherIdentityRequirements;
+using ClassMngr::Next::Application::
     initialSetupTeacherIdentityRequirements;
+
+static_assert(!std::is_aggregate_v<InitialSetupTeacherIdentityRequirements>);
+static_assert(
+    !std::is_default_constructible_v<InitialSetupTeacherIdentityRequirements>
+    );
+static_assert(
+    !std::is_constructible_v<
+        InitialSetupTeacherIdentityRequirements,
+        bool,
+        bool,
+        bool>
+    );
 
 int main()
 {
@@ -23,13 +38,26 @@ int main()
             koreanPresent,
             preferredSpellingPresent
             );
-        if (requirements.complete != complete
-            || requirements.additionalFieldsRequired
+        if (requirements.complete() != complete
+            || requirements.additionalFieldsRequired()
                 != (complete ? 0U : 2U - fieldsPresent)
-            || requirements.englishNameMissing == englishPresent
-            || requirements.koreanNameMissing == koreanPresent
-            || requirements.preferredSpellingMissing
+            || requirements.englishNameMissing() == englishPresent
+            || requirements.koreanNameMissing() == koreanPresent
+            || requirements.preferredSpellingMissing()
                 == preferredSpellingPresent)
+        {
+            return EXIT_FAILURE;
+        }
+
+        const unsigned int missingFields =
+            static_cast<unsigned int>(requirements.englishNameMissing())
+            + static_cast<unsigned int>(requirements.koreanNameMissing())
+            + static_cast<unsigned int>(
+                requirements.preferredSpellingMissing()
+                );
+        if (requirements.complete()
+                != (requirements.additionalFieldsRequired() == 0U)
+            || fieldsPresent + missingFields != 3U)
         {
             return EXIT_FAILURE;
         }

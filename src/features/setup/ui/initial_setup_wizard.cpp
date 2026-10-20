@@ -965,18 +965,18 @@ private:
                     !preferredSpelling.isEmpty()
                     );
 
-        if (!identityRequirements.complete)
+        if (!identityRequirements.complete())
         {
             QStringList missingNames;
-            if (identityRequirements.englishNameMissing)
+            if (identityRequirements.englishNameMissing())
             {
                 missingNames.append(tr("English Name"));
             }
-            if (identityRequirements.koreanNameMissing)
+            if (identityRequirements.koreanNameMissing())
             {
                 missingNames.append(tr("Korean Name"));
             }
-            if (identityRequirements.preferredSpellingMissing)
+            if (identityRequirements.preferredSpellingMissing())
             {
                 missingNames.append(tr("Preferred Spelling"));
             }
@@ -986,7 +986,7 @@ private:
                 tr("Teacher Information"),
                 tr("Complete at least %1 of the following fields before continuing:\n\n- %2")
                     .arg(static_cast<int>(
-                        identityRequirements.additionalFieldsRequired
+                        identityRequirements.additionalFieldsRequired()
                         ))
                     .arg(missingNames.join(QStringLiteral("\n- "))));
             return false;

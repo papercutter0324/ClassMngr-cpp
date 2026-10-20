@@ -17,6 +17,7 @@
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPixmap>
 #include <QPushButton>
 #include <QSqlQuery>
 #include <QTemporaryDir>
@@ -81,11 +82,19 @@ QLabel* signaturePreview(InitialSetupWizard& wizard)
         QStringLiteral("signatureImagePreview"));
 }
 
+void showSetupWizard(InitialSetupWizard& wizard)
+{
+    QPixmap transparentBackground(1, 1);
+    transparentBackground.fill(Qt::transparent);
+    wizard.setPixmap(QWizard::BackgroundPixmap, transparentBackground);
+    wizard.show();
+    QApplication::processEvents();
+}
+
 void showPersonalDetailsPage(InitialSetupWizard& wizard)
 {
     wizard.setStartId(InitialSetupWizard::PersonalDetailsPage);
-    wizard.show();
-    QApplication::processEvents();
+    showSetupWizard(wizard);
 }
 
 bool executeSql(
@@ -296,8 +305,7 @@ classTimesRejectsNoncanonicalWeekdaysAfterCreatingBlankClass()
         InitialSetupWizard wizard(&services);
         wizard.setClassDraft(draft);
         wizard.setStartId(InitialSetupWizard::ClassTimesPage);
-        wizard.show();
-        QApplication::processEvents();
+        showSetupWizard(wizard);
         QCOMPARE(wizard.currentId(), InitialSetupWizard::ClassTimesPage);
 
         auto* schedules = wizard.findChild<ClassScheduleSection*>(
@@ -389,8 +397,7 @@ classDetailsShowsOrderedPreferredTeacherNamesAndSelectsSingleTeacher()
 
     InitialSetupWizard wizard(&services);
     wizard.setStartId(InitialSetupWizard::ClassDetailsPage);
-    wizard.show();
-    QApplication::processEvents();
+    showSetupWizard(wizard);
 
     QCOMPARE(wizard.currentId(), InitialSetupWizard::ClassDetailsPage);
     auto* teachers = wizard.findChild<QComboBox*>(
@@ -420,8 +427,7 @@ classDetailsShowsOrderedPreferredTeacherNamesAndSelectsSingleTeacher()
 
     InitialSetupWizard singleTeacherWizard(&singleTeacherServices);
     singleTeacherWizard.setStartId(InitialSetupWizard::ClassDetailsPage);
-    singleTeacherWizard.show();
-    QApplication::processEvents();
+    showSetupWizard(singleTeacherWizard);
 
     auto* singleChoice = singleTeacherWizard.findChild<QComboBox*>(
         QStringLiteral("setupClassTeacher"));
@@ -444,8 +450,7 @@ classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty()
 
     InitialSetupWizard wizard(&services);
     wizard.setStartId(InitialSetupWizard::ClassDetailsPage);
-    wizard.show();
-    QApplication::processEvents();
+    showSetupWizard(wizard);
 
     DialogServices::setUserPromptServiceForTesting(nullptr);
     QCOMPARE(prompts.messages.size(), 1);
@@ -516,8 +521,7 @@ void InitialSetupWizardTests::blankTeacherEntrySkipsWhenTeachersExist()
 
     InitialSetupWizard wizard(&services);
     wizard.setStartId(InitialSetupWizard::TeacherEntryPage);
-    wizard.show();
-    QApplication::processEvents();
+    showSetupWizard(wizard);
     QCOMPARE(wizard.currentId(), InitialSetupWizard::TeacherEntryPage);
 
     auto* next = wizard.button(QWizard::NextButton);
@@ -568,11 +572,30 @@ teacherChoiceReadFailuresBehaveAsEmptyWithoutWarnings()
         prompts.messages.constFirst().title,
         QStringLiteral("Teacher Information")
         );
-    QVERIFY(
-        prompts.messages.constFirst().message.contains(
-            QStringLiteral("Complete at least")
-            )
+    const QString expectedIncompleteMessage =
+        QStringLiteral(
+            "Complete at least 2 of the following fields before continuing:\n\n"
+            "- English Name\n- Korean Name\n- Preferred Spelling"
+            );
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        expectedIncompleteMessage
         );
+
+    auto* addAnother = wizard.findChild<QPushButton*>(
+        QStringLiteral("setupAddAnotherTeacherButton")
+        );
+    QVERIFY(addAnother);
+    addAnother->click();
+    QApplication::processEvents();
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::TeacherEntryPage);
+    QCOMPARE(prompts.messages.size(), 2);
+    QCOMPARE(
+        prompts.messages.constLast().severity,
+        PromptSeverity::Information
+        );
+    QCOMPARE(prompts.messages.constLast().message, expectedIncompleteMessage);
     for (const PromptRequest& prompt : prompts.messages)
     {
         QVERIFY(prompt.severity != PromptSeverity::Warning);
@@ -594,8 +617,7 @@ void InitialSetupWizardTests::keyboardIsAvailableAtTextEntryStages()
     {
         InitialSetupWizard wizard(&services);
         wizard.setStartId(pageId);
-        wizard.show();
-        QApplication::processEvents();
+        showSetupWizard(wizard);
 
         QCOMPARE(wizard.currentId(), pageId);
         QCOMPARE(wizard.currentPage()->title(), title);
@@ -625,8 +647,7 @@ void InitialSetupWizardTests::personalNameFieldRetainsFocusWhileTyping()
     ApplicationServices services;
     InitialSetupWizard wizard(&services);
     wizard.setStartId(InitialSetupWizard::PersonalDetailsPage);
-    wizard.show();
-    QApplication::processEvents();
+    showSetupWizard(wizard);
 
     auto* name = wizard.findChild<QLineEdit*>(
         QStringLiteral("setupUserName"));
