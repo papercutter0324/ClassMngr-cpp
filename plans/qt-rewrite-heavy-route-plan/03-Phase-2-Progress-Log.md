@@ -59197,10 +59197,14 @@ Keep existing blank and 256-byte validation, messages, and behavior by
 validating `.value()`; do not trim or normalize, compare keys with IDs or
 paths, or add key uniqueness/collision policy. Folder and entry keys remain
 independent even when their text matches. At the Platform boundary wrap the
-existing bounded strings; at the sidebar display boundary convert
-`.value()` to `QString`. Preserve IDs, paths, order, producer strings,
-navigation strings, and route behavior. No CMake manifest change is needed
-because the projection header is already registered.
+existing bounded strings. At the sidebar display boundary retain the prior
+null-terminated conversion `QString::fromUtf8(key.value().c_str())`; do not
+pass an explicit byte length. Existing validation permits embedded NUL, and
+the previous conversion truncates at the first NUL, so preserving this
+conversion retains existing navigation behavior. No controller or acceptance
+scope change is intended. Preserve IDs, paths, order, producer strings, and
+navigation behavior. No CMake manifest change is needed because the projection
+header is already registered.
 
 The review evidence is in `src/next/application/document_catalog_projection.h`
 (metadata fields, equality, and existing validation),
