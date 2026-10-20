@@ -52284,3 +52284,23 @@ accepted/in progress, and F1166–F1170 discovered in order. F1166 is next after
 F1165 closes. Batch489 remains unpushed until F1170. F629 awaits source-bound
 Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0
 and Phase 2 gates remain open.
+
+### F1165 Schedule Import projected state time complete - 2026-10-20
+
+F1165 completed at acceptance commit
+`acdec03d5abcb6d946f8e70411686c550d69e025` and source/test commit
+`ecf50166d8c0b510879c5a20df3d89a42a7ac2b0`. `ScheduleImportStateTime` now
+carries one optional `Domain::ScheduleTime`; invalid `-1`, default, and other
+invalid tuples remain labeled `InvalidProjectedTime` failures before overlap
+checks. Labels, validation precedence, Apply persistence, and review
+diagnostics are preserved.
+
+The Executor built `ClassMngrNextApplicationScheduleImportStateValidationTests`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests` in the
+macOS Debug tree. The independent focused CTests passed 3/3.
+`git diff --check` passed. No full suite or Windows build ran.
+
+Batch489 remains active with F1162–F1165 complete and F1166–F1170 discovered in
+order; F1166 is next. Batch489 remains unpushed until F1170. F629 awaits
+source-bound Windows x64 layout evidence; the user cannot run Windows now, and
+the Phase 0 and Phase 2 gates remain open.
