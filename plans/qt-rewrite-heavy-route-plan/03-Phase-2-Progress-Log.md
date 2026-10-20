@@ -56038,3 +56038,45 @@ reported 63 passed, 1 failed: the existing teacher-label assertion at
 got “Keep local: New Teacher.” That unrelated case remains visible and was not
 changed. This was incremental macOS arm64 Debug verification; no full-suite or
 Windows run is claimed.
+
+### F1223 Schedule Import state-resolution candidate index accepted before implementation - 2026-10-21
+
+F1223 is accepted/current based on two independent read-only Explorer reports
+and a main-owned contract decision. Strengthen the existing Application
+`ScheduleImportStateCandidateIndex` in
+`schedule_import_state_projection.h` from a public aggregate to a distinct
+explicit value type backed by `std::size_t`, defaulting to zero, with a private
+value, `.rawValue()`, equality, and no implicit conversions. Reuse this
+state-specific type for both `ScheduleImportStateClassResolution::candidateIndex`
+and the candidate-reference alternative in `ScheduleImportStateClassReference`;
+both positions address the same request candidate vector. Do not reuse the
+general `ScheduleImportCandidateIndex`, whose `int`/`-1` value is a review/apply
+boundary, and do not add a sentinel or constructor range validation.
+
+Preserve all existing validation and ordering behavior. Enum validation must
+remain before candidate-index validation. `CreateNew` and `UpdateExisting`
+continue to reject indexes at or beyond the candidate count; `Skip` retains
+its current conditional target/exact-match handling and must not gain a blanket
+range rejection. The dialog's display-sorted controls still carry original
+candidate positions and preserve their input validation order. The repository
+still maps resolutions through candidate-indexed slots and emits them in
+candidate order. Projection still resolves against the original candidate
+vector and orders candidate references before existing IDs, with candidate
+references in descending index order. Unwrap the type only at vector and
+legacy `int` adapter boundaries; keep UI/domain `int`/`-1` values and
+`ScheduleImportCandidateIndex` unchanged.
+
+Extend `next_application_schedule_import_state_validation_tests.cpp` with
+default/explicit/equality/raw-value/non-conversion checks and a field type
+assertion for the resolution. Retain enum-before-index and invalid Create/Update
+checks, and pin the current Skip range behavior. Add a multiple-candidate
+projection assertion with distinguishable candidates that verifies the
+existing candidate-reference ordering and source mapping. Preserve the
+repository candidate-order, malformed-shape, and no-write coverage in
+`schedule_import_tests.cpp`; preserve dialog display-order, index 0–95, and
+legacy control coverage in `schedule_import_dialog_tests.cpp`. Do not add
+separate review-model tests for its distinct signed apply index. Focused CTests
+are `ClassMngrNextApplicationScheduleImportStateValidationTests`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`; build
+the app and these affected targets. No F1223 implementation or verification
+has started.
