@@ -53153,3 +53153,13 @@ Batch490 is complete locally with F1171–F1177 complete; push is pending.
 Batch491 is now active with eight provisionally discovered candidates and
 F1178 next. F629 awaits source-bound Windows x64 layout evidence, and the
 Phase 0 and Phase 2 gates remain open.
+
+### Batch490 push receipt - 2026-10-20
+
+`git push origin Qt-Rewrite` succeeded with exit code 0 and output
+`735ccfee..69be43a7 Qt-Rewrite -> Qt-Rewrite`. The push advanced
+`origin/Qt-Rewrite` from `735ccfee` to `69be43a7`, including the Batch490
+closeout. Batch490 is complete and pushed at `69be43a7`. Batch491 is active
+with eight provisionally discovered candidates and F1178 next. F629 awaits
+source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates
+remain open.

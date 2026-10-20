@@ -65,12 +65,13 @@ one-based position. The executor's four-target build passed. The independent
 Tester confirmed all eight focused CTests passed using the actual registered
 restore-defaults name `ClassMngrCalendarPreferencesRestoreDefaultsTests`; the
 Tester build was up to date, and `git diff --check` passed. No full suite or
-Windows build ran. Batch490 is complete locally, with its closeout and push
-receipt pending; Batch491 is active with eight provisional candidates and
-F1178 next. F1175's Class Transfer test still has one unresolved
-teacher-fallback label failure among 64 cases; no clean baseline proves it
-pre-existing. F629 awaits source-bound Windows x64 layout evidence. Phase 0 and
-Phase 2 gates remain open.
+Windows build ran. Batch490 is complete and pushed to `origin/Qt-Rewrite` at
+`69be43a7`; see the [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20).
+Batch491 is active with eight provisional candidates and F1178 next. F1175's
+Class Transfer test still has one unresolved teacher-fallback label failure
+among 64 cases;
+no clean baseline proves it pre-existing. F629 awaits source-bound Windows x64
+layout evidence. Phase 0 and Phase 2 gates remain open.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 
@@ -6594,7 +6595,8 @@ passed; the independent Tester confirmed eight focused CTests passed 8/8 using
 the actual registered restore-defaults name
 `ClassMngrCalendarPreferencesRestoreDefaultsTests`. Its build reported no work
 because targets were current, and `git diff --check` passed. No full suite or
-Windows build ran. Batch490 is complete locally; closeout docs and push receipt
-are pending. Batch491 is active with eight provisional candidates and F1178
-next. F1175's one teacher-fallback label failure remains unresolved and is not
+Windows build ran. Batch490 is complete and pushed at `69be43a7`; see the
+[push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20).
+Batch491 is active with eight provisional candidates and F1178 next. F1175's one
+teacher-fallback label failure remains unresolved and is not
 claimed to be pre-existing. F629 and the Phase 0 and Phase 2 gates remain open.
