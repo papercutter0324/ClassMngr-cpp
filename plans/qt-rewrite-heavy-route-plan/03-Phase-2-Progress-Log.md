@@ -53201,3 +53201,42 @@ Batch491 has one accepted/in-progress slice, F1178, and seven discovered
 candidates, F1179–F1185. Batch490 remains complete and pushed at `69be43a7`.
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase
 2 gates remain open.
+
+### F1178 Schedule Import review count complete - 2026-10-20
+
+F1178 completed at source/test commit `bf8d7fb7`, following acceptance commit
+`2460b996`. `Application::ScheduleImportReviewCount` retains exact signed-`int`
+storage, zero default, explicit construction, `rawValue()`, pre-increment, and
+equality, with no implicit conversion or range policy. The eight
+`ScheduleImportReviewSummary` values remain typed: `teachersCreated`,
+`teacherRoomsUpdated`, `teachersSkipped`, `classesCreated`, `classesUpdated`,
+`classesSkipped`, `schedulesCleared`, and `ignoredCells`. The two count inputs
+to `projectScheduleImportReviewSummary` are typed. Feature adapters explicitly
+wrap diagnostic size and the existing schedule-cleared projection result, and
+unwrap only when formatting the existing visible text.
+
+The mappings remain teacher Create→`teachersCreated`, UpdateRoom→
+`teacherRoomsUpdated`, and Skip→`teachersSkipped`; class CreateNew→
+`classesCreated`, UpdateExisting→`classesUpdated`, and Skip→`classesSkipped`.
+Reuse, Unselected, and Invalid remain non-counting, and all eight summary
+values and existing UI display behavior are preserved. No validation,
+filtering, or deduplication was added. The separate
+`ScheduleImportApplySummary`, `candidateIndex` and other positions, and
+`projectScheduleImportSchedulesCleared` behavior remain outside the change.
+
+Independent Tester accepted. All four requested build targets succeeded:
+`ClassMngr`,
+`ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests`,
+`ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests`, and
+`ClassMngrScheduleImportDialogTests`. Ninja rebuilt the schedule-cleared
+projection test target, while the other three were up to date. Both focused
+Application projection CTests passed (2/2). The
+offscreen `ClassMngrScheduleImportDialogTests` selector
+`reviewSummaryUsesApplicationProjection` passed (QtTest 3/3); output included
+only a font-alias warning. `git diff --check` passed. No full-suite or Windows
+run occurred.
+
+Batch491 has F1178 complete and F1179 next, with F1179–F1185 still discovered.
+Batch491 remains unpushed. Batch490 is complete and pushed at `69be43a7`. F629
+awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2
+gates remain open.

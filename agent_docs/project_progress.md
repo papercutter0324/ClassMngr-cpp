@@ -67,8 +67,8 @@ restore-defaults name `ClassMngrCalendarPreferencesRestoreDefaultsTests`; the
 Tester build was up to date, and `git diff --check` passed. No full suite or
 Windows build ran. Batch490 is complete and pushed to `origin/Qt-Rewrite` at
 `69be43a7`; see the [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20).
-Batch491 is active with F1178 accepted/in progress, F1179 next, and seven
-discovered candidates remaining. F1175's Class Transfer test still has one
+Batch491 is active with F1178 complete, F1179 next, and six other candidates
+discovered. F1175's Class Transfer test still has one
 unresolved teacher-fallback label failure among 64 cases;
 no clean baseline proves it pre-existing. F629 awaits source-bound Windows x64
 layout evidence. Phase 0 and Phase 2 gates remain open.
@@ -6614,3 +6614,21 @@ and unwraps summary values for display. The applied-result
 Implementation and verification have not started. Batch490 is pushed at
 `69be43a7`; Batch491 has seven other discovered candidates with F1179 next.
 F629 and both phase gates remain open.
+
+## Phase 2 update - F1178 complete; Batch491 active - 2026-10-20
+
+F1178 completed at source/test commit `bf8d7fb7`, following acceptance commit
+`2460b996`. `Application::ScheduleImportReviewCount` now types all eight
+review-summary fields and the projection's two count inputs, preserving exact
+signed values, zero defaults, explicit construction, pre-increment, equality,
+action mappings, non-counting actions, and the existing review text. The
+applied-result `ScheduleImportApplySummary` and positional indices remain
+unchanged.
+
+The four requested targets built successfully; the independent Tester rebuilt
+the schedules-cleared projection target while the other three were up to date.
+Both standalone Application projection CTests passed 2/2. The dialog selector
+`reviewSummaryUsesApplicationProjection` passed 3/3 with a font-alias warning
+only. `git diff --check` passed. No full suite or Windows run occurred. Batch491
+has F1178 complete and F1179 next, with six discovered candidates remaining.
+Batch490 is pushed; F629 and both phase gates remain open.
