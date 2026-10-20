@@ -2,6 +2,7 @@
 
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
+#include "next/application/class_details_student_count.h"
 
 #include <string>
 #include <vector>
@@ -48,7 +49,7 @@ struct ClassDetailsPageReadSnapshot final
     Domain::ClassId classId;
     Domain::Result<ClassDetailsPageFields> classFields;
     Domain::Result<std::string> teacherDisplayName;
-    Domain::Result<int> studentCount;
+    Domain::Result<ClassDetailsStudentCount> studentCount;
 };
 
 } // namespace ClassMngr::Next::Application

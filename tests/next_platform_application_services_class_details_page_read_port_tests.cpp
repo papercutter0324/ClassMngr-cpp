@@ -194,7 +194,7 @@ readsFieldsOrderedRawSchedulesTeacherAndRosterFromSession()
         }));
     QCOMPARE(snapshot.teacherDisplayName.value(),
              std::string("Preferred Teacher"));
-    QCOMPARE(snapshot.studentCount.value(), 1);
+    QCOMPARE(snapshot.studentCount.value().rawValue(), 1);
 
     const auto& metrics = services.databaseSession()->classInfoRepository()
                               ->classDetailsPageReadMetrics();
@@ -212,7 +212,7 @@ readsFieldsOrderedRawSchedulesTeacherAndRosterFromSession()
     QVERIFY(fallback.value().teacherDisplayName);
     QVERIFY(fallback.value().teacherDisplayName.value().empty());
     QVERIFY(fallback.value().studentCount);
-    QCOMPARE(fallback.value().studentCount.value(), 0);
+    QCOMPARE(fallback.value().studentCount.value().rawValue(), 0);
 }
 
 void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
@@ -308,7 +308,7 @@ wideTeacherIdResolvesDisplayNameAndPreservesOtherReads()
     QCOMPARE(fields.essayBook, std::string("Wide-ID Essay Book"));
     QCOMPARE(snapshot.teacherDisplayName.value(),
              std::string("Wide-ID Preferred Name"));
-    QCOMPARE(snapshot.studentCount.value(), 1);
+    QCOMPARE(snapshot.studentCount.value().rawValue(), 1);
 }
 
 void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
@@ -372,7 +372,7 @@ missingMetadataRetainsDefaultsAndReadsSchedules()
     QVERIFY(snapshot.teacherDisplayName);
     QVERIFY(snapshot.teacherDisplayName.value().empty());
     QVERIFY(snapshot.studentCount);
-    QCOMPARE(snapshot.studentCount.value(), 0);
+    QCOMPARE(snapshot.studentCount.value().rawValue(), 0);
 
     const auto& fields = snapshot.classFields.value();
     QVERIFY(fields.classGrade.empty());
@@ -567,7 +567,7 @@ classReadFailureDoesNotDiscardRosterCount()
         .contains(QStringLiteral("Loading regular class times")));
     QVERIFY(!snapshot.teacherDisplayName);
     QVERIFY(snapshot.studentCount);
-    QCOMPARE(snapshot.studentCount.value(), 0);
+    QCOMPARE(snapshot.studentCount.value().rawValue(), 0);
 }
 
 void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
@@ -599,7 +599,7 @@ intensiveScheduleReadFailureDoesNotDiscardRosterCount()
              qPrintable(classFieldError));
     QVERIFY(!snapshot.teacherDisplayName);
     QVERIFY(snapshot.studentCount);
-    QCOMPARE(snapshot.studentCount.value(), 0);
+    QCOMPARE(snapshot.studentCount.value().rawValue(), 0);
 }
 
 void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
@@ -650,7 +650,7 @@ teacherReadFailureDoesNotDiscardClassOrRoster()
              Domain::ErrorCode::NotFound);
     QVERIFY(!snapshot.teacherDisplayName.error().recoverable);
     QVERIFY(snapshot.studentCount);
-    QCOMPARE(snapshot.studentCount.value(), 0);
+    QCOMPARE(snapshot.studentCount.value().rawValue(), 0);
 }
 
 void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
@@ -694,7 +694,7 @@ teacherProjectionSqlFailureDoesNotDiscardClassOrRoster()
              Domain::ErrorCode::Technical);
     QVERIFY(!snapshot.teacherDisplayName.error().recoverable);
     QVERIFY(snapshot.studentCount);
-    QCOMPARE(snapshot.studentCount.value(), 0);
+    QCOMPARE(snapshot.studentCount.value().rawValue(), 0);
 }
 
 void NextPlatformApplicationServicesClassDetailsPageReadPortTests::

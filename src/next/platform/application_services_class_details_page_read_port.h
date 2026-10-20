@@ -66,7 +66,9 @@ public:
                 Application::ClassDetailsPageFields
                 >::failure(unavailable),
             Domain::Result<std::string>::failure(unavailable),
-            Domain::Result<int>::failure(unavailable)
+            Domain::Result<
+                Application::ClassDetailsStudentCount
+                >::failure(unavailable)
         };
 
         const std::optional<int> legacyClassId = legacyId(classId.value());
@@ -270,7 +272,11 @@ public:
                 else
                 {
                     snapshot.studentCount =
-                        Domain::Result<int>::success(*source);
+                        Domain::Result<
+                            Application::ClassDetailsStudentCount
+                            >::success(
+                                Application::ClassDetailsStudentCount{*source}
+                                );
                 }
             }
             catch (const std::exception&)
@@ -468,19 +474,28 @@ private:
         return Domain::Result<std::string>::failure(std::move(error));
     }
 
-    [[nodiscard]] static Domain::Result<int> studentCountFailure(
+    [[nodiscard]] static Domain::Result<
+        Application::ClassDetailsStudentCount
+        > studentCountFailure(
         const Domain::ErrorCode code,
         std::string message
         )
     {
-        return failure<int>(code, std::move(message));
+        return failure<Application::ClassDetailsStudentCount>(
+            code,
+            std::move(message)
+            );
     }
 
-    [[nodiscard]] static Domain::Result<int> studentCountFailure(
+    [[nodiscard]] static Domain::Result<
+        Application::ClassDetailsStudentCount
+        > studentCountFailure(
         Domain::OperationError error
         )
     {
-        return Domain::Result<int>::failure(std::move(error));
+        return Domain::Result<
+            Application::ClassDetailsStudentCount
+            >::failure(std::move(error));
     }
 
     [[nodiscard]] static Application::ClassDetailsPageReadSnapshot

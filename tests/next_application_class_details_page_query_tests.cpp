@@ -23,7 +23,7 @@ ClassDetailsPageReadSnapshot snapshot(
     const Domain::ClassId& id,
     Domain::Result<ClassDetailsPageFields> classFields,
     Domain::Result<std::string> teacherName,
-    Domain::Result<int> studentCount
+    Domain::Result<ClassDetailsStudentCount> studentCount
     )
 {
     return {
@@ -70,9 +70,23 @@ private slots:
 void NextApplicationClassDetailsPageQueryTests::
 contractUsesOwningNonQtTextAndRawScheduleRows()
 {
+    using StudentCount = ClassDetailsStudentCount;
+
+    static_assert(std::is_same_v<
+        decltype(std::declval<StudentCount>().rawValue()),
+        int
+        >);
+    static_assert(std::is_default_constructible_v<StudentCount>);
+    static_assert(std::is_constructible_v<StudentCount, int>);
+    static_assert(!std::is_convertible_v<int, StudentCount>);
+    static_assert(!std::is_convertible_v<StudentCount, int>);
     static_assert(std::is_same_v<
         decltype(ClassDetailsPageFields::classGrade),
         std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(ClassDetailsPageReadSnapshot::studentCount),
+        Domain::Result<StudentCount>
         >);
     static_assert(std::is_same_v<
         decltype(ClassDetailsPageScheduleRow::day),
@@ -90,6 +104,18 @@ contractUsesOwningNonQtTextAndRawScheduleRows()
     QCOMPARE(malformed.day, std::string("Legacy-Funday"));
     QCOMPARE(malformed.startTime, std::string("not a time"));
     QCOMPARE(malformed.endTime, std::string("also invalid"));
+
+    const StudentCount defaultCount;
+    const StudentCount zeroCount{0};
+    const StudentCount positiveCount{18};
+    const StudentCount negativeCount{-7};
+    QCOMPARE(defaultCount.rawValue(), 0);
+    QCOMPARE(zeroCount.rawValue(), 0);
+    QCOMPARE(positiveCount.rawValue(), 18);
+    QCOMPARE(negativeCount.rawValue(), -7);
+    QVERIFY(defaultCount == zeroCount);
+    QVERIFY(!(zeroCount == positiveCount));
+    QVERIFY(positiveCount == StudentCount{18});
 }
 
 void NextApplicationClassDetailsPageQueryTests::
@@ -139,7 +165,9 @@ returnsSuccessfulSnapshotAndIndependentSourceOutcomes()
         id,
         Domain::Result<ClassDetailsPageFields>::success(std::move(fields)),
         Domain::Result<std::string>::success("Teacher display"),
-        Domain::Result<int>::success(18)
+        Domain::Result<ClassDetailsStudentCount>::success(
+            ClassDetailsStudentCount{18}
+            )
         ));
 
     const ClassDetailsPageQuery query(readPort);
@@ -153,7 +181,7 @@ returnsSuccessfulSnapshotAndIndependentSourceOutcomes()
     QVERIFY(result.value().classFields.value() == expectedFields);
     QCOMPARE(result.value().teacherDisplayName.value(),
              std::string("Teacher display"));
-    QCOMPARE(result.value().studentCount.value(), 18);
+    QCOMPARE(result.value().studentCount.value().rawValue(), 18);
     QVERIFY(readPort.requests == std::vector<Domain::ClassId>{id});
 
     const Domain::OperationError classError{
@@ -165,7 +193,9 @@ returnsSuccessfulSnapshotAndIndependentSourceOutcomes()
         id,
         Domain::Result<ClassDetailsPageFields>::failure(classError),
         Domain::Result<std::string>::success("Teacher still available"),
-        Domain::Result<int>::success(7)
+        Domain::Result<ClassDetailsStudentCount>::success(
+            ClassDetailsStudentCount{7}
+            )
         ));
     const auto partial = query.execute(id);
 
@@ -176,7 +206,24 @@ returnsSuccessfulSnapshotAndIndependentSourceOutcomes()
     QCOMPARE(partial.value().teacherDisplayName.value(),
              std::string("Teacher still available"));
     QVERIFY(partial.value().studentCount);
-    QCOMPARE(partial.value().studentCount.value(), 7);
+    QCOMPARE(partial.value().studentCount.value().rawValue(), 7);
+
+    readPort.result = ClassDetailsPageReadResult::success(snapshot(
+        id,
+        Domain::Result<ClassDetailsPageFields>::success(expectedFields),
+        Domain::Result<std::string>::success("Teacher still available"),
+        Domain::Result<ClassDetailsStudentCount>::success(
+            ClassDetailsStudentCount{0}
+            )
+        ));
+    const auto zeroStudentCount = query.execute(id);
+
+    QVERIFY(zeroStudentCount);
+    QVERIFY(zeroStudentCount.value().studentCount);
+    QCOMPARE(
+        zeroStudentCount.value().studentCount.value().rawValue(),
+        0
+        );
 
     readPort.result = ClassDetailsPageReadResult::success(snapshot(
         id,
@@ -186,7 +233,7 @@ returnsSuccessfulSnapshotAndIndependentSourceOutcomes()
             .message = "teacher source failed",
             .recoverable = false
         }),
-        Domain::Result<int>::failure({
+        Domain::Result<ClassDetailsStudentCount>::failure({
             .code = Domain::ErrorCode::Technical,
             .message = "roster source failed",
             .recoverable = true
@@ -230,7 +277,9 @@ rejectsSnapshotClassIdMismatch()
         classId("someone-else"),
         Domain::Result<ClassDetailsPageFields>::success({}),
         Domain::Result<std::string>::success({}),
-        Domain::Result<int>::success(0)
+        Domain::Result<ClassDetailsStudentCount>::success(
+            ClassDetailsStudentCount{0}
+            )
         ));
 
     const ClassDetailsPageQuery query(readPort);

@@ -62,7 +62,9 @@ Application::ClassDetailsPageReadSnapshot makeSnapshot(
             std::move(fields)
             ),
         Domain::Result<std::string>::success(std::move(teacherName)),
-        Domain::Result<int>::success(studentCount)
+        Domain::Result<Application::ClassDetailsStudentCount>::success(
+            Application::ClassDetailsStudentCount{studentCount}
+            )
     };
 }
 
@@ -119,7 +121,7 @@ public:
         ++callCount;
         return Application::ClassDetailsValidationContextPortResult::success({
             .matchedClassId = id,
-            .teacherId = 1
+            .teacherId = Application::ClassDetailsValidationContextTeacherId{1}
         });
     }
 
@@ -171,7 +173,9 @@ Application::ClassDetailsPageReadSnapshot failedClassFieldsSnapshot(
             .message = "teacher unavailable",
             .recoverable = true
         }),
-        Domain::Result<int>::success(studentCount)
+        Domain::Result<Application::ClassDetailsStudentCount>::success(
+            Application::ClassDetailsStudentCount{studentCount}
+            )
     };
 }
 
@@ -314,7 +318,9 @@ void ClassDetailsPageDisplayTests::independentFailuresUseThePageFallbacks()
             .recoverable = true
         }),
         Domain::Result<std::string>::success("Teacher name still read"),
-        Domain::Result<int>::success(9)
+        Domain::Result<Application::ClassDetailsStudentCount>::success(
+            Application::ClassDetailsStudentCount{9}
+            )
     });
 
     ClassDetailsPage page(&services, false, nullptr, nullptr, &readPort);
@@ -343,7 +349,7 @@ void ClassDetailsPageDisplayTests::independentFailuresUseThePageFallbacks()
             .message = "teacher unavailable",
             .recoverable = false
         }),
-        Domain::Result<int>::failure({
+        Domain::Result<Application::ClassDetailsStudentCount>::failure({
             .code = Domain::ErrorCode::Technical,
             .message = "roster unavailable",
             .recoverable = true
@@ -707,7 +713,7 @@ successfulClassFieldsSaveDespiteTeacherAndRosterFailures()
             .message = "teacher unavailable",
             .recoverable = true
         }),
-        Domain::Result<int>::failure({
+        Domain::Result<Application::ClassDetailsStudentCount>::failure({
             .code = Domain::ErrorCode::Technical,
             .message = "roster unavailable",
             .recoverable = true

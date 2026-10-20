@@ -883,7 +883,7 @@ void ClassDetailsPage::applyDisplaySnapshot(int scrollPosition)
         ? m_displaySnapshot->classFields.value()
         : emptyFields;
     const int studentCount = m_displaySnapshot && m_displaySnapshot->studentCount
-        ? m_displaySnapshot->studentCount.value()
+        ? m_displaySnapshot->studentCount.value().rawValue()
         : 0;
 
     updateTitle(m_displaySnapshot ? &*m_displaySnapshot : nullptr);
@@ -1233,7 +1233,9 @@ bool ClassDetailsPage::saveClassInfoInternal(
                 ClassMngr::Next::Domain::Result<std::string>::failure(
                     missingTeacher
                     ),
-                ClassMngr::Next::Domain::Result<int>::failure(missingRoster)
+                ClassMngr::Next::Domain::Result<
+                    ClassMngr::Next::Application::ClassDetailsStudentCount
+                    >::failure(missingRoster)
             };
     }
     updateTitle(m_displaySnapshot ? &*m_displaySnapshot : nullptr);
