@@ -55770,3 +55770,30 @@ are `ClassMngr`, `ClassMngrNextApplicationRosterRowAvailabilityTests`,
 `ClassMngrNextApplicationRosterRowTransferPreparationTests`,
 `ClassMngrRosterModelTests`, and `ClassMngrRosterTransferMenuTests`. No F1218
 implementation or verification has started.
+
+### F1218 Roster first-empty-row result complete - 2026-10-21
+
+F1218 completed at commit `cb79f640` (`Phase2 - Type roster first empty row
+index`). `firstEmptyRosterRow` now returns explicit
+`RosterFirstEmptyRowIndex`, backed by `std::size_t`, defaulting to zero, with
+`.rawValue()`, equality, and no implicit conversions. It continues to return
+`rows.size()` for a full input, including an empty vector. Transfer preparation
+rejects the full sentinel before wrapping a valid row as
+`RosterRowTransferDestinationIndex`; the Feature model continues to return
+`int` and map a full roster to `-1`. The separate batch
+`RosterAvailabilityFirstEmptyRow` remains unchanged.
+
+The independent Tester built the app and four focused test targets (the
+targets were up to date) and ran focused CTests: 4/4 passed. Coverage includes
+default/explicit value semantics, non-conversion, empty/partial/whitespace
+rows, the modeled 25-row full sentinel, transfer insertion and full-target
+rejection, Feature empty/partial/full mapping, and the disabled full-target
+menu. `git diff --check` passed. This was incremental macOS Debug verification;
+no full suite or Windows run is claimed.
+
+### Batch495 complete locally - 2026-10-21
+
+Batch495 is complete with all nine discovered slices F1210–F1218 implemented
+and verified. Batch496 is now the active batch with eight discovered
+candidates, F1219–F1226. The Batch495 push is the next operation; its receipt
+will be recorded after the remote update.
