@@ -51757,3 +51757,40 @@ Platform CTests; run QtTest selector
 test executable with `QT_QPA_PLATFORM=offscreen`; then run `git diff --check`.
 No full-suite or Windows pass is claimed. Implementation and verification have
 not started.
+
+### F1159 Schedule Slot State read identity complete - 2026-10-20
+
+F1159 completed in source/test commit
+`813f506a5a489bcfedc2200dfdc38b7481cfa564`, following acceptance commit
+`890223b546586c4666f21bac571e95a52035bca5`. The dedicated read identity
+`ScheduleSlotStateReadIdentity` owns raw UTF-16 day/start strings, defaults
+empty, has explicit pair construction and const accessors, and does not parse
+or normalize. `ScheduleSlotStateReadRow` carries this identity with its
+existing raw UTF-16 `state`. Snapshot order and error results are unchanged.
+Platform maps each database row in repository order without altering the raw
+values. ScheduleWidget unwraps the identity at its existing QString boundary,
+preserving map, error, and state interpretation. The identity remains distinct
+from F1151's testing-specific key. No repository, SQL, save-contract, or
+persistence behavior changed.
+
+Changed paths: `src/next/application/schedule_slot_state_read_query.h`,
+`src/next/platform/application_services_schedule_slot_state_read_port.h`,
+`src/features/schedule/ui/schedule_widget.cpp`,
+`tests/next_application_schedule_slot_state_read_query_tests.cpp`, and
+`tests/next_platform_application_services_schedule_slot_state_read_port_tests.cpp`.
+
+Incremental builds in the existing `build/macos-clang-debug` tree succeeded
+for `ClassMngr`,
+`ClassMngrNextApplicationScheduleSlotStateReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleSlotStateReadPortTests`, and
+`ClassMngrScheduleWidgetTests`; an independent run reported Ninja had no work.
+The focused Application and Platform CTests passed 2/2. The direct offscreen
+ScheduleWidget selector `slotStateSuccessReplacesAndClearsOverrides` passed
+3/3. `git diff --check` passed. No full suite or Windows run occurred.
+
+Batch488 remains active with eight candidates: F1154–F1159 are complete, none
+are accepted/in progress, and two remain discovered with F1160 next. The
+original discovery order and boundaries are unchanged. The batch has no push
+receipt and is not closed. F629 awaits source-bound Windows x64 layout
+evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates
+remain open.
