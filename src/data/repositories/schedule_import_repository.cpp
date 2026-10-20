@@ -1022,7 +1022,7 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
     result.kind = kind;
     result.user = user;
     result.inventory.classCount =
-        static_cast<int>(projection.inventory.classCount);
+        static_cast<int>(projection.inventory.classCount.rawValue());
     result.inventory.hasRegularHours =
         projection.inventory.hasRegularHours;
     result.inventory.hasIntensiveHours =
@@ -1055,7 +1055,7 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
                 );
         }
         projected.affectedClassCount =
-            static_cast<int>(teacher.affectedClassCount);
+            static_cast<int>(teacher.affectedClassCount.rawValue());
         result.teachers.append(std::move(projected));
     }
     for (const ScheduleImportMatchingClassProjection& value :

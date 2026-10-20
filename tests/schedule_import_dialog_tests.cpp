@@ -118,6 +118,7 @@ private slots:
     void regularPreviewShowsFullEssayGrid();
     void possibleMatchIsPreselectedForUpdate();
     void resolutionChoicesUseTypedSnapshotAndPreserveOrdering();
+    void reviewDisplaysProjectedAffectedClassCount();
     void reviewMatchingUsesNormalizedSnapshotFields();
     void reviewSummaryUsesApplicationProjection();
     void reviewPreviewUsesProjectedRowsInControlOrder();
@@ -2780,6 +2781,57 @@ resolutionChoicesUseTypedSnapshotAndPreserveOrdering()
     QCOMPARE(
         classAction->currentData(Qt::UserRole).toInt(),
         static_cast<int>(ScheduleImportClassAction::UpdateExisting)
+        );
+}
+
+void ScheduleImportDialogTests::reviewDisplaysProjectedAffectedClassCount()
+{
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.teacherKr = candidate.teacherKey;
+    candidate.rooms = {QStringLiteral("414")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:50 PM")
+        }
+    };
+    request.user.classes = {candidate};
+
+    ScheduleImportReviewDialog review(&services, request);
+    QVERIFY(review.prepare());
+    review.show();
+
+    auto* tabs = review.findChild<QTabWidget*>(
+        QStringLiteral("scheduleImportResolutionTabs")
+        );
+    auto* teacherScrollArea = review.findChild<QScrollArea*>(
+        QStringLiteral("scheduleImportTeacherScrollArea")
+        );
+    QVERIFY(tabs);
+    QVERIFY(teacherScrollArea);
+    tabs->setCurrentWidget(teacherScrollArea);
+    QTRY_VERIFY(
+        teacherScrollArea->viewport()->width() > 0
+        && teacherScrollArea->viewport()->height() > 0
+        );
+
+    auto* teacherAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportTeacherAction_0")
+        );
+    QTRY_VERIFY(teacherAction && teacherAction->isVisible());
+    QVERIFY(
+        teacherAction->findText(
+            QStringLiteral("Update room globally (1 affected classes)")
+            ) >= 0
         );
 }
 

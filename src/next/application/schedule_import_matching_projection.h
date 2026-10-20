@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/schedule_import_matching_class_count.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/korean_teacher_key.h"
 
@@ -129,7 +130,7 @@ struct ScheduleImportMatchingTeacherProjection final
     std::u16string teacherName;
     std::vector<std::u16string> importedRooms;
     std::vector<Domain::TeacherId> matchingTeacherIds;
-    std::size_t affectedClassCount = 0;
+    ScheduleImportMatchingClassCount affectedClassCount;
 
     friend bool operator==(
         const ScheduleImportMatchingTeacherProjection&,
@@ -156,7 +157,7 @@ struct ScheduleImportMatchingClassProjection final
 
 struct ScheduleImportMatchingInventory final
 {
-    std::size_t classCount = 0;
+    ScheduleImportMatchingClassCount classCount;
     bool hasRegularHours = false;
     bool hasIntensiveHours = false;
 
@@ -369,7 +370,8 @@ projectScheduleImportMatching(
 
     ScheduleImportMatchingProjection result;
     result.kind = input.kind;
-    result.inventory.classCount = input.classes.size();
+    result.inventory.classCount =
+        ScheduleImportMatchingClassCount{input.classes.size()};
     for (const ScheduleImportMatchingClass& value : input.classes)
     {
         result.inventory.hasRegularHours =
@@ -428,6 +430,7 @@ projectScheduleImportMatching(
                 teacherProjection.matchingTeacherIds.push_back(teacher.id);
             }
         }
+        std::size_t affectedClassCount = 0;
         for (const ScheduleImportMatchingClass& value : input.classes)
         {
             if (
@@ -438,9 +441,11 @@ projectScheduleImportMatching(
                     ) != teacherProjection.matchingTeacherIds.cend()
                 )
             {
-                ++teacherProjection.affectedClassCount;
+                ++affectedClassCount;
             }
         }
+        teacherProjection.affectedClassCount =
+            ScheduleImportMatchingClassCount{affectedClassCount};
         result.teachers.push_back(std::move(teacherProjection));
     }
 

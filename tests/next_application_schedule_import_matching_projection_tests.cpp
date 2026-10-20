@@ -30,6 +30,33 @@ static_assert(
     );
 static_assert(
     std::is_same_v<
+        decltype(ScheduleImportMatchingTeacherProjection::affectedClassCount),
+        ScheduleImportMatchingClassCount
+        >
+    );
+static_assert(
+    std::is_same_v<
+        decltype(ScheduleImportMatchingInventory::classCount),
+        ScheduleImportMatchingClassCount
+        >
+    );
+static_assert(
+    std::is_same_v<
+        decltype(ScheduleImportMatchingClassCount{}.rawValue()),
+        std::size_t
+        >
+    );
+static_assert(
+    std::is_constructible_v<ScheduleImportMatchingClassCount, std::size_t>
+    );
+static_assert(
+    !std::is_convertible_v<std::size_t, ScheduleImportMatchingClassCount>
+    );
+static_assert(
+    !std::is_convertible_v<ScheduleImportMatchingClassCount, std::size_t>
+    );
+static_assert(
+    std::is_same_v<
         decltype(projectScheduleImportMatching(ScheduleImportMatchingInput{})),
         std::expected<
             ScheduleImportMatchingProjection,
@@ -89,6 +116,7 @@ class ScheduleImportMatchingProjectionTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void matchingClassCountHasTypedZeroAndPositiveValues();
     void rejectsUnknownKindWithoutReturningProjection();
     void ranksEveryMatchCategoryAndKeepsStableTies();
     void reportsNoMatchAndInitiallyAbsentInventory();
@@ -96,6 +124,18 @@ private slots:
     void preservesNormalAndIntensiveFallbackSemantics();
     void preservesEmptyTeacherKeyMatchingSemantics();
 };
+
+void ScheduleImportMatchingProjectionTests::
+matchingClassCountHasTypedZeroAndPositiveValues()
+{
+    const ScheduleImportMatchingClassCount zero;
+    const ScheduleImportMatchingClassCount positive{6};
+
+    QCOMPARE(zero.rawValue(), std::size_t{0});
+    QCOMPARE(positive.rawValue(), std::size_t{6});
+    QVERIFY(zero == ScheduleImportMatchingClassCount{});
+    QVERIFY(positive == ScheduleImportMatchingClassCount{6});
+}
 
 void ScheduleImportMatchingProjectionTests::
 rejectsUnknownKindWithoutReturningProjection()
@@ -164,7 +204,10 @@ ranksEveryMatchCategoryAndKeepsStableTies()
         projection.teachers[0].matchingTeacherIds
         == (std::vector<Domain::TeacherId>{teacherIdentity(1)})
         );
-    QCOMPARE(projection.teachers[0].affectedClassCount, std::size_t{6});
+    QVERIFY(
+        projection.teachers[0].affectedClassCount
+        == ScheduleImportMatchingClassCount{6}
+        );
     QCOMPARE(projection.classes.size(), std::size_t{1});
     QVERIFY(
         projection.classes[0].matchingClassIds
@@ -190,7 +233,10 @@ ranksEveryMatchCategoryAndKeepsStableTies()
         projection.classes[0].explanation,
         ScheduleImportMatchingExplanation::Exact
         );
-    QCOMPARE(projection.inventory.classCount, std::size_t{8});
+    QVERIFY(
+        projection.inventory.classCount
+        == ScheduleImportMatchingClassCount{8}
+        );
     QVERIFY(projection.inventory.hasRegularHours);
     QVERIFY(projection.inventory.hasIntensiveHours);
     QVERIFY(
@@ -233,7 +279,14 @@ reportsNoMatchAndInitiallyAbsentInventory()
         projection.classes[0].explanation,
         ScheduleImportMatchingExplanation::None
         );
-    QCOMPARE(projection.inventory.classCount, std::size_t{1});
+    QVERIFY(
+        projection.inventory.classCount
+        == ScheduleImportMatchingClassCount{1}
+        );
+    QVERIFY(
+        projection.teachers[0].affectedClassCount
+        == ScheduleImportMatchingClassCount{}
+        );
     QVERIFY(projection.inventory.hasRegularHours);
     QVERIFY(!projection.inventory.hasIntensiveHours);
     QVERIFY(
@@ -380,7 +433,10 @@ preservesEmptyTeacherKeyMatchingSemantics()
             teacherIdentity(0)
         })
         );
-    QCOMPARE(projection.teachers[0].affectedClassCount, std::size_t{2});
+    QVERIFY(
+        projection.teachers[0].affectedClassCount
+        == ScheduleImportMatchingClassCount{2}
+        );
     QVERIFY(
         projection.classes[0].matchingClassIds
         == (std::vector<Domain::ClassId>{
