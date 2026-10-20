@@ -56595,3 +56595,47 @@ independent Tester repeated the build and passed all four focused CTests:
 `git diff --check` passed. This was incremental macOS `arm64;x86_64` Debug
 verification; no full-suite or Windows run is claimed. Batch497 remains
 active, and F1230 is next for acceptance.
+
+### F1230 Teacher Import review selection positions accepted before implementation - 2026-10-21
+
+F1230 is accepted based on two independent read-only Explorer reports and a
+main-owned contract decision. Add two distinct explicit Application value
+types: `TeacherImportRequestedCandidateIndex`, backed by `std::int64_t`, for
+`TeacherImportGroupDecision::selectedCandidateIndexes`, and
+`TeacherImportResolvedCandidateIndex`, backed by `std::size_t`, for the nested
+positions in `TeacherImportReviewResolution::selectedCandidateIndexes`.
+Both have zero defaults, private storage, `.rawValue()`, equality, and no
+implicit conversions. The signed request type must represent negative values
+so the resolver continues to reject them with
+`TeacherImportReviewIssue::CandidateIndexOutOfRange`; zero remains a valid
+candidate position, not a sentinel. Keep the existing Domain `QList<int>`
+representation for the Feature-facing plan and explicitly wrap values when
+projecting decisions into Application. Keep `TeacherImportGroupKey` separate
+from candidate positions.
+
+These are group-local ordinals. The resolution's outer vectors remain aligned
+with `candidateGroups` order even when decisions arrive in a different order.
+`All` and `Selected` continue to emit candidate positions in ascending order,
+while `None` emits an empty vector. Preserve empty and duplicate candidate
+group checks, unknown, duplicate, and missing decision checks, invalid modes,
+unexpected indexes for `All` and `None`, duplicate selections, and negative
+or out-of-range selections with their current issue codes and precedence.
+Do not normalize, reorder, or discard invalid request values before resolver
+validation.
+
+At the Feature and Data adapters, explicitly construct the signed request
+type from each Domain `int` selection so a negative value survives the
+boundary. Unwrap the resolved type only at Application key lookup and Feature
+candidate lookup. Preserve the existing aligned candidate-validation-key and
+teacher-candidate ordering. Add an adapter regression proving that `-1` is
+still carried into the resolver and rejected as out of range. Retain the
+existing resolver tests for noncontiguous selection, reversed decision order,
+sorted candidate order, duplicate and range failures, and all/none modes;
+retain use-case validation-before-persistence and dialog/adapter mapping.
+
+Focused targets are `ClassMngr`, `ClassMngrNextApplicationImportReviewTests`,
+`ClassMngrTeacherImportTests`, `ClassMngrTeacherImportDialogTests`,
+`ClassMngrNextApplicationTeacherImportUseCaseTests`,
+`ClassMngrNextApplicationTeacherImportPlanValidationTests`, and
+`ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests`. At
+acceptance time, no F1230 implementation or verification had started.

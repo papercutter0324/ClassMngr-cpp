@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)); Batch497 is active with eight ordered candidates, F1227 through F1229 complete, and F1230 next for acceptance (see [Batch497 discovery](03-Phase-2-Progress-Log.md#batch497-discovery-started-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)); Batch497 is active with eight ordered candidates, F1227 through F1229 complete, and F1230 accepted before implementation (see [F1230 acceptance](03-Phase-2-Progress-Log.md#f1230-teacher-import-review-selection-positions-accepted-before-implementation-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,18 +38,18 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch497 — Active; F1227 through F1229 complete, with five later candidates discovered:**
+**Batch497 — Active; F1227 through F1229 complete, F1230 accepted, with four later candidates discovered:**
 
 1. **F1227 — Complete:** Add a distinct zero-based typed position to Schedule Import eligibility issues; preserve first-failing-candidate mapping, default-zero global issues, and Feature grade/level lookup.
 2. **F1228 — Complete:** Type positions in the Sub Prep visible-class ordering facts; preserve comparator order, stable exact ties, and filtered-to-projection row mapping.
 3. **F1229 — Complete:** Type Calendar Event import accepted-candidate positions; preserve first-seen filtering, prepared-request mapping, input order, and skipped counts.
-4. **F1230 — Discovered:** Type Teacher Import review selection positions; preserve validation, group order, and candidate order.
+4. **F1230 — Accepted:** Type Teacher Import review selection positions; preserve negative, out-of-range, duplicate-selection, and mode validation, plus group and candidate order.
 5. **F1231 — Discovered:** Type duplicate student-name row positions across Domain and Speaking Evaluation/Roster Save diagnostics; preserve group, row, and issue order.
 6. **F1232 — Discovered:** Type Class Details duplicate schedule-row positions; preserve diagnostic and row ordering.
 7. **F1233 — Discovered:** Type GS Team save validation row position; preserve first-row and default-value behavior.
 8. **F1234 — Discovered:** Type Native English Teacher save validation row position; preserve first-row and default-value behavior.
 
-Batch495 and Batch496 are complete and pushed (see the [Batch495](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21) and [Batch496](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21) receipts). Batch497 is active with eight ordered candidates (see its [discovery record](03-Phase-2-Progress-Log.md#batch497-discovery-started-2026-10-21)); F1227 through F1229 are complete, and F1230 is next for acceptance. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch495 and Batch496 are complete and pushed (see the [Batch495](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21) and [Batch496](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21) receipts). Batch497 is active with eight ordered candidates (see its [discovery record](03-Phase-2-Progress-Log.md#batch497-discovery-started-2026-10-21)); F1227 through F1229 are complete, F1230 is accepted before implementation, and four candidates remain discovered. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
