@@ -372,6 +372,16 @@ void strongestAndFocusCriteriaPreserveOrderAndLabels()
         u"Grammar (A)", u"Fluency (A)" }));
     assert((selected.focusLabels == std::vector<std::u16string>{
         u"Pronunciation (B)", u"Content (B)" }));
+    using Grade = Domain::SpeakingEvaluationGrade;
+    assert(selected.rankings.size() == 1);
+    const auto& criterionGrades =
+        selected.rankings.front().criterionLetters;
+    assert(criterionGrades[0] == Grade::A);
+    assert(criterionGrades[1] == Grade::B);
+    assert(criterionGrades[2] == Grade::A);
+    assert(!criterionGrades[3].has_value());
+    assert(criterionGrades[4] == Grade::B);
+    assert(!criterionGrades[5].has_value());
     assert(!selected.criteria[3].hasData);
     assert(!selected.criteria[5].hasData);
 }
@@ -447,10 +457,10 @@ void adjacentRoundedScoresRankBeforeNamePort()
     assert(rankings.size() == 2);
     assert(rankings[0].englishName == u"Zed");
     assert(rankings[0].overall3.thousandths() == 3001);
-    assert(rankings[0].overallLetter == u"B+");
+    assert(rankings[0].overallLetter == Domain::SpeakingEvaluationGrade::BPlus);
     assert(rankings[1].englishName == u"Amy");
     assert(rankings[1].overall3.thousandths() == 3000);
-    assert(rankings[1].overallLetter == u"B+");
+    assert(rankings[1].overallLetter == Domain::SpeakingEvaluationGrade::BPlus);
 }
 
 void emptyRosterLeavesEvaluationRowsUnfilteredAndPartialScoresDoNotMakeYtd()
@@ -483,8 +493,10 @@ void missingAndUnknownSelectionKeepGlobalYtdWhileUnknownSelectionIsEmpty()
                 std::u16string(unknown)));
         assert(result);
         assert(!result.value().selectedSnapshot.hasData);
+        assert(!result.value().selectedSnapshot.classAverageLetter.has_value());
         assert(result.value().selectedSnapshot.rankings.empty());
         assert(!result.value().classShapeSnapshot.hasData);
+        assert(!result.value().classShapeSnapshot.classAverageLetter.has_value());
         assert(result.value().classShapeSnapshot.rankings.empty());
         assert(result.value().classShapeEvaluationName.empty());
         assert(result.value().yearToDatePoints.size() == 2);
@@ -504,7 +516,9 @@ void typedAndPaddedExactNamesSelectAfterTrimmedComparison()
         ClassAnalyticsEvaluationSelection::exactName(u"Winter");
     const auto exactResult = run(port, names, exactWinter);
     assert(exactResult);
-    assert(exactResult.value().selectedSnapshot.classAverageLetter == u"B");
+    assert(exactResult.value().selectedSnapshot.classAverageLetter.has_value());
+    assert(exactResult.value().selectedSnapshot.classAverageLetter.value()
+        == Domain::SpeakingEvaluationGrade::B);
     assert(exactResult.value().classShapeEvaluationName == u"Winter");
     assert(exactResult.value().classShapeSnapshot.hasData);
     assert(exactResult.value().yearToDatePoints.size() == 2);
@@ -514,7 +528,9 @@ void typedAndPaddedExactNamesSelectAfterTrimmedComparison()
     assert(paddedWinter.name() == u"  Winter  ");
     const auto paddedResult = run(port, names, paddedWinter);
     assert(paddedResult);
-    assert(paddedResult.value().selectedSnapshot.classAverageLetter == u"B");
+    assert(paddedResult.value().selectedSnapshot.classAverageLetter.has_value());
+    assert(paddedResult.value().selectedSnapshot.classAverageLetter.value()
+        == Domain::SpeakingEvaluationGrade::B);
     assert(paddedResult.value().classShapeEvaluationName == u"Winter");
     assert(paddedResult.value().yearToDatePoints.size() == 2);
 }
@@ -532,7 +548,9 @@ void selectedEvaluationStillReadsEveryYtdInputInOneBatch()
     assert(port.evaluationBatchReadCount == 1);
     assert((port.calls == std::vector<std::u16string>{
         u"roster", u"evaluation batch" }));
-    assert(result.value().selectedSnapshot.classAverageLetter == u"B");
+    assert(result.value().selectedSnapshot.classAverageLetter.has_value());
+    assert(result.value().selectedSnapshot.classAverageLetter.value()
+        == Domain::SpeakingEvaluationGrade::B);
     assert(result.value().yearToDatePoints.size() == 2);
     assert(result.value().yearToDatePoints[0].evaluationName == u"Winter");
     assert(result.value().yearToDatePoints[1].evaluationName == u"Fall");
@@ -594,6 +612,20 @@ void numericPolicyBoundaries()
 {
     using ClassAnalyticsDashboardReadDetail::roundAverageToGrade;
     using ClassAnalyticsDashboardReadDetail::roundTo3;
+    using Grade = Domain::SpeakingEvaluationGrade;
+
+    static_assert(std::is_same_v<
+        decltype(ClassAnalyticsStudentRank::overallLetter), Grade>);
+    static_assert(std::is_same_v<
+        decltype(ClassAnalyticsStudentRank::criterionLetters)::value_type,
+        std::optional<Grade>>);
+    static_assert(std::is_same_v<
+        decltype(ClassAnalyticsSnapshot::classAverageLetter),
+        std::optional<Grade>>);
+    static_assert(std::is_same_v<
+        decltype(ClassAnalyticsSnapshot::overallLetters)::value_type, Grade>);
+    static_assert(std::is_same_v<
+        decltype(ClassAnalyticsYearToDatePoint::classAverageLetter), Grade>);
 
     assert(roundTo3(0.0) == 0.0);
     assert(roundTo3(5.0) == 5.0);
@@ -604,8 +636,22 @@ void numericPolicyBoundaries()
     assert(roundAverageToGrade(2.3995) == 3);
     assert(roundAverageToGrade(-1.0) == 0);
     assert(roundAverageToGrade(6.0) == 5);
+    assert(ClassAnalyticsDashboardReadDetail::gradeLabel(1) == u"C");
+    assert(ClassAnalyticsDashboardReadDetail::gradeLabel(2) == u"B");
+    assert(ClassAnalyticsDashboardReadDetail::gradeLabel(3) == u"B+");
+    assert(ClassAnalyticsDashboardReadDetail::gradeLabel(4) == u"A");
+    assert(ClassAnalyticsDashboardReadDetail::gradeLabel(5) == u"A+");
+    assert(ClassAnalyticsDashboardReadDetail::gradeLabel(0) == u"C");
+    assert(ClassAnalyticsDashboardReadDetail::gradeLabel(6) == u"C");
     assert(ClassAnalyticsDashboardReadDetail::numberToGrade(
-        roundAverageToGrade(2.400)) == u"B+");
+        roundAverageToGrade(2.400)) == Grade::BPlus);
+    assert(ClassAnalyticsDashboardReadDetail::numberToGrade(1) == Grade::C);
+    assert(ClassAnalyticsDashboardReadDetail::numberToGrade(2) == Grade::B);
+    assert(ClassAnalyticsDashboardReadDetail::numberToGrade(3) == Grade::BPlus);
+    assert(ClassAnalyticsDashboardReadDetail::numberToGrade(4) == Grade::A);
+    assert(ClassAnalyticsDashboardReadDetail::numberToGrade(5) == Grade::APlus);
+    assert(ClassAnalyticsDashboardReadDetail::numberToGrade(0) == Grade::C);
+    assert(ClassAnalyticsDashboardReadDetail::numberToGrade(6) == Grade::APlus);
 }
 
 void partialScoringPreservesWeightedAveragesAndYtdInputs()
@@ -642,13 +688,16 @@ void partialScoringPreservesWeightedAveragesAndYtdInputs()
     assert(selected.criteria[0].average3.thousandths() == 2333);
     assert(selected.criteria[1].average3.thousandths() == 2000);
     assert(selected.classAverage3.thousandths() == 2167);
-    assert(selected.classAverageLetter == u"B");
+    assert(selected.classAverageLetter.has_value());
+    assert(selected.classAverageLetter.value()
+        == Domain::SpeakingEvaluationGrade::B);
 
     assert(result.value().yearToDatePoints.size() == 1);
     assert(result.value().yearToDatePoints[0].evaluationName == u"Winter");
     assert(result.value().yearToDatePoints[0].classAverage3
         .thousandths() == 2000);
-    assert(result.value().yearToDatePoints[0].classAverageLetter == u"B");
+    assert(result.value().yearToDatePoints[0].classAverageLetter
+        == Domain::SpeakingEvaluationGrade::B);
 }
 
 void queryGradeBoundaryRoundsPositiveHalfUpAtThousandths()
@@ -667,12 +716,16 @@ void queryGradeBoundaryRoundsPositiveHalfUpAtThousandths()
     assert(selected.rankings.size() == 2);
     assert(selected.rankings[0].englishName == u"HalfUp");
     assert(selected.rankings[0].overall3.thousandths() == 2400);
-    assert(selected.rankings[0].overallLetter == u"B+");
+    assert(selected.rankings[0].overallLetter
+        == Domain::SpeakingEvaluationGrade::BPlus);
     assert(selected.rankings[1].englishName == u"Below");
     assert(selected.rankings[1].overall3.thousandths() == 2399);
-    assert(selected.rankings[1].overallLetter == u"B");
+    assert(selected.rankings[1].overallLetter
+        == Domain::SpeakingEvaluationGrade::B);
     assert(selected.classAverage3.thousandths() == 2400);
-    assert(selected.classAverageLetter == u"B+");
+    assert(selected.classAverageLetter.has_value());
+    assert(selected.classAverageLetter.value()
+        == Domain::SpeakingEvaluationGrade::BPlus);
 }
 
 void roundedClassAverageAtGradeBoundaryAdvances()
@@ -691,7 +744,9 @@ void roundedClassAverageAtGradeBoundaryAdvances()
         ClassAnalyticsEvaluationSelection::exactName(u"Winter"));
     assert(result);
     assert(result.value().selectedSnapshot.classAverage3.thousandths() == 2400);
-    assert(result.value().selectedSnapshot.classAverageLetter == u"B+");
+    assert(result.value().selectedSnapshot.classAverageLetter.has_value());
+    assert(result.value().selectedSnapshot.classAverageLetter.value()
+        == Domain::SpeakingEvaluationGrade::BPlus);
 }
 
 } // namespace

@@ -133,9 +133,10 @@ struct ClassAnalyticsStudentRank final
     std::u16string englishName;
     std::u16string koreanName;
     ClassAnalyticsAverageThousandths overall3;
-    std::u16string overallLetter;
-    std::array<std::u16string, kClassAnalyticsCriterionCount>
-        criterionLetters;
+    Domain::SpeakingEvaluationGrade overallLetter =
+        Domain::SpeakingEvaluationGrade::C;
+    std::array<std::optional<Domain::SpeakingEvaluationGrade>,
+               kClassAnalyticsCriterionCount> criterionLetters{};
     bool fullyScored = false;
 };
 
@@ -143,7 +144,7 @@ struct ClassAnalyticsSnapshot final
 {
     bool hasData = false;
     ClassAnalyticsAverageThousandths classAverage3;
-    std::u16string classAverageLetter;
+    std::optional<Domain::SpeakingEvaluationGrade> classAverageLetter;
     std::size_t rosterStudentCount = 0;
     std::size_t fullyScoredCount = 0;
     std::vector<ClassAnalyticsCriterionSlice> criteria;
@@ -151,7 +152,7 @@ struct ClassAnalyticsSnapshot final
     std::vector<std::u16string> focusNames;
     std::vector<std::u16string> strongestLabels;
     std::vector<std::u16string> focusLabels;
-    std::vector<std::u16string> overallLetters;
+    std::vector<Domain::SpeakingEvaluationGrade> overallLetters;
     std::vector<ClassAnalyticsStudentRank> rankings;
 };
 
@@ -159,7 +160,8 @@ struct ClassAnalyticsYearToDatePoint final
 {
     std::u16string evaluationName;
     ClassAnalyticsAverageThousandths classAverage3;
-    std::u16string classAverageLetter;
+    Domain::SpeakingEvaluationGrade classAverageLetter =
+        Domain::SpeakingEvaluationGrade::C;
 };
 
 struct ClassAnalyticsDashboard final
@@ -235,10 +237,11 @@ namespace ClassAnalyticsDashboardReadDetail
     return ClassAnalyticsNumericPolicy::roundAverageToGrade(average);
 }
 
-[[nodiscard]] inline std::u16string numberToGrade(const int value)
+[[nodiscard]] inline Domain::SpeakingEvaluationGrade numberToGrade(
+    const int value
+    )
 {
-    const std::u16string_view label = gradeLabel(std::clamp(value, 1, 5));
-    return std::u16string(label);
+    return *Domain::speakingEvaluationGradeFromValue(std::clamp(value, 1, 5));
 }
 
 [[nodiscard]] inline std::u16string studentKey(
@@ -270,7 +273,8 @@ namespace ClassAnalyticsDashboardReadDetail
 
     std::u16string label = criterion.name;
     label += u" (";
-    label += numberToGrade(roundAverageToGrade(criterion.average3));
+    label += gradeLabel(std::clamp(
+        roundAverageToGrade(criterion.average3), 1, 5));
     label += u")";
     return label;
 }
@@ -397,7 +401,8 @@ namespace ClassAnalyticsDashboardReadDetail
         double scoreSum = 0.0;
         int scoreCount = 0;
         bool fullyScored = true;
-        std::array<std::u16string, kClassAnalyticsCriterionCount> letters;
+        std::array<std::optional<Domain::SpeakingEvaluationGrade>,
+                   kClassAnalyticsCriterionCount> letters{};
 
         for (std::size_t criterion = 0;
              criterion < kClassAnalyticsCriterionCount;

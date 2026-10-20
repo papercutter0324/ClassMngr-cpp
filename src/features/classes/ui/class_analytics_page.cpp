@@ -32,6 +32,7 @@
 #include <QVBoxLayout>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace
@@ -50,10 +51,27 @@ constexpr int kRankingAverageColumnWidth = 90;
 constexpr int kRankingCriterionColumnCount = 6;
 
 namespace ApplicationAnalytics = ClassMngr::Next::Application;
+namespace AnalyticsDomain = ClassMngr::Next::Domain;
 
 QString toQString(const std::u16string& value)
 {
     return QString::fromStdU16String(value);
+}
+
+QString toQString(const AnalyticsDomain::SpeakingEvaluationGrade grade)
+{
+    const auto label = AnalyticsDomain::speakingEvaluationGradeLabel(grade);
+    if (!label)
+        return QStringLiteral("C");
+    return QString::fromLatin1(
+        label->data(), static_cast<qsizetype>(label->size()));
+}
+
+QString toQString(
+    const std::optional<AnalyticsDomain::SpeakingEvaluationGrade>& grade
+)
+{
+    return grade ? toQString(*grade) : QString{};
 }
 
 SpeakingAnalytics::Snapshot toUiSnapshot(
@@ -94,7 +112,8 @@ SpeakingAnalytics::Snapshot toUiSnapshot(
         snapshot.strongestLabels.append(toQString(label));
     for (const std::u16string& label : source.focusLabels)
         snapshot.focusLabels.append(toQString(label));
-    for (const std::u16string& letter : source.overallLetters)
+    for (const AnalyticsDomain::SpeakingEvaluationGrade letter
+         : source.overallLetters)
         snapshot.overallLetters.append(toQString(letter));
     for (const auto& sourceRank : source.rankings)
     {
@@ -103,7 +122,7 @@ SpeakingAnalytics::Snapshot toUiSnapshot(
         rank.koreanName = toQString(sourceRank.koreanName);
         rank.overall3 = sourceRank.overall3.toDouble();
         rank.overallLetter = toQString(sourceRank.overallLetter);
-        for (const std::u16string& letter : sourceRank.criterionLetters)
+        for (const auto& letter : sourceRank.criterionLetters)
             rank.criterionLetters.append(toQString(letter));
         rank.fullyScored = sourceRank.fullyScored;
         snapshot.rankings.append(std::move(rank));
