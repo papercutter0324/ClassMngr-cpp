@@ -88,7 +88,7 @@ const ManualUpdateCheckResult CachedResult{
     .currentVersion = {1, 0, 0},
     .latestVersion = {2, 0, 0},
     .artifact = {
-        .fileName = "ClassMngr-2.0.0.exe",
+        .fileName = UpdateArtifactFileName("ClassMngr-2.0.0.exe"),
         .sha256 = UpdateArtifactSha256(" sha256:MiXeD \t\n")
     },
     .updateAvailable = true
@@ -132,12 +132,30 @@ std::vector<std::string> eventNames(const std::vector<ManualUpdateCheckEvent>& e
 
 int main()
 {
+    static_assert(std::is_default_constructible_v<UpdateArtifactFileName>);
+    static_assert(std::is_constructible_v<UpdateArtifactFileName, std::string>);
+    static_assert(!std::is_convertible_v<std::string, UpdateArtifactFileName>);
+    static_assert(!std::is_convertible_v<UpdateArtifactFileName, std::string>);
     static_assert(!std::is_convertible_v<std::int64_t, UpdateArtifactSizeBytes>);
     static_assert(!std::is_convertible_v<UpdateArtifactSizeBytes, std::int64_t>);
     static_assert(!std::is_convertible_v<
         std::int64_t, UpdateCheckUtcMilliseconds>);
     static_assert(!std::is_convertible_v<
         UpdateCheckUtcMilliseconds, std::int64_t>);
+
+    const UpdateArtifactFileName defaultFileName;
+    if (!require(defaultFileName.rawValue().empty()
+            && ManualUpdateArtifact{}.fileName.rawValue().empty()
+            && UpdateArtifactFileName(std::string{})
+                == UpdateArtifactFileName(std::string{})
+            && UpdateArtifactFileName("ClassMngr.zip")
+                == UpdateArtifactFileName("ClassMngr.zip")
+            && UpdateArtifactFileName("ClassMngr.zip")
+                != UpdateArtifactFileName("classmngr.zip"),
+            "Artifact filename value default or exact equality changed"))
+    {
+        return EXIT_FAILURE;
+    }
 
     const UpdateCheckUtcMilliseconds defaultCheckedAt;
     if (!require(defaultCheckedAt.value() == 0
@@ -329,6 +347,45 @@ int main()
         port.finish(result);
         if (!require(observedPlatformKeys == std::vector<std::string>{platformKey},
                 "Manual result changed or duplicated an opaque platform key"))
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
+    const std::vector<std::string> artifactFileNames{
+        "",
+        "ClassMngr-\xE2\x9C\x93.zip"
+    };
+    for (const auto& fileName : artifactFileNames)
+    {
+        FakePort port;
+        ManualUpdateCheckUseCase useCase(port);
+        std::vector<std::string> observedFileNames;
+        useCase.setObserver([&](ManualUpdateCheckEvent event)
+        {
+            if (const auto* result = std::get_if<ManualUpdateCheckResult>(&event))
+            {
+                observedFileNames.push_back(
+                    result->artifact.fileName.rawValue());
+            }
+        });
+
+        if (!require(useCase.retry() == ManualUpdateCheckDispatch::Started,
+                "Manual filename check did not start"))
+        {
+            return EXIT_FAILURE;
+        }
+
+        port.finish(ManualUpdateCheckResult{
+            .artifact = {
+                .fileName = UpdateArtifactFileName(fileName)
+            }
+        });
+        const auto cached = port.snapshot().cachedResult;
+        if (!require(observedFileNames == std::vector<std::string>{fileName}
+                && cached.has_value()
+                && cached->artifact.fileName.rawValue() == fileName,
+                "Manual result or cached state changed an opaque artifact filename"))
         {
             return EXIT_FAILURE;
         }

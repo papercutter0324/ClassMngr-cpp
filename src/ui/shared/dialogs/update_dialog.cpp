@@ -44,7 +44,8 @@ UpdateCheckResult toPresentationResult(
             .platformKey = QString::fromStdString(result.artifact.platformKey.value()),
             .url = QUrl::fromEncoded(QByteArray::fromStdString(
                 result.artifact.url.value())),
-            .fileName = QString::fromStdString(result.artifact.fileName),
+            .fileName = QString::fromStdString(
+                result.artifact.fileName.rawValue()),
             .sha256 = QString::fromStdString(result.artifact.sha256.value()),
             .sizeBytes = result.artifact.sizeBytes.value()
         },

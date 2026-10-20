@@ -3,6 +3,7 @@
 #include "next/application/encoded_url_text.h"
 #include "next/application/release_date_iso_text.h"
 #include "next/application/skipped_update_version_policy.h"
+#include "next/application/update_artifact_file_name.h"
 #include "next/application/update_artifact_platform_key.h"
 #include "next/application/update_artifact_sha256.h"
 #include "next/application/update_artifact_size_bytes.h"
@@ -19,7 +20,7 @@ struct StartupUpdateArtifact final
 {
     UpdateArtifactPlatformKey platformKey;
     EncodedUrlText url;
-    std::string fileName;
+    UpdateArtifactFileName fileName;
     UpdateArtifactSha256 sha256;
     UpdateArtifactSizeBytes sizeBytes;
 };

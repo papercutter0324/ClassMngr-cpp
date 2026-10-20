@@ -30,7 +30,9 @@ namespace ClassMngr::Next::Platform
             .url = Application::EncodedUrlText(
                 result.artifact.url.toEncoded().toStdString()
                 ),
-            .fileName = result.artifact.fileName.toUtf8().toStdString(),
+            .fileName = Application::UpdateArtifactFileName(
+                result.artifact.fileName.toUtf8().toStdString()
+                ),
             .sha256 = Application::UpdateArtifactSha256(
                 result.artifact.sha256.toUtf8().toStdString()
                 ),

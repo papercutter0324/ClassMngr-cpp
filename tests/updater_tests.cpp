@@ -825,7 +825,8 @@ void UpdaterTests::dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale()
             .platformKey = ManualUpdate::UpdateArtifactPlatformKey("windows-x64"),
             .url = ManualUpdate::EncodedUrlText{
                 "https://example.com/ClassMngr-2.0.0-win-x64.exe"},
-            .fileName = "ClassMngr-2.0.0-win-x64.exe",
+            .fileName = ManualUpdate::UpdateArtifactFileName(
+                "ClassMngr-2.0.0-win-x64.exe"),
             .sha256 = ManualUpdate::UpdateArtifactSha256(
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                 ),
@@ -886,7 +887,8 @@ void UpdaterTests::dialogReleaseDateUsesLocalizedShortFormatAndSuppressesInvalid
                     "windows-x64"),
                 .url = ManualUpdate::EncodedUrlText{
                     "https://example.com/ClassMngr-2.0.0-win-x64.exe"},
-                .fileName = "ClassMngr-2.0.0-win-x64.exe",
+                .fileName = ManualUpdate::UpdateArtifactFileName(
+                    "ClassMngr-2.0.0-win-x64.exe"),
                 .sha256 = ManualUpdate::UpdateArtifactSha256(
                     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                     ),
@@ -936,7 +938,8 @@ void UpdaterTests::dialogPassesTypedArtifactSizeToLegacyProgress()
             .platformKey = ManualUpdate::UpdateArtifactPlatformKey("windows-x64"),
             .url = ManualUpdate::EncodedUrlText{
                 "https://example.com/ClassMngr-size-boundary.bin"},
-            .fileName = "ClassMngr-size-boundary.bin",
+            .fileName = ManualUpdate::UpdateArtifactFileName(
+                "ClassMngr-size-boundary.bin"),
             .sha256 = ManualUpdate::UpdateArtifactSha256(
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                 ),
@@ -989,6 +992,20 @@ void UpdaterTests::manualUpdatePresentationReconstructsUtcCheckTime()
             static_cast<qint64>(checkedAt));
         QVERIFY(presentation.checkedAtUtc.timeZone() == QTimeZone::utc());
         QCOMPARE(presentation.checkedAtUtc.timeZone().id(), QByteArrayLiteral("UTC"));
+    }
+
+    const std::vector<std::string> fileNames{
+        "",
+        "ClassMngr-\xE2\x9C\x93.zip"
+    };
+    for (const std::string& fileName : fileNames)
+    {
+        ManualUpdate::ManualUpdateCheckResult source;
+        source.artifact.fileName = ManualUpdate::UpdateArtifactFileName(fileName);
+
+        const UpdateCheckResult presentation =
+            ClassMngr::Next::UiShared::Details::toPresentationResult(source);
+        QCOMPARE(presentation.artifact.fileName.toUtf8().toStdString(), fileName);
     }
 }
 

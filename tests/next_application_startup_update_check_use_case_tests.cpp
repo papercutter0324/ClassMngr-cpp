@@ -58,6 +58,24 @@ int main()
 {
     static_assert(!std::is_convertible_v<std::int64_t, UpdateArtifactSizeBytes>);
     static_assert(!std::is_convertible_v<UpdateArtifactSizeBytes, std::int64_t>);
+    static_assert(std::is_default_constructible_v<UpdateArtifactFileName>);
+    static_assert(std::is_constructible_v<UpdateArtifactFileName, std::string>);
+    static_assert(!std::is_convertible_v<std::string, UpdateArtifactFileName>);
+    static_assert(!std::is_convertible_v<UpdateArtifactFileName, std::string>);
+
+    const UpdateArtifactFileName defaultFileName;
+    if (!require(defaultFileName.rawValue().empty()
+            && StartupUpdateArtifact{}.fileName.rawValue().empty()
+            && UpdateArtifactFileName(std::string{})
+                == UpdateArtifactFileName(std::string{})
+            && UpdateArtifactFileName("ClassMngr.zip")
+                == UpdateArtifactFileName("ClassMngr.zip")
+            && UpdateArtifactFileName("ClassMngr.zip")
+                != UpdateArtifactFileName("classmngr.zip"),
+            "Artifact filename value default or exact equality changed"))
+    {
+        return EXIT_FAILURE;
+    }
 
     const UpdateArtifactSizeBytes defaultSize;
     if (!require(defaultSize.value() == 0
@@ -226,6 +244,40 @@ int main()
         }
     }
 
+    const std::vector<std::string> artifactFileNames{
+        "",
+        "ClassMngr-\xE2\x9C\x93.zip"
+    };
+    for (const auto& fileName : artifactFileNames)
+    {
+        FakePort port;
+        StartupUpdateCheckUseCase useCase(port);
+        bool preserved = false;
+        if (!require(useCase.start(Eligible,
+                [&](StartupUpdateCheckOutcome outcome)
+                {
+                    const auto* result = std::get_if<StartupUpdateCheckResult>(
+                        &outcome);
+                    preserved = result
+                        && result->artifact.fileName.rawValue() == fileName;
+                }) == StartupUpdateCheckDisposition::Started,
+                "Startup filename check did not start"))
+        {
+            return EXIT_FAILURE;
+        }
+
+        port.pending(StartupUpdateCheckResult{
+            .artifact = {
+                .fileName = UpdateArtifactFileName(fileName)
+            }
+        });
+        if (!require(preserved,
+                "Startup result changed an opaque artifact filename"))
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
     // Each gate is independently required, and a corrected ineligible input
     // must leave the one eligible dispatch available.
     for (int missingGate = 0; missingGate < 4; ++missingGate)
@@ -263,7 +315,7 @@ int main()
                     const auto* result = std::get_if<StartupUpdateCheckResult>(&outcome);
                     mapped = result && result->updateAvailable == updateAvailable
                         && result->latestVersion == UpdateVersion{2, 3, 4}
-                        && result->artifact.fileName == "installer.exe";
+                        && result->artifact.fileName.rawValue() == "installer.exe";
                 }) == StartupUpdateCheckDisposition::Started && completions == 0,
                 "Started must wait for terminal completion"))
         {
@@ -271,7 +323,9 @@ int main()
         }
         const StartupUpdateCheckResult result{
             .latestVersion = {2, 3, 4},
-            .artifact = {.fileName = "installer.exe"},
+            .artifact = {
+                .fileName = UpdateArtifactFileName("installer.exe")
+            },
             .updateAvailable = updateAvailable
         };
         port.pending(result);

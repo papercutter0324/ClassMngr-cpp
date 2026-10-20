@@ -339,6 +339,7 @@ private slots:
     void adaptersPreserveArtifactSizeExactly();
     void adaptersPreserveCheckedAtMilliseconds();
     void adaptersPreserveSha256TextExactly();
+    void adaptersPreserveArtifactFileNameUtf8AndEmpty();
     void parserMatchesPlatformKeysExactlyAndKeepsLinuxAliases();
     void bridgeMapsFailures_data();
     void bridgeMapsFailures();
@@ -1060,7 +1061,8 @@ void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck
         legacy->artifact.platformKey.toUtf8().toStdString());
     QCOMPARE(result.artifact.url.value(),
         legacy->artifact.url.toEncoded().toStdString());
-    QCOMPARE(result.artifact.fileName, legacy->artifact.fileName.toStdString());
+    QCOMPARE(result.artifact.fileName.rawValue(),
+        legacy->artifact.fileName.toUtf8().toStdString());
     QCOMPARE(result.artifact.sha256.value(), legacy->artifact.sha256.toUtf8().toStdString());
     QCOMPARE(result.artifact.sizeBytes.value(), legacy->artifact.sizeBytes);
     QCOMPARE(result.releaseDateIso.value(), std::string("2026-08-05"));
@@ -1156,6 +1158,29 @@ void UpdateControllerAutomaticStartupTests::adaptersPreserveSha256TextExactly()
         const auto startup = ClassMngr::Next::Platform::toStartupUpdateCheckResult(source);
         QCOMPARE(manual.artifact.sha256.value(), sha256);
         QCOMPARE(startup.artifact.sha256.value(), sha256);
+    }
+}
+
+void UpdateControllerAutomaticStartupTests::
+    adaptersPreserveArtifactFileNameUtf8AndEmpty()
+{
+    const std::vector<QString> fileNames{
+        QString(),
+        QString::fromUtf8("ClassMngr-\xE2\x9C\x93.zip")
+    };
+
+    for (const QString& fileName : fileNames)
+    {
+        UpdateCheckResult source;
+        source.artifact.fileName = fileName;
+        const std::string expected = fileName.toUtf8().toStdString();
+
+        const auto manual =
+            ClassMngr::Next::Platform::toManualUpdateCheckResult(source);
+        const auto startup =
+            ClassMngr::Next::Platform::toStartupUpdateCheckResult(source);
+        QCOMPARE(manual.artifact.fileName.rawValue(), expected);
+        QCOMPARE(startup.artifact.fileName.rawValue(), expected);
     }
 }
 
