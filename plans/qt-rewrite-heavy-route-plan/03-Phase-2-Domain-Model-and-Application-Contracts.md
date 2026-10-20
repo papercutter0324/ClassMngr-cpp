@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch499 is complete and pushed at `cc38c959`; active Batch500 has F1243–F1251 complete and F1252 accepted awaiting implementation, while Batch501 (F1253–F1256) remains discovered for after Batch500 closes; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch500 (F1243–F1252) is complete locally with its push pending; Batch501 is active with F1253 next for acceptance, and F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1252 is accepted before implementation (see [F1252 acceptance](03-Phase-2-Progress-Log.md#f1252-document-catalog-order-metadata-accepted-before-implementation-2026-10-21)). Batch500 remains active with F1243–F1251 complete and F1252 accepted; Batch501 (F1253–F1256) remains discovered and queued until Batch500 closes. F629 and the Phase 0 and Phase 2 gates remain open.
+F1252 is complete at `4a7412d3`; all five focused Document Catalog CTests passed, followed by a passing rerun of the strengthened sidebar ID tie-break test (see [F1252 verification](03-Phase-2-Progress-Log.md#f1252-document-catalog-order-metadata-complete-2026-10-21)). Batch500 is complete locally with its push pending. Batch501 is now active with F1253 next for acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,22 +72,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch500 (10 candidates; 9 complete, 1 accepted, 0 discovered)
+#### Active batch: Batch501 (4 candidates; 0 complete, 0 accepted, 4 discovered)
 
-1. F1243 - **Complete.** Replace the `GregorianDate::DayNumber` alias with an explicit typed ordinal; preserve epoch, maximum date, formatting, and factory range validation.
-2. F1244 - **Complete.** Type only the legacy Schedule Import target class ID as optional `Domain::ClassId`; preserve UI raw integers, absent-value handling, action semantics, and validation behavior.
-3. F1245 - **Complete.** Add distinct typed Sub Prep print grade and level orders, preserving configured ranks, unknown sentinels, and comparator order.
-4. F1246 - **Complete.** Type the Calendar parser's skipped-row count while preserving parser count and duplicate-skip aggregation.
-5. F1247 - **Complete.** Preserve Teacher Import created/updated/unchanged result counts across the Platform boundary.
-6. F1248 - **Complete.** Reuse the existing navigation rank type for Class Summary day and time fields while preserving validation and numeric sentinel behavior.
-7. F1249 - **Complete.** Add a Testing Classes-specific rank value for grade and level ordering facts while preserving configured indexes, unknown values, and comparator behavior.
-8. F1250 - **Complete.** Add typed ScheduleTime start and end minute endpoints while preserving bounds, strict start-before-end, and half-open overlap.
-9. F1251 - **Complete.** Add an explicit `ClassExportRosterColumnWidth` value for the shared package's width vector; preserve every signed value and its order through adapters and JSON without range checks or clamping.
-10. F1252 - **Accepted.** Add distinct `DocumentFolderOrder` and `DocumentOrder` values to Document Catalog Application metadata; preserve negative validation, vector sequence, and sidebar display sorting.
-
-#### Discovered batch: Batch501 (4 candidates; not active until Batch500 closes)
-
-1. F1253 - **Discovered.** Type Teacher Import stored-record identities while preserving distinct IDs, the `-1` default, and full signed-64 transport.
+1. F1253 - **Discovered; next for acceptance.** Type Teacher Import stored-record identities while preserving distinct IDs, the `-1` default, and full signed-64 transport.
 2. F1254 - **Discovered.** Type Teacher Import review candidate count while preserving expansion, selection bounds, order, and validation behavior.
 3. F1255 - **Discovered.** Type the academic-year validation boundary while preserving the 2026 lower bound and absence of an upper bound.
 4. F1256 - **Discovered; rechecked after F1251.** Keep `RosterSnapshot` column widths as a separate Application projection candidate; `ClassExportRosterColumnWidth` is specific to the portable Class Transfer package and should not leak into generic `RosterSnapshot`. Preserve signed values and order.

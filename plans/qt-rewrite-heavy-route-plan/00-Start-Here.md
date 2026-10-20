@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). Batch499 is complete and pushed at `cc38c959` (see its [push receipt](03-Phase-2-Progress-Log.md#batch499-push-receipt-2026-10-21)). In active Batch500, F1243–F1251 are complete and F1252 is accepted awaiting implementation (see [F1252 acceptance](03-Phase-2-Progress-Log.md#f1252-document-catalog-order-metadata-accepted-before-implementation-2026-10-21)); Batch501 (F1253–F1256) remains discovered and queued until Batch500 closes (see [discovery](03-Phase-2-Progress-Log.md#batch501-discovery-started-at-f1251-start-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). Batch499 is complete and pushed at `cc38c959` (see its [push receipt](03-Phase-2-Progress-Log.md#batch499-push-receipt-2026-10-21)). Batch500 (F1243–F1252) is complete locally with its push pending (see [F1252 verification](03-Phase-2-Progress-Log.md#f1252-document-catalog-order-metadata-complete-2026-10-21)); Batch501 is active with F1253 next for acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,22 +38,16 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch500 — Active (F1243–F1251 complete; F1252 accepted):**
+**Batch501 — Active (0 complete, 0 accepted, 4 discovered):**
 
-1. **F1243 — Complete:** Replace the `GregorianDate::DayNumber` alias with an explicit typed ordinal; preserve epoch, maximum date, formatting, and factory range validation.
-2. **F1244 — Complete:** Type only the legacy Schedule Import target ID as optional `Domain::ClassId`; preserve UI raw integers, absent-value handling, action semantics, and validation behavior.
-3. **F1245 — Complete:** Add distinct typed Sub Prep print grade and level orders while preserving configured ranks, unknown sentinels, and comparator order.
-4. **F1246 — Complete:** Type the Calendar parser's skipped-row count while preserving parser count and duplicate-skip aggregation.
-5. **F1247 — Complete:** Preserve Teacher Import created/updated/unchanged result counts across the Platform boundary.
-6. **F1248 — Complete:** Reuse the typed navigation rank for Class Summary day and time fields while preserving validation and numeric sentinel behavior.
-7. **F1249 — Complete:** Add a Testing Classes-specific typed rank for grade and level facts while preserving configured indexes, unknown values, and comparator behavior.
-8. **F1250 — Complete:** Add typed ScheduleTime start and end minute endpoints while preserving bounds, strict start-before-end, and half-open overlap.
-9. **F1251 — Complete:** Add a typed Class Transfer export roster width value while preserving signed values and order through adapters and JSON without range checks or clamping.
-10. **F1252 — Accepted:** Type Document Catalog Application folder/document order metadata while preserving default zero, separate negative-value rejection, projection input sequence, and the sidebar's existing order/ID sort.
+1. **F1253 — Discovered; next for acceptance:** Type Teacher Import stored-record identities while preserving distinct IDs, the `-1` default, and full signed-64 transport.
+2. **F1254 — Discovered:** Type Teacher Import review candidate count while preserving expansion, selection bounds, order, and validation behavior.
+3. **F1255 — Discovered:** Type the academic-year validation boundary while preserving the 2026 lower bound and absence of an upper bound.
+4. **F1256 — Discovered; rechecked after F1251:** Keep `RosterSnapshot` column widths as a separate Application projection candidate; preserve signed values and order.
 
 Batch495 and Batch496 are complete and pushed (see the [Batch495](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21) and [Batch496](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21) receipts). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
-Batch499 is complete and pushed at `cc38c959`. Batch501 has been discovered and is queued until Batch500 closes: F1253 Teacher Import stored-record identities, F1254 Teacher Import review candidate count, F1255 academic-year validation boundary, and F1256 RosterSnapshot column widths (rechecked after F1251; keep as a separate Application projection contract). No broad Schedule Import feature completion is claimed for F1244.
+Batch500 (F1243–F1252) is complete locally; its push is pending. Batch501 is active after the Batch500 closeout, with F1253 next for acceptance. Its discovery entry records F1256 as a separate Application projection contract from the Class Transfer package width type. No broad Schedule Import feature completion is claimed for F1244.
 
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 

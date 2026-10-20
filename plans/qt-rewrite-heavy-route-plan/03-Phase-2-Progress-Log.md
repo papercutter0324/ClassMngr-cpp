@@ -58441,3 +58441,47 @@ Batch500 remains active with F1243–F1251 complete and F1252 accepted awaiting
 implementation. Batch501 remains discovered and queued until Batch500 closes,
 with F1253–F1256 in the recorded order. F629 and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1252 Document Catalog order metadata complete - 2026-10-21
+
+F1252 completed in implementation commit
+`4a7412d32a909535da5c4f9fd1e798c42da2761f`, following acceptance commit
+`09d6e5d985e68556adeeabbf9f7196140e6c046e`. The seven changed paths were
+`src/next/application/document_catalog_projection.h`,
+`src/next/platform/application_services_document_catalog_port.h`,
+`src/ui/shared/widgets/sidebar/sidebar_tree.cpp`,
+`tests/next_application_document_catalog_tests.cpp`,
+`tests/next_application_document_catalog_use_case_tests.cpp`,
+`tests/next_platform_application_services_document_catalog_port_tests.cpp`,
+and `tests/sidebar_structure_tests.cpp`. The navigation parity target was
+built and run but its source file did not change.
+
+Application metadata now carries distinct default-zero `DocumentFolderOrder`
+and `DocumentOrder` wrappers with explicit `std::int32_t` construction,
+`.rawValue()`, equality, and no implicit or cross-type conversions. Negative
+validation and existing error messages remain separate for each type. The
+Platform adapter explicitly maps legacy integers; the sidebar unwraps only at
+its local display-sort boundary. Port/projection sequence is unchanged and
+the sidebar continues sorting by order then ID. Legacy feature definitions,
+parser, and JSON representation are unchanged. F1256 was rechecked after
+F1251 and remains a separate `RosterSnapshot` Application projection contract;
+the Class Transfer width type does not leak into it.
+
+The Executor incrementally built `ClassMngr` and the five accepted test
+targets: `ClassMngrNextApplicationDocumentCatalogTests`,
+`ClassMngrNextApplicationDocumentCatalogUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests`,
+`ClassMngrSidebarStructureTests`, and
+`ClassMngrDocumentCatalogNavigationParityTests`. The five focused CTests
+passed (5/5). After adding a controlled equal-rank sidebar ID tie-break test,
+`ClassMngrSidebarStructureTests` rebuilt and passed again (1/1). The final
+case uses reverse IDs, display names, and keys to isolate the ID tie-break;
+projection input sequence is asserted separately. The independent Tester
+recheck found the target up to date and confirmed the test passes.
+`git diff --check` passed. No clean build, Windows build, or full-suite run
+was performed.
+
+Batch500 (F1243–F1252) is complete locally; its push is pending. Batch501 is
+now active with four discovered candidates, F1253 next for acceptance, then
+F1254–F1256 in the recorded order. F629 and the Phase 0 and Phase 2 gates
+remain open.
