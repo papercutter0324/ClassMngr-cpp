@@ -58651,3 +58651,47 @@ with F1253 complete, F1254 accepted awaiting implementation, and F1255–F1256
 discovered (1 complete, 1 accepted, 2 discovered). F1255 is the next candidate
 after F1254; do not start Batch502 discovery until work begins on F1255. F629
 and the Phase 0 and Phase 2 gates remain open.
+
+### F1254 Teacher Import review candidate count complete - 2026-10-21
+
+F1254 completed in source/test commit
+`c7e53f3947e49f23e763670686dac4d391b30fce`, following acceptance documentation
+commit `eb4f5ee674e49c43c2c6f61f3781bda2a134d24e`. The seven changed paths
+were `src/next/application/teacher_import_candidate_count.h`,
+`src/next/application/import_review_session.h`,
+`src/next/application/teacher_import_use_case.h`,
+`src/features/teacher/ui/teacher_import_dialog.cpp`,
+`tests/teacher_import_tests.cpp`, `tests/teacher_import_dialog_tests.cpp`, and
+`cmake/next.cmake` (the source manifest entry for the new header).
+
+`TeacherImportCandidateGroup::candidateCount` now uses the distinct explicit
+zero-default `TeacherImportCandidateCount` backed by `std::size_t`, with
+`.rawValue()` and equality. The resolver unwraps it for All expansion,
+Selected bounds, and selection tracking. The Feature dialog and Application
+use case explicitly wrap their collection sizes when constructing groups.
+All still expands indexes in ascending candidate order; Selected preserves
+negative and `>= count` rejection as `CandidateIndexOutOfRange`, duplicate
+detection, and ascending output order; None and other decision behavior are
+unchanged. No Application count cap was added, and the legacy Qt dialog's
+separate `int` loop/index behavior remains outside this slice.
+
+Tests assert the exact field/wrapper type, explicit construction from
+`std::size_t`, no implicit raw or wrapper conversions, and zero default. A
+multi-item All case checks ascending output, while existing Selected, None,
+duplicate, negative, upper-bound, and other decision coverage remains.
+
+The Executor incrementally built `ClassMngr`,
+`ClassMngrNextApplicationTeacherImportUseCaseTests`,
+`ClassMngrTeacherImportTests`, and `ClassMngrTeacherImportDialogTests` in
+`build/macos-clang-debug`; all targets succeeded. The three focused CTests
+passed (3/3), with the dialog test run using `QT_QPA_PLATFORM=offscreen`.
+The independent Tester repeated the same target build in the existing tree
+and Ninja reported no work to do; it reran the three focused CTests and all
+passed (3/3). `git diff --check` passed. No clean build, Windows build, or
+full-suite run was performed.
+
+Batch500 (F1243–F1252) is complete and pushed at `029a17e8`. Batch501 remains
+active with F1253–F1254 complete and F1255 next for acceptance; F1256 remains
+discovered (2 complete, 0 accepted, 2 discovered). Do not begin Batch502
+discovery until work starts on F1255. F629 and the Phase 0 and Phase 2 gates
+remain open.
