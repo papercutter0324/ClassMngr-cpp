@@ -56195,7 +56195,7 @@ order, adjacent-thousandths, and strict-tolerance-boundary coverage. Focused
 CTests are `ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests`,
 `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`, and
 `ClassMngrSpeakingAnalyticsTests`; build the app and these affected targets.
-No F1225 implementation or verification has started.
+No F1225 implementation or verification had started when acceptance was recorded.
 
 ### Batch497 discovery started - 2026-10-21
 
@@ -56267,3 +56267,28 @@ F1226's print-order positions.
 The two directory-validation candidates are independent; placing them
 consecutively is convenient for review. No matching Deferred item was found.
 No other slices were found.
+
+### F1225 Analytics criterion-extrema positions complete - 2026-10-21
+
+F1225 completed at implementation commit `2e960517` (`Phase2 - Type Analytics
+criterion extrema positions`), following acceptance-record commit `362f838d`.
+`ClassAnalyticsCriterionIndex` is an explicit `std::size_t` value type with
+default zero, private storage, `.rawValue()`, equality, and no implicit
+conversions. Both strongest and focus result vectors use it. The Next dashboard
+query unwraps at vector access, and the Feature `SpeakingAnalytics` service
+unwraps at the `QList::at` boundary.
+
+The policy continues to return positions in the original supplied collection,
+including gaps for missing criteria. Empty and all-missing inputs return empty
+selections; tied extrema retain input order; thousandths compare exactly; and
+legacy floating values retain strict `abs(delta) < 1e-9` comparison. The query
+and Feature service preserve their projected labels and outputs.
+
+The Executor built `ClassMngr` and the policy, dashboard-query, and Speaking
+Analytics test targets in the existing macOS universal Debug tree. The
+independent Tester confirmed the build (Ninja reported no work), passed all
+three focused CTests, and confirmed `git diff --check`. Coverage retains
+wrapper semantics, missing-position behavior, empty results, tie order,
+adjacent-thousandths distinction, and strict-tolerance boundaries, plus the
+existing query and service regressions. This was incremental macOS
+`arm64;x86_64` Debug verification; no full-suite or Windows result is claimed.
