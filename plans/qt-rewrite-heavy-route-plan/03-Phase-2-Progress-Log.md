@@ -52342,3 +52342,26 @@ accepted/in progress, and F1167–F1170 discovered in order. F1167 is next after
 F1166 closes. Batch489 remains unpushed until F1170. F629 awaits source-bound
 Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0
 and Phase 2 gates remain open.
+
+### F1166 Upcoming Birthday reference date complete - 2026-10-20
+
+F1166 completed at source/test commit
+`f83b1b286edaef98dd437666f50f4ddd36641b5d`, following acceptance commit
+`3df496be31fd916be780112bc9d6fcb7e17cba6b`. The Application reference input
+now carries `std::optional<Domain::GregorianDate>`. Invalid Qt dates and
+Qt-valid year-10000 dates map to absence and yield the ordinary empty schedule.
+Existing date buckets, year rollover, deterministic ordering, Feb 29 fallback,
+maximum-year cap, and raw birthday parsing behavior are preserved.
+
+The Executor built `ClassMngr`,
+`ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests`, and
+`ClassMngrUpcomingBirthdaysTests`. The Application and Feature test binaries
+passed 14/14 and 12/12 respectively; two offscreen Qt warnings occurred, with
+all tests passing. Five focused CTests passed: the two invalid-reference
+selectors, ordering, locale ordering, and leap-day fallback.
+`git diff --check` passed. No full suite or Windows build ran.
+
+Batch489 remains active with F1162–F1166 complete and F1167–F1170 discovered
+in order; F1167 is next. Batch489 remains unpushed until F1170. F629 awaits
+source-bound Windows x64 layout evidence; the user cannot run Windows now, and
+the Phase 0 and Phase 2 gates remain open.
