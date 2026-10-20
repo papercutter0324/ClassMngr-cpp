@@ -51907,3 +51907,46 @@ nine candidates below retain this order:
 The low-confidence student-name peer row-position idea is excluded: values are
 inherently UI positions and a domain-type benefit is unestablished.
 No other slices were found.
+
+### F1160 Calendar repeat-series delete date complete - 2026-10-20
+
+F1160 completed in source/test commit
+`14d2c957cbcd8ebbf21a652408fada85ea13e924`, following the acceptance and
+Batch489 discovery commit
+`d0d18f299fd06493a1d21a2fda35748e10477c8f`. The typed
+`CalendarEventSeriesDeleteRequest.startDate` is `Domain::GregorianDate`; raw
+ISO text remains in `CalendarEventSeriesDeleteInput` until `toRequest()`, and
+the UseCase validates before calling the port. Invalid IDs and malformed
+dates retain `Domain::ErrorCode::InvalidInput`, `recoverable=false`, and the
+exact message below; the UseCase does not call the port for either invalid
+input.
+
+```text
+Calendar repeat-series delete request must contain a non-blank bounded series identifier and a valid ISO start date.
+```
+
+The Platform retains its direct invalid-ID guard and result
+behavior, validates before session lookup, and maps date components to
+`QDate`. The UI draft still supplies raw ISO text. Repository suffix deletion
+(`start_date >= selected date`) and SQL are unchanged.
+
+Changed paths: `src/features/calendar/ui/calendar_page_events.cpp`,
+`src/next/application/calendar_event_series_delete_port.h`,
+`src/next/application/calendar_event_series_delete_use_case.h`,
+`src/next/platform/application_services_calendar_event_series_delete_port.h`,
+`tests/next_application_calendar_event_tests.cpp`, and
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
+
+Incremental builds in the existing `build/macos-clang-debug` tree succeeded
+for `ClassMngr`, `ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`. Both
+focused Application and Platform CTests passed 2/2, and `git diff --check`
+passed. Independent verification accepted the slice after the raw invalid-ID
+no-port-call assertion was added. No full suite or Windows build ran.
+
+Batch488 remains active with eight candidates: F1154–F1160 are complete,
+none are accepted/in progress, and F1161 is the sole discovered candidate
+and next in order. Batch489 remains provisional and inactive until Batch488
+closes. Batch488 has no push receipt and is not closed. F629 awaits
+source-bound Windows x64 layout evidence; the user cannot run Windows now,
+and the Phase 0 and Phase 2 gates remain open.
