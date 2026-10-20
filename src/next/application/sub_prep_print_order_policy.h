@@ -18,6 +18,52 @@ namespace ClassMngr::Next::Application
 inline constexpr int kSubPrepPrintUnknownOrder =
     std::numeric_limits<int>::max();
 
+class SubPrepPrintWeekdayOrder final
+{
+public:
+    constexpr SubPrepPrintWeekdayOrder() noexcept = default;
+    explicit constexpr SubPrepPrintWeekdayOrder(const int value) noexcept
+        : value_(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int value() const noexcept
+    {
+        return value_;
+    }
+
+    friend constexpr bool operator==(
+        const SubPrepPrintWeekdayOrder&,
+        const SubPrepPrintWeekdayOrder&
+        ) = default;
+
+private:
+    int value_ = 0;
+};
+
+class SubPrepPrintStartMinute final
+{
+public:
+    constexpr SubPrepPrintStartMinute() noexcept = default;
+    explicit constexpr SubPrepPrintStartMinute(const int value) noexcept
+        : value_(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int value() const noexcept
+    {
+        return value_;
+    }
+
+    friend constexpr bool operator==(
+        const SubPrepPrintStartMinute&,
+        const SubPrepPrintStartMinute&
+        ) = default;
+
+private:
+    int value_ = 0;
+};
+
 enum class SubPrepPrintTeacherNameField
 {
     English,
@@ -37,8 +83,8 @@ struct SubPrepPrintClassOrderFact final
     Domain::TeacherId teacherId = *Domain::TeacherId::fromString("0");
     int gradeOrder = kSubPrepPrintUnknownOrder;
     int levelOrder = kSubPrepPrintUnknownOrder;
-    int weekdayOrder = kSubPrepPrintUnknownOrder;
-    int startMinute = kSubPrepPrintUnknownOrder;
+    SubPrepPrintWeekdayOrder weekdayOrder{kSubPrepPrintUnknownOrder};
+    SubPrepPrintStartMinute startMinute{kSubPrepPrintUnknownOrder};
     Domain::ClassId classId = *Domain::ClassId::fromString("0");
 };
 
@@ -203,13 +249,21 @@ orderSubPrepPrintGroups(
                 {
                     return left.levelOrder < right.levelOrder;
                 }
-                if (left.weekdayOrder != right.weekdayOrder)
+                if (
+                    left.weekdayOrder.value()
+                    != right.weekdayOrder.value()
+                    )
                 {
-                    return left.weekdayOrder < right.weekdayOrder;
+                    return left.weekdayOrder.value()
+                        < right.weekdayOrder.value();
                 }
-                if (left.startMinute != right.startMinute)
+                if (
+                    left.startMinute.value()
+                    != right.startMinute.value()
+                    )
                 {
-                    return left.startMinute < right.startMinute;
+                    return left.startMinute.value()
+                        < right.startMinute.value();
                 }
                 return SubPrepPrintOrderPolicyDetail::numericIdLess(
                     left.classId,

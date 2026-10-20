@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -13,6 +14,58 @@ using ClassMngr::Next::Domain::TeacherId;
 
 namespace
 {
+
+static_assert(std::is_constructible_v<SubPrepPrintWeekdayOrder, int>);
+static_assert(
+    !std::is_convertible_v<int, SubPrepPrintWeekdayOrder>
+    );
+static_assert(
+    !std::is_convertible_v<SubPrepPrintWeekdayOrder, int>
+    );
+static_assert(
+    std::is_constructible_v<SubPrepPrintStartMinute, int>
+    );
+static_assert(
+    !std::is_convertible_v<int, SubPrepPrintStartMinute>
+    );
+static_assert(
+    !std::is_convertible_v<SubPrepPrintStartMinute, int>
+    );
+static_assert(
+    !std::is_same_v<SubPrepPrintWeekdayOrder, SubPrepPrintStartMinute>
+    );
+
+SubPrepPrintWeekdayOrder weekdayOrder(const int value)
+{
+    return SubPrepPrintWeekdayOrder{value};
+}
+
+SubPrepPrintStartMinute startMinute(const int value)
+{
+    return SubPrepPrintStartMinute{value};
+}
+
+bool printOrderIntegerFactsAreStrongValues()
+{
+    const SubPrepPrintWeekdayOrder defaultWeekday;
+    const SubPrepPrintWeekdayOrder weekday{7};
+    const SubPrepPrintWeekdayOrder sameWeekday{7};
+    const SubPrepPrintWeekdayOrder otherWeekday{8};
+    const SubPrepPrintStartMinute defaultMinute;
+    const SubPrepPrintStartMinute minute{1'439};
+    const SubPrepPrintStartMinute sameMinute{1'439};
+    const SubPrepPrintStartMinute otherMinute{1'438};
+    const SubPrepPrintClassOrderFact defaultFact;
+
+    return defaultWeekday.value() == 0
+        && weekday == sameWeekday
+        && !(weekday == otherWeekday)
+        && defaultMinute.value() == 0
+        && minute == sameMinute
+        && !(minute == otherMinute)
+        && defaultFact.weekdayOrder.value() == kSubPrepPrintUnknownOrder
+        && defaultFact.startMinute.value() == kSubPrepPrintUnknownOrder;
+}
 
 TeacherId teacherKey(const int value)
 {
@@ -207,63 +260,63 @@ bool eachClassKeyPrecedesTheFollowingKeys()
     const auto grade = orderSubPrepPrintGroups(
         teachers,
         {
-            {teacherKey(1), 1, 9, 6, 1'300, classKey(90)},
-            {teacherKey(1), 2, 0, 0, 0, classKey(1)}
+            {teacherKey(1), 1, 9, weekdayOrder(6), startMinute(1'300), classKey(90)},
+            {teacherKey(1), 2, 0, weekdayOrder(0), startMinute(0), classKey(1)}
         },
         comparator
         );
     const auto level = orderSubPrepPrintGroups(
         teachers,
         {
-            {teacherKey(1), 1, 1, 6, 1'300, classKey(90)},
-            {teacherKey(1), 1, 2, 0, 0, classKey(1)}
+            {teacherKey(1), 1, 1, weekdayOrder(6), startMinute(1'300), classKey(90)},
+            {teacherKey(1), 1, 2, weekdayOrder(0), startMinute(0), classKey(1)}
         },
         comparator
         );
     const auto weekday = orderSubPrepPrintGroups(
         teachers,
         {
-            {teacherKey(1), 1, 1, 0, 1'300, classKey(90)},
-            {teacherKey(1), 1, 1, 1, 0, classKey(1)}
+            {teacherKey(1), 1, 1, weekdayOrder(0), startMinute(1'300), classKey(90)},
+            {teacherKey(1), 1, 1, weekdayOrder(1), startMinute(0), classKey(1)}
         },
         comparator
         );
     const auto minute = orderSubPrepPrintGroups(
         teachers,
         {
-            {teacherKey(1), 1, 1, 0, 500, classKey(90)},
-            {teacherKey(1), 1, 1, 0, 600, classKey(1)}
+            {teacherKey(1), 1, 1, weekdayOrder(0), startMinute(500), classKey(90)},
+            {teacherKey(1), 1, 1, weekdayOrder(0), startMinute(600), classKey(1)}
         },
         comparator
         );
     const auto classId = orderSubPrepPrintGroups(
         teachers,
         {
-            {teacherKey(1), 1, 1, 0, 500, classKey(10)},
-            {teacherKey(1), 1, 1, 0, 500, classKey(2)}
+            {teacherKey(1), 1, 1, weekdayOrder(0), startMinute(500), classKey(10)},
+            {teacherKey(1), 1, 1, weekdayOrder(0), startMinute(500), classKey(2)}
         },
         comparator
         );
 
     return orderedClassIds(grade.front(), {
-               {teacherKey(1), 1, 9, 6, 1'300, classKey(90)},
-               {teacherKey(1), 2, 0, 0, 0, classKey(1)}
+               {teacherKey(1), 1, 9, weekdayOrder(6), startMinute(1'300), classKey(90)},
+               {teacherKey(1), 2, 0, weekdayOrder(0), startMinute(0), classKey(1)}
            }) == std::vector<int>{90, 1}
         && orderedClassIds(level.front(), {
-               {teacherKey(1), 1, 1, 6, 1'300, classKey(90)},
-               {teacherKey(1), 1, 2, 0, 0, classKey(1)}
+               {teacherKey(1), 1, 1, weekdayOrder(6), startMinute(1'300), classKey(90)},
+               {teacherKey(1), 1, 2, weekdayOrder(0), startMinute(0), classKey(1)}
            }) == std::vector<int>{90, 1}
         && orderedClassIds(weekday.front(), {
-               {teacherKey(1), 1, 1, 0, 1'300, classKey(90)},
-               {teacherKey(1), 1, 1, 1, 0, classKey(1)}
+               {teacherKey(1), 1, 1, weekdayOrder(0), startMinute(1'300), classKey(90)},
+               {teacherKey(1), 1, 1, weekdayOrder(1), startMinute(0), classKey(1)}
            }) == std::vector<int>{90, 1}
         && orderedClassIds(minute.front(), {
-               {teacherKey(1), 1, 1, 0, 500, classKey(90)},
-               {teacherKey(1), 1, 1, 0, 600, classKey(1)}
+               {teacherKey(1), 1, 1, weekdayOrder(0), startMinute(500), classKey(90)},
+               {teacherKey(1), 1, 1, weekdayOrder(0), startMinute(600), classKey(1)}
            }) == std::vector<int>{90, 1}
         && orderedClassIds(classId.front(), {
-               {teacherKey(1), 1, 1, 0, 500, classKey(10)},
-               {teacherKey(1), 1, 1, 0, 500, classKey(2)}
+               {teacherKey(1), 1, 1, weekdayOrder(0), startMinute(500), classKey(10)},
+               {teacherKey(1), 1, 1, weekdayOrder(0), startMinute(500), classKey(2)}
            }) == std::vector<int>{2, 10};
 }
 
@@ -287,8 +340,8 @@ bool malformedTypedIdsUseDeterministicTieBreaks()
             {teacherKey(1), true}
         };
         const std::vector<SubPrepPrintClassOrderFact> classes{
-            {teacherKey(1), 1, 1, 1, 500, classTextKey("2x")},
-            {teacherKey(1), 1, 1, 1, 500, classTextKey("10x")}
+            {teacherKey(1), 1, 1, weekdayOrder(1), startMinute(500), classTextKey("2x")},
+            {teacherKey(1), 1, 1, weekdayOrder(1), startMinute(500), classTextKey("10x")}
         };
         const std::vector<std::string> oneEnglishName{"Teacher"};
         const std::vector<std::string> oneKoreanName{""};
@@ -319,11 +372,62 @@ bool unknownRanksAndMeetingsKeepTheNumericSentinelOrder()
     const std::vector<std::string> englishNames{"Teacher"};
     const std::vector<std::string> koreanNames{""};
     const std::vector<SubPrepPrintClassOrderFact> classes{
-        {teacherKey(1), kSubPrepPrintUnknownOrder, 1, 0, 500, classKey(1)},
-        {teacherKey(1), 1, kSubPrepPrintUnknownOrder, 0, 500, classKey(2)},
-        {teacherKey(1), 1, 1, kSubPrepPrintUnknownOrder, 400, classKey(3)},
-        {teacherKey(1), 1, 1, 0, kSubPrepPrintUnknownOrder, classKey(4)},
-        {teacherKey(1), 1, 1, 0, 500, classKey(5)}
+        {
+            teacherKey(1),
+            kSubPrepPrintUnknownOrder,
+            1,
+            weekdayOrder(0),
+            startMinute(500),
+            classKey(1)
+        },
+        {
+            teacherKey(1),
+            1,
+            kSubPrepPrintUnknownOrder,
+            weekdayOrder(0),
+            startMinute(500),
+            classKey(2)
+        },
+        {
+            teacherKey(1),
+            1,
+            1,
+            weekdayOrder(kSubPrepPrintUnknownOrder),
+            startMinute(400),
+            classKey(3)
+        },
+        {
+            teacherKey(1),
+            1,
+            1,
+            weekdayOrder(0),
+            startMinute(kSubPrepPrintUnknownOrder),
+            classKey(4)
+        },
+        {
+            teacherKey(1),
+            1,
+            1,
+            weekdayOrder(0),
+            startMinute(500),
+            classKey(5)
+        },
+        {
+            teacherKey(1),
+            1,
+            1,
+            weekdayOrder(kSubPrepPrintUnknownOrder),
+            startMinute(500),
+            classKey(6)
+        },
+        {
+            teacherKey(1),
+            1,
+            1,
+            weekdayOrder(kSubPrepPrintUnknownOrder),
+            startMinute(kSubPrepPrintUnknownOrder),
+            classKey(7)
+        }
     };
 
     const auto groups = orderSubPrepPrintGroups(
@@ -333,7 +437,7 @@ bool unknownRanksAndMeetingsKeepTheNumericSentinelOrder()
         );
 
     return orderedClassIds(groups.front(), classes)
-        == std::vector<int>{5, 4, 3, 2, 1};
+        == std::vector<int>{5, 4, 3, 6, 7, 2, 1};
 }
 
 bool validUniqueIdsMakeOrderIndependentOfInputOrder()
@@ -346,10 +450,10 @@ bool validUniqueIdsMakeOrderIndependentOfInputOrder()
     const std::vector<std::string> englishA{"Bob", "Alice", ""};
     const std::vector<std::string> koreanA{"B", "A", "C"};
     const std::vector<SubPrepPrintClassOrderFact> classesA{
-        {teacherKey(20), 2, 0, 0, 500, classKey(8)},
-        {teacherKey(10), 1, 0, 0, 600, classKey(4)},
-        {teacherKey(30), 1, 0, 1, 300, classKey(7)},
-        {teacherKey(10), 1, 0, 0, 500, classKey(2)}
+        {teacherKey(20), 2, 0, weekdayOrder(0), startMinute(500), classKey(8)},
+        {teacherKey(10), 1, 0, weekdayOrder(0), startMinute(600), classKey(4)},
+        {teacherKey(30), 1, 0, weekdayOrder(1), startMinute(300), classKey(7)},
+        {teacherKey(10), 1, 0, weekdayOrder(0), startMinute(500), classKey(2)}
     };
     const std::vector<SubPrepPrintTeacherOrderFact> teachersB{
         {teacherKey(30), false},
@@ -359,10 +463,10 @@ bool validUniqueIdsMakeOrderIndependentOfInputOrder()
     const std::vector<std::string> englishB{"", "Bob", "Alice"};
     const std::vector<std::string> koreanB{"C", "B", "A"};
     const std::vector<SubPrepPrintClassOrderFact> classesB{
-        {teacherKey(10), 1, 0, 0, 500, classKey(2)},
-        {teacherKey(30), 1, 0, 1, 300, classKey(7)},
-        {teacherKey(10), 1, 0, 0, 600, classKey(4)},
-        {teacherKey(20), 2, 0, 0, 500, classKey(8)}
+        {teacherKey(10), 1, 0, weekdayOrder(0), startMinute(500), classKey(2)},
+        {teacherKey(30), 1, 0, weekdayOrder(1), startMinute(300), classKey(7)},
+        {teacherKey(10), 1, 0, weekdayOrder(0), startMinute(600), classKey(4)},
+        {teacherKey(20), 2, 0, weekdayOrder(0), startMinute(500), classKey(8)}
     };
 
     const auto groupsA = orderSubPrepPrintGroups(
@@ -406,6 +510,11 @@ bool validUniqueIdsMakeOrderIndependentOfInputOrder()
 
 int main()
 {
+    if (!printOrderIntegerFactsAreStrongValues())
+    {
+        std::cerr << "Print order integer facts should retain exact strong values.\n";
+        return EXIT_FAILURE;
+    }
     if (!englishPresenceAndInjectedNameOrderTeachers())
     {
         std::cerr << "Teacher ordering should use English presence and injected name comparison.\n";

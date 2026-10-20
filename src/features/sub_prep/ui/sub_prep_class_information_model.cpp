@@ -447,8 +447,8 @@ SubPrepClassInformation::build(
                 typedTeacherId(teacherId),
                 gradeOrder(source.info.classGrade),
                 levelOrder(source.info),
-                meetingOrder.first,
-                meetingOrder.second,
+                PrintOrder::SubPrepPrintWeekdayOrder{meetingOrder.first},
+                PrintOrder::SubPrepPrintStartMinute{meetingOrder.second},
                 typedClassId(classId)
             }
             );

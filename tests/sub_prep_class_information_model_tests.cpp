@@ -58,6 +58,7 @@ private slots:
     void filtersInvalidUnavailableHiddenAndDuplicateRowsBeforeOrdering();
     void ordersPreparedClassKeysAndRetainsFirstClassStyleFacts();
     void unknownConfiguredRanksSortAfterKnownRanks();
+    void unknownWeekdayMeetingSortsBeforeNoMeetingWithoutChangingPresentation();
     void collapsesRepeatedClassLabelsInTeacherHeading();
     void selectedScheduleModeControlsDetails();
     void fallsBackForMissingTeacherAndClassNames();
@@ -570,6 +571,49 @@ void SubPrepClassInformationModelTests::unknownConfiguredRanksSortAfterKnownRank
     QCOMPARE(groups.first().classes.at(1).classId, 10);
     QCOMPARE(groups.first().classes.at(2).classId, 1);
     QCOMPARE(groups.first().classes.at(3).classId, 3);
+}
+
+void SubPrepClassInformationModelTests
+    ::unknownWeekdayMeetingSortsBeforeNoMeetingWithoutChangingPresentation()
+{
+    Teacher teacher;
+    teacher.id = 1;
+    teacher.teacherEn = QStringLiteral("Susan");
+
+    const auto groups = SubPrepClassInformation::build(
+        {
+            sourceClass(
+                1,
+                teacher,
+                QStringLiteral("E4"),
+                QStringLiteral("Theseus"),
+                {}
+                ),
+            sourceClass(
+                2,
+                teacher,
+                QStringLiteral("E4"),
+                QStringLiteral("Theseus"),
+                {meeting(QStringLiteral("Funday"), QStringLiteral("4:05:37"))}
+                )
+        },
+        {
+            .visibleClassIds = {1, 2},
+            .visibleDays = {QStringLiteral("Funday")}
+        }
+        );
+
+    QCOMPARE(groups.size(), 1);
+    QCOMPARE(groups.first().displayName, QStringLiteral("Susan"));
+    QCOMPARE(groups.first().classListText, QStringLiteral("E4 Theseus"));
+    QCOMPARE(groups.first().classes.size(), 2);
+    QCOMPARE(groups.first().classes.at(0).classId, 2);
+    QCOMPARE(
+        groups.first().classes.at(0).timeText,
+        QStringLiteral("Funday 4:05am")
+        );
+    QCOMPARE(groups.first().classes.at(1).classId, 1);
+    QCOMPARE(groups.first().classes.at(1).timeText, QStringLiteral("N/A"));
 }
 
 void SubPrepClassInformationModelTests
