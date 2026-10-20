@@ -19,7 +19,7 @@ Domain::ClassId classId(const std::string& value)
 }
 
 Domain::ScheduleTime time(
-    const int weekday,
+    const Domain::Weekday weekday,
     const int startMinute,
     const int endMinute
     )
@@ -92,12 +92,12 @@ contractUsesQtFreeTypedOrderedValues()
     const ClassDetailsScheduleConflictRequest request{
         .classId = classId("42"),
         .mode = ClassDetailsScheduleMode::Intensive,
-        .candidateTimes = {time(2, 12 * 60, 12 * 60 + 55)}
+        .candidateTimes = {time(Domain::Weekday::Wednesday, 12 * 60, 12 * 60 + 55)}
     };
     QCOMPARE(request.classId.value(), std::string("42"));
     QCOMPARE(request.mode, ClassDetailsScheduleMode::Intensive);
     QCOMPARE(request.candidateTimes.size(), std::size_t(1));
-    QCOMPARE(request.candidateTimes.front().weekdayIndex(), 2);
+    QVERIFY(request.candidateTimes.front().weekday() == Domain::Weekday::Wednesday);
 }
 
 void NextApplicationClassDetailsScheduleConflictQueryTests::
@@ -108,8 +108,8 @@ sendsRequestOnceAndPreservesConflictOrderAndFields()
         .classId = classId("42"),
         .mode = ClassDetailsScheduleMode::Regular,
         .candidateTimes = {
-            time(4, 15 * 60, 15 * 60 + 55),
-            time(0, 9 * 60, 9 * 60 + 55)
+            time(Domain::Weekday::Friday, 15 * 60, 15 * 60 + 55),
+            time(Domain::Weekday::Monday, 9 * 60, 9 * 60 + 55)
         }
     };
     const std::vector<ClassDetailsScheduleConflict> expected{
@@ -251,8 +251,8 @@ acceptsMaximumClassIdAndPreservesRequest()
         .classId = classId("2147483647"),
         .mode = ClassDetailsScheduleMode::Intensive,
         .candidateTimes = {
-            time(2, 12 * 60, 12 * 60 + 55),
-            time(5, 15 * 60, 15 * 60 + 55)
+            time(Domain::Weekday::Wednesday, 12 * 60, 12 * 60 + 55),
+            time(Domain::Weekday::Saturday, 15 * 60, 15 * 60 + 55)
         }
     };
     port.result = ClassDetailsScheduleConflictResult::success({});

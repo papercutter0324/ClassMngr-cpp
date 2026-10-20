@@ -8,6 +8,7 @@
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/schedule_import_overlap_projection.h"
+#include "next/domain/schedule_time.h"
 
 #include <QByteArray>
 #include <QColor>
@@ -19,6 +20,7 @@
 #include <algorithm>
 #include <array>
 #include <limits>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -118,6 +120,39 @@ int weekdayIndex(
     return index >= 0
         ? index
         : std::numeric_limits<int>::max();
+}
+
+std::optional<ClassMngr::Next::Domain::Weekday> domainWeekday(
+    const QString& day
+    )
+{
+    const QString trimmed = day.trimmed();
+    const auto parsed = ScheduleValueParser::parseWeekday(trimmed);
+    if (!parsed || parsed->text != trimmed)
+    {
+        return std::nullopt;
+    }
+
+    using Weekday = ClassMngr::Next::Domain::Weekday;
+    switch (parsed->value)
+    {
+    case ScheduleValueParser::Weekday::Monday:
+        return Weekday::Monday;
+    case ScheduleValueParser::Weekday::Tuesday:
+        return Weekday::Tuesday;
+    case ScheduleValueParser::Weekday::Wednesday:
+        return Weekday::Wednesday;
+    case ScheduleValueParser::Weekday::Thursday:
+        return Weekday::Thursday;
+    case ScheduleValueParser::Weekday::Friday:
+        return Weekday::Friday;
+    case ScheduleValueParser::Weekday::Saturday:
+        return Weekday::Saturday;
+    case ScheduleValueParser::Weekday::Sunday:
+        return Weekday::Sunday;
+    }
+
+    return std::nullopt;
 }
 
 QString weekdayLabel(
@@ -479,7 +514,7 @@ QStringList projectedScheduleConflicts(
         {
             const auto stateTime =
                 ClassMngr::Next::Application::makeScheduleImportStateTime(
-                    weekdayIndex(time.day),
+                    domainWeekday(time.day),
                     timeMinutes(time.startTime),
                     timeMinutes(time.endTime),
                     utf8String(time.day),

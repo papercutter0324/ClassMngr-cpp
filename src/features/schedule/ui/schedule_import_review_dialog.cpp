@@ -26,6 +26,7 @@
 #include "next/application/schedule_import_review_summary_projection.h"
 #include "next/application/schedule_import_schedules_cleared_projection.h"
 #include "next/domain/domain_types.h"
+#include "next/domain/schedule_time.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -127,15 +128,39 @@ int stateTimeMinutes(const QString& value)
         : -1;
 }
 
+std::optional<ImportDomain::Weekday> domainWeekday(const QString& day)
+{
+    const auto parsed = ScheduleValueParser::parseWeekday(day);
+    if (!parsed || parsed->text != day)
+    {
+        return std::nullopt;
+    }
+
+    switch (parsed->value)
+    {
+    case ScheduleValueParser::Weekday::Monday:
+        return ImportDomain::Weekday::Monday;
+    case ScheduleValueParser::Weekday::Tuesday:
+        return ImportDomain::Weekday::Tuesday;
+    case ScheduleValueParser::Weekday::Wednesday:
+        return ImportDomain::Weekday::Wednesday;
+    case ScheduleValueParser::Weekday::Thursday:
+        return ImportDomain::Weekday::Thursday;
+    case ScheduleValueParser::Weekday::Friday:
+        return ImportDomain::Weekday::Friday;
+    case ScheduleValueParser::Weekday::Saturday:
+        return ImportDomain::Weekday::Saturday;
+    case ScheduleValueParser::Weekday::Sunday:
+        return ImportDomain::Weekday::Sunday;
+    }
+
+    return std::nullopt;
+}
+
 ImportState::ScheduleImportStateTime stateTime(const ClassTime& time)
 {
-    const auto parsedDay = ScheduleValueParser::parseWeekday(time.day);
-    const int weekdayIndex = parsedDay && parsedDay->text == time.day
-        ? static_cast<int>(ClassInfoConfig::Days.indexOf(parsedDay->text))
-        : -1;
-
     return ImportState::makeScheduleImportStateTime(
-        weekdayIndex,
+        domainWeekday(time.day),
         stateTimeMinutes(time.startTime),
         stateTimeMinutes(time.endTime),
         utf8String(time.day),

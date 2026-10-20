@@ -19,7 +19,7 @@ struct ScheduleImportStateTime
 };
 
 [[nodiscard]] inline ScheduleImportStateTime makeScheduleImportStateTime(
-    int dayIndex,
+    std::optional<Domain::Weekday> weekday,
     int startMinute,
     int endMinute,
     std::string dayLabel,
@@ -27,8 +27,18 @@ struct ScheduleImportStateTime
     std::string endLabel
     )
 {
+    std::optional<Domain::ScheduleTime> scheduleTime;
+    if (weekday)
+    {
+        scheduleTime = Domain::ScheduleTime::fromMinutes(
+            *weekday,
+            startMinute,
+            endMinute
+            );
+    }
+
     return {
-        Domain::ScheduleTime::fromMinutes(dayIndex, startMinute, endMinute),
+        std::move(scheduleTime),
         std::move(dayLabel),
         std::move(startLabel),
         std::move(endLabel)

@@ -5,6 +5,7 @@
 #include "next/application/class_details_schedule_conflict_query.h"
 #include "next/application/class_details_validation_context_query.h"
 #include "next/application/class_details_validation_policy.h"
+#include "next/domain/schedule_time.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -174,7 +175,9 @@ private:
             + static_cast<int>(text[colon + 2] - u'0');
     }
 
-    [[nodiscard]] static std::optional<int> weekday(std::u16string_view text)
+    [[nodiscard]] static std::optional<Domain::Weekday> weekday(
+        std::u16string_view text
+        )
     {
         const std::u16string trimmed = trimQtWhitespace(text);
         const auto parsed = ScheduleKeyRules::parseWeekday(
@@ -198,7 +201,26 @@ private:
             );
         if (!parsed)
             return std::nullopt;
-        return static_cast<int>(parsed->value);
+
+        switch (parsed->value)
+        {
+        case ScheduleKeyRules::Weekday::Monday:
+            return Domain::Weekday::Monday;
+        case ScheduleKeyRules::Weekday::Tuesday:
+            return Domain::Weekday::Tuesday;
+        case ScheduleKeyRules::Weekday::Wednesday:
+            return Domain::Weekday::Wednesday;
+        case ScheduleKeyRules::Weekday::Thursday:
+            return Domain::Weekday::Thursday;
+        case ScheduleKeyRules::Weekday::Friday:
+            return Domain::Weekday::Friday;
+        case ScheduleKeyRules::Weekday::Saturday:
+            return Domain::Weekday::Saturday;
+        case ScheduleKeyRules::Weekday::Sunday:
+            return Domain::Weekday::Sunday;
+        }
+
+        return std::nullopt;
     }
 
     [[nodiscard]] static std::optional<std::vector<Domain::ScheduleTime>> scheduleTimes(

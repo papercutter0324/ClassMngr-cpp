@@ -27,6 +27,7 @@
 #include "next/platform/application_services_personal_signature_preferences_port.h"
 #include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
 #include "next/domain/personal_signature_image_save_bytes.h"
+#include "next/domain/schedule_time.h"
 #include "core/utils/colorutils.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
@@ -67,6 +68,33 @@
 
 namespace
 {
+std::optional<ClassMngr::Next::Domain::Weekday> domainWeekday(
+    const ScheduleValueParser::Weekday weekday
+    )
+{
+    using DomainWeekday = ClassMngr::Next::Domain::Weekday;
+
+    switch (weekday)
+    {
+    case ScheduleValueParser::Weekday::Monday:
+        return DomainWeekday::Monday;
+    case ScheduleValueParser::Weekday::Tuesday:
+        return DomainWeekday::Tuesday;
+    case ScheduleValueParser::Weekday::Wednesday:
+        return DomainWeekday::Wednesday;
+    case ScheduleValueParser::Weekday::Thursday:
+        return DomainWeekday::Thursday;
+    case ScheduleValueParser::Weekday::Friday:
+        return DomainWeekday::Friday;
+    case ScheduleValueParser::Weekday::Saturday:
+        return DomainWeekday::Saturday;
+    case ScheduleValueParser::Weekday::Sunday:
+        return DomainWeekday::Sunday;
+    }
+
+    return std::nullopt;
+}
+
 std::optional<std::vector<ClassMngr::Next::Domain::ScheduleTime>>
 typedScheduleTimes(const QList<ClassTime>& values)
 {
@@ -76,22 +104,17 @@ typedScheduleTimes(const QList<ClassTime>& values)
         ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmSpaced
     };
 
-    const QStringList days{
-        QStringLiteral("Monday"), QStringLiteral("Tuesday"),
-        QStringLiteral("Wednesday"), QStringLiteral("Thursday"),
-        QStringLiteral("Friday"), QStringLiteral("Saturday"),
-        QStringLiteral("Sunday")
-    };
-
     std::vector<ScheduleTime> result;
     result.reserve(static_cast<std::size_t>(values.size()));
     for (const ClassTime& value : values)
     {
         const auto parsedDay = ScheduleValueParser::parseWeekday(value.day);
-        const int weekday = parsedDay && parsedDay->text == value.day
-            ? days.indexOf(parsedDay->text)
-            : -1;
-        if (weekday < 0
+        std::optional<ClassMngr::Next::Domain::Weekday> weekday;
+        if (parsedDay && parsedDay->text == value.day)
+        {
+            weekday = domainWeekday(parsedDay->value);
+        }
+        if (!weekday
             || value.startTime != value.startTime.trimmed()
             || value.endTime != value.endTime.trimmed())
         {
@@ -112,7 +135,7 @@ typedScheduleTimes(const QList<ClassTime>& values)
         }
 
         const auto time = ScheduleTime::fromMinutes(
-            weekday,
+            *weekday,
             start->hour() * 60 + start->minute(),
             end->hour() * 60 + end->minute()
             );

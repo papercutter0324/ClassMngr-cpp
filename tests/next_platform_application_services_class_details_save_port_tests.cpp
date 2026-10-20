@@ -40,7 +40,7 @@ int createTeacher(ApplicationServices& services)
 }
 
 Domain::ScheduleTime scheduleTime(
-    const int weekday,
+    const Domain::Weekday weekday,
     const int startMinute,
     const int endMinute
     )
@@ -333,8 +333,8 @@ savesWideTeacherIdAtomicallyWithClassDetails()
 
     auto request = requestForClass(*classId);
     request.teacherId = Domain::TeacherId::fromString("2147483648");
-    request.regularTimes = std::vector<Domain::ScheduleTime>{scheduleTime(0, 540, 590)};
-    request.intensiveTimes = std::vector<Domain::ScheduleTime>{scheduleTime(4, 600, 650)};
+    request.regularTimes = std::vector<Domain::ScheduleTime>{scheduleTime(Domain::Weekday::Monday, 540, 590)};
+    request.intensiveTimes = std::vector<Domain::ScheduleTime>{scheduleTime(Domain::Weekday::Friday, 600, 650)};
     Platform::ApplicationServicesClassDetailsSavePort port(services);
     const auto direct = port.saveClassDetails(request);
     QVERIFY(direct);
@@ -378,8 +378,8 @@ savesWideTeacherIdAtomicallyWithClassDetails()
         "BEGIN SELECT RAISE(ABORT, 'F838 schedule failure'); END")));
     request.teacherId = Domain::TeacherId::fromString("9223372036854775807");
     request.classColor = u"#AABBCC";
-    request.regularTimes = std::vector<Domain::ScheduleTime>{scheduleTime(1, 660, 710)};
-    request.intensiveTimes = std::vector<Domain::ScheduleTime>{scheduleTime(5, 720, 770)};
+    request.regularTimes = std::vector<Domain::ScheduleTime>{scheduleTime(Domain::Weekday::Tuesday, 660, 710)};
+    request.intensiveTimes = std::vector<Domain::ScheduleTime>{scheduleTime(Domain::Weekday::Saturday, 720, 770)};
     const auto failed = Application::ClassDetailsSaveUseCase::execute(request, port);
     QVERIFY(!failed);
     QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);
@@ -479,12 +479,12 @@ savesEditedFieldsAndPreservesHiddenClassInfo()
         .classColor = u"#123456",
         .fontColor = u"#654321",
         .regularTimes = std::vector<Domain::ScheduleTime>{
-            scheduleTime(1, 18 * 60, 18 * 60 + 50),
-            scheduleTime(0, 17 * 60, 17 * 60 + 50)
+            scheduleTime(Domain::Weekday::Tuesday, 18 * 60, 18 * 60 + 50),
+            scheduleTime(Domain::Weekday::Monday, 17 * 60, 17 * 60 + 50)
         },
         .intensiveTimes = std::vector<Domain::ScheduleTime>{
-            scheduleTime(6, 19 * 60, 19 * 60 + 45),
-            scheduleTime(4, 16 * 60, 16 * 60 + 45)
+            scheduleTime(Domain::Weekday::Sunday, 19 * 60, 19 * 60 + 45),
+            scheduleTime(Domain::Weekday::Friday, 16 * 60, 16 * 60 + 45)
         }
     };
 
@@ -628,7 +628,7 @@ absentSchedulesPreservePersistedSchedulesIndependently()
     Application::ClassDetailsSaveRequest updateIntensive =
         requestForClass(*createdClass);
     updateIntensive.intensiveTimes = std::vector<Domain::ScheduleTime>{
-        scheduleTime(6, 19 * 60, 19 * 60 + 45)
+        scheduleTime(Domain::Weekday::Sunday, 19 * 60, 19 * 60 + 45)
     };
     QVERIFY(!updateIntensive.regularTimes.has_value());
     QVERIFY(Application::ClassDetailsSaveUseCase::execute(
@@ -657,7 +657,7 @@ absentSchedulesPreservePersistedSchedulesIndependently()
     Application::ClassDetailsSaveRequest updateRegular =
         requestForClass(*createdClass);
     updateRegular.regularTimes = std::vector<Domain::ScheduleTime>{
-        scheduleTime(1, 18 * 60, 18 * 60 + 50)
+        scheduleTime(Domain::Weekday::Tuesday, 18 * 60, 18 * 60 + 50)
     };
     QVERIFY(!updateRegular.intensiveTimes.has_value());
     QVERIFY(Application::ClassDetailsSaveUseCase::execute(
@@ -741,7 +741,7 @@ missingParentReturnsNotFoundBeforeDetailAndConflictReads()
         );
 
     request.regularTimes = std::vector<Domain::ScheduleTime>{
-        scheduleTime(0, 9 * 60, 9 * 60 + 50)
+        scheduleTime(Domain::Weekday::Monday, 9 * 60, 9 * 60 + 50)
     };
     const auto scheduledResult =
         Application::ClassDetailsSaveUseCase::execute(request, port);
@@ -941,7 +941,7 @@ scheduleConflictRetainsClassInfoValidationBehavior()
     Application::ClassDetailsSaveRequest request =
         requestForClass(*selectedClass);
     request.regularTimes = std::vector<Domain::ScheduleTime>{
-        scheduleTime(0, 18 * 60, 18 * 60 + 50)
+        scheduleTime(Domain::Weekday::Monday, 18 * 60, 18 * 60 + 50)
     };
     Platform::ApplicationServicesClassDetailsSavePort port(services);
     const auto result =

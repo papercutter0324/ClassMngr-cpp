@@ -41,10 +41,14 @@ Application::ClassDetailsSaveRequest request(std::string classId)
         .classColor = u"#123456",
         .fontColor = u"#654321",
         .regularTimes = std::vector<Domain::ScheduleTime>{
-            *Domain::ScheduleTime::fromMinutes(0, 9 * 60, 9 * 60 + 50)
+            *Domain::ScheduleTime::fromMinutes(
+                Domain::Weekday::Monday, 9 * 60, 9 * 60 + 50
+                )
         },
         .intensiveTimes = std::vector<Domain::ScheduleTime>{
-            *Domain::ScheduleTime::fromMinutes(4, 10 * 60, 10 * 60 + 50)
+            *Domain::ScheduleTime::fromMinutes(
+                Domain::Weekday::Friday, 10 * 60, 10 * 60 + 50
+                )
         }
     };
 }
@@ -461,12 +465,21 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowRawWeekdayConversionPr
     QCOMPARE(ports.conflicts.size(), std::size_t(2));
     QCOMPARE(ports.conflicts[0].mode, Application::ClassDetailsScheduleMode::Regular);
     QCOMPARE(ports.conflicts[1].mode, Application::ClassDetailsScheduleMode::Intensive);
+    constexpr Domain::Weekday weekdays[]{
+        Domain::Weekday::Monday,
+        Domain::Weekday::Tuesday,
+        Domain::Weekday::Wednesday,
+        Domain::Weekday::Thursday,
+        Domain::Weekday::Friday,
+        Domain::Weekday::Saturday,
+        Domain::Weekday::Sunday
+    };
     for (std::size_t mode = 0; mode < ports.conflicts.size(); ++mode)
     {
         const auto& candidates = ports.conflicts[mode].candidateTimes;
         QCOMPARE(candidates.size(), rawDays.size());
         for (std::size_t weekday = 0; weekday < rawDays.size(); ++weekday)
-            QCOMPARE(candidates[weekday].weekdayIndex(), static_cast<int>(weekday));
+            QVERIFY(candidates[weekday].weekday() == weekdays[weekday]);
     }
 
     QVERIFY(ports.saved);
@@ -477,7 +490,10 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowRawWeekdayConversionPr
         u"Monday", u"Tuesday", u"Wednesday", u"Thursday", u"Friday", u"Saturday", u"Sunday"};
     for (std::size_t weekday = 0; weekday < rawDays.size(); ++weekday)
     {
-        QCOMPARE(ports.saved->regularTimes->at(weekday).weekdayIndex(), static_cast<int>(weekday));
+        QVERIFY(
+            ports.saved->regularTimes->at(weekday).weekday()
+                == weekdays[weekday]
+            );
         QCOMPARE(success->normalized.regularTimes[weekday].day, canonicalDays[weekday]);
     }
 }

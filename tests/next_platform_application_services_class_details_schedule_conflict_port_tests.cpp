@@ -35,7 +35,7 @@ Domain::ClassId classId(const int value)
 }
 
 Domain::ScheduleTime domainTime(
-    const int weekday,
+    const Domain::Weekday weekday,
     const int startMinute,
     const int endMinute
     )
@@ -228,8 +228,8 @@ readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder()
         ));
 
     const std::vector<Domain::ScheduleTime> regularCandidates{
-        domainTime(1, 10 * 60 + 15, 11 * 60),
-        domainTime(0, 9 * 60 + 10, 9 * 60 + 40)
+        domainTime(Domain::Weekday::Tuesday, 10 * 60 + 15, 11 * 60),
+        domainTime(Domain::Weekday::Monday, 9 * 60 + 10, 9 * 60 + 40)
     };
     const auto rawRegular = repository->getClassTimeConflicts(
         target,
@@ -294,7 +294,7 @@ readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder()
     QVERIFY(regularWrongMode.value().empty());
 
     const std::vector<Domain::ScheduleTime> intensiveCandidates{
-        domainTime(2, 12 * 60 + 5, 12 * 60 + 30)
+        domainTime(Domain::Weekday::Wednesday, 12 * 60 + 5, 12 * 60 + 30)
     };
     const auto intensive =
         Application::ClassDetailsScheduleConflictQuery::execute(
@@ -425,7 +425,7 @@ blankNameWidePersistedConflictIdPreservesFullFallback()
         request(
             target,
             Application::ClassDetailsScheduleMode::Regular,
-            {domainTime(0, 9 * 60 + 10, 9 * 60 + 40)}
+            {domainTime(Domain::Weekday::Monday, 9 * 60 + 10, 9 * 60 + 40)}
             ),
         port
         );
@@ -504,8 +504,8 @@ repositoryOwnsSelfOverlapAndBoundaryBehavior()
                 target,
                 Application::ClassDetailsScheduleMode::Regular,
                 {
-                    domainTime(0, 10 * 60, 10 * 60 + 35),
-                    domainTime(0, 10 * 60 + 20, 10 * 60 + 50)
+                    domainTime(Domain::Weekday::Monday, 10 * 60, 10 * 60 + 35),
+                    domainTime(Domain::Weekday::Monday, 10 * 60 + 20, 10 * 60 + 50)
                 }
                 ),
             port
@@ -522,7 +522,7 @@ repositoryOwnsSelfOverlapAndBoundaryBehavior()
             request(
                 target,
                 Application::ClassDetailsScheduleMode::Regular,
-                {domainTime(0, 9 * 60 + 55, 10 * 60 + 5)}
+                {domainTime(Domain::Weekday::Monday, 9 * 60 + 55, 10 * 60 + 5)}
                 ),
             port
             );
@@ -534,7 +534,7 @@ repositoryOwnsSelfOverlapAndBoundaryBehavior()
             request(
                 target,
                 Application::ClassDetailsScheduleMode::Regular,
-                {domainTime(0, 9 * 60 + 54, 10 * 60)}
+                {domainTime(Domain::Weekday::Monday, 9 * 60 + 54, 10 * 60)}
                 ),
             port
             );
@@ -725,7 +725,7 @@ terminalConflictCursorFailureDiscardsPartialConflicts()
             request(
                 target,
                 Application::ClassDetailsScheduleMode::Regular,
-                {domainTime(0, 9 * 60 + 10, 9 * 60 + 40)}
+                {domainTime(Domain::Weekday::Monday, 9 * 60 + 10, 9 * 60 + 40)}
                 ),
             port
             );
@@ -770,7 +770,7 @@ missingClassAndRepositoryFailureAreTechnical()
             request(
                 classIdValue,
                 Application::ClassDetailsScheduleMode::Regular,
-                {domainTime(0, 9 * 60, 9 * 60 + 55)}
+                {domainTime(Domain::Weekday::Monday, 9 * 60, 9 * 60 + 55)}
                 ),
             port
             );

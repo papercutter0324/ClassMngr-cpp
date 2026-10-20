@@ -35,6 +35,18 @@ static_assert(std::is_same_v<
 static_assert(std::is_same_v<
               decltype(ScheduleImportStateTime{}.scheduleTime),
               std::optional<Domain::ScheduleTime>>);
+using MakeScheduleImportStateTime = ScheduleImportStateTime (*) (
+    std::optional<Domain::Weekday>,
+    int,
+    int,
+    std::string,
+    std::string,
+    std::string
+    );
+static_assert(std::is_same_v<
+    decltype(&makeScheduleImportStateTime),
+    MakeScheduleImportStateTime
+    >);
 static_assert(std::is_same_v<
               decltype(std::declval<ScheduleImportStateTeacherSnapshot>().id),
               Domain::TeacherId>);
@@ -95,7 +107,7 @@ Domain::ClassId classId(int id)
 }
 
 ScheduleImportStateTime time(
-    int day,
+    std::optional<Weekday> weekday,
     int start,
     int end,
     std::string dayLabel = "Monday",
@@ -104,7 +116,7 @@ ScheduleImportStateTime time(
     )
 {
     return makeScheduleImportStateTime(
-        day,
+        weekday,
         start,
         end,
         std::move(dayLabel),
@@ -114,7 +126,7 @@ ScheduleImportStateTime time(
 }
 
 ScheduleImportProjectedTime projectedTime(
-    int day,
+    std::optional<Weekday> weekday,
     int start,
     int end,
     std::string dayLabel = "Monday",
@@ -124,7 +136,7 @@ ScheduleImportProjectedTime projectedTime(
 {
     const auto projected = projectScheduleImportStateTime(
         time(
-            day,
+            weekday,
             start,
             end,
             std::move(dayLabel),
@@ -229,16 +241,16 @@ sharedProjectionUsesHalfOpenTimesAndMatchingDays()
 {
     const auto first = ScheduleImportOverlapSchedule{
         "First",
-        {projectedTime(0, 16 * 60, 17 * 60)}
+        {projectedTime(Weekday::Monday, 16 * 60, 17 * 60)}
     };
     auto second = ScheduleImportOverlapSchedule{
         "Second",
-        {projectedTime(0, 17 * 60, 18 * 60)}
+        {projectedTime(Weekday::Monday, 17 * 60, 18 * 60)}
     };
 
     QVERIFY(projectScheduleImportOverlaps({first, second}).empty());
 
-    second.times[0] = projectedTime(0, 16 * 60 + 59, 18 * 60);
+    second.times[0] = projectedTime(Weekday::Monday, 16 * 60 + 59, 18 * 60);
     auto conflicts = projectScheduleImportOverlaps({first, second});
     QCOMPARE(conflicts.size(), std::size_t(1));
     QCOMPARE(conflicts.front().classLabel, std::string("Second"));
@@ -248,7 +260,7 @@ sharedProjectionUsesHalfOpenTimesAndMatchingDays()
         );
     QCOMPARE(conflicts.front().time.dayLabel, std::string("Monday"));
 
-    second.times[0] = projectedTime(1, 16 * 60, 18 * 60, "Tuesday");
+    second.times[0] = projectedTime(Weekday::Tuesday, 16 * 60, 18 * 60, "Tuesday");
     QVERIFY(projectScheduleImportOverlaps({first, second}).empty());
 }
 
@@ -256,16 +268,15 @@ void NextApplicationScheduleImportStateValidationTests::
 stateTimeStoresTypedValueAndKeepsLabels()
 {
     const auto stateTime =
-        time(6, 1438, 1439, "Sunday", "11:58 PM", "11:59 PM");
+        time(Weekday::Sunday, 1438, 1439, "Sunday", "11:58 PM", "11:59 PM");
     QVERIFY(stateTime.scheduleTime.has_value());
-    QCOMPARE(stateTime.scheduleTime->weekdayIndex(), 6);
+    QVERIFY(stateTime.scheduleTime->weekday() == Weekday::Sunday);
     QCOMPARE(stateTime.scheduleTime->startMinute(), 1438);
     QCOMPARE(stateTime.scheduleTime->endMinute(), 1439);
 
     const auto projected = projectScheduleImportStateTime(stateTime);
     QVERIFY(projected.has_value());
     QVERIFY(projected->scheduleTime.weekday() == Weekday::Sunday);
-    QCOMPARE(projected->scheduleTime.weekdayIndex(), 6);
     QCOMPARE(projected->scheduleTime.startMinute(), 1438);
     QCOMPARE(projected->scheduleTime.endMinute(), 1439);
     QCOMPARE(projected->dayLabel, std::string("Sunday"));
@@ -273,7 +284,7 @@ stateTimeStoresTypedValueAndKeepsLabels()
     QCOMPARE(projected->endLabel, std::string("11:59 PM"));
 
     QVERIFY(!projectScheduleImportStateTime(
-                 time(7, 1438, 1439, "Funday", "11:58 PM", "11:59 PM")
+                 time(std::nullopt, 1438, 1439, "Funday", "11:58 PM", "11:59 PM")
                  )
                  .has_value());
 }
@@ -282,11 +293,12 @@ void NextApplicationScheduleImportStateValidationTests::
 invalidStateTimeTuplesRemainAbsent()
 {
     const std::vector<ScheduleImportStateTime> invalidTimes{
-        time(-1, 16 * 60, 16 * 60 + 55, "Funday"),
-        time(0, -1, 16 * 60 + 55),
-        time(0, 16 * 60, -1),
-        time(0, 16 * 60, 16 * 60)
+        time(std::nullopt, 16 * 60, 16 * 60 + 55, "Funday"),
+        time(Weekday::Monday, -1, 16 * 60 + 55),
+        time(Weekday::Monday, 16 * 60, -1),
+        time(Weekday::Monday, 16 * 60, 16 * 60)
     };
+    QCOMPARE(invalidTimes.front().dayLabel, std::string("Funday"));
     for (const auto& stateTime : invalidTimes)
     {
         QVERIFY(!stateTime.scheduleTime.has_value());
@@ -302,13 +314,13 @@ void NextApplicationScheduleImportStateValidationTests::
 sharedProjectionOrdersEveryConflictDeterministically()
 {
     const std::vector<ScheduleImportOverlapSchedule> schedules{
-        {"A", {projectedTime(0, 16 * 60, 18 * 60)}},
-        {"B", {projectedTime(0, 16 * 60 + 30, 17 * 60 + 30)}},
+        {"A", {projectedTime(Weekday::Monday, 16 * 60, 18 * 60)}},
+        {"B", {projectedTime(Weekday::Monday, 16 * 60 + 30, 17 * 60 + 30)}},
         {
             "C",
             {
-                projectedTime(0, 16 * 60 + 10, 16 * 60 + 20),
-                projectedTime(0, 17 * 60, 18 * 60 + 30)
+                projectedTime(Weekday::Monday, 16 * 60 + 10, 16 * 60 + 20),
+                projectedTime(Weekday::Monday, 17 * 60, 18 * 60 + 30)
             }
         }
     };
@@ -705,7 +717,7 @@ rejectsUnknownStateKindBeforeProjectionConsumption()
     const ScheduleImportStateProjectedSchedule invalidProjection{
         ScheduleImportStateCandidateIndex{0},
         "Invalid projection",
-        {time(7, 16 * 60, 17 * 60, "Funday")}
+        {time(std::nullopt, 16 * 60, 17 * 60, "Funday")}
     };
     const auto suppliedProjectionError = validateScheduleImportState(
         request,
@@ -735,7 +747,7 @@ rejectsUnknownIntensiveModeBeforeProjectionConsumption()
     const ScheduleImportStateProjectedSchedule invalidProjection{
         ScheduleImportStateCandidateIndex{0},
         "Invalid projection",
-        {time(7, 16 * 60, 17 * 60, "Funday")}
+        {time(std::nullopt, 16 * 60, 17 * 60, "Funday")}
     };
     const auto suppliedProjectionError = validateScheduleImportState(
         request,
@@ -791,7 +803,7 @@ rejectsUnknownClassActionBeforeIndexAndProjectionHandling()
     const ScheduleImportStateProjectedSchedule invalidProjection{
         ScheduleImportStateCandidateIndex{0},
         "Invalid projection",
-        {time(7, 16 * 60, 17 * 60, "Funday")}
+        {time(std::nullopt, 16 * 60, 17 * 60, "Funday")}
     };
     const auto suppliedProjectionError = validateScheduleImportState(
         request,
@@ -818,10 +830,10 @@ void NextApplicationScheduleImportStateValidationTests::
 rejectsInvalidProjectedTimes()
 {
     const std::vector<ScheduleImportStateTime> invalidTimes{
-        time(-1, 16 * 60, 16 * 60 + 55, "Funday"),
-        time(0, -1, 16 * 60 + 55, "Monday", "unparsed", "4:55 PM"),
-        time(0, 16 * 60, -1, "Monday", "4:00 PM", "unparsed"),
-        time(0, 16 * 60, 16 * 60, "Monday", "4:00 PM", "4:00 PM")
+        time(std::nullopt, 16 * 60, 16 * 60 + 55, "Funday"),
+        time(Weekday::Monday, -1, 16 * 60 + 55, "Monday", "unparsed", "4:55 PM"),
+        time(Weekday::Monday, 16 * 60, -1, "Monday", "4:00 PM", "unparsed"),
+        time(Weekday::Monday, 16 * 60, 16 * 60, "Monday", "4:00 PM", "4:00 PM")
     };
     for (const auto& invalidTime : invalidTimes)
     {
@@ -860,17 +872,17 @@ rejectsInvalidProjectedTimes()
     addNewCandidate(
         overlapPrecedenceRequest,
         "teacher-a",
-        {time(0, 16 * 60, 17 * 60)}
+        {time(Weekday::Monday, 16 * 60, 17 * 60)}
         );
     addNewCandidate(
         overlapPrecedenceRequest,
         "teacher-b",
-        {time(0, 16 * 60 + 30, 17 * 60 + 30)}
+        {time(Weekday::Monday, 16 * 60 + 30, 17 * 60 + 30)}
         );
     addNewCandidate(
         overlapPrecedenceRequest,
         "teacher-c",
-        {time(0, -1, 16 * 60 + 55, "Monday", "unparsed", "4:55 PM")}
+        {time(Weekday::Monday, -1, 16 * 60 + 55, "Monday", "unparsed", "4:55 PM")}
         );
     const auto precedenceError =
         validateScheduleImportState(overlapPrecedenceRequest);
@@ -892,12 +904,12 @@ rejectsOverlapsAndAllowsAdjacentTimes()
     addNewCandidate(
         request,
         "teacher-a",
-        {time(0, 16 * 60, 16 * 60 + 55)}
+        {time(Weekday::Monday, 16 * 60, 16 * 60 + 55)}
         );
     addNewCandidate(
         request,
         "teacher-b",
-        {time(0, 16 * 60 + 54, 17 * 60)}
+        {time(Weekday::Monday, 16 * 60 + 54, 17 * 60)}
         );
     request.candidates[0].classLabel = "First";
     request.candidates[1].classLabel = "Second";
@@ -912,7 +924,7 @@ rejectsOverlapsAndAllowsAdjacentTimes()
     QCOMPARE(conflict->classLabel, std::string("First"));
     QCOMPARE(conflict->conflictingClassLabel, std::string("Second"));
 
-    request.candidates[1].times[0] = time(0, 16 * 60 + 55, 17 * 60);
+    request.candidates[1].times[0] = time(Weekday::Monday, 16 * 60 + 55, 17 * 60);
     QVERIFY(!errorCode(request).has_value());
 }
 
@@ -929,14 +941,14 @@ normalProjectionIncludesSkippedButDropsAbsentClasses()
             "e5",
             "zeus",
             "E5 Zeus",
-            {time(0, 16 * 60, 17 * 60)},
+            {time(Weekday::Monday, 16 * 60, 17 * 60)},
             {}
         }
     };
     addNewCandidate(
         request,
         "teacher-b",
-        {time(0, 16 * 60, 17 * 60)}
+        {time(Weekday::Monday, 16 * 60, 17 * 60)}
         );
     // Normal replacement drops unrelated existing classes from projection.
     QVERIFY(!errorCode(request).has_value());
@@ -983,13 +995,13 @@ intensiveProjectionPreservesAbsentOnlyInUpdateMode()
             "apollo",
             "E5 Apollo",
             {},
-            {time(0, 16 * 60, 17 * 60)}
+            {time(Weekday::Monday, 16 * 60, 17 * 60)}
         }
     };
     addNewCandidate(
         request,
         "teacher-b",
-        {time(0, 16 * 60, 17 * 60)}
+        {time(Weekday::Monday, 16 * 60, 17 * 60)}
         );
     QCOMPARE(
         errorCode(request),
@@ -1013,7 +1025,7 @@ intensiveProjectionPreservesAbsentOnlyInUpdateMode()
 
     request.intensiveMode = ScheduleImportStateIntensiveMode::UpdateExisting;
     request.existingClasses[0].intensiveTimes = {
-        time(0, 17 * 60, 18 * 60)
+        time(Weekday::Monday, 17 * 60, 18 * 60)
     };
     QVERIFY(!errorCode(request).has_value());
     const auto updatedProjection =
@@ -1039,7 +1051,7 @@ projectedClassOrderRemainsNumericForTypedIds()
             "ten",
             "ID 10",
             {},
-            {time(0, 16 * 60, 17 * 60)}
+            {time(Weekday::Monday, 16 * 60, 17 * 60)}
         },
         {
             classId(2),
@@ -1048,7 +1060,7 @@ projectedClassOrderRemainsNumericForTypedIds()
             "two",
             "ID 2",
             {},
-            {time(0, 16 * 60, 17 * 60)}
+            {time(Weekday::Monday, 16 * 60, 17 * 60)}
         }
     };
 
@@ -1076,7 +1088,7 @@ intensiveSkippedClassKeepsItsScheduleInBothModes()
             "zeus",
             "E5 Zeus",
             {},
-            {time(0, 16 * 60, 17 * 60)}
+            {time(Weekday::Monday, 16 * 60, 17 * 60)}
         }
     };
     request.candidates = {
@@ -1092,7 +1104,7 @@ intensiveSkippedClassKeepsItsScheduleInBothModes()
     addNewCandidate(
         request,
         "teacher-b",
-        {time(0, 16 * 60 + 30, 17 * 60 + 30)}
+        {time(Weekday::Monday, 16 * 60 + 30, 17 * 60 + 30)}
         );
 
     request.intensiveMode = ScheduleImportStateIntensiveMode::UpdateExisting;
@@ -1145,8 +1157,8 @@ projectionUsesTypedReferencesAndPreservesMeetingOrder()
             "m2",
             "atlas",
             {
-                time(0, 16 * 60, 16 * 60 + 55),
-                time(4, 17 * 60, 17 * 60 + 55, "Friday", "5:00 PM", "5:55 PM")
+                time(Weekday::Monday, 16 * 60, 16 * 60 + 55),
+                time(Weekday::Friday, 17 * 60, 17 * 60 + 55, "Friday", "5:00 PM", "5:55 PM")
             }
             ),
         candidate(
@@ -1154,8 +1166,8 @@ projectionUsesTypedReferencesAndPreservesMeetingOrder()
             "e5",
             "zeus",
             {
-                time(1, 18 * 60, 18 * 60 + 55, "Tuesday", "6:00 PM", "6:55 PM"),
-                time(3, 19 * 60, 19 * 60 + 55, "Thursday", "7:00 PM", "7:55 PM")
+                time(Weekday::Tuesday, 18 * 60, 18 * 60 + 55, "Tuesday", "6:00 PM", "6:55 PM"),
+                time(Weekday::Thursday, 19 * 60, 19 * 60 + 55, "Thursday", "7:00 PM", "7:55 PM")
             }
             ),
         candidate(
@@ -1163,7 +1175,7 @@ projectionUsesTypedReferencesAndPreservesMeetingOrder()
             "m3",
             "orion",
             {
-                time(2, 20 * 60, 20 * 60 + 55, "Wednesday", "8:00 PM", "8:55 PM")
+                time(Weekday::Wednesday, 20 * 60, 20 * 60 + 55, "Wednesday", "8:00 PM", "8:55 PM")
             }
             )
     };
@@ -1229,7 +1241,7 @@ projectionUsesTypedReferencesAndPreservesMeetingOrder()
     QVERIFY(!validateScheduleImportState(request).has_value());
 
     request.candidates[1].times[0] =
-        time(0, 16 * 60 + 30, 17 * 60 + 30);
+        time(Weekday::Monday, 16 * 60 + 30, 17 * 60 + 30);
     const auto overlapping = projectScheduleImportStateSchedules(request);
     const auto error = validateScheduleImportState(request, overlapping);
     QVERIFY(error.has_value());

@@ -410,7 +410,7 @@ QString queryFailure(
     return SqlQueryUtils::errorFor(query, action).userMessage();
 }
 
-int dayIndex(
+int legacyDayIndex(
     const QString& day
     )
 {
@@ -430,6 +430,37 @@ int dayIndex(
         QStringLiteral("Sunday")
     };
     return days.indexOf(parsed->text);
+}
+
+std::optional<Domain::Weekday> domainWeekday(
+    const QString& day
+    )
+{
+    const auto parsed = ScheduleValueParser::parseWeekday(day);
+    if (!parsed || parsed->text != day)
+    {
+        return std::nullopt;
+    }
+
+    switch (parsed->value)
+    {
+    case ScheduleValueParser::Weekday::Monday:
+        return Domain::Weekday::Monday;
+    case ScheduleValueParser::Weekday::Tuesday:
+        return Domain::Weekday::Tuesday;
+    case ScheduleValueParser::Weekday::Wednesday:
+        return Domain::Weekday::Wednesday;
+    case ScheduleValueParser::Weekday::Thursday:
+        return Domain::Weekday::Thursday;
+    case ScheduleValueParser::Weekday::Friday:
+        return Domain::Weekday::Friday;
+    case ScheduleValueParser::Weekday::Saturday:
+        return Domain::Weekday::Saturday;
+    case ScheduleValueParser::Weekday::Sunday:
+        return Domain::Weekday::Sunday;
+    }
+
+    return std::nullopt;
 }
 
 std::string utf8String(
@@ -513,8 +544,13 @@ std::optional<std::vector<PersistedScheduleEntry>> resolvedScheduleEntries(
 
         for (const ClassTime& sourceTime : iterator.value())
         {
+            const auto weekday = domainWeekday(sourceTime.day);
+            if (!weekday)
+            {
+                return std::nullopt;
+            }
             const auto scheduleTime = Domain::ScheduleTime::fromMinutes(
-                dayIndex(sourceTime.day),
+                *weekday,
                 timeMinutes(sourceTime.startTime),
                 timeMinutes(sourceTime.endTime)
                 );
@@ -539,7 +575,7 @@ ScheduleImportStateTime stateTime(
     )
 {
     return makeScheduleImportStateTime(
-        dayIndex(time.day),
+        domainWeekday(time.day),
         timeMinutes(time.startTime),
         timeMinutes(time.endTime),
         utf8String(time.day),
@@ -841,10 +877,12 @@ Status writeScheduleEntries(
         const ClassTime& sourceTime = entry.sourceTime;
         const Domain::ScheduleTime& scheduleTime =
             entry.fact.scheduleTime();
+        const auto sourceWeekday = domainWeekday(sourceTime.day);
         if (
             !classIdOk
             || classId <= 0
-            || dayIndex(sourceTime.day) != scheduleTime.weekdayIndex()
+            || !sourceWeekday
+            || *sourceWeekday != scheduleTime.weekday()
             || timeMinutes(sourceTime.startTime)
                 != scheduleTime.startMinute()
             || timeMinutes(sourceTime.endTime)
@@ -900,7 +938,7 @@ Status writeIntensiveSlotStates(
 
     for (const IntensiveSlotState& state : states)
     {
-        const int day = dayIndex(state.day);
+        const int day = legacyDayIndex(state.day);
         const auto startTime =
             ScheduleValueParser::parseDisplayTime(
                 state.startTime,

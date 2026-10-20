@@ -11,7 +11,6 @@
 #include <QString>
 #include <QTime>
 
-#include <array>
 #include <charconv>
 #include <exception>
 #include <optional>
@@ -173,31 +172,45 @@ private:
         const std::vector<Domain::ScheduleTime>& times
         )
     {
-        static const std::array<QString, 7> weekdays{
-            QStringLiteral("Monday"),
-            QStringLiteral("Tuesday"),
-            QStringLiteral("Wednesday"),
-            QStringLiteral("Thursday"),
-            QStringLiteral("Friday"),
-            QStringLiteral("Saturday"),
-            QStringLiteral("Sunday")
-        };
-
         QList<ClassTime> converted;
         converted.reserve(static_cast<qsizetype>(times.size()));
         for (const Domain::ScheduleTime& time : times)
         {
-            const int weekday = time.weekdayIndex();
             const QTime start(time.startMinute() / 60, time.startMinute() % 60);
             const QTime end(time.endMinute() / 60, time.endMinute() % 60);
             converted.append({
-                weekdays.at(static_cast<std::size_t>(weekday)),
+                legacyWeekdayName(time.weekday()),
                 start.toString(QStringLiteral("h:mm AP")),
                 end.toString(QStringLiteral("h:mm AP"))
             });
         }
 
         return converted;
+    }
+
+    [[nodiscard]] static QString legacyWeekdayName(
+        const Domain::Weekday weekday
+        )
+    {
+        switch (weekday)
+        {
+        case Domain::Weekday::Monday:
+            return QStringLiteral("Monday");
+        case Domain::Weekday::Tuesday:
+            return QStringLiteral("Tuesday");
+        case Domain::Weekday::Wednesday:
+            return QStringLiteral("Wednesday");
+        case Domain::Weekday::Thursday:
+            return QStringLiteral("Thursday");
+        case Domain::Weekday::Friday:
+            return QStringLiteral("Friday");
+        case Domain::Weekday::Saturday:
+            return QStringLiteral("Saturday");
+        case Domain::Weekday::Sunday:
+            return QStringLiteral("Sunday");
+        }
+
+        return {};
     }
 
     [[nodiscard]] static std::string toStdString(const QString& value)

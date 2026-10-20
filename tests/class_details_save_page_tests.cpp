@@ -337,22 +337,34 @@ void ClassDetailsSavePageTests::normalizedSchedulesReachUseCaseAsMinuteValues()
         );
     QCOMPARE(conflictPort.requests[0].candidateTimes.size(), std::size_t(2));
     QCOMPARE(conflictPort.requests[1].candidateTimes.size(), std::size_t(2));
-    QCOMPARE(conflictPort.requests[0].candidateTimes[0].weekdayIndex(), 0);
+    QVERIFY(
+        conflictPort.requests[0].candidateTimes[0].weekday()
+            == Domain::Weekday::Monday
+        );
     QCOMPARE(
         conflictPort.requests[0].candidateTimes[0].startMinute(),
         9 * 60
         );
-    QCOMPARE(conflictPort.requests[0].candidateTimes[1].weekdayIndex(), 1);
+    QVERIFY(
+        conflictPort.requests[0].candidateTimes[1].weekday()
+            == Domain::Weekday::Tuesday
+        );
     QCOMPARE(
         conflictPort.requests[0].candidateTimes[1].startMinute(),
         15 * 60
         );
-    QCOMPARE(conflictPort.requests[1].candidateTimes[0].weekdayIndex(), 1);
+    QVERIFY(
+        conflictPort.requests[1].candidateTimes[0].weekday()
+            == Domain::Weekday::Tuesday
+        );
     QCOMPARE(
         conflictPort.requests[1].candidateTimes[0].startMinute(),
         12 * 60
         );
-    QCOMPARE(conflictPort.requests[1].candidateTimes[1].weekdayIndex(), 2);
+    QVERIFY(
+        conflictPort.requests[1].candidateTimes[1].weekday()
+            == Domain::Weekday::Wednesday
+        );
     QCOMPARE(
         conflictPort.requests[1].candidateTimes[1].startMinute(),
         0
@@ -366,18 +378,18 @@ void ClassDetailsSavePageTests::normalizedSchedulesReachUseCaseAsMinuteValues()
     QCOMPARE(request.essayBook, std::u16string(u"4A"));
     QVERIFY(request.regularTimes.has_value());
     QCOMPARE(request.regularTimes->size(), std::size_t(2));
-    QCOMPARE((*request.regularTimes)[0].weekdayIndex(), 0);
+    QVERIFY((*request.regularTimes)[0].weekday() == Domain::Weekday::Monday);
     QCOMPARE((*request.regularTimes)[0].startMinute(), 9 * 60);
     QCOMPARE((*request.regularTimes)[0].endMinute(), 9 * 60 + 55);
-    QCOMPARE((*request.regularTimes)[1].weekdayIndex(), 1);
+    QVERIFY((*request.regularTimes)[1].weekday() == Domain::Weekday::Tuesday);
     QCOMPARE((*request.regularTimes)[1].startMinute(), 15 * 60);
     QCOMPARE((*request.regularTimes)[1].endMinute(), 15 * 60 + 55);
     QVERIFY(request.intensiveTimes.has_value());
     QCOMPARE(request.intensiveTimes->size(), std::size_t(2));
-    QCOMPARE((*request.intensiveTimes)[0].weekdayIndex(), 1);
+    QVERIFY((*request.intensiveTimes)[0].weekday() == Domain::Weekday::Tuesday);
     QCOMPARE((*request.intensiveTimes)[0].startMinute(), 12 * 60);
     QCOMPARE((*request.intensiveTimes)[0].endMinute(), 12 * 60 + 55);
-    QCOMPARE((*request.intensiveTimes)[1].weekdayIndex(), 2);
+    QVERIFY((*request.intensiveTimes)[1].weekday() == Domain::Weekday::Wednesday);
     QCOMPARE((*request.intensiveTimes)[1].startMinute(), 0);
     QCOMPARE((*request.intensiveTimes)[1].endMinute(), 55);
     QVERIFY(!page.hasUnsavedChanges());
@@ -576,7 +588,8 @@ void ClassDetailsSavePageTests::freshInvalidContextBlocksBeforeConflictAndSave()
     contextPort.result =
         Application::ClassDetailsValidationContextPortResult::success({
             .matchedClassId = typedClassId,
-            .teacherId = -1,
+            .teacherId =
+                Application::ClassDetailsValidationContextTeacherId{-1},
             .notes = {},
             .timeFillerActivities = {}
         });
@@ -601,7 +614,8 @@ void ClassDetailsSavePageTests::freshInvalidContextBlocksBeforeConflictAndSave()
     contextPort.result =
         Application::ClassDetailsValidationContextPortResult::success({
             .matchedClassId = typedClassId,
-            .teacherId = 0,
+            .teacherId =
+                Application::ClassDetailsValidationContextTeacherId{0},
             .notes = {},
             .timeFillerActivities = {}
         });
@@ -668,7 +682,8 @@ void ClassDetailsSavePageTests::contextReadFailureFallsBackAndContinuesSaveOrder
     contextPort.result = mismatchedContext
         ? Application::ClassDetailsValidationContextPortResult::success({
             *Domain::ClassId::fromString(std::to_string(classId + 1)),
-            0, std::u16string(10001, u'x'), {}})
+            Application::ClassDetailsValidationContextTeacherId{0},
+            std::u16string(10001, u'x'), {}})
         : Application::ClassDetailsValidationContextPortResult::failure({
             .code = Domain::ErrorCode::Technical,
             .message = "validation context repository read failed",

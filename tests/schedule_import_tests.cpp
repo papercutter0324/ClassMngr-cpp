@@ -2,11 +2,13 @@
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/schedule_import_repository.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "domain/rules/schedule_import_rules.h"
 #include "features/calendar/calendar_workbook_reader.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "next/application/schedule_import_apply_use_case.h"
 #include "next/domain/schedule_entry.h"
+#include "next/domain/schedule_time.h"
 
 #include <QCryptographicHash>
 #include <QFile>
@@ -316,15 +318,35 @@ std::optional<ClassMngr::Next::Domain::ScheduleEntry> domainEntry(
 {
     using namespace ClassMngr::Next::Domain;
 
-    static const QStringList days{
-        QStringLiteral("Monday"),
-        QStringLiteral("Tuesday"),
-        QStringLiteral("Wednesday"),
-        QStringLiteral("Thursday"),
-        QStringLiteral("Friday"),
-        QStringLiteral("Saturday"),
-        QStringLiteral("Sunday")
-    };
+    std::optional<Weekday> weekday;
+    const auto parsedDay = ScheduleValueParser::parseWeekday(day);
+    if (parsedDay && parsedDay->text == day)
+    {
+        switch (parsedDay->value)
+        {
+        case ScheduleValueParser::Weekday::Monday:
+            weekday = Weekday::Monday;
+            break;
+        case ScheduleValueParser::Weekday::Tuesday:
+            weekday = Weekday::Tuesday;
+            break;
+        case ScheduleValueParser::Weekday::Wednesday:
+            weekday = Weekday::Wednesday;
+            break;
+        case ScheduleValueParser::Weekday::Thursday:
+            weekday = Weekday::Thursday;
+            break;
+        case ScheduleValueParser::Weekday::Friday:
+            weekday = Weekday::Friday;
+            break;
+        case ScheduleValueParser::Weekday::Saturday:
+            weekday = Weekday::Saturday;
+            break;
+        case ScheduleValueParser::Weekday::Sunday:
+            weekday = Weekday::Sunday;
+            break;
+        }
+    }
     const auto minutes = [](const QString& value)
     {
         for (const QString& format : {
@@ -346,12 +368,16 @@ std::optional<ClassMngr::Next::Domain::ScheduleEntry> domainEntry(
     const auto typedClassId = ClassId::fromString(
         std::to_string(classId)
         );
+    if (!typedClassId || !weekday)
+    {
+        return std::nullopt;
+    }
     const auto time = ScheduleTime::fromMinutes(
-        days.indexOf(day),
+        *weekday,
         minutes(startTime),
         minutes(endTime)
         );
-    if (!typedClassId || !time)
+    if (!time)
     {
         return std::nullopt;
     }

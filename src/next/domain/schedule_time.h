@@ -21,13 +21,13 @@ class ScheduleTime final
 {
 public:
     [[nodiscard]] static std::optional<ScheduleTime> fromMinutes(
-        int weekdayIndex,
+        Weekday weekday,
         int startMinute,
         int endMinute
         )
     {
-        if (weekdayIndex < static_cast<int>(Weekday::Monday)
-            || weekdayIndex > static_cast<int>(Weekday::Sunday)
+        if (weekday < Weekday::Monday
+            || weekday > Weekday::Sunday
             || startMinute < 0
             || startMinute >= minutesPerDay
             || endMinute <= startMinute
@@ -37,7 +37,7 @@ public:
         }
 
         return ScheduleTime(
-            static_cast<Weekday>(weekdayIndex),
+            weekday,
             startMinute,
             endMinute
             );
@@ -46,11 +46,6 @@ public:
     [[nodiscard]] Weekday weekday() const noexcept
     {
         return m_weekday;
-    }
-
-    [[nodiscard]] int weekdayIndex() const noexcept
-    {
-        return static_cast<int>(m_weekday);
     }
 
     [[nodiscard]] int startMinute() const noexcept

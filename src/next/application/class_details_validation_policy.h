@@ -3,6 +3,7 @@
 #include "domain/rules/schedule_key_rules.h"
 #include "next/application/qt_compatible_text.h"
 #include "next/domain/domain_types.h"
+#include "next/domain/schedule_time.h"
 
 #include <algorithm>
 #include <charconv>
@@ -201,7 +202,7 @@ private:
 
     struct SlotGroup final
     {
-        int weekday = 0;
+        Domain::Weekday weekday = Domain::Weekday::Monday;
         int startMinute = 0;
         int endMinute = 0;
         std::vector<ClassDetailsScheduleValidationRowIndex> rows;
@@ -333,7 +334,7 @@ private:
         return names;
     }
 
-    [[nodiscard]] static std::optional<int> weekdayIndex(
+    [[nodiscard]] static std::optional<Domain::Weekday> parseDomainWeekday(
         std::u16string_view value
         )
     {
@@ -346,16 +347,50 @@ private:
         {
             return std::nullopt;
         }
-        return static_cast<int>(parsed->value);
+        switch (parsed->value)
+        {
+        case ScheduleKeyRules::Weekday::Monday:
+            return Domain::Weekday::Monday;
+        case ScheduleKeyRules::Weekday::Tuesday:
+            return Domain::Weekday::Tuesday;
+        case ScheduleKeyRules::Weekday::Wednesday:
+            return Domain::Weekday::Wednesday;
+        case ScheduleKeyRules::Weekday::Thursday:
+            return Domain::Weekday::Thursday;
+        case ScheduleKeyRules::Weekday::Friday:
+            return Domain::Weekday::Friday;
+        case ScheduleKeyRules::Weekday::Saturday:
+            return Domain::Weekday::Saturday;
+        case ScheduleKeyRules::Weekday::Sunday:
+            return Domain::Weekday::Sunday;
+        }
+
+        return std::nullopt;
     }
 
-    [[nodiscard]] static std::u16string weekdayName(int index)
+    [[nodiscard]] static std::u16string weekdayName(
+        const Domain::Weekday weekday
+        )
     {
-        static constexpr std::u16string_view weekdays[]{
-            u"Monday", u"Tuesday", u"Wednesday", u"Thursday",
-            u"Friday", u"Saturday", u"Sunday"
-        };
-        return std::u16string(weekdays[index]);
+        switch (weekday)
+        {
+        case Domain::Weekday::Monday:
+            return u"Monday";
+        case Domain::Weekday::Tuesday:
+            return u"Tuesday";
+        case Domain::Weekday::Wednesday:
+            return u"Wednesday";
+        case Domain::Weekday::Thursday:
+            return u"Thursday";
+        case Domain::Weekday::Friday:
+            return u"Friday";
+        case Domain::Weekday::Saturday:
+            return u"Saturday";
+        case Domain::Weekday::Sunday:
+            return u"Sunday";
+        }
+
+        return {};
     }
 
     [[nodiscard]] static std::optional<ParsedTime> parseTime(
@@ -515,7 +550,7 @@ private:
     {
         for (auto& row : rows)
         {
-            if (const auto weekday = weekdayIndex(row.day))
+            if (const auto weekday = parseDomainWeekday(row.day))
             {
                 row.day = weekdayName(*weekday);
             }
@@ -793,7 +828,7 @@ private:
         for (std::size_t index = 0; index < rows.size(); ++index)
         {
             const auto& row = rows[index];
-            const auto weekday = weekdayIndex(row.day);
+            const auto weekday = parseDomainWeekday(row.day);
             const auto start = parseTime(row.startTime);
             const auto end = parseTime(row.endTime);
             if (!weekday)
