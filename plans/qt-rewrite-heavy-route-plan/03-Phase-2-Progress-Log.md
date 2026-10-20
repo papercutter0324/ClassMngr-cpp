@@ -52215,3 +52215,34 @@ accepted/in progress, and F1165–F1170 discovered in order. F1165 is next after
 F1164 closes. Batch489 remains unpushed until F1170. F629 awaits source-bound
 Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0
 and Phase 2 gates remain open.
+
+### F1164 Calendar series-edit occurrence start date complete - 2026-10-20
+
+F1164 completed at acceptance commit
+`840919adff1b3e4f7730256b26c79f92b6339869` and source/test commit
+`bb4fc2a7fb9c0cadcb309f135187fc101d268c7a`. The occurrence snapshot now uses
+`std::optional<Domain::GregorianDate>`; invalid persisted dates retain the
+existing nonrecoverable Technical diagnostic, and ordering, date shifts,
+overflow handling, and Platform no-write behavior are preserved.
+
+The Executor's incremental macOS Debug build passed for `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`. The
+independent Tester reviewed the diff and passed 2/2 focused CTest targets:
+Application (78 tests) and Platform (73 tests). Its affected-target build
+reported Ninja no work; the executables were newer than changed sources.
+Application tests cover nullopt source handling, exact diagnostic and
+request-validation precedence, unsorted order/date shifts, and overflow. The
+Platform corruption test writes `2026-12-40`, verifies the exact nonrecoverable
+Technical diagnostic, and uses a rejecting trigger to establish no persistence
+attempt. `git diff --check` passed. No full suite or Windows build ran.
+
+Coverage limitation: there is no dedicated integration fixture for a valid
+`QDate` year outside 0001–9999. Source inspection shows
+`GregorianDate::fromComponents` rejects those years; the corrupt stored-date
+path is covered end to end.
+
+Batch489 remains active with F1162–F1164 complete and F1165–F1170 discovered in
+order; F1165 is next. Batch489 remains unpushed until F1170. F629 awaits
+source-bound Windows x64 layout evidence; the user cannot run Windows now, and
+the Phase 0 and Phase 2 gates remain open.
