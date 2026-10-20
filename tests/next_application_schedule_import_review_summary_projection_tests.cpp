@@ -1,6 +1,7 @@
 #include "next/application/schedule_import_review_summary_projection.h"
 
 #include <stdexcept>
+#include <type_traits>
 
 using namespace ClassMngr::Next::Application;
 
@@ -11,20 +12,69 @@ void require(const bool condition)
     if (!condition)
         throw std::runtime_error("Schedule import review summary assertion failed");
 }
+
+void reviewCountContractIsValid()
+{
+    constexpr ScheduleImportReviewCount defaultCount;
+    constexpr ScheduleImportReviewCount exactCount{-17};
+
+    static_assert(std::is_constructible_v<ScheduleImportReviewCount, int>);
+    static_assert(
+        std::is_same_v<decltype(defaultCount.rawValue()), int>
+        );
+    static_assert(!std::is_convertible_v<int, ScheduleImportReviewCount>);
+    static_assert(!std::is_convertible_v<ScheduleImportReviewCount, int>);
+
+    require(defaultCount.rawValue() == 0);
+    require(exactCount.rawValue() == -17);
+    require(defaultCount == ScheduleImportReviewCount{});
+    require(defaultCount != exactCount);
+
+    ScheduleImportReviewCount incremented;
+    ScheduleImportReviewCount& incrementedReference = ++incremented;
+    require(&incrementedReference == &incremented);
+    require(incremented == ScheduleImportReviewCount{1});
+}
 }
 
 int main()
 {
+    reviewCountContractIsValid();
+
     ScheduleImportReviewDecisionRequest decisions;
     decisions.teachers = {
-        {"create-1", ScheduleImportReviewTeacherAction::Create},
-        {"create-2", ScheduleImportReviewTeacherAction::Create},
-        {"update-1", ScheduleImportReviewTeacherAction::UpdateRoom},
-        {"skip-1", ScheduleImportReviewTeacherAction::Skip},
-        {"skip-2", ScheduleImportReviewTeacherAction::Skip},
-        {"reuse", ScheduleImportReviewTeacherAction::Reuse},
-        {"unselected", ScheduleImportReviewTeacherAction::Unselected},
-        {"invalid", ScheduleImportReviewTeacherAction::Invalid}
+        {
+            ScheduleImportReviewTeacherKey{"create-1"},
+            ScheduleImportReviewTeacherAction::Create
+        },
+        {
+            ScheduleImportReviewTeacherKey{"create-2"},
+            ScheduleImportReviewTeacherAction::Create
+        },
+        {
+            ScheduleImportReviewTeacherKey{"update-1"},
+            ScheduleImportReviewTeacherAction::UpdateRoom
+        },
+        {
+            ScheduleImportReviewTeacherKey{"skip-1"},
+            ScheduleImportReviewTeacherAction::Skip
+        },
+        {
+            ScheduleImportReviewTeacherKey{"skip-2"},
+            ScheduleImportReviewTeacherAction::Skip
+        },
+        {
+            ScheduleImportReviewTeacherKey{"reuse"},
+            ScheduleImportReviewTeacherAction::Reuse
+        },
+        {
+            ScheduleImportReviewTeacherKey{"unselected"},
+            ScheduleImportReviewTeacherAction::Unselected
+        },
+        {
+            ScheduleImportReviewTeacherKey{"invalid"},
+            ScheduleImportReviewTeacherAction::Invalid
+        }
     };
     decisions.classes = {
         {0, ScheduleImportReviewClassAction::CreateNew},
@@ -37,13 +87,17 @@ int main()
     };
 
     const ScheduleImportReviewSummary summary =
-        projectScheduleImportReviewSummary(decisions, 3, 9);
-    require(summary.teachersCreated == 2);
-    require(summary.teacherRoomsUpdated == 1);
-    require(summary.teachersSkipped == 2);
-    require(summary.classesCreated == 2);
-    require(summary.classesUpdated == 1);
-    require(summary.classesSkipped == 2);
-    require(summary.schedulesCleared == 9);
-    require(summary.ignoredCells == 3);
+        projectScheduleImportReviewSummary(
+            decisions,
+            ScheduleImportReviewCount{3},
+            ScheduleImportReviewCount{9}
+            );
+    require(summary.teachersCreated.rawValue() == 2);
+    require(summary.teacherRoomsUpdated.rawValue() == 1);
+    require(summary.teachersSkipped.rawValue() == 2);
+    require(summary.classesCreated.rawValue() == 2);
+    require(summary.classesUpdated.rawValue() == 1);
+    require(summary.classesSkipped.rawValue() == 2);
+    require(summary.schedulesCleared.rawValue() == 9);
+    require(summary.ignoredCells.rawValue() == 3);
 }

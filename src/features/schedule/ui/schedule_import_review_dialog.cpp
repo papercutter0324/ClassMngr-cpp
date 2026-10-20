@@ -2166,21 +2166,23 @@ void ScheduleImportReviewDialog::updateReviewState()
     const auto summary =
         ClassMngr::Next::Application::projectScheduleImportReviewSummary(
             decisions,
-            static_cast<int>(m_preview.user.diagnostics.size()),
-            cleared
+            ClassMngr::Next::Application::ScheduleImportReviewCount{
+                static_cast<int>(m_preview.user.diagnostics.size())
+            },
+            ClassMngr::Next::Application::ScheduleImportReviewCount{cleared}
             );
     m_reviewSummary->setText(
         tr("Proposed import: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; "
            "%4 class(es) created, %5 updated, %6 skipped; %7 existing schedule(s) cleared; "
            "%8 occupied cell(s) acknowledged and ignored.%9%10")
-            .arg(summary.teachersCreated)
-            .arg(summary.teacherRoomsUpdated)
-            .arg(summary.teachersSkipped)
-            .arg(summary.classesCreated)
-            .arg(summary.classesUpdated)
-            .arg(summary.classesSkipped)
-            .arg(summary.schedulesCleared)
-            .arg(summary.ignoredCells)
+            .arg(summary.teachersCreated.rawValue())
+            .arg(summary.teacherRoomsUpdated.rawValue())
+            .arg(summary.teachersSkipped.rawValue())
+            .arg(summary.classesCreated.rawValue())
+            .arg(summary.classesUpdated.rawValue())
+            .arg(summary.classesSkipped.rawValue())
+            .arg(summary.schedulesCleared.rawValue())
+            .arg(summary.ignoredCells.rawValue())
             .arg(profileNameChange)
             .arg(
                 m_request.kind != ScheduleImportKind::Intensive

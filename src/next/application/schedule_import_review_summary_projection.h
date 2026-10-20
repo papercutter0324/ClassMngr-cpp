@@ -5,23 +5,53 @@
 namespace ClassMngr::Next::Application
 {
 
+class ScheduleImportReviewCount final
+{
+public:
+    constexpr ScheduleImportReviewCount() noexcept = default;
+
+    explicit constexpr ScheduleImportReviewCount(const int value) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    constexpr ScheduleImportReviewCount& operator++() noexcept
+    {
+        ++m_value;
+        return *this;
+    }
+
+    friend constexpr bool operator==(
+        const ScheduleImportReviewCount&,
+        const ScheduleImportReviewCount&
+        ) noexcept = default;
+
+private:
+    int m_value = 0;
+};
+
 struct ScheduleImportReviewSummary final
 {
-    int teachersCreated = 0;
-    int teacherRoomsUpdated = 0;
-    int teachersSkipped = 0;
-    int classesCreated = 0;
-    int classesUpdated = 0;
-    int classesSkipped = 0;
-    int schedulesCleared = 0;
-    int ignoredCells = 0;
+    ScheduleImportReviewCount teachersCreated;
+    ScheduleImportReviewCount teacherRoomsUpdated;
+    ScheduleImportReviewCount teachersSkipped;
+    ScheduleImportReviewCount classesCreated;
+    ScheduleImportReviewCount classesUpdated;
+    ScheduleImportReviewCount classesSkipped;
+    ScheduleImportReviewCount schedulesCleared;
+    ScheduleImportReviewCount ignoredCells;
 };
 
 [[nodiscard]] inline ScheduleImportReviewSummary
 projectScheduleImportReviewSummary(
     const ScheduleImportReviewDecisionRequest& decisions,
-    const int ignoredDiagnosticCount,
-    const int schedulesCleared
+    const ScheduleImportReviewCount ignoredDiagnosticCount,
+    const ScheduleImportReviewCount schedulesCleared
     )
 {
     ScheduleImportReviewSummary summary;

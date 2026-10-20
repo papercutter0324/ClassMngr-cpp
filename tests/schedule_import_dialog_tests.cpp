@@ -2970,24 +2970,26 @@ void ScheduleImportDialogTests::reviewSummaryUsesApplicationProjection()
     const auto expected =
         ClassMngr::Next::Application::projectScheduleImportReviewSummary(
             decisions,
-            0,
-            expectedCleared
+            ClassMngr::Next::Application::ScheduleImportReviewCount{0},
+            ClassMngr::Next::Application::ScheduleImportReviewCount{
+                expectedCleared
+            }
             );
     const QString expectedActionSummary =
         QStringLiteral(
             "Proposed import: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; "
             "%4 class(es) created, %5 updated, %6 skipped;"
             )
-            .arg(expected.teachersCreated)
-            .arg(expected.teacherRoomsUpdated)
-            .arg(expected.teachersSkipped)
-            .arg(expected.classesCreated)
-            .arg(expected.classesUpdated)
-            .arg(expected.classesSkipped);
+            .arg(expected.teachersCreated.rawValue())
+            .arg(expected.teacherRoomsUpdated.rawValue())
+            .arg(expected.teachersSkipped.rawValue())
+            .arg(expected.classesCreated.rawValue())
+            .arg(expected.classesUpdated.rawValue())
+            .arg(expected.classesSkipped.rawValue());
     QTRY_VERIFY(summaryLabel->text().startsWith(expectedActionSummary));
     QVERIFY(summaryLabel->text().contains(
         QStringLiteral("%1 existing schedule(s) cleared;")
-            .arg(expected.schedulesCleared)
+            .arg(expected.schedulesCleared.rawValue())
         ));
 
     tabs->setCurrentWidget(teacherScrollArea);
