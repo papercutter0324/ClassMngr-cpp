@@ -6513,3 +6513,16 @@ also passed, independent Tester accepted the slice, and `git diff --check`
 passed. No full suite or Windows build ran. Batch490 has F1171–F1174 complete
 and F1175 next; it remains unpushed until F1177 closes. F629 and both phase
 gates remain open.
+
+## Phase 2 update - F1175 accepted; Batch490 active - 2026-10-20
+
+F1175 is accepted to type only
+`Application::ClassTransferPortablePackage::version` with an exact signed
+`int` `ClassTransferPackageVersion`; the portable package field must still
+default to version 1. Preserve integer JSON serialization, adapter round-trip
+values, and the current parser rule accepting only version 1 with the existing
+integer and unsupported-version diagnostics. The legacy `ClassTransferPackage`
+field and parser policy stay unchanged; add no migration or range policy.
+Implementation and verification have not started. F1171–F1174 are complete;
+F1176 is next after F1175. Batch490 remains unpushed until F1177 closes. F629
+and both phase gates remain open.
