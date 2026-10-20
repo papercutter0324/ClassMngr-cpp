@@ -27,7 +27,36 @@
 #include <cstdint>
 #include <initializer_list>
 #include <limits>
+#include <type_traits>
 #include <vector>
+
+using TeacherImportCandidateCount =
+    ClassMngr::Next::Application::TeacherImportCandidateCount;
+using TeacherImportCandidateGroup =
+    ClassMngr::Next::Application::TeacherImportCandidateGroup;
+using TeacherImportRequestedCandidateIndex =
+    ClassMngr::Next::Application::TeacherImportRequestedCandidateIndex;
+using TeacherImportResolvedCandidateIndex =
+    ClassMngr::Next::Application::TeacherImportResolvedCandidateIndex;
+
+static_assert(std::is_same_v<
+              decltype(TeacherImportCandidateGroup::candidateCount),
+              TeacherImportCandidateCount>);
+static_assert(std::is_constructible_v<TeacherImportCandidateCount, std::size_t>);
+static_assert(!std::is_convertible_v<std::size_t, TeacherImportCandidateCount>);
+static_assert(!std::is_convertible_v<TeacherImportCandidateCount, std::size_t>);
+static_assert(!std::is_convertible_v<
+              TeacherImportCandidateCount,
+              TeacherImportRequestedCandidateIndex>);
+static_assert(!std::is_convertible_v<
+              TeacherImportRequestedCandidateIndex,
+              TeacherImportCandidateCount>);
+static_assert(!std::is_convertible_v<
+              TeacherImportCandidateCount,
+              TeacherImportResolvedCandidateIndex>);
+static_assert(!std::is_convertible_v<
+              TeacherImportResolvedCandidateIndex,
+              TeacherImportCandidateCount>);
 
 class TeacherImportTests : public QObject
 {
@@ -337,7 +366,9 @@ ClassMngr::Next::Application::TeacherImportReviewResolution resolveReview(
     for (const KoreanTeacherImportGroup& group : review.candidateGroups)
     {
         groups.push_back({TeacherImportGroupKey(group.level.toUtf8().toStdString()),
-                          static_cast<std::size_t>(group.candidates.size())});
+                          TeacherImportCandidateCount{
+                              static_cast<std::size_t>(group.candidates.size())
+                          }});
     }
     for (const TeacherImportGroupSelection& selection : review.groupSelections)
     {
@@ -938,10 +969,14 @@ void TeacherImportTests::unreadableDataFailsValidation()
 void TeacherImportTests::reviewContractAcceptsAllSelectedAndNone()
 {
     using namespace ClassMngr::Next::Application;
+    const TeacherImportCandidateCount defaultCount;
+    QCOMPARE(defaultCount.rawValue(), std::size_t(0));
+    QVERIFY(defaultCount == TeacherImportCandidateCount{});
+
     const std::vector<TeacherImportCandidateGroup> groups{
-        {TeacherImportGroupKey("M1"), 3},
-        {TeacherImportGroupKey("M2"), 2},
-        {TeacherImportGroupKey("H1"), 1}};
+        {TeacherImportGroupKey("M1"), TeacherImportCandidateCount{3}},
+        {TeacherImportGroupKey("M2"), TeacherImportCandidateCount{2}},
+        {TeacherImportGroupKey("H1"), TeacherImportCandidateCount{3}}};
     const std::vector<TeacherImportGroupDecision> decisions{
         {TeacherImportGroupKey("H1"), TeacherImportGroupMode::All, {}},
         {TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {
@@ -958,19 +993,22 @@ void TeacherImportTests::reviewContractAcceptsAllSelectedAndNone()
     QCOMPARE(resolution.selectedCandidateIndexes[0][0].rawValue(), std::size_t(0));
     QCOMPARE(resolution.selectedCandidateIndexes[0][1].rawValue(), std::size_t(2));
     QVERIFY(resolution.selectedCandidateIndexes[1].empty());
-    QCOMPARE(resolution.selectedCandidateIndexes[2].size(), std::size_t(1));
+    QCOMPARE(resolution.selectedCandidateIndexes[2].size(), std::size_t(3));
     QCOMPARE(resolution.selectedCandidateIndexes[2][0].rawValue(), std::size_t(0));
+    QCOMPARE(resolution.selectedCandidateIndexes[2][1].rawValue(), std::size_t(1));
+    QCOMPARE(resolution.selectedCandidateIndexes[2][2].rawValue(), std::size_t(2));
 }
 
 void TeacherImportTests::reviewContractRejectsInvalidDecisions()
 {
     using namespace ClassMngr::Next::Application;
     const std::vector<TeacherImportCandidateGroup> groups{
-        {TeacherImportGroupKey("M1"), 2},
-        {TeacherImportGroupKey("H1"), 1}};
+        {TeacherImportGroupKey("M1"), TeacherImportCandidateCount{2}},
+        {TeacherImportGroupKey("H1"), TeacherImportCandidateCount{1}}};
     const auto candidate = [](std::string id, const std::size_t count) {
         return TeacherImportCandidateGroup{
-            TeacherImportGroupKey(std::move(id)), count};
+            TeacherImportGroupKey(std::move(id)),
+            TeacherImportCandidateCount{count}};
     };
     const auto decision = [](
                               std::string id,
@@ -1049,13 +1087,18 @@ void TeacherImportTests::reviewContractPreservesExactUtf8KeysAndEmptyPrecedence(
     QVERIFY(composedKey != decomposedKey);
 
     const auto emptyBeforeDuplicate = resolveTeacherImportReview(
-        {{emptyKey, 1}, {composedKey, 1}, {composedKey, 1}},
+        {
+            {emptyKey, TeacherImportCandidateCount{1}},
+            {composedKey, TeacherImportCandidateCount{1}},
+            {composedKey, TeacherImportCandidateCount{1}}
+        },
         {{composedKey, TeacherImportGroupMode::All, {}}});
     QCOMPARE(static_cast<int>(emptyBeforeDuplicate.issue),
              static_cast<int>(TeacherImportReviewIssue::EmptyGroupId));
 
     const std::vector<TeacherImportCandidateGroup> groups{
-        {composedKey, 3}, {decomposedKey, 1}};
+        {composedKey, TeacherImportCandidateCount{3}},
+        {decomposedKey, TeacherImportCandidateCount{1}}};
     const std::vector<TeacherImportGroupDecision> decisions{
         {decomposedKey, TeacherImportGroupMode::Selected, {
             TeacherImportRequestedCandidateIndex{0}
@@ -1079,7 +1122,7 @@ void TeacherImportTests::reviewContractPreservesExactUtf8KeysAndEmptyPrecedence(
              }));
 
     const auto normalizationWouldBeUnknown = resolveTeacherImportReview(
-        {{composedKey, 1}},
+        {{composedKey, TeacherImportCandidateCount{1}}},
         {{decomposedKey, TeacherImportGroupMode::All, {}}});
     QCOMPARE(static_cast<int>(normalizationWouldBeUnknown.issue),
              static_cast<int>(TeacherImportReviewIssue::UnknownDecisionGroup));

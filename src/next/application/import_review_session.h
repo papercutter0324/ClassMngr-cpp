@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/teacher_import_candidate_count.h"
 #include "next/application/teacher_import_candidate_index.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
@@ -907,7 +908,7 @@ enum class TeacherImportGroupMode
 struct TeacherImportCandidateGroup
 {
     TeacherImportGroupKey id;
-    std::size_t candidateCount = 0;
+    TeacherImportCandidateCount candidateCount;
 };
 
 struct TeacherImportGroupDecision
@@ -994,6 +995,8 @@ struct TeacherImportReviewResolution
             return result;
         }
         resolved[groupIndex] = true;
+        const std::size_t candidateCount =
+            candidateGroups[groupIndex].candidateCount.rawValue();
 
         switch (decision.mode)
         {
@@ -1004,7 +1007,7 @@ struct TeacherImportReviewResolution
                 return result;
             }
             for (std::size_t index = 0;
-                 index < candidateGroups[groupIndex].candidateCount;
+                 index < candidateCount;
                  ++index)
             {
                 result.selectedCandidateIndexes[groupIndex].push_back(
@@ -1015,7 +1018,7 @@ struct TeacherImportReviewResolution
 
         case TeacherImportGroupMode::Selected:
         {
-            std::vector<bool> selected(candidateGroups[groupIndex].candidateCount, false);
+            std::vector<bool> selected(candidateCount, false);
             for (const TeacherImportRequestedCandidateIndex requestedCandidateIndex :
                  decision.selectedCandidateIndexes)
             {
@@ -1023,7 +1026,7 @@ struct TeacherImportReviewResolution
                     requestedCandidateIndex.rawValue();
                 if (requestedIndex < 0
                     || static_cast<std::uint64_t>(requestedIndex)
-                        >= candidateGroups[groupIndex].candidateCount)
+                        >= candidateCount)
                 {
                     result.issue = TeacherImportReviewIssue::CandidateIndexOutOfRange;
                     return result;

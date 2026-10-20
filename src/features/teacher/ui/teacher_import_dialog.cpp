@@ -47,7 +47,9 @@ TeacherImportReviewRequest reviewRequest(const TeacherImportReview& review)
     {
         request.groups.push_back({
             TeacherImportGroupKey(group.level.toUtf8().toStdString()),
-            static_cast<std::size_t>(group.candidates.size())
+            TeacherImportCandidateCount{
+                static_cast<std::size_t>(group.candidates.size())
+            }
         });
     }
     for (const TeacherImportGroupSelection& selection : review.groupSelections)

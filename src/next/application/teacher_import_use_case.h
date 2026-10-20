@@ -457,7 +457,12 @@ public:
             groups.reserve(request.review->candidateGroups.size());
             for (const TeacherImportReviewGroup& group : request.review->candidateGroups)
             {
-                groups.push_back({group.id, group.candidateValidationKeys.size()});
+                groups.push_back({
+                    group.id,
+                    TeacherImportCandidateCount{
+                        group.candidateValidationKeys.size()
+                    }
+                });
             }
             const TeacherImportReviewResolution resolution =
                 resolveTeacherImportReview(groups, request.review->decisions);

@@ -28,6 +28,7 @@
 
 using ClassMngr::Next::Application::TeacherImportRequestedCandidateIndex;
 using ClassMngr::Next::Application::TeacherImportResolvedCandidateIndex;
+using ClassMngr::Next::Application::TeacherImportCandidateCount;
 
 class TeacherImportDialogTests : public QObject
 {
@@ -548,7 +549,11 @@ void TeacherImportDialogTests::legacyPlanAdapterPreservesExactUtf8ReviewKeys()
     for (const auto& group : request.review->candidateGroups)
     {
         groups.push_back({
-            group.id, group.candidateValidationKeys.size()});
+            group.id,
+            TeacherImportCandidateCount{
+                group.candidateValidationKeys.size()
+            }
+        });
     }
     const auto resolution =
         ClassMngr::Next::Application::resolveTeacherImportReview(
@@ -598,7 +603,9 @@ legacyPlanAdapterPreservesNegativeCandidateIndexForValidation()
     std::vector<ClassMngr::Next::Application::TeacherImportCandidateGroup> groups;
     groups.push_back({
         request.review->candidateGroups[0].id,
-        request.review->candidateGroups[0].candidateValidationKeys.size()
+        TeacherImportCandidateCount{
+            request.review->candidateGroups[0].candidateValidationKeys.size()
+        }
     });
     const auto resolution = ClassMngr::Next::Application::resolveTeacherImportReview(
         groups,
