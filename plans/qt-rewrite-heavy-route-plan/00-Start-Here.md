@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is active and unpushed: F1219–F1224 are complete, F1225 is accepted/current, and F1226 remains discovered (see [F1225 acceptance](03-Phase-2-Progress-Log.md#f1225-analytics-criterion-extrema-positions-accepted-before-implementation-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is active and unpushed: F1219–F1224 are complete, F1225 is accepted/current, and F1226 remains discovered (see [F1225 acceptance](03-Phase-2-Progress-Log.md#f1225-analytics-criterion-extrema-positions-accepted-before-implementation-2026-10-21)). Batch497 has eight discovered candidates queued after Batch496 closes (see [Batch497 discovery](03-Phase-2-Progress-Log.md#batch497-discovery-started-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -49,7 +49,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 7. **F1225 — Accepted/current:** Type Analytics criterion-extrema positions; preserve empty results and tied-index order (see [acceptance](03-Phase-2-Progress-Log.md#f1225-analytics-criterion-extrema-positions-accepted-before-implementation-2026-10-21)).
 8. **F1226 — Discovered:** Type Sub Prep print group/class positions; preserve original input positions and group/class ordering.
 
-Batch495 is complete and pushed (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is active and unpushed; its [discovery record](03-Phase-2-Progress-Log.md#batch496-discovery-started-2026-10-21) and completed slices F1219–F1224 are in the progress log. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch495 is complete and pushed (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is active and unpushed; its [discovery record](03-Phase-2-Progress-Log.md#batch496-discovery-started-2026-10-21) and completed slices F1219–F1224 are in the progress log. Batch497 has been discovered and will start when Batch496 closes (see its [discovery record](03-Phase-2-Progress-Log.md#batch497-discovery-started-2026-10-21)). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 

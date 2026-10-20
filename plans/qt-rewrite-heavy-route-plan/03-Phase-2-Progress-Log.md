@@ -56196,3 +56196,74 @@ CTests are `ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests`,
 `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`, and
 `ClassMngrSpeakingAnalyticsTests`; build the app and these affected targets.
 No F1225 implementation or verification has started.
+
+### Batch497 discovery started - 2026-10-21
+
+Batch497 discovery began when F1225 became the second-last slice in Batch496.
+Two independent read-only Explorer passes and a targeted overlap review
+produced eight ordered candidates. The Schedule Import findings were the same
+issue field and were merged. Duplicate student-name positions are one
+cross-layer candidate because the Domain groups feed both Speaking Evaluation
+and Roster Save diagnostics. Sub Prep visible-row ordering is separate from
+F1226's print-order positions.
+
+1. **F1227 - Schedule Import eligibility issue position.** Type
+   `ScheduleImportPlanEligibilityIssue::candidateIndex` while preserving the
+   first failing candidate and the default-zero value for issue codes without
+   a candidate. This field is used to retrieve grade and level in the Feature
+   validator. F1211 typed the separate class-color input index and left this
+   field raw. Tests: `ClassMngrNextApplicationScheduleImportPlanValidationTests`,
+   `ClassMngrNextApplicationScheduleImportApplyUseCaseTests`, and
+   `ClassMngrScheduleImportTests`.
+2. **F1228 - Sub Prep visible-class ordering positions.** Type the positions
+   returned by `orderSubPrepVisibleClassRows`; preserve configured-level,
+   day/time/label/ID ordering, stable exact ties, and source-row mapping in the
+   class-information list model. This is distinct from F1226's print grouping.
+   Tests: `ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests`,
+   `ClassMngrSubPrepClassInformationListModelTests`, and
+   `ClassMngrSubPrepPageTests`.
+3. **F1229 - Calendar Event import accepted-candidate positions.** Type
+   `CalendarEventImportPlan::acceptedCandidateIndices`; preserve first-seen
+   duplicate filtering, accepted input order, and the skipped count while the
+   use case selects prepared save requests. The earlier planner slice covered
+   planner behavior, not index typing. Tests:
+   `ClassMngrNextApplicationCalendarEventImportPlanTests`,
+   `ClassMngrNextApplicationCalendarEventImportUseCaseTests`, and
+   `ClassMngrCalendarImportTests`.
+4. **F1230 - Teacher Import review selection positions.** Type candidate
+   positions in `TeacherImportGroupDecision` and
+   `TeacherImportReviewResolution`; preserve negative, out-of-range, and
+   duplicate-selection validation, mode checks, group order, and candidate
+   order. F1111 typed review-group correlation keys but not these positions.
+   Tests: `ClassMngrNextApplicationImportReviewTests`,
+   `ClassMngrTeacherImportTests`, and `ClassMngrTeacherImportDialogTests`.
+5. **F1231 - Duplicate student-name row positions across Domain and
+   Application diagnostics.** Type the row positions in
+   `DuplicateStudentNamePairGroup` and carry them through Speaking Evaluation
+   and Roster Save diagnostic payloads. Preserve first-seen group order, row
+   order within groups, issue order, and existing feature-facing values. F752
+   established the grouping behavior; F1201 left Roster Save duplicate-row
+   arguments raw. Tests: `ClassMngrNextDomainContractTests`,
+   `ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`,
+   `ClassMngrNextApplicationRosterSaveUseCaseTests`, and existing adapter or
+   parity coverage.
+6. **F1232 - Class Details duplicate schedule-row positions.** Type
+   `ClassDetailsValidationIssue::duplicateRows`; preserve duplicate-group and
+   row order, diagnostic order, and the Feature adapter's `QVariantList`
+   mapping. F1207 typed the individual row field and left duplicate-row lists
+   for separate acceptance. Tests:
+   `ClassMngrNextApplicationClassDetailsValidationPolicyTests` and
+   `ClassMngrClassDetailsPageSaveParityTests`.
+7. **F1233 - GS Team save validation row position.** Type
+   `GsTeamDirectorySaveValidation::rowIndex`; preserve zero-based row reports
+   and the current default value for success and collection-level failures.
+   Test: `ClassMngrNextApplicationGsTeamDirectorySaveTests`.
+8. **F1234 - Native English Teacher save validation row position.** Type
+   `NativeEnglishTeacherDirectorySaveValidation::rowIndex`; preserve
+   zero-based row reports and the current default value for success and
+   collection-level failures. Test:
+   `ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests`.
+
+The two directory-validation candidates are independent; placing them
+consecutively is convenient for review. No matching Deferred item was found.
+No other slices were found.

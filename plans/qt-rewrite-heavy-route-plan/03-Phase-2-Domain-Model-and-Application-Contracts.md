@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch496 is active with F1219–F1224 complete, F1225 accepted/current, and F1226 discovered; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch496 is active with F1219–F1224 complete, F1225 accepted/current, and F1226 discovered; Batch497's eight candidates are recorded for after Batch496 closes, and F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1225 is accepted/current after two independent Explorer reviews; its implementation will type the shared Analytics criterion-extrema collection positions and retain both consumer boundaries (see [F1225 acceptance](03-Phase-2-Progress-Log.md#f1225-analytics-criterion-extrema-positions-accepted-before-implementation-2026-10-21)). Batch496 remains active and unpushed. F629 plus the Phase 0 and Phase 2 gates remain open.
+F1225 is accepted/current after two independent Explorer reviews; its implementation will type the shared Analytics criterion-extrema collection positions and retain both consumer boundaries (see [F1225 acceptance](03-Phase-2-Progress-Log.md#f1225-analytics-criterion-extrema-positions-accepted-before-implementation-2026-10-21)). Batch497 discovery is complete with eight queued candidates (see [Batch497 discovery](03-Phase-2-Progress-Log.md#batch497-discovery-started-2026-10-21)). Batch496 remains active and unpushed; F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -82,6 +82,17 @@ Treat this plan as an operational summary, not a history:
 6. F1224 - **Complete.** Type Testing Classes ordered row positions; preserve grade/level/text ordering and the existing unspecified exact-tie order (see [completion](03-Phase-2-Progress-Log.md#f1224-testing-classes-ordered-row-positions-complete-2026-10-21)).
 7. F1225 - **Accepted/current.** Type Analytics criterion-extrema positions; preserve empty results and tied-index order (see [acceptance](03-Phase-2-Progress-Log.md#f1225-analytics-criterion-extrema-positions-accepted-before-implementation-2026-10-21)).
 8. F1226 - **Discovered.** Type Sub Prep print group/class positions; preserve original input positions and group/class ordering.
+
+#### Discovered next batch: Batch497 (8 candidates; starts after Batch496 closes)
+
+1. F1227 - **Discovered.** Type Schedule Import eligibility issue candidate positions; preserve first-failing-candidate mapping and default-zero issue behavior.
+2. F1228 - **Discovered.** Type Sub Prep visible-class ordering positions; preserve configured ordering, stable ties, and source-row mapping.
+3. F1229 - **Discovered.** Type Calendar Event import accepted-candidate positions; preserve duplicate filtering, input order, and skipped counts.
+4. F1230 - **Discovered.** Type Teacher Import review selection positions; preserve validation, group order, and candidate order.
+5. F1231 - **Discovered.** Type duplicate student-name row positions across Domain and Speaking Evaluation/Roster Save diagnostics; preserve group, row, and issue order.
+6. F1232 - **Discovered.** Type Class Details duplicate schedule-row positions; preserve diagnostic and row ordering.
+7. F1233 - **Discovered.** Type GS Team save validation row position; preserve first-row and default-value behavior.
+8. F1234 - **Discovered.** Type Native English Teacher save validation row position; preserve first-row and default-value behavior.
 
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
