@@ -58481,7 +58481,24 @@ recheck found the target up to date and confirmed the test passes.
 `git diff --check` passed. No clean build, Windows build, or full-suite run
 was performed.
 
-Batch500 (F1243–F1252) is complete locally; its push is pending. Batch501 is
-now active with four discovered candidates, F1253 next for acceptance, then
+Batch500 (F1243–F1252) is complete and pushed at `029a17e8`. Batch501 is now
+active with four discovered candidates, F1253 next for acceptance, then
 F1254–F1256 in the recorded order. F629 and the Phase 0 and Phase 2 gates
 remain open.
+
+### Batch500 push receipt - 2026-10-21
+
+The completed Batch500 branch was pushed from local branch `Qt-Rewrite` with
+`git push`. The command reported:
+
+```text
+d3a05eb3..029a17e8  Qt-Rewrite -> Qt-Rewrite
+```
+
+The local tip and upstream `Qt-Rewrite` both resolve to
+`029a17e8c2e6716a3f6f894293a0a404bf29f50e`; the worktree was clean and no
+push blocker was reported.
+
+Batch500 is complete and pushed. Batch501 is active with F1253 next for
+acceptance; F1254–F1256 remain discovered in the recorded order. F629 and the
+Phase 0 and Phase 2 gates remain open.

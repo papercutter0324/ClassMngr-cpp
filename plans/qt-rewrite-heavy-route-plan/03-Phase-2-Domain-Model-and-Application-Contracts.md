@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch500 (F1243–F1252) is complete locally with its push pending; Batch501 is active with F1253 next for acceptance, and F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch500 (F1243–F1252) is complete and pushed at `029a17e8`; Batch501 is active with F1253 next for acceptance, and F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1252 is complete at `4a7412d3`; all five focused Document Catalog CTests passed, followed by a passing rerun of the strengthened sidebar ID tie-break test (see [F1252 verification](03-Phase-2-Progress-Log.md#f1252-document-catalog-order-metadata-complete-2026-10-21)). Batch500 is complete locally with its push pending. Batch501 is now active with F1253 next for acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
+Batch500 is complete and pushed at `029a17e8` (see [push receipt](03-Phase-2-Progress-Log.md#batch500-push-receipt-2026-10-21)). Batch501 is active with F1253 next for acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
