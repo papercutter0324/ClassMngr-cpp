@@ -56929,3 +56929,37 @@ Their raw `classmngr_add_qt_test(NAME ...)` values are
 target and CTest names. The platform save-port test does not exercise this
 validation index. At acceptance time, no F1234 code change or verification has
 started.
+
+### F1234 Native English Teacher save validation row position complete - 2026-10-21
+
+F1234 completed at implementation commit `39345d56`
+(`Phase2 - Type Native English Teacher save validation row index`), following
+acceptance commit `11e28490`. The Application validation result now uses the
+distinct explicit `NativeEnglishTeacherDirectorySaveValidationRowIndex`.
+First-failure order, zero-based row positions, default-zero success and
+collection-level results, and no-port-call validation failures remain
+preserved. The Feature continues to use the generic warning path without row
+index conversion.
+
+The independent Tester reused the incremental `build/macos-clang-debug` tree
+and built `ClassMngr` and both focused targets:
+
+```text
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests ClassMngrStaffDirectoryNativeEnglishSaveParityTests --parallel 8
+```
+
+Both focused CTests passed (2/2):
+
+```text
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests|ClassMngrStaffDirectoryNativeEnglishSaveParityTests)$'
+```
+
+`git diff --check` passed. `cmake --preset windows-x64-debug` is disabled on
+this macOS host; Windows x64 and the full suite remain unverified.
+
+### Batch497 complete locally; push pending - 2026-10-21
+
+All eight ordered slices F1227–F1234 are complete, and their scoped
+verification is recorded above. Batch497 is complete locally, but no push
+receipt has been recorded yet. Batch498 remains discovered and queued, with
+F1235 then F1236, until the Batch497 push succeeds.
