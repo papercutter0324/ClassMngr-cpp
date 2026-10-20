@@ -51433,3 +51433,37 @@ selectors `studentCountReadsOnlySelectedClassAndKeepsCounts`,
 `rosterWithoutNameColumnsShowsZeroStudentCount` (Qt offscreen if needed); then
 run `git diff --check`. No full-suite or Windows pass is claimed. Implementation
 and verification had not started at acceptance.
+
+### F1155 My Classes student count complete - 2026-10-20
+
+F1155 completed in source/test commit
+`743e4433162f6c6e644b6e80b942817c9bc502b4`, following acceptance commit
+`2612de4a7e83ad66a4639f2d576e731918594b10`. The Qt-free Application value
+`MyClassesStudentCount` explicitly wraps the repository's signed `int`, exposes
+`rawValue()` and equality, and has no implicit conversion. The Application
+snapshot now carries `Domain::Result<MyClassesStudentCount>`. Query rejects a
+negative successful count with the unchanged nonrecoverable Validation message;
+per-row errors are preserved. Platform wraps repository counts, and the UI reads
+`rawValue()` only on success. Zero displays `0`; errors display `Unavailable`.
+There is no artificial count cap. This remains separate from
+`ClassSummary::studentCount` (`size_t`, capped at 10,000); the repository `int`
+boundary and count/overflow behavior are unchanged.
+
+In the existing macOS Debug tree, incremental builds passed for `ClassMngr`,
+the Application query test, Platform read-port test, and
+`ClassMngrMyClassesPageTests`, using Apple Clang 21.0.0 and Qt 6.12.0.
+Application and Platform CTests passed 2/2; the Application CTest was rerun
+after strengthening per-row assertions to compare complete `OperationError`
+code, message, and recoverability, and passed 1/1. UI selectors
+`studentCountReadsOnlySelectedClassAndKeepsCounts`,
+`rosterReadFailureKeepsClassAndShowsUnavailableStudentCount`, and
+`rosterWithoutNameColumnsShowsZeroStudentCount` passed. `git diff --check`
+passed. Offscreen/font warnings were non-failing. No full suite or Windows build
+ran.
+
+Batch488 remains active with eight candidates: F1154 and F1155 are complete,
+none are accepted/in progress, and six remain discovered with F1156 next. The
+original discovery order and boundaries are unchanged. The batch has no push
+receipt and is not closed. F629 awaits source-bound Windows x64 layout
+evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates
+remain open.
