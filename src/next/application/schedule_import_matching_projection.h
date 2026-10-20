@@ -210,11 +210,18 @@ struct ScheduleImportMatchingProjection final
 namespace ScheduleImportMatchingProjectionDetail
 {
 
-[[nodiscard]] inline int dayGroup(
+enum class WeekdayGroup
+{
+    Unclassified = 0,
+    MondayWednesdayFriday = 1,
+    TuesdayThursday = 2
+};
+
+[[nodiscard]] inline WeekdayGroup dayGroup(
     const std::vector<ScheduleImportMatchingTime>& times
     )
 {
-    int group = 0;
+    WeekdayGroup group = WeekdayGroup::Unclassified;
     for (const ScheduleImportMatchingTime& time : times)
     {
         std::size_t first = 0;
@@ -251,15 +258,21 @@ namespace ScheduleImportMatchingProjectionDetail
                     : character;
             }
             );
-        const int timeGroup =
+        const WeekdayGroup timeGroup =
             day == "monday" || day == "wednesday" || day == "friday"
-            ? 1
+            ? WeekdayGroup::MondayWednesdayFriday
             : day == "tuesday" || day == "thursday"
-                ? 2
-                : 0;
-        if (timeGroup == 0 || (group != 0 && group != timeGroup))
+                ? WeekdayGroup::TuesdayThursday
+                : WeekdayGroup::Unclassified;
+        if (
+            timeGroup == WeekdayGroup::Unclassified
+            || (
+                group != WeekdayGroup::Unclassified
+                && group != timeGroup
+                )
+            )
         {
-            return 0;
+            return WeekdayGroup::Unclassified;
         }
         group = timeGroup;
     }
@@ -308,8 +321,8 @@ namespace ScheduleImportMatchingProjectionDetail
     const std::vector<ScheduleImportMatchingTime>& existing
     )
 {
-    const int importedGroup = dayGroup(imported);
-    return importedGroup != 0
+    const WeekdayGroup importedGroup = dayGroup(imported);
+    return importedGroup != WeekdayGroup::Unclassified
         && importedGroup == dayGroup(existing)
         && meetingDays(imported) == meetingDays(existing);
 }
@@ -351,13 +364,21 @@ targetTimesForKind(
     )
 {
     const auto existingTimes = timesForKind(existing, kind);
-    return candidate.gradeMatchKey == existing.gradeMatchKey
-        && candidate.levelMatchKey == existing.levelMatchKey
-        && (
-            existingTimes.empty()
-            || dayGroup(candidate.times) != 0
-                && dayGroup(candidate.times) == dayGroup(existingTimes)
-            );
+    if (
+        candidate.gradeMatchKey != existing.gradeMatchKey
+        || candidate.levelMatchKey != existing.levelMatchKey
+        )
+    {
+        return false;
+    }
+    if (existingTimes.empty())
+    {
+        return true;
+    }
+
+    const WeekdayGroup candidateGroup = dayGroup(candidate.times);
+    return candidateGroup != WeekdayGroup::Unclassified
+        && candidateGroup == dayGroup(existingTimes);
 }
 
 template <typename T>

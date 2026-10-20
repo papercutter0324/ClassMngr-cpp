@@ -5,10 +5,27 @@
 #include <cstdint>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 using namespace ClassMngr::Next::Application;
 
 namespace Domain = ClassMngr::Next::Domain;
+namespace MatchingProjectionDetail =
+    ClassMngr::Next::Application::ScheduleImportMatchingProjectionDetail;
+
+using WeekdayGroup = MatchingProjectionDetail::WeekdayGroup;
+
+static_assert(
+    std::is_same_v<
+        decltype(MatchingProjectionDetail::dayGroup(
+            std::declval<const std::vector<ScheduleImportMatchingTime>&>()
+            )),
+        WeekdayGroup
+        >
+    );
+static_assert(static_cast<int>(WeekdayGroup::Unclassified) == 0);
+static_assert(static_cast<int>(WeekdayGroup::MondayWednesdayFriday) == 1);
+static_assert(static_cast<int>(WeekdayGroup::TuesdayThursday) == 2);
 
 static_assert(
     !std::is_assignable_v<Domain::TeacherId&, const Domain::ClassId&>
@@ -139,6 +156,9 @@ class ScheduleImportMatchingProjectionTests final : public QObject
 private slots:
     void matchingClassCountHasTypedZeroAndPositiveValues();
     void matchingCandidateIndexHasTypedZeroAndPositiveValues();
+    void weekdayGroupUsesClosedClassificationsAndAsciiNormalization();
+    void meetingDayMatchRequiresEquivalentNormalizedDayLists();
+    void eligibilityKeepsEmptyTimeBypassSeparateFromWeekdayGroups();
     void rejectsUnknownKindWithoutReturningProjection();
     void ranksEveryMatchCategoryAndKeepsStableTies();
     void projectsCandidateIndexesInInputOrder();
@@ -170,6 +190,122 @@ matchingCandidateIndexHasTypedZeroAndPositiveValues()
     QCOMPARE(positive.rawValue(), std::size_t{6});
     QVERIFY(zero == ScheduleImportMatchingCandidateIndex{});
     QVERIFY(positive == ScheduleImportMatchingCandidateIndex{6});
+}
+
+void ScheduleImportMatchingProjectionTests::
+weekdayGroupUsesClosedClassificationsAndAsciiNormalization()
+{
+    const std::vector<std::string> mondayWednesdayFriday{
+        "Monday", "Wednesday", "Friday"
+    };
+    for (const std::string& day : mondayWednesdayFriday)
+    {
+        QCOMPARE(
+            MatchingProjectionDetail::dayGroup({{day}}),
+            WeekdayGroup::MondayWednesdayFriday
+            );
+    }
+
+    const std::vector<std::string> tuesdayThursday{"Tuesday", "Thursday"};
+    for (const std::string& day : tuesdayThursday)
+    {
+        QCOMPARE(
+            MatchingProjectionDetail::dayGroup({{day}}),
+            WeekdayGroup::TuesdayThursday
+            );
+    }
+
+    const std::string paddedMixedCase =
+        " \t\n\r\f\vWeDnEsDaY\v\f\r\n\t ";
+    QCOMPARE(
+        MatchingProjectionDetail::dayGroup({{paddedMixedCase}}),
+        WeekdayGroup::MondayWednesdayFriday
+        );
+
+    QCOMPARE(
+        MatchingProjectionDetail::dayGroup(
+            std::vector<ScheduleImportMatchingTime>{}
+            ),
+        WeekdayGroup::Unclassified
+        );
+    QCOMPARE(
+        MatchingProjectionDetail::dayGroup({{" \t\n\r\f\v"}}),
+        WeekdayGroup::Unclassified
+        );
+    QCOMPARE(
+        MatchingProjectionDetail::dayGroup({{"Saturday"}}),
+        WeekdayGroup::Unclassified
+        );
+    QCOMPARE(
+        MatchingProjectionDetail::dayGroup({{"Sunday"}}),
+        WeekdayGroup::Unclassified
+        );
+    QCOMPARE(
+        MatchingProjectionDetail::dayGroup({{"Funday"}}),
+        WeekdayGroup::Unclassified
+        );
+    QCOMPARE(
+        MatchingProjectionDetail::dayGroup({{"Monday"}, {"Tuesday"}}),
+        WeekdayGroup::Unclassified
+        );
+}
+
+void ScheduleImportMatchingProjectionTests::
+meetingDayMatchRequiresEquivalentNormalizedDayLists()
+{
+    QVERIFY(
+        !MatchingProjectionDetail::meetingDaysMatch(
+            {{"Tuesday"}},
+            {{"Thursday"}}
+            )
+        );
+    QVERIFY(
+        MatchingProjectionDetail::meetingDaysMatch(
+            {{" Tuesday "}, {"TUESDAY"}},
+            {{"tuesday"}}
+            )
+        );
+    QVERIFY(
+        MatchingProjectionDetail::meetingDaysMatch(
+            {{"Thursday"}, {"Tuesday"}, {"TUESDAY"}},
+            {{"Tuesday"}, {"THURSDAY"}}
+            )
+        );
+}
+
+void ScheduleImportMatchingProjectionTests::
+eligibilityKeepsEmptyTimeBypassSeparateFromWeekdayGroups()
+{
+    ScheduleImportMatchingCandidate imported = candidate();
+    imported.times = {{"Saturday"}};
+    ScheduleImportMatchingClass existing = matchingClass(10, 1, u"416");
+
+    QVERIFY(
+        MatchingProjectionDetail::isEligible(
+            imported,
+            existing,
+            ScheduleImportMatchingKind::Normal
+            )
+        );
+
+    existing.regularTimes = {{"Tuesday"}};
+    QVERIFY(
+        !MatchingProjectionDetail::isEligible(
+            imported,
+            existing,
+            ScheduleImportMatchingKind::Normal
+            )
+        );
+
+    imported.times = {{"Tuesday"}};
+    existing.regularTimes = {{"Saturday"}};
+    QVERIFY(
+        !MatchingProjectionDetail::isEligible(
+            imported,
+            existing,
+            ScheduleImportMatchingKind::Normal
+            )
+        );
 }
 
 void ScheduleImportMatchingProjectionTests::
