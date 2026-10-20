@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1194 accepted; Batch492 pushed)
+### Current checkpoint - 2026-10-20 (F1195 accepted; Batch492 pushed)
 
 Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
@@ -62,18 +62,18 @@ at `56bd1973`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-
 records the handoff. F1178–F1191 are complete. Batch492 is complete and
 pushed to `origin/Qt-Rewrite` at
 `3e6c09d9e5a82bc23281a76970683e4372dcec9d`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)
-records the handoff. Batch493 is active with ten ordered candidates; F1192 and
-F1193 are complete, with F1193 at source/test commit `a00e70b1`; F1194 is
-accepted/current and F1195–F1201 are discovered. Acceptance, discovery, and
-verification evidence are in the [Phase 2 progress
+records the handoff. Batch493 is active with ten ordered candidates; F1192
+through F1194 are complete, with F1194 at source/test commit `107531bc`.
+F1195 is accepted/current and F1196–F1201 are discovered. Acceptance,
+discovery, and verification evidence are in the [Phase 2 progress
 log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
-F1193 completed at source/test commit `a00e70b1`. The five Class Analytics
-criterion grade bins are now keyed by the domain grade enum; invalid grade
-lookups do not index the fixed storage, and the page adapter retains its
-labels and order. The incremental macOS build covered three targets; the
-independent verification build found no work remaining, both focused CTests
-passed, and `git diff --check` passed. No full suite or Windows build ran.
+F1194 completed at source/test commit `107531bc`. A signed Application
+candidate-index value preserves the `-1` sentinel and arbitrary invalid inputs
+through review/apply validation; adapter boundaries extract it for indexing
+only after validation. The incremental macOS build covered ClassMngr and nine
+affected test targets; all nine focused CTests and `git diff --check` passed.
+No full suite or Windows build ran.
 
 F1175's Class Transfer test still has one unresolved teacher-fallback label
 failure among 64 cases; no clean baseline proves it pre-existing. F629 awaits

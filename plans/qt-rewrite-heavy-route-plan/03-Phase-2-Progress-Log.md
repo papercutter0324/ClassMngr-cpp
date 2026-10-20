@@ -54346,3 +54346,62 @@ Focused verification is to build `ClassMngr`,
 `build/macos-clang-debug`; run the five matching CTests with those names and
 `git diff --check`. This acceptance was recorded before F1194 implementation;
 no F1194 implementation or verification result is claimed here.
+
+### F1194 Schedule Import candidate index complete - 2026-10-20
+
+F1194 completed at source/test commit
+`107531bc4ba80da6546625446da491bac1b63880`. The Executor build succeeded for
+the six accepted targets in `build/macos-clang-debug`: `ClassMngr`,
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
+`ClassMngrNextApplicationScheduleImportApplyReviewDecisionsTests`,
+`ClassMngrNextApplicationScheduleImportPlanValidationTests`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`.
+
+Independent verification covered `ClassMngr` and all nine changed test
+targets. Its initial incremental build began compiling the additional modified
+fixtures; the final build command exited 0, with Ninja reporting no work
+remaining. The four additional fixture test targets were
+`ClassMngrNextApplicationScheduleImportApplyUseCaseTests`,
+`ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests`,
+`ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests`, and
+`ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`.
+Independent verification passed all nine focused CTests 9/9:
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
+`ClassMngrNextApplicationScheduleImportApplyReviewDecisionsTests`,
+`ClassMngrNextApplicationScheduleImportPlanValidationTests`,
+`ClassMngrScheduleImportTests`,
+`ClassMngrScheduleImportDialogTests`,
+`ClassMngrNextApplicationScheduleImportApplyUseCaseTests`,
+`ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests`,
+`ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests`, and
+`ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`.
+`git diff --check` passed. No full suite or Windows result is claimed.
+
+### F1195 Initial Setup identity requirements accepted before implementation - 2026-10-20
+
+F1195 is accepted/current before implementation. Replace the publicly writable
+`InitialSetupTeacherIdentityRequirements` aggregate with an invariant-preserving
+Qt-free Application result so callers cannot create contradictory combinations.
+Preserve the exact truth table over the three trimmed presence booleans:
+`complete` is true iff at least two fields are present; additional required
+fields is 0 for two or three present, 1 for one present, and 2 for none.
+Each missing flag must report exactly that field's absence. List all missing
+fields in English Name, Korean Name, Preferred Spelling order.
+
+Preserve trimming at the Feature edge, the same informational incomplete
+prompt/blocking behavior for Next and Add Another, and the blank-entry bypass
+when all identity and room fields are blank and existing teachers are
+available. A read failure or no available teachers still falls through to the
+two-of-three validation. Preserve preferred-name fallback and creation
+behavior.
+
+Add direct value/consistency coverage for all eight presence combinations and
+strengthen the existing focused wizard test to check missing-field prompt
+order; retain blank-entry bypass coverage. Focused verification is to build
+`ClassMngr`,
+`ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests`, and
+`ClassMngrInitialSetupWizardTests` in `build/macos-clang-debug`; run the matching
+`ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests` and
+`ClassMngrInitialSetupWizardTests` CTests and `git diff --check`. This
+acceptance was recorded before F1195 implementation; no F1195 implementation
+or verification result is claimed here.

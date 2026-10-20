@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batches 481–492 are complete and pushed, with Batch492 at `3e6c09d9` (see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)). Batch493 is active and unpushed, with F1192–F1193 complete, F1194 accepted/current, and F1195–F1201 discovered (see [Batch493 discovery](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20), [F1193 closeout](03-Phase-2-Progress-Log.md#f1193-class-analytics-grade-distribution-complete-2026-10-20), and [F1194 acceptance](03-Phase-2-Progress-Log.md#f1194-schedule-import-candidate-index-accepted-before-implementation-2026-10-20)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batches 481–492 are complete and pushed, with Batch492 at `3e6c09d9` (see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)). Batch493 is active and unpushed, with F1192–F1194 complete, F1195 accepted/current, and F1196–F1201 discovered (see [Batch493 discovery](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20), [F1194 closeout](03-Phase-2-Progress-Log.md#f1194-schedule-import-candidate-index-complete-2026-10-20), and [F1195 acceptance](03-Phase-2-Progress-Log.md#f1195-initial-setup-identity-requirements-accepted-before-implementation-2026-10-20)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,12 +38,12 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch493 — Active and unpushed; ten candidates, with F1192–F1193 complete, F1194 accepted/in progress/current, and F1195–F1201 discovered:**
+**Batch493 — Active and unpushed; ten candidates, with F1192–F1194 complete, F1195 accepted/in progress/current, and F1196–F1201 discovered:**
 
 1. **F1192 — Complete:** Add distinct Qt-free `Application::ClassAnalyticsRosterRowCount` and `Application::ClassAnalyticsFullyScoredStudentCount`; preserve row-versus-student meaning, zero values, Feature narrowing, and display (see [closeout](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-complete-2026-10-20)).
 2. **F1193 — Complete:** Add the Qt-free grade-keyed Class Analytics distribution, preserving C/B/B+/A/A+ behavior and displayed labels/order (see [closeout](03-Phase-2-Progress-Log.md#f1193-class-analytics-grade-distribution-complete-2026-10-20)).
-3. **F1194 — Accepted/in progress; current:** Add a Qt-free Schedule Import candidate index type; preserve the -1 sentinel, arbitrary invalid values, decision and issue ordering, and candidate identity across UI sorting (see [acceptance](03-Phase-2-Progress-Log.md#f1194-schedule-import-candidate-index-accepted-before-implementation-2026-10-20)).
-4. **F1195 — Discovered:** Assess an invariant-preserving Initial Setup identity-requirements result; preserve the two-of-three rule and prompt order.
+3. **F1194 — Complete:** Add a Qt-free Schedule Import candidate index type; preserve the -1 sentinel, arbitrary invalid values, decision and issue ordering, and candidate identity across UI sorting (see [closeout](03-Phase-2-Progress-Log.md#f1194-schedule-import-candidate-index-complete-2026-10-20)).
+4. **F1195 — Accepted/in progress; current:** Replace the writable Initial Setup identity-requirements aggregate with an invariant-preserving result; preserve the two-of-three rule, missing-field order, and blank-entry behavior (see [acceptance](03-Phase-2-Progress-Log.md#f1195-initial-setup-identity-requirements-accepted-before-implementation-2026-10-20)).
 5. **F1196 — Discovered:** Type the Schedule Import schedules-cleared count; preserve exact counts, mode, and legacy ID behavior.
 6. **F1197 — Discovered:** Type the Sub Prep print student count; assess `ClassSummaryStudentCount` reuse while preserving zero, cap, and print behavior.
 7. **F1198 — Discovered:** Type Speaking Evaluation report source-row positions; preserve filtering and edit-to-source mapping.
@@ -51,7 +51,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 9. **F1200 — Discovered:** Type only the AI batch `reportIndex`; preserve -1, range filtering, and assignment order, and keep overlapping `sourceRow` raw.
 10. **F1201 — Discovered:** Type roster-save issue cell coordinates; preserve zero-based row/column values and -1 absence sentinels.
 
-Batch492 is complete and pushed at `3e6c09d9`; see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20). Batch493's ordered candidates and discovery comparison are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20); the [F1193 closeout](03-Phase-2-Progress-Log.md#f1193-class-analytics-grade-distribution-complete-2026-10-20) and [F1194 pre-implementation acceptance](03-Phase-2-Progress-Log.md#f1194-schedule-import-candidate-index-accepted-before-implementation-2026-10-20) are recorded there as well. Batch490 is complete and pushed at `69be43a7`; Batch491 is complete and pushed at `56bd1973`. Batch489 is complete and pushed at `e329f92b`. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch492 is complete and pushed at `3e6c09d9`; see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20). Batch493's ordered candidates and discovery comparison are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20); the [F1194 closeout](03-Phase-2-Progress-Log.md#f1194-schedule-import-candidate-index-complete-2026-10-20) and [F1195 pre-implementation acceptance](03-Phase-2-Progress-Log.md#f1195-initial-setup-identity-requirements-accepted-before-implementation-2026-10-20) are recorded there as well. Batch490 is complete and pushed at `69be43a7`; Batch491 is complete and pushed at `56bd1973`. Batch489 is complete and pushed at `e329f92b`. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.
