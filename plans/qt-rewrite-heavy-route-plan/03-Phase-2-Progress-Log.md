@@ -57729,3 +57729,53 @@ Both focused CTests passed (2/2), and the committed diff passed
 
 Batch500 remains active with F1243 complete, F1244 next for acceptance, and
 F1245–F1252 discovered.
+
+### F1244 Schedule Import target class IDs accepted before implementation - 2026-10-21
+
+F1244 is accepted before implementation. Change only the legacy
+`ScheduleImportClassResolution::targetClassId` field from `int = -1` to
+`std::optional<ClassMngr::Next::Domain::ClassId>`, reusing the existing
+Application ID type. Keep UI `ClassControl` and combo-box integers,
+`skipTargetId`, suggested IDs, repository/database integer IDs, and unrelated
+teacher IDs raw. At UI extraction, map every raw target value `<= 0` to
+`nullopt`, and positive values to `ClassId`, preserving the existing `-1` and
+`0` absent behavior. The `-2` value in `findActionIndex` is a separate action
+search wildcard, not a target-absence value.
+
+Copy the typed optional directly through `ScheduleImportReviewModel::buildApplyRequest`,
+`ScheduleImportPlanValidator`, and the repository's legacy-plan adapter. Keep
+`legacyApplyId` integer conversion at the database boundary. Preserve
+Application canonical-positive validation, existence checks, validation
+order, and issue mappings. Update requires an existing valid target; Create
+requires no target; Skip may be targetless or carry an exact uniquely matching
+target. Duplicate claims include Update and targeted Skip, retaining the
+existing later-claim issue-code choice. Targetless and targeted Skip continue
+to preserve schedules according to their distinct existing behavior. Do not
+broaden this slice to other Schedule Import IDs.
+
+Evidence: `src/domain/models/schedule_import.h:134,139`,
+`src/features/schedule/ui/schedule_import_resolution_controls.h:39`,
+`src/features/schedule/ui/schedule_import_resolution_controls.cpp:1018,1154`,
+`src/next/application/schedule_import_apply_request.h:100`,
+`src/next/application/schedule_import_review_decisions.h:122`,
+`src/features/schedule/services/schedule_import_review_model.cpp:14,148`,
+`src/features/schedule/services/schedule_import_plan_validator.cpp:42,472`, and
+`src/data/repositories/schedule_import_repository.cpp:42,209,1474`.
+Existing action-matrix coverage includes targetless `-1`/`0` Create/Skip,
+missing Update, invalid and canonical IDs, duplicates, stale targets, and exact
+Skip behavior. Add a compile-time optional-`ClassId` field assertion and UI
+boundary tests for `-1`/`0` absence and a positive typed ID.
+
+Focused targets and registered CTests are
+`ClassMngrScheduleImportDialogTests`,
+`ClassMngrScheduleImportTests`,
+`ClassMngrNextApplicationScheduleImportPlanValidationTests`,
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
+`ClassMngrNextApplicationScheduleImportStateValidationTests`, and
+`ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`; build
+`ClassMngr` as well and run only these focused CTests. At acceptance, no
+implementation, build, or tests had started. No Windows or full-suite result
+is claimed.
+
+Batch500 remains active with F1243 complete, F1244 accepted awaiting
+implementation, and F1245–F1252 discovered.
