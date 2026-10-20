@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batches 481–491 are complete and pushed, with Batch491 at `56bd1973` (see its [push receipt](03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)). Batch492 is active and unpushed: F1186–F1190 are complete and F1191 is accepted/in progress/current (see the [F1190 closeout](03-Phase-2-Progress-Log.md#f1190-schedule-import-matching-class-count-complete-2026-10-20), [F1191 acceptance](03-Phase-2-Progress-Log.md#f1191-class-tab-navigation-order-rank-accepted-before-implementation-2026-10-20), and [Batch492 discovery record](03-Phase-2-Progress-Log.md#batch492-provisional-discovery-at-f1184-start-2026-10-20)). Batch493 remains provisional under its existing [discovery record](03-Phase-2-Progress-Log.md#batch493-provisional-discovery-at-f1190-start-2026-10-20); it needs no rediscovery before Batch492 closes. F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batches 481–491 are complete and pushed, with Batch491 at `56bd1973` (see its [push receipt](03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)). Batch492 is closed locally and awaits push; F1191 is complete. Batch493 is active and unpushed, with F1192 accepted/current and F1193–F1201 discovered (see [Batch492 closeout and Batch493 discovery](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20) and [F1192 acceptance](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-accepted-before-implementation-2026-10-20)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,16 +38,20 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch492 — Active and unpushed; six candidates, with F1186–F1190 complete and F1191 accepted/in progress/current:**
+**Batch493 — Active and unpushed; ten candidates, with F1192 accepted/in progress/current and F1193–F1201 discovered:**
 
-1. **F1186 — Complete:** `Application::ScheduleImportAppliedCount` types only the seven apply-result counts; preserve exact/zero forwarding, telemetry, localized success text, and `profileNameUpdated` (see the [closeout record](03-Phase-2-Progress-Log.md#f1186-schedule-import-applied-result-counts-complete-2026-10-20)).
-2. **F1187 — Complete:** `Application::ClassDetailsStudentCount` types only the successful student-count result, preserving independent errors, NotFound recovery, and the zero display fallback (see the [closeout record](03-Phase-2-Progress-Log.md#f1187-class-details-page-student-count-complete-2026-10-20)).
-3. **F1188 — Complete:** `Application::ClassSummaryStudentCount` types the ClassSummary count; preserve zero, the projection’s 10,000 cap, and semantics separate from MyClasses (see the [closeout record](03-Phase-2-Progress-Log.md#f1188-classsummary-student-count-complete-2026-10-20)).
-4. **F1189 — Complete:** Shared `Application::UpdateArtifactFileName` preserves UTF-8 bytes, empty values, and existing display behavior without adding path policy (see the [closeout record](03-Phase-2-Progress-Log.md#f1189-updater-artifact-filename-complete-2026-10-20)).
-5. **F1190 — Complete:** `Application::ScheduleImportMatchingClassCount` types Schedule Import inventory and affected-class counts, preserving their distinct meanings and exact values without a cap (see the [closeout record](03-Phase-2-Progress-Log.md#f1190-schedule-import-matching-class-count-complete-2026-10-20)).
-6. **F1191 — Accepted/in progress; current:** Add Qt-free `Application::ClassTabNavigationOrderRank` for the four ordering ranks; preserve the 1000 sentinel (including valid 16:40), comparison/tie behavior, and Feature rank preparation (see the [acceptance record](03-Phase-2-Progress-Log.md#f1191-class-tab-navigation-order-rank-accepted-before-implementation-2026-10-20)).
+1. **F1192 — Accepted/in progress; current:** Add distinct Qt-free `Application::ClassAnalyticsRosterRowCount` and `Application::ClassAnalyticsFullyScoredStudentCount`; preserve row-versus-student meaning, zero values, Feature narrowing, and display (see [acceptance](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-accepted-before-implementation-2026-10-20)).
+2. **F1193 — Discovered:** Make the five Class Analytics grade bins addressable; preserve C/B/B+/A/A+ order and display, and add direct bin coverage.
+3. **F1194 — Discovered:** Type Schedule Import candidate index; preserve -1, ordering, duplicate handling, issue order, and invalid-index results; assess reuse of the neighboring typed index.
+4. **F1195 — Discovered:** Assess an invariant-preserving Initial Setup identity-requirements result; preserve the two-of-three rule and prompt order.
+5. **F1196 — Discovered:** Type the Schedule Import schedules-cleared count; preserve exact counts, mode, and legacy ID behavior.
+6. **F1197 — Discovered:** Type the Sub Prep print student count; assess `ClassSummaryStudentCount` reuse while preserving zero, cap, and print behavior.
+7. **F1198 — Discovered:** Type Speaking Evaluation report source-row positions; preserve filtering and edit-to-source mapping.
+8. **F1199 — Discovered:** Type the AI accepted-comment overwrite count; preserve the changed-comment and Qt-compatible trimmed-old-text definition.
+9. **F1200 — Discovered:** Type only the AI batch `reportIndex`; preserve -1, range filtering, and assignment order, and keep overlapping `sourceRow` raw.
+10. **F1201 — Discovered:** Type roster-save issue cell coordinates; preserve zero-based row/column values and -1 absence sentinels.
 
-Batch490 is complete and pushed at `69be43a7`; see its [push receipt](03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20). Batch491 is complete and pushed at `56bd1973`; see its [push receipt](03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20). Batch492 remains active and unpushed with the six ordered candidates above. Batch493 remains provisional under its existing [discovery record](03-Phase-2-Progress-Log.md#batch493-provisional-discovery-at-f1190-start-2026-10-20); keep Batch492 active until it closes, with no rediscovery required. Batch489 is complete and pushed at `e329f92b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch492 is closed locally and awaits push. Batch493's ordered candidates and discovery comparison are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20); F1192's pre-implementation acceptance is [recorded here](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-accepted-before-implementation-2026-10-20). Batch490 is complete and pushed at `69be43a7`; Batch491 is complete and pushed at `56bd1973`. Batch489 is complete and pushed at `e329f92b`. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.

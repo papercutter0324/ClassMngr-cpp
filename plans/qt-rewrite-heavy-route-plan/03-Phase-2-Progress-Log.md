@@ -54155,3 +54155,89 @@ accepted/in progress/current. Batch493 remains provisional under its existing
 keep Batch492's ordered list active until closure, with no rediscovery needed.
 F629 awaits source-bound Windows x64 layout evidence; the Phase 0 and Phase 2
 gates remain open.
+
+### F1191 Class Tab navigation order rank complete - 2026-10-20
+
+F1191 completed at source/test commit
+`6a7cb2ebe1e26a526f2f7f2ed971f20e64c2d34a` (`Phase2 - Type Class Tab
+navigation ranks`); its acceptance was recorded in documentation commit
+`b9c20e0bb37116919140e5e6248c6aa5fc5fc71f`. The Qt-free
+`Application::ClassTabNavigationOrderRank` now stores signed `std::int32_t`
+with explicit construction, default value `1000`, `.rawValue()`, and equality,
+without implicit conversion in either direction. All four rank fields use the
+type; Feature explicitly wraps prepared ranks and Application unwraps them for
+comparison. Existing rank priority, label comparison, sentinel/valid 16:40
+collision, class-ID tie-break, and strict weak ordering remain unchanged.
+
+The incremental macOS build in `build/macos-clang-debug` built `ClassMngr`,
+`ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests`, and
+`ClassMngrClassTabNavigationModelTests`. Both focused CTests passed. The
+policy test was rerun after durable assertions for both conversion directions
+were added and passed. `git diff --check` passed. No full suite or Windows
+build ran.
+
+F1191 completes Batch492's sixth and final slice. Batch492 is closed locally;
+its push remains pending and has no push receipt yet. F629 awaits source-bound
+Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+
+### Batch492 closed locally and Batch493 discovery finalized - 2026-10-20
+
+After F1191 closed Batch492, two independent Explorers compared complementary
+Application-contract and Feature-boundary scans to complete the next ordered
+batch of ten. The scans agreed on F1193–F1195; F1192 was present in both, with
+different confidence. One scan independently validated F1199–F1201. No
+deferred trigger became newly actionable.
+
+The final Batch493 order is F1192 Class Analytics counts, F1193 Class Analytics
+grade distribution, F1194 Schedule Import candidate index, F1195 Initial Setup
+identity-requirements invariant, F1196 Schedule Import schedules-cleared
+count, F1197 Sub Prep print student count, F1198 Speaking Evaluation report
+source row, F1199 AI accepted-comment overwrite count, F1200 AI batch report
+index, and F1201 roster-save issue cell location. Schedule Import
+schedules-cleared was selected over Schedule View position fields because it
+has a single count semantic, a typed consumer, and a focused existing CTest.
+Speaking Evaluation `sourceRow` was selected over Class Transfer
+`selectedIndex` because existing coverage exercises filtering and mapping edits
+back to source rows.
+
+Discovery corrections and retained prospects: for F1192, direct
+`rosterStudentCount` query assertions and zero-display assertions were not
+found, so acceptance now requires direct zero/positive count assertions; the
+existing page parity expectation `2 / 3` remains. F1200 is limited to
+`reportIndex` (`int`, -1 sentinel, range filtering, assignment order), because
+its `sourceRow` overlaps F1198 and remains raw pending a separate decision.
+Schedule View positions and Class Transfer `selectedIndex` remain unselected
+Batch494 prospects; no standalone AI `sourceRow` slice is added. The earlier
+F1190-start discovery entry remains historical; this record supersedes its
+provisional four-candidate count for the active plan. Batch493 has ten ordered
+candidates, with F1192 accepted/current and F1193–F1201 discovered.
+
+### F1192 Class Analytics counts accepted before implementation - 2026-10-20
+
+F1192 is accepted/current before implementation. In
+`src/next/application/class_analytics_dashboard_read_query.h`,
+`ClassAnalyticsSnapshot::rosterStudentCount` and `fullyScoredCount` are raw
+`std::size_t` counts. Roster count represents rows, including blank and sparse
+rows; fully-scored count represents distinct identified students with all six
+criteria scored. Feature currently narrows both to `int` for display. The two
+counts have distinct meanings and must remain separate.
+
+Add Qt-free `Application::ClassAnalyticsRosterRowCount` and
+`Application::ClassAnalyticsFullyScoredStudentCount`, each with exact
+`std::size_t` storage, zero default, explicit construction, `.rawValue()`, and
+equality, with no implicit conversion or policy. Use them only for the
+corresponding snapshot fields. Preserve identity/scoring logic, exact zero and
+positive values, current Feature narrowing, and display; add no cap. Extend the
+query tests with direct exact zero/positive assertions for both counts. Do not
+claim existing query/Platform/page coverage asserts exact roster count or zero
+display; existing page parity `2 / 3` remains the display check.
+
+Build `ClassMngr`,
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`,
+and `ClassMngrClassAnalyticsPageReadParityTests` in
+`build/macos-clang-debug`; run the three matching focused CTests and
+`git diff --check`. Implementation and verification have not started. No full
+suite or Windows result is claimed. Batch492 is closed locally and awaits
+push; Batch493 is active with F1192 accepted/current and F1193–F1201
+discovered. F629 and the Phase 0 and Phase 2 gates remain open.

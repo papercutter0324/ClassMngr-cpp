@@ -53,57 +53,24 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1191 active; Batch492 unpushed)
+### Current checkpoint - 2026-10-20 (F1192 accepted; Batch492 closed locally)
 
 Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
 records the handoff. Batch491 is complete and pushed to `origin/Qt-Rewrite`
 at `56bd1973`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)
-records the handoff. F1178–F1190 are complete. Batch492 is active with six
-candidates: F1186–F1190 are complete, and F1191 is accepted and in progress.
-Acceptance, completion, and verification details are in the [Phase 2 progress
-log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
+records the handoff. F1178–F1191 are complete. Batch492 is closed locally and
+awaits its push receipt. Batch493 is active with ten ordered candidates;
+F1192 is accepted/current before implementation and F1193–F1201 are
+discovered. Acceptance, discovery, and verification evidence are in the
+[Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
-F1186 completed at source/test commit `32eb56e4`, after acceptance commit
-`94304544`. `Application::ScheduleImportAppliedCount` now types all seven
-applied-result counts while preserving exact and zero forwarding, telemetry,
-localized success text, and the optional profile-name suffix. The independent
-Tester built five affected targets in `build/macos-clang-debug`; the focused
-Application, Platform, dialog, and startup lifecycle checks passed. Startup
-metrics were `5,0,20,0,0,96,0`. No full suite or Windows build ran.
+F1191 completed at source/test commit `6a7cb2eb`. Its typed navigation rank
+preserves the 1000 sentinel, valid 16:40 collision, tuple order, label
+comparison, class-ID tie-break, and strict weak ordering. The incremental
+macOS build covered three affected targets; both focused CTests and
+`git diff --check` passed. No full suite or Windows build ran.
 
-F1187 completed at source/test commit `c2085ba2`. The dedicated
-`Application::ClassDetailsStudentCount` preserves exact successful values,
-zero, independent source errors, recoverable missing-parent `NotFound`, and
-the Feature zero fallback. The independent Tester built four affected targets
-in `build/macos-clang-debug`; the three focused CTests passed. No full suite or
-Windows build ran.
-
-F1188 completed at source/test commit `37b73c6a`. The distinct
-`Application::ClassSummaryStudentCount` preserves exact values and keeps the
-10,000 maximum in projection validation. Seven affected targets built and
-five focused CTests passed; the direct changed-page case passed. The full page
-CTest timed out in `unavailablePreferenceLoadsPreservePageValues`; no full
-suite or Windows build ran.
-
-F1189 completed at source/test commit `db5e3d86`. The shared
-`Application::UpdateArtifactFileName` preserves empty and UTF-8 filename
-values across the startup/manual paths. Five affected targets built, both
-Application CTests passed, and the focused adapter and UI roundtrip cases
-passed. Broader Qt CTests hit sandbox-denied localhost binds; no full suite or
-Windows build ran.
-
-F1190 completed at source/test commit `71ce33ed`. The shared
-`Application::ScheduleImportMatchingClassCount` types total inventory and
-affected-class counts while preserving their distinct meanings and existing
-legacy casts. Four affected targets built and all three focused CTests passed.
-No full suite or Windows build ran. F1191 is accepted and in progress.
-Batch493's provisional discovery found four candidates, F1192–F1195, with a
-shortfall of six against the ten-slice target; no deferred trigger became
-actionable.
-
-Batch492's discovery found six candidates against the ten-candidate target;
-see its [discovery record](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch492-provisional-discovery-at-f1184-start-2026-10-20).
 F1175's Class Transfer test still has one unresolved teacher-fallback label
 failure among 64 cases; no clean baseline proves it pre-existing. F629 awaits
 source-bound Windows x64 layout evidence. The Phase 0 and Phase 2 gates remain
