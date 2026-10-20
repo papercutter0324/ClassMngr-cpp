@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). In active Batch499, F1237–F1239 are complete and F1240 is accepted awaiting implementation (see [F1240 acceptance](03-Phase-2-Progress-Log.md#f1240-speaking-evaluation-utf-16-text-match-spans-accepted-before-implementation-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). In active Batch499, F1237–F1240 are complete and F1241 is next for acceptance (see [F1240 verification](03-Phase-2-Progress-Log.md#f1240-speaking-evaluation-utf-16-text-match-spans-complete-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,12 +38,12 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch499 — Active (F1237–F1239 complete; F1240 accepted; F1241–F1242 discovered):**
+**Batch499 — Active (F1237–F1240 complete; F1241–F1242 discovered):**
 
 1. **F1237 — Complete:** Type `ClassAnalyticsRosterNames::rowCount` with existing `ClassAnalyticsRosterRowCount`; preserve physical sparse-row count, vector sizing, and empty-name query behavior.
 2. **F1238 — Complete:** `GregorianDate::weekday()` returns `Domain::IsoWeekday`, explicitly mapped to zero-based `Domain::Weekday` at the calendar recurrence boundary.
 3. **F1239 — Complete:** Type Class Transfer weekly weekday candidates with `Domain::Weekday`; preserve invalid-day rejection, half-open overlap, Sunday overnight behavior, and repository preflight.
-4. **F1240 — Accepted; awaiting implementation:** Type Speaking Evaluation text-match start and length as UTF-16 code-unit values; preserve matching behavior.
+4. **F1240 — Complete:** Type Speaking Evaluation text-match start and length as UTF-16 code-unit values; preserve matching behavior.
 5. **F1241 — Discovered; next for acceptance:** Give Calendar Event Timing clock values a semantic representation while preserving its day rules; begin Batch500 discovery when this second-last slice starts.
 6. **F1242 — Discovered:** Distinguish Schedule View row order, cell order, and slot keys; preserve lookup behavior.
 

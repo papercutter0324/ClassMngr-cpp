@@ -57436,3 +57436,29 @@ Batch499 remains active with F1237–F1239 complete and F1240 accepted. F1241
 is next for acceptance, followed by discovered F1242. Starting F1241, the
 second-last Batch499 slice, also triggers ordered Batch500 discovery under the
 phase plan.
+
+### F1240 Speaking Evaluation UTF-16 text-match spans complete - 2026-10-21
+
+F1240 completed at implementation commit
+`69fc572b34cfa14042b26f0c545039d88d43c74e`. The Qt-free Application contract
+now has explicit `SpeakingEvaluationTextMatchStart` and
+`SpeakingEvaluationTextMatchLength` values, carried by match spans and through
+the Application redaction candidate path. The Qt adapter wraps match offsets;
+Application code unwraps only for `std::u16string_view` bounds and substring
+operations. Matching and prompt text behavior remain unchanged.
+
+Tests cover wrapper type and conversion semantics, invalid span handling, and
+the supplementary-plane example: `u"\U00010400 \U00010428"` matched against
+`u"\U00010428"` reports UTF-16 code-unit start `3` and length `2`.
+
+The Executor built `ClassMngr` and both focused targets:
+`ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests` and
+`ClassMngrNextPlatformSpeakingEvaluationQtTextMatchPortTests`. Both focused
+CTests passed (2/2). The independent Tester rebuilt in the existing
+`build/macos-clang-debug` tree, Ninja reported no work to do, and it reran the
+two CTests with 2/2 passing. `git diff --check` passed. This is incremental
+macOS Clang verification; Windows x64 and the full suite were not run.
+
+Batch499 remains active with F1237–F1240 complete. F1241 is next for
+acceptance; F1242 remains discovered. When F1241 starts, it will trigger the
+ordered Batch500 discovery required for this second-last slice.
