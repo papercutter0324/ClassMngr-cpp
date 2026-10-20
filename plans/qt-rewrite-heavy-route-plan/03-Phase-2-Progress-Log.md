@@ -48819,6 +48819,43 @@ bounded scans found no further candidates within their respective scanned
 surfaces; F1127 remains lower confidence pending acceptance screening. F629
 and the Phase 0 and Phase 2 gates remain open.
 
+### F1161 Calendar repeat-series edit event type accepted before implementation - 2026-10-20
+
+F1161 is accepted/in progress as Batch488's final candidate. Type
+`CalendarEventSeriesEditRequest.eventType` and
+`CalendarEventSeriesEditOccurrenceUpdate.eventType` as
+`Domain::CalendarEventType`; keep raw `std::string` only in
+`CalendarEventSeriesEditInput`. `toRequest()` recognizes the ASCII-trimmed
+input using the Domain event-type parser, while enforcing the existing
+64-byte bound against the original raw UTF-8 input. Preserve the exact
+`Domain::ErrorCode::InvalidInput`, message
+`Calendar repeat-series edit text fields must be non-blank and bounded.`, and
+`recoverable=false` for invalid or oversized event type input, including the
+current validation precedence. Requests and plans carry the enum; validation
+rejects invalid enum casts. The planner propagates the value to each update,
+and Platform serializes it with the Domain name helper to the same canonical
+persisted string. Keep selection, order, date, time, error, and persistence
+semantics unchanged; make no repository or SQL changes.
+
+Evidence: `src/next/application/calendar_event_series_edit_port.h`,
+`src/next/application/calendar_event_series_edit_use_case.h`,
+`src/next/domain/calendar_event_timing.h`,
+`src/next/platform/application_services_calendar_event_series_edit_port.h`,
+`src/features/calendar/ui/calendar_page_events.cpp`,
+`tests/next_application_calendar_event_tests.cpp`, and
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
+The existing Application test
+`calendarEventTypeValidationUsesDomainClassifiersAndPreservesRawText`
+accepts padded `" \tWorkshop \n"` after trim-based recognition while
+preserving the raw input; the Platform currently canonicalizes recognized
+values before persistence. Implementation and verification have not started.
+
+Batch488 remains active with seven complete, F1161 accepted/in progress, and
+none discovered. Batch489 remains provisional and inactive until Batch488
+closes. The batch has no push receipt and is not closed. F629 awaits
+source-bound Windows x64 layout evidence; the user cannot run Windows now,
+and the Phase 0 and Phase 2 gates remain open.
+
 ### Batch483 push receipt 2026-10-20
 
 Batch483 closeout commit `0f47ad3241c727002c2cdb68a81c38145141dc03` was

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch488 is active with seven complete, none accepted/in progress, and one discovered; F1161 is next. F629 awaits source-bound Windows x64 layout evidence, the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch488 is active with seven complete and F1161 accepted/in progress as its final candidate; F629 awaits source-bound Windows x64 layout evidence, the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
@@ -73,7 +73,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch488 (8 candidates; 7 complete; 0 accepted/in progress; 1 discovered)
+#### Active batch: Batch488 (8 candidates; 7 complete; 1 accepted/in progress; 0 discovered)
 
 1. F1154 - **Complete.** Type RosterAvailability's first-empty row output; preserve values 0–24, -1 as the full sentinel, and per-row `Result` errors (see the [completion record](03-Phase-2-Progress-Log.md#f1154-rosteravailability-first-empty-row-complete-2026-10-20)).
 2. F1155 - **Complete.** Type My Classes' nonnegative student-count output; preserve per-row `Result` errors (see the [completion record](03-Phase-2-Progress-Log.md#f1155-my-classes-student-count-complete-2026-10-20)).
@@ -82,9 +82,9 @@ Treat this plan as an operational summary, not a history:
 5. F1158 - **Complete.** Give Co-Teacher schedule day/start identity its own `ClassCoTeacherPageScheduleSlot` value; preserve raw pair values and source order (see the [completion record](03-Phase-2-Progress-Log.md#f1158-co-teacher-schedule-slot-complete-2026-10-20)).
 6. F1159 - **Complete.** Add `ScheduleSlotStateReadIdentity` for raw UTF-16 day/start text; preserve state text, row order, and existing UI interpretation, without reusing F1151's testing key (see the [completion record](03-Phase-2-Progress-Log.md#f1159-schedule-slot-state-read-identity-complete-2026-10-20)).
 7. F1160 - **Complete.** Type the repeat-series delete request date as `Domain::GregorianDate`; retain raw input at the UI/use-case boundary and preserve exact validation behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1160-calendar-repeat-series-delete-date-complete-2026-10-20)).
-8. F1161 - **Discovered.** Reassess Calendar repeat-series edit `eventType` against `Domain::CalendarEventType`; resolve trimmed recognition versus raw-forwarding compatibility before acceptance.
+8. F1161 - **Accepted/in progress.** Type repeat-series edit request and occurrence-update `eventType` as `Domain::CalendarEventType`, retaining raw text at the Input boundary and preserving trimmed recognition, raw byte bounds, and validation behavior (see the [acceptance record](03-Phase-2-Progress-Log.md#f1161-calendar-repeat-series-edit-event-type-accepted-before-implementation-2026-10-20)).
 
-Batch488 has eight candidates: F1154–F1160 are complete, none are accepted/in progress, and one remains discovered; F1161 follows F1160 in the recorded order. The original candidate list is in the [Batch488 discovery record](03-Phase-2-Progress-Log.md#batch488-discovery-at-f1152-start-2026-10-20). The batch has no push receipt and is not closed. F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+Batch488 has eight candidates: F1154–F1160 are complete, F1161 is accepted/in progress, and none remain discovered. The original candidate list is in the [Batch488 discovery record](03-Phase-2-Progress-Log.md#batch488-discovery-at-f1152-start-2026-10-20). The batch has no push receipt and is not closed. F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 
