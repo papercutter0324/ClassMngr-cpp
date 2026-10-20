@@ -54910,3 +54910,55 @@ Relevant sources are
 `tests/roster_transfer_menu_tests.cpp`. No F1203 implementation or
 verification has started. Batch494 remains open and unpushed; F1204–F1209
 remain discovered.
+
+### F1203 Roster-row transfer position types complete - 2026-10-20
+
+F1203 completed at source/test commit
+`2dff4c78a4ba103750fdbb64d87ff79a80ffdb13` (`Phase2 - Type roster transfer
+row positions`). The eight changed paths were
+`src/features/roster/ui/roster_editor_widget_transfer.cpp`,
+`src/features/roster/ui/roster_model_rows.cpp`,
+`src/next/application/roster_row_transfer_preparation.h`,
+`src/next/application/roster_row_transfer_use_case.h`,
+`tests/next_application_roster_row_transfer_preparation_tests.cpp`,
+`tests/next_application_roster_row_transfer_use_case_tests.cpp`,
+`tests/next_platform_application_services_roster_save_port_tests.cpp`, and
+`tests/roster_transfer_menu_tests.cpp`.
+
+In `build/macos-clang-debug`, the independent Tester built `ClassMngr`,
+`ClassMngrNextApplicationRosterRowTransferPreparationTests`,
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`,
+`ClassMngrRosterTransferMenuTests`, and `ClassMngrRosterModelTests`. Ninja
+compiled/relinked only `ClassMngrRosterModelTests`. With
+`QT_QPA_PLATFORM=offscreen`, the five focused CTests passed 5/5, and
+`git diff --check` passed. This is focused evidence only; no full-suite or
+Windows check is claimed. Batch494 remains open and unpushed.
+
+### F1204 Roster-row reordering index types accepted before implementation - 2026-10-20
+
+F1204 is accepted/current before implementation, based on two independent
+read-only Explorer reports. In `src/next/application/roster_row_reordering.h`
+(lines 37–102), add separate explicit signed-`int` Application wrappers
+`RosterRowReorderingSourceIndex` and
+`RosterRowReorderingDestinationIndex`, each with explicit construction,
+`.rawValue()`, equality, and no implicit conversions; use them in
+`reorderRosterRows`. Keep these values distinct from F1203 transfer positions.
+Adapt only the two `RosterModel` call sites in
+`src/features/roster/ui/roster_model_rows.cpp` at the Qt/UI boundary. Keep the
+Qt-facing `int` drag/drop APIs in `roster_model.h` and `roster_table_view.cpp`
+and all F1203 transfer wrappers unchanged.
+
+Preserve validation precedence: source range, destination range, same-row
+rejection, then source-data validation. When multiple inputs are invalid, the
+source failure continues to win. Preserve erase/insert move semantics and all
+rows, cells, and other snapshot fields. Add a focused source-invalid
+precedence assertion because the existing suite lacks a multi-invalid case.
+The discovery references are `src/next/application/roster_row_reordering.h`,
+`src/features/roster/ui/roster_model_rows.cpp`,
+`src/features/roster/ui/roster_model.h`,
+`src/features/roster/ui/roster_table_view.cpp`, and
+`tests/next_application_roster_row_reordering_tests.cpp`; existing targets are
+`ClassMngrNextApplicationRosterRowReorderingTests` and
+`ClassMngrRosterModelTests`. No F1204 implementation or verification has
+started. Batch494 remains open and unpushed; F1205–F1209 remain discovered.
