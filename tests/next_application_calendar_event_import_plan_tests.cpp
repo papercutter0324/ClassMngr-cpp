@@ -3,11 +3,22 @@
 #include <QtTest/QtTest>
 
 #include <cstddef>
+#include <limits>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
+
+static_assert(std::is_same_v<
+    decltype(CalendarEventImportPlanRequest{}.initiallySkippedCount),
+    CalendarEventImportCount
+    >);
+static_assert(std::is_same_v<
+    decltype(CalendarEventImportPlan{}.skippedCount),
+    CalendarEventImportCount
+    >);
 
 namespace
 {
@@ -31,6 +42,7 @@ class NextApplicationCalendarEventImportPlanTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void countWrapsSignedIntWithoutImplicitConversions();
     void emptyInputProducesEmptyPlan();
     void noCandidatesRetainParserSkippedCount();
     void existingSignaturesSkipMatchingCandidates();
@@ -39,13 +51,40 @@ private slots:
     void distinctLoneSurrogateKeysRemainDistinct();
 };
 
+void NextApplicationCalendarEventImportPlanTests::
+countWrapsSignedIntWithoutImplicitConversions()
+{
+    static_assert(!std::is_convertible_v<int, CalendarEventImportCount>);
+    static_assert(!std::is_convertible_v<CalendarEventImportCount, int>);
+    static_assert(std::is_constructible_v<CalendarEventImportCount, int>);
+
+    CalendarEventImportCount count;
+    QCOMPARE(count.rawValue(), 0);
+    QVERIFY(count == CalendarEventImportCount{});
+
+    const CalendarEventImportCount minimum{
+        std::numeric_limits<int>::min()
+    };
+    const CalendarEventImportCount maximum{
+        std::numeric_limits<int>::max()
+    };
+    QCOMPARE(minimum.rawValue(), std::numeric_limits<int>::min());
+    QCOMPARE(maximum.rawValue(), std::numeric_limits<int>::max());
+    QVERIFY(minimum != maximum);
+
+    CalendarEventImportCount& incremented = ++count;
+    QVERIFY(&incremented == &count);
+    QCOMPARE(count.rawValue(), 1);
+    QVERIFY(count == CalendarEventImportCount{1});
+}
+
 void NextApplicationCalendarEventImportPlanTests::emptyInputProducesEmptyPlan()
 {
     const CalendarEventImportPlan plan =
         planCalendarEventImport(CalendarEventImportPlanRequest{});
 
     QVERIFY(plan.acceptedCandidateIndices.empty());
-    QCOMPARE(plan.skippedCount, 0);
+    QCOMPARE(plan.skippedCount.rawValue(), 0);
 }
 
 void NextApplicationCalendarEventImportPlanTests::
@@ -53,13 +92,13 @@ noCandidatesRetainParserSkippedCount()
 {
     CalendarEventImportPlanRequest request;
     request.existingSignatures = {signature(u"already-present")};
-    request.initiallySkippedCount = 6;
+    request.initiallySkippedCount = CalendarEventImportCount{6};
 
     const CalendarEventImportPlan plan =
         planCalendarEventImport(request);
 
     QVERIFY(plan.acceptedCandidateIndices.empty());
-    QCOMPARE(plan.skippedCount, 6);
+    QCOMPARE(plan.skippedCount.rawValue(), 6);
 }
 
 void NextApplicationCalendarEventImportPlanTests::
@@ -80,7 +119,7 @@ existingSignaturesSkipMatchingCandidates()
 
     const std::vector<std::size_t> expectedAcceptedIndices = {1};
     QVERIFY(plan.acceptedCandidateIndices == expectedAcceptedIndices);
-    QCOMPARE(plan.skippedCount, 1);
+    QCOMPARE(plan.skippedCount.rawValue(), 1);
 }
 
 void NextApplicationCalendarEventImportPlanTests::
@@ -96,7 +135,7 @@ duplicateCandidatesAreAcceptedOnlyOnceInInputOrder()
         signature(u"third"),
         signature(u"second")
     };
-    request.initiallySkippedCount = 7;
+    request.initiallySkippedCount = CalendarEventImportCount{7};
 
     const CalendarEventImportPlan plan =
         planCalendarEventImport(request);
@@ -104,7 +143,7 @@ duplicateCandidatesAreAcceptedOnlyOnceInInputOrder()
     const std::vector<std::size_t> expectedAcceptedIndices = {0, 2, 4};
     QVERIFY(plan.acceptedCandidateIndices == expectedAcceptedIndices);
     // One match in the existing set plus two repeated candidate keys.
-    QCOMPARE(plan.skippedCount, 10);
+    QCOMPARE(plan.skippedCount.rawValue(), 10);
 }
 
 void NextApplicationCalendarEventImportPlanTests::
@@ -124,7 +163,7 @@ opaqueSignaturesUseExactStringEquality()
 
     const std::vector<std::size_t> expectedAcceptedIndices = {1, 2};
     QVERIFY(plan.acceptedCandidateIndices == expectedAcceptedIndices);
-    QCOMPARE(plan.skippedCount, 2);
+    QCOMPARE(plan.skippedCount.rawValue(), 2);
 }
 
 void NextApplicationCalendarEventImportPlanTests::
@@ -146,7 +185,7 @@ distinctLoneSurrogateKeysRemainDistinct()
 
     const std::vector<std::size_t> expectedAcceptedIndices = {1};
     QVERIFY(plan.acceptedCandidateIndices == expectedAcceptedIndices);
-    QCOMPARE(plan.skippedCount, 1);
+    QCOMPARE(plan.skippedCount.rawValue(), 1);
 }
 
 QTEST_APPLESS_MAIN(NextApplicationCalendarEventImportPlanTests)

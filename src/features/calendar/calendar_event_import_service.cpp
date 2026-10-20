@@ -5,6 +5,7 @@
 #include "calendar_workbook_reader.h"
 #include "core/application_services.h"
 #include "core/startup_profiler.h"
+#include "next/application/calendar_event_import_count.h"
 #include "next/application/calendar_event_import_campus_code_query_port.h"
 #include "next/application/calendar_event_import_use_case.h"
 #include "next/application/calendar_event_import_signature_query_port.h"
@@ -54,12 +55,13 @@ public:
 
     void savePrepared(
         const std::size_t eventCount,
-        const int skippedCount
+        const ClassMngr::Next::Application::CalendarEventImportCount
+            skippedCount
         ) override
     {
         StartupProfiler::recordCalendarImportSavePrepared(
             static_cast<int>(eventCount),
-            skippedCount
+            skippedCount.rawValue()
             );
     }
 };
@@ -343,7 +345,10 @@ void CalendarEventImportService::handleFinished(
             lastDate.toString(Qt::ISODate).toStdString()
             )
     };
-    useCaseRequest.initiallySkippedCount = parsed.skippedCount;
+    useCaseRequest.initiallySkippedCount =
+        ClassMngr::Next::Application::CalendarEventImportCount{
+            parsed.skippedCount
+            };
     useCaseRequest.candidates.reserve(
         static_cast<std::size_t>(parsed.events.size())
         );
@@ -387,12 +392,12 @@ void CalendarEventImportService::handleFinished(
     }
 
     StartupProfiler::recordCalendarImportApplied(
-        imported.value().importedCount,
-        imported.value().skippedCount
+        imported.value().importedCount.rawValue(),
+        imported.value().skippedCount.rawValue()
         );
 
     emit importFinished(
-        imported.value().importedCount,
-        imported.value().skippedCount
+        imported.value().importedCount.rawValue(),
+        imported.value().skippedCount.rawValue()
         );
 }

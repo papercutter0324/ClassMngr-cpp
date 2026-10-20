@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/calendar_event_import_count.h"
 #include "next/application/calendar_event_import_signature.h"
 
 #include <cstddef>
@@ -16,13 +17,13 @@ struct CalendarEventImportPlanRequest
     // Opaque UTF-16 code units from the legacy QString signature.
     std::vector<CalendarEventImportSignature> existingSignatures;
     std::vector<CalendarEventImportSignature> candidateSignatures;
-    int initiallySkippedCount = 0;
+    CalendarEventImportCount initiallySkippedCount;
 };
 
 struct CalendarEventImportPlan
 {
     std::vector<std::size_t> acceptedCandidateIndices;
-    int skippedCount = 0;
+    CalendarEventImportCount skippedCount;
 };
 
 [[nodiscard]] inline CalendarEventImportPlan planCalendarEventImport(

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/calendar_event_import_count.h"
 #include "next/application/calendar_event_import_save_port.h"
 #include "next/application/calendar_event_import_plan.h"
 #include "next/application/calendar_event_import_signature_query_port.h"
@@ -180,13 +181,13 @@ struct CalendarEventImportUseCaseRequest final
 {
     CalendarEventImportSignatureRangeRequest signatureRange;
     std::vector<CalendarEventImportCandidate> candidates;
-    int initiallySkippedCount = 0;
+    CalendarEventImportCount initiallySkippedCount;
 };
 
 struct CalendarEventImportUseCaseResult final
 {
-    int importedCount = 0;
-    int skippedCount = 0;
+    CalendarEventImportCount importedCount;
+    CalendarEventImportCount skippedCount;
 
     friend bool operator==(
         const CalendarEventImportUseCaseResult&,
@@ -204,7 +205,7 @@ public:
     virtual void existingSignaturesLoaded(std::size_t count) = 0;
     virtual void savePrepared(
         std::size_t eventCount,
-        int skippedCount
+        CalendarEventImportCount skippedCount
         ) = 0;
 };
 
@@ -222,7 +223,7 @@ public:
         if (request.candidates.empty())
         {
             return Domain::Result<CalendarEventImportUseCaseResult>::success({
-                .importedCount = 0,
+                .importedCount = CalendarEventImportCount{},
                 .skippedCount = request.initiallySkippedCount
             });
         }
@@ -336,7 +337,9 @@ public:
         }
 
         return Domain::Result<CalendarEventImportUseCaseResult>::success({
-            .importedCount = static_cast<int>(saved.value().size()),
+            .importedCount = CalendarEventImportCount{
+                static_cast<int>(saved.value().size())
+                },
             .skippedCount = plan.skippedCount
         });
     }

@@ -4,11 +4,32 @@
 
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
+
+static_assert(std::is_same_v<
+    decltype(CalendarEventImportUseCaseRequest{}.initiallySkippedCount),
+    CalendarEventImportCount
+    >);
+static_assert(std::is_same_v<
+    decltype(CalendarEventImportUseCaseResult{}.importedCount),
+    CalendarEventImportCount
+    >);
+static_assert(std::is_same_v<
+    decltype(CalendarEventImportUseCaseResult{}.skippedCount),
+    CalendarEventImportCount
+    >);
+static_assert(std::is_same_v<
+    decltype(&CalendarEventImportUseCaseObserver::savePrepared),
+    void (CalendarEventImportUseCaseObserver::*)(
+        std::size_t,
+        CalendarEventImportCount
+        )
+    >);
 
 namespace
 {
@@ -87,7 +108,7 @@ public:
 
     void savePrepared(
         const std::size_t eventCount,
-        const int skippedCount
+        const CalendarEventImportCount skippedCount
         ) override
     {
         stages.push_back("save");
@@ -98,7 +119,7 @@ public:
     std::vector<std::string> stages;
     std::size_t existingSignatureCount = 0;
     std::size_t saveEventCount = 0;
-    int skippedCount = 0;
+    CalendarEventImportCount skippedCount;
 };
 
 CalendarEventImportUseCaseRequest requestWithRange()
@@ -189,7 +210,7 @@ emptyInputSkipsPortsAndPreservesParserSkipCount()
     const CalendarEventImportUseCaseRequest request = []()
     {
         auto empty = requestWithRange();
-        empty.initiallySkippedCount = 4;
+        empty.initiallySkippedCount = CalendarEventImportCount{4};
         return empty;
     }();
     FakeSignatureQueryPort queryPort;
@@ -204,8 +225,8 @@ emptyInputSkipsPortsAndPreservesParserSkipCount()
     QVERIFY(result);
     QVERIFY((
         result.value() == CalendarEventImportUseCaseResult{
-            .importedCount = 0,
-            .skippedCount = 4
+            .importedCount = CalendarEventImportCount{},
+            .skippedCount = CalendarEventImportCount{4}
         }
         ));
     QCOMPARE(queryPort.callCount, 0);
@@ -343,8 +364,8 @@ normalizedTitleMatchesQtSimplifiedWhitespace()
         );
 
     QVERIFY(result);
-    QCOMPARE(result.value().importedCount, 0);
-    QCOMPARE(result.value().skippedCount, 1);
+    QCOMPARE(result.value().importedCount.rawValue(), 0);
+    QCOMPARE(result.value().skippedCount.rawValue(), 1);
     QCOMPARE(queryPort.callCount, 1);
     QCOMPARE(savePort.callCount, 1);
     QVERIFY(savePort.lastRequest.events.empty());
@@ -409,7 +430,7 @@ acceptedCandidatesStayOrderedAndCountsMatch()
     const CalendarEventImportCandidate existingDuplicate =
         candidate("Existing duplicate");
     CalendarEventImportUseCaseRequest request = requestWithRange();
-    request.initiallySkippedCount = 4;
+    request.initiallySkippedCount = CalendarEventImportCount{4};
     request.candidates = {
         candidate(multibyteTitle),
         existingDuplicate,
@@ -436,8 +457,8 @@ acceptedCandidatesStayOrderedAndCountsMatch()
     QVERIFY(result);
     QVERIFY((
         result.value() == CalendarEventImportUseCaseResult{
-            .importedCount = 2,
-            .skippedCount = 6
+            .importedCount = CalendarEventImportCount{2},
+            .skippedCount = CalendarEventImportCount{6}
         }
         ));
     QCOMPARE(queryPort.callCount, 1);
@@ -456,14 +477,14 @@ acceptedCandidatesStayOrderedAndCountsMatch()
     QVERIFY(observer.stages == (std::vector<std::string>{"query", "save"}));
     QCOMPARE(observer.existingSignatureCount, std::size_t(2));
     QCOMPARE(observer.saveEventCount, std::size_t(2));
-    QCOMPARE(observer.skippedCount, 6);
+    QCOMPARE(observer.skippedCount.rawValue(), 6);
 }
 
 void NextApplicationCalendarEventImportUseCaseTests::
 duplicateOnlyInputStillSavesAnEmptyBatch()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
-    request.initiallySkippedCount = 2;
+    request.initiallySkippedCount = CalendarEventImportCount{2};
     const CalendarEventImportCandidate duplicate = candidate("Duplicate");
     request.candidates = {duplicate};
 
@@ -480,8 +501,8 @@ duplicateOnlyInputStillSavesAnEmptyBatch()
     QVERIFY(result);
     QVERIFY((
         result.value() == CalendarEventImportUseCaseResult{
-            .importedCount = 0,
-            .skippedCount = 3
+            .importedCount = CalendarEventImportCount{},
+            .skippedCount = CalendarEventImportCount{3}
         }
         ));
     QCOMPARE(queryPort.callCount, 1);
@@ -512,9 +533,9 @@ duplicateHeavyInputIsFilteredBeforeApplyingSaveLimit()
         );
 
     QVERIFY(result);
-    QCOMPARE(result.value().importedCount, 1);
+    QCOMPARE(result.value().importedCount.rawValue(), 1);
     QCOMPARE(
-        result.value().skippedCount,
+        result.value().skippedCount.rawValue(),
         static_cast<int>(kCalendarEventImportSaveMaxEvents)
         );
     QCOMPARE(queryPort.callCount, 1);
@@ -580,8 +601,8 @@ signatureIdentityRemainsExactUtf16()
         );
 
     QVERIFY(result);
-    QCOMPARE(result.value().importedCount, 1);
-    QCOMPARE(result.value().skippedCount, 1);
+    QCOMPARE(result.value().importedCount.rawValue(), 1);
+    QCOMPARE(result.value().skippedCount.rawValue(), 1);
     QCOMPARE(savePort.lastRequest.events.size(), std::size_t(1));
     QCOMPARE(
         QString::fromStdString(savePort.lastRequest.events.at(0).title),
@@ -688,7 +709,7 @@ void NextApplicationCalendarEventImportUseCaseTests::
 saveFailurePropagatesAfterPreparation()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
-    request.initiallySkippedCount = 3;
+    request.initiallySkippedCount = CalendarEventImportCount{3};
     request.candidates = {candidate("Candidate")};
     FakeSignatureQueryPort queryPort;
     FakeSavePort savePort;
@@ -710,7 +731,7 @@ saveFailurePropagatesAfterPreparation()
     QCOMPARE(savePort.lastRequest.events.size(), std::size_t(1));
     QVERIFY(observer.stages == (std::vector<std::string>{"query", "save"}));
     QCOMPARE(observer.saveEventCount, std::size_t(1));
-    QCOMPARE(observer.skippedCount, 3);
+    QCOMPARE(observer.skippedCount.rawValue(), 3);
 }
 
 QTEST_APPLESS_MAIN(NextApplicationCalendarEventImportUseCaseTests)
