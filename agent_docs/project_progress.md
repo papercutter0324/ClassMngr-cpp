@@ -75,13 +75,16 @@ and legacy/UI `int` fields. The independent Tester rebuilt the four accepted
 targets; three focused CTests passed, and the offscreen typed-dialog selector
 passed 3/3. The additional changed apply-use-case test target rebuilt after an
 explicit-initializer repair, and its CTest passed 1/1. `git diff --check` passed.
-No full suite or Windows build ran. Batch491 is active and unpushed with
-F1178–F1181 complete, F1182 accepted/in progress, F1183 next, and F1184–F1185
-discovered. F1182 types the four startup/manual Updater artifact and
-release-page URL fields as exact encoded URL text while preserving
-`QUrl::toEncoded()`/`QUrl::fromEncoded()` and downstream behavior. F1175's
-Class Transfer test still has one unresolved teacher-fallback label failure
-among 64 cases; no clean baseline proves it pre-existing. F629 awaits
+F1182 completed at source/test commit `95c12c10`, after acceptance commit
+`9907c255`. `Application::EncodedUrlText` now types the four startup/manual
+Updater artifact and release-page URL fields, preserving exact encoded bytes
+and the existing `QUrl::toEncoded()`/`QUrl::fromEncoded()` behavior. Independent
+clean builds passed for `ClassMngr` and both updater test targets; both focused
+CTests and all three selected cases passed. Socket tests used local loopback
+permission only. No full suite or Windows build ran. Batch491 is active and
+unpushed with F1178–F1182 complete, F1183 next, and F1184–F1185 discovered.
+F1175's Class Transfer test still has one unresolved teacher-fallback label
+failure among 64 cases; no clean baseline proves it pre-existing. F629 awaits
 source-bound Windows x64 layout evidence. Phase 0 and Phase 2 gates remain
 open.
 

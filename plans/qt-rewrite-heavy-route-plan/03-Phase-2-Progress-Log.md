@@ -53468,14 +53468,44 @@ storage, empty default/state, equality, and no implicit string conversion. It
 also verifies both startup adapter URL fields and both manual adapter URL
 fields against legacy `QUrl::toEncoded()` bytes while retaining dialog
 presentation behavior. Build `ClassMngr` and
-`ClassMngrUpdateControllerAutomaticStartupTests`; run the registered CTest for
-that target and focused selectors `bridgeMapsSuccessAndForcesFreshCheck`,
-`manualAdapterDistinguishesFreshBusyForceAndFailure`, and
-`dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale`. The independent
-Tester will clean and rebuild the affected target. Implementation and
-verification have not started; no full-suite or Windows run is in scope.
+`ClassMngrUpdateControllerAutomaticStartupTests`, and
+`ClassMngrUpdaterTests`; run both registered CTests. Run focused selectors
+`bridgeMapsSuccessAndForcesFreshCheck` and
+`manualAdapterDistinguishesFreshBusyForceAndFailure` in
+`ClassMngrUpdateControllerAutomaticStartupTests`, and
+`dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale` in
+`ClassMngrUpdaterTests`. The independent Tester will clean and rebuild affected
+outputs. Implementation and verification have not started; no full-suite or
+Windows run is in scope.
 
 Batch491 has F1178–F1181 complete, F1182 accepted/in progress, and F1183 next;
 F1183–F1185 remain discovered. Batch491 remains unpushed. Batch490 is complete
 and pushed at `69be43a7`. F629 awaits source-bound Windows x64 layout evidence,
 and the Phase 0 and Phase 2 gates remain open.
+
+### F1182 Updater encoded URL text complete - 2026-10-20
+
+F1182 completed at source/test commit `95c12c10`, following acceptance commit
+`9907c255`. `Application::EncodedUrlText` preserves exact encoded bytes; only
+the startup/manual artifact `url` and `releaseUrl` fields use it. Platform
+adapters wrap `QUrl::toEncoded()` explicitly, and the controller and dialog
+unwrap at the existing `QUrl::fromEncoded()` boundaries. Parsing, downstream
+validation, invalid/empty behavior, and release-link display remain unchanged.
+
+Independent Tester cleanly rebuilt `ClassMngr`,
+`ClassMngrUpdateControllerAutomaticStartupTests`, and
+`ClassMngrUpdaterTests`. Both registered CTests passed. In
+`ClassMngrUpdateControllerAutomaticStartupTests`,
+`bridgeMapsSuccessAndForcesFreshCheck` passed both data rows and
+`manualAdapterDistinguishesFreshBusyForceAndFailure` passed. In
+`ClassMngrUpdaterTests`,
+`dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale` passed. Wrapper
+and four-field adapter mapping cases passed. The first two selectors used
+elevated local loopback permission because they exercise `QTcpServer`; no
+external network was accessed. `git diff --check` passed. No full-suite or
+Windows run occurred.
+
+Batch491 has F1178–F1182 complete, F1183 next, and F1183–F1185 discovered.
+Batch491 remains unpushed. Batch490 is complete and pushed at `69be43a7`. F629
+awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2
+gates remain open.
