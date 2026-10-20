@@ -53,13 +53,14 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (Batch490 pushed; Batch491 complete locally)
+### Current checkpoint - 2026-10-20 (Batch491 pushed; Batch492 active)
 
 Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
-records the handoff. Batch491 is complete locally with its push pending.
-F1178–F1185 are complete. Batch492 is active with six candidates and F1186 next.
-Their acceptance, completion, and
+records the handoff. Batch491 is complete and pushed to `origin/Qt-Rewrite`
+at `56bd1973`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)
+records the handoff. F1178–F1185 are complete. Batch492 is active with six
+discovered candidates; F1186 is accepted/in progress and F1187 is next. Their acceptance, completion, and
 verification details are in the [Phase 2 progress
 log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 

@@ -53771,7 +53771,65 @@ alongside scored criteria; unchanged count derivation and Feature boundary;
 header ownership in `cmake/next.cmake`; and exactly the assigned five changed
 paths. Diff checks passed. No full suite or Windows build occurred.
 
-Batch491 is complete locally with push pending; GitHub has not received its
-changes. Batch492 is active locally and unpushed, with six discovered
-candidates and F1186 next. F629 awaits source-bound Windows x64 layout
-evidence, and the Phase 0 and Phase 2 gates remain open.
+At this F1185 closeout, Batch491 was complete locally with push pending; the
+following receipt records its successful push. Batch492 is active locally and
+unpushed, with six discovered candidates and F1186 next. F629 awaits
+source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates
+remain open.
+
+### Batch491 push receipt - 2026-10-20
+
+Batch491 is complete and pushed. Before: remote HEAD
+`b22b18c4cc68c491c8b201980d9c9d084900b0b1`; after: commit
+`56bd1973d3897e7693b588acfcd391a85c4fa5a0`.
+
+Push output: `b22b18c4..56bd1973 Qt-Rewrite -> Qt-Rewrite`. Local and remote
+HEAD match, and the branch is synchronized. Batch492 remains active and
+unpushed with six discovered candidates and F1186 next. F629 and the Phase 0
+and Phase 2 gates remain open.
+
+### F1186 Schedule Import applied-result counts accepted before implementation - 2026-10-20
+
+F1186 is accepted/in progress. `ScheduleImportApplySummary` has seven raw `int`
+count fields in `src/next/application/schedule_import_apply_request.h:122-132`;
+the eighth field, `profileNameUpdated`, is a `bool`. The Platform apply port
+maps the legacy summary at
+`src/next/platform/application_services_schedule_import_apply_port.h:16-58`.
+The Feature dialog forwards all seven values to telemetry and formats them in
+its localized success message at
+`src/features/schedule/ui/schedule_import_review_dialog.cpp:2415-2448`.
+`StartupProfiler::recordScheduleImportApplied` receives the seven counts,
+clamps each to nonnegative telemetry storage, and emits the existing event at
+`src/core/startup_profiler.cpp:2310-2345`.
+
+Add distinct Qt-free `Application::ScheduleImportAppliedCount` with exact
+signed-`int` storage, zero default, explicit construction, `.rawValue()`, and
+equality, without implicit conversion or new range/negative policy. Do not
+reuse `ScheduleImportReviewCount` from
+`src/next/application/schedule_import_review_summary_projection.h:8`; applied
+counts describe completed operations, and the apply request header must not
+depend on the review projection. Register the new header in `cmake/next.cmake`.
+Type only the seven applied count fields; keep `profileNameUpdated` unchanged.
+Explicitly preserve exact and zero forwarding through Application and
+Platform, repository-derived counts, all seven telemetry arguments and the
+existing clamp/event behavior, localized success counts, and the optional
+name-update suffix.
+
+Acceptance coverage: extend
+`tests/next_application_schedule_import_apply_use_case_tests.cpp` for wrapper
+semantics and all seven exact values, including zero; extend
+`tests/next_platform_application_services_schedule_import_apply_port_tests.cpp`
+to verify every mapped value. In `tests/schedule_import_dialog_tests.cpp`,
+retain visible count and optional suffix coverage. Inspect the existing
+telemetry-focused coverage in `tests/startup_performance_tests.cpp` and assert
+all seven metrics through that real lifecycle fixture if feasible, without a
+test-only slice; preserve the nonnegative clamp and event. Build `ClassMngr`,
+`ClassMngrNextApplicationScheduleImportApplyUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`, and
+`ClassMngrScheduleImportDialogTests`; build and run the focused
+`ClassMngrStartupPerformanceTests` coverage if it is extended. Run the
+corresponding focused Application, Platform, and dialog tests, plus the
+existing StartupProfiler test if extended. Implementation and verification
+have not started; no full-suite or Windows result is claimed.
+
+Batch491 remains complete and pushed at `56bd1973`; see the [push receipt](#batch491-push-receipt-2026-10-20). Batch492 is active and unpushed: F1186 is accepted/in progress, F1187 is next, and F1188–F1191 remain discovered. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
