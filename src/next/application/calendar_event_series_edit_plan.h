@@ -5,6 +5,7 @@
 #include "next/domain/domain_types.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -59,7 +60,7 @@ namespace CalendarEventSeriesEditPlanDetail
 {
 
 using Date = Domain::GregorianDate;
-using DayNumber = Date::DayNumber;
+using RawDayNumber = std::int64_t;
 
 [[nodiscard]] inline CalendarEventSeriesEditPlanResult technicalFailure(
     const char* message
@@ -91,10 +92,12 @@ planCalendarEventSeriesEditSuffix(
     }
 
     using namespace CalendarEventSeriesEditPlanDetail;
-    const DayNumber startDateOffset =
-        request.editedStartDate.dayNumber() - request.startDate.dayNumber();
-    const DayNumber durationDays =
-        request.editedEndDate.dayNumber() - request.editedStartDate.dayNumber();
+    const RawDayNumber startDateOffset =
+        request.editedStartDate.dayNumber().rawValue()
+        - request.startDate.dayNumber().rawValue();
+    const RawDayNumber durationDays =
+        request.editedEndDate.dayNumber().rawValue()
+        - request.editedStartDate.dayNumber().rawValue();
     const std::optional<Domain::CalendarEventSeriesId> repeatSeriesId =
         Domain::CalendarEventSeriesId::fromString(
             CalendarEventSeriesEditRequestDetail::trimAscii(
@@ -120,12 +123,14 @@ planCalendarEventSeriesEditSuffix(
                 );
         }
 
-        const DayNumber shiftedStartDate =
-            occurrence.startDate->dayNumber() + startDateOffset;
-        const DayNumber shiftedEndDate = shiftedStartDate + durationDays;
+        const RawDayNumber shiftedStartDate =
+            occurrence.startDate->dayNumber().rawValue() + startDateOffset;
+        const RawDayNumber shiftedEndDate = shiftedStartDate + durationDays;
         const std::optional<Date> shiftedStart =
-            Date::fromDayNumber(shiftedStartDate);
-        const std::optional<Date> shiftedEnd = Date::fromDayNumber(shiftedEndDate);
+            Date::fromDayNumber(Date::DayNumber{shiftedStartDate});
+        const std::optional<Date> shiftedEnd = Date::fromDayNumber(
+            Date::DayNumber{shiftedEndDate}
+            );
         if (!shiftedStart || !shiftedEnd)
         {
             return technicalFailure(

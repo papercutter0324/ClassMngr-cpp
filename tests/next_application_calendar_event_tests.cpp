@@ -2130,19 +2130,46 @@ void NextApplicationCalendarEventTests::
 {
     using DayNumber = GregorianDate::DayNumber;
 
+    using DayNumberAccessor = DayNumber (GregorianDate::*)() const noexcept;
+    using DayNumberFactory = std::optional<GregorianDate> (*)(DayNumber) noexcept;
+    using MaximumDayNumberProvider = DayNumber (*)() noexcept;
+    static_assert(std::is_same_v<
+        decltype(&GregorianDate::dayNumber),
+        DayNumberAccessor
+        >);
+    static_assert(std::is_same_v<
+        decltype(&GregorianDate::fromDayNumber),
+        DayNumberFactory
+        >);
+    static_assert(std::is_same_v<
+        decltype(&GregorianDate::maximumDayNumber),
+        MaximumDayNumberProvider
+        >);
+    static_assert(std::is_same_v<
+        decltype(DayNumber{}.rawValue()),
+        std::int64_t
+        >);
+    static_assert(std::is_default_constructible_v<DayNumber>);
+    static_assert(std::is_constructible_v<DayNumber, std::int64_t>);
+    static_assert(!std::is_convertible_v<std::int64_t, DayNumber>);
+    static_assert(!std::is_convertible_v<DayNumber, std::int64_t>);
+    static_assert(DayNumber{}.rawValue() == 0);
+    static_assert(DayNumber{} == DayNumber{0});
+    static_assert(DayNumber{-1} < DayNumber{0});
+
     const auto firstDay = GregorianDate::fromIsoString("0001-01-01");
     QVERIFY(firstDay.has_value());
-    QCOMPARE(firstDay->dayNumber(), DayNumber{0});
+    QCOMPARE(firstDay->dayNumber().rawValue(), std::int64_t{0});
     QVERIFY(firstDay->weekday() == IsoWeekday::Monday);
 
     const auto millenniumDay = GregorianDate::fromIsoString("2000-01-01");
     QVERIFY(millenniumDay.has_value());
-    QCOMPARE(millenniumDay->dayNumber(), DayNumber{730119});
+    QCOMPARE(millenniumDay->dayNumber().rawValue(), std::int64_t{730119});
     QVERIFY(millenniumDay->weekday() == IsoWeekday::Saturday);
 
     const auto leapDay = GregorianDate::fromIsoString("2000-02-29");
     QVERIFY(leapDay.has_value());
-    QCOMPARE(leapDay->dayNumber(), DayNumber{730178});
+    QCOMPARE(leapDay->dayNumber().rawValue(), std::int64_t{730178});
     QVERIFY(leapDay->weekday() == IsoWeekday::Tuesday);
 
     const auto leapDayFromOrdinal = GregorianDate::fromDayNumber(
@@ -2174,7 +2201,10 @@ void NextApplicationCalendarEventTests::
 
     const auto lastDay = GregorianDate::fromIsoString("9999-12-31");
     QVERIFY(lastDay.has_value());
-    QCOMPARE(GregorianDate::maximumDayNumber(), DayNumber{3652058});
+    QCOMPARE(
+        GregorianDate::maximumDayNumber().rawValue(),
+        std::int64_t{3652058}
+        );
     QCOMPARE(lastDay->dayNumber(), GregorianDate::maximumDayNumber());
     QVERIFY(lastDay->weekday() == IsoWeekday::Friday);
 
@@ -2190,7 +2220,7 @@ void NextApplicationCalendarEventTests::
 
     QVERIFY(!GregorianDate::fromDayNumber(DayNumber{-1}).has_value());
     QVERIFY(!GregorianDate::fromDayNumber(
-        GregorianDate::maximumDayNumber() + DayNumber{1}
+        DayNumber{GregorianDate::maximumDayNumber().rawValue() + 1}
         ).has_value());
 }
 

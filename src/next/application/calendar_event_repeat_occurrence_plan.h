@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -27,6 +28,7 @@ namespace CalendarEventRepeatOccurrencePlanDetail
 
 using GregorianDate = Domain::GregorianDate;
 using DayNumber = GregorianDate::DayNumber;
+using RawDayNumber = std::int64_t;
 
 [[nodiscard]] inline std::optional<Domain::Weekday> domainWeekdayForIsoWeekday(
     const Domain::IsoWeekday weekday
@@ -102,10 +104,14 @@ using DayNumber = GregorianDate::DayNumber;
     switch (frequency)
     {
     case CalendarEventRepeatFrequency::Daily:
-        return GregorianDate::fromDayNumber(current.dayNumber() + 1);
+        return GregorianDate::fromDayNumber(DayNumber{
+            current.dayNumber().rawValue() + RawDayNumber{1}
+        });
 
     case CalendarEventRepeatFrequency::Weekly:
-        return GregorianDate::fromDayNumber(current.dayNumber() + 7);
+        return GregorianDate::fromDayNumber(DayNumber{
+            current.dayNumber().rawValue() + RawDayNumber{7}
+        });
 
     case CalendarEventRepeatFrequency::Monthly:
     {
@@ -174,13 +180,14 @@ defaultCalendarEventRepeatUntilDate(
         return std::nullopt;
     }
 
-    const int daysBack =
+    const RawDayNumber daysBack = static_cast<RawDayNumber>(
         (static_cast<int>(*finalWeekday)
-            - static_cast<int>(*requestedWeekday) + 7) % 7;
+            - static_cast<int>(*requestedWeekday) + 7) % 7
+        );
     const std::optional<GregorianDate> defaultUntilDate =
-        GregorianDate::fromDayNumber(
-            finalDayOfYear->dayNumber() - daysBack
-            );
+        GregorianDate::fromDayNumber(DayNumber{
+            finalDayOfYear->dayNumber().rawValue() - daysBack
+        });
     if (!defaultUntilDate || defaultUntilDate->year() != parsedDate->year())
     {
         return std::nullopt;
@@ -217,7 +224,8 @@ planCalendarEventRepeatOccurrences(
             );
     }
 
-    const DayNumber durationDays = seedEndDate.dayNumber() - firstDayNumber;
+    const RawDayNumber durationDays =
+        seedEndDate.dayNumber().rawValue() - firstDayNumber.rawValue();
     CalendarEventSeriesCreateRequest request;
     request.repeatSeriesId = std::move(repeatSeriesId);
 
@@ -234,7 +242,9 @@ planCalendarEventRepeatOccurrences(
 
         const std::optional<GregorianDate> occurrenceEnd =
             GregorianDate::fromDayNumber(
-                occurrenceStart.dayNumber() + durationDays
+                DayNumber{
+                    occurrenceStart.dayNumber().rawValue() + durationDays
+                }
                 );
         if (!occurrenceEnd)
         {

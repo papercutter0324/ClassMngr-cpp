@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <compare>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -25,7 +26,32 @@ enum class IsoWeekday
 class GregorianDate final
 {
 public:
-    using DayNumber = std::int64_t;
+    class DayNumber final
+    {
+    public:
+        constexpr DayNumber() noexcept = default;
+
+        constexpr explicit DayNumber(const std::int64_t rawValue) noexcept
+            : m_rawValue(rawValue)
+        {
+        }
+
+        [[nodiscard]] constexpr std::int64_t rawValue() const noexcept
+        {
+            return m_rawValue;
+        }
+
+        friend constexpr bool operator==(
+            const DayNumber&, const DayNumber&
+            ) noexcept = default;
+
+        friend constexpr auto operator<=>(
+            const DayNumber&, const DayNumber&
+            ) noexcept = default;
+
+    private:
+        std::int64_t m_rawValue = 0;
+    };
 
     [[nodiscard]] static std::optional<GregorianDate> fromIsoString(
         const std::string_view value
@@ -76,7 +102,7 @@ public:
             year,
             month,
             day,
-            dayNumberForComponents(year, month, day)
+            DayNumber{dayNumberForComponents(year, month, day)}
             );
     }
 
@@ -84,7 +110,8 @@ public:
         const DayNumber value
         ) noexcept
     {
-        if (value < 0 || value > maximumDayNumber())
+        const std::int64_t rawValue = value.rawValue();
+        if (rawValue < 0 || rawValue > maximumDayNumber().rawValue())
         {
             return std::nullopt;
         }
@@ -95,7 +122,7 @@ public:
         {
             const int middleYear =
                 firstYear + (afterLastYear - firstYear) / 2;
-            if (daysBeforeYear(middleYear) <= value)
+            if (daysBeforeYear(middleYear) <= rawValue)
             {
                 firstYear = middleYear;
             }
@@ -105,7 +132,9 @@ public:
             }
         }
 
-        int dayOfYear = static_cast<int>(value - daysBeforeYear(firstYear));
+        int dayOfYear = static_cast<int>(
+            rawValue - daysBeforeYear(firstYear)
+            );
         int month = 1;
         while (month <= 12)
         {
@@ -128,7 +157,7 @@ public:
 
     [[nodiscard]] static constexpr DayNumber maximumDayNumber() noexcept
     {
-        return daysBeforeYear(10'000) - 1;
+        return DayNumber{daysBeforeYear(10'000) - 1};
     }
 
     [[nodiscard]] static constexpr bool isLeapYear(
@@ -182,7 +211,7 @@ public:
 
     [[nodiscard]] constexpr IsoWeekday weekday() const noexcept
     {
-        return static_cast<IsoWeekday>(m_dayNumber % 7 + 1);
+        return static_cast<IsoWeekday>(m_dayNumber.rawValue() % 7 + 1);
     }
 
     [[nodiscard]] std::string toIsoString() const
@@ -218,24 +247,24 @@ private:
     {
     }
 
-    [[nodiscard]] static constexpr DayNumber daysBeforeYear(
+    [[nodiscard]] static constexpr std::int64_t daysBeforeYear(
         const int year
         ) noexcept
     {
-        const DayNumber completedYears = year - 1;
+        const std::int64_t completedYears = year - 1;
         return completedYears * 365
             + completedYears / 4
             - completedYears / 100
             + completedYears / 400;
     }
 
-    [[nodiscard]] static constexpr DayNumber dayNumberForComponents(
+    [[nodiscard]] static constexpr std::int64_t dayNumberForComponents(
         const int year,
         const int month,
         const int day
         ) noexcept
     {
-        DayNumber result = daysBeforeYear(year);
+        std::int64_t result = daysBeforeYear(year);
         for (int currentMonth = 1; currentMonth < month; ++currentMonth)
         {
             result += daysInMonth(year, currentMonth);
