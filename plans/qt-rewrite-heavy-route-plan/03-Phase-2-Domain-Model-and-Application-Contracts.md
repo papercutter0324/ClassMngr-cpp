@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch495 is active with F1210–F1216 complete, F1217 accepted/current, and F1218 discovered; Batch496 discovery is recorded, and F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch495 is active with F1210–F1217 complete and F1218 next for acceptance; Batch496 discovery is recorded, and F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-Batch494 is complete and pushed at `fc626d56` (see the [push receipt](03-Phase-2-Progress-Log.md#batch494-push-receipt-2026-10-20)); F1207–F1216 have focused verification evidence. Batch495 is active, F1210–F1216 are complete, F1217 is accepted/current, and F1218 remains discovered (see the [F1217 acceptance](03-Phase-2-Progress-Log.md#f1217-roster-projection-source-column-index-accepted-before-implementation-2026-10-21)). Batch496 discovery has started while F1217 is the second-last Batch495 candidate (see the [Batch496 discovery record](03-Phase-2-Progress-Log.md#batch496-discovery-started-2026-10-21)). F629 plus the Phase 0 and Phase 2 gates remain open.
+Batch494 is complete and pushed at `fc626d56` (see the [push receipt](03-Phase-2-Progress-Log.md#batch494-push-receipt-2026-10-20)); F1207–F1217 have focused verification evidence. Batch495 is active, F1210–F1217 are complete, and F1218 is next for acceptance (see the [F1217 completion](03-Phase-2-Progress-Log.md#f1217-roster-projection-source-column-index-complete-2026-10-21)). Batch496 discovery started while F1217 was the second-last Batch495 candidate (see the [Batch496 discovery record](03-Phase-2-Progress-Log.md#batch496-discovery-started-2026-10-21)). F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,7 +72,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch495 (9 candidates; 7 complete, 1 accepted, 1 discovered)
+#### Active batch: Batch495 (9 candidates; 8 complete, 1 discovered)
 
 1. F1210 - **Complete.** Independent explicit row and column value types for `SpeakingEvaluationValidationIssue`; focused verification passed (see [completion](03-Phase-2-Progress-Log.md#f1210-speaking-evaluation-validation-issue-coordinates-complete-2026-10-20)).
 2. F1211 - **Complete.** Reuse `ScheduleImportCandidateIndex` for the class-color candidate index; focused verification passed (see [completion](03-Phase-2-Progress-Log.md#f1211-schedule-import-class-color-candidate-index-complete-2026-10-20)).
@@ -81,7 +81,7 @@ Treat this plan as an operational summary, not a history:
 5. F1214 - **Complete.** Use distinct selected-row and peer-row types in Application student name-pair lookup; focused lookup and adapter checks passed (see [completion](03-Phase-2-Progress-Log.md#f1214-student-name-pair-lookup-row-positions-complete-2026-10-21)).
 6. F1215 - **Complete.** Type the selected row for Application Korean-name suffix suggestions; focused Application and Feature checks passed (see [completion](03-Phase-2-Progress-Log.md#f1215-korean-name-suffix-selected-row-index-complete-2026-10-21)).
 7. F1216 - **Complete.** Reuse `ClassTransferPackageClassIndex` for matching input/result positions; focused matching and adapter checks passed (see [completion](03-Phase-2-Progress-Log.md#f1216-class-transfer-matching-package-class-index-complete-2026-10-21)).
-8. F1217 - **Accepted/current.** Type the optional stored source-column index in roster projection; preserve absence and displayed-column order (see [acceptance](03-Phase-2-Progress-Log.md#f1217-roster-projection-source-column-index-accepted-before-implementation-2026-10-21)).
+8. F1217 - **Complete.** Type the optional stored source-column index in roster projection; preserve absence and displayed-column order (see [completion](03-Phase-2-Progress-Log.md#f1217-roster-projection-source-column-index-complete-2026-10-21)).
 9. F1218 - **Discovered.** Type the first-empty-row result; preserve the modeled-row-count sentinel and Feature insertion behavior.
 
 #### Next batch discovery: Batch496 (8 candidates; all discovered)

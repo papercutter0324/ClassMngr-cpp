@@ -55720,3 +55720,25 @@ left F1219 unassigned. The ordered discovery list is recorded in the plan.
 
 These are discovery candidates, not accepted scopes. No files were changed and
 no builds or tests were run during discovery.
+
+### F1217 Roster projection source-column index complete - 2026-10-21
+
+F1217 completed at commit `b15b9894` (`Phase2 - Type roster source column
+index`). `RosterProjectedColumn::sourceColumnIndex` now uses
+`std::optional<RosterSourceColumnIndex>`, with absence still represented by
+`std::nullopt` and index zero remaining valid. The explicit `std::size_t`
+wrapper defaults to zero and exposes `.rawValue()` and equality without
+implicit conversions. The availability accumulator, row-transfer projection,
+and Feature roster model unwrap only at their existing indexing boundaries.
+Projection order, first alias match, custom-column normalization/order,
+ignored-header filtering, and source-row bounds checks remain unchanged. A new
+roster-model regression checks displayed cell values for reordered stored
+columns and duplicate `Autumn`/`Fall` aliases.
+
+The independent Tester built the affected app and three focused test targets
+(the targets were up to date) and ran focused CTests: 3/3 passed. The roster
+model reported 35 passing Qt cases, including the new mapping regression; the
+availability batch-read target reported 6 passing cases. The Executor's
+self-check also built the same four targets. `git diff --check` passed. This
+was incremental macOS arm64 Debug verification; no full suite or Windows run
+is claimed.
