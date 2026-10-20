@@ -68,6 +68,7 @@ private slots:
     void startsEmpty();
     void filtersAndOrdersRowsByGradeAndConfiguredLevel();
     void appliesLegacyScheduleAndLabelTieBreakers();
+    void navigationTimeSentinelRetainsNumericOrdering();
     void addsTeacherNamesToDuplicateNavigationLabels();
     void pixelScrollingKeepsThePriorTabTailVisible();
 };
@@ -182,8 +183,8 @@ appliesLegacyScheduleAndLabelTieBreakers()
         3
         );
     mondayEarlier.navigationLabel = "Hercules • M/F 9:00";
-    mondayEarlier.navigationFirstDayOrder = 0;
-    mondayEarlier.navigationFirstTimeOrder = 9 * 60;
+    mondayEarlier.navigationFirstDayOrder = ClassTabNavigationOrderRank{0};
+    mondayEarlier.navigationFirstTimeOrder = ClassTabNavigationOrderRank{9 * 60};
 
     auto mondayLabelZ = summary(
         30,
@@ -194,8 +195,8 @@ appliesLegacyScheduleAndLabelTieBreakers()
         0
         );
     mondayLabelZ.navigationLabel = "Hercules • Z 10:00";
-    mondayLabelZ.navigationFirstDayOrder = 0;
-    mondayLabelZ.navigationFirstTimeOrder = 10 * 60;
+    mondayLabelZ.navigationFirstDayOrder = ClassTabNavigationOrderRank{0};
+    mondayLabelZ.navigationFirstTimeOrder = ClassTabNavigationOrderRank{10 * 60};
 
     auto mondayLabelA = summary(
         20,
@@ -206,8 +207,8 @@ appliesLegacyScheduleAndLabelTieBreakers()
         4
         );
     mondayLabelA.navigationLabel = "Hercules • A 10:00";
-    mondayLabelA.navigationFirstDayOrder = 0;
-    mondayLabelA.navigationFirstTimeOrder = 10 * 60;
+    mondayLabelA.navigationFirstDayOrder = ClassTabNavigationOrderRank{0};
+    mondayLabelA.navigationFirstTimeOrder = ClassTabNavigationOrderRank{10 * 60};
 
     auto mondayLabelBLowerId = summary(
         25,
@@ -218,8 +219,8 @@ appliesLegacyScheduleAndLabelTieBreakers()
         1
         );
     mondayLabelBLowerId.navigationLabel = "Hercules • B 10:00";
-    mondayLabelBLowerId.navigationFirstDayOrder = 0;
-    mondayLabelBLowerId.navigationFirstTimeOrder = 10 * 60;
+    mondayLabelBLowerId.navigationFirstDayOrder = ClassTabNavigationOrderRank{0};
+    mondayLabelBLowerId.navigationFirstTimeOrder = ClassTabNavigationOrderRank{10 * 60};
 
     auto tuesdayEarlier = summary(
         10,
@@ -230,8 +231,8 @@ appliesLegacyScheduleAndLabelTieBreakers()
         2
         );
     tuesdayEarlier.navigationLabel = "Hercules • T 8:00";
-    tuesdayEarlier.navigationFirstDayOrder = 1;
-    tuesdayEarlier.navigationFirstTimeOrder = 8 * 60;
+    tuesdayEarlier.navigationFirstDayOrder = ClassTabNavigationOrderRank{1};
+    tuesdayEarlier.navigationFirstTimeOrder = ClassTabNavigationOrderRank{8 * 60};
 
     SubPrepClassInformationListModel model;
     model.setProjection(projection(
@@ -258,6 +259,70 @@ appliesLegacyScheduleAndLabelTieBreakers()
     QCOMPARE(model.classIdAt(2)->value(), std::string("25"));
     QCOMPARE(model.classIdAt(3)->value(), std::string("30"));
     QCOMPARE(model.classIdAt(4)->value(), std::string("10"));
+}
+
+void SubPrepClassInformationListModelTests::
+navigationTimeSentinelRetainsNumericOrdering()
+{
+    auto validSixteenForty = summary(
+        90,
+        7,
+        "E4",
+        "Hercules",
+        "Mon 4:40pm",
+        0
+        );
+    validSixteenForty.navigationLabel = "Z 16:40";
+    validSixteenForty.navigationFirstDayOrder = ClassTabNavigationOrderRank{0};
+    validSixteenForty.navigationFirstTimeOrder = ClassTabNavigationOrderRank{16 * 60 + 40};
+
+    auto unknownTime = summary(
+        10,
+        7,
+        "E4",
+        "Hercules",
+        "Unknown time",
+        1
+        );
+    unknownTime.navigationLabel = "A Unknown";
+    unknownTime.navigationFirstDayOrder = ClassTabNavigationOrderRank{0};
+
+    auto laterValidTime = summary(
+        5,
+        7,
+        "E4",
+        "Hercules",
+        "Mon 6:20pm",
+        2
+        );
+    laterValidTime.navigationLabel = "0 18:20";
+    laterValidTime.navigationFirstDayOrder = ClassTabNavigationOrderRank{0};
+    laterValidTime.navigationFirstTimeOrder = ClassTabNavigationOrderRank{18 * 60 + 20};
+
+    SubPrepClassInformationListModel model;
+    model.setProjection(projection(
+        {validSixteenForty, laterValidTime, unknownTime},
+        {
+            {
+                .id = teacherId(7),
+                .displayName = "Legacy Teacher",
+                .facilities = {},
+                .notes = {}
+            }
+        }
+        ));
+
+    QCOMPARE(model.rowCount(), 3);
+    // Unknown and valid 16:40 both have rank 1000, so labels decide. An
+    // unknown-last special case would reverse these first two rows.
+    QCOMPARE(
+        unknownTime.navigationFirstTimeOrder.rawValue(),
+        validSixteenForty.navigationFirstTimeOrder.rawValue()
+        );
+    QCOMPARE(model.classIdAt(0)->value(), std::string("10"));
+    QCOMPARE(model.classIdAt(1)->value(), std::string("90"));
+    // The sentinel remains a literal 1000 and sorts before valid 18:20 (1100).
+    QCOMPARE(model.classIdAt(2)->value(), std::string("5"));
 }
 
 void SubPrepClassInformationListModelTests::
@@ -302,19 +367,19 @@ pixelScrollingKeepsThePriorTabTailVisible()
     auto prior = summary(101, 21, "E4", "Hercules", "Mon 9am", 0);
     prior.navigationLabel = "Prior class schedule";
     prior.navigationTeacherLabel = "Teacher 21";
-    prior.navigationFirstDayOrder = 0;
-    prior.navigationFirstTimeOrder = 9 * 60;
+    prior.navigationFirstDayOrder = ClassTabNavigationOrderRank{0};
+    prior.navigationFirstTimeOrder = ClassTabNavigationOrderRank{9 * 60};
 
     auto priorDuplicate = summary(102, 22, "E4", "Hercules", "Mon 9am", 1);
     priorDuplicate.navigationLabel = "Prior class schedule";
     priorDuplicate.navigationTeacherLabel = "Teacher 22";
-    priorDuplicate.navigationFirstDayOrder = 0;
-    priorDuplicate.navigationFirstTimeOrder = 9 * 60;
+    priorDuplicate.navigationFirstDayOrder = ClassTabNavigationOrderRank{0};
+    priorDuplicate.navigationFirstTimeOrder = ClassTabNavigationOrderRank{9 * 60};
 
     auto selected = summary(103, 23, "E4", "Hercules", "Mon 10am", 2);
     selected.navigationLabel = "Selected meeting schedule 09:00";
-    selected.navigationFirstDayOrder = 0;
-    selected.navigationFirstTimeOrder = 10 * 60;
+    selected.navigationFirstDayOrder = ClassTabNavigationOrderRank{0};
+    selected.navigationFirstTimeOrder = ClassTabNavigationOrderRank{10 * 60};
 
     SubPrepClassInformationListModel model;
     model.setProjection(projection(

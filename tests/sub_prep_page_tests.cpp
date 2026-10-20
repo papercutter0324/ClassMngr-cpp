@@ -140,11 +140,17 @@ public:
                     ? legacyId == 43 ? 0 : legacyId == 42 ? 1 : 2
                     : static_cast<std::int32_t>(index),
                 .navigationFirstDayOrder = sortedFallbackFixture
-                    ? fridayClass ? 6 : 0
-                    : kClassSummaryUnknownNavigationOrder,
+                    ? ClassTabNavigationOrderRank{fridayClass ? 6 : 0}
+                    : ClassTabNavigationOrderRank{
+                        kClassSummaryUnknownNavigationOrder
+                    },
                 .navigationFirstTimeOrder = sortedFallbackFixture
-                    ? fridayClass ? 1'100 : 500
-                    : kClassSummaryUnknownNavigationOrder
+                    ? ClassTabNavigationOrderRank{
+                        fridayClass ? 1'100 : 500
+                    }
+                    : ClassTabNavigationOrderRank{
+                        kClassSummaryUnknownNavigationOrder
+                    }
             };
             input.classes.push_back(std::move(classSummary));
         }

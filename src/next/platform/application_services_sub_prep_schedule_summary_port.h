@@ -481,8 +481,14 @@ public:
                     .order = static_cast<std::int32_t>(requestIndex),
                     .navigationLabel = *navigationLabel,
                     .navigationTeacherLabel = *navigationTeacherLabel,
-                    .navigationFirstDayOrder = navigation.firstDayOrder,
-                    .navigationFirstTimeOrder = navigation.firstTimeOrder
+                    .navigationFirstDayOrder =
+                        Application::ClassTabNavigationOrderRank{
+                            navigation.firstDayOrder
+                        },
+                    .navigationFirstTimeOrder =
+                        Application::ClassTabNavigationOrderRank{
+                            navigation.firstTimeOrder
+                        }
                 });
             }
 

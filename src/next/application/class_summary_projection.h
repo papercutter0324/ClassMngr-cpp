@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/class_summary_student_count.h"
+#include "next/application/navigation_order_rank.h"
 #include "next/application/qt_compatible_text.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
@@ -89,10 +90,8 @@ struct ClassSummary final
     // repository records; consumers do not need to retain per-meeting rows.
     std::string navigationLabel;
     std::string navigationTeacherLabel;
-    std::int32_t navigationFirstDayOrder =
-        kClassSummaryUnknownNavigationOrder;
-    std::int32_t navigationFirstTimeOrder =
-        kClassSummaryUnknownNavigationOrder;
+    ClassTabNavigationOrderRank navigationFirstDayOrder;
+    ClassTabNavigationOrderRank navigationFirstTimeOrder;
 
     [[nodiscard]] bool hasTeacher() const noexcept
     {
@@ -341,15 +340,15 @@ template <typename TypedId>
     }
 
     const bool validNavigationDayOrder =
-        classSummary.navigationFirstDayOrder
+        classSummary.navigationFirstDayOrder.rawValue()
             == kClassSummaryUnknownNavigationOrder
-        || (classSummary.navigationFirstDayOrder >= 0
-            && classSummary.navigationFirstDayOrder <= 6);
+        || (classSummary.navigationFirstDayOrder.rawValue() >= 0
+            && classSummary.navigationFirstDayOrder.rawValue() <= 6);
     const bool validNavigationTimeOrder =
-        classSummary.navigationFirstTimeOrder
+        classSummary.navigationFirstTimeOrder.rawValue()
             == kClassSummaryUnknownNavigationOrder
-        || (classSummary.navigationFirstTimeOrder >= 0
-            && classSummary.navigationFirstTimeOrder < 24 * 60);
+        || (classSummary.navigationFirstTimeOrder.rawValue() >= 0
+            && classSummary.navigationFirstTimeOrder.rawValue() < 24 * 60);
     if (!validNavigationDayOrder || !validNavigationTimeOrder)
     {
         return Domain::Result<void>::failure(

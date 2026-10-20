@@ -318,14 +318,8 @@ void SubPrepClassInformationListModel::rebuildVisibleRows()
                 grade,
                 fromUtf8(summary.level).trimmed()
                 ),
-            .navigationFirstDayOrder =
-                ClassMngr::Next::Application::ClassTabNavigationOrderRank{
-                    summary.navigationFirstDayOrder
-                },
-            .navigationFirstTimeOrder =
-                ClassMngr::Next::Application::ClassTabNavigationOrderRank{
-                    summary.navigationFirstTimeOrder
-                },
+            .navigationFirstDayOrder = summary.navigationFirstDayOrder,
+            .navigationFirstTimeOrder = summary.navigationFirstTimeOrder,
             .baseLabel = baseLabel.toUtf8().toStdString(),
             .classId = summary.id
         });

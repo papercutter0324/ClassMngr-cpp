@@ -119,6 +119,7 @@ private slots:
     void unicodeWhitespaceOnlyRequiredTextIsRejected();
     void unicodeRequiredTextOptionalWhitespaceAndOpaqueIdentifiersArePreserved();
     void collectionAndStudentCountBoundsAreRejected();
+    void classSummaryNavigationRanksHaveTypedValuesAndBoundaries();
     void projectionsAreCopyableEqualAndIndependentlyReleasable();
     void classSummaryStudentCountHasExplicitValueSemantics();
     void contractSurfaceHasTypedValuesAndNoPointerLookups();
@@ -528,6 +529,75 @@ void NextApplicationClassSummaryTests::collectionAndStudentCountBoundsAreRejecte
     auto negativeOrder = validInput();
     negativeOrder.classes.front().order = -1;
     verifyInvalid(ClassSummaryProjection::create(std::move(negativeOrder)));
+}
+
+void NextApplicationClassSummaryTests::
+classSummaryNavigationRanksHaveTypedValuesAndBoundaries()
+{
+    using Rank = ClassTabNavigationOrderRank;
+    static_assert(
+        std::is_same_v<decltype(ClassSummary::navigationFirstDayOrder), Rank>
+        );
+    static_assert(
+        std::is_same_v<decltype(ClassSummary::navigationFirstTimeOrder), Rank>
+        );
+    static_assert(std::is_constructible_v<Rank, std::int32_t>);
+    static_assert(!std::is_convertible_v<std::int32_t, Rank>);
+    static_assert(!std::is_convertible_v<Rank, std::int32_t>);
+    static_assert(
+        std::is_same_v<decltype(std::declval<Rank>().rawValue()), std::int32_t>
+        );
+
+    const ClassSummary defaultSummary = classSummary(
+        "class-default",
+        std::nullopt
+        );
+    QCOMPARE(
+        defaultSummary.navigationFirstDayOrder.rawValue(),
+        kClassSummaryUnknownNavigationOrder
+        );
+    QCOMPARE(
+        defaultSummary.navigationFirstTimeOrder.rawValue(),
+        kClassSummaryUnknownNavigationOrder
+        );
+
+    auto acceptedBoundaries = validInput();
+    acceptedBoundaries.classes[0].navigationFirstDayOrder = Rank{0};
+    acceptedBoundaries.classes[0].navigationFirstTimeOrder = Rank{0};
+    acceptedBoundaries.classes[1].navigationFirstDayOrder = Rank{6};
+    acceptedBoundaries.classes[1].navigationFirstTimeOrder = Rank{24 * 60 - 1};
+    const auto acceptedResult = ClassSummaryProjection::create(
+        std::move(acceptedBoundaries)
+        );
+    QVERIFY(acceptedResult);
+    QCOMPARE(
+        acceptedResult.value().classes()[0].navigationFirstDayOrder.rawValue(),
+        std::int32_t(0)
+        );
+    QCOMPARE(
+        acceptedResult.value().classes()[1].navigationFirstDayOrder.rawValue(),
+        std::int32_t(6)
+        );
+    QCOMPARE(
+        acceptedResult.value().classes()[0].navigationFirstTimeOrder.rawValue(),
+        std::int32_t(0)
+        );
+    QCOMPARE(
+        acceptedResult.value().classes()[1].navigationFirstTimeOrder.rawValue(),
+        std::int32_t(24 * 60 - 1)
+        );
+
+    auto invalidDayOrder = validInput();
+    invalidDayOrder.classes.front().navigationFirstDayOrder = Rank{7};
+    verifyInvalid(
+        ClassSummaryProjection::create(std::move(invalidDayOrder))
+        );
+
+    auto invalidTimeOrder = validInput();
+    invalidTimeOrder.classes.front().navigationFirstTimeOrder = Rank{24 * 60};
+    verifyInvalid(
+        ClassSummaryProjection::create(std::move(invalidTimeOrder))
+        );
 }
 
 void NextApplicationClassSummaryTests::

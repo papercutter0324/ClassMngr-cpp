@@ -422,8 +422,14 @@ projectsVisibleScheduleSummariesAndAggregatesRosterCounts()
         result.value().classes()[1].navigationTeacherLabel,
         std::string("English Name")
         );
-    QCOMPARE(result.value().classes()[1].navigationFirstDayOrder, 0);
-    QCOMPARE(result.value().classes()[1].navigationFirstTimeOrder, 9 * 60);
+    QCOMPARE(
+        result.value().classes()[1].navigationFirstDayOrder.rawValue(),
+        0
+        );
+    QCOMPARE(
+        result.value().classes()[1].navigationFirstTimeOrder.rawValue(),
+        9 * 60
+        );
     QCOMPARE(result.value().teacherIndex().summaries().size(), std::size_t(1));
     const auto teacherSummary = result.value().teacherIndex().find(
         teacherId(teacher)
@@ -783,8 +789,14 @@ selectsModeAndOmitsUnusableOrOutOfScopeClasses()
         result.value().classes.front().navigationLabel,
         utf8(QStringLiteral("Theseus • Int W 2:00"))
         );
-    QCOMPARE(result.value().classes.front().navigationFirstDayOrder, 2);
-    QCOMPARE(result.value().classes.front().navigationFirstTimeOrder, 14 * 60);
+    QCOMPARE(
+        result.value().classes.front().navigationFirstDayOrder.rawValue(),
+        2
+        );
+    QCOMPARE(
+        result.value().classes.front().navigationFirstTimeOrder.rawValue(),
+        14 * 60
+        );
     QCOMPARE(result.value().teachers.size(), std::size_t(1));
 }
 
@@ -3162,8 +3174,8 @@ ordersAllCanonicalWeekdaysInSummariesAndNavigation()
         summary.navigationLabel,
         utf8(QStringLiteral("Perseus \u2022 M/T/W/Th/F/Sat/Sun 9:15"))
         );
-    QCOMPARE(summary.navigationFirstDayOrder, 0);
-    QCOMPARE(summary.navigationFirstTimeOrder, 9 * 60 + 15);
+    QCOMPARE(summary.navigationFirstDayOrder.rawValue(), 0);
+    QCOMPARE(summary.navigationFirstTimeOrder.rawValue(), 9 * 60 + 15);
 
     const auto& secondPrecisionSummary = result.value().classes.back();
     QCOMPARE(secondPrecisionSummary.id, classId(classWithSecondPrecisionStart));
@@ -3173,7 +3185,7 @@ ordersAllCanonicalWeekdaysInSummariesAndNavigation()
         utf8(QStringLiteral("Perseus \u2022 M 9:30"))
         );
     QVERIFY2(
-        secondPrecisionSummary.navigationFirstTimeOrder == 570,
+        secondPrecisionSummary.navigationFirstTimeOrder.rawValue() == 570,
         "Raw 09:30:59 is mapped to minute 570 before Application order reduction."
         );
 }
@@ -3225,8 +3237,8 @@ regularAllWeekNavigationMetadataWinsOverIntensiveSummary()
         utf8(QStringLiteral("Perseus \u2022 M 9:00"))
         );
     QCOMPARE(summary.navigationTeacherLabel, std::string("English Name"));
-    QCOMPARE(summary.navigationFirstDayOrder, 0);
-    QCOMPARE(summary.navigationFirstTimeOrder, 9 * 60);
+    QCOMPARE(summary.navigationFirstDayOrder.rawValue(), 0);
+    QCOMPARE(summary.navigationFirstTimeOrder.rawValue(), 9 * 60);
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
@@ -3330,8 +3342,8 @@ parsesRawScheduleTimesAndKeepsMalformedNavigationFallback()
         mixed.navigationLabel,
         utf8(QStringLiteral("Perseus • M 9:15; T 2:30; W 11:00; Th 7:xx"))
         );
-    QCOMPARE(mixed.navigationFirstDayOrder, 0);
-    QCOMPARE(mixed.navigationFirstTimeOrder, 9 * 60 + 15);
+    QCOMPARE(mixed.navigationFirstDayOrder.rawValue(), 0);
+    QCOMPARE(mixed.navigationFirstTimeOrder.rawValue(), 9 * 60 + 15);
 
     // The malformed-only meeting has no summary label, while navigation keeps
     // the trimmed legacy fallback after removing its literal AM/PM suffix.
@@ -3342,9 +3354,9 @@ parsesRawScheduleTimesAndKeepsMalformedNavigationFallback()
         malformedOnly.navigationLabel,
         utf8(QStringLiteral("Perseus • M 8:bad"))
         );
-    QCOMPARE(malformedOnly.navigationFirstDayOrder, 0);
+    QCOMPARE(malformedOnly.navigationFirstDayOrder.rawValue(), 0);
     QCOMPARE(
-        malformedOnly.navigationFirstTimeOrder,
+        malformedOnly.navigationFirstTimeOrder.rawValue(),
         kClassSummaryUnknownNavigationOrder
         );
 }
@@ -3434,15 +3446,15 @@ unknownAndNoncanonicalRawDaysDoNotChangeNavigationOrPresentation()
         withUnrecognizedDays.navigationLabel,
         canonicalOnly.navigationLabel
         );
-    QCOMPARE(canonicalOnly.navigationFirstDayOrder, 0);
-    QCOMPARE(canonicalOnly.navigationFirstTimeOrder, 9 * 60);
+    QCOMPARE(canonicalOnly.navigationFirstDayOrder.rawValue(), 0);
+    QCOMPARE(canonicalOnly.navigationFirstTimeOrder.rawValue(), 9 * 60);
     QCOMPARE(
-        withUnrecognizedDays.navigationFirstDayOrder,
-        canonicalOnly.navigationFirstDayOrder
+        withUnrecognizedDays.navigationFirstDayOrder.rawValue(),
+        canonicalOnly.navigationFirstDayOrder.rawValue()
         );
     QCOMPARE(
-        withUnrecognizedDays.navigationFirstTimeOrder,
-        canonicalOnly.navigationFirstTimeOrder
+        withUnrecognizedDays.navigationFirstTimeOrder.rawValue(),
+        canonicalOnly.navigationFirstTimeOrder.rawValue()
         );
 }
 

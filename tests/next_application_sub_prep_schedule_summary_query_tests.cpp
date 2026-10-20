@@ -632,9 +632,11 @@ boundedNavigationMetadataIsEnforced()
         'T'
         );
     auto invalidDayOrder = validInput();
-    invalidDayOrder.classes.front().navigationFirstDayOrder = 7;
+    invalidDayOrder.classes.front().navigationFirstDayOrder =
+        ClassTabNavigationOrderRank{7};
     auto invalidTimeOrder = validInput();
-    invalidTimeOrder.classes.front().navigationFirstTimeOrder = 24 * 60;
+    invalidTimeOrder.classes.front().navigationFirstTimeOrder =
+        ClassTabNavigationOrderRank{24 * 60};
 
     for (auto input : {
              oversizedLabel,
