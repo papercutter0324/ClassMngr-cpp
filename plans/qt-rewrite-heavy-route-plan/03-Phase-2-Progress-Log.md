@@ -55577,6 +55577,37 @@ resource warning but passed. The full page CTest was omitted because its
 unrelated output-directory assertion is confirmed on the pre-F1214 baseline;
 no full suite or Windows run is claimed.
 
+### F1216 Class Transfer matching package-class index accepted before implementation - 2026-10-21
+
+F1216 is accepted/current based on two independent read-only Explorer reports.
+Use the existing explicit Application `ClassTransferPackageClassIndex` for
+both `ClassTransferMatchingSourceClass::packageClassIndex` and
+`ClassTransferClassMatchList::packageClassIndex`. The shared type remains
+int-backed, defaults to `-1`, exposes `.rawValue()` and equality, and has no
+implicit conversions. Preserve the matching structs' existing default value of
+`0` by initializing those fields explicitly with `ClassTransferPackageClassIndex{0}`.
+Do not add range validation. The normal package projection is capped at 4,096
+class entries, so production package positions fit the existing signed type.
+
+Keep the package position unchanged through matching and preview query results;
+preserve source order, destination match order, and the existing `{4, 1, 9, 7}`
+preview mapping. Wrap the Platform-produced loop index at the Application
+boundary. Unwrap only where the legacy preview adapter requires its raw index;
+keep the Feature's existing negative/out-of-range skip and range checks. Move
+the existing value type to a small shared Application header so matching policy
+does not depend on the larger projection header, and register that header in
+`cmake/next.cmake`.
+
+Update `tests/next_application_class_transfer_tests.cpp` with typed field and
+default-value checks and an assertion for match-result position. Preserve
+mapping/order coverage in
+`tests/next_application_class_transfer_preview_query_tests.cpp` and
+`tests/class_transfer_tests.cpp`. Focused targets are
+`ClassMngrNextApplicationClassTransferTests`,
+`ClassMngrNextApplicationClassTransferPreviewQueryTests`,
+`ClassMngrClassTransferTests`, and affected production target `ClassMngr`. No
+F1216 implementation or verification has started.
+
 ### Batch494 push receipt - 2026-10-20
 
 Batch494 is complete and pushed to `origin/Qt-Rewrite`. The normal push
