@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch499 is complete and pushed at `cc38c959`; active Batch500 has F1243–F1250 complete, F1251 accepted awaiting implementation, and F1252 discovered, while Batch501 (F1253–F1256) is discovered for after Batch500 closes; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch499 is complete and pushed at `cc38c959`; active Batch500 has F1243–F1251 complete and F1252 next for acceptance, while Batch501 (F1253–F1256) remains discovered for after Batch500 closes; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1251 is accepted before implementation; Batch500 remains active with F1243–F1250 complete and F1252 discovered. Batch501 has been discovered with F1253–F1256 queued until Batch500 closes (see [F1251 acceptance](03-Phase-2-Progress-Log.md#f1251-class-transfer-export-roster-widths-accepted-before-implementation-2026-10-21) and [Batch501 discovery](03-Phase-2-Progress-Log.md#batch501-discovery-started-at-f1251-start-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
+F1251 is complete at `e804fe52`; the incremental macOS build succeeded and the four focused Class Transfer export CTests passed (4/4) (see [F1251 verification](03-Phase-2-Progress-Log.md#f1251-class-transfer-export-roster-widths-complete-2026-10-21)). Batch500 remains active with F1243–F1251 complete and F1252 next for acceptance. Batch501 (F1253–F1256) remains discovered and queued until Batch500 closes. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,7 +72,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch500 (10 candidates; 8 complete, 1 accepted, 1 discovered)
+#### Active batch: Batch500 (10 candidates; 9 complete, 0 accepted, 1 discovered)
 
 1. F1243 - **Complete.** Replace the `GregorianDate::DayNumber` alias with an explicit typed ordinal; preserve epoch, maximum date, formatting, and factory range validation.
 2. F1244 - **Complete.** Type only the legacy Schedule Import target class ID as optional `Domain::ClassId`; preserve UI raw integers, absent-value handling, action semantics, and validation behavior.
@@ -82,7 +82,7 @@ Treat this plan as an operational summary, not a history:
 6. F1248 - **Complete.** Reuse the existing navigation rank type for Class Summary day and time fields while preserving validation and numeric sentinel behavior.
 7. F1249 - **Complete.** Add a Testing Classes-specific rank value for grade and level ordering facts while preserving configured indexes, unknown values, and comparator behavior.
 8. F1250 - **Complete.** Add typed ScheduleTime start and end minute endpoints while preserving bounds, strict start-before-end, and half-open overlap.
-9. F1251 - **Accepted.** Add an explicit `ClassExportRosterColumnWidth` value for the shared package's width vector; preserve every signed value and its order through adapters and JSON without range checks or clamping.
+9. F1251 - **Complete.** Add an explicit `ClassExportRosterColumnWidth` value for the shared package's width vector; preserve every signed value and its order through adapters and JSON without range checks or clamping.
 10. F1252 - **Discovered.** Type Document Catalog folder/document order metadata while preserving default, negative-value rejection, and input order.
 
 #### Discovered batch: Batch501 (4 candidates; not active until Batch500 closes)

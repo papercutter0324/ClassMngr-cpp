@@ -58236,9 +58236,8 @@ reported no work to do. The focused CTest command
 passed (1/1). `git diff --check` passed in both reviews. No clean build,
 Windows build, or full-suite run was performed.
 
-Batch500 remains active with F1243–F1250 complete, F1251 accepted awaiting
-implementation, and F1252 discovered. Batch501 has been discovered and is
-queued until Batch500 closes.
+Batch500 remains active with F1243–F1250 complete, F1251 next for acceptance,
+and F1252 discovered.
 
 ### Batch501 discovery started at F1251 start - 2026-10-21
 
@@ -58341,3 +58340,45 @@ Batch500 remains active with F1243–F1250 complete, F1251 accepted awaiting
 implementation, and F1252 discovered. Batch501 is discovered, not active until
 Batch500 closes, with F1253–F1256 queued in the order above. F629 and the
 Phase 0 and Phase 2 gates remain open.
+
+### F1251 Class Transfer export roster widths complete - 2026-10-21
+
+F1251 completed in implementation commit
+`e804fe5200c73c06c9118975910c117aa1a5f627`, following acceptance commit
+`9efd3b33249471bf839a250dd32662fd1e5ab83f`. The eight scoped paths were
+`src/data/repositories/class_transfer_legacy_package_adapter.h`,
+`src/features/classes/services/class_transfer_json_codec.cpp`,
+`src/next/application/class_transfer_package.h`,
+`src/next/platform/application_services_class_transfer_export_source_read_port.h`,
+`tests/class_transfer_apply_package_adapter_tests.cpp`,
+`tests/class_transfer_export_codec_parity_tests.cpp`,
+`tests/next_application_class_transfer_export_query_tests.cpp`, and
+`tests/next_platform_class_transfer_export_source_tests.cpp`.
+
+The portable `ClassExportRoster::columnWidths` now uses the explicit,
+default-zero `ClassExportRosterColumnWidth` value type backed by `int`, with
+`.rawValue()` and equality. The source preserves all signed values and order
+through the Platform export-source adapter, both legacy package conversion
+directions, and JSON parse/serialization. No validation, clamping, or JSON
+schema change was introduced. Legacy `Roster`, `RosterSnapshot`, database
+representability checks, and unrelated width fields remain unchanged. The
+independent Tester confirmed ordered `INT_MIN`, negative, zero, and `INT_MAX`
+values through the Platform and legacy paths and exact JSON width order/value.
+
+The Executor's incremental macOS build succeeded for `ClassMngr` and the five
+affected test targets:
+`ClassMngrNextApplicationClassTransferExportQueryTests`,
+`ClassMngrNextPlatformClassTransferExportSourceTests`,
+`ClassMngrClassTransferExportCodecParityTests`,
+`ClassMngrClassTransferApplyPackageAdapterTests`, and
+`ClassMngrNextApplicationClassTransferApplyUseCaseTests`. The independent
+Tester repeated the build in the existing `build/macos-clang-debug` tree and
+Ninja reported no work to do. The focused CTest command
+`ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextApplicationClassTransferExportQueryTests|ClassMngrNextPlatformClassTransferExportSourceTests|ClassMngrClassTransferExportCodecParityTests|ClassMngrClassTransferApplyPackageAdapterTests)$'`
+passed (4/4). `git diff --check` and the staged diff check passed. No fresh
+build, Windows build, or full-suite run was performed.
+
+Batch500 remains active with F1243–F1251 complete and F1252 next for
+acceptance. Batch501 remains discovered and queued until Batch500 closes, with
+F1253–F1256 in the recorded order. F629 and the Phase 0 and Phase 2 gates
+remain open.
