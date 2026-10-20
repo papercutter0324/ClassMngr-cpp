@@ -55530,6 +55530,31 @@ Tester reproduced the same failure and 35/36 result on pre-F1214 baseline
 slice. No cause beyond the matching baseline result is claimed. No full suite
 or Windows run is claimed.
 
+### F1215 Korean-name suffix selected-row index accepted before implementation - 2026-10-21
+
+F1215 is accepted/current based on two independent read-only Explorer reports.
+Add a dedicated explicit Application `StudentKoreanNameSuffixSelectedRowIndex`
+backed by `int`, defaulting to `-1`, with `.rawValue()`, equality, and no
+implicit conversions. Preserve supplied values and do not add constructor range
+validation. Change only `suggestStudentKoreanNameSuffix`'s selected-row input.
+Keep missing-column and invalid-row checks before conversion to `std::size_t`,
+and preserve empty results for incomplete selected names, existing name trim
+and case behavior, and first-unused `A`–`Z` suffix ordering.
+
+Keep `RosterModel::suggestedKoreanNameWithSuffix(int)` and
+`SpeakingEvalModel::suggestedKoreanNameWithSuffix(int)` unchanged; wrap the Qt
+row at each Application call. Extend
+`tests/next_application_student_korean_name_suffix_suggestion_tests.cpp` for
+typed-value/default/non-conversion semantics and retain invalid-row,
+incomplete-name, matching, and suffix-exhaustion checks. Preserve roster
+legacy parity in `tests/roster_model_tests.cpp` and Speaking Evaluation parity
+and invalid-row coverage in `tests/speaking_eval_page_save_tests.cpp`. Focused
+targets are `ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests`,
+`ClassMngrRosterModelTests`, `ClassMngrSpeakingEvalPageSaveTests`, and affected
+production target `ClassMngr`. Run the suffix-specific page selectors; the
+full Speaking Evaluation CTest has a separately confirmed pre-F1214
+output-directory failure documented above.
+
 ### Batch494 push receipt - 2026-10-20
 
 Batch494 is complete and pushed to `origin/Qt-Rewrite`. The normal push

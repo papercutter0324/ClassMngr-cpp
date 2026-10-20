@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch495 is active with F1210–F1214 complete and F1215 next for acceptance review; four candidates remain discovered, and F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch495 is active with F1210–F1214 complete, F1215 accepted/current, and three discovered candidates; F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-Batch494 is complete and pushed at `fc626d56` (see the [push receipt](03-Phase-2-Progress-Log.md#batch494-push-receipt-2026-10-20)); F1207–F1214 have focused verification evidence. Batch495 is active, F1210–F1214 are complete, and F1215 is next for acceptance review (see the [F1214 completion](03-Phase-2-Progress-Log.md#f1214-student-name-pair-lookup-row-positions-complete-2026-10-21)). F629 plus the Phase 0 and Phase 2 gates remain open.
+Batch494 is complete and pushed at `fc626d56` (see the [push receipt](03-Phase-2-Progress-Log.md#batch494-push-receipt-2026-10-20)); F1207–F1214 have focused verification evidence. Batch495 is active, F1210–F1214 are complete, and F1215 is accepted/current (see the [F1214 completion](03-Phase-2-Progress-Log.md#f1214-student-name-pair-lookup-row-positions-complete-2026-10-21) and [F1215 acceptance](03-Phase-2-Progress-Log.md#f1215-korean-name-suffix-selected-row-index-accepted-before-implementation-2026-10-21)). F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,14 +72,14 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch495 (9 candidates; 5 complete, 4 discovered)
+#### Active batch: Batch495 (9 candidates; 5 complete, 1 accepted/current, 3 discovered)
 
 1. F1210 - **Complete.** Independent explicit row and column value types for `SpeakingEvaluationValidationIssue`; focused verification passed (see [completion](03-Phase-2-Progress-Log.md#f1210-speaking-evaluation-validation-issue-coordinates-complete-2026-10-20)).
 2. F1211 - **Complete.** Reuse `ScheduleImportCandidateIndex` for the class-color candidate index; focused verification passed (see [completion](03-Phase-2-Progress-Log.md#f1211-schedule-import-class-color-candidate-index-complete-2026-10-20)).
 3. F1212 - **Complete.** Type the selected row for Application roster removal; focused verification passed (see [completion](03-Phase-2-Progress-Log.md#f1212-roster-row-removal-index-complete-2026-10-20)).
 4. F1213 - **Complete.** Type the selected column for Application custom-column removal checks; focused verification passed (see [completion](03-Phase-2-Progress-Log.md#f1213-roster-custom-column-removal-index-complete-2026-10-20)).
 5. F1214 - **Complete.** Use distinct selected-row and peer-row types in Application student name-pair lookup; focused lookup and adapter checks passed (see [completion](03-Phase-2-Progress-Log.md#f1214-student-name-pair-lookup-row-positions-complete-2026-10-21)).
-6. F1215 - **Discovered.** Type the selected row for Korean-name suffix suggestions; preserve invalid-row and incomplete-name empty results.
+6. F1215 - **Accepted/current.** Type the selected row for Application Korean-name suffix suggestions; preserve invalid-row and incomplete-name empty results (see [acceptance](03-Phase-2-Progress-Log.md#f1215-korean-name-suffix-selected-row-index-accepted-before-implementation-2026-10-21)).
 7. F1216 - **Discovered.** Type the matching package-class position in Class Transfer input/result; preserve source order and preview mapping.
 8. F1217 - **Discovered.** Type the optional stored source-column index in roster projection; preserve absence and displayed-column order.
 9. F1218 - **Discovered.** Type the first-empty-row result; preserve the modeled-row-count sentinel and Feature insertion behavior.
