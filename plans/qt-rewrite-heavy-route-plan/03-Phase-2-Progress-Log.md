@@ -55006,3 +55006,55 @@ The existing test surface is
 `ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests`
 (`cmake/tests/next.cmake:709`). No F1205 implementation or verification has
 started. Batch494 remains open and unpushed; F1206–F1209 remain discovered.
+
+### F1205 Speaking Evaluation roster score assignment row index complete - 2026-10-20
+
+F1205 completed at source/test commit
+`75739bef14b2740b614c402089ea07d4ddfa0ec1` (`Phase2 - Type score assignment
+roster row`). The three changed paths were
+`src/features/roster/ui/roster_editor_widget_import_print.cpp`,
+`src/next/application/speaking_evaluation_roster_score_row_assignments.h`, and
+`tests/next_application_speaking_evaluation_roster_score_row_assignments_tests.cpp`.
+
+In `build/macos-clang-debug`, the independent Tester built `ClassMngr`,
+`ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests`,
+and `ClassMngrRosterEditorWidgetImportTests`; Ninja reported no work. With
+`QT_QPA_PLATFORM=offscreen`, the two focused CTests passed 2/2, and
+`git diff --check` passed. This is scoped evidence only; no full-suite or
+Windows check is claimed. Batch494 remains open and unpushed.
+
+### F1206 Speaking Evaluation roster name import position types accepted before implementation - 2026-10-20
+
+F1206 is accepted/current before implementation, based on two independent
+read-only Explorer reports. In
+`src/next/application/speaking_evaluation_roster_name_import_plan.h`
+(lines 12–90), add distinct signed-`int` wrappers
+`SpeakingEvaluationRosterNameImportSourceIndex` and
+`SpeakingEvaluationRosterNameImportTargetIndex`, each defaulting to `-1` and
+providing explicit construction, `.rawValue()`, equality, and no implicit
+conversions. Use the source wrapper for
+`SpeakingEvaluationRosterNameImportAssignment::sourceRow`; use the target
+wrapper for both `SpeakingEvaluationRosterNameEvaluationRow::row` and
+assignment `targetRow`.
+
+The source value remains the source vector's original zero-based position
+before filtering, retaining its current cast/representation. The target value
+is caller-supplied and must be copied unchanged, even when negative or
+nonascending; add no validation or numeric ordering. Preserve trim and exact
+case-sensitive matching, the U+001F delimiter, first-imported-duplicate-wins,
+skips for incomplete/existing pairs, eligible-source order, blank-target
+rules, target input order, and no-op behavior when targets are exhausted.
+In `src/features/speaking_eval/ui/speaking_eval_page_name_matching.cpp`
+(lines 26–125), unwrap the target only at `m_model->index`; source provenance
+remains unused in UI.
+
+Keep F1205 score-assignment rows, F1208 save-cell coordinates, repository row
+indices, and unrelated source/target APIs out of scope. Repository vector
+background at `src/data/repositories/roster_repository.cpp` (lines 959–1002,
+1079–1115) does not define the Application contract. Existing tests are in
+`tests/next_application_speaking_evaluation_roster_name_import_plan_tests.cpp`
+(lines 41–130), target
+`ClassMngrNextApplicationSpeakingEvaluationRosterNameImportPlanTests`; UI
+integration coverage is in `tests/speaking_eval_page_save_tests.cpp`. No F1206
+implementation or verification has started. Batch494 remains open and
+unpushed; F1207–F1209 remain discovered.
