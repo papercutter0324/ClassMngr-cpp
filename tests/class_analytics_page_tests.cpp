@@ -147,7 +147,7 @@ void ClassAnalyticsPageTests::successfulDashboardMapsResultsIntoRankingModel()
 {
     ApplicationServices services;
     EmptyDashboardReadPort readPort;
-    readPort.roster.rowCount = 1;
+    readPort.roster.rowCount = ClassAnalyticsRosterRowCount{std::size_t{1}};
     readPort.roster.hasEnglishColumn = true;
     readPort.roster.hasKoreanColumn = true;
     readPort.roster.englishNames = { u"Alex Example" };

@@ -35,11 +35,36 @@ inline constexpr std::array<std::u16string_view, 4>
         : std::u16string_view{};
 }
 
+class ClassAnalyticsRosterRowCount final
+{
+public:
+    constexpr ClassAnalyticsRosterRowCount() noexcept = default;
+    explicit constexpr ClassAnalyticsRosterRowCount(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ClassAnalyticsRosterRowCount&,
+        const ClassAnalyticsRosterRowCount&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
 struct ClassAnalyticsRosterNames final
 {
     // Matches Roster::rows.size(), including blank and sparse rows, without
     // copying unrelated roster columns or their cell values.
-    std::size_t rowCount = 0;
+    ClassAnalyticsRosterRowCount rowCount;
     bool hasEnglishColumn = false;
     bool hasKoreanColumn = false;
     std::vector<std::u16string> englishNames;

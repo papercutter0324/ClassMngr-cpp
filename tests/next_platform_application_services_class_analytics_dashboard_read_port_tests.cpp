@@ -147,7 +147,7 @@ readsOnlyRosterNamesAndExactEvaluationScoreProjection()
 
     const auto rosterProjection = port.readRosterNames(*typedClassId);
     QVERIFY(rosterProjection);
-    QVERIFY(rosterProjection.value().rowCount == std::size_t{1});
+    QVERIFY(rosterProjection.value().rowCount.rawValue() == std::size_t{1});
     QVERIFY(rosterProjection.value().hasEnglishColumn);
     QVERIFY(rosterProjection.value().hasKoreanColumn);
     QVERIFY(rosterProjection.value().englishNames
@@ -188,6 +188,8 @@ readsOnlyRosterNamesAndExactEvaluationScoreProjection()
         port);
     QVERIFY(dashboard);
     QVERIFY(dashboard.value().selectedSnapshot.rankings.size() == 1);
+    QVERIFY(dashboard.value().selectedSnapshot.rosterStudentCount.rawValue()
+            == std::size_t{1});
     QCOMPARE(dashboard.value().yearToDatePoints.size(), std::size_t{4});
     for (std::size_t index = 0; index < names.size(); ++index)
     {
@@ -266,7 +268,7 @@ sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders()
     QVERIFY(roster);
     QVERIFY(roster.value().hasEnglishColumn);
     QVERIFY(roster.value().hasKoreanColumn);
-    QCOMPARE(roster.value().rowCount, std::size_t{5});
+    QCOMPARE(roster.value().rowCount.rawValue(), std::size_t{5});
     QVERIFY((roster.value().englishNames == std::vector<std::u16string>{
         u"Chosen English", u"", u"", u"", u""
     }));
@@ -274,11 +276,20 @@ sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders()
         u"", u"", u"Chosen Korean", u"", u""
     }));
 
+    const auto dashboard =
+        Application::ClassAnalyticsDashboardReadQuery::execute(
+            { .classId = *typedClassId }, port, port);
+    QVERIFY(dashboard);
+    QCOMPARE(
+        dashboard.value().selectedSnapshot.rosterStudentCount.rawValue(),
+        std::size_t{5}
+        );
+
     const auto absentHeaders = port.readRosterNames(*typedAbsentNamesClassId);
     QVERIFY(absentHeaders);
     QVERIFY(!absentHeaders.value().hasEnglishColumn);
     QVERIFY(!absentHeaders.value().hasKoreanColumn);
-    QCOMPARE(absentHeaders.value().rowCount, std::size_t{4});
+    QCOMPARE(absentHeaders.value().rowCount.rawValue(), std::size_t{4});
     QVERIFY(absentHeaders.value().englishNames
             == std::vector<std::u16string>(4));
     QVERIFY(absentHeaders.value().koreanNames
@@ -598,7 +609,7 @@ activeSessionQueryFailureIsStructured()
     QVERIFY(removeRosterColumns.exec());
     const auto emptyRoster = port.readRosterNames(*typedClassId);
     QVERIFY(emptyRoster);
-    QCOMPARE(emptyRoster.value().rowCount, std::size_t{0});
+    QCOMPARE(emptyRoster.value().rowCount.rawValue(), std::size_t{0});
 
     QSqlQuery insertRosterColumn(services.databaseSession()->database());
     insertRosterColumn.prepare(R"(

@@ -256,12 +256,16 @@ public:
                         Application::ClassAnalyticsRosterNames>(
                             "Roster data contains a row index outside the Class Analytics range.");
                 }
-                roster.rowCount = static_cast<std::size_t>(*maximumRowIndex)
-                    + 1;
+                roster.rowCount =
+                    Application::ClassAnalyticsRosterRowCount{
+                        static_cast<std::size_t>(*maximumRowIndex) + 1
+                    };
             }
-            roster.englishNames.resize(roster.rowCount);
-            roster.koreanNames.resize(roster.rowCount);
-            if (roster.rowCount == 0
+            const std::size_t rosterRowCount =
+                roster.rowCount.rawValue();
+            roster.englishNames.resize(rosterRowCount);
+            roster.koreanNames.resize(rosterRowCount);
+            if (rosterRowCount == 0
                 || (!roster.hasEnglishColumn && !roster.hasKoreanColumn))
             {
                 return Domain::Result<
@@ -281,7 +285,7 @@ public:
                         || *rowIndex < 0
                         || static_cast<unsigned long long>(*rowIndex)
                             >= static_cast<unsigned long long>(
-                                roster.rowCount))
+                                rosterRowCount))
                     {
                         return technicalFailure<
                             Application::ClassAnalyticsRosterNames>(

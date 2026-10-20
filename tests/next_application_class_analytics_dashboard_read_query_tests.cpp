@@ -326,6 +326,8 @@ void classAnalyticsCountValueSemantics()
     using FullyScoredCount = ClassAnalyticsFullyScoredStudentCount;
 
     static_assert(std::is_same_v<
+        decltype(ClassAnalyticsRosterNames{}.rowCount), RosterCount>);
+    static_assert(std::is_same_v<
         decltype(ClassAnalyticsSnapshot::rosterStudentCount), RosterCount>);
     static_assert(std::is_same_v<
         decltype(ClassAnalyticsSnapshot::fullyScoredCount), FullyScoredCount>);
@@ -511,7 +513,7 @@ void criterionGradeDistributionCountsConsolidatedAndRoundedStudents()
 void currentRosterUsesNormalizedEnglishAndKoreanIdentities()
 {
     FakeReadPort port;
-    port.roster.rowCount = 2;
+    port.roster.rowCount = ClassAnalyticsRosterRowCount{std::size_t{2}};
     port.roster.hasEnglishColumn = true;
     port.roster.hasKoreanColumn = true;
     port.roster.englishNames = { u"Mary - Jane", u"" };
@@ -536,10 +538,56 @@ void currentRosterUsesNormalizedEnglishAndKoreanIdentities()
         .thousandths() > 3000);
 }
 
+void englishOnlyRosterFiltersUnrelatedEvaluationRows()
+{
+    FakeReadPort port;
+    port.roster.rowCount = ClassAnalyticsRosterRowCount{std::size_t{1}};
+    port.roster.hasEnglishColumn = true;
+    port.roster.hasKoreanColumn = false;
+    port.roster.englishNames = {u"Current Student"};
+    port.evaluations[0] = {
+        row(u"Current Student", u"김민수", u"A"),
+        row(u"Former Student", u"김민수", u"B")
+    };
+    const TestNameSemantics names;
+
+    const auto result = run(port, names,
+        ClassAnalyticsEvaluationSelection::exactName(u"Winter"));
+    assert(result);
+    const auto& selected = result.value().selectedSnapshot;
+    assert(selected.rosterStudentCount.rawValue() == std::size_t{1});
+    assert(selected.rankings.size() == 1);
+    assert(selected.rankings.front().englishName == u"Current Student");
+}
+
+void positiveRosterWithBlankNamesLeavesEvaluationRowsUnfiltered()
+{
+    FakeReadPort port;
+    port.roster.rowCount = ClassAnalyticsRosterRowCount{std::size_t{3}};
+    port.roster.hasEnglishColumn = true;
+    port.roster.hasKoreanColumn = true;
+    port.roster.englishNames = {u"", u" \t ", u""};
+    port.roster.koreanNames = {u" \t ", u"", u""};
+    port.evaluations[0] = {
+        row(u"Former One", u"박지훈", u"A"),
+        row(u"Former Two", u"김민수", u"B")
+    };
+    const TestNameSemantics names;
+
+    const auto result = run(port, names,
+        ClassAnalyticsEvaluationSelection::exactName(u"Winter"));
+    assert(result);
+    const auto& selected = result.value().selectedSnapshot;
+    assert(selected.rosterStudentCount.rawValue() == std::size_t{3});
+    assert(selected.rankings.size() == 2);
+    assert(selected.rankings[0].englishName == u"Former One");
+    assert(selected.rankings[1].englishName == u"Former Two");
+}
+
 void queryCountWrappersPreserveDistinctRosterAndScoredStudentMeanings()
 {
     FakeReadPort port;
-    port.roster.rowCount = 5;
+    port.roster.rowCount = ClassAnalyticsRosterRowCount{std::size_t{5}};
     port.roster.hasEnglishColumn = true;
     port.roster.englishNames = {
         u"Alex", u"", u"Blair", u"", u""
@@ -616,7 +664,7 @@ void adjacentRoundedScoresRankBeforeNamePort()
 void emptyRosterLeavesEvaluationRowsUnfilteredAndPartialScoresDoNotMakeYtd()
 {
     FakeReadPort port;
-    port.roster.rowCount = 0;
+    port.roster.rowCount = ClassAnalyticsRosterRowCount{std::size_t{0}};
     port.evaluations[3].push_back(row(u"Former", u"", u"A", false));
     const TestNameSemantics names;
 
@@ -920,6 +968,8 @@ int main()
     strongestAndFocusCriteriaPreserveOrderAndLabels();
     criterionGradeDistributionCountsConsolidatedAndRoundedStudents();
     currentRosterUsesNormalizedEnglishAndKoreanIdentities();
+    englishOnlyRosterFiltersUnrelatedEvaluationRows();
+    positiveRosterWithBlankNamesLeavesEvaluationRowsUnfiltered();
     queryCountWrappersPreserveDistinctRosterAndScoredStudentMeanings();
     duplicateRowsConsolidateAndRankingTiesUseNamePort();
     adjacentRoundedScoresRankBeforeNamePort();

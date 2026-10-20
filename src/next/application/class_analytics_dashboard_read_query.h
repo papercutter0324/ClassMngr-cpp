@@ -191,31 +191,6 @@ struct ClassAnalyticsStudentRank final
     bool fullyScored = false;
 };
 
-class ClassAnalyticsRosterRowCount final
-{
-public:
-    constexpr ClassAnalyticsRosterRowCount() noexcept = default;
-    explicit constexpr ClassAnalyticsRosterRowCount(
-        const std::size_t value
-        ) noexcept
-        : m_value(value)
-    {
-    }
-
-    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
-    {
-        return m_value;
-    }
-
-    friend constexpr bool operator==(
-        const ClassAnalyticsRosterRowCount&,
-        const ClassAnalyticsRosterRowCount&
-        ) noexcept = default;
-
-private:
-    std::size_t m_value = 0;
-};
-
 class ClassAnalyticsFullyScoredStudentCount final
 {
 public:
@@ -386,7 +361,7 @@ namespace ClassAnalyticsDashboardReadDetail
     const ClassAnalyticsNameSemanticsPort& names
     )
 {
-    if (roster.rowCount == 0
+    if (roster.rowCount.rawValue() == 0
         || (!roster.hasEnglishColumn && !roster.hasKoreanColumn))
     {
         return matrix;
@@ -667,6 +642,8 @@ public:
         {
             return ClassAnalyticsDashboardResult::failure(roster.error());
         }
+        const std::size_t rosterRowCount =
+            roster.value().rowCount.rawValue();
 
         struct EvaluationView final
         {
@@ -698,9 +675,9 @@ public:
             view.filteredRows = filterByRoster(
                 view.rawRows, roster.value(), names);
             view.filteredSnapshot = compute(
-                view.filteredRows, roster.value().rowCount, names);
+                view.filteredRows, rosterRowCount, names);
             view.historicalSnapshot = compute(
-                view.rawRows, roster.value().rowCount, names);
+                view.rawRows, rosterRowCount, names);
         }
 
         const ClassAnalyticsEvaluationSelection& selection =
@@ -717,7 +694,7 @@ public:
                                    view.filteredRows.end());
             }
             dashboard.selectedSnapshot = compute(
-                currentRows, roster.value().rowCount, names);
+                currentRows, rosterRowCount, names);
 
             for (auto view = evaluations.rbegin();
                  view != evaluations.rend();

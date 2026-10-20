@@ -48,7 +48,7 @@ class InMemoryDashboardReadPort final
 {
 public:
     ClassAnalyticsRosterNames roster{
-        .rowCount = 3,
+        .rowCount = ClassAnalyticsRosterRowCount{std::size_t{3}},
         .hasEnglishColumn = true,
         .hasKoreanColumn = false,
         .englishNames = { u"Alex Example", u"Blair Example", u"No Scores" }
