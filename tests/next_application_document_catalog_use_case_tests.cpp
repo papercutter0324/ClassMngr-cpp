@@ -38,7 +38,7 @@ namespace
     input.folders.push_back({
         folderId("folder-guides"),
         DocumentCatalogPath("Guides"),
-        "guides",
+        DocumentFolderKey("guides"),
         "Guides",
         DocumentFolderOrder(0)
     });
@@ -46,7 +46,7 @@ namespace
         documentId("document-lesson"),
         input.folders.front().id,
         DocumentCatalogPath("Guides/lesson.pdf"),
-        "lesson",
+        DocumentEntryKey("lesson"),
         "Lesson",
         DocumentOrder(0),
         true,
@@ -93,6 +93,7 @@ void NextApplicationDocumentCatalogUseCaseTests::successfulLookupReturnsCopyable
     QCOMPARE(result.value().id.value(), std::string("document-lesson"));
     QCOMPARE(result.value().folderId.value(), std::string("folder-guides"));
     QCOMPARE(result.value().path.value(), std::string("Guides/lesson.pdf"));
+    QCOMPARE(result.value().key.value(), std::string("lesson"));
     QCOMPARE(result.value().contentReference.value(),
         std::string("resource://documents/lesson.pdf"));
     QVERIFY(result.value().exportReference.has_value());

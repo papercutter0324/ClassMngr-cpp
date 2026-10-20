@@ -121,7 +121,7 @@ public:
                 input.folders.push_back({
                     *folderId,
                     Application::DocumentCatalogPath(*path),
-                    *key,
+                    Application::DocumentFolderKey(*key),
                     *displayName,
                     Application::DocumentFolderOrder(folder.order),
                     Application::DocumentCatalogPath(*parentPath)
@@ -216,7 +216,7 @@ public:
                     *documentId,
                     *folderId,
                     Application::DocumentCatalogPath(*path),
-                    *key,
+                    Application::DocumentEntryKey(*key),
                     *displayName,
                     Application::DocumentOrder(document.order),
                     document.printingEnabled,

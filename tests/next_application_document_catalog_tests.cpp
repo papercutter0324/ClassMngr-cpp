@@ -3,6 +3,7 @@
 
 #include <QtTest/QtTest>
 
+#include <concepts>
 #include <cstdint>
 #include <string>
 #include <type_traits>
@@ -12,6 +13,15 @@ using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
 using namespace ClassMngr::Next::Domain;
 using ClassMngr::Next::Domain::DocumentContentReference;
+
+template <typename Left, typename Right>
+concept EqualityComparablePair = requires(
+    const Left& left,
+    const Right& right
+    )
+{
+    left == right;
+};
 
 static_assert(std::is_same_v<
     decltype(DocumentFolderMetadata::path),
@@ -33,6 +43,37 @@ static_assert(std::is_same_v<
     decltype(DocumentEntryMetadata::order),
     DocumentOrder
     >);
+static_assert(std::is_same_v<
+    decltype(DocumentFolderMetadata::key),
+    DocumentFolderKey
+    >);
+static_assert(std::is_same_v<
+    decltype(DocumentEntryMetadata::key),
+    DocumentEntryKey
+    >);
+static_assert(!std::is_same_v<DocumentFolderKey, DocumentEntryKey>);
+static_assert(std::is_same_v<DocumentFolderKey::Text, std::string>);
+static_assert(std::is_same_v<DocumentEntryKey::Text, std::string>);
+static_assert(std::is_same_v<
+    decltype(std::declval<const DocumentFolderKey&>().value()),
+    const std::string&
+    >);
+static_assert(std::is_same_v<
+    decltype(std::declval<const DocumentEntryKey&>().value()),
+    const std::string&
+    >);
+static_assert(std::is_constructible_v<DocumentFolderKey, std::string>);
+static_assert(std::is_constructible_v<DocumentEntryKey, std::string>);
+static_assert(!std::is_convertible_v<std::string, DocumentFolderKey>);
+static_assert(!std::is_convertible_v<std::string, DocumentEntryKey>);
+static_assert(!std::is_convertible_v<DocumentFolderKey, std::string>);
+static_assert(!std::is_convertible_v<DocumentEntryKey, std::string>);
+static_assert(!std::is_constructible_v<DocumentFolderKey, DocumentEntryKey>);
+static_assert(!std::is_constructible_v<DocumentEntryKey, DocumentFolderKey>);
+static_assert(!std::is_convertible_v<DocumentFolderKey, DocumentEntryKey>);
+static_assert(!std::is_convertible_v<DocumentEntryKey, DocumentFolderKey>);
+static_assert(!EqualityComparablePair<DocumentFolderKey, DocumentEntryKey>);
+static_assert(!EqualityComparablePair<DocumentEntryKey, DocumentFolderKey>);
 static_assert(!std::is_same_v<DocumentFolderOrder, DocumentOrder>);
 static_assert(std::is_constructible_v<DocumentFolderOrder, std::int32_t>);
 static_assert(std::is_constructible_v<DocumentOrder, std::int32_t>);
@@ -66,7 +107,7 @@ DocumentCatalogProjectionInput validInput()
     input.folders.push_back({
         folderId("folder-guides"),
         DocumentCatalogPath("Guides"),
-        "guides",
+        DocumentFolderKey("guides"),
         "Guides",
         DocumentFolderOrder(10)
     });
@@ -74,7 +115,7 @@ DocumentCatalogProjectionInput validInput()
         documentId("document-lesson-planning"),
         input.folders.front().id,
         DocumentCatalogPath("Guides/lesson-planning.pdf"),
-        "lesson-planning",
+        DocumentEntryKey("lesson-planning"),
         "Lesson Planning",
         DocumentOrder(20),
         true,
@@ -112,6 +153,8 @@ class NextApplicationDocumentCatalogTests final : public QObject
 
 private slots:
     void validConstructionPreservesMetadataAndOrdering();
+    void keyTypesRemainDistinctAndPreserveExactBytes();
+    void matchingFolderAndEntryKeyTextIsAllowed();
     void orderTypesRemainDistinctAndDefaultToZero();
     void projectionPreservesInputSequenceIndependentOfOrderRanks();
     void completeMetadataIsPreserved();
@@ -141,7 +184,7 @@ void NextApplicationDocumentCatalogTests::validConstructionPreservesMetadataAndO
     QCOMPARE(projection.folders().front().id.value(), std::string("folder-guides"));
     QCOMPARE(projection.folders().front().path.value(), std::string("Guides"));
     QCOMPARE(projection.folders().front().parentPath.value(), std::string());
-    QCOMPARE(projection.folders().front().key, std::string("guides"));
+    QCOMPARE(projection.folders().front().key.value(), std::string("guides"));
     QCOMPARE(projection.folders().front().displayName, std::string("Guides"));
     QCOMPARE(projection.folders().front().order.rawValue(), std::int32_t(10));
 
@@ -149,7 +192,7 @@ void NextApplicationDocumentCatalogTests::validConstructionPreservesMetadataAndO
     QCOMPARE(document.id.value(), std::string("document-lesson-planning"));
     QCOMPARE(document.folderId.value(), std::string("folder-guides"));
     QCOMPARE(document.path.value(), std::string("Guides/lesson-planning.pdf"));
-    QCOMPARE(document.key, std::string("lesson-planning"));
+    QCOMPARE(document.key.value(), std::string("lesson-planning"));
     QCOMPARE(document.displayName, std::string("Lesson Planning"));
     QCOMPARE(document.order.rawValue(), std::int32_t(20));
     QVERIFY(document.printable);
@@ -167,14 +210,14 @@ void NextApplicationDocumentCatalogTests::orderTypesRemainDistinctAndDefaultToZe
     const DocumentFolderMetadata folder{
         folderId("folder-default-order"),
         DocumentCatalogPath("Default"),
-        "default",
+        DocumentFolderKey("default"),
         "Default"
     };
     const DocumentEntryMetadata document{
         .id = documentId("document-default-order"),
         .folderId = folderId("folder-default-order"),
         .path = DocumentCatalogPath("Default/document.pdf"),
-        .key = "default",
+        .key = DocumentEntryKey("default"),
         .displayName = "Default",
         .printable = true,
         .contentReference = DocumentContentReference(
@@ -192,19 +235,66 @@ void NextApplicationDocumentCatalogTests::orderTypesRemainDistinctAndDefaultToZe
     QVERIFY(documentOrder == DocumentOrder(std::int32_t(7)));
 }
 
+void NextApplicationDocumentCatalogTests::keyTypesRemainDistinctAndPreserveExactBytes()
+{
+    const DocumentFolderKey emptyFolderKey;
+    const DocumentEntryKey emptyEntryKey;
+    QCOMPARE(emptyFolderKey.value(), std::string());
+    QCOMPARE(emptyEntryKey.value(), std::string());
+
+    std::string exactFolderText = "folder";
+    exactFolderText.push_back('\0');
+    exactFolderText.append("\xFF", 1);
+    exactFolderText.append("key");
+    const DocumentFolderKey folderKey(exactFolderText);
+    const DocumentFolderKey equalFolderKey(exactFolderText);
+    std::string exactEntryText = "entry";
+    exactEntryText.push_back('\0');
+    exactEntryText.append("\xFE", 1);
+    exactEntryText.append("key");
+    const DocumentEntryKey entryKey(exactEntryText);
+    const DocumentEntryKey equalEntryKey(exactEntryText);
+
+    QCOMPARE(folderKey.value(), exactFolderText);
+    QCOMPARE(entryKey.value(), exactEntryText);
+    QVERIFY(folderKey == equalFolderKey);
+    QVERIFY(entryKey == equalEntryKey);
+    QVERIFY(folderKey != DocumentFolderKey("different"));
+    QVERIFY(entryKey != DocumentEntryKey("different"));
+}
+
+void NextApplicationDocumentCatalogTests::matchingFolderAndEntryKeyTextIsAllowed()
+{
+    auto input = validInput();
+    input.folders.front().key = DocumentFolderKey("shared-key");
+    input.documents.front().key = DocumentEntryKey("shared-key");
+
+    const auto result = DocumentCatalogProjection::create(std::move(input));
+
+    QVERIFY(result);
+    QCOMPARE(
+        result.value().folders().front().key.value(),
+        std::string("shared-key")
+        );
+    QCOMPARE(
+        result.value().documents().front().key.value(),
+        std::string("shared-key")
+        );
+}
+
 void NextApplicationDocumentCatalogTests::
 projectionPreservesInputSequenceIndependentOfOrderRanks()
 {
     auto input = validInput();
     input.folders.front().id = folderId("folder-zulu");
     input.folders.front().path = DocumentCatalogPath("Zulu");
-    input.folders.front().key = "zulu";
+    input.folders.front().key = DocumentFolderKey("zulu");
     input.folders.front().displayName = "Zulu";
     input.folders.front().order = DocumentFolderOrder(20);
     input.documents.front().folderId = input.folders.front().id;
     input.documents.front().id = documentId("document-zulu");
     input.documents.front().path = DocumentCatalogPath("Zulu/zulu.pdf");
-    input.documents.front().key = "zulu";
+    input.documents.front().key = DocumentEntryKey("zulu");
     input.documents.front().displayName = "Zulu";
     input.documents.front().order = DocumentOrder(10);
     input.documents.front().contentReference = DocumentContentReference(
@@ -214,14 +304,14 @@ projectionPreservesInputSequenceIndependentOfOrderRanks()
     input.folders.push_back({
         folderId("folder-alpha"),
         DocumentCatalogPath("Alpha"),
-        "alpha",
+        DocumentFolderKey("alpha"),
         "Alpha",
         DocumentFolderOrder(0)
     });
     input.folders.push_back({
         folderId("folder-mike"),
         DocumentCatalogPath("Mike"),
-        "mike",
+        DocumentFolderKey("mike"),
         "Mike",
         DocumentFolderOrder(10)
     });
@@ -229,7 +319,7 @@ projectionPreservesInputSequenceIndependentOfOrderRanks()
         documentId("document-alpha"),
         input.folders[1].id,
         DocumentCatalogPath("Alpha/alpha.pdf"),
-        "alpha",
+        DocumentEntryKey("alpha"),
         "Alpha",
         DocumentOrder(0),
         false,
@@ -241,7 +331,7 @@ projectionPreservesInputSequenceIndependentOfOrderRanks()
         documentId("document-mike"),
         input.folders[2].id,
         DocumentCatalogPath("Mike/mike.pdf"),
-        "mike",
+        DocumentEntryKey("mike"),
         "Mike",
         DocumentOrder(5),
         true,
@@ -279,7 +369,7 @@ void NextApplicationDocumentCatalogTests::completeMetadataIsPreserved()
     folder.id = folderId("folder-curriculum");
     folder.path = DocumentCatalogPath("Catalog/Curriculum");
     folder.parentPath = DocumentCatalogPath("Catalog");
-    folder.key = "curriculum";
+    folder.key = DocumentFolderKey("curriculum");
     folder.displayName = "Curriculum";
     folder.order = DocumentFolderOrder(42);
     const auto curriculumFolderId = folder.id;
@@ -288,7 +378,7 @@ void NextApplicationDocumentCatalogTests::completeMetadataIsPreserved()
     parent.id = folderId("folder-catalog");
     parent.path = DocumentCatalogPath("Catalog");
     parent.parentPath = DocumentCatalogPath();
-    parent.key = "catalog";
+    parent.key = DocumentFolderKey("catalog");
     parent.displayName = "Catalog";
     input.folders.push_back(std::move(parent));
 
@@ -296,7 +386,7 @@ void NextApplicationDocumentCatalogTests::completeMetadataIsPreserved()
     document.id = documentId("document-curriculum-guide");
     document.folderId = curriculumFolderId;
     document.path = DocumentCatalogPath("Catalog/Curriculum/guide.pdf");
-    document.key = "curriculum-guide";
+    document.key = DocumentEntryKey("curriculum-guide");
     document.displayName = "Curriculum Guide";
     document.order = DocumentOrder(7);
     document.printable = false;
@@ -315,7 +405,7 @@ void NextApplicationDocumentCatalogTests::completeMetadataIsPreserved()
     QCOMPARE(projectedFolder.id.value(), std::string("folder-curriculum"));
     QCOMPARE(projectedFolder.path.value(), std::string("Catalog/Curriculum"));
     QCOMPARE(projectedFolder.parentPath.value(), std::string("Catalog"));
-    QCOMPARE(projectedFolder.key, std::string("curriculum"));
+    QCOMPARE(projectedFolder.key.value(), std::string("curriculum"));
     QCOMPARE(projectedFolder.displayName, std::string("Curriculum"));
     QCOMPARE(projectedFolder.order.rawValue(), std::int32_t(42));
 
@@ -332,7 +422,7 @@ void NextApplicationDocumentCatalogTests::completeMetadataIsPreserved()
         projectedDocument.path.value(),
         std::string("Catalog/Curriculum/guide.pdf")
         );
-    QCOMPARE(projectedDocument.key, std::string("curriculum-guide"));
+    QCOMPARE(projectedDocument.key.value(), std::string("curriculum-guide"));
     QCOMPARE(
         projectedDocument.displayName,
         std::string("Curriculum Guide")
@@ -467,10 +557,19 @@ void NextApplicationDocumentCatalogTests::boundedValidationAndDuplicateIdsAreRej
 
     {
         auto input = validInput();
-        input.folders.front().key = std::string(
+        input.folders.front().key = DocumentFolderKey(std::string(
             kDocumentCatalogMaxKeyLength + 1,
             'k'
-            );
+            ));
+        verifyInvalid(DocumentCatalogProjection::create(std::move(input)));
+    }
+
+    {
+        auto input = validInput();
+        input.documents.front().key = DocumentEntryKey(std::string(
+            kDocumentCatalogMaxKeyLength + 1,
+            'k'
+            ));
         verifyInvalid(DocumentCatalogProjection::create(std::move(input)));
     }
 
@@ -502,7 +601,7 @@ void NextApplicationDocumentCatalogTests::boundedValidationAndDuplicateIdsAreRej
             input.folders.push_back({
                 folderId("folder-" + suffix),
                 DocumentCatalogPath("folder-path-" + suffix),
-                "folder-key-" + suffix,
+                DocumentFolderKey("folder-key-" + suffix),
                 "Folder " + suffix,
                 DocumentFolderOrder(static_cast<std::int32_t>(index))
             });
@@ -533,7 +632,7 @@ void NextApplicationDocumentCatalogTests::folderPathsMustBeUniqueAndHierarchyMus
         input.folders.push_back({
             folderId("folder-section"),
             DocumentCatalogPath("Section"),
-            "section",
+            DocumentFolderKey("section"),
             "Section",
             DocumentFolderOrder(11)
         });
@@ -548,7 +647,7 @@ void NextApplicationDocumentCatalogTests::validNestedFoldersArePreserved()
     auto root = input.folders.front();
     root.id = folderId("folder-catalog");
     root.path = DocumentCatalogPath("Catalog");
-    root.key = "catalog";
+    root.key = DocumentFolderKey("catalog");
     root.displayName = "Catalog";
 
     auto child = input.folders.front();
@@ -559,7 +658,7 @@ void NextApplicationDocumentCatalogTests::validNestedFoldersArePreserved()
     grandchild.id = folderId("folder-unit-1");
     grandchild.path = DocumentCatalogPath("Catalog/Guides/Unit 1");
     grandchild.parentPath = child.path;
-    grandchild.key = "unit-1";
+    grandchild.key = DocumentFolderKey("unit-1");
     grandchild.displayName = "Unit 1";
 
     // The child and its parent need not appear in hierarchy order.
@@ -687,7 +786,7 @@ void NextApplicationDocumentCatalogTests::unicodeWhitespaceIsRejectedAcrossBlank
                     input.folders.front().parentPath = DocumentCatalogPath(whitespace);
                     break;
                 case Field::FolderKey:
-                    input.folders.front().key = whitespace;
+                    input.folders.front().key = DocumentFolderKey(whitespace);
                     break;
                 case Field::FolderDisplayName:
                     input.folders.front().displayName = whitespace;
@@ -702,7 +801,7 @@ void NextApplicationDocumentCatalogTests::unicodeWhitespaceIsRejectedAcrossBlank
                     input.documents.front().path = DocumentCatalogPath(whitespace);
                     break;
                 case Field::DocumentKey:
-                    input.documents.front().key = whitespace;
+                    input.documents.front().key = DocumentEntryKey(whitespace);
                     break;
                 case Field::DocumentDisplayName:
                     input.documents.front().displayName = whitespace;
@@ -766,12 +865,12 @@ void NextApplicationDocumentCatalogTests::nonBlankUnicodeAndMalformedUtf8ArePres
         input.folders.front().id = folderId(folderIdValue);
         input.folders.front().path = DocumentCatalogPath(folderPath);
         input.folders.front().parentPath = DocumentCatalogPath(folderParentPath);
-        input.folders.front().key = folderKey;
+        input.folders.front().key = DocumentFolderKey(folderKey);
         input.folders.front().displayName = folderDisplayName;
         input.documents.front().id = documentId(documentIdValue);
         input.documents.front().folderId = input.folders.front().id;
         input.documents.front().path = DocumentCatalogPath(documentPath);
-        input.documents.front().key = documentKey;
+        input.documents.front().key = DocumentEntryKey(documentKey);
         input.documents.front().displayName = documentDisplayName;
         input.documents.front().contentReference =
             DocumentContentReference(contentReference);
@@ -780,7 +879,7 @@ void NextApplicationDocumentCatalogTests::nonBlankUnicodeAndMalformedUtf8ArePres
         parent.id = folderId("folder-parent-" + embeddedValue);
         parent.path = DocumentCatalogPath(folderParentPath);
         parent.parentPath = DocumentCatalogPath();
-        parent.key = "parent-key";
+        parent.key = DocumentFolderKey("parent-key");
         parent.displayName = "Parent Folder";
         input.folders.push_back(std::move(parent));
 
@@ -790,14 +889,14 @@ void NextApplicationDocumentCatalogTests::nonBlankUnicodeAndMalformedUtf8ArePres
         QCOMPARE(folder.id.value(), folderIdValue);
         QCOMPARE(folder.path.value(), folderPath);
         QCOMPARE(folder.parentPath.value(), folderParentPath);
-        QCOMPARE(folder.key, folderKey);
+        QCOMPARE(folder.key.value(), folderKey);
         QCOMPARE(folder.displayName, folderDisplayName);
 
         const auto& document = result.value().documents().front();
         QCOMPARE(document.id.value(), documentIdValue);
         QCOMPARE(document.folderId.value(), folderIdValue);
         QCOMPARE(document.path.value(), documentPath);
-        QCOMPARE(document.key, documentKey);
+        QCOMPARE(document.key.value(), documentKey);
         QCOMPARE(document.displayName, documentDisplayName);
         QCOMPARE(document.contentReference.value(), contentReference);
         QVERIFY(!document.exportReference.has_value());
@@ -818,7 +917,7 @@ void NextApplicationDocumentCatalogTests::documentCollectionOverflowIsRejected()
             documentId("document-" + suffix),
             input.folders.front().id,
             DocumentCatalogPath("Guides/document-" + suffix + ".pdf"),
-            "document-" + suffix,
+            DocumentEntryKey("document-" + suffix),
             "Document " + suffix,
             DocumentOrder(static_cast<std::int32_t>(index)),
             index % 2 == 0,

@@ -110,6 +110,60 @@ private:
     std::string m_value;
 };
 
+// Catalog keys preserve their adapter-provided bytes. Their distinct types
+// prevent folder and entry keys from being interchanged at call sites.
+class DocumentFolderKey final
+{
+public:
+    using Text = std::string;
+
+    DocumentFolderKey() = default;
+
+    explicit DocumentFolderKey(Text value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const Text& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const DocumentFolderKey&,
+        const DocumentFolderKey&
+        ) = default;
+
+private:
+    Text m_value;
+};
+
+class DocumentEntryKey final
+{
+public:
+    using Text = std::string;
+
+    DocumentEntryKey() = default;
+
+    explicit DocumentEntryKey(Text value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const Text& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const DocumentEntryKey&,
+        const DocumentEntryKey&
+        ) = default;
+
+private:
+    Text m_value;
+};
+
 // A folder is copied metadata only. Its identifier is intentionally a
 // different type from a document identifier, so a document cannot
 // accidentally use a folder id at a call site.
@@ -117,7 +171,7 @@ struct DocumentFolderMetadata final
 {
     Domain::DocumentFolderId id;
     DocumentCatalogPath path;
-    std::string key;
+    DocumentFolderKey key;
     std::string displayName;
     DocumentFolderOrder order;
     // Empty for a root folder; non-root folders carry their bounded parent
@@ -140,7 +194,7 @@ struct DocumentEntryMetadata final
     Domain::DocumentId id;
     Domain::DocumentFolderId folderId;
     DocumentCatalogPath path;
-    std::string key;
+    DocumentEntryKey key;
     std::string displayName;
     DocumentOrder order;
     bool printable = false;
@@ -276,7 +330,7 @@ template <typename TypedId>
 
     if (!isValidPath(folder.path)
         || !isValidParentPath(folder.parentPath)
-        || !isValidKey(folder.key)
+        || !isValidKey(folder.key.value())
         || !isValidDisplayName(folder.displayName))
     {
         return Domain::Result<void>::failure(
@@ -335,7 +389,7 @@ template <typename TypedId>
     }
 
     if (!isValidPath(document.path)
-        || !isValidKey(document.key)
+        || !isValidKey(document.key.value())
         || !isValidDisplayName(document.displayName))
     {
         return Domain::Result<void>::failure(

@@ -27,6 +27,10 @@ using DocumentCatalogProjectionInput =
     ClassMngr::Next::Application::DocumentCatalogProjectionInput;
 using DocumentCatalogPath =
     ClassMngr::Next::Application::DocumentCatalogPath;
+using DocumentFolderKey =
+    ClassMngr::Next::Application::DocumentFolderKey;
+using DocumentEntryKey =
+    ClassMngr::Next::Application::DocumentEntryKey;
 using DocumentFolderOrder =
     ClassMngr::Next::Application::DocumentFolderOrder;
 using DocumentOrder =
@@ -161,7 +165,7 @@ std::optional<DocumentCatalogProjection> projectionFromCatalog(
         input.folders.push_back({
             *folderId,
             DocumentCatalogPath(folder.path.toUtf8().toStdString()),
-            folder.id.toUtf8().toStdString(),
+            DocumentFolderKey(folder.id.toUtf8().toStdString()),
             folder.sidebarNames.forLocale(localeName)
                 .toUtf8().toStdString(),
             DocumentFolderOrder(folder.order),
@@ -223,7 +227,7 @@ std::optional<DocumentCatalogProjection> projectionFromCatalog(
             *documentId,
             *folderId,
             DocumentCatalogPath(relativePdfPath.toUtf8().toStdString()),
-            document.id.toUtf8().toStdString(),
+            DocumentEntryKey(document.id.toUtf8().toStdString()),
             document.sidebarNames.forLocale(localeName)
                 .toUtf8().toStdString(),
             DocumentOrder(document.order),
@@ -282,7 +286,7 @@ std::optional<DocumentCatalogProjection> recursiveExpansionProjection(
         {
             *rootFolderId,
             DocumentCatalogPath("synthetic/root"),
-            "document_test_root",
+            DocumentFolderKey("document_test_root"),
             korean ? "깊은 폴더" : "Deep Folder",
             DocumentFolderOrder(0),
             DocumentCatalogPath()
@@ -290,7 +294,7 @@ std::optional<DocumentCatalogProjection> recursiveExpansionProjection(
         {
             *nestedFolderId,
             DocumentCatalogPath("synthetic/root/nested"),
-            "document_test_nested",
+            DocumentFolderKey("document_test_nested"),
             korean ? "중첩 폴더" : "Nested Folder",
             DocumentFolderOrder(0),
             DocumentCatalogPath("synthetic/root")
@@ -298,7 +302,7 @@ std::optional<DocumentCatalogProjection> recursiveExpansionProjection(
         {
             *siblingFolderId,
             DocumentCatalogPath("synthetic/root/sibling"),
-            "document_test_sibling",
+            DocumentFolderKey("document_test_sibling"),
             korean ? "접힌 형제 폴더" : "Collapsed Sibling",
             DocumentFolderOrder(1),
             DocumentCatalogPath("synthetic/root")
@@ -309,7 +313,7 @@ std::optional<DocumentCatalogProjection> recursiveExpansionProjection(
             *nestedDocumentId,
             *nestedFolderId,
             DocumentCatalogPath("synthetic/nested.pdf"),
-            "document_test_nested_leaf",
+            DocumentEntryKey("document_test_nested_leaf"),
             korean ? "중첩 문서" : "Nested Document",
             DocumentOrder(0),
             true,
@@ -323,7 +327,7 @@ std::optional<DocumentCatalogProjection> recursiveExpansionProjection(
             *siblingDocumentId,
             *siblingFolderId,
             DocumentCatalogPath("synthetic/sibling.pdf"),
-            "document_test_sibling_leaf",
+            DocumentEntryKey("document_test_sibling_leaf"),
             korean ? "형제 문서" : "Sibling Document",
             DocumentOrder(0),
             true,
@@ -742,7 +746,7 @@ void SidebarStructureTests::documentSiblingsSortByOrderThenIdentifier()
     input.folders.push_back({
         *folderId,
         DocumentCatalogPath("synthetic/order-sort"),
-        "document_sort_folder",
+        DocumentFolderKey("document_sort_folder"),
         "Order Sort",
         DocumentFolderOrder(0),
         DocumentCatalogPath()
@@ -752,7 +756,7 @@ void SidebarStructureTests::documentSiblingsSortByOrderThenIdentifier()
             *zuluDocumentId,
             *folderId,
             DocumentCatalogPath("synthetic/order-sort/zulu.pdf"),
-            "document_key_alpha",
+            DocumentEntryKey("document_key_alpha"),
             "Alpha display for zulu ID",
             DocumentOrder(2),
             false,
@@ -766,7 +770,7 @@ void SidebarStructureTests::documentSiblingsSortByOrderThenIdentifier()
             *alphaDocumentId,
             *folderId,
             DocumentCatalogPath("synthetic/order-sort/alpha.pdf"),
-            "document_key_zulu",
+            DocumentEntryKey("document_key_zulu"),
             "Zulu display for alpha ID",
             DocumentOrder(2),
             false,
@@ -780,7 +784,7 @@ void SidebarStructureTests::documentSiblingsSortByOrderThenIdentifier()
             *earlyDocumentId,
             *folderId,
             DocumentCatalogPath("synthetic/order-sort/early.pdf"),
-            "document_key_early",
+            DocumentEntryKey("document_key_early"),
             "Earlier order",
             DocumentOrder(1),
             false,

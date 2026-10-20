@@ -82,7 +82,7 @@ projectsEmbeddedCatalogAsBoundedLocalizedMetadata()
         QVERIFY(projected != projection.folders().cend());
         QCOMPARE(utf8(projected->path.value()), source.path);
         QCOMPARE(utf8(projected->parentPath.value()), source.parentPath);
-        QCOMPARE(utf8(projected->key), source.id);
+        QCOMPARE(utf8(projected->key.value()), source.id);
         QCOMPARE(utf8(projected->displayName),
                  source.sidebarNames.forLocale(QStringLiteral("ko_KR")));
         QCOMPARE(projected->order.rawValue(), source.order);
@@ -138,7 +138,7 @@ preservesDocumentFlagsAndOptionalExportReferences()
         QVERIFY(folder != legacy->folders().cend());
         QCOMPARE(utf8(projected->folderId.value()), folder->id);
         QCOMPARE(utf8(projected->path.value()), relativePath(source.pdf));
-        QCOMPARE(utf8(projected->key), source.id);
+        QCOMPARE(utf8(projected->key.value()), source.id);
         QCOMPARE(utf8(projected->displayName),
                  source.sidebarNames.forLocale(QStringLiteral("en_US")));
         QCOMPARE(projected->order.rawValue(), source.order);

@@ -48,7 +48,7 @@ QList<TreeNodeSpec> documentChildren(
             static_cast<int>(folder.order.rawValue()),
             QString::fromUtf8(folder.id.value().c_str()),
             {
-                QString::fromUtf8(folder.key.c_str()),
+                QString::fromUtf8(folder.key.value().c_str()),
                 QString::fromUtf8(folder.displayName.c_str()),
                 NodeType::Root,
                 children
@@ -67,7 +67,7 @@ QList<TreeNodeSpec> documentChildren(
             static_cast<int>(document.order.rawValue()),
             QString::fromUtf8(document.id.value().c_str()),
             {
-                QString::fromUtf8(document.key.c_str()),
+                QString::fromUtf8(document.key.value().c_str()),
                 QString::fromUtf8(document.displayName.c_str()),
                 NodeType::Page
             }
