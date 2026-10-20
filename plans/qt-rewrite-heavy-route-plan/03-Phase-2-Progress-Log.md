@@ -51467,3 +51467,45 @@ original discovery order and boundaries are unchanged. The batch has no push
 receipt and is not closed. F629 awaits source-bound Windows x64 layout
 evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1156 Selected Class grade accepted before implementation - 2026-10-20
+
+F1156 is accepted/in progress. Add the Qt-free Application value
+`SelectedClassGradeValue`, an owning opaque UTF-8 `std::string` wrapper with
+explicit string construction, a const `value()` accessor, equality, and an
+empty default for empty/missing grades and aggregate initialization. Do not
+add implicit conversion, validation, normalization, `Course` parsing, or
+catalog interpretation at the Application boundary. Change
+`SelectedClassGradeReadSnapshot::classGrade` to this value.
+
+The Platform adapter wraps the existing `QString::toUtf8()` bytes. The Query
+passes grade unchanged while preserving canonical class-ID validation, port
+error propagation, and identity-mismatch validation. Update the existing
+consumers `classes_page.cpp` and `evaluation_default_selection_service.cpp` to
+read `.value()` only at their current interpretation boundary; retain their
+trim/case/classification and fail-open/no-default behavior. Preserve empty and
+missing values, exact whitespace and UTF-8 bytes, and add non-ASCII coverage at
+the Query and Platform boundaries. Existing classifiers may normalize later by
+design. No repository changes.
+
+Evidence: `src/next/application/selected_class_grade_read_snapshot.h`,
+`src/next/application/selected_class_grade_read_query.h`,
+`src/next/platform/application_services_selected_class_grade_read_port.h`,
+`src/data/repositories/class_info_repository.cpp` (LEFT JOIN behavior),
+`src/features/classes/ui/classes_page.cpp`,
+`src/features/classes/evaluation_default_selection_service.cpp`,
+`tests/next_application_selected_class_grade_read_query_tests.cpp`,
+`tests/next_platform_application_services_selected_class_grade_read_port_tests.cpp`,
+`tests/classes_page_tests.cpp`,
+`tests/evaluation_default_selection_tests.cpp`, and
+`tests/evaluation_default_selection_integration_tests.cpp`.
+
+Focused acceptance gate: in the existing `build/macos-clang-debug` tree,
+incrementally build `ClassMngr`,
+`ClassMngrNextApplicationSelectedClassGradeReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSelectedClassGradeReadPortTests`,
+`ClassMngrClassesPageTests`, `ClassMngrEvaluationDefaultSelectionTests`, and
+`ClassMngrEvaluationDefaultSelectionIntegrationTests`; run the five focused
+CTests (Qt offscreen for the GUI target), then run `git diff --check`. No full
+suite or Windows pass is claimed. Implementation and verification have not
+started.
