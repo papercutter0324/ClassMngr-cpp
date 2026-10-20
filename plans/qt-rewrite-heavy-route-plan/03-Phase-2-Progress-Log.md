@@ -54514,3 +54514,55 @@ Build in `build/macos-clang-debug`: `ClassMngr`,
 `ClassMngrSubPrepPageTests`; run `git diff --check`. No full-suite or Windows
 gate is claimed. This acceptance was recorded before implementation; no F1197
 implementation or verification result is claimed here.
+
+### F1197 Sub Prep print student count complete - 2026-10-20
+
+F1197 completed at source/test commit
+`ff4625ace4f2a608c61575c10d1e51f837d64b08` (`Phase2 - Type Sub Prep print
+student count`). Production reuses `Application::ClassSummaryStudentCount`
+through the Application query, Platform port, and Feature mapper. A direct
+type assertion and zero mapper assertion were added; four page fixtures and
+Platform assertions explicitly construct or unwrap the type.
+
+Six targets built in `build/macos-clang-debug`. The four non-page focused
+CTests passed 4/4: `NextApplicationSubPrepPrintSourceQuery`,
+`NextPlatformApplicationServicesSubPrepPrintSourcePort`,
+`ClassMngrSubPrepPrintSourceMapperTests`, and
+`ClassMngrSubPrepPrintPdfTests`. Both affected page-generation selectors
+passed when run directly (3 QtTest cases each). The full
+`ClassMngrSubPrepPageTests` CTest timed out after 300.51 seconds in
+`unavailablePreferenceLoadsPreservePageValues`, before reaching the changed
+selectors; it is a verification limitation, not a passing full page CTest.
+The same timeout is recorded at F1188, with an earlier reproduction against
+pre-F1100 production. `git diff --check` passed. No full-project suite or
+Windows run occurred.
+
+### F1198 Speaking Evaluation report source row accepted before implementation - 2026-10-20
+
+F1198 is accepted/current before implementation. Add a Qt-free Application
+`SpeakingEvaluationReportSourceRow` value backed by `std::size_t`, with zero
+default, explicit construction, `.rawValue()`, equality, and no `-1` sentinel
+or implicit conversion. Use it only for
+`SpeakingEvaluationReportStudentContent::sourceRow`. The projection assigns
+each included student's original zero-based input row index, filtering only
+rows where both trimmed names are blank and preserving input order. Preserve
+sparse source positions, the existing 33-row Application coverage, and no
+arbitrary Application row cap.
+
+Convert with `.rawValue()` only at the Feature boundary to legacy
+`StudentReport::sourceRow` `int`. Keep that Feature field's `-1` no-match and
+default behavior, the filtered report index raw, and edit-to-source mapping
+unchanged. Do not change AI batch `reportIndex` or `sourceRow` (F1200).
+
+Existing tests cover original positions 2 and 3 after blank filtering,
+sequential indices for 33 rows, mapping source row 2 to filtered report index
+1 and a missing row to -1, and edits emitting original source row 4. Build in
+`build/macos-clang-debug`: `ClassMngr`,
+`ClassMngrNextApplicationSpeakingEvaluationReportContentTests`, and
+`ClassMngrSpeakingEvalBatchReportServiceTests`. Run the matching
+`ClassMngrNextApplicationSpeakingEvaluationReportContentTests`,
+`ClassMngrSpeakingEvalBatchReportServiceTests`, and
+`ClassMngrSpeakingEvalReportProjectionAdapterTests` CTests, plus
+`git diff --check`. No full-suite or Windows gate is claimed. This acceptance
+was recorded before implementation; no F1198 implementation or verification
+result is claimed here.

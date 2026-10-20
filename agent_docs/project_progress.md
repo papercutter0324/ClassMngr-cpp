@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1196 complete; F1197 accepted; Batch492 pushed)
+### Current checkpoint - 2026-10-20 (F1197 complete; F1198 accepted; Batch492 pushed)
 
 Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
@@ -69,11 +69,14 @@ F1195 completed at source/test commit
 the Application and Wizard CTests 2/2, the changed Wizard selector, and the
 full Wizard target, including blank-entry bypass coverage. F1196 completed at
 source/test commit `1298c4449903c0bf7048ba844a78e248f411b055`; independent
-verification passed its four focused CTests. F1197 is accepted/current, using
-`ClassSummaryStudentCount` for the Sub Prep print-source count; F1198–F1201
-remain discovered. Batch493 remains unpushed until all ten slices and its
-closeout are committed. Acceptance, discovery, and verification evidence are
-in the [Phase 2 progress
+verification passed its four focused CTests. F1197 completed at source/test
+commit `ff4625ace4f2a608c61575c10d1e51f837d64b08`; four focused CTests passed
+and both affected page-generation selectors passed directly. The full page
+CTest timed out in the unrelated preference-refresh case, which prior Phase 2
+evidence also reproduced unchanged. F1198 is accepted/current for typing only
+the Application report source-row position; F1199–F1201 remain discovered.
+Batch493 remains unpushed until all ten slices and its closeout are committed.
+Acceptance, discovery, and verification evidence are in the [Phase 2 progress
 log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
 F1194 completed at source/test commit `107531bc`. A signed Application

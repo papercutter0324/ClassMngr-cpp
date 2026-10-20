@@ -6137,13 +6137,13 @@ combined Phase 0 gate remains open because F629 still needs source-bound
 Windows x64 layout evidence, which the user cannot run right now; the Phase 2
 gate also remains open.
 
-## Current continuation - 2026-10-20 (F1196 complete; F1197 accepted; Batch493 active)
+## Current continuation - 2026-10-20 (F1197 complete; F1198 accepted; Batch493 active)
 
 The current deployment is `phase2-batch490-f1172-20261020`, on the Heavy route
 and `Qt-Rewrite`. Batch492 is complete and pushed at
 `3e6c09d9e5a82bc23281a76970683e4372dcec9d`. Batch493's ordered ten-slice list
-is current in the Phase 2 plan; F1192–F1196 are complete and F1197 is accepted
-as current. F1198–F1201 remain discovered. F629 still awaits source-bound
+is current in the Phase 2 plan; F1192–F1197 are complete and F1198 is accepted
+as current. F1199–F1201 remain discovered. F629 still awaits source-bound
 Windows x64 layout evidence; the Phase 0 and Phase 2 gates remain open.
 
 F1195 completed at source/test commit
@@ -6163,9 +6163,20 @@ projection and review-dialog preview; the post-apply legacy summary remains
 unchanged. The incremental macOS Debug build covered five targets; four
 focused CTests passed 4/4 and diff-check passed. No full suite or Windows run.
 
-F1197 is accepted to reuse `Application::ClassSummaryStudentCount` for the
-Sub Prep print-source count. Preserve zero and missing/error fallbacks,
-negative-to-zero Platform clamping, the 10,000 cap, and downstream printed
-count; keep renderer-facing integer models unchanged. Next: implement F1197 and
-run its five accepted focused CTests. Continue committing each slice; push
-Batch493 only after all ten slices and the batch closeout are committed.
+F1197 completed at source/test commit
+`ff4625ace4f2a608c61575c10d1e51f837d64b08`. Four focused CTests passed, and
+both changed page-generation selectors passed directly (3 QtTest cases each).
+The full `ClassMngrSubPrepPageTests` CTest timed out after 300.51 seconds in
+`unavailablePreferenceLoadsPreservePageValues`, before reaching either changed
+selector. Prior Phase 2 evidence records the same timeout and a pre-F1100
+reproduction. No full-suite or Windows run occurred.
+
+F1198 is accepted to type only the Qt-free Application
+`SpeakingEvaluationReportStudentContent::sourceRow` as a valid-only,
+zero-based `std::size_t` value. Preserve original source positions through
+blank-row filtering and order; unwrap at the Feature boundary while retaining
+its `-1` lookup sentinel and edit mapping. Do not change the Application's
+uncapped 33-row behavior or the separate AI batch fields. Next: implement
+F1198 and run its three accepted focused CTests. Continue committing each
+slice; push Batch493 only after all ten slices and the batch closeout are
+committed.
