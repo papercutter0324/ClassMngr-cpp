@@ -20,6 +20,14 @@ static_assert(std::is_same_v<
     decltype(std::declval<ClassTransferPortablePackage>().exportedAtUtc),
     ClassTransferExportedAtUtc>);
 static_assert(std::is_same_v<
+    decltype(std::declval<ClassTransferPortablePackage>().version),
+    ClassTransferPackageVersion>);
+static_assert(std::is_same_v<
+    decltype(std::declval<ClassTransferPackageVersion>().value()),
+    int>);
+static_assert(!std::is_convertible_v<int, ClassTransferPackageVersion>);
+static_assert(!std::is_convertible_v<ClassTransferPackageVersion, int>);
+static_assert(std::is_same_v<
     decltype(std::declval<ClassTransferExportedAtUtc>().value()),
     const std::string&>);
 static_assert(std::is_same_v<
@@ -63,6 +71,7 @@ class ClassTransferExportQueryTests : public QObject
     Q_OBJECT
 private slots:
     void preservesRequestAndAssemblesFirstSeenKeysAndFullPayload();
+    void packageVersionIsAnExactSignedIntValue();
     void utcMillisecondsValuePreservesFullSignedRangeAndIsOpaque();
     void formatsUnixEpochAndNegativeMillisecondsInUtc();
     void sourceFailuresPropagate();
@@ -89,7 +98,7 @@ void ClassTransferExportQueryTests::preservesRequestAndAssemblesFirstSeenKeysAnd
     auto result = ClassTransferExportQuery(port).execute(request);
     QVERIFY(result); QCOMPARE(port.calls, 1); QVERIFY(port.seen.classIds == request.classIds);
     const auto& output = result.value();
-    QCOMPARE(output.version, 1); QVERIFY(output.exportedAtUtc.value() == "1970-01-01T00:00:01.234Z");
+    QCOMPARE(output.version.value(), 1); QVERIFY(output.exportedAtUtc.value() == "1970-01-01T00:00:01.234Z");
     QCOMPARE(output.teachers.size(), std::size_t(2));
     QVERIFY(output.teachers[0].key.value() == u"teacher-1" && output.teachers[0].teacher.teacherEn == u"First");
     QVERIFY(output.teachers[1].key.value() == u"teacher-2" && output.teachers[1].teacher.teacherEn == u"Second");
@@ -105,6 +114,18 @@ void ClassTransferExportQueryTests::preservesRequestAndAssemblesFirstSeenKeysAnd
     QVERIFY(output.classes[0].evaluations[0].name == u"Second" && output.classes[0].evaluations[1].name == u"First");
     port.source.classes[0].name = u"mutated";
     QVERIFY(output.classes[0].name == exactPayload);
+}
+void ClassTransferExportQueryTests::packageVersionIsAnExactSignedIntValue()
+{
+    const ClassTransferPortablePackage package;
+    const ClassTransferPackageVersion minimum{std::numeric_limits<int>::min()};
+    const ClassTransferPackageVersion maximum{std::numeric_limits<int>::max()};
+    QCOMPARE(package.version.value(), 1);
+    QCOMPARE(minimum.value(), std::numeric_limits<int>::min());
+    QCOMPARE(maximum.value(), std::numeric_limits<int>::max());
+    QVERIFY(minimum == ClassTransferPackageVersion{std::numeric_limits<int>::min()});
+    QVERIFY(maximum == ClassTransferPackageVersion{std::numeric_limits<int>::max()});
+    QVERIFY(minimum != maximum);
 }
 void ClassTransferExportQueryTests::utcMillisecondsValuePreservesFullSignedRangeAndIsOpaque()
 {

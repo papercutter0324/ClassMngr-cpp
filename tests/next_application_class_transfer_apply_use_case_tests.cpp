@@ -30,7 +30,7 @@ Application::ClassTransferApplyCommand command()
 {
     Application::ClassTransferPortablePackage package;
     Application::ClassExportClass transferClass;
-    transferClass.key = std::u16string(u"class-1");
+    transferClass.key = Application::ClassExportClassKey{u"class-1"};
     transferClass.name = u"Incoming Class";
     package.classes.push_back(std::move(transferClass));
 
@@ -72,7 +72,7 @@ forwardsPackageChoicesAndSummary()
     QVERIFY(result);
     QCOMPARE(port.calls, 1);
     QCOMPARE(port.received.package.classes.size(), std::size_t(1));
-    QCOMPARE(port.received.package.classes.front().key,
+    QCOMPARE(port.received.package.classes.front().key.value(),
         std::u16string(u"class-1"));
     QCOMPARE(port.received.choices.classes.size(), std::size_t(1));
     QCOMPARE(port.received.choices.classes.front().packageClassIndex, 0);

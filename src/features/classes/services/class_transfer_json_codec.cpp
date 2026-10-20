@@ -767,7 +767,7 @@ QJsonObject ClassTransferJsonCodec::toJson(const ClassTransferPortablePackage& p
     QJsonArray teachers, classes;
     for (const auto& teacher : package.teachers) teachers.append(teacherToJson(teacher));
     for (const auto& classroom : package.classes) classes.append(classToJson(classroom));
-    return {{QStringLiteral("format"), FormatName}, {QStringLiteral("version"), package.version},
+    return {{QStringLiteral("format"), FormatName}, {QStringLiteral("version"), package.version.value()},
         {QStringLiteral("exported_at_utc"), QString::fromStdString(package.exportedAtUtc.value())},
         {QStringLiteral("teachers"), teachers}, {QStringLiteral("classes"), classes}};
 }

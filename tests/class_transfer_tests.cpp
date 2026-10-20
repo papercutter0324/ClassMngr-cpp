@@ -2654,8 +2654,25 @@ void ClassTransferTests::codecRejectsMalformedAndUnsupportedPackages()
     package.classes.append(transferClass);
 
     QJsonObject json = ClassTransferJsonCodec::toJson(package);
+    json.remove(QStringLiteral("version"));
+    const auto missingVersion = ClassTransferJsonCodec::fromJson(json);
+    QVERIFY(!missingVersion.has_value());
+    QCOMPARE(missingVersion.error(),
+             QStringLiteral("package.version must be an integer."));
+
+    json = ClassTransferJsonCodec::toJson(package);
+    json.insert(QStringLiteral("version"), 1.5);
+    const auto fractionalVersion = ClassTransferJsonCodec::fromJson(json);
+    QVERIFY(!fractionalVersion.has_value());
+    QCOMPARE(fractionalVersion.error(),
+             QStringLiteral("package.version must be an integer."));
+
+    json = ClassTransferJsonCodec::toJson(package);
     json.insert(QStringLiteral("version"), 99);
-    QVERIFY(!ClassTransferJsonCodec::fromJson(json).has_value());
+    const auto unsupportedVersion = ClassTransferJsonCodec::fromJson(json);
+    QVERIFY(!unsupportedVersion.has_value());
+    QCOMPARE(unsupportedVersion.error(),
+             QStringLiteral("Unsupported class package version: 99"));
 
     json = ClassTransferJsonCodec::toJson(package);
     QJsonArray classes = json.value(QStringLiteral("classes")).toArray();

@@ -26,6 +26,10 @@ static_assert(std::is_same_v<decltype(std::declval<Application::ClassTransferTea
     const std::string&>);
 static_assert(std::is_same_v<decltype(std::declval<Application::ClassTransferClassKey>().value()),
     const std::string&>);
+static_assert(std::is_same_v<decltype(std::declval<Application::ClassTransferPortablePackage>().version),
+    Application::ClassTransferPackageVersion>);
+static_assert(!std::is_convertible_v<int, Application::ClassTransferPackageVersion>);
+static_assert(!std::is_convertible_v<Application::ClassTransferPackageVersion, int>);
 
 namespace
 {
@@ -126,7 +130,7 @@ void ClassTransferApplyPackageAdapterTests::preservesEveryImportedFieldAndOrderi
     auto parsed = ClassTransferJsonCodec::fromJson(json);
     QVERIFY2(parsed, parsed ? "" : qPrintable(parsed.error()));
     auto portable = Legacy::toPortableClassTransferPackage(std::move(*parsed));
-    QCOMPARE(portable.version, 1);
+    QCOMPARE(portable.version.value(), 1);
     QCOMPARE(
         portable.exportedAtUtc.value(),
         std::string("2026-10-14T00:23:45.678Z")
@@ -266,7 +270,7 @@ void ClassTransferApplyPackageAdapterTests::preservesVersionAndInvalidTimestamp(
     ::ClassTransferPackage package;
     package.version = 37;
     auto portable = Legacy::toPortableClassTransferPackage(std::move(package));
-    QCOMPARE(portable.version, 37);
+    QCOMPARE(portable.version.value(), 37);
     QVERIFY(portable.exportedAtUtc.value().empty());
     const auto legacy = Legacy::toLegacyClassTransferPackage(std::move(portable));
     QCOMPARE(legacy.version, 37);

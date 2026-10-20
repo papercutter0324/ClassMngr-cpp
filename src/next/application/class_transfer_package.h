@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/class_transfer_export_keys.h"
+#include "next/application/class_transfer_package_version.h"
 
 #include <string>
 #include <utility>
@@ -72,7 +73,7 @@ private:
 
 struct ClassTransferPortablePackage
 {
-    int version = 1;
+    ClassTransferPackageVersion version{1};
     ClassTransferExportedAtUtc exportedAtUtc;
     std::vector<ClassExportTeacher> teachers;
     std::vector<ClassExportClass> classes;

@@ -180,7 +180,11 @@ void ClassTransferExportCodecParityTests::completeExportPreservesSchemaOrderAndE
     QCOMPARE(normalized(QJsonDocument::fromJson(file.readAll()).object()), normalized(*actual));
     QCOMPARE(actual->keys(), (QStringList{QStringLiteral("classes"), QStringLiteral("exported_at_utc"), QStringLiteral("format"), QStringLiteral("teachers"), QStringLiteral("version")}));
     const auto date = QDateTime::fromString(actual->value(QStringLiteral("exported_at_utc")).toString(), Qt::ISODateWithMs);
-    QVERIFY(date.isValid()); QCOMPARE(date.timeSpec(), Qt::UTC); QCOMPARE(actual->value(QStringLiteral("version")).toInt(), 1);
+    QVERIFY(date.isValid()); QCOMPARE(date.timeSpec(), Qt::UTC);
+    const QJsonValue version = actual->value(QStringLiteral("version"));
+    QVERIFY(version.isDouble());
+    QCOMPARE(version.toDouble(), 1.0);
+    QCOMPARE(version.toInt(), 1);
     const auto teachers = actual->value(QStringLiteral("teachers")).toArray(); QCOMPARE(teachers.size(), 2);
     QCOMPARE(teachers[0].toObject().value(QStringLiteral("key")).toString(), QStringLiteral("teacher-1"));
     QCOMPARE(teachers[0].toObject().value(QStringLiteral("teacher_en")).toString(), QStringLiteral("Bob"));
