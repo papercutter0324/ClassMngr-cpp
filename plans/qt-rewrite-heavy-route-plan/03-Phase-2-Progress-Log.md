@@ -58153,3 +58153,44 @@ full-suite run was performed.
 
 Batch500 remains active with F1243–F1249 complete, F1250 next for acceptance,
 and F1251–F1252 discovered.
+
+### F1250 ScheduleTime endpoint minutes accepted before implementation - 2026-10-21
+
+F1250 is accepted before implementation. Add nested strong types
+`ScheduleTime::StartMinute` and `ScheduleTime::EndMinute`, each with explicit
+`int` construction, `.rawValue()`, equality and ordering, and no implicit
+conversions. Use them in the factory arguments, endpoint accessors, and
+stored members. Keep `fromMinutes` as the validation boundary for values
+`0..1439` and strict `start < end`; preserve same-weekday half-open overlap.
+At integer-based call boundaries, explicitly wrap inputs and unwrap only
+where legacy or Platform APIs require integers. Do not change the week-based
+overnight intervals in `ClassTransferProjection`.
+
+Preserve all existing ScheduleTime behavior. The compile-time and runtime
+assertions should cover the exact typed factory signature, no implicit raw
+integer conversions, distinct endpoint types, typed accessors, valid `0` and
+`1439` boundaries, negative and `1440` rejection, equal/reversed endpoint
+rejection, adjacent intervals not overlapping, true overlap, and weekday
+mismatch.
+
+The scanned factory/accessor call sites include
+`src/next/application/class_details_save_workflow.h`,
+`src/next/application/schedule_import_overlap_projection.h`,
+`src/features/setup/ui/initial_setup_wizard.cpp`,
+`src/data/repositories/schedule_import_repository.cpp`,
+`src/next/platform/application_services_class_details_save_port.h`,
+`src/next/platform/application_services_class_details_schedule_conflict_port.h`,
+and tests in `tests/next_domain_contract_tests.cpp`,
+`tests/next_application_class_details_save_use_case_tests.cpp`,
+`tests/next_platform_application_services_class_details_save_port_tests.cpp`,
+`tests/next_application_class_details_schedule_conflict_query_tests.cpp`,
+`tests/class_details_save_page_tests.cpp`, `tests/schedule_import_tests.cpp`,
+`tests/next_platform_application_services_class_details_schedule_conflict_port_tests.cpp`,
+and `tests/next_application_schedule_import_state_validation_tests.cpp`.
+
+Build `ClassMngr` and all affected test targets; run only the focused CTest
+`ClassMngrNextDomainContractTests`. At acceptance, no implementation, build,
+or tests had started. No Windows or full-suite result is claimed.
+
+Batch500 remains active with F1243–F1249 complete, F1250 accepted awaiting
+implementation, and F1251–F1252 discovered.
