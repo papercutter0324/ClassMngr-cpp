@@ -817,7 +817,9 @@ void UpdaterTests::dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale()
             .platformKey = ManualUpdate::UpdateArtifactPlatformKey("windows-x64"),
             .url = "https://example.com/ClassMngr-2.0.0-win-x64.exe",
             .fileName = "ClassMngr-2.0.0-win-x64.exe",
-            .sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            .sha256 = ManualUpdate::UpdateArtifactSha256(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ),
             .sizeBytes = 123
         },
         .releaseDateIso = "2026-08-05",

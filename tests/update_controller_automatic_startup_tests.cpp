@@ -34,6 +34,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 using ClassMngr::Next::Application::SkippedUpdateVersionText;
 
@@ -326,6 +327,7 @@ private slots:
     void failedAutomaticSkipKeepsDialogOpenAndAllowsRetry();
     void bridgeMapsSuccessAndForcesFreshCheck_data();
     void bridgeMapsSuccessAndForcesFreshCheck();
+    void adaptersPreserveSha256TextExactly();
     void parserMatchesPlatformKeysExactlyAndKeepsLinuxAliases();
     void bridgeMapsFailures_data();
     void bridgeMapsFailures();
@@ -988,7 +990,7 @@ void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck
         legacy->artifact.platformKey.toUtf8().toStdString());
     QCOMPARE(result.artifact.url, legacy->artifact.url.toEncoded().toStdString());
     QCOMPARE(result.artifact.fileName, legacy->artifact.fileName.toStdString());
-    QCOMPARE(result.artifact.sha256, legacy->artifact.sha256.toStdString());
+    QCOMPARE(result.artifact.sha256.value(), legacy->artifact.sha256.toUtf8().toStdString());
     QCOMPARE(result.artifact.sizeBytes, legacy->artifact.sizeBytes);
     QCOMPARE(result.releaseDateIso, std::string("2026-08-05"));
     QCOMPARE(result.releaseUrl, legacy->releaseUrl.toEncoded().toStdString());
@@ -1007,6 +1009,30 @@ void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck
         StartupUpdateCheckDispatch::Busy);
     QTRY_COMPARE(succeeded.count(), 4);
     QCOMPARE(busyCompletions, 0);
+}
+
+void UpdateControllerAutomaticStartupTests::adaptersPreserveSha256TextExactly()
+{
+    const std::vector<std::string> sha256Values{
+        "",
+        "a",
+        "AbCdEf0123456789",
+        " sha256:MiXeD \t\n",
+        " \xE2\x9C\x93 digest\r\n"
+    };
+
+    for (const auto& sha256 : sha256Values)
+    {
+        UpdateCheckResult source;
+        source.artifact.sha256 = QString::fromUtf8(
+            QByteArray::fromStdString(sha256)
+            );
+
+        const auto manual = ClassMngr::Next::Platform::toManualUpdateCheckResult(source);
+        const auto startup = ClassMngr::Next::Platform::toStartupUpdateCheckResult(source);
+        QCOMPARE(manual.artifact.sha256.value(), sha256);
+        QCOMPARE(startup.artifact.sha256.value(), sha256);
+    }
 }
 
 void UpdateControllerAutomaticStartupTests::bridgeMapsFailures_data()
@@ -1203,8 +1229,12 @@ void UpdateControllerAutomaticStartupTests::manualAdapterDistinguishesFreshBusyF
     QVERIFY(lastResult.has_value());
     QCOMPARE(lastResult->artifact.platformKey.value(),
         firstLegacyResult->artifact.platformKey.toUtf8().toStdString());
+    QCOMPARE(lastResult->artifact.sha256.value(),
+        firstLegacyResult->artifact.sha256.toUtf8().toStdString());
     QCOMPARE(port.snapshot().cachedResult->artifact.platformKey.value(),
         firstLegacyResult->artifact.platformKey.toUtf8().toStdString());
+    QCOMPARE(port.snapshot().cachedResult->artifact.sha256.value(),
+        firstLegacyResult->artifact.sha256.toUtf8().toStdString());
 
     QCOMPARE(port.check(ManualUpdateCheckPolicy::IfStale,
         [&](ManualUpdateCheckOutcome) { ++busyCompletions; }),

@@ -2,6 +2,7 @@
 
 #include "next/application/skipped_update_version_policy.h"
 #include "next/application/update_artifact_platform_key.h"
+#include "next/application/update_artifact_sha256.h"
 
 #include <cstdint>
 #include <functional>
@@ -16,7 +17,7 @@ struct StartupUpdateArtifact final
     UpdateArtifactPlatformKey platformKey;
     std::string url;
     std::string fileName;
-    std::string sha256;
+    UpdateArtifactSha256 sha256;
     std::int64_t sizeBytes = 0;
 };
 

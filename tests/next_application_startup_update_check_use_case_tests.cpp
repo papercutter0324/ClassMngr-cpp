@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
@@ -53,6 +54,51 @@ bool require(bool condition, const char* message)
 
 int main()
 {
+    static_assert(!std::is_convertible_v<std::string, UpdateArtifactSha256>);
+    static_assert(!std::is_convertible_v<UpdateArtifactSha256, std::string>);
+
+    const UpdateArtifactSha256 defaultSha256;
+    if (!require(defaultSha256.value().empty()
+            && UpdateArtifactSha256("mixedCase") == UpdateArtifactSha256("mixedCase")
+            && UpdateArtifactSha256("mixedCase") != UpdateArtifactSha256("mixedcase"),
+            "SHA-256 value default or exact equality changed"))
+    {
+        return EXIT_FAILURE;
+    }
+
+    const std::vector<std::string> sha256Values{
+        "",
+        "a",
+        "AbCdEf0123456789",
+        " sha256:MiXeD \t\n",
+        std::string{"x\0y", 3}
+    };
+    for (const auto& sha256 : sha256Values)
+    {
+        FakePort port;
+        StartupUpdateCheckUseCase useCase(port);
+        bool preserved = false;
+        const auto disposition = useCase.start(Eligible,
+            [&](StartupUpdateCheckOutcome outcome)
+            {
+                const auto* result = std::get_if<StartupUpdateCheckResult>(&outcome);
+                preserved = result && result->artifact.sha256.value() == sha256;
+            });
+        if (!require(disposition == StartupUpdateCheckDisposition::Started,
+                "Startup digest check did not start"))
+        {
+            return EXIT_FAILURE;
+        }
+
+        port.pending(StartupUpdateCheckResult{
+            .artifact = {.sha256 = UpdateArtifactSha256(sha256)}
+        });
+        if (!require(preserved, "Startup result changed SHA-256 text"))
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
     // Platform keys are opaque bytes at the Application boundary. Preserve
     // empty, unknown, case-distinct, alias, malformed UTF-8, and embedded-NUL
     // values through successful startup results.

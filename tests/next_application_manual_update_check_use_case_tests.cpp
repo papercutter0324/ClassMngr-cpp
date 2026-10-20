@@ -85,7 +85,10 @@ public:
 const ManualUpdateCheckResult CachedResult{
     .currentVersion = {1, 0, 0},
     .latestVersion = {2, 0, 0},
-    .artifact = {.fileName = "ClassMngr-2.0.0.exe"},
+    .artifact = {
+        .fileName = "ClassMngr-2.0.0.exe",
+        .sha256 = UpdateArtifactSha256(" sha256:MiXeD \t\n")
+    },
     .updateAvailable = true
 };
 
@@ -127,6 +130,56 @@ std::vector<std::string> eventNames(const std::vector<ManualUpdateCheckEvent>& e
 
 int main()
 {
+    static_assert(!std::is_convertible_v<std::string, UpdateArtifactSha256>);
+    static_assert(!std::is_convertible_v<UpdateArtifactSha256, std::string>);
+
+    const UpdateArtifactSha256 defaultSha256;
+    if (!require(defaultSha256.value().empty()
+            && UpdateArtifactSha256("mixedCase") == UpdateArtifactSha256("mixedCase")
+            && UpdateArtifactSha256("mixedCase") != UpdateArtifactSha256("mixedcase"),
+            "SHA-256 value default or exact equality changed"))
+    {
+        return EXIT_FAILURE;
+    }
+
+    const std::vector<std::string> sha256Values{
+        "",
+        "a",
+        "AbCdEf0123456789",
+        " sha256:MiXeD \t\n",
+        std::string{"x\0y", 3}
+    };
+    for (const auto& sha256 : sha256Values)
+    {
+        FakePort port;
+        ManualUpdateCheckUseCase useCase(port);
+        std::vector<std::string> observedSha256Values;
+        useCase.setObserver([&](ManualUpdateCheckEvent event)
+        {
+            if (const auto* result = std::get_if<ManualUpdateCheckResult>(&event))
+            {
+                observedSha256Values.push_back(result->artifact.sha256.value());
+            }
+        });
+
+        if (!require(useCase.retry() == ManualUpdateCheckDispatch::Started,
+                "Manual digest check did not start"))
+        {
+            return EXIT_FAILURE;
+        }
+
+        port.finish(ManualUpdateCheckResult{
+            .artifact = {.sha256 = UpdateArtifactSha256(sha256)}
+        });
+        if (!require(observedSha256Values == std::vector<std::string>{sha256}
+                && port.snapshot().cachedResult.has_value()
+                && port.snapshot().cachedResult->artifact.sha256.value() == sha256,
+                "Manual result or cached state changed SHA-256 text"))
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
     // Manual success results keep platform keys opaque, including empty,
     // unknown, case-distinct, alias, malformed UTF-8, and embedded-NUL bytes.
     const std::vector<std::string> platformKeys{
@@ -187,6 +240,9 @@ int main()
             || !require(events.size() == 1
                 && std::holds_alternative<ManualUpdateCheckResult>(events.front()),
                 "Fresh open did not present its cached result")
+            || !require(std::get<ManualUpdateCheckResult>(events.front())
+                    .artifact.sha256.value() == " sha256:MiXeD \t\n",
+                "Fresh cached result changed SHA-256 text")
             || !require(useCase.retry() == ManualUpdateCheckDispatch::Started
                 && port.policies == std::vector{ManualUpdateCheckPolicy::Force},
                 "Retry did not force a fresh request")

@@ -28,7 +28,9 @@ namespace ClassMngr::Next::Platform
                 ),
             .url = result.artifact.url.toEncoded().toStdString(),
             .fileName = result.artifact.fileName.toUtf8().toStdString(),
-            .sha256 = result.artifact.sha256.toUtf8().toStdString(),
+            .sha256 = Application::UpdateArtifactSha256(
+                result.artifact.sha256.toUtf8().toStdString()
+                ),
             .sizeBytes = result.artifact.sizeBytes
         },
         .releaseDateIso = result.releaseDate.toString(Qt::ISODate).toStdString(),
