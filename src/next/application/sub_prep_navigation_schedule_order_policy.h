@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/class_summary_projection.h"
+#include "next/domain/schedule_time.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -11,13 +12,39 @@
 namespace ClassMngr::Next::Application
 {
 
+class SubPrepNavigationStartMinute final
+{
+public:
+    constexpr SubPrepNavigationStartMinute() noexcept = default;
+
+    explicit constexpr SubPrepNavigationStartMinute(
+        const std::int32_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::int32_t value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const SubPrepNavigationStartMinute&,
+        const SubPrepNavigationStartMinute&
+        ) = default;
+
+private:
+    std::int32_t m_value = 0;
+};
+
 // A schedule-order fact has already passed Platform's exact weekday and raw
 // time parsing. Weekday order is Monday=0 through Sunday=6; an absent minute
 // retains a recognized weekday while leaving its time order unknown.
 struct SubPrepNavigationScheduleOrderFact final
 {
-    std::int32_t weekdayOrder = 0;
-    std::optional<std::int32_t> startMinute;
+    Domain::Weekday weekdayOrder = Domain::Weekday::Monday;
+    std::optional<SubPrepNavigationStartMinute> startMinute;
 
     friend bool operator==(
         const SubPrepNavigationScheduleOrderFact&,
@@ -35,29 +62,40 @@ calculateSubPrepNavigationScheduleOrder(
     std::int32_t firstDayOrder = kClassSummaryUnknownNavigationOrder;
     for (const SubPrepNavigationScheduleOrderFact& fact : facts)
     {
-        if (fact.weekdayOrder >= 0 && fact.weekdayOrder <= 6)
+        const std::int32_t weekdayOrder =
+            static_cast<std::int32_t>(fact.weekdayOrder);
+        if (weekdayOrder >= 0 && weekdayOrder <= 6)
         {
-            firstDayOrder = std::min(firstDayOrder, fact.weekdayOrder);
+            firstDayOrder = std::min(firstDayOrder, weekdayOrder);
         }
     }
 
-    std::int32_t firstTimeOrder = kClassSummaryUnknownNavigationOrder;
+    std::optional<std::int32_t> firstTimeOrder;
     if (firstDayOrder != kClassSummaryUnknownNavigationOrder)
     {
         for (const SubPrepNavigationScheduleOrderFact& fact : facts)
         {
-            if (fact.weekdayOrder != firstDayOrder
-                || !fact.startMinute
-                || *fact.startMinute < 0
-                || *fact.startMinute >= 24 * 60)
+            const std::int32_t weekdayOrder =
+                static_cast<std::int32_t>(fact.weekdayOrder);
+            if (weekdayOrder != firstDayOrder || !fact.startMinute)
             {
                 continue;
             }
-            firstTimeOrder = std::min(firstTimeOrder, *fact.startMinute);
+            const std::int32_t startMinute = fact.startMinute->value();
+            if (startMinute < 0 || startMinute >= 24 * 60)
+            {
+                continue;
+            }
+            firstTimeOrder = firstTimeOrder
+                ? std::min(*firstTimeOrder, startMinute)
+                : startMinute;
         }
     }
 
-    return {firstDayOrder, firstTimeOrder};
+    return {
+        firstDayOrder,
+        firstTimeOrder.value_or(kClassSummaryUnknownNavigationOrder)
+    };
 }
 
 } // namespace ClassMngr::Next::Application

@@ -840,17 +840,20 @@ private:
                 continue;
             }
 
-            std::optional<std::int32_t> startMinute;
+            std::optional<Application::SubPrepNavigationStartMinute>
+                startMinute;
             const QTime time = parseTime(meeting.startTime);
             if (time.isValid())
             {
-                startMinute = static_cast<std::int32_t>(
-                    (time.hour() * 60) + time.minute()
-                    );
+                startMinute = Application::SubPrepNavigationStartMinute{
+                    static_cast<std::int32_t>(
+                        (time.hour() * 60) + time.minute()
+                        )
+                };
             }
 
             facts.push_back({
-                static_cast<std::int32_t>(*dayOrder),
+                static_cast<Domain::Weekday>(*dayOrder),
                 startMinute
             });
         }

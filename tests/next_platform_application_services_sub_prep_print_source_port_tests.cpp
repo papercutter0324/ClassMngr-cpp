@@ -297,6 +297,7 @@ private slots:
     void ordersAllCanonicalWeekdaysInSummariesAndNavigation();
     void regularAllWeekNavigationMetadataWinsOverIntensiveSummary();
     void parsesRawScheduleTimesAndKeepsMalformedNavigationFallback();
+    void unknownAndNoncanonicalRawDaysDoNotChangeNavigationOrPresentation();
     void perClassMeetingOverflowSurfacesValidation();
     void aggregateMeetingOverflowSurfacesValidation();
     void boundaryReturnsOwningTypedValues();
@@ -3333,6 +3334,103 @@ parsesRawScheduleTimesAndKeepsMalformedNavigationFallback()
     QCOMPARE(
         malformedOnly.navigationFirstTimeOrder,
         kClassSummaryUnknownNavigationOrder
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+unknownAndNoncanonicalRawDaysDoNotChangeNavigationOrPresentation()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("English Name"),
+        QStringLiteral("Preferred Name"),
+        QStringLiteral("unknown-navigation-days")
+        );
+    QVERIFY(teacher > 0);
+    const auto createScheduleClass = [&services, teacher](const QString& name)
+    {
+        return createClass(
+            services,
+            name,
+            teacher,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            QStringLiteral(""),
+            QStringLiteral("#FFFFFF"),
+            QStringLiteral("#000000"),
+            {}
+            );
+    };
+    const int canonicalOnlyClass = createScheduleClass(
+        QStringLiteral("Canonical only")
+        );
+    const int classWithUnrecognizedDays = createScheduleClass(
+        QStringLiteral("Unknown and noncanonical days")
+        );
+    QVERIFY(canonicalOnlyClass > 0);
+    QVERIFY(classWithUnrecognizedDays > 0);
+
+    for (const int scheduleClass : {
+             canonicalOnlyClass,
+             classWithUnrecognizedDays
+         })
+    {
+        QVERIFY(insertScheduleMeeting(
+            services,
+            QStringLiteral("class_times"),
+            scheduleClass,
+            QStringLiteral("Monday"),
+            QStringLiteral("09:00")
+            ));
+    }
+    QVERIFY(insertScheduleMeeting(
+        services,
+        QStringLiteral("class_times"),
+        classWithUnrecognizedDays,
+        QStringLiteral("monday"),
+        QStringLiteral("12:01 AM")
+        ));
+    QVERIFY(insertScheduleMeeting(
+        services,
+        QStringLiteral("class_times"),
+        classWithUnrecognizedDays,
+        QStringLiteral("Funday"),
+        QStringLiteral("12:00 AM")
+        ));
+
+    ApplicationServicesSubPrepScheduleSummaryPort port(services);
+    const auto result = port.loadSummaries(summaryRequestFor(
+        {classId(canonicalOnlyClass), classId(classWithUnrecognizedDays)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(2));
+    const auto& canonicalOnly = result.value().classes[0];
+    const auto& withUnrecognizedDays = result.value().classes[1];
+    QCOMPARE(canonicalOnly.meetingText, std::string("Mon 9am"));
+    QCOMPARE(withUnrecognizedDays.meetingText, canonicalOnly.meetingText);
+    QCOMPARE(
+        canonicalOnly.navigationLabel,
+        utf8(QStringLiteral("Perseus • M 9:00"))
+        );
+    QCOMPARE(
+        withUnrecognizedDays.navigationLabel,
+        canonicalOnly.navigationLabel
+        );
+    QCOMPARE(canonicalOnly.navigationFirstDayOrder, 0);
+    QCOMPARE(canonicalOnly.navigationFirstTimeOrder, 9 * 60);
+    QCOMPARE(
+        withUnrecognizedDays.navigationFirstDayOrder,
+        canonicalOnly.navigationFirstDayOrder
+        );
+    QCOMPARE(
+        withUnrecognizedDays.navigationFirstTimeOrder,
+        canonicalOnly.navigationFirstTimeOrder
         );
 }
 
