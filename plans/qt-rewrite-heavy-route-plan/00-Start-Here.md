@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batches 481–492 are complete and pushed, with Batch492 at `3e6c09d9` (see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)). Batch493 is active and unpushed, with F1192–F1200 complete and F1201 accepted/current. Batch494 is discovered but inactive, with eight provisional candidates, two short of ten (see [F1200 closeout](03-Phase-2-Progress-Log.md#f1200-speaking-evaluation-ai-batch-report-index-complete-2026-10-20), [F1201 acceptance](03-Phase-2-Progress-Log.md#f1201-roster-save-issue-coordinate-values-accepted-before-implementation-2026-10-20), and [Batch494 discovery](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batches 481–492 are complete and pushed, with Batch492 at `3e6c09d9` (see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)). Batch493 is complete locally at `4eea71a8` and awaits push. Batch494 is active with eight discovered candidates: F1202 is next but unaccepted, and F1203–F1209 remain discovered (see the [Batch493 local closeout](03-Phase-2-Progress-Log.md#batch493-closed-locally-after-f1201-2026-10-20) and [Batch494 discovery](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,20 +38,19 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch493 — Active and unpushed; ten candidates, with F1192–F1200 complete and F1201 accepted/current:**
+**Batch494 — Active; eight discovered candidates, with F1202 next and still unaccepted:**
 
-1. **F1192 — Complete:** Add distinct Qt-free `Application::ClassAnalyticsRosterRowCount` and `Application::ClassAnalyticsFullyScoredStudentCount`; preserve row-versus-student meaning, zero values, Feature narrowing, and display (see [closeout](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-complete-2026-10-20)).
-2. **F1193 — Complete:** Add the Qt-free grade-keyed Class Analytics distribution, preserving C/B/B+/A/A+ behavior and displayed labels/order (see [closeout](03-Phase-2-Progress-Log.md#f1193-class-analytics-grade-distribution-complete-2026-10-20)).
-3. **F1194 — Complete:** Add a Qt-free Schedule Import candidate index type; preserve the -1 sentinel, arbitrary invalid values, decision and issue ordering, and candidate identity across UI sorting (see [closeout](03-Phase-2-Progress-Log.md#f1194-schedule-import-candidate-index-complete-2026-10-20)).
-4. **F1195 — Complete:** Replace the writable Initial Setup identity-requirements aggregate with an invariant-preserving result; preserve the two-of-three rule, missing-field order, and blank-entry behavior (see [closeout](03-Phase-2-Progress-Log.md#f1195-initial-setup-identity-requirements-complete-2026-10-20)).
-5. **F1196 — Complete:** Type the Schedule Import schedules-cleared count; preserve exact counts, mode, and legacy ID behavior (see [closeout](03-Phase-2-Progress-Log.md#f1196-schedule-import-schedules-cleared-count-complete-2026-10-20)).
-6. **F1197 — Complete:** Reuse `ClassSummaryStudentCount` for the Sub Prep print student count; preserve zero, cap, and print behavior (see [closeout](03-Phase-2-Progress-Log.md#f1197-sub-prep-print-student-count-complete-2026-10-20)).
-7. **F1198 — Complete:** Type Speaking Evaluation report source-row positions; preserve filtering and edit-to-source mapping (see [closeout](03-Phase-2-Progress-Log.md#f1198-speaking-evaluation-report-source-row-complete-2026-10-20)).
-8. **F1199 — Complete:** Type the AI accepted-comment overwrite count; preserve candidate filters, changed-comment assignments, and Qt-compatible trimmed-old-text counting (see [closeout](03-Phase-2-Progress-Log.md#f1199-ai-accepted-comment-overwrite-count-complete-2026-10-20)).
-9. **F1200 — Complete:** Type `SpeakingEvaluationAiBatchReportIndex` for the Application candidate's `reportIndex`; preserve planner range validation, raw UI indexes, and raw `sourceRow` fields (see [closeout](03-Phase-2-Progress-Log.md#f1200-speaking-evaluation-ai-batch-report-index-complete-2026-10-20)).
-10. **F1201 — Accepted/current:** Type roster-save issue row and column as distinct values; preserve independent -1 sentinels, zero-based positions, issue semantics, and legacy integer boundaries (see [acceptance](03-Phase-2-Progress-Log.md#f1201-roster-save-issue-coordinate-values-accepted-before-implementation-2026-10-20)).
+1. **F1202 — Discovered/next:** Class Transfer export ordinal / `selectedIndex`; preserve request order and zero-based selection to one-based class-key mapping.
+2. **F1203 — Discovered:** Type roster-row transfer source-request and destination-result positions; preserve `-1`/range failure order and destination semantics.
+3. **F1204 — Discovered:** Type roster-row reorder source/destination arguments; preserve validation order, same-row rejection, and move behavior.
+4. **F1205 — Discovered:** Type the Speaking Evaluation score-assignment roster row; preserve zero-based assignment order and changed-grade filtering.
+5. **F1206 — Discovered:** Type Speaking Evaluation roster-name import source/target positions; preserve filtering, order, and caller-supplied target values, and assess source/target semantics separately.
+6. **F1207 — Discovered:** Type the Class Details schedule-validation row; preserve zero-based row and duplicate-group ordering; keep `duplicateRows` raw pending acceptance.
+7. **F1208 — Discovered:** Type Speaking Evaluation save-cell row/column, separately from F1201; preserve 25×11 zero-based coordinates and `-1` absence sentinels.
+8. **F1209 — Discovered:** Reuse `ClassTabNavigationOrderRank` for Sub Prep day/time schedule ranks from a neutral Application header; preserve sentinel 1000 including the valid 16:40 collision, comparisons, tuple tie rules, and separate Sub Prep weekday/minute preparation while keeping the comparator distinct.
 
-Batch492 is complete and pushed at `3e6c09d9`; see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20). Batch493's ordered candidates and discovery comparison are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20); F1200's [closeout](03-Phase-2-Progress-Log.md#f1200-speaking-evaluation-ai-batch-report-index-complete-2026-10-20), F1201's [pre-implementation acceptance](03-Phase-2-Progress-Log.md#f1201-roster-save-issue-coordinate-values-accepted-before-implementation-2026-10-20), and the inactive Batch494 [discovery](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20) are recorded there as well. Batch490 is complete and pushed at `69be43a7`; Batch491 is complete and pushed at `56bd1973`. Batch489 is complete and pushed at `e329f92b`. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch492 remains complete and pushed at `3e6c09d9`; see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20). Batch493 is complete locally after F1201 and awaits push (see [local closeout](03-Phase-2-Progress-Log.md#batch493-closed-locally-after-f1201-2026-10-20)). Batch494's discovery record is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.

@@ -54773,3 +54773,46 @@ Batch493 has ten ordered candidates: F1192–F1200 complete and F1201
 accepted/current. Batch494 has eight provisional candidates and remains
 inactive until Batch493 closes. Batch493 remains unpushed; F629 and the Phase 0
 and Phase 2 gates remain open.
+
+### F1201 Roster-save issue coordinate values complete - 2026-10-20
+
+F1201 completed at source/test commit
+`4eea71a8cfa44da7a31add52d11ae76c1fbe18df` (`Phase2 - Type roster-save issue
+coordinates`). The seven changed paths were
+`src/next/application/roster_save_preparation.h`,
+`src/next/application/roster_save_use_case.h`,
+`src/features/roster/ui/roster_save_validation_adapter.h`,
+`src/features/roster/ui/roster_editor_widget.cpp`,
+`src/features/roster/ui/roster_editor_widget_transfer.cpp`,
+`tests/next_application_roster_save_use_case_tests.cpp`, and
+`tests/next_application_roster_row_transfer_use_case_tests.cpp`. Distinct
+`RosterSaveIssueRowIndex` and `RosterSaveIssueColumnIndex` values now type only
+`RosterSaveIssue.row` and `.column`, retaining independent `-1` defaults,
+explicit `int` construction, `.rawValue()`, equality, and no implicit
+conversion. Raw adapter conversion and existing behavior are preserved.
+
+In `build/macos-clang-debug`, the Executor built `ClassMngr`,
+`ClassMngrNextApplicationRosterSaveUseCaseTests`,
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`,
+`ClassMngrRosterEditorWidgetSaveTests`, `ClassMngrRosterTransferMenuTests`, and
+`ClassMngrRosterModelTests`. The independent Tester rerun reported Ninja had no
+work remaining. With `QT_QPA_PLATFORM=offscreen`, the six matching CTests
+`ClassMngrNextApplicationRosterSaveUseCaseTests`,
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`,
+`ClassMngrRosterEditorWidgetSaveTests`, `ClassMngrRosterTransferMenuTests`, and
+`ClassMngrRosterModelTests` passed 6/6. `git diff --check` passed. No full suite
+or Windows run occurred.
+
+### Batch493 closed locally after F1201 - 2026-10-20
+
+Batch493's ten ordered slices, F1192–F1201, are complete locally. F1201 closed
+at `4eea71a8cfa44da7a31add52d11ae76c1fbe18df`; Batch492 remains pushed at
+`3e6c09d9`. The Git operator reported `Qt-Rewrite` 19 commits ahead of
+`origin/Qt-Rewrite`; Batch493 remains unpushed, with no push receipt recorded.
+
+Batch494 is now active with its eight discovered candidates. F1202 is next but
+still discovered/unaccepted; F1203–F1209 remain discovered. See the [Batch494
+discovery](#batch494-discovery-finalized-at-f1200-start-2026-10-20). F629 and
+the Phase 0 and Phase 2 gates remain open.
