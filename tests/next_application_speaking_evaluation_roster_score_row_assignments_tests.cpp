@@ -1,16 +1,40 @@
 #include "next/application/speaking_evaluation_roster_score_row_assignments.h"
 
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 using ClassMngr::Next::Application::SpeakingEvaluationRosterScore;
 using ClassMngr::Next::Application::SpeakingEvaluationRosterScoreAssignment;
+using ClassMngr::Next::Application::SpeakingEvaluationRosterScoreAssignmentRowIndex;
 using ClassMngr::Next::Application::SpeakingEvaluationRosterScoreRow;
 using ClassMngr::Next::Application::speakingEvaluationRosterScoreRowAssignments;
+
+static_assert(std::is_same_v<
+    decltype(SpeakingEvaluationRosterScoreAssignment::rosterRowIndex),
+    SpeakingEvaluationRosterScoreAssignmentRowIndex
+    >);
+static_assert(!std::is_convertible_v<
+    std::size_t,
+    SpeakingEvaluationRosterScoreAssignmentRowIndex
+    >);
+static_assert(!std::is_convertible_v<
+    SpeakingEvaluationRosterScoreAssignmentRowIndex,
+    std::size_t
+    >);
+
+constexpr SpeakingEvaluationRosterScoreAssignmentRowIndex DefaultRowIndex{};
+constexpr SpeakingEvaluationRosterScoreAssignmentRowIndex ZeroRowIndex{0};
+constexpr SpeakingEvaluationRosterScoreAssignmentRowIndex NonzeroRowIndex{7};
+static_assert(DefaultRowIndex.rawValue() == 0);
+static_assert(DefaultRowIndex == ZeroRowIndex);
+static_assert(NonzeroRowIndex.rawValue() == 7);
+static_assert(NonzeroRowIndex != ZeroRowIndex);
 
 namespace
 {
@@ -53,7 +77,9 @@ bool exactTrimmedPairsMatch()
     return speakingEvaluationRosterScoreRowAssignments(
         rosterRows,
         importedScores
-        ) == std::vector<SpeakingEvaluationRosterScoreAssignment>{{0, u"A"}};
+        ) == std::vector<SpeakingEvaluationRosterScoreAssignment>{
+            {SpeakingEvaluationRosterScoreAssignmentRowIndex{0}, u"A"}
+        };
 }
 
 bool lastImportedDuplicateWins()
@@ -69,7 +95,9 @@ bool lastImportedDuplicateWins()
     return speakingEvaluationRosterScoreRowAssignments(
         rosterRows,
         importedScores
-        ) == std::vector<SpeakingEvaluationRosterScoreAssignment>{{0, u"A"}};
+        ) == std::vector<SpeakingEvaluationRosterScoreAssignment>{
+            {SpeakingEvaluationRosterScoreAssignmentRowIndex{0}, u"A"}
+        };
 }
 
 bool incompleteAndUnmatchedPairsAreSkipped()
@@ -89,7 +117,9 @@ bool incompleteAndUnmatchedPairsAreSkipped()
     return speakingEvaluationRosterScoreRowAssignments(
         rosterRows,
         importedScores
-        ) == std::vector<SpeakingEvaluationRosterScoreAssignment>{{2, u"A"}};
+        ) == std::vector<SpeakingEvaluationRosterScoreAssignment>{
+            {SpeakingEvaluationRosterScoreAssignmentRowIndex{2}, u"A"}
+        };
 }
 
 bool alreadyEqualGradesProduceNoAssignment()
@@ -124,9 +154,9 @@ bool assignmentsFollowRosterRowOrder()
         rosterRows,
         importedScores
         ) == std::vector<SpeakingEvaluationRosterScoreAssignment>{
-            {0, u"A"},
-            {1, u"B"},
-            {2, u"C"}
+            {SpeakingEvaluationRosterScoreAssignmentRowIndex{0}, u"A"},
+            {SpeakingEvaluationRosterScoreAssignmentRowIndex{1}, u"B"},
+            {SpeakingEvaluationRosterScoreAssignmentRowIndex{2}, u"C"}
         };
 }
 

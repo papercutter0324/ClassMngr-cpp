@@ -19,9 +19,35 @@ struct SpeakingEvaluationRosterScoreRow final
     std::optional<std::u16string> currentGrade;
 };
 
+class SpeakingEvaluationRosterScoreAssignmentRowIndex final
+{
+public:
+    constexpr SpeakingEvaluationRosterScoreAssignmentRowIndex() noexcept = default;
+
+    explicit constexpr SpeakingEvaluationRosterScoreAssignmentRowIndex(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const SpeakingEvaluationRosterScoreAssignmentRowIndex&,
+        const SpeakingEvaluationRosterScoreAssignmentRowIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
 struct SpeakingEvaluationRosterScoreAssignment final
 {
-    std::size_t rosterRowIndex;
+    SpeakingEvaluationRosterScoreAssignmentRowIndex rosterRowIndex;
     std::u16string finalGrade;
 
     friend bool operator==(
@@ -90,7 +116,10 @@ speakingEvaluationRosterScoreRowAssignments(
             continue;
         }
 
-        assignments.push_back({rowIndex, importedGrade->second});
+        assignments.push_back({
+            SpeakingEvaluationRosterScoreAssignmentRowIndex{rowIndex},
+            importedGrade->second
+        });
     }
 
     return assignments;

@@ -163,7 +163,9 @@ void RosterEditorWidget::importScores()
                         );
             for (const auto& assignment : assignments)
             {
-                const int row = static_cast<int>(assignment.rosterRowIndex);
+                const int row = static_cast<int>(
+                    assignment.rosterRowIndex.rawValue()
+                    );
                 const QModelIndex index = m_model->index(row, scoreColumn);
                 if (!index.isValid())
                 {
