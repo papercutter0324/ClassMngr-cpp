@@ -55367,6 +55367,29 @@ the existing invalid-color and skip assertions. Focused targets are
 `ClassMngrScheduleImportDialogTests`, and affected production target
 `ClassMngr`. No F1211 implementation or verification has started.
 
+### F1211 Schedule Import class-color candidate index complete - 2026-10-20
+
+F1211 completed at commit `4b9b42c5` (`Phase2 - Type Schedule Import class
+color index`). `ScheduleImportPlanEligibilityClassColors::candidateIndex`
+reuses `ScheduleImportCandidateIndex`, and both Application validation bridges
+and the Feature validator carry the typed value. The policy reads the raw value
+only for its existing nonnegative/bounds filter and vector lookup. Negative and
+out-of-range records remain ignored before indexing; later records still win,
+missing/invalid colors still fail, and skipped candidates retain their color
+exemption. `ScheduleImportPlanEligibilityIssue::candidateIndex` is unchanged.
+
+The independent Tester built `ClassMngr`,
+`ClassMngrNextApplicationScheduleImportPlanValidationTests`, and
+`ClassMngrScheduleImportDialogTests` in `build/macos-clang-debug`. The focused
+CTest selection passed 2/2. The dialog CTest covered 58 Qt cases, including the
+Feature validator mapping and Skip cases; the Application test covered the new
+negative/out-of-range records, record precedence, invalid colors, and Skip
+behavior. A direct Qt invocation without `QT_QPA_PLATFORM=offscreen` crashed
+during a Skip UI case; the registered CTest uses its configured offscreen
+environment and passed, and the targeted Feature/Skip slots passed when rerun
+with that environment (5 Qt cases including setup/cleanup). No full suite is
+claimed.
+
 ### Batch494 push receipt - 2026-10-20
 
 Batch494 is complete and pushed to `origin/Qt-Rewrite`. The normal push
