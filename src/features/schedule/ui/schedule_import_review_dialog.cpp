@@ -1732,7 +1732,9 @@ void ScheduleImportReviewDialog::updateReviewState()
             }
             stateRequest.classResolutions.push_back(
                 {
-                    static_cast<std::size_t>(control.candidateIndex),
+                    ImportState::ScheduleImportStateCandidateIndex{
+                        static_cast<std::size_t>(control.candidateIndex)
+                    },
                     action,
                     std::move(targetClassId)
                 }
@@ -1882,12 +1884,12 @@ void ScheduleImportReviewDialog::updateReviewState()
                     );
             if (
                 candidateIndex
-                && candidateIndex->value
+                && candidateIndex->rawValue()
                     < static_cast<std::size_t>(m_preview.user.classes.size())
                 )
             {
                 projectedSchedulesByCandidate.insert(
-                    static_cast<int>(candidateIndex->value),
+                    static_cast<int>(candidateIndex->rawValue()),
                     &schedule
                     );
             }

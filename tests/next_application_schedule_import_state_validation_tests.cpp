@@ -49,6 +49,33 @@ static_assert(std::is_same_v<
               std::variant<
                   Domain::ClassId,
                   ScheduleImportStateCandidateIndex>>);
+static_assert(
+    ScheduleImportStateCandidateIndex{}
+        == ScheduleImportStateCandidateIndex{0}
+    );
+static_assert(
+    ScheduleImportStateCandidateIndex{3}.rawValue() == std::size_t(3)
+    );
+static_assert(std::is_constructible_v<
+    ScheduleImportStateCandidateIndex,
+    std::size_t
+    >);
+static_assert(!std::is_convertible_v<
+    std::size_t,
+    ScheduleImportStateCandidateIndex
+    >);
+static_assert(!std::is_convertible_v<
+    ScheduleImportStateCandidateIndex,
+    std::size_t
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportStateClassResolution{}.candidateIndex),
+    ScheduleImportStateCandidateIndex
+    >);
+static_assert(
+    ScheduleImportStateClassResolution{}.candidateIndex
+        == ScheduleImportStateCandidateIndex{0}
+    );
 
 namespace
 {
@@ -145,7 +172,7 @@ void addNewCandidate(
         );
     request.classResolutions.push_back(
         {
-            candidateIndex,
+            ScheduleImportStateCandidateIndex{candidateIndex},
             ScheduleImportStateClassAction::CreateNew,
             std::nullopt
         }
@@ -403,7 +430,11 @@ rejectsStaleClassTarget()
     ScheduleImportStateValidationRequest request;
     request.candidates = {candidate("teacher-a")};
     request.classResolutions = {
-        {0, ScheduleImportStateClassAction::UpdateExisting, classId(42)}
+        {
+            ScheduleImportStateCandidateIndex{0},
+            ScheduleImportStateClassAction::UpdateExisting,
+            classId(42)
+        }
     };
     QCOMPARE(
         errorCode(request),
@@ -422,7 +453,11 @@ requiresSelectedClassAndAllowsUntargetedSkip()
         {classId(42), teacherId(3), "e5", "zeus", "E5 Zeus", {}, {}}
     };
     request.classResolutions = {
-        {0, ScheduleImportStateClassAction::UpdateExisting, classId(42)}
+        {
+            ScheduleImportStateCandidateIndex{0},
+            ScheduleImportStateClassAction::UpdateExisting,
+            classId(42)
+        }
     };
     QVERIFY(!errorCode(request).has_value());
 
@@ -435,7 +470,20 @@ requiresSelectedClassAndAllowsUntargetedSkip()
         );
 
     request.classResolutions = {
-        {0, ScheduleImportStateClassAction::Skip, std::nullopt}
+        {
+            ScheduleImportStateCandidateIndex{0},
+            ScheduleImportStateClassAction::Skip,
+            std::nullopt
+        }
+    };
+    QVERIFY(!errorCode(request).has_value());
+
+    request.classResolutions = {
+        {
+            ScheduleImportStateCandidateIndex{99},
+            ScheduleImportStateClassAction::Skip,
+            classId(42)
+        }
     };
     QVERIFY(!errorCode(request).has_value());
 }
@@ -446,7 +494,11 @@ rejectsCreateNewClassWithTarget()
     ScheduleImportStateValidationRequest request;
     request.candidates = {candidate("teacher-a")};
     request.classResolutions = {
-        {0, ScheduleImportStateClassAction::CreateNew, classId(42)}
+        {
+            ScheduleImportStateCandidateIndex{0},
+            ScheduleImportStateClassAction::CreateNew,
+            classId(42)
+        }
     };
 
     QCOMPARE(
@@ -475,7 +527,11 @@ requiresUniqueExactSkipTarget()
         }
     };
     request.classResolutions = {
-        {0, ScheduleImportStateClassAction::Skip, classId(11)}
+        {
+            ScheduleImportStateCandidateIndex{0},
+            ScheduleImportStateClassAction::Skip,
+            classId(11)
+        }
     };
     request.existingClasses = {
         {classId(11), teacherId(3), "e5", "zeus", "E5 Zeus", {}, {}},
@@ -525,7 +581,11 @@ preservesArbitraryExactTeacherKeys()
         }
     };
     request.classResolutions = {
-        {0, ScheduleImportStateClassAction::Skip, classId(11)}
+        {
+            ScheduleImportStateCandidateIndex{0},
+            ScheduleImportStateClassAction::Skip,
+            classId(11)
+        }
     };
     request.existingClasses = {
         {classId(11), teacherId(3), "e5", "zeus", "E5 Zeus", {}, {}}
@@ -559,7 +619,11 @@ rejectsSkippedClassWithMismatchedTeacherKey()
     request.existingTeachers = {{teacherId(3), reviewTeacherKey("teacher-b")}};
     request.candidates = {candidate("teacher-a", "e5", "zeus")};
     request.classResolutions = {
-        {0, ScheduleImportStateClassAction::Skip, classId(11)}
+        {
+            ScheduleImportStateCandidateIndex{0},
+            ScheduleImportStateClassAction::Skip,
+            classId(11)
+        }
     };
     request.existingClasses = {
         {classId(11), teacherId(3), "e5", "zeus", "E5 Zeus", {}, {}}
@@ -597,7 +661,7 @@ rejectsOutOfRangeCandidateIndexesForCreateAndUpdate()
     {
         request.classResolutions = {
             {
-                0,
+                ScheduleImportStateCandidateIndex{0},
                 action,
                 action == ScheduleImportStateClassAction::UpdateExisting
                     ? std::optional<Domain::ClassId>{classId(42)}
@@ -711,7 +775,7 @@ rejectsUnknownClassActionBeforeIndexAndProjectionHandling()
     ScheduleImportStateValidationRequest request;
     request.classResolutions = {
         {
-            7,
+            ScheduleImportStateCandidateIndex{7},
             static_cast<ScheduleImportStateClassAction>(99),
             std::nullopt
         }
@@ -889,9 +953,14 @@ normalProjectionIncludesSkippedButDropsAbsentClasses()
         );
     request.classResolutions.insert(
         request.classResolutions.begin(),
-        {0, ScheduleImportStateClassAction::Skip, classId(11)}
+        {
+            ScheduleImportStateCandidateIndex{0},
+            ScheduleImportStateClassAction::Skip,
+            classId(11)
+        }
         );
-    request.classResolutions[1].candidateIndex = 1;
+    request.classResolutions[1].candidateIndex =
+        ScheduleImportStateCandidateIndex{1};
     QCOMPARE(
         errorCode(request),
         std::optional{
@@ -1014,7 +1083,11 @@ intensiveSkippedClassKeepsItsScheduleInBothModes()
         candidate("teacher-a", "e5", "zeus")
     };
     request.classResolutions = {
-        {0, ScheduleImportStateClassAction::Skip, classId(11)}
+        {
+            ScheduleImportStateCandidateIndex{0},
+            ScheduleImportStateClassAction::Skip,
+            classId(11)
+        }
     };
     addNewCandidate(
         request,
@@ -1077,44 +1150,82 @@ projectionUsesTypedReferencesAndPreservesMeetingOrder()
             }
             ),
         candidate(
-            "teacher-existing",
+            "teacher-second-new",
             "e5",
             "zeus",
             {
                 time(1, 18 * 60, 18 * 60 + 55, "Tuesday", "6:00 PM", "6:55 PM"),
                 time(3, 19 * 60, 19 * 60 + 55, "Thursday", "7:00 PM", "7:55 PM")
             }
+            ),
+        candidate(
+            "teacher-existing",
+            "m3",
+            "orion",
+            {
+                time(2, 20 * 60, 20 * 60 + 55, "Wednesday", "8:00 PM", "8:55 PM")
+            }
             )
     };
+    request.candidates[0].classLabel = "Candidate zero";
+    request.candidates[1].classLabel = "Candidate one";
+    request.candidates[2].classLabel = "Candidate two";
     request.classResolutions = {
-        {0, ScheduleImportStateClassAction::CreateNew, std::nullopt},
-        {1, ScheduleImportStateClassAction::UpdateExisting, classId(42)}
+        {
+            ScheduleImportStateCandidateIndex{0},
+            ScheduleImportStateClassAction::CreateNew,
+            std::nullopt
+        },
+        {
+            ScheduleImportStateCandidateIndex{1},
+            ScheduleImportStateClassAction::CreateNew,
+            std::nullopt
+        },
+        {
+            ScheduleImportStateCandidateIndex{2},
+            ScheduleImportStateClassAction::UpdateExisting,
+            classId(42)
+        }
     };
 
     const auto projected = projectScheduleImportStateSchedules(request);
-    QCOMPARE(projected.size(), std::size_t(2));
+    QCOMPARE(projected.size(), std::size_t(3));
     QVERIFY(std::holds_alternative<ScheduleImportStateCandidateIndex>(
         projected[0].classReference
         ));
     QCOMPARE(
         std::get<ScheduleImportStateCandidateIndex>(
             projected[0].classReference
-            ).value,
-        std::size_t(0)
+            ).rawValue(),
+        std::size_t(1)
         );
-    QVERIFY(std::holds_alternative<Domain::ClassId>(
+    QVERIFY(std::holds_alternative<ScheduleImportStateCandidateIndex>(
         projected[1].classReference
         ));
     QCOMPARE(
-        std::get<Domain::ClassId>(projected[1].classReference),
+        std::get<ScheduleImportStateCandidateIndex>(
+            projected[1].classReference
+            ).rawValue(),
+        std::size_t(0)
+        );
+    QVERIFY(std::holds_alternative<Domain::ClassId>(
+        projected[2].classReference
+        ));
+    QCOMPARE(
+        std::get<Domain::ClassId>(projected[2].classReference),
         classId(42)
         );
+    QCOMPARE(projected[0].classLabel, std::string("Candidate one"));
+    QCOMPARE(projected[1].classLabel, std::string("Candidate zero"));
+    QCOMPARE(projected[2].classLabel, std::string("Candidate two"));
     QCOMPARE(projected[0].times.size(), std::size_t(2));
-    QCOMPARE(projected[0].times[0].dayLabel, std::string("Monday"));
-    QCOMPARE(projected[0].times[1].dayLabel, std::string("Friday"));
+    QCOMPARE(projected[0].times[0].dayLabel, std::string("Tuesday"));
+    QCOMPARE(projected[0].times[1].dayLabel, std::string("Thursday"));
     QCOMPARE(projected[1].times.size(), std::size_t(2));
-    QCOMPARE(projected[1].times[0].dayLabel, std::string("Tuesday"));
-    QCOMPARE(projected[1].times[1].dayLabel, std::string("Thursday"));
+    QCOMPARE(projected[1].times[0].dayLabel, std::string("Monday"));
+    QCOMPARE(projected[1].times[1].dayLabel, std::string("Friday"));
+    QCOMPARE(projected[2].times.size(), std::size_t(1));
+    QCOMPARE(projected[2].times[0].dayLabel, std::string("Wednesday"));
     QVERIFY(!validateScheduleImportState(request).has_value());
 
     request.candidates[1].times[0] =

@@ -694,7 +694,7 @@ ScheduleImportStateValidationRequest stateValidationRequest(
         }
         request.classResolutions.push_back(
             {
-                index,
+                ScheduleImportStateCandidateIndex{index},
                 action,
                 resolution.targetClassId
             }
@@ -1553,9 +1553,9 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
         }
         else
         {
-            const auto candidateIndex = std::get<
+            const std::size_t candidateIndex = std::get<
                 ScheduleImportStateCandidateIndex
-                >(projectedSchedule.classReference).value;
+                >(projectedSchedule.classReference).rawValue();
             if (candidateIndex < insertedClassIdsByCandidate.size()
                 && insertedClassIdsByCandidate[candidateIndex])
             {

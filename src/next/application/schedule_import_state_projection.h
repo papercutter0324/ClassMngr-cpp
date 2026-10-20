@@ -63,9 +63,30 @@ struct ScheduleImportStateTeacherResolution
     bool roomSelected = false;
 };
 
-struct ScheduleImportStateCandidateIndex
+class ScheduleImportStateCandidateIndex final
 {
-    std::size_t value = 0;
+public:
+    constexpr ScheduleImportStateCandidateIndex() noexcept = default;
+
+    explicit constexpr ScheduleImportStateCandidateIndex(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ScheduleImportStateCandidateIndex&,
+        const ScheduleImportStateCandidateIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
 };
 
 // New candidates deliberately remain candidate references until the repository
@@ -75,7 +96,7 @@ using ScheduleImportStateClassReference =
 
 struct ScheduleImportStateClassResolution
 {
-    std::size_t candidateIndex = 0;
+    ScheduleImportStateCandidateIndex candidateIndex;
     ScheduleImportStateClassAction action =
         ScheduleImportStateClassAction::CreateNew;
     std::optional<Domain::ClassId> targetClassId;
@@ -233,7 +254,7 @@ struct ScheduleImportStateClassReferenceLess
             {
                 return true;
             }
-            return leftCandidate->value > rightCandidate->value;
+            return leftCandidate->rawValue() > rightCandidate->rawValue();
         }
         return ScheduleImportStateClassIdNumericLess{}(
             std::get<Domain::ClassId>(left),
@@ -293,11 +314,13 @@ projectScheduleImportStateSchedules(
 
     for (const auto& resolution : request.classResolutions)
     {
-        if (resolution.candidateIndex >= request.candidates.size())
+        const std::size_t candidateIndex =
+            resolution.candidateIndex.rawValue();
+        if (candidateIndex >= request.candidates.size())
         {
             continue;
         }
-        const auto& candidate = request.candidates[resolution.candidateIndex];
+        const auto& candidate = request.candidates[candidateIndex];
         if (resolution.action == ScheduleImportStateClassAction::Skip)
         {
             if (!preservesAbsentIntensiveClasses
@@ -329,7 +352,7 @@ projectScheduleImportStateSchedules(
         }
 
         ScheduleImportStateClassReference reference =
-            ScheduleImportStateCandidateIndex{resolution.candidateIndex};
+            resolution.candidateIndex;
         if (resolution.action
                 == ScheduleImportStateClassAction::UpdateExisting
             && resolution.targetClassId)

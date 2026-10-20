@@ -96,7 +96,8 @@ validateScheduleImportStateCandidateIndexes(
         if ((resolution.action == ScheduleImportStateClassAction::CreateNew
              || resolution.action
                  == ScheduleImportStateClassAction::UpdateExisting)
-            && resolution.candidateIndex >= request.candidates.size())
+            && resolution.candidateIndex.rawValue()
+                >= request.candidates.size())
         {
             return ScheduleImportStateValidationError{
                 ScheduleImportStateValidationErrorCode::
@@ -223,12 +224,15 @@ validateScheduleImportState(
         }
         if (resolution.action != ScheduleImportStateClassAction::Skip
             || !resolution.targetClassId
-            || resolution.candidateIndex >= request.candidates.size())
+            || resolution.candidateIndex.rawValue()
+                >= request.candidates.size())
         {
             continue;
         }
 
-        const auto& candidate = request.candidates[resolution.candidateIndex];
+        const auto& candidate = request.candidates[
+            resolution.candidateIndex.rawValue()
+            ];
         std::vector<Domain::ClassId> exactTargets;
         for (const auto& classroom : request.existingClasses)
         {
