@@ -53,7 +53,16 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1148-F1151 complete; F1152 accepted/in progress; F629 open)
+### Current checkpoint - 2026-10-20 (Batch487 closed and pushed; F1154 complete; F1155 next; F629 open)
+
+Batch487 (F1144–F1153) is closed and pushed to `origin/Qt-Rewrite` at
+`c3c06e2f5432933a0e8b7df629e25b2afa920e2c`. Batch488 is active: F1154 is
+complete at source/test commit `8dc20e2439048aaa076fa0ba35a9e6cc691e2127`;
+F1155 is next, with seven discovered candidates remaining in Batch488. F629
+still awaits source-bound Windows x64 layout evidence; the user cannot run
+Windows now.
+Phase 0 and Phase 2 gates remain open. The Phase 2 progress log records
+F1154's acceptance and focused verification details.
 
 F1148 completed at source/test commit
 `5a1756f54173affb33853f3e5dd0b8d8b3ce793d`, after acceptance commit

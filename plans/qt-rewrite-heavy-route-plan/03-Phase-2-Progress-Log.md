@@ -51353,3 +51353,39 @@ coverage, 0/24/-1 behavior, mixed per-row errors and full error detail, Platform
 full/empty/projection/order behavior, and UI full/failure behavior. No full-suite
 or Windows pass is claimed. Implementation and verification had not started at
 acceptance.
+
+### F1154 RosterAvailability first-empty row complete - 2026-10-20
+
+F1154 completed in source/test commit
+`8dc20e2439048aaa076fa0ba35a9e6cc691e2127`, following acceptance commit
+`05989aadc6f1af3af863d520ca12c2526ca8b853`. The Application value
+`RosterAvailabilityFirstEmptyRow` is explicit from an integer, defaults to row
+0, exposes `rawValue()` and `isFull()`, and has equality without implicit int
+conversion. Snapshot, accumulator, Platform construction, Query boundary
+validation, and transfer UI consumption now use the typed value. Malformed
+values remain available for Query validation; 0–24 and -1 preserve their
+existing meanings, per-row Results and full errors remain intact, and the
+default snapshot yields success(0). The separate `firstEmptyRosterRow` helper,
+occupancy algorithm, storage, and other flows are unchanged.
+
+In the existing `build/macos-clang-debug` tree, incremental Debug/Ninja builds
+passed for `ClassMngr`,
+`ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`,
+`ClassMngrRosterTransferMenuTests`, and `ClassMngrRosterModelTests` with Apple
+clang 21.0.0 and Qt 6.12.0. Focused Application query CTest passed 1/1; the
+Platform roster read port and roster model CTests passed 2/2 total. UI selectors
+`fullSameGradeTargetIsLabeledAndDisabled`,
+`targetRosterReadFailureBehavesLikeEmptyRoster`, and
+`targetRosterCellReadFailureBehavesLikeEmptyRoster` passed under Qt offscreen.
+Qt emitted non-failing font fallback, missing keyboard SVG, and unsupported
+offscreen plugin warnings. The initial combined build exposed a test fixture
+that default-constructed `RosterAvailabilityReadSnapshot` without its required
+ClassId; the fixture was corrected with a valid class ID, then the Application
+test target and CTest passed. `git diff --check` passed. No full suite or Windows
+build ran.
+
+Batch488 remains active with eight candidates: F1154 is complete, no candidate
+is accepted/in progress, and seven remain discovered with F1155 next. F629
+still awaits source-bound Windows x64 evidence; the Phase 0 and Phase 2 gates
+remain open.

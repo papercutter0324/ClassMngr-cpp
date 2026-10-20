@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch487 is complete and pushed at `c3c06e2f5432933a0e8b7df629e25b2afa920e2c`; Batch488 is active with F1154 accepted/in progress, while F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch487 is complete and pushed at `c3c06e2f5432933a0e8b7df629e25b2afa920e2c`; Batch488 is active with F1154 complete and F1155 next, while F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -68,10 +68,10 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch488 (8 candidates; none complete; 1 accepted/in progress; 7 discovered)
+#### Active batch: Batch488 (8 candidates; 1 complete; none accepted/in progress; 7 discovered)
 
-1. F1154 - **Accepted/in progress.** Type RosterAvailability's first-empty row output; preserve values 0–24, -1 as the full sentinel, and per-row `Result` errors (see the [acceptance record](03-Phase-2-Progress-Log.md#f1154-rosteravailability-first-empty-row-accepted-before-implementation-2026-10-20)).
-2. F1155 - **Discovered.** Type My Classes' nonnegative student-count output; preserve per-row `Result` errors.
+1. F1154 - **Complete.** Type RosterAvailability's first-empty row output; preserve values 0–24, -1 as the full sentinel, and per-row `Result` errors (see the [completion record](03-Phase-2-Progress-Log.md#f1154-rosteravailability-first-empty-row-complete-2026-10-20)).
+2. F1155 - **Discovered; next.** Type My Classes' nonnegative student-count output; preserve per-row `Result` errors.
 3. F1156 - **Discovered.** Keep selected-class grade as opaque UTF-8, including whitespace and empty values; do not parse through Course.
 4. F1157 - **Discovered.** Type Schedule Builder source-time rows; preserve raw UTF-16 day/start/end text and row order without parsing.
 5. F1158 - **Discovered.** Give Co-Teacher schedule day/start identity its own schedule-slot concept; do not assume F1151's testing-specific key is reusable.
@@ -79,7 +79,7 @@ Treat this plan as an operational summary, not a history:
 7. F1160 - **Discovered.** Type Calendar repeat-series delete start date with `Domain::GregorianDate`; preserve validation and error behavior.
 8. F1161 - **Discovered.** Reassess Calendar repeat-series edit `eventType` against `Domain::CalendarEventType`; resolve trimmed recognition versus raw-forwarding compatibility before acceptance.
 
-Batch488 has eight candidates, with F1154 accepted/in progress. The original candidate list is in the [Batch488 discovery record](03-Phase-2-Progress-Log.md#batch488-discovery-at-f1152-start-2026-10-20).
+Batch488 has eight candidates, with F1154 complete and F1155 next. The original candidate list is in the [Batch488 discovery record](03-Phase-2-Progress-Log.md#batch488-discovery-at-f1152-start-2026-10-20).
 
 #### Deferred candidates
 
