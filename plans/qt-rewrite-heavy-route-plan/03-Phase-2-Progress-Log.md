@@ -57852,3 +57852,27 @@ tests had started. No Windows or full-suite result is claimed.
 
 Batch500 remains active with F1243–F1244 complete, F1245 accepted awaiting
 implementation, and F1246–F1252 discovered.
+
+### F1245 Sub Prep print grade and level order complete - 2026-10-21
+
+F1245 completed at implementation commit
+`3c87bf47abde32790620f5d0f9465182c3ac3fe3`, following acceptance commit
+`08a693e57f14412d838ca351b8ebc3ebbd5d9709`. The exact scoped source/test
+paths were `src/next/application/sub_prep_print_order_policy.h`,
+`src/features/sub_prep/ui/sub_prep_class_information_model.cpp`, and
+`tests/next_application_sub_prep_print_order_policy_tests.cpp`.
+
+The grade and level rank fields now use distinct explicit value types.
+Configured trimmed-grade and grade-scoped trimmed-level ranks remain
+unchanged, unknown ranks retain the `INT_MAX` sentinel, and the comparator
+still orders by grade, level, weekday, start minute, and numeric-aware class
+ID. No rank validation or normalization behavior changed.
+
+The incremental macOS build succeeded for `ClassMngr`,
+`ClassMngrNextApplicationSubPrepPrintOrderPolicyTests`,
+`ClassMngrSubPrepClassInformationModelTests`, and
+`ClassMngrSubPrepPrintPdfTests`. All three focused CTests passed (3/3), and
+`git diff --check` passed. Windows x64 and the full suite were not run.
+
+Batch500 remains active with F1243–F1245 complete, F1246 next for acceptance,
+and F1247–F1252 discovered.
