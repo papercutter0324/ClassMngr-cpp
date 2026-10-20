@@ -52678,3 +52678,32 @@ Build `ClassMngr`,
 CTest entries with `QT_QPA_PLATFORM=offscreen`, independent Tester review,
 and `git diff --check`. No full-suite or Windows result is required or
 claimed. Implementation and verification have not started.
+
+### F1171 Updater artifact size complete - 2026-10-20
+
+F1171 completed at source/test commit `6ef86387`, following acceptance commit
+`ef32efbb`. Added Qt-free `Application::UpdateArtifactSizeBytes` with exact
+signed `std::int64_t` storage, zero default, explicit construction, `.value()`,
+exact equality, and no implicit conversions or value validation. Replaced only
+the manual/startup artifact `sizeBytes` fields. Both Platform mappings,
+including manual cached results, and the dialog/controller legacy boundaries
+explicitly wrap or unwrap the value. The change touched 12 files: the new
+header, CMake inventory, two Application contracts, two Platform adapters,
+two consumers, and four tests.
+
+Legacy `UpdateArtifact::sizeBytes`, SHA-256, timestamps, other artifact fields,
+UI behavior, and parser/downloader input and positivity policy are unchanged.
+Both Application tests and both adapters cover the signed `int64` minimum
+through maximum; the dialog boundary integration checks the maximum. Main
+accepted this coverage as meeting scope.
+
+The Executor built all five requested targets, and all four focused binaries
+passed; the automatic-startup controller suite passed 25/25 and the updater
+suite 31/31. The independent Tester confirmed all four focused offscreen CTests
+passed 4/4 and `git diff --check` passed. Test servers required a retry with
+local loopback permission; all passed after the retry. No full-suite or Windows
+run occurred.
+
+Batch490 now has F1171 complete and F1172–F1177 discovered, with F1172 next.
+Batch489 remains complete and pushed at `e329f92b`. F629 awaits source-bound
+Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.

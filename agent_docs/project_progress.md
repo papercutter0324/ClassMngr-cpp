@@ -6442,6 +6442,22 @@ and downloader retain their existing nonpositive-size policy.
 Acceptance covers the value type, both Application results and use cases, both
 Platform adapters, and the legacy consumer boundaries. Focused verification
 targets are the two updater use-case tests, automatic-startup/controller tests,
-and updater tests. Implementation and verification have not started. Batch489
-is pushed; Batch490 remains active with F1171 current. F629 and both phase
-gates remain open.
+and updater tests. At acceptance, implementation and verification had not
+started. Batch489 is pushed; F1171 is complete and F1172 is next in Batch490.
+F629 and both phase gates remain open.
+
+## Phase 2 update - F1171 complete; Batch490 active - 2026-10-20
+
+F1171 completed at source/test commit `6ef86387`, following acceptance commit
+`ef32efbb`. The shared Qt-free `Application::UpdateArtifactSizeBytes` now
+types manual and startup artifact sizes while preserving exact signed
+`std::int64_t` values and zero defaults. Both Platform adapters and both
+legacy consumer boundaries explicitly convert. Parser/downloader positivity
+policy, SHA-256, timestamps, and other artifact fields remain unchanged.
+
+The incremental macOS Debug build passed for `ClassMngr` and four focused
+test targets. The Application, controller, and updater binaries passed; the
+controller suite reported 25/25 and updater suite 31/31. Four focused CTests
+passed 4/4 offscreen after a loopback-enabled retry. `git diff --check` passed.
+No full suite or Windows build ran. Batch490 has one complete slice and F1172
+next; Batch489 is pushed. F629 and both phase gates remain open.
