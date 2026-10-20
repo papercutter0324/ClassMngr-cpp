@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch487 is active with F1153 accepted/in progress as its sole remaining slice; Batch488 is discovered but inactive, while F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch487 is closed locally after F1153 completion; Batch488 is active with F1154 next, while F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -68,33 +68,18 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch487 (10 candidates; 9 complete; 1 accepted/in progress; none discovered)
+#### Active batch: Batch488 (8 candidates; none complete; none accepted/in progress; 8 discovered)
 
-1. F1144 - **Complete at `e523001d`.** Type personal-signature image save-request bytes, separate from F1140's read-result value.
-2. F1145 - **Complete at `119b961e`.** Type only Sub Prep's normalized calendar-interval query output with existing `Domain::CalendarEventType`; split the raw text read-port input DTO from the typed result DTO. Keep Calendar create/edit and repeat-series inputs unchanged to preserve compatibility.
-3. F1146 - **Complete at `fcbeadee`.** Keep raw input dates at the Application boundary and use three `Domain::GregorianDate` values in the edit request; preserve raw persisted dates and `startDate` suffix selection.
-4. F1147 - **Complete at `6a89aa0f`.** Replace F1139's importer-specific wrapper with shared `Application::CampusCode` and use it for optional Calendar Page campus metadata; preserve each boundary's existing normalization, exact value, and omission behavior.
-5. F1148 - **Complete at `5a1756f5`.** Type current-campus preference read/write and `PersonalDetailsSaveRequest::campus` with opaque `Application::CurrentCampusPreferenceValue`; preserve exact values and consumer behavior.
-6. F1149 - **Complete at `91306a84`.** Type `ClassTransferPortablePackage::exportedAtUtc` with exact-text `Application::ClassTransferExportedAtUtc`; preserve canonical export text and raw import/legacy timestamp behavior.
-7. F1150 - **Complete at `801b4d44`.** Type imported-room membership and selected-room review decision values with `Application::ScheduleImportReviewRoomValue`; preserve normalization boundaries, exact membership, and diagnostics.
-8. F1151 - **Complete at `7aa21f36`.** Type the raw UTF-16 weekday/start-time pair with `Application::ScheduleTestingAssignmentKey`; preserve row text, order, sentinel, and lookup behavior.
-9. F1152 - **Complete at `d2ed97f8`.** Add Qt-free `Application::ClassAnalyticsEvaluationSelection`, distinguishing All from an owning exact UTF-16 evaluation name; preserve legacy conversion, exact query semantics, selector behavior, aggregation, and global YTD.
-10. F1153 - **Accepted/in progress.** Reuse `Domain::SpeakingEvaluationGrade` for typed Class Analytics grade outputs; preserve grade conversion, score parsing, and existing text consumers. See the [acceptance record](03-Phase-2-Progress-Log.md#f1153-class-analytics-closed-grade-label-outputs-accepted-before-implementation-2026-10-20).
+1. F1154 - **Discovered; next.** Type RosterAvailability's first-empty row output; preserve values 0–24, -1 as the full sentinel, and per-row `Result` errors.
+2. F1155 - **Discovered.** Type My Classes' nonnegative student-count output; preserve per-row `Result` errors.
+3. F1156 - **Discovered.** Keep selected-class grade as opaque UTF-8, including whitespace and empty values; do not parse through Course.
+4. F1157 - **Discovered.** Type Schedule Builder source-time rows; preserve raw UTF-16 day/start/end text and row order without parsing.
+5. F1158 - **Discovered.** Give Co-Teacher schedule day/start identity its own schedule-slot concept; do not assume F1151's testing-specific key is reusable.
+6. F1159 - **Discovered.** Type Schedule Slot State read-row day/start identity; preserve arbitrary raw state text and row order.
+7. F1160 - **Discovered.** Type Calendar repeat-series delete start date with `Domain::GregorianDate`; preserve validation and error behavior.
+8. F1161 - **Discovered.** Reassess Calendar repeat-series edit `eventType` against `Domain::CalendarEventType`; resolve trimmed recognition versus raw-forwarding compatibility before acceptance.
 
-Batch487 has nine complete candidates (F1144–F1152) and one accepted/in progress (F1153). Earlier scope and evidence are in the [F1152 completion record](03-Phase-2-Progress-Log.md#f1152-class-analytics-evaluation-selection-complete-2026-10-20) and [Batch487 discovery record](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20).
-
-#### Next discovered batch: Batch488 (8 candidates; discovered, not active)
-
-1. F1154 - Type RosterAvailability first-empty row output; preserve rows 0–24, -1 as the full sentinel, and per-row `Result` errors.
-2. F1155 - Type My Classes nonnegative student-count output; preserve `Result` errors.
-3. F1156 - Type selected-class grade as opaque UTF-8; retain whitespace and empty values without Course parsing.
-4. F1157 - Type Schedule Builder source-time rows; preserve raw UTF-16 day/start/end text and order without parsing.
-5. F1158 - Give Co-Teacher schedule day/start identity its own schedule-slot concept; do not assume F1151's testing-specific type is reusable.
-6. F1159 - Type Schedule Slot State read-row day/start identity; preserve arbitrary raw state text and row order.
-7. F1160 - Type Calendar repeat-series delete start date with `Domain::GregorianDate`; preserve validation and error behavior.
-8. F1161 - Reassess Calendar repeat-series edit `eventType` against `Domain::CalendarEventType`; resolve trimmed recognition versus raw-forwarding compatibility before acceptance.
-
-The provisional scope and evidence are recorded in the [Batch488 discovery entry](03-Phase-2-Progress-Log.md#batch488-discovery-at-f1152-start-2026-10-20).
+Batch488 has eight discovered candidates, with F1154 next. Full boundaries and evidence remain in the [Batch488 discovery record](03-Phase-2-Progress-Log.md#batch488-discovery-at-f1152-start-2026-10-20).
 
 #### Deferred candidates
 

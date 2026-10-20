@@ -8423,3 +8423,19 @@ Preserve the distinct conversion paths: `gradeLabel()` maps unknown numeric
 values to C; `numberToGrade()` clamps to 1–5 before mapping (so 6 remains A+);
 and unknown persisted score text is skipped. The focused Application and UI
 parity selectors will cover those paths and the visible/empty states.
+
+## 2026-10-20 - F1153 complete; Batch487 closed locally
+
+F1153 completed at source/test commit
+`f95e04ec0e51d9922dcf1d7488ab3a62d8e54bdc`, following acceptance commit
+`07ecc351012bf94ee8f0911492e350884d1dc692`. Pure Class Analytics grade
+outputs now use the existing Domain grade enum, while the feature adapter
+converts them back to the current Qt text DTOs. Optional snapshot and
+per-criterion grades preserve empty display behavior.
+
+The incremental macOS Debug build and Application query CTest passed. The
+visible summary/YTD and no-scored-data UI selectors passed under Qt offscreen;
+the two selectors emitted non-failing font-alias and size-hint warnings.
+`git diff --check` passed. No full suite or Windows run occurred. Batch487 is
+complete locally; Batch488 is active with F1154 next. The push will follow the
+Batch487 closeout commit, and no push receipt exists yet.

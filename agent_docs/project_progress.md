@@ -6275,20 +6275,26 @@ Windows build ran. Batch487 has nine complete slices and F1153 accepted/in
 progress; Batch488 is discovered but inactive. F629 and both phase gates
 remain open.
 
-## Phase 2 update - F1153 accepted; Batch487 active - 2026-10-20
+## Phase 2 update - Batch487 complete locally; Batch488 active - 2026-10-20
 
-F1153 will reuse `Domain::SpeakingEvaluationGrade` for the pure grade outputs
-in the Class Analytics Application snapshot. Keep absent snapshot and
-per-criterion grades optional so empty and partial states remain blank in the
-Qt UI adapter. Preserve existing grade labels, the unknown numeric-label to C
-fallback, `numberToGrade()` clamping, and the separate rule that unknown raw
-score text is ignored. Composite criterion labels, raw score inputs, numeric
-distributions, aggregation, and display-model text remain unchanged.
+F1153 completed at source/test commit
+`f95e04ec0e51d9922dcf1d7488ab3a62d8e54bdc`, following acceptance commit
+`07ecc351012bf94ee8f0911492e350884d1dc692`. Class Analytics now uses
+`Domain::SpeakingEvaluationGrade` for pure grade-valued Application outputs;
+the feature adapter converts them back to the existing QString DTOs. Optional
+snapshot and criterion grades retain blank empty/partial states. Raw score
+text, composite criterion labels, numeric distributions, and calculations
+remain unchanged. The unknown numeric label fallback to C and
+`numberToGrade()` clamp behavior are preserved; unknown raw score text remains
+skipped.
 
-The focused gate builds `ClassMngr`, the Application Class Analytics query
-tests, and Class Analytics Page parity tests; it covers all five grades,
-fallback and clamping paths, optional blank states, and the existing visible
-and no-scored-data UI selectors. No implementation results are recorded yet.
-Batch487 has nine complete slices and one accepted/in-progress slice; F1153 is
-its final candidate. Batch488 remains inactive. F629 and both phase gates
-remain open.
+In the existing `build/macos-clang-debug` tree, the incremental build passed
+for `ClassMngr`, the Application Class Analytics query tests, and the Class
+Analytics Page parity tests. Application CTest passed 1/1, and the visible
+summary/YTD plus no-scored-data UI selectors passed under Qt offscreen. Qt
+reported font-alias and offscreen size-hint warnings without failing either
+selector. `git diff --check` passed. No full suite or Windows build ran.
+
+Batch487 is complete locally; its push follows the closeout commit, with no
+push receipt yet. Batch488 is now active with eight candidates and F1154 next.
+F629 and both phase gates remain open.

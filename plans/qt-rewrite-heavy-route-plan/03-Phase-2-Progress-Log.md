@@ -51274,10 +51274,34 @@ selectors `visibleSummaryShapeAndYearToDateMatchFixture` and
 cannot create a screen, then run `git diff --check`. Application tests must
 cover all five labels, the default fallback and `numberToGrade()` clamping,
 absent class-average grade, and unscored criterion grades. No Platform
-production change is expected. This is an acceptance gate only; implementation
-and verification have not started.
+production change is expected.
+This was the acceptance gate; implementation and verification had not started
+at acceptance.
 
-Batch487 remains active with nine complete candidates (F1144–F1152) and one
-accepted/in progress (F1153); Batch488 remains discovered and inactive with
-its provisional list unchanged. F629 remains active pending source-bound
+At acceptance, Batch487 remained active with nine complete candidates
+(F1144–F1152) and one accepted/in progress (F1153); Batch488 remained
+discovered and inactive with its provisional list unchanged. F629 remained
+active pending source-bound Windows x64 evidence; the Phase 0 and Phase 2
+gates remained open.
+
+### F1153 Class Analytics grade outputs complete and Batch487 local closeout - 2026-10-20
+
+F1153 completed at source/test commit
+`f95e04ec0e51d9922dcf1d7488ab3a62d8e54bdc`, following acceptance commit
+`07ecc351012bf94ee8f0911492e350884d1dc692`. In the existing
+`build/macos-clang-debug` tree, incremental builds passed for `ClassMngr`,
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`, and
+`ClassMngrClassAnalyticsPageReadParityTests`. Application CTest passed 1/1.
+The UI selectors `visibleSummaryShapeAndYearToDateMatchFixture` and
+`noScoredDataShowsEmptyStateAndBlankCharts` passed under Qt offscreen (two
+selected; four QtTest phases including setup and cleanup). Qt emitted font-alias
+and offscreen size-hint warnings without failing either selector. The
+independent Tester reports `git diff --check` passed. No full suite or Windows
+build ran. The UI parity test file remained unchanged because existing
+assertions covered text and empty-state behavior.
+
+Batch487 is closed locally with all ten slices complete (F1144–F1153). Its
+push follows the closure commit; no push receipt exists yet. Batch488 is now
+active with its eight previously discovered candidates, F1154 next, and the
+original order and boundaries unchanged. F629 remains open pending source-bound
 Windows x64 evidence; the Phase 0 and Phase 2 gates remain open.
