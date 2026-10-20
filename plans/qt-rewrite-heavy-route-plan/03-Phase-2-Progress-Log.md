@@ -52635,3 +52635,46 @@ Phase 2 gates remain open.
 Batch489 commits through closeout `e329f92b`. Batch489 is complete and pushed.
 Batch490 is active with seven discovered candidates and F1171 next. F629 and
 both phase gates remain open.
+
+### F1171 Updater artifact size accepted before implementation - 2026-10-20
+
+F1171 is accepted/in progress. Add the shared Qt-free
+`Application::UpdateArtifactSizeBytes` in
+`src/next/application/update_artifact_size_bytes.h`, register it in
+`cmake/next.cmake`, and replace only `sizeBytes` in
+`ManualUpdateArtifact` and `StartupUpdateArtifact`. The value owns an exact
+signed `std::int64_t`, has an explicit constructor, `.value()` accessor, zero
+default, and exact equality. It has no implicit conversions in either
+direction and performs no validation or clamping; the two artifact fields keep
+their zero defaults.
+
+Map both Platform adapters, including the manual port's cached `lastResult()`,
+through the typed value and explicitly unwrap it at the manual-dialog and
+startup-controller legacy boundaries. Preserve legacy
+`UpdateArtifact::sizeBytes`, all other artifact fields, F1168's SHA-256 type,
+`checkedAtUtcMilliseconds`, and exact signed values at Application/adapter
+boundaries. Keep UI and downloader behavior unchanged. Nonpositive rejection
+remains in existing GitHub parser/downloader policy; do not change parser
+input conversion or positivity checks.
+
+Acceptance evidence: `src/next/application/manual_update_check.h:16`,
+`src/next/application/startup_update_check.h:15`,
+`src/next/platform/update_service_manual_check_port.h`,
+`src/next/platform/update_service_startup_check_port.h`,
+`src/app/controllers/update_controller.cpp:91`,
+`src/ui/shared/dialogs/update_dialog.cpp:28`,
+`src/core/updater/github_release.cpp:147`, and
+`src/core/updater/update_downloader.cpp:283,772`. Affected suites are
+`tests/next_application_manual_update_check_use_case_tests.cpp`,
+`tests/next_application_startup_update_check_use_case_tests.cpp`,
+`tests/update_controller_automatic_startup_tests.cpp`, and
+`tests/updater_tests.cpp`.
+
+Build `ClassMngr`,
+`ClassMngrNextApplicationManualUpdateCheckUseCaseTests`,
+`ClassMngrNextApplicationStartupUpdateCheckUseCaseTests`,
+`ClassMngrUpdateControllerAutomaticStartupTests`, and
+`ClassMngrUpdaterTests`; run the full focused binaries and matching focused
+CTest entries with `QT_QPA_PLATFORM=offscreen`, independent Tester review,
+and `git diff --check`. No full-suite or Windows result is required or
+claimed. Implementation and verification have not started.

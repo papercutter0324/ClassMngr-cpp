@@ -6429,3 +6429,19 @@ Windows build ran. Batch489 was pushed to origin at `e329f92b`; the push
 receipt is in the [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20).
 Batch490 is active with seven candidates and F1171 next. F629 and both phase
 gates remain open.
+
+## Phase 2 update - F1171 accepted; Batch490 active - 2026-10-20
+
+F1171 is accepted to replace `ManualUpdateArtifact::sizeBytes` and
+`StartupUpdateArtifact::sizeBytes` with a shared Qt-free
+`Application::UpdateArtifactSizeBytes`. The value retains exact signed
+`std::int64_t` values, defaults to zero, and performs no validation. Platform
+and legacy UI/controller boundaries must unwrap explicitly; the GitHub parser
+and downloader retain their existing nonpositive-size policy.
+
+Acceptance covers the value type, both Application results and use cases, both
+Platform adapters, and the legacy consumer boundaries. Focused verification
+targets are the two updater use-case tests, automatic-startup/controller tests,
+and updater tests. Implementation and verification have not started. Batch489
+is pushed; Batch490 remains active with F1171 current. F629 and both phase
+gates remain open.

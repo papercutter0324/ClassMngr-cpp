@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch489 is complete and pushed at `e329f92b`; Batch490 is active with seven discovered slices and F1171 next, while F629 awaits source-bound Windows x64 evidence and both phase gates remain open.
+- Current note: Batch489 is complete and pushed at `e329f92b`; Batch490 is active with F1171 accepted/in progress and six discovered slices remaining, while F629 awaits source-bound Windows x64 evidence and both phase gates remain open.
 
 ### Latest Progress Update
 
-F1170 completed at source/test commit `9f0116cb` after acceptance commit `286b2851`; see the [completion record](03-Phase-2-Progress-Log.md#batch489-local-closeout-after-f1170-2026-10-20).
+F1171 acceptance is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#f1171-updater-artifact-size-accepted-before-implementation-2026-10-20); implementation and verification have not started.
 
 ### Slice discovery batches
 
@@ -72,9 +72,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch490 (7 candidates; all discovered)
+#### Active batch: Batch490 (7 candidates; 1 accepted/in progress; 6 discovered)
 
-1. F1171 - **Discovered; next.** Type updater artifact sizes; preserve signed values, zero defaults, and parser/updater positivity policy.
+1. F1171 - **Accepted/in progress; current.** Use `Application::UpdateArtifactSizeBytes` for manual/startup artifact sizes; preserve signed values, zero defaults, and existing parser/downloader positivity policy (see the [acceptance record](03-Phase-2-Progress-Log.md#f1171-updater-artifact-size-accepted-before-implementation-2026-10-20)).
 2. F1172 - **Discovered.** Type update-check UTC milliseconds; preserve signed values, zero defaults, and adapter/UI conversion boundaries.
 3. F1173 - **Discovered.** Type Calendar Import counts without range policy; preserve defaults and count transitions.
 4. F1174 - **Discovered.** Type the Class Transfer export timestamp input; preserve epoch and serialized timestamp formatting.
@@ -82,7 +82,7 @@ Treat this plan as an operational summary, not a history:
 6. F1176 - **Discovered.** Type Schedule-slot canonical hour; preserve the 15/16 cutoff and absence, without broadening parsing.
 7. F1177 - **Discovered.** Review Academic-term week-count typing carefully; preserve invalid-input rejection and four-term cardinality.
 
-Batch490 is active with F1171 next in the order recorded by its [discovery record](03-Phase-2-Progress-Log.md#batch490-discovery-at-f1169-start-2026-10-20). Batch489 is complete and pushed at `e329f92b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence; the Phase 0 and Phase 2 gates remain open.
+Batch490 has F1171 accepted/in progress and F1172–F1177 discovered in the order recorded by its [discovery record](03-Phase-2-Progress-Log.md#batch490-discovery-at-f1169-start-2026-10-20). Batch489 is complete and pushed at `e329f92b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence; the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 
