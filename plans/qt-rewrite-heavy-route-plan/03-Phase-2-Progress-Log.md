@@ -56898,3 +56898,34 @@ ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNext
 x64 and the full suite remain unverified. Batch497 remains active with
 F1227–F1233 complete and F1234 discovered. Batch498 remains discovered, not
 active, with F1235 then F1236.
+
+### F1234 Native English Teacher save validation row position accepted before implementation - 2026-10-21
+
+F1234 is accepted based on one read-only Explorer review. Add the
+Application-owned `NativeEnglishTeacherDirectorySaveValidationRowIndex` with
+explicit `std::size_t` construction, zero default, private storage,
+`.rawValue()`, equality, and no implicit conversions. Use it for
+`NativeEnglishTeacherDirectorySaveValidation::rowIndex`, which is currently a
+raw `std::size_t` defaulting to zero. Keep this type distinct from
+`GsTeamDirectorySaveValidationRowIndex`; the two represent separate save
+validation contracts.
+
+Preserve first-failure behavior: process rows sequentially and, within each
+row, check invalid ID, duplicate ID, empty name key, duplicate name key, then
+birthday. Check invalid deleted IDs only after all rows. Keep zero-based
+first-failure positions, collection-level `InvalidDeletedId` at default zero,
+successful validation at default zero, all issue codes, and no port call on
+validation errors. The Feature page only checks `isValid()` and displays a
+generic warning, so it needs no row-index conversion.
+
+Add wrapper type, non-conversion, and value assertions; explicitly assert
+default-zero success and `InvalidDeletedId`; retain the later-row first-failure
+test. Focused build targets and generated CTest names are
+`ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests` and
+`ClassMngrStaffDirectoryNativeEnglishSaveParityTests` (plus `ClassMngr`).
+Their raw `classmngr_add_qt_test(NAME ...)` values are
+`NextApplicationNativeEnglishTeacherDirectorySave` and
+`StaffDirectoryNativeEnglishSaveParity`; the CMake helper generates the full
+target and CTest names. The platform save-port test does not exercise this
+validation index. At acceptance time, no F1234 code change or verification has
+started.

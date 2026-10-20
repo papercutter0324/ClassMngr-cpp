@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)); Batch497 is active with F1227–F1233 complete and F1234 discovered (see [F1233 completion](03-Phase-2-Progress-Log.md#f1233-gs-team-save-validation-row-position-complete-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)); Batch497 is active with F1227–F1233 complete and F1234 accepted for implementation (see [F1234 acceptance](03-Phase-2-Progress-Log.md#f1234-native-english-teacher-save-validation-row-position-accepted-before-implementation-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,7 +38,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch497 — Active; F1227–F1233 complete, with F1234 discovered:**
+**Batch497 — Active; F1227–F1233 complete, with F1234 accepted:**
 
 1. **F1227 — Complete:** Add a distinct zero-based typed position to Schedule Import eligibility issues; preserve first-failing-candidate mapping, default-zero global issues, and Feature grade/level lookup.
 2. **F1228 — Complete:** Type positions in the Sub Prep visible-class ordering facts; preserve comparator order, stable exact ties, and filtered-to-projection row mapping.
@@ -47,9 +47,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 5. **F1231 — Complete:** Type duplicate student-name row positions across Domain and Speaking Evaluation/Roster Save diagnostics; preserve grouping, row and issue order, adapter parity, and signed validation-issue row contracts.
 6. **F1232 — Complete:** Reuse the existing Class Details schedule row index for duplicate-row positions; preserve deterministic grouping, diagnostic order, and the Feature payload contract.
 7. **F1233 — Complete:** Add an Application-owned GS Team validation row index; preserve first-failure order, collection-level and success defaults, and no-save-on-failure behavior.
-8. **F1234 — Discovered:** Type Native English Teacher save validation row position; preserve first-row and default-value behavior.
+8. **F1234 — Accepted:** Add a distinct Application-owned Native English Teacher save validation row index; preserve first-failure order, default-zero collection and success values, and no-port-call on validation errors.
 
-Batch495 and Batch496 are complete and pushed (see the [Batch495](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21) and [Batch496](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21) receipts). Batch497 is active with eight ordered candidates (see its [discovery record](03-Phase-2-Progress-Log.md#batch497-discovery-started-2026-10-21)); F1227–F1233 are complete and F1234 remains discovered. F1234 is next for acceptance. Batch498 has two ordered discovered candidates and will become active when Batch497 closes (see [Batch498 discovery](03-Phase-2-Progress-Log.md#batch498-discovery-started-at-f1233-start-2026-10-21)). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch495 and Batch496 are complete and pushed (see the [Batch495](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21) and [Batch496](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21) receipts). Batch497 is active with eight ordered candidates (see its [discovery record](03-Phase-2-Progress-Log.md#batch497-discovery-started-2026-10-21)); F1227–F1233 are complete and F1234 is accepted for implementation. Batch498 has two ordered discovered candidates and will become active when Batch497 closes (see [Batch498 discovery](03-Phase-2-Progress-Log.md#batch498-discovery-started-at-f1233-start-2026-10-21)). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
