@@ -6,9 +6,37 @@
 #include <array>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 using namespace ClassMngr::Next;
+
+using NativeEnglishTeacherDirectorySaveValidationRowIndex =
+    Application::NativeEnglishTeacherDirectorySaveValidationRowIndex;
+
+static_assert(std::is_same_v<
+    decltype(Application::NativeEnglishTeacherDirectorySaveValidation{}.rowIndex),
+    NativeEnglishTeacherDirectorySaveValidationRowIndex
+    >);
+static_assert(std::is_same_v<
+    decltype(NativeEnglishTeacherDirectorySaveValidationRowIndex{}.rawValue()),
+    std::size_t
+    >);
+static_assert(std::is_constructible_v<
+    NativeEnglishTeacherDirectorySaveValidationRowIndex,
+    std::size_t
+    >);
+static_assert(!std::is_convertible_v<
+    std::size_t,
+    NativeEnglishTeacherDirectorySaveValidationRowIndex
+    >);
+static_assert(!std::is_convertible_v<
+    NativeEnglishTeacherDirectorySaveValidationRowIndex,
+    std::size_t
+    >);
+static_assert(!std::is_aggregate_v<
+    NativeEnglishTeacherDirectorySaveValidationRowIndex
+    >);
 
 namespace
 {
@@ -82,6 +110,7 @@ class NextApplicationNativeEnglishTeacherDirectorySaveTests final
     Q_OBJECT
 
 private slots:
+    void validationRowIndexHasTypedValueSemantics();
     void acceptsBlankAndLeapDayBirthdayText();
     void preservesQtBirthdayParsingBehavior();
     void derivesEmptyAndDuplicateIdentityFromRawNames();
@@ -90,6 +119,21 @@ private slots:
     void useCaseCallsThePortOnceForValidInputAndNeverForInvalidInput();
     void rejectsInvalidRowAndDeletedIdsBeforeCallingPort();
 };
+
+void NextApplicationNativeEnglishTeacherDirectorySaveTests::
+validationRowIndexHasTypedValueSemantics()
+{
+    const NativeEnglishTeacherDirectorySaveValidationRowIndex zero;
+    const NativeEnglishTeacherDirectorySaveValidationRowIndex positive{7};
+
+    QCOMPARE(zero.rawValue(), std::size_t(0));
+    QCOMPARE(positive.rawValue(), std::size_t(7));
+    QVERIFY(zero == NativeEnglishTeacherDirectorySaveValidationRowIndex{});
+    QVERIFY(
+        positive == NativeEnglishTeacherDirectorySaveValidationRowIndex{7}
+        );
+    QVERIFY(zero != positive);
+}
 
 void NextApplicationNativeEnglishTeacherDirectorySaveTests::
 acceptsBlankAndLeapDayBirthdayText()
@@ -106,6 +150,7 @@ acceptsBlankAndLeapDayBirthdayText()
             normalizedTestNameKey);
 
     QVERIFY(validation.isValid());
+    QCOMPARE(validation.rowIndex.rawValue(), std::size_t(0));
     QCOMPARE(
         validation.issue,
         Application::NativeEnglishTeacherDirectorySaveIssue::None);
@@ -172,7 +217,7 @@ derivesEmptyAndDuplicateIdentityFromRawNames()
     QCOMPARE(
         validation.issue,
         Application::NativeEnglishTeacherDirectorySaveIssue::EmptyName);
-    QCOMPARE(validation.rowIndex, std::size_t(0));
+    QCOMPARE(validation.rowIndex.rawValue(), std::size_t(0));
 
     Application::NativeEnglishTeacherDirectorySaveRequest duplicateName;
     duplicateName.rows = {
@@ -186,7 +231,7 @@ derivesEmptyAndDuplicateIdentityFromRawNames()
     QCOMPARE(
         validation.issue,
         Application::NativeEnglishTeacherDirectorySaveIssue::DuplicateName);
-    QCOMPARE(validation.rowIndex, std::size_t(1));
+    QCOMPARE(validation.rowIndex.rawValue(), std::size_t(1));
 }
 
 void NextApplicationNativeEnglishTeacherDirectorySaveTests::
@@ -203,7 +248,7 @@ rejectsInvalidCalendarDay()
     QCOMPARE(
         validation.issue,
         Application::NativeEnglishTeacherDirectorySaveIssue::InvalidBirthday);
-    QCOMPARE(validation.rowIndex, std::size_t(0));
+    QCOMPARE(validation.rowIndex.rawValue(), std::size_t(0));
 }
 
 void NextApplicationNativeEnglishTeacherDirectorySaveTests::
@@ -224,7 +269,7 @@ reportsTheFirstInvalidRow()
     QCOMPARE(
         validation.issue,
         Application::NativeEnglishTeacherDirectorySaveIssue::EmptyName);
-    QCOMPARE(validation.rowIndex, std::size_t(1));
+    QCOMPARE(validation.rowIndex.rawValue(), std::size_t(1));
 }
 
 void NextApplicationNativeEnglishTeacherDirectorySaveTests::
@@ -243,6 +288,7 @@ useCaseCallsThePortOnceForValidInputAndNeverForInvalidInput()
         execute(valid, port, normalizedTestNameKey);
     QVERIFY(outcome.saved);
     QVERIFY(outcome.validation.isValid());
+    QCOMPARE(outcome.validation.rowIndex.rawValue(), std::size_t(0));
     QVERIFY(!outcome.error.has_value());
     QCOMPARE(port.calls, 1);
     QVERIFY(port.received == valid);
@@ -267,7 +313,7 @@ useCaseCallsThePortOnceForValidInputAndNeverForInvalidInput()
     QCOMPARE(
         outcome.validation.issue,
         Application::NativeEnglishTeacherDirectorySaveIssue::DuplicateName);
-    QCOMPARE(outcome.validation.rowIndex, std::size_t(1));
+    QCOMPARE(outcome.validation.rowIndex.rawValue(), std::size_t(1));
     QCOMPARE(port.calls, 1);
 
     invalid.rows = {row(u"teacher", u"02-30")};
@@ -298,7 +344,7 @@ rejectsInvalidRowAndDeletedIdsBeforeCallingPort()
         QCOMPARE(
             outcome.validation.issue,
             Application::NativeEnglishTeacherDirectorySaveIssue::InvalidRowId);
-        QCOMPARE(outcome.validation.rowIndex, std::size_t(0));
+        QCOMPARE(outcome.validation.rowIndex.rawValue(), std::size_t(0));
         QCOMPARE(port.calls, 0);
     }
 
@@ -312,7 +358,7 @@ rejectsInvalidRowAndDeletedIdsBeforeCallingPort()
     QCOMPARE(
         outcome.validation.issue,
         Application::NativeEnglishTeacherDirectorySaveIssue::DuplicateRowId);
-    QCOMPARE(outcome.validation.rowIndex, std::size_t(1));
+    QCOMPARE(outcome.validation.rowIndex.rawValue(), std::size_t(1));
     QCOMPARE(port.calls, 0);
 
     invalid.rows = {row(u"valid insert")};
@@ -327,6 +373,7 @@ rejectsInvalidRowAndDeletedIdsBeforeCallingPort()
             outcome.validation.issue,
             Application::NativeEnglishTeacherDirectorySaveIssue::
                 InvalidDeletedId);
+        QCOMPARE(outcome.validation.rowIndex.rawValue(), std::size_t(0));
         QCOMPARE(port.calls, 0);
     }
 }

@@ -27,7 +27,10 @@ validateNativeEnglishTeacherDirectorySave(
                 return {
                     .issue =
                         NativeEnglishTeacherDirectorySaveIssue::InvalidRowId,
-                    .rowIndex = index
+                    .rowIndex =
+                        NativeEnglishTeacherDirectorySaveValidationRowIndex{
+                            index
+                        }
                 };
             }
             if (!rowIds.insert(id).second)
@@ -35,7 +38,10 @@ validateNativeEnglishTeacherDirectorySave(
                 return {
                     .issue =
                         NativeEnglishTeacherDirectorySaveIssue::DuplicateRowId,
-                    .rowIndex = index
+                    .rowIndex =
+                        NativeEnglishTeacherDirectorySaveValidationRowIndex{
+                            index
+                        }
                 };
             }
         }
@@ -45,14 +51,20 @@ validateNativeEnglishTeacherDirectorySave(
         {
             return {
                 .issue = NativeEnglishTeacherDirectorySaveIssue::EmptyName,
-                .rowIndex = index
+                .rowIndex =
+                    NativeEnglishTeacherDirectorySaveValidationRowIndex{
+                        index
+                    }
             };
         }
         if (!nameKeys.insert(nameKey).second)
         {
             return {
                 .issue = NativeEnglishTeacherDirectorySaveIssue::DuplicateName,
-                .rowIndex = index
+                .rowIndex =
+                    NativeEnglishTeacherDirectorySaveValidationRowIndex{
+                        index
+                    }
             };
         }
         if (!isBirthdayTextBlank(row.birthday)
@@ -60,7 +72,10 @@ validateNativeEnglishTeacherDirectorySave(
         {
             return {
                 .issue = NativeEnglishTeacherDirectorySaveIssue::InvalidBirthday,
-                .rowIndex = index
+                .rowIndex =
+                    NativeEnglishTeacherDirectorySaveValidationRowIndex{
+                        index
+                    }
             };
         }
     }

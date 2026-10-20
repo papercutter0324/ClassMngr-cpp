@@ -57,13 +57,40 @@ enum class NativeEnglishTeacherDirectorySaveIssue
     InvalidDeletedId
 };
 
+class NativeEnglishTeacherDirectorySaveValidationRowIndex final
+{
+public:
+    constexpr NativeEnglishTeacherDirectorySaveValidationRowIndex() noexcept =
+        default;
+
+    explicit constexpr NativeEnglishTeacherDirectorySaveValidationRowIndex(
+        const std::size_t rawValue
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const NativeEnglishTeacherDirectorySaveValidationRowIndex&,
+        const NativeEnglishTeacherDirectorySaveValidationRowIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t m_rawValue = 0;
+};
+
 struct NativeEnglishTeacherDirectorySaveValidation final
 {
     NativeEnglishTeacherDirectorySaveIssue issue =
         NativeEnglishTeacherDirectorySaveIssue::None;
     // Row-specific issues report their row here. InvalidDeletedId is a
     // collection-level issue, so rowIndex is unused for that result.
-    std::size_t rowIndex = 0;
+    NativeEnglishTeacherDirectorySaveValidationRowIndex rowIndex;
 
     [[nodiscard]] bool isValid() const noexcept
     {
