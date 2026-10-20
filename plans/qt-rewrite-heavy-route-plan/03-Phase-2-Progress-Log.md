@@ -57666,3 +57666,41 @@ remote branch from `2348ee374445cc46b1209d6d0144901c35d8e4a7` to
 The confirmed remote tip is `cc38c959e70256c4f7179f23a8203445f074c496`.
 Batch499 is complete and pushed; Batch500 is active with F1243 next for
 acceptance and F1244–F1252 discovered.
+
+### F1243 GregorianDate day number accepted before implementation - 2026-10-21
+
+F1243 is accepted before implementation. Replace the nested
+`GregorianDate::DayNumber` alias with a nested Qt-free value type backed by
+`std::int64_t`, with a zero default, explicit construction, `.rawValue()`,
+equality, ordinal ordering, and no implicit conversions or constructor range
+policy. Type `dayNumber()`, `fromDayNumber()`, `maximumDayNumber()`, and the
+stored ordinal. `fromDayNumber` remains the validation boundary for the
+inclusive range `0..3,652,058`; negative and above-maximum wrapper values must
+remain representable so this factory can reject them.
+
+Preserve `0001-01-01 == 0`, maximum date `9999-12-31`, date formatting,
+equality, weekday behavior, and typed ordinal comparisons. At date-planning
+arithmetic boundaries, explicitly unwrap ordinals to signed `std::int64_t`
+for offsets and differences, then explicitly wrap resulting ordinals before
+conversion. Do not add arithmetic overloads or a separate DayOffset type;
+preserve signed start-offset and duration arithmetic.
+
+Evidence: `src/next/domain/gregorian_date.h:23,83-90,129-132,178-185,204-249`;
+date-ordinal callers are `src/next/domain/calendar_event_timing.h:277`,
+`src/next/application/calendar_event_import_use_case.h:380,387-388`,
+`src/next/application/teacher_import_use_case.h:785-787`,
+`src/next/application/calendar_event_repeat_occurrence_plan.h:97,209`, and
+`src/next/application/calendar_event_series_edit_plan.h:94`. No serialization
+or casts were found.
+
+The existing `gregorianDateConvertsOrdinalsAndWeekdaysAcrossRange` test in
+`tests/next_application_calendar_event_tests.cpp:2128-2195` already covers the
+epoch, leap day, maximum date and ordinal, round trips, and rejection below
+and above range; retain those cases. Add type, no-conversion, and signature
+assertions. Build `ClassMngr`, `ClassMngrNextDomainContractTests`, and
+`ClassMngrNextApplicationCalendarEventTests`; run those two focused CTests.
+At acceptance, no implementation, build, or tests had started.
+
+Batch499 is complete and pushed at `cc38c959`. Batch500 remains active with
+F1243 accepted awaiting implementation, F1244 next for acceptance, and
+F1245–F1252 discovered.
