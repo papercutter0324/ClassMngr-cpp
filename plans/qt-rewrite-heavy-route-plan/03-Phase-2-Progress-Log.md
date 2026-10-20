@@ -55415,6 +55415,26 @@ targets are `ClassMngrNextApplicationRosterRowRemovalTests`,
 and affected production target `ClassMngr`. No F1212 implementation or
 verification has started.
 
+### F1212 Roster row-removal index complete - 2026-10-20
+
+F1212 completed at commit `62c82096` (`Phase2 - Type roster row removal
+index`). The Application `removeRosterRow` parameter now uses the dedicated,
+explicit `RosterRowRemovalIndex` with default `-1`, `.rawValue()`, equality,
+and no implicit conversions. The function unwraps once before the existing
+checks, preserving invalid-index-before-empty-row rejection and row compaction.
+Both Feature call sites wrap their Qt row values; the transfer use case bridges
+from its distinct `RosterRowTransferSourceIndex`. Feature APIs and transfer
+request typing remain unchanged.
+
+The independent Tester built `ClassMngr`,
+`ClassMngrNextApplicationRosterRowRemovalTests`, `ClassMngrRosterModelTests`,
+and `ClassMngrNextApplicationRosterRowTransferUseCaseTests` in
+`build/macos-clang-debug`. Focused CTests passed 3/3: Application removal five
+checks, roster model 34 Qt cases (four for removal), and transfer 15 cases.
+Coverage includes invalid/out-of-range, empty/whitespace, compaction and final
+slot clearing, Feature messages/dirty state, and transfer rejection ordering.
+No full suite or Windows run is claimed.
+
 ### Batch494 push receipt - 2026-10-20
 
 Batch494 is complete and pushed to `origin/Qt-Rewrite`. The normal push
