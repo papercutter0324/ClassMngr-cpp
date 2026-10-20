@@ -52151,3 +52151,30 @@ F1164–F1170 discovered in order; F1164 is next after F1163 closes. Batch489's
 push remains deferred until F1170. F629 awaits source-bound Windows x64 layout
 evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1163 Calendar single-event save date pair complete - 2026-10-20
+
+F1163 completed in source/test commit
+`030e9752ec581b8013c27eef37a4ef5e36af6531`, following acceptance commit
+`c7660c884420ec2a8cdcb674b8788fc69982d336`. The shared save request now uses
+typed Gregorian dates, with raw input retained at the Application boundary;
+single save, import, repeat-create, and all three Platform adapters use the
+typed contract. Existing validation/error precedence, import identity/range
+and batch behavior, repeat seed/planner/cutoff behavior, and Platform QDate
+persistence were covered. No production defect was found.
+
+The Executor's final incremental macOS Debug build completed 40 Ninja steps.
+The independent Tester reviewed the full 14-file diff and passed the focused
+CTest selection for `ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarPageEventMutationParityTests` (4/4). The corresponding
+independent CMake build reported Ninja no work; affected outputs postdated the
+changed inputs. The Tester separately rebuilt
+`ClassMngrNextDomainContractTests`, which passed 1/1. `git diff --check`
+passed. No full suite or Windows build ran.
+
+Batch489 remains active with F1162 and F1163 complete and F1164–F1170
+discovered in order; F1164 is next. Batch489 remains unpushed until F1170.
+F629 awaits source-bound Windows x64 layout evidence; the user cannot run
+Windows now, and the Phase 0 and Phase 2 gates remain open.
