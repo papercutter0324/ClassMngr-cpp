@@ -170,18 +170,9 @@ planCalendarEventRepeatOccurrences(
         return invalid(seedAndFrequencyValidation.error().message);
     }
 
-    const std::optional<GregorianDate> startDate =
-        GregorianDate::fromIsoString(seed.startDate);
-    const std::optional<GregorianDate> seedEndDate =
-        GregorianDate::fromIsoString(seed.endDate);
-    if (!startDate || !seedEndDate)
-    {
-        return invalid(
-            "Calendar repeat seed and until dates must be canonical ISO dates."
-            );
-    }
-
-    const DayNumber firstDayNumber = startDate->dayNumber();
+    const GregorianDate startDate = seed.startDate;
+    const GregorianDate seedEndDate = seed.endDate;
+    const DayNumber firstDayNumber = startDate.dayNumber();
     const DayNumber lastDayNumber = finalStartDate.dayNumber();
     if (lastDayNumber < firstDayNumber)
     {
@@ -190,11 +181,11 @@ planCalendarEventRepeatOccurrences(
             );
     }
 
-    const DayNumber durationDays = seedEndDate->dayNumber() - firstDayNumber;
+    const DayNumber durationDays = seedEndDate.dayNumber() - firstDayNumber;
     CalendarEventSeriesCreateRequest request;
     request.repeatSeriesId = std::move(repeatSeriesId);
 
-    GregorianDate occurrenceStart = *startDate;
+    GregorianDate occurrenceStart = startDate;
     while (occurrenceStart.dayNumber() <= lastDayNumber)
     {
         if (request.occurrences.size()
@@ -218,8 +209,8 @@ planCalendarEventRepeatOccurrences(
 
         CalendarEventSaveRequest occurrence = seed;
         occurrence.id.reset();
-        occurrence.startDate = occurrenceStart.toIsoString();
-        occurrence.endDate = occurrenceEnd->toIsoString();
+        occurrence.startDate = occurrenceStart;
+        occurrence.endDate = *occurrenceEnd;
         request.occurrences.push_back(std::move(occurrence));
 
         const std::optional<GregorianDate> nextStart =

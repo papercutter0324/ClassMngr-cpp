@@ -4,6 +4,7 @@
 
 #include "next/domain/calendar_event_timing.h"
 #include "next/domain/domain_types.h"
+#include "next/domain/gregorian_date.h"
 #include "next/domain/operation_result.h"
 
 #include <cctype>
@@ -11,6 +12,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace ClassMngr::Next::Application
 {
@@ -24,14 +26,13 @@ inline constexpr std::size_t kCalendarEventSaveMaxEventTypeLength = 64;
 
 // A bounded, adapter-neutral request for saving one non-repeat calendar
 // event. An absent identifier requests creation; a present identifier requests
-// an update. Dates and times use canonical ISO text so platform conversion
-// stays at the Qt/legacy boundary.
+// an update. Dates are valid domain values and times use canonical ISO text.
 struct CalendarEventSaveRequest final
 {
     std::optional<Domain::CalendarEventId> id;
     std::string title;
-    std::string startDate;
-    std::string endDate;
+    Domain::GregorianDate startDate;
+    Domain::GregorianDate endDate;
     std::optional<std::string> startTime;
     std::optional<std::string> endTime;
     bool allDay = false;
@@ -155,7 +156,112 @@ namespace CalendarEventSaveRequestDetail
     return "Calendar event timing is invalid.";
 }
 
+[[nodiscard]] inline Domain::Result<void> validateTextFields(
+    const std::optional<Domain::CalendarEventId>& id,
+    const std::string& title,
+    const std::string& eventType
+    )
+{
+    if (id.has_value() && !isBoundedIdentifier(*id))
+    {
+        return invalid(
+            "Calendar event identifier must be non-blank and bounded."
+            );
+    }
+
+    if (CalendarEventTitleValidation::isBlankUtf8Title(title)
+        || !CalendarEventTitleValidation::isValidUtf8WithinUtf16Units(
+            title,
+            kCalendarEventSaveMaxTitleLength
+            )
+        || !Domain::calendarEventTypeFromName(trimAscii(eventType)).has_value()
+        || eventType.size() > kCalendarEventSaveMaxEventTypeLength)
+    {
+        return invalid(
+            "Calendar event text fields must be non-blank and bounded."
+            );
+    }
+
+    return Domain::Result<void>::success();
+}
+
 } // namespace CalendarEventSaveRequestDetail
+
+// A default-buildable boundary value for raw calendar UI and import input.
+// Conversion validates identifier and text before parsing dates, then applies
+// the same typed-request timing validation used by the application port.
+struct CalendarEventSaveInput final
+{
+    std::optional<Domain::CalendarEventId> id;
+    std::string title;
+    std::string startDate;
+    std::string endDate;
+    std::optional<std::string> startTime;
+    std::optional<std::string> endTime;
+    bool allDay = false;
+    std::string eventType = "Other";
+    Domain::CalendarEventTimeStatus timeStatus =
+        Domain::CalendarEventTimeStatus::Timed;
+
+    [[nodiscard]] Domain::Result<CalendarEventSaveRequest> toRequest() const
+    {
+        using namespace CalendarEventSaveRequestDetail;
+
+        const Domain::Result<void> textValidation = validateTextFields(
+            id,
+            title,
+            eventType
+            );
+        if (!textValidation)
+        {
+            return Domain::Result<CalendarEventSaveRequest>::failure(
+                textValidation.error()
+                );
+        }
+
+        const auto parsedStartDate =
+            Domain::GregorianDate::fromIsoString(startDate);
+        const auto parsedEndDate =
+            Domain::GregorianDate::fromIsoString(endDate);
+        if (!parsedStartDate.has_value() || !parsedEndDate.has_value())
+        {
+            return Domain::Result<CalendarEventSaveRequest>::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message =
+                    "Calendar event dates must be valid canonical ISO dates.",
+                .recoverable = false
+            });
+        }
+
+        CalendarEventSaveRequest request{
+            id,
+            title,
+            *parsedStartDate,
+            *parsedEndDate,
+            startTime,
+            endTime,
+            allDay,
+            eventType,
+            timeStatus
+        };
+        const Domain::Result<void> validation = request.validate();
+        if (!validation)
+        {
+            return Domain::Result<CalendarEventSaveRequest>::failure(
+                validation.error()
+                );
+        }
+
+        return Domain::Result<CalendarEventSaveRequest>::success(
+            std::move(request)
+            );
+    }
+
+    friend bool operator==(
+        const CalendarEventSaveInput&,
+        const CalendarEventSaveInput&
+        ) = default;
+};
 
 [[nodiscard]] inline Domain::Result<void> validateCalendarEventSaveRequest(
     const CalendarEventSaveRequest& request
@@ -163,26 +269,14 @@ namespace CalendarEventSaveRequestDetail
 {
     using namespace CalendarEventSaveRequestDetail;
 
-    if (request.id.has_value() && !isBoundedIdentifier(*request.id))
+    const Domain::Result<void> textValidation = validateTextFields(
+        request.id,
+        request.title,
+        request.eventType
+        );
+    if (!textValidation)
     {
-        return invalid(
-            "Calendar event identifier must be non-blank and bounded."
-            );
-    }
-
-    if (CalendarEventTitleValidation::isBlankUtf8Title(request.title)
-        || !CalendarEventTitleValidation::isValidUtf8WithinUtf16Units(
-            request.title,
-            kCalendarEventSaveMaxTitleLength
-            )
-        || !Domain::calendarEventTypeFromName(
-                trimAscii(request.eventType)
-                ).has_value()
-        || request.eventType.size() > kCalendarEventSaveMaxEventTypeLength)
-    {
-        return invalid(
-            "Calendar event text fields must be non-blank and bounded."
-            );
+        return textValidation;
     }
 
     const Domain::CalendarEventTiming timing(

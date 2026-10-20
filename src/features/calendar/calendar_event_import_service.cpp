@@ -92,10 +92,10 @@ calendarEventSignatureKey(const CalendarEvent& event)
     return CalendarImport::calendarEventImportSignature(event);
 }
 
-ClassMngr::Next::Application::CalendarEventSaveRequest
-calendarEventImportSaveRequest(const CalendarEvent& event)
+ClassMngr::Next::Application::CalendarEventSaveInput
+calendarEventImportSaveInput(const CalendarEvent& event)
 {
-    ClassMngr::Next::Application::CalendarEventSaveRequest request;
+    ClassMngr::Next::Application::CalendarEventSaveInput request;
     request.title = event.title.toUtf8().toStdString();
     request.startDate = event.startDate.toString(Qt::ISODate).toStdString();
     request.endDate = event.endDate.toString(Qt::ISODate).toStdString();
@@ -351,7 +351,7 @@ void CalendarEventImportService::handleFinished(
     {
         useCaseRequest.candidates.push_back({
             .signature = calendarEventSignatureKey(event),
-            .saveRequest = calendarEventImportSaveRequest(event)
+            .saveInput = calendarEventImportSaveInput(event)
         });
     }
 

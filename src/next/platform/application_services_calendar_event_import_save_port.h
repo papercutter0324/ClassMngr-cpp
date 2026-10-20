@@ -223,14 +223,10 @@ private:
     }
 
     [[nodiscard]] static QDate legacyDate(
-        const std::string& value
+        const Domain::GregorianDate& value
         )
     {
-        const QString text = legacyText(value);
-        const QDate date = QDate::fromString(text, Qt::ISODate);
-        return date.isValid() && date.toString(Qt::ISODate) == text
-            ? date
-            : QDate();
+        return QDate(value.year(), value.month(), value.day());
     }
 
     [[nodiscard]] static QTime legacyTime(

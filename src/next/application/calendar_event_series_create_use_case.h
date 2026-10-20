@@ -14,7 +14,7 @@ namespace ClassMngr::Next::Application
 // have completed. The UseCase converts it to a domain date before planning.
 struct CalendarEventSeriesCreateInput final
 {
-    CalendarEventSaveRequest seed;
+    CalendarEventSaveInput seed;
     std::optional<Domain::CalendarEventSeriesId> repeatSeriesId;
     CalendarEventRepeatFrequency frequency =
         CalendarEventRepeatFrequency::Daily;
@@ -31,14 +31,20 @@ public:
         const CalendarEventSeriesCreateInput& input
         )
     {
-        const Domain::Result<void> seedAndFrequencyValidation =
-            CalendarEventRepeatOccurrencePlanDetail::
-                validateSeedAndFrequency(input.seed, input.frequency);
-        if (!seedAndFrequencyValidation)
+        if (!CalendarEventRepeatOccurrencePlanDetail::isSupportedFrequency(
+                input.frequency
+                ))
         {
-            return CalendarEventSeriesCreateResult::failure(
-                seedAndFrequencyValidation.error()
+            return invalidSeedOrFrequency(
+                "Calendar repeat frequency is invalid."
                 );
+        }
+
+        const Domain::Result<CalendarEventSaveRequest> typedSeed =
+            input.seed.toRequest();
+        if (!typedSeed)
+        {
+            return invalidSeedOrFrequency(typedSeed.error().message);
         }
 
         const std::optional<Domain::GregorianDate> finalStartDate =
@@ -56,7 +62,7 @@ public:
 
         const Domain::Result<CalendarEventSeriesCreateRequest> plannedSeries =
             planCalendarEventRepeatOccurrences(
-                input.seed,
+                typedSeed.value(),
                 input.repeatSeriesId,
                 input.frequency,
                 *finalStartDate
@@ -69,6 +75,18 @@ public:
         }
 
         return createPort.createRepeatSeries(plannedSeries.value());
+    }
+
+private:
+    [[nodiscard]] static CalendarEventSeriesCreateResult invalidSeedOrFrequency(
+        const std::string& message
+        )
+    {
+        return CalendarEventSeriesCreateResult::failure({
+            .code = Domain::ErrorCode::InvalidInput,
+            .message = message,
+            .recoverable = false
+        });
     }
 };
 

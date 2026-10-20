@@ -111,14 +111,36 @@ CalendarEventSaveRequest validSaveRequest()
     return CalendarEventSaveRequest{
         std::nullopt,
         "Event title",
-        "2026-09-20",
-        "2026-09-20",
+        gregorianDate("2026-09-20"),
+        gregorianDate("2026-09-20"),
         std::string("09:00"),
         std::string("10:00"),
         false,
         "Meeting",
         CalendarEventTimeStatus::Timed
     };
+}
+
+CalendarEventSaveInput saveInputFromRequest(
+    const CalendarEventSaveRequest& request
+    )
+{
+    return {
+        request.id,
+        request.title,
+        request.startDate.toIsoString(),
+        request.endDate.toIsoString(),
+        request.startTime,
+        request.endTime,
+        request.allDay,
+        request.eventType,
+        request.timeStatus
+    };
+}
+
+CalendarEventSaveInput validSaveInput()
+{
+    return saveInputFromRequest(validSaveRequest());
 }
 
 CalendarEventEditDraft validEditDraft()
@@ -258,7 +280,10 @@ void verifyOccurrenceStartDates(
     std::size_t index = 0;
     for (const std::string_view date : expected)
     {
-        QCOMPARE(request.occurrences.at(index).startDate, std::string(date));
+        QCOMPARE(
+            request.occurrences.at(index).startDate.toIsoString(),
+            std::string(date)
+            );
         ++index;
     }
 }
@@ -469,6 +494,7 @@ private slots:
     void calendarEventSaveUseCaseForwardsRequestAndResultOnce();
     void calendarEventSaveUseCasePropagatesPortFailure();
     void calendarEventSaveUseCaseRejectsInvalidRequestWithoutCallingPort();
+    void calendarEventSaveInputPreservesDateValidationOrderAndMetadata();
     void timingErrorsKeepFeatureMessagesAndValidationPrecedence();
     void calendarEventTypeValidationUsesDomainClassifiersAndPreservesRawText();
     void timingAcceptsFullGregorianRangeAndCrossDayClocks();
@@ -1348,11 +1374,12 @@ saveRequestBoundsAndOptionalIdRemainTyped()
     QVERIFY(!oversizedEventType.validate());
 
     auto invalidDate = createRequest;
-    invalidDate.startDate = "2026-02-30";
-    QVERIFY(!invalidDate.validate());
+    auto invalidDateInput = saveInputFromRequest(invalidDate);
+    invalidDateInput.startDate = "2026-02-30";
+    QVERIFY(!invalidDateInput.toRequest());
 
     auto reversedDates = createRequest;
-    reversedDates.startDate = "2026-09-21";
+    reversedDates.startDate = gregorianDate("2026-09-21");
     QVERIFY(!reversedDates.validate());
 }
 
@@ -1409,25 +1436,27 @@ calendarEventSaveUseCaseForwardsRequestAndResultOnce()
 {
     using UseCaseResult = decltype(CalendarEventSaveUseCase::execute(
         std::declval<CalendarEventSavePort&>(),
-        std::declval<const CalendarEventSaveRequest&>()
+        std::declval<const CalendarEventSaveInput&>()
         ));
     static_assert(std::is_same_v<UseCaseResult, CalendarEventSaveResult>);
 
-    CalendarEventSaveRequest request = validSaveRequest();
-    request.id = calendarEventId("event-42");
-    request.title = repeatedHangulTitle(86);
+    CalendarEventSaveInput input = validSaveInput();
+    input.id = calendarEventId("event-42");
+    input.title = repeatedHangulTitle(86);
+    const auto expectedRequest = input.toRequest();
+    QVERIFY(expectedRequest);
 
     FakeCalendarEventSavePort port;
     const CalendarEventId savedId = calendarEventId("event-42");
     port.response = CalendarEventSaveResult::success(savedId);
 
     const CalendarEventSaveResult result =
-        CalendarEventSaveUseCase::execute(port, request);
+        CalendarEventSaveUseCase::execute(port, input);
 
     QVERIFY(result);
     QCOMPARE(port.saveCalls, 1);
     QVERIFY(port.receivedRequest.has_value());
-    QVERIFY(*port.receivedRequest == request);
+    QVERIFY(*port.receivedRequest == expectedRequest.value());
     QVERIFY(result.value() == savedId);
 }
 
@@ -1442,7 +1471,7 @@ calendarEventSaveUseCasePropagatesPortFailure()
     });
 
     const CalendarEventSaveResult result =
-        CalendarEventSaveUseCase::execute(port, validSaveRequest());
+        CalendarEventSaveUseCase::execute(port, validSaveInput());
 
     QVERIFY(!result);
     QCOMPARE(port.saveCalls, 1);
@@ -1458,11 +1487,11 @@ void NextApplicationCalendarEventTests::
 calendarEventSaveUseCaseRejectsInvalidRequestWithoutCallingPort()
 {
     FakeCalendarEventSavePort port;
-    CalendarEventSaveRequest request = validSaveRequest();
-    request.title = "   ";
+    CalendarEventSaveInput input = validSaveInput();
+    input.title = "   ";
 
     const CalendarEventSaveResult result =
-        CalendarEventSaveUseCase::execute(port, request);
+        CalendarEventSaveUseCase::execute(port, input);
 
     QVERIFY(!result);
     QCOMPARE(port.saveCalls, 0);
@@ -1473,6 +1502,60 @@ calendarEventSaveUseCaseRejectsInvalidRequestWithoutCallingPort()
         std::string("Calendar event text fields must be non-blank and bounded.")
         );
     QVERIFY(!result.error().recoverable);
+}
+
+void NextApplicationCalendarEventTests::
+calendarEventSaveInputPreservesDateValidationOrderAndMetadata()
+{
+    const auto verifyInputFailure = [](
+        const CalendarEventSaveInput& input,
+        const std::string_view message
+        )
+    {
+        const auto result = input.toRequest();
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(result.error().message, std::string(message));
+        QVERIFY(!result.error().recoverable);
+    };
+
+    auto identifierPrecedence = validSaveInput();
+    identifierPrecedence.id = calendarEventId("   ");
+    identifierPrecedence.title.clear();
+    identifierPrecedence.startDate = "2026-02-30";
+    verifyInputFailure(
+        identifierPrecedence,
+        "Calendar event identifier must be non-blank and bounded."
+        );
+
+    auto textPrecedence = validSaveInput();
+    textPrecedence.title.clear();
+    textPrecedence.startDate = "2026-02-30";
+    verifyInputFailure(
+        textPrecedence,
+        "Calendar event text fields must be non-blank and bounded."
+        );
+
+    auto malformedDate = validSaveInput();
+    malformedDate.startDate = "2026-02-30";
+    malformedDate.endTime.reset();
+    verifyInputFailure(
+        malformedDate,
+        "Calendar event dates must be valid canonical ISO dates."
+        );
+
+    FakeCalendarEventSavePort port;
+    const CalendarEventSaveResult useCaseResult =
+        CalendarEventSaveUseCase::execute(port, malformedDate);
+    QVERIFY(!useCaseResult);
+    QCOMPARE(useCaseResult.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        useCaseResult.error().message,
+        std::string("Calendar event dates must be valid canonical ISO dates.")
+        );
+    QVERIFY(!useCaseResult.error().recoverable);
+    QCOMPARE(port.saveCalls, 0);
+    QVERIFY(!port.receivedRequest.has_value());
 }
 
 void NextApplicationCalendarEventTests::
@@ -1490,11 +1573,10 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         saveCases.emplace_back(std::move(request), message);
     };
     addSaveCase(
-        [](auto& request) { request.startDate = "2026-02-30"; },
-        "Calendar event dates must be valid canonical ISO dates."
-        );
-    addSaveCase(
-        [](auto& request) { request.startDate = "2026-09-21"; },
+        [](auto& request)
+        {
+            request.startDate = gregorianDate("2026-09-21");
+        },
         "Calendar event end date must not precede its start date."
         );
     addSaveCase(
@@ -1539,24 +1621,28 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         verifyInvalidValidation(request.validate(), message);
     }
 
-    auto saveTextPrecedence = validSaveRequest();
+    auto saveTextPrecedence = validSaveInput();
     saveTextPrecedence.title.clear();
     saveTextPrecedence.startDate = "2026-02-30";
-    verifyInvalidValidation(
-        saveTextPrecedence.validate(),
-        "Calendar event text fields must be non-blank and bounded."
+    const auto saveTextPrecedenceResult = saveTextPrecedence.toRequest();
+    QVERIFY(!saveTextPrecedenceResult);
+    QCOMPARE(
+        saveTextPrecedenceResult.error().message,
+        std::string("Calendar event text fields must be non-blank and bounded.")
         );
 
-    auto saveDatePrecedence = validSaveRequest();
+    auto saveDatePrecedence = validSaveInput();
     saveDatePrecedence.startDate = "2026-02-30";
     saveDatePrecedence.endTime.reset();
-    verifyInvalidValidation(
-        saveDatePrecedence.validate(),
+    const auto saveDatePrecedenceResult = saveDatePrecedence.toRequest();
+    QVERIFY(!saveDatePrecedenceResult);
+    QCOMPARE(
+        saveDatePrecedenceResult.error().message,
         "Calendar event dates must be valid canonical ISO dates."
         );
 
     auto saveRangePrecedence = validSaveRequest();
-    saveRangePrecedence.startDate = "2026-09-21";
+    saveRangePrecedence.startDate = gregorianDate("2026-09-21");
     saveRangePrecedence.endTime.reset();
     verifyInvalidValidation(
         saveRangePrecedence.validate(),
@@ -1902,8 +1988,8 @@ void NextApplicationCalendarEventTests::
 timingAcceptsFullGregorianRangeAndCrossDayClocks()
 {
     auto save = validSaveRequest();
-    save.startDate = "0001-01-01";
-    save.endDate = "9999-12-31";
+    save.startDate = gregorianDate("0001-01-01");
+    save.endDate = gregorianDate("9999-12-31");
     save.startTime = "23:59";
     save.endTime = "00:00";
     save.timeStatus = CalendarEventTimeStatus::Timed;
@@ -2129,6 +2215,16 @@ saveRequestContractHasNoQtOrLegacySurface()
         decltype(std::declval<CalendarEventSaveRequest>().id),
         std::optional<CalendarEventId>
         >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSaveRequest>().startDate),
+        GregorianDate
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSaveRequest>().endDate),
+        GregorianDate
+        >);
+    static_assert(!std::is_default_constructible_v<CalendarEventSaveRequest>);
+    static_assert(std::is_default_constructible_v<CalendarEventSaveInput>);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSaveRequest>().startTime),
         std::optional<std::string>
@@ -2509,7 +2605,8 @@ seriesCreateRequestBoundsAndOccurrencesRemainTyped()
     QVERIFY(!overlongTitleOccurrence.validate());
 
     auto invalidOccurrence = request;
-    invalidOccurrence.occurrences.front().startDate = "2026-02-30";
+    invalidOccurrence.occurrences.front().startDate =
+        gregorianDate("2026-09-21");
     QVERIFY(!invalidOccurrence.validate());
     QCOMPARE(
         invalidOccurrence.validate().error().code,
@@ -2610,7 +2707,7 @@ void NextApplicationCalendarEventTests::
 repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil()
 {
     auto seed = validSaveRequest();
-    seed.startDate = "2026-09-20";
+    seed.startDate = gregorianDate("2026-09-20");
     seed.endDate = seed.startDate;
 
     const auto daily = planCalendarEventRepeatOccurrences(
@@ -2642,7 +2739,7 @@ repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil()
         seed,
         calendarEventSeriesId("inclusive-start"),
         CalendarEventRepeatFrequency::Daily,
-        gregorianDate(seed.startDate)
+        seed.startDate
         );
     QVERIFY(untilStart);
     QCOMPARE(untilStart.value().occurrences.size(), std::size_t(1));
@@ -2652,7 +2749,7 @@ repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil()
         );
 
     auto lowerBoundarySeed = validSaveRequest();
-    lowerBoundarySeed.startDate = "0001-01-01";
+    lowerBoundarySeed.startDate = gregorianDate("0001-01-01");
     lowerBoundarySeed.endDate = lowerBoundarySeed.startDate;
     const auto lowerBoundary = planCalendarEventRepeatOccurrences(
         lowerBoundarySeed,
@@ -2662,12 +2759,12 @@ repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil()
         );
     QVERIFY(lowerBoundary);
     QCOMPARE(
-        lowerBoundary.value().occurrences.front().startDate,
+        lowerBoundary.value().occurrences.front().startDate.toIsoString(),
         std::string("0001-01-01")
         );
 
     auto upperBoundarySeed = validSaveRequest();
-    upperBoundarySeed.startDate = "9999-12-31";
+    upperBoundarySeed.startDate = gregorianDate("9999-12-31");
     upperBoundarySeed.endDate = upperBoundarySeed.startDate;
     const auto upperBoundary = planCalendarEventRepeatOccurrences(
         upperBoundarySeed,
@@ -2677,7 +2774,7 @@ repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil()
         );
     QVERIFY(upperBoundary);
     QCOMPARE(
-        upperBoundary.value().occurrences.front().startDate,
+        upperBoundary.value().occurrences.front().startDate.toIsoString(),
         std::string("9999-12-31")
         );
 }
@@ -2686,7 +2783,7 @@ void NextApplicationCalendarEventTests::
 repeatOccurrencePlanClampsMonthlyDatesFromPreviousOccurrence()
 {
     auto nonLeapSeed = validSaveRequest();
-    nonLeapSeed.startDate = "2025-01-31";
+    nonLeapSeed.startDate = gregorianDate("2025-01-31");
     nonLeapSeed.endDate = nonLeapSeed.startDate;
     const auto nonLeap = planCalendarEventRepeatOccurrences(
         nonLeapSeed,
@@ -2701,7 +2798,7 @@ repeatOccurrencePlanClampsMonthlyDatesFromPreviousOccurrence()
         );
 
     auto leapSeed = validSaveRequest();
-    leapSeed.startDate = "2024-01-31";
+    leapSeed.startDate = gregorianDate("2024-01-31");
     leapSeed.endDate = leapSeed.startDate;
     const auto leap = planCalendarEventRepeatOccurrences(
         leapSeed,
@@ -2722,8 +2819,8 @@ repeatOccurrencePlanPreservesSeedFieldsAndDateDuration()
     auto seed = validSaveRequest();
     seed.id = calendarEventId("existing-seed-event");
     seed.title = "Workshop series title";
-    seed.startDate = "2026-09-20";
-    seed.endDate = "2026-09-22";
+    seed.startDate = gregorianDate("2026-09-20");
+    seed.endDate = gregorianDate("2026-09-22");
     seed.startTime = "14:15";
     seed.endTime = "15:45";
     seed.allDay = false;
@@ -2749,10 +2846,10 @@ repeatOccurrencePlanPreservesSeedFieldsAndDateDuration()
     QVERIFY(!second.id.has_value());
     QCOMPARE(first.title, seed.title);
     QCOMPARE(second.title, seed.title);
-    QCOMPARE(first.startDate, std::string("2026-09-20"));
-    QCOMPARE(first.endDate, std::string("2026-09-22"));
-    QCOMPARE(second.startDate, std::string("2026-09-21"));
-    QCOMPARE(second.endDate, std::string("2026-09-23"));
+    QCOMPARE(first.startDate.toIsoString(), std::string("2026-09-20"));
+    QCOMPARE(first.endDate.toIsoString(), std::string("2026-09-22"));
+    QCOMPARE(second.startDate.toIsoString(), std::string("2026-09-21"));
+    QCOMPARE(second.endDate.toIsoString(), std::string("2026-09-23"));
     QCOMPARE(first.startTime, seed.startTime);
     QCOMPARE(second.startTime, seed.startTime);
     QCOMPARE(first.endTime, seed.endTime);
@@ -2769,7 +2866,7 @@ void NextApplicationCalendarEventTests::
 repeatOccurrencePlanRejectsInvalidSeedRangeUntilAndFrequency()
 {
     auto invalidSeed = validSaveRequest();
-    invalidSeed.startDate = "2026-02-30";
+    invalidSeed.title.clear();
     verifyInvalidRepeatPlan(planCalendarEventRepeatOccurrences(
         invalidSeed,
         calendarEventSeriesId("invalid-seed"),
@@ -2778,8 +2875,8 @@ repeatOccurrencePlanRejectsInvalidSeedRangeUntilAndFrequency()
         ));
 
     auto reversedSeedRange = validSaveRequest();
-    reversedSeedRange.startDate = "2026-09-20";
-    reversedSeedRange.endDate = "2026-09-19";
+    reversedSeedRange.startDate = gregorianDate("2026-09-20");
+    reversedSeedRange.endDate = gregorianDate("2026-09-19");
     verifyInvalidRepeatPlan(planCalendarEventRepeatOccurrences(
         reversedSeedRange,
         calendarEventSeriesId("reversed-seed-range"),
@@ -2802,8 +2899,8 @@ repeatOccurrencePlanRejectsInvalidSeedRangeUntilAndFrequency()
         ));
 
     auto endOfRangeSeed = validSaveRequest();
-    endOfRangeSeed.startDate = "9999-12-30";
-    endOfRangeSeed.endDate = "9999-12-31";
+    endOfRangeSeed.startDate = gregorianDate("9999-12-30");
+    endOfRangeSeed.endDate = gregorianDate("9999-12-31");
     verifyInvalidRepeatPlan(planCalendarEventRepeatOccurrences(
         endOfRangeSeed,
         calendarEventSeriesId("end-of-range"),
@@ -2816,7 +2913,7 @@ void NextApplicationCalendarEventTests::
 repeatOccurrencePlanAccepts366AndRejects367Occurrences()
 {
     auto seed = validSaveRequest();
-    seed.startDate = "2023-01-01";
+    seed.startDate = gregorianDate("2023-01-01");
     seed.endDate = seed.startDate;
     const auto exactLimit = planCalendarEventRepeatOccurrences(
         seed,
@@ -2830,11 +2927,11 @@ repeatOccurrencePlanAccepts366AndRejects367Occurrences()
         kCalendarEventSeriesCreateMaxOccurrences
         );
     QCOMPARE(
-        exactLimit.value().occurrences.back().startDate,
+        exactLimit.value().occurrences.back().startDate.toIsoString(),
         std::string("2024-01-01")
         );
 
-    seed.startDate = "2024-01-01";
+    seed.startDate = gregorianDate("2024-01-01");
     seed.endDate = seed.startDate;
     const auto overLimit = planCalendarEventRepeatOccurrences(
         seed,
@@ -2882,7 +2979,7 @@ repeatSeriesCreateUseCasePlansAndForwardsExactlyOnce()
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesCreateInput>().seed),
-        CalendarEventSaveRequest
+        CalendarEventSaveInput
         >);
     static_assert(std::is_same_v<
         decltype(
@@ -2902,8 +2999,8 @@ repeatSeriesCreateUseCasePlansAndForwardsExactlyOnce()
     CalendarEventSaveRequest seed = validSaveRequest();
     seed.id = calendarEventId("event-existing");
     seed.title = repeatedHangulTitle(86);
-    seed.startDate = "2026-09-20";
-    seed.endDate = "2026-09-21";
+    seed.startDate = gregorianDate("2026-09-20");
+    seed.endDate = gregorianDate("2026-09-21");
     seed.startTime = "08:30";
     seed.endTime = "10:15";
     seed.eventType = "Workshop";
@@ -2921,7 +3018,7 @@ repeatSeriesCreateUseCasePlansAndForwardsExactlyOnce()
         CalendarEventSeriesCreateUseCase::execute(
             port,
             CalendarEventSeriesCreateInput{
-                seed,
+                saveInputFromRequest(seed),
                 calendarEventSeriesId("generated-series-123"),
                 CalendarEventRepeatFrequency::Daily,
                 "2026-09-21"
@@ -2934,12 +3031,12 @@ repeatSeriesCreateUseCasePlansAndForwardsExactlyOnce()
 
     CalendarEventSaveRequest firstOccurrence = seed;
     firstOccurrence.id.reset();
-    firstOccurrence.startDate = "2026-09-20";
-    firstOccurrence.endDate = "2026-09-21";
+    firstOccurrence.startDate = gregorianDate("2026-09-20");
+    firstOccurrence.endDate = gregorianDate("2026-09-21");
     CalendarEventSaveRequest secondOccurrence = seed;
     secondOccurrence.id.reset();
-    secondOccurrence.startDate = "2026-09-21";
-    secondOccurrence.endDate = "2026-09-22";
+    secondOccurrence.startDate = gregorianDate("2026-09-21");
+    secondOccurrence.endDate = gregorianDate("2026-09-22");
 
     const CalendarEventSeriesCreateRequest expectedRequest{
         calendarEventSeriesId("generated-series-123"),
@@ -2965,7 +3062,7 @@ repeatSeriesCreateUseCasePropagatesPortFailure()
         CalendarEventSeriesCreateUseCase::execute(
             port,
             CalendarEventSeriesCreateInput{
-                validSaveRequest(),
+                validSaveInput(),
                 calendarEventSeriesId("series-with-failure"),
                 CalendarEventRepeatFrequency::Weekly,
                 "2026-09-20"
@@ -2991,7 +3088,7 @@ repeatSeriesCreateUseCaseRejectsInvalidPlanWithoutCallingPort()
         CalendarEventSeriesCreateUseCase::execute(
             port,
             CalendarEventSeriesCreateInput{
-                validSaveRequest(),
+                validSaveInput(),
                 calendarEventSeriesId("series-with-invalid-range"),
                 CalendarEventRepeatFrequency::Daily,
                 "2026-09-19"
@@ -3015,7 +3112,7 @@ void NextApplicationCalendarEventTests::
 repeatSeriesCreateUseCaseRejectsMalformedUntilWithoutCallingPort()
 {
     FakeCalendarEventSeriesCreatePort port;
-    const CalendarEventSaveRequest seed = validSaveRequest();
+    const CalendarEventSaveInput seed = validSaveInput();
     const std::vector<std::string> malformedUntilDates{
         "",
         "2026-02-30",
@@ -3056,7 +3153,7 @@ void NextApplicationCalendarEventTests::
 repeatSeriesCreateUseCasePreservesValidationPrecedence()
 {
     FakeCalendarEventSeriesCreatePort port;
-    CalendarEventSaveRequest invalidSeed = validSaveRequest();
+    CalendarEventSaveInput invalidSeed = validSaveInput();
     invalidSeed.startDate = "2026-02-30";
 
     const CalendarEventSeriesCreateResult invalidFrequencyResult =
@@ -3116,7 +3213,7 @@ repeatSeriesCreateUseCaseRejectsUnicodeWhitespaceIdWithoutCallingPort()
             CalendarEventSeriesCreateUseCase::execute(
                 port,
                 CalendarEventSeriesCreateInput{
-                    validSaveRequest(),
+                    validSaveInput(),
                     calendarEventSeriesId(repeatSeriesId),
                     CalendarEventRepeatFrequency::Daily,
                     "2026-09-20"
@@ -3147,7 +3244,7 @@ repeatSeriesCreateUseCaseRejectsAbsentIdWithoutCallingPort()
         CalendarEventSeriesCreateUseCase::execute(
             port,
             CalendarEventSeriesCreateInput{
-                validSaveRequest(),
+                validSaveInput(),
                 CalendarEventSeriesId::fromString(""),
                 CalendarEventRepeatFrequency::Daily,
                 "2026-09-20"

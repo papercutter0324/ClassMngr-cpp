@@ -111,9 +111,9 @@ CalendarEventImportUseCaseRequest requestWithRange()
     return request;
 }
 
-CalendarEventSaveRequest saveRequest(std::string title)
+CalendarEventSaveInput saveInput(std::string title)
 {
-    CalendarEventSaveRequest request;
+    CalendarEventSaveInput request;
     request.title = std::move(title);
     request.startDate = "2026-02-03";
     request.endDate = "2026-02-03";
@@ -122,21 +122,23 @@ CalendarEventSaveRequest saveRequest(std::string title)
     return request;
 }
 
-CalendarEventImportCandidate candidate(CalendarEventSaveRequest saveRequest)
+CalendarEventImportCandidate candidate(CalendarEventSaveInput saveInput)
 {
+    const auto typedRequest = saveInput.toRequest();
+    Q_ASSERT(typedRequest);
     const auto signature = CalendarEventImportIdentity::fromSaveRequest(
-        saveRequest
+        typedRequest.value()
         );
     Q_ASSERT(signature.has_value());
     return {
         .signature = *signature,
-        .saveRequest = std::move(saveRequest)
+        .saveInput = std::move(saveInput)
     };
 }
 
 CalendarEventImportCandidate candidate(std::string title)
 {
-    return candidate(saveRequest(std::move(title)));
+    return candidate(saveInput(std::move(title)));
 }
 
 Domain::CalendarEventId calendarEventId(const int value)
@@ -164,6 +166,7 @@ class NextApplicationCalendarEventImportUseCaseTests final : public QObject
 private slots:
     void emptyInputSkipsPortsAndPreservesParserSkipCount();
     void invalidCandidateFailsBeforeCallingEitherPort();
+    void malformedCandidateDateFailsBeforeCallingEitherPort();
     void candidateIdFailsBeforeCallingEitherPort();
     void forgedSignatureFailsBeforeCallingEitherPort();
     void normalizedTitleMatchesQtSimplifiedWhitespace();
@@ -213,10 +216,9 @@ void NextApplicationCalendarEventImportUseCaseTests::
 invalidCandidateFailsBeforeCallingEitherPort()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
-    request.candidates = {
-        candidate("Valid candidate"),
-        candidate(" \t ")
-    };
+    CalendarEventImportCandidate invalid = candidate("Invalid candidate");
+    invalid.saveInput.title = " \t ";
+    request.candidates = {candidate("Valid candidate"), std::move(invalid)};
     FakeSignatureQueryPort queryPort;
     FakeSavePort savePort;
 
@@ -233,10 +235,38 @@ invalidCandidateFailsBeforeCallingEitherPort()
 }
 
 void NextApplicationCalendarEventImportUseCaseTests::
+malformedCandidateDateFailsBeforeCallingEitherPort()
+{
+    CalendarEventImportUseCaseRequest request = requestWithRange();
+    CalendarEventImportCandidate invalid = candidate("Malformed date");
+    invalid.saveInput.startDate = "2026-02-30";
+    invalid.saveInput.endTime.reset();
+    request.candidates = {std::move(invalid)};
+    FakeSignatureQueryPort queryPort;
+    FakeSavePort savePort;
+
+    const auto result = CalendarEventImportUseCase::execute(
+        request,
+        queryPort,
+        savePort
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        QString::fromStdString(result.error().message),
+        QStringLiteral("Calendar event dates must be valid canonical ISO dates.")
+        );
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(queryPort.callCount, 0);
+    QCOMPARE(savePort.callCount, 0);
+}
+
+void NextApplicationCalendarEventImportUseCaseTests::
 candidateIdFailsBeforeCallingEitherPort()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
-    CalendarEventSaveRequest updateRequest = saveRequest("Existing event");
+    CalendarEventSaveInput updateRequest = saveInput("Existing event");
     updateRequest.id = calendarEventId(17);
     request.candidates = {candidate(std::move(updateRequest))};
     FakeSignatureQueryPort queryPort;
@@ -291,7 +321,7 @@ normalizedTitleMatchesQtSimplifiedWhitespace()
         );
     CalendarEventImportUseCaseRequest request = requestWithRange();
     const CalendarEventImportCandidate normalized = candidate("Plan Review");
-    const CalendarEventImportCandidate source = candidate(saveRequest(
+    const CalendarEventImportCandidate source = candidate(saveInput(
         sourceTitle.toUtf8().toStdString()
         ));
     request.candidates = {source};
@@ -324,7 +354,7 @@ void NextApplicationCalendarEventImportUseCaseTests::
 signatureRangeMustCoverEveryCandidateDate()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
-    CalendarEventSaveRequest spanningRequest = saveRequest("Range boundary");
+    CalendarEventSaveInput spanningRequest = saveInput("Range boundary");
     spanningRequest.startDate = "2026-02-28";
     spanningRequest.endDate = "2026-03-01";
     request.candidates = {candidate(std::move(spanningRequest))};
@@ -350,7 +380,7 @@ void NextApplicationCalendarEventImportUseCaseTests::
 signatureRangeMustCoverCandidateStartDate()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
-    CalendarEventSaveRequest earlyStartRequest = saveRequest("Early start");
+    CalendarEventSaveInput earlyStartRequest = saveInput("Early start");
     earlyStartRequest.startDate = "2026-01-31";
     earlyStartRequest.endDate = "2026-02-03";
     request.candidates = {candidate(std::move(earlyStartRequest))};
@@ -524,7 +554,7 @@ void NextApplicationCalendarEventImportUseCaseTests::
 signatureIdentityRemainsExactUtf16()
 {
     const QString supplementaryTitle = QStringLiteral("Launch \U0001f680");
-    const CalendarEventImportCandidate exactUtf16 = candidate(saveRequest(
+    const CalendarEventImportCandidate exactUtf16 = candidate(saveInput(
         supplementaryTitle.toUtf8().toStdString()
         ));
     std::u16string expectedUtf16 =
@@ -562,7 +592,7 @@ signatureIdentityRemainsExactUtf16()
 void NextApplicationCalendarEventImportUseCaseTests::
 signatureIncludesEveryIdentityFieldButExcludesTimes()
 {
-    CalendarEventSaveRequest baseRequest = saveRequest("Identity");
+    CalendarEventSaveInput baseRequest = saveInput("Identity");
     baseRequest.startDate = "2026-02-03";
     baseRequest.endDate = "2026-02-05";
     baseRequest.timeStatus = Domain::CalendarEventTimeStatus::Timed;
@@ -571,7 +601,7 @@ signatureIncludesEveryIdentityFieldButExcludesTimes()
     const CalendarEventImportSignature original =
         candidate(baseRequest).signature;
 
-    CalendarEventSaveRequest changed = baseRequest;
+    CalendarEventSaveInput changed = baseRequest;
     changed.title = "Different identity";
     QVERIFY(candidate(changed).signature != original);
 

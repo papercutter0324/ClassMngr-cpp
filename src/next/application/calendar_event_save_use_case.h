@@ -12,16 +12,17 @@ class CalendarEventSaveUseCase final
 public:
     [[nodiscard]] static CalendarEventSaveResult execute(
         CalendarEventSavePort& savePort,
-        const CalendarEventSaveRequest& request
+        const CalendarEventSaveInput& input
         )
     {
-        const Domain::Result<void> validation = request.validate();
-        if (!validation)
+        const Domain::Result<CalendarEventSaveRequest> request =
+            input.toRequest();
+        if (!request)
         {
-            return CalendarEventSaveResult::failure(validation.error());
+            return CalendarEventSaveResult::failure(request.error());
         }
 
-        return savePort.saveEvent(request);
+        return savePort.saveEvent(request.value());
     }
 };
 

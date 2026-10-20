@@ -38,6 +38,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -66,7 +67,7 @@ using ClassMngr::Next::Platform::
 namespace
 {
 
-GregorianDate gregorianDate(const char* const isoDate)
+GregorianDate gregorianDate(const std::string_view isoDate)
 {
     return *GregorianDate::fromIsoString(isoDate);
 }
@@ -135,13 +136,30 @@ CalendarEventSaveRequest validSaveRequest()
     return CalendarEventSaveRequest{
         std::nullopt,
         "Typed save event",
-        "2026-12-10",
-        "2026-12-10",
+        gregorianDate("2026-12-10"),
+        gregorianDate("2026-12-10"),
         std::string("09:00"),
         std::string("10:00"),
         false,
         "Meeting",
         CalendarEventTimeStatus::Timed
+    };
+}
+
+CalendarEventSaveInput saveInputFromRequest(
+    const CalendarEventSaveRequest& request
+    )
+{
+    return {
+        request.id,
+        request.title,
+        request.startDate.toIsoString(),
+        request.endDate.toIsoString(),
+        request.startTime,
+        request.endTime,
+        request.allDay,
+        request.eventType,
+        request.timeStatus
     };
 }
 
@@ -160,8 +178,8 @@ CalendarEventImportSaveRequest validImportSaveRequest()
 {
     CalendarEventSaveRequest laterEvent = validSaveRequest();
     laterEvent.title = "Later imported event";
-    laterEvent.startDate = "2026-12-12";
-    laterEvent.endDate = "2026-12-12";
+    laterEvent.startDate = gregorianDate("2026-12-12");
+    laterEvent.endDate = gregorianDate("2026-12-12");
     laterEvent.startTime.reset();
     laterEvent.endTime.reset();
     laterEvent.eventType = "Workshop";
@@ -169,8 +187,8 @@ CalendarEventImportSaveRequest validImportSaveRequest()
 
     CalendarEventSaveRequest earlierAllDayEvent = validSaveRequest();
     earlierAllDayEvent.title = "Earlier imported event";
-    earlierAllDayEvent.startDate = "2026-12-10";
-    earlierAllDayEvent.endDate = "2026-12-10";
+    earlierAllDayEvent.startDate = gregorianDate("2026-12-10");
+    earlierAllDayEvent.endDate = gregorianDate("2026-12-10");
     earlierAllDayEvent.startTime.reset();
     earlierAllDayEvent.endTime.reset();
     earlierAllDayEvent.allDay = true;
@@ -198,20 +216,22 @@ CalendarEventSeriesCreateRequest seriesCreateRequest(
     request.occurrences.reserve(static_cast<std::size_t>(dateRanges.size()));
     for (const QPair<QDate, QDate>& dateRange : dateRanges)
     {
-        CalendarEventSaveRequest occurrence;
+        CalendarEventSaveRequest occurrence = validSaveRequest();
         occurrence.title = title.toUtf8().toStdString();
-        occurrence.startDate = dateRange.first.toString(
+        occurrence.startDate = gregorianDate(dateRange.first.toString(
             Qt::ISODate
-            ).toStdString();
-        occurrence.endDate = dateRange.second.toString(
+            ).toStdString());
+        occurrence.endDate = gregorianDate(dateRange.second.toString(
             Qt::ISODate
-            ).toStdString();
+            ).toStdString());
         occurrence.allDay = allDay;
         occurrence.eventType = eventType.toUtf8().toStdString();
         occurrence.timeStatus =
             ClassMngr::Next::Platform::calendarEventTimeStatusFromLegacyText(
                 timeStatus
                 );
+        occurrence.startTime.reset();
+        occurrence.endTime.reset();
         if (!allDay && timeStatus == QStringLiteral("Timed"))
         {
             occurrence.startTime = "09:15";
@@ -1405,8 +1425,8 @@ savesOrderedCalendarImportBatchWithTypedIdsAndParity()
     request.events.front().timeStatus = CalendarEventTimeStatus::Unknown;
     CalendarEventSaveRequest timedEvent = validSaveRequest();
     timedEvent.title = "Timed imported event";
-    timedEvent.startDate = "2026-12-11";
-    timedEvent.endDate = "2026-12-11";
+    timedEvent.startDate = gregorianDate("2026-12-11");
+    timedEvent.endDate = gregorianDate("2026-12-11");
     request.events.push_back(std::move(timedEvent));
 
     ApplicationServicesCalendarEventImportSavePort port(services);
@@ -1671,8 +1691,8 @@ createsAndUpdatesValidEventWithTypedIdMapping()
     auto updateRequest = createRequest;
     updateRequest.id = createdId;
     updateRequest.title = "Typed updated event";
-    updateRequest.startDate = "2026-12-11";
-    updateRequest.endDate = "2026-12-12";
+    updateRequest.startDate = gregorianDate("2026-12-11");
+    updateRequest.endDate = gregorianDate("2026-12-12");
     updateRequest.startTime = "11:00";
     updateRequest.endTime = "12:30";
     const auto updated = port.saveEvent(updateRequest);
@@ -1806,9 +1826,9 @@ reportsInvalidSaveRequestStructurally()
     blankTitle.title = "   ";
     verifyFailure(port.saveEvent(blankTitle), ErrorCode::InvalidInput);
 
-    auto invalidDate = validSaveRequest();
-    invalidDate.startDate = "2026-02-30";
-    verifyFailure(port.saveEvent(invalidDate), ErrorCode::InvalidInput);
+    auto reversedDateRange = validSaveRequest();
+    reversedDateRange.startDate = gregorianDate("2026-12-11");
+    verifyFailure(port.saveEvent(reversedDateRange), ErrorCode::InvalidInput);
 
     auto invalidStatus = validSaveRequest();
     invalidStatus.timeStatus = static_cast<CalendarEventTimeStatus>(99);
@@ -2073,11 +2093,17 @@ reportsUnavailableSaveSessionStructurally()
     auto validUpdate = validSaveRequest();
     validUpdate.id = calendarEventId(1);
     verifyUnavailableSave(
-        CalendarEventSaveUseCase::execute(port, validUpdate)
+        CalendarEventSaveUseCase::execute(
+            port,
+            saveInputFromRequest(validUpdate)
+            )
         );
 
     verifyUnavailableSave(
-        CalendarEventSaveUseCase::execute(port, validSaveRequest())
+        CalendarEventSaveUseCase::execute(
+            port,
+            saveInputFromRequest(validSaveRequest())
+            )
         );
 
     QVERIFY(openDatabase(services, m_directory));
@@ -2092,7 +2118,10 @@ reportsUnavailableSaveSessionStructurally()
         );
 
     verifyUnavailableSave(
-        CalendarEventSaveUseCase::execute(port, validSaveRequest())
+        CalendarEventSaveUseCase::execute(
+            port,
+            saveInputFromRequest(validSaveRequest())
+            )
         );
 }
 
@@ -4536,6 +4565,14 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSaveRequest>().id),
         std::optional<CalendarEventId>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSaveRequest>().startDate),
+        GregorianDate
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSaveRequest>().endDate),
+        GregorianDate
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSaveRequest>().allDay),

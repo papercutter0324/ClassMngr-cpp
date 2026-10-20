@@ -53,8 +53,8 @@ using CalendarEventSummary =
     ClassMngr::Next::Application::CalendarEventSummary;
 using CalendarEventEditDraft =
     ClassMngr::Next::Application::CalendarEventEditDraft;
-using CalendarEventSaveRequest =
-    ClassMngr::Next::Application::CalendarEventSaveRequest;
+using CalendarEventSaveInput =
+    ClassMngr::Next::Application::CalendarEventSaveInput;
 using CalendarEventSeriesCreateInput =
     ClassMngr::Next::Application::CalendarEventSeriesCreateInput;
 using CalendarEventId =
@@ -125,11 +125,11 @@ ApplicationCalendarEventRepeatFrequency applicationRepeatFrequency(
     return static_cast<ApplicationCalendarEventRepeatFrequency>(-1);
 }
 
-CalendarEventSaveRequest saveRequestFromDraft(
+CalendarEventSaveInput saveRequestFromDraft(
     const CalendarEventEditDraft& draft
     )
 {
-    CalendarEventSaveRequest request;
+    CalendarEventSaveInput request;
     request.id = draft.id;
     request.title = draft.title;
     request.startDate = draft.startDate;
@@ -897,7 +897,7 @@ void CalendarPage::openCalendarDialog(
             }
             else if (!repeatSeriesEvent && !dialog.repeatEnabled())
             {
-                CalendarEventSaveRequest request =
+                CalendarEventSaveInput request =
                     saveRequestFromDraft(savedDraft);
 
                 ClassMngr::Next::Platform::
@@ -922,7 +922,7 @@ void CalendarPage::openCalendarDialog(
             }
             else if (repeatSeriesEvent)
             {
-                CalendarEventSaveRequest request =
+                CalendarEventSaveInput request =
                     saveRequestFromDraft(savedDraft);
 
                 ClassMngr::Next::Platform::

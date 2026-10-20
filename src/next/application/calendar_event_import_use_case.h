@@ -144,18 +144,9 @@ fromSaveRequest(const CalendarEventSaveRequest& request)
         : std::nullopt;
     const auto canonicalStatus =
         Detail::canonicalTimeStatus(request.timeStatus);
-    const auto startDate = Domain::GregorianDate::fromIsoString(
-        request.startDate
-        );
-    const auto endDate = Domain::GregorianDate::fromIsoString(
-        request.endDate
-        );
-
     if (!simplifiedTitle.has_value()
         || !canonicalType.has_value()
-        || !canonicalStatus.has_value()
-        || !startDate.has_value()
-        || !endDate.has_value())
+        || !canonicalStatus.has_value())
     {
         return std::nullopt;
     }
@@ -163,8 +154,8 @@ fromSaveRequest(const CalendarEventSaveRequest& request)
     return CalendarEventImportSignature::fromNormalizedFields({
         .simplifiedTitle = *simplifiedTitle,
         .normalizedEventType = std::u16string(*canonicalType),
-        .startDateIso = Detail::toUtf16(startDate->toIsoString()),
-        .endDateIso = Detail::toUtf16(endDate->toIsoString()),
+        .startDateIso = Detail::toUtf16(request.startDate.toIsoString()),
+        .endDateIso = Detail::toUtf16(request.endDate.toIsoString()),
         .allDay = request.allDay,
         .normalizedTimeStatus = std::u16string(*canonicalStatus)
     });
@@ -177,7 +168,7 @@ fromSaveRequest(const CalendarEventSaveRequest& request)
 struct CalendarEventImportCandidate final
 {
     CalendarEventImportSignature signature;
-    CalendarEventSaveRequest saveRequest;
+    CalendarEventSaveInput saveInput;
 
     friend bool operator==(
         const CalendarEventImportCandidate&,
@@ -236,22 +227,29 @@ public:
             });
         }
 
+        std::vector<CalendarEventSaveRequest> preparedSaveRequests;
+        preparedSaveRequests.reserve(request.candidates.size());
         for (const CalendarEventImportCandidate& candidate : request.candidates)
         {
-            const Domain::Result<void> validation =
-                CalendarEventImportSaveRequestDetail::validateEvent(
-                    candidate.saveRequest
-                    );
-            if (!validation)
+            if (candidate.saveInput.id.has_value())
             {
                 return Domain::Result<CalendarEventImportUseCaseResult>::failure(
-                    validation.error()
+                    importOnlyCreatesError()
+                    );
+            }
+
+            const Domain::Result<CalendarEventSaveRequest> converted =
+                candidate.saveInput.toRequest();
+            if (!converted)
+            {
+                return Domain::Result<CalendarEventImportUseCaseResult>::failure(
+                    converted.error()
                     );
             }
 
             const auto expectedSignature =
                 CalendarEventImportIdentity::fromSaveRequest(
-                    candidate.saveRequest
+                    converted.value()
                     );
             if (!expectedSignature.has_value()
                 || candidate.signature != *expectedSignature)
@@ -260,9 +258,11 @@ public:
                     "Calendar import candidate signature does not match its save request."
                     );
             }
+
+            preparedSaveRequests.push_back(converted.value());
         }
 
-        if (!signatureRangeCoversCandidates(request))
+        if (!signatureRangeCoversCandidates(request, preparedSaveRequests))
         {
             return invalidInput(
                 "Calendar event signature query range must be valid and cover all candidate dates."
@@ -303,7 +303,7 @@ public:
              plan.acceptedCandidateIndices)
         {
             saveRequest.events.push_back(
-                request.candidates.at(candidateIndex).saveRequest
+                preparedSaveRequests.at(candidateIndex)
                 );
         }
 
@@ -352,8 +352,18 @@ private:
         });
     }
 
+    [[nodiscard]] static Domain::OperationError importOnlyCreatesError()
+    {
+        return {
+            .code = Domain::ErrorCode::InvalidInput,
+            .message = "Calendar imports may only create new events.",
+            .recoverable = false
+        };
+    }
+
     [[nodiscard]] static bool signatureRangeCoversCandidates(
-        const CalendarEventImportUseCaseRequest& request
+        const CalendarEventImportUseCaseRequest& request,
+        const std::vector<CalendarEventSaveRequest>& preparedSaveRequests
         )
     {
         const auto rangeStart = Domain::GregorianDate::fromIsoString(
@@ -369,18 +379,10 @@ private:
             return false;
         }
 
-        for (const CalendarEventImportCandidate& candidate : request.candidates)
+        for (const CalendarEventSaveRequest& candidate : preparedSaveRequests)
         {
-            const auto candidateStart = Domain::GregorianDate::fromIsoString(
-                candidate.saveRequest.startDate
-                );
-            const auto candidateEnd = Domain::GregorianDate::fromIsoString(
-                candidate.saveRequest.endDate
-                );
-            if (!candidateStart.has_value()
-                || !candidateEnd.has_value()
-                || candidateStart->dayNumber() < rangeStart->dayNumber()
-                || candidateEnd->dayNumber() > rangeEnd->dayNumber())
+            if (candidate.startDate.dayNumber() < rangeStart->dayNumber()
+                || candidate.endDate.dayNumber() > rangeEnd->dayNumber())
             {
                 return false;
             }

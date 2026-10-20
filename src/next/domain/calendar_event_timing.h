@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace ClassMngr::Next::Domain
 {
@@ -138,9 +139,9 @@ enum class CalendarEventTimingIssue
     InvalidTimeStatus
 };
 
-// A value describing one calendar event's date and time range. Date and time
-// text stays in canonical ISO form so platform-specific conversion remains
-// outside the Domain layer.
+// A value describing one calendar event's date and time range. Raw edit paths
+// can supply canonical ISO text; typed save paths can supply domain dates
+// without reparsing them.
 class CalendarEventTiming final
 {
 public:
@@ -161,6 +162,24 @@ public:
     {
     }
 
+    CalendarEventTiming(
+        const GregorianDate startDate,
+        const GregorianDate endDate,
+        const std::optional<std::string>& startTime,
+        const std::optional<std::string>& endTime,
+        const bool allDay,
+        const CalendarEventTimeStatus timeStatus
+        )
+        : m_startDate(startDate.toIsoString())
+        , m_endDate(endDate.toIsoString())
+        , m_startTime(startTime)
+        , m_endTime(endTime)
+        , m_allDay(allDay)
+        , m_timeStatus(timeStatus)
+        , m_typedDates(std::pair{startDate, endDate})
+    {
+    }
+
     [[nodiscard]] static bool isCanonicalDate(
         const std::string_view value
         ) noexcept
@@ -170,12 +189,18 @@ public:
 
     [[nodiscard]] std::optional<CalendarEventTimingIssue> validate() const
     {
-        if (!isCanonicalDate(m_startDate) || !isCanonicalDate(m_endDate))
+        const std::optional<GregorianDate> startDate = m_typedDates
+            ? std::optional<GregorianDate>(m_typedDates->first)
+            : GregorianDate::fromIsoString(m_startDate);
+        const std::optional<GregorianDate> endDate = m_typedDates
+            ? std::optional<GregorianDate>(m_typedDates->second)
+            : GregorianDate::fromIsoString(m_endDate);
+        if (!startDate.has_value() || !endDate.has_value())
         {
             return CalendarEventTimingIssue::InvalidDate;
         }
 
-        if (m_endDate < m_startDate)
+        if (endDate->dayNumber() < startDate->dayNumber())
         {
             return CalendarEventTimingIssue::EndDateBeforeStartDate;
         }
@@ -223,7 +248,7 @@ public:
                 return CalendarEventTimingIssue::TimedRequiresBothTimes;
             }
 
-            if (m_startDate == m_endDate
+            if (*startDate == *endDate
                 && *m_endTime <= *m_startTime)
             {
                 return CalendarEventTimingIssue::EndTimeMustFollowStartTime;
@@ -303,6 +328,7 @@ private:
     std::optional<std::string> m_endTime;
     bool m_allDay;
     CalendarEventTimeStatus m_timeStatus;
+    std::optional<std::pair<GregorianDate, GregorianDate>> m_typedDates;
 };
 
 } // namespace ClassMngr::Next::Domain
