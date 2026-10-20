@@ -53694,3 +53694,51 @@ F1178–F1184 are complete and F1185 is next; Batch492 has six provisional
 candidates and remains inactive until Batch491 closes. Batch490 is complete
 and pushed at `69be43a7`. F629 awaits source-bound Windows x64 layout evidence,
 and the Phase 0 and Phase 2 gates remain open.
+
+### F1185 Class Analytics criterion student count accepted before implementation - 2026-10-20
+
+F1185 is accepted/in progress. The current Application contract is
+`ClassAnalyticsCriterionSlice::students`, raw `int` with zero default in
+`src/next/application/class_analytics_dashboard_read_query.h:122-129`.
+Its normalized student accumulator and raw count arrays are at lines 347-395;
+valid-score filtering is at lines 378-387, one-per-student criterion counting
+at lines 399-425, and slice assignment plus score-cell `hasData` at lines
+462-467. The whole-empty-snapshot early return is at lines 448-449. The Feature
+maps the field to legacy `SpeakingAnalytics::CriterionSlice::students` at
+`src/features/classes/ui/class_analytics_page.cpp:87-94`.
+
+Add Qt-free `Application::ClassAnalyticsCriterionStudentCount` in
+`src/next/application/class_analytics_criterion_student_count.h`, with exact
+signed-`int` storage, default 0, explicit construction, `.rawValue()`, and
+equality, without implicit conversion or range/negative-value policy. Register
+the header in the class-analytics ownership block at
+`cmake/next.cmake:160-166`. Type only
+`ClassAnalyticsCriterionSlice::students`; leave the local
+`std::array<int, ...>` accumulator and algorithm unchanged.
+
+Preserve one count per normalized student with at least one valid score for
+the criterion, so duplicate rows do not inflate it; absent/invalid scores
+remain ignored. Keep `hasData` based on criterion score cells: if the snapshot
+has other scored criteria, an empty criterion has count 0 and `hasData` is
+false. Preserve the whole-empty-snapshot early return. Add no overflow policy.
+At the Feature boundary, explicitly unwrap `.rawValue()` into the existing
+`SpeakingAnalytics::CriterionSlice::students` `int`; keep legacy Feature
+storage and rendering unchanged, and keep Qt out of Application.
+
+Extend `tests/next_application_class_analytics_dashboard_read_query_tests.cpp`:
+test default zero and non-convertibility, one distinct student despite
+duplicate rows, and zero for an empty criterion with `hasData == false`.
+Existing related coverage includes `strongestAndFocusCriteriaPreserveOrderAndLabels`
+at lines 350-386, `partialScoringPreservesWeightedAveragesAndYtdInputs` at
+657-700, and the current query accumulation at the source locations above.
+Build `ClassMngr` and
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`; run its
+focused CTest. Use the existing standard macOS Debug tree, run
+`git diff --check`, and do not add a test-only slice. Implementation and
+verification have not started; no full-suite or Windows build is in scope.
+
+Batch491 remains active and unpushed; GitHub has not received these local
+changes. F1178–F1184 are complete and F1185 is accepted/in progress. Batch492
+has six provisional candidates and remains inactive until Batch491 closes.
+F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and
+Phase 2 gates remain open.

@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch491 is active and unpushed with F1178–F1184 complete and F1185 next; F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch491 is active and unpushed with F1178–F1184 complete and F1185 accepted/in progress; F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1184 is complete: distinct `Application::ImportJobGeneration` and `Application::ReportJobGeneration` types now cover their respective coordinator surfaces, preserving generation and stale-event behavior (see its [completion record](03-Phase-2-Progress-Log.md#f1184-import-and-report-job-generation-complete-2026-10-20)); F1185 is next.
+F1185 is accepted/in progress: type only the criterion student count while preserving per-criterion scoring behavior and the Feature integer boundary (see its [acceptance record](03-Phase-2-Progress-Log.md#f1185-class-analytics-criterion-student-count-accepted-before-implementation-2026-10-20)).
 
 ### Slice discovery batches
 
@@ -72,7 +72,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch491 (8 candidates; 7 complete; 1 discovered)
+#### Active batch: Batch491 (8 candidates; 7 complete; 1 accepted/in progress)
 
 1. F1178 - **Complete.** Type the eight Schedule Import review summary values and two projection inputs as `Application::ScheduleImportReviewCount`; preserve the action mappings, visible text, and cleared-schedule projection behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1178-schedule-import-review-count-complete-2026-10-20)).
 2. F1179 - **Complete.** Reuse `Domain::CourseGradeBand` in both Application prompt grade fields; preserve 4–6 eligibility, `Other` rejection, prompt text and formatting, Feature integer mapping, and integer report/legacy storage (see the [completion record](03-Phase-2-Progress-Log.md#f1179-speaking-evaluation-ai-grade-band-complete-2026-10-20)).
@@ -81,7 +81,7 @@ Treat this plan as an operational summary, not a history:
 5. F1182 - **Complete.** Add `Application::EncodedUrlText` to only the startup/manual artifact `url` and `releaseUrl` fields; preserve encoded bytes, parsing, validation, invalid/empty behavior, and release-link display (see the [completion record](03-Phase-2-Progress-Log.md#f1182-updater-encoded-url-text-complete-2026-10-20)).
 6. F1183 - **Complete.** Add `Application::ReleaseDateIsoText` to only the startup and manual result `releaseDateIso` fields; preserve exact ISO text, invalid/empty parsing, and localized display (see the [completion record](03-Phase-2-Progress-Log.md#f1183-updater-release-date-iso-text-complete-2026-10-20)).
 7. F1184 - **Complete.** Add distinct `Application::ImportJobGeneration` and `Application::ReportJobGeneration` types to their respective coordinators; preserve first generation 1, exact sequence values, stale rejection, and exhaustion guards (see the [completion record](03-Phase-2-Progress-Log.md#f1184-import-and-report-job-generation-complete-2026-10-20)).
-8. F1185 - **Discovered; next; lower confidence.** Type the Class Analytics criterion student count; preserve zero and count only when criterion data exists, confirming its contract and test coverage at acceptance.
+8. F1185 - **Accepted/in progress.** Add Qt-free `Application::ClassAnalyticsCriterionStudentCount` to only `ClassAnalyticsCriterionSlice::students`; preserve one count per normalized student with a valid criterion score, score-based `hasData`, and Feature integer storage (see the [acceptance record](03-Phase-2-Progress-Log.md#f1185-class-analytics-criterion-student-count-accepted-before-implementation-2026-10-20)).
 
 #### Provisional next batch: Batch492 (6 candidates; inactive until Batch491 closes)
 

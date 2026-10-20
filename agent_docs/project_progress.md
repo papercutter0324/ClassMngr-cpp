@@ -58,8 +58,9 @@ the staged-package report probe passed. Cross-platform CI and local
 Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
 records the handoff. Batch491 remains active and unpushed. F1178–F1184 are
-complete; F1185 is next. Their acceptance, completion, and verification details
-are in the [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
+complete; F1185 is accepted/in progress. Their acceptance, completion, and
+verification details are in the [Phase 2 progress
+log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
 F1184 completed at source/test commit `bc23cf4c`, after acceptance commit
 `06da72ee`. It adds distinct Qt-free Import and Report generation types while
@@ -72,6 +73,9 @@ injection seam. No full suite or Windows build ran.
 
 Batch492 is provisionally discovered with six candidates and a 6-of-10
 shortfall; see its [discovery record](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch492-provisional-discovery-at-f1184-start-2026-10-20).
+F1185 will type the criterion-specific student count while preserving the
+distinct-student calculation, zero/`hasData` behavior, and the existing Feature
+integer boundary; implementation and verification have not started.
 F1175's Class Transfer test still has one unresolved teacher-fallback label
 failure among 64 cases; no clean baseline proves it pre-existing. F629 awaits
 source-bound Windows x64 layout evidence. The Phase 0 and Phase 2 gates remain
