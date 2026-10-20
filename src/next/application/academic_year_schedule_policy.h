@@ -1,5 +1,7 @@
 #pragma once
 
+#include "academic_term_week_count.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -14,7 +16,8 @@ inline constexpr int MaximumTermWeeks = 53;
 inline constexpr std::size_t AcademicYearScheduleTermCount = 4;
 
 // Convert a resolved day span into a permitted term week count.
-[[nodiscard]] inline std::optional<int> termWeeksFromDayDistance(
+[[nodiscard]] inline std::optional<AcademicTermWeekCount>
+termWeeksFromDayDistance(
     const std::int64_t dayDistance
     ) noexcept
 {
@@ -29,14 +32,14 @@ inline constexpr std::size_t AcademicYearScheduleTermCount = 4;
         return std::nullopt;
     }
 
-    return static_cast<int>(weeks);
+    return AcademicTermWeekCount{static_cast<int>(weeks)};
 }
 
 // Validate resolved schedule facts without depending on Qt date types.
 [[nodiscard]] inline bool isAcademicYearScheduleValid(
     const int termYear,
     const bool winterStartIsValidMonday,
-    const std::span<const int> termWeekCounts
+    const std::span<const AcademicTermWeekCount> termWeekCounts
     ) noexcept
 {
     if (
@@ -50,9 +53,10 @@ inline constexpr std::size_t AcademicYearScheduleTermCount = 4;
 
     return std::ranges::all_of(
         termWeekCounts,
-        [](const int count)
+        [](const AcademicTermWeekCount count)
         {
-            return count >= 1 && count <= MaximumTermWeeks;
+            return count.value() >= 1
+                && count.value() <= MaximumTermWeeks;
         }
         );
 }

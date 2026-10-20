@@ -8,6 +8,20 @@
 namespace
 {
 constexpr int DaysPerWeek = 7;
+using ClassMngr::Next::Application::AcademicTermWeekCount;
+
+std::array<AcademicTermWeekCount, AcademicTermCount> applicationWeekCounts(
+    const std::array<int, AcademicTermCount>& counts
+    )
+{
+    std::array<AcademicTermWeekCount, AcademicTermCount> result{};
+    for (int index = 0; index < AcademicTermCount; ++index)
+    {
+        result[index] = AcademicTermWeekCount{counts[index]};
+    }
+
+    return result;
+}
 
 int termIndex(AcademicTerm term)
 {
@@ -72,7 +86,7 @@ bool scheduleFromJson(
     if (!ClassMngr::Next::Application::isAcademicYearScheduleValid(
             termYear,
             winterStart.isValid() && winterStart.dayOfWeek() == Qt::Monday,
-            parsed.weeks
+            applicationWeekCounts(parsed.weeks)
             ))
     {
         return false;
@@ -146,7 +160,7 @@ bool AcademicYearSchedule::isValid() const
     return ClassMngr::Next::Application::isAcademicYearScheduleValid(
         termYear,
         winterStart.isValid() && winterStart.dayOfWeek() == Qt::Monday,
-        weeks
+        applicationWeekCounts(weeks)
         );
 }
 
@@ -363,9 +377,9 @@ void AcademicCalendarSchedule::setYearSchedules(
         }
 
         previousElementary.weeks[termIndex(AcademicTerm::Fall)] =
-            *elementaryFallWeeks;
+            elementaryFallWeeks->value();
         previousMiddle.weeks[termIndex(AcademicTerm::Fall)] =
-            *middleFallWeeks;
+            middleFallWeeks->value();
     }
 
     while (!m_elementarySchedules.isEmpty()

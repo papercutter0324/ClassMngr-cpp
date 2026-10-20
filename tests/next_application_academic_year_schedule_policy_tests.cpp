@@ -4,7 +4,9 @@
 #include <cstdint>
 #include <cstdlib>
 #include <string_view>
+#include <type_traits>
 
+using ClassMngr::Next::Application::AcademicTermWeekCount;
 using ClassMngr::Next::Application::
     isAcademicYearScheduleValid;
 using ClassMngr::Next::Application::
@@ -12,10 +14,38 @@ using ClassMngr::Next::Application::
 
 namespace
 {
+bool academicTermWeekCountIsValid()
+{
+    constexpr AcademicTermWeekCount defaultCount;
+    constexpr AcademicTermWeekCount oneWeek{1};
+    constexpr AcademicTermWeekCount anotherOneWeek{1};
+    constexpr AcademicTermWeekCount fiftyThreeWeeks{53};
+    constexpr AcademicTermWeekCount zeroWeeks{0};
+    constexpr AcademicTermWeekCount fiftyFourWeeks{54};
+
+    static_assert(std::is_constructible_v<AcademicTermWeekCount, int>);
+    static_assert(
+        std::is_same_v<decltype(defaultCount.value()), int>
+        );
+    static_assert(!std::is_convertible_v<int, AcademicTermWeekCount>);
+    static_assert(!std::is_convertible_v<AcademicTermWeekCount, int>);
+
+    return defaultCount.value() == 0
+        && oneWeek.value() == 1
+        && fiftyThreeWeeks.value() == 53
+        && oneWeek == anotherOneWeek
+        && oneWeek != fiftyThreeWeeks
+        && zeroWeeks.value() == 0
+        && fiftyFourWeeks.value() == 54;
+}
+
 bool termWeeksFromDayDistanceIsValid()
 {
-    return termWeeksFromDayDistance(7) == 1
-        && termWeeksFromDayDistance(371) == 53
+    const auto oneWeek = termWeeksFromDayDistance(7);
+    const auto fiftyThreeWeeks = termWeeksFromDayDistance(371);
+
+    return oneWeek && oneWeek->value() == 1
+        && fiftyThreeWeeks && fiftyThreeWeeks->value() == 53
         && !termWeeksFromDayDistance(0)
         && !termWeeksFromDayDistance(-7)
         && !termWeeksFromDayDistance(8)
@@ -25,12 +55,42 @@ bool termWeeksFromDayDistanceIsValid()
 
 bool academicYearScheduleValidityIsValid()
 {
-    constexpr std::array<int, 4> boundaryCounts{1, 53, 1, 53};
-    constexpr std::array<int, 4> allMaximumCounts{53, 53, 53, 53};
-    constexpr std::array<int, 4> zeroCount{1, 0, 1, 1};
-    constexpr std::array<int, 4> excessiveCount{1, 54, 1, 1};
-    constexpr std::array<int, 3> tooFewCounts{1, 53, 1};
-    constexpr std::array<int, 5> tooManyCounts{1, 53, 1, 53, 1};
+    constexpr std::array<AcademicTermWeekCount, 4> boundaryCounts{
+        AcademicTermWeekCount{1},
+        AcademicTermWeekCount{53},
+        AcademicTermWeekCount{1},
+        AcademicTermWeekCount{53}
+    };
+    constexpr std::array<AcademicTermWeekCount, 4> allMaximumCounts{
+        AcademicTermWeekCount{53},
+        AcademicTermWeekCount{53},
+        AcademicTermWeekCount{53},
+        AcademicTermWeekCount{53}
+    };
+    constexpr std::array<AcademicTermWeekCount, 4> zeroCount{
+        AcademicTermWeekCount{1},
+        AcademicTermWeekCount{0},
+        AcademicTermWeekCount{1},
+        AcademicTermWeekCount{1}
+    };
+    constexpr std::array<AcademicTermWeekCount, 4> excessiveCount{
+        AcademicTermWeekCount{1},
+        AcademicTermWeekCount{54},
+        AcademicTermWeekCount{1},
+        AcademicTermWeekCount{1}
+    };
+    constexpr std::array<AcademicTermWeekCount, 3> tooFewCounts{
+        AcademicTermWeekCount{1},
+        AcademicTermWeekCount{53},
+        AcademicTermWeekCount{1}
+    };
+    constexpr std::array<AcademicTermWeekCount, 5> tooManyCounts{
+        AcademicTermWeekCount{1},
+        AcademicTermWeekCount{53},
+        AcademicTermWeekCount{1},
+        AcademicTermWeekCount{53},
+        AcademicTermWeekCount{1}
+    };
 
     return !(
         isAcademicYearScheduleValid(2025, true, boundaryCounts)
@@ -63,6 +123,7 @@ int main(const int argc, char* argv[])
     }
 
     if (!academicYearScheduleValidityIsValid()
+        || !academicTermWeekCountIsValid()
         || !termWeeksFromDayDistanceIsValid())
     {
         return EXIT_FAILURE;

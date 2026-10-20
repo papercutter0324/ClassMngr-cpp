@@ -51,6 +51,7 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
 
 set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/academic_calendar_schedule_preferences.h
+    src/next/application/academic_term_week_count.h
     src/next/application/academic_year_schedule_policy.h
     src/next/application/calendar_event_campus_visibility_policy.h
     src/next/application/calendar_event_visibility_policy.h

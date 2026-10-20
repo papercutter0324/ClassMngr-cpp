@@ -947,7 +947,7 @@ void CalendarPreferencesPanel::commitDate(int schoolIndex, int termIndex)
             return;
         }
 
-        schedule.weeks[termIndex - 1] = *weeks;
+        schedule.weeks[termIndex - 1] = weeks->value();
     }
 
     if (m_linkCheck->isChecked() && schoolIndex == 0 && termIndex <= 2)
