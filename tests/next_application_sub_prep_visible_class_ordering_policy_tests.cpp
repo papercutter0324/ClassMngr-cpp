@@ -1,5 +1,6 @@
 #include "next/application/sub_prep_visible_class_ordering_policy.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -15,6 +16,7 @@ namespace
 
 using Fact = SubPrepVisibleClassOrderingFact;
 using Rank = ClassTabNavigationOrderRank;
+using RowIndex = SubPrepVisibleClassRowIndex;
 using ClassId = ClassMngr::Next::Domain::ClassId;
 
 static_assert(
@@ -38,6 +40,23 @@ static_assert(
 static_assert(Rank{}.rawValue() == 1'000);
 static_assert(!std::is_convertible_v<std::int32_t, Rank>);
 static_assert(!std::is_convertible_v<Rank, std::int32_t>);
+static_assert(std::is_same_v<decltype(RowIndex{}.rawValue()), std::size_t>);
+static_assert(RowIndex{}.rawValue() == 0);
+static_assert(RowIndex{7}.rawValue() == 7);
+static_assert(RowIndex{7} == RowIndex{7});
+static_assert(!(RowIndex{7} == RowIndex{8}));
+static_assert(std::is_constructible_v<RowIndex, std::size_t>);
+static_assert(!std::is_convertible_v<std::size_t, RowIndex>);
+static_assert(!std::is_convertible_v<RowIndex, std::size_t>);
+static_assert(
+    std::is_same_v<
+        decltype(orderSubPrepVisibleClassRows(
+            std::declval<const std::vector<Fact>&>(),
+            std::declval<const SubPrepVisibleClassLabelComparator&>()
+            )),
+        std::vector<RowIndex>
+        >
+    );
 
 ClassId classId(const std::string_view value)
 {
@@ -69,7 +88,7 @@ bool configuredLevelRankHasHighestPriority()
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
-        == std::vector<std::size_t>{2, 1, 0};
+        == std::vector<RowIndex>{RowIndex{2}, RowIndex{1}, RowIndex{0}};
 }
 
 bool navigationDayPrecedesMinuteLabelAndClassId()
@@ -80,7 +99,7 @@ bool navigationDayPrecedesMinuteLabelAndClassId()
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
-        == std::vector<std::size_t>{1, 0};
+        == std::vector<RowIndex>{RowIndex{1}, RowIndex{0}};
 }
 
 bool navigationMinutePrecedesLabelAndClassId()
@@ -91,7 +110,7 @@ bool navigationMinutePrecedesLabelAndClassId()
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
-        == std::vector<std::size_t>{1, 0};
+        == std::vector<RowIndex>{RowIndex{1}, RowIndex{0}};
 }
 
 bool injectedLabelComparisonPrecedesClassId()
@@ -112,7 +131,7 @@ bool injectedLabelComparisonPrecedesClassId()
 
     const auto rowOrder = orderSubPrepVisibleClassRows(rows, reverseLabels);
     return comparatorWasCalled
-        && rowOrder == std::vector<std::size_t>{1, 0};
+        && rowOrder == std::vector<RowIndex>{RowIndex{1}, RowIndex{0}};
 }
 
 bool classIdBreaksEqualEarlierTupleFields()
@@ -123,7 +142,7 @@ bool classIdBreaksEqualEarlierTupleFields()
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
-        == std::vector<std::size_t>{1, 0};
+        == std::vector<RowIndex>{RowIndex{1}, RowIndex{0}};
 }
 
 bool numericUnknownTimeSentinelPrecedesLargerValidMinute()
@@ -140,7 +159,7 @@ bool numericUnknownTimeSentinelPrecedesLargerValidMinute()
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
-        == std::vector<std::size_t>{1, 0};
+        == std::vector<RowIndex>{RowIndex{1}, RowIndex{0}};
 }
 
 bool validSixteenFortyAndUnknownTimeFallThroughToLabelComparison()
@@ -163,7 +182,7 @@ bool validSixteenFortyAndUnknownTimeFallThroughToLabelComparison()
     return validSixteenForty.navigationFirstTimeOrder
             == unknownTime.navigationFirstTimeOrder
         && orderSubPrepVisibleClassRows(rows, compareUtf8)
-            == std::vector<std::size_t>{0, 1};
+            == std::vector<RowIndex>{RowIndex{0}, RowIndex{1}};
 }
 
 bool exactTupleTiesRetainInputOrder()
@@ -175,7 +194,24 @@ bool exactTupleTiesRetainInputOrder()
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
-        == std::vector<std::size_t>{0, 1, 2};
+        == std::vector<RowIndex>{RowIndex{0}, RowIndex{1}, RowIndex{2}};
+}
+
+bool emptyInputReturnsEmptyOrderWithoutComparingLabels()
+{
+    bool comparatorWasCalled = false;
+    const std::vector<Fact> rows;
+    const auto compareLabels = [&comparatorWasCalled](
+                                  const std::string_view,
+                                  const std::string_view
+                              )
+    {
+        comparatorWasCalled = true;
+        return 0;
+    };
+
+    const auto rowOrder = orderSubPrepVisibleClassRows(rows, compareLabels);
+    return rowOrder.empty() && !comparatorWasCalled;
 }
 
 } // namespace
@@ -221,6 +257,11 @@ int main()
     if (!exactTupleTiesRetainInputOrder())
     {
         std::cerr << "Exact tuple ties should preserve input row order.\n";
+        return EXIT_FAILURE;
+    }
+    if (!emptyInputReturnsEmptyOrderWithoutComparingLabels())
+    {
+        std::cerr << "Empty input should return an empty row order.\n";
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

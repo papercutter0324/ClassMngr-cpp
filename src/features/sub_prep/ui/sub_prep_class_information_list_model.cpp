@@ -332,7 +332,9 @@ void SubPrepClassInformationListModel::rebuildVisibleRows()
         unsortedBaseLabels.append(baseLabel);
     }
 
-    const std::vector<std::size_t> orderedFactIndexes =
+    const std::vector<
+        ClassMngr::Next::Application::SubPrepVisibleClassRowIndex
+        > orderedFactIndexes =
         ClassMngr::Next::Application::orderSubPrepVisibleClassRows(
             orderingFacts,
             [](const std::string_view left, const std::string_view right)
@@ -347,11 +349,12 @@ void SubPrepClassInformationListModel::rebuildVisibleRows()
     m_visibleRows.reserve(orderedFactIndexes.size());
     QStringList baseLabels;
     baseLabels.reserve(static_cast<qsizetype>(orderedFactIndexes.size()));
-    for (const std::size_t factIndex : orderedFactIndexes)
+    for (const auto factIndex : orderedFactIndexes)
     {
-        m_visibleRows.push_back(filteredRows[factIndex]);
+        const std::size_t factPosition = factIndex.rawValue();
+        m_visibleRows.push_back(filteredRows[factPosition]);
         baseLabels.append(
-            unsortedBaseLabels.at(static_cast<qsizetype>(factIndex))
+            unsortedBaseLabels.at(static_cast<qsizetype>(factPosition))
             );
     }
 

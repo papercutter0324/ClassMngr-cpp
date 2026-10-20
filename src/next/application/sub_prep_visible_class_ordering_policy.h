@@ -7,7 +7,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <numeric>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -31,30 +30,60 @@ struct SubPrepVisibleClassOrderingFact final
 using SubPrepVisibleClassLabelComparator =
     std::function<int(std::string_view, std::string_view)>;
 
+class SubPrepVisibleClassRowIndex final
+{
+public:
+    constexpr SubPrepVisibleClassRowIndex() noexcept = default;
+
+    explicit constexpr SubPrepVisibleClassRowIndex(
+        const std::size_t rawValue
+        ) noexcept
+        : rawValue_(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return rawValue_;
+    }
+
+    friend constexpr bool operator==(
+        const SubPrepVisibleClassRowIndex&,
+        const SubPrepVisibleClassRowIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t rawValue_ = 0;
+};
+
 // The caller supplies a non-empty label comparator that returns a negative,
 // zero, or positive result. This returns input row indexes ordered by
 // configured level, navigation day, navigation minute, injected base-label
 // comparison, and class ID. Numeric sentinels compare literally; stable
 // sorting preserves input order when the complete tuple is equal.
-[[nodiscard]] inline std::vector<std::size_t>
+[[nodiscard]] inline std::vector<SubPrepVisibleClassRowIndex>
 orderSubPrepVisibleClassRows(
     const std::vector<SubPrepVisibleClassOrderingFact>& rows,
     const SubPrepVisibleClassLabelComparator& compareBaseLabels
     )
 {
-    std::vector<std::size_t> rowOrder(rows.size());
-    std::iota(rowOrder.begin(), rowOrder.end(), std::size_t{0});
+    std::vector<SubPrepVisibleClassRowIndex> rowOrder;
+    rowOrder.reserve(rows.size());
+    for (std::size_t index = 0; index < rows.size(); ++index)
+    {
+        rowOrder.emplace_back(index);
+    }
 
     std::stable_sort(
         rowOrder.begin(),
         rowOrder.end(),
         [&rows, &compareBaseLabels](
-            const std::size_t leftIndex,
-            const std::size_t rightIndex
+            const SubPrepVisibleClassRowIndex leftIndex,
+            const SubPrepVisibleClassRowIndex rightIndex
         )
         {
-            const auto& left = rows[leftIndex];
-            const auto& right = rows[rightIndex];
+            const auto& left = rows[leftIndex.rawValue()];
+            const auto& right = rows[rightIndex.rawValue()];
             if (left.configuredLevelOrder != right.configuredLevelOrder)
             {
                 return left.configuredLevelOrder

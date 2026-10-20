@@ -120,6 +120,13 @@ filtersAndOrdersRowsByGradeAndConfiguredLevel()
         QStringLiteral("Theseus • Wed 8am")
         );
     QCOMPARE(
+        model.data(
+            model.index(0, 0),
+            SubPrepClassInformationListModel::ClassIdRole
+            ).toString(),
+        QStringLiteral("44")
+        );
+    QCOMPARE(
         model.data(model.index(0, 0),
                    SubPrepClassInformationListModel::GradeRole).toString(),
         QStringLiteral("E4")
@@ -129,6 +136,9 @@ filtersAndOrdersRowsByGradeAndConfiguredLevel()
                    SubPrepClassInformationListModel::StudentCountRole).toULongLong(),
         qulonglong(12)
         );
+    QCOMPARE(model.rowForClassId(classId(44)), 0);
+    QCOMPARE(model.rowForClassId(classId(42)), 1);
+    QCOMPARE(model.rowForClassId(classId(43)), -1);
 
     model.setCurrentGrade(QStringLiteral("E5"));
     QCOMPARE(model.rowCount(), 1);
