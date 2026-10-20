@@ -53946,20 +53946,36 @@ Add distinct Qt-free `Application::ClassSummaryStudentCount` in
 and equality, without implicit conversion or validation/range policy. Add its
 header to `cmake/next.cmake`. Change only `ClassSummary::studentCount` to this
 type. Preserve zero, copy/equality behavior, and its documented semantics
-distinct from MyClasses student count; do not reuse `MyClassesStudentCount`,
-change projection membership/order, or move the cap into the wrapper. Keep
+distinct from MyClasses student count as recorded in F1155; do not reuse
+`MyClassesStudentCount`, change projection membership/order, or move the cap
+into the wrapper. Keep
 the existing 10,000 maximum in projection validation and compare the
-`.rawValue()` there.
+`.rawValue()` there. Preserve the repository cast/count semantics. Explicitly
+wrap at `src/next/platform/application_services_sub_prep_schedule_summary_port.h`
+and explicitly unwrap at the Feature list-model role,
+`src/features/sub_prep/ui/sub_prep_class_information_list_model.cpp`, the
+displayed student count, and existing summary metric conversion in
+`src/features/sub_prep/ui/sub_prep_page_class_information.cpp`. Do not change
+repository behavior, add validation, or change presentation or metrics.
 
 Extend `tests/next_application_class_summary_tests.cpp` for wrapper storage,
-zero default, explicit construction, equality, zero and positive projection
-values, and the existing over-limit rejection. Establish the exact maximum
-boundary as valid and the next value as rejected if existing coverage does
-not already do so. Build `ClassMngr` and
-`ClassMngrNextApplicationClassSummaryTests`; run the focused
-`ClassMngrNextApplicationClassSummaryTests` CTest in the existing standard
-macOS Debug tree. Run `git diff --check`. Implementation and verification
-have not started; no full-suite or Windows build is claimed.
+zero default, explicit construction, `.rawValue()`, equality, no implicit
+conversion, zero and positive projection values, and acceptance at
+10,000/rejection at 10,001. Add existing-boundary coverage in
+`tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp`,
+`tests/next_application_sub_prep_schedule_summary_query_tests.cpp`,
+`tests/next_application_sub_prep_class_information_state_tests.cpp`, and
+`tests/sub_prep_page_tests.cpp` to verify zero and positive values cross the
+Platform/Feature boundaries unchanged and the existing Sub Prep presentation
+and metrics remain unchanged. Build `ClassMngr`,
+`ClassMngrNextApplicationClassSummaryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`,
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+`ClassMngrNextApplicationSubPrepClassInformationStateTests`, and
+`ClassMngrSubPrepPageTests` in `build/macos-clang-debug`; run their focused
+CTests. Run `git diff --check`. Implementation is in progress and verification
+is pending until the boundary adapters are updated; no full-suite or Windows
+build is claimed.
 
 Batch492 remains active and unpushed: F1186–F1187 are complete, F1188 is
 accepted/in progress and next, and F1189–F1191 remain discovered. F629 awaits
