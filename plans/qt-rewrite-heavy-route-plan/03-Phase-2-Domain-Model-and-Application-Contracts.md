@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch499 is complete and pushed at `cc38c959`; active Batch500 has F1243–F1250 complete and F1251 next for acceptance, and F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch499 is complete and pushed at `cc38c959`; active Batch500 has F1243–F1250 complete, F1251 accepted awaiting implementation, and F1252 discovered, while Batch501 (F1253–F1256) is discovered for after Batch500 closes; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1250 is complete at `426a8e06`; the incremental macOS build succeeded and `ClassMngrNextDomainContractTests` passed (1/1), with endpoint unwrapping within domain comparisons clarified (see [F1250 verification](03-Phase-2-Progress-Log.md#f1250-scheduletime-endpoint-minutes-complete-2026-10-21)). Batch499 is complete and pushed at `cc38c959`; Batch500 remains active with F1251–F1252 discovered. F629 and the Phase 0 and Phase 2 gates remain open.
+F1251 is accepted before implementation; Batch500 remains active with F1243–F1250 complete and F1252 discovered. Batch501 has been discovered with F1253–F1256 queued until Batch500 closes (see [F1251 acceptance](03-Phase-2-Progress-Log.md#f1251-class-transfer-export-roster-widths-accepted-before-implementation-2026-10-21) and [Batch501 discovery](03-Phase-2-Progress-Log.md#batch501-discovery-started-at-f1251-start-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,7 +72,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch500 (10 candidates; 8 complete, 0 accepted, 2 discovered)
+#### Active batch: Batch500 (10 candidates; 8 complete, 1 accepted, 1 discovered)
 
 1. F1243 - **Complete.** Replace the `GregorianDate::DayNumber` alias with an explicit typed ordinal; preserve epoch, maximum date, formatting, and factory range validation.
 2. F1244 - **Complete.** Type only the legacy Schedule Import target class ID as optional `Domain::ClassId`; preserve UI raw integers, absent-value handling, action semantics, and validation behavior.
@@ -82,8 +82,15 @@ Treat this plan as an operational summary, not a history:
 6. F1248 - **Complete.** Reuse the existing navigation rank type for Class Summary day and time fields while preserving validation and numeric sentinel behavior.
 7. F1249 - **Complete.** Add a Testing Classes-specific rank value for grade and level ordering facts while preserving configured indexes, unknown values, and comparator behavior.
 8. F1250 - **Complete.** Add typed ScheduleTime start and end minute endpoints while preserving bounds, strict start-before-end, and half-open overlap.
-9. F1251 - **Discovered.** Type Class Transfer export roster widths while preserving values and order without range checks or clamping.
+9. F1251 - **Accepted.** Add an explicit `ClassExportRosterColumnWidth` value for the shared package's width vector; preserve every signed value and its order through adapters and JSON without range checks or clamping.
 10. F1252 - **Discovered.** Type Document Catalog folder/document order metadata while preserving default, negative-value rejection, and input order.
+
+#### Discovered batch: Batch501 (4 candidates; not active until Batch500 closes)
+
+1. F1253 - **Discovered.** Type Teacher Import stored-record identities while preserving distinct IDs, the `-1` default, and full signed-64 transport.
+2. F1254 - **Discovered.** Type Teacher Import review candidate count while preserving expansion, selection bounds, order, and validation behavior.
+3. F1255 - **Discovered.** Type the academic-year validation boundary while preserving the 2026 lower bound and absence of an upper bound.
+4. F1256 - **Discovered; recheck after F1251.** Revisit `RosterSnapshot` column-width values and decide whether to reuse `ClassExportRosterColumnWidth` or retain a distinct Application projection contract; preserve signed values and order.
 
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 

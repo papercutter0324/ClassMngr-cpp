@@ -58236,5 +58236,108 @@ reported no work to do. The focused CTest command
 passed (1/1). `git diff --check` passed in both reviews. No clean build,
 Windows build, or full-suite run was performed.
 
-Batch500 remains active with F1243–F1250 complete, F1251 next for acceptance,
-and F1252 discovered.
+Batch500 remains active with F1243–F1250 complete, F1251 accepted awaiting
+implementation, and F1252 discovered. Batch501 has been discovered and is
+queued until Batch500 closes.
+
+### Batch501 discovery started at F1251 start - 2026-10-21
+
+Starting F1251, candidate nine of active Batch500, triggered discovery of the
+next batch. Two independent Explorer reviews converged on the following four
+ordered candidates. Batch501 is discovered, not active, until Batch500 closes.
+
+1. **F1253 — Teacher Import stored-record identities (high confidence).** Type
+   the `GsTeamImportProfile::id` and
+   `NativeEnglishTeacherImportProfile::id` fields while preserving distinct
+   identities, default `-1`, and full signed-64 transport without narrowing or
+   validation. Evidence: `src/next/application/gs_team_import_update.h:24`,
+   `native_english_teacher_import_update.h:24`, and SQL transport in
+   `src/data/repositories/teacher_import_sql_persistence_adapter.cpp:139,177,343,394`;
+   integration cases retain ID `2147483648` in `tests/teacher_import_tests.cpp:1197,1274`.
+   Focused targets: `ClassMngrNextApplicationNativeEnglishTeacherImportUpdateTests`,
+   `ClassMngrNextApplicationGsTeamImportUpdateTests`,
+   `ClassMngrNextApplicationTeacherImportUseCaseTests`, and
+   `ClassMngrTeacherImportTests`.
+2. **F1254 — Teacher Import review candidate count (high confidence).** Type
+   `ImportReviewSession::candidateCount`, which controls All expansion and
+   selected-index bounds, while preserving zero default, candidate order,
+   duplicate/out-of-range issue behavior, and no size cap. Evidence:
+   `src/next/application/import_review_session.h:907,1006,1018`; requested and
+   resolved candidate indexes already have types in
+   `src/next/application/teacher_import_candidate_index.h:9`. Focused target:
+   `ClassMngrNextApplicationTeacherImportUseCaseTests`, including the invalid
+   index case in `tests/next_application_teacher_import_use_case_tests.cpp:1065`.
+   It follows F1253 because the slices share Teacher Import use-case/test surfaces.
+3. **F1255 — Academic term year at Application validation boundary (medium
+   confidence).** Type the year input to `isAcademicYearScheduleValid` while
+   preserving rejection below 2026, acceptance from 2026 onward, and no upper
+   bound; storage and JSON remain unchanged. Evidence:
+   `src/next/application/academic_year_schedule_policy.h:14,39` and callers in
+   `src/features/calendar/academic_calendar_schedule.cpp:86,158`. Focused
+   targets: `ClassMngrNextApplicationAcademicYearSchedulePolicyTests` and
+   `AcademicCalendarScheduleValidityPolicy`.
+4. **F1256 — RosterSnapshot column-width values (medium confidence,
+   conditional).** Revisit the raw `std::vector<int>` in
+   `src/next/application/roster_snapshot.h:9`; preserve signed values and
+   order, including negatives. Recheck this candidate after F1251 because both
+   slices touch column-width values, then decide whether to reuse
+   `ClassExportRosterColumnWidth` or retain a separate Application projection
+   contract. Evidence: count-only validation in
+   `src/next/application/roster_save_preparation.h:383`, signed-value test in
+   `tests/next_application_roster_save_use_case_tests.cpp:323`, Platform copy
+   in `src/next/platform/application_services_roster_save_port.h:170`, and row
+   transfer in `src/next/application/roster_row_transfer_use_case.h:241`;
+   existing F879 rejects only SQL values outside `int` representability.
+   Focused targets: `NextApplicationRosterSaveUseCase`,
+   `ClassMngrNextApplicationRosterRowTransferUseCaseTests`, and
+   `NextPlatformApplicationServicesRosterSavePort`.
+
+No other slices were found.
+
+### F1251 Class Transfer export roster widths accepted before implementation - 2026-10-21
+
+F1251 is accepted before implementation. Add an explicit, unvalidated
+`ClassExportRosterColumnWidth` value type backed by `int`, defaulting to zero,
+with `.rawValue()`, equality, and no implicit conversions. Change only the
+shared portable `ClassExportRoster::columnWidths` field to a vector of this
+type. Preserve the original order and every signed value, including negative
+values and `INT_MIN`/`INT_MAX`; do not add range checks or clamping.
+
+Explicitly wrap and unwrap each item at the existing Platform export-source
+adapter, legacy package adapter in both directions, and JSON parse/serialize
+boundaries. Keep `Roster`, `RosterSnapshot`, database representability
+checks, roster editor/printing widths, and unrelated `columnWidths` unchanged.
+Add compile-time field-type and no-implicit-conversion assertions, extend the
+legacy package adapter checks for ordered signed extremes, and retain query
+order and JSON output order/value checks.
+
+Evidence: `Roster::columnWidths` remains `QVector<int>` in
+`src/domain/models/roster.h:7`; the existing SQL conversion at
+`src/data/repositories/roster_repository.cpp:23` maps NULL to zero, preserves
+representable integers, and rejects values outside C++ `int` bounds. Requested
+class/column/row order is established in `roster_repository.cpp:1186`. The
+shared package is copied by `src/next/application/class_transfer_export_query.h:174`,
+the Platform adapter currently copies elements in
+`src/next/platform/application_services_class_transfer_export_source_read_port.h:109-115`,
+legacy conversions are in
+`src/data/repositories/class_transfer_legacy_package_adapter.h:112-116,171-175`,
+and JSON width parsing/serialization is in
+`src/features/classes/services/class_transfer_json_codec.cpp:393-413,711-717`.
+Existing coverage checks ordered `-1, 400` through the package adapter,
+`{70,80,90}` query order, and serialized width `159` in
+`tests/class_transfer_apply_package_adapter_tests.cpp:240-263`,
+`tests/next_application_class_transfer_export_query_tests.cpp:141`, and
+`tests/class_transfer_export_codec_parity_tests.cpp:205-209`.
+
+Build `ClassMngr` and the affected targets, then run only focused CTests
+`ClassMngrNextApplicationClassTransferExportQueryTests`,
+`ClassMngrNextPlatformClassTransferExportSourceTests`,
+`ClassMngrClassTransferExportCodecParityTests`, and
+`ClassMngrClassTransferApplyPackageAdapterTests`. At acceptance, no
+implementation, build, or tests had started. No Windows build or full-suite
+result is claimed.
+
+Batch500 remains active with F1243–F1250 complete, F1251 accepted awaiting
+implementation, and F1252 discovered. Batch501 is discovered, not active until
+Batch500 closes, with F1253–F1256 queued in the order above. F629 and the
+Phase 0 and Phase 2 gates remain open.
