@@ -134,14 +134,14 @@ ImportState::ScheduleImportStateTime stateTime(const ClassTime& time)
         ? static_cast<int>(ClassInfoConfig::Days.indexOf(parsedDay->text))
         : -1;
 
-    return {
+    return ImportState::makeScheduleImportStateTime(
         weekdayIndex,
         stateTimeMinutes(time.startTime),
         stateTimeMinutes(time.endTime),
         utf8String(time.day),
         utf8String(time.startTime),
         utf8String(time.endTime)
-    };
+        );
 }
 
 std::vector<ImportState::ScheduleImportStateTime> stateTimes(

@@ -477,15 +477,15 @@ QStringList projectedScheduleConflicts(
             );
         for (const ClassTime& time : candidate.times)
         {
-            const ClassMngr::Next::Application::ScheduleImportStateTime
-                stateTime{
+            const auto stateTime =
+                ClassMngr::Next::Application::makeScheduleImportStateTime(
                     weekdayIndex(time.day),
                     timeMinutes(time.startTime),
                     timeMinutes(time.endTime),
                     utf8String(time.day),
                     utf8String(time.startTime),
                     utf8String(time.endTime)
-                };
+                    );
             auto projectedTime =
                 ClassMngr::Next::Application::projectScheduleImportStateTime(
                     stateTime

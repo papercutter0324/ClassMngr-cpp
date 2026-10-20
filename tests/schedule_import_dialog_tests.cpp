@@ -4588,6 +4588,13 @@ void ScheduleImportDialogTests::reviewRejectsMalformedProjectedTime()
             QStringLiteral("contains an invalid time")
             )
         );
+    QCOMPARE(
+        status->text(),
+        QStringLiteral(
+            "E4 Hercules contains an invalid time: "
+            "Monday not-a-time–4:55 PM"
+            )
+        );
     auto* import = review.findChild<QPushButton*>(
         QStringLiteral("scheduleImportAcceptButton")
         );

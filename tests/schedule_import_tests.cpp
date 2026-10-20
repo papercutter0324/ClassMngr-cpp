@@ -7293,6 +7293,28 @@ void ScheduleImportTests::typedApplyRejectsMalformedTimeBeforeWrites()
             ClassMngr::Next::Application::
                 ScheduleImportStateValidationErrorCode::InvalidProjectedTime
             );
+        QCOMPARE(
+            malformedTimeImport.error().stateValidationError->classLabel,
+            std::string("E5 Zeus")
+            );
+        QCOMPARE(
+            malformedTimeImport.error().stateValidationError->day,
+            std::string("Monday")
+            );
+        QCOMPARE(
+            malformedTimeImport.error().stateValidationError->startTime,
+            std::string("not-a-time")
+            );
+        QCOMPARE(
+            malformedTimeImport.error().stateValidationError->endTime,
+            std::string("4:55 PM")
+            );
+        QCOMPARE(
+            typedApplyFailureMessage(malformedTimeImport),
+            QStringLiteral(
+                "E5 Zeus contains an invalid time: Monday not-a-time–4:55 PM"
+                )
+            );
         QVERIFY(!malformedTimeImport.error().policyIssue.has_value());
         QVERIFY(!malformedTimeImport.error().teacherTargetIssue.has_value());
         QCOMPARE(

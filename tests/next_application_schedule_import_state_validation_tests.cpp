@@ -33,6 +33,9 @@ static_assert(std::is_same_v<
               decltype(ScheduleImportStateClassResolution{}.targetClassId),
               std::optional<Domain::ClassId>>);
 static_assert(std::is_same_v<
+              decltype(ScheduleImportStateTime{}.scheduleTime),
+              std::optional<Domain::ScheduleTime>>);
+static_assert(std::is_same_v<
               decltype(std::declval<ScheduleImportStateTeacherSnapshot>().id),
               Domain::TeacherId>);
 static_assert(std::is_same_v<
@@ -73,14 +76,14 @@ ScheduleImportStateTime time(
     std::string endLabel = "4:55 PM"
     )
 {
-    return {
+    return makeScheduleImportStateTime(
         day,
         start,
         end,
         std::move(dayLabel),
         std::move(startLabel),
         std::move(endLabel)
-    };
+        );
 }
 
 ScheduleImportProjectedTime projectedTime(
@@ -168,7 +171,8 @@ class NextApplicationScheduleImportStateValidationTests final : public QObject
 
 private slots:
     void sharedProjectionUsesHalfOpenTimesAndMatchingDays();
-    void rawStateTimeProjectsToDomainValueAndKeepsLabels();
+    void stateTimeStoresTypedValueAndKeepsLabels();
+    void invalidStateTimeTuplesRemainAbsent();
     void sharedProjectionOrdersEveryConflictDeterministically();
     void rejectsStaleTeacherTargetsAndIdentity();
     void requiresSelectedTeacherAndAllowsAbsentActionTarget();
@@ -222,11 +226,16 @@ sharedProjectionUsesHalfOpenTimesAndMatchingDays()
 }
 
 void NextApplicationScheduleImportStateValidationTests::
-rawStateTimeProjectsToDomainValueAndKeepsLabels()
+stateTimeStoresTypedValueAndKeepsLabels()
 {
-    const auto projected = projectScheduleImportStateTime(
-        time(6, 1438, 1439, "Sunday", "11:58 PM", "11:59 PM")
-        );
+    const auto stateTime =
+        time(6, 1438, 1439, "Sunday", "11:58 PM", "11:59 PM");
+    QVERIFY(stateTime.scheduleTime.has_value());
+    QCOMPARE(stateTime.scheduleTime->weekdayIndex(), 6);
+    QCOMPARE(stateTime.scheduleTime->startMinute(), 1438);
+    QCOMPARE(stateTime.scheduleTime->endMinute(), 1439);
+
+    const auto projected = projectScheduleImportStateTime(stateTime);
     QVERIFY(projected.has_value());
     QVERIFY(projected->scheduleTime.weekday() == Weekday::Sunday);
     QCOMPARE(projected->scheduleTime.weekdayIndex(), 6);
@@ -240,6 +249,26 @@ rawStateTimeProjectsToDomainValueAndKeepsLabels()
                  time(7, 1438, 1439, "Funday", "11:58 PM", "11:59 PM")
                  )
                  .has_value());
+}
+
+void NextApplicationScheduleImportStateValidationTests::
+invalidStateTimeTuplesRemainAbsent()
+{
+    const std::vector<ScheduleImportStateTime> invalidTimes{
+        time(-1, 16 * 60, 16 * 60 + 55, "Funday"),
+        time(0, -1, 16 * 60 + 55),
+        time(0, 16 * 60, -1),
+        time(0, 16 * 60, 16 * 60)
+    };
+    for (const auto& stateTime : invalidTimes)
+    {
+        QVERIFY(!stateTime.scheduleTime.has_value());
+        QVERIFY(!projectScheduleImportStateTime(stateTime).has_value());
+    }
+
+    const ScheduleImportStateTime defaultStateTime;
+    QVERIFY(!defaultStateTime.scheduleTime.has_value());
+    QVERIFY(!projectScheduleImportStateTime(defaultStateTime).has_value());
 }
 
 void NextApplicationScheduleImportStateValidationTests::
@@ -724,30 +753,72 @@ acceptsReplaceModeForNormalState()
 void NextApplicationScheduleImportStateValidationTests::
 rejectsInvalidProjectedTimes()
 {
-    ScheduleImportStateValidationRequest request;
+    const std::vector<ScheduleImportStateTime> invalidTimes{
+        time(-1, 16 * 60, 16 * 60 + 55, "Funday"),
+        time(0, -1, 16 * 60 + 55, "Monday", "unparsed", "4:55 PM"),
+        time(0, 16 * 60, -1, "Monday", "4:00 PM", "unparsed"),
+        time(0, 16 * 60, 16 * 60, "Monday", "4:00 PM", "4:00 PM")
+    };
+    for (const auto& invalidTime : invalidTimes)
+    {
+        ScheduleImportStateValidationRequest request;
+        addNewCandidate(request, "teacher-a", {invalidTime});
+        const auto error = validateScheduleImportState(request);
+        QVERIFY(error.has_value());
+        QCOMPARE(
+            error->code,
+            ScheduleImportStateValidationErrorCode::InvalidProjectedTime
+            );
+        QCOMPARE(error->classLabel, std::string("E5 Zeus"));
+        QCOMPARE(error->day, invalidTime.dayLabel);
+        QCOMPARE(error->startTime, invalidTime.startLabel);
+        QCOMPARE(error->endTime, invalidTime.endLabel);
+    }
+
+    ScheduleImportStateValidationRequest defaultStateRequest;
     addNewCandidate(
-        request,
-        "teacher-a",
-        {time(-1, 16 * 60, 16 * 60 + 55, "Funday")}
+        defaultStateRequest,
+        "teacher-default",
+        {ScheduleImportStateTime{}}
         );
-    const auto error = validateScheduleImportState(request);
-    QVERIFY(error.has_value());
+    const auto defaultError = validateScheduleImportState(defaultStateRequest);
+    QVERIFY(defaultError.has_value());
     QCOMPARE(
-        error->code,
+        defaultError->code,
         ScheduleImportStateValidationErrorCode::InvalidProjectedTime
         );
-    QCOMPARE(error->classLabel, std::string("E5 Zeus"));
-    QCOMPARE(error->day, std::string("Funday"));
-    QCOMPARE(error->startTime, std::string("4:00 PM"));
-    QCOMPARE(error->endTime, std::string("4:55 PM"));
+    QCOMPARE(defaultError->classLabel, std::string("E5 Zeus"));
+    QVERIFY(defaultError->day.empty());
+    QVERIFY(defaultError->startTime.empty());
+    QVERIFY(defaultError->endTime.empty());
 
-    request.candidates[0].times[0] = time(0, 16 * 60, 16 * 60);
-    QCOMPARE(
-        errorCode(request),
-        std::optional{
-            ScheduleImportStateValidationErrorCode::InvalidProjectedTime
-        }
+    ScheduleImportStateValidationRequest overlapPrecedenceRequest;
+    addNewCandidate(
+        overlapPrecedenceRequest,
+        "teacher-a",
+        {time(0, 16 * 60, 17 * 60)}
         );
+    addNewCandidate(
+        overlapPrecedenceRequest,
+        "teacher-b",
+        {time(0, 16 * 60 + 30, 17 * 60 + 30)}
+        );
+    addNewCandidate(
+        overlapPrecedenceRequest,
+        "teacher-c",
+        {time(0, -1, 16 * 60 + 55, "Monday", "unparsed", "4:55 PM")}
+        );
+    const auto precedenceError =
+        validateScheduleImportState(overlapPrecedenceRequest);
+    QVERIFY(precedenceError.has_value());
+    QCOMPARE(
+        precedenceError->code,
+        ScheduleImportStateValidationErrorCode::InvalidProjectedTime
+        );
+    QCOMPARE(precedenceError->classLabel, std::string("E5 Zeus"));
+    QCOMPARE(precedenceError->day, std::string("Monday"));
+    QCOMPARE(precedenceError->startTime, std::string("unparsed"));
+    QCOMPARE(precedenceError->endTime, std::string("4:55 PM"));
 }
 
 void NextApplicationScheduleImportStateValidationTests::

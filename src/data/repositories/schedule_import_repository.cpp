@@ -536,14 +536,14 @@ ScheduleImportStateTime stateTime(
     const ClassTime& time
     )
 {
-    return {
+    return makeScheduleImportStateTime(
         dayIndex(time.day),
         timeMinutes(time.startTime),
         timeMinutes(time.endTime),
         utf8String(time.day),
         utf8String(time.startTime),
         utf8String(time.endTime)
-    };
+        );
 }
 
 std::vector<ScheduleImportStateTime> stateTimes(

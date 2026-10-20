@@ -12,13 +12,28 @@ namespace ClassMngr::Next::Application
 
 struct ScheduleImportStateTime
 {
-    int dayIndex = -1;
-    int startMinute = -1;
-    int endMinute = -1;
+    std::optional<Domain::ScheduleTime> scheduleTime;
     std::string dayLabel;
     std::string startLabel;
     std::string endLabel;
 };
+
+[[nodiscard]] inline ScheduleImportStateTime makeScheduleImportStateTime(
+    int dayIndex,
+    int startMinute,
+    int endMinute,
+    std::string dayLabel,
+    std::string startLabel,
+    std::string endLabel
+    )
+{
+    return {
+        Domain::ScheduleTime::fromMinutes(dayIndex, startMinute, endMinute),
+        std::move(dayLabel),
+        std::move(startLabel),
+        std::move(endLabel)
+    };
+}
 
 struct ScheduleImportProjectedTime
 {
@@ -31,18 +46,13 @@ struct ScheduleImportProjectedTime
 [[nodiscard]] inline std::optional<ScheduleImportProjectedTime>
 projectScheduleImportStateTime(const ScheduleImportStateTime& stateTime)
 {
-    auto scheduleTime = Domain::ScheduleTime::fromMinutes(
-        stateTime.dayIndex,
-        stateTime.startMinute,
-        stateTime.endMinute
-        );
-    if (!scheduleTime)
+    if (!stateTime.scheduleTime)
     {
         return std::nullopt;
     }
 
     return ScheduleImportProjectedTime{
-        std::move(*scheduleTime),
+        *stateTime.scheduleTime,
         stateTime.dayLabel,
         stateTime.startLabel,
         stateTime.endLabel
