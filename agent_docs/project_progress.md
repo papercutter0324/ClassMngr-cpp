@@ -6492,3 +6492,16 @@ parity of 3 imported/2 skipped after a localhost-enabled retry. The
 independent Tester accepted the change and `git diff --check` passed. No full
 suite or Windows build ran. Batch490 has F1171–F1173 complete and F1174 next;
 it remains unpushed until F1177 closes. F629 and both phase gates remain open.
+
+## Phase 2 update - F1174 accepted; Batch490 active - 2026-10-20
+
+F1174 is accepted to type `ClassTransferExportSource::exportedAtUtcMilliseconds`
+with an exact signed `std::int64_t` UTC-millisecond Application value. Zero
+continues to mean the Unix epoch; the repository's UTC `QDateTime` source and
+adapter conversion remain unchanged. Preserve the query's
+`YYYY-MM-DDTHH:MM:SS.mmmZ` serialization and JSON string field without adding
+range validation. Wrapper tests will cover signed extrema; formatter checks
+will use representative values, including epoch, 1,234 ms, and -1 ms, without
+claiming every `int64_t` can be formatted. Implementation and verification
+have not started. F1171–F1173 are complete; F1175 is next after F1174. Batch490
+remains unpushed until F1177 closes. F629 and both phase gates remain open.

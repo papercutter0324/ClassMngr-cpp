@@ -52843,3 +52843,54 @@ build ran.
 Batch490 now has F1171–F1173 complete and F1174–F1177 discovered, with F1174
 next; it remains unpushed until F1177 closes. F629 awaits source-bound Windows
 x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+
+### F1174 Class Transfer export UTC milliseconds accepted before implementation - 2026-10-20
+
+F1174 is accepted/in progress. Source HEAD `005581a2` confirms
+`Application::ClassTransferExportSource::exportedAtUtcMilliseconds` is raw
+`std::int64_t` defaulting to zero in
+`src/next/application/class_transfer_export_query.h`. The repository supplies
+`QDateTime::currentDateTimeUtc()` and
+`ApplicationServicesClassTransferExportSourceReadPort` converts it with
+`toMSecsSinceEpoch()`. The query interprets signed epoch milliseconds as UTC
+`sys_time<milliseconds>` and formats `YYYY-MM-DDTHH:MM:SS.mmmZ` into the
+existing `ClassTransferExportedAtUtc` string; the package codec writes
+`exported_at_utc` as a JSON string. Zero means the Unix epoch
+`1970-01-01T00:00:00.000Z`, not absence. There is no range validation or
+clamping; acceptance does not claim all `int64_t` values can be formatted.
+
+Add Qt-free
+`Application::ClassTransferExportUtcMilliseconds` in
+`src/next/application/class_transfer_export_utc_milliseconds.h` and register
+it in `cmake/next.cmake`. Store exact signed `std::int64_t` with a zero
+default, explicit constructor, `.value()`, and equality; add no validation,
+clamping, or implicit conversion. Replace only
+`ClassTransferExportSource::exportedAtUtcMilliseconds`. The Platform read port
+explicitly wraps its existing `toMSecsSinceEpoch()` result, and the query
+unwraps only at the chrono formatter boundary.
+
+Preserve the repository's UTC source, epoch unit, zero-as-epoch meaning,
+existing current-date-time behavior, UTC interpretation, three fractional
+digits, trailing `Z`, and JSON string field. Keep the typed package
+`ClassTransferExportedAtUtc`, codec, other fields, ordering, and errors
+unchanged. Add no invalid-`QDateTime` policy or range validation. Coverage
+verifies signed `int64_t` extremes in full wrapper storage, zero default,
+equality, explicitness/non-convertibility, and representative adapter values;
+query formatting pins zero, 1,234 ms to
+`1970-01-01T00:00:01.234Z`, and -1 ms to
+`1969-12-31T23:59:59.999Z`. Do not route `int64_t` extremes through date
+formatting. Codec parity retains its valid-UTC assertion; the query test pins
+the exact format.
+
+Build `ClassMngr`,
+`ClassMngrNextApplicationClassTransferExportQueryTests`,
+`ClassMngrNextPlatformClassTransferExportSourceTests`, and
+`ClassMngrClassTransferExportCodecParityTests`; run the matching focused
+offscreen CTests, independent Tester review, and `git diff --check`. No
+full-suite or Windows claim is in scope. Implementation and verification have
+not started.
+
+Batch490 has F1171–F1173 complete, F1174 accepted/in progress, and F1175–F1177
+discovered, with F1175 next; it remains unpushed until F1177 closes. F629
+awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2
+gates remain open.
