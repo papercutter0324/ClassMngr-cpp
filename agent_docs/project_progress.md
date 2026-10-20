@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (Batch488 pushed; F1162 accepted and in progress; F629 open)
+### Current checkpoint - 2026-10-20 (Batch488 pushed; F1162 complete; F1163 next; F629 open)
 
 Batch487 (F1144–F1153) is closed and pushed to `origin/Qt-Rewrite` at
 `c3c06e2f5432933a0e8b7df629e25b2afa920e2c`. Batch488 is active: F1154–F1158
@@ -64,16 +64,19 @@ are complete; F1158's source/test commit is
 `890223b546586c4666f21bac571e95a52035bca5`. F1160 is complete at
 `14d2c957cbcd8ebbf21a652408fada85ea13e924`; F1161 completes Batch488 at
 source/test commit `81a1fc256fa7e7d32b589fe2bef193e1a213864e`, after acceptance
-commit `8162b27b22c5ace992ab129b149849572dbeac73`. Both focused macOS Debug
-targets built incrementally, both Application and Platform CTests passed
-(2/2), and `git diff --check` passed. No full suite or Windows build ran.
-Batch488 is closed and pushed at `138c2cf86f3bac153d948649980798fbfd066dd6`;
-the Phase 2 progress log has the push receipt. Batch489 is active with nine
-ordered candidates; F1162 is accepted and in progress. F629 still awaits
-source-bound Windows x64 layout evidence; the user cannot run Windows now.
-Phase 0 and Phase 2 gates remain open. The Phase 2 progress log records prior
-focused evidence, including outstanding ClassesPage assertions and the
-ScheduleWidget CTest timeout.
+commit `8162b27b22c5ace992ab129b149849572dbeac73`. F1162 completes the first
+Batch489 candidate at source/test commit `75614008eb26cf33e3c602b1cdbc99d4a497a11b`,
+after acceptance commit `ddf8e74c68d5ee3f4566d0e8399d4e0ca5166639`. The
+incremental macOS Debug build covered `ClassMngr` and the Application,
+Platform, and Calendar Page parity targets; all three focused CTests passed,
+and `git diff --check` passed. No full suite or Windows build ran. Batch488 is
+closed and pushed at `138c2cf86f3bac153d948649980798fbfd066dd6`; the Phase 2
+progress log has the push receipt. Batch489 is active with one complete and
+eight discovered candidates; F1163 is next. F629 still awaits source-bound
+Windows x64 layout evidence; the user cannot run Windows now. Phase 0 and
+Phase 2 gates remain open. The Phase 2 progress log records prior focused
+evidence, including outstanding ClassesPage assertions and the ScheduleWidget
+CTest timeout.
 
 F1148 completed at source/test commit
 `5a1756f54173affb33853f3e5dd0b8d8b3ce793d`, after acceptance commit

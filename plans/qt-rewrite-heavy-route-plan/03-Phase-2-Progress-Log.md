@@ -52069,3 +52069,35 @@ Application contract. Existing tests cover inclusive generation and cutoff-
 before-start no-port behavior; add use-case coverage for malformed/empty
 cutoff, exact error metadata, and no port call. Implementation and
 verification have not started.
+
+### F1162 Calendar repeat-create cutoff date complete - 2026-10-20
+
+F1162 completed in source/test commit
+`75614008eb26cf33e3c602b1cdbc99d4a497a11b`, following acceptance docs
+commit `ddf8e74c68d5ee3f4566d0e8399d4e0ca5166639`. The new
+`CalendarEventSeriesCreateInput` retains raw `untilDate` text with the seed,
+series ID, and frequency. The UseCase validates frequency and seed before
+parsing the cutoff, then calls `planCalendarEventRepeatOccurrences` with
+`Domain::GregorianDate`; the UI constructs the Input from the dialog's
+`QDate` ISO text. Only a successful typed plan reaches the Platform port.
+The exact malformed-cutoff error, metadata, and no-port-call behavior remain
+unchanged, as do inclusive cutoff, cutoff-before-start rejection, dates
+0001–9999, monthly clamping, the 366 occurrence limit, overflow behavior,
+generated fields and IDs, order, and Platform/persistence semantics.
+
+The Executor's incremental macOS Debug build command succeeded:
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationCalendarEventTests ClassMngrNextPlatformApplicationServicesCalendarEventPortTests ClassMngrCalendarPageEventMutationParityTests --parallel 4
+```
+
+The independent Tester rerun reported Ninja had no work, and modified-source
+timestamps preceded the generated binaries. The focused Application,
+Platform, and Calendar Page event-mutation parity CTests all passed 3/3.
+`git diff --check` passed. No full suite or Windows run occurred.
+
+Batch489 remains active with F1162 complete and F1163–F1170 discovered in
+order; F1163 is next. Batch488 remains closed and pushed (see its [push
+receipt](03-Phase-2-Progress-Log.md#batch488-push-receipt-2026-10-20)). F629
+awaits source-bound Windows x64 layout evidence; the user cannot run Windows
+now, and the Phase 0 and Phase 2 gates remain open.
