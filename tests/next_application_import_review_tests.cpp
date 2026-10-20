@@ -2,6 +2,7 @@
 
 #include <QtTest/QtTest>
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -11,6 +12,49 @@
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
 using namespace ClassMngr::Next::Domain;
+
+static_assert(std::is_same_v<
+    decltype(TeacherImportGroupDecision{}.selectedCandidateIndexes),
+    std::vector<TeacherImportRequestedCandidateIndex>
+    >);
+static_assert(std::is_same_v<
+    decltype(TeacherImportReviewResolution{}.selectedCandidateIndexes),
+    std::vector<std::vector<TeacherImportResolvedCandidateIndex>>
+    >);
+static_assert(std::is_same_v<
+    decltype(TeacherImportRequestedCandidateIndex{}.rawValue()),
+    std::int64_t
+    >);
+static_assert(std::is_same_v<
+    decltype(TeacherImportResolvedCandidateIndex{}.rawValue()),
+    std::size_t
+    >);
+static_assert(std::is_constructible_v<
+    TeacherImportRequestedCandidateIndex,
+    std::int64_t
+    >);
+static_assert(std::is_constructible_v<
+    TeacherImportResolvedCandidateIndex,
+    std::size_t
+    >);
+static_assert(!std::is_convertible_v<
+    std::int64_t,
+    TeacherImportRequestedCandidateIndex
+    >);
+static_assert(!std::is_convertible_v<
+    TeacherImportRequestedCandidateIndex,
+    std::int64_t
+    >);
+static_assert(!std::is_convertible_v<
+    std::size_t,
+    TeacherImportResolvedCandidateIndex
+    >);
+static_assert(!std::is_convertible_v<
+    TeacherImportResolvedCandidateIndex,
+    std::size_t
+    >);
+static_assert(!std::is_aggregate_v<TeacherImportRequestedCandidateIndex>);
+static_assert(!std::is_aggregate_v<TeacherImportResolvedCandidateIndex>);
 
 namespace
 {
@@ -76,6 +120,7 @@ class NextApplicationImportReviewTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void teacherImportCandidateIndexesAreDistinctTypedValues();
     void typedMatchIndexesKeepTeacherAndClassIdsSeparate();
     void sourceKeysAreExplicitExactValueTypes();
     void sourceKeyValidationPreservesWhitespaceAndByteLimits();
@@ -90,6 +135,27 @@ private slots:
     void typedIdentifierLimitsReturnStructuredInvalidInput();
     void sessionsAreCopyableEqualValueSnapshots();
 };
+
+void NextApplicationImportReviewTests::
+teacherImportCandidateIndexesAreDistinctTypedValues()
+{
+    const TeacherImportRequestedCandidateIndex requestedZero;
+    const TeacherImportRequestedCandidateIndex requestedNegative{-1};
+    const TeacherImportRequestedCandidateIndex requestedPositive{6};
+    const TeacherImportResolvedCandidateIndex resolvedZero;
+    const TeacherImportResolvedCandidateIndex resolvedPositive{6};
+
+    QCOMPARE(requestedZero.rawValue(), std::int64_t(0));
+    QCOMPARE(requestedNegative.rawValue(), std::int64_t(-1));
+    QCOMPARE(requestedPositive.rawValue(), std::int64_t(6));
+    QVERIFY(requestedZero == TeacherImportRequestedCandidateIndex{});
+    QVERIFY(requestedNegative == TeacherImportRequestedCandidateIndex{-1});
+    QVERIFY(requestedPositive != requestedNegative);
+    QCOMPARE(resolvedZero.rawValue(), std::size_t(0));
+    QCOMPARE(resolvedPositive.rawValue(), std::size_t(6));
+    QVERIFY(resolvedZero == TeacherImportResolvedCandidateIndex{});
+    QVERIFY(resolvedPositive == TeacherImportResolvedCandidateIndex{6});
+}
 
 void NextApplicationImportReviewTests::typedMatchIndexesKeepTeacherAndClassIdsSeparate()
 {

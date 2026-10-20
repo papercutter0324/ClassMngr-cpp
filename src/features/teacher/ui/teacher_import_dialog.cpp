@@ -74,7 +74,11 @@ TeacherImportReviewRequest reviewRequest(const TeacherImportReview& review)
             static_cast<std::size_t>(selection.selectedCandidateIndexes.size()));
         for (const int index : selection.selectedCandidateIndexes)
         {
-            decision.selectedCandidateIndexes.push_back(index);
+            decision.selectedCandidateIndexes.push_back(
+                TeacherImportRequestedCandidateIndex{
+                    static_cast<std::int64_t>(index)
+                }
+                );
         }
         request.decisions.push_back(std::move(decision));
     }
@@ -526,11 +530,13 @@ TeacherImportPlan TeacherImportDialog::importPlan() const
         {
             const KoreanTeacherImportGroup& group =
                 plan.review->candidateGroups.at(static_cast<qsizetype>(groupIndex));
-            for (const std::size_t candidateIndex :
+            for (const ClassMngr::Next::Application::TeacherImportResolvedCandidateIndex candidateIndex :
                  resolution.selectedCandidateIndexes[groupIndex])
             {
                 plan.koreanTeachers.append(
-                    group.candidates.at(static_cast<qsizetype>(candidateIndex)).teacher);
+                    group.candidates.at(static_cast<qsizetype>(
+                        candidateIndex.rawValue()
+                        )).teacher);
             }
         }
     }

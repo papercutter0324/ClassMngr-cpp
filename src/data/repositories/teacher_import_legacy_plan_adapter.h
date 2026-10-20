@@ -6,6 +6,7 @@
 
 #include <QString>
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -15,6 +16,7 @@ namespace ClassMngr::Data::Legacy
 using ClassMngr::Next::Application::TeacherImportGroupDecision;
 using ClassMngr::Next::Application::TeacherImportGroupKey;
 using ClassMngr::Next::Application::TeacherImportGroupMode;
+using ClassMngr::Next::Application::TeacherImportRequestedCandidateIndex;
 using ClassMngr::Next::Application::TeacherImportReviewGroup;
 using ClassMngr::Next::Application::TeacherImportUseCaseRequest;
 using ClassMngr::Next::Application::ImportSourceKey;
@@ -187,7 +189,11 @@ inline TeacherImportUseCaseRequest teacherImportPlanToUseCaseRequest(const Teach
                 static_cast<std::size_t>(selection.selectedCandidateIndexes.size()));
             for (const int index : selection.selectedCandidateIndexes)
             {
-                decision.selectedCandidateIndexes.push_back(index);
+                decision.selectedCandidateIndexes.push_back(
+                    TeacherImportRequestedCandidateIndex{
+                        static_cast<std::int64_t>(index)
+                    }
+                    );
             }
             review.decisions.push_back(std::move(decision));
         }

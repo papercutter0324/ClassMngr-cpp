@@ -26,6 +26,9 @@
 #include <cstdint>
 #include <vector>
 
+using ClassMngr::Next::Application::TeacherImportRequestedCandidateIndex;
+using ClassMngr::Next::Application::TeacherImportResolvedCandidateIndex;
+
 class TeacherImportDialogTests : public QObject
 {
     Q_OBJECT
@@ -37,6 +40,7 @@ private slots:
     void suppliedWorkbookBuildsDynamicSelectionUi();
     void checkedInWorkbookProductionDialogPlanAppliesToRepository();
     void legacyPlanAdapterPreservesExactUtf8ReviewKeys();
+    void legacyPlanAdapterPreservesNegativeCandidateIndexForValidation();
 };
 
 namespace
@@ -531,9 +535,14 @@ void TeacherImportDialogTests::legacyPlanAdapterPreservesExactUtf8ReviewKeys()
     QCOMPARE(request.review->candidateGroups[1].candidateValidationKeys[0].value(),
              secondKoreanKey);
     QVERIFY(request.review->decisions[0].selectedCandidateIndexes
-            == std::vector<std::int64_t>{0});
+            == std::vector<TeacherImportRequestedCandidateIndex>{
+                TeacherImportRequestedCandidateIndex{0}
+            });
     QVERIFY((request.review->decisions[1].selectedCandidateIndexes
-             == std::vector<std::int64_t>{1, 0}));
+             == std::vector<TeacherImportRequestedCandidateIndex>{
+                 TeacherImportRequestedCandidateIndex{1},
+                 TeacherImportRequestedCandidateIndex{0}
+             }));
 
     std::vector<ClassMngr::Next::Application::TeacherImportCandidateGroup> groups;
     for (const auto& group : request.review->candidateGroups)
@@ -547,9 +556,58 @@ void TeacherImportDialogTests::legacyPlanAdapterPreservesExactUtf8ReviewKeys()
     QVERIFY(resolution.accepted());
     QCOMPARE(resolution.selectedCandidateIndexes.size(), std::size_t(2));
     QVERIFY(resolution.selectedCandidateIndexes[0]
-            == (std::vector<std::size_t>{0, 1}));
+            == (std::vector<TeacherImportResolvedCandidateIndex>{
+                TeacherImportResolvedCandidateIndex{0},
+                TeacherImportResolvedCandidateIndex{1}
+            }));
     QVERIFY(resolution.selectedCandidateIndexes[1]
-            == (std::vector<std::size_t>{0}));
+            == (std::vector<TeacherImportResolvedCandidateIndex>{
+                TeacherImportResolvedCandidateIndex{0}
+            }));
+}
+
+void TeacherImportDialogTests::
+legacyPlanAdapterPreservesNegativeCandidateIndexForValidation()
+{
+    Teacher teacher;
+    teacher.teacherKr = QString::fromUtf8(" 김 하늘 ");
+
+    TeacherImportPlan plan;
+    plan.sourceDate = QDate(2026, 10, 1);
+    plan.review.emplace();
+    plan.review->candidateGroups = {
+        {QStringLiteral("M1"), {{teacher, true}}}
+    };
+    plan.review->groupSelections = {
+        {QStringLiteral("M1"), TeacherImportSelectionMode::Selected, {-1}}
+    };
+
+    const auto request =
+        ClassMngr::Data::Legacy::teacherImportPlanToUseCaseRequest(plan);
+    QVERIFY(request.review.has_value());
+    QCOMPARE(request.review->decisions.size(), std::size_t(1));
+    QCOMPARE(
+        request.review->decisions[0].selectedCandidateIndexes.size(),
+        std::size_t(1)
+        );
+    QCOMPARE(
+        request.review->decisions[0].selectedCandidateIndexes[0].rawValue(),
+        std::int64_t(-1)
+        );
+
+    std::vector<ClassMngr::Next::Application::TeacherImportCandidateGroup> groups;
+    groups.push_back({
+        request.review->candidateGroups[0].id,
+        request.review->candidateGroups[0].candidateValidationKeys.size()
+    });
+    const auto resolution = ClassMngr::Next::Application::resolveTeacherImportReview(
+        groups,
+        request.review->decisions
+        );
+    QCOMPARE(
+        resolution.issue,
+        ClassMngr::Next::Application::TeacherImportReviewIssue::CandidateIndexOutOfRange
+        );
 }
 
 QTEST_MAIN(TeacherImportDialogTests)

@@ -528,7 +528,9 @@ void successfulOrchestrationAcrossNamespaces()
                 {"new-korean", "unchanged-korean"})
         },
         .decisions = {
-            {TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {1}},
+            {TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {
+                TeacherImportRequestedCandidateIndex{1}
+            }},
             {TeacherImportGroupKey("M2"), TeacherImportGroupMode::All, {}}
         }
     };
@@ -672,8 +674,12 @@ void exactUtf8ReviewKeysKeepCandidateOrderInUseCase()
         // Decisions arrive in reverse order; selected Korean sources must
         // still follow candidate-group order.
         .decisions = {
-            {decomposedKey, TeacherImportGroupMode::Selected, {0}},
-            {composedKey, TeacherImportGroupMode::Selected, {1}}
+            {decomposedKey, TeacherImportGroupMode::Selected, {
+                TeacherImportRequestedCandidateIndex{0}
+            }},
+            {composedKey, TeacherImportGroupMode::Selected, {
+                TeacherImportRequestedCandidateIndex{1}
+            }}
         }
     };
 
@@ -774,7 +780,11 @@ void reviewAndPlanRejectionPrecedePersistence()
         request.review = TeacherImportReview{
             .candidateGroups = {
                 reviewGroup(TeacherImportGroupKey("M1"), {"selected"})},
-            .decisions = {{TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {4}}}
+            .decisions = {{
+                TeacherImportGroupKey("M1"),
+                TeacherImportGroupMode::Selected,
+                {TeacherImportRequestedCandidateIndex{4}}
+            }}
         };
         FakeTeacherImportPersistence persistence;
         const auto result = runUseCase(request, persistence);
@@ -1054,7 +1064,11 @@ void derivedKoreanIdentityValidationPreservesPrecedence()
         request.review = TeacherImportReview{
             .candidateGroups = {
                 reviewGroup(TeacherImportGroupKey("M1"), {"kim-a"})},
-            .decisions = {{TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {1}}}
+            .decisions = {{
+                TeacherImportGroupKey("M1"),
+                TeacherImportGroupMode::Selected,
+                {TeacherImportRequestedCandidateIndex{1}}
+            }}
         };
 
         FakeTeacherImportPersistence persistence;

@@ -313,6 +313,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/powerpoint_data_access_notice_preferences.h
     src/next/application/import_job_coordinator.h
     src/next/application/import_job_generation.h
+    src/next/application/teacher_import_candidate_index.h
     src/next/application/import_review_session.h
     src/next/application/import_job_state.h
     src/next/application/korean_teacher_import_update.h

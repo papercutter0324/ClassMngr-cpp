@@ -476,11 +476,13 @@ public:
             {
                 const TeacherImportReviewGroup& group =
                     request.review->candidateGroups[groupIndex];
-                for (const std::size_t candidateIndex :
+                for (const TeacherImportResolvedCandidateIndex candidateIndex :
                      resolution.selectedCandidateIndexes[groupIndex])
                 {
                     selectedKeys.push_back(
-                        group.candidateValidationKeys[candidateIndex]);
+                        group.candidateValidationKeys.at(
+                            candidateIndex.rawValue()
+                            ));
                 }
             }
         }

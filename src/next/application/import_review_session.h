@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/teacher_import_candidate_index.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -913,7 +914,7 @@ struct TeacherImportGroupDecision
 {
     TeacherImportGroupKey groupId;
     TeacherImportGroupMode mode = TeacherImportGroupMode::All;
-    std::vector<std::int64_t> selectedCandidateIndexes;
+    std::vector<TeacherImportRequestedCandidateIndex> selectedCandidateIndexes;
 };
 
 enum class TeacherImportReviewIssue
@@ -933,7 +934,8 @@ enum class TeacherImportReviewIssue
 struct TeacherImportReviewResolution
 {
     TeacherImportReviewIssue issue = TeacherImportReviewIssue::None;
-    std::vector<std::vector<std::size_t>> selectedCandidateIndexes;
+    std::vector<std::vector<TeacherImportResolvedCandidateIndex>>
+        selectedCandidateIndexes;
 
     [[nodiscard]] bool accepted() const
     {
@@ -1005,15 +1007,20 @@ struct TeacherImportReviewResolution
                  index < candidateGroups[groupIndex].candidateCount;
                  ++index)
             {
-                result.selectedCandidateIndexes[groupIndex].push_back(index);
+                result.selectedCandidateIndexes[groupIndex].push_back(
+                    TeacherImportResolvedCandidateIndex{index}
+                    );
             }
             break;
 
         case TeacherImportGroupMode::Selected:
         {
             std::vector<bool> selected(candidateGroups[groupIndex].candidateCount, false);
-            for (const std::int64_t requestedIndex : decision.selectedCandidateIndexes)
+            for (const TeacherImportRequestedCandidateIndex requestedCandidateIndex :
+                 decision.selectedCandidateIndexes)
             {
+                const std::int64_t requestedIndex =
+                    requestedCandidateIndex.rawValue();
                 if (requestedIndex < 0
                     || static_cast<std::uint64_t>(requestedIndex)
                         >= candidateGroups[groupIndex].candidateCount)
@@ -1033,7 +1040,9 @@ struct TeacherImportReviewResolution
             {
                 if (selected[index])
                 {
-                    result.selectedCandidateIndexes[groupIndex].push_back(index);
+                    result.selectedCandidateIndexes[groupIndex].push_back(
+                        TeacherImportResolvedCandidateIndex{index}
+                        );
                 }
             }
             break;

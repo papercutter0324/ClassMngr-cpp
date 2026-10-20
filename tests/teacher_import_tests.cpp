@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <initializer_list>
 #include <vector>
 
 class TeacherImportTests : public QObject
@@ -356,7 +357,11 @@ ClassMngr::Next::Application::TeacherImportReviewResolution resolveReview(
             TeacherImportGroupKey(selection.level.toUtf8().toStdString()), mode, {}};
         for (const int index : selection.selectedCandidateIndexes)
         {
-            decision.selectedCandidateIndexes.push_back(index);
+            decision.selectedCandidateIndexes.push_back(
+                TeacherImportRequestedCandidateIndex{
+                    static_cast<std::int64_t>(index)
+                }
+                );
         }
         decisions.push_back(std::move(decision));
     }
@@ -377,11 +382,12 @@ QList<Teacher> selectedKoreanTeachers(const TeacherImportReview& review)
     {
         const KoreanTeacherImportGroup& group =
             review.candidateGroups.at(static_cast<qsizetype>(groupIndex));
-        for (const std::size_t candidateIndex :
+        for (const ClassMngr::Next::Application::
+                 TeacherImportResolvedCandidateIndex candidateIndex :
              resolution.selectedCandidateIndexes[groupIndex])
         {
             selected.append(group.candidates.at(
-                static_cast<qsizetype>(candidateIndex)).teacher);
+                static_cast<qsizetype>(candidateIndex.rawValue())).teacher);
         }
     }
     return selected;
@@ -921,7 +927,10 @@ void TeacherImportTests::reviewContractAcceptsAllSelectedAndNone()
         {TeacherImportGroupKey("H1"), 1}};
     const std::vector<TeacherImportGroupDecision> decisions{
         {TeacherImportGroupKey("H1"), TeacherImportGroupMode::All, {}},
-        {TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {2, 0}},
+        {TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {
+            TeacherImportRequestedCandidateIndex{2},
+            TeacherImportRequestedCandidateIndex{0}
+        }},
         {TeacherImportGroupKey("M2"), TeacherImportGroupMode::None, {}}
     };
 
@@ -929,11 +938,11 @@ void TeacherImportTests::reviewContractAcceptsAllSelectedAndNone()
     QVERIFY(resolution.accepted());
     QCOMPARE(resolution.selectedCandidateIndexes.size(), std::size_t(3));
     QCOMPARE(resolution.selectedCandidateIndexes[0].size(), std::size_t(2));
-    QCOMPARE(resolution.selectedCandidateIndexes[0][0], std::size_t(0));
-    QCOMPARE(resolution.selectedCandidateIndexes[0][1], std::size_t(2));
+    QCOMPARE(resolution.selectedCandidateIndexes[0][0].rawValue(), std::size_t(0));
+    QCOMPARE(resolution.selectedCandidateIndexes[0][1].rawValue(), std::size_t(2));
     QVERIFY(resolution.selectedCandidateIndexes[1].empty());
     QCOMPARE(resolution.selectedCandidateIndexes[2].size(), std::size_t(1));
-    QCOMPARE(resolution.selectedCandidateIndexes[2][0], std::size_t(0));
+    QCOMPARE(resolution.selectedCandidateIndexes[2][0].rawValue(), std::size_t(0));
 }
 
 void TeacherImportTests::reviewContractRejectsInvalidDecisions()
@@ -949,9 +958,15 @@ void TeacherImportTests::reviewContractRejectsInvalidDecisions()
     const auto decision = [](
                               std::string id,
                               const TeacherImportGroupMode mode,
-                              std::vector<std::int64_t> indexes = {}) {
+                              std::initializer_list<std::int64_t> indexes = {}) {
+        std::vector<TeacherImportRequestedCandidateIndex> wrappedIndexes;
+        wrappedIndexes.reserve(indexes.size());
+        for (const std::int64_t index : indexes)
+        {
+            wrappedIndexes.emplace_back(index);
+        }
         return TeacherImportGroupDecision{
-            TeacherImportGroupKey(std::move(id)), mode, std::move(indexes)};
+            TeacherImportGroupKey(std::move(id)), mode, std::move(wrappedIndexes)};
     };
     const auto issueFor = [&groups](
                               const std::vector<TeacherImportGroupDecision>& decisions,
@@ -1025,16 +1040,26 @@ void TeacherImportTests::reviewContractPreservesExactUtf8KeysAndEmptyPrecedence(
     const std::vector<TeacherImportCandidateGroup> groups{
         {composedKey, 3}, {decomposedKey, 1}};
     const std::vector<TeacherImportGroupDecision> decisions{
-        {decomposedKey, TeacherImportGroupMode::Selected, {0}},
-        {composedKey, TeacherImportGroupMode::Selected, {2, 0}}
+        {decomposedKey, TeacherImportGroupMode::Selected, {
+            TeacherImportRequestedCandidateIndex{0}
+        }},
+        {composedKey, TeacherImportGroupMode::Selected, {
+            TeacherImportRequestedCandidateIndex{2},
+            TeacherImportRequestedCandidateIndex{0}
+        }}
     };
     const auto resolution = resolveTeacherImportReview(groups, decisions);
     QVERIFY(resolution.accepted());
     QCOMPARE(resolution.selectedCandidateIndexes.size(), std::size_t(2));
     QCOMPARE(resolution.selectedCandidateIndexes[0],
-             (std::vector<std::size_t>{0, 2}));
+             (std::vector<TeacherImportResolvedCandidateIndex>{
+                 TeacherImportResolvedCandidateIndex{0},
+                 TeacherImportResolvedCandidateIndex{2}
+             }));
     QCOMPARE(resolution.selectedCandidateIndexes[1],
-             (std::vector<std::size_t>{0}));
+             (std::vector<TeacherImportResolvedCandidateIndex>{
+                 TeacherImportResolvedCandidateIndex{0}
+             }));
 
     const auto normalizationWouldBeUnknown = resolveTeacherImportReview(
         {{composedKey, 1}},
