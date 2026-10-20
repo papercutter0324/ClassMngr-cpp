@@ -53990,3 +53990,63 @@ Batch492 remains active and unpushed: F1186–F1187 are complete, F1188 is
 accepted/in progress and next, and F1189–F1191 remain discovered. F629 awaits
 source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1188 ClassSummary student count complete - 2026-10-20
+
+F1188 completed at source/test commit
+`37b73c6a87651c3cfacbc7ba5d3e002c06b25369`. The Qt-free
+`Application::ClassSummaryStudentCount` types the `std::size_t` count with a
+zero default, explicit construction, `.rawValue()`, and equality. The existing
+10,000 maximum remains in projection validation (10,000 accepted and 10,001
+rejected); Platform and Feature boundaries explicitly wrap/unwrap the value.
+The count remains distinct from MyClasses student count.
+
+Independent verification built seven affected targets in the existing
+`build/macos-clang-debug` tree: `ClassMngr`, ClassSummary, the Platform print-
+source port, Sub Prep summary query, class-information state, Sub Prep Page,
+and the list model. Five focused CTests passed. The direct offscreen
+`ClassMngrSubPrepPageTests gradeAndLevelTabsSelectOneClassAndPreserveSelection`
+case passed and checked zero/positive role values. `git diff --check` passed.
+The full `ClassMngrSubPrepPageTests` CTest timed out after 300 seconds in
+`unavailablePreferenceLoadsPreservePageValues`; it did not pass. No full-suite
+or Windows run occurred.
+
+Batch492 remains active and unpushed. At the F1188 source/test closeout, the
+worktree was clean on `Qt-Rewrite`, eight commits ahead of origin; F1186–F1188
+are complete and F1189–F1191 remain discovered. F629 awaits source-bound
+Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+
+### F1189 updater artifact filename accepted before implementation - 2026-10-20
+
+F1189 is accepted/in progress and current. `StartupUpdateArtifact::fileName`
+and `ManualUpdateArtifact::fileName` are raw `std::string` values. Their
+Platform adapters encode from `QString` using `toUtf8().toStdString()`; the
+startup controller and manual dialog convert back with
+`QString::fromStdString()`. The manual dialog compares filenames when checking
+for artifact changes and passes the artifact to the downloader. Current
+`resultDetails` displays version and date, not filename. No existing test
+covers UTF-8 filename bytes or empty filename values through both adapters.
+
+Introduce shared Qt-free `Application::UpdateArtifactFileName` with
+`std::string` backing, empty default, explicit construction, `.rawValue()`,
+and equality, with no implicit conversion, path validation, or new policy.
+Apply it to both startup and manual update artifacts and add its header to
+`cmake/next.cmake`. Preserve UTF-8 bytes and empty values across Platform and
+UI boundaries and existing display behavior; no filename-specific visible
+text is evidenced. Keep path and basename policy in the legacy updater.
+
+Extend `ClassMngrNextApplicationStartupUpdateCheckUseCaseTests` and
+`ClassMngrNextApplicationManualUpdateCheckUseCaseTests` for wrapper semantics
+and exact pass-through of non-ASCII and empty filenames. Extend the Qt adapter
+coverage in `ClassMngrUpdateControllerAutomaticStartupTests`, implemented in
+`tests/update_controller_automatic_startup_tests.cpp`, for both paths; the
+startup adapter currently asserts an ASCII filename and the manual adapter has
+no filename assertion. Verify exact UTF-8 bytes and empty values through each
+adapter while preserving existing presentation behavior. Implementation and
+verification have not started; no results are claimed.
+
+Batch492 remains active and unpushed: F1186–F1188 are complete, F1189 is
+accepted/in progress/current, and F1190–F1191 remain discovered. The
+`Qt-Rewrite` branch remains eight commits ahead of origin. F629 awaits
+source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates
+remain open.

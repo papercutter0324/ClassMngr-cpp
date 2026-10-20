@@ -53,15 +53,16 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1188 active; Batch492 unpushed)
+### Current checkpoint - 2026-10-20 (F1189 active; Batch492 unpushed)
 
 Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
 records the handoff. Batch491 is complete and pushed to `origin/Qt-Rewrite`
 at `56bd1973`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)
-records the handoff. F1178–F1187 are complete. Batch492 is active with six
-discovered candidates; F1188 is accepted and in progress, with F1189–F1191
-still discovered. Acceptance, completion, and verification details are in the [Phase 2 progress
+records the handoff. F1178–F1188 are complete. Batch492 is active with six
+candidates: F1186–F1188 are complete, F1189 is accepted and in progress, and
+F1190–F1191 remain discovered. Acceptance, completion, and verification
+details are in the [Phase 2 progress
 log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
 F1186 completed at source/test commit `32eb56e4`, after acceptance commit
@@ -78,6 +79,13 @@ zero, independent source errors, recoverable missing-parent `NotFound`, and
 the Feature zero fallback. The independent Tester built four affected targets
 in `build/macos-clang-debug`; the three focused CTests passed. No full suite or
 Windows build ran.
+
+F1188 completed at source/test commit `37b73c6a`. The distinct
+`Application::ClassSummaryStudentCount` preserves exact values and keeps the
+10,000 maximum in projection validation. Seven affected targets built and
+five focused CTests passed; the direct changed-page case passed. The full page
+CTest timed out in `unavailablePreferenceLoadsPreservePageValues`; no full
+suite or Windows build ran. F1189 is accepted and in progress.
 
 Batch492's discovery found six candidates against the ten-candidate target;
 see its [discovery record](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch492-provisional-discovery-at-f1184-start-2026-10-20).
