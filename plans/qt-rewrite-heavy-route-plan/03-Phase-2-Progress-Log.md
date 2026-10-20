@@ -57404,3 +57404,35 @@ suite remain unverified.
 
 Batch499 remains active with F1237–F1239 complete. F1240 is next for
 acceptance; F1241–F1242 remain in the ordered discovered queue.
+
+### F1240 Speaking Evaluation UTF-16 text-match spans accepted before implementation - 2026-10-21
+
+F1240 is accepted before implementation. Add two Qt-free explicit Application
+value types, `SpeakingEvaluationTextMatchStart` and
+`SpeakingEvaluationTextMatchLength`, each backed by `std::size_t`, defaulting
+to zero, with explicit construction, `.rawValue()`, equality, and no implicit
+conversions or range policy. Change `SpeakingEvaluationTextMatchSpan.start`
+and `.length` to these types and carry them through the Application redaction
+candidate path. Unwrap only for `std::u16string_view` bounds and substring
+operations. The Qt matcher wraps Qt match start and length in these values;
+offsets remain UTF-16 code units.
+
+Preserve ordered non-overlapping, case-insensitive literal matching, escaped
+metacharacters, no word-boundary behavior, and no normalization or expanding
+case fold. Empty literals still produce no matches. Extraction continues to
+reject zero-length and out-of-range spans using the overflow-safe check
+`length > size - start` after validating the start bound.
+
+Add wrapper type and no-conversion assertions, and an Application assertion for
+invalid spans if current tests do not cover them. Add the hard-coded
+supplementary-plane matcher assertion for `u"\U00010400 \U00010428"`
+matching `u"\U00010428"` at UTF-16 code-unit start `3` with length `2`.
+Focused tests are `ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests`
+and `ClassMngrNextPlatformSpeakingEvaluationQtTextMatchPortTests`; build
+`ClassMngr` as well. Matching and prompt text behavior remain unchanged. At
+acceptance, no implementation, build, or tests had started.
+
+Batch499 remains active with F1237–F1239 complete and F1240 accepted. F1241
+is next for acceptance, followed by discovered F1242. Starting F1241, the
+second-last Batch499 slice, also triggers ordered Batch500 discovery under the
+phase plan.

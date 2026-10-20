@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch498 is complete and pushed at `2348ee37`; F1239 is complete and F1240 is next for acceptance in active Batch499, while F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch498 is complete and pushed at `2348ee37`; F1239 is complete and F1240 is accepted awaiting implementation in active Batch499, while F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1239 is complete: Class Transfer schedule candidates now use `Domain::Weekday` with explicit legacy-boundary mapping (see [F1239 verification](03-Phase-2-Progress-Log.md#f1239-class-transfer-weekday-candidates-complete-2026-10-21)). One previously reproduced unrelated teacher-label failure remains visible in the focused feature suite. Batch499 remains active; F1240 is next for acceptance and F1241–F1242 remain discovered. F629 and the Phase 0 and Phase 2 gates remain open.
+F1240 is accepted before implementation: use explicit Application UTF-16 code-unit start and length values throughout text-match and redaction paths (see [F1240 acceptance](03-Phase-2-Progress-Log.md#f1240-speaking-evaluation-utf-16-text-match-spans-accepted-before-implementation-2026-10-21)). Batch499 remains active; F1241 is next for acceptance and F1242 remains discovered. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,13 +72,13 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch499 (6 candidates; 3 complete, 0 accepted, 3 discovered)
+#### Active batch: Batch499 (6 candidates; 3 complete, 1 accepted, 2 discovered)
 
 1. F1237 - **Complete.** Type `ClassAnalyticsRosterNames::rowCount` with the existing `ClassAnalyticsRosterRowCount`; preserve physical sparse-row counts, vector sizing, and unfiltered empty-name query behavior.
 2. F1238 - **Complete.** Type `GregorianDate::weekday()` as `Domain::IsoWeekday`; explicitly map it to zero-based `Domain::Weekday` at the calendar recurrence boundary.
 3. F1239 - **Complete.** Type Class Transfer weekly weekday candidates with `Domain::Weekday`; preserve invalid-day rejection, half-open overlap, Sunday overnight wrapping, and repository preflight behavior.
-4. F1240 - **Discovered; next for acceptance.** Type Speaking Evaluation UTF-16 text-match spans; preserve matching and extraction behavior.
-5. F1241 - **Discovered.** Give `CalendarEventTiming` clock values a semantic representation while preserving same-day and cross-day rules.
+4. F1240 - **Accepted; awaiting implementation.** Type Speaking Evaluation text-match start and length as explicit UTF-16 code-unit values; preserve matching and extraction behavior.
+5. F1241 - **Discovered; next for acceptance.** Give `CalendarEventTiming` clock values a semantic representation while preserving same-day and cross-day rules; begin Batch500 discovery when this second-last slice starts.
 6. F1242 - **Discovered.** Distinguish Schedule View row order, cell order, and slot keys; preserve validation scopes and lookup behavior.
 
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
