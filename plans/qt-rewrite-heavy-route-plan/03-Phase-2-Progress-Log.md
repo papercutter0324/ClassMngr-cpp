@@ -51389,3 +51389,47 @@ Batch488 remains active with eight candidates: F1154 is complete, no candidate
 is accepted/in progress, and seven remain discovered with F1155 next. F629
 still awaits source-bound Windows x64 evidence; the Phase 0 and Phase 2 gates
 remain open.
+
+### F1155 My Classes student count accepted before implementation - 2026-10-20
+
+F1155 is accepted/in progress. Add the Qt-free Application value
+`MyClassesStudentCount`, explicitly constructed from the existing signed `int`,
+with `rawValue()` and equality. Do not add implicit int conversion or require a
+default value; `Domain::Result` has no default constructor.
+
+Type `MyClassesStudentCountBatchReadEntry::studentCount` as
+`Domain::Result<MyClassesStudentCount>`. Update the Application Query negative
+check to inspect `rawValue()` and the Platform adapter to wrap successful counts
+while preserving per-row `OperationError` code, message, and recoverability.
+Update My Classes UI formatting to use `rawValue()` on success only. Keep the
+repository `Result<int>` boundary unchanged.
+
+Preserve zero and all nonnegative representable `int` values without a business
+cap. Do not reuse `ClassSummary::studentCount`, the separate `size_t` contract
+with a 10,000 cap. Negative successful values remain batch-level nonrecoverable
+`Validation` errors with the exact message `A My Classes student-count batch
+returned a negative count.` Preserve ID validation, empty-input no-call
+behavior, outer error propagation, response count and order validation,
+per-row Results, zero display as `0`, error display as `Unavailable`, and
+repository counting/overflow behavior; make no repository changes.
+
+Evidence: `src/next/application/my_classes_student_count_batch_read_snapshot.h`,
+`src/next/application/my_classes_student_count_batch_read_query.h`,
+`src/next/application/my_classes_student_count_batch_read_port.h`,
+`src/next/platform/application_services_my_classes_student_count_batch_read_port.h`,
+`src/features/my_info/ui/my_classes_page_content.cpp`,
+`src/data/repositories/roster_repository.cpp:2621-2629`,
+`tests/next_application_my_classes_student_count_batch_read_query_tests.cpp`,
+`tests/next_platform_application_services_my_classes_student_count_batch_read_port_tests.cpp`,
+and `tests/my_classes_page_tests.cpp`.
+
+Focused acceptance gate: incrementally build in the existing
+`build/macos-clang-debug` tree for `ClassMngr`,
+`ClassMngrNextApplicationMyClassesStudentCountBatchReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests`,
+and `ClassMngrMyClassesPageTests`; run Application and Platform CTests; run UI
+selectors `studentCountReadsOnlySelectedClassAndKeepsCounts`,
+`rosterReadFailureKeepsClassAndShowsUnavailableStudentCount`, and
+`rosterWithoutNameColumnsShowsZeroStudentCount` (Qt offscreen if needed); then
+run `git diff --check`. No full-suite or Windows pass is claimed. Implementation
+and verification had not started at acceptance.
