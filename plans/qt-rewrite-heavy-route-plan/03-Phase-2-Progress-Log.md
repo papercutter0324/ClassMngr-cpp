@@ -59054,10 +59054,59 @@ The accepted incremental macOS build targets are `ClassMngr`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
 `ClassMngrNextApplicationSubPrepClassInformationStateTests`. Also build
 `ClassMngrSubPrepPageTests` to compile its aggregate fixtures only; do not run
-its broader UI CTest. The focused CTest names are `NextApplicationClassSummary`,
-`NextApplicationSubPrepScheduleSummaryQuery`, and
-`NextPlatformApplicationServicesSubPrepPrintSourcePort`, plus
-`NextApplicationSubPrepClassInformationState`. No implementation, build, or
-test execution has started. No clean build, Windows build, or full-suite
-verification is claimed. The existing Batch502 discovery record remains the
-upcoming queue; no new batch search was performed for this slice.
+its broader UI CTest. The focused registered CTest names are
+`ClassMngrNextApplicationClassSummaryTests`,
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrNextApplicationSubPrepClassInformationStateTests`. No implementation,
+build, or test execution had started when this acceptance was recorded. No
+clean build, Windows build, or full-suite verification was claimed. The
+existing Batch502 discovery record remains the upcoming queue; no new batch
+search was performed for this slice.
+
+### F1257 ClassSummaryOrder complete - 2026-10-21
+
+F1257 source/test changes are committed as
+`53891af16ca9263eb5195c9270b95583380e0c8d` (`Phase2 - Type ClassSummary
+source order`), following acceptance documentation commit
+`b6348c539199c8d6a37731fba96643a899b2ecb7` and verification-target correction
+commit `99dcf1c7eded0d48dad00f81bf0827e2b2c1b921`.
+
+The ten changed paths are `cmake/next.cmake`,
+`src/next/application/class_summary_order.h`,
+`src/next/application/class_summary_projection.h`,
+`src/next/application/sub_prep_schedule_summary_query.h`,
+`src/next/platform/application_services_sub_prep_schedule_summary_port.h`,
+`tests/next_application_class_summary_tests.cpp`,
+`tests/next_application_sub_prep_class_information_state_tests.cpp`,
+`tests/next_application_sub_prep_schedule_summary_query_tests.cpp`,
+`tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp`,
+and `tests/sub_prep_page_tests.cpp`. The source defines explicit, zero-default
+`ClassSummaryOrder` over signed `std::int32_t`, with `.rawValue()`, equality,
+and no implicit conversions. Only `ClassSummary::order` changed type; the
+adapter explicitly maps the request index, validation unwraps for its existing
+negative check, and the query unwraps for the existing order-then-class-ID
+sort. The adapter regression requests an omitted class before two returned
+classes and verifies their order values are 1 and 2. Negative rejection and
+its existing error remain; no upper-bound, contiguity, or uniqueness rule was
+added. Navigation ranks remain a separate contract.
+
+The incremental macOS build in `build/macos-clang-debug` covered `ClassMngr`,
+`ClassMngrNextApplicationClassSummaryTests`,
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`,
+`ClassMngrNextApplicationSubPrepClassInformationStateTests`, and
+`ClassMngrSubPrepPageTests`; the page target was compile-only. The four
+registered focused CTests
+`ClassMngrNextApplicationClassSummaryTests`,
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrNextApplicationSubPrepClassInformationStateTests` passed 4/4. The
+platform test was rerun after the sparse-position regression and passed 1/1.
+The independent Tester reports the same results, and `git diff --check` passed.
+The broader `ClassMngrSubPrepPageTests` CTest was not run. No clean build,
+Windows build, or full-suite verification is claimed.
+
+Batch502 remains active: F1257 is complete, F1258 is next for acceptance, and
+F1259–F1261 remain discovered. Batch501 is complete and pushed at `7f8ca958`.
+F629 and the Phase 0 and Phase 2 gates remain open.
