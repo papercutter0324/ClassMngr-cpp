@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch490 F1177 is accepted/in progress as its final candidate; the batch remains unpushed until F1177 implementation and closeout complete, Batch491 remains provisional/inactive with eight candidates until Batch490 closes, and F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch491 is active and unpushed with F1178 and F1179 complete and F1180 next; F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1177 accepted/in progress as Batch490's final candidate: type only the Application academic-term week count, preserving four-term cardinality and existing invalid-input rejection (see the [acceptance record](03-Phase-2-Progress-Log.md#f1177-academic-term-week-count-accepted-before-implementation-2026-10-20)).
+F1178 and F1179 are complete (see the [F1178](03-Phase-2-Progress-Log.md#f1178-schedule-import-review-count-complete-2026-10-20) and [F1179](03-Phase-2-Progress-Log.md#f1179-speaking-evaluation-ai-grade-band-complete-2026-10-20) completion records); F1180 is next.
 
 ### Slice discovery batches
 
@@ -72,17 +72,16 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch490 (7 candidates; 6 complete; 1 accepted/in progress)
+#### Active batch: Batch491 (8 candidates; 2 complete; 6 discovered)
 
-1. F1171 - **Complete.** Use `Application::UpdateArtifactSizeBytes` for manual/startup artifact sizes; preserve exact signed values and existing parser/downloader positivity policy (see the [completion record](03-Phase-2-Progress-Log.md#f1171-updater-artifact-size-complete-2026-10-20)).
-2. F1172 - **Complete.** Add the typed update-check UTC millisecond value, preserving signed values, ordinary zero defaults, and adapter/UI conversion boundaries (see the [completion record](03-Phase-2-Progress-Log.md#f1172-update-check-utc-milliseconds-complete-2026-10-20)).
-3. F1173 - **Complete.** Type the six Application Calendar Import semantic counts as exact signed `int` values without range policy; preserve defaults, count transitions, collection sizes/indices, and legacy `int` boundaries (see the [completion record](03-Phase-2-Progress-Log.md#f1173-calendar-import-counts-complete-2026-10-20)).
-4. F1174 - **Complete.** Type the Class Transfer export timestamp input; preserve epoch and serialized timestamp formatting (see the [completion record](03-Phase-2-Progress-Log.md#f1174-class-transfer-export-utc-milliseconds-complete-2026-10-20)).
-5. F1175 - **Complete.** Type only the Application Class Transfer package version; preserve integer JSON output and legacy parser diagnostics (see the [completion record](03-Phase-2-Progress-Log.md#f1175-class-transfer-package-version-complete-2026-10-20)).
-6. F1176 - **Complete.** Type only the optional Application Schedule-slot policy hour and feature helper result as `Application::ScheduleSlotCanonicalHour`, preserving the 15/16 cutoff, absence, weekend/intensive precedence, toggling, and canonical-label parsing (see the [completion record](03-Phase-2-Progress-Log.md#f1176-schedule-slot-canonical-hour-complete-2026-10-20)).
-7. F1177 - **Accepted/in progress; final candidate.** Type only the Application academic-term week count, preserving invalid-input rejection, four-term cardinality, JSON v1 behavior, and UI rollback semantics (see the [acceptance record](03-Phase-2-Progress-Log.md#f1177-academic-term-week-count-accepted-before-implementation-2026-10-20)).
-
-Batch490 has F1171–F1176 complete and F1177 accepted/in progress as its final candidate; it remains unpushed until F1177 implementation and closeout complete. Batch491 remains provisional/inactive with eight candidates until Batch490 closes. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+1. F1178 - **Complete.** Type the eight Schedule Import review summary values and two projection inputs as `Application::ScheduleImportReviewCount`; preserve the action mappings, visible text, and cleared-schedule projection behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1178-schedule-import-review-count-complete-2026-10-20)).
+2. F1179 - **Complete.** Reuse `Domain::CourseGradeBand` in both Application prompt grade fields; preserve 4–6 eligibility, `Other` rejection, prompt text and formatting, Feature integer mapping, and integer report/legacy storage (see the [completion record](03-Phase-2-Progress-Log.md#f1179-speaking-evaluation-ai-grade-band-complete-2026-10-20)).
+3. F1180 - **Discovered; next.** Type the Class Transfer skipped-class count; preserve zero, exact count, and no range policy.
+4. F1181 - **Discovered.** Type the Class Transfer package-class index; preserve the `-1` sentinel, out-of-range values, and validation issue order.
+5. F1182 - **Discovered.** Type Updater encoded URLs; preserve encoded text and existing parse/display behavior without validation or canonicalization.
+6. F1183 - **Discovered.** Type Updater release-date ISO text; preserve ISO text, invalid/empty behavior, and localized display.
+7. F1184 - **Discovered.** Type Import/report job generation tokens; preserve initial 1, exact values, stale rejection, and exhaustion behavior.
+8. F1185 - **Discovered; lower confidence.** Type the Class Analytics criterion student count; preserve zero and count only when criterion data exists, confirming its contract and test coverage at acceptance.
 
 #### Deferred candidates
 

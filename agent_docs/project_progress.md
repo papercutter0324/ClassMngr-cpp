@@ -67,8 +67,8 @@ restore-defaults name `ClassMngrCalendarPreferencesRestoreDefaultsTests`; the
 Tester build was up to date, and `git diff --check` passed. No full suite or
 Windows build ran. Batch490 is complete and pushed to `origin/Qt-Rewrite` at
 `69be43a7`; see the [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20).
-Batch491 is active with F1178 complete, F1179 accepted/in progress, and F1180
-next; F1180–F1185 remain discovered. F1175's Class Transfer test still has one
+Batch491 is active with F1178 and F1179 complete, F1180 next, and F1181–F1185
+discovered. F1175's Class Transfer test still has one
 unresolved teacher-fallback label failure among 64 cases;
 no clean baseline proves it pre-existing. F629 awaits source-bound Windows x64
 layout evidence. Phase 0 and Phase 2 gates remain open.
@@ -6644,3 +6644,22 @@ behavior and tests unchanged, and retain report/legacy integer storage.
 Implementation and verification have not started. Batch491 remains unpushed;
 F1180–F1185 remain discovered. Batch490 is pushed at `69be43a7`; F629 and
 both phase gates remain open.
+
+## Phase 2 update - F1179 complete; Batch491 active - 2026-10-20
+
+F1179 completed at source/test commit `26751644`, following acceptance commit
+`3a46ce21`. Both Application AI prompt grade fields now use
+`Domain::CourseGradeBand` with default `Other`; prompt eligibility and ordinal
+formatting consume the typed band, while both Feature request boundaries map
+the existing report integers through `speakingEvaluationCourseGradeBandFromInteger`.
+Exact prompt text, the integer grade parser, report/legacy integer storage,
+and unsupported-grade behavior remain unchanged.
+
+The independent Tester cleaned the affected target outputs and rebuilt
+`ClassMngr`, the prompt and eligibility test targets,
+`ClassMngrSpeakingEvalBatchReportServiceTests`, and the affected Platform text
+match port test target. Four focused CTests passed 4/4; the eligibility UI
+selector passed with 3 QtTest cases. `git diff --check` passed. The UI checks
+reported a font-alias warning without failures. No full suite or Windows build
+ran. Batch491 remains unpushed with F1180 next and F1181–F1185 discovered.
+Batch490 is pushed at `69be43a7`; F629 and both phase gates remain open.
