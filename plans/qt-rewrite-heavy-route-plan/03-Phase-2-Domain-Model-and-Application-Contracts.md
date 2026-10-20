@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch498 is active with F1235 next for acceptance and F1236 discovered; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: F1235 is accepted before implementation and F1236 remains discovered in active Batch498; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-Batch497 was pushed to `origin/Qt-Rewrite`, advancing it to `75788b64` (see the [Batch497 push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)); Batch498 is now active with F1235 next for acceptance and F1236 discovered. F629 and the Phase 0 and Phase 2 gates remain open.
+F1235 is accepted before implementation; its typed weekday contract and preservation requirements are recorded in the [acceptance entry](03-Phase-2-Progress-Log.md#f1235-scheduletime-weekday-ordinal-boundary-accepted-before-implementation-2026-10-21). Batch498 remains active with F1236 discovered. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,9 +72,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch498 (2 candidates; 0 complete, 2 discovered)
+#### Active batch: Batch498 (2 candidates; 0 complete, 1 accepted, 1 discovered)
 
-1. F1235 - **Discovered; next for acceptance.** Use `Domain::Weekday` at the `ScheduleTime` boundary where appropriate; preserve weekday, minute, overlap, projection, label, and ordering behavior.
+1. F1235 - **Accepted; awaiting implementation.** Use `Domain::Weekday` at the `ScheduleTime` boundary and migrate boundary callers with explicit mappings; preserve weekday, minute, overlap, projection, label, and ordering behavior.
 2. F1236 - **Discovered.** Type shared calendar workbook cell coordinates and ranges; preserve one-based validation, inclusive containment, lookup precedence, merged values, and consumer ordering.
 
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.

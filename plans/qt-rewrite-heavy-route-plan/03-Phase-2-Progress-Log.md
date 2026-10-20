@@ -56979,3 +56979,52 @@ c6fd2458..75788b64  Qt-Rewrite -> Qt-Rewrite
 local branch was synchronized with its upstream after the push. This closes
 Batch497 and activates the previously discovered Batch498: F1235 is next for
 acceptance and F1236 remains discovered. No tests were run for the push.
+
+### F1235 ScheduleTime weekday ordinal boundary accepted before implementation - 2026-10-21
+
+F1235 is accepted based on two independent Explorer reviews, the Investigator
+review, and exact CMake/CTest registration evidence. Change
+`Domain::ScheduleTime::fromMinutes` to take `Domain::Weekday` with start and end
+minute integers. Keep `weekday()` as the typed accessor and remove
+`weekdayIndex()`. Validate weekday range even when an invalid enum value is
+created by cast; Monday `0` through Sunday `6` remain the Domain semantics.
+
+Change the stable Application helper `makeScheduleImportStateTime` to accept
+`std::optional<Domain::Weekday>`, allowing unknown or invalid source weekdays
+to remain absent. Preserve the original day/start/end labels and produce an
+absent `scheduleTime` with the existing invalid-projection diagnostic; never
+default an invalid weekday to Monday. At external parser, legacy UI/repository,
+and adapter boundaries, use explicit validation or mapping and do not rely on
+ordinal agreement between separate weekday enums. Preserve invalid Schedule
+Import day sorting last, worksheet/import order, labels, and existing ordering.
+Keep one-based `SubPrepWeekday` and other separate contracts out of scope.
+
+Migrate callers in Class Details, Schedule Import projection/repository/review
+UI, the setup wizard, and the Class Details conflict adapter. Preserve Class
+Details `InvalidWeekday` and `EndNotAfterStart` diagnostic order, minute bounds
+`[0, 1439]`, `end > start`, no-overnight behavior, half-open same-day overlap,
+boundary cases, conflict mapping, and `ScheduleTime` ordering/equality.
+
+Tests should cover the typed API boundary, rejection of cast-invalid weekdays,
+Monday-through-Sunday conversion, minute bounds and no-overnight behavior,
+half-open overlap, invalid Schedule Import input with retained labels and absent
+projection, invalid raw-source conversion, and invalid-day sort-last/order.
+Use focused assertions in existing tests.
+
+The accepted focused build targets and matching generated CTest names are
+`ClassMngrNextDomainContractTests`,
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests`,
+`ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`,
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`,
+`ClassMngrNextApplicationScheduleImportStateValidationTests`,
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests`,
+`ClassMngrScheduleImportTests`, `ClassMngrScheduleImportDialogTests`,
+`ClassMngrClassDetailsSavePageTests`, and
+`ClassMngrInitialSetupWizardClassCreateSaveParityTests`, along with production
+target `ClassMngr`. CMake's helper adds the `ClassMngr` prefix and `Tests`
+suffix; raw registration names are not the CTest names. Use the documented
+`build/windows-x64-debug` folder if supported. If the Windows preset remains
+disabled on this macOS host, report that blocker and scoped incremental
+`build/macos-clang-debug` verification without claiming Windows or full-suite
+coverage. At acceptance time, no implementation, tests, or build had started.
