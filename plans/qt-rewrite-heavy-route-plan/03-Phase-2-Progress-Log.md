@@ -57342,3 +57342,33 @@ host.
 
 Batch499 remains active with F1237 and F1238 complete. F1239 is next for
 acceptance; F1240–F1242 remain in the ordered discovered queue.
+
+### F1239 Class Transfer weekday candidates accepted before implementation - 2026-10-21
+
+F1239 is accepted before implementation. Type the weekday argument to
+`ClassTransferScheduleCandidate::create` as the existing `Domain::Weekday`,
+with Monday=`0` through Sunday=`6`; do not add a competing weekday type or use
+same-day `ScheduleTime` for overnight intervals. The candidate factory must
+reject forged invalid `Domain::Weekday` values.
+
+At the legacy repository boundary, preserve
+`ScheduleValueParser::parseWeekday` and exact canonical-text equality. Map
+valid parsed indexes `0..6` explicitly to the named `Domain::Weekday` values.
+Invalid or noncanonical text must continue producing no candidate and the
+existing diagnostics before writes.
+
+Preserve category/time validation and absolute minutes-from-Monday
+calculations. When `end <= start`, advance the end by one day; equal endpoints
+represent a 24-hour interval, and Sunday overnight intervals may extend past
+the week boundary. Preserve half-open overlap and the `-1/0/+1` week
+comparison, conflict ordering and category behavior, and repository preflight
+before transaction. F1235 `ScheduleTime` same-day behavior remains separate and
+unchanged.
+
+Focused coverage should retain typed weekday-to-minute mapping, forged invalid
+enum rejection, malformed-input diagnostics and no-write behavior, half-open
+touching, Sunday overnight overlap, and equal-endpoint behavior. Build
+`ClassMngr` plus `ClassMngrNextApplicationClassTransferTests` and
+`ClassMngrClassTransferTests`; run those two focused CTests. At acceptance,
+implementation, build, and tests had not started. Batch499 remains active;
+F1240–F1242 stay in the ordered discovered queue.
