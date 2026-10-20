@@ -53240,3 +53240,35 @@ Batch491 has F1178 complete and F1179 next, with F1179–F1185 still discovered.
 Batch491 remains unpushed. Batch490 is complete and pushed at `69be43a7`. F629
 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2
 gates remain open.
+
+### F1179 Speaking Evaluation AI grade band accepted before implementation - 2026-10-20
+
+F1179 is accepted/in progress. Reuse existing `Domain::CourseGradeBand` for
+the `grade` fields in `SpeakingEvaluationAiCommentPromptRequest` and
+`SpeakingEvaluationAiBatchPromptStudent`, with default `Other`; add no new
+wrapper. In the Application prompt builder, use the typed enum for the existing
+4–6 eligibility decision and ordinal prompt formatting. At Feature
+boundaries, map existing report `int` grades with
+`Application::speakingEvaluationCourseGradeBandFromInteger` (`4/5/6` to
+`E4/E5/E6`, all other values to `Other`).
+
+Preserve prompt text, 4–6 eligibility, `Other` rejection, and the existing
+integer mapper. Keep `speakingEvaluationElementaryGrade` returning `int` with
+its parser behavior and tests unchanged. Preserve report and legacy integer
+storage and unrelated `CourseGradeBand` behavior.
+
+Acceptance verification builds `ClassMngr`,
+`ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests`,
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests`, and
+`ClassMngrSpeakingEvalBatchReportServiceTests`; runs CTests
+`ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests`,
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests`,
+`SpeakingEvalAiBatchPromptUiParity`, and `SpeakingEvalAiSinglePromptUiParity`;
+and runs the focused QtTest selector
+`aiBatchDialogDisplaysEligibilityReasonsAndCheckState`. Implementation and
+verification have not started; no full-suite or Windows run is in scope.
+
+Batch491 has F1178 complete, F1179 accepted/in progress, and F1180 next after
+F1179; F1180–F1185 remain discovered. Batch491 remains unpushed. Batch490 is
+complete and pushed at `69be43a7`. F629 awaits source-bound Windows x64 layout
+evidence, and the Phase 0 and Phase 2 gates remain open.

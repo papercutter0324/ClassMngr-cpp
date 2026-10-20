@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (Batch490 locally complete; Batch491 active)
+### Current checkpoint - 2026-10-20 (Batch490 pushed; Batch491 active)
 
 F1177 completed at source/test commit `d3e8ca01`, after acceptance commit
 `914b5316` and CTest-name correction `80ea5513`. Qt-free
@@ -67,8 +67,8 @@ restore-defaults name `ClassMngrCalendarPreferencesRestoreDefaultsTests`; the
 Tester build was up to date, and `git diff --check` passed. No full suite or
 Windows build ran. Batch490 is complete and pushed to `origin/Qt-Rewrite` at
 `69be43a7`; see the [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20).
-Batch491 is active with F1178 complete, F1179 next, and six other candidates
-discovered. F1175's Class Transfer test still has one
+Batch491 is active with F1178 complete, F1179 accepted/in progress, and F1180
+next; F1180–F1185 remain discovered. F1175's Class Transfer test still has one
 unresolved teacher-fallback label failure among 64 cases;
 no clean baseline proves it pre-existing. F629 awaits source-bound Windows x64
 layout evidence. Phase 0 and Phase 2 gates remain open.
@@ -6632,3 +6632,15 @@ Both standalone Application projection CTests passed 2/2. The dialog selector
 only. `git diff --check` passed. No full suite or Windows run occurred. Batch491
 has F1178 complete and F1179 next, with six discovered candidates remaining.
 Batch490 is pushed; F629 and both phase gates remain open.
+
+## Phase 2 update - F1179 accepted; Batch491 active - 2026-10-20
+
+F1179 is accepted to reuse existing `Domain::CourseGradeBand` in both
+Application Speaking Evaluation AI prompt request grade fields, with default
+`Other`. Preserve 4–6 eligibility, rejection of `Other`, exact prompt text,
+and the existing integer-to-band mapper at Feature boundaries. Keep the
+`speakingEvaluationElementaryGrade` parser returning `int` with its current
+behavior and tests unchanged, and retain report/legacy integer storage.
+Implementation and verification have not started. Batch491 remains unpushed;
+F1180–F1185 remain discovered. Batch490 is pushed at `69be43a7`; F629 and
+both phase gates remain open.
