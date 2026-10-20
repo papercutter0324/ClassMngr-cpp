@@ -55608,6 +55608,32 @@ mapping/order coverage in
 `ClassMngrClassTransferTests`, and affected production target `ClassMngr`. No
 F1216 implementation or verification has started.
 
+### F1216 Class Transfer matching package-class index complete - 2026-10-21
+
+F1216 completed at commit `818b5109` (`Phase2 - Type Class Transfer matching
+indexes`). The existing `ClassTransferPackageClassIndex` now lives in the small
+shared Application header `class_transfer_package_class_index.h` and is used by
+both matching source and result fields. Their previous default `0` values are
+preserved explicitly. The Platform adapter wraps package positions, the
+preview query passes the typed position through without narrowing, and legacy
+conversion unwraps it. Existing Feature range/skip checks and ordering remain
+unchanged.
+
+The independent Tester built `ClassMngr`,
+`ClassMngrNextApplicationClassTransferTests`,
+`ClassMngrNextApplicationClassTransferPreviewQueryTests`, and
+`ClassMngrClassTransferTests`. The two Application CTests passed. The
+`ClassTransferPreviewAdapterRegressionTests` CTest passed 1/1; its selected
+Qt case reported 3 passes and verified indices `0` and `1` through the Platform
+request, typed preview, and legacy preview. The full `ClassMngrClassTransferTests`
+CTest did not pass: without offscreen mode it hit a no-screen UI environment
+failure, and with `QT_QPA_PLATFORM=offscreen` it failed the teacher-label
+assertion in `importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`
+at `tests/class_transfer_tests.cpp:5181`. The Tester reproduced the same
+actual/expected label mismatch on pre-F1216 baseline
+`9d8c61e3e74f1308badae50b6b7b8185b97f77c6`; no cause beyond the matching
+baseline result is claimed. No full suite or Windows run is claimed.
+
 ### Batch494 push receipt - 2026-10-20
 
 Batch494 is complete and pushed to `origin/Qt-Rewrite`. The normal push
