@@ -58936,3 +58936,69 @@ Batch501 remains active with F1253–F1255 complete and F1256 accepted awaiting
 implementation (3 complete, 1 accepted, 0 discovered). Batch502's five
 candidates F1257–F1261 remain discovered and inactive until Batch501 closes.
 F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1256 RosterSnapshot column width complete - 2026-10-21
+
+F1256 completed in source/test commit
+`70f9003a6f584606e3de77c2b3dc0a5a79d3a622`, following acceptance documentation
+commit `3a5d0f73e54315e2975bb5525df4f986963adff7`. Batch501's source/test
+commits landed in slice order: F1253
+`1f4b405f9df66a988fd8cd49f50b49ae18ae6ea5`, F1254
+`c7e53f3947e49f23e763670686dac4d391b30fce`, F1255
+`907d050eeed64865ec83b62516257622797af9ed`, and F1256
+`70f9003a6f584606e3de77c2b3dc0a5a79d3a622`. Batch501 is complete locally;
+its push is pending and no push receipt is recorded here.
+
+The 21 changed paths were the production files `src/next/application/roster_snapshot.h`,
+`src/next/application/roster_row_transfer_use_case.h`,
+`src/next/platform/application_services_roster_read_port.h`,
+`src/next/platform/application_services_roster_save_port.h`,
+`src/next/platform/application_services_roster_row_transfer_save_port.h`,
+`src/next/platform/application_services_roster_template_print_source_read_port.h`,
+`src/features/roster/ui/roster_editor_widget.cpp`,
+`src/features/roster/ui/roster_editor_widget_transfer.cpp`, and
+`src/features/roster/services/roster_template_print_private_service.inc`, plus
+the tests `tests/next_application_roster_custom_column_append_tests.cpp`,
+`tests/next_application_roster_read_query_tests.cpp`,
+`tests/next_application_roster_row_removal_tests.cpp`,
+`tests/next_application_roster_row_reordering_tests.cpp`,
+`tests/next_application_roster_row_transfer_use_case_tests.cpp`,
+`tests/next_application_roster_save_use_case_tests.cpp`,
+`tests/next_application_roster_template_print_source_read_query_tests.cpp`,
+`tests/next_platform_application_services_roster_read_port_tests.cpp`,
+`tests/next_platform_application_services_roster_save_port_tests.cpp`,
+`tests/next_platform_application_services_roster_template_print_source_read_port_tests.cpp`,
+`tests/roster_template_print_service_tests.cpp`, and
+`tests/roster_transfer_menu_tests.cpp`.
+
+`RosterSnapshot::columnWidths` now uses explicit int-backed,
+zero-default `RosterSnapshotColumnWidth`, distinct from
+`ClassExportRosterColumnWidth`. Explicit conversions carry the values through
+Application row transfer, Platform read/save/row-transfer-save/template-print
+ports, roster editor snapshot conversion, transfer UI, and template-print
+service. Signed values and vector order, including `[INT_MIN, -1, 0, INT_MAX]`,
+remain unchanged. No width validation, clamp, or sort was added; count-only
+save preparation and missing-width-to-zero row transfer remain. Legacy
+`QVector<int>`, schema/storage and representability checks, and Class Transfer
+package/JSON remain unchanged.
+
+The Executor incrementally built `ClassMngr` and the ten accepted targets,
+plus row-removal, row-reordering, and custom-column-append fixture targets in
+`build/macos-clang-debug`. The accepted focused CTests were
+`NextApplicationRosterSaveUseCase`, `NextApplicationRosterReadQuery`,
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`,
+`ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests`,
+`NextPlatformApplicationServicesRosterReadPort`,
+`NextPlatformApplicationServicesRosterSavePort`,
+`NextPlatformApplicationServicesRosterTemplatePrintSourceReadPort`,
+`RosterEditorWidgetSave`, `RosterTransferMenu`, and
+`ClassMngrRosterTemplatePrintServiceTests`. The independent Tester rechecked
+the builds and all ten focused CTests passed (10/10); `git diff --check`
+passed. Its `ctest -N` inventory emitted unrelated missing-executable
+warnings; no broader suite was run. No clean build or Windows build was
+performed.
+
+Batch501 (F1253–F1256) is complete locally and awaits push. Batch502 is now
+active with five discovered candidates: F1257 is next for acceptance, followed
+by F1258–F1261 in the recorded order. F629 and the Phase 0 and Phase 2 gates
+remain open.

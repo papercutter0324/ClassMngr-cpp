@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch500 (F1243–F1252) is complete and pushed at `029a17e8`; active Batch501 has F1253–F1255 complete and F1256 accepted awaiting implementation; Batch502 is discovered but inactive until Batch501 closes; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch501 (F1253–F1256) is complete locally with push pending; active Batch502 has five discovered candidates with F1257 next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1255 is complete at `907d050e`; the incremental macOS build and three focused academic-year policy and Calendar CTests passed (3/3) (see [F1255 verification](03-Phase-2-Progress-Log.md#f1255-academic-term-year-complete-2026-10-21)). Batch501 has F1253–F1255 complete and F1256 next for acceptance; Batch502 remains discovered and inactive until Batch501 closes. F629 and the Phase 0 and Phase 2 gates remain open.
+F1256 is complete at `70f9003a`; the incremental macOS build and ten focused roster snapshot CTests passed (10/10) (see [F1256 verification](03-Phase-2-Progress-Log.md#f1256-rostersnapshot-column-width-complete-2026-10-21)). Batch501 is complete locally with push pending; Batch502 is active with F1257 next for acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,12 +72,13 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch501 (4 candidates; 3 complete, 1 accepted, 0 discovered)
+#### Active batch: Batch502 (5 candidates; 0 complete, 0 accepted, 5 discovered)
 
-1. F1253 - **Complete.** Add distinct explicit signed-64 Application identities for GS Team and Native English Teacher stored profiles; preserve `-1` and full-width SQL transport.
-2. F1254 - **Complete.** Type `TeacherImportCandidateGroup::candidateCount` while preserving expansion, selection bounds, order, and validation behavior.
-3. F1255 - **Complete.** Type the academic-year validation boundary while preserving the 2026 lower bound and absence of an upper bound.
-4. F1256 - **Accepted; awaiting implementation; rechecked after F1251.** Type generic `RosterSnapshot::columnWidths` with a distinct `RosterSnapshotColumnWidth`; keep it separate from `ClassExportRosterColumnWidth` and preserve signed values and order.
+1. F1257 - **Discovered; next for acceptance.** Type `ClassSummary::order`, preserving default zero, nonnegative validation, and position-then-class-ID ordering; keep distinct from F1248 navigation ranks.
+2. F1258 - **Discovered.** Type weekday-group classification values while preserving the 0/1/2 categories, trim/fold behavior, equality, and empty-existing eligibility; keep separate from legacy F729 parser work.
+3. F1259 - **Discovered.** Consider distinct Document Catalog folder/entry key types while preserving exact text, validation, ordering, and independent keys; add no equality or uniqueness policy.
+4. F1260 - **Discovered.** Consider an open-text Calendar Event summary event-type value, preserving unknown names and current validation/trimming.
+5. F1261 - **Discovered.** Type Calendar event projection order while preserving nonnegative int32 values, source sequence, and no sorting/uniqueness rule.
 
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
