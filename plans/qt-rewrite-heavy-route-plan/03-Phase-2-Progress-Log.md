@@ -55106,3 +55106,84 @@ Evidence: `src/next/application/class_details_validation_policy.h` (lines
 `ClassMngrClassDetailsPageSaveParityTests`, and `ClassMngr`. No F1207
 implementation or verification has started. Batch494 remains open and
 unpushed; F1208–F1209 remain discovered.
+
+### F1207 Class Details schedule validation row index complete - 2026-10-20
+
+F1207 completed at source commit `b09101f8` (`Phase2 - Type class schedule
+validation row`). `ClassDetailsValidationIssue::row` now uses the explicit,
+zero-default `ClassDetailsScheduleValidationRowIndex` value backed by
+`std::size_t`. The policy constructs the type for row-level and duplicate-slot
+issues; it retains raw `duplicateRows` and the existing diagnostic order. The
+Feature adapter unwraps only for field paths and legacy `ValidationIssue.row`,
+keeping `-1` for non-schedule issues. Existing Application assertions now read
+`rawValue()`.
+
+`git diff --check` passed before commit. No build or tests ran, so this commit
+has no behavioral verification evidence. Batch494 remains open and unpushed.
+
+### Batch495 discovery finalized at F1208 start - 2026-10-20
+
+A bounded read-only scan of Application position fields and their Feature or
+Platform callers found nine ordered candidates, one below the ten-candidate
+target:
+
+1. **F1210 - Speaking Evaluation validation issue coordinates.** Type
+   `SpeakingEvaluationValidationIssue::row` and `column` independently;
+   preserve zero-based values, separate `-1` absence sentinels, and UI mapping.
+2. **F1211 - Schedule Import class-color candidate index.** Reuse
+   `ScheduleImportCandidateIndex` for `ScheduleImportPlanEligibilityClassColors::candidateIndex`;
+   preserve `-1` and out-of-range filtering.
+3. **F1212 - Roster row removal input.** Type the selected source-row argument
+   to `removeRosterRow`; preserve invalid-row and empty-row rejection order.
+4. **F1213 - Roster custom-column removal input.** Type the selected column
+   argument to `canRemoveRosterCustomColumn`; preserve range and required-column
+   rejection order.
+5. **F1214 - Student name-pair lookup positions.** Type the selected row and
+   returned peer rows separately; preserve self-exclusion and peer order.
+6. **F1215 - Korean-name suffix selected row.** Type only the selected-row
+   argument to `suggestStudentKoreanNameSuffix`; preserve invalid-row and
+   incomplete-name empty results.
+7. **F1216 - Class Transfer matching package-class position.** Use one typed
+   package-class index in matching input and result; preserve source order and
+   the preview mapping.
+8. **F1217 - Roster projected source-column position.** Type the optional
+   stored-column index; preserve absence and displayed-column order.
+9. **F1218 - Roster first-empty-row result.** Type the returned row position;
+   preserve the modeled-row-count sentinel and Feature insertion behavior.
+
+The scan evidence is in `src/next/application/speaking_evaluation_validation.h`,
+`schedule_import_plan_validation.h`, `roster_row_removal.h`,
+`roster_custom_column_removal_policy.h`, `student_name_pair_lookup.h`,
+`student_korean_name_suffix_suggestion.h`, `class_transfer_matching_policy.h`,
+`roster_column_projection.h`, and `roster_row_availability.h`, with callers in
+the corresponding Feature adapters and models. Other matches were local loop
+indexes or fields without a stable Feature/Platform contract and were not
+carried forward. F1219 is not assigned; the discovery shortfall is one.
+
+### F1208 Speaking Evaluation changed-cell coordinates accepted before implementation - 2026-10-20
+
+F1208 is accepted/current before implementation. In
+`src/next/application/speaking_evaluation_validation.h`, replace only
+`SpeakingEvaluationCellChange::row` and `.column` with distinct explicit
+Application value types backed by `int`, defaulting independently to `-1` and
+exposing `.rawValue()` and equality without implicit conversions. Preserve
+arbitrary values in the request value and the existing validation boundary in
+`SpeakingEvaluationSaveUseCase`, which accepts only zero-based cells inside the
+25-row by 11-column matrix. Unwrap only at the Feature snapshot builder and
+Platform legacy-cell adapter. Do not change
+`SpeakingEvaluationValidationIssue::row` or `.column` in this slice.
+
+Evidence: `speaking_evaluation_validation.h` (`SpeakingEvaluationCellChange`),
+`src/next/application/speaking_evaluation_save_use_case.h` (changed-cell range
+checks), `src/features/speaking_eval/ui/speaking_eval_page_validation_adapter.cpp`
+(snapshot construction), and
+`src/next/platform/application_services_speaking_evaluation_save_port.cpp`
+(legacy conversion). Existing coverage is in
+`tests/next_application_speaking_evaluation_save_use_case_tests.cpp`,
+`tests/next_platform_application_services_speaking_evaluation_save_port_tests.cpp`,
+and `tests/speaking_eval_page_save_tests.cpp`; the focused CMake targets are
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`,
+`NextPlatformApplicationServicesSpeakingEvaluationSavePort`,
+`ClassMngrSpeakingEvalPageSaveTests`, and `ClassMngr`. No F1208 implementation
+or verification has started. Batch494 remains open and unpushed; F1209 remains
+discovered.
