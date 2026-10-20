@@ -55340,6 +55340,33 @@ The independent Tester built `ClassMngr`,
 focused CTests passed 3/3: Application 13 Qt cases, Platform 15, and page
 parity 5. No full suite or optional broader UI-flow result is claimed.
 
+### F1211 Schedule Import class-color candidate index accepted before implementation - 2026-10-20
+
+F1211 is accepted/current based on two independent read-only Explorer reports.
+Change only `ScheduleImportPlanEligibilityClassColors::candidateIndex` to reuse
+the existing explicit `ScheduleImportCandidateIndex` value type, backed by
+`int`, defaulting to `-1`, with `.rawValue()`, equality, and no implicit
+conversion. Preserve all supplied values. Keep the existing policy behavior
+that ignores negative and out-of-range color-record indexes before any
+candidate-vector access; do not convert to an unsigned index before that
+filter. Preserve the later-record-wins mapping, missing/invalid-color issues,
+and skipped-candidate exemption.
+
+Update the construction sites in
+`src/next/application/schedule_import_apply_validation.h` and
+`src/features/schedule/services/schedule_import_plan_validator.cpp` (both the
+eligibility request and legacy plan conversion paths) to carry the typed index.
+Unwrap only for the existing filter and vector lookup. Do not change
+`ScheduleImportPlanEligibilityIssue::candidateIndex` or valid candidate-loop
+indexes. Existing Application coverage is in
+`tests/next_application_schedule_import_plan_validation_tests.cpp`; add direct
+negative and out-of-range record cases that preserve filtering, with a Feature
+validator mapping check in `tests/schedule_import_dialog_tests.cpp`. Preserve
+the existing invalid-color and skip assertions. Focused targets are
+`ClassMngrNextApplicationScheduleImportPlanValidationTests`,
+`ClassMngrScheduleImportDialogTests`, and affected production target
+`ClassMngr`. No F1211 implementation or verification has started.
+
 ### Batch494 push receipt - 2026-10-20
 
 Batch494 is complete and pushed to `origin/Qt-Rewrite`. The normal push
