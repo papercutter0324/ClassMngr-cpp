@@ -53098,7 +53098,7 @@ CTests: `ClassMngrNextApplicationAcademicYearSchedulePolicyTests`,
 `AcademicCalendarScheduleValidityPolicy`,
 `AcademicCalendarJsonRoundTripAndMalformedFallback`,
 `AcademicCalendarInvalidWinterContinuityIsAtomic`,
-`CalendarPreferencesRestoreDefaults`,
+`ClassMngrCalendarPreferencesRestoreDefaultsTests`,
 `CalendarPreferencesRejectsOutOfRangeWinterStart`, and
 `CalendarPreferencesRejectsOutOfRangeInternalTermStart`. Require independent
 Tester review and `git diff --check`. Implementation and verification have not
