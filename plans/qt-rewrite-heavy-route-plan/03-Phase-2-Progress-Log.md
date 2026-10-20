@@ -59110,3 +59110,41 @@ Windows build, or full-suite verification is claimed.
 Batch502 remains active: F1257 is complete, F1258 is next for acceptance, and
 F1259–F1261 remain discovered. Batch501 is complete and pushed at `7f8ca958`.
 F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1258 Schedule Import weekday group accepted before implementation - 2026-10-21
+
+F1258 is accepted as the second Batch502 slice. Add the closed enum
+`ScheduleImportMatchingProjectionDetail::WeekdayGroup` inside the existing
+Detail namespace, with explicit integer values `Unclassified = 0`,
+`MondayWednesdayFriday = 1`, and `TuesdayThursday = 2`. Make `dayGroup()`
+return this enum and update its two existing callers to compare named values.
+Keep the type internal to the existing projection header; no new header or
+manifest entry is needed.
+
+Preserve trimming of the six existing ASCII whitespace bytes, ASCII A–Z case
+folding, and full weekday-name acceptance. Monday/Wednesday/Friday map to the
+first classified group, Tuesday/Thursday to the second, and empty, unknown,
+or mixed weekday groups remain `Unclassified`. `meetingDaysMatch` continues
+to require both groups to be classified and equal, plus exact equality of
+normalized, deduplicated, sorted meeting-day names. `isEligible` continues to
+require matching grade and level; an explicit empty `existingTimes` remains a
+bypass, while non-empty existing times require equal classified groups. Empty
+times are not treated as `Unclassified`. The legacy F729
+`scheduleImportDayGroup()` and Qt normalization are unchanged. No new candidate
+discovery is triggered by this slice.
+
+Focused tests in
+`tests/next_application_schedule_import_matching_projection_tests.cpp` will
+assert the returned type and category values, M/W/F and T/Th grouping,
+trimming and ASCII folding, empty/unknown/mixed unclassified cases, failure
+for same-group but different meeting-day names, and successful matching for
+normalized equivalent days. Existing empty-existing eligibility coverage is
+retained and clarified where useful.
+
+The accepted incremental build targets are `ClassMngr` and
+`ClassMngrNextApplicationScheduleImportMatchingProjectionTests`; run only the
+registered CTest `ClassMngrNextApplicationScheduleImportMatchingProjectionTests`.
+No implementation, build, or tests have started. The existing projection
+header is already in the source manifest, so no CMake manifest change is
+expected. No clean build, Windows build, or full-suite verification is
+claimed.
