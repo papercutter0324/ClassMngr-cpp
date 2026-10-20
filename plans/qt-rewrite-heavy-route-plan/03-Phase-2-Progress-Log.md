@@ -51116,3 +51116,97 @@ Batch487 has ten candidates: eight complete (F1144–F1151), none accepted/in
 progress, and two discovered (F1152–F1153); F1152 is next. The batch remains
 open, so no push is due. F629 remains active pending source-bound Windows x64
 evidence; the Phase 0 and Phase 2 gates remain open.
+
+### F1152 Class Analytics evaluation selection accepted before implementation - 2026-10-20
+
+F1152 is accepted/in progress. Add Qt-free
+`Application::ClassAnalyticsEvaluationSelection` with distinct All and owning
+exact UTF-16 evaluation-name modes; a default request selects All. Keep the
+name text exact in the value. At the UI boundary, blank combo `currentData()`
+maps to All and nonblank item data maps to ExactName; never infer selection
+from the translated display label. Preserve old text callers through a
+separately named legacy-text conversion: trimmed blank/whitespace and a
+case-insensitive literal `All` map to All. An explicitly constructed
+`ExactName("All")` remains name mode. The query applies its existing name
+semantics trim to a temporary value before exact, case-sensitive name matching.
+
+Preserve these behavior boundaries:
+
+1. An unknown exact name remains a successful result with empty selected and
+   class-shape snapshots; Year-to-Date still includes every evaluation.
+2. Keep All aggregation order, reverse class-shape choice, one batch read and
+   its error propagation, current/default selector behavior, and persisted
+   default-selection policy semantics.
+3. Do not change Platform storage, evaluation names, or the separate
+   default-selection service.
+
+Evidence: `src/next/application/class_analytics_dashboard_read_query.h:27,
+436-441,530-568`, `src/features/classes/ui/class_analytics_page.cpp:528-551`,
+and `src/next/platform/application_services_class_analytics_dashboard_read_port.h`.
+Focused test surfaces: `tests/next_application_class_analytics_dashboard_read_query_tests.cpp`,
+`tests/next_platform_application_services_class_analytics_dashboard_read_port_tests.cpp`,
+and `tests/class_analytics_page_read_parity_tests.cpp:292-369`.
+
+Focused verification gate: incrementally build `ClassMngr`,
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`,
+and `ClassMngrClassAnalyticsPageReadParityTests` in the existing
+`build/macos-clang-debug` tree. Add Application coverage for default/legacy
+All, explicit All versus `ExactName("All")`, exact named matching, preserved
+name text with trimmed and case-sensitive query matching, and unknown-name
+empty snapshots with global YTD. Preserve UI translated-label/item-data and
+All/Winter/YTD parity. Run the Application and Platform CTests, the UI selector
+`visibleSummaryShapeAndYearToDateMatchFixture`, and `git diff --check`. No
+implementation or test results are recorded yet. F629 and both Phase 0 and
+Phase 2 gates remain open.
+
+Batch487 has ten candidates: eight complete (F1144–F1151), one accepted/in
+progress (F1152), and one discovered (F1153). F1152 is the second-last slice;
+Batch487 remains active and no push is due.
+
+### Batch488 discovery at F1152 start - 2026-10-20
+
+Batch488 is discovered but not active while Batch487 remains in progress. The
+eight ordered candidates are provisional:
+
+1. **F1154 - RosterAvailability first-empty row result.** Preserve values
+   0–24, -1 as the full sentinel, and per-row `Result` errors. Evidence:
+   `src/next/application/roster_availability_batch_read_snapshot.h`,
+   `src/next/application/roster_availability_batch_read_query.h`, and
+   `tests/next_application_roster_availability_batch_read_query_tests.cpp`.
+2. **F1155 - My Classes student-count output.** Type the nonnegative count
+   while preserving per-row `Result` errors. Evidence:
+   `src/next/application/my_classes_student_count_batch_read_snapshot.h`,
+   `src/next/application/my_classes_student_count_batch_read_query.h`, and
+   `tests/next_application_my_classes_student_count_batch_read_query_tests.cpp`.
+3. **F1156 - Selected-class grade.** Keep grade as opaque UTF-8, including
+   whitespace and empty values; do not parse through Course. Evidence:
+   `src/next/application/selected_class_grade_read_snapshot.h` and
+   `tests/next_application_selected_class_grade_read_query_tests.cpp`.
+4. **F1157 - Schedule Builder source-time row.** Preserve raw UTF-16 day,
+   start, and end text and row order; do not parse. Evidence:
+   `src/next/application/schedule_builder_source_snapshot.h` and
+   `tests/next_application_schedule_builder_source_snapshot_tests.cpp`.
+5. **F1158 - Co-Teacher schedule identity.** Give day/start-time identity its
+   own schedule-slot concept; do not assume F1151's testing-specific key is
+   reusable. Evidence:
+   `src/next/application/class_co_teacher_page_read_snapshot.h` and
+   `tests/next_application_class_co_teacher_page_read_query_tests.cpp`.
+6. **F1159 - Schedule Slot State read-row identity.** Type day/start-time
+   identity while preserving arbitrary raw state text and row order. Evidence:
+   `src/next/application/schedule_slot_state_read_query.h` and
+   `tests/next_application_schedule_slot_state_read_query_tests.cpp`.
+7. **F1160 - Calendar repeat-series delete date.** Use
+   `Domain::GregorianDate` for the start date and preserve validation/error
+   behavior. Evidence:
+   `src/next/application/calendar_event_series_delete_port.h`,
+   `src/next/platform/application_services_calendar_event_series_delete_port.h`,
+   and `tests/calendar_page_event_mutation_parity_tests.cpp`.
+8. **F1161 - Calendar repeat-series edit event type.** Reassess against
+   `Domain::CalendarEventType`; resolve trimmed recognition versus raw
+   forwarding compatibility before acceptance. Evidence:
+   `src/next/application/calendar_event_series_edit_port.h`,
+   `src/next/platform/application_services_calendar_event_series_edit_port.h`,
+   and `tests/calendar_page_event_mutation_parity_tests.cpp`.
+
+No other slices were found.

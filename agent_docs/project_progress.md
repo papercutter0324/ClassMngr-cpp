@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1148-F1151 complete; Batch487 active; F1152 next; F629 open)
+### Current checkpoint - 2026-10-20 (F1148-F1151 complete; F1152 accepted/in progress; F629 open)
 
 F1148 completed at source/test commit
 `5a1756f54173affb33853f3e5dd0b8d8b3ce793d`, after acceptance commit
@@ -104,9 +104,20 @@ each. The save/reload selector timed out after 70.547 seconds after
 `initTestCase`, with no assertion result; it was interrupted and remains
 unverified, with no assertion failure observed. `git diff --check` passed. No
 full suite, Windows run, fresh configure, or clean build was performed.
-Batch487 now has eight complete slices and two discovered candidates; F1152
-is next. F629 remains active pending source-bound Windows layout evidence;
-Phase 0 and Phase 2 gates remain open.
+F1152 is accepted to add Qt-free `Application::ClassAnalyticsEvaluationSelection`
+with distinct All and owning exact UTF-16 name cases. Blank UI item data maps
+to All; nonblank item data maps to an exact name, while translated display text
+is never parsed. The name remains unnormalized in the value; Application keeps
+the existing trim-before-exact-case-sensitive match, successful empty result
+for unknown names, and global year-to-date projection. Explicitly typed
+`ExactName("All")` remains name mode, separate from the legacy text adapter's
+case-insensitive All spelling. Default-selection policy and its persisted
+preference remain out of scope. The focused gate is pending.
+
+Batch487 has eight complete slices, F1152 accepted/in progress, and F1153
+discovered. Batch488 has eight discovered candidates and is not yet active.
+F629 remains active pending source-bound Windows layout evidence; Phase 0 and
+Phase 2 gates remain open.
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,

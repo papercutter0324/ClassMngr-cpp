@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e`; see its [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20). Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96`; see its [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20). Batch486 is complete locally at F1143 source/test commit `686bdc2a5000709c6b5ab6cd6b632552d62577d6`; this update records Batch486's local closure, and the completed-batch push follows this closure commit (no push receipt yet). Batch487 is active with F1144–F1151 complete and two discovered candidates; F1152 is next (see [F1151 completion record](03-Phase-2-Progress-Log.md#f1151-schedule-testing-assignment-key-complete-2026-10-20)). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e`; see its [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20). Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96`; see its [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20). Batch486 is complete locally at F1143 source/test commit `686bdc2a5000709c6b5ab6cd6b632552d62577d6`; this update records Batch486's local closure, and the completed-batch push follows this closure commit (no push receipt yet). Batch487 is active with F1144–F1151 complete, F1152 accepted/in progress, and F1153 discovered; Batch488 is discovered but inactive (see [F1152 acceptance and Batch488 discovery](03-Phase-2-Progress-Log.md#f1152-class-analytics-evaluation-selection-accepted-before-implementation-2026-10-20)). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,7 +38,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch487 — Active; ten candidates, eight complete, none accepted/in progress, and two discovered:**
+**Batch487 — Active; ten candidates, eight complete, one accepted/in progress, and one discovered:**
 
 1. **F1144 — Complete at `e523001d`:** Type personal-signature image save-request bytes, separate from F1140's read-result value.
 2. **F1145 — Complete at `119b961e`:** Type only Sub Prep's normalized calendar-interval query output with existing `Domain::CalendarEventType`; keep raw read-port input and Calendar create/edit and repeat-series inputs unchanged to preserve compatibility.
@@ -48,10 +48,12 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 6. **F1149 — Complete at `91306a84`:** Type `ClassTransferPortablePackage::exportedAtUtc` with exact-text `Application::ClassTransferExportedAtUtc`; preserve canonical UTC text and raw apply/import behavior.
 7. **F1150 — Complete at `801b4d44`:** Type imported-room membership and selected-room review decision values with `Application::ScheduleImportReviewRoomValue`; preserve normalization boundaries, exact membership, and diagnostics.
 8. **F1151 — Complete at `7aa21f36`:** Type the raw UTF-16 weekday/start-time pair with `Application::ScheduleTestingAssignmentKey`; preserve row text, order, sentinel, and lookup behavior.
-9. **F1152 — Discovered; next:** Type Class Analytics evaluation selection. Distinguish All mode from a dynamic exact evaluation name; preserve blank/All and exact dynamic-name behavior.
-10. **F1153 — Discovered:** Type Class Analytics closed grade-label output. Preserve the C/B/B+/A/A+ mapping and unknown-to-C fallback.
+9. **F1152 — Accepted/in progress:** Add Qt-free `Application::ClassAnalyticsEvaluationSelection` with explicit All and owning exact UTF-16 name modes; preserve UI item-data, legacy-text, query, unknown-name, selector/default, aggregation, and YTD behavior.
+10. **F1153 — Discovered; next:** Type Class Analytics closed grade-label output. Preserve the C/B/B+/A/A+ mapping and unknown-to-C fallback.
 
-Batch487 has eight complete candidates (F1144–F1151), none accepted/in progress, and two discovered; F1152 is next. See the [F1151 completion record](03-Phase-2-Progress-Log.md#f1151-schedule-testing-assignment-key-complete-2026-10-20) and the [discovery record](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20) for current scope and remaining candidates.
+Batch487 has eight complete candidates (F1144–F1151), one accepted/in progress (F1152), and one discovered (F1153). See the [F1152 acceptance record](03-Phase-2-Progress-Log.md#f1152-class-analytics-evaluation-selection-accepted-before-implementation-2026-10-20) and [Batch487 discovery record](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20).
+
+**Batch488 — Discovered; not active (eight provisional candidates):** F1154 RosterAvailability first-empty row result; F1155 My Classes student-count output; F1156 selected-class grade text; F1157 Schedule Builder source-time row; F1158 Co-Teacher schedule-slot identity; F1159 Schedule Slot State row identity; F1160 repeat-series delete date; F1161 repeat-series edit event type. Full boundaries and evidence are in the [Batch488 discovery record](03-Phase-2-Progress-Log.md#batch488-discovery-at-f1152-start-2026-10-20).
 
 The provisional discovery record and full acceptance, preservation, and verification details are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 

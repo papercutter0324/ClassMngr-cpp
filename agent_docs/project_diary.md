@@ -8375,3 +8375,23 @@ passed. No full suite, Windows run, fresh configure, or clean build ran.
 Batch487 now has eight complete slices and two discovered candidates; F1152
 is next. F629 and both phase gates remain open. Batch486's push remains
 pending exact-payload approval.
+
+## 2026-10-20 - F1152 accepted and Batch488 discovered
+
+F1152 types Class Analytics selection as an explicit All-or-exact-name value.
+The UI's blank item data is All; nonblank item data carries the owning UTF-16
+name, and translated display text stays outside the query contract. Keep the
+existing trim-before-case-sensitive matching at query execution. Unknown exact
+names remain successful empty selected/class-shape results with global YTD;
+typed `ExactName("All")` remains distinct from the legacy case-insensitive
+All text alias. Do not change the separate default-selection policy or its
+persisted preference.
+
+Starting F1152 triggered Batch488 discovery, as it is the second-last slice of
+Batch487. Two independent scans found eight provisional candidates after F1153:
+typed roster first-empty-row result, My Classes student count, selected-class
+grade text, Schedule Builder source-time row, Co-Teacher schedule key,
+Schedule Slot State key, Calendar series delete start date, and Calendar
+series edit event type pending raw-value compatibility review. Batch487 has
+eight complete slices, F1152 accepted/in progress, and F1153 discovered;
+Batch488 is discovered but inactive. F629 and both phase gates remain open.
