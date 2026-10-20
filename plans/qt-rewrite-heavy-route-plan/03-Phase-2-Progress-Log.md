@@ -58589,3 +58589,65 @@ reviews. No clean build, Windows build, or full-suite run was performed.
 Batch500 (F1243–F1252) is complete and pushed at `029a17e8`. Batch501 remains
 active with F1253 complete and F1254 next for acceptance; F1255–F1256 remain
 discovered. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1254 Teacher Import review candidate count accepted before implementation - 2026-10-21
+
+F1254 is accepted before implementation. The field is
+`TeacherImportCandidateGroup::candidateCount` in
+`src/next/application/import_review_session.h`; it is not a member of
+`ImportReviewSession`. Replace the raw `std::size_t` field with a distinct
+Application value type, `TeacherImportCandidateCount`, with explicit
+`std::size_t` construction, zero default, `.rawValue()`, equality, and no
+implicit conversions to or from the raw or wrapper type. Keep this count
+distinct from requested and resolved candidate indexes.
+
+Preserve vector-sized count inputs without narrowing and leave count policy
+unchanged: All expands candidate indexes in ascending candidate order;
+Selected rejects negative or `>= count` indexes as
+`CandidateIndexOutOfRange`, detects duplicate requests, and emits selected
+indexes in ascending candidate order; None emits no candidates. Preserve the
+zero-count default, issue values and order, empty-group handling, and existing
+missing, unknown, and duplicate decision behavior. Add no cap, maximum,
+clamp, validation, or allocation policy.
+
+Requested indexes remain signed `std::int64_t`, while resolved indexes and
+the candidate vector cardinality remain `std::size_t`. Explicitly construct
+the count when `TeacherImportCandidateGroup` is formed from `size()` values
+in `src/features/teacher/ui/teacher_import_dialog.cpp:39-51` and
+`src/next/application/teacher_import_use_case.h:456-463`; preserve their
+existing vector-sized inputs. The separate Qt dialog `int` loop/index
+limitation at `teacher_import_dialog.cpp:441-449,511-517` is outside this
+slice and is not fixed by the Application count type.
+
+Acceptance coverage: assert the exact group field type, explicit
+constructibility from `std::size_t`, lack of implicit raw/wrapper conversions,
+and zero default. Add a multi-item All expansion case asserting ascending
+candidate order; retain Selected ordering, None, duplicate, negative, and
+upper-bound coverage. Focused verification is `ClassMngr` plus
+`ClassMngrNextApplicationTeacherImportUseCaseTests`,
+`ClassMngrTeacherImportTests`, and `ClassMngrTeacherImportDialogTests`, with
+only those three focused CTests. The existing incremental build folder is
+`build/macos-clang-debug`. At acceptance, no implementation, build, or tests
+have started; no full-suite, clean-build, or Windows result is claimed.
+
+Evidence: the group and resolver are in
+`src/next/application/import_review_session.h:907,946-1073`, where count
+drives All expansion, Selected bounds, and selection tracking. The signed
+requested and `std::size_t` resolved index distinction is in
+`src/next/application/teacher_import_candidate_index.h`; resolver consumption
+is in `src/next/application/teacher_import_use_case.h:456-463`. The Feature
+dialog constructs groups from `QList::size()` at
+`src/features/teacher/ui/teacher_import_dialog.cpp:39-51`. Existing direct
+tests cover Selected ordering, None, duplicate, negative, and out-of-range
+cases in `tests/teacher_import_tests.cpp:935-1034`; All currently has only a
+single candidate, so the multi-item order assertion is needed. The Application
+target is registered in `cmake/tests/next.cmake:2692`, and the dialog target
+in `cmake/tests/features.cmake:274`. Independent review found no
+Application-level count cap; a separate 256 match-index bound does not apply
+to candidate cardinality.
+
+Batch500 (F1243–F1252) is complete and pushed at `029a17e8`. Batch501 is active
+with F1253 complete, F1254 accepted awaiting implementation, and F1255–F1256
+discovered (1 complete, 1 accepted, 2 discovered). F1255 is the next candidate
+after F1254; do not start Batch502 discovery until work begins on F1255. F629
+and the Phase 0 and Phase 2 gates remain open.
