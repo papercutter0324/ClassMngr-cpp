@@ -27,7 +27,9 @@ namespace ClassMngr::Next::Platform
             .platformKey = Application::UpdateArtifactPlatformKey(
                 result.artifact.platformKey.toUtf8().toStdString()
                 ),
-            .url = result.artifact.url.toEncoded().toStdString(),
+            .url = Application::EncodedUrlText(
+                result.artifact.url.toEncoded().toStdString()
+                ),
             .fileName = result.artifact.fileName.toUtf8().toStdString(),
             .sha256 = Application::UpdateArtifactSha256(
                 result.artifact.sha256.toUtf8().toStdString()
@@ -37,7 +39,9 @@ namespace ClassMngr::Next::Platform
                 )
         },
         .releaseDateIso = result.releaseDate.toString(Qt::ISODate).toStdString(),
-        .releaseUrl = result.releaseUrl.toEncoded().toStdString(),
+        .releaseUrl = Application::EncodedUrlText(
+            result.releaseUrl.toEncoded().toStdString()
+            ),
         .checkedAtUtcMilliseconds = Application::UpdateCheckUtcMilliseconds(
             result.checkedAtUtc.toMSecsSinceEpoch()
             ),

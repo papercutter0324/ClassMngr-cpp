@@ -821,7 +821,8 @@ void UpdaterTests::dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale()
         .latestVersion = {2, 0, 0},
         .artifact = {
             .platformKey = ManualUpdate::UpdateArtifactPlatformKey("windows-x64"),
-            .url = "https://example.com/ClassMngr-2.0.0-win-x64.exe",
+            .url = ManualUpdate::EncodedUrlText{
+                "https://example.com/ClassMngr-2.0.0-win-x64.exe"},
             .fileName = "ClassMngr-2.0.0-win-x64.exe",
             .sha256 = ManualUpdate::UpdateArtifactSha256(
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -829,7 +830,8 @@ void UpdaterTests::dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale()
             .sizeBytes = ManualUpdate::UpdateArtifactSizeBytes(123)
         },
         .releaseDateIso = "2026-08-05",
-        .releaseUrl = "https://example.com/releases/2.0.0",
+        .releaseUrl = ManualUpdate::EncodedUrlText{
+            "https://example.com/releases/2.0.0"},
         .checkedAtUtcMilliseconds = ManualUpdate::UpdateCheckUtcMilliseconds(0),
         .updateAvailable = true
     };
@@ -873,7 +875,8 @@ void UpdaterTests::dialogPassesTypedArtifactSizeToLegacyProgress()
         .latestVersion = {2, 0, 0},
         .artifact = {
             .platformKey = ManualUpdate::UpdateArtifactPlatformKey("windows-x64"),
-            .url = "https://example.com/ClassMngr-size-boundary.bin",
+            .url = ManualUpdate::EncodedUrlText{
+                "https://example.com/ClassMngr-size-boundary.bin"},
             .fileName = "ClassMngr-size-boundary.bin",
             .sha256 = ManualUpdate::UpdateArtifactSha256(
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -881,7 +884,8 @@ void UpdaterTests::dialogPassesTypedArtifactSizeToLegacyProgress()
             .sizeBytes = ManualUpdate::UpdateArtifactSizeBytes(sizeBytes)
         },
         .releaseDateIso = "2026-08-05",
-        .releaseUrl = "https://example.com/releases/2.0.0",
+        .releaseUrl = ManualUpdate::EncodedUrlText{
+            "https://example.com/releases/2.0.0"},
         .checkedAtUtcMilliseconds = ManualUpdate::UpdateCheckUtcMilliseconds(0),
         .updateAvailable = true
     };

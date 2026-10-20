@@ -42,7 +42,8 @@ UpdateCheckResult toPresentationResult(
             ),
         .artifact = {
             .platformKey = QString::fromStdString(result.artifact.platformKey.value()),
-            .url = QUrl::fromEncoded(QByteArray::fromStdString(result.artifact.url)),
+            .url = QUrl::fromEncoded(QByteArray::fromStdString(
+                result.artifact.url.value())),
             .fileName = QString::fromStdString(result.artifact.fileName),
             .sha256 = QString::fromStdString(result.artifact.sha256.value()),
             .sizeBytes = result.artifact.sizeBytes.value()
@@ -50,7 +51,8 @@ UpdateCheckResult toPresentationResult(
         .releaseDate = QDate::fromString(
             QString::fromStdString(result.releaseDateIso), Qt::ISODate
             ),
-        .releaseUrl = QUrl::fromEncoded(QByteArray::fromStdString(result.releaseUrl)),
+        .releaseUrl = QUrl::fromEncoded(QByteArray::fromStdString(
+            result.releaseUrl.value())),
         .checkedAtUtc = QDateTime::fromMSecsSinceEpoch(
             result.checkedAtUtcMilliseconds.value(), QTimeZone::utc()
             ),

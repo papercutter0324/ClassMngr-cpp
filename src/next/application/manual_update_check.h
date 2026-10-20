@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/encoded_url_text.h"
 #include "next/application/skipped_update_version_policy.h"
 #include "next/application/update_artifact_platform_key.h"
 #include "next/application/update_artifact_sha256.h"
@@ -17,7 +18,7 @@ namespace ClassMngr::Next::Application
 struct ManualUpdateArtifact final
 {
     UpdateArtifactPlatformKey platformKey;
-    std::string url;
+    EncodedUrlText url;
     std::string fileName;
     UpdateArtifactSha256 sha256;
     UpdateArtifactSizeBytes sizeBytes;
@@ -29,7 +30,7 @@ struct ManualUpdateCheckResult final
     UpdateVersion latestVersion;
     ManualUpdateArtifact artifact;
     std::string releaseDateIso;
-    std::string releaseUrl;
+    EncodedUrlText releaseUrl;
     UpdateCheckUtcMilliseconds checkedAtUtcMilliseconds;
     bool updateAvailable = false;
 };

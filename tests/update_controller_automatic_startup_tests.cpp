@@ -27,6 +27,7 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QPushButton>
+#include <QUrl>
 #include <QVariant>
 #include <QtTest/QtTest>
 
@@ -35,6 +36,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -327,8 +329,10 @@ private slots:
     void failedUserUnskipRetainsStateAndAllowsRetry();
     void failedStaleCleanupRetainsValueAndDisplayAndAllowsPrompt();
     void failedAutomaticSkipKeepsDialogOpenAndAllowsRetry();
+    void encodedUrlTextPreservesExactBytes();
     void bridgeMapsSuccessAndForcesFreshCheck_data();
     void bridgeMapsSuccessAndForcesFreshCheck();
+    void adaptersPreserveEncodedUrlTextExactly();
     void adaptersPreserveArtifactSizeExactly();
     void adaptersPreserveCheckedAtMilliseconds();
     void adaptersPreserveSha256TextExactly();
@@ -952,6 +956,37 @@ void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck
     QTest::newRow("no-update") << false;
 }
 
+void UpdateControllerAutomaticStartupTests::encodedUrlTextPreservesExactBytes()
+{
+    using ClassMngr::Next::Application::EncodedUrlText;
+
+    static_assert(std::is_default_constructible_v<EncodedUrlText>);
+    static_assert(std::is_constructible_v<EncodedUrlText, std::string>);
+    static_assert(!std::is_convertible_v<std::string, EncodedUrlText>);
+    static_assert(!std::is_convertible_v<EncodedUrlText, std::string>);
+
+    const EncodedUrlText defaultText;
+    QVERIFY(defaultText.empty());
+    QCOMPARE(defaultText.value(), std::string{});
+    QVERIFY(defaultText == EncodedUrlText{std::string{}});
+
+    const std::vector<std::string> encodedValues{
+        "https://example.invalid/releases/%E2%9C%93/a%2Fb?next=%25",
+        "https://example.invalid/releases/%2f?case=%2F",
+        std::string{"x\0y", 3}
+    };
+    for (const std::string& value : encodedValues)
+    {
+        const EncodedUrlText encoded(value);
+        QCOMPARE(encoded.value(), value);
+        QVERIFY(!encoded.empty());
+        QVERIFY(encoded == EncodedUrlText{value});
+    }
+
+    QVERIFY(EncodedUrlText{"https://example.invalid/%2f"}
+        != EncodedUrlText{"https://example.invalid/%2F"});
+}
+
 void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck()
 {
     QFETCH(bool, updateAvailable);
@@ -992,12 +1027,20 @@ void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck
     QCOMPARE(result.currentVersion.major, legacy->currentVersion.majorVersion());
     QCOMPARE(result.artifact.platformKey.value(),
         legacy->artifact.platformKey.toUtf8().toStdString());
-    QCOMPARE(result.artifact.url, legacy->artifact.url.toEncoded().toStdString());
+    QCOMPARE(result.artifact.url.value(),
+        legacy->artifact.url.toEncoded().toStdString());
     QCOMPARE(result.artifact.fileName, legacy->artifact.fileName.toStdString());
     QCOMPARE(result.artifact.sha256.value(), legacy->artifact.sha256.toUtf8().toStdString());
     QCOMPARE(result.artifact.sizeBytes.value(), legacy->artifact.sizeBytes);
     QCOMPARE(result.releaseDateIso, std::string("2026-08-05"));
-    QCOMPARE(result.releaseUrl, legacy->releaseUrl.toEncoded().toStdString());
+    QCOMPARE(result.releaseUrl.value(),
+        legacy->releaseUrl.toEncoded().toStdString());
+    const auto manual =
+        ClassMngr::Next::Platform::toManualUpdateCheckResult(*legacy);
+    QCOMPARE(manual.artifact.url.value(),
+        legacy->artifact.url.toEncoded().toStdString());
+    QCOMPARE(manual.releaseUrl.value(),
+        legacy->releaseUrl.toEncoded().toStdString());
     QCOMPARE(result.checkedAtUtcMilliseconds.value(),
         legacy->checkedAtUtc.toMSecsSinceEpoch());
     // Repeated terminal signals are not a second completion for this request.
@@ -1014,6 +1057,27 @@ void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck
         StartupUpdateCheckDispatch::Busy);
     QTRY_COMPARE(succeeded.count(), 4);
     QCOMPARE(busyCompletions, 0);
+}
+
+void UpdateControllerAutomaticStartupTests::adaptersPreserveEncodedUrlTextExactly()
+{
+    UpdateCheckResult source;
+    source.artifact.url = QUrl::fromEncoded(QByteArrayLiteral(
+        "https://example.invalid/download/a%2Fb%20c?token=%25"));
+    source.releaseUrl = QUrl::fromEncoded(QByteArrayLiteral(
+        "https://example.invalid/releases/v2%2Fpreview?from=release%20notes"));
+    const std::string artifactUrl =
+        source.artifact.url.toEncoded().toStdString();
+    const std::string releaseUrl = source.releaseUrl.toEncoded().toStdString();
+
+    const auto manual =
+        ClassMngr::Next::Platform::toManualUpdateCheckResult(source);
+    const auto startup =
+        ClassMngr::Next::Platform::toStartupUpdateCheckResult(source);
+    QCOMPARE(manual.artifact.url.value(), artifactUrl);
+    QCOMPARE(manual.releaseUrl.value(), releaseUrl);
+    QCOMPARE(startup.artifact.url.value(), artifactUrl);
+    QCOMPARE(startup.releaseUrl.value(), releaseUrl);
 }
 
 void UpdateControllerAutomaticStartupTests::adaptersPreserveSha256TextExactly()
@@ -1280,17 +1344,27 @@ void UpdateControllerAutomaticStartupTests::manualAdapterDistinguishesFreshBusyF
     const auto firstLegacyResult = service.lastResult();
     QVERIFY(firstLegacyResult.has_value());
     QVERIFY(lastResult.has_value());
+    QCOMPARE(lastResult->artifact.url.value(),
+        firstLegacyResult->artifact.url.toEncoded().toStdString());
+    QCOMPARE(lastResult->releaseUrl.value(),
+        firstLegacyResult->releaseUrl.toEncoded().toStdString());
     QCOMPARE(lastResult->artifact.platformKey.value(),
         firstLegacyResult->artifact.platformKey.toUtf8().toStdString());
     QCOMPARE(lastResult->artifact.sha256.value(),
         firstLegacyResult->artifact.sha256.toUtf8().toStdString());
     QCOMPARE(lastResult->artifact.sizeBytes.value(),
         firstLegacyResult->artifact.sizeBytes);
-    QCOMPARE(port.snapshot().cachedResult->artifact.platformKey.value(),
+    const auto manualSnapshot = port.snapshot();
+    QVERIFY(manualSnapshot.cachedResult.has_value());
+    QCOMPARE(manualSnapshot.cachedResult->artifact.url.value(),
+        firstLegacyResult->artifact.url.toEncoded().toStdString());
+    QCOMPARE(manualSnapshot.cachedResult->releaseUrl.value(),
+        firstLegacyResult->releaseUrl.toEncoded().toStdString());
+    QCOMPARE(manualSnapshot.cachedResult->artifact.platformKey.value(),
         firstLegacyResult->artifact.platformKey.toUtf8().toStdString());
-    QCOMPARE(port.snapshot().cachedResult->artifact.sha256.value(),
+    QCOMPARE(manualSnapshot.cachedResult->artifact.sha256.value(),
         firstLegacyResult->artifact.sha256.toUtf8().toStdString());
-    QCOMPARE(port.snapshot().cachedResult->artifact.sizeBytes.value(),
+    QCOMPARE(manualSnapshot.cachedResult->artifact.sizeBytes.value(),
         firstLegacyResult->artifact.sizeBytes);
 
     QCOMPARE(port.check(ManualUpdateCheckPolicy::IfStale,
