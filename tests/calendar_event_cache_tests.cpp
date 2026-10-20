@@ -222,7 +222,7 @@ ClassMngr::Next::Application::CalendarEventProjection injectedProjection(
         std::string("10:00"),
         {},
         {},
-        0,
+        ClassMngr::Next::Application::CalendarEventOrder(0),
         false,
         ClassMngr::Next::Application::CalendarEventTypeName(
             std::string("Meeting")
@@ -695,7 +695,7 @@ void CalendarEventCacheTests::injectedInvalidTimesAreFilteredByCacheAndModel()
             std::move(endTime),
             {},
             {},
-            order,
+            ClassMngr::Next::Application::CalendarEventOrder(order),
             false,
             ClassMngr::Next::Application::CalendarEventTypeName(
                 std::string("Meeting")
@@ -1541,6 +1541,10 @@ void CalendarEventCacheTests::typedRangeProjectionPreservesOrderingMetadataAndLe
         projection.events().at(3).startDate,
         std::string("2026-07-12")
         );
+    QCOMPARE(projection.events().at(0).order.rawValue(), std::int32_t(0));
+    QCOMPARE(projection.events().at(1).order.rawValue(), std::int32_t(1));
+    QCOMPARE(projection.events().at(2).order.rawValue(), std::int32_t(2));
+    QCOMPARE(projection.events().at(3).order.rawValue(), std::int32_t(3));
 
     const auto& allDay = projection.events().at(0);
     QVERIFY(allDay.allDay);

@@ -28,7 +28,7 @@ CalendarEventSummary testSummary()
         std::string("10:00"),
         {},
         {},
-        0,
+        CalendarEventOrder(0),
         false,
         CalendarEventTypeName(std::string("Meeting")),
         CalendarEventTimeStatus::Timed,

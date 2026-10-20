@@ -62,6 +62,32 @@ inline constexpr std::size_t kCalendarEventMaxLocationLength =
 inline constexpr std::size_t kCalendarEventMaxNotesLength =
     kCalendarEventSummaryMaxNotesLength;
 
+class CalendarEventOrder final
+{
+public:
+    constexpr CalendarEventOrder() noexcept = default;
+
+    explicit constexpr CalendarEventOrder(
+        const std::int32_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::int32_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const CalendarEventOrder&,
+        const CalendarEventOrder&
+        ) = default;
+
+private:
+    std::int32_t m_value = 0;
+};
+
 class CalendarEventTypeName final
 {
 public:
@@ -107,7 +133,7 @@ struct CalendarEventSummary final
     std::optional<std::string> endTime;
     std::string location;
     std::string notes;
-    std::int32_t order = 0;
+    CalendarEventOrder order;
     bool allDay = false;
     CalendarEventTypeName eventType{"Other"};
     Domain::CalendarEventTimeStatus timeStatus =
@@ -335,7 +361,7 @@ template <typename TypedId>
             );
     }
 
-    if (event.order < 0)
+    if (event.order.rawValue() < 0)
     {
         return Domain::Result<void>::failure(
             invalidInput("Calendar event order must not be negative.")

@@ -970,7 +970,7 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
     QCOMPARE(events.at(0).timeStatus, CalendarEventTimeStatus::Timed);
     QVERIFY(events.at(0).repeatSeriesId.has_value());
     QCOMPARE(events.at(0).repeatSeriesId->value(), std::string("series-july"));
-    QCOMPARE(events.at(0).order, std::int32_t(0));
+    QCOMPARE(events.at(0).order.rawValue(), std::int32_t(0));
     QVERIFY(!events.at(0).classId.has_value());
     QVERIFY(!events.at(0).campusId.has_value());
     QVERIFY(events.at(0).location.empty());
@@ -985,14 +985,14 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
     QCOMPARE(events.at(1).eventType.value(), std::string("Meeting"));
     QCOMPARE(events.at(1).timeStatus, CalendarEventTimeStatus::Timed);
     QCOMPARE(events.at(1).repeatSeriesId->value(), std::string("series-july"));
-    QCOMPARE(events.at(1).order, std::int32_t(1));
+    QCOMPARE(events.at(1).order.rawValue(), std::int32_t(1));
 
     QCOMPARE(events.at(2).id.value(), std::to_string(overlapsEndId));
     QCOMPARE(events.at(2).title, std::string("Overlap end"));
     QCOMPARE(events.at(2).eventType.value(), std::string("Holiday"));
     QCOMPARE(events.at(2).timeStatus, CalendarEventTimeStatus::Timed);
     QVERIFY(!events.at(2).repeatSeriesId.has_value());
-    QCOMPARE(events.at(2).order, std::int32_t(2));
+    QCOMPARE(events.at(2).order.rawValue(), std::int32_t(2));
     QVERIFY(!result.value().findEvent(calendarEventId(outsideId)).has_value());
 
     const auto copied = result.value().findEvent(calendarEventId(insideId));
@@ -1063,7 +1063,7 @@ projectsByIdAsOwnedTypedMetadata()
     QCOMPARE(projected.endTime, std::optional<std::string>(
         std::string("09:35")
         ));
-    QCOMPARE(projected.order, std::int32_t(0));
+    QCOMPARE(projected.order.rawValue(), std::int32_t(0));
     QVERIFY(!projected.classId.has_value());
     QVERIFY(!projected.campusId.has_value());
     QVERIFY(projected.location.empty());
@@ -4394,6 +4394,35 @@ rejectsPartialSourceTimesAndProjectionOverflow()
     QCOMPARE(
         QString::fromStdU16String(importKeyValues.back().value()),
         QStringLiteral("Overflow 4096|Other|2026-11-01|2026-11-01|0|Timed")
+        );
+
+    QSqlQuery moveLastEventOutsideRange(
+        services.dataService()->databaseSession()->database()
+        );
+    moveLastEventOutsideRange.prepare(QStringLiteral(
+        "UPDATE calendar_events SET start_date=?, end_date=? WHERE id=?"
+        ));
+    moveLastEventOutsideRange.addBindValue(QStringLiteral("2026-11-02"));
+    moveLastEventOutsideRange.addBindValue(QStringLiteral("2026-11-02"));
+    moveLastEventOutsideRange.addBindValue(saved->back());
+    QVERIFY2(
+        moveLastEventOutsideRange.exec(),
+        qPrintable(moveLastEventOutsideRange.lastError().text())
+        );
+    QCOMPARE(moveLastEventOutsideRange.numRowsAffected(), 1);
+
+    const auto exactCap = port.projection(
+        QDate(2026, 11, 1),
+        QDate(2026, 11, 1)
+        );
+    QVERIFY(exactCap);
+    QCOMPARE(
+        exactCap.value().eventCount(),
+        kCalendarEventProjectionMaxEvents
+        );
+    QCOMPARE(
+        exactCap.value().events().back().order.rawValue(),
+        std::int32_t(4095)
         );
 }
 

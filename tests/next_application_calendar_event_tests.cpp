@@ -27,6 +27,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
+#include <limits>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -93,7 +94,7 @@ CalendarEventSummary calendarEventSummary(
         std::string("10:00"),
         "Room 1",
         "Event notes",
-        order,
+        CalendarEventOrder(order),
         allDay
     };
 
@@ -598,11 +599,11 @@ void NextApplicationCalendarEventTests::valid96ScaleEventsRetainTypedMetadataAnd
         projection.events().front().id.value(),
         std::string("event-1")
         );
-    QCOMPARE(projection.events().front().order, std::int32_t(0));
+    QCOMPARE(projection.events().front().order.rawValue(), std::int32_t(0));
     QVERIFY(projection.events().front().allDay);
     QVERIFY(!projection.events().front().hasTimeRange());
     QVERIFY(projection.events().at(1).hasTimeRange());
-    QCOMPARE(projection.events().back().order, std::int32_t(190));
+    QCOMPARE(projection.events().back().order.rawValue(), std::int32_t(190));
 }
 
 void NextApplicationCalendarEventTests::typedReferencesAndTemporalFieldsRemainExplicit()
@@ -618,6 +619,9 @@ void NextApplicationCalendarEventTests::typedReferencesAndTemporalFieldsRemainEx
     static_assert(std::is_constructible_v<CalendarEventTypeName, std::string>);
     static_assert(!std::is_convertible_v<std::string, CalendarEventTypeName>);
     static_assert(!std::is_convertible_v<const char*, CalendarEventTypeName>);
+    static_assert(std::is_constructible_v<CalendarEventOrder, std::int32_t>);
+    static_assert(!std::is_convertible_v<std::int32_t, CalendarEventOrder>);
+    static_assert(!std::is_convertible_v<CalendarEventOrder, std::int32_t>);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSummary>().id),
         CalendarEventId
@@ -645,6 +649,10 @@ void NextApplicationCalendarEventTests::typedReferencesAndTemporalFieldsRemainEx
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSummary>().eventType),
         CalendarEventTypeName
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSummary>().order),
+        CalendarEventOrder
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSummary>().timeStatus),
@@ -680,6 +688,23 @@ void NextApplicationCalendarEventTests::typedReferencesAndTemporalFieldsRemainEx
         calendarEventSummary("default-event").eventType.value(),
         std::string("Other")
         );
+    constexpr CalendarEventOrder constexprOrder(17);
+    static_assert(constexprOrder.rawValue() == 17);
+    static_assert(constexprOrder == CalendarEventOrder(17));
+    QCOMPARE(CalendarEventOrder{}.rawValue(), std::int32_t(0));
+    const CalendarEventSummary defaultOrderSummary{
+        calendarEventId("default-order"),
+        std::nullopt,
+        std::nullopt,
+        {},
+        {},
+        {},
+        std::nullopt,
+        std::nullopt,
+        {},
+        {}
+    };
+    QCOMPARE(defaultOrderSummary.order.rawValue(), std::int32_t(0));
 
     const auto result = CalendarEventProjection::create(validInput());
 
@@ -1038,20 +1063,59 @@ calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort()
 void NextApplicationCalendarEventTests::orderingAndSafeValueLookupsAreDeterministic()
 {
     auto input = validInput();
-    input.events.front().order = 42;
-    input.events.back().order = 7;
+    input.events.front().order = CalendarEventOrder(42);
+    input.events.back().order = CalendarEventOrder(7);
     const auto result = CalendarEventProjection::create(std::move(input));
     QVERIFY(result);
 
     const auto& projection = result.value();
-    QCOMPARE(projection.events().front().order, std::int32_t(42));
-    QCOMPARE(projection.events().back().order, std::int32_t(7));
+    QCOMPARE(projection.events().front().order.rawValue(), std::int32_t(42));
+    QCOMPARE(projection.events().back().order.rawValue(), std::int32_t(7));
+    QCOMPARE(projection.events().front().id.value(), std::string("event-1"));
+    QCOMPARE(projection.events().back().id.value(), std::string("event-2"));
+
+    auto duplicateOrderInput = validInput();
+    duplicateOrderInput.events.front().order = CalendarEventOrder(12);
+    duplicateOrderInput.events.back().order = CalendarEventOrder(12);
+    const auto duplicateOrderResult = CalendarEventProjection::create(
+        std::move(duplicateOrderInput)
+        );
+    QVERIFY(duplicateOrderResult);
+    QCOMPARE(
+        duplicateOrderResult.value().events().front().id.value(),
+        std::string("event-1")
+        );
+    QCOMPARE(
+        duplicateOrderResult.value().events().back().id.value(),
+        std::string("event-2")
+        );
+    QCOMPARE(
+        duplicateOrderResult.value().events().front().order.rawValue(),
+        std::int32_t(12)
+        );
+    QCOMPARE(
+        duplicateOrderResult.value().events().back().order.rawValue(),
+        std::int32_t(12)
+        );
+
+    auto maximumOrderInput = validInput();
+    maximumOrderInput.events.front().order = CalendarEventOrder(
+        std::numeric_limits<std::int32_t>::max()
+        );
+    const auto maximumOrderResult = CalendarEventProjection::create(
+        std::move(maximumOrderInput)
+        );
+    QVERIFY(maximumOrderResult);
+    QCOMPARE(
+        maximumOrderResult.value().events().front().order.rawValue(),
+        std::numeric_limits<std::int32_t>::max()
+        );
 
     auto eventCopy = projection.findEvent(calendarEventId("event-1"));
     QVERIFY(eventCopy.has_value());
     eventCopy->title = "Changed outside projection";
     eventCopy->classId.reset();
-    eventCopy->order = 99;
+    eventCopy->order = CalendarEventOrder(99);
     eventCopy->eventType = CalendarEventTypeName(std::string("Changed type"));
     eventCopy->repeatSeriesId.reset();
 
@@ -1059,7 +1123,7 @@ void NextApplicationCalendarEventTests::orderingAndSafeValueLookupsAreDeterminis
     QVERIFY(stored.has_value());
     QCOMPARE(stored->title, std::string("Staff meeting"));
     QVERIFY(stored->classId.has_value());
-    QCOMPARE(stored->order, std::int32_t(42));
+    QCOMPARE(stored->order.rawValue(), std::int32_t(42));
     QCOMPARE(stored->eventType.value(), std::string("Meeting"));
     QCOMPARE(stored->repeatSeriesId->value(), std::string("series-1"));
     QCOMPARE(
@@ -1170,8 +1234,13 @@ void NextApplicationCalendarEventTests::duplicateAndInvalidValuesReturnStructure
 
     {
         auto input = validInput();
-        input.events.front().order = -1;
-        verifyInvalid(CalendarEventProjection::create(std::move(input)));
+        input.events.front().order = CalendarEventOrder(-1);
+        const auto result = CalendarEventProjection::create(std::move(input));
+        QVERIFY(!result);
+        QCOMPARE(
+            result.error().message,
+            std::string("Calendar event order must not be negative.")
+            );
     }
 
     auto invalidEvent = validInput().events.front();

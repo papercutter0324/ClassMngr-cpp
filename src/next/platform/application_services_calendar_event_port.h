@@ -165,7 +165,10 @@ public:
                     );
             }
 
-            return projectEvent(loaded.event, 0);
+            return projectEvent(
+                loaded.event,
+                Application::CalendarEventOrder(0)
+                );
         }
         catch (const std::exception&)
         {
@@ -279,7 +282,9 @@ public:
                 const CalendarEvent& source = events.at(index);
                 auto event = projectEvent(
                     source,
-                    static_cast<std::int32_t>(index)
+                    Application::CalendarEventOrder(
+                        static_cast<std::int32_t>(index)
+                        )
                     );
                 if (!event)
                 {
@@ -316,7 +321,7 @@ private:
     [[nodiscard]] static Domain::Result<Application::CalendarEventSummary>
     projectEvent(
         const CalendarEvent& source,
-        const std::int32_t order
+        const Application::CalendarEventOrder order
         )
     {
         if (source.id <= 0)

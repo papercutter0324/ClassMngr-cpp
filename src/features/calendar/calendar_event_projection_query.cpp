@@ -113,7 +113,7 @@ std::optional<std::string> optionalBoundedUtf8(
 
 SummaryConversionResult summaryFromEvent(
     const CalendarEvent& source,
-    const std::int32_t order
+    const ClassMngr::Next::Application::CalendarEventOrder order
     )
 {
     // The legacy cache ignores records that cannot become a canonical
@@ -281,7 +281,9 @@ ProjectionResult projectionFromRange(
 
             auto converted = summaryFromEvent(
                 source,
-                static_cast<std::int32_t>(input.events.size())
+                ClassMngr::Next::Application::CalendarEventOrder(
+                    static_cast<std::int32_t>(input.events.size())
+                    )
                 );
             if (!converted)
             {
