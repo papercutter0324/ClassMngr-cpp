@@ -57207,3 +57207,56 @@ x64 and the full suite remain unverified. Both Batch498 slices, F1235 and
 F1236, are complete locally; Batch498's push is still pending. Batch499 stays
 queued, and F1237 is next for acceptance only after Batch498 closes and is
 pushed.
+
+### Batch498 push receipt - 2026-10-21
+
+Batch498 was pushed to `origin/Qt-Rewrite`, advancing the remote from
+`75788b646c66b9b6e6f8669dd9f7113c7633ca95` to
+`2348ee374445cc46b1209d6d0144901c35d8e4a7`:
+
+```text
+75788b64..2348ee37  Qt-Rewrite -> Qt-Rewrite
+```
+
+The local `Qt-Rewrite` branch and `origin/Qt-Rewrite` were both verified at
+`2348ee374445cc46b1209d6d0144901c35d8e4a7`. This closes Batch498 and
+activates the previously discovered Batch499, with F1237 accepted and F1238
+next for acceptance. No tests were run for the push.
+
+### F1237 Class Analytics roster names row count accepted before implementation - 2026-10-21
+
+F1237 is accepted based on the Explorer and Investigator review. Type
+`ClassAnalyticsRosterNames::rowCount` with the existing
+`ClassAnalyticsRosterRowCount`, preserving its explicit `std::size_t`
+constructor, zero default, `.rawValue()`, equality, and no implicit
+conversions. Move the wrapper declaration to
+`class_analytics_dashboard_read_port.h` before the names record so the port
+does not depend on its query header; reuse it for existing snapshot fields.
+
+Preserve the platform count as maximum physical roster data row index plus
+one, including gaps, blank rows, and rows containing unrelated-column cells.
+Keep existing range validation and vector sizing; add no row caps and do not
+change sparse representation. Explicitly unwrap the typed count at existing
+query calculation boundaries. Preserve unfiltered behavior for zero rows,
+absent headers, and positive `rowCount` with headers but all matching names
+blank. Preserve filtering against whichever language has names and keep roster
+row count distinct from scored-student counts. Avoid unrelated query/output
+changes.
+
+Acceptance assertions cover the compile-time type of
+`decltype(ClassAnalyticsRosterNames{}.rowCount)` and the wrapper's explicit,
+non-convertible semantics; sparse platform count and vector sizes of `5`;
+absent headers with rows (count `4`); snapshot physical count; and a query
+regression showing positive `rowCount` with headers but blank names leaves
+evaluation rows unfiltered. Preserve single-language filtering and page parity
+count display. Update fixture assignments and aggregates to explicitly wrap
+values as `ClassAnalyticsRosterRowCount{...}`.
+
+Focused targets and generated CTest names are `ClassMngr`,
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`,
+`ClassMngrClassAnalyticsPageTests`, and
+`ClassMngrClassAnalyticsPageReadParityTests`. Use the existing
+`build/macos-clang-debug` folder if the documented `windows-x64-debug` preset
+is unavailable, and run GUI targets offscreen if needed. At acceptance time,
+no implementation, tests, or build had started.

@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1235 and F1236 are complete locally in Batch498 with its push pending; Batch499 remains queued, with F1237 next after Batch498 closes and is pushed, while F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch498 is complete and pushed at `2348ee37`; Batch499 is active with F1237 accepted awaiting implementation and F1238 next for acceptance, while F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1236 completed at code commit `12b6568d`; the six focused CTests passed across the default and isolated offscreen runs (see [F1236 completion](03-Phase-2-Progress-Log.md#f1236-shared-calendar-workbook-cell-coordinates-complete-2026-10-21)). Windows x64 and the full suite remain unverified. Batch498 is complete locally with its push pending; Batch499 remains queued, with F1237 next after Batch498 closes and is pushed. F629 and the Phase 0 and Phase 2 gates remain open.
+Batch498 was pushed to `origin/Qt-Rewrite` at `2348ee37` (see the [Batch498 push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). F1237 is accepted before implementation in active Batch499, and F1238 is next for acceptance (see [F1237 acceptance](03-Phase-2-Progress-Log.md#f1237-class-analytics-roster-names-row-count-accepted-before-implementation-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,21 +72,16 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Batch498 complete locally; push pending (2 candidates; 2 complete)
+#### Active batch: Batch499 (6 candidates; 0 complete, 1 accepted, 5 discovered)
 
-1. F1235 - **Complete.** Use typed `Domain::Weekday` values in `ScheduleTime` and migrate boundary callers with explicit mappings; preserve weekday, minute, overlap, projection, label, and ordering behavior.
-2. F1236 - **Complete.** Add bounded shared `CalendarImport::CellPosition`/`CellRange` coordinates and typed lookup keys; preserve worksheet order, duplicate last-wins behavior, merge endpoint validation, and high-row note association.
-
-F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
-
-#### Discovered batch: Batch499 (6 candidates; not active until Batch498 closes)
-
-1. F1237 - **Discovered; next after Batch498 closes and is pushed.** Type Analytics roster-name row count; preserve physical sparse/blank row count and unfiltered query behavior.
-2. F1238 - **Discovered.** Type `GregorianDate::weekday()` while preserving ISO Monday=1 through Sunday=7 and explicit mapping to `Domain::Weekday`.
+1. F1237 - **Accepted; awaiting implementation.** Type `ClassAnalyticsRosterNames::rowCount` with the existing `ClassAnalyticsRosterRowCount`; preserve physical sparse-row counts, vector sizing, and unfiltered empty-name query behavior.
+2. F1238 - **Discovered; next for acceptance.** Type `GregorianDate::weekday()` while preserving ISO Monday=1 through Sunday=7 and explicit mapping to `Domain::Weekday`.
 3. F1239 - **Discovered.** Type Class Transfer weekly weekday candidates; preserve invalid-day rejection, half-open overlap, and Sunday overnight wrapping.
 4. F1240 - **Discovered.** Type Speaking Evaluation UTF-16 text-match spans; preserve matching and extraction behavior.
 5. F1241 - **Discovered.** Give `CalendarEventTiming` clock values a semantic representation while preserving same-day and cross-day rules.
 6. F1242 - **Discovered.** Distinguish Schedule View row order, cell order, and slot keys; preserve validation scopes and lookup behavior.
+
+F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 

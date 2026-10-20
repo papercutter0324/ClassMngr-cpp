@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). F1235 and F1236 are complete locally in Batch498, with its push pending (see [F1236 completion](03-Phase-2-Progress-Log.md#f1236-shared-calendar-workbook-cell-coordinates-complete-2026-10-21)). Batch499 remains queued; F1237 is next after Batch498 closes and is pushed (see [Batch499 discovery](03-Phase-2-Progress-Log.md#batch499-discovery-started-at-f1235-start-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). Batch499 is active with F1237 accepted awaiting implementation and F1238 next for acceptance (see [F1237 acceptance](03-Phase-2-Progress-Log.md#f1237-class-analytics-roster-names-row-count-accepted-before-implementation-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,12 +38,16 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch498 — Complete locally; push pending (F1235–F1236 complete):**
+**Batch499 — Active (F1237 accepted; F1238–F1242 discovered):**
 
-1. **F1235 — Complete:** Use typed `Domain::Weekday` values in `ScheduleTime` and migrate boundary callers with explicit mappings; preserve weekday, minute, overlap, projection, label, and ordering behavior.
-2. **F1236 — Complete:** Add bounded shared `CalendarImport::CellPosition`/`CellRange` coordinates and typed lookup keys; preserve worksheet order, duplicate last-wins behavior, merge endpoint validation, and high-row note association.
+1. **F1237 — Accepted; awaiting implementation:** Type `ClassAnalyticsRosterNames::rowCount` with existing `ClassAnalyticsRosterRowCount`; preserve physical sparse-row count, vector sizing, and empty-name query behavior.
+2. **F1238 — Discovered; next for acceptance:** Type `GregorianDate::weekday()` while preserving ISO weekday numbering and explicit mapping to `Domain::Weekday`.
+3. **F1239 — Discovered:** Type Class Transfer weekly weekday candidates; preserve invalid-day rejection, overlap, and Sunday overnight behavior.
+4. **F1240 — Discovered:** Type Speaking Evaluation UTF-16 text-match spans; preserve matching behavior.
+5. **F1241 — Discovered:** Give Calendar Event Timing clock values a semantic representation while preserving its day rules.
+6. **F1242 — Discovered:** Distinguish Schedule View row order, cell order, and slot keys; preserve lookup behavior.
 
-Batch495 and Batch496 are complete and pushed (see the [Batch495](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21) and [Batch496](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21) receipts). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch499 has six discovered candidates and remains queued until Batch498 is pushed; F1237 is first after that closeout. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch495 and Batch496 are complete and pushed (see the [Batch495](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21) and [Batch496](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21) receipts). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
