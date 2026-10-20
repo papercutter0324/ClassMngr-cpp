@@ -58382,3 +58382,62 @@ Batch500 remains active with F1243–F1251 complete and F1252 next for
 acceptance. Batch501 remains discovered and queued until Batch500 closes, with
 F1253–F1256 in the recorded order. F629 and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1252 Document Catalog order metadata accepted before implementation - 2026-10-21
+
+F1252 is accepted before implementation. In the `DocumentCatalogProjection`
+Application metadata only, add distinct default-zero `DocumentFolderOrder`
+and `DocumentOrder` value types. Each has explicit `std::int32_t`
+construction, `.rawValue()`, equality, and no implicit conversion or
+cross-type substitution. Use the types for `DocumentFolderMetadata::order`
+and `DocumentEntryMetadata::order`. Constructors remain unvalidated; retain
+separate negative-value rejection for folders and documents with the current
+error codes and messages.
+
+At the Platform adapter boundary, explicitly wrap legacy integer orders. At
+the sidebar display-sort boundary, unwrap to the existing local integer
+order. Preserve the Application port and projection vector sequence without
+sorting; preserve the sidebar's explicit order-then-ID sort. Keep default zero.
+Do not change legacy feature fields, parser or JSON integer representation,
+missing/negative/too-large JSON behavior, warnings/skips, path validation,
+maximum metadata rules, or the document use case.
+
+Acceptance coverage should assert exact field types, distinctness and no
+implicit conversions, default zero, and continued negative rejection for
+folders and documents. Use non-monotonic order values across multiple folders
+and documents to prove adapters/projection retain input sequence independently
+of order ranks. Verify Platform order mappings and vector order, plus unchanged
+sidebar display sorting and ID tie-break in structure/navigation parity tests.
+
+Evidence: legacy folder/document orders default to integer zero in
+`src/features/documents/document_catalog.h:29`; Application order fields and
+negative checks are in `src/next/application/document_catalog_projection.h:64,237,296`.
+The Platform adapter iterates in source sequence at
+`src/next/platform/application_services_document_catalog_port.h:80,134`,
+validates negatives at `:112,184`, and maps output metadata at `:126,221`.
+Projection construction moves vectors in order at
+`document_catalog_projection.h:488,539`. Sidebar sorting remains order then ID
+in `src/ui/shared/widgets/sidebar/sidebar_tree.cpp:48,67,77`. The legacy
+parser separately rejects missing, negative, and above-`int`-maximum JSON
+orders at `src/features/documents/document_catalog.cpp:117`; its behavior and
+feature warnings/skips remain outside this slice.
+
+Focused verification targets: `ClassMngr` plus
+`ClassMngrNextApplicationDocumentCatalogTests`,
+`ClassMngrNextApplicationDocumentCatalogUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests`,
+`ClassMngrSidebarStructureTests`, and
+`ClassMngrDocumentCatalogNavigationParityTests`. Run only those five focused
+CTests. At acceptance, implementation, build, and tests had not started. No
+Windows build or full-suite result is claimed.
+
+Recheck of queued F1256 after F1251 is complete: keep
+`RosterSnapshot::columnWidths` as a separate Application projection contract.
+The accepted `ClassExportRosterColumnWidth` is specifically coupled to the
+portable Class Transfer package and must not leak into generic
+`RosterSnapshot`. F1256 remains discovered and queued until Batch500 closes.
+
+Batch500 remains active with F1243–F1251 complete and F1252 accepted awaiting
+implementation. Batch501 remains discovered and queued until Batch500 closes,
+with F1253–F1256 in the recorded order. F629 and the Phase 0 and Phase 2 gates
+remain open.
