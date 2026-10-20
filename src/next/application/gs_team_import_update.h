@@ -7,6 +7,32 @@
 namespace ClassMngr::Next::Application
 {
 
+class GsTeamImportStoredRecordId final
+{
+public:
+    constexpr GsTeamImportStoredRecordId() noexcept = default;
+
+    constexpr explicit GsTeamImportStoredRecordId(
+        const std::int64_t rawValue
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::int64_t rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const GsTeamImportStoredRecordId&,
+        const GsTeamImportStoredRecordId&
+        ) noexcept = default;
+
+private:
+    std::int64_t m_rawValue = -1;
+};
+
 // The repository adapter supplies simplified names and trimmed profile
 // values. Empty values preserve the stored field because this import cannot
 // clear an existing GS Team value.
@@ -23,7 +49,7 @@ struct GsTeamImportFields final
 // database identity is retained by the merge and stays outside the import.
 struct GsTeamImportProfile final
 {
-    std::int64_t id = -1;
+    GsTeamImportStoredRecordId id;
     std::u16string name;
     std::u16string koreanName;
     std::u16string position;

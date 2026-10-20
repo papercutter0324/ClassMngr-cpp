@@ -1,10 +1,21 @@
 #include "next/application/gs_team_import_update.h"
 
 #include <cstdlib>
+#include <cstdint>
 #include <iostream>
 #include <stdexcept>
+#include <type_traits>
 
 using namespace ClassMngr::Next::Application;
+
+static_assert(std::is_same_v<
+    decltype(GsTeamImportProfile{}.id),
+    GsTeamImportStoredRecordId>);
+static_assert(!std::is_convertible_v<int, GsTeamImportStoredRecordId>);
+static_assert(!std::is_convertible_v<std::int64_t, GsTeamImportStoredRecordId>);
+static_assert(!std::is_convertible_v<GsTeamImportStoredRecordId, int>);
+static_assert(!std::is_convertible_v<GsTeamImportStoredRecordId, std::int64_t>);
+static_assert(GsTeamImportStoredRecordId{}.rawValue() == -1);
 
 namespace
 {
@@ -20,7 +31,7 @@ void require(const bool condition, const char* message)
 GsTeamImportProfile existingMember()
 {
     return {
-        .id = 9101,
+        .id = GsTeamImportStoredRecordId{9101},
         .name = u"Taylor",
         .koreanName = u"Kim Haneul",
         .position = u"M2",

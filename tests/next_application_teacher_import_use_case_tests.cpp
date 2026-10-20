@@ -1,6 +1,7 @@
 #include "next/application/teacher_import_use_case.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <functional>
 #include <initializer_list>
@@ -29,6 +30,24 @@ static_assert(!std::is_convertible_v<TeacherImportCount, int>);
 static_assert(std::is_same_v<
     decltype(std::declval<const TeacherImportCounts&>().total()),
     TeacherImportCount>);
+static_assert(std::is_same_v<
+    decltype(NativeEnglishTeacherImportProfile{}.id),
+    NativeEnglishTeacherImportStoredRecordId>);
+static_assert(std::is_same_v<
+    decltype(GsTeamImportProfile{}.id),
+    GsTeamImportStoredRecordId>);
+static_assert(!std::is_convertible_v<int,
+    NativeEnglishTeacherImportStoredRecordId>);
+static_assert(!std::is_convertible_v<std::int64_t,
+    NativeEnglishTeacherImportStoredRecordId>);
+static_assert(!std::is_convertible_v<int, GsTeamImportStoredRecordId>);
+static_assert(!std::is_convertible_v<std::int64_t, GsTeamImportStoredRecordId>);
+static_assert(!std::is_convertible_v<
+    NativeEnglishTeacherImportStoredRecordId, GsTeamImportStoredRecordId>);
+static_assert(!std::is_convertible_v<
+    GsTeamImportStoredRecordId, NativeEnglishTeacherImportStoredRecordId>);
+static_assert(NativeEnglishTeacherImportStoredRecordId{}.rawValue() == -1);
+static_assert(GsTeamImportStoredRecordId{}.rawValue() == -1);
 static_assert(std::is_same_v<
     decltype(std::declval<TeacherImportUseCaseRequest>().sourceDateIso),
     std::string>);
@@ -264,7 +283,7 @@ public:
                 TeacherImportPersistenceOperation::CreateNativeEnglishTeacher));
         }
         NativeEnglishTeacherImportProfile profile{
-            .id = nextId++,
+            .id = NativeEnglishTeacherImportStoredRecordId{nextId++},
             .name = source.name,
             .position = source.position,
             .phoneNumber = source.phoneNumber,
@@ -311,7 +330,7 @@ public:
                 TeacherImportPersistenceOperation::CreateGsTeamMember));
         }
         GsTeamImportProfile profile{
-            .id = nextId++,
+            .id = GsTeamImportStoredRecordId{nextId++},
             .name = source.name,
             .koreanName = source.koreanName,
             .position = source.position,
@@ -560,26 +579,30 @@ void successfulOrchestrationAcrossNamespaces()
     };
     persistence.state.nativeEnglishTeachers = {
         {
-            .profile = {.id = 21, .name = u"Alex", .position = u"NET",
+            .profile = {.id = NativeEnglishTeacherImportStoredRecordId{21},
+                        .name = u"Alex", .position = u"NET",
                         .phoneNumber = u"010-2222", .birthday = u"02-01",
                         .nationality = u"Canadian", .email = u"alex@example.com"},
             .normalizedMatchKey = u"alex"
         },
         {
-            .profile = {.id = 22, .name = u"Robin", .position = u"NET"},
+            .profile = {.id = NativeEnglishTeacherImportStoredRecordId{22},
+                        .name = u"Robin", .position = u"NET"},
             .normalizedMatchKey = u"robin"
         }
     };
     persistence.state.gsTeamMembers = {
         {
-            .profile = {.id = 31, .name = u"Taylor", .koreanName = u"김하늘",
+            .profile = {.id = GsTeamImportStoredRecordId{31},
+                        .name = u"Taylor", .koreanName = u"김하늘",
                         .position = u"M2", .phoneNumber = u"010-3333",
                         .birthday = u"05-09"},
             .normalizedEnglishMatchKey = u"taylor",
             .normalizedKoreanMatchKey = u"김하늘"
         },
         {
-            .profile = {.id = 32, .name = u"Casey"},
+            .profile = {.id = GsTeamImportStoredRecordId{32},
+                        .name = u"Casey"},
             .normalizedEnglishMatchKey = u"casey",
             .normalizedKoreanMatchKey = {}
         }
@@ -630,18 +653,21 @@ void successfulOrchestrationAcrossNamespaces()
                 && persistence.state.koreanTeachers[0].birthday == u"03-07"
                 && persistence.state.koreanTeachers[0].phoneNumber == u"010-1111",
             "Korean merge did not retain identity or blank optional values");
-    require(persistence.state.nativeEnglishTeachers[0].profile.id == 21
+    require(persistence.state.nativeEnglishTeachers[0].profile.id.rawValue() == 21
                 && persistence.state.nativeEnglishTeachers[0].profile.position
                     == u"Team Leader"
                 && persistence.state.nativeEnglishTeachers[0].profile.phoneNumber
                     == u"010-2222",
             "Native English merge did not retain identity and blank values");
-    require(persistence.state.gsTeamMembers[0].profile.id == 31
+    require(persistence.state.gsTeamMembers[0].profile.id.rawValue() == 31
                 && persistence.state.gsTeamMembers[0].profile.name
                     == u"Taylor Updated"
                 && persistence.state.gsTeamMembers[0].profile.koreanName == u"김하늘"
                 && persistence.state.gsTeamMembers[0].profile.phoneNumber == u"010-3333",
             "GS Team merge did not use Korean identity preference or preserve blanks");
+    require(persistence.state.gsTeamMembers[1].profile.id.rawValue() == 32
+                && persistence.state.gsTeamMembers[1].profile.name == u"Casey",
+            "GS Team update changed a nonmatching stored identity");
     require(persistence.state.latestSourceDate
                 && persistence.state.latestSourceDate->toIsoString() == "2026-09-27",
             "latest source date was not advanced");
@@ -889,7 +915,7 @@ void nativeEnglishSourceNameOwnsValidationAndMatching()
         persistence.state.nativeEnglishTeachers = {
             {
                 .profile = {
-                    .id = 41,
+                    .id = NativeEnglishTeacherImportStoredRecordId{41},
                     .name = u"Jamie",
                     .position = u"NET",
                     .phoneNumber = u"010-1111",
@@ -901,7 +927,7 @@ void nativeEnglishSourceNameOwnsValidationAndMatching()
             },
             {
                 .profile = {
-                    .id = 42,
+                    .id = NativeEnglishTeacherImportStoredRecordId{42},
                     .name = u"Alex",
                     .position = u"NET",
                     .phoneNumber = u"010-2222",
@@ -924,7 +950,7 @@ void nativeEnglishSourceNameOwnsValidationAndMatching()
                        },
                 "source-name derived key did not produce the unique Jamie match");
         const NativeEnglishTeacherImportProfile expectedJamie{
-            .id = 41,
+            .id = NativeEnglishTeacherImportStoredRecordId{41},
             .name = u" Jamie ",
             .position = u"Lead",
             .phoneNumber = u"010-1111",
@@ -952,7 +978,7 @@ void nativeEnglishSourceNameOwnsValidationAndMatching()
         persistence.state.nativeEnglishTeachers = {
             {
                 .profile = {
-                    .id = 51,
+                    .id = NativeEnglishTeacherImportStoredRecordId{51},
                     .name = u"Alex",
                     .position = u"NET",
                     .phoneNumber = u"010-3333",
@@ -981,7 +1007,7 @@ void nativeEnglishSourceNameOwnsValidationAndMatching()
                     originalAlex),
                 "Native English no-match create changed the differently named Alex profile");
         const NativeEnglishTeacherImportProfile expectedJordan{
-            .id = 100,
+            .id = NativeEnglishTeacherImportStoredRecordId{100},
             .name = u"Jordan",
             .position = u"Teacher"
         };
@@ -1225,8 +1251,10 @@ void ambiguousMatchRollsBackEarlierWrites()
 
     FakeTeacherImportPersistence persistence;
     persistence.state.nativeEnglishTeachers = {
-        {.profile = {.id = 1, .name = u"Jamie"}, .normalizedMatchKey = u"jamie"},
-        {.profile = {.id = 2, .name = u" jamie "}, .normalizedMatchKey = u"jamie"}
+        {.profile = {.id = NativeEnglishTeacherImportStoredRecordId{1},
+                     .name = u"Jamie"}, .normalizedMatchKey = u"jamie"},
+        {.profile = {.id = NativeEnglishTeacherImportStoredRecordId{2},
+                     .name = u" jamie "}, .normalizedMatchKey = u"jamie"}
     };
     const auto result = runUseCase(request, persistence);
     require(!result

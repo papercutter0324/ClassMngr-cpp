@@ -1,10 +1,25 @@
 #include "next/application/native_english_teacher_import_update.h"
 
 #include <cstdlib>
+#include <cstdint>
 #include <iostream>
 #include <stdexcept>
+#include <type_traits>
 
 using namespace ClassMngr::Next::Application;
+
+static_assert(std::is_same_v<
+    decltype(NativeEnglishTeacherImportProfile{}.id),
+    NativeEnglishTeacherImportStoredRecordId>);
+static_assert(!std::is_convertible_v<int,
+    NativeEnglishTeacherImportStoredRecordId>);
+static_assert(!std::is_convertible_v<std::int64_t,
+    NativeEnglishTeacherImportStoredRecordId>);
+static_assert(!std::is_convertible_v<
+    NativeEnglishTeacherImportStoredRecordId, int>);
+static_assert(!std::is_convertible_v<
+    NativeEnglishTeacherImportStoredRecordId, std::int64_t>);
+static_assert(NativeEnglishTeacherImportStoredRecordId{}.rawValue() == -1);
 
 namespace
 {
@@ -20,7 +35,7 @@ void require(const bool condition, const char* message)
 NativeEnglishTeacherImportProfile existingTeacher()
 {
     return {
-        .id = 8104,
+        .id = NativeEnglishTeacherImportStoredRecordId{8104},
         .name = u"Alex",
         .position = u"NET",
         .phoneNumber = u"010-9999-8888",
@@ -106,7 +121,7 @@ int main()
             require(renamed.changed, "a changed normalized name was ignored");
             require(renamed.profile.name == u"Alexandra",
                     "the simplified adapter name was not retained in the result");
-            require(renamed.profile.id == 8104,
+            require(renamed.profile.id.rawValue() == 8104,
                     "renaming changed the matched database identity");
         }
     }

@@ -7,6 +7,32 @@
 namespace ClassMngr::Next::Application
 {
 
+class NativeEnglishTeacherImportStoredRecordId final
+{
+public:
+    constexpr NativeEnglishTeacherImportStoredRecordId() noexcept = default;
+
+    constexpr explicit NativeEnglishTeacherImportStoredRecordId(
+        const std::int64_t rawValue
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::int64_t rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const NativeEnglishTeacherImportStoredRecordId&,
+        const NativeEnglishTeacherImportStoredRecordId&
+        ) noexcept = default;
+
+private:
+    std::int64_t m_rawValue = -1;
+};
+
 // The repository adapter supplies a simplified name and trimmed profile
 // values. Empty optional fields mean "preserve the stored profile value".
 struct NativeEnglishTeacherImportFields final
@@ -23,7 +49,7 @@ struct NativeEnglishTeacherImportFields final
 // Domain::TeacherId because this table is separate from Korean teachers.
 struct NativeEnglishTeacherImportProfile final
 {
-    std::int64_t id = -1;
+    NativeEnglishTeacherImportStoredRecordId id;
     std::u16string name;
     std::u16string position;
     std::u16string phoneNumber;
