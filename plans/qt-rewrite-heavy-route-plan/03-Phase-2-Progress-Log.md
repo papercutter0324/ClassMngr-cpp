@@ -58867,3 +58867,72 @@ acceptance (3 complete, 0 accepted, 1 discovered). Batch502's five ordered
 candidates F1257–F1261 remain discovered and inactive until Batch501 closes;
 its discovery record and shortfall are preserved above. F629 and the Phase 0
 and Phase 2 gates remain open.
+
+### F1256 RosterSnapshot column width accepted before implementation - 2026-10-21
+
+F1256 is accepted before implementation as the final candidate in active
+Batch501. Replace only the generic `RosterSnapshot::columnWidths` element
+type `int` with a distinct `RosterSnapshotColumnWidth` backed by `int`, with
+explicit construction, default raw value zero, `.rawValue()`, equality, and
+no implicit int/wrapper or cross-type conversions. Keep it separate from
+F1251's `ClassExportRosterColumnWidth`, which belongs to the portable Class
+Transfer package.
+
+Preserve the complete signed-int domain and vector order, including
+`INT_MIN`, negative values, zero, positive values, and `INT_MAX`. Add no
+positive/range validation, clamping, sorting, or default change. Retain
+count-only preparation validation and row transfer's existing missing-width
+to-zero behavior. Explicitly wrap and unwrap at the generic Application,
+Platform, and UI boundaries: Application row transfer; Platform roster read,
+save, row-transfer save, and template-print source read; and Feature roster
+editor snapshot conversion, transfer snapshot, and template-print service
+conversion. Other direct generic-snapshot consumers may change only as
+required for type propagation.
+
+Keep legacy `Roster`/`QVector<int>`, SQL schema/storage and its existing
+in-range representability check, Class Transfer package widths/JSON, and
+generic snapshot order/columns/rows semantics unchanged. Do not change
+unrelated width fields. `roster_snapshot.h` is already listed in the explicit
+source manifest; no new manifest entry is expected.
+
+Acceptance coverage: assert the exact field element type, raw `int`, no
+implicit conversion both ways, distinction from the package-specific width
+type, and default zero. Preserve `[INT_MIN, -1, 0, INT_MAX]` in order through
+Application preparation and at least one Platform read/save boundary; retain
+row-transfer zero/default/order cases. Adapt dependent fixtures only for
+explicit construction, without behavior changes. Build incrementally in
+`build/macos-clang-debug`: `ClassMngr` plus targets for the accepted focused
+CTests `NextApplicationRosterSaveUseCase`, `NextApplicationRosterReadQuery`,
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`,
+`ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests`,
+`NextPlatformApplicationServicesRosterReadPort`,
+`NextPlatformApplicationServicesRosterSavePort`,
+`NextPlatformApplicationServicesRosterTemplatePrintSourceReadPort`,
+`RosterEditorWidgetSave`, `RosterTransferMenu`, and
+`ClassMngrRosterTemplatePrintServiceTests`. Run only these ten focused CTests;
+no clean, Windows, or full-suite claim. At acceptance no source changes, build,
+or tests have started.
+
+Evidence: the generic field/default is in
+`src/next/application/roster_snapshot.h:9`, distinct from the package type at
+`src/next/application/class_transfer_package.h:18,51`. Save preparation checks
+only the count at `src/next/application/roster_save_preparation.h:383`; the
+existing signed-value coverage is in
+`tests/next_application_roster_save_use_case_tests.cpp:323`. Row transfer
+uses a source width or zero and appends in target-column order at
+`src/next/application/roster_row_transfer_use_case.h:238`. Platform copies
+are in `application_services_roster_read_port.h:160`,
+`application_services_roster_save_port.h:170`,
+`application_services_roster_row_transfer_save_port.h:87`, and
+`application_services_roster_template_print_source_read_port.h:277`.
+Feature conversions are in `roster_editor_widget.cpp:33`,
+`roster_editor_widget_transfer.cpp:156`, and
+`roster_template_print_private_service.inc:363`. Repository width handling
+maps NULL to zero, preserves representable signed `int`, and rejects only
+out-of-int values (`src/data/repositories/roster_repository.cpp:23,633`);
+the schema has no nonnegative constraint (`database_schema_manager.cpp:189`).
+
+Batch501 remains active with F1253–F1255 complete and F1256 accepted awaiting
+implementation (3 complete, 1 accepted, 0 discovered). Batch502's five
+candidates F1257–F1261 remain discovered and inactive until Batch501 closes.
+F629 and the Phase 0 and Phase 2 gates remain open.
