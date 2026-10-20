@@ -59363,3 +59363,53 @@ This is a discovery shortfall only; Batch503 is not started or active. The
 Phase 2 plan's active Batch502 status remains unchanged.
 
 No other slices were found.
+
+### Superseded latest progress update - 2026-10-21 (F1260 accepted)
+
+F1260 is accepted for implementation in active Batch502 (see [F1260 acceptance](03-Phase-2-Progress-Log.md#f1260-calendareventsummary-event-type-name-accepted-before-implementation-2026-10-21)). F1257–F1259 are complete, F1261 remains discovered, and no implementation, build, or test execution has started for F1260. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1260 Calendar Event Type Name projection value complete - 2026-10-21
+
+F1260 acceptance was recorded in documentation commit
+`75f9c5357d071236fa49b84ea8d3c029dbf8d1a2`; the Batch503 discovery shortfall
+was recorded separately in documentation commit
+`5196a4852ea0f8f9abb48e94387affb54e43275a`. The source/test changes are
+committed as `4cbc86149c19edc7f1776d9f8329400d203d125b` (`Phase2 - Add
+CalendarEventTypeName projection value`). The ten changed paths are
+`src/features/calendar/calendar_event_projection_query.cpp`,
+`src/features/calendar/ui/calendar_event_cache.cpp`,
+`src/features/calendar/ui/calendar_event_model.cpp`,
+`src/features/calendar/ui/calendar_page_events.cpp`,
+`src/features/calendar/ui/calendar_page_upcoming_events.cpp`,
+`src/next/application/calendar_event_projection.h`,
+`src/next/application/calendar_event_visibility_policy.h`,
+`src/next/platform/application_services_calendar_event_port.h`,
+`tests/next_application_calendar_event_tests.cpp`, and
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
+
+`Application::CalendarEventTypeName` is a default-empty, explicit
+`std::string`-backed value with `.value()` returning a const string reference
+and same-type value equality. `CalendarEventSummary::eventType` now uses it
+while retaining the default text `Other`. Projection validation accepts
+arbitrary nonblank values up to 64 bytes unchanged and preserves the existing
+failure message. Direct consumers explicitly wrap or unwrap the value. Save
+and edit request types, closed enum behavior, other event fields, and legacy
+repository normalization remain unchanged. The repository still trims
+canonical stored values and maps unrecognized values to `Other` before the
+Platform adapter; no end-to-end custom database-name preservation is claimed.
+
+The Executor reported a successful incremental macOS build of `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarPageEventMutationParityTests`. The independent Tester built
+those targets in the existing `build/macos-clang-debug` folder; Ninja reported
+no work, then the three focused registered CTests
+`ClassMngrCalendarPageEventMutationParityTests`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` passed 3/3.
+The independent diff check and committed-diff check passed. No clean build,
+Windows build, or full-suite verification is claimed.
+
+Batch502 remains active and unpushed: F1257–F1260 are complete and F1261 is
+next for acceptance. The Batch503 discovery shortfall remains unactivated.
+F629 and the Phase 0 and Phase 2 gates remain open.
