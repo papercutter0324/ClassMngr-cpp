@@ -72,7 +72,7 @@ SubPrepPrintClass printClass(
         .classNotes = "Class notes",
         .classColor = "#112233",
         .fontColor = "#ffffff",
-        .studentCount = 18,
+        .studentCount = ClassSummaryStudentCount{18},
         .meetings = {meeting()}
     };
 }
@@ -215,6 +215,10 @@ requestAndResultsOwnTypedValues()
     static_assert(std::is_same_v<
         decltype(SubPrepPrintSourceInput::teachers),
         std::vector<SubPrepPrintTeacher>
+        >);
+    static_assert(std::is_same_v<
+        decltype(SubPrepPrintClass::studentCount),
+        ClassSummaryStudentCount
         >);
     static_assert(std::is_same_v<
         decltype(SubPrepPrintClass::meetings),
@@ -586,7 +590,7 @@ acceptsEmptyOptionalTextFields()
     sourceClass.classNotes.clear();
     sourceClass.classColor.clear();
     sourceClass.fontColor.clear();
-    sourceClass.studentCount = 0;
+    sourceClass.studentCount = ClassSummaryStudentCount{};
     sourceClass.meetings = {meeting(SubPrepWeekday::Monday, "", "")};
 
     FakeReadPort readPort;
@@ -834,7 +838,9 @@ acceptsMaximumBoundaryTextLengths()
         );
     expectedClass.classColor = std::string(kSubPrepPrintSourceMaxColorLength, 'a');
     expectedClass.fontColor = std::string(kSubPrepPrintSourceMaxColorLength, 'f');
-    expectedClass.studentCount = kSubPrepPrintSourceMaxStudentCount;
+    expectedClass.studentCount = ClassSummaryStudentCount{
+        kSubPrepPrintSourceMaxStudentCount
+    };
     expectedClass.meetings = {
         meeting(
             SubPrepWeekday::Monday,
@@ -1249,7 +1255,7 @@ rejectsOverBoundCountsAllOrNothing()
 
     auto tooManyStudents = validInput();
     tooManyStudents.classes.front().studentCount =
-        kSubPrepPrintSourceMaxStudentCount + 1;
+        ClassSummaryStudentCount{kSubPrepPrintSourceMaxStudentCount + 1};
     readPort.result = SubPrepPrintSourceReadResult::success(std::move(tooManyStudents));
     verifyValidationError(query.execute(validRequest()));
 

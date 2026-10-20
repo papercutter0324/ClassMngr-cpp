@@ -169,7 +169,9 @@ SubPrepPrintSourceMapper::toClassInformation(
         sourceClass.info.notes = fromUtf8(record.classNotes);
         sourceClass.info.classColor = fromUtf8(record.classColor);
         sourceClass.info.fontColor = fromUtf8(record.fontColor);
-        sourceClass.studentCount = static_cast<int>(record.studentCount);
+        sourceClass.studentCount = static_cast<int>(
+            record.studentCount.rawValue()
+            );
 
         if (record.teacherId.has_value())
         {

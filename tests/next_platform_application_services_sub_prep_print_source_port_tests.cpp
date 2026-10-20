@@ -1662,7 +1662,7 @@ projectsSelectedClassesInRequestOrderAndCopiesFilteredSource()
     QCOMPARE(source.classes[0].classNotes, std::string("Z class notes"));
     QCOMPARE(source.classes[0].classColor, std::string("#112233"));
     QCOMPARE(source.classes[0].fontColor, std::string("#AABBCC"));
-    QCOMPARE(source.classes[0].studentCount, std::size_t(2));
+    QCOMPARE(source.classes[0].studentCount.rawValue(), std::size_t(2));
     QCOMPARE(source.classes[0].meetings.size(), std::size_t(2));
     QCOMPARE(source.classes[0].meetings[0].weekday, SubPrepWeekday::Tuesday);
     QCOMPARE(source.classes[0].meetings[0].startTime, std::string("10:00 AM"));
@@ -2175,8 +2175,14 @@ batchesRosterCountsAfterPrintScopeAndPreservesLegacyMetrics()
     QCOMPARE(result.value().classes.size(), std::size_t(2));
     QCOMPARE(result.value().classes[0].id, classId(noNameColumnsClass));
     QCOMPARE(result.value().classes[1].id, classId(populatedClass));
-    QCOMPARE(result.value().classes[0].studentCount, std::size_t(0));
-    QCOMPARE(result.value().classes[1].studentCount, std::size_t(2));
+    QCOMPARE(
+        result.value().classes[0].studentCount.rawValue(),
+        std::size_t(0)
+        );
+    QCOMPARE(
+        result.value().classes[1].studentCount.rawValue(),
+        std::size_t(2)
+        );
     QCOMPARE(result.value().teachers.size(), std::size_t(1));
 
     const auto& metrics =
@@ -2344,15 +2350,15 @@ subPrepCountDoesNotAliasFractionalRosterColumns()
     {
         if (classRecord.id == classId(fractionalClass))
         {
-            fractionalStudentCount = classRecord.studentCount;
+            fractionalStudentCount = classRecord.studentCount.rawValue();
         }
         else if (classRecord.id == classId(ordinaryClass))
         {
-            ordinaryStudentCount = classRecord.studentCount;
+            ordinaryStudentCount = classRecord.studentCount.rawValue();
         }
         else if (classRecord.id == classId(emptyRosterClass))
         {
-            emptyRosterStudentCount = classRecord.studentCount;
+            emptyRosterStudentCount = classRecord.studentCount.rawValue();
         }
     }
     QVERIFY(fractionalStudentCount.has_value());
@@ -2517,15 +2523,15 @@ subPrepCountDoesNotAliasFractionalRosterRows()
     {
         if (classRecord.id == classId(fractionalClass))
         {
-            fractionalStudentCount = classRecord.studentCount;
+            fractionalStudentCount = classRecord.studentCount.rawValue();
         }
         else if (classRecord.id == classId(sparseClass))
         {
-            sparseStudentCount = classRecord.studentCount;
+            sparseStudentCount = classRecord.studentCount.rawValue();
         }
         else if (classRecord.id == classId(emptyRosterClass))
         {
-            emptyRosterStudentCount = classRecord.studentCount;
+            emptyRosterStudentCount = classRecord.studentCount.rawValue();
         }
     }
     QVERIFY(fractionalStudentCount.has_value());
@@ -2651,7 +2657,7 @@ batchesRosterCountsWideRowIndicesAndSaturatesMetrics()
     QVERIFY(result);
     QCOMPARE(result.value().classes.size(), std::size_t(1));
     QCOMPARE(result.value().classes[0].id, classId(populatedClass));
-    QCOMPARE(result.value().classes[0].studentCount, std::size_t(4));
+    QCOMPARE(result.value().classes[0].studentCount.rawValue(), std::size_t(4));
 
     const auto& metrics =
         rosterRepository->subPrepStudentCountBatchReadMetrics();
@@ -2745,8 +2751,14 @@ rosterBatchFailureFallsBackPerClassAndKeepsSuccessfulSibling()
     QCOMPARE(result.value().classes.size(), std::size_t(2));
     QCOMPARE(result.value().classes[0].id, classId(classWithData));
     QCOMPARE(result.value().classes[1].id, classId(classWithoutColumns));
-    QCOMPARE(result.value().classes[0].studentCount, std::size_t(0));
-    QCOMPARE(result.value().classes[1].studentCount, std::size_t(0));
+    QCOMPARE(
+        result.value().classes[0].studentCount.rawValue(),
+        std::size_t(0)
+        );
+    QCOMPARE(
+        result.value().classes[1].studentCount.rawValue(),
+        std::size_t(0)
+        );
     QCOMPARE(result.value().teachers.size(), std::size_t(1));
 
     const auto& metrics =
@@ -2931,7 +2943,7 @@ supportsUnassignedAndMissingTeachersAndEmptyRosterFallback()
     QCOMPARE(result.value().classes.size(), std::size_t(1));
     QCOMPARE(result.value().classes[0].id, classId(classWithTeacherButNoRoster));
     QVERIFY(result.value().classes[0].teacherId == teacherId(assignedTeacher));
-    QCOMPARE(result.value().classes[0].studentCount, std::size_t(0));
+    QCOMPARE(result.value().classes[0].studentCount.rawValue(), std::size_t(0));
     QCOMPARE(result.value().teachers.size(), std::size_t(1));
 }
 

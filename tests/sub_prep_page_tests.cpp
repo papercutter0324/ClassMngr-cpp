@@ -3235,7 +3235,7 @@ pageGenerationReportsFolderOpenFailureAndWritesInformationPdf()
             .classNotes = "F380_SELECTED_CLASS_NOTE",
             .classColor = "#ffffff",
             .fontColor = "#000000",
-            .studentCount = 1,
+            .studentCount = ClassSummaryStudentCount{1},
             .meetings = {
                 {
                     .weekday = SubPrepWeekday::Tuesday,
@@ -3677,7 +3677,7 @@ pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder()
             .classNotes = "F507_TUESDAY_CLASS_NOTE",
             .classColor = "#ffffff",
             .fontColor = "#000000",
-            .studentCount = 1,
+            .studentCount = ClassSummaryStudentCount{1},
             .meetings = {
                 {
                     .weekday = SubPrepWeekday::Tuesday,
@@ -3694,7 +3694,7 @@ pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder()
             .classNotes = "F507_THURSDAY_CLASS_NOTE",
             .classColor = "#ffffff",
             .fontColor = "#000000",
-            .studentCount = 1,
+            .studentCount = ClassSummaryStudentCount{1},
             .meetings = {
                 {
                     .weekday = SubPrepWeekday::Thursday,
@@ -3711,7 +3711,7 @@ pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder()
             .classNotes = "F507_FRIDAY_SENTINEL_CLASS_NOTE",
             .classColor = "#ffffff",
             .fontColor = "#000000",
-            .studentCount = 1,
+            .studentCount = ClassSummaryStudentCount{1},
             .meetings = {
                 {
                     .weekday = SubPrepWeekday::Friday,

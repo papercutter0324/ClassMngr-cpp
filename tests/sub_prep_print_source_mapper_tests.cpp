@@ -57,7 +57,7 @@ Application::SubPrepPrintClass classFor(
         .classNotes = "Class notes",
         .classColor = "#123456",
         .fontColor = "#ABCDEF",
-        .studentCount = 19,
+        .studentCount = Application::ClassSummaryStudentCount{19},
         .meetings = {
             {
                 .weekday = Application::SubPrepWeekday::Monday,
@@ -134,6 +134,24 @@ void SubPrepPrintSourceMapperTests::mapsBoundedSourceIntoExistingPrintModel()
     QCOMPARE(group.classes.first().info.classColor, QStringLiteral("#123456"));
     QCOMPARE(group.classes.first().info.fontColor, QStringLiteral("#ABCDEF"));
     QCOMPARE(group.classes.first().timeText, QStringLiteral("Mon 9am"));
+
+    FakePrintSourceReadPort zeroCountPort;
+    zeroCountPort.input.teachers = {teacherFor()};
+    auto zeroCountClass = classFor();
+    zeroCountClass.studentCount = Application::ClassSummaryStudentCount{};
+    zeroCountPort.input.classes = {zeroCountClass};
+    const auto zeroCountSource =
+        Application::SubPrepPrintSourceQuery(zeroCountPort).execute(request);
+    QVERIFY(zeroCountSource);
+    const auto zeroCountMapped = SubPrepPrintSourceMapper::toClassInformation(
+        zeroCountSource.value(),
+        request
+        );
+    QVERIFY(zeroCountMapped);
+    QCOMPARE(
+        zeroCountMapped.value().first().classes.first().studentCount,
+        0
+        );
 }
 
 void SubPrepPrintSourceMapperTests::preservesTeacherDisplayNameFallbackOrder()

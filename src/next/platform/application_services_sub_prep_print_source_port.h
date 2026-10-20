@@ -353,7 +353,7 @@ public:
                     .classNotes = utf8(info.notes),
                     .classColor = utf8(info.classColor),
                     .fontColor = utf8(info.fontColor),
-                    .studentCount = 0,
+                    .studentCount = Application::ClassSummaryStudentCount{},
                     .meetings = {}
                 };
 
@@ -590,12 +590,14 @@ public:
 
                             const auto& countRecord = *record->second;
                             classRecord.studentCount =
-                                static_cast<std::size_t>(
-                                    std::max(
-                                        0,
-                                        countRecord.studentCount.value()
+                                Application::ClassSummaryStudentCount{
+                                    static_cast<std::size_t>(
+                                        std::max(
+                                            0,
+                                            countRecord.studentCount.value()
+                                            )
                                         )
-                                    );
+                                };
 
                             // A metrics hook must not suppress this or later
                             // class records if instrumentation fails.

@@ -113,7 +113,7 @@ struct SubPrepPrintClass final
     std::string classNotes;
     std::string classColor;
     std::string fontColor;
-    std::size_t studentCount = 0;
+    ClassSummaryStudentCount studentCount;
     std::vector<SubPrepPrintMeeting> meetings;
 
     friend bool operator==(
@@ -367,7 +367,8 @@ template <typename TypedId>
             classRecord.fontColor,
             kSubPrepPrintSourceMaxColorLength
             )
-        && classRecord.studentCount <= kSubPrepPrintSourceMaxStudentCount;
+        && classRecord.studentCount.rawValue()
+            <= kSubPrepPrintSourceMaxStudentCount;
 }
 
 [[nodiscard]] inline bool isValidMeetingText(
