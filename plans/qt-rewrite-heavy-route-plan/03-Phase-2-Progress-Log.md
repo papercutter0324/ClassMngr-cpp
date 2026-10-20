@@ -53025,33 +53025,31 @@ policy-entangled candidates. No candidate is accepted.
 
 No other slices were found.
 
-### F1176 Schedule-slot canonical hour accepted before implementation - 2026-10-20
+### F1176 Schedule-slot canonical hour complete - 2026-10-20
 
-F1176 is accepted/in progress. Add Qt-free
-`Application::ScheduleSlotCanonicalHour`, storing exact signed `int` with an
-explicit constructor, `.value()`, equality, no implicit conversion, and no
-range policy. Change only the optional `canonicalHour` parameter of the
-Application Schedule-slot policy and the feature helper
-`canonicalScheduleHour` return to use this value. Do not change the Domain
-parser.
+F1176 completed at source/test commit `d3935c2f`, following acceptance commit
+`ff39e21a`. Added Qt-free `Application::ScheduleSlotCanonicalHour`, an exact
+signed-`int` value with explicit construction, `.value()`, equality, no
+implicit conversion, and no range policy. It types only the optional
+Application Schedule-slot policy hour and the feature helper result. The
+parser, canonical-label equality gate, 15/16 cutoff, absence,
+weekend/intensive precedence, and toggling behavior remain unchanged.
 
-Preserve existing behavior: regular weekdays use Empty through hour 15 and
-Essay for later or absent hours; intensive weekdays default to Essay, while
-weekends default to Empty and take precedence. Keep existing toggling behavior.
-The feature helper still uses `ScheduleValueParser::parseTime` and returns an
-hour only when parsing succeeds and normalized time equals the original label;
-parser trimming, exact HH:mm syntax, 0–23 hour and 0–59 minute bounds, and
-padded-label absence remain unchanged.
-
-Wrapper coverage verifies explicitness, non-conversion, equality, and stored
-value. Retain existing 15/16, absence, weekend, intensive, and toggling policy
-tests plus raw-label canonicalization/parser coverage. Build `ClassMngr`,
+The independent Tester accepted the slice. It cleaned the affected Ninja
+dependency graph in the existing standard `build/macos-clang-debug` folder
+(324 prior outputs removed), then built `ClassMngr`,
 `ClassMngrNextApplicationScheduleSlotPolicyTests`, and
-`ClassMngrSchedulePrintModelTests`; run their matching focused offscreen CTests,
-independent Tester review, and `git diff --check`. No full-suite or Windows
-claim is in scope. Implementation and verification have not started.
+`ClassMngrSchedulePrintModelTests` successfully in 321 steps. Four focused
+offscreen CTests passed (4/4):
+`ClassMngrNextApplicationScheduleSlotPolicyTests`,
+`ClassMngrSchedulePrintModelTests`,
+`SchedulePrintModelNoncanonicalWeekdayDefaultParity`, and
+`SchedulePrintModelTestingModeRegularSlotPolicy`. Coverage includes
+15/16, absence, weekend/intensive/toggling, 15:55, malformed labels, and padded
+labels. `git diff --check` passed; no Domain parser diff was present. No
+full-suite or Windows verification occurred.
 
-Batch490 has F1171–F1175 complete, F1176 accepted/in progress, and F1177
-discovered as the next slice after F1176; it remains unpushed until F1177
-closes. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0
-and Phase 2 gates remain open.
+Batch490 now has F1171–F1176 complete and F1177 discovered next; it remains
+unpushed until F1177 closes. Batch491 remains provisional/inactive with eight
+candidates. F629 awaits source-bound Windows x64 layout evidence, and the Phase
+0 and Phase 2 gates remain open.
