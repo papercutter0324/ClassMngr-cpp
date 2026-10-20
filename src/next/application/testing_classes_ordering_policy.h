@@ -25,10 +25,34 @@ struct TestingClassesOrderingFact final
 using TestingClassesOrderingTextComparator =
     std::function<int(std::u16string_view, std::u16string_view)>;
 
+class TestingClassesOrderedRowIndex final
+{
+public:
+    constexpr TestingClassesOrderedRowIndex() noexcept = default;
+    explicit constexpr TestingClassesOrderedRowIndex(
+        const std::size_t value
+        ) noexcept : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const TestingClassesOrderedRowIndex&,
+        const TestingClassesOrderedRowIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
 // The caller supplies a non-empty comparator that returns a negative, zero,
 // or positive result. Rows compare by grade rank, level rank, level text,
 // then class name. Exact ties have no ordering guarantee.
-[[nodiscard]] inline std::vector<std::size_t>
+[[nodiscard]] inline std::vector<TestingClassesOrderedRowIndex>
 orderTestingClassesRows(
     const std::vector<TestingClassesOrderingFact>& rows,
     const TestingClassesOrderingTextComparator& compareText
@@ -68,7 +92,13 @@ orderTestingClassesRows(
         }
         );
 
-    return rowOrder;
+    std::vector<TestingClassesOrderedRowIndex> orderedRows;
+    orderedRows.reserve(rowOrder.size());
+    for (const std::size_t index : rowOrder)
+    {
+        orderedRows.emplace_back(index);
+    }
+    return orderedRows;
 }
 
 } // namespace ClassMngr::Next::Application

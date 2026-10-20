@@ -1288,10 +1288,12 @@ void TestingClassesPage::rebuildClassList(
             }
             );
 
-    for (const std::size_t rowIndex : rowOrder)
+    for (const auto rowIndex : rowOrder)
     {
         const TestingClass& testingClass =
-            testingClasses.at(static_cast<qsizetype>(rowIndex));
+            testingClasses.at(
+                static_cast<qsizetype>(rowIndex.rawValue())
+                );
         auto* item =
             new QListWidgetItem(
                 classListLabel(testingClass),

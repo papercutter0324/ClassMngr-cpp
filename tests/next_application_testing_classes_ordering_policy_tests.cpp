@@ -3,14 +3,39 @@
 #include <cstdlib>
 #include <iostream>
 #include <string_view>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
+
+static_assert(std::is_default_constructible_v<TestingClassesOrderedRowIndex>);
+static_assert(std::is_constructible_v<TestingClassesOrderedRowIndex, std::size_t>);
+static_assert(!std::is_convertible_v<std::size_t, TestingClassesOrderedRowIndex>);
+static_assert(!std::is_convertible_v<TestingClassesOrderedRowIndex, std::size_t>);
+static_assert(std::is_same_v<
+    decltype(orderTestingClassesRows(
+        std::declval<const std::vector<TestingClassesOrderingFact>&>(),
+        std::declval<const TestingClassesOrderingTextComparator&>()
+        )),
+    std::vector<TestingClassesOrderedRowIndex>
+    >);
 
 namespace
 {
 
 using Fact = TestingClassesOrderingFact;
+
+bool orderedRowIndexHasValueSemantics()
+{
+    constexpr TestingClassesOrderedRowIndex defaultIndex;
+    constexpr TestingClassesOrderedRowIndex explicitIndex{7};
+
+    return defaultIndex.rawValue() == 0
+        && explicitIndex.rawValue() == 7
+        && explicitIndex == TestingClassesOrderedRowIndex{7}
+        && explicitIndex != TestingClassesOrderedRowIndex{8};
+}
 
 int compareUtf16(
     const std::u16string_view left,
@@ -44,7 +69,10 @@ bool gradeRankPrecedesLevelRankAndText()
     };
 
     return orderTestingClassesRows(rows, compareUtf16)
-        == std::vector<std::size_t>{1, 0};
+        == std::vector<TestingClassesOrderedRowIndex>{
+            TestingClassesOrderedRowIndex{1},
+            TestingClassesOrderedRowIndex{0}
+        };
 }
 
 bool levelRankPrecedesLevelAndClassText()
@@ -55,7 +83,10 @@ bool levelRankPrecedesLevelAndClassText()
     };
 
     return orderTestingClassesRows(rows, compareUtf16)
-        == std::vector<std::size_t>{1, 0};
+        == std::vector<TestingClassesOrderedRowIndex>{
+            TestingClassesOrderedRowIndex{1},
+            TestingClassesOrderedRowIndex{0}
+        };
 }
 
 bool injectedComparatorOrdersLevelText()
@@ -66,7 +97,10 @@ bool injectedComparatorOrdersLevelText()
     };
 
     return orderTestingClassesRows(rows, compareUtf16Descending)
-        == std::vector<std::size_t>{1, 0};
+        == std::vector<TestingClassesOrderedRowIndex>{
+            TestingClassesOrderedRowIndex{1},
+            TestingClassesOrderedRowIndex{0}
+        };
 }
 
 bool injectedComparatorOrdersClassNameAfterEqualLevelText()
@@ -77,7 +111,10 @@ bool injectedComparatorOrdersClassNameAfterEqualLevelText()
     };
 
     return orderTestingClassesRows(rows, compareUtf16Descending)
-        == std::vector<std::size_t>{1, 0};
+        == std::vector<TestingClassesOrderedRowIndex>{
+            TestingClassesOrderedRowIndex{1},
+            TestingClassesOrderedRowIndex{0}
+        };
 }
 
 bool unknownRankSentinelComparesAfterKnownRanks()
@@ -89,7 +126,11 @@ bool unknownRankSentinelComparesAfterKnownRanks()
     };
 
     return orderTestingClassesRows(rows, compareUtf16)
-        == std::vector<std::size_t>{2, 1, 0};
+        == std::vector<TestingClassesOrderedRowIndex>{
+            TestingClassesOrderedRowIndex{2},
+            TestingClassesOrderedRowIndex{1},
+            TestingClassesOrderedRowIndex{0}
+        };
 }
 
 bool exactTiesHaveNoPromisedOrder()
@@ -106,13 +147,14 @@ bool exactTiesHaveNoPromisedOrder()
     }
 
     std::vector<bool> seen(rows.size(), false);
-    for (const std::size_t rowIndex : rowOrder)
+    for (const TestingClassesOrderedRowIndex rowIndex : rowOrder)
     {
-        if (rowIndex >= seen.size() || seen[rowIndex])
+        const std::size_t rawIndex = rowIndex.rawValue();
+        if (rawIndex >= seen.size() || seen[rawIndex])
         {
             return false;
         }
-        seen[rowIndex] = true;
+        seen[rawIndex] = true;
     }
     return true;
 }
@@ -121,6 +163,11 @@ bool exactTiesHaveNoPromisedOrder()
 
 int main()
 {
+    if (!orderedRowIndexHasValueSemantics())
+    {
+        std::cerr << "Ordered row indexes should have value semantics.\n";
+        return EXIT_FAILURE;
+    }
     if (!gradeRankPrecedesLevelRankAndText())
     {
         std::cerr << "Grade rank should have highest priority.\n";
