@@ -58194,3 +58194,47 @@ or tests had started. No Windows or full-suite result is claimed.
 
 Batch500 remains active with F1243–F1249 complete, F1250 accepted awaiting
 implementation, and F1251–F1252 discovered.
+
+### F1250 ScheduleTime endpoint minutes complete - 2026-10-21
+
+F1250 completed in source/test commit
+`426a8e06390bd64afac81cae727cb73679c99082`, following acceptance documentation
+commit `9facb9d7b31fb3bd71d8b90e1c7f8050ef3c7119`. The 15 scoped paths were
+`src/data/repositories/schedule_import_repository.cpp`,
+`src/features/setup/ui/initial_setup_wizard.cpp`,
+`src/next/application/class_details_save_workflow.h`,
+`src/next/application/schedule_import_overlap_projection.h`,
+`src/next/domain/schedule_time.h`,
+`src/next/platform/application_services_class_details_save_port.h`,
+`src/next/platform/application_services_class_details_schedule_conflict_port.h`,
+`tests/class_details_save_page_tests.cpp`,
+`tests/next_application_class_details_save_use_case_tests.cpp`,
+`tests/next_application_class_details_schedule_conflict_query_tests.cpp`,
+`tests/next_application_schedule_import_state_validation_tests.cpp`,
+`tests/next_domain_contract_tests.cpp`,
+`tests/next_platform_application_services_class_details_save_port_tests.cpp`,
+`tests/next_platform_application_services_class_details_schedule_conflict_port_tests.cpp`,
+and `tests/schedule_import_tests.cpp`.
+
+`ScheduleTime::StartMinute` and `ScheduleTime::EndMinute` are now distinct
+typed endpoints in the factory, accessors, and stored members. The established
+numeric range validation inside `fromMinutes` and cross-endpoint ordering in
+`overlaps` use `.rawValue()` for the domain-internal integer comparisons; this
+preserves the numeric checks without weakening the typed caller API. Callers
+wrap integer inputs and unwrap only at legacy or Platform boundaries. The
+same-day `[0,1439]` and strict endpoint ordering rules, half-open overlap, and
+ClassTransferProjection's week-based overnight behavior remain unchanged.
+
+The Executor's incremental macOS build rebuilt and linked `ClassMngr` and all
+eight affected test targets. The exact build command was:
+
+`cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextDomainContractTests ClassMngrNextApplicationClassDetailsSaveUseCaseTests ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests ClassMngrNextApplicationScheduleImportStateValidationTests ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests ClassMngrClassDetailsSavePageTests ClassMngrScheduleImportTests --parallel 4`
+
+The independent Tester rebuilt the same targets incrementally and Ninja
+reported no work to do. The focused CTest command
+`ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrNextDomainContractTests$'`
+passed (1/1). `git diff --check` passed in both reviews. No clean build,
+Windows build, or full-suite run was performed.
+
+Batch500 remains active with F1243–F1250 complete, F1251 next for acceptance,
+and F1252 discovered.
