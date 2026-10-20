@@ -59281,3 +59281,67 @@ No clean build, Windows build, or full-suite verification was run.
 Batch502 remains active: F1257–F1259 are complete, F1260 is next for
 acceptance, and F1261 remains discovered. Batch501 is complete and pushed at
 `7f8ca958`; F629 and the Phase 0 and Phase 2 gates remain open.
+
+### Superseded latest progress update - 2026-10-21 (F1259 complete)
+
+F1259 is complete in active Batch502 and F1260 is next for acceptance (see [F1259 verification](03-Phase-2-Progress-Log.md#f1259-document-catalog-keys-complete-2026-10-21)). Its four focused CTests passed 4/4, with Sidebar Structure rerun passing 1/1 after the conversion adjustment; no clean, Windows, or full-suite verification is claimed. F1258's focused CTest passed 1/1 in incremental macOS verification (see [F1258 verification](03-Phase-2-Progress-Log.md#f1258-schedule-import-weekday-group-complete-2026-10-21)). F1257's four focused CTests passed 4/4, with its platform test rerun passing after the sparse-position regression; the broader page CTest was not run (see [F1257 verification](03-Phase-2-Progress-Log.md#f1257-classsummaryorder-complete-2026-10-21)). Batch501 remains pushed at `7f8ca958` (see the [push receipt](03-Phase-2-Progress-Log.md#batch501-push-receipt-2026-10-21)); F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1260 CalendarEventSummary event type name accepted before implementation - 2026-10-21
+
+F1260 is accepted as the fourth Batch502 slice. Add
+`Application::CalendarEventTypeName` adjacent to `CalendarEventSummary` in
+`src/next/application/calendar_event_projection.h`. It is a distinct open-text
+wrapper with an empty default, explicit owning `std::string` construction,
+`.value()` returning `const std::string&`, and same-type value equality.
+`CalendarEventSummary::eventType` uses this type and retains the default text
+`Other`. The wrapper has no implicit string conversions.
+
+Validate the underlying value with the existing nonblank and 64-byte rules,
+preserving the current error text. Application projection validation does not
+trim, case-fold, or restrict the value to the closed
+`Domain::CalendarEventType` enum; a nonblank custom name such as `Webinar` is
+accepted unchanged. Adapt the wrapper boundaries in validation, the Platform
+projection aggregate, the `CalendarEventVisibilityPolicy`/start-of-term policy
+call, and UI summary-to-draft conversion with `.value()` as appropriate.
+Keep save/edit request types, enum behavior, repository normalization, and all
+other event fields unchanged.
+
+The Platform adapter calls `boundedUtf8` and returns the bytes it receives,
+but the current legacy repository normalizes database values before they reach
+that adapter: `eventFromQuery` uses `normalizedCalendarEventType`, which trims
+and maps noncanonical/custom persisted values to `Other`. Preserve this
+repository behavior; acceptance of custom names in the Application projection
+does not claim end-to-end custom database-name preservation. The existing
+Platform boundary test continues to assert that padded canonical data is
+normalized to `Workshop`.
+
+The reviewed evidence is `calendar_event_projection.h:88,250-263` for the
+summary field, default, and validation; `application_services_calendar_event_port.h:345-348,438-462`
+for bounded Platform mapping; `calendar_event_repository.cpp:33-46` for legacy
+normalization; `domain/models/calendar_event.h:50-60` for the closed enum;
+`calendar_event_visibility_policy.h:23-27` for the policy boundary; and
+`calendar_page_events.cpp:77-92` for UI summary-to-draft conversion. Existing
+test evidence is `next_application_calendar_event_tests.cpp:643-645,741-800`,
+`next_platform_application_services_calendar_event_port_tests.cpp:895-970`,
+and `calendar_page_event_mutation_parity_tests.cpp:3521-3562`.
+
+Focused Application coverage in
+`tests/next_application_calendar_event_tests.cpp` will assert the field type,
+explicit construction/no implicit string conversion, default `Other`,
+unchanged acceptance of an open-text custom name, same-type equality, and the
+existing blank, exact-64-byte, and over-64-byte behavior. Preserve the
+normalization assertion in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`;
+do not assert custom-name preservation through the repository. The page parity
+coverage in `tests/calendar_page_event_mutation_parity_tests.cpp` compiles and
+tests the UI summary-to-draft `.value()` conversion.
+
+The accepted incremental macOS build targets are `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarPageEventMutationParityTests`. Run only the three matching
+focused CTests. No implementation, build, or test execution has started. No
+clean build, Windows build, or full-suite verification is claimed. Batch502
+remains active with F1257–F1259 complete, F1260 accepted, and F1261
+discovered; no new batch discovery has started. F629 and the Phase 0 and Phase 2
+gates remain open.
