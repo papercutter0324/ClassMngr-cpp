@@ -58695,3 +58695,136 @@ active with F1253–F1254 complete and F1255 next for acceptance; F1256 remains
 discovered (2 complete, 0 accepted, 2 discovered). Do not begin Batch502
 discovery until work starts on F1255. F629 and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1255 AcademicTermYear accepted before implementation - 2026-10-21
+
+F1255 is accepted before implementation. Add a distinct
+`Application::AcademicTermYear`, backed by `int`, with explicit construction,
+default value zero, `.value()`, equality, and no implicit conversion to or
+from `int`. Follow the local `AcademicTermWeekCount` value pattern, but do not
+reuse that semantically different type or `GregorianDate`.
+
+Change only `isAcademicYearScheduleValid` to accept `AcademicTermYear`. Keep
+`FirstTermYear == 2026`: reject values below 2026, accept 2026 and every
+representable `int` above it including `INT_MAX`, and add no upper-bound
+check, constructor validation, arithmetic, or policy change. Explicitly wrap
+the existing `int` at the two Feature call sites in
+`src/features/calendar/academic_calendar_schedule.cpp:86,158`. Keep
+`AcademicYearSchedule::termYear`, `QMap` keys, JSON keys and payload, and
+persisted opaque JSON text in their existing integer/shape contracts. Policy
+acceptance of `INT_MAX` does not claim that `yearSchedule()` safely generates
+through that year; its loop and the preferences UI have separate existing
+limits, which remain unchanged.
+
+Acceptance coverage asserts the exact wrapper policy parameter, explicit
+construction and no implicit conversions, default zero, rejection of 2025,
+acceptance of 2026 and `std::numeric_limits<int>::max()` with valid facts,
+and retains winter Monday and term-count validation cases. Focused build:
+`ClassMngr`, `ClassMngrNextApplicationAcademicYearSchedulePolicyTests`, and
+`ClassMngrAcademicCalendarTests`. Run only CTests
+`ClassMngrNextApplicationAcademicYearSchedulePolicyTests`,
+`AcademicCalendarScheduleValidityPolicy`, and
+`AcademicCalendarJsonRoundTripAndMalformedFallback` (headless Qt uses
+offscreen). Use the existing incremental `build/macos-clang-debug`; no clean,
+Windows, or full-suite claim. At acceptance, no implementation, build, or tests
+have started.
+
+Evidence: the policy input and `FirstTermYear` are in
+`src/next/application/academic_year_schedule_policy.h:14,39`; the two Feature
+call sites are in `src/features/calendar/academic_calendar_schedule.cpp:86,158`.
+`AcademicYearSchedule::termYear` remains `int` at
+`src/features/calendar/academic_calendar_schedule.h:29`; JSON parse and
+serialization remain in the existing shape at
+`academic_calendar_schedule.cpp:119,140`, with persisted opaque text in
+`src/features/calendar/academic_calendar_schedule_preferences.h:11`.
+Existing policy cases are in
+`tests/next_application_academic_year_schedule_policy_tests.cpp:56-103`.
+The policy target is registered in `cmake/tests/next.cmake:35-63`; the
+Calendar feature tests and selector are in
+`cmake/tests/platform_and_reports.cmake:31-65`.
+
+Batch501 remains active with F1253–F1254 complete, F1255 accepted awaiting
+implementation, and F1256 discovered (2 complete, 1 accepted, 1 discovered).
+F1256 is next for acceptance. F629 and the Phase 0 and Phase 2 gates remain
+open.
+
+### Batch502 discovery started at F1255 start - 2026-10-21
+
+Starting F1255, the second-last Batch501 candidate, triggered discovery of
+Batch502. Batch502 is discovered, not active until Batch501 closes. Two
+independent Explorer reports were complementary: the contract-focused pass
+found F1257, while the Feature-oriented pass found F1258–F1261. They did not
+conflict; duplicate checks excluded existing candidates and deferred work.
+The prior F729 work is separate from F1258. Five ordered candidates were
+found, short of ten:
+
+1. **F1257 — ClassSummary source position (high confidence).** Type the raw
+   `ClassSummary::order` (`std::int32_t`) in
+   `src/next/application/class_summary_projection.h:78-94`. Preserve default
+   zero, negative rejection at `:368-373`, the `requestIndex` producer in
+   `src/next/platform/application_services_sub_prep_schedule_summary_port.h:471-481`,
+   and sorting by order then class ID in
+   `src/next/application/sub_prep_schedule_summary_query.h:145-160`. This is
+   distinct from F1248 navigation ranks in the same struct. Focused tests and
+   targets: `tests/next_application_class_summary_tests.cpp:188-192,529-531`
+   / `ClassMngrNextApplicationClassSummaryTests`, and
+   `tests/next_application_sub_prep_schedule_summary_query_tests.cpp:453-463`
+   / `ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`.
+2. **F1258 — Schedule Import weekday-group classification (medium-high).**
+   Review raw categories returned by
+   `ScheduleImportMatchingProjectionDetail::dayGroup()` in
+   `src/next/application/schedule_import_matching_projection.h:213`: 0 means
+   incompatible/unknown/mixed, 1 M/W/F, and 2 T/Th. Preserve trim/ASCII fold,
+   classification, `meetingDays` equality, and empty-existing eligibility.
+   This Application helper is distinct from legacy F729 parser migration.
+   Focus: `tests/next_application_schedule_import_matching_projection_tests.cpp:192`,
+   `tests/schedule_import_tests.cpp:2207`; targets
+   `ClassMngrNextApplicationScheduleImportMatchingProjectionTests`,
+   `ClassMngrScheduleImportTests`, and optionally the dialog target.
+3. **F1259 — Document Catalog navigation keys (medium-high).** Consider
+   distinct explicit key wrappers for the raw string
+   `DocumentFolderMetadata::key` and `DocumentEntryMetadata::key` in
+   `src/next/application/document_catalog_projection.h:116`. Preserve exact
+   text, blank/length validation, independent keys, and ordering. Do not add
+   key equality or uniqueness checks; this remains distinct from F1252 order
+   wrappers. Evidence includes the producer at
+   `src/next/platform/application_services_document_catalog_port.h:121` and
+   UI conversion at `src/ui/shared/widgets/sidebar/sidebar_tree.cpp:51`.
+   Focused coverage: `tests/next_application_document_catalog_tests.cpp:152`,
+   `ClassMngrNextApplicationDocumentCatalogTests`,
+   `ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests`,
+   `ClassMngrSidebarStructureTests`, and
+   `ClassMngrDocumentCatalogNavigationParityTests`.
+4. **F1260 — CalendarEventSummary event type name (medium).** Review raw
+   `std::string eventType` in
+   `src/next/application/calendar_event_projection.h:88` for an explicit
+   open-text wrapper, not `Domain::CalendarEventType`. Preserve unknown/custom
+   names, current nonblank/length validation, and Platform trimming; keep this
+   scoped to the projection field. Producer and consumer are in
+   `src/next/platform/application_services_calendar_event_port.h:423` and
+   `src/features/calendar/ui/calendar_page_events.cpp:80`. Focused tests:
+   `tests/next_application_calendar_event_tests.cpp:643`,
+   `tests/next_platform_application_services_calendar_event_port_tests.cpp:3797`;
+   targets `ClassMngrNextApplicationCalendarEventTests`,
+   `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+   `ClassMngrCalendarPageEventMutationParityTests`.
+5. **F1261 — Calendar event projection order (medium).** Review raw
+   `std::int32_t order` in
+   `src/next/application/calendar_event_projection.h:86` and its
+   nonnegative validation at `:314`. Preserve default zero, signed-32 values,
+   nonnegative validation, arbitrary valid values, input sequence, and no
+   sorting or uniqueness rule. The Platform source index is assigned after
+   the 4,096-event bound in
+   `src/next/platform/application_services_calendar_event_port.h:275`.
+   Keep distinct from F1242 Schedule View order and F1252 Document Catalog
+   orders. Focus: `tests/next_platform_application_services_calendar_event_port_tests.cpp:973`,
+   `tests/next_application_calendar_event_tests.cpp:1012`; targets
+   `ClassMngrNextApplicationCalendarEventTests` and
+   `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`.
+
+No other slices were found.
+
+Batch501 remains the active batch with F1255 accepted and F1256 next for
+acceptance. Batch502's F1257–F1261 queue is discovered only and remains
+inactive until Batch501 closes. F629 and the Phase 0 and Phase 2 gates remain
+open.

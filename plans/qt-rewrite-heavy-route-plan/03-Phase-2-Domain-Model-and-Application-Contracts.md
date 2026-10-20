@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch500 (F1243–F1252) is complete and pushed at `029a17e8`; active Batch501 has F1253–F1254 complete and F1255 next for acceptance, with F1256 discovered; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch500 (F1243–F1252) is complete and pushed at `029a17e8`; active Batch501 has F1253–F1254 complete, F1255 accepted, and F1256 next for acceptance; Batch502 is discovered but inactive until Batch501 closes; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
@@ -72,12 +72,12 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch501 (4 candidates; 2 complete, 0 accepted, 2 discovered)
+#### Active batch: Batch501 (4 candidates; 2 complete, 1 accepted, 1 discovered)
 
 1. F1253 - **Complete.** Add distinct explicit signed-64 Application identities for GS Team and Native English Teacher stored profiles; preserve `-1` and full-width SQL transport.
 2. F1254 - **Complete.** Type `TeacherImportCandidateGroup::candidateCount` while preserving expansion, selection bounds, order, and validation behavior.
-3. F1255 - **Discovered.** Type the academic-year validation boundary while preserving the 2026 lower bound and absence of an upper bound.
-4. F1256 - **Discovered; rechecked after F1251.** Keep `RosterSnapshot` column widths as a separate Application projection candidate; `ClassExportRosterColumnWidth` is specific to the portable Class Transfer package and should not leak into generic `RosterSnapshot`. Preserve signed values and order.
+3. F1255 - **Accepted; awaiting implementation.** Type the academic-year validation boundary while preserving the 2026 lower bound and absence of an upper bound.
+4. F1256 - **Discovered; next for acceptance; rechecked after F1251.** Keep `RosterSnapshot` column widths as a separate Application projection candidate; `ClassExportRosterColumnWidth` is specific to the portable Class Transfer package and should not leak into generic `RosterSnapshot`. Preserve signed values and order.
 
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
