@@ -208,9 +208,9 @@ QStringList daysWithValues(
                     data.roster.columnWidths.reserve(
                         static_cast<qsizetype>(roster.columnWidths.size())
                         );
-                    for (const int width : roster.columnWidths)
+                    for (const auto width : roster.columnWidths)
                     {
-                        data.roster.columnWidths.append(width);
+                        data.roster.columnWidths.append(width.rawValue());
                     }
                     data.roster.rows.reserve(
                         static_cast<qsizetype>(roster.rows.size())
@@ -375,9 +375,9 @@ QStringList daysWithValues(
         data.roster.columnWidths.reserve(
             static_cast<qsizetype>(snapshot.columnWidths.size())
             );
-        for (const int width : snapshot.columnWidths)
+        for (const auto width : snapshot.columnWidths)
         {
-            data.roster.columnWidths.append(width);
+            data.roster.columnWidths.append(width.rawValue());
         }
 
         data.roster.rows.reserve(

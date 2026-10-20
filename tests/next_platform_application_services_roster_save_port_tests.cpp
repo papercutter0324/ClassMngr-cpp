@@ -20,6 +20,7 @@
 
 #include <string>
 #include <vector>
+#include <initializer_list>
 
 using namespace ClassMngr::Next;
 
@@ -35,6 +36,17 @@ QString databasePath(QTemporaryDir& directory)
         );
 }
 
+std::vector<Application::RosterSnapshotColumnWidth> snapshotWidths(
+    const std::initializer_list<int> values
+    )
+{
+    std::vector<Application::RosterSnapshotColumnWidth> result;
+    result.reserve(values.size());
+    for (const int value : values)
+        result.emplace_back(value);
+    return result;
+}
+
 const std::vector<std::u16string> transferBaseColumns{
     u"English", u"Korean", u"Winter", u"Speech Contest", u"Summer", u"Fall"
 };
@@ -45,7 +57,7 @@ Application::RosterSnapshot transferSnapshot(
 {
     Application::RosterSnapshot snapshot;
     snapshot.columns = transferBaseColumns;
-    snapshot.columnWidths = {101, 102, 103, 104, 105, 106};
+    snapshot.columnWidths = snapshotWidths({101, 102, 103, 104, 105, 106});
     snapshot.rows.resize(25, std::vector<std::u16string>(transferBaseColumns.size()));
     snapshot.rows[0] = firstRow;
     if (!secondRow.empty())
@@ -58,8 +70,8 @@ Roster legacyTransferRoster(const Application::RosterSnapshot& snapshot)
     Roster roster;
     for (const auto& column : snapshot.columns)
         roster.columns.append(QString::fromStdU16String(column));
-    for (const int width : snapshot.columnWidths)
-        roster.columnWidths.append(width);
+    for (const Application::RosterSnapshotColumnWidth width : snapshot.columnWidths)
+        roster.columnWidths.append(width.rawValue());
     for (const auto& sourceRow : snapshot.rows)
     {
         QStringList row;
@@ -97,7 +109,7 @@ Application::RosterSaveRequest request(
         u"Fall",
         u"備考"
     };
-    snapshot.columnWidths = {172, 123, 131, 132, 133, 134, 207};
+    snapshot.columnWidths = snapshotWidths({172, 123, 131, 132, 133, 134, 207});
     snapshot.rows.resize(25);
     for (int row = 0; row < 25; ++row)
     {
@@ -618,7 +630,8 @@ preparationMatchesLegacyNormalizationAndOrderedMetadata()
         Roster legacy;
         for (const auto& column : source.columns)
             legacy.columns.append(QString::fromStdU16String(column));
-        for (const int width : source.columnWidths) legacy.columnWidths.append(width);
+        for (const Application::RosterSnapshotColumnWidth width : source.columnWidths)
+            legacy.columnWidths.append(width.rawValue());
         for (const auto& row : source.rows)
         {
             QStringList cells;
@@ -676,7 +689,7 @@ preparationMatchesLegacyNormalizationAndOrderedMetadata()
     };
     auto base = request(42).roster;
     base.rows.clear();
-    base.columnWidths = {-5, 0, 1};
+    base.columnWidths = snapshotWidths({-5, 0, 1});
     const std::vector<std::u16string> names{
         u"", u"  ", u"aLICE", u"a . b", u"a-b", u"a--b", u"A..b", u"A . B .",
         u"Mary - JANE", u"alice2", u"O'Brien", u"Zo\u00eb", u"A\U0001f4da", u"\u0000",
@@ -807,7 +820,8 @@ void NextPlatformApplicationServicesRosterSavePortTests::rawBomSnapshotPersistsD
     Roster legacy;
     for (const auto& column : value.roster.columns)
         legacy.columns.append(QString::fromStdU16String(column));
-    for (const int width : value.roster.columnWidths) legacy.columnWidths.append(width);
+    for (const Application::RosterSnapshotColumnWidth width : value.roster.columnWidths)
+        legacy.columnWidths.append(width.rawValue());
     for (const auto& row : value.roster.rows)
     {
         QStringList cells;

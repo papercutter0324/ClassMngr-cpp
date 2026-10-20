@@ -12,6 +12,7 @@ using ClassMngr::Next::Application::RosterCustomColumnAppendResult;
 using ClassMngr::Next::Application::RosterCustomColumnNameRejection;
 using ClassMngr::Next::Application::RosterMaximumColumnNameLength;
 using ClassMngr::Next::Application::RosterSnapshot;
+using ClassMngr::Next::Application::RosterSnapshotColumnWidth;
 using ClassMngr::Next::Application::appendRosterCustomColumn;
 
 namespace
@@ -64,7 +65,7 @@ bool appendsNormalizedNameAndPreservesAllDataAndWidths()
 {
     const RosterSnapshot original{
         .columns = {u"English", u"Korean"},
-        .columnWidths = {211, 143},
+        .columnWidths = {RosterSnapshotColumnWidth{211}, RosterSnapshotColumnWidth{143}},
         .rows = {
             {u"Amy", u"\uAE40\uBBFC\uC9C0"},
             {u"Ben", u"\uC774\uC11C\uC900", u"Existing extra cell"}
@@ -72,7 +73,7 @@ bool appendsNormalizedNameAndPreservesAllDataAndWidths()
     };
     const RosterSnapshot expected{
         .columns = {u"English", u"Korean", u"Parent Contact"},
-        .columnWidths = {211, 143},
+        .columnWidths = {RosterSnapshotColumnWidth{211}, RosterSnapshotColumnWidth{143}},
         .rows = {
             {u"Amy", u"\uAE40\uBBFC\uC9C0", u""},
             {u"Ben", u"\uC774\uC11C\uC900", u"Existing extra cell", u""}
@@ -85,7 +86,8 @@ bool appendsNormalizedNameAndPreservesAllDataAndWidths()
     return std::holds_alternative<RosterSnapshot>(result)
         && std::get<RosterSnapshot>(result) == expected
         && original.columns.size() == 2
-        && original.columnWidths == std::vector<int>{211, 143};
+        && original.columnWidths == std::vector<RosterSnapshotColumnWidth>{
+            RosterSnapshotColumnWidth{211}, RosterSnapshotColumnWidth{143}};
 }
 
 bool appendsToAnEmptyRosterWithoutInventingRowsOrWidths()
@@ -101,7 +103,9 @@ bool rejectedNamesReturnTypedErrorsWithoutChangingTheInput()
 {
     const RosterSnapshot original{
         .columns = {u"English", u"Fall", u"Review"},
-        .columnWidths = {211, 143, 242},
+        .columnWidths = {
+            RosterSnapshotColumnWidth{211}, RosterSnapshotColumnWidth{143},
+            RosterSnapshotColumnWidth{242}},
         .rows = {{u"Amy", u"\uAE40\uBBFC\uC9C0", u"Note"}}
     };
     const std::u16string tooLong(RosterMaximumColumnNameLength + 1, u'x');
@@ -134,7 +138,9 @@ bool rejectedNamesReturnTypedErrorsWithoutChangingTheInput()
     return aliasError
             && aliasError->rejection == RosterCustomColumnNameRejection::RequiredColumn
         && original.columns == std::vector<std::u16string>{u"English", u"Fall", u"Review"}
-        && original.columnWidths == std::vector<int>{211, 143, 242}
+        && original.columnWidths == std::vector<RosterSnapshotColumnWidth>{
+            RosterSnapshotColumnWidth{211}, RosterSnapshotColumnWidth{143},
+            RosterSnapshotColumnWidth{242}}
         && original.rows == std::vector<std::vector<std::u16string>>{
             {u"Amy", u"\uAE40\uBBFC\uC9C0", u"Note"}
         };

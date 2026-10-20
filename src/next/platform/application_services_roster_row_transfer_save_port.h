@@ -89,8 +89,8 @@ private:
         Roster roster;
         for (const auto& column : snapshot.columns)
             roster.columns.append(text(column));
-        for (int width : snapshot.columnWidths)
-            roster.columnWidths.append(width);
+        for (const Application::RosterSnapshotColumnWidth width : snapshot.columnWidths)
+            roster.columnWidths.append(width.rawValue());
         for (const auto& sourceRow : snapshot.rows)
         {
             QStringList row;

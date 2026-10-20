@@ -162,7 +162,9 @@ private:
             );
         for (const int width : roster.columnWidths)
         {
-            snapshot.columnWidths.push_back(width);
+            snapshot.columnWidths.push_back(
+                Application::RosterSnapshotColumnWidth{width}
+                );
         }
 
         snapshot.rows.reserve(static_cast<std::size_t>(roster.rows.size()));

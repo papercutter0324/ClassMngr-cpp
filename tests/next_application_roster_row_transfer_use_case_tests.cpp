@@ -75,7 +75,10 @@ struct Confirmation final : RosterRowTransferConfirmationPort
 
 RosterRowTransferRequest request()
 {
-    RosterSnapshot source{.columns = base, .columnWidths = {101,102,103,104,105,106},
+    RosterSnapshot source{.columns = base, .columnWidths = {
+            RosterSnapshotColumnWidth{101}, RosterSnapshotColumnWidth{102},
+            RosterSnapshotColumnWidth{103}, RosterSnapshotColumnWidth{104},
+            RosterSnapshotColumnWidth{105}, RosterSnapshotColumnWidth{106}},
         .rows = {{u"John", u"\uAE40\uBBFC\uC9C0", u"", u"", u"", u"Fall value"},
                  {u"Next", u"\uBC15\uC9C0\uBBFC"}, {}}};
     return {id("1"), id("2"), source, RosterRowTransferSourceIndex{0}, base};
@@ -98,12 +101,16 @@ bool successProjectsAndCompactsWithoutMutatingInputs()
     req.sourceRoster.rows[0].push_back(u"  source\t note ");
     req.sourceRoster.rows[1][0] = u"  Next\t Name  ";
     req.sourceRoster.rows[1][1] = u" \uBC15 \uC9C0\uBBFC ";
-    req.sourceRoster.columnWidths.push_back(107);
+    req.sourceRoster.columnWidths.push_back(RosterSnapshotColumnWidth{107});
     const auto sourceBefore = req.sourceRoster;
     Ports ports;
     ports.target = {.columns = {u"Advisor Notes", u"Korean", u"Autumn", u"english",
             u" Extra\t Notes ", u"advisor notes", u""},
-        .columnWidths = {210,220,230,240,250,260,270},
+        .columnWidths = {
+            RosterSnapshotColumnWidth{210}, RosterSnapshotColumnWidth{220},
+            RosterSnapshotColumnWidth{230}, RosterSnapshotColumnWidth{240},
+            RosterSnapshotColumnWidth{250}, RosterSnapshotColumnWidth{260},
+            RosterSnapshotColumnWidth{270}},
         .rows = {{u" keep  note ", u" \uBC15 \uC9C0\uBBFC ", u" autumn  value ",
                   u" oTHER ", u" other  note ", u"ignored", u"discarded"}}};
     const auto targetBefore = ports.target;
@@ -132,7 +139,11 @@ bool successProjectsAndCompactsWithoutMutatingInputs()
             u"Next Name", u"\uBC15\uC9C0\uBBFC"}
         && saved.sourceRoster.rows.back() == std::vector<std::u16string>(7)
         && saved.targetRoster.columns == columns
-        && saved.targetRoster.columnWidths == std::vector<int>{240,220,0,0,0,230,210,0}
+        && saved.targetRoster.columnWidths == std::vector<RosterSnapshotColumnWidth>{
+            RosterSnapshotColumnWidth{240}, RosterSnapshotColumnWidth{220},
+            RosterSnapshotColumnWidth{0}, RosterSnapshotColumnWidth{0},
+            RosterSnapshotColumnWidth{0}, RosterSnapshotColumnWidth{230},
+            RosterSnapshotColumnWidth{210}, RosterSnapshotColumnWidth{0}}
         && saved.targetRoster.rows.size() == 25
         && saved.targetRoster.rows[0] == std::vector<std::u16string>{u"Other",u"\uBC15\uC9C0\uBBFC",
             u"",u"",u"",u"autumn value",u"keep note",u"other note"}
@@ -241,7 +252,8 @@ bool rejectsPreparationWithoutSave()
         {
             req.sourceRoster.columns = base;
             req.sourceRoster.columns.push_back(u"Source only");
-            req.sourceRoster.columnWidths = std::vector<int>(base.size() + 1, 0);
+            req.sourceRoster.columnWidths = std::vector<RosterSnapshotColumnWidth>(
+                base.size() + 1, RosterSnapshotColumnWidth{0});
             req.sourceRoster.rows = {{u"", u"", u"", u"", u"", u"", u"Unmapped data"}};
             expected = RosterRowTransferPreparationRejection::SourceRowHasNoData;
         }
@@ -298,7 +310,8 @@ bool emptyTargetUsesCanonicalBaseAndRowZero()
     if (target.rows.size() != RosterModeledRowCount)
         return false;
     return target.columns == base
-        && target.columnWidths == std::vector<int>(base.size(), 0)
+        && target.columnWidths == std::vector<RosterSnapshotColumnWidth>(
+            base.size(), RosterSnapshotColumnWidth{0})
         && target.rows[0] == std::vector<std::u16string>{
             u"John", u"\uAE40\uBBFC\uC9C0", u"", u"", u"", u"Fall value"}
         && target.rows[1] == std::vector<std::u16string>(base.size())

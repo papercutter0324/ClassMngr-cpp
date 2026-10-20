@@ -33,7 +33,13 @@ Application::RosterSnapshot rawSnapshot()
         u"Autumn",
         u"備考"
     };
-    snapshot.columnWidths = {321, 222, 210, 333, 177};
+    snapshot.columnWidths = {
+        Application::RosterSnapshotColumnWidth{321},
+        Application::RosterSnapshotColumnWidth{222},
+        Application::RosterSnapshotColumnWidth{210},
+        Application::RosterSnapshotColumnWidth{333},
+        Application::RosterSnapshotColumnWidth{177}
+    };
     snapshot.rows.resize(38);
     for (std::vector<std::u16string>& row : snapshot.rows)
     {
@@ -132,7 +138,13 @@ preservesCompleteOrderedRawSnapshotAndUtf16Values()
     QCOMPARE(result.value().columns[0], std::u16string(u"Korean"));
     QCOMPARE(result.value().columns[3], std::u16string(u"Autumn"));
     QCOMPARE(result.value().columns[4], std::u16string(u"\u5099\u8003"));
-    QCOMPARE(result.value().columnWidths, std::vector<int>({321, 222, 210, 333, 177}));
+    QCOMPARE(result.value().columnWidths, (std::vector<Application::RosterSnapshotColumnWidth>{
+        Application::RosterSnapshotColumnWidth{321},
+        Application::RosterSnapshotColumnWidth{222},
+        Application::RosterSnapshotColumnWidth{210},
+        Application::RosterSnapshotColumnWidth{333},
+        Application::RosterSnapshotColumnWidth{177}
+    }));
     QCOMPARE(result.value().rows.size(), std::size_t(38));
     QCOMPARE(result.value().rows[0].size(), std::size_t(5));
     QCOMPARE(result.value().rows[0][0], std::u16string(u"\uAE40\uBBFC\uC9C0"));

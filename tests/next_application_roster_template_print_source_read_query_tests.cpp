@@ -36,7 +36,10 @@ Application::RosterTemplatePrintSourceReadEntry entry(
 
     Application::RosterSnapshot roster;
     roster.columns = {u"English", u"Korean"};
-    roster.columnWidths = {120, 140};
+    roster.columnWidths = {
+        Application::RosterSnapshotColumnWidth{120},
+        Application::RosterSnapshotColumnWidth{140}
+    };
     roster.rows = {{u"Student", u"학생"}};
     return {
         typedId,
@@ -130,7 +133,7 @@ void preservesRequestedOrderAndCompleteSnapshot()
     assert(result.value()[0].classInfo.classGrade == u"E7");
     assert(result.value()[1].classInfo.classGrade == u"E5");
     assert(result.value()[0].roster.columns.size() == 2);
-    assert(result.value()[0].roster.columnWidths[1] == 140);
+    assert(result.value()[0].roster.columnWidths[1].rawValue() == 140);
     assert(result.value()[0].roster.rows[0][0] == u"Student");
 }
 

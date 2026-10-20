@@ -10,6 +10,7 @@ using ClassMngr::Next::Application::RosterRowReorderingDestinationIndex;
 using ClassMngr::Next::Application::RosterRowReorderingResult;
 using ClassMngr::Next::Application::RosterRowReorderingSourceIndex;
 using ClassMngr::Next::Application::RosterSnapshot;
+using ClassMngr::Next::Application::RosterSnapshotColumnWidth;
 using ClassMngr::Next::Application::reorderRosterRows;
 
 static_assert(!std::is_convertible_v<int, RosterRowReorderingSourceIndex>);
@@ -45,7 +46,9 @@ RosterSnapshot sampleRoster()
 {
     return {
         .columns = {u"English", u"Korean", u"Review"},
-        .columnWidths = {210, 160, 240},
+        .columnWidths = {
+            RosterSnapshotColumnWidth{210}, RosterSnapshotColumnWidth{160},
+            RosterSnapshotColumnWidth{240}},
         .rows = {
             {u"  Amy\u00A0", u"\uAE40\uBBFC\uC9C0", u" \tReview\u3000"},
             {u"Ben", u"\uC774\uC11C\uC900", u"Score B"},
@@ -163,7 +166,8 @@ bool rejectsEmptyAndUnicodeWhitespaceOnlyRows()
 {
     const RosterSnapshot emptySource{
         .columns = {u"English", u"Review"},
-        .columnWidths = {210, 240},
+        .columnWidths = {
+            RosterSnapshotColumnWidth{210}, RosterSnapshotColumnWidth{240}},
         .rows = {{}, {u"Target", u"Keep"}}
     };
     if (!isError(
@@ -180,7 +184,9 @@ bool rejectsEmptyAndUnicodeWhitespaceOnlyRows()
 
     const RosterSnapshot whitespaceOnlySource{
         .columns = {u"English", u"Korean", u"Review"},
-        .columnWidths = {210, 160, 240},
+        .columnWidths = {
+            RosterSnapshotColumnWidth{210}, RosterSnapshotColumnWidth{160},
+            RosterSnapshotColumnWidth{240}},
         .rows = {
             {u" \t\n\v\f\r", u"\u0085\u00A0\u1680", u"\u2000\u2001\u2002"
              u"\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A",

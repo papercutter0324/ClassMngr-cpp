@@ -331,7 +331,14 @@ readsCompleteRawSnapshotWithoutUiRowLimit()
             u"Korean", u"Winter", u"English", u"Autumn", u"\u5099\u8003"
         })
         );
-    QCOMPARE(result.value().columnWidths, (std::vector<int>{321, 222, 210, 333, 177}));
+    QCOMPARE(result.value().columnWidths,
+        (std::vector<Application::RosterSnapshotColumnWidth>{
+            Application::RosterSnapshotColumnWidth{321},
+            Application::RosterSnapshotColumnWidth{222},
+            Application::RosterSnapshotColumnWidth{210},
+            Application::RosterSnapshotColumnWidth{333},
+            Application::RosterSnapshotColumnWidth{177}
+        }));
     QCOMPARE(result.value().rows.size(), std::size_t(38));
     QCOMPARE(result.value().rows[0].size(), std::size_t(5));
     QCOMPARE(result.value().rows[0][0], std::u16string(u"\uAE40\uBBFC\uC9C0"));
@@ -418,6 +425,7 @@ preservesNullAndBoundaryIntegerRosterWidths()
     const QVector<QPair<QString, QVariant>> columns{
         {QStringLiteral("Minimum"), QVariant::fromValue<qlonglong>(
             std::numeric_limits<int>::min())},
+        {QStringLiteral("Negative one"), QVariant::fromValue<qlonglong>(-1)},
         {QStringLiteral("Null"), QVariant{}},
         {QStringLiteral("Maximum"), QVariant::fromValue<qlonglong>(
             std::numeric_limits<int>::max())}
@@ -443,6 +451,9 @@ preservesNullAndBoundaryIntegerRosterWidths()
     QCOMPARE(storedWidths.value("width").toLongLong(),
         qlonglong(std::numeric_limits<int>::min()));
     QVERIFY(storedWidths.next());
+    QCOMPARE(storedWidths.value("storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(storedWidths.value("width").toLongLong(), qlonglong(-1));
+    QVERIFY(storedWidths.next());
     QCOMPARE(storedWidths.value("storage_type").toString(), QStringLiteral("null"));
     QVERIFY(storedWidths.value("width").isNull());
     QVERIFY(storedWidths.next());
@@ -458,10 +469,11 @@ preservesNullAndBoundaryIntegerRosterWidths()
         );
 
     QVERIFY(result);
-    QCOMPARE(result.value().columnWidths, (std::vector<int>{
-        std::numeric_limits<int>::min(),
-        0,
-        std::numeric_limits<int>::max()
+    QCOMPARE(result.value().columnWidths, (std::vector<Application::RosterSnapshotColumnWidth>{
+        Application::RosterSnapshotColumnWidth{std::numeric_limits<int>::min()},
+        Application::RosterSnapshotColumnWidth{-1},
+        Application::RosterSnapshotColumnWidth{0},
+        Application::RosterSnapshotColumnWidth{std::numeric_limits<int>::max()}
     }));
 }
 
@@ -509,7 +521,10 @@ preservesNonIntegerTextWidthFallback()
         );
 
     QVERIFY(result);
-    QCOMPARE(result.value().columnWidths, (std::vector<int>{legacyWidth}));
+    QCOMPARE(result.value().columnWidths,
+        (std::vector<Application::RosterSnapshotColumnWidth>{
+            Application::RosterSnapshotColumnWidth{legacyWidth}
+        }));
 }
 
 void NextPlatformApplicationServicesRosterReadPortTests::

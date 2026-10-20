@@ -247,11 +247,11 @@ private:
                             std::u16string_view(stored.columns[index]), u"Autumn")))
                 {
                     if (index < stored.columnWidths.size())
-                        width = stored.columnWidths[index];
+                        width = stored.columnWidths[index].rawValue();
                     break;
                 }
             }
-            target.columnWidths.push_back(width);
+            target.columnWidths.push_back(RosterSnapshotColumnWidth{width});
         }
 
         target.rows.reserve(RosterModeledRowCount);

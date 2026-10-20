@@ -1,9 +1,12 @@
 #include "next/application/roster_save_use_case.h"
+#include "next/application/class_transfer_package.h"
 
 #include <QtTest/QtTest>
 
 #include <array>
 #include <cstdint>
+#include <initializer_list>
+#include <limits>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -50,6 +53,20 @@ static_assert(!std::is_convertible_v<int, Application::RosterSaveIssueRowIndex>)
 static_assert(!std::is_convertible_v<Application::RosterSaveIssueRowIndex, int>);
 static_assert(!std::is_convertible_v<int, Application::RosterSaveIssueColumnIndex>);
 static_assert(!std::is_convertible_v<Application::RosterSaveIssueColumnIndex, int>);
+static_assert(std::is_same_v<
+    decltype(Application::RosterSnapshot{}.columnWidths)::value_type,
+    Application::RosterSnapshotColumnWidth
+    >);
+static_assert(std::is_same_v<
+    decltype(Application::RosterSnapshotColumnWidth{}.rawValue()),
+    int
+    >);
+static_assert(!std::is_convertible_v<int, Application::RosterSnapshotColumnWidth>);
+static_assert(!std::is_convertible_v<Application::RosterSnapshotColumnWidth, int>);
+static_assert(!std::is_same_v<
+    Application::RosterSnapshotColumnWidth,
+    Application::ClassExportRosterColumnWidth
+    >);
 
 constexpr Application::RosterSaveIssueRowIndex DefaultRosterIssueRow{};
 constexpr Application::RosterSaveIssueColumnIndex DefaultRosterIssueColumn{};
@@ -65,9 +82,22 @@ static_assert(
 static_assert(
     Application::RosterSaveIssueColumnIndex{6} == ExplicitRosterIssueColumn
     );
+constexpr Application::RosterSnapshotColumnWidth DefaultRosterSnapshotColumnWidth{};
+static_assert(DefaultRosterSnapshotColumnWidth.rawValue() == 0);
 
 namespace
 {
+std::vector<Application::RosterSnapshotColumnWidth> snapshotWidths(
+    const std::initializer_list<int> values
+    )
+{
+    std::vector<Application::RosterSnapshotColumnWidth> result;
+    result.reserve(values.size());
+    for (const int value : values)
+        result.emplace_back(value);
+    return result;
+}
+
 bool equals(std::u16string_view left, std::u16string_view right)
 {
     return QStringView(left.data(), left.size()).compare(
@@ -84,7 +114,7 @@ Application::RosterSaveRequest request(std::string classId)
 
     Application::RosterSnapshot snapshot;
     snapshot.columns = {u"English", u"Korean", u"Winter", u"Speech Contest", u"Summer", u"Fall", u"\u5099\u8003"};
-    snapshot.columnWidths = {171, 121, 130, 209};
+    snapshot.columnWidths = snapshotWidths({171, 121, 130, 209});
     snapshot.rows.resize(25);
     snapshot.rows[0] = {u"Alice", u"김민지", u"A+", u"수업 \U0001F4DA"};
     snapshot.rows[3] = {u"Zoe", u"박지훈", u"B", u"점검"};
@@ -129,6 +159,7 @@ private slots:
     void invalidRosterDoesNotReachPortAndIdTakesPriority();
     void preparesNormalizedSnapshotBeforePort();
     void directPreparationPreservesStructureAndIssueOrder();
+    void preparationPreservesSignedWidthBoundaries();
     void duplicateNamePairDiagnosticsKeepTypedRowsAndIssueOrder();
     void rawBomConversionDoesNotMutateRequestOrAddSentinels();
     void policyAcceptsBoundarySizesAndCountsUtf16Units();
@@ -242,7 +273,7 @@ void NextApplicationRosterSaveUseCaseTests::preservesCompleteSnapshotAndAllowFla
     QCOMPARE(port.lastRequest->classId.value(), std::string("42"));
     QCOMPARE(port.lastRequest->roster.columns.size(), std::size_t(7));
     QCOMPARE(port.lastRequest->roster.columnWidths,
-        std::vector<int>({171, 121, 130, 209}));
+        snapshotWidths({171, 121, 130, 209}));
     QCOMPARE(port.lastRequest->roster.rows.size(), std::size_t(25));
     QVERIFY(port.lastRequest->roster.rows[1].empty());
     QCOMPARE(port.lastRequest->roster.rows[24][0], std::u16string(u"Final Row"));
@@ -324,7 +355,7 @@ void NextApplicationRosterSaveUseCaseTests::directPreparationPreservesStructureA
 {
     Application::RosterSnapshot snapshot;
     snapshot.columns = {u" English ", u"ENGLISH", u" ", std::u16string(65, u'X')};
-    snapshot.columnWidths = {-1, 0, 9, 10, 11};
+    snapshot.columnWidths = snapshotWidths({-1, 0, 9, 10, 11});
     snapshot.rows.resize(26);
     snapshot.rows[0] = {u" A2 ", u"", u"", u"", std::u16string(10001, u'z')};
     const auto prepared = Application::prepareRosterSave(snapshot, false, equals);
@@ -360,6 +391,23 @@ void NextApplicationRosterSaveUseCaseTests::directPreparationPreservesStructureA
     const auto& cell = prepared.issues[11];
     QCOMPARE(cell.field, std::u16string(u"rows[0].cells[4]"));
     QCOMPARE(std::get<std::int64_t>(cell.arguments.at("length")), std::int64_t(10001));
+}
+
+void NextApplicationRosterSaveUseCaseTests::
+preparationPreservesSignedWidthBoundaries()
+{
+    Application::RosterSnapshot snapshot = request("42").roster;
+    snapshot.columnWidths = snapshotWidths({
+        std::numeric_limits<int>::min(), -1, 0,
+        std::numeric_limits<int>::max()
+    });
+
+    const auto prepared = Application::prepareRosterSave(snapshot, true, equals);
+
+    QCOMPARE(prepared.roster.columnWidths, snapshotWidths({
+        std::numeric_limits<int>::min(), -1, 0,
+        std::numeric_limits<int>::max()
+    }));
 }
 
 void NextApplicationRosterSaveUseCaseTests::
@@ -472,7 +520,10 @@ void NextApplicationRosterSaveUseCaseTests::rawBomConversionDoesNotMutateRequest
 void NextApplicationRosterSaveUseCaseTests::policyAcceptsBoundarySizesAndCountsUtf16Units()
 {
     auto value = request("42");
-    value.roster.columnWidths.resize(value.roster.columns.size(), -1);
+    value.roster.columnWidths.resize(
+        value.roster.columns.size(),
+        Application::RosterSnapshotColumnWidth{-1}
+        );
     std::u16string supplementary;
     for (int index = 0; index < 32; ++index) supplementary += u"\U0001f4da";
     value.roster.columns[6] = supplementary;

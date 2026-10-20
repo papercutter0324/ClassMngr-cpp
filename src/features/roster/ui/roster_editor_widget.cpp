@@ -46,7 +46,9 @@ ClassMngr::Next::Application::RosterSnapshot applicationRosterSnapshot(
         );
     for (const int width : roster.columnWidths)
     {
-        snapshot.columnWidths.push_back(width);
+        snapshot.columnWidths.push_back(
+            ClassMngr::Next::Application::RosterSnapshotColumnWidth{width}
+            );
     }
 
     snapshot.rows.reserve(static_cast<std::size_t>(roster.rows.size()));
@@ -81,9 +83,9 @@ Roster rosterFromApplicationSnapshot(
     roster.columnWidths.reserve(
         static_cast<qsizetype>(snapshot.columnWidths.size())
         );
-    for (const int width : snapshot.columnWidths)
+    for (const auto width : snapshot.columnWidths)
     {
-        roster.columnWidths.append(width);
+        roster.columnWidths.append(width.rawValue());
     }
 
     roster.rows.reserve(static_cast<qsizetype>(snapshot.rows.size()));

@@ -1304,7 +1304,8 @@ void RosterTransferMenuTests::workflowProjectionMatchesRosterModel()
                 values.push_back(Ui::QtTextAdapter::toUtf16String(cell));
             result.rows.push_back(std::move(values));
         }
-        for (int width : roster.columnWidths) result.columnWidths.push_back(width);
+        for (const int width : roster.columnWidths)
+            result.columnWidths.push_back(RosterSnapshotColumnWidth{width});
         return result;
     };
     const auto equals = [](std::u16string_view a, std::u16string_view b)
@@ -1355,7 +1356,12 @@ void RosterTransferMenuTests::workflowProjectionMatchesRosterModel()
     QCOMPARE(ports.saved->targetRoster.rows, expectedRoster.rows);
     QCOMPARE(ports.saved->targetRoster.rows.size(), std::size_t(25));
     QCOMPARE(ports.saved->targetRoster.columnWidths,
-        (std::vector<int>{204,202,0,0,0,203,205,206}));
+        (std::vector<RosterSnapshotColumnWidth>{
+            RosterSnapshotColumnWidth{204}, RosterSnapshotColumnWidth{202},
+            RosterSnapshotColumnWidth{0}, RosterSnapshotColumnWidth{0},
+            RosterSnapshotColumnWidth{0}, RosterSnapshotColumnWidth{203},
+            RosterSnapshotColumnWidth{205}, RosterSnapshotColumnWidth{206}
+        }));
     QVERIFY(ports.stored == before);
 }
 

@@ -170,9 +170,9 @@ private:
         roster.columnWidths.reserve(
             static_cast<qsizetype>(snapshot.columnWidths.size())
             );
-        for (const int width : snapshot.columnWidths)
+        for (const Application::RosterSnapshotColumnWidth width : snapshot.columnWidths)
         {
-            roster.columnWidths.append(width);
+            roster.columnWidths.append(width.rawValue());
         }
 
         roster.rows.reserve(static_cast<qsizetype>(snapshot.rows.size()));

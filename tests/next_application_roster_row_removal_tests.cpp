@@ -10,6 +10,7 @@ using ClassMngr::Next::Application::RosterRowRemovalError;
 using ClassMngr::Next::Application::RosterRowRemovalErrorCode;
 using ClassMngr::Next::Application::RosterRowRemovalResult;
 using ClassMngr::Next::Application::RosterSnapshot;
+using ClassMngr::Next::Application::RosterSnapshotColumnWidth;
 using ClassMngr::Next::Application::removeRosterRow;
 
 static_assert(std::is_constructible_v<RosterRowRemovalIndex, int>);
@@ -23,7 +24,9 @@ RosterSnapshot sampleRoster()
 {
     return {
         .columns = {u"English", u"Korean", u"Review"},
-        .columnWidths = {210, 160, 240},
+        .columnWidths = {
+            RosterSnapshotColumnWidth{210}, RosterSnapshotColumnWidth{160},
+            RosterSnapshotColumnWidth{240}},
         .rows = {
             {u"Amy", u"\uAE40\uBBFC\uC9C0", u"Score A"},
             {u"Ben", u"\uC774\uC11C\uC900", u"Score B"},
@@ -104,7 +107,9 @@ bool rejectsEmptyAndQStringTrimmedWhitespaceOnlyRows()
 {
     const RosterSnapshot roster{
         .columns = {u"English", u"Korean", u"Review"},
-        .columnWidths = {210, 160, 240},
+        .columnWidths = {
+            RosterSnapshotColumnWidth{210}, RosterSnapshotColumnWidth{160},
+            RosterSnapshotColumnWidth{240}},
         .rows = {
             {u"", u"", u""},
             {u" \t\n\v\f\r", u"\u0085\u00A0\u1680", u"\u2000\u2001\u2002"

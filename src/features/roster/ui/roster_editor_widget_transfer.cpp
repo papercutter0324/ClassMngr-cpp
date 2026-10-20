@@ -158,8 +158,10 @@ ClassMngr::Next::Application::RosterSnapshot applicationSnapshot(const Roster& r
     ClassMngr::Next::Application::RosterSnapshot snapshot;
     for (const auto& column : roster.columns)
         snapshot.columns.push_back(Ui::QtTextAdapter::toUtf16String(column));
-    for (int width : roster.columnWidths)
-        snapshot.columnWidths.push_back(width);
+    for (const int width : roster.columnWidths)
+        snapshot.columnWidths.push_back(
+            ClassMngr::Next::Application::RosterSnapshotColumnWidth{width}
+            );
     for (const auto& sourceRow : roster.rows)
     {
         std::vector<std::u16string> row;

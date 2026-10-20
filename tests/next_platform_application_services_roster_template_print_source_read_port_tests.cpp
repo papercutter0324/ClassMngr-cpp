@@ -323,7 +323,11 @@ loadsFullClassInfoAndSparseRosterSnapshotsInRequestedOrder()
     QCOMPARE(firstRoster.columns, (std::vector<std::u16string>{
         u"English", u"Korean", u"Notes"
     }));
-    QCOMPARE(firstRoster.columnWidths, (std::vector<int>{121, 143, 177}));
+    QCOMPARE(firstRoster.columnWidths, (std::vector<Application::RosterSnapshotColumnWidth>{
+        Application::RosterSnapshotColumnWidth{121},
+        Application::RosterSnapshotColumnWidth{143},
+        Application::RosterSnapshotColumnWidth{177}
+    }));
     QCOMPARE(firstRoster.rows.size(), std::size_t(3));
     QCOMPARE(firstRoster.rows[0], (std::vector<std::u16string>{
         u"Alex", u"알렉스", u"First"
