@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch494 remains active and unpushed: F1202–F1208 are complete and F1209 is accepted/current; Batch495 discovery is recorded, and F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch495 is active with F1210 accepted/current and eight discovered candidates; F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1208 is complete at source commit `59c32659` and verification-support commit `b0b46e4a`; its focused Application and Platform CTests and two page selectors passed (see [completion](03-Phase-2-Progress-Log.md#f1208-speaking-evaluation-changed-cell-coordinates-complete-2026-10-20)). F1209 is accepted/current to share the rank value for Sub Prep day/time sort fields while retaining its separate comparator and preparation path. Batch495 discovery is recorded at F1208 start. Batch494 remains unpushed and open.
+Batch494 closed locally after F1209 at `81a4cdda`; its closeout record is ready to push, and F1207–F1209 now have focused verification evidence. Batch495 is active, and F1210 is accepted/current (see the [F1210 acceptance](03-Phase-2-Progress-Log.md#f1210-speaking-evaluation-validation-issue-coordinates-accepted-before-implementation-2026-10-20)). F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,18 +72,19 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch494 (8 candidates; 7 complete, 1 accepted/current)
+#### Active batch: Batch495 (9 candidates; 1 accepted/current, 8 discovered)
 
-1. F1202 - **Complete.** `ClassExportSourceClass::selectedIndex` is typed as `ClassTransferExportSelectionOrdinal`; request order and zero-based selection to one-based class-key mapping are preserved (see [completion](03-Phase-2-Progress-Log.md#f1202-class-transfer-export-selection-ordinal-complete-2026-10-20)).
-2. F1203 - **Complete.** Transfer request source and destination result positions use distinct signed-source and `std::size_t` destination wrappers; preserve `-1`/range failure order and destination semantics (see [completion](03-Phase-2-Progress-Log.md#f1203-roster-row-transfer-position-types-complete-2026-10-20)).
-3. F1204 - **Complete.** Reorder source/destination use distinct signed-`int` wrappers; validation order, source-failure precedence, and move behavior are preserved (see [completion](03-Phase-2-Progress-Log.md#f1204-roster-row-reordering-index-types-complete-2026-10-20)).
-4. F1205 - **Complete.** The score-assignment result row uses `SpeakingEvaluationRosterScoreAssignmentRowIndex`; roster order and changed-grade-only output are preserved (see [completion](03-Phase-2-Progress-Log.md#f1205-speaking-evaluation-roster-score-assignment-row-index-complete-2026-10-20)).
-5. F1206 - **Complete.** Roster-name import source and target positions use separate wrappers; matching, source/target order, and caller-supplied target values are preserved (see [completion and limitation](03-Phase-2-Progress-Log.md#f1206-speaking-evaluation-roster-name-import-position-types-complete-2026-10-20)).
-6. F1207 - **Complete.** `ClassDetailsValidationIssue::row` uses `ClassDetailsScheduleValidationRowIndex`; zero-based issue and duplicate-group order and raw `duplicateRows` are preserved (see [completion](03-Phase-2-Progress-Log.md#f1207-class-details-schedule-validation-row-index-complete-2026-10-20)).
-7. F1208 - **Complete.** `SpeakingEvaluationCellChange::row` and `.column` use distinct explicit `int` values; preserve the 25×11 zero-based grid and separate `-1` absence sentinels (see [completion](03-Phase-2-Progress-Log.md#f1208-speaking-evaluation-changed-cell-coordinates-complete-2026-10-20)).
-8. F1209 - **Accepted/current.** Share the rank value through a neutral Application header for only the Sub Prep day/time sort fields; preserve the 1000 unknown sentinel including its valid 16:40 collision, comparator order and tie rules, and separate Sub Prep weekday/minute preparation (see [acceptance](03-Phase-2-Progress-Log.md#f1209-sub-prep-shared-navigation-rank-accepted-before-implementation-2026-10-20)).
+1. F1210 - **Accepted/current.** Use independent explicit row and column value types for `SpeakingEvaluationValidationIssue`; preserve separate `-1` sentinels and arbitrary coordinate values through Feature conversion (see [acceptance](03-Phase-2-Progress-Log.md#f1210-speaking-evaluation-validation-issue-coordinates-accepted-before-implementation-2026-10-20)).
+2. F1211 - **Discovered.** Reuse `ScheduleImportCandidateIndex` for the class-color candidate index; preserve `-1` and out-of-range filtering.
+3. F1212 - **Discovered.** Type the selected source row for roster removal; preserve invalid-row and empty-row rejection order.
+4. F1213 - **Discovered.** Type the selected custom column for removal checks; preserve range and required-column rejection order.
+5. F1214 - **Discovered.** Type selected and peer row positions separately in student name-pair lookup; preserve self-exclusion and peer order.
+6. F1215 - **Discovered.** Type the selected row for Korean-name suffix suggestions; preserve invalid-row and incomplete-name empty results.
+7. F1216 - **Discovered.** Type the matching package-class position in Class Transfer input/result; preserve source order and preview mapping.
+8. F1217 - **Discovered.** Type the optional stored source-column index in roster projection; preserve absence and displayed-column order.
+9. F1218 - **Discovered.** Type the first-empty-row result; preserve the modeled-row-count sentinel and Feature insertion behavior.
 
-Batch492 remains complete and pushed at `3e6c09d9` (see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)). Batch493 closed locally after F1201 (see the [local closeout](03-Phase-2-Progress-Log.md#batch493-closed-locally-after-f1201-2026-10-20)) and was subsequently pushed at `78989f8b` (see the [push receipt](03-Phase-2-Progress-Log.md#batch493-push-receipt-2026-10-20)). Batch494 remains active and unpushed with F1202–F1208 complete and F1209 accepted/current; see the [discovery record](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20), [F1206 completion and limitation](03-Phase-2-Progress-Log.md#f1206-speaking-evaluation-roster-name-import-position-types-complete-2026-10-20), [F1207 completion](03-Phase-2-Progress-Log.md#f1207-class-details-schedule-validation-row-index-complete-2026-10-20), and [Batch495 discovery](03-Phase-2-Progress-Log.md#batch495-discovery-finalized-at-f1208-start-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 

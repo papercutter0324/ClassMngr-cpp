@@ -55239,3 +55239,80 @@ policy test. Verify the focused targets
 `ClassMngrSubPrepClassInformationListModelTests`, along with affected production
 target `ClassMngr`. No F1209 implementation or verification has started.
 Batch494 remains open and unpushed.
+
+### F1209 Sub Prep shared navigation rank complete - 2026-10-20
+
+F1209 completed at commit `4bc7db66` (`Phase2 - Share navigation order
+ranks`). `ClassTabNavigationOrderRank` now lives in the neutral Application
+header `src/next/application/navigation_order_rank.h`, included by the Class
+Tab policy and used for only Sub Prep's prepared day/time ranks. The Sub Prep
+list model explicitly wraps projected values. `configuredLevelOrder`, the
+separate comparator, its label/ID ordering and stable exact ties remain intact.
+The weekday/minute preparation path and raw `ClassSummary` projection were not
+changed. The new header is listed in `cmake/next.cmake`.
+
+The existing Sub Prep policy test covers typed value semantics and confirms
+valid 16:40 (`1000`) equals unknown `1000` and falls through to the label key.
+Its type probes use `std::declval` without requiring a default `ClassId` in the
+fact. The independent Tester built `ClassMngr`,
+`ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests`,
+`ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests`, and
+`ClassMngrSubPrepClassInformationListModelTests` in
+`build/macos-clang-debug`; the three focused CTests passed 3/3. No full suite
+is claimed.
+
+### F1207 Class Details row verification follow-up - 2026-10-20
+
+F1207's original source commit `b09101f8` had no behavioral test evidence. The
+focused audit exposed two test assertions that still compared the new row type
+directly with `std::size_t`; verification-support commit `81a4cdda`
+(`Phase2 - Verify class schedule validation rows`) updates them to compare
+`.rawValue()` and adds a direct parity assertion that a non-schedule
+teacher-ID issue retains legacy `row == -1`.
+
+The independent Tester built `ClassMngr`,
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests`,
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests`, and
+`ClassMngrClassDetailsPageSaveParityTests` in `build/macos-clang-debug`.
+Focused CTests passed 3/3: validation policy 12 cases, save use case 26, and
+page parity 10. The policy suite checked issue order and duplicate-group
+ordering; parity passed the new `-1` assertion. No full suite is claimed.
+
+### Batch494 closed locally after F1209 - 2026-10-20
+
+Batch494 (F1202–F1209) is complete locally through commit `81a4cdda`, with the
+F1207 verification follow-up and F1209 focused verification recorded above.
+Batch495's nine-candidate discovery was finalized when F1208 began; it is one
+candidate below the ten-candidate target, and F1219 remains unassigned. The
+existing F1206 output-directory test limitation remains documented in its
+completion entry. Batch494 is ready to push with this closeout record; no
+project-wide test result is claimed.
+
+### F1210 Speaking Evaluation validation issue coordinates accepted before implementation - 2026-10-20
+
+F1210 is accepted/current based on two independent read-only Explorer reports.
+Give `SpeakingEvaluationValidationIssue::row` and `.column` separate explicit
+Application value types, each backed by `int`, defaulting to `-1`, and exposing
+`.rawValue()` and equality without implicit conversions. Keep these issue
+coordinates distinct from F1208's changed-cell request coordinate types.
+
+Preserve all supplied values exactly, including zero-based coordinates beyond
+the displayed matrix bounds, and preserve each absent `-1` independently. The
+validator emits both-absent general issues, row-present/column-absent structural
+issues, and fully specified cell issues. Do not add range validation or change
+issue production. Unwrap only at the Feature validation adapter when converting
+to the legacy integer fields; keep UI range checks and negative-coordinate
+skips unchanged. The Platform save implementation has no issue conversion, so
+only its parity test needs typed access updates.
+
+Update existing coverage in
+`tests/next_application_speaking_evaluation_save_use_case_tests.cpp`,
+`tests/next_platform_application_services_speaking_evaluation_save_port_tests.cpp`,
+and `tests/speaking_eval_page_save_parity_tests.cpp` to assert the same raw
+coordinates, absent sentinels, and legacy parity. Preserve synthetic
+out-of-range parity values and the helper's negative-value filter semantics.
+Focused targets are `ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`,
+`NextPlatformApplicationServicesSpeakingEvaluationSavePort`, and
+`SpeakingEvalPageSaveParity`; `ClassMngr` builds the affected Feature adapter.
+`SpeakingEvalPageSave` is an optional UI-flow check. No F1210 implementation or
+verification has started. Batch495 is active and Batch494 remains unpushed.
