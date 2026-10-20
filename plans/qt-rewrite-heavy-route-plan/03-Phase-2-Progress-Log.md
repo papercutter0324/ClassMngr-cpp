@@ -56758,14 +56758,43 @@ Update `reportsDuplicateGroupsInDeterministicFirstSeenOrder` to assert typed
 vector values and order, adding a compile-time collection type assertion if
 needed. Strengthen `ClassDetailsPageSaveParity` to compare the adapted
 `QVariantList` in exact order rather than as an unordered set. The focused
-build scope is `ClassMngr`,
+build targets are `ClassMngr`,
 `ClassMngrNextApplicationClassDetailsValidationPolicyTests`, and
-`ClassMngrClassDetailsPageSaveParityTests`; the corresponding CTests are
-`NextApplicationClassDetailsValidationPolicy` (registered in
-`cmake/tests/next.cmake`) and `ClassDetailsPageSaveParity` (registered in
-`cmake/tests/pages_and_output.cmake`). Use the documented
+`ClassMngrClassDetailsPageSaveParityTests`. The generated CTest names are
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests` and
+`ClassMngrClassDetailsPageSaveParityTests`; their raw registration `NAME`
+values are `NextApplicationClassDetailsValidationPolicy` in
+`cmake/tests/next.cmake` and `ClassDetailsPageSaveParity` in
+`cmake/tests/pages_and_output.cmake`, respectively. Use the documented
 `build/windows-x64-debug` folder if supported. The prior F1231 attempt on this
 macOS host found the `windows-x64-debug` preset disabled; if that remains the
 case, report the blocker and focused macOS verification without claiming
 Windows coverage. At acceptance time, F1232 implementation and verification
 have not started.
+
+### F1232 Class Details duplicate schedule-row positions complete - 2026-10-21
+
+F1232 completed at implementation commit `0edfa2c3` (`Phase2 - Type Class
+Details duplicate schedule row positions`), following acceptance commit
+`71e924b9`. The existing `ClassDetailsScheduleValidationRowIndex` now carries
+duplicate group rows and `ClassDetailsValidationIssue::duplicateRows`, while
+the Class Details Feature adapter unwraps `.rawValue()` for the existing
+integer `ValidationIssue` and ordered `QVariantList` payload.
+
+The independent Tester reused the incremental `build/macos-clang-debug` tree
+and built `ClassMngr` plus the two focused targets:
+
+```text
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationClassDetailsValidationPolicyTests ClassMngrClassDetailsPageSaveParityTests --parallel 8
+```
+
+Both focused CTests passed (2/2):
+
+```text
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextApplicationClassDetailsValidationPolicyTests|ClassMngrClassDetailsPageSaveParityTests)$'
+```
+
+`git diff --check` passed. `cmake --preset windows-x64-debug` reported
+`Could not use disabled preset "windows-x64-debug"`; Windows x64 and the full
+suite remain unverified. Batch497 remains active with F1227–F1232 complete,
+F1233 next for acceptance, and F1234 discovered.
