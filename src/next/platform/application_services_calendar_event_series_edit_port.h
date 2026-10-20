@@ -187,7 +187,9 @@ public:
 
                 CalendarEvent updatedEvent = seriesEvent;
                 updatedEvent.title = legacyText(update.title);
-                updatedEvent.eventType = legacyText(update.eventType);
+                updatedEvent.eventType = legacyText(
+                    std::string(Domain::calendarEventTypeName(update.eventType))
+                    );
                 updatedEvent.timeStatus = calendarEventTimeStatusToLegacyText(
                     update.timeStatus
                     );

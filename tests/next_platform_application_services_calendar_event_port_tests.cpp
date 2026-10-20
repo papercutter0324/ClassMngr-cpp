@@ -234,7 +234,7 @@ CalendarEventSeriesEditRequest validSeriesEditRequest()
         std::string("13:15"),
         std::string("14:45"),
         false,
-        "Workshop",
+        CalendarEventType::Workshop,
         CalendarEventTimeStatus::Timed
     };
 }
@@ -2943,7 +2943,7 @@ propagatesAllDayAndUnknownTimePolicy()
         std::nullopt,
         std::nullopt,
         true,
-        "Holiday",
+        CalendarEventType::Holiday,
         CalendarEventTimeStatus::Timed
     };
     QVERIFY(port.editRepeatSeriesFromDate(allDayRequest));
@@ -2972,7 +2972,7 @@ propagatesAllDayAndUnknownTimePolicy()
         std::nullopt,
         std::nullopt,
         false,
-        "Vacation",
+        CalendarEventType::Vacation,
         CalendarEventTimeStatus::Unknown
     };
     QVERIFY(port.editRepeatSeriesFromDate(unknownRequest));
@@ -3057,6 +3057,17 @@ reportsInvalidRepeatSeriesEditRequestStructurally()
     verifyFailure(invalidText, ErrorCode::InvalidInput);
     QCOMPARE(
         invalidText.error().message,
+        std::string(
+            "Calendar repeat-series edit text fields must be non-blank and bounded."
+            )
+        );
+
+    invalid = validSeriesEditRequest();
+    invalid.eventType = static_cast<CalendarEventType>(99);
+    const auto invalidEventType = port.editRepeatSeriesFromDate(invalid);
+    verifyFailure(invalidEventType, ErrorCode::InvalidInput);
+    QCOMPARE(
+        invalidEventType.error().message,
         std::string(
             "Calendar repeat-series edit text fields must be non-blank and bounded."
             )
@@ -4581,6 +4592,10 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().repeatSeriesId),
         std::optional<CalendarEventSeriesId>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().eventType),
+        CalendarEventType
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().startDate),

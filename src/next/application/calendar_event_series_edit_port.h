@@ -43,7 +43,7 @@ struct CalendarEventSeriesEditRequest final
     std::optional<std::string> startTime;
     std::optional<std::string> endTime;
     bool allDay = false;
-    std::string eventType = "Other";
+    Domain::CalendarEventType eventType = Domain::CalendarEventType::Other;
     Domain::CalendarEventTimeStatus timeStatus =
         Domain::CalendarEventTimeStatus::Timed;
 
@@ -178,6 +178,56 @@ namespace CalendarEventSeriesEditRequestDetail
     return Domain::Result<void>::success();
 }
 
+[[nodiscard]] inline bool isValidCalendarEventType(
+    const Domain::CalendarEventType eventType
+    ) noexcept
+{
+    switch (eventType)
+    {
+    case Domain::CalendarEventType::Vacation:
+    case Domain::CalendarEventType::Holiday:
+    case Domain::CalendarEventType::Workshop:
+    case Domain::CalendarEventType::CM:
+    case Domain::CalendarEventType::Meeting:
+    case Domain::CalendarEventType::Other:
+        return true;
+    }
+
+    return false;
+}
+
+[[nodiscard]] inline Domain::Result<void> validateTextFields(
+    const std::optional<Domain::CalendarEventSeriesId>& repeatSeriesId,
+    const std::string& title,
+    const Domain::CalendarEventType eventType
+    )
+{
+    if (!repeatSeriesId.has_value()
+        || !isRequiredText(
+            repeatSeriesId->value(),
+            kCalendarEventSeriesEditMaxRepeatSeriesIdLength
+            ))
+    {
+        return invalid(
+            "Calendar repeat-series identifier must be non-blank and bounded."
+            );
+    }
+
+    if (CalendarEventTitleValidation::isBlankUtf8Title(title)
+        || !CalendarEventTitleValidation::isValidUtf8WithinUtf16Units(
+            title,
+            kCalendarEventSeriesEditMaxTitleLength
+            )
+        || !isValidCalendarEventType(eventType))
+    {
+        return invalid(
+            "Calendar repeat-series edit text fields must be non-blank and bounded."
+            );
+    }
+
+    return Domain::Result<void>::success();
+}
+
 [[nodiscard]] inline const char* calendarEventTimingIssueMessage(
     const Domain::CalendarEventTimingIssue issue
     ) noexcept
@@ -265,6 +315,17 @@ CalendarEventSeriesEditInput::toRequest() const
             );
     }
 
+    const std::optional<Domain::CalendarEventType> eventType =
+        Domain::calendarEventTypeFromName(trimAscii(this->eventType));
+    if (!eventType)
+    {
+        return Domain::Result<CalendarEventSeriesEditRequest>::failure(
+            invalidError(
+                "Calendar repeat-series edit text fields must be non-blank and bounded."
+                )
+            );
+    }
+
     const std::optional<Domain::GregorianDate> selectedStartDate =
         Domain::GregorianDate::fromIsoString(startDate);
     if (!selectedStartDate)
@@ -298,7 +359,7 @@ CalendarEventSeriesEditInput::toRequest() const
         startTime,
         endTime,
         allDay,
-        eventType,
+        *eventType,
         timeStatus
     };
     const Domain::Result<void> requestValidation = request.validate();

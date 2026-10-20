@@ -37,7 +37,7 @@ struct CalendarEventSeriesEditOccurrenceUpdate final
     Domain::GregorianDate endDate;
     Domain::CalendarEventSeriesId repeatSeriesId;
     std::string title;
-    std::string eventType;
+    Domain::CalendarEventType eventType = Domain::CalendarEventType::Other;
     Domain::CalendarEventTimeStatus timeStatus =
         Domain::CalendarEventTimeStatus::Timed;
     std::optional<std::string> startTime;

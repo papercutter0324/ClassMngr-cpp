@@ -149,7 +149,7 @@ CalendarEventSeriesEditRequest validSeriesEditRequest()
         std::string("09:00"),
         std::string("10:00"),
         false,
-        "Meeting",
+        CalendarEventType::Meeting,
         CalendarEventTimeStatus::Timed
     };
 }
@@ -1867,7 +1867,6 @@ calendarEventTypeValidationUsesDomainClassifiersAndPreservesRawText()
 
     QVERIFY(acceptsTrimmedNamesAndPreservesInput(validSaveRequest()));
     QVERIFY(acceptsTrimmedNamesAndPreservesInput(validEditDraft()));
-    QVERIFY(acceptsTrimmedNamesAndPreservesInput(validSeriesEditRequest()));
 
     QVERIFY(acceptsRawLimitsAndRejectsOverflow(
         validSaveRequest(),
@@ -1879,11 +1878,6 @@ calendarEventTypeValidationUsesDomainClassifiersAndPreservesRawText()
         kCalendarEventEditDraftMaxEventTypeLength,
         "Calendar event draft text fields must be non-blank and bounded."
         ));
-    QVERIFY(acceptsRawLimitsAndRejectsOverflow(
-        validSeriesEditRequest(),
-        kCalendarEventSeriesEditMaxEventTypeLength,
-        "Calendar repeat-series edit text fields must be non-blank and bounded."
-        ));
 
     QVERIFY(rejectsUnknownNamesWithFeatureMessage(
         validSaveRequest(),
@@ -1892,10 +1886,6 @@ calendarEventTypeValidationUsesDomainClassifiersAndPreservesRawText()
     QVERIFY(rejectsUnknownNamesWithFeatureMessage(
         validEditDraft(),
         "Calendar event draft text fields must be non-blank and bounded."
-        ));
-    QVERIFY(rejectsUnknownNamesWithFeatureMessage(
-        validSeriesEditRequest(),
-        "Calendar repeat-series edit text fields must be non-blank and bounded."
         ));
 }
 
@@ -3433,12 +3423,12 @@ seriesEditRequestBoundsAndDatesRemainTyped()
         "Calendar repeat-series edit end date must not precede its start date."
         );
 
-    auto oversizedEventType = request;
-    oversizedEventType.eventType = std::string(
-        kCalendarEventSeriesEditMaxEventTypeLength + 1,
-        'e'
+    auto invalidEventType = request;
+    invalidEventType.eventType = static_cast<CalendarEventType>(99);
+    verifyInvalidValidation(
+        invalidEventType.validate(),
+        "Calendar repeat-series edit text fields must be non-blank and bounded."
         );
-    QVERIFY(!oversizedEventType.validate());
 
     auto invalidTimeStatus = request;
     invalidTimeStatus.timeStatus = static_cast<CalendarEventTimeStatus>(99);
@@ -3469,6 +3459,14 @@ seriesEditInputConvertsRawDatesWithExistingPrecedence()
         std::string
         >);
     static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditInput>().eventType),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().eventType),
+        CalendarEventType
+        >);
+    static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().startDate),
         GregorianDate
         >);
@@ -3491,6 +3489,33 @@ seriesEditInputConvertsRawDatesWithExistingPrecedence()
         *GregorianDate::fromIsoString("2026-09-22"));
     QVERIFY(converted.value().editedEndDate ==
         *GregorianDate::fromIsoString("2026-09-23"));
+
+    auto paddedEventType = input;
+    paddedEventType.eventType = " \tWorkshop \n";
+    const auto convertedPaddedEventType = paddedEventType.toRequest();
+    QVERIFY(convertedPaddedEventType);
+    QCOMPARE(
+        convertedPaddedEventType.value().eventType,
+        CalendarEventType::Workshop
+        );
+
+    auto exactLengthEventType = input;
+    exactLengthEventType.eventType = "Workshop";
+    exactLengthEventType.eventType.append(
+        kCalendarEventSeriesEditMaxEventTypeLength
+            - exactLengthEventType.eventType.size(),
+        ' '
+        );
+    QCOMPARE(
+        exactLengthEventType.eventType.size(),
+        kCalendarEventSeriesEditMaxEventTypeLength
+        );
+    const auto convertedExactLengthEventType = exactLengthEventType.toRequest();
+    QVERIFY(convertedExactLengthEventType);
+    QCOMPARE(
+        convertedExactLengthEventType.value().eventType,
+        CalendarEventType::Workshop
+        );
 
     const auto verifyDateFailure = [](const CalendarEventSeriesEditInput& badInput)
     {
@@ -3647,9 +3672,18 @@ seriesEditRequestContractHasNoQtOrLegacySurface()
         std::optional<CalendarEventSeriesId>
         >);
     static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().eventType),
+        CalendarEventType
+        >);
+    static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditOccurrenceUpdate>()
                      .repeatSeriesId),
         CalendarEventSeriesId
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditOccurrenceUpdate>()
+                     .eventType),
+        CalendarEventType
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().startDate),
@@ -3782,6 +3816,34 @@ repeatSeriesEditUseCaseRejectsInvalidRequestWithoutCallingPort()
         );
     QVERIFY(!invalidEditedDateResult.error().recoverable);
 
+    std::string oversizedEventType = "Workshop";
+    oversizedEventType.append(
+        kCalendarEventSeriesEditMaxEventTypeLength
+            - oversizedEventType.size() + 1,
+        ' '
+        );
+    const std::vector<std::string> invalidEventTypes{
+        "Webinar",
+        oversizedEventType
+    };
+    for (const std::string& eventType : invalidEventTypes)
+    {
+        auto invalidEventTypeInput = validSeriesEditInput();
+        invalidEventTypeInput.eventType = eventType;
+        invalidEventTypeInput.startDate = "2026-02-30";
+        const CalendarEventSeriesEditResult invalidEventTypeResult =
+            CalendarEventSeriesEditUseCase::execute(port, invalidEventTypeInput);
+        QVERIFY(!invalidEventTypeResult);
+        QCOMPARE(invalidEventTypeResult.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            invalidEventTypeResult.error().message,
+            std::string(
+                "Calendar repeat-series edit text fields must be non-blank and bounded."
+                )
+            );
+        QVERIFY(!invalidEventTypeResult.error().recoverable);
+    }
+
     QCOMPARE(port.editCalls, 0);
     QVERIFY(!port.receivedRequest.has_value());
 }
@@ -3809,6 +3871,10 @@ seriesEditPlanPreservesOrderAndPropagatesRequestFields()
         decltype(std::declval<CalendarEventSeriesEditOccurrenceUpdate>().endDate),
         GregorianDate
         >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditOccurrenceUpdate>().eventType),
+        CalendarEventType
+        >);
 
     CalendarEventSeriesEditRequest request = validSeriesEditRequest();
     request.repeatSeriesId = calendarEventSeriesId("  series-1 \t");
@@ -3816,7 +3882,7 @@ seriesEditPlanPreservesOrderAndPropagatesRequestFields()
     request.editedStartDate = *GregorianDate::fromIsoString("2026-09-22");
     request.editedEndDate = *GregorianDate::fromIsoString("2026-09-25");
     request.title = "Updated workshop";
-    request.eventType = "Workshop";
+    request.eventType = CalendarEventType::Workshop;
     request.timeStatus = CalendarEventTimeStatus::Timed;
     request.startTime = "08:30";
     request.endTime = "10:15";
