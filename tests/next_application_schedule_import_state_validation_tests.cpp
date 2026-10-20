@@ -271,14 +271,14 @@ stateTimeStoresTypedValueAndKeepsLabels()
         time(Weekday::Sunday, 1438, 1439, "Sunday", "11:58 PM", "11:59 PM");
     QVERIFY(stateTime.scheduleTime.has_value());
     QVERIFY(stateTime.scheduleTime->weekday() == Weekday::Sunday);
-    QCOMPARE(stateTime.scheduleTime->startMinute(), 1438);
-    QCOMPARE(stateTime.scheduleTime->endMinute(), 1439);
+    QCOMPARE(stateTime.scheduleTime->startMinute().rawValue(), 1438);
+    QCOMPARE(stateTime.scheduleTime->endMinute().rawValue(), 1439);
 
     const auto projected = projectScheduleImportStateTime(stateTime);
     QVERIFY(projected.has_value());
     QVERIFY(projected->scheduleTime.weekday() == Weekday::Sunday);
-    QCOMPARE(projected->scheduleTime.startMinute(), 1438);
-    QCOMPARE(projected->scheduleTime.endMinute(), 1439);
+    QCOMPARE(projected->scheduleTime.startMinute().rawValue(), 1438);
+    QCOMPARE(projected->scheduleTime.endMinute().rawValue(), 1439);
     QCOMPARE(projected->dayLabel, std::string("Sunday"));
     QCOMPARE(projected->startLabel, std::string("11:58 PM"));
     QCOMPARE(projected->endLabel, std::string("11:59 PM"));
@@ -329,16 +329,16 @@ sharedProjectionOrdersEveryConflictDeterministically()
     QCOMPARE(conflicts.size(), std::size_t(4));
     QCOMPARE(conflicts[0].classLabel, std::string("B"));
     QCOMPARE(conflicts[0].conflictingClassLabel, std::string("A"));
-    QCOMPARE(conflicts[0].time.scheduleTime.startMinute(), 16 * 60 + 30);
+    QCOMPARE(conflicts[0].time.scheduleTime.startMinute().rawValue(), 16 * 60 + 30);
     QCOMPARE(conflicts[1].classLabel, std::string("C"));
     QCOMPARE(conflicts[1].conflictingClassLabel, std::string("A"));
-    QCOMPARE(conflicts[1].time.scheduleTime.startMinute(), 16 * 60 + 10);
+    QCOMPARE(conflicts[1].time.scheduleTime.startMinute().rawValue(), 16 * 60 + 10);
     QCOMPARE(conflicts[2].classLabel, std::string("C"));
     QCOMPARE(conflicts[2].conflictingClassLabel, std::string("A"));
-    QCOMPARE(conflicts[2].time.scheduleTime.startMinute(), 17 * 60);
+    QCOMPARE(conflicts[2].time.scheduleTime.startMinute().rawValue(), 17 * 60);
     QCOMPARE(conflicts[3].classLabel, std::string("C"));
     QCOMPARE(conflicts[3].conflictingClassLabel, std::string("B"));
-    QCOMPARE(conflicts[3].time.scheduleTime.startMinute(), 17 * 60);
+    QCOMPARE(conflicts[3].time.scheduleTime.startMinute().rawValue(), 17 * 60);
 
     const auto repeated = projectScheduleImportOverlaps(schedules);
     QCOMPARE(repeated.size(), conflicts.size());
@@ -350,8 +350,8 @@ sharedProjectionOrdersEveryConflictDeterministically()
             conflicts[index].conflictingClassLabel
             );
         QCOMPARE(
-            repeated[index].time.scheduleTime.startMinute(),
-            conflicts[index].time.scheduleTime.startMinute()
+            repeated[index].time.scheduleTime.startMinute().rawValue(),
+            conflicts[index].time.scheduleTime.startMinute().rawValue()
             );
     }
 }

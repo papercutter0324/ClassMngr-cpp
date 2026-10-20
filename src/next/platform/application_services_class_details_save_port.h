@@ -257,12 +257,12 @@ private:
         )
     {
         const QTime start(
-            value.startMinute() / 60,
-            value.startMinute() % 60
+            value.startMinute().rawValue() / 60,
+            value.startMinute().rawValue() % 60
             );
         const QTime end(
-            value.endMinute() / 60,
-            value.endMinute() % 60
+            value.endMinute().rawValue() / 60,
+            value.endMinute().rawValue() % 60
             );
         return {
             .day = legacyDay(value.weekday()),

@@ -176,8 +176,14 @@ private:
         converted.reserve(static_cast<qsizetype>(times.size()));
         for (const Domain::ScheduleTime& time : times)
         {
-            const QTime start(time.startMinute() / 60, time.startMinute() % 60);
-            const QTime end(time.endMinute() / 60, time.endMinute() % 60);
+            const QTime start(
+                time.startMinute().rawValue() / 60,
+                time.startMinute().rawValue() % 60
+                );
+            const QTime end(
+                time.endMinute().rawValue() / 60,
+                time.endMinute().rawValue() % 60
+                );
             converted.append({
                 legacyWeekdayName(time.weekday()),
                 start.toString(QStringLiteral("h:mm AP")),

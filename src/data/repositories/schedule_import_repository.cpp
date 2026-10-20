@@ -547,8 +547,12 @@ std::optional<std::vector<PersistedScheduleEntry>> resolvedScheduleEntries(
             }
             const auto scheduleTime = Domain::ScheduleTime::fromMinutes(
                 *weekday,
-                timeMinutes(sourceTime.startTime),
-                timeMinutes(sourceTime.endTime)
+                Domain::ScheduleTime::StartMinute{
+                    timeMinutes(sourceTime.startTime)
+                },
+                Domain::ScheduleTime::EndMinute{
+                    timeMinutes(sourceTime.endTime)
+                }
                 );
             if (!scheduleTime)
             {
@@ -880,9 +884,9 @@ Status writeScheduleEntries(
             || !sourceWeekday
             || *sourceWeekday != scheduleTime.weekday()
             || timeMinutes(sourceTime.startTime)
-                != scheduleTime.startMinute()
+                != scheduleTime.startMinute().rawValue()
             || timeMinutes(sourceTime.endTime)
-                != scheduleTime.endMinute()
+                != scheduleTime.endMinute().rawValue()
             )
         {
             return std::unexpected(

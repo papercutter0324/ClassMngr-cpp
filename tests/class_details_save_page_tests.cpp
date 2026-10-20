@@ -342,7 +342,7 @@ void ClassDetailsSavePageTests::normalizedSchedulesReachUseCaseAsMinuteValues()
             == Domain::Weekday::Monday
         );
     QCOMPARE(
-        conflictPort.requests[0].candidateTimes[0].startMinute(),
+        conflictPort.requests[0].candidateTimes[0].startMinute().rawValue(),
         9 * 60
         );
     QVERIFY(
@@ -350,7 +350,7 @@ void ClassDetailsSavePageTests::normalizedSchedulesReachUseCaseAsMinuteValues()
             == Domain::Weekday::Tuesday
         );
     QCOMPARE(
-        conflictPort.requests[0].candidateTimes[1].startMinute(),
+        conflictPort.requests[0].candidateTimes[1].startMinute().rawValue(),
         15 * 60
         );
     QVERIFY(
@@ -358,7 +358,7 @@ void ClassDetailsSavePageTests::normalizedSchedulesReachUseCaseAsMinuteValues()
             == Domain::Weekday::Tuesday
         );
     QCOMPARE(
-        conflictPort.requests[1].candidateTimes[0].startMinute(),
+        conflictPort.requests[1].candidateTimes[0].startMinute().rawValue(),
         12 * 60
         );
     QVERIFY(
@@ -366,7 +366,7 @@ void ClassDetailsSavePageTests::normalizedSchedulesReachUseCaseAsMinuteValues()
             == Domain::Weekday::Wednesday
         );
     QCOMPARE(
-        conflictPort.requests[1].candidateTimes[1].startMinute(),
+        conflictPort.requests[1].candidateTimes[1].startMinute().rawValue(),
         0
         );
     QVERIFY(port.lastRequest.has_value());
@@ -379,19 +379,19 @@ void ClassDetailsSavePageTests::normalizedSchedulesReachUseCaseAsMinuteValues()
     QVERIFY(request.regularTimes.has_value());
     QCOMPARE(request.regularTimes->size(), std::size_t(2));
     QVERIFY((*request.regularTimes)[0].weekday() == Domain::Weekday::Monday);
-    QCOMPARE((*request.regularTimes)[0].startMinute(), 9 * 60);
-    QCOMPARE((*request.regularTimes)[0].endMinute(), 9 * 60 + 55);
+    QCOMPARE((*request.regularTimes)[0].startMinute().rawValue(), 9 * 60);
+    QCOMPARE((*request.regularTimes)[0].endMinute().rawValue(), 9 * 60 + 55);
     QVERIFY((*request.regularTimes)[1].weekday() == Domain::Weekday::Tuesday);
-    QCOMPARE((*request.regularTimes)[1].startMinute(), 15 * 60);
-    QCOMPARE((*request.regularTimes)[1].endMinute(), 15 * 60 + 55);
+    QCOMPARE((*request.regularTimes)[1].startMinute().rawValue(), 15 * 60);
+    QCOMPARE((*request.regularTimes)[1].endMinute().rawValue(), 15 * 60 + 55);
     QVERIFY(request.intensiveTimes.has_value());
     QCOMPARE(request.intensiveTimes->size(), std::size_t(2));
     QVERIFY((*request.intensiveTimes)[0].weekday() == Domain::Weekday::Tuesday);
-    QCOMPARE((*request.intensiveTimes)[0].startMinute(), 12 * 60);
-    QCOMPARE((*request.intensiveTimes)[0].endMinute(), 12 * 60 + 55);
+    QCOMPARE((*request.intensiveTimes)[0].startMinute().rawValue(), 12 * 60);
+    QCOMPARE((*request.intensiveTimes)[0].endMinute().rawValue(), 12 * 60 + 55);
     QVERIFY((*request.intensiveTimes)[1].weekday() == Domain::Weekday::Wednesday);
-    QCOMPARE((*request.intensiveTimes)[1].startMinute(), 0);
-    QCOMPARE((*request.intensiveTimes)[1].endMinute(), 55);
+    QCOMPARE((*request.intensiveTimes)[1].startMinute().rawValue(), 0);
+    QCOMPARE((*request.intensiveTimes)[1].endMinute().rawValue(), 55);
     QVERIFY(!page.hasUnsavedChanges());
     QCOMPARE(savedSpy.size(), 1);
     QCOMPARE(savedSpy.at(0).at(0).toInt(), classId);

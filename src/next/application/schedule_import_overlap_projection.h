@@ -32,8 +32,8 @@ struct ScheduleImportStateTime
     {
         scheduleTime = Domain::ScheduleTime::fromMinutes(
             *weekday,
-            startMinute,
-            endMinute
+            Domain::ScheduleTime::StartMinute{startMinute},
+            Domain::ScheduleTime::EndMinute{endMinute}
             );
     }
 

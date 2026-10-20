@@ -27,7 +27,11 @@
 using namespace ClassMngr::Next::Domain;
 
 using ScheduleTimeFactory =
-    std::optional<ScheduleTime> (*)(Weekday, int, int);
+    std::optional<ScheduleTime> (*)(
+        Weekday,
+        ScheduleTime::StartMinute,
+        ScheduleTime::EndMinute
+        );
 
 static_assert(std::is_same_v<
     decltype(&ScheduleTime::fromMinutes),
@@ -36,6 +40,36 @@ static_assert(std::is_same_v<
 static_assert(std::is_same_v<
     decltype(std::declval<const ScheduleTime&>().weekday()),
     Weekday
+    >);
+static_assert(std::is_same_v<
+    decltype(std::declval<const ScheduleTime&>().startMinute()),
+    ScheduleTime::StartMinute
+    >);
+static_assert(std::is_same_v<
+    decltype(std::declval<const ScheduleTime&>().endMinute()),
+    ScheduleTime::EndMinute
+    >);
+static_assert(std::is_constructible_v<ScheduleTime::StartMinute, int>);
+static_assert(std::is_constructible_v<ScheduleTime::EndMinute, int>);
+static_assert(!std::is_convertible_v<int, ScheduleTime::StartMinute>);
+static_assert(!std::is_convertible_v<int, ScheduleTime::EndMinute>);
+static_assert(!std::is_convertible_v<ScheduleTime::StartMinute, int>);
+static_assert(!std::is_convertible_v<ScheduleTime::EndMinute, int>);
+static_assert(!std::is_convertible_v<
+    ScheduleTime::StartMinute,
+    ScheduleTime::EndMinute
+    >);
+static_assert(!std::is_convertible_v<
+    ScheduleTime::EndMinute,
+    ScheduleTime::StartMinute
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleTime::StartMinute{0}.rawValue()),
+    int
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleTime::EndMinute{0}.rawValue()),
+    int
     >);
 static_assert(std::is_same_v<
     decltype(std::declval<const GregorianDate&>().weekday()),
@@ -245,53 +279,108 @@ void NextDomainContractTests::scheduleTimesAcceptWeekdayAndMinuteBoundaries()
     };
     for (const Weekday weekday : weekdays)
     {
-        const auto value = ScheduleTime::fromMinutes(weekday, 0, 1);
+        const auto value = ScheduleTime::fromMinutes(
+            weekday,
+            ScheduleTime::StartMinute{0},
+            ScheduleTime::EndMinute{1}
+            );
         QVERIFY(value.has_value());
         QVERIFY(value->weekday() == weekday);
     }
 
     const auto mondayAtStartOfDay = ScheduleTime::fromMinutes(
         Weekday::Monday,
-        0,
-        1
+        ScheduleTime::StartMinute{0},
+        ScheduleTime::EndMinute{1}
         );
     const auto sundayAtEndOfDay = ScheduleTime::fromMinutes(
         Weekday::Sunday,
-        1438,
-        1439
+        ScheduleTime::StartMinute{1438},
+        ScheduleTime::EndMinute{1439}
         );
     QVERIFY(mondayAtStartOfDay.has_value());
     QVERIFY(sundayAtEndOfDay.has_value());
     QVERIFY(mondayAtStartOfDay->weekday() == Weekday::Monday);
     QVERIFY(sundayAtEndOfDay->weekday() == Weekday::Sunday);
-    QCOMPARE(sundayAtEndOfDay->startMinute(), 1438);
-    QCOMPARE(sundayAtEndOfDay->endMinute(), 1439);
+    QCOMPARE(sundayAtEndOfDay->startMinute().rawValue(), 1438);
+    QCOMPARE(sundayAtEndOfDay->endMinute().rawValue(), 1439);
 }
 
 void NextDomainContractTests::scheduleTimesRejectInvalidDaysAndIntervals()
 {
     QVERIFY(!ScheduleTime::fromMinutes(
-                 static_cast<Weekday>(-1), 0, 1
+                 static_cast<Weekday>(-1),
+                 ScheduleTime::StartMinute{0},
+                 ScheduleTime::EndMinute{1}
                  ).has_value());
     QVERIFY(!ScheduleTime::fromMinutes(
-                 static_cast<Weekday>(7), 0, 1
+                 static_cast<Weekday>(7),
+                 ScheduleTime::StartMinute{0},
+                 ScheduleTime::EndMinute{1}
                  ).has_value());
-    QVERIFY(!ScheduleTime::fromMinutes(Weekday::Monday, -1, 1).has_value());
-    QVERIFY(!ScheduleTime::fromMinutes(Weekday::Monday, 1440, 1441).has_value());
-    QVERIFY(!ScheduleTime::fromMinutes(Weekday::Monday, 0, -1).has_value());
-    QVERIFY(!ScheduleTime::fromMinutes(Weekday::Monday, 12, 12).has_value());
-    QVERIFY(!ScheduleTime::fromMinutes(Weekday::Monday, 13, 12).has_value());
-    QVERIFY(!ScheduleTime::fromMinutes(Weekday::Sunday, 1439, 1440).has_value());
+    QVERIFY(!ScheduleTime::fromMinutes(
+                 Weekday::Monday,
+                 ScheduleTime::StartMinute{-1},
+                 ScheduleTime::EndMinute{1}
+                 ).has_value());
+    QVERIFY(!ScheduleTime::fromMinutes(
+                 Weekday::Monday,
+                 ScheduleTime::StartMinute{1440},
+                 ScheduleTime::EndMinute{1441}
+                 ).has_value());
+    QVERIFY(!ScheduleTime::fromMinutes(
+                 Weekday::Monday,
+                 ScheduleTime::StartMinute{0},
+                 ScheduleTime::EndMinute{-1}
+                 ).has_value());
+    QVERIFY(!ScheduleTime::fromMinutes(
+                 Weekday::Monday,
+                 ScheduleTime::StartMinute{12},
+                 ScheduleTime::EndMinute{12}
+                 ).has_value());
+    QVERIFY(!ScheduleTime::fromMinutes(
+                 Weekday::Monday,
+                 ScheduleTime::StartMinute{13},
+                 ScheduleTime::EndMinute{12}
+                 ).has_value());
+    QVERIFY(!ScheduleTime::fromMinutes(
+                 Weekday::Sunday,
+                 ScheduleTime::StartMinute{1439},
+                 ScheduleTime::EndMinute{1440}
+                 ).has_value());
 }
 
 void NextDomainContractTests::scheduleTimesHaveValueAndOverlapSemantics()
 {
-    const auto first = ScheduleTime::fromMinutes(Weekday::Monday, 0, 60);
-    const auto sameValue = ScheduleTime::fromMinutes(Weekday::Monday, 0, 60);
-    const auto adjacent = ScheduleTime::fromMinutes(Weekday::Monday, 60, 120);
-    const auto overlapping = ScheduleTime::fromMinutes(Weekday::Monday, 59, 120);
+    QVERIFY(ScheduleTime::StartMinute{0} == ScheduleTime::StartMinute{0});
+    QVERIFY(ScheduleTime::StartMinute{0} < ScheduleTime::StartMinute{1});
+    QVERIFY(ScheduleTime::EndMinute{1} == ScheduleTime::EndMinute{1});
+    QVERIFY(ScheduleTime::EndMinute{1} < ScheduleTime::EndMinute{2});
+
+    const auto first = ScheduleTime::fromMinutes(
+        Weekday::Monday,
+        ScheduleTime::StartMinute{0},
+        ScheduleTime::EndMinute{60}
+        );
+    const auto sameValue = ScheduleTime::fromMinutes(
+        Weekday::Monday,
+        ScheduleTime::StartMinute{0},
+        ScheduleTime::EndMinute{60}
+        );
+    const auto adjacent = ScheduleTime::fromMinutes(
+        Weekday::Monday,
+        ScheduleTime::StartMinute{60},
+        ScheduleTime::EndMinute{120}
+        );
+    const auto overlapping = ScheduleTime::fromMinutes(
+        Weekday::Monday,
+        ScheduleTime::StartMinute{59},
+        ScheduleTime::EndMinute{120}
+        );
     const auto differentWeekday = ScheduleTime::fromMinutes(
-        Weekday::Tuesday, 0, 60
+        Weekday::Tuesday,
+        ScheduleTime::StartMinute{0},
+        ScheduleTime::EndMinute{60}
         );
     QVERIFY(first.has_value());
     QVERIFY(sameValue.has_value());
@@ -711,8 +800,8 @@ void NextDomainContractTests::scheduleEntriesKeepTypedClassAndValidatedTime()
     const auto classId = ClassId::fromString("class-42");
     const auto scheduleTime = ScheduleTime::fromMinutes(
         Weekday::Tuesday,
-        16 * 60,
-        16 * 60 + 55
+        ScheduleTime::StartMinute{16 * 60},
+        ScheduleTime::EndMinute{16 * 60 + 55}
         );
     QVERIFY(classId.has_value());
     QVERIFY(scheduleTime.has_value());
@@ -727,8 +816,8 @@ void NextDomainContractTests::scheduleEntriesKeepTypedClassAndValidatedTime()
         *classId,
         *ScheduleTime::fromMinutes(
             Weekday::Tuesday,
-            16 * 60,
-            17 * 60
+            ScheduleTime::StartMinute{16 * 60},
+            ScheduleTime::EndMinute{17 * 60}
             )
         );
 
@@ -738,8 +827,8 @@ void NextDomainContractTests::scheduleEntriesKeepTypedClassAndValidatedTime()
     QVERIFY(copy != differentClass);
     QVERIFY(copy != differentTime);
     QVERIFY(entry.scheduleTime().weekday() == Weekday::Tuesday);
-    QCOMPARE(entry.scheduleTime().startMinute(), 16 * 60);
-    QCOMPARE(entry.scheduleTime().endMinute(), 16 * 60 + 55);
+    QCOMPARE(entry.scheduleTime().startMinute().rawValue(), 16 * 60);
+    QCOMPARE(entry.scheduleTime().endMinute().rawValue(), 16 * 60 + 55);
 }
 
 void NextDomainContractTests::coursesExposeOrderedSupportedPairs()

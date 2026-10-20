@@ -391,8 +391,8 @@ std::optional<ClassMngr::Next::Domain::ScheduleEntry> domainEntry(
     }
     const auto time = ScheduleTime::fromMinutes(
         *weekday,
-        minutes(startTime),
-        minutes(endTime)
+        ScheduleTime::StartMinute{minutes(startTime)},
+        ScheduleTime::EndMinute{minutes(endTime)}
         );
     if (!time)
     {

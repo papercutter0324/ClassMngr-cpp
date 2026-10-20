@@ -136,8 +136,12 @@ typedScheduleTimes(const QList<ClassTime>& values)
 
         const auto time = ScheduleTime::fromMinutes(
             *weekday,
-            start->hour() * 60 + start->minute(),
-            end->hour() * 60 + end->minute()
+            ScheduleTime::StartMinute{
+                start->hour() * 60 + start->minute()
+            },
+            ScheduleTime::EndMinute{
+                end->hour() * 60 + end->minute()
+            }
             );
         if (!time)
         {

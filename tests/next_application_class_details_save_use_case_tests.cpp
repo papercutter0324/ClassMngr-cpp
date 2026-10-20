@@ -42,12 +42,16 @@ Application::ClassDetailsSaveRequest request(std::string classId)
         .fontColor = u"#654321",
         .regularTimes = std::vector<Domain::ScheduleTime>{
             *Domain::ScheduleTime::fromMinutes(
-                Domain::Weekday::Monday, 9 * 60, 9 * 60 + 50
+                Domain::Weekday::Monday,
+                Domain::ScheduleTime::StartMinute{9 * 60},
+                Domain::ScheduleTime::EndMinute{9 * 60 + 50}
                 )
         },
         .intensiveTimes = std::vector<Domain::ScheduleTime>{
             *Domain::ScheduleTime::fromMinutes(
-                Domain::Weekday::Friday, 10 * 60, 10 * 60 + 50
+                Domain::Weekday::Friday,
+                Domain::ScheduleTime::StartMinute{10 * 60},
+                Domain::ScheduleTime::EndMinute{10 * 60 + 50}
                 )
         }
     };
@@ -335,8 +339,8 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowSuccessNormalizesAndPr
     QCOMPARE(ports.conflicts.size(), std::size_t(2));
     QCOMPARE(ports.saved->regularTimes, std::optional(ports.conflicts[0].candidateTimes));
     QCOMPARE(ports.saved->intensiveTimes, std::optional(ports.conflicts[1].candidateTimes));
-    QCOMPARE(ports.saved->regularTimes->front().startMinute(), 9 * 60);
-    QCOMPARE(ports.saved->intensiveTimes->front().startMinute(), 0);
+    QCOMPARE(ports.saved->regularTimes->front().startMinute().rawValue(), 9 * 60);
+    QCOMPARE(ports.saved->intensiveTimes->front().startMinute().rawValue(), 0);
     QCOMPARE(input.input.teacherId.value(), std::string("0"));
     QCOMPARE(input.input.notes.size(), std::size_t(10001));
 }

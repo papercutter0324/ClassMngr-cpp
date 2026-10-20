@@ -235,7 +235,11 @@ private:
             const auto end = timeMinutes(row.endTime);
             if (!day || !start || !end)
                 return std::nullopt;
-            const auto time = Domain::ScheduleTime::fromMinutes(*day, *start, *end);
+            const auto time = Domain::ScheduleTime::fromMinutes(
+                *day,
+                Domain::ScheduleTime::StartMinute{*start},
+                Domain::ScheduleTime::EndMinute{*end}
+                );
             if (!time)
                 return std::nullopt;
             result.push_back(*time);

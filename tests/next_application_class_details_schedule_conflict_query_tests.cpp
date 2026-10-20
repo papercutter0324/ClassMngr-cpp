@@ -26,8 +26,8 @@ Domain::ScheduleTime time(
 {
     return *Domain::ScheduleTime::fromMinutes(
         weekday,
-        startMinute,
-        endMinute
+        Domain::ScheduleTime::StartMinute{startMinute},
+        Domain::ScheduleTime::EndMinute{endMinute}
         );
 }
 

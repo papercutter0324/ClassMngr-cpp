@@ -47,8 +47,8 @@ Domain::ScheduleTime scheduleTime(
 {
     const auto result = Domain::ScheduleTime::fromMinutes(
         weekday,
-        startMinute,
-        endMinute
+        Domain::ScheduleTime::StartMinute{startMinute},
+        Domain::ScheduleTime::EndMinute{endMinute}
         );
     if (!result)
     {
