@@ -52101,3 +52101,53 @@ order; F1163 is next. Batch488 remains closed and pushed (see its [push
 receipt](03-Phase-2-Progress-Log.md#batch488-push-receipt-2026-10-20)). F629
 awaits source-bound Windows x64 layout evidence; the user cannot run Windows
 now, and the Phase 0 and Phase 2 gates remain open.
+
+### F1163 Calendar single-event save date pair accepted before implementation - 2026-10-20
+
+F1163 is accepted/in progress as the next Batch489 slice. Replace the raw
+`startDate` and `endDate` strings on the shared
+`CalendarEventSaveRequest` with `Domain::GregorianDate`. Add a default-
+buildable `CalendarEventSaveInput` that retains raw date text and converts to
+the typed request only after identifier and text validation. Preserve the
+existing invalid-date result exactly: `Domain::ErrorCode::InvalidInput`,
+message `Calendar event dates must be valid canonical ISO dates.`, and
+`recoverable=false`; preserve validation precedence: identifier, text, invalid
+date, reversed date pair, time pairing/syntax, valid time-status enum, all-day
+rule, then timed/non-timed rules. Keep valid reversed date pairs rejected with
+`Calendar event end date must not precede its start date.`
+
+Migrate every producer and consumer at the proper boundary: the single-save
+use case and UI; import candidates retaining raw input before conversion to
+typed batch requests; repeat-create's raw seed before conversion to typed
+planner and occurrence requests; and the Platform save, import-save, and
+series-create adapters receiving typed dates. This is one cohesive shared-
+contract migration. Preserve import identity/range semantics and error
+precedence; repeat seed/frequency/cutoff precedence and planner behavior;
+IDs, text and event-type normalization; persistence and observable behavior.
+Do not change the schema or repository policy.
+
+Acceptance evidence: `src/next/application/calendar_event_save_port.h`,
+`calendar_event_save_use_case.h`, `calendar_event_import_use_case.h`,
+`calendar_event_series_create_use_case.h`,
+`calendar_event_repeat_occurrence_plan.h`,
+`src/next/platform/application_services_calendar_event_save_port.h`,
+`application_services_calendar_event_import_save_port.h`,
+`application_services_calendar_event_series_create_port.h`,
+`src/features/calendar/ui/calendar_page_events.cpp`,
+`tests/next_application_calendar_event_tests.cpp`,
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`,
+and `tests/calendar_page_event_mutation_parity_tests.cpp`. Focused acceptance
+is expected from `ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarPageEventMutationParityTests` as applicable. Cover exact
+error metadata and zero-port-call behavior for invalid raw inputs, valid and
+reversed typed date pairs, import and repeat-seed migration, and existing
+Platform `QDate` persistence behavior. Record only targets/tests actually
+run; obtain independent Tester review and run `git diff --check`. No full-suite
+or Windows pass is implied. Implementation and verification have not started.
+
+Batch489 remains active with F1162 complete, F1163 accepted/in progress, and
+F1164–F1170 discovered in order; F1164 is next after F1163 closes. Batch489's
+push remains deferred until F1170. F629 awaits source-bound Windows x64 layout
+evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates
+remain open.

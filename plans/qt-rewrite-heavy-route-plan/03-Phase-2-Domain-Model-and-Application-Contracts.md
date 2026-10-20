@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch489 is active with F1162 complete and F1163–F1170 discovered in order; F1163 is next, and F629 awaits source-bound Windows x64 layout evidence while the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch489 is active with F1162 complete, F1163 accepted/in progress, and F1164–F1170 discovered in order; F1164 is next, and F629 awaits source-bound Windows x64 layout evidence while the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
@@ -73,10 +73,10 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch489 (9 candidates; 1 complete; 0 accepted/in progress; 8 discovered)
+#### Active batch: Batch489 (9 candidates; 1 complete; 1 accepted/in progress; 7 discovered)
 
 1. F1162 - **Complete.** Keep raw cutoff text in an Application Input boundary, then use `Domain::GregorianDate` for repeat planning; preserve frequency/seed-before-cutoff validation, inclusive cutoff, range, and no-port-call-on-failure behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1162-calendar-repeat-create-cutoff-date-complete-2026-10-20)).
-2. F1163 - **Discovered.** Consider `Domain::GregorianDate` start/end fields for Calendar single-event save; preserve validation/order and decide how default-built requests retain raw invalid input at an Input boundary.
+2. F1163 - **Accepted/in progress.** Type the shared `CalendarEventSaveRequest` start/end fields as `Domain::GregorianDate`; retain raw text in a default-buildable `CalendarEventSaveInput`, converting only after identifier/text validation. Migrate single save, import candidates/batch requests, repeat-create seed/planner/occurrences, and all three Platform save/import/series adapters; preserve validation order, diagnostics, import/repeat behavior, normalization, and persistence (see the [acceptance record](03-Phase-2-Progress-Log.md#f1163-calendar-single-event-save-date-pair-accepted-before-implementation-2026-10-20)).
 3. F1164 - **Discovered.** Type the persisted Calendar series-edit occurrence date in `CalendarEventSeriesEditPlan`; preserve Technical failure on malformed persisted data, ordering, and shift behavior.
 4. F1165 - **Discovered.** Type Schedule Import projected `dayIndex`, `startMinute`, and `endMinute`; preserve `-1` unknown and invalid-projection error labels.
 5. F1166 - **Discovered.** Type the Upcoming Birthday reference date/input; preserve invalid-reference behavior that produces an empty schedule.
@@ -85,7 +85,7 @@ Treat this plan as an operational summary, not a history:
 8. F1169 - **Discovered.** Type Sub Prep navigation weekdays and optional minutes; preserve unknown-day ignore, guards 0–6 and 0–1439, and earliest-day-without-time behavior.
 9. F1170 - **Discovered.** Type Sub Prep print ordering weekday/start-minute keys; preserve explicit unknown-sentinel ordering.
 
-Batch489 has F1162 complete followed by eight discovered candidates in the original order, with F1163 next. See its [discovery record](03-Phase-2-Progress-Log.md#batch489-discovery-at-f1160-start-2026-10-20) for evidence and the excluded low-confidence student-name peer-row idea. Batch488 is closed and pushed; see its [push receipt](03-Phase-2-Progress-Log.md#batch488-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+Batch489 has F1162 complete, F1163 accepted/in progress, and F1164–F1170 discovered in the original order; F1164 is next after F1163 closes. See its [discovery record](03-Phase-2-Progress-Log.md#batch489-discovery-at-f1160-start-2026-10-20) for evidence and the excluded low-confidence student-name peer-row idea. Batch489 is active and its push remains deferred until F1170. Batch488 is closed and pushed; see its [push receipt](03-Phase-2-Progress-Log.md#batch488-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 
