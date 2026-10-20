@@ -53,14 +53,14 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1187 active; Batch492 unpushed)
+### Current checkpoint - 2026-10-20 (F1188 active; Batch492 unpushed)
 
 Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
 records the handoff. Batch491 is complete and pushed to `origin/Qt-Rewrite`
 at `56bd1973`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)
-records the handoff. F1178–F1186 are complete. Batch492 is active with six
-discovered candidates; F1187 is accepted and in progress, with F1188–F1191
+records the handoff. F1178–F1187 are complete. Batch492 is active with six
+discovered candidates; F1188 is accepted and in progress, with F1189–F1191
 still discovered. Acceptance, completion, and verification details are in the [Phase 2 progress
 log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
@@ -71,6 +71,13 @@ localized success text, and the optional profile-name suffix. The independent
 Tester built five affected targets in `build/macos-clang-debug`; the focused
 Application, Platform, dialog, and startup lifecycle checks passed. Startup
 metrics were `5,0,20,0,0,96,0`. No full suite or Windows build ran.
+
+F1187 completed at source/test commit `c2085ba2`. The dedicated
+`Application::ClassDetailsStudentCount` preserves exact successful values,
+zero, independent source errors, recoverable missing-parent `NotFound`, and
+the Feature zero fallback. The independent Tester built four affected targets
+in `build/macos-clang-debug`; the three focused CTests passed. No full suite or
+Windows build ran.
 
 Batch492's discovery found six candidates against the ten-candidate target;
 see its [discovery record](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch492-provisional-discovery-at-f1184-start-2026-10-20).

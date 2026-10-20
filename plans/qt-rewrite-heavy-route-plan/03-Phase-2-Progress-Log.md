@@ -53905,3 +53905,63 @@ started; no full-suite or Windows build is claimed.
 Batch492 remains active and unpushed: F1186 is complete, F1187 is accepted/in
 progress and next, and F1188–F1191 remain discovered. F629 awaits source-bound
 Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+
+### F1187 Class Details Page student count complete - 2026-10-20
+
+F1187 completed at source/test commit
+`c2085ba226a5f3293b7e6e399808fd7a4a8086b2`. Qt-free
+`Application::ClassDetailsStudentCount` types only
+`ClassDetailsPageReadSnapshot::studentCount`, preserving exact signed-`int`
+values, zero default, explicit construction, `.rawValue()`, equality, and no
+implicit conversion or negative/range policy. The field is now a
+`Domain::Result<ClassDetailsStudentCount>`; error semantics remain unchanged.
+The Platform explicitly wraps successful repository values and Feature
+explicitly unwraps the value, retaining independent per-source outcomes,
+recoverable NotFound for a missing parent, and zero display fallback on a
+count error. Repository behavior is unchanged.
+
+Independent verification in the existing `build/macos-clang-debug` tree built
+`ClassMngr`, `ClassMngrNextApplicationClassDetailsPageQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests`, and
+`ClassMngrClassDetailsPageDisplayTests`. All three focused CTests passed (3/3).
+`git diff --check` passed. No full-suite or Windows run occurred.
+
+Batch492 remains active and unpushed: F1186–F1187 are complete, F1188 is
+accepted/in progress and next, and F1189–F1191 remain discovered. F629 awaits
+source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates
+remain open.
+
+### F1188 ClassSummary student count accepted before implementation - 2026-10-20
+
+F1188 is accepted/in progress. `ClassSummary::studentCount` is currently
+`std::size_t` with zero default in
+`src/next/application/class_summary_projection.h:84`; the 10,000 maximum is
+declared at line 36 and enforced in projection validation at lines 361-364.
+The discovery record describes its distinct semantics from MyClasses student
+count and existing coverage in `tests/next_application_class_summary_tests.cpp`.
+
+Add distinct Qt-free `Application::ClassSummaryStudentCount` in
+`src/next/application/class_summary_student_count.h`, with exact
+`std::size_t` storage, zero default, explicit construction, `.rawValue()`,
+and equality, without implicit conversion or validation/range policy. Add its
+header to `cmake/next.cmake`. Change only `ClassSummary::studentCount` to this
+type. Preserve zero, copy/equality behavior, and its documented semantics
+distinct from MyClasses student count; do not reuse `MyClassesStudentCount`,
+change projection membership/order, or move the cap into the wrapper. Keep
+the existing 10,000 maximum in projection validation and compare the
+`.rawValue()` there.
+
+Extend `tests/next_application_class_summary_tests.cpp` for wrapper storage,
+zero default, explicit construction, equality, zero and positive projection
+values, and the existing over-limit rejection. Establish the exact maximum
+boundary as valid and the next value as rejected if existing coverage does
+not already do so. Build `ClassMngr` and
+`ClassMngrNextApplicationClassSummaryTests`; run the focused
+`ClassMngrNextApplicationClassSummaryTests` CTest in the existing standard
+macOS Debug tree. Run `git diff --check`. Implementation and verification
+have not started; no full-suite or Windows build is claimed.
+
+Batch492 remains active and unpushed: F1186–F1187 are complete, F1188 is
+accepted/in progress and next, and F1189–F1191 remain discovered. F629 awaits
+source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates
+remain open.
