@@ -6397,3 +6397,18 @@ both matching CTests passed 2/2 offscreen. `git diff --check` passed. No full
 suite or Windows build ran. Batch489 has eight complete slices and F1170 next;
 the batch remains unpushed until F1170 closes. Batch490 is discovered and
 inactive until Batch489 closes. F629 and both phase gates remain open.
+
+## Phase 2 update - F1170 accepted; Batch489 active - 2026-10-20
+
+F1170 is accepted as the final Batch489 slice. It will replace only the
+Sub Prep print class-order weekday and start-minute integers with distinct
+non-converting Application value types. Each retains the exact integer,
+including the max-int unknown sentinel, and the policy compares those values
+in their existing order. An unknown weekday with a valid minute therefore
+continues to sort before a class with no valid meeting.
+
+Preserve the producer's visible-day filtering, canonical weekday recognition,
+invalid-time omission, minute conversion, lexicographic policy order, and
+printed class sequence. Batch489 remains unpushed until F1170 closes. Batch490
+remains inactive until then; F629 and both phase gates remain open.
+Implementation and verification have not started.

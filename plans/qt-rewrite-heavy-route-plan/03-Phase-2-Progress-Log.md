@@ -52555,3 +52555,49 @@ the batch remains unpushed until F1170 closes. F1170 acceptance has not
 started. Batch490 remains discovered/inactive until Batch489 closes. F629
 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2
 gates remain open.
+
+### F1170 Sub Prep print-order weekday and start-minute facts accepted - 2026-10-20
+
+F1170 is accepted/in progress as the ninth and final Batch489 slice. In
+`SubPrepPrintClassOrderFact`, change only `weekdayOrder` and `startMinute` to
+two distinct Application wrappers, one for each exact integer key. Each
+wrapper owns an `int`, has explicit integer construction, a `value()` accessor,
+zero default, and exact equality; neither converts implicitly to or from `int`.
+Construction performs no validation or normalization. Initialize both fact
+fields to `kSubPrepPrintUnknownOrder` (`INT_MAX`) through their wrappers so
+existing default facts retain both unknown sentinels. Do not use an optional or
+`Domain::Weekday` representation for these sentinel-bearing fields.
+
+The comparator must compare the exact wrapped values and retain precedence:
+grade, level, weekday, start minute, then numeric-aware class ID. Preserve
+`(INT_MAX, minute)` for an unknown weekday with a valid visible time, which
+sorts before `(INT_MAX, INT_MAX)` for no meeting. Add no range validation.
+
+The feature producer must preserve regular/intensive schedule selection,
+exact raw `visibleDays` membership, trimmed/canonical weekday recognition,
+unknown sentinel assignment, invalid-time omission, `hour * 60 + minute`
+conversion (seconds truncate), and minimum tuple selection. Keep navigation
+labels, meeting display, class output, and print sequence unchanged. Evidence
+is in `src/next/application/sub_prep_print_order_policy.h`,
+`src/features/sub_prep/ui/sub_prep_class_information_model.cpp`,
+`tests/next_application_sub_prep_print_order_policy_tests.cpp`,
+`tests/sub_prep_class_information_model_tests.cpp`, and
+`tests/sub_prep_print_pdf_tests.cpp`.
+
+Acceptance tests must cover each wrapper's default, equality, and
+non-conversion in both directions; raw sentinel and ordering boundaries; an
+Application ordering regression; and a model fixture comparing an unknown
+weekday with a valid visible time against no meeting while preserving
+presentation. Build `ClassMngr`,
+`ClassMngrNextApplicationSubPrepPrintOrderPolicyTests`,
+`ClassMngrSubPrepClassInformationModelTests`, and
+`ClassMngrSubPrepPrintPdfTests`; run all three focused binaries and matching
+CTest entries with `QT_QPA_PLATFORM=offscreen`, independent Tester review, and
+`git diff --check`. No full-suite or Windows verification is required or
+claimed.
+
+The original Batch489 discovery record remains unchanged. Implementation and
+verification have not started. Batch489 has F1162–F1169 complete and F1170
+accepted/in progress; it remains unpushed until F1170 closes. Batch490 remains
+discovered/inactive until Batch489 closes. F629 awaits source-bound Windows
+x64 layout evidence, and both phase gates remain open.
