@@ -55871,3 +55871,33 @@ Feature boundaries and retained page guard, and `git diff --check` passed.
 Because the page constructs a concrete private dialog from fixed 25-row model
 data, no direct invalid-result injection test seam was added; this guard was
 verified by code review. No full page suite or Windows run is claimed.
+
+### F1220 Schedule Import matching candidate index accepted before implementation - 2026-10-21
+
+F1220 is accepted/current based on two independent read-only Explorer reports.
+Add an explicit Application `ScheduleImportMatchingCandidateIndex` backed by
+`std::size_t`, defaulting to zero, with `.rawValue()`, equality, and no implicit
+conversions. Change `ScheduleImportMatchingClassProjection::candidateIndex` to
+this type. Do not add a sentinel or constructor range validation: the policy
+generates each index from its candidate loop and returns one projection per
+input candidate. Keep this separate from `ScheduleImportCandidateIndex`, which
+is `int`-backed with default `-1` for review-state values, and from
+`ScheduleImportStateCandidateIndex`, which is a state-projection reference.
+
+Preserve the original candidate order in both input adapters and Application
+results. At the repository and dialog preview boundaries, unwrap the typed
+`std::size_t` where the legacy preview model and controls still require `int`;
+do not change those Feature/domain APIs or their existing defaults. Keep the
+current adapter narrowing behavior unchanged; this slice does not add new
+candidate-count policy.
+
+Extend `next_application_schedule_import_matching_projection_tests.cpp` with
+typed default/explicit/equality/non-conversion assertions and a multi-candidate
+projection assertion for indexes 0 and 1 in input order. Preserve ranked match
+ordering, stable ties, suggestion behavior, and existing index-zero coverage.
+Retain repository preview assertions for 0/1/2 mapping in
+`schedule_import_tests.cpp` and the dialog resolution/apply candidate-index
+coverage in `schedule_import_dialog_tests.cpp`. Focused targets are
+`ClassMngr`, `ClassMngrNextApplicationScheduleImportMatchingProjectionTests`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`. No
+F1220 implementation or verification has started.
