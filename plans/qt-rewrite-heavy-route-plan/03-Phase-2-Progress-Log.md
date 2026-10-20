@@ -55457,6 +55457,26 @@ model-level messages, data/dirty-state, and signal checks in
 `ClassMngrRosterModelTests`, and affected production target `ClassMngr`. No
 F1213 implementation or verification has started.
 
+### F1213 Roster custom-column removal index complete - 2026-10-20
+
+F1213 completed at commit `db7ca469` (`Phase2 - Type roster custom column
+index`). `canRemoveRosterCustomColumn` now accepts the explicit
+`RosterCustomColumnRemovalIndex`, defaulting to `-1`, with `.rawValue()`,
+equality, and no implicit conversions. The Feature model wraps the selected Qt
+column at the Application boundary. The policy unwraps before its existing
+bounds check; invalid indexes still reject before required-column name matching.
+Required-name normalization, the Autumn/Fall alias, case-insensitive
+comparison, and Feature APIs remain unchanged.
+
+The independent Tester built `ClassMngr`,
+`ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests`, and
+`ClassMngrRosterModelTests` in `build/macos-clang-debug`. Focused CTests passed
+2/2. The roster model suite reported 34 passing Qt cases; the standalone
+Application policy test passed its checks for default/explicit values,
+non-conversion, negative/past-end indexes, required names/alias, and accepted
+custom columns. The model suite retains message, data/state, success, and
+signal checks. No full suite or Windows run is claimed.
+
 ### Batch494 push receipt - 2026-10-20
 
 Batch494 is complete and pushed to `origin/Qt-Rewrite`. The normal push
