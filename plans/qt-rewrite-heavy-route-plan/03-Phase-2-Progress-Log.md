@@ -56639,3 +56639,33 @@ Focused targets are `ClassMngr`, `ClassMngrNextApplicationImportReviewTests`,
 `ClassMngrNextApplicationTeacherImportPlanValidationTests`, and
 `ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests`. At
 acceptance time, no F1230 implementation or verification had started.
+
+### F1230 Teacher Import review selection positions complete - 2026-10-21
+
+F1230 completed at implementation commit `75b5bde9` (`Phase2 - Type Teacher
+Import review candidate indexes`), following acceptance-record commit
+`1ae6a3bd`. The Application review contract now uses distinct explicit types
+for signed requested candidate positions and size-based resolved positions.
+Negative selections remain representable through the Feature and Data adapter
+boundaries and are rejected by the resolver with the existing out-of-range
+issue. Mode and selection validation, group order, candidate order, and
+validation-before-persistence behavior remain unchanged.
+
+The independent Tester built `ClassMngr` and all six focused targets in the
+reused `build/macos-clang-debug` tree with:
+
+```text
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationImportReviewTests ClassMngrTeacherImportTests ClassMngrTeacherImportDialogTests ClassMngrNextApplicationTeacherImportUseCaseTests ClassMngrNextApplicationTeacherImportPlanValidationTests ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests --parallel 8
+```
+
+The six focused CTests passed with `QT_QPA_PLATFORM=offscreen`:
+
+```text
+QT_QPA_PLATFORM=offscreen ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextApplicationImportReviewTests|ClassMngrTeacherImportTests|ClassMngrTeacherImportDialogTests|ClassMngrNextApplicationTeacherImportUseCaseTests|ClassMngrNextApplicationTeacherImportPlanValidationTests|ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests)$'
+```
+
+The same CTest selection without the environment variable aborted in
+`ClassMngrTeacherImportDialogTests` because no screen was available; rerunning
+with `QT_QPA_PLATFORM=offscreen` passed 6/6. `git diff --check` passed. The
+`windows-x64-debug` preset is disabled on this macOS host, so Windows x64 is
+unverified. No full suite was run.
