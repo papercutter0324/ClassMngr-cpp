@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch489 is active with F1162–F1166 complete, F1167 accepted/in progress, and F1168–F1170 discovered in order; F1168 is next after F1167 closes, and F629 awaits source-bound Windows x64 layout evidence while the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch489 is active with F1162–F1167 complete and F1168–F1170 discovered in order; F1168 is next, and F629 awaits source-bound Windows x64 layout evidence while the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1166 completed in source/test commit `f83b1b286edaef98dd437666f50f4ddd36641b5d`, following acceptance commit `3df496be31fd916be780112bc9d6fcb7e17cba6b`; see the [completion record](03-Phase-2-Progress-Log.md#f1166-upcoming-birthday-reference-date-complete-2026-10-20).
+F1167 completed in source/test commit `cc652bdea3c7c18c2d006852940526ee5eaa8e74`, following acceptance commit `0737fc598309d0f0736a754f8f27a848a1c46f61`; see the [completion record](03-Phase-2-Progress-Log.md#f1167-teacher-import-count-complete-2026-10-20).
 
 ### Slice discovery batches
 
@@ -72,19 +72,19 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch489 (9 candidates; 5 complete; 1 accepted/in progress; 3 discovered)
+#### Active batch: Batch489 (9 candidates; 6 complete; 0 accepted/in progress; 3 discovered)
 
 1. F1162 - **Complete.** Keep raw cutoff text in an Application Input boundary, then use `Domain::GregorianDate` for repeat planning; preserve frequency/seed-before-cutoff validation, inclusive cutoff, range, and no-port-call-on-failure behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1162-calendar-repeat-create-cutoff-date-complete-2026-10-20)).
 2. F1163 - **Complete.** Type the shared save request's dates and retain raw text at `CalendarEventSaveInput`; migration covers single save, import, repeat-create, and the three Platform adapters while preserving validation, diagnostics, and persistence (see the [completion record](03-Phase-2-Progress-Log.md#f1163-calendar-single-event-save-date-pair-complete-2026-10-20)).
 3. F1164 - **Complete.** Change only `CalendarEventSeriesEditOccurrenceSnapshot.startDate` to `std::optional<Domain::GregorianDate>`; preserve malformed-source failure, request-validation precedence, repository order, shift arithmetic/range handling, and no-write behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1164-calendar-series-edit-occurrence-start-date-complete-2026-10-20)).
 4. F1165 - **Complete.** Replace `ScheduleImportStateTime`'s raw time integers with one `std::optional<Domain::ScheduleTime>`; retain the labels and preserve labeled invalid-time handling, validation precedence, conflict behavior, and Apply/review behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1165-schedule-import-projected-state-time-complete-2026-10-20)).
 5. F1166 - **Complete.** Use `std::optional<Domain::GregorianDate>` as the Upcoming Birthday reference input; preserve the empty result for invalid references and the date-window, ordering, and leap-day behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1166-upcoming-birthday-reference-date-complete-2026-10-20)).
-6. F1167 - **Accepted/in progress.** Add a Qt-free, non-converting `Application::TeacherImportCount` backed by signed `int`, and type the three `TeacherImportCounts` fields; preserve zero defaults, integer summation, existing counter transitions, and explicit legacy extraction (see the [acceptance record](03-Phase-2-Progress-Log.md#f1167-teacher-import-count-accepted-before-implementation-2026-10-20)).
+6. F1167 - **Complete.** Type grouped Application create/update/unchanged totals with the non-converting signed-int count; preserve zero defaults, existing counter transitions, typed aggregation, and raw legacy summary values (see the [completion record](03-Phase-2-Progress-Log.md#f1167-teacher-import-count-complete-2026-10-20)).
 7. F1168 - **Discovered.** Consider a shared opaque SHA-256 value for manual/startup Update contracts; preserve exact text without normalization.
 8. F1169 - **Discovered.** Type Sub Prep navigation weekdays and optional minutes; preserve unknown-day ignore, guards 0–6 and 0–1439, and earliest-day-without-time behavior.
 9. F1170 - **Discovered.** Type Sub Prep print ordering weekday/start-minute keys; preserve explicit unknown-sentinel ordering.
 
-Batch489 has F1162–F1166 complete, F1167 accepted/in progress, and F1168–F1170 discovered in the original order; F1168 is next after F1167 closes. See its [discovery record](03-Phase-2-Progress-Log.md#batch489-discovery-at-f1160-start-2026-10-20) for evidence and the excluded low-confidence student-name peer-row idea. Batch489 is active and its push remains deferred until F1170. Batch488 is closed and pushed; see its [push receipt](03-Phase-2-Progress-Log.md#batch488-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+Batch489 has F1162–F1167 complete and F1168–F1170 discovered in the original order; F1168 is next. See its [discovery record](03-Phase-2-Progress-Log.md#batch489-discovery-at-f1160-start-2026-10-20) for evidence and the excluded low-confidence student-name peer-row idea. Batch489 is active and its push remains deferred until F1170. Batch488 is closed and pushed; see its [push receipt](03-Phase-2-Progress-Log.md#batch488-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 

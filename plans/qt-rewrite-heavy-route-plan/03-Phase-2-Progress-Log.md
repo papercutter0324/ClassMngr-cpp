@@ -52400,3 +52400,29 @@ accepted/in progress, and F1168–F1170 discovered in order. F1168 is next after
 F1167 closes. Batch489 remains unpushed until F1170. F629 awaits source-bound
 Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0
 and Phase 2 gates remain open.
+
+### F1167 Teacher Import count complete - 2026-10-20
+
+F1167 completed at source/test commit
+`cc652bdea3c7c18c2d006852940526ee5eaa8e74`, following acceptance commit
+`0737fc598309d0f0736a754f8f27a848a1c46f61`. The non-converting signed-int
+`TeacherImportCount` types the grouped Application fields and `total()`;
+zero defaults, increments, non-convertibility, and typed aggregation are
+covered. Existing successful create/update/unchanged behavior and the raw
+legacy summary are preserved through explicit `rawValue()` extraction.
+
+All six requested build targets succeeded. Application, Apply-port, repository,
+and dialog binaries passed; the repository had 27 passes and one optional
+sample skip, and the dialog had six passes and one optional workbook skip.
+Platform Apply-port passed 7/7. Five focused CTests passed 5/5 offscreen. An
+initial non-offscreen attempt aborted because no screens were available. The
+full UI parity binary crashed in `wizardSuccessTranscript`; the isolated
+selector reproduced a macOS `NSInvalidArgumentException` from QWizard/NSBundle
+with a nil URL. The required sidebar success CTest passed.
+
+`git diff --check` passed. No full suite or Windows build ran.
+
+Batch489 remains active with F1162–F1167 complete and F1168–F1170 discovered
+in order; F1168 is next. Batch489 remains unpushed until F1170. F629 awaits
+source-bound Windows x64 layout evidence; the user cannot run Windows now, and
+the Phase 0 and Phase 2 gates remain open.
