@@ -52748,3 +52748,30 @@ Batch490 has F1171 complete, F1172 accepted/in progress, and F1173–F1177
 discovered, with F1173 next. Batch490 remains unpushed until F1177 closes.
 F629 awaits source-bound Windows x64 layout evidence; the Phase 0 and Phase 2
 gates remain open.
+
+### F1172 Update-check UTC milliseconds complete - 2026-10-20
+
+F1172 completed at source/test commit `319c7a8b`, following acceptance commit
+`a06421a3`. Added Qt-free `Application::UpdateCheckUtcMilliseconds` with exact
+signed `std::int64_t` storage, zero default, explicit construction, `.value()`
+accessor, and exact equality. Only the manual and startup result timestamp
+fields changed. Existing `QDateTime` sourcing and service freshness remain;
+adapters wrap their existing `toMSecsSinceEpoch()` values, and the manual UI
+unwraps and reconstructs UTC at its existing boundary.
+
+Both use cases cover signed extremes. Adapter and manual UI coverage includes
+representative negative, zero, and positive values; because Qt date ranges are
+narrower than `std::int64_t`, no full-int64 preservation through `QDateTime`
+is claimed. The incremental macOS Debug build passed for `ClassMngr` and the
+four focused targets: `ClassMngrNextApplicationManualUpdateCheckUseCaseTests`,
+`ClassMngrNextApplicationStartupUpdateCheckUseCaseTests`,
+`ClassMngrUpdateControllerAutomaticStartupTests`, and `ClassMngrUpdaterTests`.
+The four matching focused offscreen CTests passed 4/4 after the local-server
+sandbox binding required an authorized localhost-enabled retry. The independent
+Tester accepted the slice, and `git diff --check` passed. No full suite or
+Windows build ran.
+
+Batch490 now has F1171 and F1172 complete, with F1173–F1177 discovered and
+F1173 next; the batch remains unpushed until F1177 closes. F629 awaits
+source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates
+remain open.

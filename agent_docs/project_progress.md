@@ -6462,15 +6462,16 @@ passed 4/4 offscreen after a loopback-enabled retry. `git diff --check` passed.
 No full suite or Windows build ran. Batch490 has one complete slice and F1172
 next; Batch489 is pushed. F629 and both phase gates remain open.
 
-## Phase 2 update - F1172 accepted; Batch490 active - 2026-10-20
+## Phase 2 update - F1172 complete; Batch490 active - 2026-10-20
 
-F1172 is accepted to type the manual and startup update-check UTC millisecond
-fields with a Qt-free `Application::UpdateCheckUtcMilliseconds`, preserving
-exact signed values and zero defaults. Existing timestamp sourcing, service
-freshness state, legacy `QDateTime`, and UTC conversion boundaries remain in
-place; zero remains an ordinary value. Adapter/UI boundary verification will
-use representative values within Qt's date range and will not claim that
-`QDateTime` can represent the full `int64` range. Implementation and
-verification have not started. F1171 is complete; F1173 is next after F1172.
-Batch490 remains unpushed until F1177 closes. F629 and both phase gates remain
-open.
+F1172 completed at source/test commit `319c7a8b`, following acceptance commit
+`a06421a3`. The Qt-free `Application::UpdateCheckUtcMilliseconds` types
+manual/startup check timestamps with exact signed values and zero defaults.
+Existing service freshness, timestamp sourcing, and `QDateTime` boundaries
+remain; the UI reconstructs UTC explicitly. Focused macOS build and four
+offscreen CTests passed, and the independent Tester accepted the change.
+Coverage uses signed extremes through the Qt-free use cases and representative
+Qt-representable values at adapters/UI; it does not claim the full int64 range
+through `QDateTime`. No full suite or Windows build ran. Batch490 has F1171–F1172
+complete and F1173 next; it remains unpushed until F1177 closes. F629 and both
+phase gates remain open.

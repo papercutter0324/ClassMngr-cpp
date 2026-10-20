@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e`; see its [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20). Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96`; see its [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20). Batch486's F1143 source/test commit `686bdc2a5000709c6b5ab6cd6b632552d62577d6` is on origin through Batch487's push; see the [Batch487 push receipt](03-Phase-2-Progress-Log.md#batch487-push-receipt-2026-10-20). Batch487 is complete and pushed at `c3c06e2f5432933a0e8b7df629e25b2afa920e2c`. Batch488 is closed and pushed at `138c2cf86f3bac153d948649980798fbfd066dd6`; see its [push receipt](03-Phase-2-Progress-Log.md#batch488-push-receipt-2026-10-20). Batch489 is complete and pushed at `e329f92b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20). Batch490 has seven slices: F1171 is complete, F1172 accepted/in progress, and F1173–F1177 discovered, with F1173 next (see the [F1172 acceptance record](03-Phase-2-Progress-Log.md#f1172-update-check-utc-milliseconds-accepted-before-implementation-2026-10-20)); Batch490 remains unpushed until F1177 closes. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batches 481–489 are complete and pushed. Batch490 has F1171 and F1172 complete, with F1173–F1177 discovered and F1173 next; it remains unpushed until F1177 closes. F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,17 +38,17 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch490 — Active; seven candidates, one complete, one accepted/in progress, and five discovered:**
+**Batch490 — Active; seven candidates, two complete and five discovered:**
 
 1. **F1171 — Complete:** Use `Application::UpdateArtifactSizeBytes` for manual/startup artifact sizes; preserve exact signed values through adapters and keep positivity policy in the existing parser/downloader (see the [completion record](03-Phase-2-Progress-Log.md#f1171-updater-artifact-size-complete-2026-10-20)).
-2. **F1172 — Accepted/in progress:** Add typed update-check UTC millisecond values; preserve signed values, ordinary zero defaults, and adapter/UI conversion boundaries (see the [acceptance record](03-Phase-2-Progress-Log.md#f1172-update-check-utc-milliseconds-accepted-before-implementation-2026-10-20)).
+2. **F1172 — Complete:** Add typed update-check UTC millisecond values; preserve signed values, ordinary zero defaults, and adapter/UI conversion boundaries (see the [completion record](03-Phase-2-Progress-Log.md#f1172-update-check-utc-milliseconds-complete-2026-10-20)).
 3. **F1173 — Discovered; next:** Type Calendar Import counts without adding range policy; preserve defaults and count transitions.
 4. **F1174 — Discovered:** Type the Class Transfer export timestamp input; preserve epoch and serialized timestamp formatting.
 5. **F1175 — Discovered:** Type the Class Transfer package version; preserve the serialized integer and unsupported-version diagnostics.
 6. **F1176 — Discovered:** Type Schedule-slot canonical hour; preserve the 15/16 cutoff and absence, without broadening parsing.
 7. **F1177 — Discovered:** Review Academic-term week-count typing carefully; preserve invalid-input rejection and four-term cardinality.
 
-Batch490 has F1171 complete, F1172 accepted/in progress, and F1173–F1177 discovered, with F1173 next; the batch remains unpushed until F1177 closes. Batch489 is complete and pushed at `e329f92b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch490 has F1171 and F1172 complete, with F1173–F1177 discovered and F1173 next; it remains unpushed until F1177 closes. Batch489 is complete and pushed at `e329f92b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.
