@@ -8395,3 +8395,18 @@ Schedule Slot State key, Calendar series delete start date, and Calendar
 series edit event type pending raw-value compatibility review. Batch487 has
 eight complete slices, F1152 accepted/in progress, and F1153 discovered;
 Batch488 is discovered but inactive. F629 and both phase gates remain open.
+
+## 2026-10-20 - F1152 complete
+
+F1152 completed at source/test commit
+`d2ed97f8547ba1d67cda65361d6a4443531b9d47`, following acceptance commit
+`69755eb15f6e0bc9e919d1f2dd73b2ea6db707cd`. Class Analytics evaluation
+selection now distinguishes All from an exact owning name value. The UI reads
+item data, and query matching retains its trim-before-exact-case behavior;
+unknown exact names still yield empty selected snapshots with global YTD.
+
+The focused Application and Platform CTests passed, and the UI parity selector
+passed under Qt offscreen. A native UI launch could not find a screen, so the
+selector was rerun offscreen. No full or Windows suite ran. Batch487 has nine
+complete slices and F1153 is next; Batch488 remains inactive. The separate
+Batch486 push is still pending exact-payload approval.

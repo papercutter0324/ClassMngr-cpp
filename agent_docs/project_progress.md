@@ -6256,3 +6256,20 @@ acceptance `c6b6eadb8a2c6901e85bc26961b8b1332c02cbb6`. Batch486 has six
 complete candidates and is closed locally; Batch487 is active with ten
 discovered candidates, and F1144 is next for acceptance. Its closure commit is
 awaiting push. F629 and both phase gates remain open.
+
+## Phase 2 update - F1152 complete; Batch487 active - 2026-10-20
+
+F1152 completed at source/test commit
+`d2ed97f8547ba1d67cda65361d6a4443531b9d47`, following acceptance commit
+`69755eb15f6e0bc9e919d1f2dd73b2ea6db707cd`. Class Analytics now represents
+evaluation selection as an explicit All or owning exact-name Application
+value. The UI uses combo item data, and the query keeps existing trimmed,
+case-sensitive matching, unknown-name empty snapshots, aggregate order, and
+global year-to-date behavior.
+
+The incremental macOS Debug build passed for `ClassMngr` and the Application,
+Platform, and Class Analytics Page parity targets. Application and Platform
+CTests passed 2/2; the UI selector passed under Qt offscreen after the native
+launch could not find a screen. `git diff --check` passed. No full, clean, or
+Windows build ran. Batch487 has nine complete slices with F1153 remaining;
+Batch488 is discovered but inactive. F629 and both phase gates remain open.

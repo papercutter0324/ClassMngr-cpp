@@ -51210,3 +51210,29 @@ eight ordered candidates are provisional:
    and `tests/calendar_page_event_mutation_parity_tests.cpp`.
 
 No other slices were found.
+
+### F1152 Class Analytics evaluation selection complete - 2026-10-20
+
+F1152 completed at source/test commit
+`d2ed97f8547ba1d67cda65361d6a4443531b9d47`, following acceptance commit
+`69755eb15f6e0bc9e919d1f2dd73b2ea6db707cd`. The Qt-free
+`Application::ClassAnalyticsEvaluationSelection` preserves explicit All versus
+owning exact UTF-16 name selection, legacy text conversion, query matching,
+UI item-data selection, unknown-name empty snapshots with global Year-to-Date,
+aggregation, and selector/default behavior. The four source/test files were
+committed; the working tree was clean at handoff.
+
+In the existing `build/macos-clang-debug` tree, incremental builds passed for
+`ClassMngr`,
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`,
+and `ClassMngrClassAnalyticsPageReadParityTests`. Application and Platform
+CTest passed 2/2. Native UI launch lacked a screen; the offscreen selector
+`visibleSummaryShapeAndYearToDateMatchFixture` passed (3 QtTest phases).
+`git diff --check` exited 0. No full, clean, or Windows build ran.
+
+Batch487 remains active with nine complete slices (F1144–F1152), none
+accepted/in progress, and F1153 as its sole discovered remaining slice; it is
+not closed or pushed. Batch488 remains discovered and inactive with its
+provisional list unchanged. F629 remains active pending source-bound Windows
+x64 evidence; the Phase 0 and Phase 2 gates remain open.
