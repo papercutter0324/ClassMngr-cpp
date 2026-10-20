@@ -54620,3 +54620,58 @@ and `ClassMngrSpeakingEvalBatchReportServiceTests` CTests, plus
 Batch493 has ten ordered candidates: F1192–F1198 complete, F1199
 accepted/current, and F1200–F1201 discovered. Batch493 remains unpushed;
 F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1199 AI accepted-comment overwrite count complete - 2026-10-20
+
+F1199 completed at source/test commit
+`4b1aa4b994567c1685af20d16cc20c8fffc32284` (`Phase2 - Type AI accepted-comment
+overwrite count`). The three changed paths were
+`src/next/application/speaking_evaluation_ai_batch_accepted_comment_plan.h`,
+`src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.cpp`, and
+`tests/next_application_speaking_evaluation_ai_batch_accepted_comment_plan_tests.cpp`.
+Application now uses `SpeakingEvaluationAiBatchOverwriteCount`; Feature unwraps
+it at the existing confirmation prompt. Application tests cover typed zero,
+one, and multiple values and the value semantics. Candidate filtering, raw
+old/new comparison, Qt-compatible trimmed-old-text counting, whitespace-only
+assignments, exact assignment text, and prompt behavior are preserved. F1200
+fields remain unchanged.
+
+In the existing `build/macos-clang-debug`, the independent tester built
+`ClassMngr`,
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests`,
+and `ClassMngrSpeakingEvalBatchReportServiceTests`; Ninja reported no work
+remaining. With `QT_QPA_PLATFORM=offscreen`, the focused CTests
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests`
+and `ClassMngrSpeakingEvalBatchReportServiceTests` passed 2/2.
+`git diff --check` passed. No full suite or Windows run occurred.
+
+### F1200 Speaking Evaluation AI batch report index accepted before implementation - 2026-10-20
+
+F1200 is accepted/current before implementation, based on two independent
+read-only discovery reports tracing the Application contract and Feature/UI.
+In `src/next/application/speaking_evaluation_ai_batch_accepted_comment_plan.h`,
+type only `SpeakingEvaluationAiBatchAcceptedCommentCandidate::reportIndex` as
+Qt-free Application `SpeakingEvaluationAiBatchReportIndex`, with exact `int`
+storage, default `-1`, explicit construction, `.rawValue()`, equality, and no
+implicit conversion. Preserve arbitrary values; planner validation remains
+responsible for rejecting every negative index and each index `>= reportCount`
+before indexing, including when `reportCount` is zero. Adapt the raw UI integer
+when constructing the planner candidate; keep Qt role storage and
+`m_selectedReportIndexes` as raw UI integers.
+
+Keep `sourceRow` as raw `int` in the candidate, assignment, Feature result, and
+page action: it is the original model row, not the report-list index.
+`reportIndex` is not carried into assignments. Preserve filtering, order, and
+assignment behavior. No generic Application type fits this contract;
+`ScheduleImportCandidateIndex` has distinct semantics. Existing Application
+tests cover `-1`, out-of-range and valid indexes, and non-index-sorted assignment
+order; add wrapper assertions for default `-1`, explicit/arbitrary values,
+equality, and non-implicit conversion, updating fixtures explicitly.
+
+Build `ClassMngr`,
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests`,
+and `ClassMngrSpeakingEvalBatchReportServiceTests`; run the two matching CTests
+and `git diff --check`. No F1200 implementation or verification has started.
+Batch493 has ten ordered candidates: F1192–F1199 complete, F1200
+accepted/current, and F1201 discovered. Batch493 remains unpushed; F629 and the
+Phase 0 and Phase 2 gates remain open.
