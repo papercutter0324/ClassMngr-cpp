@@ -445,8 +445,12 @@ SubPrepClassInformation::build(
         classOrderFacts.push_back(
             {
                 typedTeacherId(teacherId),
-                gradeOrder(source.info.classGrade),
-                levelOrder(source.info),
+                PrintOrder::SubPrepPrintGradeOrder{
+                    gradeOrder(source.info.classGrade)
+                },
+                PrintOrder::SubPrepPrintLevelOrder{
+                    levelOrder(source.info)
+                },
                 PrintOrder::SubPrepPrintWeekdayOrder{meetingOrder.first},
                 PrintOrder::SubPrepPrintStartMinute{meetingOrder.second},
                 typedClassId(classId)

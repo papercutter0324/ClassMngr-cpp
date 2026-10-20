@@ -64,6 +64,52 @@ private:
     int value_ = 0;
 };
 
+class SubPrepPrintGradeOrder final
+{
+public:
+    constexpr SubPrepPrintGradeOrder() noexcept = default;
+    explicit constexpr SubPrepPrintGradeOrder(const int value) noexcept
+        : value_(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int value() const noexcept
+    {
+        return value_;
+    }
+
+    friend constexpr bool operator==(
+        const SubPrepPrintGradeOrder&,
+        const SubPrepPrintGradeOrder&
+        ) = default;
+
+private:
+    int value_ = 0;
+};
+
+class SubPrepPrintLevelOrder final
+{
+public:
+    constexpr SubPrepPrintLevelOrder() noexcept = default;
+    explicit constexpr SubPrepPrintLevelOrder(const int value) noexcept
+        : value_(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int value() const noexcept
+    {
+        return value_;
+    }
+
+    friend constexpr bool operator==(
+        const SubPrepPrintLevelOrder&,
+        const SubPrepPrintLevelOrder&
+        ) = default;
+
+private:
+    int value_ = 0;
+};
+
 class SubPrepPrintTeacherIndex final
 {
 public:
@@ -133,8 +179,8 @@ struct SubPrepPrintTeacherOrderFact final
 struct SubPrepPrintClassOrderFact final
 {
     Domain::TeacherId teacherId = *Domain::TeacherId::fromString("0");
-    int gradeOrder = kSubPrepPrintUnknownOrder;
-    int levelOrder = kSubPrepPrintUnknownOrder;
+    SubPrepPrintGradeOrder gradeOrder{kSubPrepPrintUnknownOrder};
+    SubPrepPrintLevelOrder levelOrder{kSubPrepPrintUnknownOrder};
     SubPrepPrintWeekdayOrder weekdayOrder{kSubPrepPrintUnknownOrder};
     SubPrepPrintStartMinute startMinute{kSubPrepPrintUnknownOrder};
     Domain::ClassId classId = *Domain::ClassId::fromString("0");
@@ -300,13 +346,13 @@ orderSubPrepPrintGroups(
                     classes[leftIndex.rawValue()];
                 const SubPrepPrintClassOrderFact& right =
                     classes[rightIndex.rawValue()];
-                if (left.gradeOrder != right.gradeOrder)
+                if (left.gradeOrder.value() != right.gradeOrder.value())
                 {
-                    return left.gradeOrder < right.gradeOrder;
+                    return left.gradeOrder.value() < right.gradeOrder.value();
                 }
-                if (left.levelOrder != right.levelOrder)
+                if (left.levelOrder.value() != right.levelOrder.value())
                 {
-                    return left.levelOrder < right.levelOrder;
+                    return left.levelOrder.value() < right.levelOrder.value();
                 }
                 if (
                     left.weekdayOrder.value()
