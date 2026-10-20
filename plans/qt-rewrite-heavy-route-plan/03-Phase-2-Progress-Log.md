@@ -55901,3 +55901,22 @@ coverage in `schedule_import_dialog_tests.cpp`. Focused targets are
 `ClassMngr`, `ClassMngrNextApplicationScheduleImportMatchingProjectionTests`,
 `ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`. No
 F1220 implementation or verification has started.
+
+### F1220 Schedule Import matching candidate index complete - 2026-10-21
+
+F1220 completed at commit `471e9bc2` (`Phase2 - Type schedule import matching
+index`). The Application projection now returns an explicit
+`ScheduleImportMatchingCandidateIndex` backed by `std::size_t`, defaulting to
+zero, with `.rawValue()`, equality, and no implicit conversions. The projection
+still creates one result per candidate in input order. The repository and
+dialog preview adapters unwrap the value at the existing boundary and retain
+their legacy `int` preview APIs, defaults, and narrowing behavior.
+
+The independent Tester built the app and three focused test targets in the
+configured macOS universal Debug tree. Focused CTests passed 3/3: the
+Application projection target reported 11 passes, repository Schedule Import
+reported 94 passes and one skip for the optional external workbook check, and
+the dialog suite reported 58 passes. Assertions cover typed value semantics,
+indexes 0/1 in projection order, existing 0/1/2 repository mapping, and dialog
+resolution/apply indexes. `git diff --check` passed. No full suite or Windows
+run is claimed.
