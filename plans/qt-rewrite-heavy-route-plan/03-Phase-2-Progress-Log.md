@@ -52426,3 +52426,42 @@ Batch489 remains active with F1162–F1167 complete and F1168–F1170 discovered
 in order; F1168 is next. Batch489 remains unpushed until F1170. F629 awaits
 source-bound Windows x64 layout evidence; the user cannot run Windows now, and
 the Phase 0 and Phase 2 gates remain open.
+
+### F1168 Update artifact SHA-256 accepted before implementation - 2026-10-20
+
+F1168 is accepted/in progress. Introduce shared Qt-free
+`Application::UpdateArtifactSha256` with exact owning `std::string` storage,
+explicit construction and accessor, exact equality, and a default empty value.
+Add no format validation, length checks, trimming, prefix handling, case
+conversion, or other normalization. Replace only `ManualUpdateArtifact.sha256`
+and `StartupUpdateArtifact.sha256`; keep the artifact and result contracts
+distinct.
+
+Both Platform adapters map `QString::toUtf8().toStdString()` text through the
+type; manual cached results use the same mapping. UI/controller legacy
+boundaries explicitly unwrap `.value()` without changing text. Preserve
+arbitrary Application-boundary strings, including empty values, differing
+lengths, case, and whitespace. Do not alter
+upstream GitHub parser prefix/hex-validation/lowercasing policy, the legacy
+`UpdateArtifact` representation, downloader integrity comparisons or record
+storage, or UI behavior. Add no value-level validation.
+
+Acceptance tests cover exact pass-through and equality for arbitrary strings
+through manual and startup use cases and both adapters, including empty, short,
+mixed-case, and whitespace values; confirm exact UI/controller unwrapping.
+Keep or update parser tests to establish unchanged upstream canonicalization
+and rejection. Update `cmake/next.cmake` if a new header is added. Evidence is
+the manual/startup Application contracts and tests, both Platform adapters,
+controller/dialog consumers, and updater parser. Build `ClassMngr`,
+`ClassMngrNextApplicationManualUpdateCheckUseCaseTests`,
+`ClassMngrNextApplicationStartupUpdateCheckUseCaseTests`,
+`ClassMngrUpdateControllerAutomaticStartupTests`, and `ClassMngrUpdaterTests`;
+run the full focused binaries and matching focused CTests. Obtain independent
+Tester review and run `git diff --check`. No full-suite or Windows claim is
+implied. Implementation has not started.
+
+Batch489 remains active with nine candidates: F1162–F1167 complete, F1168
+accepted/in progress, and F1169–F1170 discovered in order. F1169 is next after
+F1168 closes. Batch489 remains unpushed until F1170. F629 awaits source-bound
+Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0
+and Phase 2 gates remain open.
