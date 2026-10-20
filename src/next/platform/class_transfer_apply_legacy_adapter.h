@@ -37,7 +37,7 @@ template <typename TypedId>
     for (int index = 0; index < package.classes.size(); ++index)
     {
         ClassTransferReviewClassCandidate candidate;
-        candidate.packageClassIndex = index;
+        candidate.packageClassIndex = ClassTransferPackageClassIndex{index};
         candidate.sourceKey = ClassTransferClassKey(
             package.classes.at(index).key.toStdString());
         const auto previewEntry = std::find_if(
@@ -119,9 +119,12 @@ template <typename TypedId>
         case ClassImportAction::Replace: action = ClassTransferReviewClassAction::Replace; break;
         case ClassImportAction::Skip: action = ClassTransferReviewClassAction::Skip; break;
         }
-        request.classes.push_back({resolution.packageClassIndex, action,
+        request.classes.push_back({
+            ClassTransferPackageClassIndex{resolution.packageClassIndex},
+            action,
             resolution.targetClassId == -1 ? std::nullopt
-                : Domain::ClassId::fromString(std::to_string(resolution.targetClassId))});
+                : Domain::ClassId::fromString(std::to_string(resolution.targetClassId))
+        });
     }
     for (const auto& resolution : plan.teachers)
     {
@@ -152,7 +155,7 @@ template <typename TypedId>
         const auto action = choice.action == ClassTransferReviewClassAction::Create
             ? ClassImportAction::Create : choice.action == ClassTransferReviewClassAction::Replace
                 ? ClassImportAction::Replace : ClassImportAction::Skip;
-        plan.classes.append({choice.packageClassIndex, action,
+        plan.classes.append({choice.packageClassIndex.rawValue(), action,
             choice.targetClassId ? *classTransferApplyDestinationId(*choice.targetClassId) : -1});
     }
     for (const auto& choice : request.teachers)

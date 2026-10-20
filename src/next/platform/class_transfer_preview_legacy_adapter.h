@@ -79,7 +79,8 @@ classTransferPreviewRequest(const ::ClassTransferPackage& package)
     for (const auto& candidate : result.classes)
     {
         ::ClassImportClassPreview classCandidate;
-        classCandidate.packageClassIndex = candidate.packageClassIndex;
+        classCandidate.packageClassIndex =
+            candidate.packageClassIndex.rawValue();
         classCandidate.matchingClassIds.reserve(
             static_cast<qsizetype>(candidate.matchingClassIds.size()));
         for (const auto& id : candidate.matchingClassIds)

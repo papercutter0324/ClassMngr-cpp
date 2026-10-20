@@ -108,11 +108,14 @@ ClassTransferReviewDecisionRequest validReviewRequest()
 {
     ClassTransferReviewDecisionRequest request;
     request.classes = {
-        {0, {reviewClassId(41), reviewClassId(42)},
+        {ClassTransferPackageClassIndex{0},
+            {reviewClassId(41), reviewClassId(42)},
             ClassTransferClassKey("class-review-0")},
-        {1, {reviewClassId(41), reviewClassId(43)},
+        {ClassTransferPackageClassIndex{1},
+            {reviewClassId(41), reviewClassId(43)},
             ClassTransferClassKey("class-review-1")},
-        {2, {}, ClassTransferClassKey("class-review-2")}
+        {ClassTransferPackageClassIndex{2}, {},
+            ClassTransferClassKey("class-review-2")}
     };
     request.teachers = {
         {ClassTransferTeacherKey("teacher-ambiguous"),
@@ -123,9 +126,12 @@ ClassTransferReviewDecisionRequest validReviewRequest()
         {ClassTransferTeacherKey("teacher-new"), {}}
     };
     request.classResolutions = {
-        {0, ClassTransferReviewClassAction::Replace, reviewClassId(41)},
-        {1, ClassTransferReviewClassAction::Create, std::nullopt},
-        {2, ClassTransferReviewClassAction::Skip, std::nullopt}
+        {ClassTransferPackageClassIndex{0},
+            ClassTransferReviewClassAction::Replace, reviewClassId(41)},
+        {ClassTransferPackageClassIndex{1},
+            ClassTransferReviewClassAction::Create, std::nullopt},
+        {ClassTransferPackageClassIndex{2},
+            ClassTransferReviewClassAction::Skip, std::nullopt}
     };
     request.teacherResolutions = {
         {ClassTransferTeacherKey("teacher-ambiguous"),
@@ -253,6 +259,7 @@ private slots:
     void contractHasNoExternalOwnersOrRawSourceAccessors();
     void keyTypesPreserveDistinctNamespacesAndExactBytes();
     void projectionAcceptsMaximumLengthKeysAndExactReferences();
+    void packageClassIndexPreservesSignedIntAndExplicitType();
     void reviewDecisionsPreserveMatchChoiceSemantics();
     void reviewDecisionMatrixRejectsIncompleteDuplicateAndInvalidChoices();
     void reviewUsesEmptyOnlyKeysFirstDuplicateCandidateAndStableIssueOrder();
@@ -844,6 +851,41 @@ void NextApplicationClassTransferTests::projectionAcceptsMaximumLengthKeysAndExa
     verifyInvalid(ClassTransferProjection::create(std::move(caseMismatch)));
 }
 
+void NextApplicationClassTransferTests::
+packageClassIndexPreservesSignedIntAndExplicitType()
+{
+    using Index = ClassTransferPackageClassIndex;
+    static_assert(std::is_same_v<
+        decltype(std::declval<ClassTransferReviewClassCandidate>()
+                     .packageClassIndex),
+        Index>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<ClassTransferReviewClassResolution>()
+                     .packageClassIndex),
+        Index>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<ClassTransferReviewDecisionIssue>()
+                     .packageClassIndex),
+        Index>);
+    static_assert(std::is_default_constructible_v<Index>);
+    static_assert(std::is_constructible_v<Index, int>);
+    static_assert(!std::is_convertible_v<int, Index>);
+    static_assert(!std::is_convertible_v<Index, int>);
+
+    const Index defaultIndex;
+    QCOMPARE(defaultIndex.rawValue(), -1);
+
+    constexpr int minimum = std::numeric_limits<int>::min();
+    constexpr int maximum = std::numeric_limits<int>::max();
+    const Index minimumIndex{minimum};
+    const Index maximumIndex{maximum};
+    QCOMPARE(minimumIndex.rawValue(), minimum);
+    QCOMPARE(maximumIndex.rawValue(), maximum);
+    QVERIFY(minimumIndex == Index{minimum});
+    QVERIFY(maximumIndex == Index{maximum});
+    QVERIFY(minimumIndex != maximumIndex);
+}
+
 void NextApplicationClassTransferTests::reviewDecisionsPreserveMatchChoiceSemantics()
 {
     static_assert(std::is_same_v<
@@ -983,7 +1025,10 @@ void NextApplicationClassTransferTests::reviewDecisionMatrixRejectsIncompleteDup
 
     request = validReviewRequest();
     request.classResolutions[1] = {
-        1, ClassAction::Replace, reviewClassId(41)};
+        ClassTransferPackageClassIndex{1},
+        ClassAction::Replace,
+        reviewClassId(41)
+    };
     QVERIFY(hasReviewIssue(
         validateClassTransferReviewDecisions(request),
         IssueCode::DuplicateClassReplacementTarget
@@ -1515,7 +1560,8 @@ void NextApplicationClassTransferTests::applyRequestKeepsChoicesSeparateAndPrese
     QCOMPARE(mapped.teacherResolutions.size(), choices.teachers.size());
     for (std::size_t index = 0; index < choices.classes.size(); ++index)
     {
-        QCOMPARE(mapped.classResolutions[index].packageClassIndex, choices.classes[index].packageClassIndex);
+        QVERIFY(mapped.classResolutions[index].packageClassIndex
+            == choices.classes[index].packageClassIndex);
         QCOMPARE(mapped.classResolutions[index].action, choices.classes[index].action);
         QCOMPARE(mapped.classResolutions[index].targetClassId, choices.classes[index].targetClassId);
     }
@@ -1558,9 +1604,14 @@ void NextApplicationClassTransferTests::applyValidationRetainsDecisionIssuesAndO
     value = baseline; value.teacherResolutions[1].targetTeacherId = reviewTeacherId(99); cases.push_back(value);
     value = baseline; value.classResolutions[1].targetClassId = reviewClassId(43); cases.push_back(value);
     value = baseline; value.teacherResolutions[3].targetTeacherId = reviewTeacherId(13); cases.push_back(value);
-    value = baseline; value.classResolutions.push_back({99,ClassTransferReviewClassAction::Create,{}});
+    value = baseline; value.classResolutions.push_back({
+        ClassTransferPackageClassIndex{99},
+        ClassTransferReviewClassAction::Create,
+        {}
+    });
     value.teacherResolutions.push_back({ClassTransferTeacherKey("unknown"),ClassTransferReviewTeacherAction::Create,{}}); cases.push_back(value);
-    value = baseline; value.classResolutions[0].packageClassIndex = -1;
+    value = baseline; value.classResolutions[0].packageClassIndex =
+        ClassTransferPackageClassIndex{-1};
     value.teacherResolutions[0].teacherKey = ClassTransferTeacherKey{}; cases.push_back(value);
     value = baseline; value.classResolutions.clear(); value.teacherResolutions.clear(); cases.push_back(value);
     for (const auto& review : cases)
@@ -1572,7 +1623,8 @@ void NextApplicationClassTransferTests::applyValidationRetainsDecisionIssuesAndO
         for (std::size_t index = 0; index < actual.issues.size(); ++index)
         {
             QCOMPARE(actual.issues[index].code, expected.issues[index].code);
-            QCOMPARE(actual.issues[index].packageClassIndex, expected.issues[index].packageClassIndex);
+            QVERIFY(actual.issues[index].packageClassIndex
+                == expected.issues[index].packageClassIndex);
             QCOMPARE(actual.issues[index].teacherKey, expected.issues[index].teacherKey);
             QCOMPARE(actual.issues[index].targetClassId, expected.issues[index].targetClassId);
             QCOMPARE(actual.issues[index].targetTeacherId, expected.issues[index].targetTeacherId);
@@ -1591,7 +1643,8 @@ applyValidationReportsInvalidActionsWithInvalidResolutionKeys()
     };
 
     auto invalidClassIndex = baseline;
-    invalidClassIndex.classResolutions[0].packageClassIndex = -1;
+    invalidClassIndex.classResolutions[0].packageClassIndex =
+        ClassTransferPackageClassIndex{-1};
     invalidClassIndex.classResolutions[0].action =
         static_cast<ClassTransferReviewClassAction>(99);
     auto result = validateClassTransferApplyRequest(
@@ -1602,11 +1655,12 @@ applyValidationReportsInvalidActionsWithInvalidResolutionKeys()
     QVERIFY(hasReviewIssue(result, IssueCode::InvalidClassIndex));
     QVERIFY(result.issues.size() >= 2);
     QCOMPARE(result.issues[0].code, IssueCode::InvalidClassAction);
-    QCOMPARE(result.issues[0].packageClassIndex, -1);
+    QCOMPARE(result.issues[0].packageClassIndex.rawValue(), -1);
     QCOMPARE(result.issues[1].code, IssueCode::InvalidClassIndex);
 
     auto unknownClassIndex = baseline;
-    unknownClassIndex.classResolutions[0].packageClassIndex = 99;
+    unknownClassIndex.classResolutions[0].packageClassIndex =
+        ClassTransferPackageClassIndex{99};
     unknownClassIndex.classResolutions[0].action =
         static_cast<ClassTransferReviewClassAction>(99);
     result = validateClassTransferApplyRequest(
@@ -1617,7 +1671,7 @@ applyValidationReportsInvalidActionsWithInvalidResolutionKeys()
     QVERIFY(hasReviewIssue(result, IssueCode::UnknownClassResolution));
     QVERIFY(result.issues.size() >= 2);
     QCOMPARE(result.issues[0].code, IssueCode::InvalidClassAction);
-    QCOMPARE(result.issues[0].packageClassIndex, 99);
+    QCOMPARE(result.issues[0].packageClassIndex.rawValue(), 99);
     QCOMPARE(result.issues[1].code, IssueCode::UnknownClassResolution);
 
     auto emptyTeacherKey = baseline;
@@ -1657,8 +1711,10 @@ applyValidationPreservesResolutionIssueOrder()
 {
     using IssueCode = ClassTransferReviewDecisionIssueCode;
     auto request = validReviewRequest();
-    request.classResolutions[0].packageClassIndex = -1;
-    request.classResolutions[1].packageClassIndex = 99;
+    request.classResolutions[0].packageClassIndex =
+        ClassTransferPackageClassIndex{-1};
+    request.classResolutions[1].packageClassIndex =
+        ClassTransferPackageClassIndex{99};
     request.classResolutions[1].action =
         static_cast<ClassTransferReviewClassAction>(99);
     const ClassTransferApplyCandidates candidates{
@@ -1672,7 +1728,7 @@ applyValidationPreservesResolutionIssueOrder()
     QVERIFY(result.issues.size() >= 2);
     QCOMPARE(result.issues[0].code, IssueCode::InvalidClassIndex);
     QCOMPARE(result.issues[1].code, IssueCode::InvalidClassAction);
-    QCOMPARE(result.issues[1].packageClassIndex, 99);
+    QCOMPARE(result.issues[1].packageClassIndex.rawValue(), 99);
 }
 
 void NextApplicationClassTransferTests::

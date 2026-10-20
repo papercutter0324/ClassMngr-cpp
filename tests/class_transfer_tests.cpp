@@ -1595,7 +1595,7 @@ void ClassTransferTests::typedPreviewQueryNormalizesAndReturnsTypedCandidates()
                 std::to_string(destinationTeacherId))
         });
     QCOMPARE(typedPreview.classes.size(), std::size_t{1});
-    QCOMPARE(typedPreview.classes.front().packageClassIndex, 0);
+    QCOMPARE(typedPreview.classes.front().packageClassIndex.rawValue(), 0);
     QCOMPARE(typedPreview.classes.front().sourceKey.value(),
         sourceClass.key.toStdString());
     QCOMPARE(typedPreview.classes.front().matchingClassIds,
@@ -1688,7 +1688,7 @@ void ClassTransferTests::typedPreviewMatchesKoreanOnlyTeacherName()
                 std::to_string(destinationTeacherId))
         });
     QCOMPARE(result.value().classes.size(), std::size_t{1});
-    QCOMPARE(result.value().classes.front().packageClassIndex, 0);
+    QCOMPARE(result.value().classes.front().packageClassIndex.rawValue(), 0);
     QCOMPARE(result.value().classes.front().matchingClassIds,
         std::vector<ClassMngr::Next::Domain::ClassId>{
             *ClassMngr::Next::Domain::ClassId::fromString(
@@ -5647,7 +5647,8 @@ void ClassTransferTests::typedDialogRequestMatchesCompatibilityPlanAndGating()
     QCOMPARE(typed.teachers.size(), static_cast<std::size_t>(legacy.teachers.size()));
     for (std::size_t index = 0; index < typed.classes.size(); ++index)
     {
-        QCOMPARE(typed.classes[index].packageClassIndex, legacy.classes[index].packageClassIndex);
+        QCOMPARE(typed.classes[index].packageClassIndex.rawValue(),
+            legacy.classes[index].packageClassIndex);
         QCOMPARE(typed.classes[index].action, ClassMngr::Next::Application::ClassTransferReviewClassAction::Create);
         QVERIFY(!typed.classes[index].targetClassId);
     }

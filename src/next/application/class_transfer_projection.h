@@ -906,9 +906,33 @@ enum class ClassTransferReviewTeacherAction
     Invalid
 };
 
+class ClassTransferPackageClassIndex final
+{
+public:
+    constexpr ClassTransferPackageClassIndex() noexcept = default;
+
+    explicit constexpr ClassTransferPackageClassIndex(const int value) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ClassTransferPackageClassIndex&,
+        const ClassTransferPackageClassIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = -1;
+};
+
 struct ClassTransferReviewClassCandidate final
 {
-    int packageClassIndex = -1;
+    ClassTransferPackageClassIndex packageClassIndex;
     std::vector<Domain::ClassId> matchingClassIds;
     ClassTransferClassKey sourceKey;
 };
@@ -921,7 +945,7 @@ struct ClassTransferReviewTeacherCandidate final
 
 struct ClassTransferReviewClassResolution final
 {
-    int packageClassIndex = -1;
+    ClassTransferPackageClassIndex packageClassIndex;
     ClassTransferReviewClassAction action =
         ClassTransferReviewClassAction::Unselected;
     std::optional<Domain::ClassId> targetClassId = std::nullopt;
@@ -969,7 +993,7 @@ enum class ClassTransferReviewDecisionIssueCode
 struct ClassTransferReviewDecisionIssue final
 {
     ClassTransferReviewDecisionIssueCode code;
-    int packageClassIndex = -1;
+    ClassTransferPackageClassIndex packageClassIndex;
     ClassTransferTeacherKey teacherKey;
     std::optional<Domain::ClassId> targetClassId = std::nullopt;
     std::optional<Domain::TeacherId> targetTeacherId = std::nullopt;
@@ -1000,7 +1024,7 @@ validateClassTransferReviewDecisions(
         &result
     ](
         const IssueCode code,
-        const int packageClassIndex,
+        const ClassTransferPackageClassIndex packageClassIndex,
         const std::optional<Domain::ClassId>& target
         )
     {
@@ -1016,7 +1040,11 @@ validateClassTransferReviewDecisions(
         const std::optional<Domain::TeacherId>& target
         )
     {
-        Issue issue{code, -1, teacherKey};
+        Issue issue{
+            code,
+            ClassTransferPackageClassIndex{-1},
+            teacherKey
+        };
         issue.targetTeacherId = target;
         result.issues.push_back(std::move(issue));
     };
@@ -1024,7 +1052,7 @@ validateClassTransferReviewDecisions(
     std::map<int, const ClassTransferReviewClassCandidate*> classCandidates;
     for (const auto& candidate : request.classes)
     {
-        if (candidate.packageClassIndex < 0)
+        if (candidate.packageClassIndex.rawValue() < 0)
         {
             result.issues.push_back(
                 Issue{IssueCode::InvalidClassIndex,
@@ -1032,7 +1060,10 @@ validateClassTransferReviewDecisions(
                 );
             continue;
         }
-        classCandidates.emplace(candidate.packageClassIndex, &candidate);
+        classCandidates.emplace(
+            candidate.packageClassIndex.rawValue(),
+            &candidate
+            );
     }
 
     std::map<ClassTransferTeacherKey, const ClassTransferReviewTeacherCandidate*>
@@ -1088,7 +1119,7 @@ validateClassTransferReviewDecisions(
                       resolution.packageClassIndex}
                 );
         }
-        if (resolution.packageClassIndex < 0)
+        if (resolution.packageClassIndex.rawValue() < 0)
         {
             result.issues.push_back(
                 Issue{IssueCode::InvalidClassIndex,
@@ -1097,7 +1128,7 @@ validateClassTransferReviewDecisions(
             continue;
         }
         const auto candidate = classCandidates.find(
-            resolution.packageClassIndex);
+            resolution.packageClassIndex.rawValue());
         if (candidate == classCandidates.end())
         {
             result.issues.push_back(
@@ -1106,7 +1137,8 @@ validateClassTransferReviewDecisions(
                 );
             continue;
         }
-        if (classResolutions.contains(resolution.packageClassIndex))
+        if (classResolutions.contains(
+                resolution.packageClassIndex.rawValue()))
         {
             result.issues.push_back(
                 Issue{IssueCode::DuplicateClassResolution,
@@ -1114,7 +1146,10 @@ validateClassTransferReviewDecisions(
                 );
             continue;
         }
-        classResolutions.emplace(resolution.packageClassIndex, &resolution);
+        classResolutions.emplace(
+            resolution.packageClassIndex.rawValue(),
+            &resolution
+            );
 
         if (!actionIsValid)
         {
@@ -1152,7 +1187,7 @@ validateClassTransferReviewDecisions(
                     resolution.packageClassIndex,
                     resolution.targetClassId);
             }
-            claimants.push_back(resolution.packageClassIndex);
+            claimants.push_back(resolution.packageClassIndex.rawValue());
         }
         else if (resolution.targetClassId)
         {
@@ -1169,7 +1204,10 @@ validateClassTransferReviewDecisions(
         if (!classResolutions.contains(packageClassIndex))
         {
             result.issues.push_back(
-                Issue{IssueCode::MissingClassResolution, packageClassIndex}
+                Issue{
+                    IssueCode::MissingClassResolution,
+                    ClassTransferPackageClassIndex{packageClassIndex}
+                }
                 );
         }
     }
@@ -1185,7 +1223,7 @@ validateClassTransferReviewDecisions(
         {
             result.issues.push_back(
                 Issue{IssueCode::InvalidTeacherAction,
-                      -1,
+                      ClassTransferPackageClassIndex{-1},
                       resolution.teacherKey}
                 );
         }
@@ -1199,7 +1237,7 @@ validateClassTransferReviewDecisions(
         {
             result.issues.push_back(
                 Issue{IssueCode::UnknownTeacherResolution,
-                      -1,
+                      ClassTransferPackageClassIndex{-1},
                       resolution.teacherKey}
                 );
             continue;
@@ -1208,7 +1246,7 @@ validateClassTransferReviewDecisions(
         {
             result.issues.push_back(
                 Issue{IssueCode::DuplicateTeacherResolution,
-                      -1,
+                      ClassTransferPackageClassIndex{-1},
                       resolution.teacherKey}
                 );
             continue;
@@ -1282,7 +1320,7 @@ validateClassTransferReviewDecisions(
         {
             result.issues.push_back(
                 Issue{IssueCode::MissingTeacherResolution,
-                      -1,
+                      ClassTransferPackageClassIndex{-1},
                       teacherKey}
                 );
         }

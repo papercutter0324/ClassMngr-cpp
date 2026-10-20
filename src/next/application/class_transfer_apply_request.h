@@ -73,7 +73,8 @@ classTransferApplyTeacherDestinationId(const TypedId& id)
             ClassTransferReviewDecisionIssue issue{
                 choice.action == TeacherAction::Create ? Code::CreateTeacherHasTarget
                                                       : Code::TeacherActionMissingTarget,
-                -1, choice.teacherKey};
+                ClassTransferPackageClassIndex{-1},
+                choice.teacherKey};
             issue.targetTeacherId = choice.targetTeacherId;
             return {{std::move(issue)}};
         }

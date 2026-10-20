@@ -38,7 +38,7 @@ Application::ClassTransferApplyCommand command()
 
     Application::ClassTransferApplyRequest choices;
     choices.classes.push_back({
-        0,
+        Application::ClassTransferPackageClassIndex{0},
         Application::ClassTransferReviewClassAction::Create,
         std::nullopt
     });
@@ -101,7 +101,7 @@ forwardsPackageChoicesAndSummary()
     QCOMPARE(port.received.package.classes.front().key.value(),
         std::u16string(u"class-1"));
     QCOMPARE(port.received.choices.classes.size(), std::size_t(1));
-    QCOMPARE(port.received.choices.classes.front().packageClassIndex, 0);
+    QCOMPARE(port.received.choices.classes.front().packageClassIndex.rawValue(), 0);
     QCOMPARE(port.received.choices.classes.front().action,
         Application::ClassTransferReviewClassAction::Create);
     QCOMPARE(result.value().createdClassIds.size(), std::size_t(1));

@@ -117,21 +117,21 @@ void assemblesInSourceAndDestinationOrderWithTypedIds()
         "third teacher candidate was not retained");
 
     require(preview.classes.size() == 4, "class source order was lost");
-    require(preview.classes[0].packageClassIndex == 4,
+    require(preview.classes[0].packageClassIndex.rawValue() == 4,
         "first package class index was not retained");
     require(preview.classes[0].sourceKey.value() == "class-b",
         "class source key was not retained");
     require(preview.classes[0].matchingClassIds
             == std::vector<Domain::ClassId>{classId("90")},
         "assigned teacher class match must retain its typed ID");
-    require(preview.classes[1].packageClassIndex == 1
+    require(preview.classes[1].packageClassIndex.rawValue() == 1
             && preview.classes[1].matchingClassIds
                 == std::vector<Domain::ClassId>{classId("80"), classId("85")},
         "unknown source teacher key must match only unassigned classes in destination order");
-    require(preview.classes[2].packageClassIndex == 9
+    require(preview.classes[2].packageClassIndex.rawValue() == 9
             && preview.classes[2].matchingClassIds.empty(),
         "incomplete source course must have no class matches");
-    require(preview.classes[3].packageClassIndex == 7
+    require(preview.classes[3].packageClassIndex.rawValue() == 7
             && preview.classes[3].sourceKey.value() == "class-empty-teacher"
             && preview.classes[3].matchingClassIds
                 == std::vector<Domain::ClassId>{classId("80"), classId("85")},
@@ -171,7 +171,7 @@ void skipsReadForRequestsThatCannotMatch()
     require(result.hasValue(), "empty-match preview should succeed");
     require(port.calls == 0, "empty destination need must skip the read port");
     require(result.value().classes.size() == 1
-            && result.value().classes.front().packageClassIndex == 5
+            && result.value().classes.front().packageClassIndex.rawValue() == 5
             && result.value().classes.front().sourceKey.value() == "class-5"
             && result.value().classes.front().matchingClassIds.empty(),
         "empty-match class candidate should still be returned");
