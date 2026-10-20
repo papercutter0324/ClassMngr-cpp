@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch496 is active with F1219–F1225 complete and F1226 accepted/current; Batch497's eight candidates are queued for after Batch496 closes, and F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch497 is active with eight discovered candidates and F1227 next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1226 is accepted/current after two independent Explorer reviews; it will type separate teacher and class positions into their prepared Sub Prep policy arrays while preserving grouping and sort behavior (see [F1226 acceptance](03-Phase-2-Progress-Log.md#f1226-sub-prep-print-group-and-class-positions-accepted-before-implementation-2026-10-21)). Batch497 discovery is complete with eight queued candidates (see [Batch497 discovery](03-Phase-2-Progress-Log.md#batch497-discovery-started-2026-10-21)). Batch496 remains active and unpushed; F629 plus the Phase 0 and Phase 2 gates remain open.
+F1226 completed at implementation commit `9a31f744`; its three focused policy, model, and mapper CTests passed (see [F1226 completion](03-Phase-2-Progress-Log.md#f1226-sub-prep-print-group-and-class-positions-complete-2026-10-21)). Batch496 is complete locally and Batch497 is now active with F1227 next for acceptance. F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,18 +72,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch496 (8 candidates; 7 complete, 1 accepted/current)
-
-1. F1219 - **Complete.** Type AI accepted-comment planner source-row coordinates; preserve `-1` propagation, input order, and downstream invalid-row skips (see [completion](03-Phase-2-Progress-Log.md#f1219-ai-accepted-comment-source-row-complete-2026-10-21)).
-2. F1220 - **Complete.** Type Schedule Import matching candidate positions; preserve candidate order and projection behavior (see [completion](03-Phase-2-Progress-Log.md#f1220-schedule-import-matching-candidate-index-complete-2026-10-21)).
-3. F1221 - **Complete.** Type Roster Availability accumulator row and source-column coordinates as distinct signed values; preserve bounds checks, no-mutation failures, and projection filtering (see [completion](03-Phase-2-Progress-Log.md#f1221-roster-availability-accumulator-coordinates-complete-2026-10-21)).
-4. F1222 - **Complete.** Type Class Transfer schedule-conflict positions with distinct incoming/other types; preserve the conditional vector meaning of `otherIndex` and conflict order (see [completion](03-Phase-2-Progress-Log.md#f1222-class-transfer-schedule-conflict-positions-complete-2026-10-21)).
-5. F1223 - **Complete.** Reuse the explicit Schedule Import state candidate index for resolutions and candidate references; preserve action-specific validation and candidate/projection ordering (see [completion](03-Phase-2-Progress-Log.md#f1223-schedule-import-state-resolution-candidate-index-complete-2026-10-21)).
-6. F1224 - **Complete.** Type Testing Classes ordered row positions; preserve grade/level/text ordering and the existing unspecified exact-tie order (see [completion](03-Phase-2-Progress-Log.md#f1224-testing-classes-ordered-row-positions-complete-2026-10-21)).
-7. F1225 - **Complete.** Type Analytics criterion-extrema positions; preserve empty results and tied-index order (see [completion](03-Phase-2-Progress-Log.md#f1225-analytics-criterion-extrema-positions-complete-2026-10-21)).
-8. F1226 - **Accepted/current.** Type Sub Prep print group and class positions in their prepared policy arrays; preserve group/class ordering and source mapping (see [acceptance](03-Phase-2-Progress-Log.md#f1226-sub-prep-print-group-and-class-positions-accepted-before-implementation-2026-10-21)).
-
-#### Discovered next batch: Batch497 (8 candidates; starts after Batch496 closes)
+#### Active batch: Batch497 (8 candidates; 8 discovered)
 
 1. F1227 - **Discovered.** Type Schedule Import eligibility issue candidate positions; preserve first-failing-candidate mapping and default-zero issue behavior.
 2. F1228 - **Discovered.** Type Sub Prep visible-class ordering positions; preserve configured ordering, stable ties, and source-row mapping.

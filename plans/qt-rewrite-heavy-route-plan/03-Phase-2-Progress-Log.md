@@ -56335,4 +56335,36 @@ Preserve model filtering and group ordering in
 `ClassMngrNextApplicationSubPrepPrintOrderPolicyTests`,
 `ClassMngrSubPrepClassInformationModelTests`, and
 `ClassMngrSubPrepPrintSourceMapperTests`; build the app and these targets. No
-F1226 implementation or verification has started.
+F1226 implementation or verification had started when acceptance was recorded.
+
+### F1226 Sub Prep print group and class positions complete - 2026-10-21
+
+F1226 completed at implementation commit `9a31f744` (`Phase2 - Type Sub Prep
+print positions`), following acceptance-record commit `ad949a04` and the
+coverage clarification commit `397c727d`. `SubPrepPrintTeacherIndex` and
+`SubPrepPrintClassIndex` are distinct explicit `std::size_t` value types with
+zero defaults, private storage, `.rawValue()`, equality, and no implicit
+conversions. The group fields and teacher-name comparator use the matching
+types. Positions address the prepared teacher and class fact arrays; the
+Feature model's source filtering and alignment remain unchanged.
+
+Teacher and class ordering keys remain unchanged. Unmatched class teacher IDs
+are skipped; every input teacher still has a group, empty teacher input still
+returns no groups, and exact comparator ties retain the existing
+`std::sort`-unspecified order. Tests cover wrapper semantics and type
+distinction, callback and result-field types, empty teachers, unmatched
+classes, input-position lookups, ordering, Feature filtering, and ordered print
+mapping.
+
+The Executor built `ClassMngr` and the policy, class-information model, and
+print-source mapper test targets in `build/macos-clang-debug`. The independent
+Tester confirmed the build (Ninja reported no work), passed all three focused
+CTests, and confirmed `git diff --check`. This was incremental macOS
+`arm64;x86_64` Debug verification; no full-suite or Windows result is claimed.
+
+### Batch496 complete locally - 2026-10-21
+
+Batch496 is complete with all eight slices F1219–F1226 implemented and their
+focused verification recorded. Batch497 is now the active batch with eight
+discovered candidates, F1227–F1234; its first slice is ready for acceptance.
+The Batch496 push receipt follows.
