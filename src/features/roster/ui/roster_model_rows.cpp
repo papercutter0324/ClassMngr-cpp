@@ -170,7 +170,7 @@ bool RosterModel::canRemoveRow(
     const auto result =
         ClassMngr::Next::Application::removeRosterRow(
             applicationSnapshot(m_columns, m_rows),
-            row
+            ClassMngr::Next::Application::RosterRowRemovalIndex{row}
             );
     const auto* error =
         std::get_if<
@@ -205,7 +205,7 @@ bool RosterModel::removeRosterRow(
     auto result =
         ClassMngr::Next::Application::removeRosterRow(
             applicationSnapshot(m_columns, m_rows),
-            row
+            ClassMngr::Next::Application::RosterRowRemovalIndex{row}
             );
     auto* removed =
         std::get_if<ClassMngr::Next::Application::RosterSnapshot>(&result);

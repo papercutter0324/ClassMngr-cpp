@@ -117,7 +117,10 @@ public:
         }
 
         const int sourceRow = request.sourceRow.rawValue();
-        auto removed = removeRosterRow(request.sourceRoster, sourceRow);
+        auto removed = removeRosterRow(
+            request.sourceRoster,
+            RosterRowRemovalIndex{sourceRow}
+            );
         if (const auto* error = std::get_if<RosterRowRemovalError>(&removed))
             return *error;
 

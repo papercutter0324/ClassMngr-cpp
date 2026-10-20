@@ -2,13 +2,19 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <type_traits>
 #include <variant>
 
+using ClassMngr::Next::Application::RosterRowRemovalIndex;
 using ClassMngr::Next::Application::RosterRowRemovalError;
 using ClassMngr::Next::Application::RosterRowRemovalErrorCode;
 using ClassMngr::Next::Application::RosterRowRemovalResult;
 using ClassMngr::Next::Application::RosterSnapshot;
 using ClassMngr::Next::Application::removeRosterRow;
+
+static_assert(std::is_constructible_v<RosterRowRemovalIndex, int>);
+static_assert(!std::is_convertible_v<int, RosterRowRemovalIndex>);
+static_assert(!std::is_convertible_v<RosterRowRemovalIndex, int>);
 
 namespace
 {
@@ -36,10 +42,20 @@ bool isError(
     return error && error->code == expected;
 }
 
+bool removalIndexHasExplicitSignedValueSemantics()
+{
+    const RosterRowRemovalIndex defaultIndex;
+    const RosterRowRemovalIndex negativeIndex{-3};
+    return defaultIndex.rawValue() == -1
+        && negativeIndex.rawValue() == -3
+        && negativeIndex == RosterRowRemovalIndex{-3}
+        && negativeIndex != defaultIndex;
+}
+
 bool compactsCompleteRowsAndPreservesSnapshotMetadata()
 {
     const RosterSnapshot original = sampleRoster();
-    const auto result = removeRosterRow(original, 1);
+    const auto result = removeRosterRow(original, RosterRowRemovalIndex{1});
 
     RosterSnapshot expected = original;
     expected.rows = {
@@ -59,7 +75,7 @@ bool compactsCompleteRowsAndPreservesSnapshotMetadata()
 bool clearsTheLastSlotWhenRemovingTheLastPopulatedRow()
 {
     const RosterSnapshot original = sampleRoster();
-    const auto result = removeRosterRow(original, 3);
+    const auto result = removeRosterRow(original, RosterRowRemovalIndex{3});
 
     RosterSnapshot expected = original;
     expected.rows.back() = {u"", u"", u""};
@@ -71,15 +87,15 @@ bool rejectsInvalidIndexes()
 {
     const RosterSnapshot roster = sampleRoster();
     return isError(
-               removeRosterRow(roster, -1),
+               removeRosterRow(roster, RosterRowRemovalIndex{-1}),
                RosterRowRemovalErrorCode::InvalidRowIndex
                )
         && isError(
-               removeRosterRow(roster, 4),
+               removeRosterRow(roster, RosterRowRemovalIndex{4}),
                RosterRowRemovalErrorCode::InvalidRowIndex
                )
         && isError(
-               removeRosterRow(RosterSnapshot{}, 0),
+               removeRosterRow(RosterSnapshot{}, RosterRowRemovalIndex{0}),
                RosterRowRemovalErrorCode::InvalidRowIndex
                );
 }
@@ -99,20 +115,26 @@ bool rejectsEmptyAndQStringTrimmedWhitespaceOnlyRows()
     };
 
     return isError(
-               removeRosterRow(roster, 0),
+               removeRosterRow(roster, RosterRowRemovalIndex{0}),
                RosterRowRemovalErrorCode::RowHasNoData
                )
         && isError(
-               removeRosterRow(roster, 1),
+               removeRosterRow(roster, RosterRowRemovalIndex{1}),
                RosterRowRemovalErrorCode::RowHasNoData
                )
-        && std::holds_alternative<RosterSnapshot>(removeRosterRow(roster, 2));
+        && std::holds_alternative<RosterSnapshot>(removeRosterRow(
+            roster, RosterRowRemovalIndex{2}));
 }
 
 } // namespace
 
 int main()
 {
+    if (!removalIndexHasExplicitSignedValueSemantics())
+    {
+        std::fprintf(stderr, "Removal index value semantics were incorrect.\n");
+        return EXIT_FAILURE;
+    }
     if (!compactsCompleteRowsAndPreservesSnapshotMetadata())
     {
         std::fprintf(stderr, "Row compaction or snapshot metadata was incorrect.\n");

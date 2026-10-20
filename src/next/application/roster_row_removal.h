@@ -10,6 +10,30 @@
 namespace ClassMngr::Next::Application
 {
 
+class RosterRowRemovalIndex final
+{
+public:
+    constexpr RosterRowRemovalIndex() noexcept = default;
+
+    explicit constexpr RosterRowRemovalIndex(const int value) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const RosterRowRemovalIndex&,
+        const RosterRowRemovalIndex&
+        ) = default;
+
+private:
+    int m_value = -1;
+};
+
 enum class RosterRowRemovalErrorCode
 {
     InvalidRowIndex,
@@ -33,9 +57,10 @@ using RosterRowRemovalResult =
 // slot. Snapshot columns and width metadata remain unchanged.
 [[nodiscard]] inline RosterRowRemovalResult removeRosterRow(
     const RosterSnapshot& roster,
-    const int row
+    const RosterRowRemovalIndex rowIndex
     )
 {
+    const int row = rowIndex.rawValue();
     const std::size_t rowCount = roster.rows.size();
     if (row < 0 || static_cast<std::size_t>(row) >= rowCount)
     {

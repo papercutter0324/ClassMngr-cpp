@@ -111,7 +111,10 @@ bool successProjectsAndCompactsWithoutMutatingInputs()
     const auto* ok = std::get_if<RosterRowTransferSuccess>(&result);
     if (!ok || ok->destinationRow.rawValue() != 1 || !ports.saved) return false;
     const auto& saved = *ports.saved;
-    const auto removedSource = removeRosterRow(sourceBefore, 0);
+    const auto removedSource = removeRosterRow(
+        sourceBefore,
+        RosterRowRemovalIndex{0}
+        );
     if (!std::holds_alternative<RosterSnapshot>(removedSource)) return false;
     const auto preparedSource = prepareRosterSaveText(
         std::get<RosterSnapshot>(removedSource), true,
