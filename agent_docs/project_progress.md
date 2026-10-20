@@ -53,16 +53,17 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (Batch487 closed and pushed; F1154-F1155 complete; F1156 next; F629 open)
+### Current checkpoint - 2026-10-20 (Batch487 closed and pushed; F1154-F1156 complete; F1157 next; F629 open)
 
 Batch487 (F1144–F1153) is closed and pushed to `origin/Qt-Rewrite` at
-`c3c06e2f5432933a0e8b7df629e25b2afa920e2c`. Batch488 is active: F1154 and
-F1155 are complete at source/test commits `8dc20e2439048aaa076fa0ba35a9e6cc691e2127`
-and `743e4433162f6c6e644b6e80b942817c9bc502b4`; F1156 is next, with six
-discovered candidates remaining in Batch488. F629 still awaits source-bound
-Windows x64 layout evidence; the user cannot run Windows now. Phase 0 and
-Phase 2 gates remain open. The Phase 2 progress log records F1154 and F1155
-acceptance and focused verification details.
+`c3c06e2f5432933a0e8b7df629e25b2afa920e2c`. Batch488 is active: F1154,
+F1155, and F1156 are complete; F1156's source/test commit is
+`55994e4feabbbe35fdad70ac00e28b8045799b5c`. F1157 is next, with five
+discovered candidates remaining. F629 still awaits source-bound Windows x64
+layout evidence; the user cannot run Windows now. Phase 0 and Phase 2 gates
+remain open. The Phase 2 progress log records acceptance, implementation, and
+focused verification for the completed slices, including four outstanding
+ClassesPage assertions outside F1156's grade behavior.
 
 F1148 completed at source/test commit
 `5a1756f54173affb33853f3e5dd0b8d8b3ce793d`, after acceptance commit

@@ -51509,3 +51509,50 @@ incrementally build `ClassMngr`,
 CTests (Qt offscreen for the GUI target), then run `git diff --check`. No full
 suite or Windows pass is claimed. Implementation and verification have not
 started.
+
+### F1156 Selected Class grade complete - 2026-10-20
+
+F1156 completed in source/test commit
+`55994e4feabbbe35fdad70ac00e28b8045799b5c`, following acceptance commit
+`9a7db7a3fd41f6abeeb585f11ca8d014c00cd60c`. The Qt-free Application value
+`SelectedClassGradeValue` is an owning `std::string` wrapper with an empty
+default, `value()` accessor, equality, and no implicit conversions. The
+snapshot carries the wrapper; Application does not validate, normalize, or
+interpret grade through Course. Platform preserves the exact UTF-8 bytes from
+QString. Existing consumers unwrap only where they already interpret grade,
+preserving class-tab behavior and evaluation default classification. No
+repository code changed.
+
+`tests/classes_page_test_support.cpp` now feeds, counts, and injects failure
+through `loadSelectedClassGradeRecordDetailed`; its legacy read delegates
+through that path, so existing grade tests exercise the active adapter route.
+
+Focused builds passed for `ClassMngr`, the Application query and Platform port
+tests, ClassesPage tests, EvaluationDefaultSelection unit tests, and
+EvaluationDefaultSelection integration tests in `build/macos-clang-debug` on
+macOS arm64 with Apple LLVM 17 and Qt 6.12.0. Application query CTest passed 6
+slots, Platform port CTest 8, evaluation unit CTest 7, and evaluation
+integration CTest 6 (27 total). F1156 selectors
+`middleSchoolAnalyticsAndEvaluationsTabsFollowPreference` and
+`selectedClassGradeFailureFailsOpenWithoutDataServiceFallback` each passed 3
+QtTest results including setup and cleanup. `git diff --check` passed; GUI
+tests used the offscreen platform.
+
+The `ClassMngrClassesPageTests` CTest had 45 passed and 4 failed:
+`selectedClassSubtitleUsesIndependentReadOutcomesAndRefreshes` (subtitle
+assertion at `tests/classes_page_tests.cpp:1928`),
+`rosterEditorSubtitleUsesSelectedClassSubtitleRead` (subtitle assertion at
+`:2033`), `classInfoShowsInlineValidationAndBlocksManualSave`
+(`hasUnsavedChanges` at `:2676`), and
+`headerKeyboardReplacesEmbeddedRosterButton` (button enabled at `:2957`). An
+independent review traced these failures to subtitle, class-details, and
+roster-editor paths; none failed on either modified F1156 consumer/accessor.
+Their baseline status is unestablished, so these failures remain unadjudicated.
+No full suite or Windows build ran.
+
+Batch488 remains active with eight candidates: F1154–F1156 are complete, none
+are accepted/in progress, and five remain discovered with F1157 next. The
+original discovery order and boundaries are unchanged. The batch has no push
+receipt and is not closed. F629 awaits source-bound Windows x64 layout
+evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates
+remain open.
