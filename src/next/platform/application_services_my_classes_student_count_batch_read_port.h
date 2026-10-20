@@ -163,7 +163,9 @@ public:
             {
                 entries.push_back({
                     .classId = classIds[index],
-                    .studentCount = Domain::Result<int>::failure(error(
+                    .studentCount = Domain::Result<
+                        Application::MyClassesStudentCount
+                        >::failure(error(
                         Domain::ErrorCode::Validation,
                         "The My Classes roster repository returned entries in a different identifier order.",
                         false
@@ -176,7 +178,9 @@ public:
             {
                 entries.push_back({
                     .classId = classIds[index],
-                    .studentCount = Domain::Result<int>::failure(error(
+                    .studentCount = Domain::Result<
+                        Application::MyClassesStudentCount
+                        >::failure(error(
                         Domain::ErrorCode::NotFound,
                         "The requested class does not exist.",
                         true
@@ -189,7 +193,9 @@ public:
             {
                 entries.push_back({
                     .classId = classIds[index],
-                    .studentCount = Domain::Result<int>::failure(
+                    .studentCount = Domain::Result<
+                        Application::MyClassesStudentCount
+                        >::failure(
                         repositoryError(source.studentCount.error())
                         )
                 });
@@ -198,8 +204,12 @@ public:
 
             entries.push_back({
                 .classId = classIds[index],
-                .studentCount = Domain::Result<int>::success(
-                    source.studentCount.value()
+                .studentCount = Domain::Result<
+                    Application::MyClassesStudentCount
+                    >::success(
+                    Application::MyClassesStudentCount(
+                        source.studentCount.value()
+                        )
                     )
             });
         }
@@ -275,7 +285,9 @@ private:
         {
             entries.push_back({
                 .classId = classId,
-                .studentCount = Domain::Result<int>::failure(failure)
+                .studentCount = Domain::Result<
+                    Application::MyClassesStudentCount
+                    >::failure(failure)
             });
         }
         return Application::MyClassesStudentCountBatchReadResult::success(

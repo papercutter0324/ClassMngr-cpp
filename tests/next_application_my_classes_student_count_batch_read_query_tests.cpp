@@ -2,11 +2,18 @@
 
 #include <QtTest/QtTest>
 
+#include <limits>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next;
+
+static_assert(!std::is_convertible_v<
+    int,
+    Application::MyClassesStudentCount
+    >);
 
 namespace
 {
@@ -23,7 +30,9 @@ Application::MyClassesStudentCountBatchReadEntry successfulEntry(
 {
     return {
         .classId = id,
-        .studentCount = Domain::Result<int>::success(count)
+        .studentCount = Domain::Result<
+            Application::MyClassesStudentCount
+            >::success(Application::MyClassesStudentCount(count))
     };
 }
 
@@ -84,19 +93,23 @@ preservesOrderedPerClassSuccessAndFailure()
 {
     FakeMyClassesStudentCountBatchReadPort port;
     const std::vector<Domain::ClassId> requested{
-        classId("42"), classId("7"), classId("100")
+        classId("42"), classId("7"), classId("100"), classId("101")
+    };
+    const Domain::OperationError expectedRowError{
+        .code = Domain::ErrorCode::Technical,
+        .message = "class 7 roster failed",
+        .recoverable = true
     };
     port.result = Application::MyClassesStudentCountBatchReadResult::success({
         successfulEntry(requested[0], 4),
         {
             .classId = requested[1],
-            .studentCount = Domain::Result<int>::failure({
-                .code = Domain::ErrorCode::Technical,
-                .message = "class 7 roster failed",
-                .recoverable = true
-            })
+            .studentCount = Domain::Result<
+                Application::MyClassesStudentCount
+                >::failure(expectedRowError)
         },
-        successfulEntry(requested[2], 0)
+        successfulEntry(requested[2], 0),
+        successfulEntry(requested[3], std::numeric_limits<int>::max())
     });
 
     const Application::MyClassesStudentCountBatchReadQuery query(port);
@@ -108,14 +121,19 @@ preservesOrderedPerClassSuccessAndFailure()
     QCOMPARE(result.value().size(), requested.size());
     QVERIFY(result.value()[0].classId == requested[0]);
     QVERIFY(result.value()[0].studentCount);
-    QCOMPARE(result.value()[0].studentCount.value(), 4);
+    QCOMPARE(result.value()[0].studentCount.value().rawValue(), 4);
     QVERIFY(result.value()[1].classId == requested[1]);
     QVERIFY(!result.value()[1].studentCount);
-    QCOMPARE(result.value()[1].studentCount.error().message,
-             std::string("class 7 roster failed"));
+    QVERIFY(result.value()[1].studentCount.error() == expectedRowError);
     QVERIFY(result.value()[2].classId == requested[2]);
     QVERIFY(result.value()[2].studentCount);
-    QCOMPARE(result.value()[2].studentCount.value(), 0);
+    QCOMPARE(result.value()[2].studentCount.value().rawValue(), 0);
+    QVERIFY(result.value()[3].classId == requested[3]);
+    QVERIFY(result.value()[3].studentCount);
+    QCOMPARE(
+        result.value()[3].studentCount.value().rawValue(),
+        std::numeric_limits<int>::max()
+        );
 }
 
 void NextApplicationMyClassesStudentCountBatchReadQueryTests::
@@ -168,6 +186,13 @@ rejectsEntryCountOrderAndNegativeCount()
     const auto shortResult = query.execute(requested);
     QVERIFY(!shortResult);
     QCOMPARE(shortResult.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        shortResult.error().message,
+        std::string(
+            "A My Classes student-count batch returned a different number of entries."
+            )
+        );
+    QVERIFY(!shortResult.error().recoverable);
 
     port.result = Application::MyClassesStudentCountBatchReadResult::success({
         successfulEntry(requested.back(), 2),
@@ -176,6 +201,13 @@ rejectsEntryCountOrderAndNegativeCount()
     const auto reorderedResult = query.execute(requested);
     QVERIFY(!reorderedResult);
     QCOMPARE(reorderedResult.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        reorderedResult.error().message,
+        std::string(
+            "A My Classes student-count batch returned entries in a different identifier order."
+            )
+        );
+    QVERIFY(!reorderedResult.error().recoverable);
 
     port.result = Application::MyClassesStudentCountBatchReadResult::success({
         successfulEntry(requested.front(), -1),
@@ -184,6 +216,11 @@ rejectsEntryCountOrderAndNegativeCount()
     const auto negativeResult = query.execute(requested);
     QVERIFY(!negativeResult);
     QCOMPARE(negativeResult.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        negativeResult.error().message,
+        std::string("A My Classes student-count batch returned a negative count.")
+        );
+    QVERIFY(!negativeResult.error().recoverable);
 }
 
 void NextApplicationMyClassesStudentCountBatchReadQueryTests::

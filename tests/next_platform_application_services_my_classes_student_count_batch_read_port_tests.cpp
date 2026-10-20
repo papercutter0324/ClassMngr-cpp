@@ -246,9 +246,9 @@ readsCountsInRequestedOrderWithExactHeadersAndQtWhitespace()
         QVERIFY(loaded.value()[index].classId == requested[index]);
         QVERIFY(loaded.value()[index].studentCount);
     }
-    QCOMPARE(loaded.value()[0].studentCount.value(), 3);
-    QCOMPARE(loaded.value()[1].studentCount.value(), 0);
-    QCOMPARE(loaded.value()[2].studentCount.value(), 3);
+    QCOMPARE(loaded.value()[0].studentCount.value().rawValue(), 3);
+    QCOMPARE(loaded.value()[1].studentCount.value().rawValue(), 0);
+    QCOMPARE(loaded.value()[2].studentCount.value().rawValue(), 3);
 
     const auto after = repository->myClassesStudentCountBatchReadMetrics();
     QCOMPARE(after.callCount, before.callCount + 1);
@@ -335,7 +335,7 @@ reportsMissingParentsInBatchWithoutCountingOrphans()
     QVERIFY(loaded.value()[0].studentCount.error().recoverable);
     QVERIFY(loaded.value()[1].classId == classId(siblingId));
     QVERIFY(loaded.value()[1].studentCount);
-    QCOMPARE(loaded.value()[1].studentCount.value(), 2);
+    QCOMPARE(loaded.value()[1].studentCount.value().rawValue(), 2);
     QVERIFY(loaded.value()[2].classId == classId(neverPresentId));
     QVERIFY(!loaded.value()[2].studentCount);
     QCOMPARE(loaded.value()[2].studentCount.error().code,
@@ -343,7 +343,7 @@ reportsMissingParentsInBatchWithoutCountingOrphans()
     QVERIFY(loaded.value()[2].studentCount.error().recoverable);
     QVERIFY(loaded.value()[3].classId == classId(noColumnsId));
     QVERIFY(loaded.value()[3].studentCount);
-    QCOMPARE(loaded.value()[3].studentCount.value(), 0);
+    QCOMPARE(loaded.value()[3].studentCount.value().rawValue(), 0);
 
     const auto after = repository->myClassesStudentCountBatchReadMetrics();
     QCOMPARE(after.callCount, before.callCount + 1);
@@ -462,7 +462,7 @@ rejectsFractionalRowIndexInBatchAndFallbackStudentCounts()
         != std::string::npos);
     QVERIFY(loaded.value()[1].classId == classId(siblingId));
     QVERIFY(loaded.value()[1].studentCount);
-    QCOMPARE(loaded.value()[1].studentCount.value(), 2);
+    QCOMPARE(loaded.value()[1].studentCount.value().rawValue(), 2);
 
     const auto after = repository->myClassesStudentCountBatchReadMetrics();
     QCOMPARE(after.callCount, before.callCount + 1);
@@ -560,14 +560,14 @@ reportsMissingParentsAfterPerClassFallback()
     QVERIFY(loaded.value()[0].studentCount.error().recoverable);
     QVERIFY(loaded.value()[1].classId == classId(siblingId));
     QVERIFY(loaded.value()[1].studentCount);
-    QCOMPARE(loaded.value()[1].studentCount.value(), 2);
+    QCOMPARE(loaded.value()[1].studentCount.value().rawValue(), 2);
     QVERIFY(loaded.value()[2].classId == classId(malformedId));
     QVERIFY(!loaded.value()[2].studentCount);
     QCOMPARE(loaded.value()[2].studentCount.error().code,
              Domain::ErrorCode::Technical);
     QVERIFY(loaded.value()[3].classId == classId(noColumnsId));
     QVERIFY(loaded.value()[3].studentCount);
-    QCOMPARE(loaded.value()[3].studentCount.value(), 0);
+    QCOMPARE(loaded.value()[3].studentCount.value().rawValue(), 0);
     QVERIFY(loaded.value()[4].classId == classId(neverPresentId));
     QVERIFY(!loaded.value()[4].studentCount);
     QCOMPARE(loaded.value()[4].studentCount.error().code,
@@ -682,7 +682,7 @@ countsDistinctRowsAboveIntMax()
     QCOMPARE(loaded.value().size(), std::size_t(1));
     QVERIFY(loaded.value().front().classId == classId(classIdValue));
     QVERIFY(loaded.value().front().studentCount);
-    QCOMPARE(loaded.value().front().studentCount.value(), 2);
+    QCOMPARE(loaded.value().front().studentCount.value().rawValue(), 2);
 }
 
 void NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests::

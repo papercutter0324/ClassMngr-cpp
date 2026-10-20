@@ -202,6 +202,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/my_classes_teacher_profile_batch_read_snapshot.h
     src/next/application/my_classes_teacher_profile_batch_read_port.h
     src/next/application/my_classes_teacher_profile_batch_read_query.h
+    src/next/application/my_classes_student_count.h
     src/next/application/my_classes_student_count_batch_read_snapshot.h
     src/next/application/my_classes_student_count_batch_read_port.h
     src/next/application/my_classes_student_count_batch_read_query.h

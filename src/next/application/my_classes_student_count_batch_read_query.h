@@ -79,7 +79,8 @@ public:
                     );
             }
 
-            if (entry.studentCount && entry.studentCount.value() < 0)
+            if (entry.studentCount
+                && entry.studentCount.value().rawValue() < 0)
             {
                 return validationFailure(
                     "A My Classes student-count batch returned a negative count."

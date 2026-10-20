@@ -918,7 +918,7 @@ void MyClassesPage::rebuildClassInformation()
                 {
                     studentCountText = QString::number(
                         loadedStudentCounts.value()
-                            .front().studentCount.value()
+                            .front().studentCount.value().rawValue()
                         );
                 }
 
