@@ -6,20 +6,22 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). Batch499 is complete and pushed at `cc38c959` (see its [push receipt](03-Phase-2-Progress-Log.md#batch499-push-receipt-2026-10-21)). Batch500 (F1243–F1252) is complete and pushed at `029a17e8` (see [push receipt](03-Phase-2-Progress-Log.md#batch500-push-receipt-2026-10-21)); Batch501 (F1253–F1256) is complete and pushed at `7f8ca958` (see [push receipt](03-Phase-2-Progress-Log.md#batch501-push-receipt-2026-10-21)); Batch502 (F1257–F1261) is complete and pushed at `20385114` (see its [push receipt](03-Phase-2-Progress-Log.md#batch502-push-receipt-2026-10-21)); no slice batch is active and Phase 2 gate work is next. F629 and the Phase 0 and Phase 2 gates remain open.
-- Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
+- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). Batch499 is complete and pushed at `cc38c959` (see its [push receipt](03-Phase-2-Progress-Log.md#batch499-push-receipt-2026-10-21)). Batch500 (F1243–F1252) is complete and pushed at `029a17e8` (see [push receipt](03-Phase-2-Progress-Log.md#batch500-push-receipt-2026-10-21)); Batch501 (F1253–F1256) is complete and pushed at `7f8ca958` (see [push receipt](03-Phase-2-Progress-Log.md#batch501-push-receipt-2026-10-21)); Batch502 (F1257–F1261) is complete and pushed at `20385114` (see its [push receipt](03-Phase-2-Progress-Log.md#batch502-push-receipt-2026-10-21)). Batch504 has one active accepted slice, F1264 (see [acceptance](03-Phase-2-Progress-Log.md#f1264-speaking-evaluation-korean-name-unicode-whitespace-parity-accepted-before-implementation-2026-10-21)); Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open. Phase 0 retains its 2026-09-18 Complete declaration; F629's separate source-bound Windows x64 requalification remains outstanding.
+- Phase 0 was declared Complete by the user on 2026-09-18. The separate
+  post-F629 source-bound Windows x64 requalification remains outstanding and
+  does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
   Windows ARM64 also passed as informational jobs; they were not required for
   closure. See the [Phase 1 plan](02-Phase-1-Build-System-and-Repository-Structure.md)
-  for the run evidence. Phase 0 and Phase 2 remain in progress with their gates open.
+  for the run evidence. Phase 2 remains in progress with its exit gate open.
 - Release target: ClassMngr v2 with feature parity, no splash screen, no resource packs, and Windows startup memory below 250 MiB
 
 ### Phase status
 
 | Phase | File | Status | Default route | Depends on |
 |---|---|---|---|---|
-| 0 | 01-Phase-0-Product-Contract-and-Baseline.md | In progress | Heavy | None |
+| 0 | 01-Phase-0-Product-Contract-and-Baseline.md | Complete | Heavy | None |
 | 1 | 02-Phase-1-Build-System-and-Repository-Structure.md | Complete | Heavy | 0 |
 | 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | In progress | Heavy | 1 |
 | 3 | 04-Phase-3-Persistence-Rewrite.md | Not started | Heavy | 1, 2 |
@@ -38,13 +40,14 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 work
 
+Batch504 contains one accepted slice, F1264, for Speaking Evaluation
+Korean-name Unicode whitespace parity (see [acceptance](03-Phase-2-Progress-Log.md#f1264-speaking-evaluation-korean-name-unicode-whitespace-parity-accepted-before-implementation-2026-10-21)).
 Batch502 (F1257–F1261) is complete and pushed at `20385114` (see its
 [push receipt](03-Phase-2-Progress-Log.md#batch502-push-receipt-2026-10-21)).
-No slice batch is active; Phase 2 exit-gate work is next.
 
-Batch495 and Batch496 are complete and pushed (see the [Batch495](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21) and [Batch496](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21) receipts). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch495 and Batch496 are complete and pushed (see the [Batch495](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21) and [Batch496](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21) receipts). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). F629's macOS 24-route matrix is complete; its source-bound Windows x64 layout trace and requalification remain outstanding separately from Phase 0's Complete declaration. The Phase 2 exit gate remains open.
 
-Batch500 (F1243–F1252) is complete and pushed at `029a17e8`. Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`. Batch502 (F1257–F1261) is complete and pushed at `20385114` (see its [push receipt](03-Phase-2-Progress-Log.md#batch502-push-receipt-2026-10-21)); no slice batch is active, and Phase 2 exit-gate work is next. F1256 keeps generic snapshot widths distinct from the Class Transfer package width type. No broad Schedule Import feature completion is claimed for F1244.
+Batch500 (F1243–F1252) is complete and pushed at `029a17e8`. Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`. Batch502 (F1257–F1261) is complete and pushed at `20385114` (see its [push receipt](03-Phase-2-Progress-Log.md#batch502-push-receipt-2026-10-21)); Batch504 is active with F1264 accepted for implementation. F1256 keeps generic snapshot widths distinct from the Class Transfer package width type. No broad Schedule Import feature completion is claimed for F1244.
 
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 

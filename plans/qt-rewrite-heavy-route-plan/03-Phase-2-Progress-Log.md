@@ -59556,3 +59556,62 @@ F1261 is complete in unpushed Batch502 as `8e985ecdd21d561bc6088bac361ab20d8c85a
 ### Batch502 push receipt - 2026-10-21
 
 The Batch502 push succeeded with receipt `4ae7304b..20385114 Qt-Rewrite -> Qt-Rewrite`. The previous upstream tip was `4ae7304bc015af3420e85d3dd09e3dd1f8824b5e`; the new local and upstream tip is `203851147b2b973b9ab0a3715f52a46f9bf9100a`. At push completion, branch `Qt-Rewrite` was clean and up to date. No force push was used.
+
+### Phase 2 cumulative exit-gate audit after Batch502 - 2026-10-21
+
+The previous detailed cumulative audit ended at F143. The focused production
+contracts added since then, including the recent Batch498–502 work, provide
+additional bounded evidence but do not establish broad gate completion or
+support a broad Gate 1/Gate 2 rerating. This post-Batch502 audit records the
+cumulative status:
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | Recent slices add focused contracts and tests, but broad coverage of the Phase 2 use cases, validation, conflict detection, import planning, and state transitions remains incomplete. |
+| Baseline parity (Gate 2) | Partial | Focused baseline comparisons cover bounded flows; comprehensive validation, conflict, planning, and state-transition parity is not established. Historical production-workbook provenance remains unverified as a tracked risk, not a literal exit criterion. |
+| Formal workspace-create boundary | Satisfied | This status is limited to the written `WorkspaceGateway::createWorkspace` and `WorkspaceCoordinator` create contract: dirty replacement is rejected before the gateway, success opens the session and clears selection, and gateway or invalid-session failures preserve both snapshots. |
+| Active `src/next` forbidden-dependency isolation | Satisfied | The active v2 paths remain isolated from `DataService`, `MainWindow`, `PageManager`, and widget pointers; legacy compatibility APIs remain outside those active paths. |
+
+Phase 2 remains In Progress with its exit gate Open. Gate 1 and Gate 2 remain
+Partial. Phase 0 retains the user's 2026-09-18 Complete declaration in its
+official plan. F629's code and macOS universal 24-route matrix are complete;
+the source-bound Windows x64 layout trace and requalification remain
+outstanding separately. This follow-up does not reopen the original Phase 0
+declaration.
+
+### Batch504 discovery - 2026-10-21
+
+Batch504 contains only F1264, Speaking Evaluation Korean-name Unicode
+whitespace parity, as an actionable slice. F1262 `CampusSummary::order` and
+F1263 `TransferClass::order` were excluded in the Batch503 shortfall because
+their projections have no production producer or consumer; both raw order
+fields are only defaulted and checked nonnegative. F1103 remains deferred
+pending policy reconciliation. F1007's broad shared-policy issue remains
+unresolved and outside this narrow slice.
+
+No other slices were found.
+
+### F1264 Speaking Evaluation Korean-name Unicode whitespace parity accepted before implementation - 2026-10-21
+
+Main accepted this scope after independent Explorer and Investigator review.
+Keep the change inside Speaking Evaluation's app-less validation and
+normalization path. Preserve existing leading Unicode-space trimming and all
+other current normalization behavior. Internal U+00A0 and U+0085 characters
+must remain in normalized Korean names; validation must match legacy behavior
+with the invalid-character Error and unusual-length Warning at matching codes,
+locations, and severities. Extend the existing app-versus-legacy parity test
+for both interior characters.
+
+Do not change shared `isUnicodeSpace()` or `normalizeKoreanName()` behavior,
+Roster normalization or validation, or the broader policy tracked by F1007.
+This acceptance addresses only Speaking Evaluation's narrow parity gap; it
+does not resolve F1007. No implementation or verification has started. After
+implementation, build `ClassMngr` and the affected Speaking Evaluation
+save-port test target in the existing incremental macOS build and run its
+focused CTest. No full-suite verification is requested or claimed.
+
+Batch504 is active with F1264 accepted (0 complete, 1 accepted, 0 discovered).
+The Batch503 shortfall remains historical and inactive; F1103 remains
+deferred. Gate 1 and Gate 2 remain Partial, the Phase 2 exit gate remains
+Open, and the Phase 0 declaration and separate F629 Windows requalification
+status remain as recorded above.

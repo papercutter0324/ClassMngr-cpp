@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch502 (F1257–F1261) is complete and pushed at `20385114` (see the [push receipt](03-Phase-2-Progress-Log.md#batch502-push-receipt-2026-10-21)); no slice batch is active, and Phase 2 exit-gate work is next; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch504 contains only F1264, accepted for implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Latest Progress Update
 
@@ -72,9 +72,18 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-No slice batch is active. Batch502 (F1257–F1261) is complete and pushed at
-`20385114`; Phase 2 exit-gate work is next. F629 awaits source-bound Windows
-x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch504 is active with one accepted slice (0 complete, 1 accepted, 0
+discovered):
+
+- F1264 - Accepted for implementation: Speaking Evaluation Korean-name
+  Unicode whitespace parity. Next action: preserve leading Unicode-space
+  trimming and validate U+00A0/U+0085 interior-character parity within the
+  Speaking Evaluation app-less path, without changing shared normalization or
+  Roster.
+
+Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+F629's source-bound Windows x64 layout trace and requalification remain
+outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 #### Deferred candidates
 
