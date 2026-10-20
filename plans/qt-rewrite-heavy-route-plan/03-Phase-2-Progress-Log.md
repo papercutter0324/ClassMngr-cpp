@@ -59148,3 +59148,34 @@ No implementation, build, or tests have started. The existing projection
 header is already in the source manifest, so no CMake manifest change is
 expected. No clean build, Windows build, or full-suite verification is
 claimed.
+
+### F1258 Schedule Import weekday group complete - 2026-10-21
+
+F1258 was accepted in documentation commit
+`012777081b9f23080a718359142f0b3cef760d15` and implemented in source/test
+commit `cb838d2dbc2185bb4a9d188952da67755dd5df10` (`Phase2 - Type Schedule
+Import weekday groups`). The only changed paths are
+`src/next/application/schedule_import_matching_projection.h` and
+`tests/next_application_schedule_import_matching_projection_tests.cpp`.
+
+The existing projection Detail namespace now contains the closed
+`ScheduleImportMatchingProjectionDetail::WeekdayGroup` enum with explicit
+values `Unclassified = 0`, `MondayWednesdayFriday = 1`, and
+`TuesdayThursday = 2`. `dayGroup()` returns the enum, and its two callers
+compare named values. The internal header and source manifest scope did not
+expand. Existing six-byte ASCII whitespace trimming, ASCII A–Z folding,
+full-name weekday matching, classified-group equality, normalized meeting
+day comparison, and the explicit empty-existing-times eligibility bypass are
+preserved. Empty existing times remain distinct from `Unclassified`; legacy
+F729 `scheduleImportDayGroup()` and Qt normalization are unchanged.
+
+The Executor built `ClassMngr` and
+`ClassMngrNextApplicationScheduleImportMatchingProjectionTests` incrementally
+in `build/macos-clang-debug`; the registered focused CTest
+`ClassMngrNextApplicationScheduleImportMatchingProjectionTests` passed 1/1.
+The independent Tester confirmed the focused result, and `git diff --check`
+passed. No clean build, Windows build, or full-suite verification was run.
+
+Batch502 remains active with F1257 and F1258 complete, F1259 next for
+acceptance, and F1260–F1261 discovered. Batch501 is complete and pushed at
+`7f8ca958`; F629 and the Phase 0 and Phase 2 gates remain open.
