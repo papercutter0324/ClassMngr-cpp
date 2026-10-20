@@ -67,8 +67,8 @@ restore-defaults name `ClassMngrCalendarPreferencesRestoreDefaultsTests`; the
 Tester build was up to date, and `git diff --check` passed. No full suite or
 Windows build ran. Batch490 is complete and pushed to `origin/Qt-Rewrite` at
 `69be43a7`; see the [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20).
-Batch491 is active with F1178 and F1179 complete, F1180 next, and F1181–F1185
-discovered. F1175's Class Transfer test still has one
+Batch491 is active with F1178 and F1179 complete, F1180 accepted/in progress,
+F1181 next, and F1182–F1185 discovered. F1175's Class Transfer test still has one
 unresolved teacher-fallback label failure among 64 cases;
 no clean baseline proves it pre-existing. F629 awaits source-bound Windows x64
 layout evidence. Phase 0 and Phase 2 gates remain open.
@@ -6663,3 +6663,22 @@ selector passed with 3 QtTest cases. `git diff --check` passed. The UI checks
 reported a font-alias warning without failures. No full suite or Windows build
 ran. Batch491 remains unpushed with F1180 next and F1181–F1185 discovered.
 Batch490 is pushed at `69be43a7`; F629 and both phase gates remain open.
+
+## Phase 2 update - F1180 accepted; Batch491 active - 2026-10-20
+
+F1180 is accepted to add Qt-free `Application::ClassTransferSkippedClassCount`
+with exact signed-int storage, zero default, explicit construction,
+`rawValue()`, equality, and no conversion or range policy. Type only
+`ClassTransferApplySummary::skippedClassCount`; preserve use-case forwarding,
+explicit wrapping of the legacy count at the Platform port, and the existing
+Feature display text. Keep the legacy repository summary, created/replaced
+IDs, and package-class index unchanged. Acceptance checks zero default,
+explicit construction, `int` minimum/maximum round-trip and equality, and no
+implicit conversions; it also checks positive use-case propagation, zero
+Platform result, and a positive Skip-action copy at the Platform boundary.
+The existing Sidebar parity test covers the unchanged `skipped: 1` display.
+Build `ClassMngr`, the Application use-case and Platform apply-port tests, and
+the Sidebar parity test target; run their focused CTests. Implementation and
+verification have not started. Batch491 remains unpushed with F1181 next and
+F1182–F1185 discovered. Batch490 is pushed at `69be43a7`; F629 and both phase
+gates remain open.

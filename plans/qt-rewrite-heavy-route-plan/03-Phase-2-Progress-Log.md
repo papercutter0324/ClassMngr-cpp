@@ -53305,3 +53305,42 @@ Batch491 has F1178 and F1179 complete, with F1180 next and F1180–F1185 still
 discovered. Batch491 remains unpushed. Batch490 is complete and pushed at
 `69be43a7`. F629 awaits source-bound Windows x64 layout evidence, and the Phase
 0 and Phase 2 gates remain open.
+
+### F1180 Class Transfer skipped-class count accepted before implementation - 2026-10-20
+
+F1180 is accepted/in progress. Add Qt-free
+`Application::ClassTransferSkippedClassCount` with exact signed-`int` storage,
+zero default, explicit construction, `rawValue()`, and equality. Preserve the
+exact signed value with no implicit conversions or range policy. Type only
+`ClassTransferApplySummary::skippedClassCount`.
+
+Preserve use-case forwarding and explicitly wrap the legacy `int` at the
+Platform apply port. Unwrap only at the Feature display boundary in
+`src/app/controllers/sidebar_controller_transfer.cpp`, leaving display text
+unchanged. Existing parity coverage in
+`tests/sidebar_class_transfer_apply_parity_tests.cpp`,
+`skippedOnlyRestoresPriorSelection`, checks `skipped: 1`. Keep the legacy
+repository summary, created/replaced IDs, package-class index, and validation
+order unchanged.
+
+Acceptance tests in
+`tests/next_application_class_transfer_apply_use_case_tests.cpp` check the
+wrapper's zero default, `int` minimum/maximum round-trip and equality, explicit
+construction, no implicit conversions, and exact positive-count propagation.
+Platform-port tests in
+`tests/next_platform_application_services_class_transfer_apply_port_tests.cpp`
+preserve the zero-result case and add a real Skip-action route asserting that
+the positive count reaches the typed summary. Build `ClassMngr`,
+`ClassMngrNextApplicationClassTransferApplyUseCaseTests`, and
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`, and
+`ClassMngrSidebarClassTransferApplyParityTests`; run CTests
+`ClassMngrNextApplicationClassTransferApplyUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`, and
+`ClassMngrSidebarClassTransferApplyParityTests`. The independent Tester will
+rebuild clean affected outputs. Implementation and verification have not
+started; no full-suite or Windows run is in scope.
+
+Batch491 has F1178 and F1179 complete, F1180 accepted/in progress, and F1181
+next; F1182–F1185 remain discovered. Batch491 remains unpushed. Batch490 is
+complete and pushed at `69be43a7`. F629 awaits source-bound Windows x64 layout
+evidence, and the Phase 0 and Phase 2 gates remain open.
