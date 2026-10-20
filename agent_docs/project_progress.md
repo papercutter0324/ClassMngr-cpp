@@ -53,17 +53,19 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1192 accepted; Batch492 closed locally)
+### Current checkpoint - 2026-10-20 (F1192 accepted; Batch492 pushed)
 
 Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
 records the handoff. Batch491 is complete and pushed to `origin/Qt-Rewrite`
 at `56bd1973`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)
-records the handoff. F1178–F1191 are complete. Batch492 is closed locally and
-awaits its push receipt. Batch493 is active with ten ordered candidates;
-F1192 is accepted/current before implementation and F1193–F1201 are
-discovered. Acceptance, discovery, and verification evidence are in the
-[Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
+records the handoff. F1178–F1191 are complete. Batch492 is complete and
+pushed to `origin/Qt-Rewrite` at
+`3e6c09d9e5a82bc23281a76970683e4372dcec9d`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)
+records the handoff. Batch493 is active with ten ordered candidates; F1192 is
+accepted/current before implementation and F1193–F1201 are discovered.
+Acceptance, discovery, and verification evidence are in the [Phase 2 progress
+log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
 F1191 completed at source/test commit `6a7cb2eb`. Its typed navigation rank
 preserves the 1000 sentinel, valid 16:40 collision, tuple order, label

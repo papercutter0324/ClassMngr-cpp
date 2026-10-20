@@ -54241,3 +54241,14 @@ and `ClassMngrClassAnalyticsPageReadParityTests` in
 suite or Windows result is claimed. Batch492 is closed locally and awaits
 push; Batch493 is active with F1192 accepted/current and F1193–F1201
 discovered. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### Batch492 push receipt - 2026-10-20
+
+The normal push to `origin/Qt-Rewrite` succeeded at HEAD
+`3e6c09d9e5a82bc23281a76970683e4372dcec9d`. The outgoing range
+`56bd1973d3897e7693b588acfcd391a85c4fa5a0..3e6c09d9e5a82bc23281a76970683e4372dcec9d`
+contains 15 commits, including Batch492 and its closeout/F1192 acceptance
+documentation. The Git operator confirmed the local `origin/Qt-Rewrite`
+remote-tracking ref matches HEAD and the worktree is clean. An extra
+`git ls-remote` recheck could not resolve `github.com` because of DNS; the
+push itself reported the branch update. No tests were run for this push.

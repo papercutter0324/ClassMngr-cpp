@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batches 481–491 are complete and pushed, with Batch491 at `56bd1973` (see its [push receipt](03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)). Batch492 is closed locally and awaits push; F1191 is complete. Batch493 is active and unpushed, with F1192 accepted/current and F1193–F1201 discovered (see [Batch492 closeout and Batch493 discovery](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20) and [F1192 acceptance](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-accepted-before-implementation-2026-10-20)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batches 481–492 are complete and pushed, with Batch492 at `3e6c09d9` (see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)). Batch493 is active and unpushed, with F1192 accepted/current and F1193–F1201 discovered (see [Batch493 discovery](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20) and [F1192 acceptance](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-accepted-before-implementation-2026-10-20)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -51,7 +51,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 9. **F1200 — Discovered:** Type only the AI batch `reportIndex`; preserve -1, range filtering, and assignment order, and keep overlapping `sourceRow` raw.
 10. **F1201 — Discovered:** Type roster-save issue cell coordinates; preserve zero-based row/column values and -1 absence sentinels.
 
-Batch492 is closed locally and awaits push. Batch493's ordered candidates and discovery comparison are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20); F1192's pre-implementation acceptance is [recorded here](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-accepted-before-implementation-2026-10-20). Batch490 is complete and pushed at `69be43a7`; Batch491 is complete and pushed at `56bd1973`. Batch489 is complete and pushed at `e329f92b`. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch492 is complete and pushed at `3e6c09d9`; see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20). Batch493's ordered candidates and discovery comparison are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20); F1192's pre-implementation acceptance is [recorded here](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-accepted-before-implementation-2026-10-20). Batch490 is complete and pushed at `69be43a7`; Batch491 is complete and pushed at `56bd1973`. Batch489 is complete and pushed at `e329f92b`. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.

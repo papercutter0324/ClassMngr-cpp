@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch492 is closed locally and awaits push; F1192 is accepted/in progress/current in active Batch493, while F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch492 is complete and pushed at `3e6c09d9`; F1192 is accepted/in progress/current in active Batch493, while F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
@@ -85,7 +85,7 @@ Treat this plan as an operational summary, not a history:
 9. F1200 - **Discovered.** Type only the AI batch `reportIndex` contract, preserving its -1 sentinel, range filtering, and assignment order; keep overlapping `sourceRow` raw.
 10. F1201 - **Discovered.** Type roster-save issue cell coordinates while preserving zero-based row/column values and -1 absence sentinels.
 
-Batch492 is complete locally and awaits push; see its [closeout and discovery comparison](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20). Batch493's accepted F1192 and the final ordered discovery are recorded in the [progress log](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-accepted-before-implementation-2026-10-20). Batch491 is complete and pushed at `56bd1973`; see its [push receipt](03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20).
+Batch492 is complete and pushed at `3e6c09d9`; see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20) and [closeout and discovery comparison](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20). Batch493's accepted F1192 and the final ordered discovery are recorded in the [progress log](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-accepted-before-implementation-2026-10-20). Batch491 is complete and pushed at `56bd1973`; see its [push receipt](03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20).
 
 #### Deferred candidates
 
