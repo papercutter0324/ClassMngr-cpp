@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch491 is active and unpushed with F1178 and F1179 complete, F1180 accepted/in progress, and F1181 next; F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch491 is active and unpushed with F1178–F1180 complete and F1181 next; F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1179 is complete (see its [completion record](03-Phase-2-Progress-Log.md#f1179-speaking-evaluation-ai-grade-band-complete-2026-10-20)); F1180 is accepted/in progress with F1181 next (see the [acceptance record](03-Phase-2-Progress-Log.md#f1180-class-transfer-skipped-class-count-accepted-before-implementation-2026-10-20)).
+F1180 is complete: type only `ClassTransferApplySummary::skippedClassCount` with `Application::ClassTransferSkippedClassCount`, preserving the Platform `int` boundary and sidebar display (see its [completion record](03-Phase-2-Progress-Log.md#f1180-class-transfer-skipped-class-count-complete-2026-10-20)); F1181 is next.
 
 ### Slice discovery batches
 
@@ -72,11 +72,11 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch491 (8 candidates; 2 complete; 1 accepted/in progress; 5 discovered)
+#### Active batch: Batch491 (8 candidates; 3 complete; 5 discovered)
 
 1. F1178 - **Complete.** Type the eight Schedule Import review summary values and two projection inputs as `Application::ScheduleImportReviewCount`; preserve the action mappings, visible text, and cleared-schedule projection behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1178-schedule-import-review-count-complete-2026-10-20)).
 2. F1179 - **Complete.** Reuse `Domain::CourseGradeBand` in both Application prompt grade fields; preserve 4–6 eligibility, `Other` rejection, prompt text and formatting, Feature integer mapping, and integer report/legacy storage (see the [completion record](03-Phase-2-Progress-Log.md#f1179-speaking-evaluation-ai-grade-band-complete-2026-10-20)).
-3. F1180 - **Accepted/in progress.** Add Qt-free `Application::ClassTransferSkippedClassCount` and type only `ClassTransferApplySummary::skippedClassCount`; preserve exact signed values without range policy, use-case forwarding, explicit Platform wrapping, and the existing sidebar `skipped: 1` display (see the [acceptance record](03-Phase-2-Progress-Log.md#f1180-class-transfer-skipped-class-count-accepted-before-implementation-2026-10-20)).
+3. F1180 - **Complete.** Add Qt-free `Application::ClassTransferSkippedClassCount` and type only `ClassTransferApplySummary::skippedClassCount`; preserve exact signed values without range policy, use-case forwarding, explicit Platform wrapping, and the existing sidebar `skipped: 1` display (see the [completion record](03-Phase-2-Progress-Log.md#f1180-class-transfer-skipped-class-count-complete-2026-10-20)).
 4. F1181 - **Discovered; next.** Type the Class Transfer package-class index; preserve the `-1` sentinel, out-of-range values, and validation issue order.
 5. F1182 - **Discovered.** Type Updater encoded URLs; preserve encoded text and existing parse/display behavior without validation or canonicalization.
 6. F1183 - **Discovered.** Type Updater release-date ISO text; preserve ISO text, invalid/empty behavior, and localized display.

@@ -53344,3 +53344,30 @@ Batch491 has F1178 and F1179 complete, F1180 accepted/in progress, and F1181
 next; F1182–F1185 remain discovered. Batch491 remains unpushed. Batch490 is
 complete and pushed at `69be43a7`. F629 awaits source-bound Windows x64 layout
 evidence, and the Phase 0 and Phase 2 gates remain open.
+
+### F1180 Class Transfer skipped-class count complete - 2026-10-20
+
+F1180 completed at source/test commit `20975320`, following acceptance commit
+`c841fe2c`. `Application::ClassTransferSkippedClassCount` stores the exact
+signed `int`, defaults to zero, and has explicit construction, `rawValue()`,
+and equality, with no implicit conversions or range policy. Only
+`ClassTransferApplySummary::skippedClassCount` uses the type. The use case
+forwards the value unchanged; the Platform apply port explicitly wraps the
+legacy `int`. The Feature unwraps it in
+`src/app/controllers/sidebar_controller_transfer.cpp`, preserving the visible
+text and the existing `skipped: 1` parity assertion in
+`tests/sidebar_class_transfer_apply_parity_tests.cpp`'s
+`skippedOnlyRestoresPriorSelection`. The legacy repository summary,
+created/replaced IDs, package-class index, and validation order are unchanged.
+
+Independent Tester cleaned and successfully rebuilt all four requested
+targets: `ClassMngr`,
+`ClassMngrNextApplicationClassTransferApplyUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`, and
+`ClassMngrSidebarClassTransferApplyParityTests`. All three focused CTests
+passed. `git diff --check` passed. No full-suite or Windows run occurred.
+
+Batch491 has F1178–F1180 complete, F1181 next, and F1181–F1185 discovered.
+Batch491 remains unpushed. Batch490 is complete and pushed at `69be43a7`. F629
+awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2
+gates remain open.
