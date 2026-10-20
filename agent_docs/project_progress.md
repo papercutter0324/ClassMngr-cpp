@@ -55,62 +55,26 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ### Current checkpoint - 2026-10-20 (Batch490 pushed; Batch491 active)
 
-F1177 completed at source/test commit `d3e8ca01`, after acceptance commit
-`914b5316` and CTest-name correction `80ea5513`. Qt-free
-`Application::AcademicTermWeekCount` now types only the Application policy
-boundary; the Feature model still stores four raw integers, and JSON v1
-parsing, UI behavior, four-term cardinality, 1–53 validation, and date-distance
-rules remain unchanged. `AcademicTermPosition::week` remains a separate
-one-based position. The executor's four-target build passed. The independent
-Tester confirmed all eight focused CTests passed using the actual registered
-restore-defaults name `ClassMngrCalendarPreferencesRestoreDefaultsTests`; the
-Tester build was up to date, and `git diff --check` passed. No full suite or
-Windows build ran. Batch490 is complete and pushed to `origin/Qt-Rewrite` at
-`69be43a7`; see the [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20).
-F1181 completed at source/test commit `d35f197c`, after acceptance commit
-`44919da9`. `Application::ClassTransferPackageClassIndex` now types only the
-three Application review indices while preserving the `-1` sentinel, 99 as
-`UnknownClassResolution`, issue order, matching-policy `std::size_t` indices,
-and legacy/UI `int` fields. The independent Tester rebuilt the four accepted
-targets; three focused CTests passed, and the offscreen typed-dialog selector
-passed 3/3. The additional changed apply-use-case test target rebuilt after an
-explicit-initializer repair, and its CTest passed 1/1. `git diff --check` passed.
-F1182 completed at source/test commit `95c12c10`, after acceptance commit
-`9907c255`. `Application::EncodedUrlText` now types the four startup/manual
-Updater artifact and release-page URL fields, preserving exact encoded bytes
-and the existing `QUrl::toEncoded()`/`QUrl::fromEncoded()` behavior. Independent
-clean builds passed for `ClassMngr` and both updater test targets; both focused
-CTests and all three selected cases passed. Socket tests used local loopback
-permission only. No full suite or Windows build ran. Batch491 is active and
-unpushed with F1178–F1183 complete, F1184 accepted/in progress, and F1185
-discovered.
+Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
+[push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
+records the handoff. Batch491 remains active and unpushed. F1178–F1184 are
+complete; F1185 is next. Their acceptance, completion, and verification details
+are in the [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
-F1183 completed at source/test commit `ba078193`, after acceptance commit
-`29e0156b`. Qt-free `Application::ReleaseDateIsoText` now types only the startup
-and manual updater result fields, preserving exact ISO text, empty/malformed
-input handling, and localized short-date display. The independent Tester
-cleaned 377 generated outputs and rebuilt the three affected targets in
-`build/macos-clang-debug`; all 363 build steps succeeded. Both focused CTests
-and all five selected offscreen selectors passed. The display selector emitted
-a non-failing Qt font-alias warning. Local loopback permission only was used;
-no external network, full suite, or Windows build ran. Both diff checks passed.
-Batch491 remains unpushed with F1184 next and F1185 discovered; F629 and both
-phase gates remain open.
+F1184 completed at source/test commit `bc23cf4c`, after acceptance commit
+`06da72ee`. It adds distinct Qt-free Import and Report generation types while
+preserving exact values, first generation 1, duplicate/failure sequencing,
+restart clearing, stale rejection, and the existing exhaustion guard. The
+independent Tester cleaned 382 outputs and rebuilt four affected targets in
+`build/macos-clang-debug`; all 367 build steps and three focused CTests passed.
+The exhaustion guard was inspected because the coordinator has no test
+injection seam. No full suite or Windows build ran.
 
-F1184 is accepted to introduce distinct Qt-free `Application::ImportJobGeneration`
-and `Application::ReportJobGeneration` value types, preserving exact
-`std::uint64_t` values, zero default, explicit construction, `.value()`, and
-equality without implicit conversions or range policy. Each job's session token
-remains an alias of its generation type. Preserve first issued value 1, duplicate
-start and worker-start-failure sequencing, restart queue clearing, exact stale
-event rejection, and existing exhaustion errors before state or worker
-mutation. The private counter has no test injection seam, so no runtime
-exhaustion test will be added. Implementation and verification have not
-started. Batch491 remains unpushed with F1185 discovered; F629 and both phase
-gates remain open.
+Batch492 is provisionally discovered with six candidates and a 6-of-10
+shortfall; see its [discovery record](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch492-provisional-discovery-at-f1184-start-2026-10-20).
 F1175's Class Transfer test still has one unresolved teacher-fallback label
 failure among 64 cases; no clean baseline proves it pre-existing. F629 awaits
-source-bound Windows x64 layout evidence. Phase 0 and Phase 2 gates remain
+source-bound Windows x64 layout evidence. The Phase 0 and Phase 2 gates remain
 open.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)

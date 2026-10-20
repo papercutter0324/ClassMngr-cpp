@@ -53613,3 +53613,84 @@ Batch491 remains unpushed; GitHub has not received these local changes.
 F1178–F1183 are complete, F1184 is accepted/in progress, and F1185 is next.
 Batch490 is complete and pushed at `69be43a7`. F629 awaits source-bound Windows
 x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+
+### Batch492 provisional discovery at F1184 start - 2026-10-20
+
+Across two independent discovery scans at the start of F1184, Batch491's
+second-last slice, six unique candidates were found for provisional Batch492.
+F1185 remains the next active slice and is excluded from Batch492. No newly
+actionable deferred trigger was found. The scan found six of ten candidates, a
+6-of-10 shortfall.
+
+1. **F1186 - Schedule Import applied-result counts.** Seven `int` counts are in
+   `src/next/application/schedule_import_apply_request.h:122`. The adapter test
+   covers all seven; the Application test covers only three, and the dialog
+   success-message test does not assert count values. Preserve exact values
+   including zero, forwarding, telemetry, localized success text, and
+   `profileNameUpdated`. Likely coverage: Application use case, Platform port,
+   and Schedule Import dialog tests. Acceptance question: reuse
+   `ScheduleImportReviewCount` or introduce a distinct applied-count type?
+2. **F1187 - Class Details Page student count.** A `Domain::Result<int>` is in
+   `src/next/application/class_details_page_snapshot.h:46`; the Platform read
+   port forwards the repository count at
+   `src/next/platform/application_services_class_details_page_read_port.h:259`.
+   Preserve zero, independent per-source errors, and F911 recoverable NotFound
+   for a missing parent. Tests: `tests/next_application_class_details_page_query_tests.cpp:142-204`
+   and the Platform read-port test near line 494. Acceptance question: share
+   `MyClassesStudentCount` or use its own type; successful negative-count policy
+   is unclear.
+3. **F1188 - ClassSummary student count.** `std::size_t` is in
+   `src/next/application/class_summary_projection.h:76`; existing validation
+   caps at 10,000 on lines 361–366. F1155 documents semantics separate from the
+   MyClasses count. Test: `tests/next_application_class_summary_tests.cpp:481-506`.
+   Preserve zero and the cap. Acceptance question: use an exact-storage wrapper
+   while keeping the cap in projection validation?
+4. **F1189 - Updater artifact filename.** Startup/manual result headers contain
+   raw `std::string fileName` fields; Platform Qt text mapping and bridge
+   coverage are in `tests/update_controller_automatic_startup_tests.cpp:1055-1076`.
+   F1182 left other strings out of scope. Preserve UTF-8 bytes, empty values,
+   and display; add no path policy. Acceptance question: keep opaque-metadata
+   semantics?
+5. **F1190 - Schedule Import matching counts.** `std::size_t`
+   `affectedClassCount` and `classCount` are in
+   `src/next/application/schedule_import_matching_projection.h:125`, derived
+   at lines 372 and 441. Tests assert the values, and the dialog unwraps them
+   for display. Preserve exact counts without a cap. Acceptance question: are
+   these meaningful values or collection cardinalities?
+6. **F1191 - Class Tab navigation ordering ranks.** Four raw `std::int32_t`
+   fields are in
+   `src/next/application/class_tab_navigation_ordering_policy.h:14`, compared
+   at lines 72–106 and prepared in Feature at
+   `src/features/classes/models/class_tab_navigation_model.cpp:616`. Focused
+   test: `tests/next_application_class_tab_navigation_ordering_policy_tests.cpp`.
+   Preserve the 1000 unknown sentinel, comparison order/ties, and Feature
+   preparation. Confidence is medium-low.
+
+No other slices were found.
+
+### F1184 Import and report job generation complete - 2026-10-20
+
+F1184 completed at source/test commit `bc23cf4c`, following acceptance commit
+`06da72ee`. `Application::ImportJobGeneration` and
+`Application::ReportJobGeneration` are distinct exact-`std::uint64_t` strong
+types. Coordinator APIs, events, and worker surfaces use their respective
+type; session-token aliases remain job-specific. Exhaustion guards
+compare `.value()` to `std::uint64_t` max before state or worker mutation.
+
+Independent Tester cleaned 382 generated outputs and rebuilt `ClassMngr`,
+`ClassMngrNextApplicationImportJobCoordinatorTests`,
+`ClassMngrNextApplicationReportJobCoordinatorTests`, and
+`ClassMngrNextPlatformQtJobWorkerTests` in the existing macOS Debug tree; all
+367 build steps succeeded. All three focused CTests passed (3/3). Tests cover
+zero/default and first generation 1, exact and max-value round-trip, no
+implicit or cross-type conversion, duplicate-start stability, worker-start
+failure consuming a generation, restart queue clearing, and stale rejection.
+The exhaustion branch was source-inspected; there is no direct runtime test
+because no counter-injection seam exists. Both diff checks passed. No full
+suite or Windows build occurred.
+
+Batch491 remains unpushed; GitHub has not received these local changes.
+F1178–F1184 are complete and F1185 is next; Batch492 has six provisional
+candidates and remains inactive until Batch491 closes. Batch490 is complete
+and pushed at `69be43a7`. F629 awaits source-bound Windows x64 layout evidence,
+and the Phase 0 and Phase 2 gates remain open.
