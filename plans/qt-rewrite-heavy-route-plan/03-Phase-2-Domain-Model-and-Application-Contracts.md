@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch495 is active with F1210 accepted/current and eight discovered candidates; F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch495 is active with F1210 complete and F1211 next for acceptance review; eight candidates remain discovered, and F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-Batch494 is complete and pushed at `fc626d56` (see the [push receipt](03-Phase-2-Progress-Log.md#batch494-push-receipt-2026-10-20)); F1207–F1209 have focused verification evidence. Batch495 is active, and F1210 is accepted/current (see the [F1210 acceptance](03-Phase-2-Progress-Log.md#f1210-speaking-evaluation-validation-issue-coordinates-accepted-before-implementation-2026-10-20)). F629 plus the Phase 0 and Phase 2 gates remain open.
+Batch494 is complete and pushed at `fc626d56` (see the [push receipt](03-Phase-2-Progress-Log.md#batch494-push-receipt-2026-10-20)); F1207–F1210 have focused verification evidence. Batch495 is active, F1210 is complete, and F1211 is next for acceptance review (see the [F1210 completion](03-Phase-2-Progress-Log.md#f1210-speaking-evaluation-validation-issue-coordinates-complete-2026-10-20)). F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,9 +72,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch495 (9 candidates; 1 accepted/current, 8 discovered)
+#### Active batch: Batch495 (9 candidates; 1 complete, 8 discovered)
 
-1. F1210 - **Accepted/current.** Use independent explicit row and column value types for `SpeakingEvaluationValidationIssue`; preserve separate `-1` sentinels and arbitrary coordinate values through Feature conversion (see [acceptance](03-Phase-2-Progress-Log.md#f1210-speaking-evaluation-validation-issue-coordinates-accepted-before-implementation-2026-10-20)).
+1. F1210 - **Complete.** Independent explicit row and column value types for `SpeakingEvaluationValidationIssue`; focused verification passed (see [completion](03-Phase-2-Progress-Log.md#f1210-speaking-evaluation-validation-issue-coordinates-complete-2026-10-20)).
 2. F1211 - **Discovered.** Reuse `ScheduleImportCandidateIndex` for the class-color candidate index; preserve `-1` and out-of-range filtering.
 3. F1212 - **Discovered.** Type the selected source row for roster removal; preserve invalid-row and empty-row rejection order.
 4. F1213 - **Discovered.** Type the selected custom column for removal checks; preserve range and required-column rejection order.

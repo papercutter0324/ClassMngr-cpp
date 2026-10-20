@@ -55300,8 +55300,9 @@ Preserve all supplied values exactly, including zero-based coordinates beyond
 the displayed matrix bounds, and preserve each absent `-1` independently. The
 validator emits both-absent general issues, row-present/column-absent structural
 issues, and fully specified cell issues. Do not add range validation or change
-issue production. Unwrap only at the Feature validation adapter when converting
-to the legacy integer fields; keep UI range checks and negative-coordinate
+issue production. Unwrap in Feature code at the legacy validation adapter and
+at the direct page-persistence consumer before its existing range checks,
+list operations, and indexing. Keep UI range checks and negative-coordinate
 skips unchanged. The Platform save implementation has no issue conversion, so
 only its parity test needs typed access updates.
 
@@ -55311,11 +55312,33 @@ Update existing coverage in
 and `tests/speaking_eval_page_save_parity_tests.cpp` to assert the same raw
 coordinates, absent sentinels, and legacy parity. Preserve synthetic
 out-of-range parity values and the helper's negative-value filter semantics.
+The Feature conversion sites are
+`src/features/speaking_eval/ui/speaking_eval_page_validation_adapter.cpp` and
+`src/features/speaking_eval/ui/speaking_eval_page_persistence.cpp`.
 Focused targets are `ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`,
 `NextPlatformApplicationServicesSpeakingEvaluationSavePort`, and
 `SpeakingEvalPageSaveParity`; `ClassMngr` builds the affected Feature adapter.
 `SpeakingEvalPageSave` is an optional UI-flow check. No F1210 implementation or
 verification has started. Batch495 is active; Batch494 is complete and pushed.
+
+### F1210 Speaking Evaluation validation issue coordinates complete - 2026-10-20
+
+F1210 completed at commit `007f6918` (`Phase2 - Type speaking evaluation
+issue coordinates`). `SpeakingEvaluationValidationIssue::row` and `.column`
+now use separate explicit `int` value types, with independent `-1` defaults,
+raw-value access, equality, and no implicit conversions. The Feature validation
+adapter and page-persistence consumer unwrap coordinates before the existing
+legacy conversion and range/index logic; the existing UI checks and skip
+behavior remain unchanged. Application, Platform parity, and page-parity tests
+preserve absent, row-only, column-only, legacy `-1`, and arbitrary `(100,200)`
+coordinates, including the negative-value filter behavior.
+
+The independent Tester built `ClassMngr`,
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`, and
+`ClassMngrSpeakingEvalPageSaveParityTests` in `build/macos-clang-debug`. The
+focused CTests passed 3/3: Application 13 Qt cases, Platform 15, and page
+parity 5. No full suite or optional broader UI-flow result is claimed.
 
 ### Batch494 push receipt - 2026-10-20
 
