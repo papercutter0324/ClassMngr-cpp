@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch499 is active with F1241 complete and F1242 accepted awaiting implementation; Batch500 remains queued with 10 discovered candidates, and F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch499 is complete locally with push pending; active Batch500 has F1243 next for acceptance, and F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1242 is accepted for the standalone Schedule View Application contract: use distinct explicit values for row order, cell order, and slot key while preserving validation scopes, input order, and value-copy lookup behavior (see [F1242 acceptance](03-Phase-2-Progress-Log.md#f1242-schedule-view-order-and-slot-keys-accepted-before-implementation-2026-10-21)). Batch499 remains active and unpushed; Batch500 stays queued with 10 candidates until Batch499 closes and is pushed. F629 and the Phase 0 and Phase 2 gates remain open.
+F1242 completed the standalone Schedule View Application contract with distinct explicit values for row order, cell order, and slot key; no non-test production consumer or legacy UI integration is claimed (see [F1242 verification](03-Phase-2-Progress-Log.md#f1242-schedule-view-order-and-slot-keys-complete-2026-10-21)). Batch499 is complete locally with push pending; Batch500 is active with F1243 next for acceptance and nine discovered candidates following. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,14 +72,18 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch499 (6 candidates; 5 complete, 1 accepted, 0 discovered)
+#### Active batch: Batch500 (10 candidates; 0 complete, 0 accepted, 10 discovered)
 
-1. F1237 - **Complete.** Type `ClassAnalyticsRosterNames::rowCount` with the existing `ClassAnalyticsRosterRowCount`; preserve physical sparse-row counts, vector sizing, and unfiltered empty-name query behavior.
-2. F1238 - **Complete.** Type `GregorianDate::weekday()` as `Domain::IsoWeekday`; explicitly map it to zero-based `Domain::Weekday` at the calendar recurrence boundary.
-3. F1239 - **Complete.** Type Class Transfer weekly weekday candidates with `Domain::Weekday`; preserve invalid-day rejection, half-open overlap, Sunday overnight wrapping, and repository preflight behavior.
-4. F1240 - **Complete.** Type Speaking Evaluation text-match start and length as explicit UTF-16 code-unit values; preserve matching and extraction behavior.
-5. F1241 - **Complete.** Add strict `Domain::CalendarEventClockTime` parsing, formatting, and comparison while preserving `CalendarEventTiming` validation and date rules.
-6. F1242 - **Accepted; awaiting implementation.** Use distinct explicit Application values for Schedule View row order, cell order, and slot key; preserve validation scopes, input order, and lookup behavior.
+1. F1243 - **Next for acceptance.** Type the `GregorianDate` day-number contract; preserve epoch value, maximum-date boundary, ordering, and formatting.
+2. F1244 - **Discovered.** Type Schedule Import destination class IDs while preserving absent (`-1`) and create/update/skip/invalid/duplicate decision behavior.
+3. F1245 - **Discovered.** Type Sub Prep print grade and level order while preserving configured ranks, unknown sentinels, and comparator order.
+4. F1246 - **Discovered.** Type the Calendar parser's skipped-row count while preserving parser count and duplicate-skip aggregation.
+5. F1247 - **Discovered.** Preserve Teacher Import created/updated/unchanged result counts across the Platform boundary.
+6. F1248 - **Discovered.** Type Class Summary day and time navigation ranks while preserving default and invalid-value sentinels.
+7. F1249 - **Discovered.** Type Testing Classes grade and level ranks while preserving configured indexes, unknown values, and comparator behavior.
+8. F1250 - **Discovered.** Type ScheduleTime endpoint minute values while preserving bounds, strict start-before-end, and half-open overlap.
+9. F1251 - **Discovered.** Type Class Transfer export roster widths while preserving values and order without range checks or clamping.
+10. F1252 - **Discovered.** Type Document Catalog folder/document order metadata while preserving default, negative-value rejection, and input order.
 
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 

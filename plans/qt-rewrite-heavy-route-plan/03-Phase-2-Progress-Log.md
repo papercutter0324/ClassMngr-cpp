@@ -57626,3 +57626,29 @@ integration. At acceptance, implementation, build, and tests had not started.
 Batch499 remains active and unpushed with F1237–F1241 complete and F1242
 accepted awaiting implementation. Batch500 remains discovered and inactive
 with F1243–F1252 queued until Batch499 closes and is pushed.
+
+### F1242 Schedule View order and slot keys complete - 2026-10-21
+
+F1242 completed in three commits: acceptance
+`61979f108dad8e0a0b50c7e08dcf72cc579845ca`, implementation
+`9d77891e77ec97bb87592d5b93b3f273f89c1905`, and the test-coverage follow-up
+`fc90686fd8dbd317f431f8b9e016288ba50c6c24`. The implementation and test
+changes are limited to `src/next/application/schedule_view_projection.h` and
+`tests/next_application_schedule_view_tests.cpp`. The standalone Application
+projection now uses distinct `std::int32_t` row-order, cell-order, and
+slot-key values while preserving its validation scopes, input order, and
+value-copy lookups. No non-test production consumer was found; no legacy
+Schedule UI integration is claimed.
+
+The first independent Tester built `ClassMngr` and
+`ClassMngrNextApplicationScheduleViewTests` in the existing incremental
+macOS Clang tree (Ninja reported no work to do) and passed the focused CTest
+(1/1). It identified missing coverage for a present row with an absent
+cell-order key. The Executor added that assertion only. The same Tester rebuilt
+the test target incrementally, reran the CTest (1/1), and confirmed the gap was
+closed. The committed diffs passed `git diff --check`. Windows x64 and the full
+suite were not run.
+
+Batch499 is complete locally with its push pending. Batch500 is now active
+with F1243 next for acceptance and F1244–F1252 discovered in the recorded
+order. No Batch500 implementation has started.
