@@ -90,7 +90,8 @@ void SidebarController::importTeachers()
 
     const ClassMngr::Next::Platform::
         ApplicationServicesTeacherImportApplyPort applyPort(m_services);
-    const Result<TeacherImportSummary> imported = applyPort.apply(plan);
+    const Result<ClassMngr::Next::Application::TeacherImportUseCaseResult>
+        imported = applyPort.apply(plan);
     if (!imported)
     {
         DialogServices::showWarning(
@@ -100,9 +101,10 @@ void SidebarController::importTeachers()
         return;
     }
 
-    const TeacherImportSummary& summary = *imported;
+    const ClassMngr::Next::Application::TeacherImportUseCaseResult& summary =
+        *imported;
     bool teacherInfoReloadFailed = false;
-    if (summary.koreanTeachers.updated > 0
+    if (summary.koreanTeachers.updated.rawValue() > 0
         && m_pages->isCurrentPage(PageType::TeacherInfo))
     {
         TeacherInfoPage* const teacherPage = m_pages->teacherPage();
@@ -133,15 +135,15 @@ void SidebarController::importTeachers()
            "Korean Teachers: %1 created, %2 updated, %3 unchanged\n"
            "Native English Teachers: %4 created, %5 updated, %6 unchanged\n"
            "GS Team: %7 created, %8 updated, %9 unchanged")
-            .arg(summary.koreanTeachers.created)
-            .arg(summary.koreanTeachers.updated)
-            .arg(summary.koreanTeachers.unchanged)
-            .arg(summary.nativeEnglishTeachers.created)
-            .arg(summary.nativeEnglishTeachers.updated)
-            .arg(summary.nativeEnglishTeachers.unchanged)
-            .arg(summary.gsTeamMembers.created)
-            .arg(summary.gsTeamMembers.updated)
-            .arg(summary.gsTeamMembers.unchanged));
+            .arg(summary.koreanTeachers.created.rawValue())
+            .arg(summary.koreanTeachers.updated.rawValue())
+            .arg(summary.koreanTeachers.unchanged.rawValue())
+            .arg(summary.nativeEnglishTeachers.created.rawValue())
+            .arg(summary.nativeEnglishTeachers.updated.rawValue())
+            .arg(summary.nativeEnglishTeachers.unchanged.rawValue())
+            .arg(summary.gsTeamMembers.created.rawValue())
+            .arg(summary.gsTeamMembers.updated.rawValue())
+            .arg(summary.gsTeamMembers.unchanged.rawValue()));
 
     if (teacherInfoReloadFailed)
     {

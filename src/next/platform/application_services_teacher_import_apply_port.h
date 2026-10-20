@@ -23,7 +23,7 @@ public:
     {
     }
 
-    [[nodiscard]] Result<TeacherImportSummary> apply(
+    [[nodiscard]] Result<Application::TeacherImportUseCaseResult> apply(
         const TeacherImportPlan& plan
         ) const
     {
@@ -59,7 +59,7 @@ public:
                 TeacherImportRepository::legacyErrorMessage(imported.error()));
         }
 
-        return TeacherImportRepository::legacySummary(*imported);
+        return *imported;
     }
 
 private:

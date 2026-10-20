@@ -11,6 +11,9 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <type_traits>
+#include <utility>
+
 namespace
 {
 QString databasePath(QTemporaryDir& directory)
@@ -60,6 +63,11 @@ QString latestSourceDate(QSqlDatabase database)
 
 using namespace ClassMngr::Next;
 
+static_assert(std::is_same_v<
+    decltype(std::declval<Platform::ApplicationServicesTeacherImportApplyPort>()
+        .apply(std::declval<const TeacherImportPlan&>())),
+    Result<Application::TeacherImportUseCaseResult>>);
+
 class NextPlatformApplicationServicesTeacherImportApplyPortTests final
     : public QObject
 {
@@ -84,9 +92,15 @@ appliesAllGroupsAndKeepsNewestDate()
 
     const auto imported = port.apply(planFor());
     QVERIFY2(imported, qPrintable(imported ? QString() : imported.error()));
-    QCOMPARE(imported->koreanTeachers.created, 1);
-    QCOMPARE(imported->nativeEnglishTeachers.created, 1);
-    QCOMPARE(imported->gsTeamMembers.created, 1);
+    QCOMPARE(imported->koreanTeachers.created.rawValue(), 1);
+    QCOMPARE(imported->koreanTeachers.updated.rawValue(), 0);
+    QCOMPARE(imported->koreanTeachers.unchanged.rawValue(), 0);
+    QCOMPARE(imported->nativeEnglishTeachers.created.rawValue(), 1);
+    QCOMPARE(imported->nativeEnglishTeachers.updated.rawValue(), 0);
+    QCOMPARE(imported->nativeEnglishTeachers.unchanged.rawValue(), 0);
+    QCOMPARE(imported->gsTeamMembers.created.rawValue(), 1);
+    QCOMPARE(imported->gsTeamMembers.updated.rawValue(), 0);
+    QCOMPARE(imported->gsTeamMembers.unchanged.rawValue(), 0);
     QCOMPARE(countRows(services.databaseSession()->database(), QStringLiteral("teachers")), 1);
     QCOMPARE(countRows(services.databaseSession()->database(), QStringLiteral("native_english_teachers")), 1);
     QCOMPARE(countRows(services.databaseSession()->database(), QStringLiteral("gs_team")), 1);
@@ -100,6 +114,18 @@ appliesAllGroupsAndKeepsNewestDate()
     QCOMPARE(latestSourceDate(services.databaseSession()->database()),
         QStringLiteral("2026-10-01"));
 
+    const auto unchanged = port.apply(planFor());
+    QVERIFY2(unchanged, qPrintable(unchanged ? QString() : unchanged.error()));
+    QCOMPARE(unchanged->koreanTeachers.created.rawValue(), 0);
+    QCOMPARE(unchanged->koreanTeachers.updated.rawValue(), 0);
+    QCOMPARE(unchanged->koreanTeachers.unchanged.rawValue(), 1);
+    QCOMPARE(unchanged->nativeEnglishTeachers.created.rawValue(), 0);
+    QCOMPARE(unchanged->nativeEnglishTeachers.updated.rawValue(), 0);
+    QCOMPARE(unchanged->nativeEnglishTeachers.unchanged.rawValue(), 1);
+    QCOMPARE(unchanged->gsTeamMembers.created.rawValue(), 0);
+    QCOMPARE(unchanged->gsTeamMembers.updated.rawValue(), 0);
+    QCOMPARE(unchanged->gsTeamMembers.unchanged.rawValue(), 1);
+
     TeacherImportPlan normalizedNameUpdate;
     normalizedNameUpdate.sourceDate = QDate(2026, 10, 2);
     normalizedNameUpdate.nativeEnglishTeachers.append(NativeEnglishTeacher{
@@ -107,8 +133,15 @@ appliesAllGroupsAndKeepsNewestDate()
     });
     const auto updated = port.apply(normalizedNameUpdate);
     QVERIFY2(updated, qPrintable(updated ? QString() : updated.error()));
-    QCOMPARE(updated->nativeEnglishTeachers.created, 0);
-    QCOMPARE(updated->nativeEnglishTeachers.updated, 1);
+    QCOMPARE(updated->koreanTeachers.created.rawValue(), 0);
+    QCOMPARE(updated->koreanTeachers.updated.rawValue(), 0);
+    QCOMPARE(updated->koreanTeachers.unchanged.rawValue(), 0);
+    QCOMPARE(updated->nativeEnglishTeachers.created.rawValue(), 0);
+    QCOMPARE(updated->nativeEnglishTeachers.updated.rawValue(), 1);
+    QCOMPARE(updated->nativeEnglishTeachers.unchanged.rawValue(), 0);
+    QCOMPARE(updated->gsTeamMembers.created.rawValue(), 0);
+    QCOMPARE(updated->gsTeamMembers.updated.rawValue(), 0);
+    QCOMPARE(updated->gsTeamMembers.unchanged.rawValue(), 0);
     QCOMPARE(countRows(services.databaseSession()->database(),
                  QStringLiteral("native_english_teachers")), 1);
     QSqlQuery normalizedName(services.databaseSession()->database());

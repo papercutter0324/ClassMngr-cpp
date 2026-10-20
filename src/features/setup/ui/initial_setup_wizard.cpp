@@ -289,8 +289,9 @@ public:
             const ClassMngr::Next::Platform::
                 ApplicationServicesTeacherImportApplyPort applyPort(
                     setup->services());
-            const Result<TeacherImportSummary> imported =
-                applyPort.apply(dialog.importPlan());
+            const Result<
+                ClassMngr::Next::Application::TeacherImportUseCaseResult>
+                imported = applyPort.apply(dialog.importPlan());
             if (!imported)
             {
                 DialogServices::showWarning(
@@ -299,12 +300,13 @@ public:
             }
 
             m_imported = true;
-            const TeacherImportSummary& summary = *imported;
+            const ClassMngr::Next::Application::
+                TeacherImportUseCaseResult& summary = *imported;
             m_status->setText(
                 tr("Import complete: %1 Korean teachers created, %2 updated, and %3 unchanged.")
-                    .arg(summary.koreanTeachers.created)
-                    .arg(summary.koreanTeachers.updated)
-                    .arg(summary.koreanTeachers.unchanged));
+                    .arg(summary.koreanTeachers.created.rawValue())
+                    .arg(summary.koreanTeachers.updated.rawValue())
+                    .arg(summary.koreanTeachers.unchanged.rawValue()));
             emit completeChanged();
         });
     }
