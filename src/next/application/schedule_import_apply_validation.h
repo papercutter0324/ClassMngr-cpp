@@ -41,7 +41,7 @@ validateScheduleImportApplyRequest(
     for (const auto& candidateClass : request.classes)
     {
         policy.classColors.push_back({
-            candidateClass.candidateIndex.rawValue(),
+            candidateClass.candidateIndex,
             scheduleImportApplyUtf8(candidateClass.classColor),
             scheduleImportApplyUtf8(candidateClass.fontColor)
         });

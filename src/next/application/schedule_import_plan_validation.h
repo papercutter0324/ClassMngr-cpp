@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/schedule_import_candidate_index.h"
 #include "next/application/schedule_import_review_decisions.h"
 #include "next/domain/course.h"
 #include "next/domain/korean_teacher_key.h"
@@ -34,7 +35,7 @@ struct ScheduleImportPlanEligibilityCandidate final
 
 struct ScheduleImportPlanEligibilityClassColors final
 {
-    int candidateIndex = -1;
+    ScheduleImportCandidateIndex candidateIndex;
     // Values are trimmed by the feature edge before crossing into Application.
     std::string classColor;
     std::string fontColor;
@@ -166,11 +167,12 @@ validateScheduleImportPlanEligibility(
     for (const ScheduleImportPlanEligibilityClassColors& colors :
          request.classColors)
     {
-        if (colors.candidateIndex >= 0
-            && static_cast<std::size_t>(colors.candidateIndex)
+        const int rawCandidateIndex = colors.candidateIndex.rawValue();
+        if (rawCandidateIndex >= 0
+            && static_cast<std::size_t>(rawCandidateIndex)
                 < colorsByCandidate.size())
         {
-            colorsByCandidate[static_cast<std::size_t>(colors.candidateIndex)] =
+            colorsByCandidate[static_cast<std::size_t>(rawCandidateIndex)] =
                 &colors;
         }
     }

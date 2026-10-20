@@ -32,6 +32,10 @@ static_assert(std::is_same_v<
     decltype(ScheduleImportPlanEligibilityCandidate{}.level),
     std::string
     >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportPlanEligibilityClassColors{}.candidateIndex),
+    ScheduleImportCandidateIndex
+    >);
 
 void require(bool condition, const std::string& message)
 {
@@ -69,7 +73,7 @@ Request validRequest(
         {ScheduleImportCandidateIndex{0}, ReviewClassAction::CreateNew, std::nullopt}
         );
     request.classColors.push_back(
-        {0, "#aabbcc", "#000000"}
+        {ScheduleImportCandidateIndex{0}, "#aabbcc", "#000000"}
         );
     return request;
 }
@@ -117,7 +121,7 @@ void appendSecondCandidate(
         {ScheduleImportCandidateIndex{1}, ReviewClassAction::CreateNew, std::nullopt}
         );
     request.classColors.push_back(
-        {1, "#112233", "#445566"}
+        {ScheduleImportCandidateIndex{1}, "#112233", "#445566"}
         );
 }
 
@@ -237,6 +241,41 @@ void verifyRejectionsAndSkipRules()
     Request invalidFontColor = validRequest();
     invalidFontColor.classColors.front().fontColor = "#ABCDEF00";
     expectIssue("invalid font color", invalidFontColor, IssueCode::InvalidClassColor);
+
+    Request negativeClassColorIndex = validRequest();
+    negativeClassColorIndex.classColors.front().candidateIndex =
+        ScheduleImportCandidateIndex{-1};
+    expectIssue(
+        "negative class color candidate index is ignored",
+        negativeClassColorIndex,
+        IssueCode::InvalidClassColor
+        );
+
+    Request outOfRangeClassColorIndex = validRequest();
+    outOfRangeClassColorIndex.classColors.front().candidateIndex =
+        ScheduleImportCandidateIndex{1};
+    expectIssue(
+        "out-of-range class color candidate index is ignored",
+        outOfRangeClassColorIndex,
+        IssueCode::InvalidClassColor
+        );
+
+    Request laterInvalidClassColor = validRequest();
+    laterInvalidClassColor.classColors.push_back(
+        {ScheduleImportCandidateIndex{0}, "invalid", "#000000"}
+        );
+    expectIssue(
+        "later class color record wins",
+        laterInvalidClassColor,
+        IssueCode::InvalidClassColor
+        );
+
+    Request laterValidClassColor = validRequest();
+    laterValidClassColor.classColors.front().classColor = "invalid";
+    laterValidClassColor.classColors.push_back(
+        {ScheduleImportCandidateIndex{0}, "#123456", "#000000"}
+        );
+    expectAccepted("later valid class color record wins", laterValidClassColor);
 
     Request skipped = validRequest("E4", "Theseus", {"Monday", "Tuesday"});
     skipped.reviewDecisions.classes.front().action = ReviewClassAction::Skip;
