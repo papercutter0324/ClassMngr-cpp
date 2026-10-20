@@ -56161,3 +56161,38 @@ The combined focused CTest run reported 43 page cases passed and 3 failed:
 Tester reproduced these failures and found no evidence connecting them to the
 typed-index change. `git diff --check` passed. Verification used incremental
 macOS arm64 Debug; no full-suite or Windows result is claimed.
+
+### F1225 Analytics criterion-extrema positions accepted before implementation - 2026-10-21
+
+F1225 is accepted/current based on two independent read-only Explorer reports
+and a main-owned contract decision. Add an explicit Application value type
+`ClassAnalyticsCriterionIndex`, backed by `std::size_t`, with default zero,
+private storage, `.rawValue()`, equality, and no implicit conversions. Use it
+for both `strongestIndices` and `focusIndices` in
+`ClassAnalyticsCriterionExtremaSelection`. The values are positions in the
+criteria collection passed to the policy, not `ClassAnalyticsCriterion` enum
+values; do not reuse the enum.
+
+Preserve original collection positions, advancing over criteria without data
+so later results are not renumbered. Empty input and all-missing input keep
+both result vectors empty. Emit every strongest/focus tie in input order.
+Keep exact integer-thousandths comparison for thousandths inputs and the
+existing strict `abs(delta) < 1e-9` rule for legacy floating inputs. The policy
+creates positions from the collection traversal, so add no sentinel or range
+validation.
+
+Update both consumers: the Next Application dashboard read query and the
+Feature `SpeakingAnalytics` service. Unwrap only at their criteria collection
+access boundaries (vector access and `QList::at` conversion); preserve
+aggregation, rounding, criterion labels, and projected output. Keep the
+existing query integration case `strongestAndFocusCriteriaPreserveOrderAndLabels`
+and the Speaking Analytics tie, missing, and empty cases.
+
+Extend `next_application_class_analytics_criterion_extrema_policy_tests.cpp`
+with default/explicit/equality/raw-value/non-conversion and selection member
+type assertions. Retain existing empty/all-missing, missing-position, tie
+order, adjacent-thousandths, and strict-tolerance-boundary coverage. Focused
+CTests are `ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests`,
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`, and
+`ClassMngrSpeakingAnalyticsTests`; build the app and these affected targets.
+No F1225 implementation or verification has started.
