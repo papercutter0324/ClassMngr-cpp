@@ -51675,3 +51675,42 @@ incrementally build `ClassMngr`,
 `ClassMngrClassCoTeacherPageReadParityTests`; run the four matching focused
 CTests (offscreen for GUI), then run `git diff --check`. No full-suite or
 Windows pass is claimed. Implementation and verification have not started.
+
+### F1158 Co-Teacher schedule slot complete - 2026-10-20
+
+F1158 completed in source/test commit
+`ca33b146fa9b33fb4ad0be5f2e9beced7663606d`, following acceptance commit
+`b61529e38323526f254949e0c5bdc8d48a178d03`. The Application-only
+`ClassCoTeacherPageScheduleRow` pair was replaced with
+`ClassCoTeacherPageScheduleSlot`, an owning UTF-16 day/start-time pair with
+default-empty state, explicit construction, `day()` and `startTime()`
+accessors, equality, and no implicit conversion. The ordered regular-schedule
+vector now carries the dedicated slot type, distinct from F1151's
+`ScheduleTestingAssignmentKey`. Platform maps repository rows unchanged in
+source order; the Application Query retains class-ID, class-identity, and
+selected-teacher validation, error behavior, and row order. The UI reads the
+pair values while preserving subtitle formatting and normalization. No
+repository changes.
+
+Changed paths: `src/next/application/class_co_teacher_page_read_snapshot.h`,
+`src/next/platform/application_services_class_co_teacher_page_read_port.h`,
+`src/features/classes/ui/class_co_teacher_page.cpp`,
+`tests/next_application_class_co_teacher_page_read_query_tests.cpp`,
+`tests/next_platform_application_services_class_co_teacher_page_read_port_tests.cpp`,
+and `tests/next_feature_class_co_teacher_page_tests.cpp`.
+
+Incremental builds in `build/macos-clang-debug` succeeded for `ClassMngr`,
+`ClassMngrNextApplicationClassCoTeacherPageReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests`,
+`ClassMngrNextFeatureClassCoTeacherPageTests`, and
+`ClassMngrClassCoTeacherPageReadParityTests`; an independent verification
+rerun reported Ninja had no work. All four matching CTests passed with
+`QT_QPA_PLATFORM=offscreen`. `git diff --check` passed. No full suite or
+Windows build ran.
+
+Batch488 remains active with eight candidates: F1154–F1158 are complete, none
+are accepted/in progress, and three remain discovered with F1159 next. The
+original discovery order and boundaries are unchanged. The batch has no push
+receipt and is not closed. F629 awaits source-bound Windows x64 layout
+evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates
+remain open.

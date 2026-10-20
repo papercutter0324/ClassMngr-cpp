@@ -53,7 +53,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch488 is active with four complete, one accepted/in progress (F1158), and three discovered; F1159 follows F1158 in order. F629 awaits source-bound Windows x64 layout evidence, the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch488 is active with five complete, zero accepted/in progress, and three discovered; F1159 is next. F629 awaits source-bound Windows x64 layout evidence, the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+
+### Latest Progress Update
+
+F1158 completed at `ca33b146fa9b33fb4ad0be5f2e9beced7663606d`; see the
+[completion record](03-Phase-2-Progress-Log.md#f1158-co-teacher-schedule-slot-complete-2026-10-20).
 
 ### Slice discovery batches
 
@@ -68,18 +73,18 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch488 (8 candidates; 4 complete; 1 accepted/in progress; 3 discovered)
+#### Active batch: Batch488 (8 candidates; 5 complete; 0 accepted/in progress; 3 discovered)
 
 1. F1154 - **Complete.** Type RosterAvailability's first-empty row output; preserve values 0–24, -1 as the full sentinel, and per-row `Result` errors (see the [completion record](03-Phase-2-Progress-Log.md#f1154-rosteravailability-first-empty-row-complete-2026-10-20)).
 2. F1155 - **Complete.** Type My Classes' nonnegative student-count output; preserve per-row `Result` errors (see the [completion record](03-Phase-2-Progress-Log.md#f1155-my-classes-student-count-complete-2026-10-20)).
 3. F1156 - **Complete.** Add an opaque UTF-8 Application grade value; preserve exact bytes, whitespace, and empty/missing values, with interpretation confined to existing consumers (see the [completion record](03-Phase-2-Progress-Log.md#f1156-selected-class-grade-complete-2026-10-20)).
 4. F1157 - **Complete.** Type Schedule Builder source day/start/end text as opaque UTF-16 values; preserve raw content, vector order, and current UI interpretation behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1157-schedule-builder-source-text-complete-2026-10-20)).
-5. F1158 - **Accepted/in progress.** Give Co-Teacher schedule day/start identity its own `ClassCoTeacherPageScheduleSlot` value; preserve raw pair values and source order, without reusing F1151's testing-specific key (see the [acceptance record](03-Phase-2-Progress-Log.md#f1158-co-teacher-schedule-slot-accepted-before-implementation-2026-10-20)).
+5. F1158 - **Complete.** Give Co-Teacher schedule day/start identity its own `ClassCoTeacherPageScheduleSlot` value; preserve raw pair values and source order (see the [completion record](03-Phase-2-Progress-Log.md#f1158-co-teacher-schedule-slot-complete-2026-10-20)).
 6. F1159 - **Discovered.** Type Schedule Slot State read-row day/start identity; preserve arbitrary raw state text and row order.
 7. F1160 - **Discovered.** Type Calendar repeat-series delete start date with `Domain::GregorianDate`; preserve validation and error behavior.
 8. F1161 - **Discovered.** Reassess Calendar repeat-series edit `eventType` against `Domain::CalendarEventType`; resolve trimmed recognition versus raw-forwarding compatibility before acceptance.
 
-Batch488 has eight candidates: F1154–F1157 are complete, F1158 is accepted/in progress, and three remain discovered; F1159 follows F1158 in the recorded order. The original candidate list is in the [Batch488 discovery record](03-Phase-2-Progress-Log.md#batch488-discovery-at-f1152-start-2026-10-20). The batch has no push receipt and is not closed. F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+Batch488 has eight candidates: F1154–F1158 are complete, none are accepted/in progress, and three remain discovered with F1159 next. The original candidate list is in the [Batch488 discovery record](03-Phase-2-Progress-Log.md#batch488-discovery-at-f1152-start-2026-10-20). The batch has no push receipt and is not closed. F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 
