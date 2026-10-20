@@ -67,11 +67,20 @@ restore-defaults name `ClassMngrCalendarPreferencesRestoreDefaultsTests`; the
 Tester build was up to date, and `git diff --check` passed. No full suite or
 Windows build ran. Batch490 is complete and pushed to `origin/Qt-Rewrite` at
 `69be43a7`; see the [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20).
-Batch491 is active with F1178–F1180 complete, F1181 accepted/in progress,
-F1182 next, and F1183–F1185 discovered. F1175's Class Transfer test still has one
-unresolved teacher-fallback label failure among 64 cases;
-no clean baseline proves it pre-existing. F629 awaits source-bound Windows x64
-layout evidence. Phase 0 and Phase 2 gates remain open.
+F1181 completed at source/test commit `d35f197c`, after acceptance commit
+`44919da9`. `Application::ClassTransferPackageClassIndex` now types only the
+three Application review indices while preserving the `-1` sentinel, 99 as
+`UnknownClassResolution`, issue order, matching-policy `std::size_t` indices,
+and legacy/UI `int` fields. The independent Tester rebuilt the four accepted
+targets; three focused CTests passed, and the offscreen typed-dialog selector
+passed 3/3. The additional changed apply-use-case test target rebuilt after an
+explicit-initializer repair, and its CTest passed 1/1. `git diff --check` passed.
+No full suite or Windows build ran. Batch491 is active with F1178–F1181
+complete, F1182 next, and F1183–F1185 discovered; it remains unpushed. F1175's
+Class Transfer test still has one unresolved teacher-fallback label failure
+among 64 cases; no clean baseline proves it pre-existing. F629 awaits
+source-bound Windows x64 layout evidence. Phase 0 and Phase 2 gates remain
+open.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 
