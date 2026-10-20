@@ -147,6 +147,7 @@ private slots:
     void applyUsesConfirmationAndReportsRepositoryOutcome();
     void applyDisplaysFreshStateValidationFailure();
     void policyFailureMessageRetainsLegacyText();
+    void eligibilityFailuresUseTheFailingCandidateGradeAndLevel();
     void featureValidatorMatchesQStringTeacherKeyConstruction();
     void reviewModelBuildsTypedApplyRequest();
 };
@@ -6018,6 +6019,78 @@ void ScheduleImportDialogTests::policyFailureMessageRetainsLegacyText()
         ScheduleImportPlanValidator::policyFailureMessage(request, issue),
         legacyValidation.error()
         );
+
+    const ImportState::ScheduleImportPlanEligibilityIssue outOfRangeIssue{
+        ImportState::ScheduleImportPlanEligibilityIssueCode::InvalidMeetingWeekday,
+        ImportState::ScheduleImportPlanEligibilityCandidateIndex{7}
+    };
+    QCOMPARE(
+        ScheduleImportPlanValidator::policyFailureMessage(request, outOfRangeIssue),
+        QStringLiteral(
+            "The meeting pattern for   is invalid: Each imported class must have exactly one meeting per scheduled weekday."
+            )
+        );
+}
+
+void ScheduleImportDialogTests::
+    eligibilityFailuresUseTheFailingCandidateGradeAndLevel()
+{
+    ScheduleImportPlan plan;
+    ScheduleImportClassCandidate firstCandidate;
+    firstCandidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+    firstCandidate.teacherKr = firstCandidate.teacherKey;
+    firstCandidate.rooms = {QStringLiteral("414")};
+    firstCandidate.classGrade = QStringLiteral("E4");
+    firstCandidate.classLevel = QStringLiteral("Hercules");
+    firstCandidate.times = {
+        {QStringLiteral("Monday"), QStringLiteral("4:00 PM"), QStringLiteral("4:50 PM")},
+        {QStringLiteral("Wednesday"), QStringLiteral("4:00 PM"), QStringLiteral("4:50 PM")}
+    };
+
+    ScheduleImportClassCandidate secondCandidate = firstCandidate;
+    secondCandidate.classGrade = QStringLiteral("E5");
+    secondCandidate.classLevel = QStringLiteral("Zeus");
+    secondCandidate.times = {
+        {QStringLiteral("Monday"), QStringLiteral("4:00 PM"), QStringLiteral("4:50 PM")},
+        {QStringLiteral("Tuesday"), QStringLiteral("4:00 PM"), QStringLiteral("4:50 PM")}
+    };
+    plan.candidates = {firstCandidate, secondCandidate};
+    plan.teachers = {{
+        firstCandidate.teacherKey,
+        ScheduleImportTeacherAction::Reuse,
+        17,
+        QString()
+    }};
+    plan.classes = {
+        {0, ScheduleImportClassAction::CreateNew, -1,
+            QStringLiteral("#AABBCC"), QStringLiteral("#000000")},
+        {1, ScheduleImportClassAction::CreateNew, -1,
+            QStringLiteral("#112233"), QStringLiteral("#445566")}
+    };
+
+    const auto validation = ScheduleImportPlanValidator::validate(plan);
+    QVERIFY(!validation.has_value());
+    QVERIFY(validation.error().contains(QStringLiteral("E5 Zeus")));
+    QVERIFY(!validation.error().contains(QStringLiteral("E4 Hercules")));
+
+    ImportState::ScheduleImportApplyRequest applyRequest;
+    for (const QString& grade : {QStringLiteral("E4"), QStringLiteral("E5")})
+    {
+        ImportState::ScheduleImportApplyCandidate candidate;
+        candidate.grade = grade.toStdU16String();
+        candidate.level = grade == QStringLiteral("E4")
+            ? u"Hercules"
+            : u"Zeus";
+        applyRequest.candidates.push_back(std::move(candidate));
+    }
+    const ImportState::ScheduleImportPlanEligibilityIssue issue{
+        ImportState::ScheduleImportPlanEligibilityIssueCode::InvalidMeetingWeekday,
+        ImportState::ScheduleImportPlanEligibilityCandidateIndex{1}
+    };
+    const QString message =
+        ScheduleImportPlanValidator::policyFailureMessage(applyRequest, issue);
+    QVERIFY(message.contains(QStringLiteral("E5 Zeus")));
+    QVERIFY(!message.contains(QStringLiteral("E4 Hercules")));
 }
 
 void ScheduleImportDialogTests::

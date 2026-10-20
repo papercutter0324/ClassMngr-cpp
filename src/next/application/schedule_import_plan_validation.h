@@ -66,10 +66,36 @@ enum class ScheduleImportPlanEligibilityIssueCode
     InvalidClassColor
 };
 
+class ScheduleImportPlanEligibilityCandidateIndex final
+{
+public:
+    constexpr ScheduleImportPlanEligibilityCandidateIndex() noexcept = default;
+
+    explicit constexpr ScheduleImportPlanEligibilityCandidateIndex(
+        const std::size_t rawValue
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const ScheduleImportPlanEligibilityCandidateIndex&,
+        const ScheduleImportPlanEligibilityCandidateIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t m_rawValue = 0;
+};
+
 struct ScheduleImportPlanEligibilityIssue final
 {
     ScheduleImportPlanEligibilityIssueCode code;
-    std::size_t candidateIndex = 0;
+    ScheduleImportPlanEligibilityCandidateIndex candidateIndex;
     std::optional<ScheduleImportReviewDecisionIssue> reviewDecisionIssue;
     std::optional<Domain::Course::WeeklyMeetingDayRuleKind>
         meetingPatternRuleKind;
@@ -120,7 +146,7 @@ validateScheduleImportPlanEligibility(
         {
             return ScheduleImportPlanEligibilityIssue{
                 IssueCode::InvalidCourse,
-                candidateIndex
+                ScheduleImportPlanEligibilityCandidateIndex{candidateIndex}
             };
         }
 
@@ -134,7 +160,7 @@ validateScheduleImportPlanEligibility(
         {
             return ScheduleImportPlanEligibilityIssue{
                 IssueCode::InvalidTeacherKey,
-                candidateIndex
+                ScheduleImportPlanEligibilityCandidateIndex{candidateIndex}
             };
         }
 
@@ -142,7 +168,7 @@ validateScheduleImportPlanEligibility(
         {
             return ScheduleImportPlanEligibilityIssue{
                 IssueCode::MissingMeetingTimes,
-                candidateIndex
+                ScheduleImportPlanEligibilityCandidateIndex{candidateIndex}
             };
         }
     }
@@ -246,7 +272,7 @@ validateScheduleImportPlanEligibility(
                 {
                     return ScheduleImportPlanEligibilityIssue{
                         IssueCode::InvalidMeetingWeekday,
-                        candidateIndex
+                        ScheduleImportPlanEligibilityCandidateIndex{candidateIndex}
                     };
                 }
                 weekdays.push_back(*weekday);
@@ -260,7 +286,7 @@ validateScheduleImportPlanEligibility(
             {
                 ScheduleImportPlanEligibilityIssue issue{
                     IssueCode::InvalidMeetingPattern,
-                    candidateIndex
+                    ScheduleImportPlanEligibilityCandidateIndex{candidateIndex}
                 };
                 issue.meetingPatternRuleKind = rule->kind();
                 issue.meetingWeekdays = std::move(weekdays);
@@ -275,7 +301,7 @@ validateScheduleImportPlanEligibility(
             {
                 return ScheduleImportPlanEligibilityIssue{
                     IssueCode::InvalidClassColor,
-                    candidateIndex
+                    ScheduleImportPlanEligibilityCandidateIndex{candidateIndex}
                 };
             }
         }

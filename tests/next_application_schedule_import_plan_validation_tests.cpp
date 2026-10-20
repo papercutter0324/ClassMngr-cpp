@@ -1,5 +1,6 @@
 #include "next/application/schedule_import_plan_validation.h"
 
+#include <cstddef>
 #include <cstdlib>
 #include <iostream>
 #include <optional>
@@ -19,6 +20,8 @@ using ReviewIssueCode = ScheduleImportReviewDecisionIssueCode;
 using ReviewTeacherAction = ScheduleImportReviewTeacherAction;
 using ReviewTeacherKey = ScheduleImportReviewTeacherKey;
 using Request = ScheduleImportPlanEligibilityRequest;
+using EligibilityCandidateIndex =
+    ScheduleImportPlanEligibilityCandidateIndex;
 
 static_assert(std::is_same_v<
     decltype(ScheduleImportPlanEligibilityCandidate{}.teacherKey),
@@ -35,6 +38,25 @@ static_assert(std::is_same_v<
 static_assert(std::is_same_v<
     decltype(ScheduleImportPlanEligibilityClassColors{}.candidateIndex),
     ScheduleImportCandidateIndex
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportPlanEligibilityIssue{}.candidateIndex),
+    EligibilityCandidateIndex
+    >);
+static_assert(std::is_constructible_v<EligibilityCandidateIndex, std::size_t>);
+static_assert(!std::is_convertible_v<std::size_t, EligibilityCandidateIndex>);
+static_assert(!std::is_convertible_v<EligibilityCandidateIndex, std::size_t>);
+static_assert(!std::is_convertible_v<
+    ScheduleImportCandidateIndex,
+    EligibilityCandidateIndex
+    >);
+static_assert(!std::is_convertible_v<
+    EligibilityCandidateIndex,
+    ScheduleImportCandidateIndex
+    >);
+static_assert(std::is_same_v<
+    decltype(EligibilityCandidateIndex{}.rawValue()),
+    std::size_t
     >);
 
 void require(bool condition, const std::string& message)
@@ -88,6 +110,10 @@ void expectIssue(
         validateScheduleImportPlanEligibility(request);
     require(result.has_value(), name + " unexpectedly accepted");
     require(result->code == expected, name + " returned the wrong issue");
+    require(
+        result->candidateIndex == EligibilityCandidateIndex{},
+        name + " did not retain the zero candidate position"
+        );
 }
 
 void expectAccepted(const std::string& name, const Request& request)
@@ -318,6 +344,10 @@ void verifyFirstErrorOrder()
         "review decision did not precede candidate checks"
         );
     require(
+        decisionIssue->candidateIndex == EligibilityCandidateIndex{},
+        "global review issue did not retain candidate position zero"
+        );
+    require(
         decisionIssue->reviewDecisionIssue.has_value()
             && decisionIssue->reviewDecisionIssue->code
                 == ReviewIssueCode::InvalidTeacherAction,
@@ -334,8 +364,19 @@ void verifyFirstErrorOrder()
     require(
         laterBasicIssue.has_value()
             && laterBasicIssue->code == IssueCode::InvalidCourse
-            && laterBasicIssue->candidateIndex == 1,
+            && laterBasicIssue->candidateIndex == EligibilityCandidateIndex{1},
         "a later candidate's basic check did not precede earlier pattern/color checks"
+        );
+
+    Request laterPatternIssue = validRequest();
+    appendSecondCandidate(laterPatternIssue, {"Monday", "Tuesday"});
+    const auto laterMeetingIssue =
+        validateScheduleImportPlanEligibility(laterPatternIssue);
+    require(
+        laterMeetingIssue.has_value()
+            && laterMeetingIssue->code == IssueCode::InvalidMeetingPattern
+            && laterMeetingIssue->candidateIndex == EligibilityCandidateIndex{1},
+        "a later candidate's meeting failure did not retain its position"
         );
 
     Request candidateBeforePattern = validRequest("invalid", "invalid", {"Monday"});
@@ -363,8 +404,26 @@ void verifyFirstErrorOrder()
     require(firstCandidateIssue.has_value(), "multiple errors were accepted");
     require(
         firstCandidateIssue->code == IssueCode::InvalidClassColor
-            && firstCandidateIssue->candidateIndex == 0,
+            && firstCandidateIssue->candidateIndex == EligibilityCandidateIndex{0},
         "candidate order did not determine the first post-basic failure"
+        );
+}
+
+void verifyEligibilityCandidateIndexValueType()
+{
+    const EligibilityCandidateIndex defaultIndex;
+    require(defaultIndex.rawValue() == 0, "candidate index did not default to zero");
+    require(
+        EligibilityCandidateIndex{17}.rawValue() == 17,
+        "candidate index did not preserve its explicit value"
+        );
+    require(
+        EligibilityCandidateIndex{17} == EligibilityCandidateIndex{17},
+        "equal candidate indices did not compare equal"
+        );
+    require(
+        EligibilityCandidateIndex{17} != EligibilityCandidateIndex{18},
+        "different candidate indices compared equal"
         );
 }
 
@@ -393,6 +452,7 @@ int main()
 {
     try
     {
+        verifyEligibilityCandidateIndexValueType();
         verifyValidMeetingRules();
         verifyRejectionsAndSkipRules();
         verifyFirstErrorOrder();

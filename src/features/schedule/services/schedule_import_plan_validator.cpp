@@ -498,15 +498,14 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
             );
     if (issue.has_value())
     {
-        const qsizetype candidateIndex =
-            static_cast<qsizetype>(issue->candidateIndex);
-        const QString grade = candidateIndex >= 0
-                && candidateIndex < plan.candidates.size()
-            ? plan.candidates[candidateIndex].classGrade
+        const std::size_t candidateIndex = issue->candidateIndex.rawValue();
+        const bool hasCandidate = candidateIndex
+            < static_cast<std::size_t>(plan.candidates.size());
+        const QString grade = hasCandidate
+            ? plan.candidates[static_cast<qsizetype>(candidateIndex)].classGrade
             : QString();
-        const QString level = candidateIndex >= 0
-                && candidateIndex < plan.candidates.size()
-            ? plan.candidates[candidateIndex].classLevel
+        const QString level = hasCandidate
+            ? plan.candidates[static_cast<qsizetype>(candidateIndex)].classLevel
             : QString();
         return std::unexpected(
             formatPolicyIssue(*issue, request, grade, level)
@@ -539,7 +538,7 @@ QString ScheduleImportPlanValidator::policyFailureMessage(
 {
     const ScheduleImportPlanEligibilityRequest policy =
         eligibilityRequest(request);
-    const std::size_t candidateIndex = issue.candidateIndex;
+    const std::size_t candidateIndex = issue.candidateIndex.rawValue();
     const QString grade = candidateIndex < request.candidates.size()
         ? QString::fromStdU16String(request.candidates[candidateIndex].grade)
         : QString();

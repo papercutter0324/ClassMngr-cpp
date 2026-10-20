@@ -46,6 +46,10 @@ static_assert(std::is_same_v<
     decltype(ScheduleImportApplySummary{}.profileNameUpdated),
     bool
     >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportPlanEligibilityIssue{}.candidateIndex),
+    ScheduleImportPlanEligibilityCandidateIndex
+    >);
 
 namespace
 {
@@ -128,6 +132,29 @@ int main()
         && rejectedNormalScheduleMode.error().policyIssue.has_value());
     require(rejectedNormalScheduleMode.error().policyIssue->code
         == ScheduleImportPlanEligibilityIssueCode::InvalidIntensiveMode);
+    require(rejectedNormalScheduleMode.error().policyIssue->candidateIndex.rawValue() == 0);
+    require(port.calls == 1);
+
+    auto invalidLaterCandidate = validRequest();
+    invalidLaterCandidate.candidates.push_back(
+        invalidLaterCandidate.candidates.front()
+        );
+    invalidLaterCandidate.candidates.back().level = u"not a catalog level";
+    invalidLaterCandidate.classes.push_back({
+        ScheduleImportCandidateIndex{1},
+        ScheduleImportReviewClassAction::CreateNew,
+        std::nullopt,
+        u"#FFFFFF",
+        u"#000000"
+    });
+    const auto rejectedLaterCandidate =
+        ScheduleImportApplyUseCase::execute(invalidLaterCandidate, port);
+    require(!rejectedLaterCandidate
+        && rejectedLaterCandidate.error().policyIssue.has_value());
+    require(rejectedLaterCandidate.error().policyIssue->code
+        == ScheduleImportPlanEligibilityIssueCode::InvalidCourse);
+    require(rejectedLaterCandidate.error().policyIssue->candidateIndex
+        == ScheduleImportPlanEligibilityCandidateIndex{1});
     require(port.calls == 1);
 
     const auto teacherId = ClassMngr::Next::Domain::TeacherId::fromString("7");
@@ -294,6 +321,7 @@ int main()
     require(!rejected && rejected.error().policyIssue.has_value());
     require(rejected.error().policyIssue->code
         == ScheduleImportPlanEligibilityIssueCode::UnacknowledgedDiagnostics);
+    require(rejected.error().policyIssue->candidateIndex.rawValue() == 0);
     require(port.calls == 1);
 
     invalid.intensiveMode = ScheduleImportPlanIntensiveMode::Invalid;
@@ -310,6 +338,7 @@ int main()
     require(!missingTarget && missingTarget.error().policyIssue.has_value());
     require(missingTarget.error().policyIssue->code
         == ScheduleImportPlanEligibilityIssueCode::InvalidReviewDecision);
+    require(missingTarget.error().policyIssue->candidateIndex.rawValue() == 0);
     require(port.calls == 1);
 
     port.result = std::unexpected(ScheduleImportApplyFailure{u"write failed", std::nullopt});

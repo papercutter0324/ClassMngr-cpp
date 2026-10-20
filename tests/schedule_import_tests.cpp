@@ -7349,6 +7349,33 @@ void ScheduleImportTests::typedApplyRejectsMalformedTimeBeforeWrites()
             QCOMPARE(persistedScheduleImportSnapshot(database), before);
         }
 
+        auto laterCandidateMissingTimes = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E4", u"Hercules"),
+            typedCandidate(u"\uBC15", u"E5", u"Zeus")
+        });
+        laterCandidateMissingTimes.candidates[1].times.clear();
+        const QStringList missingTimesBefore =
+            persistedScheduleImportSnapshot(database);
+        const auto missingTimesImport =
+            repository.applyTyped(laterCandidateMissingTimes);
+        QVERIFY(!missingTimesImport.has_value());
+        QVERIFY(missingTimesImport.error().policyIssue.has_value());
+        QCOMPARE(
+            missingTimesImport.error().policyIssue->code,
+            ClassMngr::Next::Application::
+                ScheduleImportPlanEligibilityIssueCode::MissingMeetingTimes
+            );
+        QVERIFY(
+            missingTimesImport.error().policyIssue->candidateIndex
+                == ClassMngr::Next::Application::
+                    ScheduleImportPlanEligibilityCandidateIndex{1}
+            );
+        QVERIFY(!missingTimesImport.error().stateValidationError.has_value());
+        QCOMPARE(
+            persistedScheduleImportSnapshot(database),
+            missingTimesBefore
+            );
+
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);
@@ -7920,6 +7947,11 @@ void ScheduleImportTests::typedApplyRejectsInvalidEnumsBeforeWrites()
             ClassMngr::Next::Application::
                 ScheduleImportPlanEligibilityIssueCode::InvalidIntensiveMode
             );
+        QVERIFY(
+            invalidNormalModeResult.error().policyIssue->candidateIndex
+                == ClassMngr::Next::Application::
+                    ScheduleImportPlanEligibilityCandidateIndex{}
+            );
         QVERIFY2(
             typedApplyFailureMessage(invalidNormalModeResult).contains(
                 QStringLiteral("Choose how the existing intensive schedule should be handled.")),
@@ -7937,6 +7969,11 @@ void ScheduleImportTests::typedApplyRejectsInvalidEnumsBeforeWrites()
             invalidModeAndDiagnosticsResult.error().policyIssue->code,
             ClassMngr::Next::Application::
                 ScheduleImportPlanEligibilityIssueCode::UnacknowledgedDiagnostics
+            );
+        QVERIFY(
+            invalidModeAndDiagnosticsResult.error().policyIssue->candidateIndex
+                == ClassMngr::Next::Application::
+                    ScheduleImportPlanEligibilityCandidateIndex{}
             );
         QVERIFY2(
             typedApplyFailureMessage(invalidModeAndDiagnosticsResult).contains(
@@ -8002,6 +8039,11 @@ void ScheduleImportTests::typedApplyRejectsMalformedResolutionShapesBeforeWrites
             outOfRangeResult.error().policyIssue->code,
             ClassMngr::Next::Application::
                 ScheduleImportPlanEligibilityIssueCode::InvalidReviewDecision
+            );
+        QVERIFY(
+            outOfRangeResult.error().policyIssue->candidateIndex
+                == ClassMngr::Next::Application::
+                    ScheduleImportPlanEligibilityCandidateIndex{}
             );
         QVERIFY2(
             typedApplyFailureMessage(outOfRangeResult).contains(
