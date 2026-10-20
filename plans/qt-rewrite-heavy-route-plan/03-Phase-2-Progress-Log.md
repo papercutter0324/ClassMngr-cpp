@@ -55953,3 +55953,26 @@ negative boundary. Focused targets are
 `ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests`, and
 `ClassMngrNextPlatformApplicationServicesRosterReadPortTests`. No F1221
 implementation or verification has started.
+
+### F1221 Roster Availability accumulator coordinates complete - 2026-10-21
+
+F1221 completed at implementation commit `6c8c0339` (`Phase2 - Type roster
+availability accumulator coordinates`), following acceptance-record commit
+`018d0995`. The Application accumulator now accepts distinct explicit,
+`int`-backed `RosterAvailabilityAccumulatorRowIndex` and
+`RosterAvailabilityAccumulatorSourceColumnIndex` values. The Platform stream
+adapter wraps its signed callback coordinates at the Application boundary.
+Negative inputs remain representable through the original validation order:
+negative row, row outside the 25-row model, negative source column, source
+column outside the stored header range, then retained-column projection.
+Invalid observations do not mark rows; whitespace handling, projection
+behavior, and the legacy `RosterAvailabilityFirstEmptyRow` `int`/`-1` result
+remain unchanged.
+
+The Executor built `ClassMngr` and both focused test targets in the existing
+`build/macos-clang-debug` tree and ran focused CTests: 2/2 passed. The
+independent Tester reviewed the changed Application and Platform boundaries,
+reran the target build (Ninja reported no work) and focused CTests 2/2, and
+confirmed `git diff --check`. This was incremental macOS arm64 Debug
+verification; no full suite or Windows run is claimed. `clang-format` was
+unavailable and formatter validation was not run.
