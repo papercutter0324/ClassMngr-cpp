@@ -301,14 +301,14 @@ void CalendarEventImportService::handleFinished(
 
     StartupProfiler::recordCalendarImportEventsPrepared(
         parsed.events.size(),
-        parsed.skippedCount
+        parsed.skippedCount.rawValue()
         );
 
     if (parsed.events.isEmpty())
     {
         emit importFinished(
             0,
-            parsed.skippedCount
+            parsed.skippedCount.rawValue()
             );
         return;
     }
@@ -345,10 +345,7 @@ void CalendarEventImportService::handleFinished(
             lastDate.toString(Qt::ISODate).toStdString()
             )
     };
-    useCaseRequest.initiallySkippedCount =
-        ClassMngr::Next::Application::CalendarEventImportCount{
-            parsed.skippedCount
-            };
+    useCaseRequest.initiallySkippedCount = parsed.skippedCount;
     useCaseRequest.candidates.reserve(
         static_cast<std::size_t>(parsed.events.size())
         );

@@ -8,6 +8,7 @@
 #include <zlib.h>
 
 #include <string>
+#include <type_traits>
 #include <utility>
 
 namespace
@@ -17,6 +18,10 @@ concept HasFlatCellProjection = requires(T workbook) { workbook.cells; };
 
 static_assert(!HasFlatCellProjection<CalendarImport::Workbook>,
     "Workbook cells must be owned only by worksheets.");
+static_assert(std::is_same_v<
+    decltype(CalendarImport::ParsedCalendarImport{}.skippedCount),
+    ClassMngr::Next::Application::CalendarEventImportCount
+    >);
 
 CalendarImport::Workbook baseWorkbook()
 {
@@ -315,7 +320,7 @@ void CalendarImportTests::importsOnlyFirstWorksheetInCalendarOrder()
     workbook.worksheets.append(laterSheet);
 
     const auto parsed = CalendarImport::parseCalendarEventsFromWorkbook(workbook);
-    QCOMPARE(parsed.skippedCount, 0);
+    QCOMPARE(parsed.skippedCount.rawValue(), 0);
     QCOMPARE(parsed.events.size(), 2);
     QCOMPARE(parsed.events.at(0).startDate, QDate(2026, 7, 6));
     QCOMPARE(parsed.events.at(1).startDate, QDate(2026, 7, 7));
@@ -325,7 +330,7 @@ void CalendarImportTests::importsOnlyFirstWorksheetInCalendarOrder()
     // Mutate the sole worksheet-owned source; there is no snapshot to synchronize.
     workbook.worksheets.first().cells[2].value = QStringLiteral("Updated semester");
     const auto updated = CalendarImport::parseCalendarEventsFromWorkbook(workbook);
-    QCOMPARE(updated.skippedCount, 0);
+    QCOMPARE(updated.skippedCount.rawValue(), 0);
     QCOMPARE(updated.events.size(), 2);
     QCOMPARE(updated.events.at(0).startDate, parsed.events.at(0).startDate);
     QCOMPARE(updated.events.at(1).startDate, parsed.events.at(1).startDate);
@@ -338,7 +343,7 @@ void CalendarImportTests::returnsNoEventsForMissingOrEmptyFirstWorksheet()
     CalendarImport::Workbook workbook;
     const auto missing = CalendarImport::parseCalendarEventsFromWorkbook(workbook);
     QVERIFY(missing.events.isEmpty());
-    QCOMPARE(missing.skippedCount, 0);
+    QCOMPARE(missing.skippedCount.rawValue(), 0);
 
     workbook = baseWorkbook();
     workbook.worksheets.first().cells.append(
@@ -347,7 +352,7 @@ void CalendarImportTests::returnsNoEventsForMissingOrEmptyFirstWorksheet()
     workbook.worksheets.prepend(CalendarImport::Worksheet{});
     const auto emptyFirst = CalendarImport::parseCalendarEventsFromWorkbook(workbook);
     QVERIFY(emptyFirst.events.isEmpty());
-    QCOMPARE(emptyFirst.skippedCount, 0);
+    QCOMPARE(emptyFirst.skippedCount.rawValue(), 0);
 }
 
 void CalendarImportTests::lastCellAtDuplicateCoordinateWinsInProjection()
@@ -397,7 +402,7 @@ void CalendarImportTests::cancelledCalendarDatesAreSuppressed()
     const auto parsed = CalendarImport::parseCalendarEventsFromWorkbook(workbook);
 
     QVERIFY(parsed.events.isEmpty());
-    QCOMPARE(parsed.skippedCount, 0);
+    QCOMPARE(parsed.skippedCount.rawValue(), 0);
 }
 
 void CalendarImportTests::readerRejectsUnreadableWorkbook_data()
@@ -417,7 +422,7 @@ void CalendarImportTests::readerRejectsUnreadableWorkbook()
     QVERIFY(workbook.worksheets.isEmpty());
     const auto parsed = CalendarImport::parseCalendarEventsFromWorkbook(workbook);
     QVERIFY(parsed.events.isEmpty());
-    QCOMPARE(parsed.skippedCount, 0);
+    QCOMPARE(parsed.skippedCount.rawValue(), 0);
 }
 
 void CalendarImportTests::readerRejectsMalformedLaterWorksheetAndAllEmptyWorkbook()
@@ -620,6 +625,7 @@ void CalendarImportTests::ignoresWeekendLegendEntries()
         CalendarImport::parseCalendarEventsFromWorkbook(workbook);
 
     QCOMPARE(parsed.events.size(), 0);
+    QCOMPARE(parsed.skippedCount.rawValue(), 1);
 }
 
 void CalendarImportTests::importsNewSemesterLegendEntries()
@@ -636,7 +642,7 @@ void CalendarImportTests::importsNewSemesterLegendEntries()
     const CalendarImport::ParsedCalendarImport parsed =
         CalendarImport::parseCalendarEventsFromWorkbook(workbook);
 
-    QCOMPARE(parsed.skippedCount, 0);
+    QCOMPARE(parsed.skippedCount.rawValue(), 0);
     QCOMPARE(parsed.events.size(), 1);
     QCOMPARE(parsed.events.first().title, QStringLiteral("New Semester"));
     QCOMPARE(parsed.events.first().eventType, QStringLiteral("Other"));

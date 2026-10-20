@@ -108,7 +108,7 @@ productionImportPathMatchesLegacyGoldenFixture()
     const CalendarImport::ParsedCalendarImport parsed =
         CalendarImport::parseCalendarEventsFromWorkbook(workbook);
     QCOMPARE(parsed.events.size(), 4);
-    QCOMPARE(parsed.skippedCount, 1);
+    QCOMPARE(parsed.skippedCount.rawValue(), 1);
     const QStringList actualParsedSignatures{
             legacySignature(parsed.events.at(0)),
             legacySignature(parsed.events.at(1)),
@@ -149,7 +149,10 @@ productionImportPathMatchesLegacyGoldenFixture()
             ),
         qPrintable(streamError)
         );
-    QCOMPARE(streamedParse.skippedCount, parsed.skippedCount);
+    QCOMPARE(
+        streamedParse.skippedCount.rawValue(),
+        parsed.skippedCount.rawValue()
+        );
     QCOMPARE(streamedParse.events.size(), parsed.events.size());
     for (qsizetype index = 0; index < parsed.events.size(); ++index)
     {

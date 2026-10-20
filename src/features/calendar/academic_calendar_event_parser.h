@@ -2,6 +2,7 @@
 
 #include "domain/models/calendar_event.h"
 #include "next/application/calendar_event_import_signature.h"
+#include "next/application/calendar_event_import_count.h"
 
 #include <QList>
 #include <QStringList>
@@ -15,7 +16,7 @@ struct Worksheet;
 struct ParsedCalendarImport
 {
     QList<CalendarEvent> events;
-    int skippedCount = 0;
+    ClassMngr::Next::Application::CalendarEventImportCount skippedCount;
 };
 
 ParsedCalendarImport parseCalendarEventsFromWorkbook(
