@@ -56528,3 +56528,46 @@ were up to date, passed both focused CTests (policy and list model), and passed
 emitted macOS pasteboard and LaunchServices diagnostics but exited
 successfully. This was incremental macOS `arm64;x86_64` Debug verification; no
 full suite or Windows run is claimed.
+
+### F1229 Calendar Event import accepted-candidate positions accepted before implementation - 2026-10-21
+
+F1229 is accepted based on two independent read-only Explorer reports and a
+main-owned contract decision. Add a distinct explicit Application value type
+`CalendarEventImportCandidateIndex`, backed by `std::size_t`, with default
+zero, private storage, `.rawValue()`, equality, and no implicit conversions.
+Change `CalendarEventImportPlan::acceptedCandidateIndices` to
+`std::vector<CalendarEventImportCandidateIndex>`. Positions address the
+original candidate-signature vector; the use case constructs signatures and
+prepared save requests in the same candidate order. They do not represent
+calendar source rows or event IDs. The empty vector represents no accepted
+candidates; zero is a valid position, not a sentinel. Add no range validation.
+
+Preserve first-seen duplicate handling: existing signatures are seeded into
+the seen set, the first occurrence of each new candidate signature is
+accepted, later duplicates increment `skippedCount`, and accepted positions
+remain in candidate input order. Preserve the parser's initial skipped count.
+At the use-case boundary, unwrap only when indexing `preparedSaveRequests`;
+retain `.at()` access and the existing aligned candidate/signature/request
+construction. Keep empty-input port behavior, one empty save call for a
+nonempty duplicate-only batch, filtering before the accepted-batch limit, and
+current query/save failure behavior.
+
+Extend `next_application_calendar_event_import_plan_tests.cpp` with wrapper
+default/explicit/equality/raw-value/non-conversion assertions and an exact
+vector-element type assertion. Update expected result vectors while retaining
+the empty plan, existing-key precedence, first-seen ordering, cumulative
+skipped counts, exact UTF-16 signature equality, and lone-surrogate cases. In
+`next_application_calendar_event_import_use_case_tests.cpp`, preserve
+`acceptedCandidatesStayOrderedAndCountsMatch` for noncontiguous selected
+candidate mapping and skipped/imported counts; retain empty input,
+duplicate-only, duplicate-heavy limit, and query/save failure coverage.
+Preserve parsed event ordering and existing behavior in
+`calendar_import_tests.cpp`, and empty-batch/atomic failure coverage in the
+Platform save-port tests.
+
+Focused targets are `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventImportPlanTests`,
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`,
+`ClassMngrCalendarImportTests`, and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`. At
+acceptance time, no F1229 implementation or verification had started.
