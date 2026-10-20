@@ -59460,7 +59460,7 @@ At the Platform boundary explicitly wrap the current source index in
 `CalendarEventOrder`, after the existing 4,096-event cap check. Preserve index
 assignment after that check and the by-id lookup's index zero. The feature
 query producer in `src/features/calendar/calendar_event_projection_query.cpp`
-uses the retained input vector size as its order index; preserve visit order
+wraps the retained input vector size as its order index; preserve visit order
 and the source sequence through that conversion as well.
 
 Keep `CalendarEventOrder` distinct from F1242 ScheduleView order, F1252
@@ -59500,3 +59500,51 @@ shortfall remains inactive. F629 and the Phase 0 and Phase 2 gates remain open.
 ### Superseded latest progress update - 2026-10-21 (F1261 accepted)
 
 F1261 is accepted as the final Batch502 slice for implementation (see [F1261 acceptance](03-Phase-2-Progress-Log.md#f1261-calendareventorder-accepted-before-implementation-2026-10-21)). F1257–F1260 are complete; F1261 implementation, build, and test execution have not started. Batch502 remains active and unpushed, Batch503 remains inactive, and F629 and the Phase 0 and Phase 2 gates remain open.
+
+### Superseded latest progress update - 2026-10-21 (F1260 follow-up, F1261 accepted)
+
+F1260's missed test consumers were adapted in follow-up commit `b4009a9f` and its two focused CTests passed (see [F1260 follow-up](03-Phase-2-Progress-Log.md#f1260-follow-up-calendar-event-type-name-test-consumers-2026-10-21)). F1261 is accepted as the final Batch502 slice for implementation (see [F1261 acceptance](03-Phase-2-Progress-Log.md#f1261-calendareventorder-accepted-before-implementation-2026-10-21)); its implementation, build, and tests have not started. Batch502 remains active and unpushed, Batch503 remains inactive, and F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1261 CalendarEventOrder complete - 2026-10-21
+
+F1261 acceptance was recorded in documentation commit
+`fe0ddc80dbaf073d6f9d838ceee1bd38479d35a9`. Its source/test changes are
+committed as `8e985ecdd21d561bc6088bac361ab20d8c85a6c3` (`Phase2 - Type
+CalendarEvent projection order`). The seven changed paths are
+`src/next/application/calendar_event_projection.h`,
+`src/next/platform/application_services_calendar_event_port.h`,
+`src/features/calendar/calendar_event_projection_query.cpp`,
+`tests/next_application_calendar_event_tests.cpp`,
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`,
+`tests/calendar_event_cache_tests.cpp`, and
+`tests/next_application_calendar_event_query_port_tests.cpp`.
+
+`CalendarEventSummary::order` now uses Application-owned `CalendarEventOrder`,
+with zero default, explicit `constexpr std::int32_t` construction,
+`rawValue()`, and same-type equality. Negative validation and its existing
+error text remain; every nonnegative int32 value, including `INT32_MAX`, is
+accepted. Duplicate values remain valid, and the projection preserves vector
+sequence without sorting, deduplication, or uniqueness checks. The Platform
+producer wraps its source index after the 4,096-row cap check; the feature
+query producer wraps retained input vector size for its index and preserves
+visit order. Neither producer's order semantics were merged with F1242,
+F1252, F1257, or F1260 values.
+
+The Executor incrementally built `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrCalendarEventCacheTests`, and
+`ClassMngrNextApplicationCalendarEventQueryPortTests`; the four focused CTests
+passed 4/4. The independent Tester reran those four focused CTests; Ninja
+reported no work and all passed 4/4. After adding reverse non-convertibility
+and 4,096th-ordinal assertions, the Executor rebuilt `ClassMngr` and the
+Application and Platform test targets and reran those two focused CTests. The
+independent Tester reran them and confirmed 2/2 passed. The exact 4,097-row
+overflow still fails; moving the final row outside the range yields exactly
+4,096 rows with final order 4,095. `git diff --check` passed. No clean build,
+Windows build, or full-suite verification is claimed.
+
+Batch502 (F1257–F1261) is complete and remains unpushed; no push receipt is
+recorded here. The previously documented Batch503 discovery shortfall had no
+accepted candidates, so no slice batch is active and Phase 2 exit-gate work is
+next. F629 and the Phase 0 and Phase 2 gates remain open.

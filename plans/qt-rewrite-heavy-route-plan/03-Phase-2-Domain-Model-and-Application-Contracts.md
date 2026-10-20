@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`; active, unpushed Batch502 has F1257–F1260 complete and F1261 accepted for implementation; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch502 (F1257–F1261) is complete and unpushed; no slice batch is active, and Phase 2 exit-gate work is next; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1260's missed test consumers were adapted in follow-up commit `b4009a9f` and its two focused CTests passed (see [F1260 follow-up](03-Phase-2-Progress-Log.md#f1260-follow-up-calendar-event-type-name-test-consumers-2026-10-21)). F1261 is accepted as the final Batch502 slice for implementation (see [F1261 acceptance](03-Phase-2-Progress-Log.md#f1261-calendareventorder-accepted-before-implementation-2026-10-21)); its implementation, build, and tests have not started. Batch502 remains active and unpushed, Batch503 remains inactive, and F629 and the Phase 0 and Phase 2 gates remain open.
+F1261 is complete in unpushed Batch502 as `8e985ecdd21d561bc6088bac361ab20d8c85a6c3` (see [F1261 closeout](03-Phase-2-Progress-Log.md#f1261-calendareventorder-complete-2026-10-21)). The four focused CTests passed 4/4; after adding reverse non-convertibility and the 4,096th ordinal assertions, the Application and Platform tests passed again 2/2. No clean, Windows, or full-suite verification is claimed. Batch502 is complete and unpushed, no slice batch is active, and Phase 2 exit-gate work is next; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,15 +72,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch502 (5 candidates; 4 complete, 1 accepted, 0 discovered)
-
-1. F1257 - **Complete.** `ClassSummary::order` uses distinct `ClassSummaryOrder`; default zero, negative rejection, and position-then-class-ID ordering remain, separate from F1248 navigation ranks.
-2. F1258 - **Complete.** `dayGroup()` returns the closed `ScheduleImportMatchingProjectionDetail::WeekdayGroup`; preserve normalization, matching, and empty-existing eligibility, separate from legacy F729 parser work.
-3. F1259 - **Complete.** Application metadata uses distinct `DocumentFolderKey` and `DocumentEntryKey` values; exact stored bytes, existing validation, and independent key behavior remain.
-4. F1260 - **Complete.** `CalendarEventSummary::eventType` uses explicit open-text `CalendarEventTypeName`; existing projection validation and repository normalization remain. See the [F1260 closeout](03-Phase-2-Progress-Log.md#f1260-calendar-event-type-name-projection-value-complete-2026-10-21).
-5. F1261 - **Accepted for implementation.** Add explicit Application `CalendarEventOrder` to `CalendarEventSummary::order`; preserve zero default, negative rejection, all nonnegative int32 values, input sequence, and no sort/deduplicate/uniqueness policy across the Platform and feature-query producers. See the [F1261 acceptance record](03-Phase-2-Progress-Log.md#f1261-calendareventorder-accepted-before-implementation-2026-10-21).
-
-F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+No slice batch is active. Batch502 (F1257–F1261) is complete and unpushed;
+Phase 2 exit-gate work is next. F629 awaits source-bound Windows x64 layout
+evidence, and the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 
