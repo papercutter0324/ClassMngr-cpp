@@ -59345,3 +59345,21 @@ clean build, Windows build, or full-suite verification is claimed. Batch502
 remains active with F1257–F1259 complete, F1260 accepted, and F1261
 discovered; no new batch discovery has started. F629 and the Phase 0 and Phase 2
 gates remain open.
+
+### Batch503 discovery shortfall - 2026-10-21
+
+Two independent read-only searches, performed when work began on F1260 as
+Batch502's second-last slice, produced only two low-confidence leads:
+F1262 `CampusSummary::order` and F1263 `TransferClass::order`. The application
+pass proposed these leads; the surface pass found no robust candidate, and
+neither projection has a production producer or consumer. Each raw order field
+is only defaulted and checked for nonnegative values, so adding wrappers would
+strengthen unused fields without protecting an active order contract. This is
+not a test-only slice. The Investigator recommends excluding both for now;
+F1242 had meaningful lookup and uniqueness behavior that these fields lack.
+Revisit either lead if a production path or order policy appears.
+
+This is a discovery shortfall only; Batch503 is not started or active. The
+Phase 2 plan's active Batch502 status remains unchanged.
+
+No other slices were found.
