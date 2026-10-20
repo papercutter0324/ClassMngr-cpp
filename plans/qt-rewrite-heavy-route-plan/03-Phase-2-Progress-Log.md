@@ -52954,3 +52954,104 @@ or Windows run occurred.
 Batch490 now has F1171–F1175 complete and F1176–F1177 discovered, with F1176
 next; it remains unpushed until F1177 closes. F629 awaits source-bound Windows
 x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+
+### Batch491 discovery at F1176 start - 2026-10-20
+
+Provisional and inactive until Batch490 closes. The Explorers’ union has
+eight unique candidates. Their clear shared candidate is Class Transfer
+skipped-class count; their Schedule Import findings overlap conceptually
+but differ in scope: broad review/apply summary counts versus six derived
+review-action counts. The Explorers used complementary Application/domain
+and feature-boundary angles. They excluded ordinary indices/row positions,
+UI coordinates, parsing locals, storage-mirroring values, and
+policy-entangled candidates. No candidate is accepted.
+
+1. **F1178 — Schedule Import review summary counts:** Eight raw `int` counters
+   in `src/next/application/schedule_import_review_summary_projection.h`, with
+   related apply-result counts in
+   `src/next/application/schedule_import_apply_request.h`; preserve zero and
+   action-derived counts, and decide exact scope at acceptance. Test evidence:
+   `tests/next_application_schedule_import_review_summary_projection_tests.cpp`,
+   `tests/next_application_schedule_import_apply_use_case_tests.cpp`, and
+   `tests/next_platform_application_services_schedule_import_apply_port_tests.cpp`.
+2. **F1179 — Speaking Evaluation AI grade band:** Prompt input uses `int grade`
+   in `src/next/application/speaking_evaluation_ai_comment_prompt.h`; Domain
+   `CourseGradeBand` is in `src/next/domain/course.h`. Preserve 4–6 eligibility,
+   `Other`, and exact prompt text. Test evidence:
+   `tests/next_application_speaking_evaluation_ai_comment_prompt_tests.cpp` and
+   `tests/next_application_speaking_evaluation_ai_batch_eligibility_tests.cpp`.
+3. **F1180 — Class Transfer skipped-class count:** `int skippedClassCount` in
+   `src/next/application/class_transfer_apply.h`, mapped by the Platform apply
+   port. Preserve zero, exact count, and no range policy. Test evidence:
+   `tests/next_application_class_transfer_apply_use_case_tests.cpp` and
+   `tests/next_platform_application_services_class_transfer_apply_port_tests.cpp`.
+4. **F1181 — Class Transfer package-class index:** Raw `int packageClassIndex`
+   with `-1` sentinel in `src/next/application/class_transfer_projection.h`,
+   converted to `size_t` in `src/next/application/class_transfer_preview_query.h`
+   and mapped in `src/next/platform/class_transfer_apply_legacy_adapter.h`.
+   Preserve `-1`, out-of-range 99, and validation issue order; test evidence:
+   `tests/next_application_class_transfer_tests.cpp` and
+   `tests/next_application_class_transfer_preview_query_tests.cpp`.
+5. **F1182 — Updater encoded URLs:** Qt `QUrl` artifact/release values become
+   Application `std::string` in `src/next/application/startup_update_check.h`
+   and `src/next/application/manual_update_check.h`; Platform ports encode
+   them, and the controller and dialog reconstruct with `QUrl::fromEncoded`.
+   Preserve encoded text and
+   current parse/display behavior; add no validation or canonicalization. Test
+   evidence: `tests/update_controller_automatic_startup_tests.cpp` startup
+   bridge coverage.
+6. **F1183 — Updater release-date ISO text:** Source `QDate` becomes Application
+   `std::string releaseDateIso` in `src/next/application/startup_update_check.h`
+   and `src/next/application/manual_update_check.h`, formatted as `Qt::ISODate`
+   by Platform ports and parsed for UI. Preserve ISO text, invalid/empty
+   behavior, and localized display. Test evidence:
+   `tests/update_controller_automatic_startup_tests.cpp` startup bridge
+   coverage.
+7. **F1184 — Import/report job generation tokens:** Two Application
+   coordinators in
+   `src/next/application/import_job_coordinator.h` and
+   `src/next/application/report_job_coordinator.h` use the same `uint64_t`
+   aliases; consider distinct strong tokens. Preserve initial 1, exact values,
+   stale rejection, and exhaustion behavior. Test evidence:
+   `tests/next_application_import_job_coordinator_tests.cpp` and
+   `tests/next_application_report_job_coordinator_tests.cpp`.
+8. **F1185 — Class Analytics criterion student count:** `int students`
+   projection in `src/next/application/class_analytics_dashboard_read_query.h`,
+   derived from criterion counts. Preserve zero and “counted when criterion
+   data exists”; confirm intended contract and test coverage at acceptance.
+   Lower confidence. Evidence to review:
+   `tests/next_application_class_analytics_dashboard_read_query_tests.cpp` and
+   `tests/next_platform_application_services_class_analytics_dashboard_read_port_tests.cpp`.
+
+No other slices were found.
+
+### F1176 Schedule-slot canonical hour accepted before implementation - 2026-10-20
+
+F1176 is accepted/in progress. Add Qt-free
+`Application::ScheduleSlotCanonicalHour`, storing exact signed `int` with an
+explicit constructor, `.value()`, equality, no implicit conversion, and no
+range policy. Change only the optional `canonicalHour` parameter of the
+Application Schedule-slot policy and the feature helper
+`canonicalScheduleHour` return to use this value. Do not change the Domain
+parser.
+
+Preserve existing behavior: regular weekdays use Empty through hour 15 and
+Essay for later or absent hours; intensive weekdays default to Essay, while
+weekends default to Empty and take precedence. Keep existing toggling behavior.
+The feature helper still uses `ScheduleValueParser::parseTime` and returns an
+hour only when parsing succeeds and normalized time equals the original label;
+parser trimming, exact HH:mm syntax, 0–23 hour and 0–59 minute bounds, and
+padded-label absence remain unchanged.
+
+Wrapper coverage verifies explicitness, non-conversion, equality, and stored
+value. Retain existing 15/16, absence, weekend, intensive, and toggling policy
+tests plus raw-label canonicalization/parser coverage. Build `ClassMngr`,
+`ClassMngrNextApplicationScheduleSlotPolicyTests`, and
+`ClassMngrSchedulePrintModelTests`; run their matching focused offscreen CTests,
+independent Tester review, and `git diff --check`. No full-suite or Windows
+claim is in scope. Implementation and verification have not started.
+
+Batch490 has F1171–F1175 complete, F1176 accepted/in progress, and F1177
+discovered as the next slice after F1176; it remains unpushed until F1177
+closes. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0
+and Phase 2 gates remain open.

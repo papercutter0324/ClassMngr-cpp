@@ -6532,3 +6532,15 @@ failure outside the package-version path; no clean baseline was run, so it is
 not claimed as proven pre-existing. No full suite or Windows build ran.
 Batch490 has F1171–F1175 complete and F1176 next; it remains unpushed until
 F1177 closes. F629 and both phase gates remain open.
+
+## Phase 2 update - F1176 accepted; Batch490 active - 2026-10-20
+
+F1176 is accepted to add Qt-free `Application::ScheduleSlotCanonicalHour` as
+an exact signed-`int` value, replacing only the optional Application policy
+hour and feature helper return. Preserve the 15/16 cutoff, absence, weekend
+and intensive precedence, toggling, parser syntax, and canonical-label check;
+add no range policy. Implementation and verification have not started. Batch490
+has F1171–F1175 complete, F1176 accepted/in progress, and F1177 next after
+F1176; it remains unpushed until F1177 closes. Batch491 is discovered
+provisionally with eight candidates and remains inactive until Batch490 closes.
+F629 and both phase gates remain open.
