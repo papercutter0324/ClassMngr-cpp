@@ -53967,15 +53967,24 @@ conversion, zero and positive projection values, and acceptance at
 `tests/next_application_sub_prep_class_information_state_tests.cpp`, and
 `tests/sub_prep_page_tests.cpp` to verify zero and positive values cross the
 Platform/Feature boundaries unchanged and the existing Sub Prep presentation
-and metrics remain unchanged. Build `ClassMngr`,
+and metrics remain unchanged. Also update the direct list-model fixture in
+`tests/sub_prep_class_information_list_model_tests.cpp`: explicitly construct
+its existing student count of 12 and retain the `StudentCountRole` assertion
+of 12. Build `ClassMngr`,
 `ClassMngrNextApplicationClassSummaryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`,
 `ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
 `ClassMngrNextApplicationSubPrepClassInformationStateTests`, and
-`ClassMngrSubPrepPageTests` in `build/macos-clang-debug`; run their focused
-CTests. Run `git diff --check`. Implementation is in progress and verification
-is pending until the boundary adapters are updated; no full-suite or Windows
-build is claimed.
+`ClassMngrSubPrepPageTests` and `ClassMngrSubPrepClassInformationListModelTests`
+in `build/macos-clang-debug`; run their focused CTests. Independently invoke
+`QT_QPA_PLATFORM=offscreen build/macos-clang-debug/ClassMngrSubPrepPageTests gradeAndLevelTabsSelectOneClassAndPreserveSelection`.
+The full `ClassMngrSubPrepPageTests` CTest aborted after 300 seconds in
+`unavailablePreferenceLoadsPreservePageValues`; the changed selector passed
+directly (3 QtTest cases, 0 failures, 104 ms). Rerun the direct case during
+acceptance verification and report the full CTest as timed out, not passed.
+Run `git diff --check`. Implementation is in progress; other acceptance
+verification remains pending until the boundary adapters are updated. No
+full-suite or Windows build is claimed.
 
 Batch492 remains active and unpushed: F1186–F1187 are complete, F1188 is
 accepted/in progress and next, and F1189–F1191 remain discovered. F629 awaits
