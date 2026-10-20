@@ -57572,3 +57572,24 @@ Build `ClassMngr` and run `ClassMngrNextDomainContractTests` and
 implementation and verification had not started. Batch499 remains active with
 F1237–F1240 complete, F1241 accepted, and F1242 discovered. Batch500 remains
 inactive with ten queued candidates; F1243 is first after Batch499 closes.
+
+### F1241 Calendar Event clock values complete - 2026-10-21
+
+F1241 completed at implementation commit
+`c0f2e0ab6cca6a65b8a0d4cddb07a8e4256ebe1a`, following acceptance commit
+`18db6b643a5162ddd7c4242b9806ce490a0cf3b7`. Only
+`src/next/domain/calendar_event_timing.h` and
+`tests/next_domain_contract_tests.cpp` changed. The new strict
+`CalendarEventClockTime` value parses canonical `HH:MM`, formats and compares
+clock values, and is used by `CalendarEventTiming` validation while preserving
+raw input strings, validation precedence, and date rules.
+
+The independent Tester used the existing incremental macOS Clang build for
+`ClassMngr`, `ClassMngrNextDomainContractTests`, and
+`ClassMngrNextApplicationCalendarEventTests`; both focused CTests passed.
+The committed diff passed `git diff --check`. Windows x64 and the full suite
+were not run.
+
+Batch499 remains active with F1237–F1241 complete. F1242 is next for
+acceptance; Batch500 remains discovered and queued with ten candidates until
+Batch499 closes.
