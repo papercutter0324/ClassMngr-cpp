@@ -53371,3 +53371,39 @@ Batch491 has F1178–F1180 complete, F1181 next, and F1181–F1185 discovered.
 Batch491 remains unpushed. Batch490 is complete and pushed at `69be43a7`. F629
 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2
 gates remain open.
+
+### F1181 Class Transfer package-class index accepted before implementation - 2026-10-20
+
+F1181 is accepted/in progress. Add Qt-free
+`Application::ClassTransferPackageClassIndex` with exact signed-`int` storage,
+default `-1` sentinel, explicit construction, `rawValue()`, and equality, with
+no implicit conversion or range policy. Type only
+`ClassTransferReviewClassCandidate.packageClassIndex`,
+`ClassTransferReviewClassResolution.packageClassIndex`, and
+`ClassTransferReviewDecisionIssue.packageClassIndex`.
+
+Keep `ClassTransferMatchingPolicy`'s `std::size_t` indices and all legacy/UI
+`int` fields unchanged. Wrap and unwrap explicitly at Application/Platform
+adapter boundaries while preserving preview and apply mapping. Preserve `-1`,
+arbitrary out-of-range values such as 99 as `UnknownClassResolution`, and
+validation issue order.
+
+Acceptance coverage updates
+`tests/next_application_class_transfer_tests.cpp` and
+`tests/next_application_class_transfer_preview_query_tests.cpp` for wrapper
+semantics, `{4, 1, 9, 7}` ordering, `-1`/99 behavior, and issue order; retain
+adapter/UI parity. Build `ClassMngr`,
+`ClassMngrNextApplicationClassTransferTests`,
+`ClassMngrNextApplicationClassTransferPreviewQueryTests`, and
+`ClassMngrClassTransferTests`. Run CTests
+`ClassMngrNextApplicationClassTransferTests`,
+`ClassMngrNextApplicationClassTransferPreviewQueryTests`, and
+`ClassTransferPreviewAdapterRegressionTests`, plus the focused offscreen QtTest
+command `QT_QPA_PLATFORM=offscreen build/macos-clang-debug/ClassMngrClassTransferTests typedDialogRequestMatchesCompatibilityPlanAndGating`.
+Implementation and verification have not started; no full-suite or Windows run
+is in scope.
+
+Batch491 has F1178–F1180 complete, F1181 accepted/in progress, and F1182 next;
+F1182–F1185 remain discovered. Batch491 remains unpushed. Batch490 is complete
+and pushed at `69be43a7`. F629 awaits source-bound Windows x64 layout evidence,
+and the Phase 0 and Phase 2 gates remain open.
