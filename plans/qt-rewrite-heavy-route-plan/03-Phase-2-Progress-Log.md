@@ -54962,3 +54962,47 @@ The discovery references are `src/next/application/roster_row_reordering.h`,
 `ClassMngrNextApplicationRosterRowReorderingTests` and
 `ClassMngrRosterModelTests`. No F1204 implementation or verification has
 started. Batch494 remains open and unpushed; F1205–F1209 remain discovered.
+
+### F1204 Roster-row reordering index types complete - 2026-10-20
+
+F1204 completed at source/test commit
+`f6e02a7bbb457c4f9e97ca7195e4a2f0364f6c8e` (`Phase2 - Type roster reorder
+row positions`). The three changed paths were
+`src/features/roster/ui/roster_model_rows.cpp`,
+`src/next/application/roster_row_reordering.h`, and
+`tests/next_application_roster_row_reordering_tests.cpp`.
+
+In `build/macos-clang-debug`, the independent Tester built `ClassMngr`,
+`ClassMngrNextApplicationRosterRowReorderingTests`, and
+`ClassMngrRosterModelTests`; Ninja reported no work. With
+`QT_QPA_PLATFORM=offscreen`, both focused CTests passed 2/2, and
+`git diff --check` passed. This is scoped evidence only; no full-suite or
+Windows check is claimed. Batch494 remains open and unpushed.
+
+### F1205 Speaking Evaluation roster score assignment row index accepted before implementation - 2026-10-20
+
+F1205 is accepted/current before implementation, based on two independent
+read-only Explorer reports. In
+`src/next/application/speaking_evaluation_roster_score_row_assignments.h`
+(lines 16–94), type only
+`SpeakingEvaluationRosterScoreAssignment::rosterRowIndex` as
+`SpeakingEvaluationRosterScoreAssignmentRowIndex` with `std::size_t` storage,
+zero default, explicit construction, `.rawValue()`, equality, and no implicit
+conversions. The planner emits the original zero-based input roster position
+in roster order. Preserve skips for missing grade, incomplete names, and
+unmatched imported pairs; last duplicate imported pair behavior; and
+changed-grade-only output.
+
+The UI constructs one input per model row and unwraps the typed output to `int`
+only at `m_model->index` in
+`src/features/roster/ui/roster_editor_widget_import_print.cpp` (lines
+127–179). Keep raw Qt/repository coordinates outside this slice.
+`SpeakingEvaluationRosterScoreRow` is already the typed input;
+`SpeakingEvaluationReportSourceRow` refers to a different source sequence and
+must not be reused. F1206 roster-name source/target positions remain separate.
+The existing test surface is
+`tests/next_application_speaking_evaluation_roster_score_row_assignments_tests.cpp`
+(lines 43–130), target
+`ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests`
+(`cmake/tests/next.cmake:709`). No F1205 implementation or verification has
+started. Batch494 remains open and unpushed; F1206–F1209 remain discovered.
