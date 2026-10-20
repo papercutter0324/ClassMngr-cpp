@@ -51305,3 +51305,9 @@ push follows the closure commit; no push receipt exists yet. Batch488 is now
 active with its eight previously discovered candidates, F1154 next, and the
 original order and boundaries unchanged. F629 remains open pending source-bound
 Windows x64 evidence; the Phase 0 and Phase 2 gates remain open.
+
+### Batch487 push receipt - 2026-10-20
+
+Batch487 closeout commit `c3c06e2f5432933a0e8b7df629e25b2afa920e2c` was pushed
+to `origin/Qt-Rewrite`. At verification, local HEAD matched `origin/Qt-Rewrite`
+and the working tree was clean. Batch487 is complete and pushed.
