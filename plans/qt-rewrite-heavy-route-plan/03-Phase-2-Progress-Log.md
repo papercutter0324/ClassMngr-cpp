@@ -59179,3 +59179,54 @@ passed. No clean build, Windows build, or full-suite verification was run.
 Batch502 remains active with F1257 and F1258 complete, F1259 next for
 acceptance, and F1260–F1261 discovered. Batch501 is complete and pushed at
 `7f8ca958`; F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1259 Document Catalog keys accepted before implementation - 2026-10-21
+
+F1259 is accepted as the third Batch502 slice. Add separate
+`ClassMngr::Next::Application::DocumentFolderKey` and `DocumentEntryKey`
+string-backed values. Each has an empty default, explicit `std::string`
+construction, `.value()` returning `const std::string&`, and same-type value
+equality. Neither converts implicitly to or from `std::string`, and the two
+key types do not convert to or compare across types. Same-type equality
+preserves the existing defaulted metadata/projection equality; it does not
+introduce key uniqueness or validation. Constructors preserve raw bytes and
+do not validate or normalize.
+
+Change only `DocumentFolderMetadata::key` and `DocumentEntryMetadata::key`.
+Keep existing blank and 256-byte validation, messages, and behavior by
+validating `.value()`; do not trim or normalize, compare keys with IDs or
+paths, or add key uniqueness/collision policy. Folder and entry keys remain
+independent even when their text matches. At the Platform boundary wrap the
+existing bounded strings; at the sidebar display boundary convert
+`.value()` to `QString`. Preserve IDs, paths, order, producer strings,
+navigation strings, and route behavior. No CMake manifest change is needed
+because the projection header is already registered.
+
+The review evidence is in `src/next/application/document_catalog_projection.h`
+(metadata fields, equality, and existing validation),
+`src/next/platform/application_services_document_catalog_port.h` (bounded
+string production and mapping), and
+`src/ui/shared/widgets/sidebar/sidebar_tree.cpp` (key conversion and ordering).
+Navigation route use remains in `src/app/controllers/navigation_controller.cpp`.
+Existing fixture and validation coverage is in
+`tests/next_application_document_catalog_tests.cpp`,
+`tests/next_application_document_catalog_use_case_tests.cpp`,
+`tests/next_platform_application_services_document_catalog_port_tests.cpp`,
+and `tests/sidebar_structure_tests.cpp`.
+
+Acceptance coverage remains in the existing Application projection and use
+case, Platform adapter, and sidebar tests. Assert exact field types, explicit
+construction/no implicit string or cross-type conversions, distinct wrapper
+types, empty defaults, byte-exact values and equality; retain blank/length
+and exact-byte validation and structural equality checks. Verify adapter
+mapping and sidebar string conversion, including that a folder key and entry
+key may contain the same underlying text without being rejected.
+
+Build incrementally in `build/macos-clang-debug`: `ClassMngr`,
+`ClassMngrNextApplicationDocumentCatalogTests`,
+`ClassMngrNextApplicationDocumentCatalogUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests`, and
+`ClassMngrSidebarStructureTests`. Run only those four focused registered
+CTests. No implementation, build, or tests have started. No clean build,
+Windows build, or full-suite verification is claimed. Batch502 remains active;
+F1260 and F1261 remain discovered, and no new batch discovery has started.
