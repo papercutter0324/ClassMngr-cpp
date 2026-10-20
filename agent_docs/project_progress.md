@@ -6412,3 +6412,19 @@ invalid-time omission, minute conversion, lexicographic policy order, and
 printed class sequence. Batch489 remains unpushed until F1170 closes. Batch490
 remains inactive until then; F629 and both phase gates remain open.
 Implementation and verification have not started.
+
+## Phase 2 update - Batch489 complete locally; Batch490 active - 2026-10-20
+
+F1170 completed at source/test commit `9f0116cb`, following acceptance commit
+`286b2851`. Sub Prep print-order weekday and start-minute keys now use
+distinct, non-converting Application wrappers that preserve exact integers
+and the `INT_MAX` unknown sentinels. The comparator and feature producer keep
+the existing key order and print sequence; an unknown weekday with a valid
+minute still precedes a class with no meeting.
+
+The incremental macOS Debug build passed for `ClassMngr` and all three focused
+test targets; all three focused CTests passed 3/3 offscreen. The independent
+Tester accepted the change, and `git diff --check` passed. No full suite or
+Windows build ran. Batch489 is closed locally and awaits its push. Batch490 is
+active with seven candidates and F1171 next. F629 and both phase gates remain
+open.

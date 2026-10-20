@@ -52601,3 +52601,28 @@ verification have not started. Batch489 has F1162–F1169 complete and F1170
 accepted/in progress; it remains unpushed until F1170 closes. Batch490 remains
 discovered/inactive until Batch489 closes. F629 awaits source-bound Windows
 x64 layout evidence, and both phase gates remain open.
+
+### Batch489 local closeout after F1170 - 2026-10-20
+
+Batch489 is complete locally at F1170 source/test commit `9f0116cb`, following
+acceptance commit `286b2851`. `SubPrepPrintClassOrderFact.weekdayOrder` and
+`startMinute` now use distinct exact-`int` Application wrappers without
+implicit conversion or construction-time validation. Both fact fields retain
+the `INT_MAX` unknown sentinel by default. Comparator precedence and the
+ordering of an unknown weekday with a valid minute before a no-meeting tuple
+remain unchanged. The feature producer's schedule selection, weekday/time
+recognition, tuple selection, labels, meeting text, class output, and print
+sequence remain unchanged. The implementation changed four code/test files.
+
+The Executor's incremental macOS build succeeded for `ClassMngr` and the
+Application policy, class-information model, and PDF test targets. All three
+focused binaries passed; the model suite passed 26/26 and the PDF suite 24/24.
+The independent Tester accepted the implementation. Its incremental build had
+no work because outputs were current; all three matching offscreen CTests
+passed 3/3, and `git diff --check` passed. No full suite or Windows build ran.
+
+Batch489 is complete locally, but its push is pending; no push is claimed.
+Batch490 is active with seven discovered candidates and F1171 next. Its
+[discovery record](#batch490-discovery-at-f1169-start-2026-10-20) is unchanged.
+F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and
+Phase 2 gates remain open.

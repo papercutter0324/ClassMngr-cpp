@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch489 is active with F1162–F1169 complete and F1170 accepted/in progress; the batch remains unpushed until F1170 closes, Batch490 is discovered/inactive, and F629 awaits source-bound Windows x64 evidence while both phase gates remain open.
+- Current note: Batch489 is complete locally with push pending; Batch490 is active with seven discovered slices and F1171 next, while F629 awaits source-bound Windows x64 evidence and both phase gates remain open.
 
 ### Latest Progress Update
 
-F1170 acceptance is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#f1170-sub-prep-print-order-weekday-and-start-minute-facts-accepted-2026-10-20); implementation and verification have not started.
+F1170 completed at source/test commit `9f0116cb` after acceptance commit `286b2851`; see the [completion record](03-Phase-2-Progress-Log.md#batch489-local-closeout-after-f1170-2026-10-20).
 
 ### Slice discovery batches
 
@@ -72,19 +72,17 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch489 (9 candidates; 8 complete; 1 accepted/in progress)
+#### Active batch: Batch490 (7 candidates; all discovered)
 
-1. F1162 - **Complete.** Keep raw cutoff text in an Application Input boundary, then use `Domain::GregorianDate` for repeat planning; preserve frequency/seed-before-cutoff validation, inclusive cutoff, range, and no-port-call-on-failure behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1162-calendar-repeat-create-cutoff-date-complete-2026-10-20)).
-2. F1163 - **Complete.** Type the shared save request's dates and retain raw text at `CalendarEventSaveInput`; migration covers single save, import, repeat-create, and the three Platform adapters while preserving validation, diagnostics, and persistence (see the [completion record](03-Phase-2-Progress-Log.md#f1163-calendar-single-event-save-date-pair-complete-2026-10-20)).
-3. F1164 - **Complete.** Change only `CalendarEventSeriesEditOccurrenceSnapshot.startDate` to `std::optional<Domain::GregorianDate>`; preserve malformed-source failure, request-validation precedence, repository order, shift arithmetic/range handling, and no-write behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1164-calendar-series-edit-occurrence-start-date-complete-2026-10-20)).
-4. F1165 - **Complete.** Replace `ScheduleImportStateTime`'s raw time integers with one `std::optional<Domain::ScheduleTime>`; retain the labels and preserve labeled invalid-time handling, validation precedence, conflict behavior, and Apply/review behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1165-schedule-import-projected-state-time-complete-2026-10-20)).
-5. F1166 - **Complete.** Use `std::optional<Domain::GregorianDate>` as the Upcoming Birthday reference input; preserve the empty result for invalid references and the date-window, ordering, and leap-day behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1166-upcoming-birthday-reference-date-complete-2026-10-20)).
-6. F1167 - **Complete.** Type grouped Application create/update/unchanged totals with the non-converting signed-int count; preserve zero defaults, existing counter transitions, typed aggregation, and raw legacy summary values (see the [completion record](03-Phase-2-Progress-Log.md#f1167-teacher-import-count-complete-2026-10-20)).
-7. F1168 - **Complete.** Use shared Qt-free `Application::UpdateArtifactSha256` with exact owning string storage for the manual/startup artifact digest fields; preserve arbitrary text through adapters and consumers (see the [completion record](03-Phase-2-Progress-Log.md#f1168-update-artifact-sha-256-complete-2026-10-20)).
-8. F1169 - **Complete.** Type only `SubPrepNavigationScheduleOrderFact.weekdayOrder` as `Domain::Weekday` and `startMinute` as optional `Application::SubPrepNavigationStartMinute`; preserve canonical-day filtering and presentation while fixing valid-minute ordering above sentinel 1000 (see the [completion record](03-Phase-2-Progress-Log.md#f1169-sub-prep-navigation-weekday-and-start-minute-facts-complete-2026-10-20)).
-9. F1170 - **Accepted/in progress; current.** Type only `SubPrepPrintClassOrderFact.weekdayOrder` and `startMinute` as two distinct Application wrappers for exact integer keys; preserve unknown sentinels and comparator/presentation behavior (see the [acceptance record](03-Phase-2-Progress-Log.md#f1170-sub-prep-print-order-weekday-and-start-minute-facts-accepted-2026-10-20)).
+1. F1171 - **Discovered; next.** Type updater artifact sizes; preserve signed values, zero defaults, and parser/updater positivity policy.
+2. F1172 - **Discovered.** Type update-check UTC milliseconds; preserve signed values, zero defaults, and adapter/UI conversion boundaries.
+3. F1173 - **Discovered.** Type Calendar Import counts without range policy; preserve defaults and count transitions.
+4. F1174 - **Discovered.** Type the Class Transfer export timestamp input; preserve epoch and serialized timestamp formatting.
+5. F1175 - **Discovered.** Type the Class Transfer package version; preserve its serialized integer and unsupported-version diagnostics.
+6. F1176 - **Discovered.** Type Schedule-slot canonical hour; preserve the 15/16 cutoff and absence, without broadening parsing.
+7. F1177 - **Discovered.** Review Academic-term week-count typing carefully; preserve invalid-input rejection and four-term cardinality.
 
-Batch489 has F1162–F1169 complete and F1170 accepted/in progress. See its [discovery record](03-Phase-2-Progress-Log.md#batch489-discovery-at-f1160-start-2026-10-20) for evidence and the excluded low-confidence student-name peer-row idea. Batch489 is active and unpushed until F1170 closes. Batch490 is discovered and inactive until Batch489 closes; see its [discovery record](03-Phase-2-Progress-Log.md#batch490-discovery-at-f1169-start-2026-10-20). Batch488 is closed and pushed; see its [push receipt](03-Phase-2-Progress-Log.md#batch488-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence; the Phase 0 and Phase 2 gates remain open.
+Batch490 is active with F1171 next in the order recorded by its [discovery record](03-Phase-2-Progress-Log.md#batch490-discovery-at-f1169-start-2026-10-20). Batch489 is complete locally but not pushed; its push remains pending. F629 awaits source-bound Windows x64 layout evidence; the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 
