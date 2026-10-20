@@ -57064,3 +57064,115 @@ failure; setup-wizard parity remains an explicit verification gap.
 `Could not use disabled preset "windows-x64-debug"`. Windows x64 and the full
 suite remain unverified.
 Batch498 remains active with F1235 complete and F1236 next for acceptance.
+
+### Batch499 discovery started at F1235 start - 2026-10-21
+
+Starting F1235, the second-last candidate in Batch498, triggered discovery for
+the next batch. Three independent read-only Explorer passes produced six
+ordered candidates, a shortfall from ten. Batch498 remains active; Batch499 is
+discovered but not active and waits until Batch498 closes.
+
+1. **F1237 - Class Analytics roster names row count.** Type raw
+   `ClassAnalyticsRosterNames::rowCount` using/reusing existing
+   `ClassAnalyticsRosterRowCount`. Preserve physical sparse/blank row count,
+   name vector sizing, and unfiltered queries when matching name columns are
+   blank. Evidence: `src/next/application/class_analytics_dashboard_read_port.h:38,242`
+   and `src/next/application/class_analytics_dashboard_read_query.h:194,383`.
+   Focused tests:
+   `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`,
+   `ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`,
+   and `ClassMngrClassAnalyticsPageReadParityTests`. High confidence.
+2. **F1238 - GregorianDate weekday ordinal.** Type `GregorianDate::weekday()`;
+   preserve ISO Monday=1 through Sunday=7 and explicit mapping to zero-based
+   `Domain::Weekday`, repeat-until alignment, leap years, supported-year bounds,
+   and invalid-date behavior. Evidence: `src/next/domain/gregorian_date.h:172`
+   and `src/next/application/calendar_event_repeat_occurrence_plan.h:142`.
+   Focused tests: `ClassMngrNextDomainContractTests` and
+   `ClassMngrNextApplicationCalendarEventTests`. Medium-high confidence; this
+   ISO contract differs from F1235's zero-based Domain weekday.
+3. **F1239 - Class Transfer weekly weekday candidate.** Type the raw
+   `std::int64_t weekdayIndex` accepted by
+   `ClassTransferScheduleCandidate::create`. Preserve Monday–Sunday mapping,
+   invalid-day rejection before writes, half-open overlap, and Sunday overnight
+   wrapping. Evidence: `src/next/application/class_transfer_projection.h:78`
+   and `src/data/repositories/class_transfer_repository.cpp:277,352`.
+   Focused tests: `ClassMngrNextApplicationClassTransferTests` and
+   `ClassMngrClassTransferTests`. Medium confidence; validate overlap behavior
+   against F1235 during acceptance.
+4. **F1240 - Speaking Evaluation text-match span.** Type raw `start` and
+   `length` as a UTF-16 code-unit span. Preserve ordering, non-overlap,
+   case-insensitive literal matching, extraction bounds, and empty-literal
+   behavior. Evidence: `src/next/application/speaking_evaluation_text_match_port.h:10`,
+   `src/next/platform/speaking_evaluation_qt_text_match_port.h:38`, and
+   `src/next/application/speaking_evaluation_ai_comment_prompt.h:294`.
+   Focused tests: `ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests`
+   and `ClassMngrNextPlatformSpeakingEvaluationQtTextMatchPortTests`. Medium
+   confidence.
+5. **F1241 - CalendarEventTiming clock representation.** Replace optional raw
+   clock strings with a semantic time value where useful. Preserve canonical
+   HH:MM, clock bounds, paired presence, same-day ordering, and cross-day rules
+   that do not require end-clock ordering. Evidence:
+   `src/next/domain/calendar_event_timing.h:145,208`. Focused tests:
+   `ClassMngrNextDomainContractTests` and
+   `ClassMngrNextApplicationCalendarEventTests`. Medium confidence.
+6. **F1242 - Schedule View order and slot keys.** Distinguish raw
+   `std::int32_t` row order, cell order, and slot keys. Preserve nonnegative and
+   uniqueness scopes plus lookup/order behavior. Evidence:
+   `src/next/application/schedule_view_projection.h:51,195,414`. Focused test:
+   `ClassMngrNextApplicationScheduleViewTests`. Medium-low confidence because
+   no non-test source consumer was found; confirm at acceptance. The prospect
+   remains an Application contract, not a test-only slice.
+
+No other slices were found.
+
+### F1236 Shared calendar workbook cell coordinates accepted before implementation - 2026-10-21
+
+F1236 is accepted based on two Explorer reviews and one Investigator review.
+Add shared `CalendarImport::CellPosition` as a row/column pair. Default
+`(0,0)` remains invalid; valid worksheet positions are one-based and bounded
+to rows `1..1,048,576` and columns `1..16,384`. Keep raw integers at parsing
+and Qt interfaces and local row-only/model counters; do not add unrelated
+coordinate wrappers.
+
+`Cell` carries a position pair; `CellRange` carries typed first/last positions;
+`contains` takes one position, is inclusive, and returns false for invalid
+positions or ranges. Preserve single-cell merge references and reject reversed
+ranges. Apply one-based and upper-bound validation to both merged-range
+endpoints, skipping malformed out-of-limit references.
+
+Use `CellPosition` equality/hash for the shared-reader comment/note map and the
+Calendar, Schedule Import, and Teacher Import lookup maps. Remove arithmetic
+coordinate encodings/strides from those maps: the reader's `row * 16385 + col`
+overflows `int` at valid high rows, Calendar's `*100` and Teacher Import's
+`*1000` can collide in supported coordinates, and Schedule Import's
+`qint64 * 20000` should migrate to the same key contract. Preserve insertion
+order so the last duplicate still wins keyed lookup; preserve every source
+cell and worksheet/XML traversal order. Never generate output by iterating a
+hash.
+
+Preserve note/comment association, including a high-row note regression such
+as `A1048576`, cell and worksheet order, duplicate-coordinate lookup
+precedence, diagnostics and parser ordering, and merged-cell behavior
+(top-left value fallback and Schedule Import last-row extension). Keep
+diagnostic references such as `C2` unchanged. Validate cell references and
+merged endpoints at the reader boundary; retain parser-specific offsets and
+row-only keys as integers when they are not two-dimensional sheet coordinates.
+
+Focused assertions should cover minimum/maximum valid positions; zero/default,
+negative, and out-of-bound rejection; inclusive range endpoints and just
+outside positions; invalid/default range behavior; single-cell and reversed
+ranges; high-row note attachment; duplicate lookup last-wins; worksheet order,
+merged values, and diagnostic order.
+
+The accepted focused build targets and generated CTest names, plus production
+target `ClassMngr`, are `ClassMngrCalendarImportTests`,
+`ClassMngrScheduleImportTests`, `ClassMngrTeacherImportTests`,
+`ClassMngrCalendarEventImportParityTests`,
+`ClassMngrScheduleImportDialogTests`, and
+`ClassMngrTeacherImportDialogTests`. CMake helper names are the generated
+target and CTest names, not raw `NAME` values. Use the documented
+`build/windows-x64-debug` folder if supported. If the preset remains disabled
+on this macOS host, use the existing incremental `build/macos-clang-debug`,
+run GUI tests offscreen if needed, and report focused results without claiming
+Windows or full-suite coverage. At acceptance time, no implementation, tests,
+or build had started.
