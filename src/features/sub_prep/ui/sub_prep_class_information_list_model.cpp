@@ -1,6 +1,7 @@
 #include "sub_prep_class_information_list_model.h"
 
 #include "features/classes/config/class_info_config.h"
+#include "next/application/navigation_order_rank.h"
 #include "next/application/sub_prep_visible_class_ordering_policy.h"
 #include "ui/shared/widgets/navigation_pill_style.h"
 
@@ -317,8 +318,14 @@ void SubPrepClassInformationListModel::rebuildVisibleRows()
                 grade,
                 fromUtf8(summary.level).trimmed()
                 ),
-            .navigationFirstDayOrder = summary.navigationFirstDayOrder,
-            .navigationFirstTimeOrder = summary.navigationFirstTimeOrder,
+            .navigationFirstDayOrder =
+                ClassMngr::Next::Application::ClassTabNavigationOrderRank{
+                    summary.navigationFirstDayOrder
+                },
+            .navigationFirstTimeOrder =
+                ClassMngr::Next::Application::ClassTabNavigationOrderRank{
+                    summary.navigationFirstTimeOrder
+                },
             .baseLabel = baseLabel.toUtf8().toStdString(),
             .classId = summary.id
         });

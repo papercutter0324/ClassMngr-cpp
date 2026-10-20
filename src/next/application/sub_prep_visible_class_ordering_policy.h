@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/class_summary_projection.h"
+#include "next/application/navigation_order_rank.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -21,10 +22,8 @@ struct SubPrepVisibleClassOrderingFact final
 {
     std::int32_t configuredLevelOrder =
         kClassSummaryUnknownNavigationOrder;
-    std::int32_t navigationFirstDayOrder =
-        kClassSummaryUnknownNavigationOrder;
-    std::int32_t navigationFirstTimeOrder =
-        kClassSummaryUnknownNavigationOrder;
+    ClassTabNavigationOrderRank navigationFirstDayOrder;
+    ClassTabNavigationOrderRank navigationFirstTimeOrder;
     std::string baseLabel;
     Domain::ClassId classId;
 };
@@ -61,17 +60,21 @@ orderSubPrepVisibleClassRows(
                 return left.configuredLevelOrder
                     < right.configuredLevelOrder;
             }
-            if (left.navigationFirstDayOrder
-                != right.navigationFirstDayOrder)
+            if (
+                left.navigationFirstDayOrder.rawValue()
+                != right.navigationFirstDayOrder.rawValue()
+                )
             {
-                return left.navigationFirstDayOrder
-                    < right.navigationFirstDayOrder;
+                return left.navigationFirstDayOrder.rawValue()
+                    < right.navigationFirstDayOrder.rawValue();
             }
-            if (left.navigationFirstTimeOrder
-                != right.navigationFirstTimeOrder)
+            if (
+                left.navigationFirstTimeOrder.rawValue()
+                != right.navigationFirstTimeOrder.rawValue()
+                )
             {
-                return left.navigationFirstTimeOrder
-                    < right.navigationFirstTimeOrder;
+                return left.navigationFirstTimeOrder.rawValue()
+                    < right.navigationFirstTimeOrder.rawValue();
             }
 
             const int labelComparison = compareBaseLabels(

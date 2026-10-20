@@ -231,6 +231,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/sub_prep_meeting_time_grouping_policy.h
     src/next/application/sub_prep_navigation_metadata_policy.h
     src/next/application/sub_prep_navigation_schedule_order_policy.h
+    src/next/application/navigation_order_rank.h
     src/next/application/sub_prep_visible_class_ordering_policy.h
     src/next/application/sub_prep_print_order_policy.h
     src/next/application/testing_classes_ordering_policy.h

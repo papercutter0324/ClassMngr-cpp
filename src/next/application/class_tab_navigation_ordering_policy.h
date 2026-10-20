@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/navigation_order_rank.h"
 #include "next/domain/domain_types.h"
 
 #include <charconv>
@@ -10,32 +11,6 @@
 
 namespace ClassMngr::Next::Application
 {
-
-class ClassTabNavigationOrderRank final
-{
-public:
-    constexpr ClassTabNavigationOrderRank() noexcept = default;
-
-    explicit constexpr ClassTabNavigationOrderRank(
-        const std::int32_t rawValue
-        ) noexcept
-        : m_rawValue(rawValue)
-    {
-    }
-
-    [[nodiscard]] constexpr std::int32_t rawValue() const noexcept
-    {
-        return m_rawValue;
-    }
-
-    friend constexpr bool operator==(
-        const ClassTabNavigationOrderRank&,
-        const ClassTabNavigationOrderRank&
-        ) noexcept = default;
-
-private:
-    std::int32_t m_rawValue = 1'000;
-};
 
 // Rank and label preparation stay at the feature edge. This policy compares
 // only the prepared tuple, with the feature supplying its locale-aware label
