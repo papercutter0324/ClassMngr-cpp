@@ -68,7 +68,9 @@ public:
         for (const auto& source : read->classes)
         {
             ClassExportSourceClass item{*Domain::ClassId::fromString(std::to_string(source.classId)),
-                static_cast<std::size_t>(source.selectedIndex), source.name.toStdU16String(), {}, {}, {}, {}};
+                ClassTransferExportSelectionOrdinal{
+                    static_cast<std::size_t>(source.selectedIndex)
+                    }, source.name.toStdU16String(), {}, {}, {}, {}};
             if (!source.infoError.isEmpty())
                 item.info = ClassExportStage<ClassExportSourceInfo>::error(error(source.infoError));
             else

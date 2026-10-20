@@ -1,6 +1,7 @@
 #include "next/application/class_transfer_export_query.h"
 #include "next/application/class_transfer_keys.h"
 #include <QtTest/QtTest>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <type_traits>
@@ -35,6 +36,30 @@ static_assert(std::is_same_v<
     std::int64_t>);
 static_assert(!std::is_convertible_v<std::int64_t, ClassTransferExportUtcMilliseconds>);
 static_assert(!std::is_convertible_v<ClassTransferExportUtcMilliseconds, std::int64_t>);
+static_assert(std::is_same_v<
+    decltype(ClassExportSourceClass::selectedIndex),
+    ClassTransferExportSelectionOrdinal
+    >);
+static_assert(std::is_same_v<
+    decltype(ClassTransferExportSelectionOrdinal{}.rawValue()),
+    std::size_t
+    >);
+static_assert(!std::is_convertible_v<
+    std::size_t,
+    ClassTransferExportSelectionOrdinal
+    >);
+static_assert(!std::is_convertible_v<
+    ClassTransferExportSelectionOrdinal,
+    std::size_t
+    >);
+constexpr ClassTransferExportSelectionOrdinal DefaultSelectionOrdinal{};
+constexpr ClassTransferExportSelectionOrdinal ExplicitSelectionOrdinal{4};
+constexpr ClassTransferExportSelectionOrdinal EqualSelectionOrdinal{4};
+constexpr ClassTransferExportSelectionOrdinal DifferentSelectionOrdinal{19};
+static_assert(DefaultSelectionOrdinal.rawValue() == 0);
+static_assert(ExplicitSelectionOrdinal.rawValue() == 4);
+static_assert(ExplicitSelectionOrdinal == EqualSelectionOrdinal);
+static_assert(ExplicitSelectionOrdinal != DifferentSelectionOrdinal);
 namespace
 {
 Domain::ClassId id(int value) { return *Domain::ClassId::fromString(std::to_string(value)); }
@@ -42,7 +67,12 @@ Domain::TeacherId teacherId(int value) { return *Domain::TeacherId::fromString(s
 Domain::OperationError error(const char* message) { return {Domain::ErrorCode::Technical, message, true}; }
 ClassExportSourceClass item(int value, std::optional<Domain::TeacherId> teacher = {})
 {
-    ClassExportSourceClass result{id(value), static_cast<std::size_t>(value - 1), u"Class", {}, {}, {}, {}};
+    ClassExportSourceClass result{
+        id(value),
+        ClassTransferExportSelectionOrdinal{
+            static_cast<std::size_t>(value - 1)
+            },
+        u"Class", {}, {}, {}, {}};
     ClassExportSourceInfo info;
     info.classGrade = u"E4"; info.classLevel = u"Theseus";
     info.sourceClassId = value; info.sourceTeacherId = 99;
@@ -80,13 +110,15 @@ private slots:
     void stagedFailurePrecedesDeferredSelectionAndUnattemptedValues();
     void emptyAndDuplicateRequestsRemainSourceOwned();
     void noImportProjectionCapsApply();
+    void outputClassKeysUseExplicitSelectionOrdinals();
 };
 void ClassTransferExportQueryTests::preservesRequestAndAssemblesFirstSeenKeysAndFullPayload()
 {
     Port port;
     port.source.exportedAtUtcMilliseconds = ClassTransferExportUtcMilliseconds{1'234};
     port.source.classes = {item(2, teacherId(9)), item(1, teacherId(3)), item(4, teacherId(9)), item(3)};
-    for (std::size_t i = 0; i < port.source.classes.size(); ++i) port.source.classes[i].selectedIndex = i;
+    for (std::size_t i = 0; i < port.source.classes.size(); ++i)
+        port.source.classes[i].selectedIndex = ClassTransferExportSelectionOrdinal{i};
     const std::u16string exactPayload{u'A', char16_t(0), char16_t(0xD800), u'B',
         char16_t(0xDC00), char16_t(0xD83D), char16_t(0xDE80), u'\n'};
     port.source.classes[0].name = exactPayload;
@@ -199,7 +231,15 @@ void ClassTransferExportQueryTests::errorsReplayInOriginalClassOrder()
 }
 void ClassTransferExportQueryTests::stagedFailurePrecedesDeferredSelectionAndUnattemptedValues()
 {
-    Port port; port.source.classes = {item(1, teacherId(1)), {id(2), 1, u"not attempted", {}, {}, {}, {}}};
+    Port port; port.source.classes = {
+        item(1, teacherId(1)),
+        {
+            id(2),
+            ClassTransferExportSelectionOrdinal{1},
+            u"not attempted",
+            {}, {}, {}, {}
+        }
+    };
     port.source.teachers = {{teacherId(1), ClassExportStage<ClassExportTeacherProfile>::error(error("teacher"))}};
     port.source.classes[0].evaluations = ClassExportStage<std::vector<ClassExportEvaluation>>::error(error("evaluation"));
     port.source.deferredSelectionOrLookupError = error("selection");
@@ -227,6 +267,23 @@ void ClassTransferExportQueryTests::noImportProjectionCapsApply()
     for (int i = 1; i <= 4'097; ++i) { request.classIds.push_back(id(i)); port.source.classes.push_back(item(i)); }
     auto result = ClassTransferExportQuery(port).execute(request);
     QVERIFY(result); QCOMPARE(result.value().classes.size(), std::size_t(4'097));
+}
+void ClassTransferExportQueryTests::outputClassKeysUseExplicitSelectionOrdinals()
+{
+    Port port;
+    port.source.classes = {item(9), item(3), item(7)};
+    port.source.classes[0].selectedIndex = ClassTransferExportSelectionOrdinal{6};
+    port.source.classes[1].selectedIndex = ClassTransferExportSelectionOrdinal{0};
+    port.source.classes[2].selectedIndex = ClassTransferExportSelectionOrdinal{3};
+    const ClassTransferExportRequest request{{id(9), id(3), id(7)}};
+
+    const auto result = ClassTransferExportQuery(port).execute(request);
+    QVERIFY(result);
+    QVERIFY(port.seen.classIds == request.classIds);
+    QCOMPARE(result.value().classes.size(), std::size_t(3));
+    QCOMPARE(result.value().classes[0].key.value(), std::u16string(u"class-7"));
+    QCOMPARE(result.value().classes[1].key.value(), std::u16string(u"class-1"));
+    QCOMPARE(result.value().classes[2].key.value(), std::u16string(u"class-4"));
 }
 QTEST_APPLESS_MAIN(ClassTransferExportQueryTests)
 #include "next_application_class_transfer_export_query_tests.moc"

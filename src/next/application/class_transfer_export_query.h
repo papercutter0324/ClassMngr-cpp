@@ -27,6 +27,32 @@ struct ClassExportSourceInfo : ClassExportInfo
     ClassExportText wifiName, wifiPassword, internetType, zoomId, zoomPassword, projectionType;
 };
 
+class ClassTransferExportSelectionOrdinal final
+{
+public:
+    constexpr ClassTransferExportSelectionOrdinal() noexcept = default;
+
+    explicit constexpr ClassTransferExportSelectionOrdinal(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ClassTransferExportSelectionOrdinal&,
+        const ClassTransferExportSelectionOrdinal&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
 enum class ClassExportStageState { NotAttempted, Value, Error };
 template<class T> class ClassExportStage
 {
@@ -48,7 +74,7 @@ private:
 struct ClassExportSourceClass
 {
     Domain::ClassId id;
-    std::size_t selectedIndex = 0;
+    ClassTransferExportSelectionOrdinal selectedIndex;
     ClassExportText name;
     ClassExportStage<ClassExportSourceInfo> info;
     ClassExportStage<ClassExportRoster> roster;
@@ -153,7 +179,9 @@ public:
         for (const auto& item : source.classes)
         {
             ClassExportClass output;
-            output.key = ClassTransferExportDetail::classKey(item.selectedIndex + 1);
+            output.key = ClassTransferExportDetail::classKey(
+                item.selectedIndex.rawValue() + 1
+                );
             output.name = item.name;
             output.info = static_cast<const ClassExportInfo&>(item.info.value());
             output.roster = item.roster.value();

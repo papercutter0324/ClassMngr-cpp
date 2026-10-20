@@ -400,7 +400,7 @@ void ClassTransferExportSourceTests::wideTeacherIdentityKeepsFullProfileAndShare
     {
         const auto& item = source.value().classes[index];
         QVERIFY(item.id == request.classIds[index]);
-        QCOMPARE(item.selectedIndex, index);
+        QCOMPARE(item.selectedIndex.rawValue(), index);
         QCOMPARE(item.info.state(), ClassExportStageState::Value);
         QCOMPARE(item.info.value().sourceClassId, classes[1 - static_cast<int>(index)]);
         QCOMPARE(item.info.value().sourceTeacherId, std::int64_t(teacherId));
