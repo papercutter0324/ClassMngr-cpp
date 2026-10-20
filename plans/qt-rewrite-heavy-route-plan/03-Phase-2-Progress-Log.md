@@ -56869,3 +56869,32 @@ this host during F1230–F1232; if still unavailable, report the blocker
 `Could not use disabled preset "windows-x64-debug"` and scoped macOS
 verification without claiming Windows coverage. At acceptance time, no F1233
 code change or verification has started.
+
+### F1233 GS Team save validation row position complete - 2026-10-21
+
+F1233 completed at implementation commit `b62fddf1`
+(`Phase2 - Type GS Team save validation row index`), following acceptance and
+Batch498 discovery commit `8318a784`. `GsTeamDirectorySaveValidation::rowIndex`
+now uses the explicit Application-owned
+`GsTeamDirectorySaveValidationRowIndex`. First-failure order, row positions,
+default zero for successful and collection-level results, and validation
+before persistence remain unchanged.
+
+The independent Tester reused the incremental `build/macos-clang-debug` tree
+and built `ClassMngr` and both focused targets:
+
+```text
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationGsTeamDirectorySaveTests ClassMngrStaffDirectoryGsTeamSaveParityTests --parallel 8
+```
+
+Both focused CTests passed (2/2):
+
+```text
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextApplicationGsTeamDirectorySaveTests|ClassMngrStaffDirectoryGsTeamSaveParityTests)$'
+```
+
+`git diff --check` passed. `cmake --preset windows-x64-debug` reported
+`Could not use disabled preset "windows-x64-debug"` on this macOS host; Windows
+x64 and the full suite remain unverified. Batch497 remains active with
+F1227–F1233 complete and F1234 discovered. Batch498 remains discovered, not
+active, with F1235 then F1236.

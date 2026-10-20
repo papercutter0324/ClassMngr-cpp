@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch497 is active with F1227–F1232 complete, F1233 accepted for implementation, and F1234 discovered; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch497 is active with F1227–F1233 complete and F1234 next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1233 was accepted from the Application and Domain Explorer review; implementation and verification have not started (see [F1233 acceptance](03-Phase-2-Progress-Log.md#f1233-gs-team-save-validation-row-position-accepted-before-implementation-2026-10-21)). Batch497 remains active, with F1233 next for implementation. Batch498 has two discovered candidates and will activate after Batch497 closes. F629 plus the Phase 0 and Phase 2 gates remain open.
+F1233 completed at implementation commit `b62fddf1`; both focused macOS CTests passed in the incremental build (see [F1233 completion](03-Phase-2-Progress-Log.md#f1233-gs-team-save-validation-row-position-complete-2026-10-21)). Windows x64 and the full suite remain unverified. F1234 is next for acceptance. Batch498 remains discovered with two candidates and will activate after Batch497 closes; F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,7 +72,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch497 (8 candidates; 6 complete, 1 accepted, 1 discovered)
+#### Active batch: Batch497 (8 candidates; 7 complete, 1 discovered)
 
 1. F1227 - **Complete.** Add a distinct zero-based typed position to Schedule Import eligibility issues; first-failure ordering, default-zero global issues, and Feature grade/level lookup are verified.
 2. F1228 - **Complete.** Type positions in the Sub Prep visible-class ordering facts; comparator, stable ties, and filtered-to-projection mapping are verified.
@@ -80,7 +80,7 @@ Treat this plan as an operational summary, not a history:
 4. F1230 - **Complete.** Type Teacher Import review selection positions with signed requested and size-based resolved indexes; preserve validation, group order, and candidate order.
 5. F1231 - **Complete.** Type Domain duplicate-name row positions through Speaking Evaluation and Roster Save diagnostics; preserve grouping, row and issue order, adapter parity, and signed validation-issue row contracts.
 6. F1232 - **Complete.** Reuse `ClassDetailsScheduleValidationRowIndex` for duplicate schedule-row positions; preserve deterministic grouping, diagnostic order, and the Feature payload contract.
-7. F1233 - **Accepted.** Add an Application-owned GS Team validation row index; preserve first-failure order, collection-level and success defaults, and no-save-on-failure behavior.
+7. F1233 - **Complete.** Add an Application-owned GS Team validation row index; preserve first-failure order, collection-level and success defaults, and no-save-on-failure behavior.
 8. F1234 - **Discovered.** Type Native English Teacher save validation row position; preserve first-row and default-value behavior.
 
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
