@@ -1176,7 +1176,7 @@ void SpeakingEvalAiBatchDialog::applyComments()
         return;
     }
 
-    if (plan.overwriteCount > 0)
+    if (plan.overwriteCount.rawValue() > 0)
     {
         const PromptChoice answer =
             DialogServices::confirm(
@@ -1187,7 +1187,9 @@ void SpeakingEvalAiBatchDialog::applyComments()
                     "Do you want to continue?"
                     )
                     .arg(
-                        static_cast<qulonglong>(plan.overwriteCount)
+                        static_cast<qulonglong>(
+                            plan.overwriteCount.rawValue()
+                            )
                         ),
                 tr("Replace"),
                 tr("Cancel"),

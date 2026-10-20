@@ -31,11 +31,43 @@ struct SpeakingEvaluationAiBatchAcceptedCommentAssignment final
         ) = default;
 };
 
+class SpeakingEvaluationAiBatchOverwriteCount final
+{
+public:
+    constexpr SpeakingEvaluationAiBatchOverwriteCount() noexcept = default;
+
+    explicit constexpr SpeakingEvaluationAiBatchOverwriteCount(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    constexpr SpeakingEvaluationAiBatchOverwriteCount& operator++() noexcept
+    {
+        ++m_value;
+        return *this;
+    }
+
+    friend constexpr bool operator==(
+        const SpeakingEvaluationAiBatchOverwriteCount&,
+        const SpeakingEvaluationAiBatchOverwriteCount&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
 struct SpeakingEvaluationAiBatchAcceptedCommentPlan final
 {
     std::vector<SpeakingEvaluationAiBatchAcceptedCommentAssignment>
         assignments;
-    std::size_t overwriteCount = 0;
+    SpeakingEvaluationAiBatchOverwriteCount overwriteCount;
 };
 
 // Candidates arrive in review-table row order. Text is already adapted and

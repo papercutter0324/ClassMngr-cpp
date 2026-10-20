@@ -1,8 +1,10 @@
 #include "next/application/speaking_evaluation_ai_batch_accepted_comment_plan.h"
 
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 using ClassMngr::Next::Application::
@@ -11,8 +13,36 @@ using ClassMngr::Next::Application::
     SpeakingEvaluationAiBatchAcceptedCommentCandidate;
 using ClassMngr::Next::Application::
     SpeakingEvaluationAiBatchAcceptedCommentPlan;
+using ClassMngr::Next::Application::SpeakingEvaluationAiBatchOverwriteCount;
 using ClassMngr::Next::Application::
     planSpeakingEvaluationAiBatchAcceptedComments;
+
+static_assert(std::is_same_v<
+    decltype(SpeakingEvaluationAiBatchAcceptedCommentPlan::overwriteCount),
+    SpeakingEvaluationAiBatchOverwriteCount
+    >);
+static_assert(!std::is_convertible_v<
+    std::size_t,
+    SpeakingEvaluationAiBatchOverwriteCount
+    >);
+static_assert(!std::is_convertible_v<
+    SpeakingEvaluationAiBatchOverwriteCount,
+    std::size_t
+    >);
+
+constexpr SpeakingEvaluationAiBatchOverwriteCount DefaultOverwriteCount{};
+constexpr SpeakingEvaluationAiBatchOverwriteCount ZeroOverwriteCount{0};
+constexpr SpeakingEvaluationAiBatchOverwriteCount OneOverwriteCount{1};
+constexpr SpeakingEvaluationAiBatchOverwriteCount IncrementedOverwriteCount = [] {
+    SpeakingEvaluationAiBatchOverwriteCount count;
+    ++count;
+    return count;
+}();
+static_assert(DefaultOverwriteCount.rawValue() == 0);
+static_assert(DefaultOverwriteCount == ZeroOverwriteCount);
+static_assert(OneOverwriteCount.rawValue() == 1);
+static_assert(OneOverwriteCount != ZeroOverwriteCount);
+static_assert(IncrementedOverwriteCount == OneOverwriteCount);
 
 namespace
 {
@@ -83,7 +113,7 @@ bool filtersCandidatesAndPreservesInputOrder()
         planSpeakingEvaluationAiBatchAcceptedComments(candidates, 3);
 
     return plan.assignments.size() == 2
-        && plan.overwriteCount == 1
+        && plan.overwriteCount == SpeakingEvaluationAiBatchOverwriteCount{1}
         && plan.assignments[0]
             == SpeakingEvaluationAiBatchAcceptedCommentAssignment{
                 .sourceRow = 41,
@@ -131,7 +161,7 @@ bool countsOnlyChangedCommentsWithQtTrimmedContent()
     const SpeakingEvaluationAiBatchAcceptedCommentPlan plan =
         planSpeakingEvaluationAiBatchAcceptedComments(candidates, 3);
     return plan.assignments.size() == 2
-        && plan.overwriteCount == 1;
+        && plan.overwriteCount == SpeakingEvaluationAiBatchOverwriteCount{1};
 }
 
 bool preservesExactUtf16AssignmentValues()
@@ -154,7 +184,8 @@ bool preservesExactUtf16AssignmentValues()
 
     const SpeakingEvaluationAiBatchAcceptedCommentPlan plan =
         planSpeakingEvaluationAiBatchAcceptedComments(candidates, 1);
-    if (plan.assignments.size() != 1 || plan.overwriteCount != 1)
+    if (plan.assignments.size() != 1
+        || plan.overwriteCount != SpeakingEvaluationAiBatchOverwriteCount{1})
     {
         return false;
     }
@@ -165,6 +196,61 @@ bool preservesExactUtf16AssignmentValues()
         && assignment.newComment == newComment
         && assignment.oldComment.size() == oldComment.size()
         && assignment.newComment.size() == newComment.size();
+}
+
+bool projectsTypedZeroOneAndMultipleOverwriteCounts()
+{
+    const auto zeroPlan = planSpeakingEvaluationAiBatchAcceptedComments({}, 0);
+    if (zeroPlan.overwriteCount != SpeakingEvaluationAiBatchOverwriteCount{})
+    {
+        return false;
+    }
+
+    const std::vector<SpeakingEvaluationAiBatchAcceptedCommentCandidate>
+        oneOverwriteCandidate{
+            {
+                .checked = true,
+                .valid = true,
+                .reportIndex = 0,
+                .sourceRow = 4,
+                .oldComment = u"Existing comment",
+                .newComment = u"Replacement comment"
+            }
+        };
+    const auto onePlan = planSpeakingEvaluationAiBatchAcceptedComments(
+        oneOverwriteCandidate,
+        1
+        );
+    if (onePlan.overwriteCount != SpeakingEvaluationAiBatchOverwriteCount{1})
+    {
+        return false;
+    }
+
+    const std::vector<SpeakingEvaluationAiBatchAcceptedCommentCandidate>
+        multipleOverwriteCandidates{
+            {
+                .checked = true,
+                .valid = true,
+                .reportIndex = 0,
+                .sourceRow = 5,
+                .oldComment = u"Existing comment one",
+                .newComment = u"Replacement comment one"
+            },
+            {
+                .checked = true,
+                .valid = true,
+                .reportIndex = 1,
+                .sourceRow = 6,
+                .oldComment = u"Existing comment two",
+                .newComment = u"Replacement comment two"
+            }
+        };
+    const auto multiplePlan = planSpeakingEvaluationAiBatchAcceptedComments(
+        multipleOverwriteCandidates,
+        2
+        );
+    return multiplePlan.overwriteCount
+        == SpeakingEvaluationAiBatchOverwriteCount{2};
 }
 
 } // namespace
@@ -192,6 +278,14 @@ int main()
         std::fprintf(
             stderr,
             "Accepted-comment UTF-16 values were changed.\n"
+            );
+        return EXIT_FAILURE;
+    }
+    if (!projectsTypedZeroOneAndMultipleOverwriteCounts())
+    {
+        std::fprintf(
+            stderr,
+            "Typed overwrite counts were not projected correctly.\n"
             );
         return EXIT_FAILURE;
     }
