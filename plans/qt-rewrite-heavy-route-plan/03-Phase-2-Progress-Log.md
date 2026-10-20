@@ -57372,3 +57372,35 @@ touching, Sunday overnight overlap, and equal-endpoint behavior. Build
 `ClassMngrClassTransferTests`; run those two focused CTests. At acceptance,
 implementation, build, and tests had not started. Batch499 remains active;
 F1240–F1242 stay in the ordered discovered queue.
+
+### F1239 Class Transfer weekday candidates complete - 2026-10-21
+
+F1239 completed at implementation commit
+`cd9d745d9c3e8fef83821a170fc0dd287d2e35d6`. The candidate factory now takes
+the existing `Domain::Weekday`, and the repository boundary explicitly maps
+valid legacy weekday indexes to named values after the existing parser and
+canonical-text checks. Forged invalid weekdays are rejected. Schedule
+candidate calculations preserve absolute minutes from Monday, overnight and
+equal-endpoint semantics, half-open overlap, and conflict behavior.
+
+The Executor built `ClassMngr`,
+`ClassMngrNextApplicationClassTransferTests`, and
+`ClassMngrClassTransferTests`. The focused Application CTest passed; all
+Class Transfer schedule assertions in the feature suite passed. The independent
+Tester reran both focused CTests: one of two passed. The Application CTest
+passed. `ClassMngrClassTransferTests` reported 63 passing cases and one failure
+in `importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`, with
+expected label `Keep local: Romanized One` and actual label
+`Keep local: New Teacher`. This same mismatch was recorded on the pre-F1216
+baseline `9d8c61e3e74f1308badae50b6b7b8185b97f77c6` in the
+[F1216 closeout](#f1216-class-transfer-matching-package-class-index-complete-2026-10-21).
+That teacher-label path is outside the changed Class Transfer schedule code;
+no cause beyond the reproduced baseline result is claimed.
+
+Both Executor and Tester report `git diff --check` passed. Verification used
+the existing incremental macOS build; the independent build found Ninja had no
+work to do. Do not treat this as a full-suite pass. Windows x64 and the full
+suite remain unverified.
+
+Batch499 remains active with F1237–F1239 complete. F1240 is next for
+acceptance; F1241–F1242 remain in the ordered discovered queue.
