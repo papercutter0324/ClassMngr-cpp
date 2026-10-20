@@ -55058,3 +55058,51 @@ background at `src/data/repositories/roster_repository.cpp` (lines 959–1002,
 integration coverage is in `tests/speaking_eval_page_save_tests.cpp`. No F1206
 implementation or verification has started. Batch494 remains open and
 unpushed; F1207–F1209 remain discovered.
+
+### F1206 Speaking Evaluation roster name import position types complete - 2026-10-20
+
+F1206 completed at source/test commit
+`60561d6990fa84064956735e020d1645fe0309d9` (`Phase2 - Type roster name
+import positions`). The three changed paths were
+`src/features/speaking_eval/ui/speaking_eval_page_name_matching.cpp`,
+`src/next/application/speaking_evaluation_roster_name_import_plan.h`, and
+`tests/next_application_speaking_evaluation_roster_name_import_plan_tests.cpp`.
+
+The independent Tester reported that the planner CTest and four direct
+name-import UI selectors passed. The complete
+`ClassMngrSpeakingEvalPageSaveTests` target produced 35 passes and one failure:
+`outputReportsUsesProjectedRegularSchedule()` failed its output-directory
+assertion at `tests/speaking_eval_page_save_tests.cpp:2466`, both in the full
+target run and when run individually. That failure path calls the output
+report directory service, not the changed name-import code; no baseline was
+established. `git diff --check` passed. No project-wide full-suite or Windows
+check is claimed. Batch494 remains open and unpushed.
+
+### F1207 Class Details schedule validation row index accepted before implementation - 2026-10-20
+
+F1207 is accepted/current before implementation, based on two independent
+read-only Explorer reports. Type only `ClassDetailsValidationIssue::row` with
+`ClassDetailsScheduleValidationRowIndex`, backed by `std::size_t`, defaulting
+to zero, explicitly constructed, and exposing `.rawValue()`, equality, and no
+implicit conversions. The policy emits zero-based schedule indexes. The
+Feature adapter unwraps this row for field paths and casts it to legacy
+`ValidationIssue.row` (`int`); preserve legacy `-1` on non-schedule issues and
+the existing default-zero behavior of other issue rows. Do not add a
+missing-row sentinel.
+
+Keep `duplicateRows` as raw `std::vector<int>`/`QVariantList` pending separate
+acceptance. Preserve row-level issues before duplicate groups, first-seen
+duplicate-group order, and each group's row order. Do not type input schedule
+text or expand this slice to legacy `ClassTimeValidator`.
+
+Evidence: `src/next/application/class_details_validation_policy.h` (lines
+105–117, 760–905), `src/features/classes/ui/class_details_page.cpp` (lines
+209–253, 324–372, 1126–1164), and tests
+`tests/next_application_class_details_validation_policy_tests.cpp` (lines
+148–314), `tests/next_application_class_details_save_use_case_tests.cpp`
+(lines 485–503), and `tests/class_details_page_save_parity_tests.cpp` (lines
+834–887). Targets are `ClassMngrNextApplicationClassDetailsValidationPolicyTests`,
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests`,
+`ClassMngrClassDetailsPageSaveParityTests`, and `ClassMngr`. No F1207
+implementation or verification has started. Batch494 remains open and
+unpushed; F1208–F1209 remain discovered.
