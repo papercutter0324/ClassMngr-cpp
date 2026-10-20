@@ -56669,3 +56669,40 @@ The same CTest selection without the environment variable aborted in
 with `QT_QPA_PLATFORM=offscreen` passed 6/6. `git diff --check` passed. The
 `windows-x64-debug` preset is disabled on this macOS host, so Windows x64 is
 unverified. No full suite was run.
+
+### F1231 Duplicate student-name row positions accepted before implementation - 2026-10-21
+
+F1231 is accepted based on two independent read-only Explorer reviews, which
+agreed on the Domain grouping behavior and its Application consumers. Introduce
+`DuplicateStudentNamePairRowIndex` as an explicit `std::size_t` value type with
+a zero default, private storage, `.rawValue()`, equality, and no implicit
+conversions. Use it in `Domain::DuplicateStudentNamePairGroup::rowIndexes` and
+in the duplicate-row argument vectors for Speaking Evaluation and Roster Save
+Application diagnostics. Keep the separate signed
+`SpeakingEvaluationValidationIssueRowIndex` and `RosterSaveIssueRowIndex`
+contracts, including `-1` for absent or collection-level rows.
+
+Explicitly unwrap the shared Domain row position at Feature consumers and
+adapters, including `shared_validation.cpp`, `roster_model_validation.cpp`,
+`speaking_eval_model.cpp`, `speaking_eval_page_validation_adapter.cpp`, and
+`roster_save_validation_adapter.h`. Preserve exact pair grouping, first-seen
+group order, input row order within each group, caller trim/normalization,
+incomplete-row skipping, and issue order (group, row, English then Korean).
+Keep issue codes, severity, fields, zero-based payload values, and validation
+failure behavior unchanged, including no save-port call on validation
+failures. Do not change Class Details duplicate-row output if it consumes the
+shared Domain group.
+
+The accepted tests add typed-value and ordering assertions to Domain contract
+and Speaking Evaluation coverage, plus a Roster Application regression with
+two first-seen duplicate groups and noncontiguous rows. That regression checks
+typed payloads, issue row positions, English/Korean issue order, and
+collection-level `-1`; adapter parity is also retained. The focused build scope
+is `ClassMngr`, `ClassMngrNextDomainContractTests`,
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`,
+`ClassMngrNextApplicationRosterSaveUseCaseTests`,
+`ClassMngrSpeakingEvalPageSaveParityTests`,
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`,
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`,
+and `ClassMngrSharedPolicyTests`, followed by those seven focused CTests.
+At acceptance time, implementation and verification have not started.
