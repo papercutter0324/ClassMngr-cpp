@@ -57,17 +57,8 @@ struct ResolvedTimeRange
     }
 };
 
-constexpr qint64 PositionStride = 20'000;
 constexpr int IntensiveFirstHour = 9;
 constexpr int IntensiveFinalHour = 21;
-
-qint64 positionKey(
-    int row,
-    int column
-    )
-{
-    return static_cast<qint64>(row) * PositionStride + column;
-}
 
 QString cellReference(
     int row,
@@ -93,15 +84,12 @@ QString cellReference(
 }
 
 const CalendarImport::Cell* cellAt(
-    const QHash<qint64, const CalendarImport::Cell*>& cells,
+    const QHash<CalendarImport::CellPosition, const CalendarImport::Cell*>& cells,
     int row,
     int column
     )
 {
-    return cells.value(
-        positionKey(row, column),
-        nullptr
-        );
+    return cells.value(CalendarImport::CellPosition{row, column}, nullptr);
 }
 
 QString normalizedToken(
@@ -556,7 +544,7 @@ const CalendarImport::CellRange* mergedRangeAt(
 {
     for (const CalendarImport::CellRange& range : worksheet.mergedRanges)
     {
-        if (range.contains(row, column))
+        if (range.contains({row, column}))
         {
             return &range;
         }
@@ -922,7 +910,7 @@ QList<ScheduleImportClassCandidate> aggregateOccurrences(
 ScheduleImportUserBlock parseBlock(
     const CalendarImport::Worksheet& worksheet,
     const QVector<CalendarImport::Style>& styles,
-    const QHash<qint64, const CalendarImport::Cell*>& cells,
+    const QHash<CalendarImport::CellPosition, const CalendarImport::Cell*>& cells,
     const CalendarImport::Cell& header,
     ScheduleImportKind kind
     )
@@ -930,7 +918,7 @@ ScheduleImportUserBlock parseBlock(
     ScheduleImportUserBlock result;
     result.name = header.value.simplified();
     result.headerCell =
-        cellReference(header.row, header.column);
+        cellReference(header.position.row, header.position.column);
 
     QStringList days;
     for (int offset = 1; offset <= 5; ++offset)
@@ -938,8 +926,8 @@ ScheduleImportUserBlock parseBlock(
         const CalendarImport::Cell* dayCell =
             cellAt(
                 cells,
-                header.row,
-                header.column + offset
+                header.position.row,
+                header.position.column + offset
                 );
         days.append(
             dayCell
@@ -949,12 +937,12 @@ ScheduleImportUserBlock parseBlock(
     }
 
     QList<TimetableRow> timetableRows;
-    for (int row = header.row + 1;
-         row <= header.row + 20;
+    for (int row = header.position.row + 1;
+         row <= header.position.row + 20;
          ++row)
     {
         const CalendarImport::Cell* timeCell =
-            cellAt(cells, row, header.column);
+            cellAt(cells, row, header.position.column);
 
         if (!timeCell)
         {
@@ -987,7 +975,7 @@ ScheduleImportUserBlock parseBlock(
                  ++dayOffset)
             {
                 const int column =
-                    header.column + dayOffset + 1;
+                    header.position.column + dayOffset + 1;
                 const CalendarImport::Cell* cell =
                     cellAt(cells, row.row, column);
                 if (
@@ -1038,7 +1026,7 @@ ScheduleImportUserBlock parseBlock(
                 }
 
                 const int column =
-                    header.column + dayOffset + 1;
+                    header.position.column + dayOffset + 1;
                 const CalendarImport::Cell* cell =
                     cellAt(cells, row.row, column);
                 if (!cell)
@@ -1055,8 +1043,8 @@ ScheduleImportUserBlock parseBlock(
                         cell =
                             cellAt(
                                 cells,
-                                range->firstRow,
-                                range->firstColumn
+                                range->first.row,
+                                range->first.column
                                 );
                     }
                 }
@@ -1096,7 +1084,7 @@ ScheduleImportUserBlock parseBlock(
             }
 
             const int column =
-                header.column + dayOffset + 1;
+                header.position.column + dayOffset + 1;
             const CalendarImport::Cell* cell =
                 cellAt(cells, row.row, column);
 
@@ -1160,10 +1148,10 @@ ScheduleImportUserBlock parseBlock(
                         )
                 )
             {
-                if (timeByRow.contains(range->lastRow))
+                if (timeByRow.contains(range->last.row))
                 {
                     endMinutes =
-                        timeByRow.value(range->lastRow).endMinutes;
+                        timeByRow.value(range->last.row).endMinutes;
                 }
             }
 
@@ -1235,7 +1223,7 @@ ScheduleImportUserBlock parseBlock(
 
 bool validHeader(
     const CalendarImport::Cell& candidate,
-    const QHash<qint64, const CalendarImport::Cell*>& cells
+    const QHash<CalendarImport::CellPosition, const CalendarImport::Cell*>& cells
     )
 {
     if (
@@ -1251,8 +1239,8 @@ bool validHeader(
         const CalendarImport::Cell* day =
             cellAt(
                 cells,
-                candidate.row,
-                candidate.column + offset
+                candidate.position.row,
+                candidate.position.column + offset
                 );
 
         if (
@@ -1287,11 +1275,11 @@ Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
                 sheet.name = worksheet.name;
                 sheet.visible = worksheet.visible;
 
-                QHash<qint64, const CalendarImport::Cell*> cells;
+                QHash<CalendarImport::CellPosition, const CalendarImport::Cell*> cells;
                 for (const CalendarImport::Cell& cell : worksheet.cells)
                 {
                     cells.insert(
-                        positionKey(cell.row, cell.column),
+                        cell.position,
                         &cell
                         );
                 }

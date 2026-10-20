@@ -11,8 +11,6 @@
 
 namespace
 {
-constexpr int CellPositionStride = 1'000;
-
 const QStringList LevelOrder{
     QStringLiteral("Elem Only"),
     QStringLiteral("M1"),
@@ -53,29 +51,29 @@ struct Section
     QString name;
 };
 
-QHash<int, const CalendarImport::Cell*> cellsByPosition(
+QHash<CalendarImport::CellPosition, const CalendarImport::Cell*> cellsByPosition(
     const CalendarImport::Worksheet& worksheet
     )
 {
-    QHash<int, const CalendarImport::Cell*> result;
+    QHash<CalendarImport::CellPosition, const CalendarImport::Cell*> result;
     for (const CalendarImport::Cell& cell : worksheet.cells)
     {
-        result.insert(cell.row * CellPositionStride + cell.column, &cell);
+        result.insert(cell.position, &cell);
     }
     return result;
 }
 
 const CalendarImport::Cell* cellAt(
-    const QHash<int, const CalendarImport::Cell*>& cells,
+    const QHash<CalendarImport::CellPosition, const CalendarImport::Cell*>& cells,
     int row,
     int column
     )
 {
-    return cells.value(row * CellPositionStride + column, nullptr);
+    return cells.value(CalendarImport::CellPosition{row, column}, nullptr);
 }
 
 QString cellText(
-    const QHash<int, const CalendarImport::Cell*>& cells,
+    const QHash<CalendarImport::CellPosition, const CalendarImport::Cell*>& cells,
     int row,
     int column
     )
@@ -91,14 +89,14 @@ QList<Section> sectionsIn(
     QList<Section> result;
     for (const CalendarImport::Cell& cell : worksheet.cells)
     {
-        if (cell.column != 1)
+        if (cell.position.column != 1)
         {
             continue;
         }
         const QString marker = canonicalMarker(cell.value);
         if (!marker.isEmpty())
         {
-            result.append({cell.row, marker});
+            result.append({cell.position.row, marker});
         }
     }
     std::sort(result.begin(), result.end(), [](const Section& left, const Section& right) {
@@ -326,7 +324,7 @@ Result<TeacherImportPreview> SectionedContactListTemplate::parse(
     int lastWorksheetRow = 0;
     for (const CalendarImport::Cell& cell : worksheet.cells)
     {
-        lastWorksheetRow = std::max(lastWorksheetRow, cell.row);
+        lastWorksheetRow = std::max(lastWorksheetRow, cell.position.row);
     }
 
     for (int sectionIndex = 0; sectionIndex < sections.size(); ++sectionIndex)

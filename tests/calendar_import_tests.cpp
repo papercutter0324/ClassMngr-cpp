@@ -213,6 +213,58 @@ QByteArray calendarWorkbookArchive(
     }
     return storedZipArchive(files);
 }
+
+QByteArray singleSheetWorkbookArchive(
+    const QByteArray& worksheetXml,
+    bool withHighRowNote = false
+    )
+{
+    QList<std::pair<QByteArray, QByteArray>> files{
+        {
+            QByteArrayLiteral("xl/workbook.xml"),
+            QByteArrayLiteral(
+                "<workbook><sheets><sheet name=\"First\" id=\"rId1\"/>"
+                "</sheets></workbook>"
+                )
+        },
+        {
+            QByteArrayLiteral("xl/_rels/workbook.xml.rels"),
+            QByteArrayLiteral(
+                "<Relationships><Relationship Id=\"rId1\" "
+                "Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" "
+                "Target=\"worksheets/sheet1.xml\"/>"
+                "</Relationships>"
+                )
+        },
+        {
+            QByteArrayLiteral("xl/worksheets/sheet1.xml"),
+            worksheetXml
+        }
+    };
+
+    if (withHighRowNote)
+    {
+        files.append({
+            QByteArrayLiteral("xl/worksheets/_rels/sheet1.xml.rels"),
+            QByteArrayLiteral(
+                "<Relationships><Relationship Id=\"rId2\" "
+                "Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments\" "
+                "Target=\"../comments1.xml\"/>"
+                "</Relationships>"
+                )
+        });
+        files.append({
+            QByteArrayLiteral("xl/comments1.xml"),
+            QByteArrayLiteral(
+                "<comments><commentList><comment ref=\"A1048576\">"
+                "<text><t>Campus: BDG</t></text>"
+                "</comment></commentList></comments>"
+                )
+        });
+    }
+
+    return storedZipArchive(files);
+}
 }
 
 class CalendarImportTests : public QObject
@@ -223,10 +275,15 @@ private slots:
     void importsOnlyFirstWorksheetInCalendarOrder();
     void returnsNoEventsForMissingOrEmptyFirstWorksheet();
     void lastCellAtDuplicateCoordinateWinsInProjection();
+    void calendarLookupDoesNotAliasWideColumns();
     void cancelledCalendarDatesAreSuppressed();
     void readerRejectsUnreadableWorkbook_data();
     void readerRejectsUnreadableWorkbook();
     void readerRejectsMalformedLaterWorksheetAndAllEmptyWorkbook();
+    void cellPositionsEnforceWorksheetBoundsAndHashByPair();
+    void cellRangesAreTypedInclusiveAndRejectInvalidEndpoints();
+    void readerSkipsMalformedMergedRangesAndPreservesValidBoundaries();
+    void readerAttachesNotesAtTheMaximumRow();
     void ignoresWeekendLegendEntries();
     void importsNewSemesterLegendEntries();
     void importsWeekendFontColorOverrides();
@@ -307,6 +364,24 @@ void CalendarImportTests::lastCellAtDuplicateCoordinateWinsInProjection()
 
     QCOMPARE(parsed.events.size(), 1);
     QCOMPARE(parsed.events.first().startDate, QDate(2026, 7, 7));
+}
+
+void CalendarImportTests::calendarLookupDoesNotAliasWideColumns()
+{
+    CalendarImport::Workbook workbook = baseWorkbook();
+    auto& worksheet = workbook.worksheets.first();
+    worksheet.cells.append({20, 26, 1, QStringLiteral("New Semester"), {}});
+    worksheet.cells.append({3, 3, 1, QStringLiteral("1"), {}});
+    worksheet.cells.append({4, 1, 1, QStringLiteral("6"), {}});
+    // This month label collided with the July 6 cell under the old row * 100 key.
+    worksheet.cells.append({3, 101, 0, QStringLiteral("AUGUST"), {}});
+
+    const CalendarImport::ParsedCalendarImport parsed =
+        CalendarImport::parseCalendarEventsFromWorkbook(workbook);
+
+    QCOMPARE(parsed.events.size(), 2);
+    QCOMPARE(parsed.events.at(0).startDate, QDate(2026, 7, 1));
+    QCOMPARE(parsed.events.at(1).startDate, QDate(2026, 7, 6));
 }
 
 void CalendarImportTests::cancelledCalendarDatesAreSuppressed()
@@ -401,6 +476,133 @@ void CalendarImportTests::readerRejectsMalformedLaterWorksheetAndAllEmptyWorkboo
     QCOMPARE(worksheetCallbacks, 2);
     QVERIFY(worksheetsAreEmpty);
     QCOMPARE(error, QStringLiteral("The downloaded spreadsheet could not be read."));
+}
+
+void CalendarImportTests::cellPositionsEnforceWorksheetBoundsAndHashByPair()
+{
+    using CalendarImport::CellPosition;
+
+    QVERIFY((CellPosition{1, 1}.isValid()));
+    QVERIFY((CellPosition{CellPosition::MaxRow, CellPosition::MaxColumn}.isValid()));
+    QVERIFY(!CellPosition{}.isValid());
+    QVERIFY((!CellPosition{0, 1}.isValid()));
+    QVERIFY((!CellPosition{1, 0}.isValid()));
+    QVERIFY((!CellPosition{-1, 1}.isValid()));
+    QVERIFY((!CellPosition{1, -1}.isValid()));
+    QVERIFY((!CellPosition{CellPosition::MaxRow + 1, 1}.isValid()));
+    QVERIFY((!CellPosition{1, CellPosition::MaxColumn + 1}.isValid()));
+
+    QHash<CellPosition, QString> cells;
+    cells.insert({1, 101}, QStringLiteral("wide column"));
+    cells.insert({2, 1}, QStringLiteral("next row"));
+    cells.insert({1, 101}, QStringLiteral("last duplicate"));
+
+    QCOMPARE(cells.size(), 2);
+    QCOMPARE(cells.value({1, 101}), QStringLiteral("last duplicate"));
+    QCOMPARE(cells.value({2, 1}), QStringLiteral("next row"));
+}
+
+void CalendarImportTests::cellRangesAreTypedInclusiveAndRejectInvalidEndpoints()
+{
+    using CalendarImport::CellPosition;
+    using CalendarImport::CellRange;
+
+    const CellRange range{{2, 3}, {4, 5}};
+    QVERIFY(range.isValid());
+    QVERIFY(range.contains({2, 3}));
+    QVERIFY(range.contains({4, 5}));
+    QVERIFY(range.contains({3, 4}));
+    QVERIFY(!range.contains({1, 3}));
+    QVERIFY(!range.contains({5, 5}));
+    QVERIFY(!range.contains({3, 2}));
+    QVERIFY(!range.contains({3, 6}));
+    QVERIFY(!range.contains({}));
+
+    const CellRange single{{1, 1}, {1, 1}};
+    QVERIFY(single.isValid());
+    QVERIFY(single.contains({1, 1}));
+    QVERIFY(!single.contains({1, 2}));
+
+    QVERIFY(!CellRange{}.isValid());
+    QVERIFY(!CellRange{}.contains({1, 1}));
+    QVERIFY(!(CellRange{{4, 3}, {3, 5}}).isValid());
+    QVERIFY(!(CellRange{{2, 5}, {3, 4}}).isValid());
+    QVERIFY(!(CellRange{{0, 1}, {1, 1}}).isValid());
+    QVERIFY(!(CellRange{{1, 1}, {CellPosition::MaxRow + 1, 1}}).isValid());
+    QVERIFY(!(CellRange{{1, 1}, {1, CellPosition::MaxColumn + 1}}).isValid());
+}
+
+void CalendarImportTests::readerSkipsMalformedMergedRangesAndPreservesValidBoundaries()
+{
+    const QByteArray worksheetXml = QByteArrayLiteral(
+        "<worksheet><sheetData>"
+        "<row r=\"1\"><c r=\"A1\"><v>1</v></c>"
+        "<c r=\"B2\"><v>2</v></c><c r=\"C3\"><v>3</v></c>"
+        "<c r=\"XFE1\"><v>4</v></c>"
+        "<c r=\"XFD1048576\"><v>5</v></c></row>"
+        "</sheetData><mergeCells>"
+        "<mergeCell ref=\"A1\"/>"
+        "<mergeCell ref=\"B2:C3\"/>"
+        "<mergeCell ref=\"D4:C5\"/>"
+        "<mergeCell ref=\"XFE1:XFE2\"/>"
+        "<mergeCell ref=\"A1:XFE1\"/>"
+        "<mergeCell ref=\"A1:A1048577\"/>"
+        "<mergeCell ref=\"A1048576:XFD1048576\"/>"
+        "</mergeCells></worksheet>"
+        );
+    QString error;
+    const CalendarImport::Workbook workbook =
+        CalendarImport::parseWorkbook(
+            singleSheetWorkbookArchive(worksheetXml),
+            &error
+            );
+
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QCOMPARE(workbook.worksheets.size(), 1);
+    const CalendarImport::Worksheet& worksheet = workbook.worksheets.first();
+    QCOMPARE(worksheet.cells.size(), 4);
+    QCOMPARE(worksheet.cells.at(0).position, CalendarImport::CellPosition(1, 1));
+    QCOMPARE(worksheet.cells.at(1).position, CalendarImport::CellPosition(2, 2));
+    QCOMPARE(worksheet.cells.at(2).position, CalendarImport::CellPosition(3, 3));
+    QCOMPARE(
+        worksheet.cells.at(3).position,
+        (CalendarImport::CellPosition{1048576, 16384})
+        );
+
+    QCOMPARE(worksheet.mergedRanges.size(), 3);
+    QCOMPARE(worksheet.mergedRanges.at(0).first, (CalendarImport::CellPosition{1, 1}));
+    QCOMPARE(worksheet.mergedRanges.at(0).last, (CalendarImport::CellPosition{1, 1}));
+    QVERIFY(worksheet.mergedRanges.at(0).contains({1, 1}));
+    QCOMPARE(worksheet.mergedRanges.at(1).first, (CalendarImport::CellPosition{2, 2}));
+    QCOMPARE(worksheet.mergedRanges.at(1).last, (CalendarImport::CellPosition{3, 3}));
+    QVERIFY(worksheet.mergedRanges.at(1).contains({3, 3}));
+    QCOMPARE(
+        worksheet.mergedRanges.at(2).last,
+        (CalendarImport::CellPosition{1048576, 16384})
+        );
+}
+
+void CalendarImportTests::readerAttachesNotesAtTheMaximumRow()
+{
+    const QByteArray worksheetXml = QByteArrayLiteral(
+        "<worksheet><sheetData><row r=\"1048576\">"
+        "<c r=\"A1048576\"><v>1</v></c>"
+        "</row></sheetData></worksheet>"
+        );
+    QString error;
+    const CalendarImport::Workbook workbook =
+        CalendarImport::parseWorkbook(
+            singleSheetWorkbookArchive(worksheetXml, true),
+            &error
+            );
+
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QCOMPARE(workbook.worksheets.size(), 1);
+    QCOMPARE(workbook.worksheets.first().cells.size(), 1);
+    const CalendarImport::Cell& cell =
+        workbook.worksheets.first().cells.first();
+    QCOMPARE(cell.position, (CalendarImport::CellPosition{1048576, 1}));
+    QCOMPARE(cell.note, QStringLiteral("Campus: BDG"));
 }
 
 void CalendarImportTests::ignoresWeekendLegendEntries()

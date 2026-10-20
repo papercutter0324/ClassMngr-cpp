@@ -1,21 +1,68 @@
 #pragma once
 
 #include <QByteArray>
+#include <QHashFunctions>
 #include <QString>
 #include <QStringList>
 #include <QVector>
 
+#include <cstddef>
 #include <functional>
+#include <utility>
 
 namespace CalendarImport
 {
-struct Cell
+struct CellPosition
 {
+    static constexpr int MaxRow = 1'048'576;
+    static constexpr int MaxColumn = 16'384;
+
     int row = 0;
     int column = 0;
+
+    [[nodiscard]] constexpr bool isValid() const noexcept
+    {
+        return row >= 1
+            && row <= MaxRow
+            && column >= 1
+            && column <= MaxColumn;
+    }
+
+    friend bool operator==(
+        const CellPosition&,
+        const CellPosition&
+        ) = default;
+
+    friend size_t qHash(
+        const CellPosition& position,
+        size_t seed = 0
+        ) noexcept
+    {
+        return qHashMulti(seed, position.row, position.column);
+    }
+};
+
+struct Cell
+{
+    CellPosition position;
     int style = 0;
     QString value;
     QString note;
+
+    Cell() = default;
+    Cell(
+        int rowNumber,
+        int columnNumber,
+        int styleIndex,
+        QString cellValue,
+        QString cellNote
+        )
+        : position{rowNumber, columnNumber}
+        , style(styleIndex)
+        , value(std::move(cellValue))
+        , note(std::move(cellNote))
+    {
+    }
 };
 
 struct Style
@@ -28,20 +75,27 @@ struct Style
 
 struct CellRange
 {
-    int firstRow = 0;
-    int firstColumn = 0;
-    int lastRow = 0;
-    int lastColumn = 0;
+    CellPosition first;
+    CellPosition last;
+
+    [[nodiscard]] bool isValid() const noexcept
+    {
+        return first.isValid()
+            && last.isValid()
+            && last.row >= first.row
+            && last.column >= first.column;
+    }
 
     [[nodiscard]] bool contains(
-        int row,
-        int column
+        CellPosition position
         ) const
     {
-        return row >= firstRow
-            && row <= lastRow
-            && column >= firstColumn
-            && column <= lastColumn;
+        return isValid()
+            && position.isValid()
+            && position.row >= first.row
+            && position.row <= last.row
+            && position.column >= first.column
+            && position.column <= last.column;
     }
 };
 

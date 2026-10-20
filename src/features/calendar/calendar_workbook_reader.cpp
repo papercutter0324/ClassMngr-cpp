@@ -14,9 +14,6 @@ namespace CalendarImport
 {
 namespace
 {
-constexpr int LastMeaningfulRow = 1'048'576;
-constexpr int ColumnCount = 16'384;
-constexpr int CellPositionStride = ColumnCount + 1;
 constexpr int MinZipEocdSize = 22;
 constexpr int MaxZipCommentSize = 0xffff;
 constexpr quint32 ZipEocdSignature = 0x06054b50;
@@ -107,11 +104,24 @@ int spreadsheetColumn(
             break;
         }
 
-        column =
-            column * 26
-            + character.toUpper().unicode()
+        const int digit =
+            character.toUpper().unicode()
             - QLatin1Char('A').unicode()
             + 1;
+        if (digit < 1 || digit > 26)
+        {
+            return CellPosition::MaxColumn + 1;
+        }
+
+        if (
+            column
+            > (CellPosition::MaxColumn - digit) / 26
+            )
+        {
+            return CellPosition::MaxColumn + 1;
+        }
+
+        column = column * 26 + digit;
     }
 
     return column;
@@ -874,7 +884,7 @@ QVector<Style> parseStyles(
 QVector<Cell> parseSheet(
     const QByteArray& xmlData,
     const QStringList& sharedStrings,
-    const QHash<int, QString>& notesByPosition
+    const QHash<CellPosition, QString>& notesByPosition
     )
 {
     QVector<Cell> cells;
@@ -894,25 +904,18 @@ QVector<Cell> parseSheet(
         const QString reference =
             attributes.value(QStringLiteral("r")).toString();
         Cell cell;
-        cell.row =
-            spreadsheetRow(reference);
-        cell.column =
-            spreadsheetColumn(reference);
-        cell.note =
-            notesByPosition
-                .value(cell.row * CellPositionStride + cell.column)
-                .trimmed();
+        cell.position = {
+            spreadsheetRow(reference),
+            spreadsheetColumn(reference)
+        };
 
-        if (
-            cell.row <= 0
-            || cell.row > LastMeaningfulRow
-            || cell.column <= 0
-            || cell.column > ColumnCount
-            )
+        if (!cell.position.isValid())
         {
             xml.skipCurrentElement();
             continue;
         }
+        cell.note =
+            notesByPosition.value(cell.position).trimmed();
 
         cell.style =
             attributes.value(QStringLiteral("s")).toInt();
@@ -1062,17 +1065,16 @@ QVector<CellRange> parseMergedRanges(
                 : endpoints.first();
 
         CellRange range;
-        range.firstRow = spreadsheetRow(first);
-        range.firstColumn = spreadsheetColumn(first);
-        range.lastRow = spreadsheetRow(last);
-        range.lastColumn = spreadsheetColumn(last);
+        range.first = {
+            spreadsheetRow(first),
+            spreadsheetColumn(first)
+        };
+        range.last = {
+            spreadsheetRow(last),
+            spreadsheetColumn(last)
+        };
 
-        if (
-            range.firstRow > 0
-            && range.firstColumn > 0
-            && range.lastRow >= range.firstRow
-            && range.lastColumn >= range.firstColumn
-            )
+        if (range.isValid())
         {
             result.append(range);
         }
@@ -1130,14 +1132,14 @@ QHash<QString, QString> parseWorkbookRelationships(
     return result;
 }
 
-QHash<int, QString> parseCellNotes(
+QHash<CellPosition, QString> parseCellNotes(
     const QByteArray& xmlData
     )
 {
-    QHash<int, QString> notes;
+    QHash<CellPosition, QString> notes;
     QXmlStreamReader xml(xmlData);
     QString currentElement;
-    int currentPosition = 0;
+    CellPosition currentPosition;
     QString currentText;
 
     while (!xml.atEnd())
@@ -1158,21 +1160,19 @@ QHash<int, QString> parseCellNotes(
                     xml.attributes()
                         .value(QStringLiteral("ref"))
                         .toString();
-                const int row =
-                    spreadsheetRow(reference);
-                const int column =
-                    spreadsheetColumn(reference);
+                const CellPosition position{
+                    spreadsheetRow(reference),
+                    spreadsheetColumn(reference)
+                };
 
                 currentElement =
                     name.toString();
                 currentPosition =
-                    row > 0 && column > 0
-                        ? row * CellPositionStride + column
-                        : 0;
+                    position.isValid() ? position : CellPosition{};
                 currentText.clear();
             }
             else if (
-                currentPosition > 0
+                currentPosition.isValid()
                 && (
                     name == QStringLiteral("t")
                     || (
@@ -1202,7 +1202,7 @@ QHash<int, QString> parseCellNotes(
                 const QString note =
                     currentText.simplified();
 
-                if (currentPosition > 0 && !note.isEmpty())
+                if (currentPosition.isValid() && !note.isEmpty())
                 {
                     notes.insert(
                         currentPosition,
@@ -1211,7 +1211,7 @@ QHash<int, QString> parseCellNotes(
                 }
 
                 currentElement.clear();
-                currentPosition = 0;
+                currentPosition = {};
                 currentText.clear();
             }
         }
@@ -1344,13 +1344,13 @@ QStringList worksheetNoteEntryNames(
     return entryNames;
 }
 
-QHash<int, QString> workbookCellNotes(
+QHash<CellPosition, QString> workbookCellNotes(
     const QByteArray& data,
     const QHash<QString, ZipEntry>& entries,
     const QString& worksheetEntryName
     )
 {
-    QHash<int, QString> notes;
+    QHash<CellPosition, QString> notes;
     const QStringList entryNames =
         worksheetNoteEntryNames(data, entries, worksheetEntryName);
 
@@ -1361,7 +1361,7 @@ QHash<int, QString> workbookCellNotes(
             continue;
         }
 
-        const QHash<int, QString> parsed =
+        const QHash<CellPosition, QString> parsed =
             parseCellNotes(
                 zipFileData(data, entries.value(name))
                 );

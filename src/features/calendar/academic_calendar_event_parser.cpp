@@ -78,13 +78,13 @@ QString comparableFontColor(
 }
 
 QString cellText(
-    const QHash<int, const Cell*>& cellsByPosition,
+    const QHash<CellPosition, const Cell*>& cellsByPosition,
     int row,
     int column
     )
 {
     const Cell* cell =
-        cellsByPosition.value(row * 100 + column, nullptr);
+        cellsByPosition.value(CellPosition{row, column}, nullptr);
     return cell
         ? cell->value.trimmed()
         : QString{};
@@ -183,8 +183,8 @@ QVector<MonthBlock> monthBlocks(
                 MonthBlock{
                     year,
                     month,
-                    cell.row,
-                    cell.column
+                    cell.position.row,
+                    cell.position.column
                 }
                 );
         }
@@ -233,7 +233,7 @@ QDate gridDate(
 }
 
 bool hasDisplayedDayInRow(
-    const QHash<int, const Cell*>& cellsByPosition,
+    const QHash<CellPosition, const Cell*>& cellsByPosition,
     const MonthBlock& block,
     int row
     )
@@ -243,7 +243,7 @@ bool hasDisplayedDayInRow(
          ++column)
     {
         const Cell* cell =
-            cellsByPosition.value(row * 100 + column, nullptr);
+            cellsByPosition.value(CellPosition{row, column}, nullptr);
         if (!cell)
         {
             continue;
@@ -264,14 +264,14 @@ bool hasDisplayedDayInRow(
 }
 
 bool cellDisplaysDay(
-    const QHash<int, const Cell*>& cellsByPosition,
+    const QHash<CellPosition, const Cell*>& cellsByPosition,
     int row,
     int column,
     int day
     )
 {
     const Cell* cell =
-        cellsByPosition.value(row * 100 + column, nullptr);
+        cellsByPosition.value(CellPosition{row, column}, nullptr);
     if (!cell)
     {
         return false;
@@ -286,7 +286,7 @@ bool cellDisplaysDay(
 }
 
 int gridStartRow(
-    const QHash<int, const Cell*>& cellsByPosition,
+    const QHash<CellPosition, const Cell*>& cellsByPosition,
     const MonthBlock& block
     )
 {
@@ -404,7 +404,7 @@ QHash<QString, QString> fillLegend(
 
     for (const Cell& cell : worksheet.cells)
     {
-        if (cell.column != LegendColumn)
+        if (cell.position.column != LegendColumn)
         {
             continue;
         }
@@ -434,7 +434,7 @@ QHash<QString, QString> fontLegend(
 
     for (const Cell& cell : worksheet.cells)
     {
-        if (cell.column != LegendColumn)
+        if (cell.position.column != LegendColumn)
         {
             continue;
         }
@@ -464,7 +464,7 @@ Style weekendLegendStyle(
     for (const Cell& cell : worksheet.cells)
     {
         if (
-            cell.column == LegendColumn
+            cell.position.column == LegendColumn
             && isWeekendLegend(cell.value)
             )
         {
@@ -631,7 +631,7 @@ void addNoteEntries(
 
 QHash<QDate, QStringList> noteTitlesByDate(
     const QVector<MonthBlock>& blocks,
-    const QHash<int, const Cell*>& cellsByPosition,
+    const QHash<CellPosition, const Cell*>& cellsByPosition,
     QSet<QDate>* cancelledDates
     )
 {
@@ -830,11 +830,11 @@ ParsedCalendarImport parseCalendarEventsFromWorksheet(
     const QVector<MonthBlock> blocks =
         monthBlocks(worksheet);
 
-    QHash<int, const Cell*> cellsByPosition;
+    QHash<CellPosition, const Cell*> cellsByPosition;
     for (const Cell& cell : worksheet.cells)
     {
         cellsByPosition.insert(
-            cell.row * 100 + cell.column,
+            cell.position,
             &cell
             );
     }
@@ -879,7 +879,7 @@ ParsedCalendarImport parseCalendarEventsFromWorksheet(
             {
                 const Cell* cell =
                     cellsByPosition.value(
-                        row * 100 + column,
+                        CellPosition{row, column},
                         nullptr
                         );
 

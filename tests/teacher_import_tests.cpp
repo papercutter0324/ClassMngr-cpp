@@ -57,6 +57,7 @@ private slots:
     void importsCheckedInWorkbookUsingValidatedReviewChoices();
     void teacherNameKeyAdapterPreservesCodeUnitFiltering();
     void sectionedParserRejectsNameThatFiltersToEmpty();
+    void sectionedParserDoesNotAliasWideColumns();
     void sortsGsTeamPositions();
     void validatesExternalSampleWhenProvided();
 };
@@ -469,7 +470,7 @@ void TeacherImportTests::sectionedParserRejectsNameThatFiltersToEmpty()
         worksheet.cells.end(),
         [](const CalendarImport::Cell& cell)
         {
-            return cell.row == 4 && cell.column == 3;
+            return cell.position.row == 4 && cell.position.column == 3;
         }
         );
     QVERIFY(koreanName != worksheet.cells.end());
@@ -482,6 +483,19 @@ void TeacherImportTests::sectionedParserRejectsNameThatFiltersToEmpty()
         preview.error(),
         QStringLiteral("Korean teacher name in row 4 is empty.")
         );
+}
+
+void TeacherImportTests::sectionedParserDoesNotAliasWideColumns()
+{
+    CalendarImport::Workbook workbook = sectionedWorkbook();
+    workbook.worksheets.first().cells.append(
+        {3, 1003, 0, QStringLiteral("Unrelated wide-column cell"), {}}
+        );
+
+    SectionedContactListTemplate importTemplate;
+    const auto preview = importTemplate.parse(workbook);
+
+    QVERIFY(preview.has_value());
 }
 
 void TeacherImportTests::invalidVersionIsRecognizedButRejected()
@@ -509,7 +523,7 @@ void TeacherImportTests::readsNamedMultiSheetWorkbookMetadata()
         return std::find_if(
             worksheet.cells.cbegin(), worksheet.cells.cend(),
             [row, column](const CalendarImport::Cell& cell) {
-                return cell.row == row && cell.column == column;
+                return cell.position.row == row && cell.position.column == column;
             });
     };
     const auto name = findCell(workbook.worksheets.at(0), 65, 3);
