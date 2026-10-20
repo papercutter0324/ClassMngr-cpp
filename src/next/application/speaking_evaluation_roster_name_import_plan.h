@@ -13,16 +13,68 @@ namespace ClassMngr::Next::Application
 
 using SpeakingEvaluationRosterNamePair = StudentNamePairText;
 
+class SpeakingEvaluationRosterNameImportSourceIndex final
+{
+public:
+    constexpr SpeakingEvaluationRosterNameImportSourceIndex() noexcept = default;
+
+    explicit constexpr SpeakingEvaluationRosterNameImportSourceIndex(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const SpeakingEvaluationRosterNameImportSourceIndex&,
+        const SpeakingEvaluationRosterNameImportSourceIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = -1;
+};
+
+class SpeakingEvaluationRosterNameImportTargetIndex final
+{
+public:
+    constexpr SpeakingEvaluationRosterNameImportTargetIndex() noexcept = default;
+
+    explicit constexpr SpeakingEvaluationRosterNameImportTargetIndex(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const SpeakingEvaluationRosterNameImportTargetIndex&,
+        const SpeakingEvaluationRosterNameImportTargetIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = -1;
+};
+
 struct SpeakingEvaluationRosterNameEvaluationRow final
 {
-    int row = -1;
+    SpeakingEvaluationRosterNameImportTargetIndex row;
     SpeakingEvaluationRosterNamePair names;
 };
 
 struct SpeakingEvaluationRosterNameImportAssignment final
 {
-    int sourceRow = -1;
-    int targetRow = -1;
+    SpeakingEvaluationRosterNameImportSourceIndex sourceRow;
+    SpeakingEvaluationRosterNameImportTargetIndex targetRow;
     SpeakingEvaluationRosterNamePair names;
 };
 
@@ -33,7 +85,7 @@ planSpeakingEvaluationRosterNameImport(
     )
 {
     std::unordered_set<std::u16string> existingNamePairs;
-    std::vector<int> availableTargetRows;
+    std::vector<SpeakingEvaluationRosterNameImportTargetIndex> availableTargetRows;
     existingNamePairs.reserve(evaluationRows.size());
     availableTargetRows.reserve(evaluationRows.size());
 
@@ -83,7 +135,9 @@ planSpeakingEvaluationRosterNameImport(
         importedNamePairs.insert(key);
         assignments.push_back(
             {
-                static_cast<int>(sourceRow),
+                SpeakingEvaluationRosterNameImportSourceIndex{
+                    static_cast<int>(sourceRow)
+                },
                 availableTargetRows[nextTargetRow++],
                 std::move(names)
             }

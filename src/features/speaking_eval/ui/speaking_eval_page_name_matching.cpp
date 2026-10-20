@@ -50,7 +50,8 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
     {
         projectedEvaluationRows.push_back(
             {
-                row,
+                ClassMngr::Next::Application::
+                    SpeakingEvaluationRosterNameImportTargetIndex{row},
                 {
                     Ui::QtTextAdapter::toUtf16String(
                         evaluationRows[row].value(evaluationEnglishColumn)
@@ -71,11 +72,16 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
                 );
 
     const auto appendChange =
-        [this, &changes](int row, SpeakingEvalColumn column, const QString& value)
+        [this, &changes](
+            ClassMngr::Next::Application::
+                SpeakingEvaluationRosterNameImportTargetIndex row,
+            SpeakingEvalColumn column,
+            const QString& value
+            )
         {
             const QModelIndex index =
                 m_model->index(
-                    row,
+                    row.rawValue(),
                     SpeakingEval::toInt(column)
                     );
 
@@ -97,7 +103,7 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
 
             changes.append(
                 {
-                    row,
+                    index.row(),
                     SpeakingEval::toInt(column),
                     oldValue,
                     value
