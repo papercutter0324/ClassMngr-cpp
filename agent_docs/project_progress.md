@@ -82,18 +82,19 @@ and the existing `QUrl::toEncoded()`/`QUrl::fromEncoded()` behavior. Independent
 clean builds passed for `ClassMngr` and both updater test targets; both focused
 CTests and all three selected cases passed. Socket tests used local loopback
 permission only. No full suite or Windows build ran. Batch491 is active and
-unpushed with F1178–F1182 complete, F1183 accepted/in progress, and F1184–F1185
-discovered.
+unpushed with F1178–F1183 complete, F1184 next, and F1185 discovered.
 
-F1183 is accepted to add Qt-free `Application::ReleaseDateIsoText` with exact
-string storage, empty default, explicit construction, `.value()`, `.empty()`,
-equality, and no validation or canonicalization. Type only the startup and
-manual updater result fields; Platform adapters wrap their existing
-`QDate::toString(Qt::ISODate)` text, and the UI unwraps it at the existing ISO
-parser. Preserve empty/invalid handling and localized short-date display.
-Implementation and verification have not started. Batch491 remains unpushed
-until all eight slices close; F629 and the Phase 0 and Phase 2 gates remain
-open.
+F1183 completed at source/test commit `ba078193`, after acceptance commit
+`29e0156b`. Qt-free `Application::ReleaseDateIsoText` now types only the startup
+and manual updater result fields, preserving exact ISO text, empty/malformed
+input handling, and localized short-date display. The independent Tester
+cleaned 377 generated outputs and rebuilt the three affected targets in
+`build/macos-clang-debug`; all 363 build steps succeeded. Both focused CTests
+and all five selected offscreen selectors passed. The display selector emitted
+a non-failing Qt font-alias warning. Local loopback permission only was used;
+no external network, full suite, or Windows build ran. Both diff checks passed.
+Batch491 remains unpushed with F1184 next and F1185 discovered; F629 and both
+phase gates remain open.
 F1175's Class Transfer test still has one unresolved teacher-fallback label
 failure among 64 cases; no clean baseline proves it pre-existing. F629 awaits
 source-bound Windows x64 layout evidence. Phase 0 and Phase 2 gates remain

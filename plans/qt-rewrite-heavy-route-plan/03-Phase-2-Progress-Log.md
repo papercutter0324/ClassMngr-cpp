@@ -53549,3 +53549,28 @@ F1178–F1182 are complete, F1183 is accepted/in progress, and F1184 is next;
 F1184–F1185 remain discovered. Batch490 is complete and pushed at `69be43a7`.
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and
 Phase 2 gates remain open.
+
+### F1183 Updater release-date ISO text complete - 2026-10-20
+
+F1183 completed at source/test commit `ba078193`, following acceptance commit
+`29e0156b`. `Application::ReleaseDateIsoText` types only startup/manual result
+`releaseDateIso` fields. Exact ISO text, empty/malformed input handling, and
+localized short-date display remain unchanged.
+
+Executor built `ClassMngr`,
+`ClassMngrUpdateControllerAutomaticStartupTests`, and
+`ClassMngrUpdaterTests`, and validated ownership of 1,561 handwritten files;
+Executor did not run tests. Independent Tester cleaned 377 outputs and rebuilt
+the same three targets in the existing `build/macos-clang-debug` folder; all
+363 build steps passed. Both CTests passed (2/2). Five focused offscreen
+selectors passed, covering wrapper semantics, both adapters, bridge behavior,
+and localized display with empty/invalid input suppression. The display
+selector emitted one non-failing Qt font alias warning. `git diff --check` and
+`git show --check ba078193` passed, and the worktree was clean. Elevated
+permission was used only for local loopback binds; no external network was
+accessed. No full-suite or Windows run occurred.
+
+Batch491 remains unpushed; GitHub has not received these local changes.
+F1178–F1183 are complete, F1184 is next, and F1185 remains discovered. Batch490
+is complete and pushed at `69be43a7`. F629 awaits source-bound Windows x64
+layout evidence, and the Phase 0 and Phase 2 gates remain open.
