@@ -56706,3 +56706,31 @@ is `ClassMngr`, `ClassMngrNextDomainContractTests`,
 `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`,
 and `ClassMngrSharedPolicyTests`, followed by those seven focused CTests.
 At acceptance time, implementation and verification have not started.
+
+### F1231 Duplicate student-name row positions complete - 2026-10-21
+
+F1231 completed at implementation commit `21f77ca3`
+(`Phase2 - Type duplicate student-name row positions`), following acceptance
+commit `266c3c8d`. The Domain duplicate-name groups and Speaking Evaluation and
+Roster Save diagnostics now carry `DuplicateStudentNamePairRowIndex`; signed
+validation issue row indexes remain separate, and Feature consumers and
+adapters explicitly unwrap the Domain type. Grouping, row and issue ordering,
+adapter parity, and validation-before-persistence behavior remain covered.
+
+The independent Tester built `ClassMngr` and all seven focused targets in the
+reused/incremental `build/macos-clang-debug` tree:
+
+```text
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextDomainContractTests ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests ClassMngrNextApplicationRosterSaveUseCaseTests ClassMngrSpeakingEvalPageSaveParityTests ClassMngrNextPlatformApplicationServicesRosterSavePortTests ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests ClassMngrSharedPolicyTests --parallel 8
+```
+
+All seven focused CTests passed:
+
+```text
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextDomainContractTests|ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests|ClassMngrNextApplicationRosterSaveUseCaseTests|ClassMngrSpeakingEvalPageSaveParityTests|ClassMngrNextPlatformApplicationServicesRosterSavePortTests|ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests|ClassMngrSharedPolicyTests)$'
+```
+
+`git diff --check` passed. `cmake --preset windows-x64-debug` failed with
+`CMake Error: Could not use disabled preset "windows-x64-debug"`; Windows x64
+and the full suite remain unverified. Batch497 remains active with F1227–F1231
+complete, F1232 next for acceptance, and F1233–F1234 discovered.
