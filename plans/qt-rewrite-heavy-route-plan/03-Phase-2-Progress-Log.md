@@ -56734,3 +56734,38 @@ ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNext
 `CMake Error: Could not use disabled preset "windows-x64-debug"`; Windows x64
 and the full suite remain unverified. Batch497 remains active with F1227–F1231
 complete, F1232 next for acceptance, and F1233–F1234 discovered.
+
+### F1232 Class Details duplicate schedule-row positions accepted before implementation - 2026-10-21
+
+F1232 is accepted based on two independent read-only Explorer reviews. Reuse
+the existing `ClassDetailsScheduleValidationRowIndex` for internal
+`SlotGroup::rows`, the duplicate-add helper argument, and
+`ClassDetailsValidationIssue::duplicateRows`; do not add another index type or
+change the existing typed `.row` field contract. Explicitly unwrap
+`.rawValue()` only at the Class Details Feature adapter boundary so legacy
+integer `ValidationIssue` and `QVariantList` payloads keep their current shape.
+`Domain::DuplicateStudentNamePairRowIndex` remains a separate semantic type.
+
+Preserve valid-slot grouping by parsed weekday/start/end tuple, first-seen
+group order, and row order within groups. Keep row-level diagnostics before
+duplicate diagnostics and regular schedule before intensive schedule. Emit
+one `DuplicateSlot` per duplicate row, with matching row and full-group
+payload. Preserve the default-zero `.row` on legacy/defaulted issues, empty
+`duplicateRows` outside duplicate issues, and existing codes, fields, and
+schedule association.
+
+Update `reportsDuplicateGroupsInDeterministicFirstSeenOrder` to assert typed
+vector values and order, adding a compile-time collection type assertion if
+needed. Strengthen `ClassDetailsPageSaveParity` to compare the adapted
+`QVariantList` in exact order rather than as an unordered set. The focused
+build scope is `ClassMngr`,
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests`, and
+`ClassMngrClassDetailsPageSaveParityTests`; the corresponding CTests are
+`NextApplicationClassDetailsValidationPolicy` (registered in
+`cmake/tests/next.cmake`) and `ClassDetailsPageSaveParity` (registered in
+`cmake/tests/pages_and_output.cmake`). Use the documented
+`build/windows-x64-debug` folder if supported. The prior F1231 attempt on this
+macOS host found the `windows-x64-debug` preset disabled; if that remains the
+case, report the blocker and focused macOS verification without claiming
+Windows coverage. At acceptance time, F1232 implementation and verification
+have not started.
