@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is active and unpushed: F1219–F1221 are complete, F1222 is next for acceptance, and F1223–F1226 remain discovered (see [F1221 completion](03-Phase-2-Progress-Log.md#f1221-roster-availability-accumulator-coordinates-complete-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is active and unpushed: F1219–F1221 are complete, F1222 is accepted/current before implementation, and F1223–F1226 remain discovered (see [F1222 acceptance](03-Phase-2-Progress-Log.md#f1222-class-transfer-schedule-conflict-positions-accepted-before-implementation-2026-10-21)). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,12 +38,12 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch496 — Active and unpushed; eight candidates, with F1219–F1221 complete and F1222–F1226 discovered:**
+**Batch496 — Active and unpushed; eight candidates, with F1219–F1221 complete, F1222 accepted/current, and F1223–F1226 discovered:**
 
 1. **F1219 — Complete:** Type the AI accepted-comment planner source-row coordinates; preserve `-1` propagation, input order, and downstream invalid-row skips (see [completion](03-Phase-2-Progress-Log.md#f1219-ai-accepted-comment-source-row-complete-2026-10-21)).
 2. **F1220 — Complete:** Type Schedule Import matching candidate positions; preserve candidate order and projection behavior (see [completion](03-Phase-2-Progress-Log.md#f1220-schedule-import-matching-candidate-index-complete-2026-10-21)).
 3. **F1221 — Complete:** Type Roster Availability accumulator row and source-column coordinates as distinct signed values; preserve bounds checks, no-mutation failures, and projection filtering (see [completion](03-Phase-2-Progress-Log.md#f1221-roster-availability-accumulator-coordinates-complete-2026-10-21)).
-4. **F1222 — Discovered:** Type Class Transfer schedule-conflict positions; preserve each index's conditional vector meaning and conflict order.
+4. **F1222 — Accepted/current:** Type Class Transfer schedule-conflict positions with distinct incoming/other types; preserve the conditional vector meaning of `otherIndex` and conflict order (see [acceptance](03-Phase-2-Progress-Log.md#f1222-class-transfer-schedule-conflict-positions-accepted-before-implementation-2026-10-21)).
 5. **F1223 — Discovered:** Type Schedule Import state-resolution candidate positions; preserve candidate-order validation and projection behavior.
 6. **F1224 — Discovered:** Type Testing Classes ordered row positions; preserve grade/level/text ordering and existing tie behavior.
 7. **F1225 — Discovered:** Type Analytics criterion-extrema positions; preserve empty results and tied-index order.

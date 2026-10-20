@@ -55976,3 +55976,38 @@ reran the target build (Ninja reported no work) and focused CTests 2/2, and
 confirmed `git diff --check`. This was incremental macOS arm64 Debug
 verification; no full suite or Windows run is claimed. `clang-format` was
 unavailable and formatter validation was not run.
+
+### F1222 Class Transfer schedule-conflict positions accepted before implementation - 2026-10-21
+
+F1222 is accepted/current based on two independent read-only Explorer reports.
+Add distinct explicit Application wrappers
+`ClassTransferScheduleConflictIncomingIndex` and
+`ClassTransferScheduleConflictOtherIndex`, both backed by `std::size_t`,
+defaulting to zero, with `.rawValue()`, equality, and no implicit conversions.
+Use them for `ClassTransferScheduleConflict::incomingIndex` and `otherIndex`.
+These are positions in flattened schedule vectors, not package-class
+positions; do not reuse the `int`/`-1` package-class or Schedule Import review
+index wrappers. They are loop-generated valid positions and have no sentinel
+or range-validation policy.
+
+Preserve `incomingIndex` as an incoming-vector position. Preserve
+`otherIsIncoming` as the selector for whether `otherIndex` addresses the
+incoming or existing schedule vector; unwrap only at the repository `.at()`
+boundary and retain the existing branch. Do not redesign this as a variant or
+otherwise alter the conflict shape. Keep preflight vector construction,
+replacement/skip filtering, category and conflict order, message
+de-duplication, and pre-transaction conflict behavior unchanged. No legacy API
+exposes these positions, so leave package-class resolution indexes and user
+visible conflict messages unchanged.
+
+Extend `next_application_class_transfer_tests.cpp` with typed field,
+default/explicit/equality/non-conversion assertions and retain its ordered
+expected conflict sequence covering incoming and existing meanings, including
+the ambiguous numeric position zero. Preserve the existing overnight ordering
+case. Retain repository message-order tests in `class_transfer_tests.cpp` and
+the Platform preflight-before-writes test in
+`next_platform_application_services_class_transfer_apply_port_tests.cpp`.
+Focused CTests are `NextApplicationClassTransfer`,
+`ClassMngrClassTransferTests`, and
+`NextPlatformApplicationServicesClassTransferApplyPort`; build the app and
+these affected targets. No F1222 implementation or verification has started.

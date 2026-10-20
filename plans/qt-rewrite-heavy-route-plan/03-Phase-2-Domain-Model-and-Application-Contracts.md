@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch496 is active with F1219–F1221 complete and F1222 next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch496 is active with F1219–F1221 complete and F1222 accepted/current before implementation; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
@@ -72,12 +72,12 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch496 (8 candidates; 3 complete, 5 discovered)
+#### Active batch: Batch496 (8 candidates; 3 complete, 1 accepted/current, 4 discovered)
 
 1. F1219 - **Complete.** Type AI accepted-comment planner source-row coordinates; preserve `-1` propagation, input order, and downstream invalid-row skips (see [completion](03-Phase-2-Progress-Log.md#f1219-ai-accepted-comment-source-row-complete-2026-10-21)).
 2. F1220 - **Complete.** Type Schedule Import matching candidate positions; preserve candidate order and projection behavior (see [completion](03-Phase-2-Progress-Log.md#f1220-schedule-import-matching-candidate-index-complete-2026-10-21)).
 3. F1221 - **Complete.** Type Roster Availability accumulator row and source-column coordinates as distinct signed values; preserve bounds checks, no-mutation failures, and projection filtering (see [completion](03-Phase-2-Progress-Log.md#f1221-roster-availability-accumulator-coordinates-complete-2026-10-21)).
-4. F1222 - **Discovered.** Type Class Transfer schedule-conflict positions; preserve each index's conditional vector meaning and conflict order.
+4. F1222 - **Accepted/current.** Type Class Transfer schedule-conflict positions with distinct incoming/other types; preserve the conditional vector meaning of `otherIndex` and conflict order (see [acceptance](03-Phase-2-Progress-Log.md#f1222-class-transfer-schedule-conflict-positions-accepted-before-implementation-2026-10-21)).
 5. F1223 - **Discovered.** Type Schedule Import state-resolution candidate positions; preserve candidate-order validation and projection behavior.
 6. F1224 - **Discovered.** Type Testing Classes ordered row positions; preserve grade/level/text ordering and existing tie behavior.
 7. F1225 - **Discovered.** Type Analytics criterion-extrema positions; preserve empty results and tied-index order.
