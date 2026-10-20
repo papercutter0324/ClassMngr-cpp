@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch491 is active and unpushed with F1178–F1184 complete and F1185 accepted/in progress; F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch492 is active and unpushed with six discovered candidates and F1186 next; Batch491 is complete locally with push pending after F1185 (see its [completion record](03-Phase-2-Progress-Log.md#f1185-class-analytics-criterion-student-count-complete-2026-10-20)), F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1185 is accepted/in progress: type only the criterion student count while preserving per-criterion scoring behavior and the Feature integer boundary (see its [acceptance record](03-Phase-2-Progress-Log.md#f1185-class-analytics-criterion-student-count-accepted-before-implementation-2026-10-20)).
+F1185 is complete: `Application::ClassAnalyticsCriterionStudentCount` types only the criterion student count, preserving normalized-student counting, score-based `hasData`, and the Feature integer boundary (see its [completion record](03-Phase-2-Progress-Log.md#f1185-class-analytics-criterion-student-count-complete-2026-10-20)).
 
 ### Slice discovery batches
 
@@ -72,27 +72,16 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch491 (8 candidates; 7 complete; 1 accepted/in progress)
+#### Active batch: Batch492 (6 candidates; all discovered)
 
-1. F1178 - **Complete.** Type the eight Schedule Import review summary values and two projection inputs as `Application::ScheduleImportReviewCount`; preserve the action mappings, visible text, and cleared-schedule projection behavior (see the [completion record](03-Phase-2-Progress-Log.md#f1178-schedule-import-review-count-complete-2026-10-20)).
-2. F1179 - **Complete.** Reuse `Domain::CourseGradeBand` in both Application prompt grade fields; preserve 4–6 eligibility, `Other` rejection, prompt text and formatting, Feature integer mapping, and integer report/legacy storage (see the [completion record](03-Phase-2-Progress-Log.md#f1179-speaking-evaluation-ai-grade-band-complete-2026-10-20)).
-3. F1180 - **Complete.** Add Qt-free `Application::ClassTransferSkippedClassCount` and type only `ClassTransferApplySummary::skippedClassCount`; preserve exact signed values without range policy, use-case forwarding, explicit Platform wrapping, and the existing sidebar `skipped: 1` display (see the [completion record](03-Phase-2-Progress-Log.md#f1180-class-transfer-skipped-class-count-complete-2026-10-20)).
-4. F1181 - **Complete.** Add `Application::ClassTransferPackageClassIndex` to the three Application review fields; preserve `ClassTransferMatchingPolicy`'s `std::size_t` indices and legacy/UI `int` fields, and retain `-1`, UnknownClassResolution for out-of-range values, and issue order (see the [completion record](03-Phase-2-Progress-Log.md#f1181-class-transfer-package-class-index-complete-2026-10-20)).
-5. F1182 - **Complete.** Add `Application::EncodedUrlText` to only the startup/manual artifact `url` and `releaseUrl` fields; preserve encoded bytes, parsing, validation, invalid/empty behavior, and release-link display (see the [completion record](03-Phase-2-Progress-Log.md#f1182-updater-encoded-url-text-complete-2026-10-20)).
-6. F1183 - **Complete.** Add `Application::ReleaseDateIsoText` to only the startup and manual result `releaseDateIso` fields; preserve exact ISO text, invalid/empty parsing, and localized display (see the [completion record](03-Phase-2-Progress-Log.md#f1183-updater-release-date-iso-text-complete-2026-10-20)).
-7. F1184 - **Complete.** Add distinct `Application::ImportJobGeneration` and `Application::ReportJobGeneration` types to their respective coordinators; preserve first generation 1, exact sequence values, stale rejection, and exhaustion guards (see the [completion record](03-Phase-2-Progress-Log.md#f1184-import-and-report-job-generation-complete-2026-10-20)).
-8. F1185 - **Accepted/in progress.** Add Qt-free `Application::ClassAnalyticsCriterionStudentCount` to only `ClassAnalyticsCriterionSlice::students`; preserve one count per normalized student with a valid criterion score, score-based `hasData`, and Feature integer storage (see the [acceptance record](03-Phase-2-Progress-Log.md#f1185-class-analytics-criterion-student-count-accepted-before-implementation-2026-10-20)).
+1. F1186 - **Discovered; next; high confidence.** Schedule Import applied-result counts; preserve exact and zero forwarding, telemetry, localized success text, and `profileNameUpdated`.
+2. F1187 - **Discovered.** Class Details Page student count; preserve zero, independent per-source errors, and F911 recoverable NotFound for a missing parent.
+3. F1188 - **Discovered.** ClassSummary student count; preserve zero, the 10,000-row cap, and semantics separate from MyClasses count.
+4. F1189 - **Discovered.** Updater artifact filename; preserve UTF-8 bytes, empty values, and display without path policy.
+5. F1190 - **Discovered.** Schedule Import matching counts; preserve exact values without a cap.
+6. F1191 - **Discovered; medium-low confidence.** Class Tab navigation ordering ranks; preserve the 1000 unknown sentinel, comparison order/ties, and Feature preparation.
 
-#### Provisional next batch: Batch492 (6 candidates; inactive until Batch491 closes)
-
-1. F1186 - Schedule Import applied-result counts; preserve exact count forwarding, telemetry, localized success text, and `profileNameUpdated`.
-2. F1187 - Class Details Page student count; preserve zero, independent source errors, and recoverable NotFound behavior.
-3. F1188 - ClassSummary student count; preserve zero and the existing 10,000-row validation cap.
-4. F1189 - Updater artifact filename; preserve UTF-8 bytes and display without adding path policy.
-5. F1190 - Schedule Import matching counts; preserve exact values without adding a cap.
-6. F1191 - Class Tab navigation ordering ranks; preserve the 1000 unknown sentinel, comparison order, and ties.
-
-See the progress-log [Batch492 provisional discovery record](03-Phase-2-Progress-Log.md#batch492-provisional-discovery-at-f1184-start-2026-10-20) for evidence and acceptance questions. F1185 remains the next active slice; Batch492 starts only after Batch491 closes.
+See the progress-log [Batch492 discovery record](03-Phase-2-Progress-Log.md#batch492-provisional-discovery-at-f1184-start-2026-10-20) for source/test evidence and acceptance questions. Batch491 is complete locally with push pending; GitHub has not received its changes.
 
 #### Deferred candidates
 

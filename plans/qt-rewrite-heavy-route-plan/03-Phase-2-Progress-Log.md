@@ -53742,3 +53742,36 @@ changes. F1178–F1184 are complete and F1185 is accepted/in progress. Batch492
 has six provisional candidates and remains inactive until Batch491 closes.
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and
 Phase 2 gates remain open.
+
+### F1185 Class Analytics criterion student count complete - 2026-10-20
+
+F1185 completed at source/test commit
+`a34be1a8b97eaf9f7ba24ba29e2eb47399d76329`, following acceptance commit
+`f9276a2a675fed5dd24a9c00f0d03d7ce47a2647`. The Qt-free
+`Application::ClassAnalyticsCriterionStudentCount` types only
+`ClassAnalyticsCriterionSlice::students` with exact signed-`int` storage,
+default zero, explicit construction, `.rawValue()`, and equality, without
+implicit conversion or range/negative-value policy. The local count
+accumulator and derivation algorithm remain unchanged. Counts are once per
+normalized student with a valid criterion score; duplicate rows do not
+inflate them, absent/invalid scores remain ignored, and `hasData` remains based
+on criterion score cells. Empty criteria alongside other scored criteria have
+count zero and `hasData == false`; the whole-empty-snapshot early return and
+existing Feature integer storage/rendering remain unchanged. Feature explicitly
+unwraps `.rawValue()` into `SpeakingAnalytics::CriterionSlice::students`.
+
+Independent Tester passed the incremental existing macOS Debug/Ninja build of
+`ClassMngr` and
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`; CMake
+reconfigured after detecting the new header through its glob. The focused CTest
+passed (1/1). Tester verified wrapper exact-int, zero, explicitness,
+`.rawValue()`, equality, and non-conversion behavior; one count for duplicate
+normalized-student rows; zero and `hasData == false` for an empty criterion
+alongside scored criteria; unchanged count derivation and Feature boundary;
+header ownership in `cmake/next.cmake`; and exactly the assigned five changed
+paths. Diff checks passed. No full suite or Windows build occurred.
+
+Batch491 is complete locally with push pending; GitHub has not received its
+changes. Batch492 is active locally and unpushed, with six discovered
+candidates and F1186 next. F629 awaits source-bound Windows x64 layout
+evidence, and the Phase 0 and Phase 2 gates remain open.
