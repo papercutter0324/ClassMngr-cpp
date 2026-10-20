@@ -57815,3 +57815,40 @@ suite were not run.
 
 Batch500 remains active with F1243–F1244 complete. F1245 is next for
 acceptance; F1246–F1252 remain discovered.
+
+### F1245 Sub Prep print grade and level order accepted before implementation - 2026-10-21
+
+F1245 is accepted before implementation. Add distinct
+`SubPrepPrintGradeOrder` and `SubPrepPrintLevelOrder` values in
+`src/next/application/sub_prep_print_order_policy.h`, matching the existing
+weekday/minute wrappers: explicit `int` construction, `.value()`, zero
+default, equality, and no implicit conversions. Change
+`SubPrepPrintClassOrderFact::gradeOrder` and `levelOrder` to these types and
+explicitly default both fact fields to `kSubPrepPrintUnknownOrder` (`INT_MAX`)
+so unknown values retain their current sentinel ordering.
+
+In `SubPrepClassInformation::build`, retain the existing configured,
+trimmed-grade/list-index and grade-scoped, trimmed-level/index calculations;
+explicitly wrap their exact results when constructing the fact. The
+Application comparator compares `.value()` in the existing order: grade,
+level, weekday, start minute, then numeric-aware class ID. Add no validation,
+normalization, range policy, or comparator behavior changes.
+
+Update policy tests with type, distinctness, constructibility, and
+no-implicit-conversion assertions; exact value/equality checks; and default
+fact assertions that grade and level use `INT_MAX`. Retain precedence and
+unknown-rank policy coverage, model-level configured/unlisted ordering, and
+PDF ordering. Evidence: `src/next/application/sub_prep_print_order_policy.h:133,299`,
+`src/features/sub_prep/ui/sub_prep_class_information_model.cpp:179,193,448`,
+`tests/next_application_sub_prep_print_order_policy_tests.cpp:19,363,487`,
+`tests/sub_prep_class_information_model_tests.cpp:525`, and
+`tests/sub_prep_print_pdf_tests.cpp:617`.
+
+Build `ClassMngr` and run only the registered focused CTests
+`ClassMngrNextApplicationSubPrepPrintOrderPolicyTests`,
+`ClassMngrSubPrepClassInformationModelTests`, and
+`ClassMngrSubPrepPrintPdfTests`. At acceptance, no implementation, build, or
+tests had started. No Windows or full-suite result is claimed.
+
+Batch500 remains active with F1243–F1244 complete, F1245 accepted awaiting
+implementation, and F1246–F1252 discovered.
