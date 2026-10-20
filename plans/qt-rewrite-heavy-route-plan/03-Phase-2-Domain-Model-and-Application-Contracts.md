@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`; active Batch502 has F1257–F1258 complete and F1259 accepted awaiting implementation, with F1260 next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`; active Batch502 has F1257–F1259 complete and F1260 next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1259 is accepted awaiting implementation in active Batch502; F1260 is next for acceptance (see [F1259 acceptance](03-Phase-2-Progress-Log.md#f1259-document-catalog-keys-accepted-before-implementation-2026-10-21)). No F1259 implementation, build, or tests have started. F1258's focused CTest passed 1/1 in incremental macOS verification (see [F1258 verification](03-Phase-2-Progress-Log.md#f1258-schedule-import-weekday-group-complete-2026-10-21)). F1257's four focused CTests passed 4/4, with its platform test rerun passing after the sparse-position regression; the broader page CTest was not run (see [F1257 verification](03-Phase-2-Progress-Log.md#f1257-classsummaryorder-complete-2026-10-21)). Batch501 remains pushed at `7f8ca958` (see the [push receipt](03-Phase-2-Progress-Log.md#batch501-push-receipt-2026-10-21)); F629 and the Phase 0 and Phase 2 gates remain open.
+F1259 is complete in active Batch502 and F1260 is next for acceptance (see [F1259 verification](03-Phase-2-Progress-Log.md#f1259-document-catalog-keys-complete-2026-10-21)). Its four focused CTests passed 4/4, with Sidebar Structure rerun passing 1/1 after the conversion adjustment; no clean, Windows, or full-suite verification is claimed. F1258's focused CTest passed 1/1 in incremental macOS verification (see [F1258 verification](03-Phase-2-Progress-Log.md#f1258-schedule-import-weekday-group-complete-2026-10-21)). F1257's four focused CTests passed 4/4, with its platform test rerun passing after the sparse-position regression; the broader page CTest was not run (see [F1257 verification](03-Phase-2-Progress-Log.md#f1257-classsummaryorder-complete-2026-10-21)). Batch501 remains pushed at `7f8ca958` (see the [push receipt](03-Phase-2-Progress-Log.md#batch501-push-receipt-2026-10-21)); F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,11 +72,11 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch502 (5 candidates; 2 complete, 1 accepted, 2 discovered)
+#### Active batch: Batch502 (5 candidates; 3 complete, 0 accepted, 2 discovered)
 
 1. F1257 - **Complete.** `ClassSummary::order` uses distinct `ClassSummaryOrder`; default zero, negative rejection, and position-then-class-ID ordering remain, separate from F1248 navigation ranks.
 2. F1258 - **Complete.** `dayGroup()` returns the closed `ScheduleImportMatchingProjectionDetail::WeekdayGroup`; preserve normalization, matching, and empty-existing eligibility, separate from legacy F729 parser work.
-3. F1259 - **Accepted; awaiting implementation.** Add distinct `DocumentFolderKey` and `DocumentEntryKey` values for Application metadata; preserve exact key bytes and existing validation, with independent key types and no uniqueness policy.
+3. F1259 - **Complete.** Application metadata uses distinct `DocumentFolderKey` and `DocumentEntryKey` values; exact stored bytes, existing validation, and independent key behavior remain.
 4. F1260 - **Discovered; next for acceptance.** Consider an open-text Calendar Event summary event-type value, preserving unknown names and current validation/trimming.
 5. F1261 - **Discovered.** Type Calendar event projection order while preserving nonnegative int32 values, source sequence, and no sorting/uniqueness rule.
 

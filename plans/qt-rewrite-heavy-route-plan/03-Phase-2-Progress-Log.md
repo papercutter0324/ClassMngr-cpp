@@ -59234,3 +59234,50 @@ Build incrementally in `build/macos-clang-debug`: `ClassMngr`,
 CTests. No implementation, build, or tests have started. No clean build,
 Windows build, or full-suite verification is claimed. Batch502 remains active;
 F1260 and F1261 remain discovered, and no new batch discovery has started.
+
+### F1259 Document Catalog keys complete - 2026-10-21
+
+F1259 was accepted in documentation commit
+`03a627a36639b80f4e5353b52891d819d853bab7`, with the embedded-NUL
+compatibility clarification in documentation commit
+`f8ccee981fccb4aef30fbbf0ddac9e7555529b42`. Its source/test changes are
+committed as `459b47fb8ab45aead02afbc7d12afe80e9fa75bc` (`Phase2 - Add
+distinct Document Catalog keys`). The seven changed paths are
+`src/next/application/document_catalog_projection.h`,
+`src/next/platform/application_services_document_catalog_port.h`,
+`src/ui/shared/widgets/sidebar/sidebar_tree.cpp`,
+`tests/next_application_document_catalog_tests.cpp`,
+`tests/next_application_document_catalog_use_case_tests.cpp`,
+`tests/next_platform_application_services_document_catalog_port_tests.cpp`,
+and `tests/sidebar_structure_tests.cpp`.
+
+Application folder and entry metadata now use separate string-backed
+`DocumentFolderKey` and `DocumentEntryKey` values. Each defaults empty, has
+explicit `std::string` construction, returns a const string reference from
+`.value()`, and supports same-type value equality without implicit string or
+cross-type conversions. Existing blank/256-byte validation and its messages
+remain; keys are not trimmed or normalized, folder and entry keys remain
+independent, and no uniqueness or ID/path comparison rule was added. The
+Platform adapter wraps the existing bounded strings. The sidebar retains the
+prior null-terminated `QString::fromUtf8(key.value().c_str())` conversion with
+no explicit length: wrappers preserve exact stored bytes, while permitted
+embedded NUL continues to truncate at the first NUL during navigation string
+conversion. This preserves the existing navigation behavior; no controller
+change was made.
+
+The Executor incrementally built `ClassMngr`,
+`ClassMngrNextApplicationDocumentCatalogTests`,
+`ClassMngrNextApplicationDocumentCatalogUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests`, and
+`ClassMngrSidebarStructureTests` in `build/macos-clang-debug`. The four exact
+registered focused CTests `ClassMngrNextApplicationDocumentCatalogTests`,
+`ClassMngrNextApplicationDocumentCatalogUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests`, and
+`ClassMngrSidebarStructureTests` passed 4/4. After the null-terminated
+conversion adjustment, Sidebar Structure was rerun and passed 1/1. The
+independent Tester confirmed the focused results; `git diff --check` passed.
+No clean build, Windows build, or full-suite verification was run.
+
+Batch502 remains active: F1257–F1259 are complete, F1260 is next for
+acceptance, and F1261 remains discovered. Batch501 is complete and pushed at
+`7f8ca958`; F629 and the Phase 0 and Phase 2 gates remain open.
