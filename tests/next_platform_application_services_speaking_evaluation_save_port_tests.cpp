@@ -82,6 +82,48 @@ Application::SpeakingEvaluationSaveRequest request(const int classId)
     };
 }
 
+QString validationCodeKey(
+    const Application::SpeakingEvaluationValidationCode code
+    )
+{
+    using Code = Application::SpeakingEvaluationValidationCode;
+
+    switch (code)
+    {
+    case Code::StudentNameEnglishTooLong:
+        return QStringLiteral("student_name.english.too_long");
+    case Code::StudentNameEnglishNonAscii:
+        return QStringLiteral("student_name.english.non_ascii");
+    case Code::StudentNameEnglishInvalidCharacters:
+        return QStringLiteral("student_name.english.invalid_characters");
+    case Code::StudentNameKoreanInvalidCharacters:
+        return QStringLiteral("student_name.korean.invalid_characters");
+    case Code::StudentNameKoreanTooShort:
+        return QStringLiteral("student_name.korean.too_short");
+    case Code::StudentNameKoreanTooLong:
+        return QStringLiteral("student_name.korean.too_long");
+    case Code::StudentNameKoreanUnusualLength:
+        return QStringLiteral("student_name.korean.unusual_length");
+    case Code::StudentNameDuplicatePair:
+        return QStringLiteral("student_name.duplicate_pair");
+    case Code::SpeakingEvaluationClassIdInvalid:
+        return QStringLiteral("speaking_evaluation.class_id.invalid");
+    case Code::ValidationLengthOutOfBounds:
+        return QStringLiteral("validation.length.out_of_bounds");
+    case Code::SpeakingEvaluationRowsTooMany:
+        return QStringLiteral("speaking_evaluation.rows.too_many");
+    case Code::SpeakingEvaluationRowTooManyCells:
+        return QStringLiteral("speaking_evaluation.row.too_many_cells");
+    case Code::SpeakingEvaluationStudentNameRequired:
+        return QStringLiteral("speaking_evaluation.student_name.required");
+    case Code::ValidationEnumInvalidValue:
+        return QStringLiteral("validation.enum.invalid_value");
+    }
+
+    Q_UNREACHABLE();
+    return {};
+}
+
 class RecordingSpeakingEvaluationSavePort final
     : public Application::SpeakingEvaluationSavePort
 {
@@ -382,7 +424,7 @@ appValidationMatchesLegacySpeakingEvaluationRules()
         const auto& appIssue = actual.issues[index];
         const ValidationIssue& legacyIssue =
             legacy.issues().at(static_cast<qsizetype>(index));
-        QCOMPARE(QString::fromStdString(appIssue.code), legacyIssue.code);
+        QCOMPARE(validationCodeKey(appIssue.code), legacyIssue.code);
         QCOMPARE(QString::fromStdString(appIssue.field), legacyIssue.field);
         QCOMPARE(appIssue.row, legacyIssue.row);
         QCOMPARE(appIssue.column, legacyIssue.column);
@@ -434,7 +476,7 @@ questionableKoreanNameFlagMatchesLegacySeverityAndSaveDecision()
         QCOMPARE(actual.issues.size(), std::size_t{1});
         const auto& appIssue = actual.issues.front();
         const ValidationIssue& legacyIssue = legacy.issues().front();
-        QCOMPARE(QString::fromStdString(appIssue.code), legacyIssue.code);
+        QCOMPARE(validationCodeKey(appIssue.code), legacyIssue.code);
         QCOMPARE(QString::fromStdString(appIssue.field), legacyIssue.field);
         QCOMPARE(appIssue.row, legacyIssue.row);
         QCOMPARE(appIssue.column, legacyIssue.column);
@@ -442,7 +484,7 @@ questionableKoreanNameFlagMatchesLegacySeverityAndSaveDecision()
             appIssue.severity == Application::SpeakingEvaluationValidationSeverity::Warning,
             legacyIssue.severity == ValidationSeverity::Warning
             );
-        QCOMPARE(QString::fromStdString(appIssue.code),
+        QCOMPARE(validationCodeKey(appIssue.code),
             QStringLiteral("student_name.korean.too_short"));
         QCOMPARE(QString::fromStdString(appIssue.field),
             QStringLiteral("rows[0].Korean Name"));
