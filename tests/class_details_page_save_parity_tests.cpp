@@ -1266,6 +1266,7 @@ freshInvalidTeacherIdBlocksCommonBaselineSaveInputs()
         {
             foundTeacherIssue = true;
             QCOMPARE(issue.field, QStringLiteral("teacherId"));
+            QCOMPARE(issue.row, -1);
             QCOMPARE(issue.arguments.value(QStringLiteral("value")).toInt(), 0);
         }
     }

@@ -164,7 +164,7 @@ reportsInvalidWeekdayAfterTrimmingRawScheduleDay()
         output.issues[0].schedule.value(),
         ClassDetailsValidationSchedule::Regular
         );
-    QCOMPARE(output.issues[0].row, std::size_t(0));
+    QCOMPARE(output.issues[0].row.rawValue(), std::size_t(0));
     QCOMPARE(output.issues[0].value.value(), std::u16string(u"Funday"));
     QCOMPARE(output.normalized.regularTimes.size(), std::size_t(1));
     QCOMPARE(
@@ -249,7 +249,7 @@ preservesLegacyValidationIssueOrderAndMalformedRowDetails()
         );
     QCOMPARE(output.issues[8].schedule.value(),
         ClassDetailsValidationSchedule::Regular);
-    QCOMPARE(output.issues[8].row, std::size_t(0));
+    QCOMPARE(output.issues[8].row.rawValue(), std::size_t(0));
     QCOMPARE(output.issues[8].value.value(), std::u16string(u"Funday"));
     QCOMPARE(
         output.issues[9].field,
