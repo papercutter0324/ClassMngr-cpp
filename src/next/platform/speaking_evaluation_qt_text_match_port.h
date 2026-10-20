@@ -38,8 +38,12 @@ public:
         {
             const QRegularExpressionMatch match = matches.next();
             result.push_back({
-                static_cast<std::size_t>(match.capturedStart()),
-                static_cast<std::size_t>(match.capturedLength())
+                Application::SpeakingEvaluationTextMatchStart{
+                    static_cast<std::size_t>(match.capturedStart())
+                },
+                Application::SpeakingEvaluationTextMatchLength{
+                    static_cast<std::size_t>(match.capturedLength())
+                }
             });
         }
         return result;

@@ -1,15 +1,59 @@
 #include "next/application/speaking_evaluation_ai_comment_prompt.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
 namespace Domain = ClassMngr::Next::Domain;
+
+static_assert(std::is_same_v<
+    decltype(SpeakingEvaluationTextMatchSpan{}.start),
+    SpeakingEvaluationTextMatchStart
+    >);
+static_assert(std::is_same_v<
+    decltype(SpeakingEvaluationTextMatchSpan{}.length),
+    SpeakingEvaluationTextMatchLength
+    >);
+static_assert(SpeakingEvaluationTextMatchStart{}.rawValue() == 0);
+static_assert(SpeakingEvaluationTextMatchLength{}.rawValue() == 0);
+static_assert(SpeakingEvaluationTextMatchStart{3}.rawValue() == 3);
+static_assert(SpeakingEvaluationTextMatchLength{2}.rawValue() == 2);
+static_assert(SpeakingEvaluationTextMatchStart{3}
+    == SpeakingEvaluationTextMatchStart{3});
+static_assert(SpeakingEvaluationTextMatchLength{2}
+    == SpeakingEvaluationTextMatchLength{2});
+static_assert(std::is_constructible_v<
+    SpeakingEvaluationTextMatchStart,
+    std::size_t
+    >);
+static_assert(std::is_constructible_v<
+    SpeakingEvaluationTextMatchLength,
+    std::size_t
+    >);
+static_assert(!std::is_convertible_v<
+    std::size_t,
+    SpeakingEvaluationTextMatchStart
+    >);
+static_assert(!std::is_convertible_v<
+    std::size_t,
+    SpeakingEvaluationTextMatchLength
+    >);
+static_assert(!std::is_convertible_v<
+    SpeakingEvaluationTextMatchStart,
+    std::size_t
+    >);
+static_assert(!std::is_convertible_v<
+    SpeakingEvaluationTextMatchLength,
+    std::size_t
+    >);
 
 namespace
 {
@@ -50,7 +94,10 @@ public:
             }
             if (equal)
             {
-                matches.push_back({cursor, literal.size()});
+                matches.push_back({
+                    SpeakingEvaluationTextMatchStart{cursor},
+                    SpeakingEvaluationTextMatchLength{literal.size()}
+                });
                 cursor += literal.size();
             }
             else
@@ -78,6 +125,48 @@ public:
             }
         }
         return true;
+    }
+};
+
+class InvalidSpanTextMatcher final : public SpeakingEvaluationTextMatchPort
+{
+public:
+    std::vector<SpeakingEvaluationTextMatchSpan>
+    findLiteralCaseInsensitiveMatches(
+        const std::u16string_view text,
+        std::u16string_view
+        ) const override
+    {
+        return {
+            {
+                SpeakingEvaluationTextMatchStart{text.size() + 1},
+                SpeakingEvaluationTextMatchLength{
+                    std::numeric_limits<std::size_t>::max()
+                }
+            },
+            {
+                SpeakingEvaluationTextMatchStart{0},
+                SpeakingEvaluationTextMatchLength{
+                    std::numeric_limits<std::size_t>::max()
+                }
+            },
+            {
+                SpeakingEvaluationTextMatchStart{text.size()},
+                SpeakingEvaluationTextMatchLength{1}
+            },
+            {
+                SpeakingEvaluationTextMatchStart{0},
+                SpeakingEvaluationTextMatchLength{0}
+            }
+        };
+    }
+
+    bool equalsCaseInsensitive(
+        const std::u16string_view left,
+        const std::u16string_view right
+        ) const override
+    {
+        return left == right;
     }
 };
 
@@ -148,6 +237,26 @@ bool observationsNormalizeLineEndingsAndRepeatedPrefixes()
             u"Practice"
         },
         "Observation normalization changed line endings, prefixes, or blank-line handling."
+        );
+}
+
+bool promptItemsIgnoreInvalidTextMatchSpans()
+{
+    const InvalidSpanTextMatcher matcher;
+    SpeakingEvaluationAiCommentPromptRequest request;
+    request.grade = Domain::CourseGradeBand::E4;
+    request.englishName = u"Alice";
+    request.didWell = u"Alice spoke clearly";
+    request.needsImprovement = u"Practice examples";
+
+    const auto result = buildSpeakingEvaluationAiCommentPrompt(request, matcher);
+    return check(
+        result.valid
+            && result.prompt.find(
+                u"Did well:\n- Alice spoke clearly\n\nNeeds improvement:\n"
+                u"- Practice examples"
+                ) != std::u16string::npos,
+        "Invalid text-match spans were not ignored safely."
         );
 }
 
@@ -489,6 +598,7 @@ bool invalidInputsFollowTheExistingEligibilityPolicy()
 int main()
 {
     if (!observationsNormalizeLineEndingsAndRepeatedPrefixes()
+        || !promptItemsIgnoreInvalidTextMatchSpans()
         || !elementaryGradeConversionPreservesLegacyAcceptedForms()
         || !singlePromptTextAndVoiceAreExact()
         || !singlePromptKeepsTypedGradeBandsAndOrdinalWording()

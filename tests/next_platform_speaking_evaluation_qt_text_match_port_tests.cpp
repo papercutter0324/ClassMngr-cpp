@@ -12,6 +12,8 @@ namespace
 {
 
 using ClassMngr::Next::Application::SpeakingEvaluationTextMatchSpan;
+using ClassMngr::Next::Application::SpeakingEvaluationTextMatchStart;
+using ClassMngr::Next::Application::SpeakingEvaluationTextMatchLength;
 using ClassMngr::Next::Platform::SpeakingEvaluationQtTextMatchPort;
 
 QString fromUtf16(const std::u16string_view value)
@@ -41,8 +43,12 @@ std::vector<SpeakingEvaluationTextMatchSpan> qtRegexMatches(
     {
         const QRegularExpressionMatch match = matches.next();
         result.push_back({
-            static_cast<std::size_t>(match.capturedStart()),
-            static_cast<std::size_t>(match.capturedLength())
+            SpeakingEvaluationTextMatchStart{
+                static_cast<std::size_t>(match.capturedStart())
+            },
+            SpeakingEvaluationTextMatchLength{
+                static_cast<std::size_t>(match.capturedLength())
+            }
         });
     }
     return result;
@@ -98,23 +104,60 @@ void NextPlatformSpeakingEvaluationQtTextMatchPortTests::
             equalsQtCaseInsensitive(text, literal)
             );
     }
+
+    const auto supplementaryPlaneMatch =
+        matcher.findLiteralCaseInsensitiveMatches(
+            u"\U00010400 \U00010428",
+            u"\U00010428"
+            );
+    QCOMPARE(supplementaryPlaneMatch.size(), std::size_t(2));
+    QCOMPARE(supplementaryPlaneMatch[0].start.rawValue(), std::size_t(0));
+    QCOMPARE(supplementaryPlaneMatch[0].length.rawValue(), std::size_t(2));
+    QCOMPARE(supplementaryPlaneMatch[1].start.rawValue(), std::size_t(3));
+    QCOMPARE(supplementaryPlaneMatch[1].length.rawValue(), std::size_t(2));
 }
 
 void NextPlatformSpeakingEvaluationQtTextMatchPortTests::
     regexMetacharactersOverlapsAndNoBoundariesStayLiteral()
 {
     const SpeakingEvaluationQtTextMatchPort matcher;
+    const std::vector<SpeakingEvaluationTextMatchSpan> metacharacterMatches{
+        {
+            SpeakingEvaluationTextMatchStart{0},
+            SpeakingEvaluationTextMatchLength{6}
+        },
+        {
+            SpeakingEvaluationTextMatchStart{7},
+            SpeakingEvaluationTextMatchLength{6}
+        }
+    };
     QCOMPARE(
         matcher.findLiteralCaseInsensitiveMatches(u"a.+[b] A.+[B]", u"A.+[b]"),
-        (std::vector<SpeakingEvaluationTextMatchSpan>{{0, 6}, {7, 6}})
+        metacharacterMatches
         );
+    const std::vector<SpeakingEvaluationTextMatchSpan> nonOverlappingMatches{
+        {
+            SpeakingEvaluationTextMatchStart{0},
+            SpeakingEvaluationTextMatchLength{2}
+        },
+        {
+            SpeakingEvaluationTextMatchStart{2},
+            SpeakingEvaluationTextMatchLength{2}
+        }
+    };
     QCOMPARE(
         matcher.findLiteralCaseInsensitiveMatches(u"aaaa", u"aa"),
-        (std::vector<SpeakingEvaluationTextMatchSpan>{{0, 2}, {2, 2}})
+        nonOverlappingMatches
         );
+    const std::vector<SpeakingEvaluationTextMatchSpan> embeddedMatch{
+        {
+            SpeakingEvaluationTextMatchStart{1},
+            SpeakingEvaluationTextMatchLength{5}
+        }
+    };
     QCOMPARE(
         matcher.findLiteralCaseInsensitiveMatches(u"Malice", u"Alice"),
-        (std::vector<SpeakingEvaluationTextMatchSpan>{{1, 5}})
+        embeddedMatch
         );
     QVERIFY(matcher.findLiteralCaseInsensitiveMatches(u"anything", {}).empty());
 }

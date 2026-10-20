@@ -7,10 +7,63 @@
 namespace ClassMngr::Next::Application
 {
 
+class SpeakingEvaluationTextMatchStart final
+{
+public:
+    constexpr SpeakingEvaluationTextMatchStart() noexcept = default;
+
+    explicit constexpr SpeakingEvaluationTextMatchStart(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const SpeakingEvaluationTextMatchStart&,
+        const SpeakingEvaluationTextMatchStart&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
+class SpeakingEvaluationTextMatchLength final
+{
+public:
+    constexpr SpeakingEvaluationTextMatchLength() noexcept = default;
+
+    explicit constexpr SpeakingEvaluationTextMatchLength(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const SpeakingEvaluationTextMatchLength&,
+        const SpeakingEvaluationTextMatchLength&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
+// Both values count UTF-16 code units, matching the port's text contract.
 struct SpeakingEvaluationTextMatchSpan final
 {
-    std::size_t start = 0;
-    std::size_t length = 0;
+    SpeakingEvaluationTextMatchStart start;
+    SpeakingEvaluationTextMatchLength length;
 
     friend bool operator==(
         const SpeakingEvaluationTextMatchSpan&,

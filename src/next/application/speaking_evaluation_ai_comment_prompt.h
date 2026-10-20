@@ -160,8 +160,8 @@ struct RedactionAlias final
 
 struct RedactionCandidate final
 {
-    std::size_t start = 0;
-    std::size_t length = 0;
+    SpeakingEvaluationTextMatchStart start;
+    SpeakingEvaluationTextMatchLength length;
     std::size_t aliasOrder = 0;
     std::u16string replacement;
 };
@@ -297,15 +297,17 @@ inline void appendDecimal(std::u16string& destination, const int value)
             );
         for (const SpeakingEvaluationTextMatchSpan match : matches)
         {
-            if (match.length == 0
-                || match.start > observations.size()
-                || match.length > observations.size() - match.start)
+            const std::size_t matchStart = match.start.rawValue();
+            const std::size_t matchLength = match.length.rawValue();
+            if (matchLength == 0
+                || matchStart > observations.size()
+                || matchLength > observations.size() - matchStart)
             {
                 continue;
             }
             const std::u16string_view captured = observations.substr(
-                match.start,
-                match.length
+                matchStart,
+                matchLength
                 );
             const bool isStudentName =
                 (!trimmedEnglishName.empty()
@@ -331,9 +333,9 @@ inline void appendDecimal(std::u16string& destination, const int value)
         candidates.end(),
         [](const RedactionCandidate& left, const RedactionCandidate& right)
         {
-            if (left.start != right.start)
+            if (left.start.rawValue() != right.start.rawValue())
             {
-                return left.start < right.start;
+                return left.start.rawValue() < right.start.rawValue();
             }
             return left.aliasOrder < right.aliasOrder;
         }
@@ -344,16 +346,18 @@ inline void appendDecimal(std::u16string& destination, const int value)
     std::size_t previousEnd = 0;
     for (const RedactionCandidate& candidate : candidates)
     {
-        if (candidate.start < previousEnd)
+        const std::size_t candidateStart = candidate.start.rawValue();
+        const std::size_t candidateLength = candidate.length.rawValue();
+        if (candidateStart < previousEnd)
         {
             continue;
         }
         redacted.append(observations.substr(
             previousEnd,
-            candidate.start - previousEnd
+            candidateStart - previousEnd
             ));
         redacted += candidate.replacement;
-        previousEnd = candidate.start + candidate.length;
+        previousEnd = candidateStart + candidateLength;
     }
     redacted.append(observations.substr(previousEnd));
 
