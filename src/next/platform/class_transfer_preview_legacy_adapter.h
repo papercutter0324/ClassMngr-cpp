@@ -34,7 +34,7 @@ classTransferPreviewRequest(const ::ClassTransferPackage& package)
     {
         const ::ClassTransferClass& transferClass = package.classes.at(index);
         request.classes.push_back({
-            static_cast<std::size_t>(index),
+            Application::ClassTransferPackageClassIndex{index},
             Application::ClassTransferTeacherKey(
                 transferClass.teacherKey.toStdString()),
             transferClass.info.classGrade.simplified()

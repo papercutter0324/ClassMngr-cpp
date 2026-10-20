@@ -115,9 +115,7 @@ public:
         for (const ClassTransferClassMatchList& source : matched.classes)
         {
             ClassTransferReviewClassCandidate candidate;
-            candidate.packageClassIndex = ClassTransferPackageClassIndex{
-                static_cast<int>(source.packageClassIndex)
-            };
+            candidate.packageClassIndex = source.packageClassIndex;
             candidate.matchingClassIds = source.matchingClassIds;
             candidate.sourceKey = source.sourceKey;
             result.classes.push_back(std::move(candidate));

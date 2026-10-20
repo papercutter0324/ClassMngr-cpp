@@ -79,13 +79,17 @@ void assemblesInSourceAndDestinationOrderWithTypedIds()
             {"absent teacher", "없는 교사"}}
     };
     request.classes = {
-        {4, Application::ClassTransferTeacherKey("source-b"), "e4", "perseus",
+        {Application::ClassTransferPackageClassIndex{4},
+            Application::ClassTransferTeacherKey("source-b"), "e4", "perseus",
             Application::ClassTransferClassKey("class-b")},
-        {1, Application::ClassTransferTeacherKey("missing-source-key"),
+        {Application::ClassTransferPackageClassIndex{1},
+            Application::ClassTransferTeacherKey("missing-source-key"),
             "e4", "perseus", Application::ClassTransferClassKey("class-unknown")},
-        {9, Application::ClassTransferTeacherKey("source-b"), "e4", "",
+        {Application::ClassTransferPackageClassIndex{9},
+            Application::ClassTransferTeacherKey("source-b"), "e4", "",
             Application::ClassTransferClassKey("class-incomplete")},
-        {7, Application::ClassTransferTeacherKey{}, "e4", "perseus",
+        {Application::ClassTransferPackageClassIndex{7},
+            Application::ClassTransferTeacherKey{}, "e4", "perseus",
             Application::ClassTransferClassKey("class-empty-teacher")}
     };
 
@@ -98,7 +102,7 @@ void assemblesInSourceAndDestinationOrderWithTypedIds()
             && port.observedRequest.teachers.front().sourceKey.value() == "source-b"
             && port.observedRequest.classes.front().teacherSourceKey.value() == "source-b"
             && port.observedRequest.classes.front().sourceKey.value() == "class-b"
-            && port.observedRequest.classes.front().packageClassIndex == 4,
+            && port.observedRequest.classes.front().packageClassIndex.rawValue() == 4,
         "query must pass the request to the read port unchanged");
 
     const auto& preview = result.value();
@@ -161,7 +165,9 @@ void skipsReadForRequestsThatCannotMatch()
 {
     FakeReadPort port;
     Application::ClassTransferPreviewRequest request;
-    request.classes.push_back({5, Application::ClassTransferTeacherKey("teacher"),
+    request.classes.push_back({
+        Application::ClassTransferPackageClassIndex{5},
+        Application::ClassTransferTeacherKey("teacher"),
         "e4", "", Application::ClassTransferClassKey("class-5")});
     request.teachers.push_back({
         Application::ClassTransferTeacherKey("blank"), {"", ""}});

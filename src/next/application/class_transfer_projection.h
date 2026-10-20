@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/class_transfer_keys.h"
+#include "next/application/class_transfer_package_class_index.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -904,30 +905,6 @@ enum class ClassTransferReviewTeacherAction
     ReplaceExisting,
     Unselected,
     Invalid
-};
-
-class ClassTransferPackageClassIndex final
-{
-public:
-    constexpr ClassTransferPackageClassIndex() noexcept = default;
-
-    explicit constexpr ClassTransferPackageClassIndex(const int value) noexcept
-        : m_value(value)
-    {
-    }
-
-    [[nodiscard]] constexpr int rawValue() const noexcept
-    {
-        return m_value;
-    }
-
-    friend constexpr bool operator==(
-        const ClassTransferPackageClassIndex&,
-        const ClassTransferPackageClassIndex&
-        ) noexcept = default;
-
-private:
-    int m_value = -1;
 };
 
 struct ClassTransferReviewClassCandidate final

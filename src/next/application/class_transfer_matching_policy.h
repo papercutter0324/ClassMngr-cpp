@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/class_transfer_keys.h"
+#include "next/application/class_transfer_package_class_index.h"
 #include "next/domain/domain_types.h"
 
 #include <cstddef>
@@ -41,7 +42,7 @@ struct ClassTransferMatchingDestinationTeacher final
 
 struct ClassTransferMatchingSourceClass final
 {
-    std::size_t packageClassIndex = 0;
+    ClassTransferPackageClassIndex packageClassIndex{0};
     ClassTransferTeacherKey teacherSourceKey;
     std::string grade;
     std::string level;
@@ -64,7 +65,7 @@ struct ClassTransferTeacherMatchList final
 
 struct ClassTransferClassMatchList final
 {
-    std::size_t packageClassIndex = 0;
+    ClassTransferPackageClassIndex packageClassIndex{0};
     std::vector<Domain::ClassId> matchingClassIds;
     ClassTransferClassKey sourceKey;
 };

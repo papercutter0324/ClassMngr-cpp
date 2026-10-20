@@ -867,6 +867,14 @@ packageClassIndexPreservesSignedIntAndExplicitType()
         decltype(std::declval<ClassTransferReviewDecisionIssue>()
                      .packageClassIndex),
         Index>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<ClassTransferMatchingSourceClass>()
+                     .packageClassIndex),
+        Index>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<ClassTransferClassMatchList>()
+                     .packageClassIndex),
+        Index>);
     static_assert(std::is_default_constructible_v<Index>);
     static_assert(std::is_constructible_v<Index, int>);
     static_assert(!std::is_convertible_v<int, Index>);
@@ -874,6 +882,10 @@ packageClassIndexPreservesSignedIntAndExplicitType()
 
     const Index defaultIndex;
     QCOMPARE(defaultIndex.rawValue(), -1);
+    const ClassTransferMatchingSourceClass defaultMatchingSource;
+    QCOMPARE(defaultMatchingSource.packageClassIndex.rawValue(), 0);
+    const ClassTransferClassMatchList defaultMatchList;
+    QCOMPARE(defaultMatchList.packageClassIndex.rawValue(), 0);
 
     constexpr int minimum = std::numeric_limits<int>::min();
     constexpr int maximum = std::numeric_limits<int>::max();
@@ -1183,15 +1195,20 @@ void NextApplicationClassTransferTests::classMatchingRequiresCourseAndTeacherIde
         },
         .destinationTeachers = {},
         .sourceClasses = {
-            {0, ClassTransferTeacherKey("teacher-1"), "e4", "perseus",
+            {ClassTransferPackageClassIndex{0},
+                ClassTransferTeacherKey("teacher-1"), "e4", "perseus",
                 ClassTransferClassKey("class-0")},
-            {1, ClassTransferTeacherKey("teacher-1"), "", "perseus",
+            {ClassTransferPackageClassIndex{1},
+                ClassTransferTeacherKey("teacher-1"), "", "perseus",
                 ClassTransferClassKey("class-1")},
-            {2, ClassTransferTeacherKey("teacher-1"), "e4", "",
+            {ClassTransferPackageClassIndex{2},
+                ClassTransferTeacherKey("teacher-1"), "e4", "",
                 ClassTransferClassKey("class-2")},
-            {3, ClassTransferTeacherKey("missing-teacher"), "e4", "perseus",
+            {ClassTransferPackageClassIndex{3},
+                ClassTransferTeacherKey("missing-teacher"), "e4", "perseus",
                 ClassTransferClassKey("class-3")},
-            {4, ClassTransferTeacherKey{}, "e4", "perseus",
+            {ClassTransferPackageClassIndex{4},
+                ClassTransferTeacherKey{}, "e4", "perseus",
                 ClassTransferClassKey("class-4")}
         },
         .destinationClasses = {
@@ -1278,7 +1295,8 @@ void NextApplicationClassTransferTests::classAndTeacherMatchListsRetainDestinati
             {matchingTeacherId("teacher-earlier"), names}
         },
         .sourceClasses = {
-            {0, ClassTransferTeacherKey("teacher-1"), "e4", "perseus",
+            {ClassTransferPackageClassIndex{17},
+                ClassTransferTeacherKey("teacher-1"), "e4", "perseus",
                 ClassTransferClassKey("source-class")}
         },
         .destinationClasses = {
@@ -1311,6 +1329,7 @@ void NextApplicationClassTransferTests::classAndTeacherMatchListsRetainDestinati
         std::string("teacher-earlier")
         );
     QCOMPARE(result.classes.size(), std::size_t(1));
+    QCOMPARE(result.classes[0].packageClassIndex.rawValue(), 17);
     QCOMPARE(result.classes[0].matchingClassIds.size(), std::size_t(2));
     QCOMPARE(
         result.classes[0].matchingClassIds[0].value(),
