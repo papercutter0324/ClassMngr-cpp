@@ -40,9 +40,18 @@ Application::SpeakingEvaluationSaveRequest request(std::string classId)
     snapshot.rows[3][1] = u"  zOE   dOE  ";
     snapshot.rows[3][10] = u"\uC218\uC5C5 \U0001F4DA";
     snapshot.changedCells = {
-        {24, 10},
-        {0, 1},
-        {12, 4}
+        {
+            Application::SpeakingEvaluationCellChangeRowIndex{24},
+            Application::SpeakingEvaluationCellChangeColumnIndex{10}
+        },
+        {
+            Application::SpeakingEvaluationCellChangeRowIndex{0},
+            Application::SpeakingEvaluationCellChangeColumnIndex{1}
+        },
+        {
+            Application::SpeakingEvaluationCellChangeRowIndex{12},
+            Application::SpeakingEvaluationCellChangeColumnIndex{4}
+        }
     };
 
     return {
@@ -255,7 +264,10 @@ rejectsIncompleteMatrixAndInvalidCoordinates()
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
 
     Application::SpeakingEvaluationSaveRequest invalidCell = request("42");
-    invalidCell.evaluation.changedCells.push_back({25, 0});
+    invalidCell.evaluation.changedCells.push_back({
+        Application::SpeakingEvaluationCellChangeRowIndex{25},
+        Application::SpeakingEvaluationCellChangeColumnIndex{0}
+    });
     result = Application::SpeakingEvaluationSaveUseCase::execute(
         invalidCell,
         port
@@ -362,12 +374,12 @@ normalizesValidRequestBeforePortAndPreservesUnicodeAndCellOrder()
         std::u16string(u"Last row"));
     const auto& changedCells = port.lastRequest->evaluation.changedCells;
     QCOMPARE(changedCells.size(), std::size_t(3));
-    QCOMPARE(changedCells[0].row, 24);
-    QCOMPARE(changedCells[0].column, 10);
-    QCOMPARE(changedCells[1].row, 0);
-    QCOMPARE(changedCells[1].column, 1);
-    QCOMPARE(changedCells[2].row, 12);
-    QCOMPARE(changedCells[2].column, 4);
+    QCOMPARE(changedCells[0].row.rawValue(), 24);
+    QCOMPARE(changedCells[0].column.rawValue(), 10);
+    QCOMPARE(changedCells[1].row.rawValue(), 0);
+    QCOMPARE(changedCells[1].column.rawValue(), 1);
+    QCOMPARE(changedCells[2].row.rawValue(), 12);
+    QCOMPARE(changedCells[2].column.rawValue(), 4);
     QVERIFY(port.lastRequest->allowQuestionableKoreanNameLengths);
 }
 

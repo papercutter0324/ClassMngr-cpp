@@ -76,7 +76,7 @@ QList<SpeakingEvalCellChange> legacyChanges(
     legacy.reserve(static_cast<qsizetype>(changes.size()));
     for (const auto& change : changes)
     {
-        legacy.append({change.row, change.column});
+        legacy.append({change.row.rawValue(), change.column.rawValue()});
     }
 
     return legacy;

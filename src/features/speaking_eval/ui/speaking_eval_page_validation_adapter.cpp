@@ -141,7 +141,14 @@ ClassMngr::Next::Application::SpeakingEvaluationSaveRequest makeSaveRequest(
         );
     for (const SpeakingEvalCellChange& change : changedCells)
     {
-        snapshot.changedCells.push_back({change.row, change.column});
+        snapshot.changedCells.push_back({
+            ClassMngr::Next::Application::SpeakingEvaluationCellChangeRowIndex{
+                change.row
+            },
+            ClassMngr::Next::Application::SpeakingEvaluationCellChangeColumnIndex{
+                change.column
+            }
+        });
     }
 
     return {

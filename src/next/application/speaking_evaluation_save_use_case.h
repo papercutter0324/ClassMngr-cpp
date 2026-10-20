@@ -44,10 +44,10 @@ public:
         for (const SpeakingEvaluationCellChange& change
              : request.evaluation.changedCells)
         {
-            if (change.row < 0
-                || change.row >= SpeakingEvaluationRowCount
-                || change.column < 0
-                || change.column >= SpeakingEvaluationColumnCount)
+            if (change.row.rawValue() < 0
+                || change.row.rawValue() >= SpeakingEvaluationRowCount
+                || change.column.rawValue() < 0
+                || change.column.rawValue() >= SpeakingEvaluationColumnCount)
             {
                 return failure(
                     "Changed-cell coordinates must identify a cell in the speaking evaluation matrix."

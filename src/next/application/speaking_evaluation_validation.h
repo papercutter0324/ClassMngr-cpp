@@ -28,10 +28,62 @@ inline constexpr std::size_t SpeakingEvaluationMaximumEnglishNameLength = 20;
 inline constexpr std::size_t SpeakingEvaluationMaximumCommentLength = 450;
 inline constexpr std::size_t SpeakingEvaluationMaximumNotesLength = 10000;
 
+class SpeakingEvaluationCellChangeRowIndex final
+{
+public:
+    constexpr SpeakingEvaluationCellChangeRowIndex() noexcept = default;
+
+    explicit constexpr SpeakingEvaluationCellChangeRowIndex(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const SpeakingEvaluationCellChangeRowIndex&,
+        const SpeakingEvaluationCellChangeRowIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = -1;
+};
+
+class SpeakingEvaluationCellChangeColumnIndex final
+{
+public:
+    constexpr SpeakingEvaluationCellChangeColumnIndex() noexcept = default;
+
+    explicit constexpr SpeakingEvaluationCellChangeColumnIndex(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const SpeakingEvaluationCellChangeColumnIndex&,
+        const SpeakingEvaluationCellChangeColumnIndex&
+        ) noexcept = default;
+
+private:
+    int m_value = -1;
+};
+
 struct SpeakingEvaluationCellChange final
 {
-    int row = -1;
-    int column = -1;
+    SpeakingEvaluationCellChangeRowIndex row;
+    SpeakingEvaluationCellChangeColumnIndex column;
 
     friend bool operator==(
         const SpeakingEvaluationCellChange&,

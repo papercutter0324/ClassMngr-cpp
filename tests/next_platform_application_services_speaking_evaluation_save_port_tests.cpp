@@ -164,7 +164,10 @@ savesCompleteMatrixAndAppliesExactChangedCellDelta()
 
     saveRequest.evaluation.rows[0][10] = u"Unlisted in-memory edit";
     saveRequest.evaluation.rows[3][10] = u"Updated listed note";
-    saveRequest.evaluation.changedCells = {{3, 10}};
+    saveRequest.evaluation.changedCells = {{
+        Application::SpeakingEvaluationCellChangeRowIndex{3},
+        Application::SpeakingEvaluationCellChangeColumnIndex{10}
+    }};
     saved = Application::SpeakingEvaluationSaveUseCase::execute(
         saveRequest,
         port
@@ -272,7 +275,10 @@ validationRejectsInvalidRowsBeforePersistence()
 
     auto invalidUpdate = validExisting;
     invalidUpdate.evaluation.rows[0][3] = u"Not a score";
-    invalidUpdate.evaluation.changedCells = {{0, 3}};
+    invalidUpdate.evaluation.changedCells = {{
+        Application::SpeakingEvaluationCellChangeRowIndex{0},
+        Application::SpeakingEvaluationCellChangeColumnIndex{3}
+    }};
     const auto rejectedUpdate = Application::SpeakingEvaluationSaveUseCase::execute(
         invalidUpdate,
         port
@@ -513,7 +519,10 @@ repositoryWriteFailureMapsTechnicalAndRollsBack()
         ));
 
     saveRequest.evaluation.rows[0][3] = u"1";
-    saveRequest.evaluation.changedCells = {{0, 3}};
+    saveRequest.evaluation.changedCells = {{
+        Application::SpeakingEvaluationCellChangeRowIndex{0},
+        Application::SpeakingEvaluationCellChangeColumnIndex{3}
+    }};
     const auto rejectedSave = Application::SpeakingEvaluationSaveUseCase::execute(
         saveRequest,
         port
@@ -758,7 +767,10 @@ rejectsRealRowIndexBeforeNarrowingAndRollsBack()
     QCOMPARE(query.numRowsAffected(), 1);
 
     saveRequest.evaluation.rows[0][10] = requestedValue.toStdU16String();
-    saveRequest.evaluation.changedCells = {{0, 10}};
+    saveRequest.evaluation.changedCells = {{
+        Application::SpeakingEvaluationCellChangeRowIndex{0},
+        Application::SpeakingEvaluationCellChangeColumnIndex{10}
+    }};
     const auto rejectedSave = Application::SpeakingEvaluationSaveUseCase::execute(
         saveRequest,
         port
