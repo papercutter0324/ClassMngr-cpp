@@ -6476,14 +6476,19 @@ through `QDateTime`. No full suite or Windows build ran. Batch490 has F1171–F1
 complete and F1173 next; it remains unpushed until F1177 closes. F629 and both
 phase gates remain open.
 
-## Phase 2 update - F1173 accepted; Batch490 active - 2026-10-20
+## Phase 2 update - F1173 complete; Batch490 active - 2026-10-20
 
-F1173 is accepted to type the Calendar Import Application counters with an
-exact signed-`int` `CalendarEventImportCount`, preserving default zero,
-initial skipped-count carry-through, duplicate increments, imported and
-skipped result counts, and observer reporting. Keep parser, feature/UI, and
-profiler interfaces as legacy `int` boundaries, collection cardinalities as
-`std::size_t`, and the existing 4096 save-event policy unchanged. Add no new
-range validation. Implementation and verification have not started. F1171–
-F1172 are complete; F1174 is next after F1173. Batch490 remains unpushed until
-F1177 closes. F629 and both phase gates remain open.
+F1173 completed at source/test commit `a3160a51`, following acceptance commit
+`8284393b`. The new `Application::CalendarEventImportCount` types the six
+semantic counters with exact signed `int`, a zero default, explicit
+construction, `rawValue()`, equality, and prefix increment. Parser and service
+signals remain `int`; profiler and UI boundaries unwrap explicitly. Collection
+cardinalities and indices remain `std::size_t`, and the existing 4096 save
+limit is unchanged.
+
+The incremental macOS Debug build passed for `ClassMngr` and three focused
+test targets. Three focused offscreen CTests passed 3/3, including service
+parity of 3 imported/2 skipped after a localhost-enabled retry. The
+independent Tester accepted the change and `git diff --check` passed. No full
+suite or Windows build ran. Batch490 has F1171–F1173 complete and F1174 next;
+it remains unpushed until F1177 closes. F629 and both phase gates remain open.

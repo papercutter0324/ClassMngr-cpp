@@ -52817,3 +52817,29 @@ Batch490 has F1171 and F1172 complete, F1173 accepted/in progress, and
 F1174–F1177 discovered, with F1174 next; it remains unpushed until F1177
 closes. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0
 and Phase 2 gates remain open.
+
+### F1173 Calendar Import counts complete - 2026-10-20
+
+F1173 completed at source/test commit `a3160a51`, following acceptance commit
+`8284393b`. `Application::CalendarEventImportCount` now gives the six semantic
+Calendar Import counters an exact signed `int` representation, zero default,
+explicit constructor, `rawValue()`, equality, and prefix increment. Collection
+sizes and indices remain `std::size_t`; parser/service signal values remain
+`int`, with explicit unwrapping at profiler and UI boundaries. The 4,096-event
+save limit and absence of range policy are unchanged. Defaults, initial skipped
+count, duplicate transitions, imported IDs count, observer reporting, and
+ordinary failure behavior are preserved.
+
+The `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventImportPlanTests`,
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`, and
+`ClassMngrCalendarEventImportParityTests` targets built successfully. Three
+focused offscreen CTests passed 3/3. The parity test required an authorized
+localhost-enabled retry after the sandbox rejected its localhost bind; it
+continues to assert 3 imported and 2 skipped. Independent Tester review
+accepted the slice, and `git diff --check` passed. No full suite or Windows
+build ran.
+
+Batch490 now has F1171–F1173 complete and F1174–F1177 discovered, with F1174
+next; it remains unpushed until F1177 closes. F629 awaits source-bound Windows
+x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
