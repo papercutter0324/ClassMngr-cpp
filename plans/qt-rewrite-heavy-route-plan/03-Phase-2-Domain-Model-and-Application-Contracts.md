@@ -85,7 +85,7 @@ Treat this plan as an operational summary, not a history:
 8. F1169 - **Discovered.** Type Sub Prep navigation weekdays and optional minutes; preserve unknown-day ignore, guards 0–6 and 0–1439, and earliest-day-without-time behavior.
 9. F1170 - **Discovered.** Type Sub Prep print ordering weekday/start-minute keys; preserve explicit unknown-sentinel ordering.
 
-Batch489 has nine discovered candidates with F1162 next. See its [discovery record](03-Phase-2-Progress-Log.md#batch489-discovery-at-f1160-start-2026-10-20) for evidence and the excluded low-confidence student-name peer-row idea. Batch488 is complete locally; its documentation closeout commit must precede any push, and no push receipt exists (see the [local closeout record](03-Phase-2-Progress-Log.md#batch488-local-closeout-after-f1161-2026-10-20)). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+Batch489 has nine discovered candidates with F1162 next. See its [discovery record](03-Phase-2-Progress-Log.md#batch489-discovery-at-f1160-start-2026-10-20) for evidence and the excluded low-confidence student-name peer-row idea. Batch488 is closed and pushed; see its [push receipt](03-Phase-2-Progress-Log.md#batch488-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 
