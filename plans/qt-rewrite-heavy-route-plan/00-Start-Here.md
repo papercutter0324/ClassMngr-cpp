@@ -48,7 +48,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 Batch495 and Batch496 are complete and pushed (see the [Batch495](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21) and [Batch496](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21) receipts). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
-Batch500 (F1243–F1252) is complete and pushed at `029a17e8`. Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`. Batch502 is active with F1257 next for acceptance. F1256 keeps generic snapshot widths distinct from the Class Transfer package width type. No broad Schedule Import feature completion is claimed for F1244.
+Batch500 (F1243–F1252) is complete and pushed at `029a17e8`. Batch501 (F1253–F1256) is complete and pushed at `7f8ca958`. Batch502 is active with F1257 complete and F1258 next for acceptance. F1256 keeps generic snapshot widths distinct from the Class Transfer package width type. No broad Schedule Import feature completion is claimed for F1244.
 
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
