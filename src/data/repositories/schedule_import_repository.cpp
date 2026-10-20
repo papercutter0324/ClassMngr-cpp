@@ -1066,7 +1066,8 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
          projection.classes)
     {
         ScheduleImportClassPreview projected;
-        projected.candidateIndex = static_cast<int>(value.candidateIndex);
+        projected.candidateIndex =
+            static_cast<int>(value.candidateIndex.rawValue());
         projected.matchingClassIds.reserve(
             static_cast<qsizetype>(value.matchingClassIds.size())
             );

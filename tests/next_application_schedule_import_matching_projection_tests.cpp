@@ -42,9 +42,30 @@ static_assert(
     );
 static_assert(
     std::is_same_v<
+        decltype(ScheduleImportMatchingClassProjection::candidateIndex),
+        ScheduleImportMatchingCandidateIndex
+        >
+    );
+static_assert(
+    std::is_same_v<
         decltype(ScheduleImportMatchingClassCount{}.rawValue()),
         std::size_t
         >
+    );
+static_assert(
+    std::is_same_v<
+        decltype(ScheduleImportMatchingCandidateIndex{}.rawValue()),
+        std::size_t
+        >
+    );
+static_assert(
+    std::is_constructible_v<ScheduleImportMatchingCandidateIndex, std::size_t>
+    );
+static_assert(
+    !std::is_convertible_v<std::size_t, ScheduleImportMatchingCandidateIndex>
+    );
+static_assert(
+    !std::is_convertible_v<ScheduleImportMatchingCandidateIndex, std::size_t>
     );
 static_assert(
     std::is_constructible_v<ScheduleImportMatchingClassCount, std::size_t>
@@ -117,8 +138,10 @@ class ScheduleImportMatchingProjectionTests final : public QObject
 
 private slots:
     void matchingClassCountHasTypedZeroAndPositiveValues();
+    void matchingCandidateIndexHasTypedZeroAndPositiveValues();
     void rejectsUnknownKindWithoutReturningProjection();
     void ranksEveryMatchCategoryAndKeepsStableTies();
+    void projectsCandidateIndexesInInputOrder();
     void reportsNoMatchAndInitiallyAbsentInventory();
     void excludesNonpositiveClassIdsFromMatchesAndSuggestions();
     void preservesNormalAndIntensiveFallbackSemantics();
@@ -135,6 +158,18 @@ matchingClassCountHasTypedZeroAndPositiveValues()
     QCOMPARE(positive.rawValue(), std::size_t{6});
     QVERIFY(zero == ScheduleImportMatchingClassCount{});
     QVERIFY(positive == ScheduleImportMatchingClassCount{6});
+}
+
+void ScheduleImportMatchingProjectionTests::
+matchingCandidateIndexHasTypedZeroAndPositiveValues()
+{
+    const ScheduleImportMatchingCandidateIndex zero;
+    const ScheduleImportMatchingCandidateIndex positive{6};
+
+    QCOMPARE(zero.rawValue(), std::size_t{0});
+    QCOMPARE(positive.rawValue(), std::size_t{6});
+    QVERIFY(zero == ScheduleImportMatchingCandidateIndex{});
+    QVERIFY(positive == ScheduleImportMatchingCandidateIndex{6});
 }
 
 void ScheduleImportMatchingProjectionTests::
@@ -222,7 +257,10 @@ ranksEveryMatchCategoryAndKeepsStableTies()
             classIdentity(97)
         })
         );
-    QCOMPARE(projection.classes[0].candidateIndex, std::size_t{0});
+    QVERIFY(
+        projection.classes[0].candidateIndex
+        == ScheduleImportMatchingCandidateIndex{0}
+        );
     QVERIFY(projection.classes[0].suggestedClassId == classIdentity(81));
     QVERIFY(projection.classes[0].exactMatch);
     QCOMPARE(
@@ -250,6 +288,32 @@ ranksEveryMatchCategoryAndKeepsStableTies()
             classIdentity(96),
             classIdentity(97)
         })
+        );
+}
+
+void ScheduleImportMatchingProjectionTests::
+projectsCandidateIndexesInInputOrder()
+{
+    ScheduleImportMatchingInput input;
+    input.candidates = {candidate(), candidate()};
+    input.candidates[1].teacherKey =
+        Domain::KoreanTeacherKey::fromName(u"김선생");
+    input.candidates[1].teacherName = u"김선생";
+    input.candidates[1].rooms = {u"417"};
+    input.candidates[1].roomMatchKeys = {u"417"};
+
+    const auto outcome = projectScheduleImportMatching(input);
+    QVERIFY(outcome.has_value());
+    const ScheduleImportMatchingProjection& projection = *outcome;
+
+    QCOMPARE(projection.classes.size(), std::size_t{2});
+    QVERIFY(
+        projection.classes[0].candidateIndex
+        == ScheduleImportMatchingCandidateIndex{0}
+        );
+    QVERIFY(
+        projection.classes[1].candidateIndex
+        == ScheduleImportMatchingCandidateIndex{1}
         );
 }
 

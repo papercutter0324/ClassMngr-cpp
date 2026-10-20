@@ -16,6 +16,32 @@
 namespace ClassMngr::Next::Application
 {
 
+class ScheduleImportMatchingCandidateIndex final
+{
+public:
+    constexpr ScheduleImportMatchingCandidateIndex() noexcept = default;
+
+    explicit constexpr ScheduleImportMatchingCandidateIndex(
+        const std::size_t rawValue
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const ScheduleImportMatchingCandidateIndex&,
+        const ScheduleImportMatchingCandidateIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t m_rawValue = 0;
+};
+
 enum class ScheduleImportMatchingKind
 {
     Normal,
@@ -140,7 +166,7 @@ struct ScheduleImportMatchingTeacherProjection final
 
 struct ScheduleImportMatchingClassProjection final
 {
-    std::size_t candidateIndex = 0;
+    ScheduleImportMatchingCandidateIndex candidateIndex;
     std::vector<Domain::ClassId> matchingClassIds;
     std::optional<Domain::ClassId> suggestedClassId;
     bool exactMatch = false;
@@ -459,7 +485,8 @@ projectScheduleImportMatching(
         const ScheduleImportMatchingCandidate& candidate =
             input.candidates[candidateIndex];
         ScheduleImportMatchingClassProjection classProjection;
-        classProjection.candidateIndex = candidateIndex;
+        classProjection.candidateIndex =
+            ScheduleImportMatchingCandidateIndex{candidateIndex};
 
         std::vector<Domain::TeacherId> importedTeacherIds;
         const auto matchingTeacher = std::find_if(
