@@ -99,14 +99,30 @@ readsOrderedRawRowsFromTheActiveSession()
     QVERIFY(result);
     QCOMPARE(result.value().rows.size(), std::size_t(3));
     QCOMPARE(result.value().rows[0], (Application::ScheduleSlotStateReadRow{
-        u"Monday", u"09:00", u"unknown state"
+        Application::ScheduleSlotStateReadIdentity(u"Monday", u"09:00"),
+        u"unknown state"
     }));
     QCOMPARE(result.value().rows[1], (Application::ScheduleSlotStateReadRow{
-        u"Monday", u"10:00", u"lunch"
+        Application::ScheduleSlotStateReadIdentity(u"Monday", u"10:00"),
+        u"lunch"
     }));
     QCOMPARE(result.value().rows[2], (Application::ScheduleSlotStateReadRow{
-        u"Tuesday ", u"09:05 ", u" mystery 🧭 "
+        Application::ScheduleSlotStateReadIdentity(u"Tuesday ", u"09:05 "),
+        u" mystery 🧭 "
     }));
+    QCOMPARE(result.value().rows[0].identity.day(),
+             std::u16string(u"Monday"));
+    QCOMPARE(result.value().rows[0].identity.startTime(),
+             std::u16string(u"09:00"));
+    QCOMPARE(result.value().rows[0].state, std::u16string(u"unknown state"));
+    QCOMPARE(result.value().rows[1].identity.startTime(),
+             std::u16string(u"10:00"));
+    QCOMPARE(result.value().rows[2].identity.day(),
+             std::u16string(u"Tuesday "));
+    QCOMPARE(result.value().rows[2].identity.startTime(),
+             std::u16string(u"09:05 "));
+    QCOMPARE(result.value().rows[2].state,
+             std::u16string(u" mystery 🧭 "));
 }
 
 void NextPlatformApplicationServicesScheduleSlotStateReadPortTests::

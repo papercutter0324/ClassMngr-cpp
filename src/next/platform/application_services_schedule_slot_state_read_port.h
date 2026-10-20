@@ -68,8 +68,10 @@ public:
             for (const IntensiveSlotState& state : *loaded)
             {
                 snapshot.rows.push_back({
-                    .day = state.day.toStdU16String(),
-                    .startTime = state.startTime.toStdU16String(),
+                    .identity = Application::ScheduleSlotStateReadIdentity(
+                        state.day.toStdU16String(),
+                        state.startTime.toStdU16String()
+                        ),
                     .state = state.state.toStdU16String()
                 });
             }

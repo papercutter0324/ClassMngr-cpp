@@ -1115,8 +1115,10 @@ void ScheduleWidget::reloadSlotStates()
     for (const auto& row : states.value().rows)
     {
         qtStates.append({
-            .day = QString::fromStdU16String(row.day),
-            .startTime = QString::fromStdU16String(row.startTime),
+            .day = QString::fromStdU16String(row.identity.day()),
+            .startTime = QString::fromStdU16String(
+                row.identity.startTime()
+                ),
             .state = QString::fromStdU16String(row.state)
         });
     }
