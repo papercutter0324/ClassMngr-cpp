@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch500 (F1243–F1252) is complete and pushed at `029a17e8`; active Batch501 has F1253 accepted awaiting implementation and F1254–F1256 discovered, while F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch500 (F1243–F1252) is complete and pushed at `029a17e8`; active Batch501 has F1253 complete and F1254 next for acceptance, with F1255–F1256 discovered; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1253 is accepted before implementation (see [F1253 acceptance](03-Phase-2-Progress-Log.md#f1253-teacher-import-stored-record-identities-accepted-before-implementation-2026-10-21)). Batch500 is complete and pushed at `029a17e8`; active Batch501 has F1254–F1256 remaining discovered. F629 and the Phase 0 and Phase 2 gates remain open.
+F1253 is complete at `1f4b405f`; the incremental macOS build succeeded and the four focused Teacher Import CTests passed (4/4) (see [F1253 verification](03-Phase-2-Progress-Log.md#f1253-teacher-import-stored-record-identities-complete-2026-10-21)). Batch500 is complete and pushed at `029a17e8`; active Batch501 has F1254 next for acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,10 +72,10 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch501 (4 candidates; 0 complete, 1 accepted, 3 discovered)
+#### Active batch: Batch501 (4 candidates; 1 complete, 0 accepted, 3 discovered)
 
-1. F1253 - **Accepted.** Add distinct explicit signed-64 Application identities for GS Team and Native English Teacher stored profiles; preserve `-1` and full-width SQL transport.
-2. F1254 - **Discovered.** Type Teacher Import review candidate count while preserving expansion, selection bounds, order, and validation behavior.
+1. F1253 - **Complete.** Add distinct explicit signed-64 Application identities for GS Team and Native English Teacher stored profiles; preserve `-1` and full-width SQL transport.
+2. F1254 - **Discovered; next for acceptance.** Type Teacher Import review candidate count while preserving expansion, selection bounds, order, and validation behavior.
 3. F1255 - **Discovered.** Type the academic-year validation boundary while preserving the 2026 lower bound and absence of an upper bound.
 4. F1256 - **Discovered; rechecked after F1251.** Keep `RosterSnapshot` column widths as a separate Application projection candidate; `ClassExportRosterColumnWidth` is specific to the portable Class Transfer package and should not leak into generic `RosterSnapshot`. Preserve signed values and order.
 

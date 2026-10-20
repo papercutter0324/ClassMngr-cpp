@@ -58554,3 +58554,38 @@ or full-suite result is claimed.
 Batch500 (F1243–F1252) is complete and pushed at `029a17e8`. Batch501 remains
 active with F1253 accepted awaiting implementation and F1254–F1256 discovered
 in order. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1253 Teacher Import stored-record identities complete - 2026-10-21
+
+F1253 completed in source/test commit
+`1f4b405f9df66a988fd8cd49f50b49ae18ae6ea5`, following acceptance documentation
+commit `3c09e33a05fd19b8a2c303146d6962e2b7a6b929`. The seven changed paths
+were `src/next/application/native_english_teacher_import_update.h`,
+`src/next/application/gs_team_import_update.h`,
+`src/data/repositories/teacher_import_sql_persistence_adapter.cpp`,
+`tests/next_application_native_english_teacher_import_update_tests.cpp`,
+`tests/next_application_gs_team_import_update_tests.cpp`,
+`tests/next_application_teacher_import_use_case_tests.cpp`, and
+`tests/teacher_import_tests.cpp`.
+
+The two profiles now use distinct explicit signed-64 Application identity
+types with default `-1`, `.rawValue()`, and equality. Merge retains each ID and
+excludes identity from changed/no-op value comparison; use-case matching and
+update behavior remain unchanged. The SQL adapter wraps `toLongLong()` values
+and unwraps with `.rawValue()` for `qlonglong` bindings. Integration coverage
+retains the existing above-32-bit cases and round-trips `INT64_MAX` in both
+tables, verifying the exact stored value, SQLite integer type, one-row update,
+and unchanged row count.
+
+The Executor's incremental macOS build succeeded for `ClassMngr` and the four
+accepted targets: `ClassMngrNextApplicationNativeEnglishTeacherImportUpdateTests`,
+`ClassMngrNextApplicationGsTeamImportUpdateTests`,
+`ClassMngrNextApplicationTeacherImportUseCaseTests`, and
+`ClassMngrTeacherImportTests`. The independent Tester rebuilt/rechecked the
+same targets in the existing incremental tree; Ninja reported no work to do.
+All four focused CTests passed (4/4), and `git diff --check` passed in both
+reviews. No clean build, Windows build, or full-suite run was performed.
+
+Batch500 (F1243–F1252) is complete and pushed at `029a17e8`. Batch501 remains
+active with F1253 complete and F1254 next for acceptance; F1255–F1256 remain
+discovered. F629 and the Phase 0 and Phase 2 gates remain open.
