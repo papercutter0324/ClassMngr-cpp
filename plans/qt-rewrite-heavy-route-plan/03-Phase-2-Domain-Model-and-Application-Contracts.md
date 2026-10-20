@@ -53,12 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch493 closed locally after F1201 at `4eea71a8`; Batch494 is active with F1202 next and unaccepted, while F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch493 is complete and pushed at `78989f8b`; Batch494 is active with F1202 next and unaccepted, while F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-
-F1201 completed at `4eea71a8`; seven targets built and all six focused CTests passed 6/6 with `QT_QPA_PLATFORM=offscreen`, and `git diff --check` passed. No full suite or Windows run occurred (see the [closeout](03-Phase-2-Progress-Log.md#f1201-roster-save-issue-coordinate-values-complete-2026-10-20)). Batch493 is complete locally and awaits push; Batch494 is active with F1202 next, still discovered/unaccepted (see the [local closeout](03-Phase-2-Progress-Log.md#batch493-closed-locally-after-f1201-2026-10-20) and [discovery](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20)).
+Batch493 was pushed by fast-forward at `78989f8b` (20 commits, range `3ea3959f..78989f8b`); local `HEAD`, the local `origin/Qt-Rewrite` tracking ref, and remote `Qt-Rewrite` match the full pushed SHA. The worktree is clean and the push had no limitations (see the [push receipt](03-Phase-2-Progress-Log.md#batch493-push-receipt-2026-10-20)). Batch494 is active with F1202 next and unaccepted (see its [discovery](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20)).
 
 ### Slice discovery batches
 
@@ -84,7 +83,7 @@ Treat this plan as an operational summary, not a history:
 7. F1208 - **Discovered.** Type Speaking Evaluation save-cell row/column, separately from F1201; preserve 25×11 zero-based coordinates and `-1` absence sentinels.
 8. F1209 - **Discovered.** Reuse `ClassTabNavigationOrderRank` for Sub Prep day/time schedule ranks from a neutral Application header; preserve sentinel 1000 including the valid 16:40 collision, comparisons, tuple tie rules, and separate Sub Prep weekday/minute preparation while keeping the comparator distinct.
 
-Batch492 remains complete and pushed at `3e6c09d9` (see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)). Batch493 closed locally after F1201 and awaits push (see the [local closeout](03-Phase-2-Progress-Log.md#batch493-closed-locally-after-f1201-2026-10-20)). Batch494 is active with F1202 next and unaccepted; see its [discovery record](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch492 remains complete and pushed at `3e6c09d9` (see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20)). Batch493 closed locally after F1201 (see the [local closeout](03-Phase-2-Progress-Log.md#batch493-closed-locally-after-f1201-2026-10-20)) and was subsequently pushed at `78989f8b` (see the [push receipt](03-Phase-2-Progress-Log.md#batch493-push-receipt-2026-10-20)). Batch494 is active with F1202 next and unaccepted; see its [discovery record](03-Phase-2-Progress-Log.md#batch494-discovery-finalized-at-f1200-start-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 

@@ -54816,3 +54816,11 @@ Batch494 is now active with its eight discovered candidates. F1202 is next but
 still discovered/unaccepted; F1203–F1209 remain discovered. See the [Batch494
 discovery](#batch494-discovery-finalized-at-f1200-start-2026-10-20). F629 and
 the Phase 0 and Phase 2 gates remain open.
+
+### Batch493 push receipt - 2026-10-20
+
+The Git operator pushed Batch493 normally by fast-forward, without force. The
+pushed range was `3ea3959f..78989f8b` (20 commits). Local `HEAD`, the local
+`origin/Qt-Rewrite` tracking ref, and remote `Qt-Rewrite` all equal
+`78989f8bbd1a83f0eed19a399bf2a4428af79612`. The worktree is clean on
+`Qt-Rewrite`; the push had no limitations.
