@@ -54297,3 +54297,52 @@ the matching `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`
 and `ClassMngrClassAnalyticsPageReadParityTests` CTests and `git diff --check`.
 This acceptance was recorded before F1193 implementation; no F1193
 implementation or verification result is claimed here.
+
+### F1193 Class Analytics grade distribution complete - 2026-10-20
+
+F1193 completed at source/test commit
+`a00e70b13156ba402d1c5fbd61cefd0f628de9bf`. The Executor build succeeded for
+`ClassMngr`,
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`, and
+`ClassMngrClassAnalyticsPageReadParityTests` in `build/macos-clang-debug`.
+The query and page-parity CTests passed 2/2:
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests` and
+`ClassMngrClassAnalyticsPageReadParityTests`. `git diff --check` passed.
+
+The independent Tester reran the target build command successfully; Ninja
+reported no work after the Executor build, so that invocation did not rebuild
+the targets. The Tester independently ran both CTests and `git diff --check`,
+and all passed. No full suite or Windows result is claimed.
+
+### F1194 Schedule Import candidate index accepted before implementation - 2026-10-20
+
+F1194 is accepted/current before implementation. Add one Qt-free Application
+`ScheduleImportCandidateIndex` value type with exact `int` storage, default
+`-1`, explicit construction, `.rawValue()`, equality, and no implicit
+conversion. Preserve arbitrary raw values so validation, rather than
+construction, retains current invalid-index behavior.
+
+Apply it to `ScheduleImportReviewClassResolution::candidateIndex`,
+`ScheduleImportReviewDecisionIssue::{candidateIndex,candidateIndexes}`, and
+`ScheduleImportApplyClass::candidateIndex`. Carry it through the Application
+review/apply projection and repository/adapters; extract the raw value only
+after appropriate validation. Preserve duplicate-resolution handling, issue
+order and values, claimant order, candidate identity across UI display sorting,
+and repository behavior. In particular, invalid values must continue to reach
+`CandidateIndexOutOfRange` issues in order.
+
+Do not reuse `ScheduleImportStateCandidateIndex` (valid-only `size_t`) or
+`ClassTransferPackageClassIndex` (a different package-row semantic). Keep
+valid-only `size_t` matching, state, and plan-issue indices raw. Keep
+`ScheduleImportPlanEligibilityClassColors::candidateIndex` raw because invalid
+optional color associations are intentionally ignored. Keep Feature/UI preview
+and control rows raw and convert at the boundary. Add no range or cap policy.
+
+Focused verification is to build `ClassMngr`,
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
+`ClassMngrNextApplicationScheduleImportApplyReviewDecisionsTests`,
+`ClassMngrNextApplicationScheduleImportPlanValidationTests`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests` in
+`build/macos-clang-debug`; run the five matching CTests with those names and
+`git diff --check`. This acceptance was recorded before F1194 implementation;
+no F1194 implementation or verification result is claimed here.

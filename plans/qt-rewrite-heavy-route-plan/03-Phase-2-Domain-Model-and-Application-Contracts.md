@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch492 is complete and pushed at `3e6c09d9`; in active Batch493, F1192 is complete, F1193 is accepted/current, and F1194–F1201 remain discovered, while F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch492 is complete and pushed at `3e6c09d9`; in active Batch493, F1192–F1193 are complete, F1194 is accepted/current, and F1195–F1201 remain discovered, while F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1192 completed at source commit `f8cb7d31a69a38ee125b53c49f0415cf746ecf7f`; all three focused CTests and `git diff --check` passed, with the independent incremental build reporting no work after the executor build (see its [closeout record](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-complete-2026-10-20)). No full-suite or Windows run occurred.
+F1193 completed at source/test commit `a00e70b13156ba402d1c5fbd61cefd0f628de9bf`; both focused CTests passed 2/2 and `git diff --check` passed. The independent Tester build found no work after the Executor build (see its [closeout record](03-Phase-2-Progress-Log.md#f1193-class-analytics-grade-distribution-complete-2026-10-20)). No full-suite or Windows run occurred.
 
 ### Slice discovery batches
 
@@ -72,11 +72,11 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch493 (10 candidates; 1 complete, 1 accepted/in progress, 8 discovered)
+#### Active batch: Batch493 (10 candidates; 2 complete, 1 accepted/in progress, 7 discovered)
 
 1. F1192 - **Complete.** Add distinct Qt-free `Application::ClassAnalyticsRosterRowCount` and `Application::ClassAnalyticsFullyScoredStudentCount`, preserving row-versus-student meaning, zero values, current Feature narrowing, and display (see [closeout](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-complete-2026-10-20)).
-2. F1193 - **Accepted/in progress; current.** Add a Qt-free grade-keyed Class Analytics distribution; preserve C/B/B+/A/A+ counts and order, safe invalid-grade lookup, aggregation/scoring behavior, existing labels/order, and direct bin coverage (see [acceptance](03-Phase-2-Progress-Log.md#f1193-class-analytics-grade-distribution-accepted-before-implementation-2026-10-20)).
-3. F1194 - **Discovered.** Type Schedule Import candidate index while preserving -1, ordering, duplicate handling, issue order, and invalid-index results; assess reuse of the neighboring typed index.
+2. F1193 - **Complete.** Add a Qt-free grade-keyed Class Analytics distribution; preserve C/B/B+/A/A+ counts and order, safe invalid-grade lookup, aggregation/scoring behavior, existing labels/order, and direct bin coverage (see [closeout](03-Phase-2-Progress-Log.md#f1193-class-analytics-grade-distribution-complete-2026-10-20)).
+3. F1194 - **Accepted/in progress; current.** Add Qt-free `Application::ScheduleImportCandidateIndex` for review/apply decision candidate positions; preserve -1, arbitrary invalid values, issue values/order, duplicate handling, claimant order, and candidate identity across UI sorting (see [acceptance](03-Phase-2-Progress-Log.md#f1194-schedule-import-candidate-index-accepted-before-implementation-2026-10-20)).
 4. F1195 - **Discovered.** Assess an invariant-preserving Initial Setup identity-requirements result while preserving the two-of-three rule and prompt order.
 5. F1196 - **Discovered.** Type the Schedule Import schedules-cleared count while preserving exact counts, mode, and legacy ID behavior.
 6. F1197 - **Discovered.** Type the Sub Prep print student count, assessing reuse of `ClassSummaryStudentCount` while preserving zero, cap, and print behavior.
@@ -85,7 +85,7 @@ Treat this plan as an operational summary, not a history:
 9. F1200 - **Discovered.** Type only the AI batch `reportIndex` contract, preserving its -1 sentinel, range filtering, and assignment order; keep overlapping `sourceRow` raw.
 10. F1201 - **Discovered.** Type roster-save issue cell coordinates while preserving zero-based row/column values and -1 absence sentinels.
 
-Batch492 is complete and pushed at `3e6c09d9`; see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20) and [closeout and discovery comparison](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20). Batch493's F1192 [closeout](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-complete-2026-10-20), F1193 [acceptance](03-Phase-2-Progress-Log.md#f1193-class-analytics-grade-distribution-accepted-before-implementation-2026-10-20), and final ordered discovery are recorded in the [progress log](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20). Batch491 is complete and pushed at `56bd1973`; see its [push receipt](03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20).
+Batch492 is complete and pushed at `3e6c09d9`; see its [push receipt](03-Phase-2-Progress-Log.md#batch492-push-receipt-2026-10-20) and [closeout and discovery comparison](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20). Batch493's F1192 [closeout](03-Phase-2-Progress-Log.md#f1192-class-analytics-counts-complete-2026-10-20), F1193 [closeout](03-Phase-2-Progress-Log.md#f1193-class-analytics-grade-distribution-complete-2026-10-20), F1194 [acceptance](03-Phase-2-Progress-Log.md#f1194-schedule-import-candidate-index-accepted-before-implementation-2026-10-20), and final ordered discovery are recorded in the [progress log](03-Phase-2-Progress-Log.md#batch492-closed-locally-and-batch493-discovery-finalized-2026-10-20). Batch491 is complete and pushed at `56bd1973`; see its [push receipt](03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20).
 
 #### Deferred candidates
 
