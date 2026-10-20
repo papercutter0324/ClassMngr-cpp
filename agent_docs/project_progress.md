@@ -53,16 +53,15 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1189 active; Batch492 unpushed)
+### Current checkpoint - 2026-10-20 (F1191 active; Batch492 unpushed)
 
 Batch490 is complete and pushed to `origin/Qt-Rewrite` at `69be43a7`; its
 [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch490-push-receipt-2026-10-20)
 records the handoff. Batch491 is complete and pushed to `origin/Qt-Rewrite`
 at `56bd1973`; its [push receipt](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch491-push-receipt-2026-10-20)
-records the handoff. F1178–F1189 are complete. Batch492 is active with six
-candidates: F1186–F1189 are complete, F1190 is accepted and in progress, and
-F1191 remains discovered. Acceptance, completion, and verification details
-are in the [Phase 2 progress
+records the handoff. F1178–F1190 are complete. Batch492 is active with six
+candidates: F1186–F1190 are complete, and F1191 is accepted and in progress.
+Acceptance, completion, and verification details are in the [Phase 2 progress
 log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
 F1186 completed at source/test commit `32eb56e4`, after acceptance commit
@@ -92,9 +91,16 @@ F1189 completed at source/test commit `db5e3d86`. The shared
 values across the startup/manual paths. Five affected targets built, both
 Application CTests passed, and the focused adapter and UI roundtrip cases
 passed. Broader Qt CTests hit sandbox-denied localhost binds; no full suite or
-Windows build ran. F1190 is accepted and in progress. Batch493's provisional
-discovery found four candidates, F1192–F1195, with a shortfall of six against
-the ten-slice target; no deferred trigger became actionable.
+Windows build ran.
+
+F1190 completed at source/test commit `71ce33ed`. The shared
+`Application::ScheduleImportMatchingClassCount` types total inventory and
+affected-class counts while preserving their distinct meanings and existing
+legacy casts. Four affected targets built and all three focused CTests passed.
+No full suite or Windows build ran. F1191 is accepted and in progress.
+Batch493's provisional discovery found four candidates, F1192–F1195, with a
+shortfall of six against the ten-slice target; no deferred trigger became
+actionable.
 
 Batch492's discovery found six candidates against the ten-candidate target;
 see its [discovery record](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md#batch492-provisional-discovery-at-f1184-start-2026-10-20).

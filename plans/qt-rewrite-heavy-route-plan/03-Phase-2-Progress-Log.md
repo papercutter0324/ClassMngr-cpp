@@ -54080,3 +54080,78 @@ Add shared Qt-free `Application::ScheduleImportMatchingClassCount` with exact `s
 Tests should cover type semantics and exact zero/positive Application counts, plus exact representable values through repository and Feature dialog paths, using the existing tests named above. Build `ClassMngr`, `ClassMngrNextApplicationScheduleImportMatchingProjectionTests`, `ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests` in `build/macos-clang-debug`; run focused CTests `NextApplicationScheduleImportMatchingProjection`, `ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`, then `git diff --check`. Implementation and verification have not started. No full-suite or Windows result is claimed.
 
 Batch492 remains active and unpushed: F1186–F1189 are complete, F1190 is accepted/in progress/current, and F1191 remains discovered. Batch493 remains provisional pending closure of Batch492. F629 awaits source-bound Windows x64 layout evidence; the Phase 0 and Phase 2 gates remain open.
+
+### F1190 Schedule Import matching class count complete - 2026-10-20
+
+F1190 completed at source/test commit
+`71ce33ed3ce75c3028b290280e4fc7449e8e8dae` (`Phase2 - Type Schedule Import matching class counts`). The Qt-free `Application::ScheduleImportMatchingClassCount` now types both total inventory and affected-class counts with exact `std::size_t` values, explicit construction, zero default, `.rawValue()`, and equality. Their distinct meanings, matching behavior, and explicit legacy/view-model narrowing remain unchanged.
+
+Independent verification built `ClassMngr`,
+`ClassMngrNextApplicationScheduleImportMatchingProjectionTests`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests` in
+`build/macos-clang-debug`. Focused CTests
+`NextApplicationScheduleImportMatchingProjection`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests` passed
+(3/3). The projection test checks exact `std::size_t`, explicit construction,
+zero, equality, no implicit conversions either direction, and values (affected
+0/2/6; inventory 8); the dialog test asserts displayed affected count 1.
+`git diff --check HEAD^ HEAD` passed, and the worktree was clean. No full-suite
+or Windows run occurred.
+
+Batch492 remains active and unpushed: F1186–F1190 are complete and F1191 is
+accepted/in progress/current. Batch493 remains provisional under its existing
+discovery record; no rediscovery is needed before Batch492 closes. F629 awaits
+source-bound Windows x64 layout evidence; the Phase 0 and Phase 2 gates remain
+open.
+
+### F1191 Class Tab navigation order rank accepted before implementation - 2026-10-20
+
+F1191 is accepted/in progress and current. The Qt-free
+`Application::ClassTabNavigationOrderingFact` stores four raw
+`std::int32_t` ranks—grade, level, earliest schedule day, and earliest start
+minute—all defaulting to `1000`
+(`src/next/application/class_tab_navigation_ordering_policy.h:17-22`). Its
+comparator compares those ranks in that order, then delegates to the supplied
+base-label comparator, then applies the existing numeric/lexical class-ID
+tie-break (`src/next/application/class_tab_navigation_ordering_policy.h:66-106`). Feature prepares the ranks
+(`src/features/classes/models/class_tab_navigation_model.cpp:14-19,616-628`)
+and retains locale-aware label comparison
+(`src/features/classes/models/class_tab_navigation_model.cpp:632-644`);
+`entryLessThan` delegates to Application. `1000` is also a valid minute rank
+for 16:40, so it must continue to collide with unknown time and fall through
+to label/class-ID comparison. Unknown grades, levels, days, and times use that
+same sentinel.
+
+Add Qt-free `Application::ClassTabNavigationOrderRank` with exact signed
+`std::int32_t` storage, default raw value `1000`, explicit construction,
+`.rawValue()`, and equality, with no implicit conversion or ranking policy.
+Apply it to all four rank fields. Feature remains responsible for grade,
+level, day, and time rank preparation and explicitly wraps the four values;
+keep locale-aware label comparison in Feature. Application unwraps ranks for
+the existing lexicographic comparison. Add the header to `cmake/next.cmake`.
+Preserve the `UnknownOrder=1000` behavior including the 16:40 collision,
+comparison priority and all tie behavior, class-ID final ordering, strict weak
+ordering, grouping, labels, and current Feature preparation. Add no cap or
+policy, and do not move rank calculation or locale behavior into Application.
+
+Existing Qt-free coverage is
+`tests/next_application_class_tab_navigation_ordering_policy_tests.cpp`
+(`ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests`): tuple
+priority, injected label comparison, sentinel collision, exact ties, numeric
+class-ID ordering, malformed/out-of-range IDs, and strict weak ordering.
+Feature coverage is `tests/class_tab_navigation_model_tests.cpp`
+(`ClassMngrClassTabNavigationModelTests`): unknown weekday/time order, 16:40
+collision, label output, and sort order. Register the value type in
+`cmake/next.cmake`. Build `ClassMngr` and both test targets in
+`build/macos-clang-debug`; run both focused CTests and `git diff --check`.
+Implementation and verification have not started; no full-suite or Windows
+result is claimed.
+
+This final discovered candidate in Batch492 is accepted from the
+[Batch492 discovery record](#batch492-provisional-discovery-at-f1184-start-2026-10-20).
+Batch492 remains active and unpushed with F1186–F1190 complete and F1191
+accepted/in progress/current. Batch493 remains provisional under its existing
+[discovery record](#batch493-provisional-discovery-at-f1190-start-2026-10-20);
+keep Batch492's ordered list active until closure, with no rediscovery needed.
+F629 awaits source-bound Windows x64 layout evidence; the Phase 0 and Phase 2
+gates remain open.
