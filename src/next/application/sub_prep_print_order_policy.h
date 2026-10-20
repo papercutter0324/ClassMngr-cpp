@@ -64,6 +64,58 @@ private:
     int value_ = 0;
 };
 
+class SubPrepPrintTeacherIndex final
+{
+public:
+    constexpr SubPrepPrintTeacherIndex() noexcept = default;
+
+    explicit constexpr SubPrepPrintTeacherIndex(
+        const std::size_t rawValue
+        ) noexcept
+        : rawValue_(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return rawValue_;
+    }
+
+    friend constexpr bool operator==(
+        const SubPrepPrintTeacherIndex&,
+        const SubPrepPrintTeacherIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t rawValue_ = 0;
+};
+
+class SubPrepPrintClassIndex final
+{
+public:
+    constexpr SubPrepPrintClassIndex() noexcept = default;
+
+    explicit constexpr SubPrepPrintClassIndex(
+        const std::size_t rawValue
+        ) noexcept
+        : rawValue_(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return rawValue_;
+    }
+
+    friend constexpr bool operator==(
+        const SubPrepPrintClassIndex&,
+        const SubPrepPrintClassIndex&
+        ) noexcept = default;
+
+private:
+    std::size_t rawValue_ = 0;
+};
+
 enum class SubPrepPrintTeacherNameField
 {
     English,
@@ -133,15 +185,15 @@ template <typename TypedId>
 } // namespace SubPrepPrintOrderPolicyDetail
 
 using SubPrepPrintTeacherNameComparator = std::function<int(
-    std::size_t,
-    std::size_t,
+    SubPrepPrintTeacherIndex,
+    SubPrepPrintTeacherIndex,
     SubPrepPrintTeacherNameField
     )>;
 
 struct SubPrepPrintGroupOrder final
 {
-    std::size_t teacherIndex = 0;
-    std::vector<std::size_t> classIndexes;
+    SubPrepPrintTeacherIndex teacherIndex;
+    std::vector<SubPrepPrintClassIndex> classIndexes;
 
     friend bool operator==(
         const SubPrepPrintGroupOrder&,
@@ -150,10 +202,10 @@ struct SubPrepPrintGroupOrder final
 };
 
 // compareTeacherNames must compare the caller's prepared, trimmed names and
-// return a negative, zero, or positive result. Returns teacher fact indexes
-// and, for each teacher, ordered class fact indexes. Teacher names remain
-// caller-owned; indexes let the injected comparator inspect those names
-// without copying display text into this policy.
+// return a negative, zero, or positive result. Teacher indexes address the
+// teachers fact vector and class indexes address the classes fact vector.
+// Teacher names remain caller-owned; indexes let the injected comparator
+// inspect those names without copying display text into this policy.
 [[nodiscard]] inline std::vector<SubPrepPrintGroupOrder>
 orderSubPrepPrintGroups(
     const std::vector<SubPrepPrintTeacherOrderFact>& teachers,
@@ -172,7 +224,7 @@ orderSubPrepPrintGroups(
     groups.reserve(teachers.size());
     for (std::size_t index = 0; index < teachers.size(); ++index)
     {
-        groups.push_back({index, {}});
+        groups.push_back({SubPrepPrintTeacherIndex{index}, {}});
     }
 
     for (std::size_t classIndex = 0; classIndex < classes.size(); ++classIndex)
@@ -184,7 +236,9 @@ orderSubPrepPrintGroups(
         {
             continue;
         }
-        groups[teacher->second].classIndexes.push_back(classIndex);
+        groups[teacher->second].classIndexes.push_back(
+            SubPrepPrintClassIndex{classIndex}
+            );
     }
 
     std::sort(
@@ -196,9 +250,9 @@ orderSubPrepPrintGroups(
         )
         {
             const SubPrepPrintTeacherOrderFact& left =
-                teachers[leftGroup.teacherIndex];
+                teachers[leftGroup.teacherIndex.rawValue()];
             const SubPrepPrintTeacherOrderFact& right =
-                teachers[rightGroup.teacherIndex];
+                teachers[rightGroup.teacherIndex.rawValue()];
 
             if (left.hasEnglishName != right.hasEnglishName)
             {
@@ -237,10 +291,15 @@ orderSubPrepPrintGroups(
         std::sort(
             group.classIndexes.begin(),
             group.classIndexes.end(),
-            [&classes](const std::size_t leftIndex, const std::size_t rightIndex)
+            [&classes](
+                const SubPrepPrintClassIndex leftIndex,
+                const SubPrepPrintClassIndex rightIndex
+                )
             {
-                const SubPrepPrintClassOrderFact& left = classes[leftIndex];
-                const SubPrepPrintClassOrderFact& right = classes[rightIndex];
+                const SubPrepPrintClassOrderFact& left =
+                    classes[leftIndex.rawValue()];
+                const SubPrepPrintClassOrderFact& right =
+                    classes[rightIndex.rawValue()];
                 if (left.gradeOrder != right.gradeOrder)
                 {
                     return left.gradeOrder < right.gradeOrder;

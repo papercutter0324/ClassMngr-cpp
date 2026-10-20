@@ -1,6 +1,7 @@
 #include "next/application/sub_prep_print_order_policy.h"
 
 #include <cstdlib>
+#include <functional>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -34,6 +35,49 @@ static_assert(
 static_assert(
     !std::is_same_v<SubPrepPrintWeekdayOrder, SubPrepPrintStartMinute>
     );
+static_assert(
+    std::is_constructible_v<SubPrepPrintTeacherIndex, std::size_t>
+    );
+static_assert(
+    !std::is_convertible_v<std::size_t, SubPrepPrintTeacherIndex>
+    );
+static_assert(
+    !std::is_convertible_v<SubPrepPrintTeacherIndex, std::size_t>
+    );
+static_assert(
+    std::is_constructible_v<SubPrepPrintClassIndex, std::size_t>
+    );
+static_assert(
+    !std::is_convertible_v<std::size_t, SubPrepPrintClassIndex>
+    );
+static_assert(
+    !std::is_convertible_v<SubPrepPrintClassIndex, std::size_t>
+    );
+static_assert(
+    !std::is_same_v<SubPrepPrintTeacherIndex, SubPrepPrintClassIndex>
+    );
+static_assert(
+    std::is_same_v<
+        decltype(SubPrepPrintGroupOrder::teacherIndex),
+        SubPrepPrintTeacherIndex
+        >
+    );
+static_assert(
+    std::is_same_v<
+        decltype(SubPrepPrintGroupOrder::classIndexes),
+        std::vector<SubPrepPrintClassIndex>
+        >
+    );
+static_assert(
+    std::is_same_v<
+        SubPrepPrintTeacherNameComparator,
+        std::function<int(
+            SubPrepPrintTeacherIndex,
+            SubPrepPrintTeacherIndex,
+            SubPrepPrintTeacherNameField
+            )>
+        >
+    );
 
 SubPrepPrintWeekdayOrder weekdayOrder(const int value)
 {
@@ -65,6 +109,30 @@ bool printOrderIntegerFactsAreStrongValues()
         && !(minute == otherMinute)
         && defaultFact.weekdayOrder.value() == kSubPrepPrintUnknownOrder
         && defaultFact.startMinute.value() == kSubPrepPrintUnknownOrder;
+}
+
+bool printOrderIndexesAreStrongValues()
+{
+    const SubPrepPrintTeacherIndex defaultTeacherIndex;
+    const SubPrepPrintTeacherIndex teacherIndex{4};
+    const SubPrepPrintTeacherIndex sameTeacherIndex{4};
+    const SubPrepPrintTeacherIndex otherTeacherIndex{5};
+    const SubPrepPrintClassIndex defaultClassIndex;
+    const SubPrepPrintClassIndex classIndex{9};
+    const SubPrepPrintClassIndex sameClassIndex{9};
+    const SubPrepPrintClassIndex otherClassIndex{10};
+    const SubPrepPrintGroupOrder defaultGroup;
+
+    return defaultTeacherIndex.rawValue() == 0
+        && teacherIndex.rawValue() == 4
+        && teacherIndex == sameTeacherIndex
+        && !(teacherIndex == otherTeacherIndex)
+        && defaultClassIndex.rawValue() == 0
+        && classIndex.rawValue() == 9
+        && classIndex == sameClassIndex
+        && !(classIndex == otherClassIndex)
+        && defaultGroup.teacherIndex.rawValue() == 0
+        && defaultGroup.classIndexes.empty();
 }
 
 TeacherId teacherKey(const int value)
@@ -119,8 +187,8 @@ SubPrepPrintTeacherNameComparator compareNames(
     )
 {
     return [&englishNames, &koreanNames](
-               const std::size_t leftIndex,
-               const std::size_t rightIndex,
+               const SubPrepPrintTeacherIndex leftIndex,
+               const SubPrepPrintTeacherIndex rightIndex,
                const SubPrepPrintTeacherNameField field
            )
     {
@@ -129,10 +197,50 @@ SubPrepPrintTeacherNameComparator compareNames(
                 ? englishNames
                 : koreanNames;
         return compareText(
-            names[leftIndex],
-            names[rightIndex]
+            names[leftIndex.rawValue()],
+            names[rightIndex.rawValue()]
             );
     };
+}
+
+bool emptyTeacherInputAndUnmatchedClassesKeepExpectedGroups()
+{
+    const auto compareEqualNames = [](
+                                       const SubPrepPrintTeacherIndex,
+                                       const SubPrepPrintTeacherIndex,
+                                       const SubPrepPrintTeacherNameField
+                                   )
+    {
+        return 0;
+    };
+    const auto emptyGroups = orderSubPrepPrintGroups(
+        {},
+        {},
+        compareEqualNames
+        );
+    const std::vector<SubPrepPrintTeacherOrderFact> teachers{
+        {teacherKey(1), true}
+    };
+    const std::vector<SubPrepPrintClassOrderFact> unmatchedClasses{
+        {
+            teacherKey(2),
+            1,
+            1,
+            weekdayOrder(1),
+            startMinute(500),
+            classKey(3)
+        }
+    };
+    const auto unmatchedGroups = orderSubPrepPrintGroups(
+        teachers,
+        unmatchedClasses,
+        compareEqualNames
+        );
+
+    return emptyGroups.empty()
+        && unmatchedGroups.size() == 1
+        && unmatchedGroups.front().teacherIndex.rawValue() == 0
+        && unmatchedGroups.front().classIndexes.empty();
 }
 
 std::vector<int> orderedTeacherIds(
@@ -144,7 +252,9 @@ std::vector<int> orderedTeacherIds(
     ids.reserve(groups.size());
     for (const SubPrepPrintGroupOrder& group : groups)
     {
-        ids.push_back(numericId(teachers[group.teacherIndex].teacherId));
+        ids.push_back(
+            numericId(teachers[group.teacherIndex.rawValue()].teacherId)
+            );
     }
     return ids;
 }
@@ -156,9 +266,9 @@ std::vector<int> orderedClassIds(
 {
     std::vector<int> ids;
     ids.reserve(group.classIndexes.size());
-    for (const std::size_t index : group.classIndexes)
+    for (const SubPrepPrintClassIndex index : group.classIndexes)
     {
-        ids.push_back(numericId(classes[index].classId));
+        ids.push_back(numericId(classes[index.rawValue()].classId));
     }
     return ids;
 }
@@ -186,8 +296,8 @@ bool englishPresenceAndInjectedNameOrderTeachers()
     bool comparedEnglish = false;
     bool comparedKorean = false;
     const auto comparator = [&] (
-                                const std::size_t leftIndex,
-                                const std::size_t rightIndex,
+                                const SubPrepPrintTeacherIndex leftIndex,
+                                const SubPrepPrintTeacherIndex rightIndex,
                                 const SubPrepPrintTeacherNameField field
                             )
     {
@@ -195,15 +305,15 @@ bool englishPresenceAndInjectedNameOrderTeachers()
         {
             comparedEnglish = true;
             return compareText(
-                englishNames[leftIndex],
-                englishNames[rightIndex]
+                englishNames[leftIndex.rawValue()],
+                englishNames[rightIndex.rawValue()]
                 );
         }
 
         comparedKorean = true;
         return compareText(
-            koreanNames[leftIndex],
-            koreanNames[rightIndex]
+            koreanNames[leftIndex.rawValue()],
+            koreanNames[rightIndex.rawValue()]
             );
     };
 
@@ -351,13 +461,21 @@ bool malformedTypedIdsUseDeterministicTieBreaks()
             compareNames(oneEnglishName, oneKoreanName)
             );
 
-        return teachers[teacherGroups.at(0).teacherIndex].teacherId.value()
+        return teachers[
+                   teacherGroups.at(0).teacherIndex.rawValue()
+                   ].teacherId.value()
                 == "10x"
-            && teachers[teacherGroups.at(1).teacherIndex].teacherId.value()
+            && teachers[
+                   teacherGroups.at(1).teacherIndex.rawValue()
+                   ].teacherId.value()
                 == "2x"
-            && classes[classGroups.at(0).classIndexes.at(0)].classId.value()
+            && classes[
+                   classGroups.at(0).classIndexes.at(0).rawValue()
+                   ].classId.value()
                 == "10x"
-            && classes[classGroups.at(0).classIndexes.at(1)].classId.value()
+            && classes[
+                   classGroups.at(0).classIndexes.at(1).rawValue()
+                   ].classId.value()
                 == "2x";
     }
     catch (...)
@@ -485,14 +603,14 @@ bool validUniqueIdsMakeOrderIndependentOfInputOrder()
     for (const SubPrepPrintGroupOrder& group : groupsA)
     {
         normalizedA.emplace_back(
-            numericId(teachersA[group.teacherIndex].teacherId),
+            numericId(teachersA[group.teacherIndex.rawValue()].teacherId),
             orderedClassIds(group, classesA)
             );
     }
     for (const SubPrepPrintGroupOrder& group : groupsB)
     {
         normalizedB.emplace_back(
-            numericId(teachersB[group.teacherIndex].teacherId),
+            numericId(teachersB[group.teacherIndex.rawValue()].teacherId),
             orderedClassIds(group, classesB)
             );
     }
@@ -510,6 +628,16 @@ bool validUniqueIdsMakeOrderIndependentOfInputOrder()
 
 int main()
 {
+    if (!emptyTeacherInputAndUnmatchedClassesKeepExpectedGroups())
+    {
+        std::cerr << "Empty teacher input and unmatched classes should preserve expected groups.\n";
+        return EXIT_FAILURE;
+    }
+    if (!printOrderIndexesAreStrongValues())
+    {
+        std::cerr << "Print order indexes should retain distinct strong values.\n";
+        return EXIT_FAILURE;
+    }
     if (!printOrderIntegerFactsAreStrongValues())
     {
         std::cerr << "Print order integer facts should retain exact strong values.\n";

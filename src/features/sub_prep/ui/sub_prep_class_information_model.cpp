@@ -483,8 +483,8 @@ SubPrepClassInformation::build(
             teacherOrderFacts,
             classOrderFacts,
             [&trimmedEnglishNames, &trimmedKoreanNames](
-                const std::size_t leftIndex,
-                const std::size_t rightIndex,
+                const PrintOrder::SubPrepPrintTeacherIndex leftIndex,
+                const PrintOrder::SubPrepPrintTeacherIndex rightIndex,
                 const PrintOrder::SubPrepPrintTeacherNameField field
             )
             {
@@ -493,8 +493,12 @@ SubPrepClassInformation::build(
                         ? trimmedEnglishNames
                         : trimmedKoreanNames;
                 return QString::localeAwareCompare(
-                    names.at(static_cast<qsizetype>(leftIndex)),
-                    names.at(static_cast<qsizetype>(rightIndex))
+                    names.at(
+                        static_cast<qsizetype>(leftIndex.rawValue())
+                        ),
+                    names.at(
+                        static_cast<qsizetype>(rightIndex.rawValue())
+                        )
                     );
             }
             );
@@ -504,15 +508,20 @@ SubPrepClassInformation::build(
     for (const PrintOrder::SubPrepPrintGroupOrder& orderedGroup : groupOrder)
     {
         const Teacher& teacher =
-            teachers.at(static_cast<qsizetype>(orderedGroup.teacherIndex));
+            teachers.at(
+                static_cast<qsizetype>(orderedGroup.teacherIndex.rawValue())
+                );
         QList<ClassDetails> orderedClasses;
         orderedClasses.reserve(
             static_cast<qsizetype>(orderedGroup.classIndexes.size())
             );
-        for (const std::size_t classIndex : orderedGroup.classIndexes)
+        for (
+            const PrintOrder::SubPrepPrintClassIndex classIndex :
+            orderedGroup.classIndexes
+            )
         {
             orderedClasses.append(
-                classes.at(static_cast<qsizetype>(classIndex))
+                classes.at(static_cast<qsizetype>(classIndex.rawValue()))
                 );
         }
 
