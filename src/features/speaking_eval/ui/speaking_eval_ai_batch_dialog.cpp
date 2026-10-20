@@ -1144,7 +1144,10 @@ void SpeakingEvalAiBatchDialog::applyComments()
                 .valid = valid,
                 .reportIndex = ClassMngr::Next::Application::
                     SpeakingEvaluationAiBatchReportIndex{reportIndex},
-                .sourceRow = sourceRow,
+                .sourceRow = ClassMngr::Next::Application::
+                    SpeakingEvaluationAiBatchAcceptedCommentSourceRow{
+                        sourceRow
+                    },
                 .oldComment = oldComment.toStdU16String(),
                 .newComment = newComment.toStdU16String()
             }
@@ -1165,7 +1168,7 @@ void SpeakingEvalAiBatchDialog::applyComments()
     {
         accepted.append(
             {
-                assignment.sourceRow,
+                assignment.sourceRow.rawValue(),
                 QString::fromStdU16String(assignment.oldComment),
                 QString::fromStdU16String(assignment.newComment)
             }

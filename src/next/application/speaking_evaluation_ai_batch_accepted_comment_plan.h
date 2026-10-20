@@ -35,19 +35,46 @@ private:
     int m_value = -1;
 };
 
+class SpeakingEvaluationAiBatchAcceptedCommentSourceRow final
+{
+public:
+    constexpr SpeakingEvaluationAiBatchAcceptedCommentSourceRow() noexcept =
+        default;
+
+    explicit constexpr SpeakingEvaluationAiBatchAcceptedCommentSourceRow(
+        const int value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const SpeakingEvaluationAiBatchAcceptedCommentSourceRow&,
+        const SpeakingEvaluationAiBatchAcceptedCommentSourceRow&
+        ) noexcept = default;
+
+private:
+    int m_value = -1;
+};
+
 struct SpeakingEvaluationAiBatchAcceptedCommentCandidate final
 {
     bool checked = false;
     bool valid = false;
     SpeakingEvaluationAiBatchReportIndex reportIndex;
-    int sourceRow = -1;
+    SpeakingEvaluationAiBatchAcceptedCommentSourceRow sourceRow;
     std::u16string oldComment;
     std::u16string newComment;
 };
 
 struct SpeakingEvaluationAiBatchAcceptedCommentAssignment final
 {
-    int sourceRow = -1;
+    SpeakingEvaluationAiBatchAcceptedCommentSourceRow sourceRow;
     std::u16string oldComment;
     std::u16string newComment;
 
