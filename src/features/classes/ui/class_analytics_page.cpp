@@ -82,8 +82,10 @@ SpeakingAnalytics::Snapshot toUiSnapshot(
     snapshot.hasData = source.hasData;
     snapshot.classAverage3 = source.classAverage3.toDouble();
     snapshot.classAverageLetter = toQString(source.classAverageLetter);
-    snapshot.rosterStudentCount = static_cast<int>(source.rosterStudentCount);
-    snapshot.fullyScoredCount = static_cast<int>(source.fullyScoredCount);
+    snapshot.rosterStudentCount = static_cast<int>(
+        source.rosterStudentCount.rawValue());
+    snapshot.fullyScoredCount = static_cast<int>(
+        source.fullyScoredCount.rawValue());
     for (const auto& sourceSlice : source.criteria)
     {
         SpeakingAnalytics::CriterionSlice slice;

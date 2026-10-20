@@ -141,13 +141,63 @@ struct ClassAnalyticsStudentRank final
     bool fullyScored = false;
 };
 
+class ClassAnalyticsRosterRowCount final
+{
+public:
+    constexpr ClassAnalyticsRosterRowCount() noexcept = default;
+    explicit constexpr ClassAnalyticsRosterRowCount(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ClassAnalyticsRosterRowCount&,
+        const ClassAnalyticsRosterRowCount&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
+class ClassAnalyticsFullyScoredStudentCount final
+{
+public:
+    constexpr ClassAnalyticsFullyScoredStudentCount() noexcept = default;
+    explicit constexpr ClassAnalyticsFullyScoredStudentCount(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ClassAnalyticsFullyScoredStudentCount&,
+        const ClassAnalyticsFullyScoredStudentCount&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
+};
+
 struct ClassAnalyticsSnapshot final
 {
     bool hasData = false;
     ClassAnalyticsAverageThousandths classAverage3;
     std::optional<Domain::SpeakingEvaluationGrade> classAverageLetter;
-    std::size_t rosterStudentCount = 0;
-    std::size_t fullyScoredCount = 0;
+    ClassAnalyticsRosterRowCount rosterStudentCount;
+    ClassAnalyticsFullyScoredStudentCount fullyScoredCount;
     std::vector<ClassAnalyticsCriterionSlice> criteria;
     std::vector<std::u16string> strongestNames;
     std::vector<std::u16string> focusNames;
@@ -389,7 +439,7 @@ namespace ClassAnalyticsDashboardReadDetail
     }
 
     ClassAnalyticsSnapshot snapshot;
-    snapshot.rosterStudentCount = rosterCount;
+    snapshot.rosterStudentCount = ClassAnalyticsRosterRowCount{rosterCount};
     std::array<double, kClassAnalyticsCriterionCount> criterionSums{};
     std::array<int, kClassAnalyticsCriterionCount> criterionCounts{};
     std::array<int, kClassAnalyticsCriterionCount> criterionStudentCounts{};
@@ -443,7 +493,12 @@ namespace ClassAnalyticsDashboardReadDetail
         snapshot.overallLetters.push_back(rank.overallLetter);
         classSumThousandths += rank.overall3.thousandths();
         ++classCount;
-        if (fullyScored) ++snapshot.fullyScoredCount;
+        if (fullyScored)
+        {
+            snapshot.fullyScoredCount = ClassAnalyticsFullyScoredStudentCount{
+                snapshot.fullyScoredCount.rawValue() + 1
+            };
+        }
     }
 
     snapshot.hasData = classCount > 0;
@@ -515,7 +570,7 @@ yearToDatePoint(
     const ClassAnalyticsSnapshot& snapshot
     )
 {
-    if (snapshot.fullyScoredCount == 0) return std::nullopt;
+    if (snapshot.fullyScoredCount.rawValue() == 0) return std::nullopt;
     std::int64_t sumThousandths = 0;
     std::size_t count = 0;
     for (const ClassAnalyticsStudentRank& rank : snapshot.rankings)
@@ -615,7 +670,8 @@ public:
                  view != evaluations.rend();
                  ++view)
             {
-                if (view->filteredSnapshot.fullyScoredCount == 0) continue;
+                if (view->filteredSnapshot.fullyScoredCount.rawValue() == 0)
+                    continue;
                 dashboard.classShapeEvaluationName = std::u16string(
                     classAnalyticsEvaluationName(view->evaluation));
                 dashboard.classShapeSnapshot = view->filteredSnapshot;

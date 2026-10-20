@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <cctype>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -291,6 +292,43 @@ void criterionStudentCountValueSemantics()
     assert(value != Count(125));
 }
 
+void classAnalyticsCountValueSemantics()
+{
+    using RosterCount = ClassAnalyticsRosterRowCount;
+    using FullyScoredCount = ClassAnalyticsFullyScoredStudentCount;
+
+    static_assert(std::is_same_v<
+        decltype(ClassAnalyticsSnapshot::rosterStudentCount), RosterCount>);
+    static_assert(std::is_same_v<
+        decltype(ClassAnalyticsSnapshot::fullyScoredCount), FullyScoredCount>);
+    static_assert(std::is_constructible_v<RosterCount, std::size_t>);
+    static_assert(std::is_constructible_v<FullyScoredCount, std::size_t>);
+    static_assert(!std::is_convertible_v<std::size_t, RosterCount>);
+    static_assert(!std::is_convertible_v<std::size_t, FullyScoredCount>);
+    static_assert(!std::is_convertible_v<RosterCount, std::size_t>);
+    static_assert(!std::is_convertible_v<FullyScoredCount, std::size_t>);
+    static_assert(!std::is_convertible_v<RosterCount, FullyScoredCount>);
+    static_assert(!std::is_convertible_v<FullyScoredCount, RosterCount>);
+    static_assert(std::is_same_v<
+        decltype(RosterCount{}.rawValue()), std::size_t>);
+    static_assert(std::is_same_v<
+        decltype(FullyScoredCount{}.rawValue()), std::size_t>);
+
+    const RosterCount defaultRosterCount{};
+    const FullyScoredCount defaultFullyScoredCount{};
+    assert(defaultRosterCount.rawValue() == std::size_t{0});
+    assert(defaultFullyScoredCount.rawValue() == std::size_t{0});
+
+    const RosterCount rosterCount(std::size_t{17});
+    const FullyScoredCount fullyScoredCount(std::size_t{12});
+    assert(rosterCount.rawValue() == std::size_t{17});
+    assert(rosterCount == RosterCount(std::size_t{17}));
+    assert(rosterCount != RosterCount(std::size_t{18}));
+    assert(fullyScoredCount.rawValue() == std::size_t{12});
+    assert(fullyScoredCount == FullyScoredCount(std::size_t{12}));
+    assert(fullyScoredCount != FullyScoredCount(std::size_t{13}));
+}
+
 void evaluationSelectionDefaultsAndLegacyTextConversion()
 {
     const TestNameSemantics names;
@@ -348,7 +386,8 @@ void canonicalOrderLatestClassShapeAndYtd()
     assert(result.value().selectedSnapshot.rankings.front().overall3
         .thousandths() == 2615);
     assert(result.value().classShapeEvaluationName == u"Speech Contest");
-    assert(result.value().classShapeSnapshot.fullyScoredCount == 1);
+    assert(result.value().classShapeSnapshot.fullyScoredCount.rawValue()
+        == std::size_t{1});
     assert(result.value().yearToDatePoints.size() == 2);
     assert(result.value().yearToDatePoints[0].evaluationName == u"Winter");
     assert(result.value().yearToDatePoints[1].evaluationName == u"Speech Contest");
@@ -435,6 +474,33 @@ void currentRosterUsesNormalizedEnglishAndKoreanIdentities()
         .thousandths() > 3000);
 }
 
+void queryCountWrappersPreserveDistinctRosterAndScoredStudentMeanings()
+{
+    FakeReadPort port;
+    port.roster.rowCount = 5;
+    port.roster.hasEnglishColumn = true;
+    port.roster.englishNames = {
+        u"Alex", u"", u"Blair", u"", u""
+    };
+    port.evaluations[0] = {
+        row(u"Alex", u"", u"A"),
+        row(u"Alex", u"", u"B", false),
+        row(u"Blair", u"", u"B", false),
+        row(u"Former", u"", u"A")
+    };
+    const TestNameSemantics names;
+
+    const auto result = run(port, names,
+        ClassAnalyticsEvaluationSelection::exactName(u"Winter"));
+    assert(result);
+    const auto& selected = result.value().selectedSnapshot;
+    assert(selected.rosterStudentCount.rawValue() == std::size_t{5});
+    // Alex's six criteria are aggregated across duplicate rows. The two Alex
+    // rows count once, Blair is partial, and Former is outside the roster.
+    assert(selected.fullyScoredCount.rawValue() == std::size_t{1});
+    assert(selected.rankings.size() == 2);
+}
+
 void duplicateRowsConsolidateAndRankingTiesUseNamePort()
 {
     FakeReadPort port;
@@ -495,6 +561,10 @@ void emptyRosterLeavesEvaluationRowsUnfilteredAndPartialScoresDoNotMakeYtd()
     const auto result = run(port, names,
         ClassAnalyticsEvaluationSelection::exactName(u"Fall"));
     assert(result);
+    assert(result.value().selectedSnapshot.rosterStudentCount.rawValue()
+        == std::size_t{0});
+    assert(result.value().selectedSnapshot.fullyScoredCount.rawValue()
+        == std::size_t{0});
     assert(result.value().selectedSnapshot.rankings.size() == 1);
     assert(!result.value().selectedSnapshot.rankings.front().fullyScored);
     assert(result.value().yearToDatePoints.empty());
@@ -777,6 +847,7 @@ int main()
 {
     averageThousandthsValueSemantics();
     criterionStudentCountValueSemantics();
+    classAnalyticsCountValueSemantics();
     evaluationSelectionDefaultsAndLegacyTextConversion();
     numericPolicyBoundaries();
     partialScoringPreservesWeightedAveragesAndYtdInputs();
@@ -785,6 +856,7 @@ int main()
     canonicalOrderLatestClassShapeAndYtd();
     strongestAndFocusCriteriaPreserveOrderAndLabels();
     currentRosterUsesNormalizedEnglishAndKoreanIdentities();
+    queryCountWrappersPreserveDistinctRosterAndScoredStudentMeanings();
     duplicateRowsConsolidateAndRankingTiesUseNamePort();
     adjacentRoundedScoresRankBeforeNamePort();
     emptyRosterLeavesEvaluationRowsUnfilteredAndPartialScoresDoNotMakeYtd();
