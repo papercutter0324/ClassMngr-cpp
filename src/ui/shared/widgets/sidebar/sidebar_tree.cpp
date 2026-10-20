@@ -45,7 +45,7 @@ QList<TreeNodeSpec> documentChildren(
         }
 
         nodes.append({
-            folder.order,
+            static_cast<int>(folder.order.rawValue()),
             QString::fromUtf8(folder.id.value().c_str()),
             {
                 QString::fromUtf8(folder.key.c_str()),
@@ -64,7 +64,7 @@ QList<TreeNodeSpec> documentChildren(
         }
 
         nodes.append({
-            document.order,
+            static_cast<int>(document.order.rawValue()),
             QString::fromUtf8(document.id.value().c_str()),
             {
                 QString::fromUtf8(document.key.c_str()),

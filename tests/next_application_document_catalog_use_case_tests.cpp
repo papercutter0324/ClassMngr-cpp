@@ -37,18 +37,18 @@ namespace
     DocumentCatalogProjectionInput input;
     input.folders.push_back({
         folderId("folder-guides"),
-        "Guides",
+        DocumentCatalogPath("Guides"),
         "guides",
         "Guides",
-        0
+        DocumentFolderOrder(0)
     });
     input.documents.push_back({
         documentId("document-lesson"),
         input.folders.front().id,
-        "Guides/lesson.pdf",
+        DocumentCatalogPath("Guides/lesson.pdf"),
         "lesson",
         "Lesson",
-        0,
+        DocumentOrder(0),
         true,
         withExport,
         DocumentContentReference("resource://documents/lesson.pdf"),
@@ -92,7 +92,7 @@ void NextApplicationDocumentCatalogUseCaseTests::successfulLookupReturnsCopyable
     QVERIFY(result);
     QCOMPARE(result.value().id.value(), std::string("document-lesson"));
     QCOMPARE(result.value().folderId.value(), std::string("folder-guides"));
-    QCOMPARE(result.value().path, std::string("Guides/lesson.pdf"));
+    QCOMPARE(result.value().path.value(), std::string("Guides/lesson.pdf"));
     QCOMPARE(result.value().contentReference.value(),
         std::string("resource://documents/lesson.pdf"));
     QVERIFY(result.value().exportReference.has_value());

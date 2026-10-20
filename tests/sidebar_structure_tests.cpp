@@ -27,6 +27,10 @@ using DocumentCatalogProjectionInput =
     ClassMngr::Next::Application::DocumentCatalogProjectionInput;
 using DocumentCatalogPath =
     ClassMngr::Next::Application::DocumentCatalogPath;
+using DocumentFolderOrder =
+    ClassMngr::Next::Application::DocumentFolderOrder;
+using DocumentOrder =
+    ClassMngr::Next::Application::DocumentOrder;
 using DocumentContentReference =
     ClassMngr::Next::Domain::DocumentContentReference;
 
@@ -160,7 +164,7 @@ std::optional<DocumentCatalogProjection> projectionFromCatalog(
             folder.id.toUtf8().toStdString(),
             folder.sidebarNames.forLocale(localeName)
                 .toUtf8().toStdString(),
-            folder.order,
+            DocumentFolderOrder(folder.order),
             DocumentCatalogPath(folder.parentPath.toUtf8().toStdString())
         });
     }
@@ -222,7 +226,7 @@ std::optional<DocumentCatalogProjection> projectionFromCatalog(
             document.id.toUtf8().toStdString(),
             document.sidebarNames.forLocale(localeName)
                 .toUtf8().toStdString(),
-            document.order,
+            DocumentOrder(document.order),
             document.printingEnabled,
             exportable,
             DocumentContentReference(
@@ -280,7 +284,7 @@ std::optional<DocumentCatalogProjection> recursiveExpansionProjection(
             DocumentCatalogPath("synthetic/root"),
             "document_test_root",
             korean ? "깊은 폴더" : "Deep Folder",
-            0,
+            DocumentFolderOrder(0),
             DocumentCatalogPath()
         },
         {
@@ -288,7 +292,7 @@ std::optional<DocumentCatalogProjection> recursiveExpansionProjection(
             DocumentCatalogPath("synthetic/root/nested"),
             "document_test_nested",
             korean ? "중첩 폴더" : "Nested Folder",
-            0,
+            DocumentFolderOrder(0),
             DocumentCatalogPath("synthetic/root")
         },
         {
@@ -296,7 +300,7 @@ std::optional<DocumentCatalogProjection> recursiveExpansionProjection(
             DocumentCatalogPath("synthetic/root/sibling"),
             "document_test_sibling",
             korean ? "접힌 형제 폴더" : "Collapsed Sibling",
-            1,
+            DocumentFolderOrder(1),
             DocumentCatalogPath("synthetic/root")
         }
     };
@@ -307,7 +311,7 @@ std::optional<DocumentCatalogProjection> recursiveExpansionProjection(
             DocumentCatalogPath("synthetic/nested.pdf"),
             "document_test_nested_leaf",
             korean ? "중첩 문서" : "Nested Document",
-            0,
+            DocumentOrder(0),
             true,
             false,
             DocumentContentReference(
@@ -321,7 +325,7 @@ std::optional<DocumentCatalogProjection> recursiveExpansionProjection(
             DocumentCatalogPath("synthetic/sibling.pdf"),
             "document_test_sibling_leaf",
             korean ? "형제 문서" : "Sibling Document",
-            0,
+            DocumentOrder(0),
             true,
             false,
             DocumentContentReference(
@@ -351,6 +355,7 @@ private slots:
     void topLevelOrderAndSubPrepStructure();
     void defaultWidthAccommodatesLongestTopLevelLabel();
     void documentCatalogBuildsLocalizedTree();
+    void documentSiblingsSortByOrderThenIdentifier();
     void recursiveExpandedKeyPathsSurviveLocalizedCatalogRebuild();
 };
 
@@ -709,6 +714,132 @@ void SidebarStructureTests::documentCatalogBuildsLocalizedTree()
     QVERIFY(emptyTree);
     QCOMPARE(emptyTree->topLevelItemCount(), 7);
     QVERIFY(!topLevelWithKey(emptyTree, QStringLiteral("document")));
+}
+
+void SidebarStructureTests::documentSiblingsSortByOrderThenIdentifier()
+{
+    using ClassMngr::Next::Domain::DocumentFolderId;
+    using ClassMngr::Next::Domain::DocumentId;
+
+    const auto folderId = DocumentFolderId::fromString(
+        "document_sort_folder"
+        );
+    const auto zuluDocumentId = DocumentId::fromString(
+        "document_sort_zulu"
+        );
+    const auto alphaDocumentId = DocumentId::fromString(
+        "document_sort_alpha"
+        );
+    const auto earlyDocumentId = DocumentId::fromString(
+        "document_sort_early"
+        );
+    QVERIFY(folderId);
+    QVERIFY(zuluDocumentId);
+    QVERIFY(alphaDocumentId);
+    QVERIFY(earlyDocumentId);
+
+    DocumentCatalogProjectionInput input;
+    input.folders.push_back({
+        *folderId,
+        DocumentCatalogPath("synthetic/order-sort"),
+        "document_sort_folder",
+        "Order Sort",
+        DocumentFolderOrder(0),
+        DocumentCatalogPath()
+    });
+    input.documents = {
+        {
+            *zuluDocumentId,
+            *folderId,
+            DocumentCatalogPath("synthetic/order-sort/zulu.pdf"),
+            "document_key_alpha",
+            "Alpha display for zulu ID",
+            DocumentOrder(2),
+            false,
+            false,
+            DocumentContentReference(
+                "resource://documents/synthetic/order-sort/zulu.pdf"
+                ),
+            std::nullopt
+        },
+        {
+            *alphaDocumentId,
+            *folderId,
+            DocumentCatalogPath("synthetic/order-sort/alpha.pdf"),
+            "document_key_zulu",
+            "Zulu display for alpha ID",
+            DocumentOrder(2),
+            false,
+            false,
+            DocumentContentReference(
+                "resource://documents/synthetic/order-sort/alpha.pdf"
+                ),
+            std::nullopt
+        },
+        {
+            *earlyDocumentId,
+            *folderId,
+            DocumentCatalogPath("synthetic/order-sort/early.pdf"),
+            "document_key_early",
+            "Earlier order",
+            DocumentOrder(1),
+            false,
+            false,
+            DocumentContentReference(
+                "resource://documents/synthetic/order-sort/early.pdf"
+                ),
+            std::nullopt
+        }
+    };
+
+    const auto projection = DocumentCatalogProjection::create(std::move(input));
+    QVERIFY(projection);
+
+    // The projection retains adapter sequence even when order ranks differ.
+    const auto& projectedDocuments = projection.value().documents();
+    QCOMPARE(projectedDocuments[0].id.value(),
+             std::string("document_sort_zulu"));
+    QCOMPARE(projectedDocuments[1].id.value(),
+             std::string("document_sort_alpha"));
+    QCOMPARE(projectedDocuments[2].id.value(),
+             std::string("document_sort_early"));
+
+    Sidebar sidebar;
+    sidebar.setDocumentCatalog(
+        projection.value(),
+        QStringLiteral("en_US")
+        );
+    sidebar.rebuildTree();
+
+    auto* tree = sidebar.findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+    QTreeWidgetItem* documents = topLevelWithKey(
+        tree,
+        QStringLiteral("document")
+        );
+    QVERIFY(documents);
+    QTreeWidgetItem* folder = childWithKey(
+        documents,
+        QStringLiteral("document_sort_folder")
+        );
+    QVERIFY(folder);
+    QCOMPARE(folder->childCount(), 3);
+
+    // Display order is rank first, then document ID for equal ranks. The
+    // deliberately opposite keys show that the tie-break is not by key.
+    QCOMPARE(folder->child(0)->text(0), QStringLiteral("Earlier order"));
+    QCOMPARE(folder->child(1)->text(0), QStringLiteral("Zulu display for alpha ID"));
+    QCOMPARE(folder->child(2)->text(0), QStringLiteral("Alpha display for zulu ID"));
+    QCOMPARE(
+        folder->child(1)->data(0, KeyRole).toString(),
+        QStringLiteral("document_key_zulu")
+        );
+    QCOMPARE(
+        folder->child(2)->data(0, KeyRole).toString(),
+        QStringLiteral("document_key_alpha")
+        );
 }
 
 void SidebarStructureTests::recursiveExpandedKeyPathsSurviveLocalizedCatalogRebuild()

@@ -85,9 +85,19 @@ projectsEmbeddedCatalogAsBoundedLocalizedMetadata()
         QCOMPARE(utf8(projected->key), source.id);
         QCOMPARE(utf8(projected->displayName),
                  source.sidebarNames.forLocale(QStringLiteral("ko_KR")));
-        QCOMPARE(projected->order, source.order);
+        QCOMPARE(projected->order.rawValue(), source.order);
         QVERIFY(projected->id.value().size()
                 <= Application::kDocumentCatalogMaxIdentifierLength);
+    }
+
+    for (qsizetype index = 0; index < legacy->folders().size(); ++index)
+    {
+        const auto& source = legacy->folders().at(index);
+        const auto& projected = projection.folders().at(
+            static_cast<std::size_t>(index)
+            );
+        QCOMPARE(utf8(projected.id.value()), source.id);
+        QCOMPARE(projected.order.rawValue(), source.order);
     }
 }
 
@@ -131,6 +141,7 @@ preservesDocumentFlagsAndOptionalExportReferences()
         QCOMPARE(utf8(projected->key), source.id);
         QCOMPARE(utf8(projected->displayName),
                  source.sidebarNames.forLocale(QStringLiteral("en_US")));
+        QCOMPARE(projected->order.rawValue(), source.order);
         QCOMPARE(projected->printable, source.printingEnabled);
 
         const bool expectedExportable =
@@ -152,6 +163,16 @@ preservesDocumentFlagsAndOptionalExportReferences()
                     + relativePath(*source.exportFile)
                 );
         }
+    }
+
+    for (qsizetype index = 0; index < legacy->documents().size(); ++index)
+    {
+        const auto& source = legacy->documents().at(index);
+        const auto& projected = result.value().documents().at(
+            static_cast<std::size_t>(index)
+            );
+        QCOMPARE(utf8(projected.id.value()), source.id);
+        QCOMPARE(projected.order.rawValue(), source.order);
     }
 }
 

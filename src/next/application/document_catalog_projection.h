@@ -32,6 +32,58 @@ inline constexpr std::size_t kDocumentCatalogMaxReferenceLength =
 inline constexpr std::size_t kDocumentCatalogMaxFolderEntries = 4'096;
 inline constexpr std::size_t kDocumentCatalogMaxDocumentEntries = 4'096;
 
+class DocumentFolderOrder final
+{
+public:
+    constexpr DocumentFolderOrder() noexcept = default;
+
+    explicit constexpr DocumentFolderOrder(
+        const std::int32_t rawValue
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::int32_t rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const DocumentFolderOrder&,
+        const DocumentFolderOrder&
+        ) noexcept = default;
+
+private:
+    std::int32_t m_rawValue = 0;
+};
+
+class DocumentOrder final
+{
+public:
+    constexpr DocumentOrder() noexcept = default;
+
+    explicit constexpr DocumentOrder(
+        const std::int32_t rawValue
+        ) noexcept
+        : m_rawValue(rawValue)
+    {
+    }
+
+    [[nodiscard]] constexpr std::int32_t rawValue() const noexcept
+    {
+        return m_rawValue;
+    }
+
+    friend constexpr bool operator==(
+        const DocumentOrder&,
+        const DocumentOrder&
+        ) noexcept = default;
+
+private:
+    std::int32_t m_rawValue = 0;
+};
+
 // Catalog paths preserve their adapter-provided bytes. The projection owns
 // path validation; constructing this value does not validate or normalize it.
 class DocumentCatalogPath final
@@ -67,7 +119,7 @@ struct DocumentFolderMetadata final
     DocumentCatalogPath path;
     std::string key;
     std::string displayName;
-    std::int32_t order = 0;
+    DocumentFolderOrder order;
     // Empty for a root folder; non-root folders carry their bounded parent
     // path. Appended to preserve existing aggregate construction.
     DocumentCatalogPath parentPath;
@@ -90,7 +142,7 @@ struct DocumentEntryMetadata final
     DocumentCatalogPath path;
     std::string key;
     std::string displayName;
-    std::int32_t order = 0;
+    DocumentOrder order;
     bool printable = false;
     bool exportable = false;
     Domain::DocumentContentReference contentReference;
@@ -234,7 +286,7 @@ template <typename TypedId>
             );
     }
 
-    if (folder.order < 0)
+    if (folder.order.rawValue() < 0)
     {
         return Domain::Result<void>::failure(
             invalidInput("Document folder order must not be negative.")
@@ -293,7 +345,7 @@ template <typename TypedId>
             );
     }
 
-    if (document.order < 0)
+    if (document.order.rawValue() < 0)
     {
         return Domain::Result<void>::failure(
             invalidInput("Document order must not be negative.")

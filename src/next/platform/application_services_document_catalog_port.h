@@ -123,7 +123,7 @@ public:
                     Application::DocumentCatalogPath(*path),
                     *key,
                     *displayName,
-                    folder.order,
+                    Application::DocumentFolderOrder(folder.order),
                     Application::DocumentCatalogPath(*parentPath)
                 });
             }
@@ -218,7 +218,7 @@ public:
                     Application::DocumentCatalogPath(*path),
                     *key,
                     *displayName,
-                    document.order,
+                    Application::DocumentOrder(document.order),
                     document.printingEnabled,
                     exportable,
                     Domain::DocumentContentReference(*contentReference),

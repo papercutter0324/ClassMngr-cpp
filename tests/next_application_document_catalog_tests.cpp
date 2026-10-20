@@ -25,6 +25,23 @@ static_assert(std::is_same_v<
     decltype(DocumentEntryMetadata::path),
     DocumentCatalogPath
     >);
+static_assert(std::is_same_v<
+    decltype(DocumentFolderMetadata::order),
+    DocumentFolderOrder
+    >);
+static_assert(std::is_same_v<
+    decltype(DocumentEntryMetadata::order),
+    DocumentOrder
+    >);
+static_assert(!std::is_same_v<DocumentFolderOrder, DocumentOrder>);
+static_assert(std::is_constructible_v<DocumentFolderOrder, std::int32_t>);
+static_assert(std::is_constructible_v<DocumentOrder, std::int32_t>);
+static_assert(!std::is_convertible_v<int, DocumentFolderOrder>);
+static_assert(!std::is_convertible_v<int, DocumentOrder>);
+static_assert(!std::is_convertible_v<std::int32_t, DocumentFolderOrder>);
+static_assert(!std::is_convertible_v<std::int32_t, DocumentOrder>);
+static_assert(!std::is_convertible_v<DocumentFolderOrder, DocumentOrder>);
+static_assert(!std::is_convertible_v<DocumentOrder, DocumentFolderOrder>);
 
 namespace
 {
@@ -51,7 +68,7 @@ DocumentCatalogProjectionInput validInput()
         DocumentCatalogPath("Guides"),
         "guides",
         "Guides",
-        10
+        DocumentFolderOrder(10)
     });
     input.documents.push_back({
         documentId("document-lesson-planning"),
@@ -59,7 +76,7 @@ DocumentCatalogProjectionInput validInput()
         DocumentCatalogPath("Guides/lesson-planning.pdf"),
         "lesson-planning",
         "Lesson Planning",
-        20,
+        DocumentOrder(20),
         true,
         false,
         DocumentContentReference("resource://documents/lesson-planning.pdf"),
@@ -95,6 +112,8 @@ class NextApplicationDocumentCatalogTests final : public QObject
 
 private slots:
     void validConstructionPreservesMetadataAndOrdering();
+    void orderTypesRemainDistinctAndDefaultToZero();
+    void projectionPreservesInputSequenceIndependentOfOrderRanks();
     void completeMetadataIsPreserved();
     void typedFolderAndDocumentCategoriesRemainDistinct();
     void boundedValidationAndDuplicateIdsAreRejected();
@@ -124,7 +143,7 @@ void NextApplicationDocumentCatalogTests::validConstructionPreservesMetadataAndO
     QCOMPARE(projection.folders().front().parentPath.value(), std::string());
     QCOMPARE(projection.folders().front().key, std::string("guides"));
     QCOMPARE(projection.folders().front().displayName, std::string("Guides"));
-    QCOMPARE(projection.folders().front().order, std::int32_t(10));
+    QCOMPARE(projection.folders().front().order.rawValue(), std::int32_t(10));
 
     const auto& document = projection.documents().front();
     QCOMPARE(document.id.value(), std::string("document-lesson-planning"));
@@ -132,7 +151,7 @@ void NextApplicationDocumentCatalogTests::validConstructionPreservesMetadataAndO
     QCOMPARE(document.path.value(), std::string("Guides/lesson-planning.pdf"));
     QCOMPARE(document.key, std::string("lesson-planning"));
     QCOMPARE(document.displayName, std::string("Lesson Planning"));
-    QCOMPARE(document.order, std::int32_t(20));
+    QCOMPARE(document.order.rawValue(), std::int32_t(20));
     QVERIFY(document.printable);
     QVERIFY(!document.exportable);
     QCOMPARE(
@@ -141,6 +160,116 @@ void NextApplicationDocumentCatalogTests::validConstructionPreservesMetadataAndO
         );
     QVERIFY(!document.exportReference.has_value());
     QVERIFY(projection.entries() == projection.documents());
+}
+
+void NextApplicationDocumentCatalogTests::orderTypesRemainDistinctAndDefaultToZero()
+{
+    const DocumentFolderMetadata folder{
+        folderId("folder-default-order"),
+        DocumentCatalogPath("Default"),
+        "default",
+        "Default"
+    };
+    const DocumentEntryMetadata document{
+        .id = documentId("document-default-order"),
+        .folderId = folderId("folder-default-order"),
+        .path = DocumentCatalogPath("Default/document.pdf"),
+        .key = "default",
+        .displayName = "Default",
+        .printable = true,
+        .contentReference = DocumentContentReference(
+            "resource://documents/Default/document.pdf"
+            )
+    };
+    const DocumentFolderOrder folderOrder(std::int32_t(7));
+    const DocumentOrder documentOrder(std::int32_t(7));
+
+    QCOMPARE(folder.order.rawValue(), std::int32_t(0));
+    QCOMPARE(document.order.rawValue(), std::int32_t(0));
+    QCOMPARE(folderOrder.rawValue(), std::int32_t(7));
+    QCOMPARE(documentOrder.rawValue(), std::int32_t(7));
+    QVERIFY(folderOrder == DocumentFolderOrder(std::int32_t(7)));
+    QVERIFY(documentOrder == DocumentOrder(std::int32_t(7)));
+}
+
+void NextApplicationDocumentCatalogTests::
+projectionPreservesInputSequenceIndependentOfOrderRanks()
+{
+    auto input = validInput();
+    input.folders.front().id = folderId("folder-zulu");
+    input.folders.front().path = DocumentCatalogPath("Zulu");
+    input.folders.front().key = "zulu";
+    input.folders.front().displayName = "Zulu";
+    input.folders.front().order = DocumentFolderOrder(20);
+    input.documents.front().folderId = input.folders.front().id;
+    input.documents.front().id = documentId("document-zulu");
+    input.documents.front().path = DocumentCatalogPath("Zulu/zulu.pdf");
+    input.documents.front().key = "zulu";
+    input.documents.front().displayName = "Zulu";
+    input.documents.front().order = DocumentOrder(10);
+    input.documents.front().contentReference = DocumentContentReference(
+        "resource://documents/Zulu/zulu.pdf"
+        );
+
+    input.folders.push_back({
+        folderId("folder-alpha"),
+        DocumentCatalogPath("Alpha"),
+        "alpha",
+        "Alpha",
+        DocumentFolderOrder(0)
+    });
+    input.folders.push_back({
+        folderId("folder-mike"),
+        DocumentCatalogPath("Mike"),
+        "mike",
+        "Mike",
+        DocumentFolderOrder(10)
+    });
+    input.documents.push_back({
+        documentId("document-alpha"),
+        input.folders[1].id,
+        DocumentCatalogPath("Alpha/alpha.pdf"),
+        "alpha",
+        "Alpha",
+        DocumentOrder(0),
+        false,
+        false,
+        DocumentContentReference("resource://documents/Alpha/alpha.pdf"),
+        std::nullopt
+    });
+    input.documents.push_back({
+        documentId("document-mike"),
+        input.folders[2].id,
+        DocumentCatalogPath("Mike/mike.pdf"),
+        "mike",
+        "Mike",
+        DocumentOrder(5),
+        true,
+        false,
+        DocumentContentReference("resource://documents/Mike/mike.pdf"),
+        std::nullopt
+    });
+
+    const auto result = DocumentCatalogProjection::create(std::move(input));
+    QVERIFY(result);
+    QCOMPARE(result.value().folders().size(), std::size_t(3));
+    QCOMPARE(result.value().documents().size(), std::size_t(3));
+
+    const auto& folders = result.value().folders();
+    QCOMPARE(folders[0].id.value(), std::string("folder-zulu"));
+    QCOMPARE(folders[1].id.value(), std::string("folder-alpha"));
+    QCOMPARE(folders[2].id.value(), std::string("folder-mike"));
+    QCOMPARE(folders[0].order.rawValue(), std::int32_t(20));
+    QCOMPARE(folders[1].order.rawValue(), std::int32_t(0));
+    QCOMPARE(folders[2].order.rawValue(), std::int32_t(10));
+
+    const auto& documents = result.value().documents();
+    QCOMPARE(documents[0].id.value(), std::string("document-zulu"));
+    QCOMPARE(documents[1].id.value(), std::string("document-alpha"));
+    QCOMPARE(documents[2].id.value(), std::string("document-mike"));
+    QCOMPARE(documents[0].order.rawValue(), std::int32_t(10));
+    QCOMPARE(documents[1].order.rawValue(), std::int32_t(0));
+    QCOMPARE(documents[2].order.rawValue(), std::int32_t(5));
 }
 
 void NextApplicationDocumentCatalogTests::completeMetadataIsPreserved()
@@ -152,7 +281,7 @@ void NextApplicationDocumentCatalogTests::completeMetadataIsPreserved()
     folder.parentPath = DocumentCatalogPath("Catalog");
     folder.key = "curriculum";
     folder.displayName = "Curriculum";
-    folder.order = 42;
+    folder.order = DocumentFolderOrder(42);
     const auto curriculumFolderId = folder.id;
 
     auto parent = folder;
@@ -169,7 +298,7 @@ void NextApplicationDocumentCatalogTests::completeMetadataIsPreserved()
     document.path = DocumentCatalogPath("Catalog/Curriculum/guide.pdf");
     document.key = "curriculum-guide";
     document.displayName = "Curriculum Guide";
-    document.order = 7;
+    document.order = DocumentOrder(7);
     document.printable = false;
     document.exportable = true;
     document.contentReference = DocumentContentReference(
@@ -188,7 +317,7 @@ void NextApplicationDocumentCatalogTests::completeMetadataIsPreserved()
     QCOMPARE(projectedFolder.parentPath.value(), std::string("Catalog"));
     QCOMPARE(projectedFolder.key, std::string("curriculum"));
     QCOMPARE(projectedFolder.displayName, std::string("Curriculum"));
-    QCOMPARE(projectedFolder.order, std::int32_t(42));
+    QCOMPARE(projectedFolder.order.rawValue(), std::int32_t(42));
 
     const auto& projectedDocument = result.value().documents().front();
     QCOMPARE(
@@ -208,7 +337,7 @@ void NextApplicationDocumentCatalogTests::completeMetadataIsPreserved()
         projectedDocument.displayName,
         std::string("Curriculum Guide")
         );
-    QCOMPARE(projectedDocument.order, std::int32_t(7));
+    QCOMPARE(projectedDocument.order.rawValue(), std::int32_t(7));
     QVERIFY(!projectedDocument.printable);
     QVERIFY(projectedDocument.exportable);
     QCOMPARE(
@@ -375,7 +504,7 @@ void NextApplicationDocumentCatalogTests::boundedValidationAndDuplicateIdsAreRej
                 DocumentCatalogPath("folder-path-" + suffix),
                 "folder-key-" + suffix,
                 "Folder " + suffix,
-                static_cast<std::int32_t>(index)
+                DocumentFolderOrder(static_cast<std::int32_t>(index))
             });
         }
         verifyInvalid(DocumentCatalogProjection::create(std::move(input)));
@@ -406,7 +535,7 @@ void NextApplicationDocumentCatalogTests::folderPathsMustBeUniqueAndHierarchyMus
             DocumentCatalogPath("Section"),
             "section",
             "Section",
-            11
+            DocumentFolderOrder(11)
         });
         input.folders.back().parentPath = DocumentCatalogPath("Guides");
         verifyInvalid(DocumentCatalogProjection::create(std::move(input)));
@@ -691,7 +820,7 @@ void NextApplicationDocumentCatalogTests::documentCollectionOverflowIsRejected()
             DocumentCatalogPath("Guides/document-" + suffix + ".pdf"),
             "document-" + suffix,
             "Document " + suffix,
-            static_cast<std::int32_t>(index),
+            DocumentOrder(static_cast<std::int32_t>(index)),
             index % 2 == 0,
             false,
             DocumentContentReference(
@@ -708,14 +837,20 @@ void NextApplicationDocumentCatalogTests::negativeOrdersAreRejected()
 {
     {
         auto input = validInput();
-        input.folders.front().order = -1;
-        verifyInvalid(DocumentCatalogProjection::create(std::move(input)));
+        input.folders.front().order = DocumentFolderOrder(-1);
+        verifyInvalidWithMessage(
+            DocumentCatalogProjection::create(std::move(input)),
+            "Document folder order must not be negative."
+            );
     }
 
     {
         auto input = validInput();
-        input.documents.front().order = -1;
-        verifyInvalid(DocumentCatalogProjection::create(std::move(input)));
+        input.documents.front().order = DocumentOrder(-1);
+        verifyInvalidWithMessage(
+            DocumentCatalogProjection::create(std::move(input)),
+            "Document order must not be negative."
+            );
     }
 }
 
