@@ -224,7 +224,9 @@ ClassMngr::Next::Application::CalendarEventProjection injectedProjection(
         {},
         0,
         false,
-        "Meeting",
+        ClassMngr::Next::Application::CalendarEventTypeName(
+            std::string("Meeting")
+            ),
         ClassMngr::Next::Domain::CalendarEventTimeStatus::Timed,
         *ClassMngr::Next::Domain::CalendarEventSeriesId::fromString(
             "series-injected"
@@ -695,7 +697,9 @@ void CalendarEventCacheTests::injectedInvalidTimesAreFilteredByCacheAndModel()
             {},
             order,
             false,
-            "Meeting",
+            ClassMngr::Next::Application::CalendarEventTypeName(
+                std::string("Meeting")
+                ),
             ClassMngr::Next::Domain::CalendarEventTimeStatus::Timed,
             std::nullopt
         };
@@ -839,7 +843,7 @@ void CalendarEventCacheTests::projectionMappingPreservesRichCalendarFieldsAndCle
         QStringLiteral("Repeat unknown-time")
         );
     QVERIFY(repeat);
-    QCOMPARE(repeat->eventType, std::string("Holiday"));
+    QCOMPARE(repeat->eventType.value(), std::string("Holiday"));
     QCOMPARE(
         repeat->timeStatus,
         ClassMngr::Next::Domain::CalendarEventTimeStatus::Unknown
@@ -1540,7 +1544,7 @@ void CalendarEventCacheTests::typedRangeProjectionPreservesOrderingMetadataAndLe
 
     const auto& allDay = projection.events().at(0);
     QVERIFY(allDay.allDay);
-    QCOMPARE(allDay.eventType, std::string("Vacation"));
+    QCOMPARE(allDay.eventType.value(), std::string("Vacation"));
     QCOMPARE(
         allDay.repeatSeriesId,
         std::optional<ClassMngr::Next::Domain::CalendarEventSeriesId>(
@@ -1627,7 +1631,7 @@ void CalendarEventCacheTests::typedRangeProjectionPreservesOrderingMetadataAndLe
             );
         const CalendarEvent& legacy = legacyEvents.at(index);
         QCOMPARE(legacy.title, projectionText(summary.title));
-        QCOMPARE(legacy.eventType, projectionText(summary.eventType));
+        QCOMPARE(legacy.eventType, projectionText(summary.eventType.value()));
         QCOMPARE(legacy.timeStatus, projectionTimeStatusText(summary.timeStatus));
         QCOMPARE(legacy.startDate, QDate::fromString(
             projectionText(summary.startDate),
