@@ -57593,3 +57593,36 @@ were not run.
 Batch499 remains active with F1237–F1241 complete. F1242 is next for
 acceptance; Batch500 remains discovered and queued with ten candidates until
 Batch499 closes.
+
+### F1242 Schedule View order and slot keys accepted before implementation - 2026-10-21
+
+F1242 is accepted as the final Batch499 slice. Introduce three distinct,
+Qt-free Application values: `ScheduleViewRowOrder`,
+`ScheduleViewCellOrder`, and `ScheduleViewSlotKey`. Each is backed by exactly
+`std::int32_t`, defaults to zero, has explicit construction, `.rawValue()`,
+equality, and no implicit conversions. Constructors impose no range policy.
+Use these types for the corresponding projection fields and lookup
+parameters; do not reuse `ClassTabNavigationOrderRank`, which has a different
+meaning and default sentinel.
+
+Preserve validation at the existing boundary: all three values must be
+nonnegative; row orders are globally unique, while cell orders and slot keys
+are each unique within a row and may be reused across rows. Day remains a raw
+nonnegative `std::int32_t` with no uniqueness rule. Projection retains input
+vector order without sorting. Lookups remain value-copy queries by row order,
+by row plus cell order, and by row plus slot key.
+
+Add type/no-implicit-conversion assertions, cross-row key reuse coverage, and
+independent-key lookup checks showing both `findCell(10, 7)` and
+`findCellBySlot(10, 3)` retrieve the expected cell even when its other key is
+different. Retain existing negative, duplicate, missing-key, and order
+preservation assertions. Build `ClassMngr` plus
+`ClassMngrNextApplicationScheduleViewTests`, then run that focused CTest.
+Independent review found no non-test production use of the projection's
+numeric row/cell fields or numeric slot; this acceptance covers the
+standalone Application contract and does not claim legacy Schedule UI
+integration. At acceptance, implementation, build, and tests had not started.
+
+Batch499 remains active and unpushed with F1237–F1241 complete and F1242
+accepted awaiting implementation. Batch500 remains discovered and inactive
+with F1243–F1252 queued until Batch499 closes and is pushed.

@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch499 is active with F1241 complete and F1242 next for acceptance; Batch500 remains queued with 10 discovered candidates, and F629 plus the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch499 is active with F1241 complete and F1242 accepted awaiting implementation; Batch500 remains queued with 10 discovered candidates, and F629 plus the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1241 completed with strict `CalendarEventClockTime` parsing and typed clock comparison while retaining raw request text and existing validation rules (see [F1241 verification](03-Phase-2-Progress-Log.md#f1241-calendar-event-clock-values-complete-2026-10-21)). Batch499 remains active; F1242 is next for acceptance, and Batch500 remains queued with 10 candidates until Batch499 closes. F629 and the Phase 0 and Phase 2 gates remain open.
+F1242 is accepted for the standalone Schedule View Application contract: use distinct explicit values for row order, cell order, and slot key while preserving validation scopes, input order, and value-copy lookup behavior (see [F1242 acceptance](03-Phase-2-Progress-Log.md#f1242-schedule-view-order-and-slot-keys-accepted-before-implementation-2026-10-21)). Batch499 remains active and unpushed; Batch500 stays queued with 10 candidates until Batch499 closes and is pushed. F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,14 +72,14 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch499 (6 candidates; 5 complete, 0 accepted, 1 discovered)
+#### Active batch: Batch499 (6 candidates; 5 complete, 1 accepted, 0 discovered)
 
 1. F1237 - **Complete.** Type `ClassAnalyticsRosterNames::rowCount` with the existing `ClassAnalyticsRosterRowCount`; preserve physical sparse-row counts, vector sizing, and unfiltered empty-name query behavior.
 2. F1238 - **Complete.** Type `GregorianDate::weekday()` as `Domain::IsoWeekday`; explicitly map it to zero-based `Domain::Weekday` at the calendar recurrence boundary.
 3. F1239 - **Complete.** Type Class Transfer weekly weekday candidates with `Domain::Weekday`; preserve invalid-day rejection, half-open overlap, Sunday overnight wrapping, and repository preflight behavior.
 4. F1240 - **Complete.** Type Speaking Evaluation text-match start and length as explicit UTF-16 code-unit values; preserve matching and extraction behavior.
 5. F1241 - **Complete.** Add strict `Domain::CalendarEventClockTime` parsing, formatting, and comparison while preserving `CalendarEventTiming` validation and date rules.
-6. F1242 - **Discovered.** Distinguish Schedule View row order, cell order, and slot keys; preserve validation scopes and lookup behavior.
+6. F1242 - **Accepted; awaiting implementation.** Use distinct explicit Application values for Schedule View row order, cell order, and slot key; preserve validation scopes, input order, and lookup behavior.
 
 F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
