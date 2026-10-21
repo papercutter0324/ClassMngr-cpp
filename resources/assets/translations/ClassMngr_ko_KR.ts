@@ -8962,6 +8962,17 @@ Version: %2</source>
         <source>Save Changes</source>
         <translation>변경 사항 저장</translation>
     </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1022"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1942"/>
+        <source>Teacher information save status</source>
+        <translation>교사 정보 저장 상태</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1532"/>
+        <source>Your changes were saved, but the latest teacher information could not be reloaded. Navigate away and reopen this teacher before editing or saving again.</source>
+        <translation>변경 사항은 저장되었지만 최신 교사 정보를 다시 불러오지 못했습니다. 편집하거나 다시 저장하기 전에 다른 화면으로 이동한 후 이 교사를 다시 여세요.</translation>
+    </message>
 </context>
 <context>
     <name>TeacherInfoSection</name>
