@@ -53,29 +53,31 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-22
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Current and upcoming batch status is maintained in the
-  [Phase 2 slice-batch register](03-Phase-2-Slice-Batches.md). Gate 1 and Gate 2
-  remain Partial, and the Phase 2 exit gate remains Open.
+- Current note: Batch541 is complete locally at F1314 and awaits push; F1315 is
+  accepted and queued in Batch542. Current and upcoming detail is maintained in
+  the [Phase 2 slice-batch register](03-Phase-2-Slice-Batches.md). Gate 1 and
+  Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1312 (`6d2db847`) routes the Qt case-insensitive Class Details comparator
-through the Qt-free Application policy/workflow; an app-less regression covers
-U+017F long-s canonicalization. The Executor build and 53 focused QtTests
-passed; the independent Tester passed all three focused targets in macOS
-universal Debug/offscreen verification. Batch539 closeout `a493b68f` was pushed
-to `origin/Qt-Rewrite`, advancing it from `cc4e1f63`; the range contained F1312
-and closeout docs. Batch540's proposed F1313 Skip-target parity issue was a
-false positive: the pinned legacy apply chain runs `ScheduleImportStateValidator`
-and rejects the mismatched-teacher Skip just like current v2. F1313 was never
-implemented; no candidate is queued from Batch540. User scope keeps current
-schema v6 workspace opening supported, drops support for existing schemas
-below v6, and offers no migration. F1314's rejection of schemas below v6 is in
-progress in Batch541; behavior is not yet verified or shipped. Gate 1 and Gate 2
-remain Partial; the exit gate remains Open pending cumulative audit, and
-F629's Windows x64 evidence remains outstanding separately. Gate 2 audit also
-records the intentional Class Transfer identity-free package exception to
-baseline; see the progress log. Exact parity is not claimed for that input.
+F1314 (`5738d486`) completes the schema-open policy: `ensureSchema` defaults to
+existing-only, explicit `createSchema` initializes new databases, and existing
+schemas 0–5 reject before mutation, migration, or backup; schema v6 remains
+openable and future-version rejection is retained. Tester focused checks passed
+across 11 affected targets (90 QtTest cases); Executor reported 450 focused
+passes. The initial Sub Prep attempt needed an offscreen retry. No full suite
+ran; see the progress log for exact target and selector scope. Batch541 is
+complete locally and awaits push.
+
+Schema v6 remains the only supported open version; migration for schemas below
+v6 is not offered. Batch540's F1313 proposal was a false positive, withdrawn
+after full legacy-chain review; no candidate is queued. Batch542 discovery found
+no other ready candidate; F1315, Calendar Import 4,097-event save parity, is
+accepted and queued, pending implementation and focused verification. Gate 1
+and Gate 2 remain Partial; the exit gate remains Open pending cumulative audit.
+Gate 2 retains a documented Class Transfer identity-free package exception;
+exact parity is not claimed for that input. F629's Windows x64 evidence remains
+outstanding separately.
 
 ### Slice batches
 

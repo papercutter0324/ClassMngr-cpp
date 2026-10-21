@@ -63741,3 +63741,64 @@ correction commit `542aedac`, the Phase 2 extraction/F617, and current
 `ClassTransferPackageValidator` tests. Preserve it as a documented Gate 2
 exception; do not claim exact parity for this input. This records the audit
 interpretation and does not describe a new behavior change.
+
+### Batch542 discovery complete; F1315 accepted per user selection - 2026-10-22
+
+Both contract and feature discovery lanes found no other ready candidate. Per
+the user's selection, F1315 addresses the Calendar Import difference at 4,097
+events: remove the 4,096 import-save cap to match pinned legacy behavior.
+
+Bounded acceptance: remove only the total filtered save-batch cap; preserve
+per-event create-only validation, duplicate filtering and order, and failure
+precedence. Prove 4,097 unique candidates cause one signature query and one
+ordered save of all events, then verify Platform persistence of all 4,097
+through the existing atomic batch. Focused CTest scope is
+`NextApplicationCalendarEvent`, `NextApplicationCalendarEventImportPlan`,
+`NextApplicationCalendarEventImportUseCase`,
+`NextPlatformApplicationServicesCalendarEventPort`, and
+`CalendarEventImportParity`. Implementation and focused verification are
+pending.
+
+Batch541 remains active with F1314's schema-below-v6 rejection in progress;
+that behavior is still unverified and not shipped. Batch542 has F1315 accepted
+and queued, with implementation pending. Gate 1 and Gate 2 remain Partial, the
+Phase 2 exit gate remains Open pending cumulative audit, and F629's Windows x64
+evidence remains separately outstanding.
+
+### F1314 complete; Batch541 closed locally, push pending - 2026-10-22
+
+F1314 completed at commit `5738d486` (`F1314: reject pre-v6 workspaces`). The
+API-default edge is corrected: `ensureSchema` defaults to existing-only, while
+explicit `createSchema` initializes new databases. Existing schema versions
+0–5 are rejected before mutation, migration, or backup; schema v6 opening and
+future-version rejection are retained.
+
+Independent Tester built all 11 affected targets in
+`build/qt-rewrite-phase0-macos-universal-debug` using
+`cmake --build ... --target <target>`; Ninja reported each target up-to-date.
+Focused QtTest scope and results:
+
+| Target | Focused test scope | Cases |
+| --- | --- | ---: |
+| `ClassMngrDatabaseSchemaManagerTests` | Full target | 31 |
+| `ClassMngrNextPlatformApplicationServicesWorkspacePortTests` | `olderSchemasAreRejectedWithoutChangingFilesOrActiveSession`; `existingEmptyFilesAreNotInitialized`; `currentSchemaDbFilesRemainSupported`; `createOrOpenCreatesANewWorkspace` | 17 |
+| `ClassMngrFileControllerWorkspaceLifecycleTests` | `startupRejectsOlderSchemasAndPreservesWorkspaceState` | 14 |
+| `ClassMngrDataServiceLifecycleTests` | `unsupportedSchemaClosesDatabaseSession`; `existingTeacherSchemaIsRejectedWithoutPersonalDetailMigration`; `existingTestingSchemaIsRejectedWithoutAssignmentMigration` | 5 |
+| `ClassMngrStartupPerformanceTests` | `legacyStartupFixtureIsRejectedWithoutChanges`; `rejectsLockedLegacyWorkspaceWithoutMigration` | 4 |
+| `ClassMngrSharedPolicyTests` | `unsupportedSchemaIsNotInitialized` | 3 |
+| `ClassMngrCalendarEventRepositoryTests` | `schemaCreatesEndDateIndex` | 3 |
+| `ClassMngrScheduleImportTests` | `appliesIntensiveSlotStatesSnapshot` | 3 |
+| `ClassMngrTeacherImportTests` | `appliesGeneratedWorkbookWithExplicitReviewDecision` | 3 |
+| `ClassMngrTeacherImportDialogTests` | `checkedInWorkbookProductionDialogPlanAppliesToRepository` | 3 |
+| `ClassMngrSubPrepPageTests` | `pageGenerationForwardsIntensiveModeWithFilteredClasses` | 4 |
+
+Focused QtTest runs totaled 90 cases including setup and cleanup. The initial
+Sub Prep attempt required an offscreen retry; the retry passed. No full suite
+was run. Executor reported 450 focused QtTest passes
+across initial and follow-up checks and `git diff --check` passed.
+
+Batch541 is complete locally at `5738d486`; push is pending. Batch542 remains
+next with F1315 accepted and queued; its implementation and verification are
+pending. Gate 1 and Gate 2 remain Partial, the Phase 2 exit gate remains Open
+pending cumulative audit, and F629's Windows x64 evidence remains outstanding
+separately.

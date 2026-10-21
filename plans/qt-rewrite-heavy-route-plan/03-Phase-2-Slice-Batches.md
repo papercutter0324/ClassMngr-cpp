@@ -104,8 +104,31 @@ positive. The pinned legacy apply chain runs `ScheduleImportStateValidator`
 and rejects the mismatched-teacher Skip just like current v2. F1313 was never
 implemented. See the progress log for corrected call-chain evidence.
 
-## Batch541 — In progress; F1314 active
+## Batch541 — Complete locally; awaiting push
 
-- F1314 — In progress. Reject existing workspace schemas below v6 while
-  retaining current schema-v6 opening support. Implementation is in progress
-  and verification is pending; rejection behavior is not shipped.
+- F1314 — Complete at implementation commit `5738d486`. `ensureSchema` now
+  defaults to existing-only; explicit `createSchema` initializes new databases.
+  Existing schemas 0–5 are rejected before mutation, migration, or backup;
+  schema v6 remains openable and future-version rejection is retained. Tester
+  passed focused checks across 11 affected targets (90 QtTest cases); Executor
+  reported 450 focused QtTest passes. No full suite ran; see the progress log.
+
+## Batch542 — Next; F1315 accepted/queued
+
+Both contract and feature discovery lanes found no other ready candidate.
+Per the user's selection, F1315 — Calendar Import 4,097-event save parity — is
+accepted to remove the 4,096 import-save cap and match pinned legacy behavior.
+Implementation and focused verification are pending; Batch541 is complete
+locally and awaits push.
+
+Acceptance: remove only the total filtered save-batch cap. Preserve per-event
+create-only validation, duplicate filtering and order, and failure precedence.
+Prove 4,097 unique candidates cause one signature query and one ordered save of
+all events; verify Platform persistence of all 4,097 through the existing
+atomic batch.
+
+Focused CTest targets: `NextApplicationCalendarEvent`,
+`NextApplicationCalendarEventImportPlan`,
+`NextApplicationCalendarEventImportUseCase`,
+`NextPlatformApplicationServicesCalendarEventPort`, and
+`CalendarEventImportParity`.
