@@ -61880,27 +61880,59 @@ Teacher Info refresh. Cover both Native English and GS Team.
 
 Add focused coverage to the existing Teacher Import apply-parity integration
 tests, with a narrow Staff Directory read-failure injection seam or equivalent.
-Use the matched Native English Alex to Team Leader and GS Team Taylor to Branch
-Manager fixture data, seed prior persisted values, load both pages, and inject
-Technical failures only on their post-import refresh reads. Exercise Manual and
-Automatic save modes. Verify reload-required blocks edits, add, delete, manual
-and automatic saves with zero writes and imported database values intact; then
-verify successful reload restores imported display, editing, and the configured
-save path. `PageManager` exposes the loaded pages through
+Use `tests/fixtures/teacher_import/sectioned_review.xlsx`: it imports matched
+Native English Alex as Team Leader and GS Team Taylor as M2. Seed prior
+persisted values, load both pages, and inject Technical failures only on their
+post-import refresh reads. Exercise Manual and Automatic save modes. Verify
+reload-required blocks edits, add, delete, manual and automatic saves with zero
+writes and imported database values intact; then verify successful reload
+restores imported display, editing, and the configured save path. `PageManager`
+exposes the loaded pages through
 `ensureNativeEnglishTeachersPage()` and `ensureGsTeamPage()`; the
 existing import refresh path has no failure injection, so a narrow seam or
 read-port injection is required.
 
-Build `ClassMngr` and the existing TeacherImportUiApplyParity test target in
-`build/macos-clang-debug`, run the focused F1285 CTest entry and relevant
-focused Staff Directory regressions, and run `git diff --check`. The exact
-registered test target name must be confirmed from CMake by the Executor;
-do not infer it. No full suite, Windows run, clean build, hosted CI, or Gate 2
-claim is planned. F1285 is accepted as Batch523's first candidate before
-implementation. F1286 and F1287 remain discovered and ordered behind it.
+Build `ClassMngr` and `ClassMngrTeacherImportUiApplyParityTests` in
+`build/macos-clang-debug`, run focused CTest entry
+`TeacherImportUiApplyParityF1285DirectoryReloadFailure` and relevant focused
+Staff Directory regressions, and run `git diff --check`. No full suite,
+Windows run, clean build, hosted CI, or Gate 2 claim is planned. F1285 is
+accepted as Batch523's first candidate before implementation. F1286 and F1287
+remain discovered and ordered behind it.
 Batch522 was pushed through receipt
 `1854742da10a5b0ff549ed216518e453da6395a4`; Batch523 is active with F1285
 implementation next.
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 Phase 0 remains Complete; F629's source-bound Windows x64 requalification
 remains outstanding separately.
+
+### F1285 Protect Staff Directory after Teacher Import refresh failures complete locally - 2026-10-21
+
+F1285 is complete locally in Batch523. Its acceptance record is commit
+`11023e4f12937a01ef83e4d81f0bbd03264d4c76`; the source/test/CTest commit is
+`90d46abf1e1647f4379098db2b6abc1431830992`; and the localization plus
+assertion repair is `2464d2d8ddf151f603579dcb84716329afdbc818`. The registered
+target is `ClassMngrTeacherImportUiApplyParityTests`; the focused CTest entry
+is `TeacherImportUiApplyParityF1285DirectoryReloadFailure`.
+
+Independent verification built `ClassMngr`, the integration target, and seven
+Native English/GS Team directory read, read-parity, and save focused targets.
+The F1285 CTest, F1061 refresh/reload tests, and those seven targets passed
+10/10. After the localization repair, the F1285 focused CTest passed 1/1
+again. `git diff --check` and `git show --check` passed.
+
+Independent verification after the repair confirmed finished warning-body and
+both directory-label entries with placeholders in `en_AU`, `en_CA`, `en_GB`,
+`en_US`, and `ko_KR`; resources compiled and embedded. Korean runtime UI was
+not exercised. Tests verified committed import values survive the failed
+refresh, stale pages block edits,
+add, delete, and manual/automatic saves while autosave is stopped, and a later
+reload restores imported values, editing, and the configured save mode. No full
+suite, Windows run, clean build, hosted CI, or Gate 2 result is claimed.
+
+F1285 is complete locally. Batch523 remains unpushed; F1286 is next, with
+Batch524 discovery to start when F1286 work begins because it is the
+second-last Batch523 candidate. F1287 follows in order. Gate 1 and Gate 2
+remain Partial, and the Phase 2 exit gate remains Open. Phase 0 remains
+Complete; F629's source-bound Windows x64 requalification remains outstanding
+separately.
