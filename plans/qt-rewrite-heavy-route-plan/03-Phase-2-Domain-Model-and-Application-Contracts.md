@@ -53,12 +53,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch527 (F1296) is pushed through closeout `e164340f`; Batch528 F1297 implementation is underway with focused verification pending; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch528 (F1297) is closed locally and awaits push; Batch529 F1298 is accepted before implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1297 implementation is underway in active Batch528; focused build and test
-verification is pending. See the progress log for its contract and plan.
+F1298 is accepted before implementation in active Batch529; implementation and
+focused verification are pending. See the progress log for its contract and
+verification plan.
 
 ### Slice discovery batches
 
@@ -77,14 +78,17 @@ Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
-### Active Batch528
+### Active Batch529
 
-Batch527 (F1296) is pushed through closeout `e164340fd00857d5d8b5d20243adaadf156f0cfc`; local and remote tips matched at push.
+Batch527 (F1296) is pushed through closeout
+`e164340fd00857d5d8b5d20243adaadf156f0cfc` and receipt
+`3b54c31ac1c90b6e509586149e38a7a739fbf86f`; local and remote tips matched
+at push. Batch528 (F1297) is closed locally and awaits push.
 
-1. F1297 - Accepted; implementation underway: distinguish failed dashboard reads
-   from successful empty data using an inline retryable error state; preserve
-   successful-empty behavior and keep navigation usable. See the progress log
-   for full criteria.
+1. F1298 - Accepted before implementation: distinguish failed evaluation reads
+   from a successful empty grid, retain safe same-evaluation drafts, and prevent
+   writes under an unconfirmed evaluation identity. See the progress log for
+   full criteria.
 
 See the progress log for bounded discovery evidence and limitations.
 

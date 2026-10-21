@@ -62846,3 +62846,78 @@ Batch527 (F1296) is pushed through closeout `e164340f`. Batch528 is active
 with F1297 implementation underway and focused build/test verification
 pending. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
 Open.
+
+### F1297 Class Analytics dashboard read failure complete locally; Batch528 closed - 2026-10-21
+
+F1297 was accepted before implementation in `e164340f` and completed locally
+in two commits: production `452b36e9dd804151e9e33d8f47ce924dfe2406e1`
+(`Phase2 - Surface Class Analytics dashboard read failures`) and independent
+tests `be1b5460803057853305f9cbfb29c982bf14c85b`
+(`Phase2 - Test Class Analytics read failure recovery`). The dashboard now
+distinguishes failed reads from successful empty data with an inline retryable
+error; successful empty behavior and usable navigation are preserved, and raw
+provider details are not exposed.
+
+The Executor built `ClassMngr` and diff-checked. The Tester built `ClassMngr`
+and `ClassMngrClassAnalyticsPageTests` in `build/macos-clang-debug`. The
+selectors `successfulEmptyDashboardShowsNoDataState`,
+`rosterReadFailureShowsRetryAndRecovers`,
+`evaluationBatchReadFailureShowsRetryAndRecovers`, and
+`failedRefreshDoesNotPresentPreviousClassResultsAsCurrent` each reported
+3 passed / 0 failed / 0 skipped, including initialization and cleanup; all
+four selectors were listed. Owning CTest `ClassMngrClassAnalyticsPageTests`
+was registered as #141 and passed 1/1. Diff-check passed. No full suite,
+Windows build, clean build, hosted CI, or runtime resource-translation render
+is claimed.
+
+Batch528 (F1297) is closed locally and awaits push. No Phase 2 gate completion
+is claimed.
+
+### Batch529 bounded discovery following F1297 acceptance - 2026-10-21
+
+The feature lane found one candidate, F1298: `SpeakingEvalPage::loadEvaluationData()`
+collapses an evaluation-query failure into blank clean rows, and
+`activateEvaluation()` enables the editor
+(`src/features/speaking_eval/ui/speaking_eval_page.cpp:272-345,829-876`). The
+existing failure test seeds persisted rows, makes an unsaved edit, drops the
+data table, reloads, and expects blank clean rows
+(`tests/speaking_eval_page_save_tests.cpp:1800-1868`). The Investigator found
+no accepted policy approving this editable blank fallback. Batch333 screened
+the then-investigated forced failure from selection/deferred because the failed
+table also blocked writes; it did not accept the editable fallback. F218
+covers class-list/navigation reads, not the evaluation-grid read.
+
+The contract lane separately raised oversized stored campus IDs on read; this
+was screened out because F857 expressly left read-side acceptance, including
+oversized legacy values, unchanged. F1067 is scoped to write-side Unicode
+whitespace and also preserves read behavior. Both discovery lanes sampled
+independent surfaces and found no other eligible candidate.
+
+No other slices were found.
+
+### F1298 Speaking Evaluation failed-read recovery accepted before implementation - 2026-10-21
+
+Preserve a successful empty evaluation read as blank, clean, and editable. A
+failed evaluation read must show a localized, nonmodal inline error with
+Retry, distinct from empty data; do not expose raw provider details. If there
+is no successful snapshot for the requested evaluation, disable the editor
+and actions that could write or export the blank fallback until success. On a
+same-evaluation reload failure, preserve evaluation identity, rows, and dirty
+draft. On failed activation to another evaluation, do not show prior rows
+under the requested identity or enable writes. Retry the same requested read;
+success clears the error and loads actual rows or genuine empty data, while a
+subsequent failure remains an error. Keep navigation usable and preserve
+successful-load/save behavior.
+
+Focused verification plan: build `ClassMngr` and
+`ClassMngrSpeakingEvalPageSaveTests` in `build/macos-clang-debug`; cover
+successful empty data, initial failure with writes disabled, localized retry
+and recovery, same-evaluation dirty-draft retention, and failed different-
+evaluation activation safety. Run the focused selectors and owning CTest, then
+diff-check. At acceptance, implementation, builds, and tests have not started.
+No full-suite, Windows, clean-build, hosted-CI, or gate completion is claimed.
+
+Batch527 (F1296) is pushed through closeout `e164340f` and receipt `3b54c31a`,
+with local and remote tips matching. Batch528 (F1297) is closed locally and
+awaits push. Batch529 is active with F1298 accepted before implementation.
+Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
