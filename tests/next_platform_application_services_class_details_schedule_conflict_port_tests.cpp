@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/application/class_details_schedule_conflict_query.h"
 #include "next/platform/application_services_class_details_schedule_conflict_port.h"
@@ -153,7 +153,7 @@ readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder()
     QVERIFY(target > 0);
     QVERIFY(source > 0);
     QVERIFY(intensiveSource > 0);
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session && session->isOpen());
     ClassInfoRepository* const repository = session->classInfoRepository();
     QVERIFY(repository);
@@ -340,7 +340,7 @@ blankNameWidePersistedConflictIdPreservesFullFallback()
 
     constexpr qlonglong ordinaryConflictingClassId = 42;
     constexpr qlonglong wideConflictingClassId = 4294967297LL;
-    QSqlQuery insertOrdinaryClass(services.databaseSession()->database());
+    QSqlQuery insertOrdinaryClass(services.workspaceStore()->database());
     insertOrdinaryClass.prepare(
         QStringLiteral("INSERT INTO classes (id, name) VALUES (?, ?)")
         );
@@ -353,7 +353,7 @@ blankNameWidePersistedConflictIdPreservesFullFallback()
         qPrintable(insertOrdinaryClass.lastError().text())
         );
 
-    QSqlQuery insertOrdinaryTime(services.databaseSession()->database());
+    QSqlQuery insertOrdinaryTime(services.workspaceStore()->database());
     insertOrdinaryTime.prepare(
         QStringLiteral(
             "INSERT INTO class_times "
@@ -371,7 +371,7 @@ blankNameWidePersistedConflictIdPreservesFullFallback()
         qPrintable(insertOrdinaryTime.lastError().text())
         );
 
-    QSqlQuery insertClass(services.databaseSession()->database());
+    QSqlQuery insertClass(services.workspaceStore()->database());
     insertClass.prepare(
         QStringLiteral("INSERT INTO classes (id, name) VALUES (?, ?)")
         );
@@ -381,7 +381,7 @@ blankNameWidePersistedConflictIdPreservesFullFallback()
     insertClass.addBindValue(QString{});
     QVERIFY2(insertClass.exec(), qPrintable(insertClass.lastError().text()));
 
-    QSqlQuery insertTime(services.databaseSession()->database());
+    QSqlQuery insertTime(services.workspaceStore()->database());
     insertTime.prepare(
         QStringLiteral(
             "INSERT INTO class_times "
@@ -396,7 +396,7 @@ blankNameWidePersistedConflictIdPreservesFullFallback()
     insertTime.addBindValue(QStringLiteral("9:55 AM"));
     QVERIFY2(insertTime.exec(), qPrintable(insertTime.lastError().text()));
 
-    QSqlQuery persisted(services.databaseSession()->database());
+    QSqlQuery persisted(services.workspaceStore()->database());
     persisted.prepare(
         QStringLiteral(
             "SELECT classes.id, typeof(classes.id), classes.name, "
@@ -571,7 +571,7 @@ unavailableSessionsAreNotFoundAndDoNotUseFallback()
     QVERIFY(directory.isValid());
     ApplicationServices closedServices;
     QVERIFY(closedServices.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = closedServices.databaseSession();
+    WorkspaceStore* const session = closedServices.workspaceStore();
     QVERIFY(session && session->isOpen());
     closedServices.closeDatabase();
     QVERIFY(!session->isOpen());
@@ -595,7 +595,7 @@ terminalConflictCursorFailureDiscardsPartialConflicts()
         );
     QVERIFY(target > 0);
     QVERIFY(source > 0);
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session && session->isOpen());
     ClassInfoRepository* const repository = session->classInfoRepository();
     QVERIFY(repository);
@@ -762,7 +762,7 @@ missingClassAndRepositoryFailureAreTechnical()
     QCOMPARE(missing.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!missing.error().message.empty());
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE class_times")),
         qPrintable(query.lastError().text()));
     const auto repositoryFailure =

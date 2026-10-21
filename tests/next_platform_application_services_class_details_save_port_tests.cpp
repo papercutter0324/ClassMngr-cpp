@@ -1,7 +1,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/application/class_details_save_use_case.h"
 #include "next/platform/application_services_class_details_save_port.h"
@@ -169,9 +169,9 @@ void verifyStaleScheduleConflictRejected(const ScheduleType type)
     ApplicationServices secondServices;
     QVERIFY(secondServices.openDatabase(profilePath));
     ClassInfoRepository* const firstRepository =
-        firstServices.databaseSession()->classInfoRepository();
+        firstServices.workspaceStore()->classInfoRepository();
     ClassInfoRepository* const secondRepository =
-        secondServices.databaseSession()->classInfoRepository();
+        secondServices.workspaceStore()->classInfoRepository();
     QVERIFY(firstRepository);
     QVERIFY(secondRepository);
 
@@ -315,7 +315,7 @@ savesWideTeacherIdAtomicallyWithClassDetails()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlQuery sql(services.databaseSession()->database());
+    QSqlQuery sql(services.workspaceStore()->database());
     QVERIFY(sql.exec(QStringLiteral(
         "INSERT INTO teachers (id, teacher_kr, teacher_en) "
         "VALUES (2147483648, 'Wide Teacher', 'Wide Teacher')")));
@@ -606,9 +606,9 @@ absentSchedulesPreservePersistedSchedulesIndependently()
     // Seed the exact stored rows at the repository seam. The legacy service
     // normalizes accepted time text before persistence, so this fixture uses
     // its supported canonical stored representation.
-    QVERIFY(services.databaseSession());
-    QVERIFY(services.databaseSession()->classInfoRepository());
-    QVERIFY(services.databaseSession()->classInfoRepository()
+    QVERIFY(services.workspaceStore());
+    QVERIFY(services.workspaceStore()->classInfoRepository());
+    QVERIFY(services.workspaceStore()->classInfoRepository()
         ->saveClassInfo(*original));
 
     const auto seeded = services.classService()->classInfo(*createdClass);
@@ -749,7 +749,7 @@ missingParentReturnsNotFoundBeforeDetailAndConflictReads()
     QCOMPARE(scheduledResult.error().code, Domain::ErrorCode::NotFound);
     QVERIFY(!scheduledResult.error().recoverable);
 
-    QSqlQuery rowCounts(services.databaseSession()->database());
+    QSqlQuery rowCounts(services.workspaceStore()->database());
     QVERIFY(rowCounts.exec(QStringLiteral(
         "SELECT "
         "(SELECT COUNT(*) FROM class_info WHERE class_id=100001), "
@@ -769,9 +769,9 @@ legacyMissingParentSavePreservesForeignKeyDiagnostic()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QVERIFY(services.databaseSession());
+    QVERIFY(services.workspaceStore());
     ClassInfoRepository* const repository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     QVERIFY(repository);
 
     ClassInfo missingParent;
@@ -788,7 +788,7 @@ legacyMissingParentSavePreservesForeignKeyDiagnostic()
             )
         );
 
-    QSqlQuery rowCounts(services.databaseSession()->database());
+    QSqlQuery rowCounts(services.workspaceStore()->database());
     QVERIFY(rowCounts.exec(QStringLiteral(
         "SELECT "
         "(SELECT COUNT(*) FROM class_info WHERE class_id=100001), "
@@ -813,7 +813,7 @@ classInfoReadFailureReturnsTechnicalFailure()
         );
     QVERIFY(createdClass);
 
-    QSqlQuery damageClassRead(services.databaseSession()->database());
+    QSqlQuery damageClassRead(services.workspaceStore()->database());
     QVERIFY2(
         damageClassRead.exec(QStringLiteral("DROP TABLE class_times")),
         qPrintable(damageClassRead.lastError().text())
@@ -845,7 +845,7 @@ classInfoSaveFailureReturnsTechnicalFailure()
     QVERIFY(original);
     QVERIFY(services.classService()->saveClassInfo(*original));
 
-    QSqlQuery installFailure(services.databaseSession()->database());
+    QSqlQuery installFailure(services.workspaceStore()->database());
     QVERIFY2(
         installFailure.exec(QStringLiteral(
             "CREATE TRIGGER fail_class_details_save "
@@ -884,7 +884,7 @@ invalidPreservedDataFailsMergedClassInfoValidation()
     QVERIFY(services.classService()->saveClassInfo(*original));
 
     const QString invalidNotes(10001, QChar(u'x'));
-    QSqlQuery damageHiddenField(services.databaseSession()->database());
+    QSqlQuery damageHiddenField(services.workspaceStore()->database());
     damageHiddenField.prepare(QStringLiteral(
         "UPDATE class_info SET notes=? WHERE class_id=?"
         ));

@@ -2,7 +2,7 @@
 
 #include "core/enums/schedule_type.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
@@ -70,15 +70,15 @@ public:
                 );
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return unavailableFailure();
         }
 
         ClassInfoRepository* const repository =
-            session->classInfoRepository();
+            store->classInfoRepository();
         if (!repository)
         {
             return failure(
@@ -93,14 +93,14 @@ public:
                 repository->checkClassDetailsParentDetailed(*classId);
             if (!parent)
             {
-                return repositoryFailure(session, parent.error());
+                return repositoryFailure(store, parent.error());
             }
 
             const Result<ClassDetailsSaveReadRecord> loaded =
                 repository->loadClassDetailsSaveInfo(*classId);
             if (!loaded)
             {
-                return repositoryFailure(session, loaded.error());
+                return repositoryFailure(store, loaded.error());
             }
 
             qint64 savedTeacherId = loaded->teacherId;
@@ -142,7 +142,7 @@ public:
             if (validation.hasErrors())
             {
                 return repositoryFailure(
-                    session,
+                    store,
                     validationError(
                         QStringLiteral("Class information"),
                         validation
@@ -158,7 +158,7 @@ public:
                 );
             if (!regularConflicts)
             {
-                return repositoryFailure(session, regularConflicts.error());
+                return repositoryFailure(store, regularConflicts.error());
             }
 
             const Status intensiveConflicts = validateScheduleConflicts(
@@ -169,7 +169,7 @@ public:
                 );
             if (!intensiveConflicts)
             {
-                return repositoryFailure(session, intensiveConflicts.error());
+                return repositoryFailure(store, intensiveConflicts.error());
             }
 
             const ClassInfoRepository::ClassDetailsSaveDetailedResult saved =
@@ -179,7 +179,7 @@ public:
                     );
             if (!saved)
             {
-                return repositoryFailure(session, saved.error());
+                return repositoryFailure(store, saved.error());
             }
 
             return Domain::Result<void>::success();
@@ -351,11 +351,11 @@ private:
     }
 
     [[nodiscard]] static Domain::Result<void> repositoryFailure(
-        DatabaseSession* session,
+        WorkspaceStore* store,
         const QString& message
         )
     {
-        if (!session || !session->isOpen())
+        if (!store || !store->isOpen())
         {
             return unavailableFailure();
         }
@@ -363,11 +363,11 @@ private:
     }
 
     [[nodiscard]] static Domain::Result<void> repositoryFailure(
-        DatabaseSession* session,
+        WorkspaceStore* store,
         const ClassInfoRepository::ClassDetailsSaveFailure& saveFailure
         )
     {
-        if (!session || !session->isOpen())
+        if (!store || !store->isOpen())
         {
             return unavailableFailure();
         }

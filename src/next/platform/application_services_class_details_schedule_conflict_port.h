@@ -2,7 +2,7 @@
 
 #include "core/application_services.h"
 #include "core/enums/schedule_type.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/application/class_details_schedule_conflict_query.h"
 
@@ -57,15 +57,15 @@ public:
                 );
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return unavailableFailure();
         }
 
         ClassInfoRepository* const repository =
-            session->classInfoRepository();
+            store->classInfoRepository();
         if (!repository)
         {
             return failure(

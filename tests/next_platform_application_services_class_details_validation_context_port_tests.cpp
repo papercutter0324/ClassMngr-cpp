@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "next/application/class_details_validation_context_query.h"
 #include "next/platform/application_services_class_details_validation_context_port.h"
 
@@ -98,7 +98,7 @@ readsSentinelTeacherIdAndExactTextFromActiveRepository()
     QVERIFY(id > 0);
     QVERIFY(seedClassInfo(services, id));
 
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session && session->isOpen());
     QSqlQuery foreignKeys(session->database());
     QVERIFY2(foreignKeys.exec(QStringLiteral("PRAGMA foreign_keys = OFF")),
@@ -170,7 +170,7 @@ preservesWideTeacherIdFromActiveRepository()
     QVERIFY(id > 0);
     QVERIFY(seedClassInfo(services, id));
 
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session && session->isOpen());
     QSqlQuery insertTeacher(session->database());
     insertTeacher.prepare(QStringLiteral(
@@ -214,7 +214,7 @@ deletedParentWithOrphansIsNotFoundButLegacyReadIsPreserved()
     QVERIFY(id > 0);
     QVERIFY(seedClassInfo(services, id));
 
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session && session->isOpen());
     QSqlQuery foreignKeys(session->database());
     QVERIFY2(foreignKeys.exec(QStringLiteral("PRAGMA foreign_keys = OFF")),
@@ -304,7 +304,7 @@ missingClassInfoRowPreservesRepositoryDefaults()
     QVERIFY(id > 0);
     QVERIFY(seedClassInfo(services, id));
 
-    QSqlQuery remove(services.databaseSession()->database());
+    QSqlQuery remove(services.workspaceStore()->database());
     remove.prepare(QStringLiteral("DELETE FROM class_info WHERE class_id=?"));
     remove.addBindValue(id);
     QVERIFY2(remove.exec(), qPrintable(remove.lastError().text()));
@@ -318,7 +318,7 @@ missingClassInfoRowPreservesRepositoryDefaults()
     QVERIFY(result.value().notes.empty());
     QVERIFY(result.value().timeFillerActivities.empty());
 
-    const auto& metrics = services.databaseSession()->classInfoRepository()
+    const auto& metrics = services.workspaceStore()->classInfoRepository()
         ->classPageDetailsReadMetrics();
     QCOMPARE(metrics.callCount, 1);
     QCOMPARE(metrics.metadataStatementCount, 1);
@@ -353,7 +353,7 @@ unavailableSessionIsNotFoundWithoutFallback()
     QVERIFY(directory.isValid());
     ApplicationServices closedServices;
     QVERIFY(closedServices.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = closedServices.databaseSession();
+    WorkspaceStore* const session = closedServices.workspaceStore();
     QVERIFY(session && session->isOpen());
     closedServices.closeDatabase();
     QVERIFY(!session->isOpen());
@@ -373,7 +373,7 @@ repositoryErrorIsTechnical()
         );
     QVERIFY(id > 0);
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE class_info")),
         qPrintable(query.lastError().text()));
 

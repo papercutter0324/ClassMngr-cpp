@@ -38,7 +38,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-22
-- Current note: F1318–F1324 are complete; F1325 Class Details save is next.
+- Current note: F1318–F1325 are complete; F1326 selected-class roster read is
+  next (window scope discovery required).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).

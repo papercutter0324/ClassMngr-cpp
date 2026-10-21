@@ -156,3 +156,26 @@ cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationS
 ctest --test-dir build/macos-clang-debug -R '^(ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests|ClassMngrNextApplicationClassDetailsPageQueryTests|ClassMngrClassDetailsPageReadParityTests)$' --output-on-failure
 cmake --build build/macos-clang-debug --target ClassMngr
 ```
+
+## F1325 — Class Details save-workflow persistence-port migration — 2026-10-22
+
+Moved the Class Details validation-context, schedule-conflict, and save
+adapters and their focused test setup to
+`ApplicationServices::workspaceStore()` and its class-info repository. The
+application workflow, normalization, conflict policy, transactional save,
+hidden teacher/notes/time-filler preservation, optional schedule handling,
+wide teacher IDs, and page behavior remain unchanged.
+
+The executor built all three focused port targets and `ClassMngr`; the three
+port CTests and `ClassDetailsPageSaveParity` passed 4/4, and
+`git diff --check` passed. Ninja printed a premature-end-of-file warning
+during the builds, recovered, and completed successfully. An independent
+Tester reviewed the adapters and reran the four CTests: **4/4 passed**.
+Verification used the existing macOS Debug tree; the full suite and
+cross-platform builds were not run.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests
+ctest --test-dir build/macos-clang-debug -R '^(ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests|ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests|ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests|ClassMngrClassDetailsPageSaveParityTests)$' --output-on-failure
+cmake --build build/macos-clang-debug --target ClassMngr
+```
