@@ -60954,3 +60954,62 @@ next action, and no implementation batch is active. Gate 1 and Gate 2 remain
 Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows
 x64 requalification remains outstanding separately from Phase 0's 2026-09-18
 Complete declaration.
+
+### Superseded latest progress update - 2026-10-21 (Batch515 complete locally, push pending)
+
+Batch515 (F1276) was complete locally at implementation/test commit
+`bfea9f9217e072fce8ac6cb9e09ed7cfdcf5e086` and awaiting its normal push. No
+implementation slice was active. Gate 1 and Gate 2 remained Partial, and the
+Phase 2 exit gate remained Open.
+
+### Batch515 push receipt - 2026-10-21
+
+The push completed successfully. At confirmation, `origin/Qt-Rewrite` matched
+the local closeout commit `ad802adca5177ddcf3fa28dc49b040bdc1e31293`, and the
+worktree was clean.
+
+Batch515 (F1276) is complete and pushed. Batch516 discovery is next, and no
+implementation slice is active. Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification
+remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+
+### Superseded latest progress update - 2026-10-21 (Batch515 pushed, Batch516 discovery pending)
+
+Batch515 (F1276) was complete and pushed through closeout commit
+`ad802adca5177ddcf3fa28dc49b040bdc1e31293`. No implementation slice was
+active. Gate 1 and Gate 2 remained Partial, and the Phase 2 exit gate remained
+Open.
+
+### Batch516 discovery shortfall - 2026-10-21
+
+Three independent Batch516 lanes found no new supported candidate. The
+Application-boundary scan reviewed 372 headers under `src/next/application/`
+and found no Qt includes or Qt types outside comments and the already scoped
+F1276; the existing typed interval query owns retrieval and validation
+(`src/next/application/sub_prep_calendar_event_intervals_query.h`). The active
+UI-consumer scan noted Calendar Next 10 had already been screened in Batch514
+because it is intertwined with asynchronous visible-event retrieval
+(`src/features/calendar/ui/calendar_page_upcoming_events.cpp`,
+`src/features/calendar/ui/calendar_event_cache.cpp`). Testing Classes'
+configured-list lookups remain at the Feature edge under F1249
+(`src/features/classes/ui/testing_classes_page.cpp:75-99`; F1249 acceptance at
+`03-Phase-2-Progress-Log.md:58094-58122`); Roster row
+operations already call Application helpers
+(`src/features/roster/ui/roster_model_rows.cpp:170-208,252-305`); and Sub Prep
+vacation-block selection is F1276
+(`src/features/sub_prep/ui/sub_prep_page.cpp:554-591`,
+`src/features/sub_prep/ui/sub_prep_print_dialog.cpp:151-220`). The
+projection/behavior scan found the Schedule slot-state cycle expressly
+assigned to its view-model and save-request contract
+(`src/features/schedule/ui/schedule_view_model.cpp`,
+`src/next/application/schedule_slot_state_save.h`); Schedule grid derivation
+and Calendar Next 10 were already screened in Batch514. No deferred candidate
+was reopened.
+
+No other slices were found.
+
+Batch515 (F1276) remains complete and pushed through closeout commit
+`ad802adca5177ddcf3fa28dc49b040bdc1e31293`. Batch517 discovery is next, with
+no implementation slice active. Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification
+remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.

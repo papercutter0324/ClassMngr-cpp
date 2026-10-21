@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch515 (F1276) is complete locally at `bfea9f92` and awaiting its normal push; no implementation batch is active, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch515 (F1276) is complete and pushed through closeout commit `ad802adc`; Batch516 discovery found no supported slice and Batch517 discovery is next, with no implementation slice active and Gate 1 and Gate 2 Partial/Phase 2 exit Open.
 
 ### Latest Progress Update
 
-F1276 is complete locally in Batch515 at source/test commit `bfea9f9217e072fce8ac6cb9e09ed7cfdcf5e086`, with acceptance recorded at `7c40bffd8cb221efbe796fe37e96fd0c3eb12969`; see the [F1276 closeout](03-Phase-2-Progress-Log.md#f1276-sub-prep-vacation-block-selection-policy-complete-2026-10-21). Batch515 is complete locally and awaiting its normal push; the next action is push, and no implementation batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+Batch515 (F1276) is complete and pushed; the closeout commit is `ad802adca5177ddcf3fa28dc49b040bdc1e31293` (see the [push receipt](03-Phase-2-Progress-Log.md#batch515-push-receipt-2026-10-21)). Batch516 discovery found no supported slice; Batch517 discovery is next, and no implementation slice is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Slice discovery batches
 
