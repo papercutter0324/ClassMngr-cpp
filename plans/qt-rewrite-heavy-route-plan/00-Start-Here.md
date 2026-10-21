@@ -6,10 +6,10 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-22
-- Current milestone: Phase 2 remains in progress. Gate 1 and Gate 2 remain
-  Partial, and the Phase 2 exit gate remains Open. See the [Phase 2
-  current slice-batch tracker](Current-Slice-Batches.md) for the active batch
-  and the next batch whose discovery has started.
+- Current milestone: Phase 2 Complete; Gate 1 and Gate 2 satisfy the exit
+  criteria. No slice batch is active. See the [Phase 2
+  plan](03-Phase-2-Domain-Model-and-Application-Contracts.md) and [progress
+  log](03-Phase-2-Progress-Log.md) for closure evidence and limitations.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -17,7 +17,7 @@
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
   Windows ARM64 also passed as informational jobs; they were not required for
   closure. See the [Phase 1 plan](02-Phase-1-Build-System-and-Repository-Structure.md)
-  for the run evidence. Phase 2 remains in progress with its exit gate open.
+  for the run evidence.
 - Release target: ClassMngr v2 with feature parity, no splash screen, no resource packs, and Windows startup memory below 250 MiB
 
 ### Phase status
@@ -26,7 +26,7 @@
 |---|---|---|---|---|
 | 0 | 01-Phase-0-Product-Contract-and-Baseline.md | Complete | Heavy | None |
 | 1 | 02-Phase-1-Build-System-and-Repository-Structure.md | Complete | Heavy | 0 |
-| 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | In progress | Heavy | 1 |
+| 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | Complete | Heavy | 1 |
 | 3 | 04-Phase-3-Persistence-Rewrite.md | Not started | Heavy | 1, 2 |
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Not started | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Not started | Heavy | 2, 3, 4 |
@@ -41,14 +41,19 @@
 
 Statuses are intentionally conservative. A phase is not In progress until its work has started in the repository, and it is not Complete until its exit gate has passed.
 
-## Current Phase 2 work
+## Phase 2 completion
 
-Phase 2 remains in progress. Gate 1 and Gate 2 remain Partial, and its exit
-gate remains Open. Phase 0 remains Complete; F629’s source-bound Windows x64
-requalification remains outstanding separately. See the [Phase 2 slice-batch
-tracker](Current-Slice-Batches.md) for current and upcoming batch status and the
-[Phase 2 progress log](03-Phase-2-Progress-Log.md) for implementation,
-verification, and gate evidence.
+Phase 2 is Complete. Gate 1 and Gate 2 satisfy their exit criteria. The
+incremental 169-target audit built 168/169 targets; 167/170 selected
+registrations passed and three failed. One pre-existing Schedule Import test
+failed to compile, and the three failing tests retain stale expectations that
+teacher ID `2147483648` is invalid. These stale tests were not changed. The full
+suite was not run, and this audit is not exhaustive. Separately passing Domain
+and Workspace acceptance targets and the inspected source boundary satisfy the
+literal testability criterion. The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
+and [progress log](03-Phase-2-Progress-Log.md) contain exact evidence and
+bounded parity results. F629’s post-change Windows x64 requalification remains
+separate from Phase 2.
 
 ## Phase notes, slice batches, and progress logs
 

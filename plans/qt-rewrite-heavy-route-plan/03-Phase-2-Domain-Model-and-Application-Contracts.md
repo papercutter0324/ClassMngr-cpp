@@ -45,62 +45,35 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: In progress
+- Status: Complete
 - Default route: Heavy
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-10-22
 - Existing progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
-- Exit gate: Open
-- Current note: Batch542 is pushed through closeout at `3a5a5e13` (receipt
-  `917ce665..3a5a5e13`). F1316 is in progress. Batch544 discovery completed;
-  both lanes found no other ready slices. Gate 1 and Gate 2 remain Partial and
-  the Phase 2 exit gate remains Open. Current
-  and upcoming detail is maintained in the
-  [shared current slice-batch tracker](Current-Slice-Batches.md).
+- Exit gate: Satisfied
+- Current note: Phase 2 is Complete. The cumulative audit found Gate 1 and
+  Gate 2 satisfy their criteria. F1317 (`28f77666`) is the latest accepted
+  slice. No batch is active; F629's Windows x64 requalification remains
+  separate. See the [progress log](03-Phase-2-Progress-Log.md) for evidence and
+  limitations.
 
 ### Latest Progress Update
 
-F1314 (`5738d486`) completes the schema-open policy: `ensureSchema` defaults to
-existing-only, explicit `createSchema` initializes new databases, and existing
-schemas 0–5 reject before mutation, migration, or backup; schema v6 remains
-openable and future-version rejection is retained. Tester focused checks passed
-across 11 affected targets (90 QtTest cases); Executor reported 450 focused
-passes. The initial Sub Prep attempt needed an offscreen retry. No full suite
-ran; see the progress log for exact target and selector scope. Batch541 is
-pushed through closeout.
-
-F1315 (`91ba6c99`) implements the user's match-legacy decision by removing
-only the Calendar Import total filtered save-batch cap. Executor's five focused
-targets passed 189 QtTests; independent Tester passed 35 focused cases,
-including 4,097-event single-query/ordered-save and Platform persistence checks.
-No full suite or greater-than-4,097 stress test ran. Batch542 was pushed through
-closeout by `917ce665..3a5a5e13 Qt-Rewrite -> Qt-Rewrite`, including F1315 and
-closeout docs through `3a5a5e13`.
-
-Schema v6 remains the only supported open version; migration for schemas below
-v6 is not offered. Batch540's F1313 proposal was a false positive, withdrawn
-after full legacy-chain review. Batch543 accepted F1316, whose implementation
-is in progress. Batch544's feature and independent Application-contract lanes
-both completed without another ready slice. Gate 1 remains Partial, not passed:
-the workspace app-less create/lifecycle boundary and inspected `src/next`
-isolation are satisfied in bounded scope, but broader Domain/Application
-coverage remains incomplete. Gate 2 remains Partial: bounded Teacher Import
-and roster-name fixtures passed, but are not exhaustive legacy proof; required
-comparisons and F1316 verification remain. The detailed gaps, exceptions, and
-limits are in the progress log. The Phase 2 exit gate remains Open. F629's
-Windows x64 evidence remains outstanding separately.
+F1317 (`28f77666`) makes Class Details save fail closed when canonical-class
+validation context cannot be read or identifies another class. The independent
+Tester accepted the focused use-case verification. See the progress log for
+the exact target and run results.
 
 ### Slice batches
 
-Use the shared [current slice-batch tracker](Current-Slice-Batches.md) for
-Phase 2's live batch and the next batch after discovery starts. Do not keep a
-separate Phase 2 batch register or batch history. The [Phase 2 progress
-log](03-Phase-2-Progress-Log.md) retains implementation, verification, and gate
-evidence. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
-Open. F629's source-bound Windows x64 layout trace and requalification remain
-outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+The shared [current slice-batch tracker](Current-Slice-Batches.md) has no active
+batch after Phase 2 completion. Do not retain closed-batch details. The [Phase 2
+progress log](03-Phase-2-Progress-Log.md) retains useful implementation,
+verification, decision, and gate evidence. F629's source-bound Windows x64
+layout trace and requalification remain outstanding separately from Phase 2
+and Phase 0's 2026-09-18 Complete declaration.
 
 ### Deferred candidates
 
@@ -142,10 +115,6 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 - Sidebar Add/post-create wide-ID transition - deferred under F285: blank-draft
   Add is rejected before persistence, so revisit create-path identity propagation
   only after the draft-creation contract is clarified.
-- F1103 - Deferred pending explicit parity/policy reconciliation: the Class
-  Details save workflow ignores a failed validation-context read and applies
-  sentinel/default values; an existing test asserts that fallback. Do not
-  change this behavior until the policy is resolved.
 
 ## Objective
 
@@ -168,6 +137,11 @@ Create explicit value types for:
 - Document catalog entries, document-content references, and templates.
 - Import matches and conflicts.
 - User preferences.
+
+These categories are coverage goals, not a requirement for one standalone
+Domain aggregate per noun. Add a reusable Domain type when a real consumer
+needs shared identity, lifecycle, or an invariant; keep projections, commands,
+import review, and preferences in the owning Application contracts.
 
 Use typed identifiers and enums instead of unrelated strings that happen to contain IDs or state values.
 
@@ -200,8 +174,11 @@ Create use cases for:
 
 Workspace opening continues to support existing schema-v6 `.db` files.
 Existing schemas below v6 are unsupported, and migration is not offered.
-F1314 completed and was pushed in Batch541; its focused verification and limits
-are recorded above and in the progress log.
+
+The evidenced backup/recovery behavior is profile-replacement backup and
+rollback plus initial-setup cancel restoration. Do not add a user-initiated
+backup/restore workflow without baseline product behavior; durable persistence
+mechanics remain with Phase 3.
 
 F1316 adds a Qt-free Application use case that creates the Sub Prep generation
 plan in the page before its first print-source read, then passes that same plan
@@ -217,8 +194,9 @@ callbacks, concrete paths, or renderer types. Destination handling, staging or
 replacement, rendering, printing, and folder opening remain feature/platform
 edges for Phases 7/8. Acceptance must cover different vacation-date weekdays
 and explicit schedule weekdays, proving each source uses its own scope.
-Implementation is in progress and app-less acceptance coverage is pending;
-see Batch543 and the progress log for full criteria.
+The app-less acceptance cases cover this contract. F1316's focused verification
+scope and the remaining macOS PDF-reference limitation are recorded in the
+progress log.
 
 The Sub Prep slice also requires explicit summary, selected-detail, and
 operation-scoped print-source contracts. Their feature-level implementation
@@ -299,6 +277,45 @@ invalid-session failures preserve both snapshots. The existing app-less
 cover these create paths alongside open, close, save, save-as, and export.
 
 No new v2 production path depends on DataService, MainWindow, PageManager, or a widget pointer.
+
+## Current gate findings and parity decisions
+
+- Gate 1: Satisfied. Domain/Application contracts and test surfaces are
+  app-less; explicit Workspace and Domain contract targets passed. The source
+  scan found no `MainWindow`, `QApplication`, or `QCoreApplication` references
+  in 169 inspected sources. Section 2.1 type categories are coverage goals; no
+  consumer-backed production gap remains.
+- Gate 2: Satisfied. Teacher Import ambiguity/full-snapshot and Speaking
+  Evaluation page-level import differentials passed, alongside existing bounded
+  fixtures. These checks are not exhaustive parity proof. Exact scopes and
+  limitations are recorded in the progress log.
+- The incremental 169-target audit built 168/169 targets; selected registrations
+  passed 167/170. One stale Schedule Import test failed compilation after a
+  typed-key API change, and three selected tests retain stale expectations that
+  teacher ID `2147483648` is invalid. The full suite was not run. These failures
+  do not negate the separately passing acceptance targets or literal
+  app-less-testability criterion; no changes were made to those stale tests.
+- F1103 is resolved by user direction: reject Class Details save when canonical
+  class validation-context reading fails or returns a mismatched class ID. F1317
+  implements this as a structured failure before conflict lookup/save; malformed
+  IDs retain their prior validation result. This is an explicit fail-closed
+  exception to pinned legacy behavior, which can save sentinel/default teacher,
+  notes, and activities after a context-read failure.
+- Preserve the user-approved fail-closed behavior when Teacher Import's SQL
+  cursor reports `lastError()` and when Speaking Evaluation cannot read its
+  evaluation snapshot before Import Names. The Class Transfer identity-free
+  package remains an explicit parity exception; exact parity is not claimed for
+  that input.
+- Calendar Import's 4,096-event save cap remains removed to match legacy.
+- Existing schema versions below v6 are unsupported; migration is not offered.
+  Existing profile-replacement and initial-setup lifecycles cover the evidenced
+  recovery cases. No user-initiated backup/restore workflow was found, so Phase
+  2 does not add one.
+
+Phase 2 is Complete. The [progress log](03-Phase-2-Progress-Log.md) records
+F1316/F1317 verification, bounded comparisons, explicit policy exceptions, and
+the audit's test limitations. F629's Windows x64 requalification remains
+separate from the Phase 2 exit gate.
 
 ## Heavy-route requirements
 
