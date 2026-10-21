@@ -63294,3 +63294,38 @@ Preferences behavior. Keep successful missing or unavailable preference
 fallback quiet, and clear the notice when the provider recovers. Preserve
 F1301's event-display, schedule-display, current-campus, and event-range
 failure behavior. Batch535 discovery is complete with one accepted candidate.
+
+### F1302 Testing Classes teacher-assignment preservation complete locally; Batch534 closed - 2026-10-21
+
+F1302 completed locally at implementation commit
+`09b2c1a5d5f604926766d07f24e39a09a7e04540`
+(`Phase2 - Persist Testing Classes teacher assignments`). After a Technical
+teacher-choice read failure, a temporary labeled choice preserves the saved
+or current teacher ID. Saving an unrelated field retains the assignment, while
+explicitly selecting `None` remains deliberate unassignment. Successful empty
+choice-list behavior, silent `NotFound` behavior, and the existing Technical
+warning remain unchanged. The Korean catalog adds `Teacher %1 (choices could
+not be loaded)` → `교사 %1 (선택 항목을 불러오지 못함)`.
+
+Independent Tester verification used an incremental macOS Clang Debug build.
+`cmake --build build/macos-clang-debug --target
+ClassMngrTestingClassesPageTests` passed. Focused selectors
+`testingTeacherChoicesTechnicalFailurePreservesAssignedTeacherUntilNoneSelected`,
+`testingTeacherChoicesQueryFailureShowsExactWarning`,
+`emptySuccessfulTestingTeacherChoicesKeepNoneSelectedWithoutWarning`,
+`unavailableTestingTeacherChoicesQueryIsSilent`, and
+`wideTeacherSelectionSurvivesRefreshUpdateAndCreate` reported 7 passed, 0
+failed. The owning CTest `ClassMngrTestingClassesPageTests` failed with 48
+passed and 3 failed: `rosterKeyboardTriggerOpensInAppPalette` (keyboard not
+visible), `rosterKeyboardWritesToKoreanNameCell` (keyboard target absent), and
+`outputAvailabilityFollowsRosterTabAndLoadedClass` (print capability false).
+All three also reproduced individually. Older Phase 2 runs, including a
+captured pre-F912 run, note the same failures, but those records do not bind a
+source hash and do not establish a current baseline. `git diff --check` passed.
+Verification was incremental macOS Clang Debug only; no full suite or other
+platform was run.
+
+Batch534 (F1302) is closed locally with push pending. Batch535 is active with
+F1303 accepted before implementation. Batch536 discovery is due when F1303
+implementation starts, under the one-slice trigger. Gate 1 and Gate 2 remain
+Partial, and the Phase 2 exit gate remains Open.

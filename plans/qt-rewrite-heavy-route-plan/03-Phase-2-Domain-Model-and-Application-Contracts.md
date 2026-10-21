@@ -59,9 +59,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ### Latest Progress Update
 
-F1301 completed locally at implementation commit `eeb68067`; CalendarPage now
-shows localized notice on technical preference-read failures, with focused
-macOS Clang Debug verification recorded in the progress log.
+F1302 completed locally at implementation commit `09b2c1a5`; a temporary
+labeled teacher choice preserves the assigned ID after a Technical choice-read
+failure, while explicit `None` remains deliberate unassignment. Focused macOS
+Clang Debug checks passed; the owning CTest target remains red with three
+failures documented in the progress log.
 
 ### Slice batches
 

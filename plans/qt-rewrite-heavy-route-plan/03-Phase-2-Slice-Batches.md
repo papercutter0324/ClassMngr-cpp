@@ -11,18 +11,17 @@ and chronology.
 - F1301 — Complete at implementation commit `eeb68067`.
 - No other slices were found.
 
-## Batch534 — Active; implementation underway
+## Batch534 — Closed locally; push pending
 
-1. F1302 — Implementation underway. Preserve assigned Testing Classes
-   teachers when a Technical teacher-choice read failure leaves only the `None`
-   fallback, so an unrelated field save cannot clear the assignment. Verify
-   against the progress-log acceptance criteria.
+1. F1302 — Complete at implementation commit `09b2c1a5`. Technical
+   teacher-choice read failure now preserves the saved/current teacher ID
+   through unrelated-field saves; explicit `None` remains unassignment.
 
 No other slices were found.
 
-## Batch535 — Discovered; one accepted candidate
+## Batch535 — Active; one accepted candidate
 
-1. F1303 — Accepted for Batch535 after Batch534 closes. Show the existing
+1. F1303 — Accepted before implementation. Show the existing
    localized, nonmodal CalendarPage notice when a Technical first-day
    preference read fails, while preserving the locale fallback and current
    Calendar Preferences behavior. Keep successful missing/unavailable fallback
