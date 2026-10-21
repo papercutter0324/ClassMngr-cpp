@@ -58,11 +58,11 @@ discovery evidence.
 
 Closeout `4312e1fe` was pushed; `origin/Qt-Rewrite` advanced from `9bf62a69`.
 
-## Batch537 — Closed locally; push pending
+## Batch537 — Pushed through closeout
 
-Batch537 discovery completed when F1305 implementation started. F1309 and
-F1310 and F1311 are complete. No other slices or leads beyond the
-20-candidate limit were found.
+Batch537 discovery completed when F1305 implementation started. All three
+candidates are complete. No other slices or leads beyond the 20-candidate
+limit were found.
 
 1. F1309 — Complete at implementation commit `122e2a12`. Staff Directory now
    shows localized nonmodal feedback for Technical autosave writes in both
@@ -78,9 +78,12 @@ F1310 and F1311 are complete. No other slices or leads beyond the
 No other slices were found. See the progress log for verification and
 discovery evidence.
 
-## Batch538 — Next after Batch537 push; no candidates
+Closeout `8c06b019` was pushed; `origin/Qt-Rewrite` advanced from
+`4312e1fe`.
+
+## Batch538 — Discovery complete; no candidates
 
 Discovery at F1309 implementation start found no eligible candidate in either
-lane. No other slices or leads beyond the 20-candidate limit were found. Keep
-Batch538 next after Batch537 is pushed; do not activate candidates unless a
-subsequent scan finds one.
+lane. No other slices or leads beyond the 20-candidate limit were found. No
+candidate is queued. Current Phase 2 work is to review and execute remaining
+exit-gate evidence.

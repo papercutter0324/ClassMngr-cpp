@@ -62,9 +62,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 F1311 (`536e5dd3`) completed Testing Classes autosave failure feedback; four
 focused test functions passed (QtTest reported six including init/cleanup).
 The full target was not run due known unrelated failures.
-Batch537 is closed locally with push pending; Batch538 is next after the push
-with no eligible candidates. Next Phase 2 action: review and execute remaining
-open exit-gate evidence. Gate 1 and Gate 2 remain Partial, the exit gate remains
+Batch537 closeout `8c06b019` was pushed to `origin/Qt-Rewrite`, advancing it
+from `4312e1fe`. Batch538 discovery is complete with no eligible candidates;
+no candidate is queued. Next Phase 2 action: review and execute remaining open
+exit-gate evidence. Gate 1 and Gate 2 remain Partial, the exit gate remains
 Open, and F629's post-F1303 Windows x64 evidence remains outstanding.
 
 ### Slice batches
