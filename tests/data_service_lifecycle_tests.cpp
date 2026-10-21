@@ -245,7 +245,7 @@ private slots:
     void classNotesServiceDoesNotFallBackFromClosedSession();
     void subPrepOutputReadsDoNotFallBackFromClosedSession();
     void closeAndSwitchReleaseEveryRepository();
-    void schemaFailureClosesDatabaseSession();
+    void unsupportedSchemaClosesDatabaseSession();
     void classDeleteFailureRollsBackAllChanges();
     void teacherDeleteFailureRollsBackClassAssignments();
     void campusCreationValidatesGeneratedIdAtomically();
@@ -262,8 +262,8 @@ private slots:
     void speakingEvaluationRepositoryPreservesWideIds();
     void speakingEvaluationSaveRejectsMalformedStoredRowIndex();
     void legacyRepositoryWriteFailuresRollBack();
-    void existingTeacherSchemaGainsPersonalDetailColumns();
-    void existingTestingSchemaGainsClassAssignmentColumn();
+    void existingTeacherSchemaIsRejectedWithoutPersonalDetailMigration();
+    void existingTestingSchemaIsRejectedWithoutAssignmentMigration();
 };
 
 void DataServiceLifecycleTests::borrowedDataServicePreservesOwnedSession()
@@ -857,7 +857,7 @@ boundedRosterOutputLoadsOnlyRequestedColumnsAndEnforcesLimits()
     QVERIFY(!sparseRowOverflow);
 }
 
-void DataServiceLifecycleTests::schemaFailureClosesDatabaseSession()
+void DataServiceLifecycleTests::unsupportedSchemaClosesDatabaseSession()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -885,7 +885,7 @@ void DataServiceLifecycleTests::schemaFailureClosesDatabaseSession()
     DatabaseSession session;
     const Status status = session.open(path);
     QVERIFY(!status);
-    QVERIFY(status.error().contains(QStringLiteral("campuses")));
+    QVERIFY(status.error().contains(QStringLiteral("unsupported schema version 0")));
     QVERIFY(!session.isOpen());
     QVERIFY(session.databasePath().isEmpty());
     QCOMPARE(session.settingsRepository(), nullptr);
@@ -3436,7 +3436,7 @@ void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
 }
 
 void DataServiceLifecycleTests
-    ::existingTeacherSchemaGainsPersonalDetailColumns()
+    ::existingTeacherSchemaIsRejectedWithoutPersonalDetailMigration()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -3480,54 +3480,23 @@ void DataServiceLifecycleTests
     }
     QSqlDatabase::removeDatabase(connectionName);
 
+    QFile beforeFile(path);
+    QVERIFY(beforeFile.open(QIODevice::ReadOnly));
+    const QByteArray contentsBefore = beforeFile.readAll();
+    beforeFile.close();
     DataService service;
-    QVERIFY(service.openDatabase(path).has_value());
-
-    const Result<QList<Teacher>> teachers = service.getAllTeachers();
-    QVERIFY(teachers);
-    QCOMPARE(teachers->size(), 1);
-
-    Teacher teacher = teachers->first();
-    QVERIFY(teacher.preferredRomanization.isEmpty());
-    QVERIFY(teacher.preferredName.isEmpty());
-    QVERIFY(teacher.birthday.isEmpty());
-    QVERIFY(teacher.phoneNumber.isEmpty());
-
-    teacher.preferredRomanization = QStringLiteral("Legacy Teacheo");
-    teacher.preferredName = QStringLiteral("Legacy Teacher");
-    teacher.birthday = QStringLiteral("12-31");
-    teacher.phoneNumber = QStringLiteral("010-0000-0000");
-    QVERIFY(service.updateTeacher(teacher).has_value());
-
-    const Result<Teacher> reloaded = service.getTeacher(teacher.id);
-    QVERIFY(reloaded);
-    QCOMPARE(
-        reloaded->preferredRomanization,
-        QStringLiteral("Legacy Teacheo")
-        );
-    QCOMPARE(reloaded->preferredName, QStringLiteral("Legacy Teacher"));
-    QCOMPARE(reloaded->birthday, QStringLiteral("12-31"));
-    QCOMPARE(reloaded->phoneNumber, QStringLiteral("010-0000-0000"));
-
-    QVERIFY(
-        service.saveTestingBlock(
-            QStringLiteral("Thursday"),
-            QStringLiteral("17:00"),
-            QStringLiteral("Legacy Room")
-            )
-        );
-    const Result<QList<TestingBlock>> testingBlocks =
-        service.loadTestingBlocks();
-    QVERIFY(testingBlocks);
-    QCOMPARE(testingBlocks->size(), 1);
-    QCOMPARE(
-        testingBlocks->first().room,
-        QStringLiteral("Legacy Room")
-        );
+    const Status opened = service.openDatabase(path);
+    QVERIFY(!opened);
+    QVERIFY(opened.error().contains(QStringLiteral("unsupported schema version 0")));
+    QVERIFY(!service.isOpen());
+    QFile afterFile(path);
+    QVERIFY(afterFile.open(QIODevice::ReadOnly));
+    QCOMPARE(afterFile.readAll(), contentsBefore);
+    QVERIFY(!QFileInfo::exists(path + QStringLiteral(".pre-schema-v4-backup")));
 }
 
 void DataServiceLifecycleTests
-    ::existingTestingSchemaGainsClassAssignmentColumn()
+    ::existingTestingSchemaIsRejectedWithoutAssignmentMigration()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -3569,22 +3538,15 @@ void DataServiceLifecycleTests
     }
     QSqlDatabase::removeDatabase(connectionName);
 
+    QFile beforeFile(path);
+    QVERIFY(beforeFile.open(QIODevice::ReadOnly));
+    const QByteArray contentsBefore = beforeFile.readAll();
+    beforeFile.close();
     DataService service;
-    QVERIFY(service.openDatabase(path).has_value());
-
-    Result<QList<TestingAssignment>> assignments =
-        service.loadTestingAssignments();
-    QVERIFY(assignments);
-    QCOMPARE(assignments->size(), 1);
-    QCOMPARE(
-        assignments->first().kind,
-        TestingAssignmentKind::PlainTesting
-        );
-    QCOMPARE(
-        assignments->first().room,
-        QStringLiteral("Legacy Room")
-        );
-    QCOMPARE(assignments->first().classId, -1);
+    const Status opened = service.openDatabase(path);
+    QVERIFY(!opened);
+    QVERIFY(opened.error().contains(QStringLiteral("unsupported schema version 0")));
+    QVERIFY(!service.isOpen());
 
     {
         const QString verificationConnection =
@@ -3611,21 +3573,17 @@ void DataServiceLifecycleTests
                 || columnQuery.value(1).toString()
                     == QStringLiteral("class_id");
         }
-        QVERIFY(foundClassId);
+        QVERIFY(!foundClassId);
         database.close();
     }
     QSqlDatabase::removeDatabase(
         connectionName + QStringLiteral("-verification")
         );
 
-    QVERIFY(service.openDatabase(path).has_value());
-    assignments = service.loadTestingAssignments();
-    QVERIFY(assignments);
-    QCOMPARE(assignments->size(), 1);
-    QCOMPARE(
-        assignments->first().room,
-        QStringLiteral("Legacy Room")
-        );
+    QFile afterFile(path);
+    QVERIFY(afterFile.open(QIODevice::ReadOnly));
+    QCOMPARE(afterFile.readAll(), contentsBefore);
+    QVERIFY(!QFileInfo::exists(path + QStringLiteral(".pre-schema-v4-backup")));
 }
 
 QTEST_MAIN(DataServiceLifecycleTests)

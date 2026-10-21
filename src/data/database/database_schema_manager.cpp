@@ -719,7 +719,7 @@ Result<int> readSchemaVersion(QSqlDatabase& database)
     return version;
 }
 
-Result<bool> databaseHasUserTables(QSqlDatabase& database)
+Result<bool> databaseHasUserObjects(QSqlDatabase& database)
 {
     QSqlQuery query(database);
     const auto executed = SqlQueryUtils::execute(
@@ -727,7 +727,7 @@ Result<bool> databaseHasUserTables(QSqlDatabase& database)
         QStringLiteral(
             "SELECT EXISTS("
             "SELECT 1 FROM sqlite_master "
-            "WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+            "WHERE name NOT LIKE 'sqlite_%'"
             ")"
             ),
         QObject::tr("Inspecting existing database schema")
@@ -739,7 +739,7 @@ Result<bool> databaseHasUserTables(QSqlDatabase& database)
     if (!query.next())
     {
         return std::unexpected(
-            QObject::tr("SQLite did not report whether the database has tables.")
+            QObject::tr("SQLite did not report whether the database has schema objects.")
             );
     }
 
@@ -1190,14 +1190,28 @@ const SchemaMigration SchemaMigrations[] = {
 };
 } // namespace
 
+Status DatabaseSchemaManager::createSchema(QSqlDatabase& database)
+{
+    return ensureSchema(
+        database,
+        database.databaseName(),
+        Initialization::AllowEmptyDatabase
+        );
+}
+
 Status DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
 {
-    return ensureSchema(database, database.databaseName());
+    return ensureSchema(
+        database,
+        database.databaseName(),
+        Initialization::ExistingDatabase
+        );
 }
 
 Status DatabaseSchemaManager::ensureSchema(
     QSqlDatabase& database,
-    const QString& databaseFilePath
+    const QString& databaseFilePath,
+    const Initialization initialization
     )
 {
     if (!database.isValid() || !database.isOpen())
@@ -1207,18 +1221,12 @@ Status DatabaseSchemaManager::ensureSchema(
             );
     }
 
-    const Status foreignKeysEnabled = enableForeignKeyEnforcement(database);
-    if (!foreignKeysEnabled)
-    {
-        return foreignKeysEnabled;
-    }
-
     const Result<int> version = schemaVersion(database);
     if (!version)
     {
         return std::unexpected(version.error());
     }
-    const Result<bool> existingProfile = databaseHasUserTables(database);
+    const Result<bool> existingProfile = databaseHasUserObjects(database);
     if (!existingProfile)
     {
         return std::unexpected(existingProfile.error());
@@ -1231,6 +1239,27 @@ Status DatabaseSchemaManager::ensureSchema(
                 "of ClassMngr supports schema version %2."
                 ).arg(*version).arg(LatestSchemaVersion)
             );
+    }
+
+    // Only a newly created, unversioned and empty database may be initialized.
+    // Existing workspaces are never migrated, including empty version-0 files.
+    const bool mayInitialize = initialization == Initialization::AllowEmptyDatabase
+        && *version == 0 && !*existingProfile;
+    if (*version < MinimumSupportedSchemaVersion && !mayInitialize)
+    {
+        return std::unexpected(
+            QObject::tr(
+                "This Teacher Profile uses unsupported schema version %1. "
+                "ClassMngr requires schema version %2 or later. "
+                "Migration from older Teacher Profiles is not available."
+                ).arg(*version).arg(MinimumSupportedSchemaVersion)
+            );
+    }
+
+    const Status foreignKeysEnabled = enableForeignKeyEnforcement(database);
+    if (!foreignKeysEnabled)
+    {
+        return foreignKeysEnabled;
     }
 
     int currentVersion = *version;

@@ -3355,7 +3355,7 @@ pageGenerationReportsFolderOpenFailureAndWritesInformationPdf()
             )
         );
     QVERIFY(m_generationDatabase.open());
-    QVERIFY(DatabaseSchemaManager::ensureSchema(m_generationDatabase));
+    QVERIFY(DatabaseSchemaManager::createSchema(m_generationDatabase));
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(
@@ -3778,7 +3778,7 @@ pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder()
         );
     m_generationDatabase.setDatabaseName(databasePath);
     QVERIFY(m_generationDatabase.open());
-    QVERIFY(DatabaseSchemaManager::ensureSchema(m_generationDatabase));
+    QVERIFY(DatabaseSchemaManager::createSchema(m_generationDatabase));
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath));
@@ -4341,7 +4341,7 @@ void SubPrepPageTests
         );
     m_generationDatabase.setDatabaseName(databasePath);
     QVERIFY(m_generationDatabase.open());
-    QVERIFY(DatabaseSchemaManager::ensureSchema(m_generationDatabase));
+    QVERIFY(DatabaseSchemaManager::createSchema(m_generationDatabase));
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath));

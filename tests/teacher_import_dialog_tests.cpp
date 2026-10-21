@@ -342,7 +342,7 @@ void TeacherImportDialogTests::checkedInWorkbookProductionDialogPlanAppliesToRep
         database.setDatabaseName(
             temporaryDirectory.filePath(QStringLiteral("teacher-import.sqlite")));
         QVERIFY(database.open());
-        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+        QVERIFY(DatabaseSchemaManager::createSchema(database).has_value());
 
         QSqlQuery seed(database);
         QVERIFY2(seed.exec(QString::fromUtf8(R"(

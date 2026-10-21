@@ -1,5 +1,7 @@
 #include "data/database/database_schema_manager.h"
 
+#include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -72,11 +74,10 @@ class DatabaseSchemaManagerTests final : public QObject
 
 private slots:
     void createsLatestVersionedSchemaWithForeignKeys();
-    void upgradesLegacyProfileAndRepairsUnassignedTeacher();
-    void rejectsInvalidLegacyDataBeforeConstraintMigration();
-    void rejectsInvalidLegacyRowIndexesBeforeConstraintMigration();
-    void rollsBackConstraintMigrationAfterPartialTableRebuild();
-    void upgradesVersionFiveProfilesWithRowIndexConstraints();
+    void emptyFileRequiresExplicitCreationIntent();
+    void rejectsEveryOlderSchemaWithoutWritesOrBackup_data();
+    void rejectsEveryOlderSchemaWithoutWritesOrBackup();
+    void currentProfilesRetainRowIndexConstraints();
     void reportsForeignKeyIntegrityFailure();
     void rejectsProfilesFromNewerSchemaVersions();
 };
@@ -92,7 +93,7 @@ void DatabaseSchemaManagerTests::createsLatestVersionedSchemaWithForeignKeys()
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
 
-        QVERIFY(DatabaseSchemaManager::ensureSchema(database));
+        QVERIFY(DatabaseSchemaManager::createSchema(database));
         const Result<int> version = DatabaseSchemaManager::schemaVersion(database);
         QVERIFY(version);
         QCOMPARE(*version, DatabaseSchemaManager::LatestSchemaVersion);
@@ -133,13 +134,124 @@ void DatabaseSchemaManagerTests::createsLatestVersionedSchemaWithForeignKeys()
     QSqlDatabase::removeDatabase(name);
 }
 
+void DatabaseSchemaManagerTests::emptyFileRequiresExplicitCreationIntent()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("empty-existing.db"));
+    QFile file(path);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    file.close();
+    QCOMPARE(QFileInfo(path).size(), qint64(0));
+    const QString name = connectionName();
+    {
+        auto database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), name);
+        database.setDatabaseName(path);
+        QVERIFY(database.open());
+
+        const Status convenience = DatabaseSchemaManager::ensureSchema(database);
+        const Status defaultPath = DatabaseSchemaManager::ensureSchema(database, path);
+
+        QVERIFY(!convenience);
+        QVERIFY(!defaultPath);
+        QVERIFY(convenience.error().contains(QStringLiteral("unsupported schema version 0")));
+        QCOMPARE(defaultPath.error(), convenience.error());
+        QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA user_version")), 0);
+        QVERIFY(!tableExists(database, QStringLiteral("classes")));
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        QCOMPARE(file.readAll(), QByteArray{});
+        file.close();
+        QCOMPARE(QDir(directory.path()).entryList(QDir::Files),
+            QStringList{QStringLiteral("empty-existing.db")});
+
+        QVERIFY(DatabaseSchemaManager::createSchema(database));
+        QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA user_version")), 6);
+        QVERIFY(tableExists(database, QStringLiteral("classes")));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(name);
+}
+
+void DatabaseSchemaManagerTests::rejectsEveryOlderSchemaWithoutWritesOrBackup_data()
+{
+    QTest::addColumn<int>("version");
+    QTest::addColumn<bool>("hasSchemaObjects");
+    QTest::addColumn<bool>("explicitPath");
+    for (int version = 0; version < 6; ++version)
+    {
+        const QByteArray row = QByteArray::number(version);
+        QTest::newRow((row + "-populated-convenience").constData()) << version << true << false;
+        QTest::newRow((row + "-empty-existing-convenience").constData()) << version << false << false;
+        QTest::newRow((row + "-populated-default").constData()) << version << true << true;
+        QTest::newRow((row + "-empty-existing-default").constData()) << version << false << true;
+    }
+}
+
+void DatabaseSchemaManagerTests::rejectsEveryOlderSchemaWithoutWritesOrBackup()
+{
+    QFETCH(int, version);
+    QFETCH(bool, hasSchemaObjects);
+    QFETCH(bool, explicitPath);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("older-profile.db"));
+    const QString name = connectionName();
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), name);
+        database.setDatabaseName(path);
+        QVERIFY(database.open());
+        QSqlQuery query(database);
+        if (hasSchemaObjects)
+        {
+            QVERIFY(query.exec(QStringLiteral(
+                "CREATE TABLE class_info (class_id INTEGER PRIMARY KEY, teacher_id INTEGER)")));
+            QVERIFY(query.exec(QStringLiteral(
+                "INSERT INTO class_info VALUES (1, -1)")));
+        }
+        QVERIFY(query.exec(QStringLiteral("PRAGMA user_version = %1").arg(version)));
+        const int schemaBefore = pragmaValue(database, QStringLiteral("PRAGMA schema_version"));
+        const int foreignKeysBefore = pragmaValue(database, QStringLiteral("PRAGMA foreign_keys"));
+        QFile beforeFile(path);
+        QVERIFY(beforeFile.open(QIODevice::ReadOnly));
+        const QByteArray bytesBefore = beforeFile.readAll();
+        beforeFile.close();
+        const QStringList filesBefore = QDir(directory.path()).entryList(QDir::Files);
+
+        // Both public validation forms must reject old databases by default.
+        const Status status = explicitPath
+            ? DatabaseSchemaManager::ensureSchema(database, path)
+            : DatabaseSchemaManager::ensureSchema(database);
+
+        QVERIFY(!status);
+        QVERIFY(status.error().contains(QStringLiteral("unsupported schema version %1").arg(version)));
+        QVERIFY(status.error().contains(QStringLiteral("schema version 6 or later")));
+        QVERIFY(status.error().contains(QStringLiteral("Migration from older Teacher Profiles is not available")));
+        QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA user_version")), version);
+        QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA schema_version")), schemaBefore);
+        QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA foreign_keys")), foreignKeysBefore);
+        if (hasSchemaObjects)
+        {
+            QVERIFY(query.exec(QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=1")));
+            QVERIFY(query.next());
+            QCOMPARE(query.value(0).toInt(), -1);
+        }
+        QVERIFY(!tableExists(database, QStringLiteral("teachers")));
+        database.close();
+        QFile afterFile(path);
+        QVERIFY(afterFile.open(QIODevice::ReadOnly));
+        QCOMPARE(afterFile.readAll(), bytesBefore);
+        QCOMPARE(QDir(directory.path()).entryList(QDir::Files), filesBefore);
+    }
+    QSqlDatabase::removeDatabase(name);
+}
+
 void DatabaseSchemaManagerTests
-    ::upgradesLegacyProfileAndRepairsUnassignedTeacher()
+    ::currentProfilesRetainRowIndexConstraints()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
 
-    const QString path = directory.filePath(QStringLiteral("legacy-profile.db"));
+    const QString path = directory.filePath(QStringLiteral("current-profile.db"));
     const QString name = connectionName();
     {
         QSqlDatabase database = QSqlDatabase::addDatabase(
@@ -148,202 +260,11 @@ void DatabaseSchemaManagerTests
             );
         database.setDatabaseName(path);
         QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::createSchema(database));
 
         QSqlQuery query(database);
         QVERIFY(query.exec(QStringLiteral(
-            "CREATE TABLE classes (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)"
-            )));
-        QVERIFY(query.exec(QStringLiteral(
-            "CREATE TABLE class_info ("
-            "class_id INTEGER PRIMARY KEY, teacher_id INTEGER, class_grade TEXT, "
-            "class_level TEXT, reading_book TEXT, essay_book TEXT, "
-            "class_color TEXT DEFAULT '#FFFFFF', font_color TEXT DEFAULT '#000000', "
-            "notes TEXT, time_filler_activities TEXT)"
-            )));
-        QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO classes (name) VALUES ('Legacy Class')"
-            )));
-        QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO class_info (class_id, teacher_id) VALUES (1, -1)"
-            )));
-
-        QVERIFY(DatabaseSchemaManager::ensureSchema(database));
-        QCOMPARE(
-            pragmaValue(database, QStringLiteral("PRAGMA user_version")),
-            DatabaseSchemaManager::LatestSchemaVersion
-            );
-        QVERIFY(tableHasForeignKey(
-            database,
-            QStringLiteral("class_info"),
-            QStringLiteral("classes")
-            ));
-
-        QVERIFY(query.exec(QStringLiteral(
-            "SELECT teacher_id IS NULL FROM class_info WHERE class_id=1"
-            )));
-        QVERIFY(query.next());
-        QCOMPARE(query.value(0).toInt(), 1);
-    }
-    QSqlDatabase::removeDatabase(name);
-
-    QVERIFY(QFileInfo::exists(
-        path + QStringLiteral(".pre-schema-v4-backup")
-        ));
-}
-
-void DatabaseSchemaManagerTests
-    ::rejectsInvalidLegacyDataBeforeConstraintMigration()
-{
-    const QString name = connectionName();
-    {
-        QSqlDatabase database = QSqlDatabase::addDatabase(
-            QStringLiteral("QSQLITE"),
-            name
-            );
-        database.setDatabaseName(QStringLiteral(":memory:"));
-        QVERIFY(database.open());
-
-        QSqlQuery query(database);
-        QVERIFY(query.exec(QStringLiteral(
-            "CREATE TABLE teachers ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT, teacher_kr TEXT, teacher_en TEXT, "
-            "preferred_romanization TEXT, preferred_name TEXT, room_number TEXT, "
-            "birthday TEXT, phone_number TEXT, wifi_name TEXT, wifi_password TEXT, "
-            "internet_type TEXT DEFAULT 'WiFi', zoom_id TEXT, zoom_password TEXT, "
-            "projection_type TEXT DEFAULT 'HDMI', notes TEXT)"
-            )));
-        QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO teachers (teacher_en, internet_type, projection_type) "
-            "VALUES ('Legacy Teacher', 'Satellite', 'HDMI')"
-            )));
-
-        const Status status = DatabaseSchemaManager::ensureSchema(database);
-        QVERIFY(!status);
-        QVERIFY(status.error().contains(QStringLiteral("unsupported internet type")));
-        QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA user_version")), 2);
-        QVERIFY(!tableHasForeignKey(
-            database,
-            QStringLiteral("class_info"),
-            QStringLiteral("classes")
-            ));
-    }
-    QSqlDatabase::removeDatabase(name);
-}
-
-void DatabaseSchemaManagerTests
-    ::rejectsInvalidLegacyRowIndexesBeforeConstraintMigration()
-{
-    const QString name = connectionName();
-    {
-        QSqlDatabase database = QSqlDatabase::addDatabase(
-            QStringLiteral("QSQLITE"),
-            name
-            );
-        database.setDatabaseName(QStringLiteral(":memory:"));
-        QVERIFY(database.open());
-
-        QSqlQuery query(database);
-        QVERIFY(query.exec(QStringLiteral(
-            "CREATE TABLE classes (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)"
-            )));
-        QVERIFY(query.exec(QStringLiteral(
-            "CREATE TABLE roster_data ("
-            "class_id INTEGER, row_index INTEGER, col_index INTEGER, value TEXT, "
-            "PRIMARY KEY (class_id, row_index, col_index))"
-            )));
-        QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO classes (name) VALUES ('Legacy Class')"
-            )));
-        QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
-            "VALUES (1, -1, 0, 'Legacy Student')"
-            )));
-
-        const Status status = DatabaseSchemaManager::ensureSchema(database);
-        QVERIFY(!status);
-        QVERIFY(status.error().contains(
-            QStringLiteral("invalid row or column index")
-            ));
-        QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA user_version")), 2);
-    }
-    QSqlDatabase::removeDatabase(name);
-}
-
-void DatabaseSchemaManagerTests
-    ::rollsBackConstraintMigrationAfterPartialTableRebuild()
-{
-    const QString name = connectionName();
-    {
-        QSqlDatabase database = QSqlDatabase::addDatabase(
-            QStringLiteral("QSQLITE"),
-            name
-            );
-        database.setDatabaseName(QStringLiteral(":memory:"));
-        QVERIFY(database.open());
-
-        QSqlQuery query(database);
-        QVERIFY(query.exec(QStringLiteral(
-            "CREATE TABLE teachers ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT, teacher_kr TEXT, teacher_en TEXT, "
-            "preferred_romanization TEXT, preferred_name TEXT, room_number TEXT, "
-            "birthday TEXT, phone_number TEXT, wifi_name TEXT, wifi_password TEXT, "
-            "internet_type TEXT DEFAULT 'WiFi', zoom_id TEXT, zoom_password TEXT, "
-            "projection_type TEXT DEFAULT 'HDMI', notes TEXT)"
-            )));
-        QVERIFY(query.exec(QStringLiteral(
-            "CREATE TABLE classes (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)"
-            )));
-        QVERIFY(query.exec(QStringLiteral(
-            "CREATE TABLE classmngr_legacy_classes (id INTEGER PRIMARY KEY)"
-            )));
-        QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO teachers (teacher_en) VALUES ('Legacy Teacher')"
-            )));
-
-        const Status status = DatabaseSchemaManager::ensureSchema(database);
-        QVERIFY(!status);
-        QVERIFY(status.error().contains(QStringLiteral("Database migration 4")));
-
-        // Migration 4 starts by rebuilding teachers.  A name collision while
-        // rebuilding classes must roll back that earlier rebuild as well.
-        QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA user_version")), 3);
-        QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA foreign_keys")), 1);
-        QVERIFY(!tableHasForeignKey(
-            database,
-            QStringLiteral("teachers"),
-            QStringLiteral("classes")
-            ));
-        QVERIFY(!tableExists(database, QStringLiteral("classmngr_legacy_teachers")));
-        QVERIFY(tableExists(database, QStringLiteral("classmngr_legacy_classes")));
-        QVERIFY(query.exec(QStringLiteral(
-            "SELECT teacher_en FROM teachers WHERE id=1"
-            )));
-        QVERIFY(query.next());
-        QCOMPARE(query.value(0).toString(), QStringLiteral("Legacy Teacher"));
-    }
-    QSqlDatabase::removeDatabase(name);
-}
-
-void DatabaseSchemaManagerTests
-    ::upgradesVersionFiveProfilesWithRowIndexConstraints()
-{
-    QTemporaryDir directory;
-    QVERIFY(directory.isValid());
-
-    const QString path = directory.filePath(QStringLiteral("version-five.db"));
-    const QString name = connectionName();
-    {
-        QSqlDatabase database = QSqlDatabase::addDatabase(
-            QStringLiteral("QSQLITE"),
-            name
-            );
-        database.setDatabaseName(path);
-        QVERIFY(database.open());
-        QVERIFY(DatabaseSchemaManager::ensureSchema(database));
-
-        QSqlQuery query(database);
-        QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO classes (name) VALUES ('Version Five Class')"
+            "INSERT INTO classes (name) VALUES ('Current Class')"
             )));
         const int classId = query.lastInsertId().toInt();
         QVERIFY(classId > 0);
@@ -366,7 +287,6 @@ void DatabaseSchemaManagerTests
             "VALUES (%1, 0)"
             ).arg(evaluationId)));
 
-        QVERIFY(query.exec(QStringLiteral("PRAGMA user_version = 5")));
         QVERIFY(DatabaseSchemaManager::ensureSchema(database));
         QCOMPARE(
             pragmaValue(database, QStringLiteral("PRAGMA user_version")),
@@ -387,7 +307,7 @@ void DatabaseSchemaManagerTests
     }
     QSqlDatabase::removeDatabase(name);
 
-    QVERIFY(QFileInfo::exists(
+    QVERIFY(!QFileInfo::exists(
         path + QStringLiteral(".pre-schema-v6-backup")
         ));
 }
@@ -402,7 +322,7 @@ void DatabaseSchemaManagerTests::reportsForeignKeyIntegrityFailure()
             );
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        QVERIFY(DatabaseSchemaManager::ensureSchema(database));
+        QVERIFY(DatabaseSchemaManager::createSchema(database));
 
         QSqlQuery query(database);
         QVERIFY(query.exec(QStringLiteral("PRAGMA foreign_keys = OFF")));

@@ -118,6 +118,7 @@ Status DatabaseSession::openCandidate(
     }
 
     const QFileInfo databaseInfo(databasePath);
+    const bool existingDatabase = databaseInfo.exists();
     const QString normalizedPath = databaseInfo.absoluteFilePath();
 
     if (normalizedPath.trimmed().isEmpty())
@@ -168,7 +169,10 @@ Status DatabaseSession::openCandidate(
 
     const Status schemaStatus = DatabaseSchemaManager::ensureSchema(
         *m_database,
-        normalizedPath
+        normalizedPath,
+        behavior == OpenBehavior::ExistingOnly || existingDatabase
+            ? DatabaseSchemaManager::Initialization::ExistingDatabase
+            : DatabaseSchemaManager::Initialization::AllowEmptyDatabase
         );
     if (!schemaStatus)
     {

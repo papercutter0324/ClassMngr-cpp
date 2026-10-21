@@ -86,7 +86,10 @@ private slots:
     void openPreservesNormalUnicodePathBytes();
     void existingOnlyOpenAcceptsSpecialCharacterPath();
     void existingOnlyUriTreatsQuestionMarkAsPathData();
-    void existingOnlyOpenCreatesSchemaMigrationBackupAtFilesystemPath();
+    void olderSchemasAreRejectedWithoutChangingFilesOrActiveSession_data();
+    void olderSchemasAreRejectedWithoutChangingFilesOrActiveSession();
+    void existingEmptyFilesAreNotInitialized();
+    void currentSchemaDbFilesRemainSupported();
     void createOrOpenCreatesANewWorkspace();
     void existingInvalidFileIsNotSilentlyReplaced();
     void closeClosesTheOpenWorkspace();
@@ -263,39 +266,102 @@ existingOnlyUriTreatsQuestionMarkAsPathData()
 }
 
 void NextPlatformApplicationServicesWorkspacePortTests::
-existingOnlyOpenCreatesSchemaMigrationBackupAtFilesystemPath()
+olderSchemasAreRejectedWithoutChangingFilesOrActiveSession_data()
 {
+    QTest::addColumn<int>("version");
+    QTest::addColumn<bool>("createHook");
+    for (int version = 0; version < 6; ++version)
+    {
+        const QByteArray row = QByteArray::number(version);
+        QTest::newRow((row + "-open-existing").constData()) << version << false;
+        QTest::newRow((row + "-create-or-open-existing").constData()) << version << true;
+    }
+}
+
+void NextPlatformApplicationServicesWorkspacePortTests::
+olderSchemasAreRejectedWithoutChangingFilesOrActiveSession()
+{
+    QFETCH(int, version);
+    QFETCH(bool, createHook);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
     ApplicationServicesWorkspacePort port(services);
-    const QString databasePath = m_directory.filePath(
-        QStringLiteral("existing-only-schema-v5/profile.tps")
-        );
-    const QString backupPath = databasePath
-        + QStringLiteral(".pre-schema-v6-backup");
-    QVERIFY(createAndCloseWorkspace(port, utf8(databasePath)));
-    QVERIFY(!QFileInfo::exists(backupPath));
-
-    const QString legacyConnectionName =
-        QStringLiteral("workspace-schema-v5-observer");
+    const QString activePath = directory.filePath(QStringLiteral("current.tps"));
+    QVERIFY(port.createOrOpenDatabase(utf8(activePath)));
+    const QString activeConnection = services.databaseSession()->database().connectionName();
+    const QString databasePath = directory.filePath(QStringLiteral("older-수업's.db"));
+    const QString observerName = QStringLiteral("older-schema-observer");
     {
-        QSqlDatabase legacyDatabase = QSqlDatabase::addDatabase(
-            QStringLiteral("QSQLITE"),
-            legacyConnectionName
-            );
-        legacyDatabase.setDatabaseName(databasePath);
-        QVERIFY(legacyDatabase.open());
-
-        QSqlQuery versionQuery(legacyDatabase);
-        QVERIFY(versionQuery.exec(QStringLiteral("PRAGMA user_version = 5")));
-        legacyDatabase.close();
+        auto database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), observerName);
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral("CREATE TABLE legacy_data (value TEXT)")));
+        QVERIFY(query.exec(QStringLiteral("INSERT INTO legacy_data VALUES ('Keep unchanged')")));
+        QVERIFY(query.exec(QStringLiteral("PRAGMA user_version = %1").arg(version)));
+        database.close();
     }
-    QSqlDatabase::removeDatabase(legacyConnectionName);
+    QSqlDatabase::removeDatabase(observerName);
+    QFile beforeFile(databasePath);
+    QVERIFY(beforeFile.open(QIODevice::ReadOnly));
+    const QByteArray before = beforeFile.readAll();
+    beforeFile.close();
+    const QStringList filesBefore = QDir(directory.path()).entryList(QDir::Files);
 
-    const auto opened = port.openDatabase(utf8(databasePath));
+    const auto opened = createHook
+        ? port.createOrOpenDatabase(utf8(databasePath))
+        : port.openDatabase(utf8(databasePath));
 
+    QVERIFY(!opened);
+    const QString message = QString::fromStdString(opened.error().message);
+    QVERIFY(message.contains(QStringLiteral("unsupported schema version %1").arg(version)));
+    QVERIFY(message.contains(QStringLiteral("Migration from older Teacher Profiles is not available")));
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(port.currentDatabasePath(), normalizedPath(activePath));
+    QCOMPARE(services.databaseSession()->database().connectionName(), activeConnection);
+    QFile afterFile(databasePath);
+    QVERIFY(afterFile.open(QIODevice::ReadOnly));
+    QCOMPARE(afterFile.readAll(), before);
+    QCOMPARE(QDir(directory.path()).entryList(QDir::Files), filesBefore);
+    services.closeDatabase();
+}
+
+void NextPlatformApplicationServicesWorkspacePortTests::existingEmptyFilesAreNotInitialized()
+{
+    for (const bool createHook : {false, true})
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString path = directory.filePath(QStringLiteral("empty.tps"));
+        writeInvalidWorkspace(path, {});
+        ApplicationServices services;
+        ApplicationServicesWorkspacePort port(services);
+
+        const auto opened = createHook
+            ? port.createOrOpenDatabase(utf8(path))
+            : port.openDatabase(utf8(path));
+
+        QVERIFY(!opened);
+        QVERIFY(opened.error().message.find("unsupported schema version 0") != std::string::npos);
+        QVERIFY(!services.hasOpenDatabase());
+        QCOMPARE(QFileInfo(path).size(), qint64(0));
+        QCOMPARE(QDir(directory.path()).entryList(QDir::Files), QStringList{QStringLiteral("empty.tps")});
+    }
+}
+
+void NextPlatformApplicationServicesWorkspacePortTests::currentSchemaDbFilesRemainSupported()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    ApplicationServicesWorkspacePort port(services);
+    const QString path = directory.filePath(QStringLiteral("current-schema.db"));
+    QVERIFY(createAndCloseWorkspace(port, utf8(path)));
+    const auto opened = port.openDatabase(utf8(path));
     QVERIFY(opened);
-    QVERIFY(QFileInfo::exists(backupPath));
-    QCOMPARE(port.currentDatabasePath(), normalizedPath(databasePath));
+    QCOMPARE(port.currentDatabasePath(), normalizedPath(path));
+    QVERIFY(services.hasOpenDatabase());
     services.closeDatabase();
 }
 

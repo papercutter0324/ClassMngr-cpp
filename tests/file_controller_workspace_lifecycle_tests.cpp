@@ -600,7 +600,8 @@ private slots:
     void missingStartupPathUsesCapturedWarning();
     void invalidStartupDatabaseUsesLegacyErrorText();
     void startupLoadUsesCoordinatorAndLegacyFallback();
-    void startupMigratesLegacyDbThroughCoordinatorAndRetainsBackup();
+    void startupRejectsOlderSchemasAndPreservesWorkspaceState_data();
+    void startupRejectsOlderSchemasAndPreservesWorkspaceState();
     void autosaveUsesCoordinatorForOpenWorkspace();
     void autosaveWarnsAndPreservesStaleCoordinatorState();
     void autosaveUsesLegacyFallbackForCompatibilityWorkspace();
@@ -2579,110 +2580,87 @@ void FileControllerWorkspaceLifecycleTests::startupLoadUsesCoordinatorAndLegacyF
 }
 
 void FileControllerWorkspaceLifecycleTests::
-startupMigratesLegacyDbThroughCoordinatorAndRetainsBackup()
+startupRejectsOlderSchemasAndPreservesWorkspaceState_data()
 {
+    QTest::addColumn<int>("version");
+    QTest::addColumn<bool>("hasActiveWorkspace");
+    for (int version = 0; version < 6; ++version)
+    {
+        const QByteArray row = QByteArray::number(version);
+        QTest::newRow((row + "-closed").constData()) << version << false;
+        QTest::newRow((row + "-active-v6").constData()) << version << true;
+    }
+}
+
+void FileControllerWorkspaceLifecycleTests::
+startupRejectsOlderSchemasAndPreservesWorkspaceState()
+{
+    QFETCH(int, version);
+    QFETCH(bool, hasActiveWorkspace);
     QTemporaryDir workspaceRoot;
     QVERIFY(workspaceRoot.isValid());
-
-    const QString legacyDatabasePath = workspaceRoot.filePath(
-        QStringLiteral("legacy-startup.db")
-        );
-    const QString fixturePath = QDir(
-        QStringLiteral(CLASSMNGR_SOURCE_DIR)
-        ).filePath(QStringLiteral("tests/fixtures/workspaces/legacy_startup.sql"));
+    const QString olderPath = workspaceRoot.filePath(QStringLiteral("older-startup.db"));
+    const QString fixturePath = QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR))
+        .filePath(QStringLiteral("tests/fixtures/workspaces/legacy_startup.sql"));
     QString setupError;
-    QVERIFY2(
-        materializeSqlFixture(fixturePath, legacyDatabasePath, &setupError),
-        qPrintable(setupError)
-        );
+    QVERIFY2(materializeSqlFixture(fixturePath, olderPath, &setupError), qPrintable(setupError));
+    const QString connectionName = QStringLiteral("older-startup-version");
+    {
+        auto database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(olderPath);
+        QVERIFY(database.open());
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral("PRAGMA user_version = %1").arg(version)));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    const QByteArray contentsBefore = readFile(olderPath);
+    QVERIFY(!contentsBefore.isEmpty());
 
     SettingsManager::instance().clear();
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
     ApplicationServices services;
     FileController controller(&services, nullptr);
-    controller.loadDatabaseOnStartup(legacyDatabasePath);
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+    const QString activePath = workspaceRoot.filePath(QStringLiteral("current-v6.tps"));
+    if (hasActiveWorkspace)
+    {
+        QVERIFY(services.openDatabase(activePath));
+        services.closeDatabase();
+        controller.loadDatabaseOnStartup(activePath);
+        QVERIFY(services.hasOpenDatabase());
+    }
+    const QString activePathBefore = services.currentDatabasePath();
+    const QStringList recentBefore = SettingsManager::instance().getRecentFiles();
+    const QString lastBefore = SettingsManager::instance().getLastFile();
+    const QStringList filesBefore = QDir(workspaceRoot.path()).entryList(QDir::Files);
 
-    const QString normalizedPath =
-        QFileInfo(legacyDatabasePath).absoluteFilePath();
-    QVERIFY(services.hasOpenDatabase());
-    QCOMPARE(services.currentDatabasePath(), normalizedPath);
-    QVERIFY(QFileInfo::exists(normalizedPath));
+    controller.loadDatabaseOnStartup(olderPath);
 
-    const Result<QList<Teacher>> teachers =
-        services.teacherService()->teachers();
-    QVERIFY(teachers.has_value());
-    QCOMPARE(teachers->size(), 1);
-    QCOMPARE(teachers->constFirst().id, 1);
-    QCOMPARE(teachers->constFirst().teacherKr, QStringLiteral("Legacy Teacher"));
-    QCOMPARE(teachers->constFirst().teacherEn, QStringLiteral("Legacy Teacher"));
-    QCOMPARE(teachers->constFirst().roomNumber, QStringLiteral("201"));
-    QCOMPARE(teachers->constFirst().wifiName, QStringLiteral("Legacy-WiFi"));
+    QCOMPARE(prompts.messages.size(), 1);
+    const auto& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("Open Teacher Profile"));
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QVERIFY(warning.message.contains(QFileInfo(olderPath).absoluteFilePath()));
+    QVERIFY(warning.message.contains(QStringLiteral("unsupported schema version %1").arg(version)));
+    QVERIFY(warning.message.contains(QStringLiteral("Migration from older Teacher Profiles is not available")));
+    QVERIFY(prompts.confirmations.isEmpty());
+    QCOMPARE(services.hasOpenDatabase(), hasActiveWorkspace);
+    QCOMPARE(services.currentDatabasePath(), activePathBefore);
+    QCOMPARE(SettingsManager::instance().getRecentFiles(), recentBefore);
+    QCOMPARE(SettingsManager::instance().getLastFile(), lastBefore);
+    QCOMPARE(actions.saveFile->isEnabled(), hasActiveWorkspace);
+    QCOMPARE(actions.closeFile->isEnabled(), hasActiveWorkspace);
+    QCOMPARE(readFile(olderPath), contentsBefore);
+    QCOMPARE(QDir(workspaceRoot.path()).entryList(QDir::Files), filesBefore);
 
-    const Result<QList<Classroom>> classes = services.classService()->classes();
-    QVERIFY(classes.has_value());
-    QCOMPARE(classes->size(), 1);
-    QCOMPARE(classes->constFirst().id, 1);
-    QCOMPARE(classes->constFirst().name, QStringLiteral("Legacy E4"));
-
-    const Result<ClassInfo> classInfo = services.classService()->classInfo(1);
-    QVERIFY(classInfo.has_value());
-    QCOMPARE(classInfo->classId, 1);
-    QCOMPARE(classInfo->teacherId, -1);
-    QCOMPARE(classInfo->classGrade, QStringLiteral("E4"));
-    QCOMPARE(classInfo->classLevel, QStringLiteral("Blue"));
-    QCOMPARE(classInfo->readingBook, QStringLiteral("Legacy Reading"));
-    QCOMPARE(classInfo->essayBook, QStringLiteral("Legacy Essay"));
-    QCOMPARE(classInfo->classColor, QStringLiteral("#DDEBFF"));
-    QCOMPARE(classInfo->fontColor, QStringLiteral("#172B4D"));
-
-    const Result<QList<ClassInfo>> scheduleInfos =
-        services.classService()->scheduleClassInfos();
-    QVERIFY(scheduleInfos.has_value());
-    QCOMPARE(scheduleInfos->size(), 1);
-    const ClassInfo& scheduledClass = scheduleInfos->constFirst();
-    QCOMPARE(scheduledClass.classId, 1);
-    QCOMPARE(scheduledClass.teacherId, -1);
-    QCOMPARE(scheduledClass.classTimes.size(), 1);
-    QCOMPARE(scheduledClass.classTimes.constFirst().day, QStringLiteral("Monday"));
-    QCOMPARE(
-        scheduledClass.classTimes.constFirst().startTime,
-        QStringLiteral("4:00 PM")
-        );
-    QCOMPARE(
-        scheduledClass.classTimes.constFirst().endTime,
-        QStringLiteral("4:50 PM")
-        );
-
-    LegacyDatabaseInspection activeInspection;
+    LegacyDatabaseInspection inspection;
     QString inspectionError;
-    QVERIFY2(
-        inspectLegacyDatabase(
-            normalizedPath,
-            &activeInspection,
-            &inspectionError
-            ),
-        qPrintable(inspectionError)
-        );
-    QCOMPARE(
-        activeInspection.schemaVersion,
-        DatabaseSchemaManager::LatestSchemaVersion
-        );
-    QCOMPARE(activeInspection.unassignedTeacherIsNull, 1);
-
-    const QString backupPath = normalizedPath
-        + QStringLiteral(".pre-schema-v4-backup");
-    QVERIFY(QFileInfo::exists(backupPath));
-    LegacyDatabaseInspection backupInspection;
-    inspectionError.clear();
-    QVERIFY2(
-        inspectLegacyDatabase(
-            backupPath,
-            &backupInspection,
-            &inspectionError
-            ),
-        qPrintable(inspectionError)
-        );
-    QCOMPARE(backupInspection.schemaVersion, 3);
-    QCOMPARE(backupInspection.unassignedTeacherIsNull, 1);
+    QVERIFY2(inspectLegacyDatabase(olderPath, &inspection, &inspectionError), qPrintable(inspectionError));
+    QCOMPARE(inspection.schemaVersion, version);
+    QCOMPARE(inspection.unassignedTeacherIsNull, 0);
 }
 
 void FileControllerWorkspaceLifecycleTests::autosaveUsesCoordinatorForOpenWorkspace()

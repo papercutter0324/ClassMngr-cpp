@@ -1237,7 +1237,7 @@ bool createStartupFixture(
         else
         {
             const Status schemaStatus =
-                DatabaseSchemaManager::ensureSchema(database);
+                DatabaseSchemaManager::createSchema(database);
             if (!schemaStatus)
             {
                 *errorMessage = schemaStatus.error();
@@ -1806,59 +1806,11 @@ bool createLegacyStartupSource(
         }
         else if (!executeStartupFixtureSql(database, sqlPath, errorMessage))
         {
-            // The SQL fixture failed before migration began.
+            // The SQL fixture could not be materialized.
         }
         else
         {
             success = true;
-        }
-
-        database.close();
-        database = QSqlDatabase();
-    }
-
-    QSqlDatabase::removeDatabase(connectionName);
-    return success;
-}
-
-bool createLegacyStartupFixture(
-    const QString& fixturePath,
-    QString* errorMessage
-    )
-{
-    if (!createLegacyStartupSource(fixturePath, errorMessage))
-    {
-        return false;
-    }
-
-    const QString connectionName =
-        QStringLiteral("startup-legacy-migration-%1")
-            .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
-
-    bool success = false;
-    {
-        QSqlDatabase database = QSqlDatabase::addDatabase(
-            QStringLiteral("QSQLITE"),
-            connectionName
-            );
-        database.setDatabaseName(fixturePath);
-
-        if (!database.open())
-        {
-            *errorMessage = database.lastError().text();
-        }
-        else
-        {
-            const Status schemaStatus =
-                DatabaseSchemaManager::ensureSchema(database);
-            if (!schemaStatus)
-            {
-                *errorMessage = schemaStatus.error();
-            }
-            else
-            {
-                success = true;
-            }
         }
 
         database.close();
@@ -1910,9 +1862,9 @@ private slots:
     void checkpointsBracketOneApplicationMetricsTraversal();
     void representativeStartupFixtureIsCompleteAndDeterministic();
     void largeStartupFixtureIsCompleteAndDeterministic();
-    void legacyStartupFixtureMigratesAndRemainsReadable();
+    void legacyStartupFixtureIsRejectedWithoutChanges();
     void rejectsCorruptWorkspaceFile();
-    void rejectsLockedLegacyWorkspaceDuringMigration();
+    void rejectsLockedLegacyWorkspaceWithoutMigration();
     void reportsStartupMetricsAndHonorsThresholds();
     void runsRepresentativeWorkspaceLifecycleWorkflow();
     void pdfLifecycleGrabArmRejectsInvalidConfiguration();
@@ -2358,7 +2310,7 @@ void StartupPerformanceTests::largeStartupFixtureIsCompleteAndDeterministic()
     QSqlDatabase::removeDatabase(connectionName);
 }
 
-void StartupPerformanceTests::legacyStartupFixtureMigratesAndRemainsReadable()
+void StartupPerformanceTests::legacyStartupFixtureIsRejectedWithoutChanges()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -2383,7 +2335,7 @@ void StartupPerformanceTests::legacyStartupFixtureMigratesAndRemainsReadable()
     }
     QString fixtureError;
     QVERIFY2(
-        createLegacyStartupFixture(fixturePath, &fixtureError),
+        createLegacyStartupSource(fixturePath, &fixtureError),
         qPrintable(fixtureError)
         );
 
@@ -2399,49 +2351,29 @@ void StartupPerformanceTests::legacyStartupFixtureMigratesAndRemainsReadable()
         database.open(),
         qPrintable(database.lastError().text())
         );
-    QVERIFY(DatabaseSchemaManager::ensureSchema(database));
+    QFile beforeFile(fixturePath);
+    QVERIFY(beforeFile.open(QIODevice::ReadOnly));
+    const QByteArray contentsBefore = beforeFile.readAll();
+    beforeFile.close();
+    const QStringList filesBefore = QDir(QFileInfo(fixturePath).absolutePath()).entryList(QDir::Files);
 
+    const Status status = DatabaseSchemaManager::ensureSchema(database);
+    QVERIFY(!status);
+    QVERIFY(status.error().contains(QStringLiteral("unsupported schema version 0")));
     QSqlQuery query(database);
     QVERIFY(query.exec(QStringLiteral("PRAGMA user_version")));
     QVERIFY(query.next());
-    QCOMPARE(
-        query.value(0).toInt(),
-        DatabaseSchemaManager::LatestSchemaVersion
-        );
-
-    QVERIFY(query.exec(QStringLiteral("PRAGMA foreign_keys")));
+    QCOMPARE(query.value(0).toInt(), 0);
+    QVERIFY(query.exec(QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=1")));
     QVERIFY(query.next());
-    QCOMPARE(query.value(0).toInt(), 1);
-
-    QVERIFY(query.exec(QStringLiteral("PRAGMA integrity_check")));
-    QVERIFY(query.next());
-    QCOMPARE(query.value(0).toString(), QStringLiteral("ok"));
-
-    QVERIFY(query.exec(QStringLiteral(
-        "SELECT name FROM classes WHERE id=1"
-        )));
-    QVERIFY(query.next());
-    QCOMPARE(query.value(0).toString(), QStringLiteral("Legacy E4"));
-
-    QVERIFY(query.exec(QStringLiteral(
-        "SELECT teacher_id IS NULL FROM class_info WHERE class_id=1"
-        )));
-    QVERIFY(query.next());
-    QCOMPARE(query.value(0).toInt(), 1);
-
-    QVERIFY(query.exec(QStringLiteral(
-        "SELECT COUNT(*) FROM class_times WHERE class_id=1"
-        )));
-    QVERIFY(query.next());
-    QCOMPARE(query.value(0).toInt(), 1);
-
+    QCOMPARE(query.value(0).toInt(), -1);
     database.close();
     database = QSqlDatabase();
     QSqlDatabase::removeDatabase(connectionName);
-
-    QVERIFY(QFile::exists(
-        fixturePath + QStringLiteral(".pre-schema-v4-backup")
-        ));
+    QFile afterFile(fixturePath);
+    QVERIFY(afterFile.open(QIODevice::ReadOnly));
+    QCOMPARE(afterFile.readAll(), contentsBefore);
+    QCOMPARE(QDir(QFileInfo(fixturePath).absolutePath()).entryList(QDir::Files), filesBefore);
 }
 
 void StartupPerformanceTests::rejectsCorruptWorkspaceFile()
@@ -2491,7 +2423,7 @@ void StartupPerformanceTests::rejectsCorruptWorkspaceFile()
     QCOMPARE(unchangedFile.readAll(), corruptContents);
 }
 
-void StartupPerformanceTests::rejectsLockedLegacyWorkspaceDuringMigration()
+void StartupPerformanceTests::rejectsLockedLegacyWorkspaceWithoutMigration()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -2539,7 +2471,7 @@ void StartupPerformanceTests::rejectsLockedLegacyWorkspaceDuringMigration()
                 DatabaseSchemaManager::ensureSchema(migrationDatabase);
             QVERIFY2(
                 !status,
-                "A locked workspace must reject a write migration."
+                "A locked workspace must reject schema inspection without attempting migration."
                 );
             migrationDatabase.close();
         }
@@ -2569,14 +2501,16 @@ void StartupPerformanceTests::rejectsLockedLegacyWorkspaceDuringMigration()
             recoveryDatabase.open(),
             qPrintable(recoveryDatabase.lastError().text())
             );
-        QVERIFY(DatabaseSchemaManager::ensureSchema(recoveryDatabase));
+        const Status status = DatabaseSchemaManager::ensureSchema(recoveryDatabase);
+        QVERIFY(!status);
+        QVERIFY(status.error().contains(QStringLiteral("unsupported schema version 0")));
 
         QSqlQuery versionQuery(recoveryDatabase);
         QVERIFY(versionQuery.exec(QStringLiteral("PRAGMA user_version")));
         QVERIFY(versionQuery.next());
         QCOMPARE(
             versionQuery.value(0).toInt(),
-            DatabaseSchemaManager::LatestSchemaVersion
+            0
             );
 
         recoveryDatabase.close();

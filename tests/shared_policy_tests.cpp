@@ -42,7 +42,7 @@ private slots:
     void restrictedDisplayTimeParsing();
     void sqlFailurePreservesContext_data();
     void sqlFailurePreservesContext();
-    void schemaFailureRollsBack();
+    void unsupportedSchemaIsNotInitialized();
     void allowedUrl_data();
     void allowedUrl();
     void successfulStatus_data();
@@ -320,7 +320,7 @@ void SharedPolicyTests::sqlFailurePreservesContext()
     QSqlDatabase::removeDatabase(connectionName);
 }
 
-void SharedPolicyTests::schemaFailureRollsBack()
+void SharedPolicyTests::unsupportedSchemaIsNotInitialized()
 {
     const QString connectionName = QUuid::createUuid().toString();
     {
@@ -337,7 +337,10 @@ void SharedPolicyTests::schemaFailureRollsBack()
 
         const Status status = DatabaseSchemaManager::ensureSchema(database);
         QVERIFY(!status);
-        QVERIFY(status.error().contains(QStringLiteral("campuses")));
+        QVERIFY(status.error().contains(QStringLiteral("unsupported schema version 0")));
+        QVERIFY(query.exec(QStringLiteral("SELECT id FROM campuses")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 1);
 
         QVERIFY(query.exec(QStringLiteral(
             "SELECT COUNT(*) FROM sqlite_master "
