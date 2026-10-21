@@ -9,6 +9,7 @@
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <iterator>
 #include <limits>
 #include <optional>
@@ -20,6 +21,11 @@
 
 namespace ClassMngr::Next::Application
 {
+
+// The feature boundary supplies its Unicode comparison semantics without
+// coupling catalog normalization to a text framework.
+using ClassDetailsCatalogCaseInsensitiveEquals =
+    std::function<bool(std::u16string_view, std::u16string_view)>;
 
 struct ClassDetailsScheduleValidationRow final
 {
@@ -165,10 +171,11 @@ class ClassDetailsValidationPolicy final
 public:
     [[nodiscard]] static ClassDetailsValidationOutput normalizeAndValidate(
         ClassDetailsValidationInput input,
-        const ClassDetailsValidationCatalog& catalog
+        const ClassDetailsValidationCatalog& catalog,
+        const ClassDetailsCatalogCaseInsensitiveEquals& catalogEquals
         )
     {
-        normalize(input, catalog);
+        normalize(input, catalog, catalogEquals);
 
         ClassDetailsValidationOutput output;
         output.normalized = std::move(input);
@@ -252,13 +259,14 @@ private:
 
     [[nodiscard]] static std::u16string canonicalChoice(
         std::u16string_view value,
-        const std::vector<std::u16string>& choices
+        const std::vector<std::u16string>& choices,
+        const ClassDetailsCatalogCaseInsensitiveEquals& catalogEquals
         )
     {
         const std::u16string trimmed = trim(value);
         for (const std::u16string& choice : choices)
         {
-            if (equalsCaseInsensitive(choice, trimmed))
+            if (catalogEquals(choice, trimmed))
             {
                 return choice;
             }
@@ -502,26 +510,30 @@ private:
 
     static void normalize(
         ClassDetailsValidationInput& input,
-        const ClassDetailsValidationCatalog& catalog
+        const ClassDetailsValidationCatalog& catalog,
+        const ClassDetailsCatalogCaseInsensitiveEquals& catalogEquals
         )
     {
         const std::vector<std::u16string> grades = gradeNames(catalog);
-        input.classGrade = canonicalChoice(input.classGrade, grades);
+        input.classGrade = canonicalChoice(input.classGrade, grades, catalogEquals);
         const auto* grade = findGrade(catalog, input.classGrade);
         input.classLevel = canonicalChoice(
             input.classLevel,
-            levelNames(grade)
+            levelNames(grade),
+            catalogEquals
             );
         const auto* level = findLevel(grade, input.classLevel);
         if (grade && level)
         {
             input.readingBook = canonicalChoice(
                 input.readingBook,
-                level->readingBooks
+                level->readingBooks,
+                catalogEquals
                 );
             input.essayBook = canonicalChoice(
                 input.essayBook,
-                level->essayBooks
+                level->essayBooks,
+                catalogEquals
                 );
         }
         else

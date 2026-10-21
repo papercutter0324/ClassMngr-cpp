@@ -12,6 +12,13 @@ using namespace ClassMngr::Next;
 
 namespace
 {
+bool qtCatalogEquals(std::u16string_view left, std::u16string_view right)
+{
+    return QStringView(left.data(), static_cast<qsizetype>(left.size())).compare(
+        QStringView(right.data(), static_cast<qsizetype>(right.size())),
+        Qt::CaseInsensitive) == 0;
+}
+
 
 Domain::ClassId typedClassId(const std::string& value)
 {
@@ -141,7 +148,7 @@ Application::ClassDetailsSaveWorkflowResult runWorkflow(
     const Application::ClassDetailsSaveWorkflowRequest& value, const WorkflowPorts& ports)
 {
     return Application::ClassDetailsSaveWorkflow::execute(
-        value, workflowCatalog(), ports, ports, ports);
+        value, workflowCatalog(), ports, ports, ports, qtCatalogEquals);
 }
 
 const Domain::OperationError workflowError{Domain::ErrorCode::Technical, "workflow port failure", true};
@@ -162,6 +169,7 @@ private slots:
     void invalidOptionalTeacherIdsDoNotReachPort();
     void preservesPortFailure();
     void workflowSuccessNormalizesAndPreservesStageOrder();
+    void workflowNormalizesUnicodeCatalogSpellingsBeforeSaving();
     void workflowUnwrapsWideContextTeacherIdWithoutNarrowing();
     void workflowQueriesEmptySchedulesAndKeepsOptionalPayload();
     void workflowContextFailureAndMismatchFallBack();
@@ -564,6 +572,36 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowConflictAndQueryFailur
     QVERIFY(!ports.saved);
 }
 
+void NextApplicationClassDetailsSaveUseCaseTests::
+workflowNormalizesUnicodeCatalogSpellingsBeforeSaving()
+{
+    WorkflowPorts ports;
+    auto input = workflowRequest();
+    input.input.classGrade = u" m3 ";
+    input.input.classLevel = u" \u017fong's ";
+    input.input.readingBook = u" reading \u017fmart step 1 book 1 ";
+    input.input.essayBook = u" n/a ";
+    const Application::ClassDetailsValidationCatalog unicodeCatalog = {
+        {{u"M3", {{u"Song's", {u"Reading Smart Step 1 Book 1"}, {u"N/A"}}}}}
+    };
+
+    const auto result = Application::ClassDetailsSaveWorkflow::execute(
+        input, unicodeCatalog, ports, ports, ports, qtCatalogEquals);
+
+    const auto* success =
+        std::get_if<Application::ClassDetailsSaveWorkflowSuccess>(&result);
+    QVERIFY(success);
+    QCOMPARE(success->normalized.classLevel, std::u16string(u"Song's"));
+    QVERIFY(ports.saved);
+    QCOMPARE(ports.saved->classGrade, std::u16string(u"M3"));
+    QCOMPARE(ports.saved->classLevel, std::u16string(u"Song's"));
+    QCOMPARE(ports.saved->readingBook,
+        std::u16string(u"Reading Smart Step 1 Book 1"));
+    QCOMPARE(ports.saved->essayBook, std::u16string(u"N/A"));
+    QCOMPARE(ports.calls,
+        (std::vector<std::string>{"context", "regular", "intensive", "save"}));
+}
+
 void NextApplicationClassDetailsSaveUseCaseTests::workflowSaveFailureRetainsErrorAndOrder()
 {
     WorkflowPorts ports; ports.save = Domain::Result<void>::failure(workflowError);
@@ -592,7 +630,7 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowRawTimeConversionPrese
     auto validationInput = input.input;
     validationInput.teacherId = typedTeacherId("-1"); validationInput.notes.clear();
     QVERIFY(!Application::ClassDetailsValidationPolicy::normalizeAndValidate(
-        validationInput, workflowCatalog()).hasErrors());
+        validationInput, workflowCatalog(), qtCatalogEquals).hasErrors());
     const auto result = runWorkflow(input, ports);
     const auto* failure = std::get_if<Application::ClassDetailsSaveWorkflowFailure>(&result);
     QVERIFY(failure);

@@ -316,6 +316,7 @@ private slots:
     void loadRetranslateDiscardAndClearUseSnapshot();
     void independentFailuresUseThePageFallbacks();
     void successfulSaveRefreshesTeacherAndKeepsSavedFields();
+    void unicodeCatalogSpellingValidatesAndSavesCanonicalLevel();
     void automaticTechnicalFailureShowsLocalizedStatusAndClearsAfterRetry();
     void successfulAutomaticSaveRemainsQuiet();
     void failedReadsKeepFallbackFormUnavailableForAllSaveRoutes();
@@ -707,6 +708,49 @@ void ClassDetailsPageDisplayTests::successfulAutomaticSaveRemainsQuiet()
     QVERIFY(failureStatus->text().isEmpty());
     QVERIFY(m_promptService.requests.empty());
     QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void ClassDetailsPageDisplayTests::
+unicodeCatalogSpellingValidatesAndSavesCanonicalLevel()
+{
+    ApplicationServices services;
+    FakeReadPort readPort;
+    readPort.result = Application::ClassDetailsPageReadResult::success(
+        makeSnapshot(73, firstFields(), "Teacher", 12));
+    FakeSavePort savePort;
+    FakeValidationContextPort contextPort;
+    FakeScheduleConflictPort conflictPort;
+    ClassDetailsPage page(
+        &services, false, nullptr, &savePort, &readPort, &conflictPort, &contextPort);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("Unicode Catalog"), 73));
+
+    auto* details = page.findChild<ClassDetailsSection*>();
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("classInfoSaveButton"));
+    QVERIFY(details && saveButton);
+    details->gradeEditor()->setCurrentText(QStringLiteral("M3"));
+    // Keep the raw spelling in the form so both live validation and saving
+    // must use the same Unicode comparison supplied at the feature boundary.
+    const QString unicodeLevel = QString::fromUtf16(u"\u017fong's");
+    details->levelEditor()->addItem(unicodeLevel);
+    details->levelEditor()->setCurrentText(unicodeLevel);
+    details->readingBookEditor()->setCurrentText(
+        QStringLiteral("Reading Smart Step 1 Book 1"));
+    details->essayBookEditor()->setCurrentText(QStringLiteral("N/A"));
+
+    QCOMPARE(details->level(), unicodeLevel);
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(saveButton->isEnabled());
+    QVERIFY(details->levelEditor()->property("formValidationState").toString()
+        != QStringLiteral("error"));
+    QVERIFY(page.saveChanges());
+    QCOMPARE(savePort.callCount, 1);
+    QVERIFY(savePort.lastRequest);
+    QCOMPARE(savePort.lastRequest->classGrade, std::u16string(u"M3"));
+    QCOMPARE(savePort.lastRequest->classLevel, std::u16string(u"Song's"));
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(m_promptService.requests.empty());
 }
 
 void ClassDetailsPageDisplayTests::

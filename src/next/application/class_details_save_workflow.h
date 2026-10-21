@@ -65,7 +65,8 @@ public:
         const ClassDetailsValidationCatalog& catalog,
         const ClassDetailsValidationContextPort& contextPort,
         const ClassDetailsScheduleConflictPort& conflictPort,
-        const ClassDetailsSavePort& savePort
+        const ClassDetailsSavePort& savePort,
+        const ClassDetailsCatalogCaseInsensitiveEquals& catalogEquals
         )
     {
         ClassDetailsValidationInput input = request.input;
@@ -83,7 +84,8 @@ public:
         input.timeFillerActivities = context
             ? contextText(context.value().timeFillerActivities) : std::u16string{};
 
-        auto validation = ClassDetailsValidationPolicy::normalizeAndValidate(input, catalog);
+        auto validation = ClassDetailsValidationPolicy::normalizeAndValidate(
+            input, catalog, catalogEquals);
         if (validation.hasErrors())
             return validation;
 

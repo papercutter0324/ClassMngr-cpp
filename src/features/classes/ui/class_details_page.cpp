@@ -37,6 +37,7 @@
 #include <QPushButton>
 #include <QScrollBar>
 #include <QStringList>
+#include <QStringView>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -44,6 +45,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace
@@ -76,6 +78,16 @@ QString displayText(const std::string& value)
 std::string sourceText(const QString& value)
 {
     return value.toUtf8().toStdString();
+}
+
+bool classDetailsCatalogCaseInsensitiveEquals(
+    const std::u16string_view left,
+    const std::u16string_view right
+    )
+{
+    return QStringView(left.data(), static_cast<qsizetype>(left.size())).compare(
+        QStringView(right.data(), static_cast<qsizetype>(right.size())),
+        Qt::CaseInsensitive) == 0;
 }
 
 std::vector<std::u16string> validationChoices(const QStringList& choices)
@@ -167,7 +179,8 @@ validateClassDetailsInput(const ClassInfo& info)
     return ClassMngr::Next::Application::
         ClassDetailsValidationPolicy::normalizeAndValidate(
             classDetailsValidationInput(info),
-            classDetailsValidationCatalog()
+            classDetailsValidationCatalog(),
+            classDetailsCatalogCaseInsensitiveEquals
             );
 }
 
@@ -1223,7 +1236,8 @@ bool ClassDetailsPage::saveClassInfoInternal(
         classDetailsValidationCatalog(),
         m_validationContextPort ? *m_validationContextPort : defaultContextPort,
         m_scheduleConflictPort ? *m_scheduleConflictPort : defaultConflictPort,
-        m_savePort ? *m_savePort : defaultSavePort);
+        m_savePort ? *m_savePort : defaultSavePort,
+        classDetailsCatalogCaseInsensitiveEquals);
 
     refreshScheduleValidationBindings();
     if (const auto* validation = std::get_if<

@@ -12,6 +12,13 @@ namespace Domain = ClassMngr::Next::Domain;
 
 namespace
 {
+bool qtCatalogEquals(std::u16string_view left, std::u16string_view right)
+{
+    return QStringView(left.data(), static_cast<qsizetype>(left.size())).compare(
+        QStringView(right.data(), static_cast<qsizetype>(right.size())),
+        Qt::CaseInsensitive) == 0;
+}
+
 Domain::ClassId classId(const std::string& value)
 {
     return *Domain::ClassId::fromString(value);
@@ -74,6 +81,7 @@ class NextApplicationClassDetailsValidationPolicyTests final : public QObject
 
 private slots:
     void normalizesAgainstTheSuppliedCatalogAndRawScheduleRows();
+    void normalizesUnicodeCatalogSpellingsWithTheSuppliedComparator();
     void normalizesStrictTwentyFourHourTimeBoundaries();
     void reportsInvalidWeekdayAfterTrimmingRawScheduleDay();
     void reportsDisallowedGradeAndLevelAgainstTheCatalog();
@@ -91,7 +99,8 @@ normalizesAgainstTheSuppliedCatalogAndRawScheduleRows()
     const ClassDetailsValidationOutput output =
         ClassDetailsValidationPolicy::normalizeAndValidate(
             validInput(),
-            catalog()
+            catalog(),
+            qtCatalogEquals
             );
 
     QVERIFY(!output.hasErrors());
@@ -122,6 +131,43 @@ normalizesAgainstTheSuppliedCatalogAndRawScheduleRows()
 }
 
 void NextApplicationClassDetailsValidationPolicyTests::
+normalizesUnicodeCatalogSpellingsWithTheSuppliedComparator()
+{
+    const ClassDetailsValidationCatalog unicodeCatalog = {
+        {{u"M3", {{u"Song's", {u"Reading Smart Step 1 Book 1"}, {u"N/A"}}}}}
+    };
+    auto input = validInput();
+    input.classGrade = u" m3 ";
+    input.classLevel = u" \u017fong's ";
+    input.readingBook = u" reading \u017fmart step 1 book 1 ";
+    input.essayBook = u" n/a ";
+
+    const auto output = ClassDetailsValidationPolicy::normalizeAndValidate(
+        input, unicodeCatalog, qtCatalogEquals);
+
+    QVERIFY(!output.hasErrors());
+    QCOMPARE(output.normalized.classGrade, std::u16string(u"M3"));
+    QCOMPARE(output.normalized.classLevel, std::u16string(u"Song's"));
+    QCOMPARE(output.normalized.readingBook,
+        std::u16string(u"Reading Smart Step 1 Book 1"));
+    QCOMPARE(output.normalized.essayBook, std::u16string(u"N/A"));
+
+    // A Unicode spelling is accepted only when the boundary comparator agrees.
+    input = output.normalized;
+    input.classLevel = u"\u017fong's";
+    const auto exactOutput = ClassDetailsValidationPolicy::normalizeAndValidate(
+        input, unicodeCatalog,
+        [](std::u16string_view left, std::u16string_view right)
+        {
+            return left == right;
+        });
+    QCOMPARE(exactOutput.issues.size(), std::size_t(1));
+    QCOMPARE(exactOutput.issues[0].code, ClassDetailsValidationCode::ValueNotAllowed);
+    QCOMPARE(exactOutput.issues[0].field, ClassDetailsValidationField::ClassLevel);
+    QCOMPARE(exactOutput.normalized.classLevel, std::u16string(u"\u017fong's"));
+}
+
+void NextApplicationClassDetailsValidationPolicyTests::
 normalizesStrictTwentyFourHourTimeBoundaries()
 {
     ClassDetailsValidationInput input = validInput();
@@ -131,7 +177,8 @@ normalizesStrictTwentyFourHourTimeBoundaries()
     };
 
     const ClassDetailsValidationOutput output =
-        ClassDetailsValidationPolicy::normalizeAndValidate(input, catalog());
+        ClassDetailsValidationPolicy::normalizeAndValidate(
+            input, catalog(), qtCatalogEquals);
 
     QVERIFY(!output.hasErrors());
     QCOMPARE(output.normalized.regularTimes.size(), std::size_t(2));
@@ -152,7 +199,8 @@ reportsInvalidWeekdayAfterTrimmingRawScheduleDay()
     input.regularTimes = {{u" Funday ", u"16:00", u"16:55"}};
 
     const ClassDetailsValidationOutput output =
-        ClassDetailsValidationPolicy::normalizeAndValidate(input, catalog());
+        ClassDetailsValidationPolicy::normalizeAndValidate(
+            input, catalog(), qtCatalogEquals);
 
     QCOMPARE(output.issues.size(), std::size_t(1));
     QCOMPARE(output.issues[0].code, ClassDetailsValidationCode::InvalidWeekday);
@@ -191,7 +239,8 @@ preservesLegacyValidationIssueOrderAndMalformedRowDetails()
     input.intensiveTimes = {{u"Blursday", u"broken", u"also-bad"}};
 
     const ClassDetailsValidationOutput output =
-        ClassDetailsValidationPolicy::normalizeAndValidate(input, catalog());
+        ClassDetailsValidationPolicy::normalizeAndValidate(
+            input, catalog(), qtCatalogEquals);
 
     QCOMPARE(output.issues.size(), std::size_t(15));
     const ClassDetailsValidationCode expectedCodes[] = {
@@ -284,7 +333,8 @@ reportsDuplicateGroupsInDeterministicFirstSeenOrder()
     };
 
     const ClassDetailsValidationOutput output =
-        ClassDetailsValidationPolicy::normalizeAndValidate(input, catalog());
+        ClassDetailsValidationPolicy::normalizeAndValidate(
+            input, catalog(), qtCatalogEquals);
 
     QCOMPARE(output.issues.size(), std::size_t(5));
     const int expectedRows[] = {0, 2, 1, 3, 4};
@@ -346,7 +396,8 @@ reportsDisallowedCatalogValuesInLegacyFieldOrder()
     input.essayBook = u"Unknown Essay Book";
 
     const ClassDetailsValidationOutput output =
-        ClassDetailsValidationPolicy::normalizeAndValidate(input, catalog());
+        ClassDetailsValidationPolicy::normalizeAndValidate(
+            input, catalog(), qtCatalogEquals);
 
     QCOMPARE(output.issues.size(), std::size_t(2));
     QCOMPARE(output.issues[0].code, ClassDetailsValidationCode::ValueNotAllowed);
@@ -381,7 +432,8 @@ reportsDisallowedGradeAndLevelAgainstTheCatalog()
     input.classLevel = u"Unknown";
 
     const ClassDetailsValidationOutput output =
-        ClassDetailsValidationPolicy::normalizeAndValidate(input, catalog());
+        ClassDetailsValidationPolicy::normalizeAndValidate(
+            input, catalog(), qtCatalogEquals);
 
     QCOMPARE(output.issues.size(), std::size_t(2));
     QCOMPARE(output.issues[0].code, ClassDetailsValidationCode::ValueNotAllowed);
@@ -403,7 +455,8 @@ reportsBooksWithoutGradeAndLevelInBookOrder()
     input.essayBook = u" 4A ";
 
     const ClassDetailsValidationOutput output =
-        ClassDetailsValidationPolicy::normalizeAndValidate(input, catalog());
+        ClassDetailsValidationPolicy::normalizeAndValidate(
+            input, catalog(), qtCatalogEquals);
 
     QCOMPARE(output.issues.size(), std::size_t(2));
     QCOMPARE(
@@ -447,7 +500,8 @@ acceptsWideTeacherIdsAndRejectsInvalidTeacherIds()
     ClassDetailsValidationInput wideInput = validInput();
     wideInput.teacherId = teacherId("2147483648");
     const ClassDetailsValidationOutput wideOutput =
-        ClassDetailsValidationPolicy::normalizeAndValidate(wideInput, catalog());
+        ClassDetailsValidationPolicy::normalizeAndValidate(
+            wideInput, catalog(), qtCatalogEquals);
     QVERIFY(!wideOutput.hasErrors());
     QCOMPARE(
         wideOutput.normalized.teacherId.value(),
@@ -459,7 +513,8 @@ acceptsWideTeacherIdsAndRejectsInvalidTeacherIds()
     const ClassDetailsValidationOutput unassignedOutput =
         ClassDetailsValidationPolicy::normalizeAndValidate(
             unassignedInput,
-            catalog()
+            catalog(),
+            qtCatalogEquals
             );
     QVERIFY(!unassignedOutput.hasErrors());
     QCOMPARE(unassignedOutput.normalized.teacherId.value(), std::string("-1"));
@@ -477,7 +532,8 @@ acceptsWideTeacherIdsAndRejectsInvalidTeacherIds()
         const ClassDetailsValidationOutput invalidOutput =
             ClassDetailsValidationPolicy::normalizeAndValidate(
                 invalidInput,
-                catalog()
+                catalog(),
+                qtCatalogEquals
                 );
 
         QCOMPARE(invalidOutput.issues.size(), std::size_t(1));
@@ -504,7 +560,8 @@ keepsClassIdsWithinPositiveIntRange()
     const ClassDetailsValidationOutput maximumOutput =
         ClassDetailsValidationPolicy::normalizeAndValidate(
             maximumInput,
-            catalog()
+            catalog(),
+            qtCatalogEquals
             );
     QVERIFY(!maximumOutput.hasErrors());
     QCOMPARE(
@@ -526,7 +583,8 @@ keepsClassIdsWithinPositiveIntRange()
         const ClassDetailsValidationOutput invalidOutput =
             ClassDetailsValidationPolicy::normalizeAndValidate(
                 invalidInput,
-                catalog()
+                catalog(),
+                qtCatalogEquals
                 );
 
         QCOMPARE(invalidOutput.issues.size(), std::size_t(2));
