@@ -61579,3 +61579,19 @@ active implementation batch; Batch522 discovery starts after the push. Gate 1
 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. Phase 0
 remains Complete; F629's source-bound Windows x64 requalification remains
 outstanding separately.
+
+### Batch521 push receipt - 2026-10-21
+
+The Batch521 closeout was pushed to `origin/Qt-Rewrite` at
+`779d21b88f87aee17a447c62503971f78cd42b68`. Before the push, the remote tip
+`096442eff7590f841954db43d0204ec76c4f3d8e` was an ancestor of local HEAD, with
+zero remote-only and three local-only commits. Ordinary non-force
+`git push origin Qt-Rewrite` succeeded (`096442ef..779d21b8`). Local and
+remote HEAD now match at `779d21b88f87aee17a447c62503971f78cd42b68`; the
+worktree is clean, and `git show --check` passed.
+
+Batch521 is complete and pushed. Batch522 discovery is next, with no
+implementation slice active. Gate 1 and Gate 2 remain Partial, and the Phase 2
+exit gate remains Open. Phase 0 remains Complete; F629's source-bound Windows
+x64 requalification remains outstanding separately. No hosted CI or new test
+run is implied by this receipt.
