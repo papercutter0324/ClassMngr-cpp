@@ -62554,3 +62554,49 @@ F1293 is accepted before implementation in active, unpushed Batch525. F1292 is
 complete locally and F1294 remains last. Batch526 has provisional, unaccepted
 F1295. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
 Open.
+
+### F1293 preserve the active profile on failed new-profile creation complete locally - 2026-10-21
+
+F1293 is complete locally in three commits: acceptance
+`446e33b4c18946b64d4a36cb3cdfd99a5addae17`, implementation and localization
+`fa70509b41ebb88e0eac4189e10e1ae3b80e7bdf`, and focused tests
+`44111dbf8a0054d539a7b18d39af74792c8e867b`.
+
+After a failed normal New Teacher Profile creation, the controller preserves
+access to the prior active profile only after the failed candidate workspace is
+confirmed closed and recovery is safe. It captures the prior path before
+closing; a different target leaves the previous file untouched, while a
+same-path replacement reopens it only when lifecycle reports
+`originalProfileRestored`. Reopening through the existing path restores the
+service session, current-file/UI loaded state, and recent-history behavior. If
+there is no prior path, rollback is incomplete, the candidate did not close, or
+reopen fails, the controller remains in no-database state and preserves or
+reports available recovery paths; it never opens a partial replacement.
+Successful creation and Initial Setup behavior remain unchanged.
+
+Incremental build passed:
+`cmake --build build/macos-clang-debug --target ClassMngr ClassMngrFileControllerWorkspaceLifecycleTests --parallel 8`.
+Focused Qt verification passed (8 passed, 0 failed; macOS PasteBoard/service
+warnings were emitted). Selectors were
+`normalCreateFailureOnDifferentTargetRestoresActiveProfileAndHistory`,
+`normalCreateFailureOnSameTargetRestoresActiveProfileAndHistory`,
+`normalCreateFailureWithoutSafeRestoreLeavesNoActiveProfile`,
+`normalCreateFailureRestoresExistingTarget`,
+`normalCreateReplacesExistingTarget`, and
+`failedReplacementOpenPreservesActiveWorkspaceAndUiState`. CTest registration
+was confirmed, and
+`ctest --test-dir build/macos-clang-debug -R '^ClassMngrFileControllerWorkspaceLifecycleTests$' --output-on-failure`
+passed. `git diff --check` passed. No full suite, Windows run, clean build,
+hosted CI, or phase-gate result is claimed.
+
+### F1294 nested adapter fixture screened out; Batch525 complete locally - 2026-10-21
+
+F1294 is screened out. The remaining gap is a nested-folder adapter fixture:
+the source already maps `parentPath`, the current adapter test compares it, and
+nested model behavior is tested. Phase 2 does not add a test-only slice without
+a corresponding production/core change, so no change is warranted.
+
+Batch525 (F1292-F1293) is complete locally and awaits push; F1294 was screened
+out. Batch526 is active with provisional, unaccepted F1295; no acceptance or
+implementation is claimed for F1295. Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open.

@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1293 is accepted before implementation to preserve the prior active profile after safe failed normal-profile creation; F1294 is last in unpushed Batch525 and Batch526 has provisional, unaccepted F1295; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch525 (F1292-F1293) is complete locally and awaiting push, with F1294 screened out; Batch526 has provisional, unaccepted F1295; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1293 is accepted before implementation in unpushed Batch525; F1292 is complete locally and F1294 remains last. Batch526 has provisional, unaccepted F1295. See the [F1293 acceptance record](03-Phase-2-Progress-Log.md#f1293-preserve-the-active-profile-on-failed-new-profile-creation-accepted-before-implementation-2026-10-21).
+F1293 is complete locally in Batch525, which is awaiting push; F1294 was screened out. Batch526 is active with provisional, unaccepted F1295. See the [F1293 completion and Batch525 closeout](03-Phase-2-Progress-Log.md#f1293-preserve-the-active-profile-on-failed-new-profile-creation-complete-locally-2026-10-21).
 
 ### Slice discovery batches
 
@@ -76,18 +76,14 @@ Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
-### Active Batch525
+### Active Batch526
 
-Batch524 (F1288-F1290) is pushed through closeout `3480c791`; F1291 was
-screened out. F1292 is complete locally in unpushed Batch525.
+Batch525 (F1292-F1293) is complete locally and awaiting push; F1294 was
+screened out.
 
-1. F1292 - Complete locally: on a successful write followed by reload failure,
-   lock the stale Teacher Info page until a successful reopen.
-2. F1293 - Accepted before implementation: preserve access to the prior active
-   profile after failed normal New Teacher Profile creation when recovery is safe.
-3. F1294 - Discovered; last after F1293: nested-folder parent metadata through
-   the legacy catalog adapter has an integration-coverage gap; no runtime
-   failure is demonstrated.
+1. F1295 - Discovered; provisional and unaccepted: Calendar preferences may
+   omit schedule-read failure status. Acceptance is pending; see the progress
+   log for bounded evidence and the open behavior question.
 
 See the progress log for bounded discovery evidence and limitations.
 
