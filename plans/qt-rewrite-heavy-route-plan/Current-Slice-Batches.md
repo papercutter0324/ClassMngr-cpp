@@ -9,7 +9,7 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 1 is active: F1318–F1329 are complete; F1330 scope discovery is current.
+- Batch 1 is active: F1318–F1330 are complete; F1331 implementation is current.
 - Begin Batch 2 discovery when F1336 starts; do not add Batch 2 candidates before then.
 
 ## Phase 3 — Batch 1 (active)
@@ -25,9 +25,9 @@ record useful implementation and verification evidence in its progress log.
 9. F1326 — Selected-class roster read (rows 0–24; preserve full-read contract; guard writes when rows extend beyond window; complete; commit `7f10f8f5`)
 10. F1327 — Selected-class roster save (transactional tail preservation and column remapping; complete; commit `b705c158`)
 11. F1328 — Speaking-evaluation read (complete; commit `fee2d6db`)
-12. F1329 — Speaking-evaluation save (complete)
-13. F1330 — Schedule Builder source read (active; scope discovery required)
-14. F1331 — Intensive slot-state save
+12. F1329 — Speaking-evaluation save (complete; commit `e696bbf0`)
+13. F1330 — Schedule Builder source read (complete; preserve complete board projection through WorkspaceStore)
+14. F1331 — Intensive slot-state save (active)
 15. F1332 — Calendar page range read
 16. F1333 — Single Calendar Event save
 17. F1334 — Calendar Import batch save

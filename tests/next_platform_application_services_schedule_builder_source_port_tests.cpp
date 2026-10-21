@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/data_service.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/application/schedule_builder_source_snapshot.h"
@@ -135,13 +135,13 @@ class NextPlatformApplicationServicesScheduleBuilderSourcePortTests final
     Q_OBJECT
 
 private slots:
-    void readsActiveSessionCompactSourceInRepositoryOrder();
+    void readsActiveWorkspaceCompactSourceInRepositoryOrder();
     void validatesStoredScheduleClassIdsBeforeNarrowing();
     void distinguishesClosedUnavailableAndFailedReadsWithoutLegacyFallback();
 };
 
 void NextPlatformApplicationServicesScheduleBuilderSourcePortTests::
-readsActiveSessionCompactSourceInRepositoryOrder()
+readsActiveWorkspaceCompactSourceInRepositoryOrder()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -170,7 +170,7 @@ readsActiveSessionCompactSourceInRepositoryOrder()
     QVERIFY(unassignedClassInfo);
     QVERIFY(testingClass);
 
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
     int teacherId = -1;
     QVERIFY2(
         insertTeacher(
@@ -316,7 +316,7 @@ readsActiveSessionCompactSourceInRepositoryOrder()
 
     QCOMPARE(result.value().classes.size(), std::size_t(4));
     const ScheduleClassInfoReadMetrics& readMetrics = services
-        .databaseSession()
+        .workspaceStore()
         ->classInfoRepository()
         ->scheduleClassInfoReadMetrics();
     QCOMPARE(readMetrics.scheduleClassInfosCallCount, 1);
@@ -396,7 +396,7 @@ validatesStoredScheduleClassIdsBeforeNarrowing()
         QStringLiteral("wide-class-id")
         )));
 
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(insertPersistedClass(
         database,
         ordinaryClassId,
@@ -466,7 +466,7 @@ validatesStoredScheduleClassIdsBeforeNarrowing()
         QStringLiteral("11:50 AM")
         ));
 
-    auto* const repository = services.databaseSession()->classInfoRepository();
+    auto* const repository = services.workspaceStore()->classInfoRepository();
     const auto metricsBeforeInvalidId =
         repository->scheduleClassInfoReadMetrics();
     const auto invalidRepositoryResult = repository->loadScheduleClassInfos();
@@ -555,7 +555,7 @@ validatesStoredScheduleClassIdsBeforeNarrowing()
         QStringLiteral("zero-class-id")
         )));
     const QSqlDatabase zeroIdDatabase =
-        zeroIdServices.databaseSession()->database();
+        zeroIdServices.workspaceStore()->database();
     QVERIFY(insertPersistedClass(
         zeroIdDatabase,
         0,
@@ -571,7 +571,7 @@ validatesStoredScheduleClassIdsBeforeNarrowing()
         ));
 
     auto* const zeroIdRepository =
-        zeroIdServices.databaseSession()->classInfoRepository();
+        zeroIdServices.workspaceStore()->classInfoRepository();
     const auto zeroIdMetricsBeforeRead =
         zeroIdRepository->scheduleClassInfoReadMetrics();
     const auto zeroIdRepositoryResult =
@@ -659,7 +659,7 @@ distinguishesClosedUnavailableAndFailedReadsWithoutLegacyFallback()
         databasePath(directory, QStringLiteral("read-failure"))
         ));
     QSqlQuery dropScheduleTable(
-        failedReadServices.databaseSession()->database()
+        failedReadServices.workspaceStore()->database()
         );
     QVERIFY(dropScheduleTable.exec(QStringLiteral("DROP TABLE class_times")));
 

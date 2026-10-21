@@ -7,8 +7,8 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-22
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 1 is active; F1318–F1329 are complete, and F1330 Schedule Builder
-  source reading is current. See
+  Batch 1 is active; F1318–F1330 are complete, and F1331 Intensive slot-state
+  saving is current. See
   the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md), and
   [progress log](04-Phase-3-Progress-Log.md) and [current batch

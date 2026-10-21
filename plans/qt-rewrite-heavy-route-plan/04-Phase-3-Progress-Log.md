@@ -296,3 +296,33 @@ cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationS
 ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests|ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests|ClassMngrSpeakingEvalPageSaveParityTests|ClassMngrSpeakingEvalPageSaveTests)$'
 git diff --check
 ```
+
+Commit: `e696bbf0`.
+
+## F1330 — Schedule Builder source read — 2026-10-22
+
+Migrated the Schedule Builder source-read Platform adapter and its direct
+fixture to `ApplicationServices::workspaceStore()` and the existing
+`ClassInfoRepository`. The typed query, repository projection, and builder
+remain unchanged. The read includes all non-testing classes and their raw
+regular and intensive schedule rows, ordered by class name/ID and schedule
+row ID. The repository continues to load its class metadata and two schedule
+sets in three batched queries; no per-class reads were added.
+
+The complete projection remains uncapped because Schedule Builder displays all
+non-testing classes and has no class-page selection. Mode, visible-day, and
+malformed-row handling stay in the builder. Intensive slot-state and testing-
+assignment reads remain separate from F1330.
+
+The focused Application snapshot, Platform port, ScheduleBuilder, and
+ScheduleWidget CTests passed **4/4**. Independent review confirmed the
+three-query metrics and full ordering/projection coverage. `git diff --check`
+passed. CMake regenerated stale source globs; Ninja reported an incomplete
+build log and recovered. Verification used the existing macOS Debug tree; no
+broad suite or cross-platform build was run.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests ClassMngrScheduleBuilderTests ClassMngrScheduleWidgetTests -j2
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests|ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests|ClassMngrScheduleBuilderTests|ClassMngrScheduleWidgetTests)$'
+git diff --check
+```

@@ -38,10 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-22
-- Current note: F1318–F1329 are complete. F1328 moved speaking-evaluation
-  single and batch reads to `WorkspaceStore`; F1329 moved the typed save port
-  to `WorkspaceStore` while preserving the transactional delta-save contract.
-  F1330 Schedule Builder source reading is current and requires scope discovery.
+- Current note: F1318–F1330 are complete. F1328–F1329 moved speaking-evaluation
+  read and save adapters to `WorkspaceStore`. F1330 moved the Schedule Builder
+  source adapter to `WorkspaceStore` and retains the full projection because
+  the board renders all non-testing classes. F1331 Intensive slot-state
+  saving is current.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -158,6 +159,12 @@ behavior: the single-read port is also used by roster score-import fallback,
 so it must not silently cap rows for the page's 25-row display.
 Speaking-evaluation save uses the existing detailed repository transaction
 and preserves full-matrix versus dirty-cell update semantics.
+
+F1330 retains all non-testing classes and their regular and intensive
+schedule rows for the complete Schedule Builder board. Mode and visible-day
+filtering remain in the builder; do not cap classes when the board has no
+class-page selection. Intensive slot-state and testing-assignment reads remain
+separate from this source read.
 
 ### 3.4 File formats
 
