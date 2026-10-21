@@ -9386,6 +9386,14 @@ Version: %2</source>
         <source>Delete Testing Class</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Save status</source>
+        <translation>저장 상태</translation>
+    </message>
+    <message>
+        <source>Testing class changes could not be saved automatically. Your changes are still here.</source>
+        <translation>테스트 수업 변경 사항을 자동으로 저장하지 못했습니다. 변경 사항은 그대로 유지됩니다.</translation>
+    </message>
 </context>
 <context>
     <name>UpdateDialog</name>

@@ -132,7 +132,7 @@ TestingClassesPage::TestingClassesPage(
         m_autosave,
         &AutosaveCoordinator::saveRequested,
         this,
-        [this](bool) { saveChanges(); }
+        [this](bool interactive) { saveChanges(interactive); }
         );
 }
 
@@ -248,6 +248,7 @@ void TestingClassesPage::clearDatabaseState()
     m_requestedPendingDay.clear();
     m_requestedPendingStartTime.clear();
     m_editorDirty = false;
+    clearAutomaticSaveFailureStatus();
     m_classList->clear();
     loadEditorValue({});
     m_rosterEditor->clearDatabaseState();
@@ -266,6 +267,21 @@ void TestingClassesPage::retranslateUi()
     m_addButton->setText(tr("Add Class"));
     m_deleteButton->setText(tr("Delete Class"));
     m_saveButton->setText(tr("Save Changes"));
+    if (m_automaticSaveFailureStatusLabel)
+    {
+        m_automaticSaveFailureStatusLabel->setAccessibleName(
+            tr("Save status")
+            );
+        if (m_automaticSaveFailureStatusActive)
+        {
+            m_automaticSaveFailureStatusLabel->setText(
+                tr(
+                    "Testing class changes could not be saved automatically. "
+                    "Your changes are still here."
+                    )
+                );
+        }
+    }
     m_tabs->setTabText(0, tr("Details"));
     m_tabs->setTabText(1, tr("Roster"));
     m_tabs->setTabText(2, tr("Notes"));
@@ -339,6 +355,11 @@ void TestingClassesPage::saveData()
 }
 
 bool TestingClassesPage::saveChanges()
+{
+    return saveChanges(true);
+}
+
+bool TestingClassesPage::saveChanges(const bool interactive)
 {
     if (
         m_rosterEditor->hasUnsavedChanges()
@@ -504,6 +525,16 @@ bool TestingClassesPage::saveChanges()
                 return false;
             }
 
+            if (
+                !interactive
+                && updated.error().code
+                    == ClassMngr::Next::Domain::ErrorCode::Technical
+                )
+            {
+                showAutomaticSaveFailureStatus();
+                return false;
+            }
+
             const std::string& message = updated.error().message;
             DialogServices::showWarning(
                 this,
@@ -525,6 +556,7 @@ bool TestingClassesPage::saveChanges()
     m_pendingStartTime.clear();
     m_editorDirty = false;
     m_autosave->markClean();
+    clearAutomaticSaveFailureStatus();
 
     Classroom classroom(
         testingClass.name,
@@ -892,6 +924,22 @@ void TestingClassesPage::buildUi()
     splitter->setStretchFactor(1, 1);
     splitter->setSizes({240, 760});
     contentLayout()->addWidget(splitter, 1);
+
+    m_automaticSaveFailureStatusLabel = new QLabel(this);
+    m_automaticSaveFailureStatusLabel->setObjectName(
+        QStringLiteral("testingClassesAutomaticSaveFailureStatus")
+        );
+    m_automaticSaveFailureStatusLabel->setAccessibleName(tr("Save status"));
+    m_automaticSaveFailureStatusLabel->setAlignment(
+        Qt::AlignLeft | Qt::AlignVCenter
+        );
+    m_automaticSaveFailureStatusLabel->setWordWrap(true);
+    m_automaticSaveFailureStatusLabel->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Preferred
+        );
+    m_automaticSaveFailureStatusLabel->hide();
+    contentLayout()->addWidget(m_automaticSaveFailureStatusLabel);
 
     m_saveButton =
         new TextFitPushButton(
@@ -1523,6 +1571,7 @@ void TestingClassesPage::loadClass(
     m_savedClass = testingClass;
     m_pendingDay.clear();
     m_pendingStartTime.clear();
+    clearAutomaticSaveFailureStatus();
     loadEditorValue(testingClass);
     m_rosterEditor->loadClass(
         Classroom(
@@ -1553,6 +1602,7 @@ void TestingClassesPage::beginNewClass(
     m_savedClass.fontColor = QStringLiteral("#000000");
     m_pendingDay = pendingDay;
     m_pendingStartTime = pendingStartTime;
+    clearAutomaticSaveFailureStatus();
     {
         const QSignalBlocker blocker(m_classList);
         m_classList->clearSelection();
@@ -1647,6 +1697,34 @@ void TestingClassesPage::markDirty()
     }
     m_editorDirty = true;
     updateActions();
+}
+
+void TestingClassesPage::showAutomaticSaveFailureStatus()
+{
+    m_automaticSaveFailureStatusActive = true;
+    if (m_automaticSaveFailureStatusLabel)
+    {
+        m_automaticSaveFailureStatusLabel->setAccessibleName(
+            tr("Save status")
+            );
+        m_automaticSaveFailureStatusLabel->setText(
+            tr(
+                "Testing class changes could not be saved automatically. "
+                "Your changes are still here."
+                )
+            );
+        m_automaticSaveFailureStatusLabel->show();
+    }
+}
+
+void TestingClassesPage::clearAutomaticSaveFailureStatus()
+{
+    m_automaticSaveFailureStatusActive = false;
+    if (m_automaticSaveFailureStatusLabel)
+    {
+        m_automaticSaveFailureStatusLabel->clear();
+        m_automaticSaveFailureStatusLabel->hide();
+    }
 }
 
 void TestingClassesPage::updateActions()

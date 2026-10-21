@@ -19,6 +19,7 @@
 #include "next/platform/application_services_testing_class_create_port.h"
 #include "next/platform/application_services_testing_class_delete_port.h"
 #include "next/platform/application_services_testing_class_details_update_port.h"
+#include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/widgets/marquee_item_delegate.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -26,8 +27,10 @@
 #include <QtTest>
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QItemSelectionModel>
 #include <QComboBox>
+#include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMenu>
@@ -42,6 +45,7 @@
 #include <QTextEdit>
 #include <QTimer>
 #include <QTemporaryDir>
+#include <QTranslator>
 #include <QUuid>
 
 #include <algorithm>
@@ -242,6 +246,11 @@ public:
     {
         ++callCount;
         lastRequest = request;
+        if (failuresRemaining > 0)
+        {
+            --failuresRemaining;
+            return failureResult;
+        }
         return delegate
             ? delegate->updateTestingClassDetails(request)
             : result;
@@ -250,10 +259,19 @@ public:
     const ClassMngr::Next::Application::TestingClassDetailsUpdatePort*
         delegate = nullptr;
     mutable int callCount = 0;
+    mutable int failuresRemaining = 0;
     mutable std::optional<ClassMngr::Next::Application::
         TestingClassDetailsUpdateRequest> lastRequest;
     ClassMngr::Next::Application::TestingClassDetailsUpdateResult result =
         ClassMngr::Next::Domain::Result<void>::success();
+    ClassMngr::Next::Application::TestingClassDetailsUpdateResult
+        failureResult =
+            ClassMngr::Next::Application::TestingClassDetailsUpdateResult::
+                failure({
+                    .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                    .message = "injected testing class details update failure",
+                    .recoverable = false
+                });
 };
 
 class RecordingTestingClassCreatePort final
@@ -523,6 +541,70 @@ int columnByName(
     return -1;
 }
 
+class KoreanTestingClassesSaveStatusTranslator final : public QTranslator
+{
+public:
+    QString translate(
+        const char* context,
+        const char* sourceText,
+        const char* disambiguation = nullptr,
+        const int n = -1
+        ) const override
+    {
+        Q_UNUSED(disambiguation);
+        Q_UNUSED(n);
+        if (!context || !sourceText
+            || qstrcmp(context, "TestingClassesPage") != 0)
+        {
+            return {};
+        }
+
+        if (qstrcmp(sourceText, "Save status") == 0)
+        {
+            return QStringLiteral("저장 상태");
+        }
+        if (qstrcmp(
+                sourceText,
+                "Testing class changes could not be saved automatically. "
+                "Your changes are still here."
+                ) == 0)
+        {
+            return QStringLiteral(
+                "테스트 수업 변경 사항을 자동으로 저장하지 못했습니다. "
+                "변경 사항은 그대로 유지됩니다."
+                );
+        }
+        return {};
+    }
+};
+
+class ScopedTranslatorInstallation final
+{
+public:
+    explicit ScopedTranslatorInstallation(QTranslator& translator)
+        : m_translator(&translator)
+        , m_installed(QCoreApplication::installTranslator(m_translator))
+    {
+    }
+
+    ~ScopedTranslatorInstallation()
+    {
+        if (m_installed)
+        {
+            QCoreApplication::removeTranslator(m_translator);
+        }
+    }
+
+    [[nodiscard]] bool installed() const
+    {
+        return m_installed;
+    }
+
+private:
+    QTranslator* m_translator = nullptr;
+    bool m_installed = false;
+};
+
 } // namespace
 
 class TestingClassesPageTests : public QObject
@@ -564,6 +646,7 @@ private slots:
     void newTestingClassCreateReadFailureRetainsSavedRowAndReconciles();
     void wideTeacherSelectionSurvivesRefreshUpdateAndCreate();
     void testingClassDetailsUpdateFailureRetainsDraftAndShowsWarning();
+    void testingClassDetailsAutomaticTechnicalFailureShowsStatusAndRetryPersists();
     void newTestingClassCreationDoesNotUseDetailsUpdatePort();
     void newTestingClassCreateForwardsPendingSlotAndSelectsCreatedClass();
     void newTestingClassCreateFailureRetainsDraftAndPendingSlot();
@@ -3308,8 +3391,13 @@ testingClassDetailsUpdateFailureRetainsDraftAndShowsWarning()
     auto* saveButton = page.findChild<QPushButton*>(
         QStringLiteral("testingClassesSaveButton")
         );
+    auto* saveFailureStatus = page.findChild<QLabel*>(
+        QStringLiteral("testingClassesAutomaticSaveFailureStatus")
+        );
     QVERIFY(nameEdit);
     QVERIFY(saveButton);
+    QVERIFY(saveFailureStatus);
+    QVERIFY(saveFailureStatus->isHidden());
 
     nameEdit->setText(QStringLiteral("Draft Must Remain"));
     QVERIFY(page.hasUnsavedChanges());
@@ -3327,11 +3415,128 @@ testingClassDetailsUpdateFailureRetainsDraftAndShowsWarning()
     QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
     QCOMPARE(prompts.messages.constFirst().message,
              QStringLiteral("injected testing class details update failure"));
+    QVERIFY(saveFailureStatus->isHidden());
 
     const auto unchanged = services.databaseSession()
         ->testingClassRepository()->loadTestingClass(*classId);
     QVERIFY(unchanged);
     QCOMPARE(unchanged->name, QStringLiteral("Stored Class"));
+}
+
+void TestingClassesPageTests::
+testingClassDetailsAutomaticTechnicalFailureShowsStatusAndRetryPersists()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TestingClass stored = testingClass(QStringLiteral("Stored Class"));
+    stored.teacherId = -1;
+    const auto classId = services.databaseSession()
+        ->testingClassRepository()->createTestingClass(stored);
+    QVERIFY(classId);
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesTestingClassDetailsUpdatePort persistedUpdatePort(
+            &services
+            );
+    RecordingTestingClassDetailsUpdatePort updatePort;
+    updatePort.failuresRemaining = 1;
+    updatePort.delegate = &persistedUpdatePort;
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        &updatePort
+        );
+    page.openTestingClass(*classId);
+    page.refresh();
+
+    auto* const nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* const saveFailureStatus = page.findChild<QLabel*>(
+        QStringLiteral("testingClassesAutomaticSaveFailureStatus")
+        );
+    auto* const autosave = page.findChild<AutosaveCoordinator*>();
+    QVERIFY(nameEdit);
+    QVERIFY(saveFailureStatus);
+    QVERIFY(autosave);
+    QVERIFY(saveFailureStatus->isHidden());
+
+    nameEdit->setText(QStringLiteral("Draft Must Remain"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(autosave->isDirty());
+    autosave->setDebounceInterval(60'000);
+    autosave->cancelPendingSave();
+    autosave->requestSave(false);
+
+    QCOMPARE(updatePort.callCount, 1);
+    QVERIFY(updatePort.lastRequest.has_value());
+    QCOMPARE(updatePort.lastRequest->name, std::u16string(u"Draft Must Remain"));
+    QCOMPARE(nameEdit->text(), QStringLiteral("Draft Must Remain"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(autosave->isDirty());
+    QVERIFY(!saveFailureStatus->isHidden());
+    QCOMPARE(
+        saveFailureStatus->text(),
+        QStringLiteral(
+            "Testing class changes could not be saved automatically. "
+            "Your changes are still here."
+            )
+        );
+    QCOMPARE(saveFailureStatus->accessibleName(), QStringLiteral("Save status"));
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    const auto unchanged = services.databaseSession()
+        ->testingClassRepository()->loadTestingClass(*classId);
+    QVERIFY(unchanged);
+    QCOMPARE(unchanged->name, QStringLiteral("Stored Class"));
+
+    KoreanTestingClassesSaveStatusTranslator koreanTranslator;
+    {
+        ScopedTranslatorInstallation translatorScope(koreanTranslator);
+        QVERIFY(translatorScope.installed());
+        page.retranslateUi();
+        QCOMPARE(
+            saveFailureStatus->text(),
+            QStringLiteral(
+                "테스트 수업 변경 사항을 자동으로 저장하지 못했습니다. "
+                "변경 사항은 그대로 유지됩니다."
+                )
+            );
+        QCOMPARE(saveFailureStatus->accessibleName(), QStringLiteral("저장 상태"));
+    }
+    page.retranslateUi();
+    QCOMPARE(
+        saveFailureStatus->text(),
+        QStringLiteral(
+            "Testing class changes could not be saved automatically. "
+            "Your changes are still here."
+            )
+        );
+    QCOMPARE(saveFailureStatus->accessibleName(), QStringLiteral("Save status"));
+
+    autosave->requestSave(false);
+
+    QCOMPARE(updatePort.callCount, 2);
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(!autosave->isDirty());
+    QVERIFY(saveFailureStatus->isHidden());
+    QVERIFY(saveFailureStatus->text().isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+    const auto persisted = services.databaseSession()
+        ->testingClassRepository()->loadTestingClass(*classId);
+    QVERIFY(persisted);
+    QCOMPARE(persisted->name, QStringLiteral("Draft Must Remain"));
 }
 
 void TestingClassesPageTests::

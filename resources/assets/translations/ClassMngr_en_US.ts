@@ -9271,6 +9271,14 @@ Version: %2</source>
         <source>Delete Testing Class</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Save status</source>
+        <translation>Save status</translation>
+    </message>
+    <message>
+        <source>Testing class changes could not be saved automatically. Your changes are still here.</source>
+        <translation>Testing class changes could not be saved automatically. Your changes are still here.</translation>
+    </message>
 </context>
 <context>
     <name>UpdateDialog</name>

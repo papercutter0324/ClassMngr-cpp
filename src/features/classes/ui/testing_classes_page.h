@@ -99,6 +99,9 @@ private:
         const TestingClass& testingClass
         );
     void markDirty();
+    bool saveChanges(bool interactive);
+    void showAutomaticSaveFailureStatus();
+    void clearAutomaticSaveFailureStatus();
     void updateActions();
     void updateColorButtons();
     void chooseClassColor();
@@ -123,6 +126,7 @@ private:
     int m_requestedClassId{-1};
     bool m_editorDirty = false;
     bool m_teacherChoicesTechnicallyUnavailable = false;
+    bool m_automaticSaveFailureStatusActive = false;
     AutosaveCoordinator* m_autosave = nullptr;
     QString m_pendingDay;
     QString m_pendingStartTime;
@@ -136,6 +140,7 @@ private:
     QLabel* m_teacherLabel = nullptr;
     QLabel* m_classColorLabel = nullptr;
     QLabel* m_fontColorLabel = nullptr;
+    QLabel* m_automaticSaveFailureStatusLabel = nullptr;
     QListWidget* m_classList = nullptr;
     QTabWidget* m_tabs = nullptr;
     QLineEdit* m_nameEdit = nullptr;
