@@ -60237,3 +60237,77 @@ planned; the slice is intended to provide focused Gate 1 app-less evidence.
 F1270 is accepted before implementation as the
 first Batch509 slice; F1271 remains discovered second. No F1270
 implementation, build, or tests have started.
+
+### Batch510 discovery - 2026-10-21
+
+Discovery began when F1270, the second-last slice in active Batch509, started.
+`B510_HISTORY` found no additional documented candidate. `B510_SOURCE_SCAN`
+proposed a provisional Initial Setup resource-selection route policy over the
+teacher and schedule selection flags. `B510_ROUTE_POLICY_REVIEW` rejected
+that lead: the source maps two checkboxes to QWizard page IDs
+(`ResourcesPage` → `TeacherImport` → optional `ScheduleImport` →
+`PersonalDetails`), with no broader Application request, persisted setting,
+or reusable cross-UI workflow contract. Import-completion gates are local UI
+flags, while actual imports already have separate Application contracts.
+Keep stage routing and completion gates at the Feature edge unless a stable
+Application consumer emerges.
+
+F1270 and F1271 remain in active Batch509 and were excluded from this
+discovery list. No deferred candidates were reopened. Batch510 is a discovery
+record only and is not active; Batch509 remains active with F1270 accepted
+before implementation and F1271 discovered second. Gate 1 and Gate 2 remain
+Partial, and the Phase 2 exit gate remains Open.
+
+No other slices were found.
+
+### Superseded latest progress update - 2026-10-21 (Batch508 pushed, F1270 accepted)
+
+Batch508's push is recorded in its [receipt](03-Phase-2-Progress-Log.md#batch508-push-receipt-2026-10-21), and F1270's pre-implementation criteria remain in its [acceptance record](03-Phase-2-Progress-Log.md#f1270-sub-prep-configuredlevelorder-explicit-int32-value-type-accepted-before-implementation-2026-10-21). Batch510's shortfall remains recorded above; its rejected route-policy lead was not reopened.
+
+### F1270 Sub Prep `configuredLevelOrder` explicit int32 value type complete - 2026-10-21
+
+F1270 is complete in Batch509 at source commit
+`733174f0939c9d96be4ed2e87228d65cfc8b7b22`. The Qt-free Application
+`SubPrepConfiguredLevelOrder` explicitly types only
+`SubPrepVisibleClassOrderingFact::configuredLevelOrder`, preserving its
+default raw value `kClassSummaryUnknownNavigationOrder` (`1000`), full int32
+range, raw ordering, and sentinel collisions. The existing comparator order,
+Feature index/sentinel calculation, F1209 semantics, and other typed fields
+remain unchanged.
+
+The independent Tester ran the incremental macOS Ninja command
+`cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests`; it exited 0 with no work to do. The focused policy CTest passed 1/1. Coverage asserted the exact typed field, explicit conversions, minimum and maximum raw-value round trips, equality, default `1000`, order, sentinel collision, and ties. `git diff --check` passed with no warnings. No full-suite, Windows, or Gate 2 result is claimed. This is focused Gate 1 app-less evidence.
+
+Batch509 now has one complete slice and one remaining accepted candidate,
+F1271. F1270 preserves raw numeric ordering and the comparator tie behavior.
+
+### F1271 Initial Setup Class Times row-presence requirement policy in Application accepted before implementation - 2026-10-21
+
+Add a Qt-free Application policy over the two UI-prepared facts
+`hasRegularRows` and `hasIntensiveRows`. It returns true exactly when either
+list has at least one row. This contract concerns row presence only; it does
+not validate schedule-row contents.
+
+The Class Times page continues to seed one regular `ClassTime{}` row, which
+defaults to Monday 16:00–16:50, and to derive row lists through the existing
+`ClassScheduleSection::regularTimes()` and `intensiveTimes()` methods. Preserve
+row removal and serialization,
+current call ordering, prompt text/order, and page retention. Evaluate the
+policy before setup/class-service checks and before `ClassCreateUseCase`.
+Leave F365's create/save sequence, schedule parsing/validation, and the
+invalid-nonempty path unchanged; in particular,
+`classTimesRejectsNoncanonicalWeekdaysAfterCreatingBlankClass` must continue
+to reach its existing conversion/error behavior.
+
+Add direct app-less tests for all four boolean combinations. In
+`tests/initial_setup_wizard_tests.cpp`, remove the seeded regular row and
+verify both lists are empty, the existing prompt appears, the wizard remains
+on the Class Times page, and no class is created or state mutated. Retain the
+valid/default-row path and the existing invalid-nonempty regression.
+
+Build incrementally in the macOS Debug tree with `ClassMngr`, the new app
+policy target, and the Initial Setup test target; run the exact app CTest and
+focused UI selector, then check the diff. No full-suite or Gate 2 claim is
+planned; F1271 adds focused Gate 1 app-less behavior evidence. It is accepted
+as the second Batch509 slice. No F1271 implementation, build, or tests have
+started.
