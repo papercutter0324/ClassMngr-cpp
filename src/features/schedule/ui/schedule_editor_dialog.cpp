@@ -419,6 +419,15 @@ void ScheduleEditorDialog::loadData()
                 );
         if (!loaded)
         {
+            const std::string& message = loaded.error().message;
+            DialogServices::showWarning(
+                this,
+                tr("Load Class Information"),
+                QString::fromUtf8(
+                    message.data(),
+                    static_cast<qsizetype>(message.size())
+                    )
+                );
             return;
         }
 

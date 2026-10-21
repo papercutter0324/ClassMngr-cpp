@@ -159,6 +159,7 @@ class ScheduleEditorDialogTests final : public QObject
 private slots:
     void unchangedDetailsAreForwardedAndSuccessfulSaveAccepts();
     void successfulReadMapsAllFieldsAndPreservesBooksOnSave();
+    void successfulEmptyReadIsNonWarningAndCanBeSaved();
     void gradeChangeClearsBothBooksAndOmitsSchedules();
     void levelChangeClearsBothBooksAndOmitsSchedules();
     void failedReadBlocksSaveAndKeepsDialogOpen_data();
@@ -256,6 +257,47 @@ successfulReadMapsAllFieldsAndPreservesBooksOnSave()
 }
 
 void ScheduleEditorDialogTests::
+successfulEmptyReadIsNonWarningAndCanBeSaved()
+{
+    constexpr int classId = 42;
+    RecordingReadPort readPort;
+    readPort.result = Application::ScheduleEditorClassInfoReadResult::success({
+        .classId = typedClassId(classId)
+    });
+    RecordingSavePort savePort;
+    ScheduleEditorDialog dialog(nullptr, classId, nullptr, &savePort, &readPort);
+
+    QCOMPARE(readPort.callCount, 1);
+    QVERIFY(!DialogServices::promptTestDriver().activePrompt().has_value());
+    const QList<QComboBox*> combos = dialogCombos(dialog);
+    QCOMPARE(combos.size(), 2);
+    QVERIFY(combos.at(0)->currentText().isEmpty());
+    QVERIFY(combos.at(1)->currentText().isEmpty());
+    const QList<QLineEdit*> edits = dialog.findChildren<QLineEdit*>();
+    QCOMPARE(edits.size(), 2);
+    QVERIFY(edits.at(0)->text().isEmpty());
+    QVERIFY(edits.at(1)->text().isEmpty());
+
+    dialog.show();
+    QTRY_VERIFY(dialog.isVisible());
+    QVERIFY(clickSave(dialog));
+
+    QCOMPARE(savePort.callCount, 1);
+    QVERIFY(savePort.lastRequest.has_value());
+    const Application::ClassDetailsSaveRequest& request =
+        *savePort.lastRequest;
+    QCOMPARE(request.classId.value(), std::string("42"));
+    QVERIFY(request.classGrade.empty());
+    QVERIFY(request.classLevel.empty());
+    QVERIFY(request.readingBook.empty());
+    QVERIFY(request.essayBook.empty());
+    QCOMPARE(request.classColor, std::u16string(u"#FFFFFF"));
+    QCOMPARE(request.fontColor, std::u16string(u"#000000"));
+    QVERIFY(!DialogServices::promptTestDriver().activePrompt().has_value());
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
+}
+
+void ScheduleEditorDialogTests::
 gradeChangeClearsBothBooksAndOmitsSchedules()
 {
     QTemporaryDir directory;
@@ -349,11 +391,31 @@ void ScheduleEditorDialogTests::failedReadBlocksSaveAndKeepsDialogOpen()
         .recoverable = true
     });
     RecordingSavePort savePort;
+
+    QString loadWarningTitle;
+    QString loadWarningText;
+    bool loadWarningAccepted = false;
+    QTimer::singleShot(0, [&]
+    {
+        const auto prompt = DialogServices::promptTestDriver().activePrompt();
+        if (!prompt)
+        {
+            return;
+        }
+        loadWarningTitle = prompt->title;
+        loadWarningText = prompt->text;
+        loadWarningAccepted =
+            DialogServices::promptTestDriver().accept(prompt->id);
+    });
     ScheduleEditorDialog dialog(nullptr, classId, nullptr, &savePort, &readPort);
 
     QCOMPARE(readPort.callCount, 1);
     QVERIFY(readPort.lastClassId.has_value());
     QCOMPARE(readPort.lastClassId->value(), std::string("42"));
+    QVERIFY(loadWarningAccepted);
+    QCOMPARE(loadWarningTitle, QStringLiteral("Load Class Information"));
+    QCOMPARE(loadWarningText, errorMessage);
+    QVERIFY(!DialogServices::promptTestDriver().activePrompt().has_value());
     const QList<QComboBox*> combos = dialogCombos(dialog);
     QCOMPARE(combos.size(), 2);
     QVERIFY(combos.at(0)->currentText().isEmpty());
@@ -366,6 +428,7 @@ void ScheduleEditorDialogTests::failedReadBlocksSaveAndKeepsDialogOpen()
 
     dialog.show();
     QTRY_VERIFY(dialog.isVisible());
+    QVERIFY(dialog.isModal());
     QString warningTitle;
     QString warningText;
     bool warningAccepted = false;
