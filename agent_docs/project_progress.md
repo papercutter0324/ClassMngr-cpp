@@ -79,7 +79,10 @@ full suite was not run, and the F1316 macOS golden-text mismatch remains
 unrerun after its controlled comparison found it unrelated to the slice. These
 limits are recorded without weakening tests or claiming exhaustive parity.
 F629's source-bound Windows x64 requalification remains separate from Phase 2.
-The next milestone is Phase 3.
+The next milestone is Phase 3. The 2026-10-22 deferred-candidate closeout
+removed F614, F618, F626, F707, and F709 from the active list; remaining
+policy-dependent and Administrator-blocked follow-ups are recorded in the
+Phase 2 plan and progress log.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

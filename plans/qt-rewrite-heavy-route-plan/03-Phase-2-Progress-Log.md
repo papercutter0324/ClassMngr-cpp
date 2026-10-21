@@ -103,6 +103,41 @@ build or full suite. The known unrelated
 `largePackageGeneratesOutputReferenceWhenConfigured` macOS golden-text failure
 was not rerun.
 
+## Deferred-candidate closeout — 2026-10-22
+
+After Phase 2 completion, close F614, F618, F626, F707, and F709 as inactive
+implementation candidates. Their current evidence does not justify additional
+production changes:
+
+- F614 measured a 22,662-byte source/package payload, and the typed source is
+  released before rendering. No material ownership refactor is warranted for
+  the measured case. Reopen only if a larger representative fixture or
+  owner-specific memory evidence shows a meaningful cost.
+- F618 observed overlapping package, JSON-tree, and encoded-buffer lifetimes,
+  but no export-specific peak measurement established a material cost. Do not
+  change serialization or `QSaveFile` based on overlap alone. Reopen if a
+  matched packaged Release export measurement shows a meaningful peak.
+- F626's F621/F622 release and refresh coverage plus F1014 re-entry coverage
+  show no current lifecycle gap. No owner-specific packaged Release retained-
+  byte attribution or safe PageManager eviction/recreation contract supports
+  a memory refactor. Reopen only if measured retained bytes establish a gate
+  problem and a safe eviction contract is defined.
+- F707's helper chain has no production callsite in the current source tree,
+  so it has no active behavior to repair. Reopen if a live caller appears.
+- F709's missing injection seam is superseded by the Calendar cache query seam.
+  `CalendarEventCacheTests::injectedInvalidTimesAreFilteredByCacheAndModel`
+  already injects malformed and padded time strings and verifies filtering
+  through the cache and model. This closes that boundary-coverage candidate;
+  it does not claim a separate end-to-end Calendar Page parity comparison.
+
+F579 and F598 remain deferred pending a Windows process with an elevated
+Administrator token for their matched heap captures. F285 and its dependent
+Sidebar wide-ID transition, Batch 197 teacher-reassignment policy, the Class
+Analytics allocation policy, and the Dense Speaking Evaluation row policy
+remain open pending the product clarifications recorded in the Phase 2 plan.
+F629 remains separate from Phase 2. This was a documentation-only closeout;
+no source changes or tests were run.
+
 ## Durable parity and product decisions
 
 - Class Details save fails closed on validation-context read failure or class-ID

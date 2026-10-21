@@ -83,24 +83,6 @@ and Phase 0's 2026-09-18 Complete declaration.
 - F579 - The user-directed review trigger is satisfied, but a fresh matched-symbol
   heap capture remains blocked because this process lacks an elevated Administrator
   token; resume when an elevated token is available.
-- F614 - Deferred after F612: the measured source/package payload is 22,662
-  UTF-8 bytes and the typed source releases before rendering; current evidence
-  does not justify a material ownership refactor. Revisit with larger-fixture
-  or owner-specific memory evidence.
-- F618 - Deferred after a read-only export trace: package, JSON tree, and
-  encoded buffer overlap, but no export-specific peak measurement establishes
-  a material cost. Revisit with a matched packaged Release export measurement
-  before changing serialization or QSaveFile behavior.
-- F626 - Deferred: F621/F622 show Sub Prep feature-resource release/refresh on
-  a retained page, and F1014 shows class-information re-entry behavior; there
-  is still no owner-specific matched packaged Release retained-byte evidence
-  or safe PageManager eviction/recreation contract.
-- F707 - Deferred from Batch 178: the `sidebarClassNodeLessThan`/`timeOrder`
-  helper chain has no observed app callsite; revisit when a live use is found.
-- F709 - Deferred from Batch 178 and rechecked before F738: raw SQL values
-  become invalid `QTime`s in the repository before projection, so the current
-  public Calendar Page fixture cannot inject malformed projection text;
-  revisit if a focused query/summary injection seam becomes available.
 - F598 - Fresh matched WPR heap capture for the F596 Release route is blocked
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
