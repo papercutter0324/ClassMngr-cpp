@@ -60815,3 +60815,32 @@ Batch513 (F1275) is complete and pushed at `a63fa9b8`. No implementation batch
 is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
 Open. F629's source-bound Windows x64 requalification remains outstanding
 separately from Phase 0's 2026-09-18 Complete declaration.
+
+### Superseded latest progress update - 2026-10-21 (Batch513 pushed, Batch514 discovery complete)
+
+F1275 was complete and pushed at `a63fa9b8`, with no implementation batch
+active. Gate 1 and Gate 2 remained Partial, and the Phase 2 exit gate remained
+Open.
+
+### Batch514 discovery shortfall - 2026-10-21
+
+Two Explorer reports and an Investigator review found no supported slice for
+Batch514. The Class Details catalog remains feature-owned, as its source
+comments explicitly state. Calendar Next 10 selection is too narrow and
+intertwined with asynchronous visible-event retrieval to form an independent
+Application contract. Schedule grid derivation has strong existing tests, but
+it remains a Qt/Feature presentation transformation: it consumes
+widget-selected visible days and produces Qt-valued output through a Qt-valued
+parser. The existing Application `ScheduleViewProjection` is a different
+contract over preassembled rows and cells. The Investigator therefore accepted
+no F1276 candidate. F1103 and other deferred candidates remain deferred and
+were not reopened.
+
+No other slices were found.
+
+Batch513 (F1275) remains complete and pushed at `a63fa9b8`; its receipt
+documentation commit `c0da0b81` is also pushed. No implementation batch is
+active, and Batch515 discovery is the next action. Gate 1 and Gate 2 remain
+Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows
+x64 requalification remains outstanding separately from Phase 0's 2026-09-18
+Complete declaration.

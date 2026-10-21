@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch513 (F1275) is complete and pushed at `a63fa9b8`, with no implementation batch active; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch513 (F1275) is complete and pushed at `a63fa9b8`; no implementation batch is active and Batch515 discovery is next, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1275 is complete and pushed at `a63fa9b8` (see its [Batch513 push receipt](03-Phase-2-Progress-Log.md#batch513-push-receipt-2026-10-21)); its source/test commit is `3a68bd49f4bbc5b03c3902bc649e8b3da64e6371`. No implementation batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+F1275 is complete and pushed at `a63fa9b8` (see its [Batch513 push receipt](03-Phase-2-Progress-Log.md#batch513-push-receipt-2026-10-21)); its receipt documentation commit `c0da0b81` is also pushed. The next action is Batch515 discovery; no implementation batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Slice discovery batches
 
