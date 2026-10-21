@@ -479,10 +479,23 @@ and verifies migration to the latest schema, foreign-key integrity, preservation
 of the legacy class and schedule, repair of its non-positive teacher reference,
 and creation of the pre-constraint migration backup.
 
-The same focused suite generates two non-persistent failure scenarios: a
-malformed `.db` whose bytes must remain unchanged after rejection, and an
-exclusive lock held during legacy migration. The lock case must fail cleanly,
-then migrate successfully after the lock is released.
+Current status (2026-10-22): the preceding passage records historical behavior
+and is superseded for current opening policy established by F1314. Existing
+schema-v0–v5 files, including this fixture, are now rejected without migration
+or mutation; only explicit initialization of an empty version-0 database is
+supported. The fixture header also describes the historical migration path,
+while the current startup test uses `legacy_startup.sql` to verify rejection.
+See the [schema-v6 behavior baseline](phase-3-schema-baseline.md#versioning-and-opening-policy)
+and [startup rejection test](../../tests/file_controller_workspace_lifecycle_tests.cpp#L2582-L2664).
+
+The corrupt-file behavior remains current: startup rejects a corrupt `.db` and
+preserves its bytes. The former Phase 0 claim that an exclusive lock blocked
+legacy migration and migration succeeded after release is historical and no
+longer current. The current locked legacy-startup case checks that the
+version-0 workspace remains unsupported after the exclusive lock is released;
+it does not migrate. That test does not establish that the SQLite lock itself
+caused the rejection. See the current cases in
+[`startup_performance_tests.cpp`](../../tests/startup_performance_tests.cpp#L2313-L2518).
 
 `tests/fixtures/transfers/conflict_source.json` is the permanent class-transfer
 package used for conflict review. The focused class-transfer test loads it,

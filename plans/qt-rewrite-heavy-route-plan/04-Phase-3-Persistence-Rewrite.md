@@ -32,13 +32,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: Not started
+- Status: In progress
 - Default route: Heavy
 - Depends on: Phases 1 and 2
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
-- Last updated: 2026-09-15
-- Current note: Reproduce current data behavior first, then remove the compatibility facade.
+- Last updated: 2026-10-22
+- Current note: F1318 is active to close the source-derived schema-v6 behavior
+  baseline; F1319 WorkspaceStore lifecycle seam is next. See the [schema
+  baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md) and [current
+  batch tracker](Current-Slice-Batches.md).
 
 ### Slice batches
 

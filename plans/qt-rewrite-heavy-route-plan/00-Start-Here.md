@@ -6,10 +6,13 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-22
-- Current milestone: Phase 2 Complete; Gate 1 and Gate 2 satisfy the exit
-  criteria. No slice batch is active. See the [Phase 2
-  plan](03-Phase-2-Domain-Model-and-Application-Contracts.md) and [progress
-  log](03-Phase-2-Progress-Log.md) for closure evidence and limitations.
+- Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
+  Batch 1 is active with F1318 schema-v6 behavior baseline; F1319 WorkspaceStore
+  lifecycle seam is next. See the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
+  [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md), and
+  [current batch tracker](Current-Slice-Batches.md). Phase 2 closure evidence
+  and limitations remain in its [plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
+  and [progress log](03-Phase-2-Progress-Log.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -27,7 +30,7 @@
 | 0 | 01-Phase-0-Product-Contract-and-Baseline.md | Complete | Heavy | None |
 | 1 | 02-Phase-1-Build-System-and-Repository-Structure.md | Complete | Heavy | 0 |
 | 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | Complete | Heavy | 1 |
-| 3 | 04-Phase-3-Persistence-Rewrite.md | Not started | Heavy | 1, 2 |
+| 3 | 04-Phase-3-Persistence-Rewrite.md | In progress | Heavy | 1, 2 |
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Not started | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Not started | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Not started | Heavy | 5 |
