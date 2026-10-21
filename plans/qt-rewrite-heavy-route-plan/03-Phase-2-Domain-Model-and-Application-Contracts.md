@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch532 (F1300) is pushed through closeout `17102713`; Batch533 is active with F1301 accepted before implementation, and Batch534 discovery is due when F1301 implementation starts while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch532 (F1300) is pushed through closeout `17102713` and receipt `7d34b92a`; Batch533 is active with F1301 implementation underway, and Batch534 discovery is in progress with the feature lane pending while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
@@ -79,14 +79,16 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active Batch533
 
-1. F1301 - Accepted before implementation: disclose Technical failures loading
+1. F1301 - Implementation underway: disclose Technical failures loading
    CalendarPage event-display or schedule-display preferences while preserving
    established successful-load defaults and current-campus failure fallback.
-   See the progress log for full criteria.
+   Next: complete implementation and focused verification against the
+   progress-log criteria.
 
-Batch534 discovery is due when F1301 implementation starts, under the
-one-slice trigger. See the progress log for acceptance criteria and discovery
-history.
+Batch534 discovery started at F1301 implementation start under the one-slice
+trigger. The contract lane found no eligible candidate; the feature lane is
+pending. Do not record Batch534 as complete before the feature scan finishes.
+See the progress log for discovery status.
 
 ### Deferred candidates
 
