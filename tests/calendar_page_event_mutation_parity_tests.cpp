@@ -4653,6 +4653,18 @@ calendarDisplayPreferenceFailuresAreDetectedIndependently()
         executeWorkspaceSql(
             workspace,
             QStringLiteral(
+                "INSERT OR IGNORE INTO app_settings (key, value) "
+                "VALUES ('calendar/firstDayOfWeek', '1')"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
                 "ALTER TABLE app_settings "
                 "RENAME TO app_settings_base"
                 ),
@@ -4722,6 +4734,44 @@ calendarDisplayPreferenceFailuresAreDetectedIndependently()
     QLabel* const notice = displayPreferencesNotice(page);
     QVERIFY(notice);
     QVERIFY(notice->isHidden());
+    QVERIFY(notice->text().isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "UPDATE app_settings_read_fault "
+                "SET key = 'calendar/firstDayOfWeek'"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+    page.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(!notice->isHidden(), 5000);
+    QCOMPARE(
+        notice->text(),
+        QStringLiteral(
+            "Some calendar display preferences could not be loaded. "
+            "Default values are being used."
+            )
+        );
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "UPDATE app_settings_read_fault "
+                "SET key = 'unused/calendarPreference'"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+    page.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(notice->isHidden(), 5000);
     QVERIFY(notice->text().isEmpty());
     QVERIFY(QApplication::activeModalWidget() == nullptr);
 

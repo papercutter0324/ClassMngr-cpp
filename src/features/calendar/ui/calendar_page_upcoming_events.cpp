@@ -3,6 +3,7 @@
 #include "calendar_event_cache.h"
 #include "calendar_event_model.h"
 #include "core/fontmanager.h"
+#include "features/calendar/ui/academic_calendar_provider.h"
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "domain/models/calendar_event.h"
 #include "next/application/calendar_event_visibility_policy.h"
@@ -1034,6 +1035,18 @@ CalendarPage::calendarEventDisplayOptions()
                     );
                 options.currentCampusCodes.append(campusDisplayName(campus));
             }
+        }
+    }
+
+    if (m_academicCalendarProvider)
+    {
+        const auto& firstDayOfWeekLoadError =
+            m_academicCalendarProvider->firstDayOfWeekLoadError();
+        if (firstDayOfWeekLoadError
+            && firstDayOfWeekLoadError->code
+                == ClassMngr::Next::Domain::ErrorCode::Technical)
+        {
+            displayPreferenceReadFailed = true;
         }
     }
 
