@@ -1,3 +1,4 @@
+#include "data/database/database_schema_manager.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "features/calendar/calendar_event_projection_query.h"
@@ -5,6 +6,7 @@
 #include "features/calendar/ui/calendar_event_model.h"
 
 #include <QDateTime>
+#include <QFile>
 #include <QSignalSpy>
 #include <QSemaphore>
 #include <QSqlDatabase>
@@ -21,30 +23,6 @@
 
 namespace
 {
-void createCalendarEventsTable(
-    QSqlDatabase& database
-    )
-{
-    QSqlQuery query(database);
-
-    QVERIFY(
-        query.exec(R"(
-            CREATE TABLE calendar_events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                event_type TEXT DEFAULT 'Other',
-                time_status TEXT DEFAULT 'Timed',
-                repeat_series_id TEXT,
-                all_day INTEGER DEFAULT 0,
-                start_date TEXT,
-                start_time TEXT,
-                end_date TEXT,
-                end_time TEXT
-            )
-        )")
-        );
-}
-
 void saveEvent(
     QSqlDatabase& database,
     const QDate& date,
@@ -178,7 +156,7 @@ void createDatabase(
                 );
         database.setDatabaseName(databasePath);
         QVERIFY(database.open());
-        createCalendarEventsTable(database);
+        QVERIFY(DatabaseSchemaManager::createSchema(database));
         saveEvent(
             database,
             QDate(2026, 7, 10),
@@ -420,6 +398,7 @@ private slots:
     void injectedQueryFactoryPreservesUtf8DatabasePath();
     void injectedInvalidTimesAreFilteredByCacheAndModel();
     void projectionMappingPreservesRichCalendarFieldsAndCleansConnections();
+    void projectionQueryUsesExistingWorkspaceAndMapsOpenErrors();
     void projectionQueryAndCacheUseUtf16TitleBounds();
     void projectionQueryBoundsRetainedRowsAndPreservesConversionErrors();
     void typedDateProjectionPreservesModelParityAndFiltering();
@@ -456,7 +435,7 @@ void CalendarEventCacheTests::wideIdsSurviveCacheAndModel()
         auto database = QSqlDatabase::addDatabase("QSQLITE", connection);
         database.setDatabaseName(path);
         QVERIFY(database.open());
-        createCalendarEventsTable(database);
+        QVERIFY(DatabaseSchemaManager::createSchema(database));
         QSqlQuery query(database);
         query.prepare("INSERT INTO calendar_events "
                       "(id,title,start_date,end_date,start_time,end_time) "
@@ -899,6 +878,71 @@ void CalendarEventCacheTests::projectionMappingPreservesRichCalendarFieldsAndCle
     QCOMPARE(connectionNameSet(), connectionsBeforeQuery);
 }
 
+void CalendarEventCacheTests::projectionQueryUsesExistingWorkspaceAndMapsOpenErrors()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString missingPath = temporaryDirectory.filePath(
+        QStringLiteral("missing-calendar.db")
+        );
+    const QSet<QString> connectionsBeforeQuery = connectionNameSet();
+    const auto missingRange = CalendarEventProjectionQuery::loadRange(
+        missingPath,
+        QDate(2026, 7, 1),
+        QDate(2026, 7, 31)
+        );
+    QVERIFY(!missingRange);
+    QCOMPARE(
+        missingRange.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(!QFile::exists(missingPath));
+
+    const auto missingNextDate =
+        CalendarEventProjectionQuery::findNextEventDate(
+            missingPath,
+            QDate(2026, 7, 1)
+            );
+    QVERIFY(!missingNextDate);
+    QCOMPARE(
+        missingNextDate.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(!QFile::exists(missingPath));
+
+    const QString unversionedPath = temporaryDirectory.filePath(
+        QStringLiteral("unversioned-calendar.db")
+        );
+    QFile unversionedDatabase(unversionedPath);
+    QVERIFY(unversionedDatabase.open(QIODevice::WriteOnly));
+    unversionedDatabase.close();
+
+    const auto invalidSchema = CalendarEventProjectionQuery::loadRange(
+        unversionedPath,
+        QDate(2026, 7, 1),
+        QDate(2026, 7, 31)
+        );
+    QVERIFY(!invalidSchema);
+    QCOMPARE(
+        invalidSchema.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+
+    const auto invalidRange = CalendarEventProjectionQuery::loadRange(
+        missingPath,
+        QDate(2026, 7, 31),
+        QDate(2026, 7, 1)
+        );
+    QVERIFY(!invalidRange);
+    QCOMPARE(
+        invalidRange.error().code,
+        ClassMngr::Next::Domain::ErrorCode::InvalidInput
+        );
+    QVERIFY(!QFile::exists(missingPath));
+    QCOMPARE(connectionNameSet(), connectionsBeforeQuery);
+}
+
 void CalendarEventCacheTests::projectionQueryAndCacheUseUtf16TitleBounds()
 {
     QTemporaryDir temporaryDirectory;
@@ -1047,7 +1091,7 @@ projectionQueryBoundsRetainedRowsAndPreservesConversionErrors()
             );
         database.setDatabaseName(databasePath);
         QVERIFY(database.open());
-        createCalendarEventsTable(database);
+        QVERIFY(DatabaseSchemaManager::createSchema(database));
         QVERIFY(database.transaction());
 
         // SQLite permits an explicit row id of zero. Its blank title would

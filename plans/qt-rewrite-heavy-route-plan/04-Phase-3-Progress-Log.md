@@ -353,3 +353,36 @@ cmake --build build/macos-clang-debug --target ClassMngrIntensiveSlotStateReposi
 ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrIntensiveSlotStateRepositoryTests|ClassMngrNextApplicationScheduleSlotStateSaveTests|ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests|ClassMngrScheduleWidgetTests)$'
 git diff --check
 ```
+
+Commit: `728d90ff`.
+
+## F1332 — Calendar page range read — 2026-10-22
+
+Migrated the active asynchronous range and next-event-date projection queries
+to create and open a worker-local `WorkspaceStore` with `openExisting()`, then
+read through its `CalendarEventRepository`. The cache still runs each query
+on its worker and never shares the UI-owned store. Existing query contracts,
+inclusive date overlap, multi-day indexing and de-duplication, ordering,
+wall-clock dates/times, stored recurrence rows, and the 4,096-event projection
+cap remain unchanged. Missing files are not created; open/schema/query errors
+remain Technical, invalid ranges remain InvalidInput, and capacity overflow
+remains visible.
+
+The focused Calendar repository and cache CTests passed **2/2** in the
+executor's macOS Debug tree and independently in a second existing macOS
+Debug tree. Coverage includes both range and next-date missing-file behavior,
+schema/open failures, connection cleanup, inclusive overlap, recurrence IDs,
+multi-day de-duplication, and projection overflow. `git diff --check` passed.
+Ninja reported a premature-end-of-file warning and recovered.
+
+`openExisting()` runs schema and foreign-key integrity checks and constructs
+all repository wrappers for each range or next-date query. The latency of
+that repeated setup on large workspaces was not benchmarked; a SQL execution
+failure after successful open also lacks direct test injection. No broad suite
+or cross-platform build was run.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrCalendarEventCacheTests ClassMngrCalendarEventRepositoryTests --parallel 8
+ctest --test-dir build/macos-clang-debug -R 'ClassMngrCalendarEvent(Cache|Repository)Tests' --output-on-failure
+git diff --check
+```

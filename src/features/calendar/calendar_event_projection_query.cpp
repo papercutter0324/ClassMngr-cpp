@@ -1,13 +1,10 @@
 #include "calendar_event_projection_query.h"
 
-#include "data/database/database_schema_manager.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "next/platform/calendar_event_time_status_adapter.h"
 
 #include <QByteArray>
-#include <QSqlDatabase>
-#include <QSqlError>
-#include <QUuid>
 
 #include <exception>
 #include <optional>
@@ -355,65 +352,44 @@ ProjectionResult projectionFromRange(
 }
 
 template <typename Value, typename Query>
-ClassMngr::Next::Domain::Result<Value> runWithDatabase(
+ClassMngr::Next::Domain::Result<Value> runWithWorkspaceStore(
     QString databasePath,
     Query query
     )
 {
-    const QString connectionName =
-        QStringLiteral("calendar-event-projection-query-%1").arg(
-            QUuid::createUuid().toString(QUuid::WithoutBraces)
-            );
-
-    std::optional<ClassMngr::Next::Domain::Result<Value>> result;
     try
     {
-        result = [&]()
+        WorkspaceStore store;
+        const Status opened = store.openExisting(databasePath);
+        if (!opened)
         {
-            QSqlDatabase database =
-                QSqlDatabase::addDatabase(
-                    QStringLiteral("QSQLITE"),
-                    connectionName
-                    );
-            database.setDatabaseName(databasePath);
+            const auto failed = technicalFailure<Value>(opened.error());
+            store.close();
+            return failed;
+        }
 
-            if (!database.open())
-            {
-                return technicalFailure<Value>(
-                    database.lastError().text()
-                    );
-            }
+        CalendarEventRepository* repository = store.calendarEventRepository();
+        if (repository == nullptr)
+        {
+            const auto failed = technicalFailure<Value>(QString());
+            store.close();
+            return failed;
+        }
 
-            const Status foreignKeyStatus =
-                DatabaseSchemaManager::enableForeignKeyEnforcement(
-                    database
-                    );
-            if (!foreignKeyStatus)
-            {
-                database.close();
-                return technicalFailure<Value>(
-                    foreignKeyStatus.error()
-                    );
-            }
-
-            auto loaded = query(database);
-            database.close();
-            return loaded;
-        }();
+        auto loaded = query(*repository);
+        store.close();
+        return loaded;
     }
     catch (const std::exception& exception)
     {
-        result = technicalFailure<Value>(
+        return technicalFailure<Value>(
             QString::fromUtf8(exception.what())
             );
     }
     catch (...)
     {
-        result = technicalFailure<Value>(QString());
+        return technicalFailure<Value>(QString());
     }
-
-    QSqlDatabase::removeDatabase(connectionName);
-    return std::move(*result);
 }
 }
 
@@ -481,11 +457,10 @@ CalendarEventProjectionQuery::loadRange(
             );
     }
 
-    return runWithDatabase<Projection>(
+    return runWithWorkspaceStore<Projection>(
         std::move(databasePath),
-        [startDate, endDate](QSqlDatabase& database)
+        [startDate, endDate](CalendarEventRepository& repository)
         {
-            CalendarEventRepository repository(database);
             return projectionFromRange(repository, startDate, endDate);
         }
         );
@@ -508,11 +483,10 @@ CalendarEventProjectionQuery::findNextEventDate(
             );
     }
 
-    return runWithDatabase<QDate>(
+    return runWithWorkspaceStore<QDate>(
         std::move(databasePath),
-        [afterDate](QSqlDatabase& database)
+        [afterDate](CalendarEventRepository& repository)
         {
-            CalendarEventRepository repository(database);
             const ::Result<QDate> nextEventDate =
                 repository.findNextCalendarEventStartDate(afterDate);
             if (!nextEventDate)

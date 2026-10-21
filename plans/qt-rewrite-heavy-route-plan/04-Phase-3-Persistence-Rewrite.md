@@ -38,10 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-22
-- Current note: F1318–F1331 are complete. F1331 moved the typed Intensive
-  slot-state save adapter to `WorkspaceStore` while preserving the shared
-  one-key day/time toggle behavior. F1332 Calendar page range reading is
-  current.
+- Current note: F1318–F1332 are complete. F1332 preserves asynchronous Calendar
+  page range reads using a worker-local `WorkspaceStore::openExisting()` and
+  the existing bounded repository projection. Per-query schema and foreign-
+  key validation cost remains unbenchmarked. F1333 single Calendar Event save
+  is current.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
