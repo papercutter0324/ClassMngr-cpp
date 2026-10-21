@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch505 contains only F1265, accepted for implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+- Current note: Batch505 (F1265) is complete locally and awaits push; no slice batch is active; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Latest Progress Update
 
-F1264 is complete in pushed Batch504 with implementation commit `53a8747258c5ffd3087bae3941334957112e567f` and scope-correction commit `ef10c11de306acbcd5fcb3706050038e2f9b75b6` (see [F1264 closeout](03-Phase-2-Progress-Log.md#f1264-speaking-evaluation-korean-name-unicode-whitespace-parity-complete-2026-10-21)). The Executor and independent Tester each passed both focused CTests 2/2 after the correction; the first independent pass exposed shared/Roster leakage, which the correction narrowed and covered with a Roster regression. No clean, Windows, or full-suite verification is claimed. Batch504 was pushed at `4b42d4c9` (see its [push receipt](03-Phase-2-Progress-Log.md#batch504-push-receipt-2026-10-21)); Batch505 is active with F1265 accepted. Gate 1 and Gate 2 remain Partial, the Phase 2 exit gate remains Open, and F629's separate Windows x64 requalification remains outstanding.
+F1265 is complete in Batch505 at `a415e057964a4ff7cc9bdc18b0fe962ce4f75c8c` (see [F1265 closeout](03-Phase-2-Progress-Log.md#f1265-manual-save-eligibility-policy-in-application-complete-2026-10-21)). Incremental macOS build and the focused Application and selected UI cases passed; the Speaking Evaluation save suite also has a separately isolated fixture-dependent failure without a proven pre-change baseline. No clean, Windows, or full-suite verification is claimed. Batch505 is complete locally and awaits push; no slice batch is active. Gate 1 and Gate 2 remain Partial, the Phase 2 exit gate remains Open, and F629's separate Windows x64 requalification remains outstanding.
 
 ### Slice discovery batches
 
@@ -72,14 +72,8 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-Batch505 is active with one accepted slice (0 complete, 1 accepted, 0
-discovered):
-
-- F1265 - Accepted for implementation: Manual Save eligibility policy in
-  Application. Next action: centralize the typed Roster and Speaking Evaluation
-  issue-code rule in the Qt-free Application layer, then route both UI consumers
-  through it while preserving their existing confirmation and save behavior.
-
+No slice batch is active. Batch505 (F1265) is complete locally and awaits
+push.
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.

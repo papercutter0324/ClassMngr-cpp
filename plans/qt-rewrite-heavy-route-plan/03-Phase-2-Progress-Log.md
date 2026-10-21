@@ -59695,3 +59695,47 @@ The normal push succeeded with receipt `e14513c1..4b42d4c9`. The upstream
 to local `HEAD`. At push completion, the worktree was clean and the branch was
 up to date. Batch504 (F1264) is pushed; Batch505 remains active with F1265
 accepted for implementation.
+
+### Superseded latest progress update - 2026-10-21 (F1264 complete, Batch504 pushed)
+
+F1264's implementation, scope correction, and verification are recorded in
+the [F1264 closeout](03-Phase-2-Progress-Log.md#f1264-speaking-evaluation-korean-name-unicode-whitespace-parity-complete-2026-10-21),
+and Batch504's push is recorded in its [receipt](03-Phase-2-Progress-Log.md#batch504-push-receipt-2026-10-21).
+
+### F1265 Manual Save eligibility policy in Application complete - 2026-10-21
+
+F1265 is complete at implementation commit
+`a415e057964a4ff7cc9bdc18b0fe962ce4f75c8c`. The six changed paths are
+`src/next/application/roster_save_preparation.h`,
+`src/next/application/speaking_evaluation_validation.h`,
+`src/features/roster/ui/roster_editor_widget.cpp`,
+`src/features/speaking_eval/ui/speaking_eval_page_ui.cpp`,
+`tests/next_application_roster_save_use_case_tests.cpp`, and
+`tests/next_application_speaking_evaluation_save_use_case_tests.cpp`.
+
+The typed Application predicates now centralize Manual Save eligibility for
+Roster and Speaking Evaluation. Only one or more qualifying short/long Korean
+name Error issues and no other Error qualify; warnings are ignored. Both UI
+consumers use the typed policy, preserving the confirmation/save flows,
+validation rules, Manual behavior, and Automatic-mode valid-form requirement.
+Direct Application CTests passed 2/2. Selected Roster UI save cases passed;
+independent selected UI coverage passed 3 Roster and 5 Speaking Evaluation
+cases, including Manual and Automatic behavior.
+
+The incremental macOS build of `ClassMngr` and all four relevant test targets
+passed, and `git diff --check` passed. The Executor also observed a failure in
+the broader Speaking Evaluation UI save suite, which the independent Tester
+reproduced in isolation: `outputReportsUsesProjectedRegularSchedule` fails at
+`tests/speaking_eval_page_save_tests.cpp:2466` because
+`/E5 Athena (MW - 4pm)/Winter` is missing. The case uses a valid three-character
+Korean name; F1265 changes only eligibility call sites, and no evidence ties
+this failure to the change. No pre-change baseline was run, so its baseline
+status is unproven. No clean build, Windows build, or full-suite verification
+is claimed.
+
+Batch505 (F1265) is complete locally and awaits push. F1265 adds Gate 1
+app-less behavior evidence and makes no Gate 2 baseline-parity claim; Gate 1
+and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F1007's
+broad validation policy remains unresolved, F1103 remains deferred, Phase 0
+retains its 2026-09-18 Complete declaration, and F629's separate source-bound
+Windows x64 requalification remains outstanding.
