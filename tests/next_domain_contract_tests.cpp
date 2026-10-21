@@ -128,6 +128,7 @@ private slots:
     void coursesHaveValueAndAccessorSemantics();
     void coursesRejectInvalidNamesAndCrossGradePairs();
     void courseGradeBandsClassifyGradeWithoutLevelValidation();
+    void courseSchoolLevelFollowsGradeBandPolicy();
     void speakingEvaluationGradesParseExactSupportedLabels();
     void speakingEvaluationGradeLabelsRejectUnknownValues();
     void speakingEvaluationGradesAggregateAllSixComponents();
@@ -1017,6 +1018,31 @@ void NextDomainContractTests::
     QVERIFY(
         Course::gradeBandForName("M1") == CourseGradeBand::M1
     );
+}
+
+void NextDomainContractTests::courseSchoolLevelFollowsGradeBandPolicy()
+{
+    const std::array<
+        std::pair<CourseGradeBand, CourseSchoolLevel>,
+        8
+        > cases{{
+        {CourseGradeBand::E4, CourseSchoolLevel::Elementary},
+        {CourseGradeBand::E5, CourseSchoolLevel::Elementary},
+        {CourseGradeBand::E6, CourseSchoolLevel::Elementary},
+        {CourseGradeBand::M1, CourseSchoolLevel::Middle},
+        {CourseGradeBand::M2, CourseSchoolLevel::Middle},
+        {CourseGradeBand::M3, CourseSchoolLevel::Middle},
+        {CourseGradeBand::Other, CourseSchoolLevel::Elementary},
+        {
+            static_cast<CourseGradeBand>(99),
+            CourseSchoolLevel::Elementary
+        }
+    }};
+
+    for (const auto& [gradeBand, expectedLevel] : cases)
+    {
+        QVERIFY(courseSchoolLevelForGradeBand(gradeBand) == expectedLevel);
+    }
 }
 
 void NextDomainContractTests::

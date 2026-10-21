@@ -24,6 +24,33 @@ enum class CourseGradeBand
     Other
 };
 
+enum class CourseSchoolLevel
+{
+    Elementary,
+    Middle
+};
+
+[[nodiscard]] constexpr CourseSchoolLevel courseSchoolLevelForGradeBand(
+    CourseGradeBand gradeBand
+    ) noexcept
+{
+    switch (gradeBand)
+    {
+    case CourseGradeBand::M1:
+    case CourseGradeBand::M2:
+    case CourseGradeBand::M3:
+        return CourseSchoolLevel::Middle;
+
+    case CourseGradeBand::E4:
+    case CourseGradeBand::E5:
+    case CourseGradeBand::E6:
+    case CourseGradeBand::Other:
+        return CourseSchoolLevel::Elementary;
+    }
+
+    return CourseSchoolLevel::Elementary;
+}
+
 enum class CourseLevelCategory
 {
     Standard,

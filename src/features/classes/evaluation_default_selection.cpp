@@ -35,25 +35,15 @@ SchoolLevel schoolLevelForClassGrade(const QString& grade)
     const std::string normalizedGrade =
         grade.trimmed().toUpper().toStdString();
 
-    switch (
-        ClassMngr::Next::Domain::Course::gradeBandForName(
-            normalizedGrade
-            )
-        )
-    {
-    case ClassMngr::Next::Domain::CourseGradeBand::M1:
-    case ClassMngr::Next::Domain::CourseGradeBand::M2:
-    case ClassMngr::Next::Domain::CourseGradeBand::M3:
-        return SchoolLevel::Middle;
-
-    case ClassMngr::Next::Domain::CourseGradeBand::E4:
-    case ClassMngr::Next::Domain::CourseGradeBand::E5:
-    case ClassMngr::Next::Domain::CourseGradeBand::E6:
-    case ClassMngr::Next::Domain::CourseGradeBand::Other:
-        return SchoolLevel::Elementary;
-    }
-
-    return SchoolLevel::Elementary;
+    const auto schoolLevel =
+        ClassMngr::Next::Domain::courseSchoolLevelForGradeBand(
+            ClassMngr::Next::Domain::Course::gradeBandForName(
+                normalizedGrade
+                )
+            );
+    return schoolLevel == ClassMngr::Next::Domain::CourseSchoolLevel::Middle
+        ? SchoolLevel::Middle
+        : SchoolLevel::Elementary;
 }
 
 } // namespace EvaluationDefaultSelection::Private

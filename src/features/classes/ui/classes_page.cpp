@@ -93,9 +93,9 @@ bool isMiddleSchoolGrade(const QString& grade)
         ClassMngr::Next::Domain::Course::gradeBandForName(
             normalizedGrade
             );
-    return gradeBand == ClassMngr::Next::Domain::CourseGradeBand::M1
-        || gradeBand == ClassMngr::Next::Domain::CourseGradeBand::M2
-        || gradeBand == ClassMngr::Next::Domain::CourseGradeBand::M3;
+    return ClassMngr::Next::Domain::courseSchoolLevelForGradeBand(
+        gradeBand
+        ) == ClassMngr::Next::Domain::CourseSchoolLevel::Middle;
 }
 
 QString classesSectionText(ClassesSection section)
