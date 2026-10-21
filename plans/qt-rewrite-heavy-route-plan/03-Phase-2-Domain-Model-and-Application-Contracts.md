@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1273 is accepted as the sole active Batch511 slice, with implementation not started, while completed Batch510 awaits its normal push; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch510 (F1272) is complete and pushed at `ccea3d1a`, and F1273 is accepted as the sole active Batch511 slice with implementation not started; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1273 is accepted before implementation as the sole slice in active Batch511. Batch510's F1272 is complete locally at source/test commit `3979d21f28f50027e1fff85b1380414d4d005ef8` and awaits its normal push; focused macOS verification and the unavailable Windows preset are recorded in the [F1272 closeout](03-Phase-2-Progress-Log.md#f1272-schedule-testing-grade-suppression-application-policy-complete-2026-10-21). Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+Batch510 (F1272) is complete and pushed at `ccea3d1a` (see its [push receipt](03-Phase-2-Progress-Log.md#batch510-push-receipt-2026-10-21)). Batch511 is active with F1273 accepted before implementation; no F1273 implementation, build, or tests have started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Active slice batch
 

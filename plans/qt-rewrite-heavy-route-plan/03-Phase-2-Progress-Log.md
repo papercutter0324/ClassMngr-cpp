@@ -60530,3 +60530,20 @@ No full-suite or Gate 2 claim is planned. F1273 is accepted as the sole
 Batch511 slice before implementation; no implementation, build, or tests have
 started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
 Open.
+
+### Superseded latest progress update - 2026-10-21 (F1273 accepted, Batch510 push pending)
+
+F1273 was accepted before implementation as the sole active Batch511 slice;
+Batch510 was complete locally and awaiting its normal push receipt.
+
+### Batch510 push receipt - 2026-10-21
+
+The normal push on `Qt-Rewrite` succeeded from `9ae5ea2d` to
+`ccea3d1a1db89c5e04b6f09829f02bcec4e5eb82`. At push confirmation, local and
+upstream both pointed to `ccea3d1a1db89c5e04b6f09829f02bcec4e5eb82`, and the
+branch was clean and up to date. The push completed without errors or force.
+No hosted or CI verification is implied.
+
+Batch510 (F1272) is complete and pushed. Batch511 remains active with F1273
+accepted before implementation; no F1273 implementation has started. Gate 1
+and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
