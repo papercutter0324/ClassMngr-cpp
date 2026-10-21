@@ -62437,3 +62437,33 @@ with provisional, unaccepted F1292-F1294; F1292 is next for acceptance,
 followed by F1293 and F1294. Gate 1 and Gate 2 remain Partial, and the Phase 2
 exit gate remains Open. This receipt does not imply a full-suite, Windows, or
 gate result.
+
+### F1292 Teacher Info require reload after post-write refresh failure accepted before implementation - 2026-10-21
+
+When `TeacherProfileEditUseCase` returns `ReloadFailed` with
+`writeSucceeded == true`, `TeacherInfoPage` must enter the existing
+reload-required read-only state. Cancel pending autosave, disable all edit
+controls and Save, and mark the page clean so navigation does not mislabel the
+completed write as an unsaved draft. Retain submitted widget values, but do not
+update stale `m_teacher` or emit `teacherSaved` without a canonical reload.
+
+Show persistent, localized, nonmodal status in every save mode explaining that
+the update succeeded but reload failed and the user must leave and reopen the
+profile before editing or saving. Preserve it across retranslation; clear it
+only after a successful profile load or database-state clear. Keep the current
+manual warning and normal `UpdateFailed` dirty/editable behavior. Verify that
+manual, programmatic, and later autosave writes are blocked while stale,
+navigation remains allowed, and a later successful load clears the status and
+lock.
+
+The trigger test simulates reload failure by deleting the row. The accepted
+saved-state contract follows the successful write result and mirrors the
+existing staff-directory post-save refresh behavior.
+
+Focused verification: use the existing incremental `build/macos-clang-debug`,
+build `ClassMngr` and `ClassMngrTeacherInfoPageTests`, run targeted post-write
+reload-failure tests (manual and automatic if supportable) and the relevant
+reload-recovery selector, confirm CTest registration, run that target, and run
+`git diff --check`. At acceptance, implementation, build, and tests have not
+started. No full suite, Windows run, clean build, hosted CI, or gate result is
+claimed.
