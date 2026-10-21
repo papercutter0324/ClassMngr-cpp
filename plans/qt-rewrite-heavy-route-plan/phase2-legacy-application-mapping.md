@@ -124,9 +124,14 @@ with `Domain::OperationError`.
 
 Current workspace-opening scope: existing schema-v6 `.db` files remain
 supported; existing schemas below v6 are unsupported, and no migration is
-offered. F1314 is implementing rejection of existing schemas below v6. That
-implementation is in progress; Executor and Tester verification is pending,
-so rejection behavior is not yet shipped.
+offered. F1314 (`5738d486`) completed the schema-v6-only policy: existing
+schemas 0–5 reject without mutation or migration, schema v6 remains openable,
+and explicit `createSchema` still initializes new databases while
+`ensureSchema` defaults to existing-only. Focused coverage verifies unchanged
+database bytes and retention of the active session when rejection occurs.
+Independent focused checks covered 11 affected targets and 90 QtTest cases;
+the full suite was not run. See the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md) for verification scope.
 
 | Legacy symbol | Current call sites / role | v2 destination / status | Owner / layer |
 | --- | --- | --- | --- |
@@ -4933,3 +4938,13 @@ progress log](03-Phase-2-Progress-Log.md).
 F196-F207 are accepted; the F208 Sub Prep saved-content preferences port is
 selected. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for
 evidence and scope.
+
+## Current Phase 2 status — 2026-10-22
+
+Phase 2 is Complete; Gate 1 and Gate 2 satisfy their criteria. F1317
+(`28f77666`) is the latest accepted slice. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
+and [progress log](03-Phase-2-Progress-Log.md) for current gate evidence and
+verification limits. Earlier gate-status statements and progress snapshots
+that say Phase 2 or its gates remain open are historical, not current status.
+This mapping documents the legacy-to-v2 boundaries; full legacy service
+migration is outside Phase 2 and remains future work.
