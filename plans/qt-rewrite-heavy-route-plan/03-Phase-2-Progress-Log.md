@@ -63186,3 +63186,45 @@ No other slices were found.
 The feature lane is pending. Batch534 discovery is incomplete; no Batch534
 feature candidate or acceptance is recorded yet. Do not activate another slice
 until the feature scan is complete.
+
+### Batch534 bounded discovery complete at F1301 implementation start - 2026-10-21
+
+The feature lane found one candidate, F1302. On a Technical teacher-choice
+read failure, `TestingClassesPage::populateTeachers()` leaves the combo with
+only `None` and shows the existing warning. A details load retains the saved
+teacher ID in the class data, but `loadEditorValue()` selects index zero when
+that ID is absent from the fallback combo. `editorValue()` then reads `-1`
+from the selected item, and the update port maps the missing teacher ID to
+`-1` before persisting. Saving an unrelated field can therefore silently
+clear an existing teacher assignment. Evidence:
+`src/features/classes/ui/testing_classes_page.cpp:1088-1138,1429-1467,1514-1525,1546-1554`
+and `src/next/platform/application_services_testing_class_details_update_port.h:98-114`.
+
+Existing page test `testingTeacherChoicesQueryFailureShowsExactWarning`
+(`tests/testing_classes_page_tests.cpp:1468-1522`, target
+`ClassMngrTestingClassesPageTests`) verifies the warning and `None` fallback,
+but not a subsequent save for a class with an assigned teacher. The overlap
+screen found F926's typed choice-port errors, F912/F995's details-read and
+selection identity coverage, and F1296's separate Co-Teacher page work; none
+covers this update-loss path. The contract lane found no eligible candidate.
+Batch534 has one candidate, F1302.
+
+No other slices were found.
+
+### F1302 Testing Classes teacher-assignment preservation accepted for Batch534 - 2026-10-21
+
+F1302 is accepted for the next batch after Batch533 closes; it is not active
+while F1301 remains in progress. Preserve an assigned teacher when a Technical
+teacher-choice read failure leaves only the `None` fallback, and prove that
+saving an unrelated field cannot silently clear the persisted assignment.
+Distinguish the Technical failure from a genuine unassigned choice. Preserve
+successful empty-choice behavior, the silent `None` fallback for `NotFound`,
+the current Technical-read warning, and deliberate unassignment. If choices
+remain unresolved, clearly guard the save or preserve the current teacher ID
+in its update; do not treat the temporary `None` fallback as deliberate
+unassignment.
+
+Batch534 discovery is complete with one accepted candidate, F1302. Batch533
+remains active with F1301 implementation underway. Batch535 discovery is due
+when F1302 implementation starts, under the one-slice trigger. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
