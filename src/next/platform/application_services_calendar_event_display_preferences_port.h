@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/calendar_event_display_preferences.h"
 
@@ -23,14 +23,14 @@ public:
     explicit ApplicationServicesCalendarEventDisplayPreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_session(services.databaseSession())
+        : m_store(services.workspaceStore())
     {
     }
 
     explicit ApplicationServicesCalendarEventDisplayPreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_session(services ? services->databaseSession() : nullptr)
+        : m_store(services ? services->workspaceStore() : nullptr)
     {
     }
 
@@ -50,12 +50,12 @@ public:
     [[nodiscard]] Application::CalendarEventDisplayPreferencesResult load()
         const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return Application::CalendarEventDisplayPreferencesResult::success({});
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return Application::CalendarEventDisplayPreferencesResult::success({});
@@ -108,7 +108,7 @@ public:
         const Application::CalendarEventDisplayPreferencesSaveRequest& request
         ) const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return Application::
                 CalendarEventDisplayPreferencesSaveResult::failure({
@@ -119,7 +119,7 @@ public:
                 });
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return Application::
@@ -210,7 +210,7 @@ private:
         return value.toBool();
     }
 
-    DatabaseSession* m_session = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

@@ -47,3 +47,23 @@ was run. The independent CTest command was:
 ```sh
 ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrDataServiceLifecycleTests|ClassMngrNextPlatformApplicationServicesWorkspacePortTests|ClassMngrDatabaseSchemaManagerTests)$'
 ```
+
+## F1320 — Calendar display preferences persistence — 2026-10-22
+
+Moved the Calendar display-preferences adapter to
+`ApplicationServices::workspaceStore()` and its `SettingsRepository`. The
+existing preference keys, false defaults, QVariant boolean coercion,
+key-specific read diagnostics, save errors, and atomic two-setting save remain
+unchanged. Tests now set up and inspect the repository through `WorkspaceStore`.
+
+The executor built the focused test target and `ClassMngr`; the focused CTest
+passed 1/1, and `git diff --check` passed. An independent Tester reviewed the
+source and tests and reran the focused CTest: **1/1 passed**. Verification used
+the existing macOS Debug build tree; the full suite and cross-platform builds
+were not run.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests
+ctest --test-dir build/macos-clang-debug -R '^ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests$' --output-on-failure
+cmake --build build/macos-clang-debug --target ClassMngr
+```
