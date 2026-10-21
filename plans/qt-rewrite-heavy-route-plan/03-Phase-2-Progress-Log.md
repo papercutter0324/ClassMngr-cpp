@@ -63417,3 +63417,166 @@ active with five ordered accepted candidates, F1304 Speaking Evaluation
 autosave failure feedback first. Batch537 discovery is due when F1304
 implementation starts. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit
 gate remains Open; F629's post-F1303 Windows x64 evidence remains outstanding.
+
+### F1304 Speaking Evaluation autosave failure feedback complete; F1305 next - 2026-10-22
+
+F1304 completed at implementation commit `31faba36` (`F1304: report Speaking
+Evaluation autosave failures`). The build self-check passed:
+`cmake --build build/macos-clang-debug --target ClassMngrSpeakingEvalPageSaveTests -j 4`.
+Independent Tester review covered five changed files. The offscreen CTest
+`QT_QPA_PLATFORM=offscreen ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrSpeakingEvalPageSaveTests$'`
+passed 1/1; its verbose run recorded 42 passed, 0 failed, 0 skipped. Focused
+automatic failure/recovery, quiet success, manual failure, and read-failure
+cases passed. A default-platform attempt stopped at a no-screen fatal; the
+offscreen rerun passed. Offscreen output included missing keyboard SVG, font,
+and `propagateSizeHints` warnings; UI-state assertions passed. No native-display
+visual check, full suite, or other-platform run was performed.
+
+Batch536 remains active: F1304 is complete, F1305 Class Notes autosave failure
+feedback is the active next candidate, and F1306–F1308 remain accepted. The
+Batch537 discovery trigger occurred when F1304 implementation started; its
+outcome was not included in this handoff. Gate 1 and Gate 2 remain Partial,
+and the Phase 2 exit gate remains Open; F629's post-F1303 Windows x64 evidence
+remains outstanding.
+
+### Batch537 bounded discovery complete at F1305 implementation start - 2026-10-22
+
+Batch537 discovery began when F1305 implementation started. The contract lane
+sampled the Domain result contract, import/report coordinators, Qt worker
+lifetime/adapters, roster reads, teacher assignments, and document catalog;
+it found no eligible candidate. The feature lane found three ordered
+candidates, all accepted for Batch537 after Batch536 closes. No other slices
+or possible leads beyond the 20-candidate limit were found.
+
+1. **F1309 — Staff Directory autosave failure feedback.** Technical write
+   failures are not surfaced by the existing autosave paths in
+   `src/features/teacher/ui/staff_directory_page.cpp:414,935,1020,1214`.
+   Existing tests retain dirty state after quiet autosave failures but do not
+   assert status (`tests/staff_directory_gs_team_save_tests.cpp:652` and
+   `tests/staff_directory_native_english_save_tests.cpp:495`). Acceptance:
+   show localized nonmodal feedback for Technical autosave writes in both
+   directory types, retain rows and dirty state, preserve manual warnings, and
+   clear feedback on recovery. F1064 covers post-write reload failure, F1285
+   covers refresh after teacher import, and Batch531 stale-row NotFound is a
+   separate path.
+2. **F1310 — Teacher Info automatic update failure feedback.** The automatic
+   update path is at `src/features/teacher/ui/teacher_info_page.cpp:474,1462`.
+   The manual update failure test (`tests/teacher_info_page_tests.cpp:530`)
+   does not cover autosave; its automatic test (`:695`) covers a successful
+   write followed by a failed reload, not a failed write. Acceptance: disclose
+   automatic update failure nonmodally while retaining editable dirty values;
+   preserve manual warnings and clear feedback after successful save/reload.
+   F1292 covers post-write reload and F1289 covers a different page.
+3. **F1311 — Testing Classes autosave failure feedback.** The save paths are at
+   `src/features/classes/ui/testing_classes_page.cpp:131,497`; the existing
+   manual warning/draft test is
+   `tests/testing_classes_page_tests.cpp:3272`, with no autosave-modal policy
+   test. Acceptance: preserve the manual warning, show visible nonmodal
+   feedback for Technical autosave failure, and retain dirty values. Confirm
+   the no-modal autosave policy applies; Batch530 records failure safeguards
+   but does not distinguish autosave.
+
+### F1305 Class Notes autosave failure feedback complete; F1306 next - 2026-10-22
+
+F1305 completed at implementation commit `4082c9d2` (`F1305: disclose Class
+Notes autosave failures`). The build passed:
+`cmake --build build/macos-clang-debug --target ClassMngrNextFeatureClassNotesPageTests --parallel 4`.
+Final Tester verification passed the offscreen CTest
+`QT_QPA_PLATFORM=offscreen ctest --test-dir build/macos-clang-debug --verbose -R '^ClassMngrNextFeatureClassNotesPageTests$'`
+with 15 passed, 0 failed, 0 skipped, and 0 blacklisted. Failure/recovery/status
+clearing, Korean status and accessible-name text, English restoration,
+no-modal/dirty-draft behavior, manual warning, and F1281 read-failure coverage
+passed.
+
+All five TS XML files contain both keys. Korean translation values were
+verified; the four non-US-English catalogs mark the entries unfinished and
+fall back to the English source. Translation behavior was checked with a
+focused `QTranslator` stub; compiled-catalog runtime loading was not tested.
+Offscreen Qt/font warnings were non-failing. `clang-format --dry-run --Werror`
+was unavailable; `git diff --check` passed.
+
+Batch536 remains active: F1304 is complete at `31faba36`, F1305 is complete at
+`4082c9d2`, F1306 Sub Prep settings autosave feedback is the active next
+candidate, and F1307/F1308 remain accepted. Batch537 discovery is complete;
+F1309–F1311 are accepted for after Batch536 closes. Gate 1 and Gate 2 remain
+Partial, and the Phase 2 exit gate remains Open; F629's post-F1303 Windows x64
+evidence remains outstanding.
+
+### F1306 Sub Prep autosave failure feedback complete; F1307 next - 2026-10-22
+
+F1306 completed at implementation commit `a9224b63` (`F1306: disclose Sub Prep
+autosave failures`). The build command passed:
+`cmake --build build/macos-clang-debug --target ClassMngrSubPrepPageTests --parallel 4`;
+Ninja reported no work. Independent Tester verification ran
+`QT_QPA_PLATFORM=offscreen ./build/macos-clang-debug/ClassMngrSubPrepPageTests failedPreferenceSaveReportsOnlyExplicitFailureAndPreservesDraft repositoryReadFailureBlocksWritesUntilSuccessfulReload`
+and reported 4 passed, 0 failed, 0 skipped. Coverage included nonmodal
+autosave failure/status tooltip/dirty draft, Korean retranslation and English
+restoration, successful retry/status clearing, explicit-save warning, and the
+F1079 quiet read-failure guard and recovery.
+
+All five TS catalogs contain unique finished keys; Korean strings were
+verified. Korean runtime used a test-local translator stub. Compiled `.qm`
+loading and native-display verification were not tested. Offscreen font and
+read-fault warnings were non-failing. The unfiltered executable stalled in
+`unavailablePreferenceLoadsPreservePageValues` for 48.7 seconds and was
+interrupted; no full target pass is recorded.
+
+Batch536 remains active: F1304, F1305, and F1306 are complete at `31faba36`,
+`4082c9d2`, and `a9224b63`; F1307 Class Details is active next and F1308
+Co-Teacher remains accepted. Batch537 discovery remains complete, with F1309–
+F1311 accepted for after Batch536 closes. Gate 1 and Gate 2 remain Partial,
+and the Phase 2 exit gate remains Open; F629's post-F1303 Windows x64 evidence
+remains outstanding.
+
+### F1307 Class Details automatic Technical write feedback complete; F1308 next - 2026-10-22
+
+F1307 completed at implementation commit `8f7ddb9e` (`F1307: disclose Class
+Details autosave failures`). The build command passed:
+`cmake --build build/macos-clang-debug --target ClassMngrClassDetailsPageDisplayTests ClassMngrClassDetailsSavePageTests ClassMngrClassDetailsPageSaveParityTests --parallel 4`;
+Ninja reported no work. Independent Tester verification ran
+`QT_QPA_PLATFORM=offscreen ctest --test-dir build/macos-clang-debug --verbose -R '^(ClassMngrClassDetailsPageDisplayTests|ClassMngrClassDetailsSavePageTests|ClassMngrClassDetailsPageSaveParityTests)$'`.
+All 3/3 CTest targets passed, totaling 39 QtTests (17 + 10 + 12), with 0
+failures and 0 skipped. Coverage included automatic Technical failure feedback,
+nonmodal behavior and dirty-edit retention, retry and clearing, Korean
+retranslation, quiet success, manual warning, validation, schedule conflicts,
+and read-failure guards.
+
+All five catalogs contained each key exactly once; Korean values were verified,
+and four non-US-English entries remain unfinished for English source fallback.
+Offscreen output included 13 `propagateSizeHints` warnings and three missing
+Sans Serif alias warnings. No native-display check, compiled `.qm` runtime
+loading, or full-suite run was performed.
+
+Batch536 remains active: F1304–F1307 are complete at `31faba36`, `4082c9d2`,
+`a9224b63`, and `8f7ddb9e`; F1308 Co-Teacher is active next and the final
+accepted candidate. Batch537 discovery remains complete, with F1309–F1311
+accepted for after Batch536 closes. Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open; F629's post-F1303 Windows x64 evidence remains
+outstanding.
+
+### F1308 Co-Teacher autosave failure feedback complete; Batch536 closed locally - 2026-10-22
+
+F1308 completed at implementation commit `7fa77d38` (`F1308: disclose
+Co-Teacher autosave failures`). The build command passed:
+`cmake --build build/macos-clang-debug --target ClassMngrNextFeatureClassCoTeacherPageTests -j2`;
+Ninja reported no work. Independent Tester verification passed the focused
+CTest `ctest --test-dir build/macos-clang-debug -R
+'^ClassMngrNextFeatureClassCoTeacherPageTests$' --output-on-failure` 1/1. The
+direct offscreen run
+`QT_QPA_PLATFORM=offscreen build/macos-clang-debug/ClassMngrNextFeatureClassCoTeacherPageTests -v1`
+reported 14 passed, 0 failed, and 0 skipped. Coverage included automatic
+Technical failure feedback without a modal, selection and dirty-state
+retention, Korean retranslation, successful persistence and status clearing,
+quiet success, manual warning, and the unknown-read autosave barrier.
+
+The Tester checked all five TS catalogs and verified the Korean translation.
+The Executor parsed and compiled all five catalogs to `.qm`; compiled-catalog
+runtime loading and native-display verification were not tested. Offscreen
+output had one font-alias warning. `git diff --check` passed.
+
+Batch536 (F1304–F1308) is closed locally at `7fa77d38`; push is pending. All
+five slices are complete and no other slices were found. Batch537 is next after
+the push, with F1309 Staff Directory, F1310 Teacher Info, and F1311 Testing
+Classes accepted. No leads beyond the 20-candidate limit were found. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open; F629's
+post-F1303 Windows x64 evidence remains outstanding.

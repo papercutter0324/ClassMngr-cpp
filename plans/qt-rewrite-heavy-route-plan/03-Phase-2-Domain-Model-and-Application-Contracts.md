@@ -59,13 +59,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ### Latest Progress Update
 
-F1303 completed at implementation commit `1f21e364`; its Batch535 closeout
-`6239d350` was pushed to `origin/Qt-Rewrite`, advancing the remote from
-`d2c2eabc`. CalendarPage now shows its existing localized, nonmodal notice for
-Technical first-day preference read failures while preserving locale fallback
-and Calendar Preferences behavior. Focused macOS Clang Debug checks passed.
-Batch536 is active with five accepted candidates, F1304 first. Gate 1 and Gate
-2 remain Partial, and the Phase 2 exit gate is Open.
+F1308 (`7fa77d38`) adds nonmodal Co-Teacher autosave failure feedback while
+preserving selection and dirty state. The focused CTest target passed 1/1
+(14 QtTests passed). Batch536 is closed locally with push pending; Batch537 is
+next with F1309–F1311 accepted for activation after the push. Gate 1 and Gate 2
+remain Partial, and the Phase 2 exit gate is Open.
 
 ### Slice batches
 
