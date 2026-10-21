@@ -363,6 +363,10 @@ appValidationMatchesLegacySpeakingEvaluationRules()
     saveRequest.evaluation.rows[4][3] = u"5";
     saveRequest.evaluation.rows[5][1] = u"BadSuffix";
     saveRequest.evaluation.rows[5][2] = u"AB(a)";
+    saveRequest.evaluation.rows[6][1] = u"UnicodeNbsp";
+    saveRequest.evaluation.rows[6][2] = u"\u00A0\uAC00\u00A0\uB098\uB2E4\u3000";
+    saveRequest.evaluation.rows[7][1] = u"UnicodeNel";
+    saveRequest.evaluation.rows[7][2] = u"\u0085\uAC00\u0085\uB098\uB2E4\u3000";
     saveRequest.allowQuestionableKoreanNameLengths = false;
 
     const auto actual = validateAndNormalizeSpeakingEvaluation(saveRequest);
@@ -432,6 +436,54 @@ appValidationMatchesLegacySpeakingEvaluationRules()
             appIssue.severity == Application::SpeakingEvaluationValidationSeverity::Warning,
             legacyIssue.severity == ValidationSeverity::Warning
             );
+    }
+
+    using Code = Application::SpeakingEvaluationValidationCode;
+    using Severity = Application::SpeakingEvaluationValidationSeverity;
+    for (const int row : {6, 7})
+    {
+        const std::u16string expectedName = row == 6
+            ? u"\uAC00\u00A0\uB098\uB2E4"
+            : u"\uAC00\u0085\uB098\uB2E4";
+        QCOMPARE(
+            actual.normalizedRequest.evaluation.rows[
+                static_cast<std::size_t>(row)][2],
+            expectedName
+            );
+
+        const auto invalidCharacters = std::find_if(
+            actual.issues.begin(),
+            actual.issues.end(),
+            [row](const Application::SpeakingEvaluationValidationIssue& issue)
+            {
+                return issue.code == Code::StudentNameKoreanInvalidCharacters
+                    && issue.row.rawValue() == row
+                    && issue.column.rawValue() == 2;
+            }
+            );
+        QVERIFY(invalidCharacters != actual.issues.end());
+        QCOMPARE(
+            invalidCharacters->field,
+            "rows[" + std::to_string(row) + "].Korean Name"
+            );
+        QCOMPARE(invalidCharacters->severity, Severity::Error);
+
+        const auto unusualLength = std::find_if(
+            actual.issues.begin(),
+            actual.issues.end(),
+            [row](const Application::SpeakingEvaluationValidationIssue& issue)
+            {
+                return issue.code == Code::StudentNameKoreanUnusualLength
+                    && issue.row.rawValue() == row
+                    && issue.column.rawValue() == 2;
+            }
+            );
+        QVERIFY(unusualLength != actual.issues.end());
+        QCOMPARE(
+            unusualLength->field,
+            "rows[" + std::to_string(row) + "].Korean Name"
+            );
+        QCOMPARE(unusualLength->severity, Severity::Warning);
     }
 }
 

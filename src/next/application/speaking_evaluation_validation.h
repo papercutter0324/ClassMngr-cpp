@@ -290,6 +290,16 @@ inline bool isUnicodeSpace(const char16_t character) noexcept
         || character == 0x3000;
 }
 
+inline bool isKoreanNameWhitespace(const char16_t character) noexcept
+{
+    // The legacy Korean-name expression does not accept NEL or NBSP between
+    // name characters. Keep them in the input so normalization and validation
+    // can report the same invalid-character and length issues.
+    return isUnicodeSpace(character)
+        && character != 0x0085
+        && character != 0x00A0;
+}
+
 inline std::u16string trim(std::u16string_view value)
 {
     std::size_t first = 0;
@@ -517,7 +527,7 @@ inline bool isValidKoreanNameCharacters(std::u16string_view value)
 
     std::size_t position = 0;
     while (position < value.size()
-           && (isUnicodeSpace(value[position])
+           && (isKoreanNameWhitespace(value[position])
                || isHangulSyllable(value[position])))
     {
         ++position;
@@ -527,7 +537,8 @@ inline bool isValidKoreanNameCharacters(std::u16string_view value)
         return false;
     }
 
-    while (position < value.size() && isUnicodeSpace(value[position]))
+    while (position < value.size()
+           && isKoreanNameWhitespace(value[position]))
     {
         ++position;
     }
@@ -540,7 +551,8 @@ inline bool isValidKoreanNameCharacters(std::u16string_view value)
         position += 3;
     }
 
-    while (position < value.size() && isUnicodeSpace(value[position]))
+    while (position < value.size()
+           && isKoreanNameWhitespace(value[position]))
     {
         ++position;
     }
