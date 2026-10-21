@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/intensive_slot_state_repository.h"
 #include "next/application/schedule_slot_state_save.h"
 
@@ -15,7 +15,7 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Adapts the Qt-free slot-state command to the active session repository.
+// Adapts the Qt-free slot-state command to the active workspace repository.
 class ApplicationServicesScheduleSlotStateSavePort final
     : public Application::ScheduleSlotStateSavePort
 {
@@ -49,11 +49,11 @@ public:
 
     [[nodiscard]] bool isAvailable() const
     {
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        return session
-            && session->isOpen()
-            && session->intensiveSlotStateRepository();
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        return store
+            && store->isOpen()
+            && store->intensiveSlotStateRepository();
     }
 
     [[nodiscard]] Application::ScheduleSlotStateSaveResult saveSlotState(
@@ -70,15 +70,15 @@ public:
 
         try
         {
-            DatabaseSession* const session =
-                m_services ? m_services->databaseSession() : nullptr;
-            if (!session || !session->isOpen())
+            WorkspaceStore* const store =
+                m_services ? m_services->workspaceStore() : nullptr;
+            if (!store || !store->isOpen())
             {
                 return unavailableFailure();
             }
 
             IntensiveSlotStateRepository* const repository =
-                session->intensiveSlotStateRepository();
+                store->intensiveSlotStateRepository();
             if (!repository)
             {
                 return unavailableFailure();
@@ -92,7 +92,7 @@ public:
                 );
             if (!saved)
             {
-                if (!session->isOpen())
+                if (!store->isOpen())
                 {
                     return unavailableFailure();
                 }

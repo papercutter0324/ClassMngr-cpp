@@ -326,3 +326,30 @@ cmake --build build/macos-clang-debug --target ClassMngrNextApplicationScheduleB
 ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests|ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests|ClassMngrScheduleBuilderTests|ClassMngrScheduleWidgetTests)$'
 git diff --check
 ```
+
+Commit: `51449b56`.
+
+## F1331 — Intensive slot-state save — 2026-10-22
+
+Migrated the typed slot-state save adapter and its direct test setup to
+`ApplicationServices::workspaceStore()` and the existing
+`IntensiveSlotStateRepository`. Weekday and minute validation, canonical
+weekday and zero-padded `HH:mm` storage, and the global `(day,start_time)` key
+remain unchanged. Choosing the supplied default deletes only that slot key;
+other states upsert it. The same toggle path continues to support intensive,
+weekend, and enabled regular weekday slots. The separate read port, legacy
+service/DataService facade, and schedule-import snapshot writer remain outside
+this slice.
+
+The focused repository, Application use-case, Platform save-port, and
+ScheduleWidget CTests passed **4/4**. Independent review confirmed the
+single-statement repository behavior, targeted deletion, failure mapping, and
+widget coverage. `git diff --check` passed. Ninja printed a premature-end-of-
+file warning and recovered. Verification used the existing macOS Debug tree;
+no broad suite or cross-platform build was run.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrIntensiveSlotStateRepositoryTests ClassMngrNextApplicationScheduleSlotStateSaveTests ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests ClassMngrScheduleWidgetTests
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrIntensiveSlotStateRepositoryTests|ClassMngrNextApplicationScheduleSlotStateSaveTests|ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests|ClassMngrScheduleWidgetTests)$'
+git diff --check
+```

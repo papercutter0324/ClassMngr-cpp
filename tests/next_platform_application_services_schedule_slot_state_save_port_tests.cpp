@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/intensive_slot_state_repository.h"
 #include "next/platform/application_services_schedule_slot_state_save_port.h"
 
@@ -29,7 +29,7 @@ Result<QList<IntensiveSlotState>> loadSlotStates(
     ApplicationServices& services
     )
 {
-    return services.databaseSession()
+    return services.workspaceStore()
         ->intensiveSlotStateRepository()
         ->loadIntensiveSlotStates();
 }
@@ -143,7 +143,7 @@ selectingDefaultStateDeletesStoredOverride()
 
     Platform::ApplicationServicesScheduleSlotStateSavePort port(services);
     IntensiveSlotStateRepository* const repository =
-        services.databaseSession()->intensiveSlotStateRepository();
+        services.workspaceStore()->intensiveSlotStateRepository();
     QVERIFY(repository->saveIntensiveSlotState(
         QStringLiteral("Monday"),
         QStringLiteral("09:00"),
@@ -198,7 +198,7 @@ repositoryWriteFailureIsTechnicalAndLeavesNoOverride()
 {
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(m_directory)));
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_slot_state_insert "
         "BEFORE INSERT ON intensive_slot_states "

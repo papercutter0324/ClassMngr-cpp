@@ -38,11 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-22
-- Current note: F1318–F1330 are complete. F1328–F1329 moved speaking-evaluation
-  read and save adapters to `WorkspaceStore`. F1330 moved the Schedule Builder
-  source adapter to `WorkspaceStore` and retains the full projection because
-  the board renders all non-testing classes. F1331 Intensive slot-state
-  saving is current.
+- Current note: F1318–F1331 are complete. F1331 moved the typed Intensive
+  slot-state save adapter to `WorkspaceStore` while preserving the shared
+  one-key day/time toggle behavior. F1332 Calendar page range reading is
+  current.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
