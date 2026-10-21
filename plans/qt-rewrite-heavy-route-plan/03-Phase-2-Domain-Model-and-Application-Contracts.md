@@ -53,13 +53,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch529 (F1298) is complete locally with push pending; Batch531 F1299 is accepted before implementation, and the next discovery is due when work starts on F1299; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch529 (F1298) is pushed through closeout `4115e7fe` with its receipt pending; Batch531 F1299 implementation is underway; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1298's latest slice commit is test commit `20fd5eec`. Batch531 F1299 is
-accepted before implementation; begin the next discovery when work starts on
-F1299.
+F1299's latest slice commit is production commit `55e4cf90`. Batch531 F1299
+implementation is underway.
 
 ### Slice discovery batches
 
@@ -80,12 +79,11 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active Batch531
 
-1. F1299 - Accepted before implementation: add typed failure status to
+1. F1299 - Implementation underway: add typed failure status to
    ScheduleWidget source reads while preserving F141's `NotFound` behavior.
    See the progress log for full criteria.
 
-Begin the next discovery when work starts on F1299. See the progress log for
-Batch531 discovery evidence and limitations.
+See the progress log for F1299's full criteria and Batch531 discovery evidence.
 
 ### Deferred candidates
 

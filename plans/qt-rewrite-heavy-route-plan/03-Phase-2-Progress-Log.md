@@ -63003,3 +63003,50 @@ Batch529 (F1298) is complete locally and push is pending. Batch531 is active
 with F1299 accepted before implementation; begin the next discovery when work
 starts on F1299. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate
 remains Open.
+
+### Batch529 push receipt - 2026-10-21
+
+The Batch529 closeout `4115e7fe538ec4a869f34a5ee1216fd55dc29c67` was pushed
+to `origin/Qt-Rewrite`, advancing it from
+`fbff55fa42745b49740395e48e58b650233178ab` to
+`4115e7fe538ec4a869f34a5ee1216fd55dc29c67`. The ordinary push initially
+failed because DNS could not resolve GitHub; the user-authorized non-force
+retry succeeded. The local `Qt-Rewrite` tip and remote tip matched at the new
+SHA, and the worktree was clean at push.
+
+Batch529 (F1298) is pushed through closeout `4115e7fe`; its receipt is
+pending. Batch531 F1299 implementation is underway in production commit
+`55e4cf90`, and focused verification is underway. Gate 1 and Gate 2 remain
+Partial, and the Phase 2 exit gate remains Open.
+
+### Batch532 bounded discovery during F1299 implementation - 2026-10-21
+
+The feature lane screened Staff Directory stale-row `NotFound` saves because
+F653/F654 establish a no-warning contract. It found a Roster Editor candidate:
+automatic persistence failures are silent. Investigation confirmed the
+autosave timer stops after one failure, the editable draft remains dirty, and
+the automatic Save button is hidden. A one-shot manual Retry can be added
+without creating a retry loop.
+
+The contract lane found no eligible production slice. It flagged a
+`TeacherDisplayNameBatch` mismatch for `2147483648`; this is test-only and is
+excluded by the no-test-only-slice rule. The Roster Editor failure candidate
+is F1300.
+
+No other slices were found.
+
+### F1300 Roster Editor autosave failure status accepted before implementation - 2026-10-21
+
+F1300 is accepted for the next batch before implementation. An automatic
+roster persistence failure must show a localized, nonmodal inline status
+while retaining the editable draft and dirty state and leaving persisted state
+unchanged. Do not show a modal prompt. Provide a one-shot Retry only for typed
+recoverable failures, with no automatic retry loop. Keep status visible through
+edits and failed retries; clear it on successful save, successful reload or
+discard, and database-state clearing. Validation and eligibility failures and
+manual-save behavior remain unchanged.
+
+This changes F129's silent autosave failure behavior only by adding inline
+status; its no-modal behavior and dirty-draft protection remain.
+
+At acceptance, F1300 implementation has not started.
