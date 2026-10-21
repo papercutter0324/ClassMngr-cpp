@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Domain, persistence, resource, and UI implementation
 - Owner: Unassigned
 - Last updated: 2026-09-19
-- Historical progress log: [02-Phase-1-Progress-Log.md](02-Phase-1-Progress-Log.md)
+- Existing progress log: [02-Phase-1-Progress-Log.md](02-Phase-1-Progress-Log.md)
 - Current note: Slices 1.1-1.6 established the parallel executable, asserted
   target boundaries, explicit source ownership, tooling/reports, and the PR
   Debug matrix. Hosted commit `0883009d` passed the Windows x64, macOS
@@ -49,10 +49,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ### Slice batches
 
-Track ordered candidate lists, per-slice status, and beyond-cap discovery
-reminders in the [Phase 1 slice-batch register](02-Phase-1-Slice-Batches.md).
-Use the phase progress log for discovery evidence, acceptance criteria,
-verification results, and chronology.
+Use the shared [current slice-batch tracker](Current-Slice-Batches.md) for live work when Phase 1 is active. It contains only the active
+batch and the next batch once discovery starts; completed batches are
+not archived there.
 
 ## Objective
 

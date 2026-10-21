@@ -51,14 +51,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-10-22
-- Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
+- Existing progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch542 is pushed through closeout at `917ce665`; Batch543
-  discovery remains in progress with a deeper Teacher Import parity trace and
-  cumulative gate audit pending. Current
+- Current note: Batch542 is pushed through closeout at `3a5a5e13` (receipt
+  `917ce665..3a5a5e13`). F1316 is in progress. Batch544 discovery completed;
+  both lanes found no other ready slices. Gate 1 and Gate 2 remain Partial and
+  the Phase 2 exit gate remains Open. Current
   and upcoming detail is maintained in the
-  [Phase 2 slice-batch register](03-Phase-2-Slice-Batches.md). Gate 1 and Gate 2
-  remain Partial, and the Phase 2 exit gate remains Open.
+  [shared current slice-batch tracker](Current-Slice-Batches.md).
 
 ### Latest Progress Update
 
@@ -76,29 +76,31 @@ only the Calendar Import total filtered save-batch cap. Executor's five focused
 targets passed 189 QtTests; independent Tester passed 35 focused cases,
 including 4,097-event single-query/ordered-save and Platform persistence checks.
 No full suite or greater-than-4,097 stress test ran. Batch542 was pushed through
-closeout by `3719f3b2..917ce665 Qt-Rewrite -> Qt-Rewrite`, including F1315 and
-closeout docs at `917ce665`.
+closeout by `917ce665..3a5a5e13 Qt-Rewrite -> Qt-Rewrite`, including F1315 and
+closeout docs through `3a5a5e13`.
 
 Schema v6 remains the only supported open version; migration for schemas below
 v6 is not offered. Batch540's F1313 proposal was a false positive, withdrawn
-after full legacy-chain review; no candidate is queued. Batch543 discovery
-started with F1315: the contract lane and feature broad scan found no candidate,
-while a deeper Teacher Import parity trace remains pending. Batch543 discovery
-is not closed and no conclusion about other slices is recorded yet. Gate 1 and
-Gate 2 remain Partial; the exit gate remains Open pending cumulative audit.
-Gate 2 retains a documented Class Transfer identity-free package exception;
-exact parity is not claimed for that input. F629's Windows x64 evidence remains
-outstanding separately.
+after full legacy-chain review. Batch543 accepted F1316, whose implementation
+is in progress. Batch544's feature and independent Application-contract lanes
+both completed without another ready slice. Gate 1 remains Partial, not passed:
+the workspace app-less create/lifecycle boundary and inspected `src/next`
+isolation are satisfied in bounded scope, but broader Domain/Application
+coverage remains incomplete. Gate 2 remains Partial: bounded Teacher Import
+and roster-name fixtures passed, but are not exhaustive legacy proof; required
+comparisons and F1316 verification remain. The detailed gaps, exceptions, and
+limits are in the progress log. The Phase 2 exit gate remains Open. F629's
+Windows x64 evidence remains outstanding separately.
 
 ### Slice batches
 
-Track ordered candidate lists, per-slice status, and beyond-cap discovery
-reminders in the [Phase 2 slice-batch register](03-Phase-2-Slice-Batches.md).
-Keep discovery evidence, acceptance criteria, verification results, and
-chronology in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Gate 1
-and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's
-source-bound Windows x64 layout trace and requalification remain outstanding
-separately from Phase 0's 2026-09-18 Complete declaration.
+Use the shared [current slice-batch tracker](Current-Slice-Batches.md) for
+Phase 2's live batch and the next batch after discovery starts. Do not keep a
+separate Phase 2 batch register or batch history. The [Phase 2 progress
+log](03-Phase-2-Progress-Log.md) retains implementation, verification, and gate
+evidence. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
+Open. F629's source-bound Windows x64 layout trace and requalification remain
+outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Deferred candidates
 
@@ -198,8 +200,25 @@ Create use cases for:
 
 Workspace opening continues to support existing schema-v6 `.db` files.
 Existing schemas below v6 are unsupported, and migration is not offered.
-F1314 is implementing the rejection of those older schemas; this behavior is
-still in progress and is not yet verified or shipped.
+F1314 completed and was pushed in Batch541; its focused verification and limits
+are recorded above and in the progress log.
+
+F1316 adds a Qt-free Application use case that creates the Sub Prep generation
+plan in the page before its first print-source read, then passes that same plan
+to `SubPrepPackageService::generate()` before roster reads or other package
+side effects. The typed request/result and structured validation errors use
+`Domain::GregorianDate`, typed final class IDs, explicit schedule weekdays,
+normalized dates, the separately derived ordered/deduplicated roster-query
+weekdays, schedule mode, output actions, requested roster columns, and needed
+folder label, replacement choice, and target-readiness fields. Preserve current
+date normalization and selection order, modes, columns, and folder-only
+behavior. Application types must not depend on Qt, widgets, URLs,
+callbacks, concrete paths, or renderer types. Destination handling, staging or
+replacement, rendering, printing, and folder opening remain feature/platform
+edges for Phases 7/8. Acceptance must cover different vacation-date weekdays
+and explicit schedule weekdays, proving each source uses its own scope.
+Implementation is in progress and app-less acceptance coverage is pending;
+see Batch543 and the progress log for full criteria.
 
 The Sub Prep slice also requires explicit summary, selected-detail, and
 operation-scoped print-source contracts. Their feature-level implementation
@@ -294,4 +313,5 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+Evidence for earlier verified slices and cumulative exit-gate snapshots remains
+in the existing [Phase 2 progress log](03-Phase-2-Progress-Log.md).

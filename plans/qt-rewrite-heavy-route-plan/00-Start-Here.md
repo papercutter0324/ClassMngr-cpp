@@ -5,11 +5,11 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-21
+- Last updated: 2026-10-22
 - Current milestone: Phase 2 remains in progress. Gate 1 and Gate 2 remain
   Partial, and the Phase 2 exit gate remains Open. See the [Phase 2
-  slice-batch register](03-Phase-2-Slice-Batches.md) for current and upcoming
-  batch status.
+  current slice-batch tracker](Current-Slice-Batches.md) for the active batch
+  and the next batch whose discovery has started.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -46,40 +46,43 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 Phase 2 remains in progress. Gate 1 and Gate 2 remain Partial, and its exit
 gate remains Open. Phase 0 remains Complete; F629’s source-bound Windows x64
 requalification remains outstanding separately. See the [Phase 2 slice-batch
-register](03-Phase-2-Slice-Batches.md) for current and upcoming batch status and
-the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for chronological
-discovery evidence and acceptance criteria.
+tracker](Current-Slice-Batches.md) for current and upcoming batch status and the
+[Phase 2 progress log](03-Phase-2-Progress-Log.md) for implementation,
+verification, and gate evidence.
 
 ## Phase notes, slice batches, and progress logs
 
 - Keep each phase plan's `Current note` limited to the latest information that
-  is relevant to the current or next slice. Move stale progress details to that
-  phase's progress log; keep durable requirements and decisions in their
-  appropriate plan sections.
+  is relevant to the current or next slice. Remove stale progress details
+  instead of archiving them solely for history; keep durable requirements and
+  decisions in their appropriate plan sections.
 - Keep only the most recent slice commit in the phase plan's
-  `Latest Progress Update` section. When a newer progress update is written,
-  move the previous update into that phase's progress log before replacing it.
+  `Latest Progress Update` section. Replace it when a newer update is written;
+  retain the previous update elsewhere only when it contains evidence or a
+  decision that remains useful.
 - Keep the `Current milestone` note to the most recent milestone only. Replace
   the entire note when updating it; remove the previous note instead of
   appending or preserving earlier milestones.
-- Track each phase's ordered slice batches, candidate statuses, and discovery
-  reminders in its own `-Slice-Batches.md` document, not in the phase plan or
-  progress log. Discover up to 20 ordered candidates per batch, or all remaining
-  candidates when fewer than 20 remain, and work through them in order. Begin
-  discovering the next batch when starting the second-to-last candidate in the
-  active batch; for a one-candidate batch, begin when work on that candidate
-  starts. If discovery identifies possible candidates beyond the 20-candidate
-  limit, record a reminder in the batch document to search for those candidates
-  and any others when next-batch discovery is due. If a pass finds fewer than
-  20 candidates and no other candidates, add the standalone line `No other
-  slices were found.` beneath that batch in the batch document.
+- Track only the active slice batch and the next batch once its discovery
+  starts in the shared [current slice-batch tracker](Current-Slice-Batches.md).
+  Discover up to 20 ordered candidates per batch, or all remaining candidates
+  when fewer than 20 remain, and work through them in order. Begin discovering
+  the next batch when starting the second-to-last candidate in the active batch;
+  for a one-candidate batch, begin when work on that candidate starts. If
+  discovery identifies possible candidates beyond the 20-candidate limit,
+  record a reminder in the shared tracker to search for them and any others
+  when next-batch discovery is due. If a completed discovery finds no other
+  candidates, record `No other slices were found.` for that batch. Do not create
+  a separate batch file per phase or keep a historical batch log; replace
+  closed batch details as the tracker advances.
 - Use a sibling file named from the phase plan and ending in `-Progress-Log.md`
   when that phase has one (for example,
   `03-Phase-2-Progress-Log.md`); otherwise use its `Progress log` section.
-  Preserve historical entries in date order, including verified-slice reports,
-  discovery evidence, and dated exit-gate snapshots. Keep requirements,
-  decisions, and current status in the phase plan; keep current and upcoming
-  batch lists and statuses only in the phase's slice-batch document.
+  Use it only for implementation or verification evidence, decisions, and gate
+  findings that remain useful. Routine slice chronology and closed batches do
+  not need to be archived. Keep requirements and current phase status in the
+  phase plan, and live batch lists and discovery reminders only in the shared
+  tracker. No separate batch-history log is needed.
 
 ## Git commits and pushes
 

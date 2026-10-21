@@ -42,26 +42,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ### Slice batches
 
-Track ordered candidate lists, per-slice status, and beyond-cap discovery
-reminders in the [Phase 5 slice-batch register](06-Phase-5-Slice-Batches.md).
-Use the phase progress log for discovery evidence, acceptance criteria,
-verification results, and chronology.
+Use the shared [current slice-batch tracker](Current-Slice-Batches.md) for live work when Phase 5 is active. It contains only the active
+batch and the next batch once discovery starts; completed batches are
+not archived there.
 
 ## Progress log
 
-Record this phase's progress here. Add a dated entry when work starts, a
-milestone is reached, a blocker appears, or the exit gate passes. Append entries
-in date order and include what changed, what remains, evidence or a verification
-command, and any new risk or blocker.
-
-Entry format:
-
-### YYYY-MM-DD — <milestone or update>
-
-- Changed:
-- Remaining:
-- Evidence:
-- Risks or blockers:
+Use this section only when a decision, acceptance result, verification
+finding, blocker, or exit-gate detail needs a durable record. Routine
+slice chronology and closed batch history do not need to be archived;
+keep current status in this plan and live batches in the shared tracker.
 
 ## Objective
 

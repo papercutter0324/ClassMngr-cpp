@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: None; Phase 1 is unblocked
 - Owner: Unassigned
 - Last updated: 2026-09-19
-- Historical progress log: [01-Phase-0-Progress-Log.md](01-Phase-0-Progress-Log.md)
+- Existing progress log: [01-Phase-0-Progress-Log.md](01-Phase-0-Progress-Log.md)
 - Current note: Phase 0 was declared complete by the user on 2026-09-18. Fresh
   packaged Windows x64 and macOS universal matrices pass all 24 routes each;
   combined `--require-exit-gate` validation using the Windows run root and both
@@ -50,10 +50,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ### Slice batches
 
-Track ordered candidate lists, per-slice status, and beyond-cap discovery
-reminders in the [Phase 0 slice-batch register](01-Phase-0-Slice-Batches.md).
-Use the phase progress log for discovery evidence, acceptance criteria,
-verification results, and chronology.
+Use the shared [current slice-batch tracker](Current-Slice-Batches.md) for live work when Phase 0 is active. It contains only the active
+batch and the next batch once discovery starts; completed batches are
+not archived there.
 
 ### Phase 0 platform and route gate
 
