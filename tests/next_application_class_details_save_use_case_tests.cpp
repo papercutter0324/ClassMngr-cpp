@@ -172,7 +172,7 @@ private slots:
     void workflowNormalizesUnicodeCatalogSpellingsBeforeSaving();
     void workflowUnwrapsWideContextTeacherIdWithoutNarrowing();
     void workflowQueriesEmptySchedulesAndKeepsOptionalPayload();
-    void workflowContextFailureAndMismatchFallBack();
+    void workflowContextFailureAndMismatchStopBeforeValidation();
     void workflowPreservesContextSnapshotTextDecoding();
     void workflowInvalidContextAndFieldsStopBeforeConflicts();
     void workflowRawWeekdayConversionPreservesIndices();
@@ -393,23 +393,37 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowQueriesEmptySchedulesA
     }
 }
 
-void NextApplicationClassDetailsSaveUseCaseTests::workflowContextFailureAndMismatchFallBack()
+void NextApplicationClassDetailsSaveUseCaseTests::
+    workflowContextFailureAndMismatchStopBeforeValidation()
 {
     for (bool mismatch : {true,false})
     {
         WorkflowPorts ports;
+        auto input = workflowRequest();
+        input.input.timeFillerActivities = u"Caller activities";
         ports.context = mismatch
             ? Application::ClassDetailsValidationContextPortResult::success({
                 *Domain::ClassId::fromString("43"), contextTeacherId(0),
                 std::u16string(10001,u'x'), {}})
             : Application::ClassDetailsValidationContextPortResult::failure(workflowError);
-        const auto result = runWorkflow(workflowRequest(), ports);
-        const auto* success = std::get_if<Application::ClassDetailsSaveWorkflowSuccess>(&result);
-        QVERIFY(success);
-        QCOMPARE(ports.calls, (std::vector<std::string>{"context","regular","intensive","save"}));
-        QCOMPARE(success->normalized.teacherId.value(), std::string("-1"));
-        QVERIFY(success->normalized.notes.empty());
-        QVERIFY(success->normalized.timeFillerActivities.empty());
+        const Domain::OperationError expectedError = mismatch
+            ? Domain::OperationError{
+                Domain::ErrorCode::Validation,
+                "A class validation context returned a different class identifier.",
+                false}
+            : workflowError;
+
+        const auto result = runWorkflow(input, ports);
+        const auto* failure = std::get_if<Application::ClassDetailsSaveWorkflowFailure>(&result);
+        QVERIFY(failure);
+        QCOMPARE(failure->stage, Application::ClassDetailsSaveWorkflowStage::ValidationContext);
+        QVERIFY(failure->error == expectedError);
+        QCOMPARE(ports.calls, (std::vector<std::string>{"context"}));
+        QVERIFY(ports.conflicts.empty());
+        QVERIFY(!ports.saved.has_value());
+        QCOMPARE(input.input.teacherId.value(), std::string("0"));
+        QCOMPARE(input.input.notes, std::u16string(10001, u'x'));
+        QCOMPARE(input.input.timeFillerActivities, std::u16string(u"Caller activities"));
     }
 }
 

@@ -5,6 +5,7 @@
 #include "next/application/class_details_schedule_conflict_query.h"
 #include "next/application/class_details_validation_context_query.h"
 #include "next/application/class_details_validation_policy.h"
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/schedule_time.h"
 
 #include <cstddef>
@@ -39,6 +40,7 @@ struct ClassDetailsSaveWorkflowConflict final
 
 enum class ClassDetailsSaveWorkflowStage
 {
+    ValidationContext,
     RegularConflicts,
     IntensiveConflicts,
     Save
@@ -71,18 +73,26 @@ public:
     {
         ClassDetailsValidationInput input = request.input;
         const Domain::ClassId& classId = input.classId;
+        if (!isCanonicalPositiveDecimalId(classId.value()))
+        {
+            input.teacherId = Domain::TeacherId::fromString("-1").value();
+            input.notes.clear();
+            input.timeFillerActivities.clear();
+            return ClassDetailsValidationPolicy::normalizeAndValidate(
+                input, catalog, catalogEquals);
+        }
+
         const auto context = ClassDetailsValidationContextQuery::execute(classId, contextPort);
-        // The form historically continued with default hidden fields if the
-        // fresh context was unavailable or belonged to another class.
-        const ClassDetailsValidationContextTeacherId teacherId = context
-            ? context.value().teacherId
-            : ClassDetailsValidationContextTeacherId{};
+        if (!context)
+            return ClassDetailsSaveWorkflowFailure{
+                ClassDetailsSaveWorkflowStage::ValidationContext, context.error()};
+
+        const ClassDetailsValidationContextTeacherId teacherId = context.value().teacherId;
         input.teacherId = Domain::TeacherId::fromString(
             std::to_string(teacherId.value())
             ).value();
-        input.notes = context ? contextText(context.value().notes) : std::u16string{};
-        input.timeFillerActivities = context
-            ? contextText(context.value().timeFillerActivities) : std::u16string{};
+        input.notes = contextText(context.value().notes);
+        input.timeFillerActivities = contextText(context.value().timeFillerActivities);
 
         auto validation = ClassDetailsValidationPolicy::normalizeAndValidate(
             input, catalog, catalogEquals);
