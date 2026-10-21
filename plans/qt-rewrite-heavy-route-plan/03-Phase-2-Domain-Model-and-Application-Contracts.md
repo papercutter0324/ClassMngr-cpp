@@ -53,19 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch515 has F1276 accepted as its sole slice before implementation, with implementation next; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch515 (F1276) is complete locally at `bfea9f92` and awaiting its normal push; no implementation batch is active, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1276 is accepted before implementation as the sole slice in active Batch515; the next action is implementation. F1275 is complete and pushed at `a63fa9b8` (see its [Batch513 push receipt](03-Phase-2-Progress-Log.md#batch513-push-receipt-2026-10-21)), and its receipt documentation commit `c0da0b81` is also pushed. No F1276 implementation, build, or tests have started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
-
-### Active slice batch
-
-Batch515 currently has 0 complete, 1 accepted, and 0 discovered slices:
-
-1. F1276 - Sub Prep vacation-block selection policy — accepted; next action: implement the Qt-free Application policy over the typed calendar interval contract and replace the page's conversion back to Qt `CalendarEvent`.
-
-No F1276 implementation, build, or tests have started.
+F1276 is complete locally in Batch515 at source/test commit `bfea9f9217e072fce8ac6cb9e09ed7cfdcf5e086`, with acceptance recorded at `7c40bffd8cb221efbe796fe37e96fd0c3eb12969`; see the [F1276 closeout](03-Phase-2-Progress-Log.md#f1276-sub-prep-vacation-block-selection-policy-complete-2026-10-21). Batch515 is complete locally and awaiting its normal push; the next action is push, and no implementation batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Slice discovery batches
 

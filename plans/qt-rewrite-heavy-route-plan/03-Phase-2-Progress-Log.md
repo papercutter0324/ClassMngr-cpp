@@ -60913,3 +60913,44 @@ claim is planned. F1276 is accepted as the sole Batch515 slice before
 implementation; no implementation, build, or tests have started. Gate 1 and
 Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F1103 and all
 other deferred candidates remain unchanged.
+
+### Superseded latest progress update - 2026-10-21 (F1276 accepted, implementation pending)
+
+F1276 was accepted as the sole Batch515 slice before implementation. F1275
+remained complete and pushed at `a63fa9b8`, with receipt documentation commit
+`c0da0b81` also pushed. No F1276 implementation, build, or tests had started.
+Gate 1 and Gate 2 remained Partial, and the Phase 2 exit gate remained Open.
+
+### F1276 Sub Prep vacation-block selection policy complete - 2026-10-21
+
+F1276 is complete in Batch515 at implementation/test commit
+`bfea9f9217e072fce8ac6cb9e09ed7cfdcf5e086`; acceptance was recorded at
+`7c40bffd8cb221efbe796fe37e96fd0c3eb12969`. The Qt-free Application policy
+now selects the next eligible connected vacation block from typed intervals,
+and the page no longer converts those intervals back into Qt `CalendarEvent`
+values. Existing query validation and failure-to-empty fallback, checkbox and
+localized weekday behavior, and Monday week-start conversion remain at their
+accepted boundaries.
+
+The existing macOS Debug tree passed this incremental build:
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationSubPrepVacationSelectionPolicyTests ClassMngrSubPrepPageTests
+```
+
+The focused policy CTest passed 1/1. Each of five offscreen UI selectors passed
+3 passed/0 failed: `printDialogSelectsNextVacationBlock`,
+`printDialogOnlyOffersVacationModeWithinFourWeeks`,
+`printDialogCombinesVacationDatesAcrossHolidayBlocks`,
+`printDialogCalendarReadUsesTwoYearWindowAndFallsBackOnFailure`, and
+`printDialogReceivesApplicationVacationSelection`. `git diff --check` passed.
+The run emitted a nonfatal missing Sans Serif font alias warning and the
+expected query-failure warning. The Sub Prep test binary was run only for the
+selected functions; no unfiltered/full Sub Prep run, full suite, Windows, or
+Gate 2 result is claimed.
+
+Batch515 (F1276) is complete locally and awaiting its normal push; push is the
+next action, and no implementation batch is active. Gate 1 and Gate 2 remain
+Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows
+x64 requalification remains outstanding separately from Phase 0's 2026-09-18
+Complete declaration.
