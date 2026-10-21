@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_repository.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/domain/domain_types.h"
@@ -35,7 +35,7 @@ QString databasePath(QTemporaryDir& directory)
 
 int createClass(ApplicationServices& services, const QString& name)
 {
-    return services.databaseSession()->classRepository()
+    return services.workspaceStore()->classRepository()
         ->createClass(name).value_or(-1);
 }
 
@@ -112,7 +112,7 @@ preservesLargestSupportedClassId()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
 
-    QSqlQuery insert(services.databaseSession()->database());
+    QSqlQuery insert(services.workspaceStore()->database());
     insert.prepare(QStringLiteral(
         "INSERT INTO classes (id, name) VALUES (?, ?)"
         ));
@@ -163,7 +163,7 @@ unavailableSessionAndRepositoryFailureDoNotFallBack()
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE classes")),
         qPrintable(query.lastError().text()));
 
@@ -190,7 +190,7 @@ rejectsOutOfRangeStoredClassIdWithoutNarrowing()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
 
-    QSqlQuery insert(services.databaseSession()->database());
+    QSqlQuery insert(services.workspaceStore()->database());
     insert.prepare(QStringLiteral(
         "INSERT INTO classes (id, name) VALUES (?, ?)"
         ));
@@ -198,7 +198,7 @@ rejectsOutOfRangeStoredClassIdWithoutNarrowing()
     insert.addBindValue(className);
     QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
 
-    QSqlQuery storedRow(services.databaseSession()->database());
+    QSqlQuery storedRow(services.workspaceStore()->database());
     storedRow.prepare(QStringLiteral(
         "SELECT typeof(id) AS id_type, id, name FROM classes WHERE id=?"
         ));

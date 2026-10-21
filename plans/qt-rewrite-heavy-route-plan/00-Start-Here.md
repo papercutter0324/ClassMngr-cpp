@@ -10,8 +10,8 @@
   Batch 1 is active with F1318 schema-v6 behavior baseline, F1319
   WorkspaceStore lifecycle seam, F1320 calendar display-preferences
   persistence, and F1321 existing-teacher profile persistence-port migration
-  complete; F1322 ClassesPage class-list read is next. F1320 is committed as
-  `c6ea61d6`. See
+  and F1322 ClassesPage list persistence-port migration complete; F1323 My
+  Classes student-count batch read is next. See
   the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md), and
   [progress log](04-Phase-3-Progress-Log.md) and [current batch

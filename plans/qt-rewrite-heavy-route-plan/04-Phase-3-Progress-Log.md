@@ -89,3 +89,25 @@ cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationS
 ctest --test-dir build/macos-clang-debug -R '^ClassMngrNextPlatformApplicationServicesTeacherProfile(EditPersistence|Read)PortTests$' --output-on-failure
 cmake --build build/macos-clang-debug --target ClassMngr
 ```
+
+## F1322 — ClassesPage list persistence-port migration — 2026-10-22
+
+Moved the existing ClassesPage list adapter and its test setup from the
+`databaseSession()` compatibility accessor to
+`ApplicationServices::workspaceStore()` and
+`WorkspaceStore::classRepository()`. The Phase 2 query, UI wiring, repository
+ordering, visible list behavior, and no-DataService-fallback behavior remain
+unchanged. Student counts (F1323) and Class Details (F1324) remain separate.
+
+The executor built the focused platform-test target and `ClassMngr`; the
+focused CTest passed 1/1, and `git diff --check` passed. Ninja printed a
+premature-end-of-file warning during the `ClassMngr` build, recovered, and
+completed successfully. An independent Tester reviewed the diff and reran the
+focused CTest: **1/1 passed**. Verification used the existing macOS Debug
+tree; the full suite and cross-platform builds were not run.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesClassesListReadPortTests
+ctest --test-dir build/macos-clang-debug -R '^ClassMngrNextPlatformApplicationServicesClassesListReadPortTests$' --output-on-failure
+cmake --build build/macos-clang-debug --target ClassMngr
+```
