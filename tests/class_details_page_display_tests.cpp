@@ -525,6 +525,7 @@ failedReadsKeepFallbackFormUnavailableForAllSaveRoutes()
             );
         page.setSaveMode(SaveMode::Manual);
         page.loadClass(Classroom(QStringLiteral("Selected Fallback"), 73));
+        QVERIFY(!page.hasUnsavedChanges());
 
         QCOMPARE(m_promptService.requests.size(), std::size_t(1));
         QCOMPARE(m_promptService.requests.front().severity,
