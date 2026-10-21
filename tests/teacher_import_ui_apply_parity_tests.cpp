@@ -446,12 +446,20 @@ failedStaffDirectoryImportRefreshLocksStalePage()
     QCOMPARE(prompts.messages.size(), 2);
     QCOMPARE(prompts.messages.at(0).severity, PromptSeverity::Information);
     QCOMPARE(prompts.messages.at(1).severity, PromptSeverity::Warning);
+    QCOMPARE(
+        prompts.messages.at(1).title,
+        QStringLiteral("Import Teachers"));
     const QString warning = prompts.messages.at(1).message;
-    QVERIFY(warning.contains(QStringLiteral("committed")));
-    QVERIFY(warning.contains(QStringLiteral("refresh failed")));
-    QVERIFY(warning.contains(nativeEnglish
-        ? QStringLiteral("Injected Native English directory read failure.")
-        : QStringLiteral("Injected GS Team directory read failure.")));
+    const QString failureDetail = nativeEnglish
+        ? QStringLiteral(
+              "Native English Teachers: Injected Native English directory read failure.")
+        : QStringLiteral("GS Team: Injected GS Team directory read failure.");
+    QCOMPARE(
+        warning,
+        QStringLiteral(
+            "The teacher import committed its changes, but a staff directory refresh failed. "
+            "Reload the affected directory before editing or saving.\n\n%1")
+            .arg(failureDetail));
 
     QCOMPARE(
         persistedDirectoryPosition(services, nativeEnglish, targetName),

@@ -7047,6 +7047,25 @@ Native English Teachers: %4 created, %5 updated, %6 unchanged
 GS Team: %7 created, %8 updated, %9 unchanged</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="133"/>
+        <source>Native English Teachers: %1</source>
+        <translation>Native English Teachers: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="145"/>
+        <source>GS Team: %1</source>
+        <translation>GS Team: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="172"/>
+        <source>The teacher import committed its changes, but a staff directory refresh failed. Reload the affected directory before editing or saving.
+
+%1</source>
+        <translation>The teacher import committed its changes, but a staff directory refresh failed. Reload the affected directory before editing or saving.
+
+%1</translation>
+    </message>
 </context>
 <context>
     <name>SpeakingEvalAiBatchDialog</name>

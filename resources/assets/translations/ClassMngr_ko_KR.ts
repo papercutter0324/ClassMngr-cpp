@@ -7087,6 +7087,25 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
 원어민 영어 교사: %4명 생성, %5명 업데이트, %6명 변경 없음
 GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
     </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="133"/>
+        <source>Native English Teachers: %1</source>
+        <translation>원어민 영어 교사: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="145"/>
+        <source>GS Team: %1</source>
+        <translation>GS 팀: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="172"/>
+        <source>The teacher import committed its changes, but a staff directory refresh failed. Reload the affected directory before editing or saving.
+
+%1</source>
+        <translation>교사 정보를 가져와 변경 사항을 저장했지만 직원 디렉터리를 새로 고치지 못했습니다. 편집하거나 저장하기 전에 해당 디렉터리를 다시 불러오세요.
+
+%1</translation>
+    </message>
 </context>
 <context>
     <name>SpeakingEvalAiBatchDialog</name>
