@@ -504,7 +504,7 @@ private slots:
     void gregorianDateUsesGregorianLeapAndMonthRules();
     void gregorianDateConvertsOrdinalsAndWeekdaysAcrossRange();
     void saveRequestContractHasNoQtOrLegacySurface();
-    void importSaveRequestBoundsOrderedCreateBatchAndNoOp();
+    void importSaveRequestAcceptsLargeOrderedCreateBatchAndNoOp();
     void importSaveRequestRejectsUpdatesAndInvalidEvents();
     void importSaveRequestContractHasNoQtOrLegacySurface();
     void deleteAllPortContractUsesStructuredQtFreeResult();
@@ -2375,15 +2375,15 @@ saveRequestContractHasNoQtOrLegacySurface()
 }
 
 void NextApplicationCalendarEventTests::
-importSaveRequestBoundsOrderedCreateBatchAndNoOp()
+importSaveRequestAcceptsLargeOrderedCreateBatchAndNoOp()
 {
     CalendarEventImportSaveRequest emptyRequest;
     QVERIFY(emptyRequest.validate());
 
     CalendarEventImportSaveRequest request;
-    request.events.reserve(kCalendarEventImportSaveMaxEvents);
+    request.events.reserve(std::size_t(4'097));
     for (std::size_t index = 0;
-         index < kCalendarEventImportSaveMaxEvents;
+         index < std::size_t(4'097);
          ++index)
     {
         CalendarEventSaveRequest event = validSaveRequest();
@@ -2395,12 +2395,13 @@ importSaveRequestBoundsOrderedCreateBatchAndNoOp()
 
     QVERIFY(request.validate());
     QCOMPARE(request.events.front().title.size(), std::size_t(765));
-    QCOMPARE(request.events.size(), kCalendarEventImportSaveMaxEvents);
+    QCOMPARE(request.events.size(), std::size_t(4'097));
 
-    request.events.push_back(validSaveRequest());
-    const auto oversized = request.validate();
-    QVERIFY(!oversized);
-    QCOMPARE(oversized.error().code, ErrorCode::InvalidInput);
+    request.events.back().id = calendarEventId("event-1");
+    verifyInvalidValidation(request.validate());
+    request.events.back().id.reset();
+    request.events.back().title = " \t ";
+    verifyInvalidValidation(request.validate());
 }
 
 void NextApplicationCalendarEventTests::

@@ -351,8 +351,10 @@ private slots:
     void reportsUnavailableDeleteAllSessionStructurally();
     void reportsDeleteAllServiceFailureStructurally();
     void savesOrderedCalendarImportBatchWithTypedIdsAndParity();
+    void savesLargeOrderedCalendarImportBatchWithTypedIds();
     void acceptsDuplicateOnlyEmptyImportBatchAsNoOp();
     void rejectsInvalidImportBatchBeforeCreatingAnyRows();
+    void reportsImportBatchFailureWithoutPartialRows_data();
     void reportsImportBatchFailureWithoutPartialRows();
     void reportsUnavailableImportSaveSessionStructurally();
     void titleAdaptersUseUtf16UnitBoundariesForSqlReadAndWrite();
@@ -1496,6 +1498,48 @@ savesOrderedCalendarImportBatchWithTypedIdsAndParity()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
+savesLargeOrderedCalendarImportBatchWithTypedIds()
+{
+    constexpr std::size_t eventCount = 4'097;
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    auto* session = services.databaseSession();
+    QVERIFY(session && session->isOpen());
+    CalendarEventImportSaveRequest request;
+    request.events.reserve(eventCount);
+    for (std::size_t index = 0; index < eventCount; ++index)
+    {
+        auto event = validSaveRequest();
+        // Reverse title order ensures returned identifiers follow input order.
+        event.title = "Imported event " + std::to_string(eventCount - index);
+        request.events.push_back(std::move(event));
+    }
+    ApplicationServicesCalendarEventImportSavePort port(services);
+
+    const auto saved = port.saveImportedEvents(request);
+
+    QVERIFY(saved);
+    QCOMPARE(saved.value().size(), eventCount);
+    QSqlQuery query(session->database());
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT id, title FROM calendar_events ORDER BY id")));
+    qint64 previousId = 0;
+    std::size_t index = 0;
+    while (query.next())
+    {
+        QVERIFY(index < eventCount);
+        const qint64 id = query.value(0).toLongLong();
+        QVERIFY(id > previousId);
+        QCOMPARE(saved.value()[index].value(), std::to_string(id));
+        QCOMPARE(query.value(1).toString(),
+            QString::fromStdString(request.events[index].title));
+        previousId = id;
+        ++index;
+    }
+    QCOMPARE(index, eventCount);
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
 acceptsDuplicateOnlyEmptyImportBatchAsNoOp()
 {
     ApplicationServices services;
@@ -1542,17 +1586,12 @@ rejectsInvalidImportBatchBeforeCreatingAnyRows()
         std::string("Calendar imports may only create new events.")
         );
 
-    CalendarEventImportSaveRequest tooManyEvents;
-    tooManyEvents.events.resize(
-        kCalendarEventImportSaveMaxEvents + 1,
-        validSaveRequest()
-        );
-    const auto tooMany = port.saveImportedEvents(tooManyEvents);
-    verifyFailure(tooMany, ErrorCode::InvalidInput);
-    QCOMPARE(
-        tooMany.error().message,
-        std::string("Calendar import event count exceeds the maximum.")
-        );
+    CalendarEventImportSaveRequest invalidLargeBatch;
+    invalidLargeBatch.events.resize(4'097, validSaveRequest());
+    invalidLargeBatch.events.back().title = " \t ";
+    const auto invalidField = port.saveImportedEvents(invalidLargeBatch);
+    verifyFailure(invalidField, ErrorCode::InvalidInput);
+    QVERIFY(!invalidField.error().message.empty());
 
     const auto loaded = repository->loadCalendarEventsInRange(
         QDate(2026, 12, 10),
@@ -1563,8 +1602,17 @@ rejectsInvalidImportBatchBeforeCreatingAnyRows()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsImportBatchFailureWithoutPartialRows_data()
+{
+    QTest::addColumn<int>("eventCount");
+    QTest::newRow("small batch") << 2;
+    QTest::newRow("4097-event batch") << 4'097;
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
 reportsImportBatchFailureWithoutPartialRows()
 {
+    QFETCH(int, eventCount);
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
@@ -1586,6 +1634,7 @@ reportsImportBatchFailureWithoutPartialRows()
         )));
 
     auto request = validImportSaveRequest();
+    request.events.resize(static_cast<std::size_t>(eventCount), validSaveRequest());
     request.events.back().title = "Rejected imported event";
     ApplicationServicesCalendarEventImportSavePort port(services);
     const auto saved = port.saveImportedEvents(request);
@@ -1604,6 +1653,10 @@ reportsImportBatchFailureWithoutPartialRows()
         );
     QVERIFY(loaded);
     QVERIFY(loaded->isEmpty());
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name='calendar_events'), 0)")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toLongLong(), qint64(0));
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::

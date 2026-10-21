@@ -195,8 +195,9 @@ private slots:
     void signatureRangeMustCoverCandidateStartDate();
     void acceptedCandidatesStayOrderedAndCountsMatch();
     void duplicateOnlyInputStillSavesAnEmptyBatch();
-    void duplicateHeavyInputIsFilteredBeforeApplyingSaveLimit();
-    void filteredBatchAboveSaveLimitFailsBeforeSaving();
+    void duplicateHeavyInputKeepsOneSaveCandidate();
+    void largeUniqueBatchIsSavedOnceInCandidateOrder();
+    void largeBatchPreservesQueryAndSaveFailurePrecedence();
     void signatureIdentityRemainsExactUtf16();
     void signatureIncludesEveryIdentityFieldButExcludesTimes();
     void queryFailurePropagatesWithoutSaving();
@@ -511,12 +512,12 @@ duplicateOnlyInputStillSavesAnEmptyBatch()
 }
 
 void NextApplicationCalendarEventImportUseCaseTests::
-duplicateHeavyInputIsFilteredBeforeApplyingSaveLimit()
+duplicateHeavyInputKeepsOneSaveCandidate()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
-    request.candidates.reserve(kCalendarEventImportSaveMaxEvents + 1);
+    request.candidates.reserve(std::size_t(4'097));
     for (std::size_t index = 0;
-         index < kCalendarEventImportSaveMaxEvents + 1;
+         index < std::size_t(4'097);
          ++index)
     {
         request.candidates.push_back(candidate("Repeated candidate"));
@@ -536,39 +537,84 @@ duplicateHeavyInputIsFilteredBeforeApplyingSaveLimit()
     QCOMPARE(result.value().importedCount.rawValue(), 1);
     QCOMPARE(
         result.value().skippedCount.rawValue(),
-        static_cast<int>(kCalendarEventImportSaveMaxEvents)
+        4'096
         );
     QCOMPARE(queryPort.callCount, 1);
     QCOMPARE(savePort.callCount, 1);
     QCOMPARE(savePort.lastRequest.events.size(), std::size_t(1));
+    QCOMPARE(savePort.lastRequest.events.front().title, std::string("Repeated candidate"));
 }
 
 void NextApplicationCalendarEventImportUseCaseTests::
-filteredBatchAboveSaveLimitFailsBeforeSaving()
+largeUniqueBatchIsSavedOnceInCandidateOrder()
 {
+    constexpr std::size_t eventCount = 4'097;
     CalendarEventImportUseCaseRequest request = requestWithRange();
-    request.candidates.reserve(kCalendarEventImportSaveMaxEvents + 1);
-    for (std::size_t index = 0;
-         index < kCalendarEventImportSaveMaxEvents + 1;
-         ++index)
-    {
-        const std::string suffix = std::to_string(index);
-        request.candidates.push_back(candidate("Candidate " + suffix));
-    }
-
+    request.candidates.reserve(eventCount);
     FakeSignatureQueryPort queryPort;
     FakeSavePort savePort;
+    savePort.returnedIds.reserve(eventCount);
+    for (std::size_t index = 0; index < eventCount; ++index)
+    {
+        request.candidates.push_back(candidate("Candidate " + std::to_string(index)));
+        savePort.returnedIds.push_back(calendarEventId(static_cast<int>(index + 1)));
+    }
+    RecordingObserver observer;
 
     const auto result = CalendarEventImportUseCase::execute(
-        request,
-        queryPort,
-        savePort
-        );
+        request, queryPort, savePort, &observer);
 
-    QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(result);
+    QCOMPARE(result.value().importedCount.rawValue(), static_cast<int>(eventCount));
+    QCOMPARE(result.value().skippedCount.rawValue(), 0);
     QCOMPARE(queryPort.callCount, 1);
-    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(queryPort.lastRequest == request.signatureRange);
+    QCOMPARE(savePort.callCount, 1);
+    QCOMPARE(savePort.lastRequest.events.size(), eventCount);
+    QCOMPARE(savePort.returnedIds.size(), eventCount);
+    for (std::size_t index = 0; index < eventCount; ++index)
+    {
+        const auto expected = request.candidates[index].saveInput.toRequest();
+        QVERIFY(expected);
+        QVERIFY(savePort.lastRequest.events[index] == expected.value());
+    }
+    QVERIFY(observer.stages == (std::vector<std::string>{"query", "save"}));
+    QCOMPARE(observer.saveEventCount, eventCount);
+    QCOMPARE(observer.skippedCount.rawValue(), 0);
+}
+
+void NextApplicationCalendarEventImportUseCaseTests::
+largeBatchPreservesQueryAndSaveFailurePrecedence()
+{
+    auto request = requestWithRange();
+    for (std::size_t index = 0; index < 4'097; ++index)
+    {
+        request.candidates.push_back(candidate("Candidate " + std::to_string(index)));
+    }
+    const auto queryError = sampleError("large batch signature lookup failed");
+    const auto saveError = sampleError("large batch save failed");
+    for (const bool queryFails : {true, false})
+    {
+        FakeSignatureQueryPort queryPort;
+        if (queryFails)
+        {
+            queryPort.failure = queryError;
+        }
+        FakeSavePort savePort;
+        savePort.failure = saveError;
+
+        const auto result = CalendarEventImportUseCase::execute(
+            request, queryPort, savePort);
+
+        QVERIFY(!result);
+        QVERIFY(result.error() == (queryFails ? queryError : saveError));
+        QCOMPARE(queryPort.callCount, 1);
+        QCOMPARE(savePort.callCount, queryFails ? 0 : 1);
+        if (!queryFails)
+        {
+            QCOMPARE(savePort.lastRequest.events.size(), std::size_t(4'097));
+        }
+    }
 }
 
 void NextApplicationCalendarEventImportUseCaseTests::

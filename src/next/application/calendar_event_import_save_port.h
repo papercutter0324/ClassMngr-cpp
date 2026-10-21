@@ -2,13 +2,10 @@
 
 #include "next/application/calendar_event_save_port.h"
 
-#include <cstddef>
 #include <vector>
 
 namespace ClassMngr::Next::Application
 {
-
-inline constexpr std::size_t kCalendarEventImportSaveMaxEvents = 4096;
 
 // One ordered calendar-import batch. The importer only creates events, so
 // each save request must omit an existing identifier. Empty batches are valid
@@ -65,13 +62,6 @@ validateCalendarEventImportSaveRequest(
     )
 {
     using namespace CalendarEventImportSaveRequestDetail;
-
-    if (request.events.size() > kCalendarEventImportSaveMaxEvents)
-    {
-        return invalid(
-            "Calendar import event count exceeds the maximum."
-            );
-    }
 
     for (const CalendarEventSaveRequest& event : request.events)
     {
