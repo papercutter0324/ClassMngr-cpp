@@ -2146,6 +2146,19 @@
         <translation>교사 프로필 열기</translation>
     </message>
     <message>
+        <location filename="../../../src/app/controllers/file_controller.cpp" line="501"/>
+        <source>
+
+The previous Teacher Profile could not be reopened automatically:
+%1
+Use Open Teacher Profile to reopen it.</source>
+        <translation>
+
+이전 교사 프로필을 자동으로 다시 열 수 없습니다:
+%1
+'교사 프로필 열기'를 사용하여 다시 여세요.</translation>
+    </message>
+    <message>
         <location line="-30"/>
         <location line="+150"/>
         <source>Missing File</source>

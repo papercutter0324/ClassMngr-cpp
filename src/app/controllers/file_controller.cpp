@@ -74,6 +74,31 @@ QString qtWorkspacePath(
         static_cast<qsizetype>(path.value().size())
         );
 }
+
+bool sameProfilePath(
+    const QString& leftPath,
+    const QString& rightPath
+    )
+{
+    const QFileInfo leftInfo(leftPath);
+    const QFileInfo rightInfo(rightPath);
+    const QString leftCanonicalPath = leftInfo.canonicalFilePath();
+    const QString rightCanonicalPath = rightInfo.canonicalFilePath();
+    const QString comparableLeftPath =
+        QDir::cleanPath(
+            leftCanonicalPath.isEmpty()
+                ? leftInfo.absoluteFilePath()
+                : leftCanonicalPath
+            );
+    const QString comparableRightPath =
+        QDir::cleanPath(
+            rightCanonicalPath.isEmpty()
+                ? rightInfo.absoluteFilePath()
+                : rightCanonicalPath
+            );
+
+    return comparableLeftPath == comparableRightPath;
+}
 }
 
 QString ClassMngr::App::Controllers::
@@ -426,6 +451,18 @@ bool FileController::createNewDatabaseInteractive(
         return false;
     }
 
+    const QString previousProfilePath =
+        !m_currentFile.trimmed().isEmpty()
+            ? m_currentFile
+            : (
+                m_services->hasOpenDatabase()
+                    ? m_services->currentDatabasePath()
+                    : QString()
+                );
+    const bool replacingPreviouslyOpenProfile =
+        !previousProfilePath.trimmed().isEmpty()
+        && sameProfilePath(previousProfilePath, normalizedPath);
+
     if (!closeActiveDatabase())
     {
         return false;
@@ -439,17 +476,46 @@ bool FileController::createNewDatabaseInteractive(
 
     if (!created.created)
     {
-        DialogServices::showWarning(
-            m_window,
-            tr("New Teacher Profile"),
+        QString failureMessage =
             ClassMngr::App::Controllers::
                 newTeacherProfileCreationFailureMessage(
                     created,
                     normalizedPath
-                    )
+                    );
+
+        const bool samePathProfileWasRestored =
+            !replacingPreviouslyOpenProfile
+            || (
+                created.originalProfileRestored
+                && !created.partialReplacementRemainsAtTarget
+                );
+        const bool mayReopenPreviousProfile =
+            !previousProfilePath.trimmed().isEmpty()
+            && created.workspaceClosed
+            && samePathProfileWasRestored;
+
+        if (mayReopenPreviousProfile)
+        {
+            if (!loadDatabase(previousProfilePath, false))
+            {
+                failureMessage += tr(
+                    "\n\nThe previous Teacher Profile could not be reopened "
+                    "automatically:\n%1\nUse Open Teacher Profile to reopen it."
+                    ).arg(previousProfilePath);
+                enterNoDatabaseState();
+            }
+        }
+        else
+        {
+            enterNoDatabaseState();
+        }
+
+        DialogServices::showWarning(
+            m_window,
+            tr("New Teacher Profile"),
+            failureMessage
             );
 
-        enterNoDatabaseState();
         return false;
     }
 
