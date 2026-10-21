@@ -61442,3 +61442,33 @@ separately from Phase 0's 2026-09-18 Complete declaration.
 
 Batch520 is active with F1280 accepted before implementation. Gate 1 and Gate
 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### F1280 Co-Teacher post-save refresh preservation complete - 2026-10-21
+
+F1280 is complete locally in Batch520. Acceptance was recorded at
+`4ad6e48d`; production and test changes are at
+`6955c973115b8e4fac9d30df1e7d8817ca85491e`. The implementation in
+`src/features/classes/ui/class_co_teacher_page.cpp` and `.h` keeps the selected
+display name, visible selection/details, and matching title when the follow-up
+readback fails or has no usable teacher identity. A successful assignment
+still leaves the page clean and emits `classInfoSaved` once; a later successful
+load reconciles the view. The regression in
+`tests/next_feature_class_co_teacher_page_tests.cpp` uses a temporary database
+and the real assignment port, and checks persisted identity, visible UI/title,
+one signal, clean state, later reconciliation, and unusable successful
+readback. Existing successful-save and assignment-failure cases passed.
+
+Independent verification passed:
+
+- `cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextFeatureClassCoTeacherPageTests` exited 0. This was incremental; Ninja reported no work.
+- `ctest --test-dir build/macos-clang-debug -R '^ClassMngrNextFeatureClassCoTeacherPageTests$' --output-on-failure` passed 1/1.
+- `./build/macos-clang-debug/ClassMngrNextFeatureClassCoTeacherPageTests -txt` passed 10, with 0 failed or skipped.
+- `git diff --check` and `git show --check --oneline --no-renames 6955c973115b8e4fac9d30df1e7d8817ca85491e` passed.
+
+Nonfatal macOS pasteboard and LaunchServices warnings occurred. No full suite,
+clean build, Windows run, hosted CI, or Gate 2 verification is claimed.
+Batch520 is complete locally and awaiting its normal push. Batch521 discovery
+starts after the push; no implementation slice is active. Gate 1 and Gate 2
+remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound
+Windows x64 requalification remains outstanding separately from Phase 0's
+2026-09-18 Complete declaration.

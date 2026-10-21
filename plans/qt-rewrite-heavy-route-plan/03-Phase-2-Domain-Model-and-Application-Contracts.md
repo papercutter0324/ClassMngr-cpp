@@ -53,15 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch519 (F1279) is pushed; Batch520 is active with F1280 accepted before implementation, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch520 (F1280) is complete locally and awaiting its normal push; Batch521 discovery starts after the push, with no active implementation slice, Gate 1 and Gate 2 Partial, and the Phase 2 exit gate Open.
 
 ### Latest Progress Update
 
-Batch520 discovery reconciled three lanes and accepted F1280 as its sole candidate before implementation. See the [Batch520 discovery and acceptance](03-Phase-2-Progress-Log.md#batch520-discovery-2026-10-21). The required implementation, focused build, and test have not started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
-
-### Active batch — Batch520
-
-1. **F1280 - Preserve committed Co-Teacher assignment in the page when post-save refresh fails — Accepted.** Next: preserve the selected teacher, visible details, and matching title after a failed or unusable post-save readback; add the focused page regression and verify the specified macOS targets.
+F1280 is complete locally and awaiting its normal push. See the [F1280 completion record](03-Phase-2-Progress-Log.md#f1280-co-teacher-post-save-refresh-preservation-complete-2026-10-21). Batch521 discovery starts after the push; no implementation slice is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Slice discovery batches
 
