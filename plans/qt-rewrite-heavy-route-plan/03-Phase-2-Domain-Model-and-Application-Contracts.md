@@ -53,10 +53,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch533 (F1301) is closed; Batch534 is active with F1302
-  accepted before implementation, and Batch535 discovery is due when F1302
-  implementation starts. Gate 1 and Gate 2 remain Partial, and the Phase 2
-  exit gate remains Open.
+- Current note: Current and upcoming batch status is maintained in the
+  [Phase 2 slice-batch register](03-Phase-2-Slice-Batches.md). Gate 1 and Gate 2
+  remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 

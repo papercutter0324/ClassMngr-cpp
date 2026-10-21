@@ -6,9 +6,10 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch534 is active with F1302 accepted before
-  implementation; Batch535 discovery is due when F1302 implementation starts.
-  Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current milestone: Phase 2 remains in progress. Gate 1 and Gate 2 remain
+  Partial, and the Phase 2 exit gate remains Open. See the [Phase 2
+  slice-batch register](03-Phase-2-Slice-Batches.md) for current and upcoming
+  batch status.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -42,13 +43,12 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 work
 
-F1302 is the active candidate in Batch534; Batch535 discovery is due when
-implementation starts. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit
+Phase 2 remains in progress. Gate 1 and Gate 2 remain Partial, and its exit
 gate remains Open. Phase 0 remains Complete; F629’s source-bound Windows x64
 requalification remains outstanding separately. See the [Phase 2 slice-batch
-register](03-Phase-2-Slice-Batches.md) for ordered batch status and the [Phase 2
-progress log](03-Phase-2-Progress-Log.md) for discovery evidence and acceptance
-criteria.
+register](03-Phase-2-Slice-Batches.md) for current and upcoming batch status and
+the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for chronological
+discovery evidence and acceptance criteria.
 
 ## Phase notes, slice batches, and progress logs
 
