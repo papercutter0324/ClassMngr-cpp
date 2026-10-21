@@ -459,6 +459,7 @@ private slots:
     void unavailablePersonalDetailsSaveDoesNotNormalizeOrClearDirtyValues();
     void aggregateSavePersistsAllPersonalDetailsKeys();
     void aggregateSaveFailureRollsBackAndPreservesUnrelatedSettings();
+    void aggregateSaveNoninteractiveFailureShowsStatusAndAllowsRetry();
 };
 
 void MyWorkspacePageTests::createsNamedTabsWithScheduleSelectedByDefault()
@@ -2599,8 +2600,8 @@ unavailablePersonalDetailsSaveDoesNotNormalizeOrClearDirtyValues()
     QCOMPARE(
         prompts.messages.constFirst().details,
         QStringLiteral(
-            "The stored signature preferences are unknown. Reload My Details "
-            "successfully before saving."
+            "The current campus could not be read. Your displayed campus "
+            "selection has been preserved. Refresh this page to try again."
             )
         );
 
@@ -2609,6 +2610,18 @@ unavailablePersonalDetailsSaveDoesNotNormalizeOrClearDirtyValues()
     QVERIFY(page.personalDetailsPage()->hasUnsavedChanges());
 
     page.personalDetailsPage()->saveData();
+    QLabel* const saveStatus = page.personalDetailsPage()->findChild<QLabel*>(
+        QStringLiteral("personalDetailsSaveStatus")
+        );
+    QVERIFY(saveStatus);
+    QVERIFY(saveStatus->isVisible());
+    QCOMPARE(
+        saveStatus->text(),
+        QStringLiteral(
+            "Your personal details could not be saved. Your changes are "
+            "still here."
+            )
+        );
     auto* autosave = page.personalDetailsPage()
         ->findChild<AutosaveCoordinator*>();
     QVERIFY(autosave);
@@ -2863,6 +2876,192 @@ aggregateSaveFailureRollsBackAndPreservesUnrelatedSettings()
             ->loadSetting(QString::fromUtf8(UnrelatedKey))
             ->toString(),
         QStringLiteral("preserved")
+        );
+}
+
+void MyWorkspacePageTests::
+aggregateSaveNoninteractiveFailureShowsStatusAndAllowsRetry()
+{
+    FakeUserPromptService prompts;
+    ScopedUserPromptService promptScope(prompts);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+
+    for (const auto& setting : {
+             std::pair{QString::fromUtf8(DisplayNameKey),
+                       QVariant(QStringLiteral("old name"))},
+             std::pair{QString::fromUtf8(CurrentCampusKey),
+                       QVariant(QStringLiteral("Jeongja"))},
+             std::pair{QString::fromUtf8(ZoomLoginIdKey),
+                       QVariant(QStringLiteral("old login"))},
+             std::pair{QString::fromUtf8(ZoomPasswordKey),
+                       QVariant(QStringLiteral("old password"))},
+             std::pair{QString::fromUtf8(ZoomNotAvailableKey), QVariant(true)},
+             std::pair{QString::fromUtf8(SignatureImageKey),
+                       QVariant(QStringLiteral("old-image"))},
+             std::pair{QString::fromUtf8(SignatureModeKey), QVariant(0)},
+             std::pair{QString::fromUtf8(TypedSignatureTextKey),
+                       QVariant(QStringLiteral("old text"))},
+             std::pair{QString::fromUtf8(TypedSignatureFontKey), QVariant(1)},
+             std::pair{QString::fromUtf8(UnrelatedKey),
+                       QVariant(QStringLiteral("preserved"))}
+         })
+    {
+        QVERIFY(services.dataService()->saveSetting(
+            setting.first,
+            setting.second
+            ));
+    }
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_personal_details_page_save
+            BEFORE INSERT ON app_settings
+            WHEN NEW.key = 'myInfo/typedSignatureFont'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced personal details page save failure');
+            END
+        )")
+        ));
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+    page.setSaveMode(SaveMode::Manual);
+
+    PersonalDetailsPage* const details = page.personalDetailsPage();
+    QVERIFY(details);
+    QLineEdit* const name = personalNameEditor(page);
+    QLineEdit* const login = personalZoomLoginEditor(page);
+    QLineEdit* const password = personalZoomPasswordEditor(page);
+    QCheckBox* const unavailable = personalZoomUnavailableCheck(page);
+    QLabel* const status = details->findChild<QLabel*>(
+        QStringLiteral("personalDetailsSaveStatus")
+        );
+    QVERIFY(name);
+    QVERIFY(login);
+    QVERIFY(password);
+    QVERIFY(unavailable);
+    QVERIFY(status);
+    QVERIFY(status->isHidden());
+    QVERIFY(status->text().isEmpty());
+    AutosaveCoordinator* const autosave =
+        details->findChild<AutosaveCoordinator*>();
+    QVERIFY(autosave);
+    QSignalSpy saveRequests(
+        autosave,
+        &AutosaveCoordinator::saveRequested
+        );
+    QVERIFY(saveRequests.isValid());
+
+    name->setText(QStringLiteral("new name"));
+    login->clear();
+    password->setText(QStringLiteral(" \t "));
+    unavailable->setChecked(false);
+    QVERIFY(details->hasUnsavedChanges());
+
+    autosave->requestSave(false);
+    QCOMPARE(saveRequests.size(), 1);
+    QCOMPARE(saveRequests.constFirst().at(0).toBool(), false);
+
+    QVERIFY(status->isVisible());
+    QCOMPARE(
+        status->text(),
+        QStringLiteral(
+            "Your personal details could not be saved. Your changes are "
+            "still here."
+            )
+        );
+    QVERIFY(prompts.messages.isEmpty());
+    QCOMPARE(name->text(), QStringLiteral("new name"));
+    QCOMPARE(login->text(), QString());
+    QCOMPARE(password->text(), QStringLiteral(" \t "));
+    QVERIFY(!unavailable->isChecked());
+    QVERIFY(details->hasUnsavedChanges());
+
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(DisplayNameKey))
+            ->toString(),
+        QStringLiteral("old name")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(CurrentCampusKey))
+            ->toString(),
+        QStringLiteral("Jeongja")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomLoginIdKey))
+            ->toString(),
+        QStringLiteral("old login")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomPasswordKey))
+            ->toString(),
+        QStringLiteral("old password")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomNotAvailableKey))
+            ->toBool(),
+        true
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(SignatureImageKey))
+            ->toString(),
+        QStringLiteral("old-image")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(SignatureModeKey))
+            ->toInt(),
+        0
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(TypedSignatureTextKey))
+            ->toString(),
+        QStringLiteral("old text")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(TypedSignatureFontKey))
+            ->toInt(),
+        1
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(UnrelatedKey))
+            ->toString(),
+        QStringLiteral("preserved")
+        );
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("DROP TRIGGER fail_personal_details_page_save")
+        ));
+    autosave->requestSave(false);
+    QCOMPARE(saveRequests.size(), 2);
+    QCOMPARE(saveRequests.constLast().at(0).toBool(), false);
+
+    QVERIFY(status->isHidden());
+    QVERIFY(status->text().isEmpty());
+    QVERIFY(!details->hasUnsavedChanges());
+    QVERIFY(prompts.messages.isEmpty());
+    QCOMPARE(name->text(), QStringLiteral("new name"));
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(DisplayNameKey))
+            ->toString(),
+        QStringLiteral("new name")
         );
 }
 
