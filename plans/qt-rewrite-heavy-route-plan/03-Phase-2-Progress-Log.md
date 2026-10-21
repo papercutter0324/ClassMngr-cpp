@@ -61381,3 +61381,64 @@ Batch519 (F1279) is complete and pushed. Batch520 discovery is next, with no
 implementation slice active. Gate 1 and Gate 2 remain Partial, and the Phase 2
 exit gate remains Open. F629's source-bound Windows x64 requalification
 remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+
+### Batch520 discovery - 2026-10-21
+
+Three discovery lanes were reconciled. The Application-contract lane found no
+new candidate after sampling Application/domain policy and recent
+validation/identity/setup contracts. The projection/persistence lane found no
+new candidate across class/teacher projections, the schedule view, My
+Classes/Classes Navigation adapters, Class Analytics roster mapping, or Campus
+directory; it did not reopen deferred F1103 or F709.
+
+The active-feature consumer lane found F1280 in
+`src/features/classes/ui/class_co_teacher_page.cpp`: after a successful
+assignment write, `saveCoTeacherInternal()` calls
+`readSelectedClassSnapshot()`, `selectCachedTeacher()`, and `updateTitle()` at
+lines 501-529. `readSelectedClassSnapshot()` clears `m_readSnapshot` first and
+leaves it empty on query failure (534-562); selection lookup returns -1 when
+snapshot/class identity fields are missing (571-603). The shared
+`TeacherInfoSection::selectTeacher(-1)` clears the visible teacher
+(`src/ui/shared/widgets/sections/teacher_info_section.cpp:327-343,573-593`),
+while `updateTitle()` falls back to the Classroom name when snapshot display
+data is missing (`class_co_teacher_page.cpp:401-445`). The read port supports
+failure (`src/next/platform/application_services_class_co_teacher_page_read_port.h:54-100`).
+Existing page tests cover successful save (`tests/next_feature_class_co_teacher_page_tests.cpp:330-343`),
+assignment-write failure, and initial-load read failures, but not successful
+write followed by failed readback. F1106 assignment-sentinel coverage, F1158
+snapshot-type coverage, and the earlier broad Batch402 Co-Teacher review do not
+cover this sequence.
+
+The sole ordered Batch520 candidate is:
+
+1. F1280 - Preserve committed Co-Teacher assignment in the page when
+   post-save refresh fails.
+
+No other slices were found.
+
+### F1280 Co-Teacher post-save refresh preservation accepted before implementation - 2026-10-21
+
+The assignment succeeds and is committed before readback. If the post-save
+refresh fails or produces no usable selected-teacher identity, preserve the
+selected teacher and visible teacher details and keep the header consistent
+with that committed selection; do not clear the selection or revert to a
+class-only title. Keep successful mutation semantics: mark the page clean and
+emit `classInfoSaved` exactly once, without reporting save failure or repeating
+the assignment. A later successful read reconciles the view. Preserve the
+successful-refresh path and assignment-write-failure behavior.
+
+Extend the existing `NextFeatureClassCoTeacherPageTests` with a valid initial
+read, teacher selection, successful real assignment write, and injected failed
+follow-up read. Assert the persisted teacher, one save signal, clean state,
+selected teacher/details, and consistent title; then verify successful reload
+reconciles the view. In the existing `build/macos-clang-debug` configuration,
+build `ClassMngr` and `ClassMngrNextFeatureClassCoTeacherPageTests`, run that
+focused test target, and run `git diff --check`. No full suite, Windows,
+hosted CI, or Gate 2 claim is planned. F1280 is accepted as Batch520's sole
+candidate before implementation; implementation, build, and tests have not
+started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
+Open. F629's source-bound Windows x64 requalification remains outstanding
+separately from Phase 0's 2026-09-18 Complete declaration.
+
+Batch520 is active with F1280 accepted before implementation. Gate 1 and Gate
+2 remain Partial, and the Phase 2 exit gate remains Open.

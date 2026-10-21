@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch519 (F1279) is complete and pushed at `39aa7e2f` (see its [push receipt](03-Phase-2-Progress-Log.md#batch519-push-receipt-2026-10-21)). Batch520 discovery is next, with no implementation slice active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current milestone: Batch519 (F1279) is complete and pushed at `39aa7e2f` (see its [push receipt](03-Phase-2-Progress-Log.md#batch519-push-receipt-2026-10-21)); Batch520 is active with F1280 accepted before implementation. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -42,10 +42,10 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 Batch519 (F1279) is complete and pushed at `39aa7e2f` (see its [push
 receipt](03-Phase-2-Progress-Log.md#batch519-push-receipt-2026-10-21)).
-Batch520 discovery is next, with no implementation slice active. Gate 1 and
-Gate 2 remain Partial, and the Phase 2 exit gate remains Open. The [Phase 2
-progress log](03-Phase-2-Progress-Log.md) holds acceptance, verification, and
-exact batch history.
+Batch520 is active with F1280 accepted before implementation. Gate 1 and Gate
+2 remain Partial, and the Phase 2 exit gate remains Open. The [Phase 2 progress
+log](03-Phase-2-Progress-Log.md) holds acceptance, verification, and exact
+batch history.
 
 The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
 shows current status; the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
