@@ -1180,6 +1180,37 @@ add_test(
     COMMAND ClassMngrNextApplicationInitialSetupClassDetailsRequirementsTests
 )
 
+# Keep Initial Setup's Class Times row-presence requirement independent of Qt.
+add_executable(
+    ClassMngrNextApplicationInitialSetupClassTimesRequirementTests
+    tests/next_application_initial_setup_class_times_requirement_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationInitialSetupClassTimesRequirementTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationInitialSetupClassTimesRequirementTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationInitialSetupClassTimesRequirementTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationInitialSetupClassTimesRequirementTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationInitialSetupClassTimesRequirementTests
+    COMMAND ClassMngrNextApplicationInitialSetupClassTimesRequirementTests
+)
+
 # Keep automatic-update startup eligibility app-less and Qt-free.
 add_executable(
     ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests

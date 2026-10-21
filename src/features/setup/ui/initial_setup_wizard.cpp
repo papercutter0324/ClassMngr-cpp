@@ -11,6 +11,7 @@
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "next/platform/application_services_teacher_import_apply_port.h"
 #include "next/application/initial_setup_class_details_requirements.h"
+#include "next/application/initial_setup_class_times_requirement.h"
 #include "next/application/initial_setup_personal_name_requirement.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
 #include "next/application/initial_setup_teacher_entry_skip_policy.h"
@@ -1423,11 +1424,19 @@ public:
     {
         const QList<ClassTime> regular = m_schedules->regularTimes();
         const QList<ClassTime> intensive = m_schedules->intensiveTimes();
+        const bool hasAnyRows =
+            ClassMngr::Next::Application::
+                initialSetupClassTimesRequirementMet(
+                    !regular.isEmpty(),
+                    !intensive.isEmpty()
+                    );
         if (showMissingFields(
                 this,
                 tr("Class Times"),
-                regular.isEmpty() && intensive.isEmpty()
-                    ? QStringList{tr("At Least One Regular or Intensive Class Time")}
+                !hasAnyRows
+                    ? QStringList{
+                          tr("At Least One Regular or Intensive Class Time")
+                      }
                     : QStringList{}))
         {
             return false;

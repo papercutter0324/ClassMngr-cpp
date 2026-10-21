@@ -288,6 +288,7 @@ private slots:
     void classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty();
     void classDetailsRequiredInformationPrompt_data();
     void classDetailsRequiredInformationPrompt();
+    void emptyClassTimesStayOnPageWithoutCreatingClass();
     void classTimesRejectsNoncanonicalWeekdaysAfterCreatingBlankClass();
     void missingPersonalNameBlocksValidationWithoutSaving();
     void personalDetailsRoutesToClassDetailsWhenTeachersExist();
@@ -400,6 +401,139 @@ classTimesRejectsNoncanonicalWeekdaysAfterCreatingBlankClass()
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toInt(), 0);
     }
+}
+
+void InitialSetupWizardTests::
+emptyClassTimesStayOnPageWithoutCreatingClass()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.classService());
+
+    FakeUserPromptService prompts;
+    [[maybe_unused]] const ScopedUserPromptService promptService(&prompts);
+
+    ClassInfo draft;
+    draft.classId = 41;
+    draft.teacherId = 731;
+    draft.classGrade = QStringLiteral("Draft Grade");
+    draft.classLevel = QStringLiteral("Draft Level");
+    draft.readingBook = QStringLiteral("Draft Reading Book");
+    draft.essayBook = QStringLiteral("Draft Essay Book");
+    draft.classColor = QStringLiteral("#123456");
+    draft.fontColor = QStringLiteral("#654321");
+    draft.classTimes = {
+        ClassTime{
+            QStringLiteral("Wednesday"),
+            QStringLiteral("10:00 AM"),
+            QStringLiteral("10:55 AM")
+        }
+    };
+    draft.intensiveTimes = {
+        ClassTime{
+            QStringLiteral("Friday"),
+            QStringLiteral("1:00 PM"),
+            QStringLiteral("1:55 PM")
+        }
+    };
+
+    InitialSetupWizard wizard(&services);
+    wizard.setClassDraft(draft);
+    const auto draftTeacherId = wizard.classDraftTeacherId();
+    QVERIFY(draftTeacherId);
+    wizard.setStartId(InitialSetupWizard::ClassTimesPage);
+    showSetupWizard(wizard);
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::ClassTimesPage);
+    auto* const schedules = wizard.findChild<ClassScheduleSection*>(
+        QStringLiteral("setupClassSchedules")
+        );
+    QVERIFY(schedules);
+    QCOMPARE(schedules->regularRows().size(), 1);
+    QVERIFY(schedules->intensiveRows().isEmpty());
+
+    ClassTimeRow* const seededRegularRow =
+        schedules->regularRows().constFirst();
+    QVERIFY(seededRegularRow);
+    QVERIFY(seededRegularRow->removeButton());
+    seededRegularRow->removeButton()->click();
+    QApplication::processEvents();
+
+    QVERIFY(schedules->regularRows().isEmpty());
+    QVERIFY(schedules->intensiveRows().isEmpty());
+    QVERIFY(schedules->regularTimes().isEmpty());
+    QVERIFY(schedules->intensiveTimes().isEmpty());
+
+    auto* const next = wizard.button(QWizard::NextButton);
+    QVERIFY(next);
+    next->click();
+    QApplication::processEvents();
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::ClassTimesPage);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().severity,
+        PromptSeverity::Information
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Class Times")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral(
+            "Complete the following required fields before continuing:\n\n"
+            "- At Least One Regular or Intensive Class Time"
+            )
+        );
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QCOMPARE(wizard.createdClassId(), -1);
+
+    const ClassInfo unchangedDraft = wizard.classDraft();
+    QCOMPARE(unchangedDraft.classId, draft.classId);
+    QCOMPARE(unchangedDraft.teacherId, draft.teacherId);
+    QCOMPARE(unchangedDraft.classGrade, draft.classGrade);
+    QCOMPARE(unchangedDraft.classLevel, draft.classLevel);
+    QCOMPARE(unchangedDraft.readingBook, draft.readingBook);
+    QCOMPARE(unchangedDraft.essayBook, draft.essayBook);
+    QCOMPARE(unchangedDraft.classColor, draft.classColor);
+    QCOMPARE(unchangedDraft.fontColor, draft.fontColor);
+    QCOMPARE(unchangedDraft.classTimes.size(), 1);
+    QCOMPARE(unchangedDraft.classTimes.constFirst().day, QStringLiteral("Wednesday"));
+    QCOMPARE(
+        unchangedDraft.classTimes.constFirst().startTime,
+        QStringLiteral("10:00 AM")
+        );
+    QCOMPARE(
+        unchangedDraft.classTimes.constFirst().endTime,
+        QStringLiteral("10:55 AM")
+        );
+    QCOMPARE(unchangedDraft.intensiveTimes.size(), 1);
+    QCOMPARE(unchangedDraft.intensiveTimes.constFirst().day, QStringLiteral("Friday"));
+    QCOMPARE(
+        unchangedDraft.intensiveTimes.constFirst().startTime,
+        QStringLiteral("1:00 PM")
+        );
+    QCOMPARE(
+        unchangedDraft.intensiveTimes.constFirst().endTime,
+        QStringLiteral("1:55 PM")
+        );
+    const auto unchangedDraftTeacherId = wizard.classDraftTeacherId();
+    QVERIFY(unchangedDraftTeacherId);
+    QCOMPARE(
+        unchangedDraftTeacherId->value(),
+        draftTeacherId->value()
+        );
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlQuery query(session->database());
+    QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM classes")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 0);
+    QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM class_info")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 0);
 }
 
 void InitialSetupWizardTests::
