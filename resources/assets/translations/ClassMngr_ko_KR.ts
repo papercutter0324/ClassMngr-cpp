@@ -8592,6 +8592,16 @@ Comments: Please leave a comment about what the student did well and what they n
         <source>N/A</source>
         <translation>해당 없음</translation>
     </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_settings.cpp"/>
+        <source>Sub Prep settings could not be saved. Your changes are still here.</source>
+        <translation>대체 수업 준비 설정을 저장하지 못했습니다. 변경 사항은 그대로 유지됩니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp"/>
+        <source>Save status</source>
+        <translation>저장 상태</translation>
+    </message>
 </context>
 <context>
     <name>SubPrepPrintDialog</name>

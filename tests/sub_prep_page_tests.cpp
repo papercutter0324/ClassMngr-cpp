@@ -45,6 +45,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTimer>
+#include <QTranslator>
 #include <QVBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -477,6 +478,50 @@ void activatePage(SubPrepPage& page)
     page.setDatabaseOpen(true);
     page.activate();
 }
+
+class KoreanSubPrepAutosaveStatusTranslator final : public QTranslator
+{
+public:
+    QString translate(
+        const char* context,
+        const char* sourceText,
+        const char* disambiguation = nullptr,
+        int n = -1
+        ) const override
+    {
+        Q_UNUSED(disambiguation);
+        Q_UNUSED(n);
+        if (!context || !sourceText)
+        {
+            return {};
+        }
+
+        if (
+            qstrcmp(context, "SubPrepPage") == 0
+            && qstrcmp(
+                sourceText,
+                "Sub Prep settings could not be saved. Your changes "
+                "are still here."
+                ) == 0
+            )
+        {
+            return QStringLiteral(
+                "대체 수업 준비 설정을 저장하지 못했습니다. "
+                "변경 사항은 그대로 유지됩니다."
+                );
+        }
+
+        if (
+            qstrcmp(context, "SubPrepPage") == 0
+            && qstrcmp(sourceText, "Save status") == 0
+            )
+        {
+            return QStringLiteral("저장 상태");
+        }
+
+        return {};
+    }
+};
 }
 
 class SubPrepPageTests : public QObject
@@ -2118,6 +2163,11 @@ failedPreferenceSaveReportsOnlyExplicitFailureAndPreservesDraft()
     SubPrepPageHarness harness(&services);
     SubPrepPage& page = harness.page;
     activatePage(page);
+    auto* const saveFailureStatus = page.findChild<QLabel*>(
+        QStringLiteral("subPrepSettingsAutosaveFailureStatus")
+        );
+    QVERIFY(saveFailureStatus);
+    QVERIFY(saveFailureStatus->isHidden());
     const QList<QTextEdit*> editors{
         page.findChild<QTextEdit*>(QStringLiteral("subPrepClassMaterialsEdit")),
         page.findChild<QTextEdit*>(QStringLiteral("subPrepGradingInstructionsEdit")),
@@ -2149,6 +2199,7 @@ failedPreferenceSaveReportsOnlyExplicitFailureAndPreservesDraft()
         );
     QCOMPARE(promptService.messages.first().details, failure);
     QVERIFY(promptService.asynchronousMessages.isEmpty());
+    QVERIFY(saveFailureStatus->isHidden());
     QVERIFY(page.hasUnsavedChanges());
     for (qsizetype index = 0; index < editors.size(); ++index)
     {
@@ -2164,6 +2215,16 @@ failedPreferenceSaveReportsOnlyExplicitFailureAndPreservesDraft()
     QVERIFY(QMetaObject::invokeMethod(&page, "autosave", Qt::DirectConnection));
     QVERIFY(promptService.messages.isEmpty());
     QVERIFY(promptService.asynchronousMessages.isEmpty());
+    QVERIFY(!saveFailureStatus->isHidden());
+    QCOMPARE(
+        saveFailureStatus->text(),
+        QStringLiteral(
+            "Sub Prep settings could not be saved. Your changes are still here."
+            )
+        );
+    QCOMPARE(saveFailureStatus->accessibleName(), QStringLiteral("Save status"));
+    QCOMPARE(saveFailureStatus->toolTip(), failure);
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
     QVERIFY(page.hasUnsavedChanges());
     for (qsizetype index = 0; index < editors.size(); ++index)
     {
@@ -2174,9 +2235,31 @@ failedPreferenceSaveReportsOnlyExplicitFailureAndPreservesDraft()
             );
     }
 
+    KoreanSubPrepAutosaveStatusTranslator koreanTranslator;
+    QVERIFY(QCoreApplication::installTranslator(&koreanTranslator));
+    page.retranslateUi();
+    QCOMPARE(
+        saveFailureStatus->text(),
+        QStringLiteral(
+            "대체 수업 준비 설정을 저장하지 못했습니다. "
+            "변경 사항은 그대로 유지됩니다."
+            )
+        );
+    QCOMPARE(saveFailureStatus->accessibleName(), QStringLiteral("저장 상태"));
+    QVERIFY(QCoreApplication::removeTranslator(&koreanTranslator));
+    page.retranslateUi();
+    QCOMPARE(
+        saveFailureStatus->text(),
+        QStringLiteral(
+            "Sub Prep settings could not be saved. Your changes are still here."
+            )
+        );
+    QCOMPARE(saveFailureStatus->accessibleName(), QStringLiteral("Save status"));
+
     ScheduleWidgetTestStubs::setSettingsSaveFailure(QString());
-    QVERIFY(page.saveChanges());
+    QVERIFY(QMetaObject::invokeMethod(&page, "autosave", Qt::DirectConnection));
     QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(saveFailureStatus->isHidden());
     QVERIFY(promptService.messages.isEmpty());
     QVERIFY(promptService.asynchronousMessages.isEmpty());
     QVERIFY(editors[1]->toPlainText().startsWith(QStringLiteral("Scoring: 0 / 20 / 40")));
@@ -2238,6 +2321,11 @@ void SubPrepPageTests
         page.findChild<QTextEdit*>(QStringLiteral("subPrepSpecialInstructionsEdit")),
         page.findChild<QTextEdit*>(QStringLiteral("subPrepNotesEdit"))
     };
+    auto* const saveFailureStatus = page.findChild<QLabel*>(
+        QStringLiteral("subPrepSettingsAutosaveFailureStatus")
+        );
+    QVERIFY(saveFailureStatus);
+    QVERIFY(saveFailureStatus->isHidden());
     for (qsizetype index = 0; index < editors.size(); ++index)
     {
         QVERIFY(editors[index]);
@@ -2279,6 +2367,7 @@ void SubPrepPageTests
     QVERIFY(page.hasUnsavedChanges());
     QVERIFY(QMetaObject::invokeMethod(&page, "autosave", Qt::DirectConnection));
     QVERIFY(promptService.messages.isEmpty());
+    QVERIFY(saveFailureStatus->isHidden());
     QVERIFY(page.hasUnsavedChanges());
     QCOMPARE(editors.first()->toPlainText(), draft);
 
@@ -2302,6 +2391,7 @@ void SubPrepPageTests
     promptService.messages.clear();
     QVERIFY(QMetaObject::invokeMethod(&page, "autosave", Qt::DirectConnection));
     QVERIFY(promptService.messages.isEmpty());
+    QVERIFY(saveFailureStatus->isHidden());
     QVERIFY(page.hasUnsavedChanges());
     for (qsizetype index = 0; index < keys.size(); ++index)
     {
@@ -2313,6 +2403,7 @@ void SubPrepPageTests
 
     page.refresh();
     QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(saveFailureStatus->isHidden());
     for (qsizetype index = 0; index < editors.size(); ++index)
     {
         QCOMPARE(editors[index]->toPlainText(), stored[index]);
@@ -2322,6 +2413,7 @@ void SubPrepPageTests
     editors.first()->setPlainText(recoveredMaterials);
     QVERIFY(QMetaObject::invokeMethod(&page, "autosave", Qt::DirectConnection));
     QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(saveFailureStatus->isHidden());
     QVERIFY(promptService.messages.isEmpty());
     QCOMPARE(
         services.dataService()->loadSetting(keys[0])->toString(),

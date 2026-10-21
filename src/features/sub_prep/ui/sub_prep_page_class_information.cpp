@@ -1480,4 +1480,5 @@ void SubPrepPage::releaseFeatureResources()
 void SubPrepPage::clearDirty()
 {
     m_dirty = false;
+    clearAutosaveFailureStatus();
 }

@@ -3,6 +3,8 @@
 #include "features/sub_prep/ui/sub_prep_class_information_list_model.h"
 #include "ui/shared/widgets/navigation_pill_style.h"
 
+#include <QSizePolicy>
+
 void SubPrepPage::buildUi()
 {
     contentLayout()->setContentsMargins(0, 0, 0, 0);
@@ -402,6 +404,22 @@ void SubPrepPage::buildUi()
         m_specialInstructionsEdit
         );
     m_scrollContentLayout->addWidget(m_gradingCard);
+
+    m_autosaveFailureStatusLabel = new QLabel(m_scrollContent);
+    m_autosaveFailureStatusLabel->setObjectName(
+        QStringLiteral("subPrepSettingsAutosaveFailureStatus")
+        );
+    m_autosaveFailureStatusLabel->setAccessibleName(tr("Save status"));
+    m_autosaveFailureStatusLabel->setAlignment(
+        Qt::AlignLeft | Qt::AlignVCenter
+        );
+    m_autosaveFailureStatusLabel->setWordWrap(true);
+    m_autosaveFailureStatusLabel->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Preferred
+        );
+    m_autosaveFailureStatusLabel->hide();
+    m_scrollContentLayout->addWidget(m_autosaveFailureStatusLabel);
 
     m_scheduleHeading =
         createTopLevelHeading(

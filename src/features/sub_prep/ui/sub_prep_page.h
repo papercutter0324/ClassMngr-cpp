@@ -177,6 +177,8 @@ private:
         const QString& campusId
         );
     void updateReadOnlyFieldWidths();
+    void showAutosaveFailureStatus(const QString& errorMessage);
+    void clearAutosaveFailureStatus();
 
     bool saveSubPrepInternal(QString* errorMessage = nullptr);
 
@@ -273,6 +275,7 @@ private:
     QLabel* m_detailedClassNotesLabel = nullptr;
     QLabel* m_gradingInstructionsLabel = nullptr;
     QLabel* m_specialInstructionsLabel = nullptr;
+    QLabel* m_autosaveFailureStatusLabel = nullptr;
 
     ScheduleWidget* m_scheduleWidget = nullptr;
     QWidget* m_classInformationContent = nullptr;
@@ -325,4 +328,5 @@ private:
     int m_classInformationRebuildCount = 0;
 
     QTimer* m_autosaveTimer = nullptr;
+    bool m_autosaveFailureStatusActive = false;
 };

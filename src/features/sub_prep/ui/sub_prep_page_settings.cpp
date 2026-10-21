@@ -472,3 +472,36 @@ bool SubPrepPage::saveSubPrepInternal(QString* errorMessage)
     clearDirty();
     return true;
 }
+
+void SubPrepPage::showAutosaveFailureStatus(
+    const QString& errorMessage
+    )
+{
+    m_autosaveFailureStatusActive = true;
+    if (!m_autosaveFailureStatusLabel)
+    {
+        return;
+    }
+
+    m_autosaveFailureStatusLabel->setText(
+        tr(
+            "Sub Prep settings could not be saved. Your changes "
+            "are still here."
+            )
+        );
+    m_autosaveFailureStatusLabel->setToolTip(errorMessage);
+    m_autosaveFailureStatusLabel->show();
+}
+
+void SubPrepPage::clearAutosaveFailureStatus()
+{
+    m_autosaveFailureStatusActive = false;
+    if (!m_autosaveFailureStatusLabel)
+    {
+        return;
+    }
+
+    m_autosaveFailureStatusLabel->clear();
+    m_autosaveFailureStatusLabel->setToolTip(QString());
+    m_autosaveFailureStatusLabel->hide();
+}

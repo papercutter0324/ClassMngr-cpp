@@ -174,6 +174,22 @@ void SubPrepPage::retranslateUi()
             );
     }
 
+    if (m_autosaveFailureStatusLabel)
+    {
+        m_autosaveFailureStatusLabel->setAccessibleName(
+            tr("Save status")
+            );
+        if (m_autosaveFailureStatusActive)
+        {
+            m_autosaveFailureStatusLabel->setText(
+                tr(
+                    "Sub Prep settings could not be saved. Your changes "
+                    "are still here."
+                    )
+                );
+        }
+    }
+
     if (m_printButton)
     {
         m_printButton->setText(
@@ -522,7 +538,14 @@ void SubPrepPage::autosave()
 {
     if (m_dirty)
     {
-        saveSubPrepInternal();
+        QString errorMessage;
+        if (!saveSubPrepInternal(&errorMessage))
+        {
+            if (!m_subPrepPreferencesLoadBlocked)
+            {
+                showAutosaveFailureStatus(errorMessage);
+            }
+        }
     }
 }
 
