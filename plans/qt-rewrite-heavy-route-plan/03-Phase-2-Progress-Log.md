@@ -61936,3 +61936,77 @@ second-last Batch523 candidate. F1287 follows in order. Gate 1 and Gate 2
 remain Partial, and the Phase 2 exit gate remains Open. Phase 0 remains
 Complete; F629's source-bound Windows x64 requalification remains outstanding
 separately.
+
+### Batch524 discovery - 2026-10-21 (triggered at F1286)
+
+At the second-last Batch523 candidate, three read-only lanes found four
+provisional candidates; none is accepted. The application-contract lane found
+F1290. The feature/UI lane found F1288 and F1289 and screened Calendar and
+Campus Dashboard paths. The mapping lane found F1291 and screened My Classes
+batch identity/order and Calendar import coverage. This is a recorded sample,
+not a Phase 2 exhaustiveness claim.
+
+The ordered Batch524 candidates are:
+
+1. F1288 - My Details can save a campus selection from stale displayed state
+   after reading the current-campus preference fails
+   (`src/features/my_info/ui/personal_details_page_sections.cpp:941-973,1239-1260`).
+   F1066 covered avoiding the immediate first-campus correction and reporting
+   the failed read; this candidate is a later aggregate save of an unverified
+   displayed campus.
+2. F1289 - My Details automatic-save failure has no immediate feature-level
+   notice and leaves the form dirty
+   (`src/features/personal_details/ui/personal_details_page.cpp:28-31`,
+   `src/features/personal_details/ui/personal_details_page_sections.cpp:1367+`,
+   `tests/my_workspace_page_tests.cpp:2534+`). The test asserts no prompt on
+   failed autosave. Candidate only; not accepted.
+3. F1290 - Class Transfer Export query can throw while projecting an incomplete
+   but successful source snapshot because `ClassExportStage::value()` uses
+   `std::get` (`src/next/application/class_transfer_export_query.h:56,152+`).
+   Normal platform error paths appear protected; production-path exposure was
+   not established.
+4. F1291 - Class Transfer's legacy apply adapter can drop malformed
+   non-sentinel target IDs such as `0` into `nullopt`, potentially allowing a
+   valid Create to become targetless
+   (`src/next/platform/class_transfer_apply_legacy_adapter.h:108+`,
+   `src/next/application/class_transfer_apply_request.h:46+`,
+   `tests/class_transfer_tests.cpp:4457`). API-contract uncertainty remains.
+
+No other slices were found.
+
+Batch524 contains four discovered, provisional candidates in the listed order;
+none has been accepted. Batch523 remains active and unpushed: F1285 is complete
+locally, F1286 is accepted and next for implementation, and F1287 follows.
+Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+Phase 0 remains Complete; F629's source-bound Windows x64 requalification
+remains outstanding separately. The lane sample does not establish Phase 2
+exhaustiveness.
+
+### F1286 Testing Classes delete-fallback draft preservation accepted before implementation - 2026-10-21
+
+After a successful delete, reflect removal of the deleted class in the list and
+emit `testingDataChanged()` once. If the first remaining sibling's details
+read fails for any error, preserve a clean new-class draft, clear the class-row
+selection, keep delete disabled, and retain new-class save behavior; do not
+associate the draft with the sibling. Attempt the fallback details read once.
+Keep the existing warning policy: Technical errors warn and NotFound remains
+quiet. If the sibling loads, preserve normal selection and editor identity. If
+no sibling remains, keep the clean new-class draft with no row selected. Do
+not expand this slice into dirty-state or delete-failure behavior.
+
+The behavior is defined by `TestingClassesPage::deleteCurrentClass()` in
+`src/features/classes/ui/testing_classes_page.cpp:1656-1705`; row selection
+emits `currentItemChanged` to a handler that attempts `loadClass()` at
+`:997-1060`. A failed details read can leave the new-class editor identity in
+place while the sibling row remains selected, after which the delete lambda
+attempts the read again. Cover the contract in the existing
+`tests/testing_classes_page_tests.cpp`. F1060's NotFound delete reconciliation
+and programmatic details-read selection restoration remain distinct.
+
+F1286 is accepted as Batch523's second candidate before implementation;
+implementation, build, and tests have not started. F1285 is complete locally,
+Batch523 remains unpushed, and F1287 follows after F1286 closes. Batch524
+discovery is recorded with F1288-F1291 as provisional, unaccepted candidates.
+Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+Phase 0 remains Complete; F629's source-bound Windows x64 requalification
+remains outstanding separately.
