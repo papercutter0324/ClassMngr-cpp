@@ -62176,3 +62176,36 @@ Partial, and the Phase 2 exit gate remains Open. Phase 0 remains Complete;
 F629's source-bound Windows x64 requalification remains outstanding
 separately. This receipt does not imply a full-suite, Windows, hosted-CI, or
 gate result.
+
+### F1288 My Details campus read state accepted before implementation - 2026-10-21
+
+In `PersonalDetailsPage`, track whether the current-campus preference was read
+successfully. A failed read must keep the displayed combo selection and the
+existing load warning, but mark the campus value unknown. While it is unknown,
+`saveMyInfoInternal()` must block the aggregate save before invoking the save
+port and provide a localized explanation through the existing manual-save
+warning. This preserves the aggregate save's all-or-nothing contract rather
+than writing stale campus text with otherwise edited fields. A successful
+current-campus read marks the value known; a later correction-write failure
+after that successful read does not make the read value unknown. Clear the
+state when database state is cleared. Keep the `CurrentCampusPreferencesPort`
+and `PersonalDetailsSaveRequest` contracts unchanged.
+
+Add one focused case to `tests/my_workspace_page_tests.cpp` and the existing
+`ClassMngrMyWorkspacePageTests` target. Use a key-specific failing
+`app_settings` view, as the existing signature preference tests do, so the
+name and other preference reads still succeed. After the page initially loads
+campus A, change the stored campus to B, fail only the campus read, restore the
+settings table, and attempt an aggregate save from the preserved campus A
+display. Assert the read warning, unchanged visible selection, blocked save,
+retained draft/dirty state, and that neither campus B nor other persisted
+values are overwritten. Then reload successfully and verify a later aggregate
+save is allowed with campus B. Preserve the existing whole-table read-failure
+case. Do not add automatic-save feedback; that remains F1289.
+
+Focused verification: incrementally build `ClassMngr` and
+`ClassMngrMyWorkspacePageTests` in `build/macos-clang-debug`; run the new QtTest
+selector and `settingsReadFailurePreservesDisplayedCampusChoice`; confirm the
+registered CTest target; and run `git diff --check`. No full suite, Windows
+run, clean build, or Phase 2 gate result is claimed. At acceptance, no
+implementation, build, or test execution had started.

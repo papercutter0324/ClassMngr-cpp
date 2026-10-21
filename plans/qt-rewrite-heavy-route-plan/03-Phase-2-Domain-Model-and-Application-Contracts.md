@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch523 is pushed through closeout `12936f8f` with local and remote tips matching; Batch524 is active with F1288 next, F1289 following, F1290 triggering Batch525 discovery when work starts, and F1291 last, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch523 is pushed through closeout `12936f8f` with local and remote tips matching; F1288 is accepted and next for implementation in Batch524, followed by F1289, F1290, and F1291, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-Batch523 (F1285-F1287) is pushed through closeout `12936f8fb0d70d24da8eeb897815fc1db4832cb7`, with local and remote tips matching. Batch524 is active with F1288 next for acceptance and implementation; F1289 follows, F1290 triggers Batch525 discovery when work starts, and F1291 is last. See the [Batch523 push receipt](03-Phase-2-Progress-Log.md#batch523-push-receipt-2026-10-21).
+F1288 is accepted for implementation in Batch524; F1289 follows, F1290 triggers Batch525 discovery when work starts, and F1291 is last. Batch523 (F1285-F1287) is pushed through closeout `12936f8fb0d70d24da8eeb897815fc1db4832cb7`, with local and remote tips matching. See the [F1288 acceptance](03-Phase-2-Progress-Log.md#f1288-my-details-campus-read-state-accepted-before-implementation-2026-10-21) and [Batch523 push receipt](03-Phase-2-Progress-Log.md#batch523-push-receipt-2026-10-21).
 
 ### Slice discovery batches
 
@@ -78,11 +78,11 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active Batch524
 
-All four candidates remain discovered, provisional, and unaccepted.
+F1288 is accepted; F1289-F1291 remain discovered and unaccepted.
 
-1. F1288 - Next for acceptance and implementation: My Details must not save a
-   campus selection from stale displayed state after the current-campus read
-   fails.
+1. F1288 - Accepted for implementation: track current-campus read state and
+   block the aggregate My Details save after a failed read, preserving the
+   displayed campus until a successful reload.
 2. F1289 - Discovered; accept and implement after F1288: My Details automatic
    save failure has no immediate feature-level notice and leaves the form
    dirty.
