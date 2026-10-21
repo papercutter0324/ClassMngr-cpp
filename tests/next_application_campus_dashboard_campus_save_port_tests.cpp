@@ -19,15 +19,20 @@ public:
     mutable std::optional<Application::CampusDashboardCampusSnapshot> saved;
     mutable Application::CampusDashboardCampusSaveIntent savedIntent =
         Application::CampusDashboardCampusSaveIntent::Update;
+    mutable Application::CampusDashboardCampusNameOrigin savedNameOrigin =
+        Application::CampusDashboardCampusNameOrigin::UserEntered;
 
     [[nodiscard]] Domain::Result<void> saveCampus(
         const Application::CampusDashboardCampusSnapshot& campus,
-        Application::CampusDashboardCampusSaveIntent intent
+        Application::CampusDashboardCampusSaveIntent intent,
+        Application::CampusDashboardCampusNameOrigin nameOrigin =
+            Application::CampusDashboardCampusNameOrigin::UserEntered
         ) const override
     {
         ++callCount;
         saved = campus;
         savedIntent = intent;
+        savedNameOrigin = nameOrigin;
         return Domain::Result<void>::success();
     }
 };
@@ -81,7 +86,9 @@ void snapshotOwnsTheTypedSaveRequest()
     RecordingCampusSavePort port;
     const Domain::Result<void> result = port.saveCampus(
         snapshot,
-        Application::CampusDashboardCampusSaveIntent::Create
+        Application::CampusDashboardCampusSaveIntent::Create,
+        Application::CampusDashboardCampusNameOrigin::
+            LocalizedDefaultFallback
         );
 
     assert(result);
@@ -89,6 +96,11 @@ void snapshotOwnsTheTypedSaveRequest()
     assert(
         port.savedIntent
         == Application::CampusDashboardCampusSaveIntent::Create
+        );
+    assert(
+        port.savedNameOrigin
+        == Application::CampusDashboardCampusNameOrigin::
+               LocalizedDefaultFallback
         );
     assert(port.saved.has_value());
     assert(port.saved->id == snapshot.id);

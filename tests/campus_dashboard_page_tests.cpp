@@ -18,6 +18,7 @@
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTest>
+#include <QTranslator>
 
 #include <memory>
 #include <optional>
@@ -27,6 +28,57 @@
 
 namespace
 {
+
+class KoreanDefaultTranslator final : public QTranslator
+{
+public:
+    [[nodiscard]] QString translate(
+        const char* context,
+        const char* sourceText,
+        const char* disambiguation = nullptr,
+        const int n = -1
+        ) const override
+    {
+        Q_UNUSED(context);
+        Q_UNUSED(disambiguation);
+        Q_UNUSED(n);
+        if (
+            sourceText
+            && QString::fromUtf8(sourceText) == QStringLiteral("Default")
+            )
+        {
+            return QStringLiteral("기본값");
+        }
+        return {};
+    }
+};
+
+class ScopedTranslatorInstallation final
+{
+public:
+    explicit ScopedTranslatorInstallation(QTranslator& translator)
+        : m_translator(&translator)
+        , m_installed(QCoreApplication::installTranslator(m_translator))
+    {
+    }
+
+    ~ScopedTranslatorInstallation()
+    {
+        if (m_installed)
+        {
+            QCoreApplication::removeTranslator(m_translator);
+        }
+    }
+
+    [[nodiscard]] bool installed() const
+    {
+        return m_installed;
+    }
+
+private:
+    QTranslator* m_translator;
+    bool m_installed;
+};
 
 class RecordingCampusReadPort final
     : public ClassMngr::Next::Application::
@@ -106,14 +158,21 @@ public:
     mutable std::vector<
         ClassMngr::Next::Application::CampusDashboardCampusSaveIntent
         > saveIntents;
+    mutable std::vector<
+        ClassMngr::Next::Application::CampusDashboardCampusNameOrigin
+        > savedNameOrigins;
 
     [[nodiscard]] ClassMngr::Next::Domain::Result<void> saveCampus(
         const ClassMngr::Next::Application::CampusDashboardCampusSnapshot& campus,
-        ClassMngr::Next::Application::CampusDashboardCampusSaveIntent intent
+        ClassMngr::Next::Application::CampusDashboardCampusSaveIntent intent,
+        ClassMngr::Next::Application::CampusDashboardCampusNameOrigin
+            nameOrigin = ClassMngr::Next::Application::
+                CampusDashboardCampusNameOrigin::UserEntered
         ) const override
     {
         savedSnapshots.push_back(campus);
         saveIntents.push_back(intent);
+        savedNameOrigins.push_back(nameOrigin);
         if (
             intent == ClassMngr::Next::Application::
                           CampusDashboardCampusSaveIntent::Create
@@ -138,7 +197,7 @@ public:
 
         const auto result = ClassMngr::Next::Platform::
             CampusDashboardCampusRepositoryAdapter(m_directory)
-                .saveCampus(campus, intent);
+                .saveCampus(campus, intent, nameOrigin);
         if (result)
         {
             lastErrorCode.reset();
@@ -370,6 +429,9 @@ private slots:
     void manualSaveFailureRetainsDirtyForm();
     void automaticSaveFailureRetainsDirtyForm();
     void missingUpdateTargetKeepsDraftDirtyAndShowsError();
+    void localizedDefaultFallbackIsRejectedAfterEditingFinished_data();
+    void localizedDefaultFallbackIsRejectedAfterEditingFinished();
+    void userEnteredLocalizedDefaultRemainsOrdinaryAfterFallback();
     void reservedCreateIdentityFailureRetainsDirtyForm();
     void reservedUpdateNameFailureRetainsDirtyForm();
     void failedSaveRestoresSelectionAndSkipsRequestedRead();
@@ -1054,6 +1116,210 @@ void CampusDashboardPageTests::missingUpdateTargetKeepsDraftDirtyAndShowsError()
     QVERIFY(labelWithText(page, failureMessage));
     QVERIFY(!labelWithText(page, QStringLiteral("Saved")));
     QVERIFY(!QFile::exists(alphaPath));
+}
+
+void CampusDashboardPageTests::
+localizedDefaultFallbackIsRejectedAfterEditingFinished_data()
+{
+    QTest::addColumn<bool>("create");
+
+    QTest::newRow("create") << true;
+    QTest::newRow("update") << false;
+}
+
+void CampusDashboardPageTests::
+localizedDefaultFallbackIsRejectedAfterEditingFinished()
+{
+    QFETCH(bool, create);
+
+    KoreanDefaultTranslator translator;
+    ScopedTranslatorInstallation translatorInstallation(translator);
+    QVERIFY(translatorInstallation.installed());
+
+    CampusDashboardPageFixture fixture;
+    QVERIFY(fixture.initialize());
+    CampusDashboardPage& page = *fixture.page;
+    const CampusJsonRepository repository(fixture.campusDirectory.path());
+    const QString alphaPath = repository.filePathForCampusId(
+        QStringLiteral("alpha")
+        );
+    const QString betaPath = repository.filePathForCampusId(
+        QStringLiteral("beta")
+        );
+    std::vector<std::pair<QString, QByteArray>> existingFileBytes;
+    for (const QString& path : {alphaPath, betaPath})
+    {
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        existingFileBytes.emplace_back(path, file.readAll());
+    }
+
+    if (create)
+    {
+        QPushButton* newCampusButton = buttonWithText(
+            page,
+            QStringLiteral("New Campus")
+            );
+        QVERIFY(newCampusButton);
+        newCampusButton->click();
+    }
+
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("campusNameEdit")
+        );
+    QVERIFY(nameEdit);
+
+    const QString emptyName;
+    nameEdit->setText(emptyName);
+    QVERIFY(QMetaObject::invokeMethod(
+        nameEdit,
+        "textEdited",
+        Qt::DirectConnection,
+        Q_ARG(QString, emptyName)
+        ));
+    QVERIFY(QMetaObject::invokeMethod(
+        nameEdit,
+        "editingFinished",
+        Qt::DirectConnection
+        ));
+
+    QCOMPARE(nameEdit->text(), QStringLiteral("기본값"));
+    QVERIFY(page.hasUnsavedChanges());
+
+    QPushButton* saveButton = buttonWithText(
+        page,
+        QStringLiteral("Save Campus")
+        );
+    QVERIFY(saveButton);
+    saveButton->click();
+
+    QCOMPARE(fixture.savePort.savedSnapshots.size(), std::size_t(1));
+    QCOMPARE(fixture.savePort.saveIntents.size(), std::size_t(1));
+    QCOMPARE(fixture.savePort.savedNameOrigins.size(), std::size_t(1));
+    QCOMPARE(
+        fixture.savePort.savedNameOrigins.front(),
+        ClassMngr::Next::Application::
+            CampusDashboardCampusNameOrigin::LocalizedDefaultFallback
+        );
+    QCOMPARE(
+        fixture.savePort.saveIntents.front(),
+        create
+            ? ClassMngr::Next::Application::
+                  CampusDashboardCampusSaveIntent::Create
+            : ClassMngr::Next::Application::
+                  CampusDashboardCampusSaveIntent::Update
+        );
+    QCOMPARE(
+        fixture.savePort.savedSnapshots.front().campusName,
+        std::string("기본값")
+        );
+    QVERIFY(fixture.savePort.lastErrorCode.has_value());
+    QCOMPARE(
+        fixture.savePort.lastErrorCode.value(),
+        ClassMngr::Next::Domain::ErrorCode::InvalidInput
+        );
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(labelContainingText(
+        page,
+        QStringLiteral("Choose a different campus name")
+        ));
+    QVERIFY(!labelWithText(page, QStringLiteral("Saved")));
+
+    if (create)
+    {
+        QVERIFY(!QFile::exists(
+            repository.filePathForCampusId(QStringLiteral("campus"))
+            ));
+    }
+    for (const auto& [path, expectedBytes] : existingFileBytes)
+    {
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        QCOMPARE(file.readAll(), expectedBytes);
+    }
+}
+
+void CampusDashboardPageTests::
+userEnteredLocalizedDefaultRemainsOrdinaryAfterFallback()
+{
+    KoreanDefaultTranslator translator;
+    ScopedTranslatorInstallation translatorInstallation(translator);
+    QVERIFY(translatorInstallation.installed());
+
+    CampusDashboardPageFixture fixture;
+    QVERIFY(fixture.initialize());
+    CampusDashboardPage& page = *fixture.page;
+
+    QPushButton* newCampusButton = buttonWithText(
+        page,
+        QStringLiteral("New Campus")
+        );
+    QVERIFY(newCampusButton);
+    newCampusButton->click();
+
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("campusNameEdit")
+        );
+    QVERIFY(nameEdit);
+    const QString emptyName;
+    nameEdit->setText(emptyName);
+    QVERIFY(QMetaObject::invokeMethod(
+        nameEdit,
+        "textEdited",
+        Qt::DirectConnection,
+        Q_ARG(QString, emptyName)
+        ));
+    QVERIFY(QMetaObject::invokeMethod(
+        nameEdit,
+        "editingFinished",
+        Qt::DirectConnection
+        ));
+    QCOMPARE(nameEdit->text(), QStringLiteral("기본값"));
+
+    const QString intermediateName = QStringLiteral("Temporary");
+    nameEdit->setText(intermediateName);
+    QVERIFY(QMetaObject::invokeMethod(
+        nameEdit,
+        "textEdited",
+        Qt::DirectConnection,
+        Q_ARG(QString, intermediateName)
+        ));
+
+    const QString enteredLocalizedName = QStringLiteral("기본값");
+    nameEdit->setText(enteredLocalizedName);
+    QVERIFY(QMetaObject::invokeMethod(
+        nameEdit,
+        "textEdited",
+        Qt::DirectConnection,
+        Q_ARG(QString, enteredLocalizedName)
+        ));
+
+    QPushButton* saveButton = buttonWithText(
+        page,
+        QStringLiteral("Save Campus")
+        );
+    QVERIFY(saveButton);
+    saveButton->click();
+
+    QCOMPARE(fixture.savePort.savedNameOrigins.size(), std::size_t(1));
+    QCOMPARE(
+        fixture.savePort.savedNameOrigins.front(),
+        ClassMngr::Next::Application::CampusDashboardCampusNameOrigin::
+            UserEntered
+        );
+    QCOMPARE(
+        fixture.savePort.savedSnapshots.front().campusName,
+        std::string("기본값")
+        );
+    QVERIFY(!fixture.savePort.lastErrorCode.has_value());
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(labelWithText(page, QStringLiteral("Saved")));
+
+    const auto savedCampus = CampusJsonRepository(
+        fixture.campusDirectory.path()
+        ).loadCampus(QStringLiteral("campus"));
+    QVERIFY(savedCampus.has_value());
+    QCOMPARE(savedCampus->campusName, QStringLiteral("기본값"));
 }
 
 void CampusDashboardPageTests::cleanRefreshWithNoCampusesClearsCurrentCampus()

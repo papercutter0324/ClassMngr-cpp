@@ -58,14 +58,18 @@ class CampusDashboardCampusIdentitySavePolicy final
 public:
     [[nodiscard]] static Domain::Result<void> validate(
         const CampusDashboardCampusSnapshot& campus,
-        const CampusDashboardCampusSaveIntent intent
+        const CampusDashboardCampusSaveIntent intent,
+        const CampusDashboardCampusNameOrigin nameOrigin =
+            CampusDashboardCampusNameOrigin::UserEntered
         )
     {
         const bool reservedId =
             CampusDashboardCampusIdentitySavePolicyDetail::
                 asciiCaseInsensitiveEqual(campus.id.value(), "default");
         const bool reservedName =
-            CampusDashboardCampusIdentitySavePolicyDetail::
+            nameOrigin
+                == CampusDashboardCampusNameOrigin::LocalizedDefaultFallback
+            || CampusDashboardCampusIdentitySavePolicyDetail::
                 asciiCaseInsensitiveEqual(campus.campusName, "Default");
         if (!reservedId && !reservedName)
         {

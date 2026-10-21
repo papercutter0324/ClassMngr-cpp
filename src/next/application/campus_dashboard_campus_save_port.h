@@ -12,6 +12,12 @@ enum class CampusDashboardCampusSaveIntent
     Update
 };
 
+enum class CampusDashboardCampusNameOrigin
+{
+    UserEntered,
+    LocalizedDefaultFallback
+};
+
 class CampusDashboardCampusSavePort
 {
 public:
@@ -19,7 +25,9 @@ public:
 
     [[nodiscard]] virtual Domain::Result<void> saveCampus(
         const CampusDashboardCampusSnapshot& campus,
-        CampusDashboardCampusSaveIntent intent
+        CampusDashboardCampusSaveIntent intent,
+        CampusDashboardCampusNameOrigin nameOrigin =
+            CampusDashboardCampusNameOrigin::UserEntered
         ) const = 0;
 };
 

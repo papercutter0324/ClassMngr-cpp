@@ -97,6 +97,48 @@ void acceptsOrdinaryIdsAndNamesForCreateAndUpdate()
     }
 }
 
+void localizedFallbackOriginIsRejectedForCreateAndUpdate()
+{
+    const auto campus = snapshotFor("campus", "기본값");
+    for (const auto intent : {
+             Application::CampusDashboardCampusSaveIntent::Create,
+             Application::CampusDashboardCampusSaveIntent::Update
+         })
+    {
+        const auto result =
+            Application::CampusDashboardCampusIdentitySavePolicy::validate(
+                campus,
+                intent,
+                Application::CampusDashboardCampusNameOrigin::
+                    LocalizedDefaultFallback
+                );
+        assertInvalidInput(
+            result,
+            intent == Application::CampusDashboardCampusSaveIntent::Create
+                ? "create"
+                : "update"
+            );
+    }
+}
+
+void userEnteredLocalizedNameRemainsOrdinaryInput()
+{
+    const auto campus = snapshotFor("campus", "기본값");
+    for (const auto intent : {
+             Application::CampusDashboardCampusSaveIntent::Create,
+             Application::CampusDashboardCampusSaveIntent::Update
+         })
+    {
+        const auto result =
+            Application::CampusDashboardCampusIdentitySavePolicy::validate(
+                campus,
+                intent,
+                Application::CampusDashboardCampusNameOrigin::UserEntered
+                );
+        assert(result);
+    }
+}
+
 void reservedIdentityComparisonIsExact()
 {
     for (const auto intent : {
@@ -120,5 +162,7 @@ int main()
     rejectsReservedIdsForCreateAndUpdate();
     rejectsReservedNamesForCreateAndUpdate();
     acceptsOrdinaryIdsAndNamesForCreateAndUpdate();
+    localizedFallbackOriginIsRejectedForCreateAndUpdate();
+    userEnteredLocalizedNameRemainsOrdinaryInput();
     reservedIdentityComparisonIsExact();
 }

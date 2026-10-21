@@ -351,6 +351,9 @@ private:
         > m_ownedCampusSavePort;
     const ClassMngr::Next::Application::CampusDashboardCampusSavePort*
         m_campusSavePort = nullptr;
+    ClassMngr::Next::Application::CampusDashboardCampusNameOrigin
+        m_campusNameOrigin = ClassMngr::Next::Application::
+            CampusDashboardCampusNameOrigin::UserEntered;
     CampusInfo m_currentCampus;
 
     QTimer* m_saveTimer = nullptr;

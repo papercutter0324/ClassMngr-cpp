@@ -74,6 +74,9 @@ void CampusDashboardPage::buildUi()
             this,
             [this](const QString& text)
             {
+                m_campusNameOrigin = ClassMngr::Next::Application::
+                    CampusDashboardCampusNameOrigin::UserEntered;
+
                 if (m_nameEdit)
                 {
                     const QSignalBlocker blocker(m_nameEdit);

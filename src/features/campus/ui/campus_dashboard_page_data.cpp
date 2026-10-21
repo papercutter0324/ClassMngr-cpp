@@ -189,6 +189,8 @@ void CampusDashboardPage::populateFields(
     )
 {
     m_loading = true;
+    m_campusNameOrigin = ClassMngr::Next::Application::
+        CampusDashboardCampusNameOrigin::UserEntered;
 
     m_nameEdit->setText(campus.campusName);
 
@@ -341,6 +343,8 @@ void CampusDashboardPage::normalizeCampusNameField()
         return;
     }
 
+    m_campusNameOrigin = ClassMngr::Next::Application::
+        CampusDashboardCampusNameOrigin::LocalizedDefaultFallback;
     nameEdit->setText(tr("Default"));
 
     if (m_nameEdit && m_nameEdit != nameEdit)
@@ -587,8 +591,18 @@ bool CampusDashboardPage::saveCurrentCampus()
         return false;
     }
 
+    const auto nameOrigin =
+        m_campusNameEdit
+            && m_campusNameEdit->text().trimmed().isEmpty()
+            ? ClassMngr::Next::Application::
+                  CampusDashboardCampusNameOrigin::LocalizedDefaultFallback
+            : m_campusNameOrigin;
     const ClassMngr::Next::Domain::Result<void> saved =
-        m_campusSavePort->saveCampus(snapshot.value(), saveIntent);
+        m_campusSavePort->saveCampus(
+            snapshot.value(),
+            saveIntent,
+            nameOrigin
+            );
 
     if (!saved)
     {

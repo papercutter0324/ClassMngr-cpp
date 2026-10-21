@@ -46,13 +46,16 @@ public:
 
     [[nodiscard]] Domain::Result<void> saveCampus(
         const Application::CampusDashboardCampusSnapshot& snapshot,
-        Application::CampusDashboardCampusSaveIntent intent
+        Application::CampusDashboardCampusSaveIntent intent,
+        Application::CampusDashboardCampusNameOrigin nameOrigin =
+            Application::CampusDashboardCampusNameOrigin::UserEntered
         ) const override
     {
         const Domain::Result<void> identityValidation =
             Application::CampusDashboardCampusIdentitySavePolicy::validate(
                 snapshot,
-                intent
+                intent,
+                nameOrigin
                 );
         if (!identityValidation)
         {
