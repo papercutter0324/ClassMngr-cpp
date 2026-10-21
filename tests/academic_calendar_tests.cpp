@@ -185,6 +185,7 @@ private slots:
     void providerOverridesFirstDayOfWeek();
     void providerReadsAndWritesInjectedPreferencePorts();
     void providerReloadSignalsOnlyPersistedChanges();
+    void providerScheduleReadStatusSignalsTransitionsIndependently();
     void providerReadFailureRetainsLoadedScheduleAndRevision();
     void providerInitialReadFailureBlocksSaveUntilSuccessfulReload();
     void providerFirstDayReadFailureUsesLocaleFallbackAndBlocksSave();
@@ -448,6 +449,61 @@ void AcademicCalendarTests::providerReloadSignalsOnlyPersistedChanges()
     QCOMPARE(provider->revision(), revisionBefore + 2);
     QCOMPARE(firstDayChanged.count(), 1);
     QCOMPARE(revisionChanged.count(), 2);
+}
+
+void AcademicCalendarTests::
+providerScheduleReadStatusSignalsTransitionsIndependently()
+{
+    auto state = std::make_shared<AcademicCalendarPreferenceState>();
+    auto provider = makeProvider(state);
+    QVERIFY(provider->schedulePersistenceKnown());
+
+    const QJsonObject scheduleBefore = provider->schedule().toJson();
+    const int revisionBefore = provider->revision();
+    QSignalSpy scheduleReadStatusChanged(
+        provider.get(),
+        &AcademicCalendarProvider::scheduleReadStatusChanged
+        );
+    QVERIFY(scheduleReadStatusChanged.isValid());
+    QSignalSpy revisionChanged(
+        provider.get(),
+        &AcademicCalendarProvider::revisionChanged
+        );
+    QVERIFY(revisionChanged.isValid());
+    QSignalSpy firstDayChanged(
+        provider.get(),
+        &AcademicCalendarProvider::firstDayOfWeekChanged
+        );
+    QVERIFY(firstDayChanged.isValid());
+
+    state->failScheduleReads = true;
+    provider->reload();
+
+    QVERIFY(!provider->schedulePersistenceKnown());
+    QCOMPARE(scheduleReadStatusChanged.count(), 1);
+    QCOMPARE(provider->schedule().toJson(), scheduleBefore);
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(revisionChanged.count(), 0);
+    QCOMPARE(firstDayChanged.count(), 0);
+
+    provider->reload();
+
+    QVERIFY(!provider->schedulePersistenceKnown());
+    QCOMPARE(scheduleReadStatusChanged.count(), 1);
+    QCOMPARE(provider->schedule().toJson(), scheduleBefore);
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(revisionChanged.count(), 0);
+    QCOMPARE(firstDayChanged.count(), 0);
+
+    state->failScheduleReads = false;
+    provider->reload();
+
+    QVERIFY(provider->schedulePersistenceKnown());
+    QCOMPARE(scheduleReadStatusChanged.count(), 2);
+    QCOMPARE(provider->schedule().toJson(), scheduleBefore);
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(revisionChanged.count(), 0);
+    QCOMPARE(firstDayChanged.count(), 0);
 }
 
 void AcademicCalendarTests::

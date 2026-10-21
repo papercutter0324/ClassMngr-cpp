@@ -251,6 +251,54 @@ QGridLayout* calendarScheduleGrid(CalendarPreferencesPanel& panel)
     return nullptr;
 }
 
+QList<QWidget*> calendarScheduleControls(CalendarPreferencesPanel& panel)
+{
+    auto* const termYear = panel.findChild<QSpinBox*>(
+        QStringLiteral("preferencesCalendarTermYear")
+        );
+    auto* const linkOption = panel.findChild<QCheckBox*>(
+        QStringLiteral("preferencesCalendarLinkWinterSpring")
+        );
+    auto* const restoreButton = panel.findChild<QPushButton*>(
+        QStringLiteral("preferencesCalendarRestoreDefaults")
+        );
+    auto* const saveButton = panel.findChild<QPushButton*>(
+        QStringLiteral("preferencesCalendarSaveTermSchedule")
+        );
+    QGridLayout* const grid = calendarScheduleGrid(panel);
+    if (!termYear || !linkOption || !restoreButton || !saveButton || !grid)
+    {
+        return {};
+    }
+
+    QList<QWidget*> controls{
+        termYear,
+        linkOption,
+        restoreButton,
+        saveButton
+    };
+    for (int term = 0; term < AcademicTermCount; ++term)
+    {
+        const int row = term + 2;
+        for (const int dateColumn : {1, 4})
+        {
+            auto* const dateEdit = qobject_cast<QDateEdit*>(
+                widgetAt(grid, row, dateColumn)
+                );
+            auto* const weekEdit = qobject_cast<QSpinBox*>(
+                widgetAt(grid, row, dateColumn + 1)
+                );
+            if (!dateEdit || !weekEdit)
+            {
+                return {};
+            }
+            controls.append(dateEdit);
+            controls.append(weekEdit);
+        }
+    }
+    return controls;
+}
+
 bool executeCalendarPreferenceSql(
     ApplicationServices& services,
     const QString& statement
@@ -712,6 +760,7 @@ private slots:
     void rejectsOutOfRangeInternalTermStartAndRefreshesWithoutPersistence();
     void failedScheduleSaveKeepsDraftAndRetrySucceeds();
     void scheduleReadFailureWarnsAndKeepsDraftUntilReloadSucceeds();
+    void laterScheduleReadFailureLocksAndRecoversWithDraft();
     void eventDisplayReadFailureBlocksOnlyItsGroup();
     void failedEventDisplaySaveRestoresPersistedPairAndRetrySucceeds();
     void unavailableEventDisplaySaveRestoresDefaultsAndDoesNotEmit();
@@ -1371,25 +1420,49 @@ scheduleReadFailureWarnsAndKeepsDraftUntilReloadSucceeds()
     auto* const saveButton = panel.findChild<QPushButton*>(
         QStringLiteral("preferencesCalendarSaveTermSchedule")
         );
+    auto* const warning = panel.findChild<QLabel*>(
+        QStringLiteral("preferencesCalendarScheduleReadWarning")
+        );
+    auto* const linkOption = panel.findChild<QCheckBox*>(
+        QStringLiteral("preferencesCalendarLinkWinterSpring")
+        );
     QVERIFY(termYear);
     QVERIFY(saveButton);
-    termYear->setValue(2026);
-
-    QGridLayout* scheduleFields = nullptr;
-    for (QGridLayout* const candidate : panel.findChildren<QGridLayout*>())
+    QVERIFY(warning);
+    QVERIFY(linkOption);
+    const QList<QWidget*> controls = calendarScheduleControls(panel);
+    QCOMPARE(controls.size(), 20);
+    QVERIFY(!warning->isHidden());
+    QVERIFY(warning->text().contains(QStringLiteral("default or cached")));
+    QVERIFY(warning->text().contains(QStringLiteral("persisted schedule")));
+    for (QWidget* const control : controls)
     {
-        if (
-            qobject_cast<QDateEdit*>(widgetAt(candidate, 2, 1))
-            && qobject_cast<QSpinBox*>(widgetAt(candidate, 2, 2))
-            && qobject_cast<QDateEdit*>(widgetAt(candidate, 2, 4))
-            && qobject_cast<QSpinBox*>(widgetAt(candidate, 2, 5))
-            )
-        {
-            scheduleFields = candidate;
-            break;
-        }
+        QVERIFY(!control->isEnabled());
     }
-    QVERIFY2(scheduleFields, "The visible term schedule grid was not found.");
+
+    saveButton->click();
+    QCOMPARE(state->scheduleWriteAttemptCount, 0);
+    QCOMPARE(state->scheduleWriteCount, 0);
+    QCOMPARE(provider->schedule().toJson(), defaultSchedule);
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(revisionChanged.count(), 0);
+
+    state->failScheduleReads = false;
+    provider->reload();
+    QVERIFY(warning->isHidden());
+    QCOMPARE(warning->text(), QString());
+    linkOption->setChecked(false);
+    termYear->setValue(2026);
+    for (QWidget* const control : controls)
+    {
+        QVERIFY(control->isEnabled());
+    }
+    QCOMPARE(provider->schedule().toJson(), defaultSchedule);
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(revisionChanged.count(), 0);
+
+    QGridLayout* const scheduleFields = calendarScheduleGrid(panel);
+    QVERIFY(scheduleFields);
     auto* const elementarySummerWeeks = qobject_cast<QSpinBox*>(
         widgetAt(scheduleFields, 4, 2)
         );
@@ -1399,42 +1472,122 @@ scheduleReadFailureWarnsAndKeepsDraftUntilReloadSucceeds()
     elementarySummerWeeks->setValue(initialWeeks + 1);
     const int proposedWeeks = elementarySummerWeeks->value();
     QCOMPARE(proposedWeeks, initialWeeks + 1);
+    QCOMPARE(
+        provider->schedule()
+            .yearSchedule(SchoolLevel::Elementary, 2026)
+            .weeks[2],
+        initialWeeks
+        );
 
     QSignalSpy preferencesChanged(
         &panel,
         &CalendarPreferencesPanel::calendarPreferencesChanged
         );
     QVERIFY(preferencesChanged.isValid());
-    RecordingCalendarPromptService prompts;
-    CalendarPromptServiceOverride promptOverride(&prompts);
-
     saveButton->click();
 
-    QCOMPARE(prompts.messages.size(), 1);
-    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(preferencesChanged.count(), 1);
+    QCOMPARE(preferencesChanged.at(0).at(0).toBool(), false);
+    QCOMPARE(state->scheduleWriteAttemptCount, 1);
+    QCOMPARE(state->scheduleWriteCount, 1);
     QCOMPARE(
-        prompts.messages.constFirst().title,
-        QStringLiteral("Academic Schedule Not Saved")
+        provider->schedule()
+            .yearSchedule(SchoolLevel::Elementary, 2026)
+            .weeks[2],
+        proposedWeeks
         );
-    QCOMPARE(
-        prompts.messages.constFirst().details,
-        QString::fromStdString(state->scheduleReadFailure)
+    QCOMPARE(elementarySummerWeeks->value(), proposedWeeks);
+    QCOMPARE(provider->revision(), revisionBefore + 1);
+    QCOMPARE(revisionChanged.count(), 1);
+}
+
+void CalendarPreferencesRestoreDefaultsTests::
+laterScheduleReadFailureLocksAndRecoversWithDraft()
+{
+    auto state = std::make_shared<CalendarPreferenceState>();
+    auto provider = makeProvider(state);
+    const QJsonObject scheduleBefore = provider->schedule().toJson();
+    const int revisionBefore = provider->revision();
+    QSignalSpy revisionChanged(
+        provider.get(),
+        &AcademicCalendarProvider::revisionChanged
         );
-    QCOMPARE(preferencesChanged.count(), 0);
-    QCOMPARE(state->scheduleWriteAttemptCount, 0);
-    QCOMPARE(state->scheduleWriteCount, 0);
-    QCOMPARE(provider->schedule().toJson(), defaultSchedule);
+    QVERIFY(revisionChanged.isValid());
+
+    ApplicationServices services;
+    CalendarPreferencesPanel panel(provider.get(), &services);
+    auto* const warning = panel.findChild<QLabel*>(
+        QStringLiteral("preferencesCalendarScheduleReadWarning")
+        );
+    auto* const linkOption = panel.findChild<QCheckBox*>(
+        QStringLiteral("preferencesCalendarLinkWinterSpring")
+        );
+    auto* const saveButton = panel.findChild<QPushButton*>(
+        QStringLiteral("preferencesCalendarSaveTermSchedule")
+        );
+    QVERIFY(warning);
+    QVERIFY(linkOption);
+    QVERIFY(saveButton);
+    const QList<QWidget*> controls = calendarScheduleControls(panel);
+    QCOMPARE(controls.size(), 20);
+    linkOption->setChecked(false);
+    auto* const termYear = panel.findChild<QSpinBox*>(
+        QStringLiteral("preferencesCalendarTermYear")
+        );
+    QVERIFY(termYear);
+    termYear->setValue(2026);
+    for (QWidget* const control : controls)
+    {
+        QVERIFY(control->isEnabled());
+    }
+    QVERIFY(warning->isHidden());
+
+    QGridLayout* const scheduleFields = calendarScheduleGrid(panel);
+    QVERIFY(scheduleFields);
+    auto* const elementarySummerWeeks = qobject_cast<QSpinBox*>(
+        widgetAt(scheduleFields, 4, 2)
+        );
+    QVERIFY(elementarySummerWeeks);
+    const int originalWeeks = elementarySummerWeeks->value();
+    elementarySummerWeeks->setValue(originalWeeks + 1);
+    const int proposedWeeks = elementarySummerWeeks->value();
+    QCOMPARE(proposedWeeks, originalWeeks + 1);
+
+    state->failScheduleReads = true;
+    provider->reload();
+
+    QVERIFY(!provider->schedulePersistenceKnown());
+    QVERIFY(!warning->isHidden());
+    QVERIFY(warning->text().contains(QStringLiteral("default or cached")));
+    for (QWidget* const control : controls)
+    {
+        QVERIFY(!control->isEnabled());
+    }
+    QCOMPARE(elementarySummerWeeks->value(), proposedWeeks);
+    QCOMPARE(provider->schedule().toJson(), scheduleBefore);
     QCOMPARE(provider->revision(), revisionBefore);
     QCOMPARE(revisionChanged.count(), 0);
-    QCOMPARE(elementarySummerWeeks->value(), proposedWeeks);
+    saveButton->click();
+    QCOMPARE(state->scheduleWriteAttemptCount, 0);
+    QCOMPARE(state->scheduleWriteCount, 0);
 
     state->failScheduleReads = false;
     provider->reload();
+
+    QVERIFY(provider->schedulePersistenceKnown());
+    QVERIFY(warning->isHidden());
+    QCOMPARE(warning->text(), QString());
+    for (QWidget* const control : controls)
+    {
+        QVERIFY(control->isEnabled());
+    }
+    QCOMPARE(elementarySummerWeeks->value(), proposedWeeks);
+    QCOMPARE(provider->schedule().toJson(), scheduleBefore);
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(revisionChanged.count(), 0);
+
     saveButton->click();
 
-    QCOMPARE(prompts.messages.size(), 1);
-    QCOMPARE(preferencesChanged.count(), 1);
-    QCOMPARE(preferencesChanged.at(0).at(0).toBool(), false);
     QCOMPARE(state->scheduleWriteAttemptCount, 1);
     QCOMPARE(state->scheduleWriteCount, 1);
     QCOMPARE(
@@ -1507,6 +1660,23 @@ eventDisplayReadFailureBlocksOnlyItsGroup()
     QVERIFY(hideStartOfTerm);
     QVERIFY(startWeekOnMonday);
     QVERIFY(warning);
+    auto* const linkOption = panel.findChild<QCheckBox*>(
+        QStringLiteral("preferencesCalendarLinkWinterSpring")
+        );
+    QVERIFY(linkOption);
+    linkOption->setChecked(false);
+    const QList<QWidget*> scheduleControls =
+        calendarScheduleControls(panel);
+    QCOMPARE(scheduleControls.size(), 20);
+    auto* const scheduleWarning = panel.findChild<QLabel*>(
+        QStringLiteral("preferencesCalendarScheduleReadWarning")
+        );
+    QVERIFY(scheduleWarning);
+    QVERIFY(scheduleWarning->isHidden());
+    for (QWidget* const control : scheduleControls)
+    {
+        QVERIFY(control->isEnabled());
+    }
     QVERIFY(!showAllCampuses->isEnabled());
     QVERIFY(!hideStartOfTerm->isEnabled());
     QVERIFY(startWeekOnMonday->isEnabled());
@@ -1836,6 +2006,23 @@ firstDayReadFailureBlocksOnlyItsGroup()
     QVERIFY(hideStartOfTerm);
     QVERIFY(startWeekOnMonday);
     QVERIFY(warning);
+    auto* const linkOption = panel.findChild<QCheckBox*>(
+        QStringLiteral("preferencesCalendarLinkWinterSpring")
+        );
+    QVERIFY(linkOption);
+    linkOption->setChecked(false);
+    const QList<QWidget*> scheduleControls =
+        calendarScheduleControls(panel);
+    QCOMPARE(scheduleControls.size(), 20);
+    auto* const scheduleWarning = panel.findChild<QLabel*>(
+        QStringLiteral("preferencesCalendarScheduleReadWarning")
+        );
+    QVERIFY(scheduleWarning);
+    QVERIFY(scheduleWarning->isHidden());
+    for (QWidget* const control : scheduleControls)
+    {
+        QVERIFY(control->isEnabled());
+    }
     QVERIFY(showAllCampuses->isEnabled());
     QVERIFY(hideStartOfTerm->isEnabled());
     QVERIFY(!startWeekOnMonday->isEnabled());
