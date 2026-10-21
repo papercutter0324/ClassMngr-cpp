@@ -1,30 +1,25 @@
 # Latest Session Work
 
-## Current Deployment Handoff — phase2_batch493_resume_20261020 (paused)
+## Current Deployment Handoff — phase2_qt_rewrite_20261022 (complete)
 
-- Heavy route; branch `Qt-Rewrite`. The user requested a pause on 2026-10-20;
-  this handoff is recorded in the canonical deployment-state documents.
-- Batch493 is complete and pushed at `78989f8b`. Batch494 is active but
-  unpushed: F1202–F1206 are complete; F1207 is accepted/current; F1208–F1209
-  are discovered. F1206 closeout and F1207 acceptance are committed in
-  `08f4eaa4`. The complete ordered slice list and evidence are in the
-  [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
-  and [progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-- Source commits: F1202 `20edbe1c`, F1203 `2dff4c78`, F1204 `f6e02a7b`,
-  F1205 `75739bef`, and F1206 `60561d69`. All were committed after focused
-  independent verification. F1202 passed 3/3 tests; F1203 passed 5/5; F1204
-  passed 2/2; F1205 passed 2/2. F1206's planner and four direct name-import
-  UI selectors passed. Its broader page-save target had 35 passes and one
-  reproducible output-directory assertion failure in
-  `outputReportsUsesProjectedRegularSchedule()`; the failing path does not
-  call the changed name-import code, but no baseline was established. No full
-  suite or Windows build ran.
-- Resume with F1207 implementation, then complete and commit each slice. Since
-  F1208 is Batch494's second-last slice, discover Batch495 when starting F1208.
-  Close Batch494 and push it only after F1209 and the batch closeout commit.
-- F629 still awaits source-bound Windows x64 layout evidence; Phase 0 and Phase
-  2 gates remain open. The older F1175 teacher-fallback label failure remains
-  in the Phase 2 progress log.
+- Heavy route; branch `Qt-Rewrite`. Phase 2 is complete. Gate 1 and Gate 2
+  satisfy their exit criteria. Batch543 was pushed without force from remote
+  base `2d324b08` through `4f965da5`; `origin/Qt-Rewrite` matched the pushed
+  tip and the worktree was clean.
+- Batch543 includes F1316 `11ee8d80` (Sub Prep generation planning), F1317
+  `28f77666` (Class Details rejects canonical validation-context read errors
+  or mismatches), and closeout docs `4f965da5`. The user's F1103 decision was
+  implemented and independently verified. Phase 2 parity decisions, gate
+  evidence, and limits are in the [phase plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
+  and [progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md);
+  the [slice-batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
+  has no active batch.
+- The incremental 169-target audit built 168/169 targets; 167/170 selected
+  registrations passed. One Schedule Import review-readiness target did not
+  compile because its test uses raw-string initialization after the typed-key
+  API change; three tests have stale `2147483648` invalid-ID expectations. No
+  stale test assertions were changed and no full suite ran. F629's Windows x64
+  requalification remains separate. The next milestone is Phase 3.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 
@@ -91,7 +86,7 @@ Linux x64 Debug, and the informational Windows ARM64 cross-build on commit
 also passed. Phase 1 is closed; the next entry point is the Phase 2
 application use-case contract over the new domain types.
 
-## Current Deployment Handoff — linux_phase0_phase1_20260919 (paused)
+## Historical Deployment Handoff — linux_phase0_phase1_20260919 (paused)
 
 The user requested Linux Phase 0 and Phase 1 follow-up. The original Phase 0
 official exit gate remains Windows x64 plus macOS universal; this work adds a

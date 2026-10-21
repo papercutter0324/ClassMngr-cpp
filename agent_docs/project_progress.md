@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: `phase2_batch493_resume_20261020`. Route: Heavy; paused at the user's request.
+Current deployment: `phase2_qt_rewrite_20261022`. Route: Heavy; complete.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -53,31 +53,22 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1206 complete; F1207 accepted; Batch494 paused)
+### Current checkpoint - 2026-10-22 (Phase 2 complete; Batch543 pushed)
 
-Batch493 is complete and pushed to `origin/Qt-Rewrite` at `78989f8b`. Batch494
-has F1202–F1206 complete at source commits `20edbe1c`, `2dff4c78`, `f6e02a7b`,
-`75739bef`, and `60561d69`. F1207 is accepted/current; F1208 and F1209 remain
-discovered. The F1206 closeout/F1207 acceptance documentation is committed at
-`08f4eaa4`. Batch494 remains open and unpushed; this deployment is paused at
-the user's request.
+Phase 2 Gate 1 and Gate 2 satisfy their exit criteria. Batch543, containing
+F1316 (`11ee8d80`), F1317 (`28f77666`), and closeout documentation
+(`4f965da5`), was pushed without force to `origin/Qt-Rewrite` from
+`2d324b08` through `4f965da5`; the remote tip was verified and the worktree
+was clean. The current Phase 2 status and evidence are in the [phase plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
+and [progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
-Focused macOS verification passed for F1202 (3/3), F1203 (5/5, including
-Roster Model), F1204 (2/2), and F1205 (2/2). F1206's planner test and four
-direct name-import UI selectors passed. The broader
-`ClassMngrSpeakingEvalPageSaveTests` result was 35 passed and 1 failed at
-`outputReportsUsesProjectedRegularSchedule()` on its output-directory
-assertion; the failure reproduced alone, its path does not call the changed
-name-import planner, and no baseline was established. No full suite or Windows
-build ran. Acceptance and verification details are in the [Phase 2 progress
-log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-
-On resume, implement F1207. Starting F1208 requires discovery of the next
-batch because F1208 is Batch494's second-last slice. Complete F1208–F1209 and
-Batch494 closeout before pushing the batch. F1175's unresolved Class Transfer
-teacher-fallback label failure remains tracked in the Phase 2 log. F629 still
-awaits source-bound Windows x64 layout evidence; the Phase 0 and Phase 2 gates
-remain open.
+The cumulative incremental audit built 168/169 targets; 167/170 selected
+registrations passed. One Schedule Import target failed to compile against a
+typed-key API because its test uses stale raw-string initialization; three
+tests retain stale expectations that teacher ID `2147483648` is invalid. The
+full suite was not run. These limits are recorded without weakening tests or
+claiming exhaustive parity. F629's source-bound Windows x64 requalification
+remains separate from Phase 2. The next milestone is Phase 3.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

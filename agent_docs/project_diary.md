@@ -8462,3 +8462,20 @@ transparent 1×1 `QWizard::BackgroundPixmap` in the test-only show helper avoids
 the lookup. Offscreen and minimal platform selection alone did not. Keep this
 workaround inside test harnesses; the focused selector and full Wizard CTest
 passed with assertions intact.
+
+## 2026-10-22 - Phase 2 closure and slice-batch records
+
+Phase 2 Gate 1 and Gate 2 satisfy their exit criteria. User-directed decisions
+now resolve the Class Details context-read failure (reject the save), legacy
+schema support (reject schemas below v6), and Calendar Import's legacy event
+cap behavior (remove the cap). Preserve the approved fail-closed Teacher
+Import and Speaking Evaluation guards, and the documented Class Transfer
+identity-free exception. No user-initiated backup/restore behavior was found.
+
+The updated record rule keeps only the active batch and next discovered batch
+in `Current-Slice-Batches.md`; phase requirements/current status stay in the
+phase plan, while durable verification and gate evidence stay in its progress
+log. Closed-batch archives and routine chronology were removed. Batch543
+(F1316, F1317, and closeout docs) was pushed from `2d324b08` through `4f965da5`.
+The incremental audit's stale-test limitations remain recorded as-is; do not
+weaken tests or imply the full suite passed.
