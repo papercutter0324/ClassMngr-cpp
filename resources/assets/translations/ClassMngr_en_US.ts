@@ -6916,6 +6916,16 @@ Rm: %1</source>
         <source>Lunch</source>
         <translation>Lunch</translation>
     </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1147"/>
+        <source>Schedule data could not be loaded.</source>
+        <translation>Schedule data could not be loaded.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1149"/>
+        <source>Retry</source>
+        <translation>Retry</translation>
+    </message>
 </context>
 <context>
     <name>Sidebar</name>

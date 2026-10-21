@@ -102,6 +102,11 @@ private:
     void loadSettings();
     void loadSchedule();
     void updateButtons();
+    void setScheduleSourceReadStatus(
+        bool visible,
+        bool retryable
+        );
+    void updateScheduleSourceReadStatus();
     void outputSchedule(
         bool print
         );
@@ -144,4 +149,9 @@ private:
     QPushButton* m_testingClassesButton = nullptr;
     QPushButton* m_importButton = nullptr;
     QLabel* m_testingBanner = nullptr;
+    QWidget* m_sourceErrorBanner = nullptr;
+    QLabel* m_sourceErrorLabel = nullptr;
+    QPushButton* m_sourceRetryButton = nullptr;
+    bool m_sourceErrorVisible = false;
+    bool m_sourceErrorRetryable = false;
 };

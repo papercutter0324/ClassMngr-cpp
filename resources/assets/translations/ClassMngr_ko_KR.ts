@@ -6962,6 +6962,16 @@ Rm: %1</source>
         <source>Lunch</source>
         <translation>점심</translation>
     </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1147"/>
+        <source>Schedule data could not be loaded.</source>
+        <translation>일정 데이터를 불러오지 못했습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1149"/>
+        <source>Retry</source>
+        <translation>다시 시도</translation>
+    </message>
 </context>
 <context>
     <name>Sidebar</name>

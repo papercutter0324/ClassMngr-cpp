@@ -235,6 +235,7 @@ void ScheduleWidget::releaseGeneratedResources()
     m_scheduleModel = std::make_shared<const ScheduleViewModel>();
     m_previewModel = {};
     m_hasPreviewModel = false;
+    setScheduleSourceReadStatus(false, false);
     ScheduleTableRenderer::clear(m_table);
 }
 
@@ -250,6 +251,7 @@ void ScheduleWidget::clearDatabaseState()
     m_regularWeekdaySlotTogglingEnabled = false;
     m_interactionState.clear();
     m_scheduleModel = std::make_shared<const ScheduleViewModel>();
+    setScheduleSourceReadStatus(false, false);
 
     updateButtons();
 }
@@ -814,6 +816,27 @@ void ScheduleWidget::buildUi()
     m_testingBanner->setMinimumHeight(36);
     layout->addWidget(m_testingBanner);
 
+    m_sourceErrorBanner = new QWidget(this);
+    m_sourceErrorBanner->setObjectName(
+        QStringLiteral("scheduleSourceErrorBanner")
+        );
+    auto* sourceErrorLayout = new QHBoxLayout(m_sourceErrorBanner);
+    sourceErrorLayout->setContentsMargins(10, 6, 10, 6);
+    sourceErrorLayout->setSpacing(8);
+    m_sourceErrorLabel = new QLabel(m_sourceErrorBanner);
+    m_sourceErrorLabel->setObjectName(
+        QStringLiteral("scheduleSourceErrorLabel")
+        );
+    m_sourceErrorLabel->setWordWrap(true);
+    sourceErrorLayout->addWidget(m_sourceErrorLabel, 1);
+    m_sourceRetryButton = new QPushButton(m_sourceErrorBanner);
+    m_sourceRetryButton->setObjectName(
+        QStringLiteral("scheduleSourceRetryButton")
+        );
+    sourceErrorLayout->addWidget(m_sourceRetryButton);
+    layout->addWidget(m_sourceErrorBanner);
+    m_sourceErrorBanner->setHidden(true);
+
     m_table =
         new QTableWidget(
             0,
@@ -867,6 +890,16 @@ void ScheduleWidget::buildUi()
         &QPushButton::clicked,
         this,
         &ScheduleWidget::scheduleImportRequested
+        );
+
+    connect(
+        m_sourceRetryButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            loadSchedule();
+        }
         );
 
 
@@ -944,9 +977,16 @@ void ScheduleWidget::loadSchedule()
         StartupProfiler::recordScheduleRenderStarted(profilingOwner);
     }
 
-    m_scheduleModel = m_hasPreviewModel
-        ? m_previewModel
-        : std::make_shared<const ScheduleViewModel>(buildScheduleModel());
+    if (m_hasPreviewModel)
+    {
+        setScheduleSourceReadStatus(false, false);
+        m_scheduleModel = m_previewModel;
+    }
+    else
+    {
+        m_scheduleModel =
+            std::make_shared<const ScheduleViewModel>(buildScheduleModel());
+    }
 
     const ScheduleTableRenderMetrics metrics =
         ScheduleTableRenderer::render(
@@ -1003,6 +1043,9 @@ void ScheduleWidget::updateButtons()
         || !m_testingClassesButton
         || !m_importButton
         || !m_testingBanner
+        || !m_sourceErrorBanner
+        || !m_sourceErrorLabel
+        || !m_sourceRetryButton
         )
     {
         return;
@@ -1032,6 +1075,8 @@ void ScheduleWidget::updateButtons()
     m_importButton->setText(
         tr("Import")
         );
+
+    updateScheduleSourceReadStatus();
 
     const bool testing =
         m_displayMode == ScheduleDisplayMode::Testing;
@@ -1077,6 +1122,67 @@ void ScheduleWidget::updateButtons()
                     )
             );
     }
+}
+
+void ScheduleWidget::setScheduleSourceReadStatus(
+    const bool visible,
+    const bool retryable
+    )
+{
+    m_sourceErrorVisible = visible && !m_hasPreviewModel;
+    m_sourceErrorRetryable = m_sourceErrorVisible && retryable;
+    updateScheduleSourceReadStatus();
+}
+
+void ScheduleWidget::updateScheduleSourceReadStatus()
+{
+    if (!m_sourceErrorBanner
+        || !m_sourceErrorLabel
+        || !m_sourceRetryButton)
+    {
+        return;
+    }
+
+    m_sourceErrorLabel->setText(
+        tr("Schedule data could not be loaded.")
+        );
+    m_sourceRetryButton->setText(tr("Retry"));
+    m_sourceRetryButton->setVisible(
+        m_sourceErrorVisible && m_sourceErrorRetryable
+        );
+    m_sourceErrorBanner->setVisible(
+        m_sourceErrorVisible && !m_hasPreviewModel
+        );
+
+    const bool dark =
+        palette().color(QPalette::Window).lightness() < 128;
+    m_sourceErrorBanner->setStyleSheet(
+        dark
+            ? QStringLiteral(
+                "QWidget#scheduleSourceErrorBanner {"
+                "background:#402626;"
+                "border:1px solid #774343;"
+                "border-radius:6px;"
+                "}"
+                "QLabel#scheduleSourceErrorLabel {"
+                "background:transparent;"
+                "border:none;"
+                "color:#FFE3E3;"
+                "}"
+                )
+            : QStringLiteral(
+                "QWidget#scheduleSourceErrorBanner {"
+                "background:#FCE8E8;"
+                "border:1px solid #D99A9A;"
+                "border-radius:6px;"
+                "}"
+                "QLabel#scheduleSourceErrorLabel {"
+                "background:transparent;"
+                "border:none;"
+                "color:#5A2020;"
+                "}"
+                )
+        );
 }
 
 void ScheduleWidget::reloadSlotStates()
@@ -1291,12 +1397,22 @@ ScheduleViewModel ScheduleWidget::buildScheduleModel()
                 source.error().message.data(),
                 static_cast<qsizetype>(source.error().message.size())
                 );
+            setScheduleSourceReadStatus(
+                true,
+                source.error().recoverable
+                );
+        }
+        else
+        {
+            setScheduleSourceReadStatus(false, false);
         }
         return buildScheduleViewModel(
             unavailableResult,
             request
             );
     }
+
+    setScheduleSourceReadStatus(false, false);
 
     const ScheduleBuilder builder;
     const ScheduleBuildResult result = builder.build(
