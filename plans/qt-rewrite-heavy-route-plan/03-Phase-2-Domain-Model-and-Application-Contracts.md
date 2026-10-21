@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1293 is next for acceptance in unpushed Batch525 and triggers Batch526 discovery when work starts; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: F1293 is next for acceptance in unpushed Batch525; its work start triggered bounded Batch526 discovery with provisional, unaccepted F1295; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1292 is complete locally in unpushed Batch525; F1293 is next for acceptance and triggers Batch526 discovery when work starts, with F1294 last. See the [F1292 completion](03-Phase-2-Progress-Log.md#f1292-teacher-info-require-reload-after-post-write-refresh-failure-complete-locally-2026-10-21).
+Batch526 discovery was triggered when work started on F1293, the next slice for acceptance in unpushed Batch525. The bounded sample found provisional, unaccepted F1295; F1292 is complete locally and F1294 remains last in Batch525. See the [Batch526 discovery record](03-Phase-2-Progress-Log.md#batch526-discovery-triggered-at-f1293-2026-10-21).
 
 ### Slice discovery batches
 
@@ -83,7 +83,7 @@ screened out. F1292 is complete locally in unpushed Batch525.
 
 1. F1292 - Complete locally: on a successful write followed by reload failure,
    lock the stale Teacher Info page until a successful reopen.
-2. F1293 - Discovered; next for acceptance, then start Batch526 discovery:
+2. F1293 - Discovered; next for acceptance; work start triggered Batch526 discovery:
    new-profile replacement may close the active profile before replacement
    creation succeeds; expected behavior needs acceptance.
 3. F1294 - Discovered; last after F1293: nested-folder parent metadata through

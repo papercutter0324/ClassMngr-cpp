@@ -62495,3 +62495,32 @@ claimed.
 F1292 is complete locally; Batch525 remains active and unpushed. F1293 is next
 for acceptance and triggers Batch526 discovery when work starts; F1294 follows.
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### Batch526 discovery triggered at F1293 - 2026-10-21
+
+Starting work on F1293, the second-last candidate in Batch525, triggered a
+bounded discovery sample across two read-only lanes. Both lanes found one
+provisional candidate, F1295: Calendar preferences may omit a schedule-read
+failure. `AcademicCalendarProvider::reload()` sets
+`m_scheduleReadError` and `m_schedulePersistenceKnown=false` but returns
+without signals (`academic_calendar_provider.cpp:287-299`).
+`CalendarPreferencesPanel::loadSchedules()` retains the displayed schedule;
+`updateLoadWarning()` includes event-display and first-day errors but not the
+schedule-read error (`calendar_preferences_panel.cpp:639-695,845-875`). Term
+controls and save are built enabled (`calendar_preferences_panel.cpp:443-557`).
+The provider test checks retained schedule and blocked writes, but not UI
+disclosure (`academic_calendar_tests.cpp:453+`). Acceptance should decide
+whether the UI identifies the schedule as stale/unavailable and disables its
+controls until a newly loaded known schedule.
+
+The contracts lane found no other actionable candidate in My Classes batch
+reads or directory save contracts and screened deferred F1103. The feature
+lane screened cache, import, and roster paths. This is a bounded, nonexhaustive
+sample; the feature lane did not receive F1293/F1294 details, so cross-check
+coverage is limited. Candidate F1295 remains discovered and unaccepted.
+
+No other slices were found.
+
+Batch525 remains active and unpushed: F1292 is complete locally, F1293 is next
+for acceptance, and F1294 is last. Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open.
