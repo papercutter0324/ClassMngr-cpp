@@ -80,6 +80,7 @@ signals:
 private:
     void buildUi();
     void populateTeachers();
+    void addUnavailableTeacherChoice(qint64 teacherId);
     void updateLevelOptions();
     void rebuildClassList(
         int preferredClassId = -1,
@@ -121,6 +122,7 @@ private:
     int m_currentClassId{-1};
     int m_requestedClassId{-1};
     bool m_editorDirty = false;
+    bool m_teacherChoicesTechnicallyUnavailable = false;
     AutosaveCoordinator* m_autosave = nullptr;
     QString m_pendingDay;
     QString m_pendingStartTime;

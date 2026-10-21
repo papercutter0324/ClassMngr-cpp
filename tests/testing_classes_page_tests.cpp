@@ -546,6 +546,7 @@ private slots:
     void emptySuccessfulTestingTeacherChoicesKeepNoneSelectedWithoutWarning();
     void unavailableTestingTeacherChoicesQueryIsSilent();
     void testingTeacherChoicesQueryFailureShowsExactWarning();
+    void testingTeacherChoicesTechnicalFailurePreservesAssignedTeacherUntilNoneSelected();
     void testingClassDetailsReadMapsEditorRosterAndCleanState();
     void unavailableTestingClassDetailsReadIsSilent();
     void missingTestingClassDetailsShowsWarning();
@@ -1519,6 +1520,148 @@ testingTeacherChoicesQueryFailureShowsExactWarning()
         prompts.messages.constFirst().details,
         QStringLiteral("injected teacher choices repository detail")
         );
+}
+
+void TestingClassesPageTests::
+testingTeacherChoicesTechnicalFailurePreservesAssignedTeacherUntilNoneSelected()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    TestingClassRepository* const repository =
+        session->testingClassRepository();
+    QVERIFY(repository);
+
+    QSqlQuery insertTeacher(session->database());
+    QVERIFY(insertTeacher.prepare(QStringLiteral(
+        "INSERT OR IGNORE INTO teachers (id, teacher_kr, teacher_en) "
+        "VALUES (7, 'Teacher Seven', 'Teacher Seven')"
+        )));
+    QVERIFY2(
+        insertTeacher.exec(),
+        qPrintable(insertTeacher.lastError().text())
+        );
+
+    TestingClass existing = testingClass(
+        QStringLiteral("Assigned Teacher Class")
+        );
+    existing.teacherId = 7;
+    existing.room = QStringLiteral("401");
+    const auto existingId = repository->createTestingClass(existing);
+    QVERIFY(existingId);
+
+    FixedTestingClassChoicesReadPort classChoicesReadPort;
+    setSingleTestingClassChoice(
+        classChoicesReadPort,
+        *existingId,
+        existing.name
+        );
+    FixedTestingTeacherChoicesReadPort teacherChoicesReadPort;
+    teacherChoicesReadPort.result = ClassMngr::Next::Application::
+        TestingTeacherChoicesReadResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "injected teacher choices repository detail",
+            .recoverable = false
+        });
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        &classChoicesReadPort,
+        nullptr,
+        &teacherChoicesReadPort
+        );
+    page.openTestingClass(*existingId);
+    page.refresh();
+
+    auto* const teacherCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassTeacherCombo")
+        );
+    auto* const nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* const roomEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassRoomEdit")
+        );
+    QVERIFY(teacherCombo);
+    QVERIFY(nameEdit);
+    QVERIFY(roomEdit);
+    QCOMPARE(teacherChoicesReadPort.callCount, 1);
+    QCOMPARE(teacherCombo->count(), 2);
+    QCOMPARE(teacherCombo->itemText(0), QStringLiteral("None"));
+    QCOMPARE(teacherCombo->itemData(0).toLongLong(), qint64(-1));
+    QCOMPARE(
+        teacherCombo->currentText(),
+        QStringLiteral("Teacher 7 (choices could not be loaded)")
+        );
+    QCOMPARE(teacherCombo->currentData().toLongLong(), qint64(7));
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Load Teachers")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().severity,
+        PromptSeverity::Warning
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("Teachers could not be loaded.")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().details,
+        QStringLiteral("injected teacher choices repository detail")
+        );
+
+    nameEdit->setText(QStringLiteral("Updated Assigned Teacher Class"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(page.saveChanges());
+
+    auto stored = repository->loadTestingClass(*existingId);
+    QVERIFY(stored);
+    QCOMPARE(stored->name, QStringLiteral("Updated Assigned Teacher Class"));
+    QCOMPARE(stored->teacherId, qint64(7));
+    QSqlQuery assignedTeacher(session->database());
+    QVERIFY(assignedTeacher.prepare(QStringLiteral(
+        "SELECT typeof(teacher_id), teacher_id "
+        "FROM class_info WHERE class_id=?"
+        )));
+    assignedTeacher.addBindValue(*existingId);
+    QVERIFY(assignedTeacher.exec());
+    QVERIFY(assignedTeacher.next());
+    QCOMPARE(assignedTeacher.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(assignedTeacher.value(1).toLongLong(), qint64(7));
+    QVERIFY(!page.hasUnsavedChanges());
+
+    const int noneIndex = teacherCombo->findData(-1);
+    QVERIFY(noneIndex >= 0);
+    teacherCombo->setCurrentIndex(noneIndex);
+    QCOMPARE(teacherCombo->currentData().toLongLong(), qint64(-1));
+    QVERIFY(roomEdit->text().isEmpty());
+    roomEdit->setText(QStringLiteral("401"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(page.saveChanges());
+
+    stored = repository->loadTestingClass(*existingId);
+    QVERIFY(stored);
+    QCOMPARE(stored->teacherId, qint64(-1));
+    QCOMPARE(stored->room, QStringLiteral("401"));
+    QSqlQuery unassignedTeacher(session->database());
+    QVERIFY(unassignedTeacher.prepare(QStringLiteral(
+        "SELECT teacher_id FROM class_info WHERE class_id=?"
+        )));
+    unassignedTeacher.addBindValue(*existingId);
+    QVERIFY(unassignedTeacher.exec());
+    QVERIFY(unassignedTeacher.next());
+    QVERIFY(unassignedTeacher.value(0).isNull());
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
 }
 
 void TestingClassesPageTests::

@@ -57,6 +57,7 @@
 namespace
 {
 constexpr int TeacherRoomRole = Qt::UserRole + 1;
+constexpr int TeacherUnavailableRole = Qt::UserRole + 2;
 using TestingClassesOrderingRank =
     ClassMngr::Next::Application::TestingClassesOrderingRank;
 
@@ -240,6 +241,7 @@ void TestingClassesPage::clearDatabaseState()
     m_autosave->setLoading(true);
     m_currentClassId = -1;
     m_requestedClassId = -1;
+    m_teacherChoicesTechnicallyUnavailable = false;
     m_savedClass = {};
     m_pendingDay.clear();
     m_pendingStartTime.clear();
@@ -281,6 +283,23 @@ void TestingClassesPage::retranslateUi()
     m_nameEdit->setToolTip(
         tr("This name identifies the class on the Testing schedule and its roster printout.")
         );
+    for (int index = 0; index < m_teacherCombo->count(); ++index)
+    {
+        if (
+            m_teacherCombo
+                ->itemData(index, TeacherUnavailableRole)
+                .toBool()
+            )
+        {
+            const qint64 teacherId =
+                m_teacherCombo->itemData(index).toLongLong();
+            m_teacherCombo->setItemText(
+                index,
+                tr("Teacher %1 (choices could not be loaded)")
+                    .arg(teacherId)
+                );
+        }
+    }
 }
 
 PageOutputCapabilities TestingClassesPage::outputCapabilities() const
@@ -1119,6 +1138,26 @@ void TestingClassesPage::populateTeachers()
                 );
     if (!loaded)
     {
+        m_teacherChoicesTechnicallyUnavailable =
+            loaded.error().code
+            == ClassMngr::Next::Domain::ErrorCode::Technical;
+        if (m_teacherChoicesTechnicallyUnavailable)
+        {
+            addUnavailableTeacherChoice(m_savedClass.teacherId);
+            if (selectedId != m_savedClass.teacherId)
+            {
+                addUnavailableTeacherChoice(selectedId);
+            }
+
+            const int selectedIndex =
+                m_teacherCombo->findData(selectedId);
+            m_teacherCombo->setCurrentIndex(
+                selectedIndex >= 0
+                    ? selectedIndex
+                    : 0
+                );
+        }
+
         if (
             loaded.error().code
             != ClassMngr::Next::Domain::ErrorCode::NotFound
@@ -1137,6 +1176,8 @@ void TestingClassesPage::populateTeachers()
         }
         return;
     }
+
+    m_teacherChoicesTechnicallyUnavailable = false;
 
     for (const auto& choice : loaded.value().choices)
     {
@@ -1175,6 +1216,24 @@ void TestingClassesPage::populateTeachers()
             ? selectedIndex
             : 0
         );
+}
+
+void TestingClassesPage::addUnavailableTeacherChoice(
+    const qint64 teacherId
+    )
+{
+    if (teacherId <= 0 || m_teacherCombo->findData(teacherId) >= 0)
+    {
+        return;
+    }
+
+    m_teacherCombo->addItem(
+        tr("Teacher %1 (choices could not be loaded)").arg(teacherId),
+        teacherId
+        );
+    const int index = m_teacherCombo->count() - 1;
+    m_teacherCombo->setItemData(index, QString(), TeacherRoomRole);
+    m_teacherCombo->setItemData(index, true, TeacherUnavailableRole);
 }
 
 void TestingClassesPage::updateLevelOptions()
@@ -1542,6 +1601,22 @@ void TestingClassesPage::loadEditorValue(
     updateLevelOptions();
     m_levelCombo->setCurrentText(testingClass.level);
     m_roomEdit->setText(testingClass.room);
+
+    for (int index = m_teacherCombo->count() - 1; index >= 0; --index)
+    {
+        if (
+            m_teacherCombo
+                ->itemData(index, TeacherUnavailableRole)
+                .toBool()
+            )
+        {
+            m_teacherCombo->removeItem(index);
+        }
+    }
+    if (m_teacherChoicesTechnicallyUnavailable)
+    {
+        addUnavailableTeacherChoice(testingClass.teacherId);
+    }
 
     const int teacherIndex =
         m_teacherCombo->findData(

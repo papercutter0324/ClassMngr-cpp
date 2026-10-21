@@ -9311,6 +9311,12 @@ Version: %2</source>
         <translation type="unfinished">없음</translation>
     </message>
     <message>
+        <location filename="../../../src/features/classes/ui/testing_classes_page.cpp" line="298"/>
+        <location filename="../../../src/features/classes/ui/testing_classes_page.cpp" line="1231"/>
+        <source>Teacher %1 (choices could not be loaded)</source>
+        <translation>교사 %1 (선택 항목을 불러오지 못함)</translation>
+    </message>
+    <message>
         <location line="+369"/>
         <source>Choose Testing Class Color</source>
         <translation type="unfinished"></translation>
