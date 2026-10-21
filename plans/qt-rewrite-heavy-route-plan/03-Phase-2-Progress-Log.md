@@ -62600,3 +62600,17 @@ Batch525 (F1292-F1293) is complete locally and awaits push; F1294 was screened
 out. Batch526 is active with provisional, unaccepted F1295; no acceptance or
 implementation is claimed for F1295. Gate 1 and Gate 2 remain Partial, and the
 Phase 2 exit gate remains Open.
+
+### Batch525 push receipt - 2026-10-21
+
+`git push origin Qt-Rewrite` exited successfully for the verified upstream
+`origin/Qt-Rewrite` (`github.com/papercutter0324/ClassMngr-cpp`), advancing it
+from `3600c0fe4e80bb56b57e34804f19fb4c8725024d` to
+`655cf04215974ea2264117731dd2022fda062da4`. Local `HEAD` and the remote-tracking
+tip matched at `655cf04215974ea2264117731dd2022fda062da4`; the worktree was
+clean immediately after the push.
+
+Batch525 (F1292-F1293) is pushed through closeout `655cf042`; F1294 was
+screened out. Batch526 is active with provisional, unaccepted F1295. Gate 1
+and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. This receipt
+does not imply full-suite, Windows, clean-build, hosted-CI, or gate completion.

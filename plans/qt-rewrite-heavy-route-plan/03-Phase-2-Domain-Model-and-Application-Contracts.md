@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch525 (F1292-F1293) is complete locally and awaiting push, with F1294 screened out; Batch526 has provisional, unaccepted F1295; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch525 (F1292-F1293) is pushed through closeout `655cf042` with F1294 screened out; Batch526 has provisional, unaccepted F1295; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1293 is complete locally in Batch525, which is awaiting push; F1294 was screened out. Batch526 is active with provisional, unaccepted F1295. See the [F1293 completion and Batch525 closeout](03-Phase-2-Progress-Log.md#f1293-preserve-the-active-profile-on-failed-new-profile-creation-complete-locally-2026-10-21).
+Batch525 (F1292-F1293) was pushed through closeout `655cf042`; F1294 was screened out. Batch526 is active with provisional, unaccepted F1295. See the [Batch525 push receipt](03-Phase-2-Progress-Log.md#batch525-push-receipt-2026-10-21).
 
 ### Slice discovery batches
 
