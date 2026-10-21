@@ -62932,9 +62932,9 @@ remote tip matched at the new SHA, and the worktree was clean at push. The
 ordinary push succeeded.
 
 Batch528 (F1297) is pushed through closeout `44827af3`; its receipt is
-pending. Batch529 is active with F1298 accepted before implementation, and
-implementation has not started. Gate 1 and Gate 2 remain Partial, and the
-Phase 2 exit gate remains Open.
+recorded by documentation commit `fbff55fa42745b49740395e48e58b650233178ab`,
+which is pushed. Batch529 is active with F1298 implementation underway. Gate 1
+and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Batch530 bounded discovery following F1298 acceptance - 2026-10-21
 
@@ -62957,3 +62957,27 @@ started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
 Open.
 
 No other slices were found.
+
+### Batch531 bounded discovery during F1298 implementation - 2026-10-21
+
+The feature lane found a ScheduleWidget failed-source-read UX candidate. The
+contract lane found no candidate and screened the prior campus read behavior
+(F857/F1067) and Class Transfer Export work (F1290). Investigation found that
+an additive inline UI status can preserve F141's existing `NotFound` behavior.
+The discovery was read-only; no tests or builds were run.
+
+No other slices were found.
+
+### F1299 ScheduleWidget source-read error status accepted before implementation - 2026-10-21
+
+F1299 is accepted for the next batch before implementation. Successful
+schedule source results and genuine empty schedules remain normal. `NotFound`
+retains F141's silent days-only behavior. Other errors retain days-only output
+and existing `qWarning` diagnostics while showing a localized, nonmodal
+generic source error. Show Retry only for typed recoverable failures; hide it
+for nonrecoverable `Validation` failures, and retry the same schedule request.
+Success clears the error; repeated failure keeps it visible. Clear stale status
+on `NotFound`, success, database-state clearing, and preview. Preserve
+independent slot/testing reads, navigation, and normal schedule interactions.
+
+At acceptance, F1299 implementation has not started.
