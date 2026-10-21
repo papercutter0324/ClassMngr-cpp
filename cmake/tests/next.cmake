@@ -94,6 +94,37 @@ add_test(
     COMMAND ClassMngrNextApplicationScheduleSlotPolicyTests
 )
 
+# Keep Testing-mode grade suppression independent of Qt and normalization.
+add_executable(
+    ClassMngrNextApplicationScheduleTestingGradeSuppressionPolicyTests
+    tests/next_application_schedule_testing_grade_suppression_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationScheduleTestingGradeSuppressionPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationScheduleTestingGradeSuppressionPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationScheduleTestingGradeSuppressionPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationScheduleTestingGradeSuppressionPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationScheduleTestingGradeSuppressionPolicyTests
+    COMMAND ClassMngrNextApplicationScheduleTestingGradeSuppressionPolicyTests
+)
+
 # Class Analytics composition/calculation must remain Qt-free.
 add_executable(
     ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests

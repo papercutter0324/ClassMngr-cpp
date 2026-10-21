@@ -3,6 +3,7 @@
 #include "domain/rules/schedule_value_parser.h"
 #include "features/schedule/ui/schedule_time_formatter.h"
 #include "next/application/schedule_slot_policy.h"
+#include "next/application/schedule_testing_grade_suppression_policy.h"
 #include "next/domain/course.h"
 
 #include <algorithm>
@@ -14,6 +15,7 @@ using ClassMngr::Next::Application::ScheduleSlotPolicy;
 using ClassMngr::Next::Application::ScheduleSlotCanonicalHour;
 using ClassMngr::Next::Application::ScheduleSlotState;
 using ClassMngr::Next::Application::scheduleSlotPolicy;
+using ClassMngr::Next::Application::scheduleTestingSuppressesGradeBand;
 
 std::optional<ScheduleSlotCanonicalHour> canonicalScheduleHour(
     const QString& timeLabel
@@ -158,12 +160,10 @@ bool testingSuppressesEntry(
             entry.classGrade.trimmed().toUpper().toStdString()
             );
 
-    return gradeBand == ClassMngr::Next::Domain::CourseGradeBand::M2
-        || gradeBand == ClassMngr::Next::Domain::CourseGradeBand::M3
-        || (
-            testingAffectsM1
-            && gradeBand == ClassMngr::Next::Domain::CourseGradeBand::M1
-            );
+    return scheduleTestingSuppressesGradeBand(
+        gradeBand,
+        testingAffectsM1
+        );
 }
 }
 

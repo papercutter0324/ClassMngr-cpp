@@ -732,6 +732,8 @@ void SchedulePrintModelTests
         row.cells.at(3).testingBlockCreationEnabled
         );
     QCOMPARE(model.summary.testingBlocks, 3);
+    QCOMPARE(model.summary.essayBlocks, 1);
+    QCOMPARE(model.summary.scheduledBlocks, 4);
 
     request.testingAffectsM1 = true;
     model =
@@ -790,6 +792,9 @@ void SchedulePrintModelTests
         QCOMPARE(cell.slotState, scheduleEssaySlotState());
         QVERIFY(cell.testingBlockCreationEnabled);
     }
+    QCOMPARE(model.summary.essayBlocks, 2);
+    QCOMPARE(model.summary.scheduledBlocks, 5);
+    QCOMPARE(model.summary.testingBlocks, 0);
     QCOMPARE(row.cells.at(2).entries.size(), 1);
     QCOMPARE(row.cells.at(2).entries.first().classId, 3);
     QVERIFY(!row.cells.at(2).testingBlockCreationEnabled);
@@ -804,6 +809,9 @@ void SchedulePrintModelTests
     QVERIFY(affectedM1.entries.isEmpty());
     QCOMPARE(affectedM1.slotState, scheduleEssaySlotState());
     QVERIFY(affectedM1.testingBlockCreationEnabled);
+    QCOMPARE(model.summary.essayBlocks, 3);
+    QCOMPARE(model.summary.scheduledBlocks, 5);
+    QCOMPARE(model.summary.testingBlocks, 0);
 }
 
 void SchedulePrintModelTests
