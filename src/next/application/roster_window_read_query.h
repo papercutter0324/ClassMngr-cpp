@@ -63,8 +63,8 @@ public:
     }
 };
 
-// Adapts the bounded window for row transfer. Transfer refuses an overflowing
-// target instead of passing a truncated projection to the replacement save.
+// Adapts the bounded window for row transfer. The matching window save
+// boundary preserves any target rows outside the returned window.
 class RosterWindowAsRosterReadPort final : public RosterReadPort
 {
 public:
@@ -87,15 +87,6 @@ public:
         if (!loaded)
         {
             return RosterReadResult::failure(loaded.error());
-        }
-
-        if (loaded.value().hasRowsOutsideWindow)
-        {
-            return RosterReadResult::failure({
-                .code = Domain::ErrorCode::Validation,
-                .message = "The target roster has saved rows beyond row 25; transfer was blocked to preserve them.",
-                .recoverable = false
-            });
         }
 
         return RosterReadResult::success(

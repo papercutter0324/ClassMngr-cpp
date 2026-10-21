@@ -85,7 +85,9 @@ void RosterEditorWidget::removeColumn()
     }
 
     const int removedWidth = m_table->columnWidth(current.column());
-    m_model->removeRosterColumn(current.column());
+    if (!m_model->removeRosterColumn(current.column()))
+        return;
+    m_removedCustomColumns.push_back(columnName.toStdU16String());
     m_layoutController->applyResizeModes();
     m_layoutController->handleCustomColumnRemoved(removedWidth);
     scheduleAutosave();

@@ -18,6 +18,7 @@ struct RosterSaveRequest final
     Domain::ClassId classId;
     RosterSnapshot roster;
     bool allowQuestionableKoreanNameLengths = false;
+    std::vector<std::u16string> removedCustomColumns;
 
     friend bool operator==(
         const RosterSaveRequest&,
@@ -32,6 +33,7 @@ struct PreparedRosterSaveRequest final
     Domain::ClassId classId;
     RosterSnapshot roster;
     bool allowQuestionableKoreanNameLengths = false;
+    std::vector<std::u16string> removedCustomColumns;
 
     friend bool operator==(
         const PreparedRosterSaveRequest&,
@@ -44,7 +46,8 @@ class RosterSavePort
 public:
     virtual ~RosterSavePort() = default;
 
-    // Receives the prepared, valid snapshot from RosterSaveUseCase.
+    // Receives the prepared, valid visible window [0, 25) from RosterSaveUseCase.
+    // removedCustomColumns records explicit user-confirmed custom removals.
     [[nodiscard]] virtual Domain::Result<void> saveRoster(
         const PreparedRosterSaveRequest& request
         ) const = 0;
@@ -82,7 +85,8 @@ public:
         return port.saveRoster({
             .classId = request.classId,
             .roster = prepared.roster,
-            .allowQuestionableKoreanNameLengths = request.allowQuestionableKoreanNameLengths
+            .allowQuestionableKoreanNameLengths = request.allowQuestionableKoreanNameLengths,
+            .removedCustomColumns = request.removedCustomColumns
         });
     }
 

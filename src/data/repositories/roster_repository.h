@@ -51,6 +51,19 @@ public:
 
     using SaveResult = std::expected<void, SaveFailure>;
 
+    // Replaces [0, 25), preserving sparse tail rows at absolute indices.
+    // Only explicitly confirmed, displayed custom columns may lose tail cells.
+    struct WindowSaveRequest final
+    {
+        int classId = 0;
+        Roster roster;
+        QStringList removedCustomColumns;
+    };
+
+    [[nodiscard]] SaveResult saveRosterWindowsWithParentCheck(
+        const QList<WindowSaveRequest>& windows);
+
+
     struct ColumnNamesForClass final
     {
         int classId = 0;
@@ -249,6 +262,7 @@ public:
         );
 
 private:
+    [[nodiscard]] Status writeRosterWindow(const WindowSaveRequest& window);
     [[nodiscard]] Status writeRoster(
         int classId,
         const Roster& roster

@@ -49,6 +49,7 @@ struct RosterRowTransferRequest final
     RosterRowTransferSourceIndex sourceRow;
     std::vector<std::u16string> baseColumnNames;
     bool sourceQuestionableKoreanNameLengthsConfirmed = false;
+    std::vector<std::u16string> sourceRemovedCustomColumns;
 };
 
 struct RosterRowTransferSaveRequest final
@@ -57,6 +58,7 @@ struct RosterRowTransferSaveRequest final
     Domain::ClassId targetClassId;
     RosterSnapshot sourceRoster;
     RosterSnapshot targetRoster;
+    std::vector<std::u16string> sourceRemovedCustomColumns;
 };
 
 class RosterRowTransferSavePort
@@ -64,7 +66,8 @@ class RosterRowTransferSavePort
 public:
     virtual ~RosterRowTransferSavePort() = default;
 
-    // Both snapshots must be saved in one transaction, or neither is saved.
+    // Both visible windows [0, 25) must be saved in one transaction, or neither
+    // is saved. Tail rows retain absolute indices and normalized column identity.
     [[nodiscard]] virtual Domain::Result<void> saveTransfer(
         const RosterRowTransferSaveRequest& request
         ) const = 0;
@@ -190,7 +193,8 @@ public:
             .sourceClassId = request.sourceClassId,
             .targetClassId = request.targetClassId,
             .sourceRoster = std::move(preparedSource.roster),
-            .targetRoster = std::move(preparedTarget.roster)
+            .targetRoster = std::move(preparedTarget.roster),
+            .sourceRemovedCustomColumns = request.sourceRemovedCustomColumns
         });
         if (!saved)
             return saved.error();

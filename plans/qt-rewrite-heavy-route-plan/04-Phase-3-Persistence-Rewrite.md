@@ -38,9 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-22
-- Current note: F1318–F1326 are complete. F1327 selected-roster saving is
-  current; it must preserve stored rows beyond the 25-row editor window before
-  removing F1326's overflow write guard.
+- Current note: F1318–F1327 are complete. F1327 now transactionally preserves
+  tail rows at their absolute indices, remaps tail cells when the visible
+  column schema changes, and keeps transfer writes atomic. F1328
+  speaking-evaluation reading is current.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -130,11 +131,20 @@ Repositories must:
 
 For the selected roster editor, F1326 adds a bounded read of rows 0–24 while
 preserving the existing generic full-roster read behavior for other consumers.
-Keep ordered dynamic column names and widths. When stored rows extend beyond
-the editor window, prevent whole-roster saves and row transfers until F1327
-adds tail-preserving writes. Do not infer a total editor-column cap from
+Keep ordered dynamic column names and widths. F1327 adds tail-preserving
+window writes, so stored rows beyond the editor window remain available during
+visible edits and row transfers. Do not infer a total editor-column cap from
 output-specific limits; the editor still reads its complete column schema, so
 column-count memory remains a separate, unbounded dimension.
+
+F1327 adds selected-editor window saves that replace only rows 0–24 and retain
+tail rows at their existing absolute indices. When the projected column schema
+changes, remap tail cell indices transactionally by the roster's normalized
+column identity; fail without writing if the mapping is ambiguous. Row
+removal and transfer affect only the visible window and do not pull hidden
+tail rows across its boundary. A source/target roster transfer remains one
+atomic write. Keep generic full-replacement repository operations unchanged
+for their other callers.
 
 For Sub Prep, the repository boundary must support a visible-class summary
 projection, teacher data shared by teacher ID, aggregated roster counts, and

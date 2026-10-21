@@ -2,7 +2,7 @@
 
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
 #include "domain/models/roster.h"
 #include "next/application/roster_row_transfer_use_case.h"
@@ -32,26 +32,32 @@ public:
         if (!sourceId || !targetId || *sourceId == *targetId)
             return failure(Domain::ErrorCode::InvalidInput,
                 "Transfer requires distinct canonical positive class IDs.");
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
             return failure(Domain::ErrorCode::NotFound,
                 "The roster service is unavailable.", true);
 
-        RosterRepository* const repository = session->rosterRepository();
+        RosterRepository* const repository = store->rosterRepository();
         if (!repository)
             return failure(Domain::ErrorCode::Technical,
                 "Roster repository is unavailable.");
 
         try
         {
-            const Status saved = repository->saveRosters({
-                {*sourceId, legacyRoster(request.sourceRoster)},
-                {*targetId, legacyRoster(request.targetRoster)}
+            QStringList removedColumns;
+            for (const auto& column : request.sourceRemovedCustomColumns)
+                removedColumns.append(text(column));
+            const auto saved = repository->saveRosterWindowsWithParentCheck({
+                {.classId = *sourceId, .roster = legacyRoster(request.sourceRoster),
+                 .removedCustomColumns = std::move(removedColumns)},
+                {.classId = *targetId, .roster = legacyRoster(request.targetRoster)}
             });
             if (!saved)
-                return failure(Domain::ErrorCode::Technical,
-                    saved.error().toUtf8().toStdString());
+                return failure(
+                    saved.error().kind == RosterRepository::SaveFailure::Kind::ParentClassMissing
+                        ? Domain::ErrorCode::NotFound : Domain::ErrorCode::Technical,
+                    saved.error().diagnostic.toUtf8().toStdString());
             return Domain::Result<void>::success();
         }
         catch (...)

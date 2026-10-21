@@ -8,6 +8,9 @@
 #include <QStringList>
 #include <QVector>
 
+#include <string>
+#include <vector>
+
 class ApplicationServices;
 class AutosaveCoordinator;
 class QEvent;
@@ -168,6 +171,7 @@ private:
     bool m_loadingRoster = false;
     bool m_rosterReadFailed = false;
     bool m_rosterOverflow = false;
+    std::vector<std::u16string> m_removedCustomColumns;
     bool m_widthsDirty = false;
     bool m_resolvingDuplicateName = false;
     bool m_removingRosterRow = false;

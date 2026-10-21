@@ -312,7 +312,7 @@ bool invalidTargetSnapshotDoesNotReachSave()
         && req.sourceRoster == sourceBefore && ports.target == targetBefore;
 }
 
-bool targetWindowOverflowBlocksTransferBeforeSave()
+bool targetWindowOverflowAllowsBoundedTransferSave()
 {
     const auto req = request();
     Ports savePort;
@@ -333,15 +333,16 @@ bool targetWindowOverflowBlocksTransferBeforeSave()
         savePort,
         equals
         );
-    const auto* error = std::get_if<Domain::OperationError>(&result);
-    return error
-        && error->code == Domain::ErrorCode::Validation
-        && !error->recoverable
-        && error->message.find("beyond row 25") != std::string::npos
+    const auto* success = std::get_if<RosterRowTransferSuccess>(&result);
+    return success && success->destinationRow.rawValue() == 1
         && windowPort.callCount == 1
         && windowPort.readId == req.targetClassId
-        && savePort.calls.empty()
-        && !savePort.saved;
+        && savePort.calls == std::vector<std::string>{"save"}
+        && savePort.saved
+        && savePort.saved->targetRoster.rows.size() == RosterModeledRowCount
+        && savePort.saved->targetRoster.rows[0][0] == u"Existing"
+        && savePort.saved->targetRoster.rows[1][0] == u"John"
+        && savePort.saved->targetRoster.rows[1][5] == u"Fall value";
 }
 
 bool emptyTargetUsesCanonicalBaseAndRowZero()
@@ -520,7 +521,7 @@ int main()
         {"invalid IDs",invalidIdsPreventReadAndSave},
         {"maximum class ID forwarding",maximumClassIdForwardsThroughReadAndSave},
         {"invalid target snapshot",invalidTargetSnapshotDoesNotReachSave},
-        {"target window overflow blocks transfer",targetWindowOverflowBlocksTransferBeforeSave},
+        {"target window overflow allows bounded transfer save",targetWindowOverflowAllowsBoundedTransferSave},
         {"empty target base columns and row zero",emptyTargetUsesCanonicalBaseAndRowZero},
         {"warning-only roster preparation",warningOnlySnapshotPreparationStillSaves},
         {"rejected target name lengths cancel before saving",rejectedTargetQuestionableKoreanLengthCancelsBeforeSave},

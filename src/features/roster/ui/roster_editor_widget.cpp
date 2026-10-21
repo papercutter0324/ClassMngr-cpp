@@ -246,6 +246,7 @@ void RosterEditorWidget::loadClass(
     clearRosterSaveFailure();
     m_rosterReadFailed = false;
     m_rosterOverflow = false;
+    m_removedCustomColumns.clear();
     if (m_rosterLoadFailureMessage)
     {
         m_rosterLoadFailureMessage->clear();
@@ -283,11 +284,11 @@ void RosterEditorWidget::loadClass(
                 if (loaded.value().hasRowsOutsideWindow)
                 {
                     m_rosterOverflow = true;
-                    m_rosterReadFailed = true;
                     rosterReadFailureDetail = tr(
                         "This roster contains saved rows after row 25. "
-                        "Editing, saving, printing, and Save As are disabled "
-                        "because those actions could remove the additional rows."
+                        "Edits apply to the first 25 rows; additional rows keep "
+                        "their saved positions. Removing a custom column also "
+                        "removes that column from the additional rows."
                         );
                 }
             }
@@ -331,7 +332,15 @@ void RosterEditorWidget::loadClass(
     m_autosave->setLoading(false);
     m_autosave->markClean();
 
-    if (m_rosterReadFailed)
+    if (!m_rosterReadFailed)
+    {
+        m_table->setEnabled(true);
+        m_addColumnButton->setEnabled(true);
+        m_importButton->setEnabled(true);
+        m_koreanKeyboardButton->setEnabled(m_classroom.id > 0);
+    }
+
+    if (m_rosterReadFailed || m_rosterOverflow)
     {
         if (m_rosterLoadFailureMessage)
         {
@@ -355,13 +364,6 @@ void RosterEditorWidget::loadClass(
             m_rosterLoadFailureMessage->setText(message);
             m_rosterLoadFailureMessage->show();
         }
-    }
-    else
-    {
-        m_table->setEnabled(true);
-        m_addColumnButton->setEnabled(true);
-        m_importButton->setEnabled(true);
-        m_koreanKeyboardButton->setEnabled(m_classroom.id > 0);
     }
 
     updateActions();
@@ -554,7 +556,8 @@ bool RosterEditorWidget::saveRosterInternal(
     const ClassMngr::Next::Application::RosterSaveRequest request{
         .classId = *classId,
         .roster = applicationRosterSnapshot(currentRosterForSave()),
-        .allowQuestionableKoreanNameLengths = confirmQuestionableLengths
+        .allowQuestionableKoreanNameLengths = confirmQuestionableLengths,
+        .removedCustomColumns = m_removedCustomColumns
     };
     const ClassMngr::Next::Platform::ApplicationServicesRosterSavePort port(
         m_services
@@ -586,6 +589,7 @@ bool RosterEditorWidget::saveRosterInternal(
     }
 
     clearRosterSaveFailure();
+    m_removedCustomColumns.clear();
     m_model->clearDirty();
     m_widthsDirty = false;
     m_autosave->markClean();

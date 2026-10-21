@@ -3461,6 +3461,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformRosterWindowSave
+    SOURCES
+        tests/next_platform_roster_window_save_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesRosterSavePort
     SOURCES
         tests/next_platform_application_services_roster_save_port_tests.cpp

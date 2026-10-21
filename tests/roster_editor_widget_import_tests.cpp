@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "data/database/workspace_store.h"
 #include "app/services/feature_services.h"
 #include "domain/models/classroom.h"
 #include "domain/models/roster.h"
@@ -526,6 +527,9 @@ void RosterEditorWidgetImportTests
     QString error;
     QVERIFY2(fixture.initialize(&error), qPrintable(error));
 
+    QSqlQuery tail(fixture.m_services.workspaceStore()->database());
+    QVERIFY(tail.exec(QStringLiteral("INSERT INTO roster_data VALUES (%1, 25, 5, 'boundary score tail'), "
+        "(%1, 37, 5, 'later score tail')").arg(fixture.classId)));
     FakeUserPromptService prompts;
     ScopedPromptService promptScope(&prompts);
 
@@ -569,7 +573,9 @@ void RosterEditorWidgetImportTests
     );
     QVERIFY(persisted);
     QCOMPARE(persisted->columns, fixture.initialRoster.columns);
-    QCOMPARE(persisted->rows.size(), fixture.initialRoster.rows.size());
+    QCOMPARE(persisted->rows.size(), 38);
+    QCOMPARE(persisted->rows[25][5], QStringLiteral("boundary score tail"));
+    QCOMPARE(persisted->rows[37][5], QStringLiteral("later score tail"));
 
     Roster expected = fixture.initialRoster;
     for (const EvaluationFixture& evaluation : evaluations())

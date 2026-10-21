@@ -10,6 +10,7 @@
 #include "next/application/roster_row_transfer_use_case.h"
 #include "next/platform/application_services_roster_save_port.h"
 #include "next/platform/application_services_roster_read_port.h"
+#include "next/platform/application_services_roster_window_read_port.h"
 #include "next/platform/application_services_roster_row_transfer_save_port.h"
 
 #include <QSqlError>
@@ -80,6 +81,17 @@ Roster legacyTransferRoster(const Application::RosterSnapshot& snapshot)
         roster.rows.append(std::move(row));
     }
     return roster;
+}
+
+bool insertTransferTail(ApplicationServices& services, const int classId,
+    const int row, const QString& value)
+{
+    QSqlQuery query(services.workspaceStore()->database());
+    query.prepare(QStringLiteral("INSERT INTO roster_data VALUES (?, ?, 5, ?)"));
+    query.addBindValue(classId);
+    query.addBindValue(row);
+    query.addBindValue(value);
+    return query.exec();
 }
 
 struct AcceptRosterTransferConfirmation final
@@ -513,7 +525,12 @@ rowTransferPersistsPreparedRostersAndConfirmedKoreanLength()
     QVERIFY(repository->saveRoster(*sourceClass, legacyTransferRoster(source)));
     QVERIFY(repository->saveRoster(*targetClass, legacyTransferRoster(originalTarget)));
 
-    Platform::ApplicationServicesRosterReadPort readPort(services);
+    QVERIFY(insertTransferTail(services, *sourceClass, 25, QStringLiteral("source row 25")));
+    QVERIFY(insertTransferTail(services, *sourceClass, 37, QStringLiteral("source row 37")));
+    QVERIFY(insertTransferTail(services, *targetClass, 25, QStringLiteral("target row 25")));
+    QVERIFY(insertTransferTail(services, *targetClass, 37, QStringLiteral("target row 37")));
+    Platform::ApplicationServicesRosterWindowReadPort windowPort(services);
+    Application::RosterWindowAsRosterReadPort readPort(windowPort);
     Platform::ApplicationServicesRosterRowTransferSavePort savePort(&services);
     const AcceptRosterTransferConfirmation confirmation;
     const auto result = Application::RosterRowTransferUseCase::execute(
@@ -539,14 +556,20 @@ rowTransferPersistsPreparedRostersAndConfirmedKoreanLength()
     const auto savedTarget = repository->loadRoster(*targetClass);
     QVERIFY(savedSource);
     QVERIFY(savedTarget);
-    QCOMPARE(savedSource->rows.size(), 1);
+    QCOMPARE(savedSource->rows.size(), 38);
     QCOMPARE(savedSource->rows.at(0).at(0), QStringLiteral("Bob Jones"));
     QCOMPARE(savedSource->rows.at(0).at(1), QString::fromStdU16String(u"\uBC15\uC9C0\uBBFC"));
-    QCOMPARE(savedTarget->rows.size(), 2);
+    QCOMPARE(savedTarget->rows.size(), 38);
     QCOMPARE(savedTarget->rows.at(1).at(0), QStringLiteral("Alice"));
     // A one-syllable Korean name is permitted by the UI only after its
     // questionable-length confirmation; the prepared text is persisted.
     QCOMPARE(savedTarget->rows.at(1).at(1), QString::fromStdU16String(u"\uAE40"));
+    QCOMPARE(savedSource->rows[25][5], QStringLiteral("source row 25"));
+    QCOMPARE(savedSource->rows[37][5], QStringLiteral("source row 37"));
+    QCOMPARE(savedTarget->rows[25][5], QStringLiteral("target row 25"));
+    QCOMPARE(savedTarget->rows[37][5], QStringLiteral("target row 37"));
+    QVERIFY(savedSource->rows[24][5].isEmpty());
+    QVERIFY(savedTarget->rows[24][5].isEmpty());
 }
 
 void NextPlatformApplicationServicesRosterSavePortTests::
@@ -581,6 +604,10 @@ rowTransferSecondRosterFailureRollsBackBothWrites()
     QVERIFY(repository);
     QVERIFY(repository->saveRoster(*sourceClass, legacyTransferRoster(originalSource)));
     QVERIFY(repository->saveRoster(*targetClass, legacyTransferRoster(originalTarget)));
+    QVERIFY(insertTransferTail(services, *sourceClass, 25, QStringLiteral("source row 25")));
+    QVERIFY(insertTransferTail(services, *sourceClass, 37, QStringLiteral("source row 37")));
+    QVERIFY(insertTransferTail(services, *targetClass, 25, QStringLiteral("target row 25")));
+    QVERIFY(insertTransferTail(services, *targetClass, 37, QStringLiteral("target row 37")));
     const auto originalSourceStored = repository->loadRoster(*sourceClass);
     const auto originalTargetStored = repository->loadRoster(*targetClass);
     QVERIFY(originalSourceStored);

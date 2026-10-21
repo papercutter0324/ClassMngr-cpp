@@ -7,8 +7,8 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-22
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 1 is active; F1318–F1326 are complete, and F1327 selected-class roster
-  saving is current. See
+  Batch 1 is active; F1318–F1327 are complete, and F1328 speaking-evaluation
+  reading is current. See
   the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md), and
   [progress log](04-Phase-3-Progress-Log.md) and [current batch

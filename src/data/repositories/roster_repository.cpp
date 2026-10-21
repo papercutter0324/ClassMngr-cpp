@@ -3,6 +3,10 @@
 #include "core/startup_profiler.h"
 #include "data/database/database_transaction.h"
 #include "data/database/sql_query_utils.h"
+#include "next/application/roster_custom_column_name_policy.h"
+#include "next/application/roster_row_availability.h"
+
+#include <QUuid>
 
 #include <QDebug>
 #include <QHash>
@@ -397,6 +401,227 @@ Status RosterRepository::saveRosters(
     }
 
     return {};
+}
+
+RosterRepository::SaveResult RosterRepository::saveRosterWindowsWithParentCheck(
+    const QList<WindowSaveRequest>& windows)
+{
+    const auto technical = [](const QString& diagnostic) -> SaveResult
+    {
+        return std::unexpected(SaveFailure{
+            .kind = SaveFailure::Kind::Technical, .diagnostic = diagnostic});
+    };
+    if (windows.isEmpty())
+        return technical(QObject::tr("Roster window save requires at least one window."));
+
+    QSet<int> identities;
+    constexpr int rowLimit = static_cast<int>(
+        ClassMngr::Next::Application::RosterModeledRowCount);
+    for (const auto& window : windows)
+    {
+        if (window.classId <= 0 || identities.contains(window.classId)
+            || window.roster.columns.isEmpty()
+            || window.roster.columns.size() > std::numeric_limits<int>::max()
+            || window.roster.rows.size() > rowLimit
+            || window.roster.columnWidths.size() != window.roster.columns.size())
+            return technical(QObject::tr("Invalid roster window save request."));
+        for (const auto& row : window.roster.rows)
+            if (row.size() > window.roster.columns.size())
+                return technical(QObject::tr("Roster window row exceeds its column count."));
+        identities.insert(window.classId);
+    }
+
+    DatabaseTransaction transaction(m_database, DatabaseTransaction::Mode::Immediate);
+    if (!transaction.started())
+        return technical(transaction.startError());
+
+    // Check every parent under the write lock before the first mutation.
+    for (const auto& window : windows)
+    {
+        QSqlQuery parent(m_database);
+        parent.prepare(QStringLiteral("SELECT 1 FROM classes WHERE id=?"));
+        parent.addBindValue(window.classId);
+        if (!parent.exec())
+            return technical(parent.lastError().text());
+        const bool found = parent.next();
+        if (parent.lastError().isValid())
+            return technical(parent.lastError().text());
+        if (!found)
+            return std::unexpected(SaveFailure{
+                .kind = SaveFailure::Kind::ParentClassMissing,
+                .diagnostic = QObject::tr("Roster parent class %1 was not found.")
+                    .arg(window.classId)});
+    }
+    for (const auto& window : windows)
+    {
+        const auto saved = writeRosterWindow(window);
+        if (!saved)
+            return technical(saved.error());
+    }
+    if (!transaction.commit())
+        return technical(m_database.lastError().text());
+    return {};
+}
+
+Status RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
+{
+    constexpr int rowLimit = static_cast<int>(
+        ClassMngr::Next::Application::RosterModeledRowCount);
+    const auto equals = [](std::u16string_view left, std::u16string_view right)
+    {
+        return QStringView(left.data(), static_cast<qsizetype>(left.size())).compare(
+            QStringView(right.data(), static_cast<qsizetype>(right.size())),
+            Qt::CaseInsensitive) == 0;
+    };
+    const auto identity = [&equals](const QString& name)
+    {
+        const auto normalized =
+            ClassMngr::Next::Application::normalizeRosterCustomColumnName(
+                name.toStdU16String(), equals);
+        // Keep logical UTF-16 text; QString::fromStdU16String decodes BOMs.
+        QString result;
+        for (const char16_t unit : normalized)
+            result.append(QChar(unit));
+        return result;
+    };
+    const auto invalidMapping = []() -> Status
+    {
+        return std::unexpected(QObject::tr(
+            "Roster tail columns cannot be mapped unambiguously; the roster was not saved."));
+    };
+
+    QStringList targetNames;
+    for (const auto& name : window.roster.columns)
+    {
+        const auto normalized = identity(name);
+        if (normalized.isEmpty() || targetNames.contains(normalized, Qt::CaseInsensitive))
+            return invalidMapping();
+        targetNames.append(normalized);
+    }
+
+    QStringList sourceNames;
+    QSqlQuery columns(m_database);
+    columns.prepare(QStringLiteral(
+        "SELECT name, position, typeof(position) FROM roster_columns "
+        "WHERE class_id=? ORDER BY position, id"));
+    columns.addBindValue(window.classId);
+    if (!columns.exec())
+        return std::unexpected(columns.lastError().text());
+    while (columns.next())
+    {
+        // col_index refers to the ordered source header ordinal, as on read.
+        bool valid = false;
+        const auto position = columns.value(1).toLongLong(&valid);
+        if (!valid || position < 0 || columns.value(2).toString() != u"integer")
+            return invalidMapping();
+        sourceNames.append(identity(columns.value(0).toString()));
+    }
+    if (columns.lastError().isValid())
+        return std::unexpected(columns.lastError().text());
+    columns.finish();
+
+    QStringList removedNames;
+    for (const auto& name : window.removedCustomColumns)
+    {
+        const auto normalized = identity(name);
+        if (normalized.isEmpty() || Roster::BaseColumns.contains(normalized, Qt::CaseInsensitive))
+            return invalidMapping();
+        // A removal followed by re-adding the same header keeps that identity.
+        removedNames.append(normalized);
+    }
+    QList<int> mapping;
+    for (const auto& source : sourceNames)
+    {
+        int destination = -1;
+        for (int index = 0; index < targetNames.size(); ++index)
+            if (source.compare(targetNames[index], Qt::CaseInsensitive) == 0)
+                destination = index;
+        int aliases = 0;
+        for (const auto& candidate : sourceNames)
+            if (source.compare(candidate, Qt::CaseInsensitive) == 0)
+                ++aliases;
+        if (source.isEmpty() || aliases != 1)
+            destination = -2; // Ambiguity is never authorized by removal.
+        else if (destination < 0 && !removedNames.contains(source, Qt::CaseInsensitive))
+            destination = -2;
+        mapping.append(destination);
+    }
+
+    // Only column metadata and distinct tail column indices enter application
+    // memory. Tail rows and values remain inside SQLite throughout the save.
+    QSqlQuery tailColumns(m_database);
+    tailColumns.setForwardOnly(true);
+    tailColumns.prepare(QStringLiteral(
+        "SELECT DISTINCT col_index, typeof(col_index), typeof(row_index), row_index<0 "
+        "FROM roster_data WHERE class_id=? AND "
+        "(row_index>=? OR typeof(row_index)!='integer' OR row_index<0)"));
+    tailColumns.addBindValue(window.classId);
+    tailColumns.addBindValue(rowLimit);
+    if (!tailColumns.exec())
+        return std::unexpected(tailColumns.lastError().text());
+    while (tailColumns.next())
+    {
+        bool valid = false;
+        const auto column = tailColumns.value(0).toLongLong(&valid);
+        if (!valid || tailColumns.value(1).toString() != u"integer"
+            || tailColumns.value(2).toString() != u"integer"
+            || tailColumns.value(3).toBool()
+            || column < 0 || column >= mapping.size() || mapping[column] == -2)
+            return invalidMapping();
+    }
+    if (tailColumns.lastError().isValid())
+        return std::unexpected(tailColumns.lastError().text());
+    tailColumns.finish();
+
+    const QString suffix = QUuid::createUuid().toString(QUuid::Id128);
+    const QString mapTable = QStringLiteral("roster_window_map_%1").arg(suffix);
+    const QString tailTable = QStringLiteral("roster_window_tail_%1").arg(suffix);
+    QSqlQuery query(m_database);
+    const auto exec = [&query](const QString& sql) -> Status
+    {
+        if (!query.exec(sql))
+            return std::unexpected(query.lastError().text());
+        return {};
+    };
+    auto result = exec(QStringLiteral(
+        "CREATE TEMP TABLE %1 (old_index INTEGER PRIMARY KEY, new_index INTEGER NOT NULL)")
+        .arg(mapTable));
+    if (!result)
+        return result;
+    for (int index = 0; index < mapping.size(); ++index)
+    {
+        if (mapping[index] < 0)
+            continue;
+        query.prepare(QStringLiteral("INSERT INTO %1 VALUES (?, ?)").arg(mapTable));
+        query.addBindValue(index);
+        query.addBindValue(mapping[index]);
+        if (!query.exec())
+            return std::unexpected(query.lastError().text());
+    }
+    query.prepare(QStringLiteral(
+        "CREATE TEMP TABLE %1 AS SELECT d.row_index, m.new_index AS col_index, d.value "
+        "FROM roster_data d JOIN %2 m ON m.old_index=d.col_index "
+        "WHERE d.class_id=? AND d.row_index>=?").arg(tailTable, mapTable));
+    query.addBindValue(window.classId);
+    query.addBindValue(rowLimit);
+    if (!query.exec())
+        return std::unexpected(query.lastError().text());
+
+    // The staging table includes every retained tail cell, with only its column
+    // ordinal changed. In particular row 25 never fills a removed visible row.
+    result = writeRoster(window.classId, window.roster);
+    if (!result)
+        return result;
+    query.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "SELECT ?, row_index, col_index, value FROM %1").arg(tailTable));
+    query.addBindValue(window.classId);
+    if (!query.exec())
+        return std::unexpected(query.lastError().text());
+    result = exec(QStringLiteral("DROP TABLE %1").arg(tailTable));
+    if (!result)
+        return result;
+    return exec(QStringLiteral("DROP TABLE %1").arg(mapTable));
 }
 
 Status RosterRepository::writeRoster(

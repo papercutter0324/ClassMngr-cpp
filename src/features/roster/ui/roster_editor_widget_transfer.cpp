@@ -596,7 +596,8 @@ void RosterEditorWidget::transferRosterRow(
         .sourceRoster = applicationSnapshot(currentRosterForSave()),
         .sourceRow = ClassMngr::Next::Application::RosterRowTransferSourceIndex{row},
         .baseColumnNames = std::move(baseColumns),
-        .sourceQuestionableKoreanNameLengthsConfirmed = true
+        .sourceQuestionableKoreanNameLengthsConfirmed = true,
+        .sourceRemovedCustomColumns = m_removedCustomColumns
     };
     ClassMngr::Next::Platform::ApplicationServicesRosterWindowReadPort
         windowReadPort(m_services);
@@ -634,6 +635,7 @@ void RosterEditorWidget::transferRosterRow(
     }
 
     m_autosave->cancelPendingSave();
+    m_removedCustomColumns.clear();
 
     m_removingRosterRow = true;
     m_model->removeRosterRow(row);

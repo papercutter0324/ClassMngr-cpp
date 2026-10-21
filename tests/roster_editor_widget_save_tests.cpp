@@ -264,7 +264,7 @@ private slots:
     void literalLeadingBomInNameRemainsInvalid();
     void failedRosterSaveKeepsTestingClassSelection();
     void loadClassPreservesModelNormalizationWidthsAndCleanState();
-    void overflowingRosterWindowBlocksEditingAndSavePreservesTail();
+    void overflowingRosterWindowAllowsEditingAndSavePreservesTail();
     void emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities();
     void malformedReadBlocksReplacementAndRecovers();
 };
@@ -362,6 +362,9 @@ customColumnAdditionSelectionLayoutAutosaveAndPersistence()
     FakeUserPromptService prompts;
     ScopedPromptService promptScope(&prompts);
 
+    QSqlQuery tail(fixture.services.databaseSession()->database());
+    QVERIFY(tail.exec(QStringLiteral("INSERT INTO roster_data VALUES (%1, 37, 5, 'column addition tail')")
+        .arg(fixture.classId)));
     RosterEditorWidget editor(&fixture.services);
     editor.loadClass(Classroom(QStringLiteral("Column addition test"), fixture.classId));
     auto* const model = editor.findChild<RosterModel*>();
@@ -440,6 +443,8 @@ customColumnAdditionSelectionLayoutAutosaveAndPersistence()
     QCOMPARE(saved->rows.at(0).at(0), QStringLiteral("Amy"));
     QVERIFY(saved->rows.at(0).at(6).isEmpty());
     QCOMPARE(saved->columnWidths.at(6), table->columnWidth(addedColumn));
+    QCOMPARE(saved->rows.size(), 38);
+    QCOMPARE(saved->rows[37][5], QStringLiteral("column addition tail"));
     QCOMPARE(prompts.messages.size(), 0);
 }
 
@@ -680,6 +685,9 @@ customColumnRemovalConfirmationSelectionWidthAndAutosave()
     prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
     ScopedPromptService promptScope(&prompts);
 
+    QSqlQuery tail(fixture.services.databaseSession()->database());
+    QVERIFY(tail.exec(QStringLiteral("INSERT INTO roster_data VALUES (%1, 25, 6, 'removed tail'), "
+        "(%1, 37, 7, 'retained tail')").arg(fixture.classId)));
     RosterEditorWidget editor(&fixture.services);
     editor.loadClass(Classroom(QStringLiteral("Column removal test"), fixture.classId));
     auto* const model = editor.findChild<RosterModel*>();
@@ -765,6 +773,9 @@ customColumnRemovalConfirmationSelectionWidthAndAutosave()
         );
     QCOMPARE(saved->rows.at(0).at(6), QStringLiteral("Family value"));
     QCOMPARE(saved->columnWidths.at(6), familyNotesWidth);
+    QCOMPARE(saved->rows.size(), 38);
+    QVERIFY(saved->rows[25][6].isEmpty());
+    QCOMPARE(saved->rows[37][6], QStringLiteral("retained tail"));
 }
 
 void RosterEditorWidgetSaveTests::
@@ -1476,7 +1487,7 @@ loadClassPreservesModelNormalizationWidthsAndCleanState()
 }
 
 void RosterEditorWidgetSaveTests::
-overflowingRosterWindowBlocksEditingAndSavePreservesTail()
+overflowingRosterWindowAllowsEditingAndSavePreservesTail()
 {
     RosterEditorFixture fixture;
     QString error;
@@ -1517,10 +1528,16 @@ overflowingRosterWindowBlocksEditingAndSavePreservesTail()
         insertCell(24, QStringLiteral("Visible sparse row")),
         qPrintable(insertTail.lastError().text())
         );
+    QVERIFY(insertCell(25, QStringLiteral("Boundary tail marker")));
     QVERIFY2(
         insertCell(37, QStringLiteral("High-index tail marker")),
         qPrintable(insertTail.lastError().text())
         );
+
+    QSqlQuery visibleNames(fixture.services.databaseSession()->database());
+    QVERIFY(visibleNames.exec(QStringLiteral(
+        "INSERT INTO roster_data VALUES (%1, 24, 0, 'Visible Student'), "
+        "(%1, 24, 1, '박지민')").arg(fixture.classId)));
 
     FakeUserPromptService prompts;
     ScopedPromptService promptScope(&prompts);
@@ -1554,14 +1571,14 @@ overflowingRosterWindowBlocksEditingAndSavePreservesTail()
         QStringLiteral("Visible sparse row"));
     QCOMPARE(table->columnWidth(5), 169);
     QCOMPARE(table->columnWidth(6), 242);
-    QVERIFY(!table->isEnabled());
-    QVERIFY(!editor.outputCapabilities().printEnabled);
-    QVERIFY(!editor.outputCapabilities().saveAsEnabled);
+    QVERIFY(table->isEnabled());
+    QVERIFY(editor.outputCapabilities().printEnabled);
+    QVERIFY(editor.outputCapabilities().saveAsEnabled);
     QVERIFY(!failureMessage->isHidden());
     QVERIFY(failureMessage->text().contains(
         QStringLiteral("saved rows after row 25")
         ));
-    QVERIFY(!autosave->isSaveAvailable());
+    QVERIFY(autosave->isSaveAvailable());
     QVERIFY(!saveButton->isEnabled());
 
     const int englishColumn = columnByName(model, QStringLiteral("English"));
@@ -1572,11 +1589,12 @@ overflowingRosterWindowBlocksEditingAndSavePreservesTail()
         Qt::EditRole
         ));
     QVERIFY(editor.hasUnsavedChanges());
-    QVERIFY(!autosave->isSaveAvailable());
+    QVERIFY(autosave->isSaveAvailable());
     QVERIFY(!autosaveTimer->isActive());
 
+    QVERIFY(saveButton->isEnabled());
     editor.saveData();
-    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(!editor.hasUnsavedChanges());
     QVERIFY(prompts.messages.isEmpty());
 
     const auto persisted = fixture.services.rosterService()->roster(
@@ -1584,9 +1602,10 @@ overflowingRosterWindowBlocksEditingAndSavePreservesTail()
         );
     QVERIFY(persisted);
     QCOMPARE(persisted->rows.size(), 38);
-    QCOMPARE(persisted->rows.at(0).at(0), QStringLiteral("Stored Student"));
+    QCOMPARE(persisted->rows.at(0).at(0), QStringLiteral("Unsaved Edit"));
     QCOMPARE(persisted->rows.at(24).at(6),
         QStringLiteral("Visible sparse row"));
+    QCOMPARE(persisted->rows.at(25).at(6), QStringLiteral("Boundary tail marker"));
     QCOMPARE(persisted->rows.at(37).at(6),
         QStringLiteral("High-index tail marker"));
 }

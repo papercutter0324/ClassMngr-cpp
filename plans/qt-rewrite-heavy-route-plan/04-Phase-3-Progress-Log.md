@@ -207,3 +207,37 @@ cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationS
 ctest --test-dir build/macos-clang-debug -R '^(ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests|ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests|ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests|ClassMngrClassDetailsPageSaveParityTests)$' --output-on-failure
 cmake --build build/macos-clang-debug --target ClassMngr
 ```
+
+## F1327 — Selected-class roster window save — 2026-10-22
+
+Added transactional saves for selected roster windows `[0, 25)`. Sparse tail
+rows retain their absolute row indices while tail cell column indices are
+remapped by normalized header identity, including `Autumn`→`Fall`. Ambiguous
+aliases, malformed indices, and unconfirmed tail-column removals fail before
+persisted changes. Visible row removal and transfer leave hidden tail rows at
+their existing indices; source and target transfer writes remain atomic. The
+editor can save and transfer overflowing rosters again. Generic full reads and
+whole-roster replacement APIs remain unchanged.
+
+Focused coverage includes sparse tails, schema reorder and normalization,
+authorized and rejected removals, row-24 removal, very sparse row indices,
+wide dynamic schemas, editor saves/imports, transfer preservation, and
+rollback. The incremental macOS Debug build succeeded; Ninja printed a
+premature-end-of-file warning and recovered. The focused CTest selection passed
+**16/16**, and `git diff --check` passed. Independent review found no F1327
+production defect and reran the focused selection successfully.
+
+The broader `ClassMngrClassTransferTests` selection has one teacher-fallback
+assertion failure (`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`,
+`class_transfer_tests.cpp:5192`). A clean archive of F1326 commit
+`7f10f8f51f924a304a5c1280e1339fa6637bb29c`, built separately, fails the same
+isolated assertion with the same actual and expected teacher names, so this is
+a confirmed baseline failure and not an F1327 regression. The focused teacher
+choice regression selection passes. The separate baseline build emitted a
+missing `documents` resource-pack warning; it did not prevent the test from
+reproducing the assertion.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextPlatformRosterWindowSaveTests ClassMngrNextPlatformApplicationServicesRosterSavePortTests ClassMngrNextPlatformApplicationServicesRosterReadPortTests ClassMngrNextApplicationRosterSaveUseCaseTests ClassMngrNextApplicationRosterReadQueryTests ClassMngrNextApplicationRosterRowTransferUseCaseTests ClassMngrNextApplicationRosterRowTransferPreparationTests ClassMngrNextApplicationRosterRowRemovalTests ClassMngrNextApplicationRosterReorderingTests ClassMngrNextApplicationRosterCustomColumnAppendTests ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests ClassMngrRosterEditorWidgetSaveTests ClassMngrRosterTransferMenuTests ClassMngrRosterEditorWidgetImportTests ClassMngrRosterModelTests ClassMngrClassTransferTests -j 4
+QT_QPA_PLATFORM=offscreen ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngr(NextPlatformRosterWindowSave|NextPlatformApplicationServicesRoster(Save|Read)Port|NextApplicationRoster(SaveUseCase|ReadQuery|RowTransferUseCase|RowTransferPreparation|RowRemoval|RowReordering|CustomColumnAppend|CustomColumnRemovalPolicy)|RosterEditorWidget(Save|Import)|RosterTransferMenu|RosterModel|ClassImportTeacherChoiceRegression)Tests$'
+```

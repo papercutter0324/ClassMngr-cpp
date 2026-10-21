@@ -492,8 +492,8 @@ private slots:
     void fullSameGradeTargetIsLabeledAndDisabled();
     void targetRosterReadFailureBehavesLikeEmptyRoster();
     void targetRosterCellReadFailureBehavesLikeEmptyRoster();
-    void sourceWindowOverflowBlocksTransferMenu();
-    void targetWindowOverflowBlocksTransferWithoutWriting();
+    void sourceWindowOverflowAllowsTransferMenu();
+    void targetWindowOverflowAllowsTransferPreservingTail();
     void menuTransferUsesFreshTargetRosterAndPreservesCustomColumnsAndWidths();
     void rejectedTargetQuestionableNameConfirmationIsSilent();
     void applyFailureKeepsSourceAndAutosaveState_data();
@@ -1002,7 +1002,7 @@ targetRosterCellReadFailureBehavesLikeEmptyRoster()
     QCOMPARE(menu.enabled, QList<bool>({true}));
 }
 
-void RosterTransferMenuTests::sourceWindowOverflowBlocksTransferMenu()
+void RosterTransferMenuTests::sourceWindowOverflowAllowsTransferMenu()
 {
     RosterTransferMenuFixture fixture;
     QString error;
@@ -1049,14 +1049,14 @@ void RosterTransferMenuTests::sourceWindowOverflowBlocksTransferMenu()
         );
     QVERIFY(table);
     QVERIFY(failureMessage);
-    QVERIFY(!table->isEnabled());
+    QVERIFY(table->isEnabled());
     QVERIFY(failureMessage->text().contains(
         QStringLiteral("saved rows after row 25")
         ));
 
     const TransferMenuSnapshot menu = openTransferMenu(editor, table);
     QVERIFY(menu.invocationSucceeded);
-    QVERIFY(!menu.transferMenuFound);
+    QVERIFY(menu.transferMenuFound);
 
     const auto storedSource = fixture.services.rosterService()->roster(sourceId);
     QVERIFY(storedSource);
@@ -1065,7 +1065,7 @@ void RosterTransferMenuTests::sourceWindowOverflowBlocksTransferMenu()
         QStringLiteral("Source tail marker"));
 }
 
-void RosterTransferMenuTests::targetWindowOverflowBlocksTransferWithoutWriting()
+void RosterTransferMenuTests::targetWindowOverflowAllowsTransferPreservingTail()
 {
     RosterTransferMenuFixture fixture;
     QString error;
@@ -1147,24 +1147,19 @@ void RosterTransferMenuTests::targetWindowOverflowBlocksTransferWithoutWriting()
     QVERIFY(action.targetActionTriggered);
     QVERIFY(tailMarkerInserted);
     QVERIFY2(tailMarkerError.isEmpty(), qPrintable(tailMarkerError));
-    QCOMPARE(prompts.messages.size(), 1);
-    QCOMPARE(prompts.messages.constFirst().title,
-        QStringLiteral("Cannot Transfer Student"));
-    QVERIFY(prompts.messages.constFirst().message.contains(
-        QStringLiteral("beyond row 25")
-        ));
+    QVERIFY(prompts.messages.isEmpty());
     QVERIFY(prompts.confirmations.isEmpty());
 
     const auto sourceAfter = fixture.services.rosterService()->roster(sourceId);
     const auto targetAfter = fixture.services.rosterService()->roster(targetId);
     QVERIFY(sourceAfter);
     QVERIFY(targetAfter);
-    QCOMPARE(sourceAfter->rows.size(), 1);
-    QCOMPARE(sourceAfter->rows.at(0).at(0), QStringLiteral("Student"));
+    QCOMPARE(sourceAfter->rows.size(), 0);
     QCOMPARE(targetAfter->rows.size(), 38);
     QCOMPARE(targetAfter->rows.at(0).at(0), QStringLiteral("Existing Target"));
     QCOMPARE(targetAfter->rows.at(0).at(1),
         QString::fromUtf16(u"\uBC15\uC9C0\uBBFC"));
+    QCOMPARE(targetAfter->rows.at(1).at(0), QStringLiteral("Student"));
     QCOMPARE(targetAfter->rows.at(37).at(0),
         QStringLiteral("Target tail marker"));
 }
