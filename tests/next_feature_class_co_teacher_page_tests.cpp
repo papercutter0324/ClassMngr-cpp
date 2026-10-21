@@ -13,7 +13,9 @@
 #include "ui/shared/widgets/sections/teacher_info_section.h"
 
 #include <QComboBox>
+#include <QLabel>
 #include <QLineEdit>
+#include <QPushButton>
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QSignalSpy>
@@ -110,6 +112,45 @@ QStringList visibleTeacherDetails(const TeacherInfoSection* section)
         details.append(field->text());
     }
     return details;
+}
+
+QLabel* assignmentReadStatus(ClassCoTeacherPage& page)
+{
+    return page.findChild<QLabel*>(
+        QStringLiteral("classCoTeacherAssignmentReadStatus")
+        );
+}
+
+QPushButton* coTeacherSaveButton(ClassCoTeacherPage& page)
+{
+    return page.findChild<QPushButton*>(
+        QStringLiteral("classCoTeacherSaveButton")
+        );
+}
+
+void verifyUnknownAssignmentStatus(
+    const QLabel* status,
+    const QString& code,
+    const QString& message,
+    const bool recoverable = false
+    )
+{
+    QVERIFY(status);
+    QCOMPARE(status->accessibleName(),
+        QStringLiteral("Co-Teacher assignment status"));
+    QVERIFY(!status->isHidden());
+    QVERIFY(status->text().contains(
+        QStringLiteral("could not be confirmed")
+        ));
+    QVERIFY(status->text().contains(QStringLiteral("Save Changes")));
+    QVERIFY(status->text().contains(QStringLiteral("Read error")));
+    QVERIFY(status->text().contains(QStringLiteral("code %1").arg(code)));
+    QVERIFY(status->text().contains(
+        QStringLiteral("recoverable: %1").arg(
+            recoverable ? QStringLiteral("true") : QStringLiteral("false")
+            )
+        ));
+    QVERIFY(status->text().contains(QStringLiteral("details: %1").arg(message)));
 }
 
 bool updatePersistedTeacherId(
@@ -292,6 +333,9 @@ private slots:
     void manualFailureWarnsAndRetainsDirtyState();
     void loadDiscardAndSuccessfulSaveUseFreshSnapshotsAtExpectedTimes();
     void readFailuresKeepDefaultSelectionAndIndependentTitleSources();
+    void unknownAssignmentAllowsOnlyExplicitButtonSaveAndUnassignment();
+    void failedExplicitWriteRetainsUnknownStatusAndDraft();
+    void unknownExplicitWriteReadbackFailurePreservesCommittedUi();
     void nonpositivePersistedTeacherIdRetainsClassTitleAndClearsSelection();
     void teacherChoicesFailureWarnsAndClearsDatabaseState();
     void wideTeacherIdentitySurvivesSelectionSaveAndReadback();
@@ -789,13 +833,17 @@ readFailuresKeepDefaultSelectionAndIndependentTitleSources()
     QVERIFY(classId > 0);
     QVERIFY(teacherId > 0);
 
+    RecordingAssignmentPort assignmentPort;
     RecordingPageReadPort readPort;
-    ClassCoTeacherPage page(&services, false, nullptr, nullptr, &readPort);
+    ClassCoTeacherPage page(
+        &services, false, nullptr, &assignmentPort, &readPort);
     const Classroom classroom(QStringLiteral("Fallback Class"), classId);
     auto* section = page.findChild<TeacherInfoSection*>();
     auto* header = page.findChild<PageHeader*>();
+    auto* status = assignmentReadStatus(page);
     QVERIFY(section);
     QVERIFY(header);
+    QVERIFY(status);
 
     readPort.result = Application::ClassCoTeacherPageReadResult::failure({
         .code = Domain::ErrorCode::Technical,
@@ -806,13 +854,33 @@ readFailuresKeepDefaultSelectionAndIndependentTitleSources()
     QCOMPARE(section->teacherId(), -1);
     QVERIFY(header->subtitle().contains(QStringLiteral("Unknown Class")));
     QVERIFY(header->subtitle().contains(QStringLiteral("No Teacher")));
+    verifyUnknownAssignmentStatus(
+        status,
+        QStringLiteral("Technical"),
+        QStringLiteral("snapshot read failed")
+        );
+
+    const int teacherIndex = section->teacherSelector()->findData(teacherId);
+    QVERIFY(teacherIndex > 0);
+    section->teacherSelector()->setCurrentIndex(teacherIndex);
+    QVERIFY(page.hasUnsavedChanges());
+    verifyUnknownAssignmentStatus(
+        status,
+        QStringLiteral("Technical"),
+        QStringLiteral("snapshot read failed")
+        );
+    QVERIFY(!page.saveChanges());
+    page.saveData();
+    QTest::qWait(900);
+    QCOMPARE(assignmentPort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
 
     readPort.result = pageReadResult(
         classId,
         Domain::Result<Application::ClassCoTeacherPageFields>::failure({
-            .code = Domain::ErrorCode::Technical,
+            .code = Domain::ErrorCode::NotFound,
             .message = "class info failed",
-            .recoverable = false
+            .recoverable = true
         }),
         Domain::Result<std::u16string>::success(u"Ignored Without Class")
         );
@@ -820,6 +888,21 @@ readFailuresKeepDefaultSelectionAndIndependentTitleSources()
     QCOMPARE(section->teacherId(), -1);
     QVERIFY(header->subtitle().contains(QStringLiteral("Unknown Class")));
     QVERIFY(header->subtitle().contains(QStringLiteral("No Teacher")));
+    verifyUnknownAssignmentStatus(
+        status,
+        QStringLiteral("NotFound"),
+        QStringLiteral("class info failed"),
+        true
+        );
+    const int nextTeacherIndex = section->teacherSelector()->findData(teacherId);
+    QVERIFY(nextTeacherIndex > 0);
+    section->teacherSelector()->setCurrentIndex(nextTeacherIndex);
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!page.saveChanges());
+    page.saveData();
+    QTest::qWait(900);
+    QCOMPARE(assignmentPort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
 
     readPort.result = pageReadResult(
         classId,
@@ -834,11 +917,310 @@ readFailuresKeepDefaultSelectionAndIndependentTitleSources()
         );
     page.loadClass(classroom);
     QCOMPARE(section->teacherId(), teacherId);
+    QVERIFY(status->isHidden());
     QVERIFY(header->subtitle().contains(QStringLiteral("E4")));
     QVERIFY(header->subtitle().contains(QStringLiteral("Theseus")));
     QVERIFY(header->subtitle().contains(QStringLiteral("No Teacher")));
     QVERIFY(!header->subtitle().contains(QStringLiteral("Page Teacher")));
     QCOMPARE(readPort.callCount, 3);
+    QCOMPARE(assignmentPort.callCount, 0);
+
+    section->teacherSelector()->setCurrentIndex(0);
+    QVERIFY(page.hasUnsavedChanges());
+    QTRY_COMPARE_WITH_TIMEOUT(assignmentPort.callCount, 1, 3000);
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(status->isHidden());
+    QVERIFY(!assignmentPort.requests.front().teacherId.has_value());
+}
+
+void NextFeatureClassCoTeacherPageTests::
+unknownAssignmentAllowsOnlyExplicitButtonSaveAndUnassignment()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(services);
+    const int teacherId = createTeacher(services);
+    QVERIFY(classId > 0);
+    QVERIFY(teacherId > 0);
+
+    RecordingAssignmentPort assignmentPort;
+    RecordingPageReadPort readPort;
+    readPort.failOnCall = 1;
+    readPort.result = Application::ClassCoTeacherPageReadResult::failure({
+        .code = Domain::ErrorCode::Technical,
+        .message = "initial assignment read failed",
+        .recoverable = false
+    });
+    ClassCoTeacherPage page(
+        &services, false, nullptr, &assignmentPort, &readPort);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("Fallback Class"), classId));
+
+    auto* section = page.findChild<TeacherInfoSection*>();
+    auto* status = assignmentReadStatus(page);
+    auto* saveButton = coTeacherSaveButton(page);
+    QVERIFY(section);
+    QVERIFY(status);
+    QVERIFY(saveButton);
+    verifyUnknownAssignmentStatus(
+        status,
+        QStringLiteral("Technical"),
+        QStringLiteral("initial assignment read failed")
+        );
+
+    const int teacherIndex = section->teacherSelector()->findData(teacherId);
+    QVERIFY(teacherIndex > 0);
+    section->teacherSelector()->setCurrentIndex(teacherIndex);
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isHidden());
+    QVERIFY(saveButton->isEnabled());
+    QVERIFY(!page.saveChanges());
+    page.saveData();
+    QCOMPARE(assignmentPort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
+
+    readPort.result = pageReadResult(
+        classId,
+        Domain::Result<Application::ClassCoTeacherPageFields>::success(
+            readFields(teacherId)
+            ),
+        Domain::Result<std::u16string>::success(u"Page Teacher")
+        );
+    QTest::mouseClick(saveButton, Qt::LeftButton);
+    QCOMPARE(assignmentPort.callCount, 1);
+    QVERIFY(assignmentPort.requests.front().teacherId.has_value());
+    QCOMPARE(assignmentPort.requests.front().teacherId->value(),
+        std::to_string(teacherId));
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(status->isHidden());
+    QCOMPARE(section->teacherId(), teacherId);
+
+    readPort.failOnCall = 3;
+    readPort.result = Application::ClassCoTeacherPageReadResult::failure({
+        .code = Domain::ErrorCode::NotFound,
+        .message = "reload assignment read failed",
+        .recoverable = true
+    });
+    page.loadClass(Classroom(QStringLiteral("Fallback Class"), classId));
+    verifyUnknownAssignmentStatus(
+        status,
+        QStringLiteral("NotFound"),
+        QStringLiteral("reload assignment read failed"),
+        true
+        );
+    QCOMPARE(section->teacherId(), -1);
+
+    section->teacherSelector()->setCurrentIndex(
+        section->teacherSelector()->findData(teacherId)
+        );
+    QVERIFY(page.hasUnsavedChanges());
+    section->teacherSelector()->setCurrentIndex(0);
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(saveButton->isEnabled());
+
+    readPort.result = pageReadResult(
+        classId,
+        Domain::Result<Application::ClassCoTeacherPageFields>::success(
+            readFields(std::nullopt)
+            ),
+        Domain::Result<std::u16string>::success({})
+        );
+    QTest::mouseClick(saveButton, Qt::LeftButton);
+    QCOMPARE(assignmentPort.callCount, 2);
+    QVERIFY(!assignmentPort.requests.back().teacherId.has_value());
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(status->isHidden());
+    QCOMPARE(section->teacherId(), -1);
+
+    page.loadClass(Classroom(QStringLiteral("Fallback Class"), classId));
+    QVERIFY(status->isHidden());
+
+    readPort.failOnCall = 6;
+    readPort.result = Application::ClassCoTeacherPageReadResult::failure({
+        .code = Domain::ErrorCode::Technical,
+        .message = "clear-state assignment read failed",
+        .recoverable = false
+    });
+    page.loadClass(Classroom(QStringLiteral("Fallback Class"), classId));
+    verifyUnknownAssignmentStatus(
+        status,
+        QStringLiteral("Technical"),
+        QStringLiteral("clear-state assignment read failed")
+        );
+    section->teacherSelector()->setCurrentIndex(
+        section->teacherSelector()->findData(teacherId)
+        );
+    QVERIFY(page.hasUnsavedChanges());
+    page.clearDatabaseState();
+    QVERIFY(status->isHidden());
+    QVERIFY(!page.hasUnsavedChanges());
+    const int writesBeforeClearSave = assignmentPort.callCount;
+    page.saveData();
+    QCOMPARE(assignmentPort.callCount, writesBeforeClearSave);
+}
+
+void NextFeatureClassCoTeacherPageTests::
+failedExplicitWriteRetainsUnknownStatusAndDraft()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(services);
+    Teacher assignedTeacher;
+    assignedTeacher.teacherEn = QStringLiteral("Committed Teacher");
+    assignedTeacher.preferredName = assignedTeacher.teacherEn;
+    assignedTeacher.roomNumber = QStringLiteral("Room 18");
+    assignedTeacher.internetType = QStringLiteral("LAN");
+    assignedTeacher.wifiName = QStringLiteral("Network 18");
+    assignedTeacher.wifiPassword = QStringLiteral("Password 18");
+    assignedTeacher.projectionType = QStringLiteral("HDMI");
+    assignedTeacher.zoomId = QStringLiteral("Zoom 18");
+    assignedTeacher.zoomPassword = QStringLiteral("Zoom Password 18");
+    const auto assignedTeacherResult =
+        services.teacherService()->save(assignedTeacher);
+    const int teacherId = assignedTeacherResult
+        ? *assignedTeacherResult
+        : -1;
+    QVERIFY(classId > 0);
+    QVERIFY(teacherId > 0);
+
+    RecordingAssignmentPort assignmentPort;
+    assignmentPort.result = Domain::Result<void>::failure({
+        .code = Domain::ErrorCode::Technical,
+        .message = "assignment write failed",
+        .recoverable = false
+    });
+    RecordingPageReadPort readPort;
+    readPort.result = Application::ClassCoTeacherPageReadResult::failure({
+        .code = Domain::ErrorCode::Technical,
+        .message = "read state remains unknown",
+        .recoverable = false
+    });
+    ClassCoTeacherPage page(
+        &services, false, nullptr, &assignmentPort, &readPort);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("Fallback Class"), classId));
+    auto* section = page.findChild<TeacherInfoSection*>();
+    auto* status = assignmentReadStatus(page);
+    auto* saveButton = coTeacherSaveButton(page);
+    QVERIFY(section);
+    QVERIFY(status);
+    QVERIFY(saveButton);
+
+    const int teacherIndex = section->teacherSelector()->findData(teacherId);
+    QVERIFY(teacherIndex > 0);
+    section->teacherSelector()->setCurrentIndex(teacherIndex);
+    QVERIFY(page.hasUnsavedChanges());
+    const QString originalStatus = status->text();
+    QTest::mouseClick(saveButton, Qt::LeftButton);
+
+    QCOMPARE(assignmentPort.callCount, 1);
+    QCOMPARE(readPort.callCount, 1);
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(section->teacherId(), teacherId);
+    QVERIFY(!status->isHidden());
+    QCOMPARE(status->text(), originalStatus);
+    QCOMPARE(m_promptService.requests.size(), std::size_t(1));
+    QCOMPARE(m_promptService.requests.front().message,
+        QStringLiteral("assignment write failed"));
+}
+
+void NextFeatureClassCoTeacherPageTests::
+unknownExplicitWriteReadbackFailurePreservesCommittedUi()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(services);
+    Teacher assignedTeacher;
+    assignedTeacher.teacherEn = QStringLiteral("Committed Teacher");
+    assignedTeacher.preferredName = assignedTeacher.teacherEn;
+    assignedTeacher.roomNumber = QStringLiteral("Room 18");
+    assignedTeacher.internetType = QStringLiteral("LAN");
+    assignedTeacher.wifiName = QStringLiteral("Network 18");
+    assignedTeacher.wifiPassword = QStringLiteral("Password 18");
+    assignedTeacher.projectionType = QStringLiteral("HDMI");
+    assignedTeacher.zoomId = QStringLiteral("Zoom 18");
+    assignedTeacher.zoomPassword = QStringLiteral("Zoom Password 18");
+    const auto assignedTeacherResult =
+        services.teacherService()->save(assignedTeacher);
+    const int teacherId = assignedTeacherResult
+        ? *assignedTeacherResult
+        : -1;
+    QVERIFY(classId > 0);
+    QVERIFY(teacherId > 0);
+
+    Platform::ApplicationServicesClassCoTeacherPageReadPort actualReadPort(
+        &services
+        );
+    RecordingAssignmentPort assignmentPort;
+    RecordingPageReadPort readPort;
+    readPort.delegate = &actualReadPort;
+    readPort.failOnCall = 1;
+    readPort.result = Application::ClassCoTeacherPageReadResult::failure({
+        .code = Domain::ErrorCode::Technical,
+        .message = "initial assignment read failed",
+        .recoverable = false
+    });
+    ClassCoTeacherPage page(
+        &services, false, nullptr, &assignmentPort, &readPort);
+    const Classroom classroom(QStringLiteral("Fallback Class"), classId);
+    page.loadClass(classroom);
+
+    auto* section = page.findChild<TeacherInfoSection*>();
+    auto* header = page.findChild<PageHeader*>();
+    auto* status = assignmentReadStatus(page);
+    auto* saveButton = coTeacherSaveButton(page);
+    QVERIFY(section);
+    QVERIFY(header);
+    QVERIFY(status);
+    QVERIFY(saveButton);
+
+    const int teacherIndex = section->teacherSelector()->findData(teacherId);
+    QVERIFY(teacherIndex > 0);
+    section->teacherSelector()->setCurrentIndex(teacherIndex);
+    QVERIFY(page.hasUnsavedChanges());
+    const QStringList committedDetails{
+        QStringLiteral("Room 18"),
+        QStringLiteral("LAN"),
+        QStringLiteral("Network 18"),
+        QStringLiteral("Password 18"),
+        QStringLiteral("HDMI"),
+        QStringLiteral("Zoom 18"),
+        QStringLiteral("Zoom Password 18")
+    };
+
+    readPort.failOnCall = 2;
+    readPort.result = Application::ClassCoTeacherPageReadResult::failure({
+        .code = Domain::ErrorCode::Technical,
+        .message = "post-save readback failed",
+        .recoverable = false
+    });
+    QTest::mouseClick(saveButton, Qt::LeftButton);
+
+    QCOMPARE(assignmentPort.callCount, 1);
+    QCOMPARE(readPort.callCount, 2);
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(section->teacherId(), teacherId);
+    QCOMPARE(section->teacherSelector()->currentData().toInt(), teacherId);
+    QCOMPARE(visibleTeacherDetails(section), committedDetails);
+    QVERIFY(header->subtitle().contains(QStringLiteral("Fallback Class")));
+    QVERIFY(header->subtitle().contains(QStringLiteral("Committed Teacher")));
+    QVERIFY(!header->subtitle().contains(QStringLiteral("No Teacher")));
+    QVERIFY(status->isHidden());
+
+    // A later ordinary autosave proves the successful explicit write released
+    // the unknown-state save barrier, even though its readback failed.
+    section->teacherSelector()->setCurrentIndex(0);
+    QVERIFY(page.hasUnsavedChanges());
+    QTRY_COMPARE_WITH_TIMEOUT(assignmentPort.callCount, 2, 3000);
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(!assignmentPort.requests.back().teacherId.has_value());
+    QVERIFY(status->isHidden());
 }
 
 void NextFeatureClassCoTeacherPageTests::
