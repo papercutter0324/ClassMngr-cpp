@@ -1,7 +1,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "domain/validation/speaking_eval_validator.h"
 #include "next/application/speaking_evaluation_save_use_case.h"
@@ -37,13 +37,13 @@ bool executeSql(
     const QString& statement
     )
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     return query.exec(statement);
 }
 
@@ -161,7 +161,7 @@ private slots:
     void rejectsRealRowIndexBeforeNarrowingAndRollsBack();
     void forwardsQuestionableKoreanNameDecision();
     void nullServicesPointerFailsRecoverably();
-    void closedSessionFailsWithoutDataServiceFallback();
+    void closedStoreFailsWithoutDataServiceFallback();
 };
 
 void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
@@ -664,10 +664,10 @@ missingParentMapsNotFoundWithoutCreatingEvaluationRows()
         );
     QVERIFY(!result.error().recoverable);
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
-    QSqlQuery query(session->database());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    QSqlQuery query(store->database());
     query.prepare(R"(
         SELECT COUNT(*)
         FROM speaking_evaluations
@@ -728,11 +728,11 @@ legacyMissingParentPreservesForeignKeyDiagnostic()
     const int missingClassId = 100001;
     const QString evaluationName =
         QStringLiteral("Missing Parent Baseline");
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
 
-    QSqlDatabase database = session->database();
+    QSqlDatabase database = store->database();
     SpeakingEvalRepository repository(database);
     const SpeakingEvalRows rows;
     const Status result = repository.saveSpeakingEval(
@@ -750,7 +750,7 @@ legacyMissingParentPreservesForeignKeyDiagnostic()
             )
         );
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     query.prepare(R"(
         SELECT COUNT(*)
         FROM speaking_evaluations
@@ -800,11 +800,11 @@ rejectsRealRowIndexBeforeNarrowingAndRollsBack()
         );
     QVERIFY(initialSave);
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     query.prepare(R"(
         SELECT id
         FROM speaking_evaluations
@@ -984,7 +984,7 @@ nullServicesPointerFailsRecoverably()
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
-closedSessionFailsWithoutDataServiceFallback()
+closedStoreFailsWithoutDataServiceFallback()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -995,15 +995,15 @@ closedSessionFailsWithoutDataServiceFallback()
         );
     QVERIFY(createdClass);
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     Platform::ApplicationServicesSpeakingEvaluationSavePort port(services);
 
     services.closeDatabase();
     QVERIFY(!services.hasOpenDatabase());
-    QCOMPARE(services.databaseSession(), session);
-    QVERIFY(!session->isOpen());
+    QCOMPARE(services.workspaceStore(), store);
+    QVERIFY(!store->isOpen());
     QVERIFY(services.dataService());
     QVERIFY(!services.dataService()->isOpen());
 

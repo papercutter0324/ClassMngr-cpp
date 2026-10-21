@@ -268,3 +268,31 @@ run.
 cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests
 ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests$'
 ```
+
+Commit: `fee2d6db`.
+
+## F1329 — Speaking-evaluation save — 2026-10-22
+
+Migrated the typed Platform save adapter and direct test setup to
+`ApplicationServices::workspaceStore()` and its existing
+`SpeakingEvalRepository`. The Application contract, detailed transactional
+save, validation and normalization, 25×11 matrix, all columns, and dirty-cell
+delta semantics remain unchanged. Legacy `SpeakingEvaluationService` and
+DataService save paths remain outside this slice.
+
+The focused Platform save-port, Application use-case, page-save parity, and
+page-save CTests passed **4/4**. An independent Tester reviewed and reran the
+same selection successfully. `git diff --check` passed. Ninja printed a
+premature-end-of-file warning and recovered. Verification used the existing
+macOS Debug tree; no broad suite or cross-platform build was run.
+
+The null-repository guard maps to recoverable `NotFound`, but the current
+fixture cannot create an open `WorkspaceStore` without its repository, so
+that branch remains untested directly. Closed/unavailable store, missing
+parent, rollback, delta update, Application, and page behavior are covered.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests ClassMngrSpeakingEvalPageSaveParityTests ClassMngrSpeakingEvalPageSaveTests --parallel 4
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests|ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests|ClassMngrSpeakingEvalPageSaveParityTests|ClassMngrSpeakingEvalPageSaveTests)$'
+git diff --check
+```

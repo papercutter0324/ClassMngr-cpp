@@ -1,6 +1,6 @@
 #include "next/platform/application_services_speaking_evaluation_save_port.h"
 
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "domain/models/speaking_evaluation.h"
 
@@ -135,7 +135,7 @@ saveEvaluation(
             );
     }
 
-    if (!m_session || !m_session->isOpen())
+    if (!m_store || !m_store->isOpen())
     {
         return unavailableFailure();
     }
@@ -143,13 +143,10 @@ saveEvaluation(
     try
     {
         SpeakingEvalRepository* const repository =
-            m_session->speakingEvalRepository();
+            m_store->speakingEvalRepository();
         if (!repository)
         {
-            return failure(
-                Domain::ErrorCode::Technical,
-                "No Teacher Profile service is available."
-                );
+            return unavailableFailure();
         }
 
         const SpeakingEvalRepository::SaveResult saved =

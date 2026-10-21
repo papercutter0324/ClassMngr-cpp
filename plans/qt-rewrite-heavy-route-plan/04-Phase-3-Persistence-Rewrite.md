@@ -38,11 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-22
-- Current note: F1318–F1328 are complete. F1327 now transactionally preserves
-  tail rows at their absolute indices, remaps tail cells when the visible
-  column schema changes, and keeps transfer writes atomic. F1328 moved
-  speaking-evaluation single and batch reads to `WorkspaceStore`; F1329
-  speaking-evaluation saving is current.
+- Current note: F1318–F1329 are complete. F1328 moved speaking-evaluation
+  single and batch reads to `WorkspaceStore`; F1329 moved the typed save port
+  to `WorkspaceStore` while preserving the transactional delta-save contract.
+  F1330 Schedule Builder source reading is current and requires scope discovery.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -157,6 +156,8 @@ Speaking-evaluation single and batch reads use their existing typed
 application ports with `WorkspaceStore`. Keep the ordered detailed read
 behavior: the single-read port is also used by roster score-import fallback,
 so it must not silently cap rows for the page's 25-row display.
+Speaking-evaluation save uses the existing detailed repository transaction
+and preserves full-matrix versus dirty-cell update semantics.
 
 ### 3.4 File formats
 
