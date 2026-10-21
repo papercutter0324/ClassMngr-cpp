@@ -38,12 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-22
-- Current note: F1333 migrated the typed single Calendar Event save adapter to
-  `WorkspaceStore`, preserving repository transaction behavior and detachment
-  of only the selected repeat occurrence. The existing dialog can convert an
-  `Unknown` event status to `Timed` when the event is opened and saved; this
-  pre-existing UI behavior remains unchanged. F1334 Calendar Import batch save
-  is current.
+- Current note: F1334 migrated the typed Calendar Import batch save adapter to
+  `WorkspaceStore`. The ordered batch still uses one repository transaction,
+  accepts an empty batch as a no-op, and returns typed IDs in input order.
+  F1335 repeat-series suffix delete is current.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).

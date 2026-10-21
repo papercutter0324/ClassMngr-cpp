@@ -415,3 +415,35 @@ cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationS
 ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextPlatformApplicationServicesCalendarEventPortTests|ClassMngrNextApplicationCalendarEventTests|ClassMngrCalendarEventRepositoryTests|ClassMngrCalendarPageEventMutationParityTests)$'
 git diff --check
 ```
+
+Commit: `8ef71240`.
+
+## F1334 — Calendar Import batch save — 2026-10-22
+
+Migrated the typed Calendar Import save adapter and its direct import fixtures
+from the `DatabaseSession` compatibility accessor to
+`ApplicationServices::workspaceStore()`. Request validation, event
+normalization and mapping, create-only semantics, repeat-series clearing,
+structured errors, and returned-ID validation remain unchanged. The adapter
+still makes one ordered `saveCalendarEvents()` call; the repository owns the
+single transaction for the batch and returns IDs in input order. An empty
+batch remains a successful no-op. Duplicate detection and import counts remain
+in the existing use case.
+
+The focused Platform port, Application import use case, end-to-end import
+parity, CalendarEvent repository, and typed Application event CTests passed
+**5/5**. Independent review confirmed ordered typed IDs, empty and duplicate-
+only batches, rejection before writes, and rollback with no partial rows for
+the 4,097-event failure case. `git diff --check` passed. The first parity run
+could not bind its localhost fixture in the restricted sandbox; the test
+passed on rerun with loopback access. The escalation completed without
+rejection or a manual approval prompt. Ninja reported a premature-end-of-file
+warning and recovered. Verification used the existing macOS Debug tree; no
+broad suite or cross-platform build was run. Transaction-start and commit
+failure injection remain outside current test coverage.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesCalendarEventPortTests ClassMngrNextApplicationCalendarEventImportUseCaseTests ClassMngrCalendarEventImportParityTests ClassMngrCalendarEventRepositoryTests ClassMngrNextApplicationCalendarEventTests --parallel 4
+ctest --test-dir build/macos-clang-debug --output-on-failure -j1 -R '^(ClassMngrNextPlatformApplicationServicesCalendarEventPortTests|ClassMngrNextApplicationCalendarEventImportUseCaseTests|ClassMngrCalendarEventImportParityTests|ClassMngrCalendarEventRepositoryTests|ClassMngrNextApplicationCalendarEventTests)$'
+git diff --check
+```
