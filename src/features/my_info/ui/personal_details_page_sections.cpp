@@ -875,6 +875,16 @@ void PersonalDetailsPage::loadPageData()
     if (loaded)
     {
         clearDirty();
+        if (
+            m_storedNameKnown
+            && m_currentCampusKnown
+            && m_zoomPreferencesKnown
+            && m_signatureImageKnown
+            && m_signaturePreferencesKnown
+            )
+        {
+            clearSaveFailureStatus();
+        }
     }
 }
 bool PersonalDetailsPage::loadStoredSettings()
@@ -1396,6 +1406,8 @@ bool PersonalDetailsPage::saveMyInfoInternal(QString* errorMessage)
         }
         return false;
     }
+
+    clearSaveFailureStatus();
 
     if (!zoomNotAvailable)
     {

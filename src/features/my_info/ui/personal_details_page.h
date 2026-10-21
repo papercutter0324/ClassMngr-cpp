@@ -62,6 +62,8 @@ private:
     void loadPageData();
     bool loadStoredSettings();
     bool saveMyInfoInternal(QString* errorMessage = nullptr);
+    void showNoninteractiveSaveFailureStatus();
+    void clearSaveFailureStatus();
     bool normalizeZoomFields();
     bool normalizeLineEdit(QLineEdit* edit, const QString& defaultText);
     void setZoomFieldsEnabled();
@@ -97,6 +99,7 @@ private:
     QLabel* m_zoomLoginIdLabel = nullptr;
     QLabel* m_zoomPasswordLabel = nullptr;
     QLabel* m_zoomLabel = nullptr;
+    QLabel* m_saveStatusLabel = nullptr;
 
     QLineEdit* m_nameEdit = nullptr;
     QComboBox* m_campusCombo = nullptr;
@@ -128,5 +131,6 @@ private:
     bool m_signatureImageKnown = false;
     bool m_signaturePreferencesKnown = false;
     bool m_zoomPreferencesKnown = false;
+    bool m_saveFailureStatusActive = false;
 
 };

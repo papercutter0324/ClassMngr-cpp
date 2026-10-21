@@ -8,10 +8,12 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QSizePolicy>
 #include <QTimer>
 
 PersonalDetailsPage::PersonalDetailsPage(
@@ -25,11 +27,32 @@ PersonalDetailsPage::PersonalDetailsPage(
     setProperty("role", UiRoles::MyInfo);
     buildUi();
 
+    m_saveStatusLabel = new QLabel(this);
+    m_saveStatusLabel->setObjectName(
+        QStringLiteral("personalDetailsSaveStatus")
+        );
+    m_saveStatusLabel->setAccessibleName(tr("Save status"));
+    m_saveStatusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    m_saveStatusLabel->setWordWrap(true);
+    m_saveStatusLabel->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Preferred
+        );
+    m_saveStatusLabel->hide();
+    bottomLayout()->addWidget(m_saveStatusLabel, 1);
+    setBottomBarVisible(false);
+
     connect(
         m_autosave,
         &AutosaveCoordinator::saveRequested,
         this,
-        [this](bool) { saveMyInfoInternal(); }
+        [this](bool interactive)
+        {
+            if (!saveMyInfoInternal() && !interactive)
+            {
+                showNoninteractiveSaveFailureStatus();
+            }
+        }
         );
 }
 
@@ -46,6 +69,7 @@ void PersonalDetailsPage::refresh()
 void PersonalDetailsPage::clearDatabaseState()
 {
     m_autosave->setLoading(true);
+    clearSaveFailureStatus();
     m_storedNameKnown = false;
     m_currentCampusKnown = false;
     m_signatureImageKnown = false;
@@ -123,6 +147,10 @@ void PersonalDetailsPage::retranslateUi()
     m_zoomPasswordLabel->setText(tr("Zoom Password"));
     m_zoomLabel->setText(tr("Zoom"));
     m_zoomNotAvailableCheck->setText(tr("N/A"));
+    if (m_saveFailureStatusActive)
+    {
+        showNoninteractiveSaveFailureStatus();
+    }
     updateSignatureControls();
     updateTypedSignatureFontOptions();
     updateSignaturePreview();
@@ -130,7 +158,10 @@ void PersonalDetailsPage::retranslateUi()
 
 void PersonalDetailsPage::saveData()
 {
-    saveMyInfoInternal();
+    if (!saveMyInfoInternal())
+    {
+        showNoninteractiveSaveFailureStatus();
+    }
 }
 
 bool PersonalDetailsPage::saveChanges()
@@ -161,6 +192,30 @@ void PersonalDetailsPage::discardChanges()
 {
     m_autosave->cancelPendingSave();
     loadPageData();
+}
+
+void PersonalDetailsPage::showNoninteractiveSaveFailureStatus()
+{
+    m_saveFailureStatusActive = true;
+    if (m_saveStatusLabel)
+    {
+        m_saveStatusLabel->setText(
+            tr("Your personal details could not be saved. Your changes are still here.")
+            );
+        m_saveStatusLabel->show();
+    }
+    setBottomBarVisible(true);
+}
+
+void PersonalDetailsPage::clearSaveFailureStatus()
+{
+    m_saveFailureStatusActive = false;
+    if (m_saveStatusLabel)
+    {
+        m_saveStatusLabel->clear();
+        m_saveStatusLabel->hide();
+    }
+    setBottomBarVisible(false);
 }
 
 void PersonalDetailsPage::setSaveMode(SaveMode mode)
