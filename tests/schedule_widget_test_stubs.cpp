@@ -119,6 +119,7 @@ bool duplicateKoreanTeacherNames = false;
 bool classesNavigationReadFailure = false;
 QSet<int> classesNavigationParentMissing;
 bool scheduleClassInfoReadFailure = false;
+int scheduleSourceClassIdOverride = -1;
 int legacyClassListReadCount = 0;
 int repositoryClassListReadCount = 0;
 int legacyClassInfoReadCount = 0;
@@ -238,6 +239,7 @@ void reset()
     classesNavigationReadFailure = false;
     classesNavigationParentMissing.clear();
     scheduleClassInfoReadFailure = false;
+    scheduleSourceClassIdOverride = -1;
     legacyClassListReadCount = 0;
     repositoryClassListReadCount = 0;
     legacyClassInfoReadCount = 0;
@@ -329,6 +331,11 @@ void setSlotSaveFailure(
 void setScheduleClassInfoReadFailure(const bool fail)
 {
     scheduleClassInfoReadFailure = fail;
+}
+
+void setScheduleSourceClassIdOverride(const int classId)
+{
+    scheduleSourceClassIdOverride = classId;
 }
 
 void setIncludeAdditionalClass(
@@ -1351,6 +1358,11 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
         if (loaded)
         {
             ClassInfo info = *loaded;
+            if (ScheduleWidgetTestStubs::scheduleSourceClassIdOverride >= 0)
+            {
+                info.classId =
+                    ScheduleWidgetTestStubs::scheduleSourceClassIdOverride;
+            }
             if (info.teacherId > 0)
             {
                 const Teacher teacher = DataService().getTeacher(
@@ -1849,6 +1861,31 @@ Status TestingBlockRepository::assignTestingClass(
 
     ScheduleWidgetTestStubs::testingBlocks.remove(key);
     ScheduleWidgetTestStubs::testingClassAssignments.insert(key, classId);
+    return {};
+}
+
+TestingClassAssignmentSaveDetailedResult
+TestingBlockRepository::assignTestingClassDetailed(
+    const QString& day,
+    const QString& startTime,
+    const int classId,
+    const bool replaceExisting
+    )
+{
+    const Status result = assignTestingClass(
+        day,
+        startTime,
+        classId,
+        replaceExisting
+        );
+    if (!result)
+    {
+        return std::unexpected(TestingClassAssignmentSaveFailure{
+            .kind = TestingClassAssignmentSaveFailureKind::Technical,
+            .message = result.error()
+        });
+    }
+
     return {};
 }
 

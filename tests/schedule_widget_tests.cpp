@@ -98,6 +98,8 @@ void setTestingAssignmentRepositoryAvailable(bool available);
 void setTestingAssignmentWriteFailure(const QString& error);
 void setSlotSaveFailure(const QString& error);
 void setScheduleClassInfoReadFailure(bool fail);
+void setScheduleSourceClassIdOverride(int classId);
+void setClassRegularHoursEmpty(int classId, bool empty);
 void setExistingIntensiveHours(bool exists);
 void setIncludeMiddleSchoolClasses(bool include);
 void setTestingBlock(
@@ -643,8 +645,11 @@ private slots:
     void failedTestingAssignmentWriteWarnsAndDoesNotReload();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
     void sourceQueryBuildsRegularIntensiveAndTestingSchedules();
+    void successfulEmptyScheduleSourceShowsNoError();
     void unavailableSourceReturnsDaysOnlyWithoutReading();
     void failedSourceReadLogsAndKeepsIndependentScheduleReads();
+    void failedSourceReadStatusRetriesAndClearsAfterSuccess();
+    void invalidSourceClassIdShowsNonrecoverableStatusWithoutRetry();
     void previewModelBypassesSourceAndScheduleReads();
     void failedTestingAssignmentReadWarnsAndRetainsAssignments();
     void unavailableTestingAssignmentReadClearsAssignments();
@@ -2401,6 +2406,37 @@ sourceQueryBuildsRegularIntensiveAndTestingSchedules()
     QCOMPARE(testingCell->entries.first().classId, 42);
 }
 
+void ScheduleWidgetTests::successfulEmptyScheduleSourceShowsNoError()
+{
+    ScheduleWidgetTestStubs::setClassRegularHoursEmpty(42, true);
+
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 1);
+    QVERIFY(widget.visibleClassIds().isEmpty());
+    QVERIFY(!widget.scheduleModel().rows.isEmpty());
+    for (const ScheduleRowView& row : widget.scheduleModel().rows)
+    {
+        for (const ScheduleCellView& cell : row.cells)
+        {
+            QVERIFY(cell.entries.isEmpty());
+        }
+    }
+
+    auto* banner = widget.findChild<QWidget*>(
+        QStringLiteral("scheduleSourceErrorBanner")
+        );
+    auto* retry = widget.findChild<QPushButton*>(
+        QStringLiteral("scheduleSourceRetryButton")
+        );
+    QVERIFY(banner);
+    QVERIFY(retry);
+    QVERIFY(banner->isHidden());
+    QVERIFY(retry->isHidden());
+}
+
 void ScheduleWidgetTests::
 unavailableSourceReturnsDaysOnlyWithoutReading()
 {
@@ -2417,6 +2453,40 @@ unavailableSourceReturnsDaysOnlyWithoutReading()
     QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 0);
     QCOMPARE(widget.scheduleModel().days, visibleScheduleDays(false));
     QVERIFY(widget.scheduleModel().rows.isEmpty());
+    QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join(QLatin1Char('\n'))));
+
+    auto* banner = widget.findChild<QWidget*>(
+        QStringLiteral("scheduleSourceErrorBanner")
+        );
+    auto* retry = widget.findChild<QPushButton*>(
+        QStringLiteral("scheduleSourceRetryButton")
+        );
+    QVERIFY(banner);
+    QVERIFY(retry);
+    QVERIFY(banner->isHidden());
+    QVERIFY(retry->isHidden());
+
+    ScheduleWidgetTestStubs::setDatabaseOpen(true);
+    ScheduleWidgetTestStubs::setScheduleClassInfoReadFailure(true);
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(QStringLiteral(
+            "^\\\"injected schedule read failure\\\"$"
+            ))
+        );
+    widget.refreshSchedule();
+    QVERIFY(!banner->isHidden());
+
+    ScheduleWidgetTestStubs::setDatabaseOpen(false);
+    {
+        const ScopedQtWarningCapture warningCapture(warnings);
+        widget.refreshSchedule();
+    }
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 1);
+    QCOMPARE(widget.scheduleModel().days, visibleScheduleDays(false));
+    QVERIFY(widget.scheduleModel().rows.isEmpty());
+    QVERIFY(banner->isHidden());
+    QVERIFY(retry->isHidden());
     QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join(QLatin1Char('\n'))));
 }
 
@@ -2447,10 +2517,167 @@ failedSourceReadLogsAndKeepsIndependentScheduleReads()
     QVERIFY(widget.scheduleModel().rows.isEmpty());
 }
 
+void ScheduleWidgetTests::failedSourceReadStatusRetriesAndClearsAfterSuccess()
+{
+    ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+    ScheduleWidgetTestStubs::setScheduleClassInfoReadFailure(true);
+
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("intensive")
+        );
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    ScheduleWidget widget(&services);
+    QSignalSpy importRequested(
+        &widget,
+        &ScheduleWidget::scheduleImportRequested
+        );
+
+    const auto ignoreSourceWarning = []()
+    {
+        QTest::ignoreMessage(
+            QtWarningMsg,
+            QRegularExpression(QStringLiteral(
+                "^\\\"injected schedule read failure\\\"$"
+                ))
+            );
+    };
+    ignoreSourceWarning();
+    widget.refreshSchedule();
+
+    auto* banner = widget.findChild<QWidget*>(
+        QStringLiteral("scheduleSourceErrorBanner")
+        );
+    auto* message = widget.findChild<QLabel*>(
+        QStringLiteral("scheduleSourceErrorLabel")
+        );
+    auto* retry = widget.findChild<QPushButton*>(
+        QStringLiteral("scheduleSourceRetryButton")
+        );
+    auto* import = widget.findChild<QPushButton*>(
+        QStringLiteral("scheduleImportButton")
+        );
+    QVERIFY(banner);
+    QVERIFY(message);
+    QVERIFY(retry);
+    QVERIFY(import);
+    QVERIFY(!banner->isHidden());
+    QVERIFY(!retry->isHidden());
+    QCOMPARE(retry->text(), QStringLiteral("Retry"));
+    QCOMPARE(
+        message->text(),
+        QCoreApplication::translate(
+            "ScheduleWidget",
+            "Schedule data could not be loaded."
+            )
+        );
+    QVERIFY(!message->text().contains(QStringLiteral("injected")));
+    QCOMPARE(widget.displayState().displayMode, ScheduleDisplayMode::Intensive);
+    QCOMPARE(widget.scheduleModel().days, visibleScheduleDays(false));
+    QVERIFY(widget.scheduleModel().rows.isEmpty());
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 1);
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 1);
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, 1);
+    QVERIFY(prompts.messages.isEmpty());
+
+    import->click();
+    QCOMPARE(importRequested.count(), 1);
+
+    ignoreSourceWarning();
+    retry->click();
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 2);
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 2);
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, 2);
+    QVERIFY(!banner->isHidden());
+    QVERIFY(!retry->isHidden());
+    QCOMPARE(prompts.messages.size(), 0);
+
+    ScheduleWidgetTestStubs::setScheduleClassInfoReadFailure(false);
+    retry->click();
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 3);
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 3);
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, 3);
+    QVERIFY(banner->isHidden());
+    QVERIFY(retry->isHidden());
+    QCOMPARE(widget.displayState().displayMode, ScheduleDisplayMode::Intensive);
+    const ScheduleCellView* recoveredCell = findScheduleCell(
+        widget.scheduleModel(),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("09:00")
+        );
+    QVERIFY(recoveredCell);
+    QCOMPARE(recoveredCell->entries.size(), 1);
+    QCOMPARE(recoveredCell->entries.first().classId, 42);
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void ScheduleWidgetTests::
+invalidSourceClassIdShowsNonrecoverableStatusWithoutRetry()
+{
+    ScheduleWidgetTestStubs::setScheduleSourceClassIdOverride(0);
+
+    ApplicationServices services;
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    ScheduleWidget widget(&services);
+
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(QStringLiteral(
+            "^\\\"The schedule class source returned an invalid class ID\\.\\\"$"
+            ))
+        );
+    widget.refreshSchedule();
+
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 1);
+    QCOMPARE(widget.scheduleModel().days, visibleScheduleDays(false));
+    QVERIFY(widget.scheduleModel().rows.isEmpty());
+    auto* banner = widget.findChild<QWidget*>(
+        QStringLiteral("scheduleSourceErrorBanner")
+        );
+    auto* message = widget.findChild<QLabel*>(
+        QStringLiteral("scheduleSourceErrorLabel")
+        );
+    auto* retry = widget.findChild<QPushButton*>(
+        QStringLiteral("scheduleSourceRetryButton")
+        );
+    QVERIFY(banner);
+    QVERIFY(message);
+    QVERIFY(retry);
+    QVERIFY(!banner->isHidden());
+    QVERIFY(retry->isHidden());
+    QCOMPARE(
+        message->text(),
+        QCoreApplication::translate(
+            "ScheduleWidget",
+            "Schedule data could not be loaded."
+            )
+        );
+    QVERIFY(prompts.messages.isEmpty());
+}
+
 void ScheduleWidgetTests::previewModelBypassesSourceAndScheduleReads()
 {
+    ScheduleWidgetTestStubs::setScheduleClassInfoReadFailure(true);
     ApplicationServices services;
     ScheduleWidget widget(&services);
+
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(QStringLiteral(
+            "^\\\"injected schedule read failure\\\"$"
+            ))
+        );
+    widget.refreshSchedule();
+    auto* errorBanner = widget.findChild<QWidget*>(
+        QStringLiteral("scheduleSourceErrorBanner")
+        );
+    QVERIFY(errorBanner);
+    QVERIFY(!errorBanner->isHidden());
 
     ScheduleViewModel preview;
     preview.days = {QStringLiteral("Wednesday")};
@@ -2462,11 +2689,12 @@ void ScheduleWidgetTests::previewModelBypassesSourceAndScheduleReads()
     row.cells.append(previewCell);
     preview.rows.append(std::move(row));
     widget.setPreviewModel(preview);
+    QVERIFY(errorBanner->isHidden());
     widget.refreshSchedule();
 
-    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 0);
-    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 0);
-    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, 0);
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 1);
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 1);
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, 1);
     QCOMPARE(
         widget.scheduleModel().days,
         QStringList{QStringLiteral("Wednesday")}
@@ -3409,9 +3637,24 @@ void ScheduleWidgetTests
         );
     widget.refreshSchedule();
 
+    ScheduleWidgetTestStubs::setScheduleClassInfoReadFailure(true);
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(QStringLiteral(
+            "^\\\"injected schedule read failure\\\"$"
+            ))
+        );
+    widget.refreshSchedule();
+    auto* sourceError = widget.findChild<QWidget*>(
+        QStringLiteral("scheduleSourceErrorBanner")
+        );
+    QVERIFY(sourceError);
+    QVERIFY(!sourceError->isHidden());
+
     ScheduleWidgetTestStubs::setDatabaseOpen(false);
     widget.clearDatabaseState();
 
+    QVERIFY(sourceError->isHidden());
     QVERIFY(widget.visibleClassIds().isEmpty());
     const ScheduleDisplayState cleared =
         widget.displayState();
