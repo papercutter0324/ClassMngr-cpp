@@ -61140,3 +61140,23 @@ implementation checks only and do not complete Gate 1 or Gate 2. Gate 1 and
 Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's
 source-bound Windows x64 requalification remains
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+
+### Superseded latest progress update - 2026-10-21 (Batch517 complete locally, push pending)
+
+Batch517 (F1277) was complete locally at source/test commit
+`c9a39af2e7b72b30add628f5d891b93c8cbd41cd` and awaiting its normal push. No
+implementation batch was active. Gate 1 and Gate 2 remained Partial, and the
+Phase 2 exit gate remained Open.
+
+### Batch517 push receipt - 2026-10-21
+
+Batch517 was pushed successfully through closeout commit
+`67967637d86488442a20970754213d3d52054114`. The push helper confirmed that
+`origin/Qt-Rewrite` matches local HEAD and that the worktree is clean. No hosted
+or CI verification is implied.
+
+Batch517 (F1277) is complete and pushed at `67967637`. Batch518 discovery is
+next, with no implementation batch active. Gate 1 and Gate 2 remain Partial,
+and the Phase 2 exit gate remains Open. F629's source-bound Windows x64
+requalification remains outstanding separately from Phase 0's 2026-09-18
+Complete declaration.
