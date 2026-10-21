@@ -196,12 +196,22 @@ public:
             events->push_back("classInfo");
         }
         requests.push_back(id);
+        if (callCount == failOnCall)
+        {
+            return result;
+        }
+        if (delegate)
+        {
+            return delegate->readClassCoTeacherPage(id);
+        }
         return result;
     }
 
     mutable int callCount = 0;
     mutable std::vector<Domain::ClassId> requests;
     mutable std::vector<std::string>* events = nullptr;
+    const Application::ClassCoTeacherPageReadPort* delegate = nullptr;
+    int failOnCall = 0;
     Application::ClassCoTeacherPageReadResult result =
         Application::ClassCoTeacherPageReadResult::failure({
             .code = Domain::ErrorCode::Technical,
@@ -278,6 +288,7 @@ private slots:
     void init();
     void cleanup();
     void defaultPortSavesAssignmentAndRefreshesTitle();
+    void successfulAssignmentSurvivesFailedFollowupRead();
     void manualFailureWarnsAndRetainsDirtyState();
     void loadDiscardAndSuccessfulSaveUseFreshSnapshotsAtExpectedTimes();
     void readFailuresKeepDefaultSelectionAndIndependentTitleSources();
@@ -341,6 +352,169 @@ defaultPortSavesAssignmentAndRefreshesTitle()
     QVERIFY(header->subtitle() != initialSubtitle);
     QVERIFY(header->subtitle().contains(QStringLiteral("Page Teacher")));
     QVERIFY(m_promptService.requests.empty());
+}
+
+void NextFeatureClassCoTeacherPageTests::
+successfulAssignmentSurvivesFailedFollowupRead()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(services);
+
+    Teacher assignedTeacher;
+    assignedTeacher.teacherEn = QStringLiteral("Committed Teacher");
+    assignedTeacher.preferredName = assignedTeacher.teacherEn;
+    assignedTeacher.roomNumber = QStringLiteral("Room 18");
+    assignedTeacher.internetType = QStringLiteral("LAN");
+    assignedTeacher.wifiName = QStringLiteral("Network 18");
+    assignedTeacher.wifiPassword = QStringLiteral("Password 18");
+    assignedTeacher.projectionType = QStringLiteral("HDMI");
+    assignedTeacher.zoomId = QStringLiteral("Zoom 18");
+    assignedTeacher.zoomPassword = QStringLiteral("Zoom Password 18");
+    const auto assignedTeacherResult =
+        services.teacherService()->save(assignedTeacher);
+    const int assignedTeacherId = assignedTeacherResult
+        ? *assignedTeacherResult
+        : -1;
+
+    Teacher refreshedTeacher;
+    refreshedTeacher.teacherEn = QStringLiteral("Refreshed Teacher");
+    refreshedTeacher.preferredName = refreshedTeacher.teacherEn;
+    refreshedTeacher.roomNumber = QStringLiteral("Room 27");
+    refreshedTeacher.internetType = QStringLiteral("WiFi");
+    refreshedTeacher.wifiName = QStringLiteral("Network 27");
+    refreshedTeacher.wifiPassword = QStringLiteral("Password 27");
+    refreshedTeacher.projectionType = QStringLiteral("Zoom");
+    refreshedTeacher.zoomId = QStringLiteral("Zoom 27");
+    refreshedTeacher.zoomPassword = QStringLiteral("Zoom Password 27");
+    const auto refreshedTeacherResult =
+        services.teacherService()->save(refreshedTeacher);
+    const int refreshedTeacherId = refreshedTeacherResult
+        ? *refreshedTeacherResult
+        : -1;
+    QVERIFY(classId > 0);
+    QVERIFY(assignedTeacherId > 0);
+    QVERIFY(refreshedTeacherId > 0);
+
+    Platform::ApplicationServicesClassCoTeacherPageReadPort actualReadPort(
+        &services
+        );
+    RecordingPageReadPort readPort;
+    readPort.delegate = &actualReadPort;
+    readPort.failOnCall = 2;
+    readPort.result = Application::ClassCoTeacherPageReadResult::failure({
+        .code = Domain::ErrorCode::Technical,
+        .message = "follow-up page read failed",
+        .recoverable = false
+    });
+    ClassCoTeacherPage page(
+        &services,
+        false,
+        nullptr,
+        nullptr,
+        &readPort
+        );
+    page.setSaveMode(SaveMode::Manual);
+    const Classroom classroom(QStringLiteral("Co-Teacher Page Test"), classId);
+    page.loadClass(classroom);
+
+    auto* section = page.findChild<TeacherInfoSection*>();
+    auto* header = page.findChild<PageHeader*>();
+    QVERIFY(section);
+    QVERIFY(header);
+    QCOMPARE(readPort.callCount, 1);
+    QComboBox* selector = section->teacherSelector();
+    QVERIFY(selector);
+    const int assignedTeacherIndex = selector->findData(assignedTeacherId);
+    QVERIFY(assignedTeacherIndex > 0);
+    selector->setCurrentIndex(assignedTeacherIndex);
+    QVERIFY(page.hasUnsavedChanges());
+
+    QSignalSpy savedSpy(&page, &ClassCoTeacherPage::classInfoSaved);
+    QVERIFY(savedSpy.isValid());
+    QVERIFY(page.saveChanges());
+    QCOMPARE(readPort.callCount, 2);
+    QCOMPARE(savedSpy.size(), 1);
+    QCOMPARE(savedSpy.front().front().toInt(), classId);
+    QVERIFY(!page.hasUnsavedChanges());
+
+    const auto persisted = services.classService()->classInfo(classId);
+    QVERIFY(persisted);
+    QCOMPARE(persisted->teacherId, assignedTeacherId);
+    QCOMPARE(section->teacherId(), assignedTeacherId);
+    QCOMPARE(selector->currentData().toInt(), assignedTeacherId);
+    const QStringList assignedTeacherDetails{
+        QStringLiteral("Room 18"),
+        QStringLiteral("LAN"),
+        QStringLiteral("Network 18"),
+        QStringLiteral("Password 18"),
+        QStringLiteral("HDMI"),
+        QStringLiteral("Zoom 18"),
+        QStringLiteral("Zoom Password 18")
+    };
+    QCOMPARE(visibleTeacherDetails(section), assignedTeacherDetails);
+    QVERIFY(header->subtitle().contains(QStringLiteral("Committed Teacher")));
+    QVERIFY(!header->subtitle().contains(QStringLiteral("No Teacher")));
+    QVERIFY(m_promptService.requests.empty());
+
+    QVERIFY(updatePersistedTeacherId(services, classId, refreshedTeacherId));
+    page.loadClass(classroom);
+    QCOMPARE(readPort.callCount, 3);
+    QCOMPARE(savedSpy.size(), 1);
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(section->teacherId(), refreshedTeacherId);
+    QCOMPARE(selector->currentData().toInt(), refreshedTeacherId);
+    const QStringList refreshedTeacherDetails{
+        QStringLiteral("Room 27"),
+        QStringLiteral("WiFi"),
+        QStringLiteral("Network 27"),
+        QStringLiteral("Password 27"),
+        QStringLiteral("Zoom"),
+        QStringLiteral("Zoom 27"),
+        QStringLiteral("Zoom Password 27")
+    };
+    QCOMPARE(visibleTeacherDetails(section), refreshedTeacherDetails);
+    QVERIFY(header->subtitle().contains(QStringLiteral("Refreshed Teacher")));
+    QVERIFY(!header->subtitle().contains(QStringLiteral("Committed Teacher")));
+
+    const int committedTeacherIndex = selector->findData(assignedTeacherId);
+    QVERIFY(committedTeacherIndex > 0);
+    selector->setCurrentIndex(committedTeacherIndex);
+    QVERIFY(page.hasUnsavedChanges());
+    readPort.failOnCall = 4;
+    readPort.result = pageReadResult(
+        classId,
+        Domain::Result<Application::ClassCoTeacherPageFields>::success(
+            readFields(std::nullopt, u"E5", u"NoIdentityClass")
+            ),
+        Domain::Result<std::u16string>::success(u"Unmatched Teacher")
+        );
+
+    QVERIFY(page.saveChanges());
+    QCOMPARE(readPort.callCount, 4);
+    QCOMPARE(savedSpy.size(), 2);
+    QVERIFY(!page.hasUnsavedChanges());
+    const auto persistedAgain = services.classService()->classInfo(classId);
+    QVERIFY(persistedAgain);
+    QCOMPARE(persistedAgain->teacherId, assignedTeacherId);
+    QCOMPARE(section->teacherId(), assignedTeacherId);
+    QCOMPARE(selector->currentData().toInt(), assignedTeacherId);
+    QCOMPARE(visibleTeacherDetails(section), assignedTeacherDetails);
+    QVERIFY(header->subtitle().contains(QStringLiteral("NoIdentityClass")));
+    QVERIFY(header->subtitle().contains(QStringLiteral("Committed Teacher")));
+    QVERIFY(!header->subtitle().contains(QStringLiteral("Unmatched Teacher")));
+
+    readPort.failOnCall = 0;
+    page.loadClass(classroom);
+    QCOMPARE(readPort.callCount, 5);
+    QCOMPARE(savedSpy.size(), 2);
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(section->teacherId(), assignedTeacherId);
+    QCOMPARE(selector->currentData().toInt(), assignedTeacherId);
+    QCOMPARE(visibleTeacherDetails(section), assignedTeacherDetails);
+    QVERIFY(header->subtitle().contains(QStringLiteral("Committed Teacher")));
 }
 
 void NextFeatureClassCoTeacherPageTests::manualFailureWarnsAndRetainsDirtyState()

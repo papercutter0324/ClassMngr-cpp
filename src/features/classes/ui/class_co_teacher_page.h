@@ -6,6 +6,7 @@
 #include "next/application/class_co_teacher_page_read_snapshot.h"
 
 #include <QHash>
+#include <QString>
 #include <QtGlobal>
 
 #include <optional>
@@ -69,6 +70,7 @@ private:
     [[nodiscard]] qint64 selectedTeacherIdFromSnapshot() const;
     [[nodiscard]] int selectedUiTeacherIdFromSnapshot() const;
     [[nodiscard]] qint64 selectedTeacherIdFromUi() const;
+    [[nodiscard]] QString selectedTeacherDisplayNameFromUi() const;
     void updateTitle();
     void markDirty();
     void clearDirty();
@@ -88,6 +90,7 @@ private:
     std::optional<
         ClassMngr::Next::Application::ClassCoTeacherPageReadSnapshot
         > m_readSnapshot;
+    QString m_titleTeacherNameFallback;
     QHash<int, qint64> m_stableTeacherIdsByUiId;
     QHash<qint64, int> m_uiIdsByStableTeacherId;
     Classroom m_classroom;

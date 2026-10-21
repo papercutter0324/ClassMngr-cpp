@@ -21,6 +21,7 @@
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
+#include <QComboBox>
 #include <QFont>
 #include <QHash>
 #include <QLabel>
@@ -207,6 +208,7 @@ void ClassCoTeacherPage::loadClass(
     )
 {
     m_autosave->setLoading(true);
+    m_titleTeacherNameFallback.clear();
     refresh();
     m_classroom = classroom;
 
@@ -331,6 +333,7 @@ void ClassCoTeacherPage::clearDatabaseState()
     m_autosave->setLoading(true);
     m_classroom = {};
     m_readSnapshot.reset();
+    m_titleTeacherNameFallback.clear();
     m_stableTeacherIdsByUiId.clear();
     m_uiIdsByStableTeacherId.clear();
     m_teacherSection->setTeachers({});
@@ -408,11 +411,13 @@ void ClassCoTeacherPage::updateTitle()
 
     ClassInfo info;
     Teacher teacher;
+    bool hasClassFields = false;
     if (m_readSnapshot)
     {
         const auto& classFields = m_readSnapshot->classFields;
         if (classFields)
         {
+            hasClassFields = true;
             info.classId = m_classroom.id;
             info.teacherId = selectedTeacherIdFromSnapshot() > 0 ? 1 : -1;
             info.classGrade = QString::fromStdU16String(
@@ -439,6 +444,25 @@ void ClassCoTeacherPage::updateTitle()
                     teacherDisplayName.value()
                     );
             }
+        }
+    }
+
+    if (!m_titleTeacherNameFallback.isEmpty())
+    {
+        info.teacherId = 1;
+        teacher.preferredName = m_titleTeacherNameFallback;
+        if (!hasClassFields)
+        {
+            const QString className = !m_classroom.name.trimmed().isEmpty()
+                ? m_classroom.name.trimmed()
+                : tr("Class %1").arg(m_classroom.id);
+            m_pageHeader->setSubtitle(
+                QStringLiteral("%1 • %2").arg(
+                    className,
+                    m_titleTeacherNameFallback
+                    )
+                );
+            return;
         }
     }
 
@@ -523,9 +547,30 @@ bool ClassCoTeacherPage::saveCoTeacherInternal(
         return false;
     }
 
+    const auto previousSnapshot = m_readSnapshot;
+    const QString committedTeacherName = selectedTeacherDisplayNameFromUi();
     clearDirty();
     readSelectedClassSnapshot();
-    selectCachedTeacher();
+    if (selectedUiTeacherIdFromSnapshot() > 0)
+    {
+        selectCachedTeacher();
+        const bool hasTeacherDisplayName = m_readSnapshot
+            && m_readSnapshot->teacherDisplayName
+            && !QString::fromStdU16String(
+                m_readSnapshot->teacherDisplayName.value()
+                ).trimmed().isEmpty();
+        m_titleTeacherNameFallback = hasTeacherDisplayName
+            ? QString{}
+            : selectedTeacherDisplayNameFromUi();
+    }
+    else
+    {
+        if (!m_readSnapshot)
+        {
+            m_readSnapshot = previousSnapshot;
+        }
+        m_titleTeacherNameFallback = committedTeacherName;
+    }
     updateTitle();
     emit classInfoSaved(m_classroom.id);
     return true;
@@ -601,4 +646,34 @@ qint64 ClassCoTeacherPage::selectedTeacherIdFromUi() const
         return -1;
     }
     return m_stableTeacherIdsByUiId.value(uiTeacherId, 0);
+}
+
+QString ClassCoTeacherPage::selectedTeacherDisplayNameFromUi() const
+{
+    if (!m_teacherSection)
+    {
+        return {};
+    }
+
+    const auto* englishSelector = m_teacherSection->findChild<QComboBox*>(
+        QStringLiteral("teacherEnCombo")
+        );
+    QString displayName = englishSelector
+        ? englishSelector->currentText().trimmed()
+        : QString{};
+    if (displayName.isEmpty())
+    {
+        displayName = m_teacherSection->teacherSelector()
+            ? m_teacherSection->teacherSelector()->currentText().trimmed()
+            : QString{};
+    }
+    if (displayName.isEmpty() && m_teacherSection->teacherId() > 0)
+    {
+        const qint64 stableTeacherId = m_stableTeacherIdsByUiId.value(
+            m_teacherSection->teacherId(),
+            m_teacherSection->teacherId()
+            );
+        displayName = tr("Teacher %1").arg(stableTeacherId);
+    }
+    return displayName;
 }
