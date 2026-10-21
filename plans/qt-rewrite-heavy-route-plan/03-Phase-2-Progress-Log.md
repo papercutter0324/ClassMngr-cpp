@@ -60803,3 +60803,15 @@ Batch513 (F1275) is complete locally and awaiting its normal push. No
 implementation batch is active. Gate 1 and Gate 2 remain Partial, and the
 Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification
 remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+
+### Batch513 push receipt - 2026-10-21
+
+The normal push on `Qt-Rewrite` succeeded for range `9ac3e4be..a63fa9b8`.
+At push confirmation, the remote tip matched local HEAD at
+`a63fa9b8559631a075ddf867e4b2bde448f133a7`; the branch was clean and up to
+date. No hosted or CI verification is implied.
+
+Batch513 (F1275) is complete and pushed at `a63fa9b8`. No implementation batch
+is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
+Open. F629's source-bound Windows x64 requalification remains outstanding
+separately from Phase 0's 2026-09-18 Complete declaration.
