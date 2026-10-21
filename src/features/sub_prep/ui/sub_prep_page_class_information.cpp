@@ -5,6 +5,7 @@
 #include "next/application/sub_prep_class_details_query.h"
 #include "next/application/sub_prep_class_information_selection_policy.h"
 #include "next/application/sub_prep_class_information_state.h"
+#include "next/application/sub_prep_package_request_validation.h"
 #include "next/application/sub_prep_print_source_query.h"
 #include "next/application/sub_prep_schedule_summary_query.h"
 #include "next/application/schedule_display_mode_source_policy.h"
@@ -366,6 +367,33 @@ SubPrepPage::SubPrepPage(
     )
     : BasePage(parent),
       m_services(services),
+      m_classInformationDataAccess(
+          std::make_unique<SubPrepClassInformationDataAccess>(
+              summaryReadPort,
+              detailsReadPort,
+              printSourceReadPort
+              )
+          ),
+      m_classInformationState(
+          std::make_unique<Application::SubPrepClassInformationState>()
+          )
+{
+    initialize();
+}
+
+SubPrepPage::SubPrepPage(
+    ApplicationServices* services,
+    Application::SubPrepScheduleSummaryReadPort& summaryReadPort,
+    Application::SubPrepClassDetailsReadPort& detailsReadPort,
+    Application::SubPrepPrintSourceReadPort& printSourceReadPort,
+    Application::SubPrepCalendarEventIntervalsReadPort& calendarIntervalsReadPort,
+    Application::SubPrepRosterOutputSourceReadPort& rosterOutputSourceReadPort,
+    QWidget* parent
+    )
+    : BasePage(parent),
+      m_services(services),
+      m_calendarIntervalsReadPort(&calendarIntervalsReadPort),
+      m_rosterOutputSourceReadPort(&rosterOutputSourceReadPort),
       m_classInformationDataAccess(
           std::make_unique<SubPrepClassInformationDataAccess>(
               summaryReadPort,
@@ -1223,9 +1251,7 @@ SubPrepPage::scheduleWidgetRuntimeMetrics() const
 }
 
 bool SubPrepPage::buildPrintClassInformation(
-    const QList<int>& classIds,
-    const QStringList& selectedDays,
-    const bool useIntensive,
+    const Application::SubPrepGenerationPlan& plan,
     QList<SubPrepClassInformation::TeacherGroup>* groups,
     QString* errorMessage
     )
@@ -1244,55 +1270,9 @@ bool SubPrepPage::buildPrintClassInformation(
     }
 
     Application::SubPrepPrintSourceRequest request;
-    request.mode = useIntensive
-        ? Application::ScheduleViewMode::Intensive
-        : Application::ScheduleViewMode::Regular;
-
-    request.selectedClassIds.reserve(static_cast<std::size_t>(classIds.size()));
-    for (const int classId : classIds)
-    {
-        if (classId <= 0)
-        {
-            *errorMessage = tr("A selected class identifier is invalid.");
-            return false;
-        }
-
-        const std::string value = std::to_string(classId);
-        const auto typedId = Domain::ClassId::fromString(value);
-        if (!typedId)
-        {
-            *errorMessage = tr("A selected class identifier is invalid.");
-            return false;
-        }
-
-        if (std::find(
-                request.selectedClassIds.cbegin(),
-                request.selectedClassIds.cend(),
-                *typedId
-                ) == request.selectedClassIds.cend())
-        {
-            request.selectedClassIds.push_back(*typedId);
-        }
-    }
-
-    for (const QString& day : selectedDays)
-    {
-        const auto typedDay = weekdayFor(day);
-        if (!typedDay)
-        {
-            *errorMessage = tr("A selected schedule weekday is invalid.");
-            return false;
-        }
-
-        if (std::find(
-                request.selectedDays.cbegin(),
-                request.selectedDays.cend(),
-                *typedDay
-                ) == request.selectedDays.cend())
-        {
-            request.selectedDays.push_back(*typedDay);
-        }
-    }
+    request.mode = plan.mode;
+    request.selectedClassIds = plan.selectedClassIds;
+    request.selectedDays = plan.selectedScheduleWeekdays;
 
     const auto source = m_classInformationDataAccess->loadPrintSource(request);
     if (!source)

@@ -12,6 +12,7 @@
 #include "next/application/sub_prep_vacation_selection_policy.h"
 #include "next/application/sub_prep_schedule_summary_query.h"
 #include "next/application/sub_prep_print_source_query.h"
+#include "next/application/sub_prep_roster_output_source_query.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
@@ -280,6 +281,44 @@ public:
     bool failAfterCapture = false;
 };
 
+class SubPrepTestRosterOutputSourceReadPort final
+    : public SubPrepRosterOutputSourceReadPort
+{
+public:
+    SubPrepRosterOutputSourceReadResult loadSource(
+        const SubPrepRosterOutputSourceRequest& request
+        ) override
+    {
+        ++loadCount;
+        lastRequest = request;
+
+        SubPrepRosterOutputSourceInput input;
+        for (const Domain::ClassId& classId : request.selectedClassIds)
+        {
+            SubPrepRosterOutputClass classRecord{.id = classId};
+            classRecord.classroomName = "F507_ROSTER_CLASS";
+            classRecord.grade = "E5";
+            classRecord.level = "Athena";
+            for (const SubPrepWeekday day : request.selectedDays)
+            {
+                classRecord.meetings.push_back(
+                    {day, "4:00 PM", "4:50 PM"}
+                    );
+            }
+            classRecord.rosterColumns = {"English", "Korean"};
+            classRecord.rosterRows = {{"F507_STUDENT", "F507_STUDENT_KR"}};
+            input.classes.push_back(std::move(classRecord));
+        }
+
+        return SubPrepRosterOutputSourceReadResult::success(
+            std::move(input)
+            );
+    }
+
+    int loadCount = 0;
+    SubPrepRosterOutputSourceRequest lastRequest;
+};
+
 class SubPrepTestCalendarIntervalsReadPort final
     : public SubPrepCalendarEventIntervalsReadPort
 {
@@ -325,6 +364,22 @@ public:
               detailsReadPort,
               printSourceReadPort,
               calendarIntervalsReadPort
+              )
+    {
+    }
+
+    SubPrepPageHarness(
+        ApplicationServices* services,
+        SubPrepCalendarEventIntervalsReadPort& calendarIntervalsReadPort,
+        SubPrepRosterOutputSourceReadPort& rosterOutputSourceReadPort
+        )
+        : page(
+              services,
+              summaryReadPort,
+              detailsReadPort,
+              printSourceReadPort,
+              calendarIntervalsReadPort,
+              rosterOutputSourceReadPort
               )
     {
     }
@@ -564,7 +619,8 @@ private slots:
     void printDialogAcceptsWhenRememberedNameSaveFails();
     void clearDatabaseStateStopsAutosaveAndRemovesLoadedContent();
     void pageGenerationReportsFolderOpenFailureAndWritesInformationPdf();
-    void pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder();
+    void pageGenerationKeepsVacationDateAndCheckedWeekdayScopesSeparate();
+    void pageGenerationRejectsInvalidPlanBeforeSourceReadsAndEffects();
     void pageGenerationForwardsIntensiveModeWithFilteredClasses_data();
     void pageGenerationForwardsIntensiveModeWithFilteredClasses();
 
@@ -3761,7 +3817,7 @@ pageGenerationReportsFolderOpenFailureAndWritesInformationPdf()
 }
 
 void SubPrepPageTests::
-pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder()
+pageGenerationKeepsVacationDateAndCheckedWeekdayScopesSeparate()
 {
     QTemporaryDir outputRoot;
     QVERIFY(outputRoot.isValid());
@@ -3911,7 +3967,27 @@ pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder()
     }
 
     SubPrepTestCalendarIntervalsReadPort calendarIntervalsReadPort;
-    SubPrepPageHarness harness(&services, calendarIntervalsReadPort);
+    calendarIntervalsReadPort.shouldFail = false;
+    const QDate referenceDate = QDate::currentDate();
+    int daysUntilFriday =
+        (static_cast<int>(Qt::Friday) - referenceDate.dayOfWeek() + 7) % 7;
+    if (daysUntilFriday == 0)
+    {
+        daysUntilFriday = 7;
+    }
+    const QDate vacationDate = referenceDate.addDays(daysUntilFriday);
+    const QString vacationDateIso = vacationDate.toString(Qt::ISODate);
+    calendarIntervalsReadPort.intervals.push_back({
+        .eventType = "Vacation",
+        .startDate = CalendarEventDate(vacationDateIso.toStdString()),
+        .endDate = CalendarEventDate(vacationDateIso.toStdString())
+    });
+    SubPrepTestRosterOutputSourceReadPort rosterOutputSourceReadPort;
+    SubPrepPageHarness harness(
+        &services,
+        calendarIntervalsReadPort,
+        rosterOutputSourceReadPort
+        );
     harness.printSourceReadPort.sourceInput.teachers = {
         {
             .id = typedTeacherId(701),
@@ -4092,7 +4168,11 @@ pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder()
                     dialog->reject();
                     return;
                 }
-                dayCheck->setChecked(false);
+                const QSignalBlocker blocker(dayCheck);
+                dayCheck->setChecked(
+                    day == QStringLiteral("Tuesday")
+                    || day == QStringLiteral("Thursday")
+                    );
                 if (day == QStringLiteral("Tuesday"))
                 {
                     tuesdayCheck = dayCheck;
@@ -4110,9 +4190,17 @@ pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder()
                 dialog->reject();
                 return;
             }
-
-            tuesdayCheck->setChecked(true);
-            thursdayCheck->setChecked(true);
+            auto* const nextVacationCheck = dialog->findChild<QCheckBox*>(
+                QStringLiteral("subPrepNextVacationCheckBox")
+                );
+            if (!nextVacationCheck || !nextVacationCheck->isChecked())
+            {
+                dialogAutomationError = QStringLiteral(
+                    "The vacation date selection was not retained."
+                    );
+                dialog->reject();
+                return;
+            }
             targetEdit->setText(outputRoot.path());
             nameEdit->setText(QStringLiteral("F507"));
             openFolderCheck->setChecked(false);
@@ -4192,6 +4280,20 @@ pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder()
     QCOMPARE(request.selectedClassIds.at(0).value(), std::string("100"));
     QCOMPARE(request.selectedClassIds.at(1).value(), std::string("43"));
     QCOMPARE(request.mode, ScheduleViewMode::Regular);
+
+    QCOMPARE(rosterOutputSourceReadPort.loadCount, 1);
+    const SubPrepRosterOutputSourceRequest& rosterRequest =
+        rosterOutputSourceReadPort.lastRequest;
+    QCOMPARE(rosterRequest.selectedClassIds.size(), std::size_t(2));
+    QCOMPARE(rosterRequest.selectedClassIds.at(0).value(), std::string("100"));
+    QCOMPARE(rosterRequest.selectedClassIds.at(1).value(), std::string("43"));
+    QCOMPARE(rosterRequest.selectedDays.size(), std::size_t(1));
+    QCOMPARE(
+        static_cast<int>(rosterRequest.selectedDays.front()),
+        static_cast<int>(SubPrepWeekday::Friday)
+        );
+    QCOMPARE(rosterRequest.mode, ScheduleViewMode::Regular);
+
     const SubPrepPrintSourceInput& selectedSource =
         harness.printSourceReadPort.lastSelectedInput;
     QCOMPARE(selectedSource.classes.size(), std::size_t(2));
@@ -4303,6 +4405,232 @@ pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder()
     QVERIFY(!informationPdfText.contains(
         QStringLiteral("F507_FRIDAY_SENTINEL")
         ));
+}
+
+void SubPrepPageTests::
+pageGenerationRejectsInvalidPlanBeforeSourceReadsAndEffects()
+{
+    QTemporaryDir outputRoot;
+    QVERIFY(outputRoot.isValid());
+
+    ApplicationServices services;
+    SubPrepTestCalendarIntervalsReadPort calendarIntervalsReadPort;
+    calendarIntervalsReadPort.shouldFail = false;
+    const QDate referenceDate = QDate::currentDate();
+    int daysUntilFriday =
+        (static_cast<int>(Qt::Friday) - referenceDate.dayOfWeek() + 7) % 7;
+    if (daysUntilFriday == 0)
+    {
+        daysUntilFriday = 7;
+    }
+    const QString vacationDateIso =
+        referenceDate.addDays(daysUntilFriday).toString(Qt::ISODate);
+    calendarIntervalsReadPort.intervals.push_back({
+        .eventType = "Vacation",
+        .startDate = CalendarEventDate(vacationDateIso.toStdString()),
+        .endDate = CalendarEventDate(vacationDateIso.toStdString())
+    });
+    SubPrepTestRosterOutputSourceReadPort rosterOutputSourceReadPort;
+    SubPrepPageHarness harness(
+        &services,
+        calendarIntervalsReadPort,
+        rosterOutputSourceReadPort
+        );
+    activatePage(harness.page);
+
+    auto* const scheduleWidget = harness.page.findChild<ScheduleWidget*>(
+        QStringLiteral("subPrepScheduleWidget")
+        );
+    QVERIFY(scheduleWidget);
+    ScheduleViewModel schedule;
+    schedule.days = {
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday")
+    };
+    ScheduleRowView row;
+    for (const QString& day : schedule.days)
+    {
+        ScheduleCellView cell;
+        cell.day = day;
+        if (day == QStringLiteral("Tuesday"))
+        {
+            ScheduleEntry entry;
+            entry.classId = 100;
+            cell.entries.append(entry);
+        }
+        else if (day == QStringLiteral("Thursday"))
+        {
+            ScheduleEntry entry;
+            entry.classId = 43;
+            cell.entries.append(entry);
+        }
+        else
+        {
+            ScheduleEntry entry;
+            entry.classId = 44;
+            cell.entries.append(entry);
+        }
+        row.cells.append(cell);
+    }
+    schedule.rows.append(row);
+    scheduleWidget->setPreviewModel(schedule);
+
+    bool dialogOpened = false;
+    bool dialogAccepted = false;
+    bool safetyCloseTriggered = false;
+    QString dialogAutomationError;
+    QTimer::singleShot(
+        0,
+        &harness.page,
+        [&]
+        {
+            auto* const dialog = qobject_cast<SubPrepPrintDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Sub Prep print dialog did not open."
+                    );
+                return;
+            }
+            dialogOpened = true;
+
+            auto* const targetEdit = dialog->findChild<QLineEdit*>(
+                QStringLiteral("subPrepTargetFolderEdit")
+                );
+            auto* const nameEdit = dialog->findChild<QLineEdit*>(
+                QStringLiteral("subPrepUserNameEdit")
+                );
+            auto* const acceptButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("subPrepGenerateOkButton")
+                );
+            auto* const vacationCheck = dialog->findChild<QCheckBox*>(
+                QStringLiteral("subPrepNextVacationCheckBox")
+                );
+            if (!targetEdit || !nameEdit || !acceptButton || !vacationCheck)
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Sub Prep generation controls are incomplete."
+                    );
+                dialog->reject();
+                return;
+            }
+
+            for (const QString& day : QStringList{
+                     QStringLiteral("Monday"),
+                     QStringLiteral("Tuesday"),
+                     QStringLiteral("Wednesday"),
+                     QStringLiteral("Thursday"),
+                     QStringLiteral("Friday")
+                 })
+            {
+                auto* const dayCheck = dialog->findChild<QCheckBox*>(
+                    QStringLiteral("subPrepPrint%1CheckBox").arg(day)
+                    );
+                if (!dayCheck)
+                {
+                    dialogAutomationError = QStringLiteral(
+                        "A weekday selection control is missing."
+                        );
+                    dialog->reject();
+                    return;
+                }
+
+                const QSignalBlocker blocker(dayCheck);
+                dayCheck->setChecked(
+                    day == QStringLiteral("Tuesday")
+                    || day == QStringLiteral("Thursday")
+                    );
+                if (day == QStringLiteral("Tuesday"))
+                {
+                    dayCheck->setProperty(
+                        "day",
+                        QStringLiteral("Invalid schedule weekday")
+                        );
+                }
+            }
+
+            if (!vacationCheck->isChecked())
+            {
+                dialogAutomationError = QStringLiteral(
+                    "The vacation date selection was not retained."
+                    );
+                dialog->reject();
+                return;
+            }
+            targetEdit->setText(outputRoot.path());
+            nameEdit->setText(QStringLiteral("F1316"));
+            if (!acceptButton->isEnabled())
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Sub Prep generation did not become enabled."
+                    );
+                dialog->reject();
+                return;
+            }
+            acceptButton->click();
+            dialogAccepted = dialog->result() == QDialog::Accepted;
+        }
+        );
+
+    QTimer safetyCloseTimer;
+    safetyCloseTimer.setSingleShot(true);
+    QObject::connect(&safetyCloseTimer, &QTimer::timeout, &harness.page, [&]
+    {
+        if (QWidget* const modal = QApplication::activeModalWidget())
+        {
+            safetyCloseTriggered = true;
+            if (dialogAutomationError.isEmpty())
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Sub Prep print dialog automation timed out."
+                    );
+            }
+            modal->close();
+        }
+    });
+
+    FakeUserPromptService promptService;
+    struct PromptServiceRestorer final
+    {
+        ~PromptServiceRestorer()
+        {
+            DialogServices::setUserPromptServiceForTesting(nullptr);
+        }
+    } restorePromptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+
+    safetyCloseTimer.start(5'000);
+    const bool generationInvoked = QMetaObject::invokeMethod(
+        &harness.page,
+        "generateSubPrep",
+        Qt::DirectConnection
+        );
+    safetyCloseTimer.stop();
+
+    QVERIFY(generationInvoked);
+    QVERIFY2(!safetyCloseTriggered, qPrintable(dialogAutomationError));
+    QVERIFY2(dialogOpened, qPrintable(dialogAutomationError));
+    QVERIFY2(dialogAccepted, qPrintable(dialogAutomationError));
+    QCOMPARE(calendarIntervalsReadPort.loadCount, 1);
+    QCOMPARE(harness.printSourceReadPort.loadCount, 0);
+    QCOMPARE(rosterOutputSourceReadPort.loadCount, 0);
+    QCOMPARE(promptService.messages.size(), 1);
+    QCOMPARE(
+        promptService.messages.front().message,
+        QStringLiteral("A selected schedule weekday is invalid.")
+        );
+    QCOMPARE(
+        QDir(outputRoot.path()).entryList(
+            QDir::AllEntries
+                | QDir::NoDotAndDotDot
+                | QDir::Hidden
+                | QDir::System
+            ).size(),
+        0
+        );
 }
 
 void SubPrepPageTests

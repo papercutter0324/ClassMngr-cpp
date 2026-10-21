@@ -3,6 +3,7 @@
 #include "features/roster/services/roster_template_print_service.h"
 #include "features/sub_prep/services/sub_prep_print_service.h"
 #include "features/schedule/ui/schedule_view_model.h"
+#include "next/application/sub_prep_package_request_validation.h"
 #include "next/application/sub_prep_roster_output_source_query.h"
 
 #include <QDate>
@@ -81,4 +82,8 @@ struct Result
 // Takes ownership of this operation snapshot and releases its Sub Prep
 // information-sheet input immediately after that PDF is rendered.
 [[nodiscard]] Result generate(Request request);
+[[nodiscard]] Result generate(
+    Request request,
+    const ClassMngr::Next::Application::SubPrepGenerationPlan& plan
+    );
 }

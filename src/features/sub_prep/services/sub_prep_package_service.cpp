@@ -111,11 +111,11 @@ Result failed(
 
 QString preflightFailureMessage(
     const ClassMngr::Next::Application::
-        SubPrepPackageRequestValidationReason reason
+        SubPrepGenerationPlanFailureReason reason
     )
 {
     using Reason = ClassMngr::Next::Application::
-        SubPrepPackageRequestValidationReason;
+        SubPrepGenerationPlanFailureReason;
 
     switch (reason)
     {
@@ -129,6 +129,10 @@ QString preflightFailureMessage(
         return QObject::tr("Choose a target folder.");
     case Reason::MissingUserName:
         return QObject::tr("Enter your name for the Sub Prep folder.");
+    case Reason::InvalidSelectedScheduleWeekday:
+        return QObject::tr("A selected schedule weekday is invalid.");
+    case Reason::InvalidScheduleMode:
+        return QObject::tr("The Sub Prep schedule mode is invalid.");
     case Reason::None:
         return {};
     }
@@ -155,28 +159,38 @@ QList<QDate> normalizedDates(
 }
 
 std::optional<ClassMngr::Next::Application::SubPrepWeekday>
-weekdayForDate(const QDate& date)
+weekdayForScheduleLabel(const QString& label)
 {
     using ClassMngr::Next::Application::SubPrepWeekday;
-    switch (date.dayOfWeek())
+    if (label == QStringLiteral("Monday"))
     {
-    case Qt::Monday:
         return SubPrepWeekday::Monday;
-    case Qt::Tuesday:
-        return SubPrepWeekday::Tuesday;
-    case Qt::Wednesday:
-        return SubPrepWeekday::Wednesday;
-    case Qt::Thursday:
-        return SubPrepWeekday::Thursday;
-    case Qt::Friday:
-        return SubPrepWeekday::Friday;
-    case Qt::Saturday:
-        return SubPrepWeekday::Saturday;
-    case Qt::Sunday:
-        return SubPrepWeekday::Sunday;
-    default:
-        return std::nullopt;
     }
+    if (label == QStringLiteral("Tuesday"))
+    {
+        return SubPrepWeekday::Tuesday;
+    }
+    if (label == QStringLiteral("Wednesday"))
+    {
+        return SubPrepWeekday::Wednesday;
+    }
+    if (label == QStringLiteral("Thursday"))
+    {
+        return SubPrepWeekday::Thursday;
+    }
+    if (label == QStringLiteral("Friday"))
+    {
+        return SubPrepWeekday::Friday;
+    }
+    if (label == QStringLiteral("Saturday"))
+    {
+        return SubPrepWeekday::Saturday;
+    }
+    if (label == QStringLiteral("Sunday"))
+    {
+        return SubPrepWeekday::Sunday;
+    }
+    return std::nullopt;
 }
 
 std::optional<QString> weekdayLabel(
@@ -202,6 +216,73 @@ std::optional<QString> weekdayLabel(
         return QStringLiteral("Sunday");
     }
     return std::nullopt;
+}
+
+ClassMngr::Next::Application::SubPrepGenerationPlanRequest
+generationPlanRequest(const Request& request)
+{
+    using ClassMngr::Next::Application::
+        SubPrepGenerationPlanRequest;
+    using ClassMngr::Next::Application::ScheduleViewMode;
+
+    SubPrepGenerationPlanRequest planRequest;
+    planRequest.selectedDates.reserve(
+        static_cast<std::size_t>(request.selectedDates.size())
+        );
+    for (const QDate& date : request.selectedDates)
+    {
+        if (!date.isValid())
+        {
+            continue;
+        }
+
+        const auto domainDate = ClassMngr::Next::Domain::GregorianDate::
+            fromComponents(date.year(), date.month(), date.day());
+        if (domainDate)
+        {
+            planRequest.selectedDates.push_back(*domainDate);
+        }
+    }
+
+    planRequest.selectedClassIds = request.selectedClassIds;
+    planRequest.selectedScheduleWeekdays.reserve(
+        static_cast<std::size_t>(request.subPrep.schedule.days.size())
+        );
+    for (const QString& day : request.subPrep.schedule.days)
+    {
+        planRequest.selectedScheduleWeekdays.push_back(
+            weekdayForScheduleLabel(day).value_or(
+                static_cast<ClassMngr::Next::Application::SubPrepWeekday>(0)
+                )
+            );
+    }
+    planRequest.mode = request.useIntensiveSchedule
+        ? ScheduleViewMode::Intensive
+        : ScheduleViewMode::Regular;
+    planRequest.createFolder = request.createFolder;
+    planRequest.printPaperCopies = request.printPaperCopies;
+    planRequest.openFolderAfterGeneration = request.openFolderAfterGeneration;
+    planRequest.requestedRosterColumns.reserve(
+        static_cast<std::size_t>(request.selectedExtraColumns.size())
+        );
+    for (const QString& column : request.selectedExtraColumns)
+    {
+        const QByteArray bytes = column.toUtf8();
+        planRequest.requestedRosterColumns.emplace_back(
+            bytes.constData(),
+            static_cast<std::size_t>(bytes.size())
+            );
+    }
+
+    const QByteArray labelBytes = request.userName.toUtf8();
+    planRequest.folderLabel.assign(
+        labelBytes.constData(),
+        static_cast<std::size_t>(labelBytes.size())
+        );
+    planRequest.hasNonEmptyFolderLabel = !request.userName.trimmed().isEmpty();
+    planRequest.targetRootReady = !request.targetRoot.trimmed().isEmpty();
+    planRequest.replaceExisting = request.replaceExisting;
+    return planRequest;
 }
 
 std::optional<int> legacyId(
@@ -296,6 +377,7 @@ QString uniqueFolderName(
 
 QList<PackageClass> loadPackageClasses(
     const Request& request,
+    const ClassMngr::Next::Application::SubPrepGenerationPlan& plan,
     QString* errorMessage
     )
 {
@@ -311,33 +393,15 @@ QList<PackageClass> loadPackageClasses(
 
     ClassMngr::Next::Application::SubPrepRosterOutputSourceRequest
         sourceRequest;
-    sourceRequest.selectedClassIds = request.selectedClassIds;
-    sourceRequest.mode = request.useIntensiveSchedule
-        ? ClassMngr::Next::Application::ScheduleViewMode::Intensive
-        : ClassMngr::Next::Application::ScheduleViewMode::Regular;
-    for (const QDate& date : normalizedDates(request.selectedDates))
-    {
-        const auto weekday = weekdayForDate(date);
-        if (weekday
-            && std::find(
-                sourceRequest.selectedDays.cbegin(),
-                sourceRequest.selectedDays.cend(),
-                *weekday
-                ) == sourceRequest.selectedDays.cend())
-        {
-            sourceRequest.selectedDays.push_back(*weekday);
-        }
-    }
+    sourceRequest.selectedClassIds = plan.selectedClassIds;
+    sourceRequest.selectedDays = plan.rosterWeekdays;
+    sourceRequest.mode = plan.mode;
     sourceRequest.selectedExtraColumns.reserve(
-        static_cast<std::size_t>(request.selectedExtraColumns.size())
+        plan.requestedRosterColumns.size()
         );
-    for (const QString& column : request.selectedExtraColumns)
+    for (const std::string& column : plan.requestedRosterColumns)
     {
-        const QByteArray bytes = column.toUtf8();
-        sourceRequest.selectedExtraColumns.emplace_back(
-            bytes.constData(),
-            static_cast<std::size_t>(bytes.size())
-            );
+        sourceRequest.selectedExtraColumns.push_back(column);
     }
 
     ClassMngr::Next::Application::SubPrepRosterOutputSourceQuery query(
@@ -615,6 +679,7 @@ QList<PackageClass> loadPackageClasses(
 
 GeneratedPackage generateAt(
     Request& request,
+    const ClassMngr::Next::Application::SubPrepGenerationPlan& plan,
     const QString& packageDirectory
     )
 {
@@ -649,7 +714,7 @@ GeneratedPackage generateAt(
     QString classError;
     PackageClassesReleaseGuard packageClassesReleaseGuard;
     QList<PackageClass> classes =
-        loadPackageClasses(request, &classError);
+        loadPackageClasses(request, plan, &classError);
 
     if (classes.isEmpty())
     {
@@ -661,6 +726,19 @@ GeneratedPackage generateAt(
     QList<RosterTemplatePrintService::RosterClassData> rosterClasses;
     const bool perClassRoster = request.rosterTemplate
         == RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo;
+    QStringList selectedExtraColumns;
+    selectedExtraColumns.reserve(
+        static_cast<qsizetype>(plan.requestedRosterColumns.size())
+        );
+    for (const std::string& column : plan.requestedRosterColumns)
+    {
+        selectedExtraColumns.append(
+            QString::fromUtf8(
+                column.data(),
+                static_cast<qsizetype>(column.size())
+                )
+            );
+    }
     if (!perClassRoster)
     {
         rosterClasses.reserve(classes.size());
@@ -700,7 +778,7 @@ GeneratedPackage generateAt(
                     {packageClass.rosterData},
                     QDir(packageDirectory).filePath(relativePath),
                     request.rosterTemplate,
-                    request.selectedExtraColumns,
+                    selectedExtraColumns,
                     request.perClassOrientation
                     );
 
@@ -1041,22 +1119,32 @@ Result generate(
     Request request
     )
 {
-    const auto preflight =
-        ClassMngr::Next::Application::validateSubPrepPackageRequest(
-            {
-                .createFolder = request.createFolder,
-                .printPaperCopies = request.printPaperCopies,
-                .hasValidSelectedDate =
-                    !normalizedDates(request.selectedDates).isEmpty(),
-                .hasSelectedClassIds = !request.selectedClassIds.empty(),
-                .hasNonEmptyTargetRoot =
-                    !request.targetRoot.trimmed().isEmpty(),
-                .hasNonEmptyUserName = !request.userName.trimmed().isEmpty()
-            }
-            );
-    if (!preflight.isValid())
+    const auto planned = ClassMngr::Next::Application::
+        planSubPrepGeneration(generationPlanRequest(request));
+    if (!planned.isValid() || !planned.plan)
     {
-        return failed(preflightFailureMessage(preflight.reason));
+        return failed(preflightFailureMessage(planned.reason));
+    }
+
+    return generate(std::move(request), *planned.plan);
+}
+
+Result generate(
+    Request request,
+    const ClassMngr::Next::Application::SubPrepGenerationPlan& plan
+    )
+{
+    const bool createFolder = plan.output.createFolder;
+    const bool printPaperCopies = plan.output.printPaperCopies;
+    const auto* folderPlan = plan.output.folder
+        ? &*plan.output.folder
+        : nullptr;
+
+    if (createFolder
+        && (!folderPlan || !folderPlan->targetRootReady
+            || request.targetRoot.trimmed().isEmpty()))
+    {
+        return failed(QObject::tr("Choose a target folder."));
     }
 
     QString packageDirectory;
@@ -1064,23 +1152,31 @@ Result generate(
     std::unique_ptr<QTemporaryDir> printOnlyDirectory;
     bool folderCreated = false;
 
-    if (request.createFolder)
+    if (createFolder)
     {
-        if (request.targetRoot.trimmed().isEmpty())
-        {
-            return failed(QObject::tr("Choose a target folder."));
-        }
-        if (request.userName.trimmed().isEmpty())
-        {
-            return failed(QObject::tr("Enter your name for the Sub Prep folder."));
-        }
         if (!QDir().mkpath(request.targetRoot))
         {
             return failed(QObject::tr("Unable to create the target folder."));
         }
 
+        QList<QDate> plannedDates;
+        plannedDates.reserve(
+            static_cast<qsizetype>(plan.normalizedDates.size())
+            );
+        for (const auto& date : plan.normalizedDates)
+        {
+            plannedDates.append(
+                QDate(date.year(), date.month(), date.day())
+                );
+        }
         const QString finalName =
-            datedFolderName(request.userName, request.selectedDates);
+            datedFolderName(
+                QString::fromUtf8(
+                    folderPlan->folderLabel.data(),
+                    static_cast<qsizetype>(folderPlan->folderLabel.size())
+                    ),
+                plannedDates
+                );
         const QString finalPath =
             QDir(request.targetRoot).filePath(finalName);
 
@@ -1088,7 +1184,7 @@ Result generate(
         {
             return failed(QObject::tr("The generated folder path is not safe."));
         }
-        if (QFileInfo::exists(finalPath) && !request.replaceExisting)
+        if (QFileInfo::exists(finalPath) && !folderPlan->replaceExisting)
         {
             return failed(
                 QObject::tr("The Sub Prep folder already exists.")
@@ -1106,7 +1202,7 @@ Result generate(
         }
 
         const GeneratedPackage generated =
-            generateAt(request, stagingDirectory.path());
+            generateAt(request, plan, stagingDirectory.path());
         if (!generated.success)
         {
             return failed(generated.message);
@@ -1171,7 +1267,7 @@ Result generate(
         }
 
         const GeneratedPackage generated =
-            generateAt(request, printOnlyDirectory->path());
+            generateAt(request, plan, printOnlyDirectory->path());
         if (!generated.success)
         {
             return failed(generated.message);
@@ -1192,7 +1288,7 @@ Result generate(
             ? QObject::tr("Sub Prep package created.")
             : QString();
 
-    if (request.printPaperCopies)
+    if (printPaperCopies)
     {
         const PdfPrintService::Result printResult =
             PdfPrintService::printPdfDocuments(
@@ -1223,7 +1319,7 @@ Result generate(
     }
 
     bool folderOpenFailed = false;
-    if (folderCreated && request.openFolderAfterGeneration)
+    if (folderCreated && folderPlan->openAfterGeneration)
     {
         const QUrl packageUrl = QUrl::fromLocalFile(packageDirectory);
         const bool opened = request.folderOpener

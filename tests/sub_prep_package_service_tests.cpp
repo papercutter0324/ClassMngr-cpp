@@ -853,6 +853,7 @@ class SubPrepPackageServiceTests : public QObject
 private slots:
     void init();
     void rejectsInvalidPackagePreflightBeforeFilesystemEffects();
+    void generationConsumesTypedPlanForRosterQueryAndFolderOutput();
     void byDayPackageCreatesExpectedTreeAndReplacesTransactionally();
     void folderOpenOutcomePreservesGeneratedPackageArtifacts();
     void acceptsWideTeacherIdAndUsesPreferredDisplayName();
@@ -936,6 +937,87 @@ void SubPrepPackageServiceTests
         request,
         QStringLiteral("Enter your name for the Sub Prep folder.")
         ));
+
+    request = packageRequest(targetPath, QStringLiteral("Jamie"));
+    request.subPrep.schedule.days = {QStringLiteral("Not a weekday")};
+    QVERIFY(failsBeforeFilesystemEffects(
+        request,
+        QStringLiteral("A selected schedule weekday is invalid.")
+        ));
+}
+
+void SubPrepPackageServiceTests
+    ::generationConsumesTypedPlanForRosterQueryAndFolderOutput()
+{
+    QTemporaryDir targetRoot;
+    QVERIFY(targetRoot.isValid());
+
+    const auto selectedDate =
+        ClassMngr::Next::Domain::GregorianDate::fromComponents(
+            2026,
+            7,
+            21
+            );
+    QVERIFY(selectedDate);
+
+    using namespace ClassMngr::Next::Application;
+    SubPrepGenerationPlanRequest planRequest;
+    planRequest.selectedDates = {*selectedDate};
+    planRequest.selectedClassIds = {typedClassId(42)};
+    planRequest.selectedScheduleWeekdays = {
+        SubPrepWeekday::Thursday,
+        SubPrepWeekday::Monday
+    };
+    planRequest.mode = ScheduleViewMode::Intensive;
+    planRequest.createFolder = true;
+    planRequest.requestedRosterColumns = {"Allergies"};
+    planRequest.folderLabel = "Planned Label";
+    planRequest.hasNonEmptyFolderLabel = true;
+    planRequest.targetRootReady = true;
+    const auto generationPlan = planSubPrepGeneration(planRequest);
+    QVERIFY(generationPlan.isValid());
+    QVERIFY(generationPlan.plan);
+
+    ClassInfo info = g_classInfo.value(42);
+    info.intensiveTimes = info.classTimes;
+    g_classInfo.insert(42, info);
+
+    SubPrepPackageService::Request request = packageRequest(
+        targetRoot.path(),
+        QStringLiteral("Planned Label")
+        );
+    request.selectedExtraColumns = {QStringLiteral("Allergies")};
+    const SubPrepPackageService::Result result =
+        SubPrepPackageService::generate(
+            std::move(request),
+            *generationPlan.plan
+            );
+
+    QCOMPARE(result.status, SubPrepPackageService::Status::Completed);
+    QCOMPARE(g_rosterOutputSourceReadPort.loadCount, 1);
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.selectedClassIds,
+        std::vector<ClassMngr::Next::Domain::ClassId>{typedClassId(42)}
+        );
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.selectedDays,
+        std::vector<SubPrepWeekday>{SubPrepWeekday::Tuesday}
+        );
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.mode,
+        ScheduleViewMode::Intensive
+        );
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.selectedExtraColumns,
+        std::vector<std::string>{"Allergies"}
+        );
+    QCOMPARE(
+        QFileInfo(result.outputDirectory).fileName(),
+        SubPrepPackageService::datedFolderName(
+            QStringLiteral("Planned Label"),
+            {QDate(2026, 7, 21)}
+            )
+        );
 }
 
 void SubPrepPackageServiceTests

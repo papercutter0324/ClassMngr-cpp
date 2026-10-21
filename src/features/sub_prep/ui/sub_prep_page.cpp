@@ -1,6 +1,7 @@
 #include "sub_prep_page_p.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "next/application/sub_prep_calendar_event_intervals_query.h"
+#include "next/application/sub_prep_package_request_validation.h"
 #include "next/application/sub_prep_vacation_selection_policy.h"
 #include "next/application/schedule_display_mode_source_policy.h"
 #include "next/platform/application_services_sub_prep_calendar_event_intervals_port.h"
@@ -8,6 +9,7 @@
 
 #include <memory>
 #include <limits>
+#include <optional>
 #include <string>
 
 #include <QCoreApplication>
@@ -48,6 +50,70 @@ QDate subPrepReferenceDate()
     }
 
     return referenceDate;
+}
+
+std::optional<ClassMngr::Next::Application::SubPrepWeekday>
+weekdayForDialogLabel(const QString& day)
+{
+    using ClassMngr::Next::Application::SubPrepWeekday;
+    if (day == QStringLiteral("Monday"))
+    {
+        return SubPrepWeekday::Monday;
+    }
+    if (day == QStringLiteral("Tuesday"))
+    {
+        return SubPrepWeekday::Tuesday;
+    }
+    if (day == QStringLiteral("Wednesday"))
+    {
+        return SubPrepWeekday::Wednesday;
+    }
+    if (day == QStringLiteral("Thursday"))
+    {
+        return SubPrepWeekday::Thursday;
+    }
+    if (day == QStringLiteral("Friday"))
+    {
+        return SubPrepWeekday::Friday;
+    }
+    if (day == QStringLiteral("Saturday"))
+    {
+        return SubPrepWeekday::Saturday;
+    }
+    if (day == QStringLiteral("Sunday"))
+    {
+        return SubPrepWeekday::Sunday;
+    }
+    return std::nullopt;
+}
+
+QString generationPlanFailureMessage(
+    const ClassMngr::Next::Application::
+        SubPrepGenerationPlanFailureReason reason
+    )
+{
+    using Reason = ClassMngr::Next::Application::
+        SubPrepGenerationPlanFailureReason;
+    switch (reason)
+    {
+    case Reason::NoOutputAction:
+        return QObject::tr("Choose a folder or paper-copy action.");
+    case Reason::NoValidSelectedDate:
+        return QObject::tr("Select at least one day to include.");
+    case Reason::NoSelectedClassIds:
+        return QObject::tr("No classes meet on the selected days.");
+    case Reason::MissingTargetRoot:
+        return QObject::tr("Choose a target folder.");
+    case Reason::MissingUserName:
+        return QObject::tr("Enter your name for the Sub Prep folder.");
+    case Reason::InvalidSelectedScheduleWeekday:
+        return QObject::tr("A selected schedule weekday is invalid.");
+    case Reason::InvalidScheduleMode:
+        return QObject::tr("The Sub Prep schedule mode is invalid.");
+    case Reason::None:
+        return {};
+    }
+    return {};
 }
 }
 
@@ -689,11 +755,120 @@ void SubPrepPage::generateSubPrep()
             scheduleDisplayModeUsesIntensiveSource(
                 m_scheduleWidget->displayState().displayMode
                 );
+
+    SubPrepPackageService::Request packageRequest;
+    packageRequest.parent = this;
+    packageRequest.selectedDates = dialog.selectedDates();
+    const QList<int> selectedClassIds = dialog.selectedClassIds();
+    packageRequest.selectedClassIds.reserve(
+        static_cast<std::size_t>(selectedClassIds.size())
+        );
+    for (const int classId : selectedClassIds)
+    {
+        const auto typedClassId =
+            ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(classId)
+                );
+        if (classId <= 0 || !typedClassId)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Load Class Information"),
+                tr("Class information for Sub Prep could not be loaded."),
+                tr("A selected class identifier is invalid.")
+                );
+            return;
+        }
+        packageRequest.selectedClassIds.push_back(*typedClassId);
+    }
+    packageRequest.useIntensiveSchedule = useIntensiveSchedule;
+    packageRequest.createFolder = dialog.createFolder();
+    packageRequest.targetRoot = dialog.targetRoot();
+    packageRequest.userName = dialog.userName();
+    packageRequest.replaceExisting = dialog.replaceExisting();
+    packageRequest.printPaperCopies = dialog.printPaperCopies();
+    packageRequest.openFolderAfterGeneration =
+        dialog.openFolderAfterGeneration();
+    packageRequest.folderOpener = m_folderOpener;
+
+    ClassMngr::Next::Application::SubPrepGenerationPlanRequest planRequest;
+    planRequest.selectedDates.reserve(
+        static_cast<std::size_t>(packageRequest.selectedDates.size())
+        );
+    for (const QDate& date : packageRequest.selectedDates)
+    {
+        if (!date.isValid())
+        {
+            continue;
+        }
+
+        const auto domainDate =
+            ClassMngr::Next::Domain::GregorianDate::fromComponents(
+                date.year(),
+                date.month(),
+                date.day()
+                );
+        if (domainDate)
+        {
+            planRequest.selectedDates.push_back(*domainDate);
+        }
+    }
+    planRequest.selectedClassIds = packageRequest.selectedClassIds;
+    for (const QString& day : dialog.selectedDays())
+    {
+        planRequest.selectedScheduleWeekdays.push_back(
+            weekdayForDialogLabel(day).value_or(
+                static_cast<
+                    ClassMngr::Next::Application::SubPrepWeekday
+                    >(0)
+                )
+            );
+    }
+    planRequest.mode = useIntensiveSchedule
+        ? ClassMngr::Next::Application::ScheduleViewMode::Intensive
+        : ClassMngr::Next::Application::ScheduleViewMode::Regular;
+    planRequest.createFolder = packageRequest.createFolder;
+    planRequest.printPaperCopies = packageRequest.printPaperCopies;
+    planRequest.openFolderAfterGeneration =
+        packageRequest.openFolderAfterGeneration;
+    for (const QString& column : packageRequest.selectedExtraColumns)
+    {
+        const QByteArray bytes = column.toUtf8();
+        planRequest.requestedRosterColumns.emplace_back(
+            bytes.constData(),
+            static_cast<std::size_t>(bytes.size())
+            );
+    }
+    const QByteArray folderLabelBytes = packageRequest.userName.toUtf8();
+    planRequest.folderLabel.assign(
+        folderLabelBytes.constData(),
+        static_cast<std::size_t>(folderLabelBytes.size())
+        );
+    planRequest.hasNonEmptyFolderLabel =
+        !packageRequest.userName.trimmed().isEmpty();
+    planRequest.targetRootReady =
+        !packageRequest.targetRoot.trimmed().isEmpty();
+    planRequest.replaceExisting = packageRequest.replaceExisting;
+
+    const auto generationPlan =
+        ClassMngr::Next::Application::planSubPrepGeneration(planRequest);
+    if (!generationPlan.isValid() || !generationPlan.plan)
+    {
+        DialogServices::prompts().showMessage(
+            PromptRequest{
+                .parent = this,
+                .automationId = QStringLiteral("generation-warning"),
+                .title = tr("Generate Sub Prep"),
+                .message = generationPlanFailureMessage(generationPlan.reason),
+                .severity = PromptSeverity::Warning
+            }
+            );
+        return;
+    }
+
     QString classInformationError;
     if (!buildPrintClassInformation(
-            dialog.selectedClassIds(),
-            dialog.selectedDays(),
-            useIntensiveSchedule,
+            *generationPlan.plan,
             &subPrepRequest.classInformation,
             &classInformationError
             ))
@@ -710,56 +885,26 @@ void SubPrepPage::generateSubPrep()
         m_subNotesEdit
             ? m_subNotesEdit->toPlainText()
             : QString();
-
-    SubPrepPackageService::Request packageRequest;
-    packageRequest.parent = this;
     packageRequest.subPrep = std::move(subPrepRequest);
-    packageRequest.selectedDates = dialog.selectedDates();
-    const QList<int> selectedClassIds = dialog.selectedClassIds();
-    packageRequest.selectedClassIds.reserve(
-        static_cast<std::size_t>(selectedClassIds.size())
-        );
-    for (const int classId : selectedClassIds)
-    {
-        const auto typedClassId =
-            ClassMngr::Next::Domain::ClassId::fromString(
-                std::to_string(classId)
-                );
-        if (!typedClassId)
-        {
-            DialogServices::showWarning(
-                this,
-                tr("Generate Sub Prep"),
-                tr("Selected class identifiers are invalid."),
-                QString::number(classId)
-                );
-            return;
-        }
-        packageRequest.selectedClassIds.push_back(*typedClassId);
-    }
-    packageRequest.useIntensiveSchedule = useIntensiveSchedule;
-    packageRequest.createFolder = dialog.createFolder();
-    packageRequest.targetRoot = dialog.targetRoot();
-    packageRequest.userName = dialog.userName();
-    packageRequest.replaceExisting = dialog.replaceExisting();
-    packageRequest.printPaperCopies = dialog.printPaperCopies();
-    packageRequest.openFolderAfterGeneration =
-        dialog.openFolderAfterGeneration();
-    packageRequest.folderOpener = m_folderOpener;
     std::unique_ptr<
         ClassMngr::Next::Platform::
             ApplicationServicesSubPrepRosterOutputSourcePort
         > rosterOutputSource;
-    if (m_services)
+    auto* rosterOutputSourceReadPort = m_rosterOutputSourceReadPort;
+    if (!rosterOutputSourceReadPort && m_services)
     {
         rosterOutputSource = std::make_unique<
             ClassMngr::Next::Platform::
                 ApplicationServicesSubPrepRosterOutputSourcePort
             >(*m_services);
+        rosterOutputSourceReadPort = rosterOutputSource.get();
     }
-    packageRequest.rosterOutputSourceReadPort = rosterOutputSource.get();
+    packageRequest.rosterOutputSourceReadPort = rosterOutputSourceReadPort;
     const SubPrepPackageService::Result result =
-        SubPrepPackageService::generate(std::move(packageRequest));
+        SubPrepPackageService::generate(
+            std::move(packageRequest),
+            *generationPlan.plan
+            );
 
     if (result.status == SubPrepPackageService::Status::Failed)
     {

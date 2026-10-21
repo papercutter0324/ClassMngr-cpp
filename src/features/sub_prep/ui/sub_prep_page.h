@@ -35,8 +35,10 @@ namespace ClassMngr::Next::Application
 class SubPrepClassDetailsReadPort;
 class SubPrepClassInformationState;
 class SubPrepPrintSourceReadPort;
+class SubPrepRosterOutputSourceReadPort;
 class SubPrepScheduleSummaryReadPort;
 class SubPrepCalendarEventIntervalsReadPort;
+struct SubPrepGenerationPlan;
 }
 
 enum class SubPrepSection
@@ -88,6 +90,20 @@ public:
             summaryReadPort,
         ClassMngr::Next::Application::SubPrepClassDetailsReadPort&
             detailsReadPort,
+        QWidget* parent = nullptr
+        );
+    SubPrepPage(
+        ApplicationServices* services,
+        ClassMngr::Next::Application::SubPrepScheduleSummaryReadPort&
+            summaryReadPort,
+        ClassMngr::Next::Application::SubPrepClassDetailsReadPort&
+            detailsReadPort,
+        ClassMngr::Next::Application::SubPrepPrintSourceReadPort&
+            printSourceReadPort,
+        ClassMngr::Next::Application::SubPrepCalendarEventIntervalsReadPort&
+            calendarIntervalsReadPort,
+        ClassMngr::Next::Application::SubPrepRosterOutputSourceReadPort&
+            rosterOutputSourceReadPort,
         QWidget* parent = nullptr
         );
     SubPrepPage(
@@ -193,9 +209,7 @@ private:
     void renderSelectedClassInformation();
     void updateClassInformationEmptyState();
     bool buildPrintClassInformation(
-        const QList<int>& classIds,
-        const QStringList& selectedDays,
-        bool useIntensive,
+        const ClassMngr::Next::Application::SubPrepGenerationPlan& plan,
         QList<SubPrepClassInformation::TeacherGroup>* groups,
         QString* errorMessage
         );
@@ -225,6 +239,8 @@ private:
     std::function<bool(const QUrl&)> m_folderOpener;
     ClassMngr::Next::Application::SubPrepCalendarEventIntervalsReadPort*
         m_calendarIntervalsReadPort = nullptr;
+    ClassMngr::Next::Application::SubPrepRosterOutputSourceReadPort*
+        m_rosterOutputSourceReadPort = nullptr;
 
     bool m_loading = false;
     bool m_dirty = false;
