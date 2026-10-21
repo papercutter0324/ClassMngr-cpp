@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch518's sole slice F1278 is accepted and in progress before implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch518 (F1278) is complete locally and awaits its normal push; Batch519 discovery starts after that push, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-Batch517 (F1277) is complete and pushed through closeout commit `67967637d86488442a20970754213d3d52054114` (see the [push receipt](03-Phase-2-Progress-Log.md#batch517-push-receipt-2026-10-21)). Batch518 has one accepted slice, F1278, in progress before implementation. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+Batch518 (F1278) is complete locally at source/test commit `4d89a6dfa6ba663ba23e3ac0054109dd07008c6c`, with acceptance commit `a45b2b2f80ad2bb28e6f3875a8d530f27f4f62e8`; its normal push is next. Batch519 discovery starts after the Batch518 push, with no implementation batch active. See the [F1278 completion record](03-Phase-2-Progress-Log.md#f1278-speaking-evaluation-notes-length-validation-complete-2026-10-21). Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Slice discovery batches
 
@@ -75,12 +75,6 @@ Treat this plan as an operational summary, not a history:
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
-
-### Active batch: Batch518
-
-1. F1278 - Speaking Evaluation Notes length validation — Accepted / in
-   progress; add a shared Qt-free Application predicate and reuse it in
-   whole-save and live cell validation, then run the focused macOS Debug checks.
 
 #### Deferred candidates
 

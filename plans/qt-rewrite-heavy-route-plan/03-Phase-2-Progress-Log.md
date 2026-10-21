@@ -61208,3 +61208,39 @@ separately from Phase 0's 2026-09-18 Complete declaration.
 
 Batch518 is active with F1278 accepted/in progress before implementation. Gate
 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### F1278 Speaking Evaluation Notes length validation complete - 2026-10-21
+
+F1278 is complete locally in Batch518 at source/test commit
+`4d89a6dfa6ba663ba23e3ac0054109dd07008c6c`; acceptance was recorded at
+`a45b2b2f80ad2bb28e6f3875a8d530f27f4f62e8`. A Qt-free Application Notes
+length predicate is shared by whole-save validation and live model validation:
+10,000 UTF-16 code units pass and 10,001 fail. Notes text remains raw and is
+not truncated. Live validation checks length before its blank-value return, so
+over-limit whitespace is caught. The existing whole-save blank-row skip and
+save issue details remain unchanged; F1277 behavior and all other fields are
+preserved.
+
+The incremental build in the existing `build/macos-clang-debug` tree succeeded
+for `ClassMngr`,
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`, and
+`ClassMngrSpeakingEvalPageSaveTests`. The focused app-less CTest command
+`ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests$'`
+passed 1/1. After rebuilding `ClassMngrSpeakingEvalPageSaveTests`, the final
+`liveNotesLengthValidationUsesApplicationCellRules` selector passed 3/0,
+checking the exact and over-limit boundaries, raw preservation, over-limit
+whitespace, clearing, and recovery. `git diff --check` passed.
+
+The first UI assertion attempt exposed existing message-list semantics and was
+adjusted: non-whitespace over-limit text expects the local Notes message plus
+the generic domain message, while over-limit whitespace on a blank row expects
+only the local Notes message because whole-save intentionally skips
+non-editable rows. Nonfatal missing Sans Serif alias and
+`:/assets/icons/keyboard_light.svg` warnings occurred. No full-suite, Windows,
+clean-build, or Gate 2 result is claimed.
+
+Batch518 is complete locally and awaits its normal push. Batch519 discovery
+starts after the Batch518 push; no implementation batch is active. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's
+source-bound Windows x64 requalification remains outstanding separately from
+Phase 0's 2026-09-18 Complete declaration.
