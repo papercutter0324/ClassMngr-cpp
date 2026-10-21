@@ -63802,3 +63802,48 @@ next with F1315 accepted and queued; its implementation and verification are
 pending. Gate 1 and Gate 2 remain Partial, the Phase 2 exit gate remains Open
 pending cumulative audit, and F629's Windows x64 evidence remains outstanding
 separately.
+
+### Batch541 push receipt; Batch542 F1315 implementation underway - 2026-10-22
+
+Push succeeded with `3bf10cd5..3719f3b2 Qt-Rewrite -> Qt-Rewrite`, advancing
+the remote to `3719f3b2`. The pushed range included F1314 source `5738d486` and
+Batch541 closeout docs `3719f3b2`. Batch541 is pushed through closeout.
+
+Batch542/F1315 implementation is underway; Senior Executor has begun and no
+result is available yet. Verification remains pending. Gate 1 and Gate 2
+remain Partial, the Phase 2 exit gate remains Open pending cumulative audit,
+and F629's Windows x64 evidence remains separately outstanding.
+
+### F1315 complete; Batch542 closed locally; Batch543 discovery underway - 2026-10-22
+
+F1315 completed at source commit `91ba6c99` (`F1315: remove Calendar Import
+save cap`), following the user's decision to match pinned legacy behavior. The
+change removes only the total filtered import-save cap; per-event create-only
+validation, duplicate filtering/order, failure precedence, projection cap, and
+repeat-series cap are retained.
+
+Executor built `ClassMngr` and five focused test targets; all five passed 189
+QtTests. Calendar Event Import parity required a loopback-authorized retry,
+which passed. Independent Tester built those six targets and passed 35 focused
+cases across:
+
+| Focused target | Coverage | Cases |
+| --- | --- | ---: |
+| `NextApplicationCalendarEventImportPlan` | Import-plan tests | 10 |
+| `NextApplicationCalendarEventImportUseCase` | Ordered counts, empty/duplicate input, 4,097 unique/duplicate candidates, query/save failure precedence | 8 |
+| `NextApplicationCalendarEvent` | 4,097 validation, create-only checks, projection overflow, repeat-series limit | 6 |
+| `NextPlatformApplicationServicesCalendarEventPort` | Ordered IDs, 4,097 persistence, no-op/invalid input, rollback including failure rows | 8 |
+| `CalendarEventImportParity` | Golden fixture | 3 |
+
+The 4,097 unique-candidate path performs one signature query and one ordered
+save with matching returned IDs; the 4,097-duplicate path performs one save and
+reports 4,096 skipped. Platform persistence retains row/ID alignment, and a
+final insert failure rolls back rows and sequence state. No full suite or
+greater-than-4,097 stress test ran.
+
+Batch542 is complete locally at `91ba6c99`; push is pending. Batch543 discovery
+started at F1315 implementation start. The contract lane found no candidate;
+the feature lane's broad scan found none, but a deeper Teacher Import parity
+trace remains pending, so discovery stays in progress. Gate 1 and Gate 2 remain
+Partial, the Phase 2 exit gate remains Open pending cumulative audit, and
+F629's Windows x64 evidence remains separately outstanding.

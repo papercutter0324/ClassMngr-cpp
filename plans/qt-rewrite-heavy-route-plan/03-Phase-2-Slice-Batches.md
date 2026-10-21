@@ -104,7 +104,7 @@ positive. The pinned legacy apply chain runs `ScheduleImportStateValidator`
 and rejects the mismatched-teacher Skip just like current v2. F1313 was never
 implemented. See the progress log for corrected call-chain evidence.
 
-## Batch541 — Complete locally; awaiting push
+## Batch541 — Pushed through closeout
 
 - F1314 — Complete at implementation commit `5738d486`. `ensureSchema` now
   defaults to existing-only; explicit `createSchema` initializes new databases.
@@ -113,13 +113,19 @@ implemented. See the progress log for corrected call-chain evidence.
   passed focused checks across 11 affected targets (90 QtTest cases); Executor
   reported 450 focused QtTest passes. No full suite ran; see the progress log.
 
-## Batch542 — Next; F1315 accepted/queued
+Batch541 push receipt: `3bf10cd5..3719f3b2 Qt-Rewrite -> Qt-Rewrite`;
+the range included F1314 source `5738d486` and closeout docs `3719f3b2`.
+
+## Batch542 — Complete locally; awaiting push
 
 Both contract and feature discovery lanes found no other ready candidate.
 Per the user's selection, F1315 — Calendar Import 4,097-event save parity — is
 accepted to remove the 4,096 import-save cap and match pinned legacy behavior.
-Implementation and focused verification are pending; Batch541 is complete
-locally and awaits push.
+Batch541 is pushed through closeout. F1315 is complete at source commit
+`91ba6c99` (`F1315: remove Calendar Import save cap`). Executor's five focused
+test targets passed 189 QtTests; independent Tester passed 35 focused cases.
+No full suite or greater-than-4,097-event stress test ran. See the progress log
+for focused acceptance and verification details.
 
 Acceptance: remove only the total filtered save-batch cap. Preserve per-event
 create-only validation, duplicate filtering and order, and failure precedence.
@@ -132,3 +138,9 @@ Focused CTest targets: `NextApplicationCalendarEvent`,
 `NextApplicationCalendarEventImportUseCase`,
 `NextPlatformApplicationServicesCalendarEventPort`, and
 `CalendarEventImportParity`.
+
+## Batch543 — Discovery in progress; Teacher Import parity trace pending
+
+Discovery started at F1315 implementation start. The contract lane found no
+candidate, and the feature lane's broad scan found none; a deeper Teacher Import
+parity trace is still pending. Keep discovery open until that review returns.
