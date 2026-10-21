@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch522 remains active and unpushed with F1282 and F1283 complete locally and F1284 accepted as the next implementation; Batch523 discovery is complete with three candidates recorded, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch522 is complete locally and unpushed; Batch523 is active with F1285 next and F1286-F1287 following in order, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1283 is complete locally at follow-up assertion commit `43e30b211f31c4603730301eca7682e7d005c771`; F1284 is accepted before implementation and is next. See the [F1283 completion record](03-Phase-2-Progress-Log.md#f1283-required-read-failure-clean-state-assertions-complete-locally-2026-10-21) and [F1284 acceptance](03-Phase-2-Progress-Log.md#f1284-schedule-editor-initial-read-feedback-accepted-before-implementation-2026-10-21).
+F1284 is complete locally at focused query-mismatch test commit `bd74e19b383515ae7d3bf031f30fecb16aa6b563`; Batch522 is closed locally and Batch523 is active with F1285 next. See the [F1284 completion record](03-Phase-2-Progress-Log.md#f1284-schedule-editor-initial-read-feedback-complete-locally-2026-10-21).
 
 ### Slice discovery batches
 
@@ -76,26 +76,17 @@ Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
-### Active Batch522
+### Active Batch523
 
-1. F1282 - Complete locally: Calendar event activation load-error feedback.
-2. F1283 - Complete locally.
-3. F1284 - Accepted before implementation: show structured initial-read
-   feedback in Schedule Editor; implementation is next. Batch522 remains
-   unpushed until F1284 closes.
-
-### Recorded Batch523 candidates (activate after Batch522 closes)
-
-1. F1285 - Protect a loaded Native English or GS Team Staff Directory when a
-   committed Teacher Import is followed by a failed directory refresh; stale
-   rows otherwise remain editable and can overwrite imported values.
-2. F1286 - Keep Testing Classes selection and editor identity coherent when
-   the fallback class-details read fails after successful deletion.
-3. F1287 - Preserve Testing Classes state when a successful create/update is
-   followed by a failed class-list refresh.
-
-These candidates are discovered, not accepted. Batch523 starts after Batch522
-closes.
+1. F1285 - Discovered; accept and implement next: protect a loaded Native
+   English or GS Team Staff Directory after a committed Teacher Import is
+   followed by a failed directory refresh.
+2. F1286 - Discovered; accept and implement after F1285 closes: keep Testing
+   Classes selection and editor identity coherent after a successful delete
+   when the fallback class-details read fails.
+3. F1287 - Discovered; accept and implement after F1286 closes: preserve
+   Testing Classes state when a successful create/update is followed by a
+   failed class-list refresh.
 
 ### Deferred candidates
 

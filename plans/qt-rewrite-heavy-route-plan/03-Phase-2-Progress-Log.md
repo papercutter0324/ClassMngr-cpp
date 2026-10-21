@@ -61807,17 +61807,43 @@ non-warning and follows existing editor behavior. This warning covers
 structured query failures only; the earlier pre-query invalid-`ClassId` return
 is outside the slice.
 
-Update `tests/schedule_editor_dialog_tests.cpp`
-(`ClassMngrScheduleEditorDialogTests`) to assert the load-time title and
-message for both existing failed-read rows, safe/default display and blocked
-zero-write Save, while preserving successful read/save cases. Focused
-verification: build `ClassMngr` and
-`ClassMngrScheduleEditorDialogTests` in `build/macos-clang-debug`, run its
-matching focused CTest, and run `git diff --check`. No full suite, Windows
-run, clean build, or Gate 2 claim is planned. F1284 is accepted as Batch522's
-third candidate before implementation; implementation, build, and tests have
-not started. F1282 and F1283 are complete locally. Batch522 remains unpushed;
-Batch523 discovery is complete with its three candidates recorded. Gate 1 and
-Gate 2 remain Partial, and the Phase 2 exit gate remains Open. Phase 0 remains
+Update `tests/schedule_editor_dialog_tests.cpp` (registered target
+`ClassMngrNextScheduleEditorDialogSaveTests` at
+`cmake/tests/next.cmake:2136`) to assert the load-time title and message for
+both existing failed-read rows, safe/default display and blocked zero-write
+Save, while preserving successful read/save cases. Focused verification:
+build `ClassMngr` and `ClassMngrNextScheduleEditorDialogSaveTests` in
+`build/macos-clang-debug`, run its matching focused CTest, and run
+`git diff --check`. No full suite, Windows run, clean build, or Gate 2 claim
+is planned. F1284 is accepted as Batch522's third candidate before
+implementation; implementation, build, and tests have not started. F1282 and
+F1283 are complete locally. Batch522 remains unpushed; Batch523 discovery is
+complete with its three candidates recorded. Gate 1 and Gate 2 remain Partial,
+and the Phase 2 exit gate remains Open. Phase 0 remains Complete; F629's
+source-bound Windows x64 requalification remains outstanding separately.
+
+### F1284 Schedule Editor initial-read feedback complete locally - 2026-10-21
+
+F1284 is complete locally in Batch522. The acceptance record is in docs commit
+`86f90bcca448628eff1fe761eaad5e1a0e4119dd`; the source/test commit is
+`bf937dee49ced04a6e63940845431ff5eefd84e1`; and the focused query-mismatch
+test commit is `bd74e19b383515ae7d3bf031f30fecb16aa6b563`. The registered test
+target is `ClassMngrNextScheduleEditorDialogSaveTests` at
+`cmake/tests/next.cmake:2136`.
+
+Independent verification passed:
+
+- `cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextScheduleEditorDialogSaveTests`
+- Matching focused CTest: 1/1; CTest target listing confirmed registration.
+- `git show --check` for the repair and executor `git diff --check`.
+
+Coverage includes Technical and NotFound port failures plus Validation from a
+mismatched snapshot, exact warning title/message, safe empty/default fields,
+blocked zero-write Save, the still-open modal, and a successful empty snapshot
+save without a load warning. No full suite, Windows run, clean build, hosted
+CI, or Gate 2 result is claimed. Batch522 is complete locally and its closeout
+is not yet pushed. Batch523 is active with F1285 next; F1286 and F1287 remain
+discovered and will be accepted and implemented in order. Gate 1 and Gate 2
+remain Partial, and the Phase 2 exit gate remains Open. Phase 0 remains
 Complete; F629's source-bound Windows x64 requalification remains outstanding
 separately.
