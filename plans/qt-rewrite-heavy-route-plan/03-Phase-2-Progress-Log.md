@@ -63580,3 +63580,93 @@ the push, with F1309 Staff Directory, F1310 Teacher Info, and F1311 Testing
 Classes accepted. No leads beyond the 20-candidate limit were found. Gate 1 and
 Gate 2 remain Partial, and the Phase 2 exit gate remains Open; F629's
 post-F1303 Windows x64 evidence remains outstanding.
+
+### Batch536 push receipt; Batch537 activated - 2026-10-22
+
+`git push origin Qt-Rewrite` advanced `origin/Qt-Rewrite` from `9bf62a69` to
+closeout `4312e1fe`. The pushed range included F1304 `31faba36`, F1305
+`4082c9d2`, F1306 `a9224b63`, F1307 `8f7ddb9e`, F1308 `7fa77d38`, and closeout
+`4312e1fe`. Batch536 is pushed through closeout. Batch537 is active with F1309
+Staff Directory implementation started; F1310 Teacher Info and F1311 Testing
+Classes remain accepted. Batch538 discovery was due at F1309 implementation
+start; its outcome is not recorded in this handoff. Gate 1 and Gate 2 remain
+Partial, and the Phase 2 exit gate remains Open; F629's post-F1303 Windows x64
+evidence remains outstanding.
+
+### Batch538 bounded discovery complete at F1309 implementation start - 2026-10-22
+
+Batch538 discovery was triggered when F1309 implementation started. The
+contract lane found no eligible candidate in the sampled Domain Result,
+class-transfer export, and Calendar preferences adapter contracts. The feature
+lane found no eligible candidate after screening recent UI work and Campus
+Dashboard save feedback. No other slices or leads beyond the 20-candidate
+limit were found.
+
+### F1309 Staff Directory autosave failure feedback complete; F1310 next - 2026-10-22
+
+F1309 completed at implementation commit `122e2a12` (`F1309: report Staff
+Directory autosave failures`). The build command passed:
+`cmake --build build/macos-clang-debug --target ClassMngrStaffDirectoryGsTeamSaveTests ClassMngrStaffDirectoryNativeEnglishSaveParityTests -j 4`;
+Ninja reported no work. Independent CTest verification ran
+`ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrStaffDirectoryGsTeamSaveTests|ClassMngrStaffDirectoryNativeEnglishSaveParityTests)$'`
+and passed 2/2 targets. Coverage included both directory types, Technical
+autosave failure without a modal, retained rows and dirty state, retry and
+status clearing, manual warning, and Korean retranslation. All five TS entries
+were checked. Compiled `.qm` runtime loading was not tested; no warnings were
+reported. `git diff --check` passed.
+
+Batch537 remains active: F1309 is complete at `122e2a12`, F1310 Teacher Info
+is next, and F1311 Testing Classes remains accepted. Batch538 discovery found
+no eligible candidate; its next scan is due at the next accepted-batch
+trigger, and no candidate should be activated unless found. Gate 1 and Gate 2
+remain Partial, and the Phase 2 exit gate remains Open; F629's post-F1303
+Windows x64 evidence remains outstanding.
+
+### F1310 Teacher Info automatic save-failure feedback complete; F1311 next - 2026-10-22
+
+F1310 completed at implementation commit `c11525f1` (`F1310: report Teacher
+Info autosave failures`). Tester build verification used
+`build/qt-rewrite-phase0-macos-universal-debug`:
+`cmake --build build/qt-rewrite-phase0-macos-universal-debug --target ClassMngrTeacherInfoPageTests`.
+CTest `-R '^ClassMngrTeacherInfoPageTests$'` passed 1/1; direct QtTest
+reported 16 passed. Coverage included automatic Technical failure and inline
+feedback without a modal, dirty-value retention, Korean retranslation, retry
+and persistence/status clearing, the existing manual warning, and post-write
+reload behavior.
+
+All five catalogs had one matching string. `en_US` and `ko_KR` entries are
+finished; `en_AU`, `en_CA`, and `en_GB` entries remain unfinished for source
+fallback. CMake reconfigured due source globs. Linking emitted 58 macOS
+deployment-target warnings (target 13.0; Qt dylibs 14.4); runtime emitted nine
+offscreen warnings, and assertions passed. Compiled `.qm` runtime loading and
+native-display verification were not tested. `git diff --check` passed.
+
+Batch537 remains active: F1309 is complete at `122e2a12`, F1310 is complete at
+`c11525f1`, and F1311 Testing Classes is active next. Batch538 discovery remains
+complete with no eligible candidate. Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open; F629's post-F1303 Windows x64 evidence remains
+outstanding.
+
+### F1311 Testing Classes autosave failure feedback complete; Batch537 closed locally - 2026-10-22
+
+F1311 completed at implementation commit `536e5dd3` (`F1311: disclose Testing
+Classes autosave failures`). The build command
+`cmake --build build/macos-clang-debug --target ClassMngrTestingClassesPageTests -j 4`
+reported the target up-to-date. Tester ran four focused selectors under
+`QT_QPA_PLATFORM=offscreen`; all four test functions passed (QtTest reported
+six including initialization and cleanup). Coverage included Technical
+autosave failure/status, no modal and dirty-draft retention, retry clearing,
+manual warning, F1302 teacher preservation, and wide teacher selection.
+
+All five TS catalogs had 10/10 new entries; Korean translation and retranslation
+passed. Warnings included one font alias and 12 `QSqlQuery: database not open`
+messages; their origin was not established. A screen-reader announcement was
+not observed, though accessible name and translated status were checked. The
+full target was not run due known unrelated failures. `git diff --check` passed.
+
+Batch537 (F1309–F1311) is closed locally at `536e5dd3`; push is pending. All
+three slices are complete. Batch538 is next after the push; its discovery at
+F1309 start found no eligible candidates, no other slices, and no leads beyond
+the 20-candidate limit. Next Phase 2 action: review and execute remaining open
+exit-gate evidence. Gate 1 and Gate 2 remain Partial, the Phase 2 exit gate
+remains Open, and F629's post-F1303 Windows x64 evidence remains outstanding.

@@ -30,7 +30,7 @@ No other slices were found.
 
 No other slices were found.
 
-## Batch536 — Closed locally; push pending
+## Batch536 — Pushed through closeout
 
 Batch536 discovery completed when F1303 implementation started. The five
 ordered candidates below were accepted; no other slices or possible candidates
@@ -56,23 +56,31 @@ beyond the 20-candidate limit were found.
 No other slices were found. See the progress log for verification and
 discovery evidence.
 
-## Batch537 — Next after Batch536 push; three accepted candidates
+Closeout `4312e1fe` was pushed; `origin/Qt-Rewrite` advanced from `9bf62a69`.
 
-Batch537 discovery completed when F1305 implementation started. The candidates
-below are accepted for activation after Batch536 is pushed; no other slices or
-leads beyond the 20-candidate limit were found.
+## Batch537 — Closed locally; push pending
 
-1. F1309 — Staff Directory autosave failure feedback. Show localized,
-   nonmodal feedback for Technical autosave writes in both directory types;
-   retain rows and dirty state, preserve manual warnings, and clear feedback
-   on recovery.
-2. F1310 — Teacher Info automatic update failure feedback. Disclose automatic
-   update failures nonmodally while retaining editable dirty values; preserve
-   manual warnings and clear feedback after successful save and reload.
-3. F1311 — Testing Classes autosave failure feedback. Preserve manual warnings;
-   show visible nonmodal feedback for Technical autosave failures and retain
-   dirty values. Confirm the no-modal autosave policy applies; Batch530's
-   safeguards do not distinguish autosave.
+Batch537 discovery completed when F1305 implementation started. F1309 and
+F1310 and F1311 are complete. No other slices or leads beyond the
+20-candidate limit were found.
 
-See the progress log for discovery evidence, source references, and overlap
-screening. Batch538 discovery is due when F1309 implementation starts.
+1. F1309 — Complete at implementation commit `122e2a12`. Staff Directory now
+   shows localized nonmodal feedback for Technical autosave writes in both
+   directory types; rows and dirty state remain, manual warnings are preserved,
+   and feedback clears on recovery.
+2. F1310 — Complete at implementation commit `c11525f1`. Teacher Info now
+   gives inline feedback for automatic Technical update failure while
+   retaining dirty values; retry and successful persistence clear the status.
+3. F1311 — Complete at implementation commit `536e5dd3`. Testing Classes
+   reports Technical autosave failures nonmodally, retains dirty values, and
+   preserves manual warnings.
+
+No other slices were found. See the progress log for verification and
+discovery evidence.
+
+## Batch538 — Next after Batch537 push; no candidates
+
+Discovery at F1309 implementation start found no eligible candidate in either
+lane. No other slices or leads beyond the 20-candidate limit were found. Keep
+Batch538 next after Batch537 is pushed; do not activate candidates unless a
+subsequent scan finds one.

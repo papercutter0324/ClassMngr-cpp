@@ -59,11 +59,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ### Latest Progress Update
 
-F1308 (`7fa77d38`) adds nonmodal Co-Teacher autosave failure feedback while
-preserving selection and dirty state. The focused CTest target passed 1/1
-(14 QtTests passed). Batch536 is closed locally with push pending; Batch537 is
-next with F1309–F1311 accepted for activation after the push. Gate 1 and Gate 2
-remain Partial, and the Phase 2 exit gate is Open.
+F1311 (`536e5dd3`) completed Testing Classes autosave failure feedback; four
+focused test functions passed (QtTest reported six including init/cleanup).
+The full target was not run due known unrelated failures.
+Batch537 is closed locally with push pending; Batch538 is next after the push
+with no eligible candidates. Next Phase 2 action: review and execute remaining
+open exit-gate evidence. Gate 1 and Gate 2 remain Partial, the exit gate remains
+Open, and F629's post-F1303 Windows x64 evidence remains outstanding.
 
 ### Slice batches
 
