@@ -81,6 +81,12 @@ criteria.
   decisions, and current status in the phase plan; keep current and upcoming
   batch lists and statuses only in the phase's slice-batch document.
 
+## Git commits and pushes
+
+Git staging, committing, and pushing have often required elevated permissions
+in this environment. If the default sandbox denies a requested Git operation,
+retry it with elevated permissions, then verify the commit and remote branch tip.
+
 ## Build and test verification
 
 - Use `build/windows-x64-debug` as the standard local Windows x64 Debug
