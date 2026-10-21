@@ -4,6 +4,8 @@
 #include "data/database/database_session.h"
 #include "data/repositories/teacher_repository.h"
 #include "fakes/fake_user_prompt_service.h"
+#include "next/application/teacher_profile_read_port.h"
+#include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
@@ -70,6 +72,29 @@ void verifyPosition(
     QCOMPARE(row, expectedRow);
     QCOMPARE(column, expectedColumn);
 }
+
+class SuccessfulTeacherProfileReadPort final
+    : public ClassMngr::Next::Application::TeacherProfileReadPort
+{
+public:
+    explicit SuccessfulTeacherProfileReadPort(
+        ClassMngr::Next::Domain::TeacherProfileFields fields
+        )
+        : m_fields(fields)
+    {
+    }
+
+    ClassMngr::Next::Application::TeacherProfileReadResult readTeacherProfile(
+        const ClassMngr::Next::Domain::TeacherId& teacherId
+        ) const override
+    {
+        return ClassMngr::Next::Application::TeacherProfileReadResult::success(
+            {teacherId, m_fields});
+    }
+
+private:
+    ClassMngr::Next::Domain::TeacherProfileFields m_fields;
+};
 } // namespace
 
 class TeacherInfoPageTests : public QObject
@@ -89,7 +114,8 @@ private slots:
     void saveUsesApplicationEditAndReloadsCanonicalTeacher();
     void applicationValidationBlocksInvalidTeacherWrite();
     void repositoryUpdateFailureKeepsDirtyStateAndShowsWarning();
-    void repositoryReloadFailureKeepsDirtyStateAfterSuccessfulWrite();
+    void repositoryReloadFailureRetainsSavedValuesAndRequiresReload();
+    void automaticReloadFailureKeepsSubmittedValuesAndShowsStatus();
 };
 
 void TeacherInfoPageTests::cleanup()
@@ -562,7 +588,7 @@ repositoryUpdateFailureKeepsDirtyStateAndShowsWarning()
 }
 
 void TeacherInfoPageTests::
-repositoryReloadFailureKeepsDirtyStateAfterSuccessfulWrite()
+repositoryReloadFailureRetainsSavedValuesAndRequiresReload()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -601,13 +627,19 @@ repositoryReloadFailureKeepsDirtyStateAfterSuccessfulWrite()
 
     auto* english = page.findChild<QLineEdit*>(
         QStringLiteral("teacherEnEdit"));
+    auto* status = page.findChild<QLabel*>(
+        QStringLiteral("teacherInfoReloadFailureStatus"));
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("teacherInfoSaveButton"));
     QVERIFY(english);
+    QVERIFY(status);
+    QVERIFY(saveButton);
     QSignalSpy saved(&page, &TeacherInfoPage::teacherSaved);
     english->setText(QStringLiteral("Reload Failure"));
     QVERIFY(page.hasUnsavedChanges());
 
     QVERIFY(!page.saveChanges());
-    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!page.hasUnsavedChanges());
     QCOMPARE(saved.count(), 0);
     QCOMPARE(prompts.messages.size(), 1);
     QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
@@ -617,7 +649,25 @@ repositoryReloadFailureKeepsDirtyStateAfterSuccessfulWrite()
         QStringLiteral("The saved teacher information could not be reloaded."));
     QVERIFY(prompts.messages.first().details.contains(
         QStringLiteral("no matching record"), Qt::CaseInsensitive));
+    QCOMPARE(english->text(), QStringLiteral("Reload Failure"));
+    QVERIFY(!english->isEnabled());
+    QVERIFY(!saveButton->isEnabled());
+    QVERIFY(!status->isHidden());
+    QCOMPARE(
+        status->text(),
+        QStringLiteral(
+            "Your changes were saved, but the latest teacher information "
+            "could not be reloaded. Navigate away and reopen this teacher "
+            "before editing or saving again."
+            )
+        );
     QCOMPARE(page.teacher().teacherEn, QStringLiteral("Alex"));
+
+    page.saveData();
+    QCOMPARE(saved.count(), 0);
+    QCOMPARE(prompts.messages.size(), 1);
+    QVERIFY(!status->isHidden());
+    QVERIFY(!page.hasUnsavedChanges());
 
     QSqlQuery audit(services.databaseSession()->database());
     QVERIFY(audit.exec(QStringLiteral(
@@ -629,6 +679,107 @@ repositoryReloadFailureKeepsDirtyStateAfterSuccessfulWrite()
     const Result<Teacher> deleted = services.databaseSession()
         ->teacherRepository()->getTeacher(original.id);
     QVERIFY(!deleted);
+
+    ClassMngr::Next::Domain::TeacherProfileFields reloadedFields;
+    reloadedFields.teacherKr = u"김선생";
+    reloadedFields.teacherEn = u"Reload Failure";
+    SuccessfulTeacherProfileReadPort readPort(reloadedFields);
+    QVERIFY(page.reloadTeacherProfile(readPort));
+    QVERIFY(status->isHidden());
+    QVERIFY(status->text().isEmpty());
+    QVERIFY(english->isEnabled());
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(english->text(), QStringLiteral("Reload Failure"));
+}
+
+void TeacherInfoPageTests::
+automaticReloadFailureKeepsSubmittedValuesAndShowsStatus()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("teacher-profile-auto-reload-failure.tps"))));
+
+    Teacher original;
+    original.teacherKr = QStringLiteral("김선생");
+    original.teacherEn = QStringLiteral("Alex");
+    const Result<int> created = services.teacherService()->create(original);
+    QVERIFY(created);
+    original.id = *created;
+
+    QSqlQuery trigger(services.databaseSession()->database());
+    QVERIFY(trigger.exec(QStringLiteral(
+        "CREATE TABLE teacher_profile_update_audit (teacher_id INTEGER, teacher_en TEXT)"
+        )));
+    QVERIFY(trigger.exec(QStringLiteral(
+        "CREATE TRIGGER remove_teacher_after_profile_update "
+        "AFTER UPDATE OF teacher_en ON teachers "
+        "WHEN NEW.teacher_en = 'Reload Failure' "
+        "BEGIN "
+        "INSERT INTO teacher_profile_update_audit(teacher_id, teacher_en) "
+        "VALUES (NEW.id, NEW.teacher_en); "
+        "DELETE FROM teachers WHERE id = NEW.id; "
+        "END"
+        )));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    TeacherInfoPage page(&services);
+    page.setSaveMode(SaveMode::Automatic);
+    page.loadTeacher(original);
+
+    auto* english = page.findChild<QLineEdit*>(
+        QStringLiteral("teacherEnEdit"));
+    auto* status = page.findChild<QLabel*>(
+        QStringLiteral("teacherInfoReloadFailureStatus"));
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("teacherInfoSaveButton"));
+    auto* autosave = page.findChild<AutosaveCoordinator*>();
+    QVERIFY(english);
+    QVERIFY(status);
+    QVERIFY(saveButton);
+    QVERIFY(autosave);
+    autosave->setDebounceInterval(0);
+
+    QSignalSpy saveRequests(autosave, &AutosaveCoordinator::saveRequested);
+    QSignalSpy saved(&page, &TeacherInfoPage::teacherSaved);
+    english->setText(QStringLiteral("Reload Failure"));
+    QVERIFY(autosave->isValid());
+    QVERIFY(autosave->isDirty());
+
+    QTRY_COMPARE(saveRequests.count(), 1);
+    QVERIFY(!saveRequests.constFirst().constFirst().toBool());
+    QTRY_VERIFY(!status->isHidden());
+    QCOMPARE(saveRequests.count(), 1);
+    QCOMPARE(saved.count(), 0);
+    QCOMPARE(prompts.messages.size(), 0);
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(english->text(), QStringLiteral("Reload Failure"));
+    QVERIFY(!english->isEnabled());
+    QVERIFY(!saveButton->isEnabled());
+    autosave->requestSave(false);
+    QCOMPARE(saveRequests.count(), 1);
+    page.saveData();
+    QCOMPARE(prompts.messages.size(), 0);
+    QVERIFY(!status->isHidden());
+    QCOMPARE(
+        status->text(),
+        QStringLiteral(
+            "Your changes were saved, but the latest teacher information "
+            "could not be reloaded. Navigate away and reopen this teacher "
+            "before editing or saving again."
+            )
+        );
+
+    QSqlQuery audit(services.databaseSession()->database());
+    QVERIFY(audit.exec(QStringLiteral(
+        "SELECT teacher_id, teacher_en FROM teacher_profile_update_audit")));
+    QVERIFY(audit.next());
+    QCOMPARE(audit.value(0).toInt(), original.id);
+    QCOMPARE(audit.value(1).toString(), QStringLiteral("Reload Failure"));
+    QVERIFY(!audit.next());
 }
 
 QTEST_MAIN(TeacherInfoPageTests)
