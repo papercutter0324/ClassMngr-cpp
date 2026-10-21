@@ -62388,3 +62388,38 @@ F1288-F1290 are complete locally; Batch524 remains active and unpushed. F1291
 is next/last in Batch524 and remains discovered and unaccepted. Batch525
 discovery is recorded with provisional F1292-F1294, all unaccepted. Gate 1 and
 Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### F1291 Class Transfer Apply adapter screened out - 2026-10-21
+
+Read-only inspection found no adapter defect. `classTransferApplyRequest()`
+maps exact `-1` to `nullopt`; other integer values, including `0` and `-2`,
+become engaged typed IDs. `TypedId::fromString()` rejects only empty strings,
+and Application's positive-decimal validation rejects malformed IDs before
+apply. Existing test `typedDialogRequestMatchesCompatibilityPlanAndGating`
+covers legacy `-1` as absent; `malformedNonpositiveReviewTargetsAreRejectedAtLegacyBoundary`
+covers `0`/`-2` rejection with no writes through the legacy boundary. Typed
+parsing and validation are also covered. Screen F1291 out; no production
+change or test-only slice is warranted.
+
+### Batch524 local closeout - 2026-10-21
+
+Batch524 (F1288-F1290) is complete locally and awaits push. F1291 was screened
+out and added no code or test slice. Per-slice commit records:
+
+- F1288: acceptance `31808a172125e6be64655c6ad29f7696ea948469`, production
+  `f29fcf499a76751ce59f7b5dda89bc32294bf735`, focused regression
+  `c0fddd3f26dd8bc9fb51342c85772f8028792408`, completion record
+  `0601db4ee9f0cf46fc5f9333228c0b8f75c5eadf`.
+- F1289: acceptance `27493fe656ed83b0a2f0e18fad2a1ba47bab4ba4`, production
+  `b439cbdca206a4f181ece9fe39abbb602772a135`, focused regression
+  `fe036e3dc42bee4c6b9f3c41f88679ebd658ddf5`, completion documentation
+  `66cbc45561ac76c5d5bdaffa03245165d18cb575`.
+- F1290: acceptance `968fdfd2239fec4ab587597804796de12a17b2de`, production
+  `b16f06fd7ed20646d92e1ee654cb612030425f54`, tests
+  `6afde7835c034bf24908255ef9488471e60441a2`, completion documentation
+  `a64e57cd307644415b007ca6920760f525581a68`.
+
+No push has occurred. After the Batch524 push, F1292 is next for acceptance in
+Batch525; F1293 and F1294 follow in order. All Batch525 candidates remain
+provisional and unaccepted. Gate 1 and Gate 2 remain Partial, and the Phase 2
+exit gate remains Open.

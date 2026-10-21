@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1291 is next and last in unpushed Batch524; Batch525 candidates F1292-F1294 remain provisional and unaccepted; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch524 (F1288-F1290) is complete locally and awaiting push after F1291 was screened out; after that push, F1292 is next for acceptance in Batch525; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1290 is complete locally in unpushed Batch524; F1291 is next/last and remains unaccepted. Batch525 discovery is recorded with provisional F1292-F1294. See the [F1290 completion](03-Phase-2-Progress-Log.md#f1290-class-transfer-export-validates-successful-source-snapshots-complete-locally-2026-10-21) and [Batch525 discovery](03-Phase-2-Progress-Log.md#batch525-discovery-2026-10-21-triggered-at-f1290).
+F1291 was screened out; Batch524 (F1288-F1290) is complete locally and awaits push. Batch525 is active with F1292 next for acceptance after that push, followed by F1293 and F1294. See the [F1291 screening](03-Phase-2-Progress-Log.md#f1291-class-transfer-apply-adapter-screened-out-2026-10-21), [Batch524 local closeout](03-Phase-2-Progress-Log.md#batch524-local-closeout-2026-10-21), and [Batch525 discovery](03-Phase-2-Progress-Log.md#batch525-discovery-2026-10-21-triggered-at-f1290).
 
 ### Slice discovery batches
 
@@ -76,36 +76,20 @@ Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
-### Active Batch524
+### Active Batch525
 
-F1288-F1290 are complete locally; F1291 remains discovered, unaccepted, and
-next/last in unpushed Batch524.
+Batch524 is complete locally and awaits push. Batch525 has three discovered,
+provisional, unaccepted candidates in order:
 
-1. F1288 - Complete locally: track current-campus read state and block the
-   aggregate My Details save after a failed read, preserving the displayed
-   campus until a successful reload. Batch524 remains unpushed.
-2. F1289 - Complete locally: show localized, nonmodal status for failed
-   noninteractive My Details saves while retaining editable dirty values; clear
-   it after save success, successful discard/reload, or database-state clear.
-   Preserve the modal warning for explicit save failure.
-3. F1290 - Complete locally: return a structured Technical failure
-   instead of throwing when a successful source snapshot omits a consumed class
-   stage or referenced teacher profile; preserve staged-error order, deferred
-   selection precedence, and complete-snapshot output.
-4. F1291 - Discovered; next/last in Batch524 after F1290: the Class Transfer
-   legacy apply adapter may turn malformed non-sentinel IDs into `nullopt`;
-   API-contract uncertainty remains.
-
-### Batch525 discovery
-
-Three provisional candidates, all discovered and unaccepted, in order:
-
-1. F1292 - Teacher Info may retain an editable dirty page after a successful
-   write followed by reload failure, allowing a later stale overwrite.
-2. F1293 - New-profile replacement may close the active profile before
-   replacement creation succeeds; expected behavior needs acceptance.
-3. F1294 - Nested-folder parent metadata through the legacy catalog adapter
-   has an integration-coverage gap; no runtime failure is demonstrated.
+1. F1292 - Discovered; next for acceptance after Batch524 push: Teacher Info
+   may retain an editable dirty page after a successful write followed by
+   reload failure, allowing a later stale overwrite.
+2. F1293 - Discovered; after F1292: new-profile replacement may close the
+   active profile before replacement creation succeeds; expected behavior
+   needs acceptance.
+3. F1294 - Discovered; last after F1293: nested-folder parent metadata through
+   the legacy catalog adapter has an integration-coverage gap; no runtime
+   failure is demonstrated.
 
 See the progress log for bounded discovery evidence and limitations.
 
