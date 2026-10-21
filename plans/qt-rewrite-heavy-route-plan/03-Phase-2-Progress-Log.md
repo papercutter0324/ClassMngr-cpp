@@ -63329,3 +63329,81 @@ Batch534 (F1302) is closed locally with push pending. Batch535 is active with
 F1303 accepted before implementation. Batch536 discovery is due when F1303
 implementation starts, under the one-slice trigger. Gate 1 and Gate 2 remain
 Partial, and the Phase 2 exit gate remains Open.
+
+### Batch536 bounded discovery at F1303 implementation start - 2026-10-22
+
+Batch536 bounded discovery began when F1303 implementation started. The
+contract lane sampled roster batch reads, Class teacher assignments, and the
+document catalog and found no eligible candidate. The feature lane found five
+ordered candidates, all accepted for Batch536 by main; no other slices or
+possible candidates beyond the 20-candidate limit were found.
+
+1. **F1304 — Speaking Evaluation autosave failure feedback.** The save callback
+   forwards `interactive` (`src/features/speaking_eval/ui/speaking_eval_page.cpp:42`),
+   and the persistence path warns on write failure only for interactive saves
+   (`src/features/speaking_eval/ui/speaking_eval_page_persistence.cpp:115`).
+   `tests/speaking_eval_page_save_tests.cpp:1932` covers read failure/retry,
+   not Technical save failure (F1298). Acceptance: show localized, nonmodal
+   feedback after automatic save failure, retain dirty scores, clear feedback
+   after successful save, and keep successful autosaves quiet.
+2. **F1305 — Class Notes autosave failure feedback.** The autosave path is at
+   `src/features/classes/ui/class_notes_page.cpp:60,292`; existing test
+   `tests/next_feature_class_notes_page_tests.cpp:338` injects a Technical
+   failure and checks dirty state without a prompt. F994 screened this question
+   as policy, not as a formal deferral. Acceptance: show nonmodal auto-save
+   feedback while preserving no-modal behavior and the dirty draft; clear it on
+   recovery.
+3. **F1306 — Sub Prep settings autosave failure feedback.** The timer callback
+   ignores `saveSubPrepInternal()`'s result
+   (`src/features/sub_prep/ui/sub_prep_page.cpp:525`); failure text is set only
+   when an error-message pointer is supplied
+   (`src/features/sub_prep/ui/sub_prep_page_settings.cpp:458`). Existing test
+   `tests/sub_prep_page_tests.cpp:2164` covers explicit-save warning and quiet
+   autosave failure with a retained draft. Acceptance: report failed autosaves
+   nonmodally, preserve the draft, and clear feedback on successful save.
+4. **F1307 — Class Details automatic Technical write feedback.** The callback
+   passes `interactive` (`src/features/classes/ui/class_details_page.cpp:564`),
+   while the workflow warns only when `showMessages` is true
+   (`src/features/classes/ui/class_details_page.cpp:1204`). Sampled save tests
+   and F1283 cover validation or read failures, not Technical autosave failure.
+   Acceptance: show nonmodal feedback for automatic Technical write failure
+   while retaining dirty edits and preserving validation and schedule-conflict
+   behavior.
+5. **F1308 — Co-Teacher autosave failure feedback.** The callback passes the
+   interaction flag (`src/features/classes/ui/class_co_teacher_page.cpp:145`);
+   failed assignment writes mark the page dirty and warn only for interactive
+   saves (`src/features/classes/ui/class_co_teacher_page.cpp:604`). Existing
+   test `tests/next_feature_class_co_teacher_page_tests.cpp:564` covers manual
+   failure, not autosave. Acceptance: report ordinary automatic assignment
+   write failures while preserving selection and dirty state, and clear
+   feedback on recovery.
+
+Discovery context: F1289 covers My Details nonmodal save-failure feedback and
+F1300 covers Roster inline failure status; the autosave no-modal policy remains
+intentional. F1281, F1079, F1283, F1280, and F1296 cover adjacent read,
+refresh, or other paths rather than these write-failure paths. Batch536 has five
+accepted candidates and is queued after Batch535.
+
+### F1303 CalendarPage first-day preference failure notice complete locally; Batch535 closed - 2026-10-22
+
+F1303 completed locally at implementation commit `1f21e364`. CalendarPage now
+includes a Technical first-day-of-week preference read failure in its existing
+localized, nonmodal display-preference notice, independently of
+current-campus availability. The `QLocale()` fallback and Calendar Preferences
+behavior remain unchanged; successful missing or unavailable fallback remains
+quiet, and provider recovery clears the notice.
+
+The build self-check passed:
+`cmake --build build/macos-clang-debug --target ClassMngrCalendarPageEventMutationParityTests`.
+Independent Tester verification in the existing build tree reported 5 passed,
+0 failed for
+`QT_QPA_PLATFORM=offscreen ./build/macos-clang-debug/ClassMngrCalendarPageEventMutationParityTests calendarDisplayPreferenceFailuresShowNoticeAndRecover calendarDisplayPreferenceFailuresAreDetectedIndependently calendarDisplayPreferenceDefaultsDoNotShowNotice`
+and 3 passed, 0 failed for
+`QT_QPA_PLATFORM=offscreen ./build/macos-clang-debug/ClassMngrAcademicCalendarTests providerFirstDayReadFailureUsesLocaleFallbackAndBlocksSave`.
+Fault-injection/offscreen Qt warnings appeared; assertions passed. No full
+suite or other-platform verification was run.
+
+Batch535 (F1303) is closed locally at `1f21e364`; push is pending. Batch536 is
+next with five accepted candidates. Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open; F629's post-F1303 Windows x64 evidence remains
+outstanding.

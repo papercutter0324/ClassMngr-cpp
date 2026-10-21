@@ -19,20 +19,37 @@ and chronology.
 
 No other slices were found.
 
-## Batch535 — Active; one accepted candidate
+## Batch535 — Closed locally; push pending
 
-1. F1303 — Accepted before implementation. Show the existing
-   localized, nonmodal CalendarPage notice when a Technical first-day
-   preference read fails, while preserving the locale fallback and current
-   Calendar Preferences behavior. Keep successful missing/unavailable fallback
-   quiet and clear the notice on provider recovery. Preserve F1301 behavior.
-   See the progress log for full acceptance criteria and discovery evidence.
+- F1303 — Complete at implementation commit `1f21e364`. CalendarPage now
+  includes Technical first-day preference read failures in its existing
+  localized, nonmodal notice; locale fallback and Calendar Preferences
+  behavior remain unchanged.
 
 No other slices were found.
 
-## Next discovery
+## Batch536 — Next; accepted candidates
 
-Batch536 discovery is due when F1303 implementation starts, following the
-one-candidate trigger. Search for up to 20 ordered candidates. No possible
-candidates beyond the 20-candidate limit were found in Batch535; include any
-newly found candidates and revisit any such reminders when discovery starts.
+Batch536 discovery completed when F1303 implementation started. The five
+ordered candidates below were accepted; no other slices or possible candidates
+beyond the 20-candidate limit were found.
+
+1. F1304 — Speaking Evaluation autosave failure feedback. Show localized,
+   nonmodal feedback after an automatic write failure; retain dirty scores,
+   clear feedback after recovery, and keep successful autosaves quiet.
+2. F1305 — Class Notes autosave failure feedback. Show nonmodal automatic
+   save feedback while preserving the draft and no-modal behavior; clear it on
+   recovery.
+3. F1306 — Sub Prep settings autosave failure feedback. Report failed
+   autosaves nonmodally, preserve the draft, and clear feedback after a
+   successful save.
+4. F1307 — Class Details automatic Technical write feedback. Report automatic
+   Technical write failures nonmodally while retaining dirty edits and
+   preserving validation and schedule-conflict behavior.
+5. F1308 — Co-Teacher autosave failure feedback. Report ordinary automatic
+   assignment-write failures while preserving selection and dirty state; clear
+   feedback on recovery.
+
+See the progress log for discovery evidence and source references. Batch536
+remains next until Batch535 is pushed and closed out. Batch537 discovery is due
+when F1304 implementation starts, following the one-slice trigger.

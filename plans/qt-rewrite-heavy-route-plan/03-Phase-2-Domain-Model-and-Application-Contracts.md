@@ -50,7 +50,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-21
+- Last updated: 2026-10-22
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
 - Current note: Current and upcoming batch status is maintained in the
@@ -59,11 +59,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ### Latest Progress Update
 
-F1302 completed locally at implementation commit `09b2c1a5`; a temporary
-labeled teacher choice preserves the assigned ID after a Technical choice-read
-failure, while explicit `None` remains deliberate unassignment. Focused macOS
-Clang Debug checks passed; the owning CTest target remains red with three
-failures documented in the progress log.
+F1303 completed locally at implementation commit `1f21e364`; CalendarPage now
+shows its existing localized, nonmodal notice for Technical first-day
+preference read failures while preserving locale fallback and Calendar
+Preferences behavior. Focused macOS Clang Debug checks passed. Batch535 is
+closed locally with push pending; Batch536 has five accepted candidates and
+remains next. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate is
+Open.
 
 ### Slice batches
 
