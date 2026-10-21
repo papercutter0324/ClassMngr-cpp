@@ -9,7 +9,7 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 1 is active: F1318–F1327 are complete; F1328 implementation is current.
+- Batch 1 is active: F1318–F1328 are complete; F1329 implementation is current.
 - Begin Batch 2 discovery when F1336 starts; do not add Batch 2 candidates before then.
 
 ## Phase 3 — Batch 1 (active)
@@ -23,9 +23,9 @@ record useful implementation and verification evidence in its progress log.
 7. F1324 — Class Details display persistence-port migration (complete; commit `d536916f`)
 8. F1325 — Class Details save workflow persistence-port migration (complete; commit `8174df22`)
 9. F1326 — Selected-class roster read (rows 0–24; preserve full-read contract; guard writes when rows extend beyond window; complete; commit `7f10f8f5`)
-10. F1327 — Selected-class roster save (transactional tail preservation and column remapping; complete)
-11. F1328 — Speaking-evaluation read (active)
-12. F1329 — Speaking-evaluation save
+10. F1327 — Selected-class roster save (transactional tail preservation and column remapping; complete; commit `b705c158`)
+11. F1328 — Speaking-evaluation read (complete)
+12. F1329 — Speaking-evaluation save (active)
 13. F1330 — Schedule Builder source read (scope discovery required)
 14. F1331 — Intensive slot-state save
 15. F1332 — Calendar page range read

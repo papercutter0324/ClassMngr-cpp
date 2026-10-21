@@ -1,7 +1,7 @@
 #include "next/platform/application_services_speaking_evaluation_read_port.h"
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "domain/models/speaking_evaluation.h"
 
@@ -137,15 +137,15 @@ ApplicationServicesSpeakingEvaluationReadPort::readEvaluation(
             );
     }
 
-    DatabaseSession* const session =
-        m_services ? m_services->databaseSession() : nullptr;
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store =
+        m_services ? m_services->workspaceStore() : nullptr;
+    if (!store || !store->isOpen())
     {
         return unavailableFailure();
     }
 
     SpeakingEvalRepository* const repository =
-        session->speakingEvalRepository();
+        store->speakingEvalRepository();
     if (!repository)
     {
         return unavailableFailure();

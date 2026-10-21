@@ -1,7 +1,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "next/application/speaking_evaluation_query.h"
 #include "next/application/speaking_evaluation_batch_read_query.h"
@@ -101,7 +101,7 @@ private slots:
     void emptyBatchDoesNotRequireAnActiveSession();
     void rejectsNoncanonicalClassIdsBeforeSessionAccess();
     void mapsRepositoryErrorsToTechnicalFailures();
-    void closedSessionFailsWithoutDataServiceFallback();
+    void closedWorkspaceFailsWithoutDataServiceFallback();
 };
 
 void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::
@@ -119,7 +119,7 @@ readsExactNameAndPreservesOrderedUnicodeMatrix()
 
     const SpeakingEvalRows expected = makeRows();
     SpeakingEvalRepository* const repository =
-        services.databaseSession()->speakingEvalRepository();
+        services.workspaceStore()->speakingEvalRepository();
     QVERIFY(repository->saveSpeakingEval(
         *createdClass,
         QStringLiteral("Winter"),
@@ -169,23 +169,23 @@ reportsDeletedParentEvenWhenOrphanEvaluationRowsRemain()
     QVERIFY(createdClass);
 
     SpeakingEvalRepository* const repository =
-        services.databaseSession()->speakingEvalRepository();
+        services.workspaceStore()->speakingEvalRepository();
     QVERIFY(repository->saveSpeakingEval(
         *createdClass,
         QStringLiteral("Winter"),
         makeRows()
         ));
 
-    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QSqlQuery disableForeignKeys(services.workspaceStore()->database());
     QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
 
-    QSqlQuery deleteParent(services.databaseSession()->database());
+    QSqlQuery deleteParent(services.workspaceStore()->database());
     deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id=?"));
     deleteParent.addBindValue(*createdClass);
     QVERIFY(deleteParent.exec());
     QCOMPARE(deleteParent.numRowsAffected(), 1);
 
-    QSqlQuery orphanCounts(services.databaseSession()->database());
+    QSqlQuery orphanCounts(services.workspaceStore()->database());
     orphanCounts.prepare(QStringLiteral(R"(
         SELECT
             (SELECT COUNT(*) FROM speaking_evaluations WHERE class_id=?)
@@ -293,7 +293,7 @@ readsExistingEvaluationHeaderWithNoRowsAsEmpty()
         );
     QVERIFY(createdClass);
 
-    QSqlQuery insertHeader(services.databaseSession()->database());
+    QSqlQuery insertHeader(services.workspaceStore()->database());
     insertHeader.prepare(QStringLiteral(R"(
         INSERT INTO speaking_evaluations (class_id, evaluation_name)
         VALUES (?, ?)
@@ -325,7 +325,7 @@ readsBatchWithRequestedOrderAndSuccessfulEmptyOutcomes()
     QVERIFY(createdClass);
 
     SpeakingEvalRepository* const repository =
-        services.databaseSession()->speakingEvalRepository();
+        services.workspaceStore()->speakingEvalRepository();
     SpeakingEvalRows batchRows = makeRows();
     for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
     {
@@ -337,7 +337,7 @@ readsBatchWithRequestedOrderAndSuccessfulEmptyOutcomes()
         batchRows
         ));
 
-    QSqlQuery createEmptyEvaluation(services.databaseSession()->database());
+    QSqlQuery createEmptyEvaluation(services.workspaceStore()->database());
     createEmptyEvaluation.prepare(QStringLiteral(
         "INSERT INTO speaking_evaluations (class_id, evaluation_name) "
         "VALUES (?, ?)"
@@ -442,14 +442,14 @@ rejectsFractionalRowIndexesInTypedReads()
     QVERIFY(createdClass);
 
     SpeakingEvalRepository* const repository =
-        services.databaseSession()->speakingEvalRepository();
+        services.workspaceStore()->speakingEvalRepository();
     QVERIFY(repository->saveSpeakingEval(
         *createdClass,
         QStringLiteral("Winter"),
         makeRows()
         ));
 
-    QSqlQuery insertFractionalRow(services.databaseSession()->database());
+    QSqlQuery insertFractionalRow(services.workspaceStore()->database());
     insertFractionalRow.prepare(QStringLiteral(R"(
         INSERT INTO speaking_eval_data (
             evaluation_id,
@@ -465,7 +465,7 @@ rejectsFractionalRowIndexesInTypedReads()
     QVERIFY(insertFractionalRow.exec());
     QCOMPARE(insertFractionalRow.numRowsAffected(), 1);
 
-    QSqlQuery storedTypes(services.databaseSession()->database());
+    QSqlQuery storedTypes(services.workspaceStore()->database());
     storedTypes.prepare(QStringLiteral(R"(
         SELECT row_index, typeof(row_index) AS storage_type
         FROM speaking_eval_data
@@ -580,13 +580,13 @@ mapsRepositoryErrorsToTechnicalFailures()
         );
 
     SpeakingEvalRepository* const repository =
-        services.databaseSession()->speakingEvalRepository();
+        services.workspaceStore()->speakingEvalRepository();
     QVERIFY(repository->saveSpeakingEval(
         *createdClass,
         QStringLiteral("Winter"),
         makeRows()
         ));
-    QSqlQuery dropDataTable(services.databaseSession()->database());
+    QSqlQuery dropDataTable(services.workspaceStore()->database());
     QVERIFY(dropDataTable.exec(QStringLiteral(
         "DROP TABLE speaking_eval_data"
         )));
@@ -613,7 +613,7 @@ mapsRepositoryErrorsToTechnicalFailures()
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::
-closedSessionFailsWithoutDataServiceFallback()
+closedWorkspaceFailsWithoutDataServiceFallback()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -638,6 +638,20 @@ closedSessionFailsWithoutDataServiceFallback()
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
     QVERIFY(QString::fromStdString(result.error().message).contains(
+        QStringLiteral("unavailable")
+        ));
+
+    Platform::ApplicationServicesSpeakingEvaluationBatchReadPort batchPort(
+        services
+        );
+    const auto batchResult =
+        Application::SpeakingEvaluationReadBatchQueryHandler::execute(
+            batchQuery(*createdClass, {u"Winter"}),
+            batchPort
+            );
+    QVERIFY(!batchResult);
+    QCOMPARE(batchResult.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(QString::fromStdString(batchResult.error().message).contains(
         QStringLiteral("unavailable")
         ));
 }

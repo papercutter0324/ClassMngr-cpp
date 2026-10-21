@@ -241,3 +241,30 @@ reproducing the assertion.
 cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextPlatformRosterWindowSaveTests ClassMngrNextPlatformApplicationServicesRosterSavePortTests ClassMngrNextPlatformApplicationServicesRosterReadPortTests ClassMngrNextApplicationRosterSaveUseCaseTests ClassMngrNextApplicationRosterReadQueryTests ClassMngrNextApplicationRosterRowTransferUseCaseTests ClassMngrNextApplicationRosterRowTransferPreparationTests ClassMngrNextApplicationRosterRowRemovalTests ClassMngrNextApplicationRosterReorderingTests ClassMngrNextApplicationRosterCustomColumnAppendTests ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests ClassMngrRosterEditorWidgetSaveTests ClassMngrRosterTransferMenuTests ClassMngrRosterEditorWidgetImportTests ClassMngrRosterModelTests ClassMngrClassTransferTests -j 4
 QT_QPA_PLATFORM=offscreen ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngr(NextPlatformRosterWindowSave|NextPlatformApplicationServicesRoster(Save|Read)Port|NextApplicationRoster(SaveUseCase|ReadQuery|RowTransferUseCase|RowTransferPreparation|RowRemoval|RowReordering|CustomColumnAppend|CustomColumnRemovalPolicy)|RosterEditorWidget(Save|Import)|RosterTransferMenu|RosterModel|ClassImportTeacherChoiceRegression)Tests$'
 ```
+
+Commit: `b705c158`.
+
+## F1328 — Speaking-evaluation read — 2026-10-22
+
+Migrated the selected-evaluation and batch score-import Platform read
+adapters, plus their direct test setup, from the transitional
+`databaseSession()` accessor to `ApplicationServices::workspaceStore()` and
+its existing `SpeakingEvalRepository`. The application query contracts,
+detailed repository methods, error mappings, exact-name matching, ordered
+rows, 11-cell values, Unicode, and empty-success behavior remain unchanged.
+
+The single-read port is also used as a roster score-import fallback, so this
+slice deliberately does not add a 25-row limit for the page display. A future
+page-specific bounded read would need a separate explicit contract while
+keeping the import read behavior intact.
+
+The focused platform port target built and its CTest passed **1/1** (12 QtTest
+cases); the independent Tester reran it successfully. `git diff --check`
+passed. Ninja printed a premature-end-of-file warning and recovered. The
+existing macOS Debug tree was used; no broad suite or cross-platform build was
+run.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests$'
+```
