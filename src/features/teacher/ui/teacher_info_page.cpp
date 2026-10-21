@@ -1014,6 +1014,23 @@ void TeacherInfoPage::buildUi()
     // Footer
     // =====================================================
 
+    m_reloadFailureStatusLabel = new QLabel(this);
+    m_reloadFailureStatusLabel->setObjectName(
+        QStringLiteral("teacherInfoReloadFailureStatus")
+        );
+    m_reloadFailureStatusLabel->setAccessibleName(
+        tr("Teacher information save status")
+        );
+    m_reloadFailureStatusLabel->setAlignment(
+        Qt::AlignLeft | Qt::AlignVCenter
+        );
+    m_reloadFailureStatusLabel->setWordWrap(true);
+    m_reloadFailureStatusLabel->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Preferred
+        );
+    m_reloadFailureStatusLabel->hide();
+
     m_saveButton =
         new TextFitPushButton(tr("Save Changes"));
     m_saveButton->setObjectName(QStringLiteral("teacherInfoSaveButton"));
@@ -1099,6 +1116,7 @@ void TeacherInfoPage::buildUi()
         &TeacherInfoPage::handleFieldChanged
         );
 
+    bottomLayout()->addWidget(m_reloadFailureStatusLabel, 1);
     bottomLayout()->addStretch();
     bottomLayout()->addWidget(m_saveButton);
 
@@ -1209,6 +1227,7 @@ void TeacherInfoPage::loadTeacher(const Teacher& teacher, const qint64 teacherId
     m_autosave->setLoading(false);
     m_validationBinder->clear();
     clearDirty();
+    clearSavedButReloadFailedStatus();
 }
 
 bool TeacherInfoPage::reloadTeacherProfile(
@@ -1453,6 +1472,11 @@ bool TeacherInfoPage::saveTeacherInternal(bool showErrors)
                 return false;
 
             case NextApplication::TeacherProfileEditFailureKind::ReloadFailed:
+                if (failure.writeSucceeded)
+                {
+                    setReloadRequired(true);
+                    showSavedButReloadFailedStatus();
+                }
                 if (showErrors)
                 {
                     DialogServices::showWarning(
@@ -1496,6 +1520,32 @@ void TeacherInfoPage::clearDirty()
 {
     m_autosave->markClean();
     updateActions();
+}
+
+void TeacherInfoPage::showSavedButReloadFailedStatus()
+{
+    m_savedButReloadFailedStatusActive = true;
+    if (m_reloadFailureStatusLabel)
+    {
+        m_reloadFailureStatusLabel->setText(
+            tr(
+                "Your changes were saved, but the latest teacher "
+                "information could not be reloaded. Navigate away and "
+                "reopen this teacher before editing or saving again."
+                )
+            );
+        m_reloadFailureStatusLabel->show();
+    }
+}
+
+void TeacherInfoPage::clearSavedButReloadFailedStatus()
+{
+    m_savedButReloadFailedStatusActive = false;
+    if (m_reloadFailureStatusLabel)
+    {
+        m_reloadFailureStatusLabel->clear();
+        m_reloadFailureStatusLabel->hide();
+    }
 }
 
 void TeacherInfoPage::setReloadRequired(const bool required)
@@ -1884,6 +1934,17 @@ void TeacherInfoPage::retranslateUi()
         m_zoomPasswordLabel->setText(
             tr("Zoom Password")
             );
+    }
+
+    if (m_reloadFailureStatusLabel)
+    {
+        m_reloadFailureStatusLabel->setAccessibleName(
+            tr("Teacher information save status")
+            );
+        if (m_savedButReloadFailedStatusActive)
+        {
+            showSavedButReloadFailedStatus();
+        }
     }
 
     updateActions();

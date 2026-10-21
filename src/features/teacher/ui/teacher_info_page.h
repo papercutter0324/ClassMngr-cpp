@@ -101,6 +101,8 @@ private:
 
     void clearDirty();
     void setReloadRequired(bool required);
+    void showSavedButReloadFailedStatus();
+    void clearSavedButReloadFailedStatus();
 
     void updateActions();
     void updateFieldWidths();
@@ -175,4 +177,6 @@ private:
     QTextEdit* m_notesEdit = nullptr;
 
     QPushButton* m_saveButton = nullptr;
+    QLabel* m_reloadFailureStatusLabel = nullptr;
+    bool m_savedButReloadFailedStatusActive = false;
 };
