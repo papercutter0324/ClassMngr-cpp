@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1285-F1287 are complete locally in active, unpushed Batch523, which is ready for closeout/push; F1288 follows after the push, Batch524 discovery is recorded, and Batch525 discovery is due when F1290 work starts, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch523 is closed locally and awaiting push; Batch524 is active with F1288 next, F1289 following, F1290 triggering Batch525 discovery when work starts, and F1291 last, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1287 is complete locally in implementation commit `cff949772dda58aa199fc4b130a5703a109b2ba0`; acceptance is in `b88812912804811ec32955aa1c871b26e615730e`. Batch523 is ready for closeout/push but remains unpushed; F1288 follows after push. See the [F1287 completion record](03-Phase-2-Progress-Log.md#f1287-testing-classes-preserve-saved-class-after-list-refresh-failure-complete-locally-2026-10-21).
+Batch523 is closed locally and awaiting push at remote baseline `1854742da10a5b0ff549ed216518e453da6395a4`. Batch524 is active with F1288 next for acceptance and implementation; F1289 follows, F1290 triggers Batch525 discovery when work starts, and F1291 is last. See the [Batch523 closeout record](03-Phase-2-Progress-Log.md#batch523-local-closeout-2026-10-21).
 
 ### Slice discovery batches
 
@@ -76,15 +76,22 @@ Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
-### Active Batch523
+### Active Batch524
 
-1. F1285 - Complete locally: protect a loaded Native English or GS Team Staff
-   Directory after a committed Teacher Import is followed by a failed refresh.
-2. F1286 - Complete locally: preserve the clean new-class draft when a
-   post-delete sibling details read fails.
-3. F1287 - Complete locally. Batch523 is ready for closeout/push but remains
-   unpushed; F1288 follows after push. Batch524 discovery is recorded; begin
-   Batch525 discovery when F1290 work starts.
+All four candidates remain discovered, provisional, and unaccepted.
+
+1. F1288 - Next for acceptance and implementation: My Details must not save a
+   campus selection from stale displayed state after the current-campus read
+   fails.
+2. F1289 - Discovered; accept and implement after F1288: My Details automatic
+   save failure has no immediate feature-level notice and leaves the form
+   dirty.
+3. F1290 - Discovered; next after F1289: Class Transfer Export may throw while
+   projecting an incomplete but successful source snapshot. Begin Batch525
+   discovery when F1290 work starts, per the second-last-candidate trigger.
+4. F1291 - Discovered; last in Batch524, after F1290: the Class Transfer
+   legacy apply adapter may turn malformed non-sentinel IDs into `nullopt`;
+   API-contract uncertainty remains.
 
 ### Deferred candidates
 

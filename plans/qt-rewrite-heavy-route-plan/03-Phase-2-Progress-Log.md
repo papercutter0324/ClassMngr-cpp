@@ -62104,3 +62104,60 @@ recorded with F1288-F1291 provisional; begin Batch525 discovery when F1290
 work starts. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate
 remains Open. Phase 0 remains Complete; F629's source-bound Windows x64
 requalification remains outstanding separately.
+
+### Batch523 local closeout - 2026-10-21
+
+Batch523 (F1285-F1287) is fully accepted, implemented, independently verified,
+and complete locally. The remote baseline remains the Batch522 receipt
+`1854742da10a5b0ff549ed216518e453da6395a4`; the ten Batch523 commits are local
+and have not been pushed.
+
+Per-slice commit records:
+
+- F1285: acceptance `11023e4f12937a01ef83e4d81f0bbd03264d4c76`, implementation
+  `90d46abf1e1647f4379098db2b6abc1431830992`, localization/assertion repair
+  `2464d2d8ddf151f603579dcb84716329afdbc818`, completion record
+  `655915a2018c5f319e34c1b30624401c1f395d8b`.
+- F1286: acceptance and Batch524 discovery
+  `06be5fe0ef558fc68deaf859c24b579966443e43`, implementation
+  `746eab472f160d752235b6e0458204c5c8328a80`, completion record
+  `7d19a13c620aa3b2579e3ff6eb3f924d32b8781e`.
+- F1287: acceptance `b88812912804811ec32955aa1c871b26e615730e`, implementation
+  `cff949772dda58aa199fc4b130a5703a109b2ba0`, completion record
+  `2b163cf159d2a3e4f4ed42e1321633dae3cadd29`.
+
+Focused verification by slice:
+
+- F1285 built `ClassMngr`, `ClassMngrTeacherImportUiApplyParityTests`, and
+  seven Native English/GS Team directory targets. The focused CTest
+  `TeacherImportUiApplyParityF1285DirectoryReloadFailure`, F1061 refresh/reload
+  tests, and seven focused regressions passed 10/10; the F1285 CTest passed
+  1/1 again after localization/assertion repair.
+- F1286 built `ClassMngrTestingClassesPageTests`; both scoped deletion methods
+  `testingClassDeletionSuccessFallbackReadFailureKeepsNewDraft` and
+  `testingClassDeletionSuccessSelectsSiblingAndEmitsOnce` passed direct
+  independent Tester runs; `ClassMngrTestingClassesPageF147DeleteTests` passed
+  1/1. The broader target attempt reported three failures outside F1286; the
+  Tester did not rerun them. Their names and scope limitation are recorded in
+  the F1286 completion entry.
+- F1287 built `ClassMngrTestingClassesPageTests`;
+  `ClassMngrTestingClassesPageF1287SaveRefreshTests` and
+  `ClassMngrTestingClassesPageF147DeleteTests` each passed 1/1. CTest listing
+  confirmed all three F1287 methods are invoked.
+
+`git diff --check` passed. No full suite, Windows run, clean build, hosted CI,
+or phase-gate completion is claimed. The focused checks do not resolve the
+broader F1286 failures described above.
+
+Batch523 is closed locally and awaits push. Batch524 discovery is complete and
+active with four ordered, provisional, unaccepted candidates: F1288 (My Details
+stale campus state after a failed current-campus read), F1289 (My Details
+automatic-save failure notice and dirty form), F1290 (Class Transfer Export
+projection of an incomplete successful snapshot), and F1291 (malformed legacy
+apply target IDs may become `nullopt`; API-contract uncertainty remains). The
+Batch524 discovery entry retains the standalone `No other slices were found.`
+line. F1288 is next for acceptance and implementation; F1289 follows, then
+F1290, which triggers Batch525 discovery when work starts; F1291 is last.
+Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+Phase 0 remains Complete; F629's source-bound Windows x64 requalification
+remains outstanding separately.
