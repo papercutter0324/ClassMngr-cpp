@@ -60695,3 +60695,20 @@ Windows, or Gate 2 result is claimed.
 Batch512 (F1274) is complete locally and awaiting its normal push. No
 implementation batch is active. Gate 1 and Gate 2 remain Partial, and the
 Phase 2 exit gate remains Open.
+
+### Superseded latest progress update - 2026-10-21 (Batch512 complete locally, push pending)
+
+Batch512 (F1274) was complete locally at source/test commit
+`85ff86737b81c6da74cdc162f85edc2b44f2ccb0` and awaiting its normal push. No
+implementation batch was active.
+
+### Batch512 push receipt - 2026-10-21
+
+The normal push on `Qt-Rewrite` succeeded for range `054bd86f..e16135f5`.
+At push confirmation, the remote tip matched local HEAD at
+`e16135f544cfedbb3ec4b88439e3f9235c318582`, and the branch was clean and up
+to date. No hosted or CI verification is implied.
+
+Batch512 (F1274) is complete and pushed at `e16135f5`. No implementation
+batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate
+remains Open.

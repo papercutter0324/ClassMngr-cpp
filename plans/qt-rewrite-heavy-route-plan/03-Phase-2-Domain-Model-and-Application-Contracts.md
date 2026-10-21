@@ -53,13 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch512 (F1274) is complete locally at source/test commit `85ff86737b81c6da74cdc162f85edc2b44f2ccb0` and awaiting its normal push, with no implementation batch active; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch512 (F1274) is complete and pushed at `e16135f5`, with no implementation batch active; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-Batch512 (F1274) is complete locally at source/test commit
-`85ff86737b81c6da74cdc162f85edc2b44f2ccb0` and awaits its normal push. The
-focused macOS verification is recorded in the [F1274 closeout](03-Phase-2-Progress-Log.md#f1274-class-analytics-grade-attention-policy-complete-2026-10-21); no full-suite, Windows, or Gate 2 claim is made. No implementation batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+Batch512 (F1274) is complete and pushed at `e16135f5` (see its [push receipt](03-Phase-2-Progress-Log.md#batch512-push-receipt-2026-10-21)). Its source/test commit is `85ff86737b81c6da74cdc162f85edc2b44f2ccb0`; focused macOS verification is recorded in the [F1274 closeout](03-Phase-2-Progress-Log.md#f1274-class-analytics-grade-attention-policy-complete-2026-10-21). No implementation batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
