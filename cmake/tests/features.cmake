@@ -702,6 +702,7 @@ qt_add_executable(ClassMngrClassTransferTests
             testingClassDeletionCancelKeepsDraftAndDoesNotCallPort
             testingClassDeletionFailureRetainsDraftAndDoesNotSave
             testingClassDeletionSuccessSelectsSiblingAndEmitsOnce
+            testingClassDeletionSuccessFallbackReadFailureKeepsNewDraft
             testingClassDeletionSuccessWithNoSiblingStartsNewDraft
             testingClassDeletionNotFoundReconcilesToSiblingAndEmitsOnce
             testingClassDeletionNotFoundWithNoClassesStartsNewDraft

@@ -1690,13 +1690,14 @@ void TestingClassesPage::deleteCurrentClass()
         rebuildClassList();
         if (m_classList->count() > 0)
         {
-            m_classList->setCurrentRow(0);
-            loadClass(
-                m_classList
-                    ->currentItem()
-                    ->data(Qt::UserRole)
-                    .toInt()
-                );
+            const int fallbackClassId =
+                m_classList->item(0)->data(Qt::UserRole).toInt();
+            loadClass(fallbackClassId);
+            if (m_currentClassId == fallbackClassId)
+            {
+                const QSignalBlocker blocker(m_classList);
+                m_classList->setCurrentRow(0);
+            }
         }
         else
         {

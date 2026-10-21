@@ -562,6 +562,7 @@ private slots:
     void testingClassDeletionCancelKeepsDraftAndDoesNotCallPort();
     void testingClassDeletionFailureRetainsDraftAndDoesNotSave();
     void testingClassDeletionSuccessSelectsSiblingAndEmitsOnce();
+    void testingClassDeletionSuccessFallbackReadFailureKeepsNewDraft();
     void testingClassDeletionSuccessWithNoSiblingStartsNewDraft();
     void testingClassDeletionNotFoundReconcilesToSiblingAndEmitsOnce();
     void testingClassDeletionNotFoundWithNoClassesStartsNewDraft();
@@ -3288,6 +3289,147 @@ testingClassDeletionFailureRetainsDraftAndDoesNotSave()
 }
 
 void TestingClassesPageTests::
+testingClassDeletionSuccessFallbackReadFailureKeepsNewDraft()
+{
+    const std::vector<ClassMngr::Next::Domain::ErrorCode> fallbackErrors{
+        ClassMngr::Next::Domain::ErrorCode::Technical,
+        ClassMngr::Next::Domain::ErrorCode::NotFound
+    };
+
+    for (const auto fallbackError : fallbackErrors)
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        ApplicationServices services;
+        QVERIFY(services.openDatabase(databasePath(directory)));
+        TestingClass target = testingClass(
+            QStringLiteral("Alpha Delete Target")
+            );
+        target.teacherId = -1;
+        const auto targetId = services.databaseSession()
+            ->testingClassRepository()->createTestingClass(target);
+        QVERIFY(targetId);
+        TestingClass sibling = testingClass(
+            QStringLiteral("Beta Sibling")
+            );
+        sibling.teacherId = -1;
+        const auto siblingId = services.databaseSession()
+            ->testingClassRepository()->createTestingClass(sibling);
+        QVERIFY(siblingId);
+
+        FakeUserPromptService prompts;
+        prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+        DialogServices::setUserPromptServiceForTesting(&prompts);
+        FixedTestingClassDetailsReadPort detailsReadPort;
+        detailsReadPort.resultsByCall = {
+            ClassMngr::Next::Application::TestingClassDetailsReadResult::
+                success(testingClassDetails(
+                    *targetId,
+                    QStringLiteral("Alpha Delete Target")
+                    )),
+            ClassMngr::Next::Application::TestingClassDetailsReadResult::
+                failure({
+                    .code = fallbackError,
+                    .message = "injected fallback details read failure",
+                    .recoverable = false
+                })
+        };
+        ClassMngr::Next::Platform::ApplicationServicesTestingClassDeletePort
+            persistedDeletePort(services);
+        RecordingTestingClassDeletePort deletePort;
+        deletePort.delegate = &persistedDeletePort;
+        RecordingTestingClassDetailsUpdatePort updatePort;
+        RecordingTestingClassCreatePort createPort;
+        TestingClassesPage page(
+            &services,
+            nullptr,
+            nullptr,
+            &detailsReadPort,
+            nullptr,
+            &updatePort,
+            &createPort,
+            &deletePort
+            );
+        page.openTestingClass(*targetId);
+        page.refresh();
+        auto* nameEdit = page.findChild<QLineEdit*>(
+            QStringLiteral("testingClassNameEdit")
+            );
+        auto* roomEdit = page.findChild<QLineEdit*>(
+            QStringLiteral("testingClassRoomEdit")
+            );
+        auto* list = page.findChild<QListWidget*>(
+            QStringLiteral("testingClassesList")
+            );
+        auto* deleteButton = page.findChild<QPushButton*>(
+            QStringLiteral("testingClassesDeleteButton")
+            );
+        QVERIFY(nameEdit);
+        QVERIFY(roomEdit);
+        QVERIFY(list);
+        QVERIFY(deleteButton);
+        QCOMPARE(detailsReadPort.callCount, 1);
+        QCOMPARE(list->count(), 2);
+        QVERIFY(list->currentItem());
+        QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), *targetId);
+        QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
+        QVERIFY(changedSpy.isValid());
+
+        deleteButton->click();
+
+        QCOMPARE(deletePort.callCount, 1);
+        QCOMPARE(detailsReadPort.callCount, 2);
+        QCOMPARE(
+            detailsReadPort.requestedClassIds.at(0),
+            std::to_string(*targetId)
+            );
+        QCOMPARE(
+            detailsReadPort.requestedClassIds.at(1),
+            std::to_string(*siblingId)
+            );
+        QCOMPARE(changedSpy.size(), 1);
+        QCOMPARE(list->count(), 1);
+        QCOMPARE(list->item(0)->data(Qt::UserRole).toInt(), *siblingId);
+        QVERIFY(!list->currentItem());
+        QCOMPARE(nameEdit->text(), QStringLiteral("Testing Class"));
+        QVERIFY(!page.hasUnsavedChanges());
+        QVERIFY(!deleteButton->isEnabled());
+        if (fallbackError == ClassMngr::Next::Domain::ErrorCode::Technical)
+        {
+            QCOMPARE(prompts.messages.size(), 1);
+            QCOMPARE(
+                prompts.messages.constFirst().title,
+                QStringLiteral("Testing Classes")
+                );
+            QCOMPARE(
+                prompts.messages.constFirst().severity,
+                PromptSeverity::Warning
+                );
+            QCOMPARE(
+                prompts.messages.constFirst().message,
+                QStringLiteral("injected fallback details read failure")
+                );
+        }
+        else
+        {
+            QVERIFY(prompts.messages.isEmpty());
+        }
+
+        nameEdit->setText(QStringLiteral("New Class After Fallback Failure"));
+        roomEdit->setText(QStringLiteral("Room F1286"));
+        QVERIFY(page.hasUnsavedChanges());
+        QVERIFY(page.saveChanges());
+        QCOMPARE(createPort.callCount, 1);
+        QVERIFY(createPort.lastRequest.has_value());
+        QCOMPARE(
+            createPort.lastRequest->name,
+            std::u16string(u"New Class After Fallback Failure")
+            );
+        QCOMPARE(updatePort.callCount, 0);
+    }
+}
+
+void TestingClassesPageTests::
 testingClassDeletionSuccessSelectsSiblingAndEmitsOnce()
 {
     QTemporaryDir directory;
@@ -3315,6 +3457,21 @@ testingClassDeletionSuccessSelectsSiblingAndEmitsOnce()
     FakeUserPromptService prompts;
     prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
     DialogServices::setUserPromptServiceForTesting(&prompts);
+    FixedTestingClassDetailsReadPort detailsReadPort;
+    detailsReadPort.resultsByCall = {
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::success(
+            testingClassDetails(
+                *targetId,
+                QStringLiteral("Alpha Delete Target")
+                )
+            ),
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::success(
+            testingClassDetails(
+                *siblingId,
+                QStringLiteral("Beta Sibling")
+                )
+            )
+    };
     RecordingTestingClassDetailsUpdatePort updatePort;
     RecordingTestingClassCreatePort createPort;
     ClassMngr::Next::Platform::ApplicationServicesTestingClassDeletePort
@@ -3325,7 +3482,7 @@ testingClassDeletionSuccessSelectsSiblingAndEmitsOnce()
         &services,
         nullptr,
         nullptr,
-        nullptr,
+        &detailsReadPort,
         nullptr,
         &updatePort,
         &createPort,
@@ -3351,6 +3508,7 @@ testingClassDeletionSuccessSelectsSiblingAndEmitsOnce()
     QVERIFY(deleteButton);
     QVERIFY(rosterEditor);
     QVERIFY(rosterTable);
+    QCOMPARE(detailsReadPort.callCount, 1);
     nameEdit->setText(QStringLiteral("Draft Is Not Saved Before Delete"));
     const int englishColumn = columnByName(
         rosterTable->model(),
@@ -3370,6 +3528,11 @@ testingClassDeletionSuccessSelectsSiblingAndEmitsOnce()
     deleteButton->click();
 
     QCOMPARE(deletePort.callCount, 1);
+    QCOMPARE(detailsReadPort.callCount, 2);
+    QCOMPARE(
+        detailsReadPort.requestedClassIds.at(1),
+        std::to_string(*siblingId)
+        );
     QVERIFY(deletePort.lastRequest.has_value());
     QCOMPARE(deletePort.lastRequest->classId.value(), std::to_string(*targetId));
     QCOMPARE(updatePort.callCount, 0);
