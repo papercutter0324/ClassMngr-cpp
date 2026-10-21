@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch518 (F1278) is complete locally and awaits its normal push; Batch519 discovery starts after that push, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch518 (F1278) is complete and pushed at `a4b35941`; Batch519 discovery is next, with no implementation batch active, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-Batch518 (F1278) is complete locally at source/test commit `4d89a6dfa6ba663ba23e3ac0054109dd07008c6c`, with acceptance commit `a45b2b2f80ad2bb28e6f3875a8d530f27f4f62e8`; its normal push is next. Batch519 discovery starts after the Batch518 push, with no implementation batch active. See the [F1278 completion record](03-Phase-2-Progress-Log.md#f1278-speaking-evaluation-notes-length-validation-complete-2026-10-21). Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+Batch518 (F1278) is complete and pushed at `a4b35941`. Batch519 discovery is next, with no implementation batch active. See the [F1278 completion record](03-Phase-2-Progress-Log.md#f1278-speaking-evaluation-notes-length-validation-complete-2026-10-21) and [Batch518 push receipt](03-Phase-2-Progress-Log.md#batch518-push-receipt-2026-10-21). Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Slice discovery batches
 

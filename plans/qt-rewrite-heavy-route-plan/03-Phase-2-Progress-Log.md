@@ -61244,3 +61244,18 @@ starts after the Batch518 push; no implementation batch is active. Gate 1 and
 Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's
 source-bound Windows x64 requalification remains outstanding separately from
 Phase 0's 2026-09-18 Complete declaration.
+
+### Batch518 push receipt - 2026-10-21
+
+The push helper confirmed a normal, non-force push of three commits from
+`246845d978b6c08e7596e9b517c7e37a4d614bae` to
+`a4b359411ff756834a030cceb939ab05baed80f8`. `origin/Qt-Rewrite` matches local
+HEAD at `a4b359411ff756834a030cceb939ab05baed80f8`, and the worktree was clean.
+This records remote push and local repository state only; no hosted or CI
+verification is implied.
+
+Batch518 (F1278) is complete and pushed at `a4b35941`. Batch519 discovery is
+next, with no implementation batch active. Gate 1 and Gate 2 remain Partial,
+and the Phase 2 exit gate remains Open. F629's source-bound Windows x64
+requalification remains outstanding separately from Phase 0's 2026-09-18
+Complete declaration.
