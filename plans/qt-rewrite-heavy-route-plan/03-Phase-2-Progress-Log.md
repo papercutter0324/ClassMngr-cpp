@@ -62240,7 +62240,7 @@ nonmodal status to the My Details page when a noninteractive save fails,
 including the autosave callback and `saveData()` when it uses the same path.
 Keep every edited value editable and dirty, and preserve the existing
 transactional write behavior. Clear the failure status after a successful
-save, discard, successful reload, or database-state clear. Do not prompt
+save, successful discard/reload, or database-state clear. Do not prompt
 modally for noninteractive failures; preserve the existing modal warning when
 explicit `saveChanges()` fails. Keep the change local to My Details without a
 shared `AutosaveCoordinator` redesign or automatic retry loop.
@@ -62259,3 +62259,31 @@ F1288 is complete locally and Batch524 remains unpushed. F1289 is accepted and
 next for implementation. F1290 triggers Batch525 discovery when work starts;
 F1291 remains last in Batch524. Gate 1 and Gate 2 remain Partial, and the Phase
 2 exit gate remains Open.
+
+### F1289 My Details noninteractive save failure feedback complete locally - 2026-10-21
+
+F1289 is complete locally in three commits: acceptance `27493fe6`, production
+change `b439cbdc`, and focused regression `fe036e3d`. Failed noninteractive
+saves now show localized, nonmodal status; successful save, successful
+reload/discard, and database-state clear remove it. Explicit manual-save
+failure remains modal.
+
+Incremental build passed for `ClassMngr` and
+`ClassMngrMyWorkspacePageTests` with
+`cmake --build build/macos-clang-debug --target ClassMngr ClassMngrMyWorkspacePageTests --parallel 4`.
+Each of these selectors passed (3 passed, 0 failed):
+`unavailablePersonalDetailsSaveDoesNotNormalizeOrClearDirtyValues`,
+`aggregateSaveNoninteractiveFailureShowsStatusAndAllowsRetry`,
+`aggregateSaveFailureRollsBackAndPreservesUnrelatedSettings`, and
+`currentCampusReadFailurePreservesChoiceAndBlocksSaveUntilReload`. CTest
+listing found `ClassMngrMyWorkspacePageTests` as target #69, and
+`git diff --check` passed. The stale unavailable-settings diagnostic
+expectation was updated for the campus-known guard; other assertions remain.
+A separate key-specific signature-preferences test continues to cover that
+guard.
+
+No full suite, clean build, Windows run, hosted CI, or gate result is claimed.
+F1288's completion record is `0601db4e`. F1288 and F1289 are complete locally;
+Batch524 remains unpushed. F1290 is next for acceptance and triggers Batch525
+discovery when work starts; F1291 remains last in Batch524. Gate 1 and Gate 2
+remain Partial, and the Phase 2 exit gate remains Open.

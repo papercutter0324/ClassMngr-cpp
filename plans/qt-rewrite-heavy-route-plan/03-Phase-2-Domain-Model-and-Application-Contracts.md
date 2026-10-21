@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1289 is accepted for implementation in unpushed Batch524; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: F1290 is next for acceptance in unpushed Batch524 and triggers Batch525 discovery when work starts; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1288 is complete locally; F1289 is accepted for implementation in unpushed Batch524, with implementation, build, and tests not started. F1290 triggers Batch525 discovery when work starts, and F1291 is last. See the [F1289 acceptance](03-Phase-2-Progress-Log.md#f1289-my-details-noninteractive-save-failure-feedback-accepted-before-implementation-2026-10-21).
+F1289 is complete locally in unpushed Batch524; F1290 is next for acceptance and triggers Batch525 discovery when work starts, with F1291 last. See the [F1289 completion](03-Phase-2-Progress-Log.md#f1289-my-details-noninteractive-save-failure-feedback-complete-locally-2026-10-21).
 
 ### Slice discovery batches
 
@@ -78,19 +78,20 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active Batch524
 
-F1288 is complete locally; F1289 is accepted for implementation; F1290-F1291
-remain discovered and unaccepted.
+F1288-F1289 are complete locally; F1290-F1291 remain discovered and
+unaccepted.
 
 1. F1288 - Complete locally: track current-campus read state and block the
    aggregate My Details save after a failed read, preserving the displayed
    campus until a successful reload. Batch524 remains unpushed.
-2. F1289 - Accepted for implementation: show localized, nonmodal status for
-   failed noninteractive My Details saves while retaining editable dirty values;
-   clear the status after a successful save, discard, successful reload, or
-   database-state clear. Preserve the modal warning for explicit save failure.
-3. F1290 - Discovered; next after F1289: Class Transfer Export may throw while
-   projecting an incomplete but successful source snapshot. Begin Batch525
-   discovery when F1290 work starts, per the second-last-candidate trigger.
+2. F1289 - Complete locally: show localized, nonmodal status for failed
+   noninteractive My Details saves while retaining editable dirty values; clear
+   it after save success, successful discard/reload, or database-state clear.
+   Preserve the modal warning for explicit save failure.
+3. F1290 - Discovered; next for acceptance: Class Transfer Export may throw
+   while projecting an incomplete but successful source snapshot. Begin
+   Batch525 discovery when F1290 work starts, per the second-last-candidate
+   trigger.
 4. F1291 - Discovered; last in Batch524, after F1290: the Class Transfer
    legacy apply adapter may turn malformed non-sentinel IDs into `nullopt`;
    API-contract uncertainty remains.
