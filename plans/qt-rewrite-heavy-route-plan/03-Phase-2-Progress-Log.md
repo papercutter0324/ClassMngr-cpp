@@ -62287,3 +62287,75 @@ F1288's completion record is `0601db4e`. F1288 and F1289 are complete locally;
 Batch524 remains unpushed. F1290 is next for acceptance and triggers Batch525
 discovery when work starts; F1291 remains last in Batch524. Gate 1 and Gate 2
 remain Partial, and the Phase 2 exit gate remains Open.
+
+### Batch525 discovery - 2026-10-21 (triggered at F1290)
+
+At the second-last Batch524 candidate, three read-only lanes found three
+provisional candidates in this bounded sample; this is not an exhaustiveness
+claim, and none has been accepted. The ordered candidates are:
+
+1. F1292 - A successful Teacher Info edit followed by reload failure can leave
+   the page stale, dirty, and editable (`src/next/application/teacher_profile_edit_use_case.h:298-319`,
+   `src/features/teacher/ui/teacher_info_page.cpp:1422-1465`; existing test
+   `tests/teacher_info_page_tests.cpp:565-630`). A later stale overwrite is an
+   inference; a reload-required pattern exists at `teacher_info_page.cpp:1214-1244,1501-1546`.
+2. F1293 - New-profile replacement may close the active profile before
+   replacement creation succeeds (`src/app/controllers/file_controller.cpp:423-453`).
+   The existing failure test starts with no active profile
+   (`tests/file_controller_workspace_lifecycle_tests.cpp:1366-1412`); expected
+   user behavior needs later acceptance. Mapping caveat:
+   `phase2-legacy-application-mapping.md:139`.
+3. F1294 - Nested-folder parent metadata has an integration-coverage gap
+   through the legacy catalog adapter: `parentPath` is mapped at
+   `src/next/platform/application_services_document_catalog_port.h:98-128`,
+   while adapter tests cover root folders only
+   (`tests/next_platform_application_services_document_catalog_port_tests.cpp:68-101`).
+   Nested folders are covered at app projection
+   (`tests/next_application_document_catalog_tests.cpp:655-685`); no runtime
+   failure is demonstrated.
+
+The contracts lane found no additional candidates and ruled out class create
+and ID narrowing as intentional or covered. The feature lane screened repeated
+autosave, Calendar, and Campus paths and found F1292. The mapping lane screened
+initial-setup name re-entry as apparently correct and found F1294. Its
+invalid-UTF-8 coverage statement may be stale; no mapping-file edit is in scope.
+
+No other slices were found.
+
+### F1290 Class Transfer Export validates successful source snapshots accepted before implementation - 2026-10-21
+
+`ClassTransferExportQuery::execute()` must return a structured
+`Domain::Result` Technical failure, not throw, when a successful but
+incomplete source snapshot reaches projection. After existing staged-error
+replay and the `deferredSelectionOrLookupError` check, require every consumed
+class stage (`info`, `roster`, `teacher`, and `evaluations`) to be `Value`.
+For every referenced teacher ID, require a matching source teacher with a
+`Value` profile. A missing stage, missing teacher, or unattempted profile must
+produce a structured Technical error. Preserve staged-error class order and
+deferred selection precedence; complete snapshots must project identically.
+This is query-boundary protection for the application port contract, not an
+observed normal production crash: the repository path supplies `Value` or
+`Error` for attempted stages and rolls back when reads fail. Keep changes to
+the query boundary and focused app-level tests; do not change the platform
+source repository. The value accessors use unchecked `std::get`
+(`src/next/application/class_transfer_export_query.h:56-73`); current replay
+rejects only `Error` before projection
+(`src/next/application/class_transfer_export_query.h:152-172`), which
+dereferences stages at `:186-199` and uses `teacherKeys.at(id)` at `:202`.
+
+Focused coverage must test each required class stage as `NotAttempted`, a
+missing teacher reference, and a `NotAttempted` teacher profile, while
+preserving `stagedFailurePrecedesDeferredSelectionAndUnattemptedValues()` and
+the complete-output test. Target:
+`ClassMngrNextApplicationClassTransferExportQueryTests` / CTest
+`ClassMngrNextApplicationClassTransferExportQueryTests`. Focused verification:
+incrementally build the target, run the new and relevant existing selectors,
+confirm CTest registration, and run `git diff --check`. At acceptance,
+implementation, build, and tests have not started. No full suite, Windows run,
+or Phase 2 gate result is claimed.
+
+F1288 and F1289 are complete locally; Batch524 remains unpushed. F1290 is
+accepted and next for implementation; F1291 remains discovered and unaccepted.
+Batch525 discovery is recorded with F1292-F1294, all provisional and
+unaccepted. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
+Open.
