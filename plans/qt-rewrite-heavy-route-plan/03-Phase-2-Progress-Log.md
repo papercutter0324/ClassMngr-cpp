@@ -61550,3 +61550,32 @@ implementation; implementation, builds, and tests have not started. Gate 1
 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. Phase 0
 remains Complete; F629's source-bound Windows x64 requalification remains
 outstanding separately.
+
+### F1281 Class Notes required-read feedback complete locally - 2026-10-21
+
+F1281 is complete locally. The acceptance documentation commit is
+`79bb5174c60222fa18204cb9d5c7612a125e174d`; the production/test commit is
+`7222d23c4dc6de67eca58d39edd3ec617c895a20`. The changes are limited to
+`src/features/classes/ui/class_notes_page.cpp` and
+`tests/next_feature_class_notes_page_tests.cpp`.
+
+Top-level and required `classFields` read failures now each show one translated
+`Load Class Notes` warning with the error message, leave data unavailable,
+keep the page clean, and block saving. Successful empty values and independent
+`teacherDisplayName` failures remain non-warning; valid class fields remain
+saveable. A later successful reload restores the notes and save availability.
+An independent Tester reviewed the production/test commit and found the
+acceptance met.
+
+Independent verification passed:
+
+- `cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextFeatureClassNotesPageTests` exited 0; this was incremental/up-to-date.
+- `ctest --test-dir build/macos-clang-debug -R '^ClassMngrNextFeatureClassNotesPageTests$' --output-on-failure` passed 1/1 CTest in 4.71s; the suite contains 13 Qt test functions.
+- `git diff --check` and `git show --check --oneline --no-renames 7222d23c4dc6de67eca58d39edd3ec617c895a20` passed. The worktree was clean at verification.
+
+No full suite, Windows run, clean build, hosted CI, or Gate 2 result is claimed.
+F1281 is complete locally awaiting its normal push. Batch521 is closed with no
+active implementation batch; Batch522 discovery starts after the push. Gate 1
+and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. Phase 0
+remains Complete; F629's source-bound Windows x64 requalification remains
+outstanding separately.

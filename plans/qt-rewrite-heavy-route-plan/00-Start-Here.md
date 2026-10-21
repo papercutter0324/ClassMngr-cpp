@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch520 (F1280) is complete and pushed at `9fa83678`; Batch521 is active with F1281 accepted before implementation. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current milestone: F1281 is complete locally awaiting its normal push; Batch521 is closed, with no implementation batch active and Batch522 discovery next after the push. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -40,13 +40,13 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 work
 
-Batch520 (F1280) is complete and pushed at `9fa83678`. Batch521 is active
-with F1281 accepted before implementation; F1281 implementation, build, and
-tests have not started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit
-gate remains Open. F629's
-source-bound Windows x64 requalification remains outstanding separately from
-Phase 0's Complete declaration. The [Phase 2 progress log](03-Phase-2-Progress-Log.md)
-holds acceptance, verification, and exact batch history.
+F1281 is complete locally and awaiting its normal push. Batch521 is closed;
+there is no active implementation batch, and Batch522 discovery starts after
+the push. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
+Open. F629's source-bound Windows x64 requalification remains outstanding
+separately from Phase 0's Complete declaration. The [Phase 2 progress
+log](03-Phase-2-Progress-Log.md) holds acceptance, verification, and exact
+batch history.
 
 The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
 shows current status; the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
