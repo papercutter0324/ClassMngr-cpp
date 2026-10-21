@@ -27,6 +27,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QSet>
+#include <QSizePolicy>
 #include <QVector>
 #include <QVBoxLayout>
 #include <QtAssert>
@@ -78,6 +79,30 @@ Teacher uiTeacher(
     teacher.zoomId = QString::fromStdU16String(source.zoomId);
     teacher.zoomPassword = QString::fromStdU16String(source.zoomPassword);
     return teacher;
+}
+
+QString operationErrorCodeName(
+    const ClassMngr::Next::Domain::ErrorCode code
+    )
+{
+    using ClassMngr::Next::Domain::ErrorCode;
+    switch (code)
+    {
+    case ErrorCode::InvalidInput:
+        return QStringLiteral("InvalidInput");
+    case ErrorCode::NotFound:
+        return QStringLiteral("NotFound");
+    case ErrorCode::Conflict:
+        return QStringLiteral("Conflict");
+    case ErrorCode::Validation:
+        return QStringLiteral("Validation");
+    case ErrorCode::Canceled:
+        return QStringLiteral("Canceled");
+    case ErrorCode::Technical:
+        return QStringLiteral("Technical");
+    }
+
+    return QStringLiteral("Unknown");
 }
 
 } // namespace
@@ -175,6 +200,30 @@ void ClassCoTeacherPage::buildUi()
         UiConstants::ClassInfo::Page::ContentSpacing
         );
     contentLayout()->addWidget(m_pageBody);
+
+    m_assignmentReadStatusLabel = new QLabel(
+        m_pageBody->contentWidget()
+        );
+    m_assignmentReadStatusLabel->setObjectName(
+        QStringLiteral("classCoTeacherAssignmentReadStatus")
+        );
+    m_assignmentReadStatusLabel->setAccessibleName(
+        tr("Co-Teacher assignment status")
+        );
+    m_assignmentReadStatusLabel->setAlignment(
+        Qt::AlignLeft | Qt::AlignVCenter
+        );
+    m_assignmentReadStatusLabel->setWordWrap(true);
+    m_assignmentReadStatusLabel->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Preferred
+        );
+    m_assignmentReadStatusLabel->hide();
+    m_pageBody->contentLayout()->addWidget(
+        m_assignmentReadStatusLabel,
+        0,
+        Qt::AlignTop
+        );
 
     m_teacherCard = new SectionCard(
         tr("Korean Teacher"),
@@ -320,7 +369,7 @@ void ClassCoTeacherPage::loadClass(
             ));
     }
     m_teacherSection->setTeachers(teachers);
-    readSelectedClassSnapshot();
+    (void)readSelectedClassSnapshot();
     selectCachedTeacher();
     updateTitle();
 
@@ -331,6 +380,7 @@ void ClassCoTeacherPage::loadClass(
 void ClassCoTeacherPage::clearDatabaseState()
 {
     m_autosave->setLoading(true);
+    clearAssignmentReadFailure();
     m_classroom = {};
     m_readSnapshot.reset();
     m_titleTeacherNameFallback.clear();
@@ -350,12 +400,22 @@ void ClassCoTeacherPage::refresh()
 
 void ClassCoTeacherPage::saveData()
 {
+    if (m_assignmentReadError)
+    {
+        return;
+    }
+
     saveCoTeacherInternal(true);
 }
 
 bool ClassCoTeacherPage::saveChanges()
 {
     m_autosave->cancelPendingSave();
+
+    if (m_assignmentReadError && hasUnsavedChanges())
+    {
+        return false;
+    }
 
     return !hasUnsavedChanges() || saveCoTeacherInternal(true);
 }
@@ -396,6 +456,14 @@ void ClassCoTeacherPage::retranslateUi()
     if (m_teacherSection)
     {
         m_teacherSection->retranslateUi();
+    }
+
+    if (m_assignmentReadStatusLabel)
+    {
+        m_assignmentReadStatusLabel->setAccessibleName(
+            tr("Co-Teacher assignment status")
+            );
+        updateAssignmentReadStatus();
     }
 
     updateActions();
@@ -501,6 +569,11 @@ bool ClassCoTeacherPage::saveCoTeacherInternal(
     bool showMessages
     )
 {
+    if (m_assignmentReadError && !showMessages)
+    {
+        return false;
+    }
+
     if (m_classroom.id < 0)
     {
         return true;
@@ -548,10 +621,36 @@ bool ClassCoTeacherPage::saveCoTeacherInternal(
     }
 
     const auto previousSnapshot = m_readSnapshot;
+    const qint64 committedTeacherId = selectedTeacherIdFromUi();
     const QString committedTeacherName = selectedTeacherDisplayNameFromUi();
     clearDirty();
-    readSelectedClassSnapshot();
-    if (selectedUiTeacherIdFromSnapshot() > 0)
+    const bool requiredReadSucceeded = readSelectedClassSnapshot();
+    if (!requiredReadSucceeded)
+    {
+        m_readSnapshot = previousSnapshot;
+        if (m_readSnapshot && m_readSnapshot->classFields)
+        {
+            auto& selectedTeacherId = m_readSnapshot->classFields.value()
+                .selectedTeacherId;
+            if (committedTeacherId > 0)
+            {
+                selectedTeacherId =
+                    ClassMngr::Next::Domain::TeacherId::fromString(
+                        std::to_string(committedTeacherId)
+                        );
+            }
+            else
+            {
+                selectedTeacherId.reset();
+            }
+        }
+
+        clearAssignmentReadFailure();
+        m_titleTeacherNameFallback = committedTeacherId > 0
+            ? committedTeacherName
+            : QString{};
+    }
+    else if (selectedUiTeacherIdFromSnapshot() > 0)
     {
         selectCachedTeacher();
         const bool hasTeacherDisplayName = m_readSnapshot
@@ -565,10 +664,6 @@ bool ClassCoTeacherPage::saveCoTeacherInternal(
     }
     else
     {
-        if (!m_readSnapshot)
-        {
-            m_readSnapshot = previousSnapshot;
-        }
         m_titleTeacherNameFallback = committedTeacherName;
     }
     updateTitle();
@@ -576,12 +671,13 @@ bool ClassCoTeacherPage::saveCoTeacherInternal(
     return true;
 }
 
-void ClassCoTeacherPage::readSelectedClassSnapshot()
+bool ClassCoTeacherPage::readSelectedClassSnapshot()
 {
     m_readSnapshot.reset();
     if (m_classroom.id <= 0)
     {
-        return;
+        clearAssignmentReadFailure();
+        return true;
     }
 
     const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
@@ -589,7 +685,12 @@ void ClassCoTeacherPage::readSelectedClassSnapshot()
         );
     if (!classId)
     {
-        return;
+        setAssignmentReadFailure({
+            .code = ClassMngr::Next::Domain::ErrorCode::InvalidInput,
+            .message = "The selected class identifier is invalid.",
+            .recoverable = false
+        });
+        return false;
     }
 
     ClassMngr::Next::Platform::
@@ -602,10 +703,75 @@ void ClassCoTeacherPage::readSelectedClassSnapshot()
         readPort
         );
     const auto snapshot = query.execute(*classId);
-    if (snapshot)
+    if (!snapshot)
     {
-        m_readSnapshot = snapshot.value();
+        setAssignmentReadFailure(snapshot.error());
+        return false;
     }
+
+    m_readSnapshot = snapshot.value();
+    if (!m_readSnapshot->classFields)
+    {
+        setAssignmentReadFailure(m_readSnapshot->classFields.error());
+        return false;
+    }
+
+    clearAssignmentReadFailure();
+    return true;
+}
+
+void ClassCoTeacherPage::setAssignmentReadFailure(
+    const ClassMngr::Next::Domain::OperationError& error
+    )
+{
+    m_assignmentReadError = error;
+    m_autosave->cancelPendingSave();
+    m_autosave->setManualSaveRequired(true);
+    updateAssignmentReadStatus();
+}
+
+void ClassCoTeacherPage::clearAssignmentReadFailure()
+{
+    m_assignmentReadError.reset();
+    m_autosave->setManualSaveRequired(false);
+    updateAssignmentReadStatus();
+}
+
+void ClassCoTeacherPage::updateAssignmentReadStatus()
+{
+    if (!m_assignmentReadStatusLabel)
+    {
+        return;
+    }
+
+    if (!m_assignmentReadError)
+    {
+        m_assignmentReadStatusLabel->clear();
+        m_assignmentReadStatusLabel->hide();
+        return;
+    }
+
+    const auto& error = *m_assignmentReadError;
+    const QString errorDetails = QString::fromUtf8(
+        error.message.data(),
+        static_cast<qsizetype>(error.message.size())
+        );
+    m_assignmentReadStatusLabel->setText(
+        tr(
+            "The saved Co-Teacher assignment could not be confirmed, so "
+            "the current selection may not match the saved value. Use the "
+            "Save Changes button on this page to explicitly assign or "
+            "unassign a teacher. Read error: code %1; recoverable: %2; "
+            "details: %3"
+            ).arg(
+                operationErrorCodeName(error.code),
+                error.recoverable
+                    ? QStringLiteral("true")
+                    : QStringLiteral("false"),
+                errorDetails
+                )
+        );
+    m_assignmentReadStatusLabel->show();
 }
 
 void ClassCoTeacherPage::selectCachedTeacher()

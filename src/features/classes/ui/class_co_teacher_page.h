@@ -4,6 +4,7 @@
 
 #include "domain/models/classroom.h"
 #include "next/application/class_co_teacher_page_read_snapshot.h"
+#include "next/domain/operation_result.h"
 
 #include <QHash>
 #include <QString>
@@ -65,7 +66,12 @@ signals:
 
 private:
     void buildUi();
-    void readSelectedClassSnapshot();
+    [[nodiscard]] bool readSelectedClassSnapshot();
+    void setAssignmentReadFailure(
+        const ClassMngr::Next::Domain::OperationError& error
+        );
+    void clearAssignmentReadFailure();
+    void updateAssignmentReadStatus();
     void selectCachedTeacher();
     [[nodiscard]] qint64 selectedTeacherIdFromSnapshot() const;
     [[nodiscard]] int selectedUiTeacherIdFromSnapshot() const;
@@ -90,6 +96,8 @@ private:
     std::optional<
         ClassMngr::Next::Application::ClassCoTeacherPageReadSnapshot
         > m_readSnapshot;
+    std::optional<ClassMngr::Next::Domain::OperationError>
+        m_assignmentReadError;
     QString m_titleTeacherNameFallback;
     QHash<int, qint64> m_stableTeacherIdsByUiId;
     QHash<qint64, int> m_uiIdsByStableTeacherId;
@@ -102,5 +110,6 @@ private:
     ScrollablePageBody* m_pageBody{nullptr};
     PageHeader* m_pageHeader{nullptr};
     QLabel* m_embeddedHeading{nullptr};
+    QLabel* m_assignmentReadStatusLabel{nullptr};
     QPushButton* m_saveButton{nullptr};
 };
