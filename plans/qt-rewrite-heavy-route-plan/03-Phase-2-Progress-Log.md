@@ -59850,3 +59850,13 @@ Partial, and the Phase 2 exit gate remains Open. The separate F1265
 `outputReportsUsesProjectedRegularSchedule` fixture failure remains recorded
 at `tests/speaking_eval_page_save_tests.cpp:2466`; its pre-change baseline is
 unproven, and F1266 does not change that evidence.
+
+### Batch506 push receipt - 2026-10-21
+
+The push succeeded with receipt `113ef43d..b6398665`. The upstream
+`origin/Qt-Rewrite` tip is `b6398665abe161bb95150922ec6bfc877ff9471a`, equal
+to local `HEAD`. At push completion, the worktree was clean and the branch
+was up to date. Batch506 (F1266) is complete and pushed. Gate 1 and Gate 2
+remain Partial, and the Phase 2 exit gate remains Open. F1265's separately
+reproduced report-output fixture failure remains documented with its
+pre-change baseline unproven.

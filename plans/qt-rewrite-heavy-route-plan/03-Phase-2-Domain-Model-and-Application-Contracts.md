@@ -53,12 +53,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch506 (F1266) is complete locally and awaits push; no slice batch is active; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+- Current note: Batch506 (F1266) is complete and pushed at `b6398665` (see [push receipt](03-Phase-2-Progress-Log.md#batch506-push-receipt-2026-10-21)); no slice batch is active; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Latest Progress Update
 
 F1266 is complete locally in Batch506 at implementation commit
-`dffd270ed476439897e3712511c6b9f2bc6a1c1f` (see [F1266 closeout](03-Phase-2-Progress-Log.md#f1266-calendar-event-editor-validation-in-application-complete-2026-10-21)). The Qt-free Application contract now returns structured ordered field issues for the typed edit draft and recurrence inputs, and the v2 dialog uses it while retaining UI translation, binding, refresh, and focus behavior. Incremental macOS Debug builds and focused Application/dialog checks passed; no clean, Windows, full-suite, or Gate 2 baseline-parity claim is made. Batch506 is complete locally and awaits push; no slice batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+`dffd270ed476439897e3712511c6b9f2bc6a1c1f` (see [F1266 closeout](03-Phase-2-Progress-Log.md#f1266-calendar-event-editor-validation-in-application-complete-2026-10-21)). The Qt-free Application contract now returns structured ordered field issues for the typed edit draft and recurrence inputs, and the v2 dialog uses it while retaining UI translation, binding, refresh, and focus behavior. Incremental macOS Debug builds and focused Application/dialog checks passed; no clean, Windows, full-suite, or Gate 2 baseline-parity claim is made. Batch506 is complete and pushed at `b6398665` (see [push receipt](03-Phase-2-Progress-Log.md#batch506-push-receipt-2026-10-21)); no slice batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -73,8 +73,8 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-No slice batch is active. Batch506 (F1266) is complete locally and awaits
-push.
+No slice batch is active. Batch506 (F1266) is complete and pushed at
+`b6398665` (see the [push receipt](03-Phase-2-Progress-Log.md#batch506-push-receipt-2026-10-21)).
 
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
