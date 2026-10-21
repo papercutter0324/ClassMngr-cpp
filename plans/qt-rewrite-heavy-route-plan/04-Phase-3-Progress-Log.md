@@ -447,3 +447,34 @@ cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationS
 ctest --test-dir build/macos-clang-debug --output-on-failure -j1 -R '^(ClassMngrNextPlatformApplicationServicesCalendarEventPortTests|ClassMngrNextApplicationCalendarEventImportUseCaseTests|ClassMngrCalendarEventImportParityTests|ClassMngrCalendarEventRepositoryTests|ClassMngrNextApplicationCalendarEventTests)$'
 git diff --check
 ```
+
+Commit: `abc8a278`.
+
+## F1335 — Repeat-series suffix delete — 2026-10-22
+
+Migrated the typed repeat-series suffix-delete adapter and its direct fixtures
+from the `DatabaseSession` compatibility accessor to
+`ApplicationServices::workspaceStore()`. The adapter still validates the
+series ID and selected start date before store access and calls
+`deleteCalendarEventsForRepeatSeriesFromDate()` once. The repository continues
+to trim the ID and delete the selected date and later occurrences, while
+preserving earlier and unrelated events. No-match success, recoverable
+unavailable-store handling, SQL failure mapping, and the UI's existing
+invalidation behavior remain unchanged.
+
+The focused Platform port, CalendarEvent repository, and typed Application
+event CTests passed **3/3**. Independent review confirmed padded-ID matching,
+the inclusive suffix boundary, earlier/unrelated-event preservation,
+no-match success, invalid input, closed-store handling, and trigger failure
+with the target row intact. `git diff --check` passed. The existing parity
+tests do not cover suffix deletion at the page level, and repository failure
+tests do not inject transaction-start/commit errors or a multi-row failure.
+Ninja reported a premature-end-of-file warning and recovered. Verification
+used the existing macOS Debug tree; no broad suite or cross-platform build was
+run.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesCalendarEventPortTests ClassMngrCalendarEventRepositoryTests ClassMngrNextApplicationCalendarEventTests --parallel 4
+ctest --test-dir build/macos-clang-debug --output-on-failure -R 'ClassMngrNextPlatformApplicationServicesCalendarEventPortTests|ClassMngrCalendarEventRepositoryTests|ClassMngrNextApplicationCalendarEventTests'
+git diff --check
+```

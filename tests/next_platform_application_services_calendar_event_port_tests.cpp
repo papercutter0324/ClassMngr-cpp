@@ -385,7 +385,7 @@ private slots:
     void deletesValidRepeatSeriesSuffix();
     void deletesMissingRepeatSeriesSuffixSuccessfully();
     void reportsInvalidRepeatSeriesDeleteRequestStructurally();
-    void reportsUnavailableRepeatSeriesDeleteSessionStructurally();
+    void reportsUnavailableRepeatSeriesDeleteStoreStructurally();
     void reportsRepeatSeriesDeleteServiceFailureStructurally();
     void preservesLegacyTitleSurroundingSpaces();
     void preservesAllDayAndUnknownTimePolicy();
@@ -3540,12 +3540,11 @@ deletesValidRepeatSeriesSuffix()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
     const QString repeatSeriesId = QStringLiteral("series-delete-suffix");
@@ -3631,12 +3630,11 @@ deletesMissingRepeatSeriesSuffixSuccessfully()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
     const QString repeatSeriesId = QStringLiteral("series-delete-missing");
@@ -3706,13 +3704,12 @@ reportsInvalidRepeatSeriesDeleteRequestStructurally()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
-reportsUnavailableRepeatSeriesDeleteSessionStructurally()
+reportsUnavailableRepeatSeriesDeleteStoreStructurally()
 {
     ApplicationServices services;
-    QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(!session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(!store->isOpen());
     ApplicationServicesCalendarEventSeriesDeletePort port(services);
 
     verifyRecoverableFailure(
@@ -3725,12 +3722,11 @@ reportsUnavailableRepeatSeriesDeleteSessionStructurally()
         );
 
     QVERIFY(openDatabase(services, m_directory));
-    QVERIFY(session->isOpen());
-    QVERIFY(session->calendarEventRepository());
+    QVERIFY(store->isOpen());
+    QVERIFY(store->calendarEventRepository());
 
     services.closeDatabase();
-    QVERIFY(services.dataService());
-    QVERIFY(!session->isOpen());
+    QVERIFY(!store->isOpen());
     verifyRecoverableFailure(
         port.deleteRepeatSeriesFromDate({
             calendarEventSeriesId("series-delete-unavailable"),
@@ -3746,12 +3742,11 @@ reportsRepeatSeriesDeleteServiceFailureStructurally()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
     CalendarEvent event = makeEvent(
@@ -3767,7 +3762,7 @@ reportsRepeatSeriesDeleteServiceFailureStructurally()
     const int eventId = *saved;
     QVERIFY(eventId > 0);
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_repeat_delete "
         "BEFORE DELETE ON calendar_events "

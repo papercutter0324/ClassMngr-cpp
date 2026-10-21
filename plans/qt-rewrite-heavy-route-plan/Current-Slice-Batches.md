@@ -9,7 +9,7 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 1 is active: F1318–F1334 are complete; F1335 implementation is current.
+- Batch 1 is active: F1318–F1335 are complete; F1336 scope discovery is current.
 - Begin Batch 2 discovery when F1336 starts; do not add Batch 2 candidates before then.
 
 ## Phase 3 — Batch 1 (active)
@@ -30,7 +30,7 @@ record useful implementation and verification evidence in its progress log.
 14. F1331 — Intensive slot-state save (complete; commit `728d90ff`)
 15. F1332 — Calendar page range read (complete; worker-local WorkspaceStore; commit `c5289ae2`)
 16. F1333 — Single Calendar Event save (complete; commit `8ef71240`)
-17. F1334 — Calendar Import batch save (complete)
-18. F1335 — Repeat-series suffix delete
-19. F1336 — Sub Prep visible schedule summaries (scope discovery required)
+17. F1334 — Calendar Import batch save (complete; commit `abc8a278`)
+18. F1335 — Repeat-series suffix delete (complete)
+19. F1336 — Sub Prep visible schedule summaries (scope discovery required; current)
 20. F1337 — Selected Sub Prep class details

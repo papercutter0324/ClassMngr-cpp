@@ -38,10 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-22
-- Current note: F1334 migrated the typed Calendar Import batch save adapter to
-  `WorkspaceStore`. The ordered batch still uses one repository transaction,
-  accepts an empty batch as a no-op, and returns typed IDs in input order.
-  F1335 repeat-series suffix delete is current.
+- Current note: F1335 migrated the repeat-series suffix delete adapter to
+  `WorkspaceStore`, preserving the repository's single date-inclusive delete
+  and existing error mapping. F1336 Sub Prep visible schedule summaries is
+  current; scope discovery is required.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
