@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch525 (F1292-F1293) is pushed through closeout `655cf042` with F1294 screened out; Batch526 has provisional, unaccepted F1295; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch525 (F1292-F1293) is pushed through closeout `655cf042` with F1294 screened out; F1295 is accepted before implementation in active Batch526; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-Batch525 (F1292-F1293) was pushed through closeout `655cf042`; F1294 was screened out. Batch526 is active with provisional, unaccepted F1295. See the [Batch525 push receipt](03-Phase-2-Progress-Log.md#batch525-push-receipt-2026-10-21).
+F1295 is accepted before implementation in Batch526: disclose unknown schedule persistence in Calendar Preferences and disable schedule controls until a successful reload. See the [F1295 acceptance record](03-Phase-2-Progress-Log.md#f1295-calendar-preferences-schedule-read-failure-status-accepted-before-implementation-2026-10-21).
 
 ### Slice discovery batches
 
@@ -78,12 +78,13 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active Batch526
 
-Batch525 (F1292-F1293) is complete locally and awaiting push; F1294 was
-screened out.
+Batch525 (F1292-F1293) was pushed through closeout `655cf042`; push receipt
+tip is `34240255`. F1294 was screened out.
 
-1. F1295 - Discovered; provisional and unaccepted: Calendar preferences may
-   omit schedule-read failure status. Acceptance is pending; see the progress
-   log for bounded evidence and the open behavior question.
+1. F1295 - Accepted before implementation: in Calendar Preferences, disclose
+   unknown schedule persistence and disable schedule controls until a
+   successful reload; retain drafts and keep unrelated preference failures
+   from locking the schedule. See the progress log for full criteria.
 
 See the progress log for bounded discovery evidence and limitations.
 

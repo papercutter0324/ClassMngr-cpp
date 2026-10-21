@@ -62614,3 +62614,36 @@ Batch525 (F1292-F1293) is pushed through closeout `655cf042`; F1294 was
 screened out. Batch526 is active with provisional, unaccepted F1295. Gate 1
 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. This receipt
 does not imply full-suite, Windows, clean-build, hosted-CI, or gate completion.
+
+### F1295 Calendar Preferences schedule-read failure status accepted before implementation - 2026-10-21
+
+In Calendar Preferences, disclose schedule-preference read failure in the Term
+Schedules section with persistent localized status. Explain that displayed
+values may be defaults or cached and may not match the persisted schedule.
+While schedule persistence is unknown, disable the term-year selector,
+date/week fields, link option, Restore Defaults, and Save; retain the provider
+write guard. Preserve the cached schedule and revision on a schedule-read
+failure.
+
+Expose load-state changes so an already-open panel refreshes this status after
+later retry failure or success. Keep that read-status notification distinct
+from schedule revision and first-day data signals. A successful reload clears
+the status and re-enables schedule controls while preserving any panel draft
+under F1069. Event-display and first-day preference errors alone must not
+disable schedule controls; F1069's historical acceptance remains unchanged.
+
+Focused verification: incrementally build `ClassMngr`,
+`ClassMngrAcademicCalendarTests`, and
+`ClassMngrCalendarPreferencesRestoreDefaultsTests` in
+`build/macos-clang-debug`; cover provider failed/successful read notifications
+without revision/first-day signals, initial and later panel failure/recovery
+with draft retention and control locking, and unrelated preference failures
+leaving schedule controls enabled. Run matching focused CTests and
+`git diff --check`. At acceptance, implementation, build, and tests have not
+started. No full-suite, Windows, clean-build, hosted-CI, or phase-gate result
+is claimed.
+
+F1295 is accepted before implementation in active Batch526. Batch525
+(F1292-F1293) is pushed through closeout `655cf042`, with receipt tip
+`34240255`; F1294 was screened out. Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open.

@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is pushed through receipt `1854742`; Batch523 (F1285-F1287) is pushed through closeout `12936f8f`, with local and remote tips matching. Batch524 (F1288-F1290) is pushed through closeout `3480c791`; F1291 was screened out. Batch525 (F1292-F1293) is pushed through closeout `655cf042`; F1294 was screened out. Batch526 is active with provisional, unaccepted F1295. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is pushed through receipt `1854742`; Batch523 (F1285-F1287) is pushed through closeout `12936f8f`, with local and remote tips matching. Batch524 (F1288-F1290) is pushed through closeout `3480c791`; F1291 was screened out. Batch525 (F1292-F1293) is pushed through closeout `655cf042`, with receipt tip `34240255`; F1294 was screened out. Batch526 is active; F1295 is accepted before implementation. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -47,8 +47,9 @@ match. Batch522 (F1282-F1284) is complete and pushed through receipt
 pushed through closeout `12936f8fb0d70d24da8eeb897815fc1db4832cb7`, with
 local and remote tips matching. Batch524 (F1288-F1290) is pushed through
 closeout `3480c791`; F1291 was screened out. Batch525 (F1292-F1293) is pushed
-through closeout `655cf042`; F1294 was screened out. Local and remote tips
-match. Batch526 is active with provisional, unaccepted F1295. Gate 1 and Gate 2
+through closeout `655cf042`, with receipt tip `34240255`; F1294 was screened out.
+Local and remote tips match. Batch526 is active, with F1295 accepted before
+implementation. Gate 1 and Gate 2
 remain Partial, and the Phase 2 exit gate remains Open. Phase 0 remains
 Complete; F629's
 source-bound Windows x64 requalification remains outstanding separately. The
