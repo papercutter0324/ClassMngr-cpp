@@ -1118,6 +1118,37 @@ add_test(
     COMMAND ClassMngrNextApplicationInitialSetupPersonalNameRequirementTests
 )
 
+# Keep Initial Setup's Teacher Entry skip decision independent of Qt.
+add_executable(
+    ClassMngrNextApplicationInitialSetupTeacherEntrySkipPolicyTests
+    tests/next_application_initial_setup_teacher_entry_skip_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationInitialSetupTeacherEntrySkipPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationInitialSetupTeacherEntrySkipPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationInitialSetupTeacherEntrySkipPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationInitialSetupTeacherEntrySkipPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationInitialSetupTeacherEntrySkipPolicyTests
+    COMMAND ClassMngrNextApplicationInitialSetupTeacherEntrySkipPolicyTests
+)
+
 # Keep automatic-update startup eligibility app-less and Qt-free.
 add_executable(
     ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests

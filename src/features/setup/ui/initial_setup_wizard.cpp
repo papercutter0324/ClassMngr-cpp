@@ -12,6 +12,7 @@
 #include "next/platform/application_services_teacher_import_apply_port.h"
 #include "next/application/initial_setup_personal_name_requirement.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
+#include "next/application/initial_setup_teacher_entry_skip_policy.h"
 #include "next/application/initial_setup_teacher_identity_validation.h"
 #include "next/application/class_create_use_case.h"
 #include "next/application/class_details_save_use_case.h"
@@ -910,8 +911,11 @@ public:
 
     bool validatePage() override
     {
-        if (currentFieldsEmpty())
+        const bool allTeacherIdentityAndRoomFieldsEmpty =
+            currentFieldsEmpty();
+        if (allTeacherIdentityAndRoomFieldsEmpty)
         {
+            bool availableTeacherExists = false;
             auto* setup = setupWizard(this);
             if (setup && setup->teacherService())
             {
@@ -921,10 +925,17 @@ public:
                 const ClassMngr::Next::Application::
                     InitialSetupTeacherChoicesReadQuery query(readPort);
                 const auto teachers = query.execute();
-                if (teachers && !teachers.value().teachers.empty())
-                {
-                    return true;
-                }
+                availableTeacherExists =
+                    teachers && !teachers.value().teachers.empty();
+            }
+
+            if (ClassMngr::Next::Application::
+                    initialSetupTeacherEntryShouldBeSkipped(
+                        allTeacherIdentityAndRoomFieldsEmpty,
+                        availableTeacherExists
+                        ))
+            {
+                return true;
             }
         }
         return saveCurrentTeacher(false);

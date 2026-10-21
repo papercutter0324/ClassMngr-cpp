@@ -256,6 +256,7 @@ private slots:
     void personalDetailsRoutesToClassDetailsWhenTeachersExist();
     void personalDetailsRoutesToTeacherEntryWhenNoTeachersExist();
     void blankTeacherEntrySkipsWhenTeachersExist();
+    void blankTeacherEntryWithoutTeachersPromptsForIdentityWithoutCreating();
     void teacherChoiceReadFailuresBehaveAsEmptyWithoutWarnings();
     void unavailableSettingsBlockPersonalDetailsValidationWithoutMutation();
     void campusReadFailureBlocksAggregateSaveAndCanRetry();
@@ -603,12 +604,29 @@ void InitialSetupWizardTests::blankTeacherEntrySkipsWhenTeachersExist()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.teacherService());
     QVERIFY(addTeacher(services, QStringLiteral("Existing Teacher")));
+
+    FakeUserPromptService prompts;
+    [[maybe_unused]] const ScopedUserPromptService promptService(&prompts);
 
     InitialSetupWizard wizard(&services);
     wizard.setStartId(InitialSetupWizard::TeacherEntryPage);
     showSetupWizard(wizard);
     QCOMPARE(wizard.currentId(), InitialSetupWizard::TeacherEntryPage);
+
+    const QStringList teacherFieldNames{
+        QStringLiteral("setupTeacherEnglishName"),
+        QStringLiteral("setupTeacherKoreanName"),
+        QStringLiteral("setupTeacherPreferredSpelling"),
+        QStringLiteral("setupTeacherRoom")
+    };
+    for (const QString& objectName : teacherFieldNames)
+    {
+        auto* const field = wizard.findChild<QLineEdit*>(objectName);
+        QVERIFY(field);
+        field->setText(QStringLiteral(" \t "));
+    }
 
     auto* next = wizard.button(QWizard::NextButton);
     QVERIFY(next);
@@ -616,6 +634,55 @@ void InitialSetupWizardTests::blankTeacherEntrySkipsWhenTeachersExist()
     QApplication::processEvents();
 
     QCOMPARE(wizard.currentId(), InitialSetupWizard::ClassDetailsPage);
+    QVERIFY(prompts.messages.isEmpty());
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlQuery query(session->database());
+    QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM teachers")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 1);
+}
+
+void InitialSetupWizardTests::
+blankTeacherEntryWithoutTeachersPromptsForIdentityWithoutCreating()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.teacherService());
+
+    FakeUserPromptService prompts;
+    [[maybe_unused]] const ScopedUserPromptService promptService(&prompts);
+
+    InitialSetupWizard wizard(&services);
+    wizard.setStartId(InitialSetupWizard::TeacherEntryPage);
+    showSetupWizard(wizard);
+
+    auto* const next = wizard.button(QWizard::NextButton);
+    QVERIFY(next);
+    next->click();
+    QApplication::processEvents();
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::TeacherEntryPage);
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& prompt = prompts.messages.constFirst();
+    QCOMPARE(prompt.severity, PromptSeverity::Information);
+    QCOMPARE(prompt.title, QStringLiteral("Teacher Information"));
+    QCOMPARE(
+        prompt.message,
+        QStringLiteral(
+            "Complete at least 2 of the following fields before continuing:\n\n"
+            "- English Name\n- Korean Name\n- Preferred Spelling"
+            )
+        );
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlQuery query(session->database());
+    QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM teachers")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 0);
 }
 
 void InitialSetupWizardTests::
@@ -623,6 +690,7 @@ teacherChoiceReadFailuresBehaveAsEmptyWithoutWarnings()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.teacherService());
     QVERIFY(executeSql(services, QStringLiteral("DROP TABLE teachers")));
 
     FakeUserPromptService prompts;
