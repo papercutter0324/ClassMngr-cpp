@@ -28,7 +28,7 @@
 
 void RosterEditorWidget::importScores()
 {
-    if (!m_services || m_classroom.id <= 0)
+    if (m_rosterReadFailed || !m_services || m_classroom.id <= 0)
     {
         return;
     }

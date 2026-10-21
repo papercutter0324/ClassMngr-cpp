@@ -11,12 +11,13 @@
 #include "next/application/roster_availability_batch_read_query.h"
 #include "next/application/roster_row_transfer_use_case.h"
 #include "next/application/roster_transfer_target_eligibility.h"
+#include "next/application/roster_window_read_query.h"
 #include "next/application/selected_class_subtitle_batch_read_query.h"
 #include "next/application/selected_class_subtitle_read_query.h"
 #include "next/domain/domain_types.h"
 #include "next/platform/application_services_classes_list_read_port.h"
 #include "next/platform/application_services_roster_availability_batch_read_port.h"
-#include "next/platform/application_services_roster_read_port.h"
+#include "next/platform/application_services_roster_window_read_port.h"
 #include "next/platform/application_services_roster_row_transfer_save_port.h"
 #include "next/platform/application_services_selected_class_subtitle_batch_read_port.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
@@ -279,7 +280,7 @@ void RosterEditorWidget::showRosterContextMenu(
     const QPoint& position
     )
 {
-    if (!m_table || !m_model)
+    if (!m_table || !m_model || m_rosterReadFailed)
     {
         return;
     }
@@ -559,6 +560,7 @@ void RosterEditorWidget::transferRosterRow(
         !m_model
         || !m_services
         || !m_services->rosterService()
+        || m_rosterReadFailed
         || m_classroom.id <= 0
         || targetClassId <= 0
         || targetClassId == m_classroom.id
@@ -596,7 +598,11 @@ void RosterEditorWidget::transferRosterRow(
         .baseColumnNames = std::move(baseColumns),
         .sourceQuestionableKoreanNameLengthsConfirmed = true
     };
-    ClassMngr::Next::Platform::ApplicationServicesRosterReadPort readPort(m_services);
+    ClassMngr::Next::Platform::ApplicationServicesRosterWindowReadPort
+        windowReadPort(m_services);
+    ClassMngr::Next::Application::RosterWindowAsRosterReadPort readPort(
+        windowReadPort
+        );
     ClassMngr::Next::Platform::ApplicationServicesRosterRowTransferSavePort savePort(
         m_services);
     const RosterRowTransferConfirmationAdapter confirmationPort(this);

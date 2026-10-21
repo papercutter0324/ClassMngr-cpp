@@ -537,7 +537,39 @@ Result<RosterReadOutcome> RosterRepository::loadRosterDetailed(
     int classId
     )
 {
-    RosterReadOutcome outcome;
+    auto loaded = loadRosterDetailedImpl(classId, std::nullopt);
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+
+    return RosterReadOutcome{
+        .roster = std::move(loaded->roster),
+        .parentMissing = loaded->parentMissing
+    };
+}
+
+Result<RosterWindowReadOutcome> RosterRepository::loadRosterWindowDetailed(
+    const int classId,
+    const int rowLimit
+    )
+{
+    if (rowLimit <= 0)
+    {
+        return std::unexpected(QObject::tr(
+            "Loading a roster window failed: row limit must be positive."
+            ));
+    }
+
+    return loadRosterDetailedImpl(classId, rowLimit);
+}
+
+Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
+    const int classId,
+    const std::optional<int> rowLimit
+    )
+{
+    RosterWindowReadOutcome outcome;
 
     if (classId <= 0)
     {
@@ -659,6 +691,88 @@ Result<RosterReadOutcome> RosterRepository::loadRosterDetailed(
             ).userMessage());
     }
 
+    if (outcome.roster.columns.isEmpty() && !rowLimit)
+    {
+        return outcome;
+    }
+
+    if (rowLimit)
+    {
+        if (!outcome.roster.columns.isEmpty())
+        {
+            QSqlQuery invalidRowIndexQuery(m_database);
+            invalidRowIndexQuery.prepare(R"(
+                SELECT 1
+                FROM roster_data
+                WHERE class_id=? AND typeof(row_index)!='integer'
+                LIMIT 1
+            )");
+            invalidRowIndexQuery.addBindValue(classId);
+            const auto checkedRowIndexes = SqlQueryUtils::executePrepared(
+                invalidRowIndexQuery,
+                QObject::tr("Validating roster row indexes"),
+                identity
+                );
+            if (!checkedRowIndexes)
+            {
+                return std::unexpected(checkedRowIndexes.error().userMessage());
+            }
+            if (invalidRowIndexQuery.next())
+            {
+                return std::unexpected(
+                    QObject::tr(
+                        "Loading roster data failed for %1: invalid row index."
+                        ).arg(identity)
+                    );
+            }
+            if (invalidRowIndexQuery.lastError().isValid())
+            {
+                return std::unexpected(SqlQueryUtils::errorFor(
+                    invalidRowIndexQuery,
+                    QObject::tr("Validating roster row indexes"),
+                    {},
+                    identity
+                    ).userMessage());
+            }
+        }
+
+        QSqlQuery overflowQuery(m_database);
+        overflowQuery.prepare(R"(
+            SELECT EXISTS(
+                SELECT 1
+                FROM roster_data
+                WHERE class_id=? AND row_index>=?
+            )
+        )");
+        overflowQuery.addBindValue(classId);
+        overflowQuery.addBindValue(*rowLimit);
+        const auto checkedOverflow = SqlQueryUtils::executePrepared(
+            overflowQuery,
+            QObject::tr("Checking roster rows outside the window"),
+            identity
+            );
+        if (!checkedOverflow)
+        {
+            return std::unexpected(checkedOverflow.error().userMessage());
+        }
+        if (!overflowQuery.next())
+        {
+            return std::unexpected(QObject::tr(
+                "Checking roster rows failed for %1: no result was returned."
+                ).arg(identity));
+        }
+        outcome.hasRowsOutsideWindow = overflowQuery.value(0).toBool();
+        if (overflowQuery.lastError().isValid())
+        {
+            return std::unexpected(SqlQueryUtils::errorFor(
+                overflowQuery,
+                QObject::tr("Checking roster rows outside the window"),
+                {},
+                identity
+                ).userMessage());
+        }
+    }
+
     if (outcome.roster.columns.isEmpty())
     {
         return outcome;
@@ -673,10 +787,21 @@ Result<RosterReadOutcome> RosterRepository::loadRosterDetailed(
             value
         FROM roster_data
         WHERE class_id=?
+            AND (? IS NULL OR row_index < ?)
         ORDER BY row_index, col_index
     )");
 
     query.addBindValue(classId);
+    if (rowLimit)
+    {
+        query.addBindValue(*rowLimit);
+        query.addBindValue(*rowLimit);
+    }
+    else
+    {
+        query.addBindValue(QVariant());
+        query.addBindValue(QVariant());
+    }
 
     const auto loadedData = SqlQueryUtils::executePrepared(
         query,
@@ -723,6 +848,11 @@ Result<RosterReadOutcome> RosterRepository::loadRosterDetailed(
         }
         if (rowIndex > std::numeric_limits<int>::max())
         {
+            if (rowLimit)
+            {
+                outcome.hasRowsOutsideWindow = true;
+                continue;
+            }
             return std::unexpected(
                 QObject::tr(
                     "Loading roster data failed for %1: row index %2 exceeds the supported range."
@@ -730,6 +860,12 @@ Result<RosterReadOutcome> RosterRepository::loadRosterDetailed(
                 );
         }
         const int row = static_cast<int>(rowIndex);
+
+        if (rowLimit && row >= *rowLimit)
+        {
+            outcome.hasRowsOutsideWindow = true;
+            continue;
+        }
 
         if (
             query.value("col_index_storage_type").toString()

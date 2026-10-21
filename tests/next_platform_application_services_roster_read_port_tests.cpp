@@ -6,8 +6,10 @@
 #include "domain/models/roster.h"
 #include "next/application/roster_availability_batch_read_query.h"
 #include "next/application/roster_read_query.h"
+#include "next/application/roster_window_read_query.h"
 #include "next/platform/application_services_roster_availability_batch_read_port.h"
 #include "next/platform/application_services_roster_read_port.h"
+#include "next/platform/application_services_roster_window_read_port.h"
 
 #include <QSqlError>
 #include <QSqlQuery>
@@ -248,6 +250,10 @@ class NextPlatformApplicationServicesRosterReadPortTests final : public QObject
 private slots:
     void rejectsNonCanonicalIdsBeforeSessionAccess();
     void readsCompleteRawSnapshotWithoutUiRowLimit();
+    void readsBoundedWindowWithSparseRowsAndReportsTailRows();
+    void windowReadMissingParentReturnsRecoverableNotFound();
+    void windowReadRepositoryFailureReturnsTechnicalError();
+    void windowReadClosedStoreReturnsRecoverableNotFound();
     void rejectsOutOfRangeIntegerRosterWidth();
     void preservesNullAndBoundaryIntegerRosterWidths();
     void preservesNonIntegerTextWidthFallback();
@@ -349,6 +355,146 @@ readsCompleteRawSnapshotWithoutUiRowLimit()
     QVERIFY(result.value().rows[23][4].empty());
     QCOMPARE(result.value().rows[24][2], std::u16string(u"Middle 25"));
     QCOMPARE(result.value().rows[37][4], std::u16string(u"\uC218\uC5C5 \U0001F4DA"));
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+readsBoundedWindowWithSparseRowsAndReportsTailRows()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Bounded Roster Read Test")
+        );
+    QVERIFY(createdClass);
+    QVERIFY(seedRawRoster(
+        services.workspaceStore()->database(),
+        *createdClass
+        ));
+
+    const auto classId = Domain::ClassId::fromString(
+        std::to_string(*createdClass)
+        );
+    QVERIFY(classId);
+    Platform::ApplicationServicesRosterWindowReadPort port(services);
+    const auto result = Application::RosterWindowReadUseCase::execute(
+        {.classId = *classId},
+        port
+        );
+
+    QVERIFY2(
+        result,
+        qPrintable(result ? QString() : QString::fromStdString(result.error().message))
+        );
+    QVERIFY(result.value().hasRowsOutsideWindow);
+    QCOMPARE(result.value().roster.columns,
+        (std::vector<std::u16string>{
+            u"Korean", u"Winter", u"English", u"Autumn", u"\u5099\u8003"
+        }));
+    QCOMPARE(result.value().roster.columnWidths,
+        (std::vector<Application::RosterSnapshotColumnWidth>{
+            Application::RosterSnapshotColumnWidth{321},
+            Application::RosterSnapshotColumnWidth{222},
+            Application::RosterSnapshotColumnWidth{210},
+            Application::RosterSnapshotColumnWidth{333},
+            Application::RosterSnapshotColumnWidth{177}
+        }));
+    QCOMPARE(result.value().roster.rows.size(), std::size_t(25));
+    QCOMPARE(result.value().roster.rows[0][0],
+        std::u16string(u"\uAE40\uBBFC\uC9C0"));
+    QVERIFY(result.value().roster.rows[1][0].empty());
+    QCOMPARE(result.value().roster.rows[24][2],
+        std::u16string(u"Middle 25"));
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+windowReadMissingParentReturnsRecoverableNotFound()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Platform::ApplicationServicesRosterWindowReadPort port(services);
+    const auto result = Application::RosterWindowReadUseCase::execute(
+        {.classId = typedClassId(987654321)},
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(result.error().recoverable);
+    QVERIFY(result.error().message.find("not found") != std::string::npos);
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+windowReadRepositoryFailureReturnsTechnicalError()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Broken Bounded Roster Read Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(seedSparseRoster(
+        database,
+        *createdClass,
+        {QStringLiteral("English")},
+        {{0, 0, QStringLiteral("Student")}}
+        ));
+    QSqlQuery dropTable(database);
+    QVERIFY2(
+        dropTable.exec(QStringLiteral("DROP TABLE roster_data")),
+        qPrintable(dropTable.lastError().text())
+        );
+
+    Platform::ApplicationServicesRosterWindowReadPort port(services);
+    const auto result = Application::RosterWindowReadUseCase::execute(
+        {.classId = typedClassId(*createdClass)},
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(result.error().recoverable);
+    QVERIFY(!result.error().message.empty());
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+windowReadClosedStoreReturnsRecoverableNotFound()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Closed Bounded Roster Read Test")
+        );
+    QVERIFY(createdClass);
+
+    services.closeDatabase();
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(services.dataService());
+    QVERIFY(!services.dataService()->isOpen());
+
+    Platform::ApplicationServicesRosterWindowReadPort port(services);
+    const auto result = Application::RosterWindowReadUseCase::execute(
+        {.classId = typedClassId(*createdClass)},
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(result.error().recoverable);
+    QVERIFY(result.error().message.find("unavailable") != std::string::npos);
 }
 
 void NextPlatformApplicationServicesRosterReadPortTests::

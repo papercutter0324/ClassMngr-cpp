@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <expected>
 #include <functional>
+#include <optional>
 
 inline constexpr std::size_t kRosterRepositoryOutputMaxColumns = 128;
 inline constexpr std::size_t kRosterRepositoryOutputMaxRows = 4'096;
@@ -24,6 +25,13 @@ struct RosterReadOutcome final
 {
     Roster roster;
     bool parentMissing = false;
+};
+
+struct RosterWindowReadOutcome final
+{
+    Roster roster;
+    bool parentMissing = false;
+    bool hasRowsOutsideWindow = false;
 };
 
 class RosterRepository
@@ -153,6 +161,12 @@ public:
     [[nodiscard]] Result<RosterReadOutcome> loadRosterDetailed(
         int classId
         );
+    // Loads every ordered column and width, but materializes cells only for
+    // rows [0, rowLimit). Reports any persisted row outside that window.
+    [[nodiscard]] Result<RosterWindowReadOutcome> loadRosterWindowDetailed(
+        int classId,
+        int rowLimit
+        );
 
     // Reads only the first English/Korean name columns and preserves the
     // legacy materialized-row shape, including sparse rows caused by any
@@ -245,6 +259,10 @@ private:
     loadSpeakingEvaluationRosterNamesImpl(int classId, bool parentRooted);
     [[nodiscard]] Result<SubPrepStudentCountReadEntry>
     loadSubPrepStudentCountRecord(int classId);
+    [[nodiscard]] Result<RosterWindowReadOutcome> loadRosterDetailedImpl(
+        int classId,
+        std::optional<int> rowLimit
+        );
     [[nodiscard]] Result<QList<FullRosterReadRecord>> loadFullRostersImpl(
         const QList<int>& classIds,
         TemplatePrintBatchReadMetrics* templatePrintMetrics,

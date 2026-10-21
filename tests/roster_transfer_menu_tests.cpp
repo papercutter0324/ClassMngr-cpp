@@ -20,6 +20,7 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QLabel>
 #include <QMenu>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -445,6 +446,36 @@ bool addTeacher(
     return true;
 }
 
+bool insertRosterCell(
+    ApplicationServices& services,
+    const int classId,
+    const int rowIndex,
+    const int columnIndex,
+    const QString& value,
+    QString* error
+    )
+{
+    QSqlQuery insert(services.databaseSession()->database());
+    if (!insert.prepare(QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (?, ?, ?, ?)"
+            )))
+    {
+        *error = insert.lastError().text();
+        return false;
+    }
+    insert.addBindValue(classId);
+    insert.addBindValue(rowIndex);
+    insert.addBindValue(columnIndex);
+    insert.addBindValue(value);
+    if (!insert.exec())
+    {
+        *error = insert.lastError().text();
+        return false;
+    }
+    return true;
+}
+
 }
 
 class RosterTransferMenuTests final : public QObject
@@ -461,6 +492,8 @@ private slots:
     void fullSameGradeTargetIsLabeledAndDisabled();
     void targetRosterReadFailureBehavesLikeEmptyRoster();
     void targetRosterCellReadFailureBehavesLikeEmptyRoster();
+    void sourceWindowOverflowBlocksTransferMenu();
+    void targetWindowOverflowBlocksTransferWithoutWriting();
     void menuTransferUsesFreshTargetRosterAndPreservesCustomColumnsAndWidths();
     void rejectedTargetQuestionableNameConfirmationIsSilent();
     void applyFailureKeepsSourceAndAutosaveState_data();
@@ -967,6 +1000,173 @@ targetRosterCellReadFailureBehavesLikeEmptyRoster()
         })
         );
     QCOMPARE(menu.enabled, QList<bool>({true}));
+}
+
+void RosterTransferMenuTests::sourceWindowOverflowBlocksTransferMenu()
+{
+    RosterTransferMenuFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int sourceId = 0;
+    int targetId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Overflow source"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Perseus"),
+                 -1,
+                 &sourceId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Transfer target"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 -1,
+                 &targetId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY(targetId > 0);
+    QVERIFY2(fixture.addRosterRow(sourceId, &error), qPrintable(error));
+    QVERIFY2(insertRosterCell(
+                 fixture.services,
+                 sourceId,
+                 37,
+                 0,
+                 QStringLiteral("Source tail marker"),
+                 &error
+                 ), qPrintable(error));
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Overflow source"), sourceId));
+    editor.show();
+    QApplication::processEvents();
+    auto* const table = editor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    auto* const failureMessage = editor.findChild<QLabel*>(
+        QStringLiteral("rosterLoadFailureMessage")
+        );
+    QVERIFY(table);
+    QVERIFY(failureMessage);
+    QVERIFY(!table->isEnabled());
+    QVERIFY(failureMessage->text().contains(
+        QStringLiteral("saved rows after row 25")
+        ));
+
+    const TransferMenuSnapshot menu = openTransferMenu(editor, table);
+    QVERIFY(menu.invocationSucceeded);
+    QVERIFY(!menu.transferMenuFound);
+
+    const auto storedSource = fixture.services.rosterService()->roster(sourceId);
+    QVERIFY(storedSource);
+    QCOMPARE(storedSource->rows.size(), 38);
+    QCOMPARE(storedSource->rows.at(37).at(0),
+        QStringLiteral("Source tail marker"));
+}
+
+void RosterTransferMenuTests::targetWindowOverflowBlocksTransferWithoutWriting()
+{
+    RosterTransferMenuFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int sourceId = 0;
+    int targetId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Transfer source"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Perseus"),
+                 -1,
+                 &sourceId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Overflow target"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 -1,
+                 &targetId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.addRosterRow(sourceId, &error), qPrintable(error));
+
+    Roster targetAfterMenuSnapshot;
+    targetAfterMenuSnapshot.columns = Roster::BaseColumns;
+    targetAfterMenuSnapshot.rows = {{
+        QStringLiteral("Existing target"),
+        QString::fromUtf16(u"\uBC15\uC9C0\uBBFC"),
+        QString(), QString(), QString(), QString()
+    }};
+    QVERIFY(fixture.services.rosterService()->saveRoster(
+        targetId,
+        targetAfterMenuSnapshot
+        ));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Transfer source"), sourceId));
+    editor.show();
+    QApplication::processEvents();
+    auto* const table = editor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    QVERIFY(table);
+
+    const QString targetLabel = displayLabel(
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus")
+        );
+    bool tailMarkerInserted = false;
+    QString tailMarkerError;
+    const TransferMenuActionSnapshot action = triggerTransferMenuAction(
+        editor,
+        table,
+        targetLabel,
+        fixture.services,
+        targetId,
+        targetAfterMenuSnapshot,
+        [&]
+        {
+            tailMarkerInserted = insertRosterCell(
+                fixture.services,
+                targetId,
+                37,
+                0,
+                QStringLiteral("Target tail marker"),
+                &tailMarkerError
+                );
+        }
+        );
+
+    QVERIFY(action.invocationSucceeded);
+    QVERIFY(action.transferMenuFound);
+    QVERIFY(action.targetActionFound);
+    QVERIFY(action.targetActionEnabled);
+    QVERIFY(action.targetActionTriggered);
+    QVERIFY(tailMarkerInserted);
+    QVERIFY2(tailMarkerError.isEmpty(), qPrintable(tailMarkerError));
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title,
+        QStringLiteral("Cannot Transfer Student"));
+    QVERIFY(prompts.messages.constFirst().message.contains(
+        QStringLiteral("beyond row 25")
+        ));
+    QVERIFY(prompts.confirmations.isEmpty());
+
+    const auto sourceAfter = fixture.services.rosterService()->roster(sourceId);
+    const auto targetAfter = fixture.services.rosterService()->roster(targetId);
+    QVERIFY(sourceAfter);
+    QVERIFY(targetAfter);
+    QCOMPARE(sourceAfter->rows.size(), 1);
+    QCOMPARE(sourceAfter->rows.at(0).at(0), QStringLiteral("Student"));
+    QCOMPARE(targetAfter->rows.size(), 38);
+    QCOMPARE(targetAfter->rows.at(0).at(0), QStringLiteral("Existing Target"));
+    QCOMPARE(targetAfter->rows.at(0).at(1),
+        QString::fromUtf16(u"\uBC15\uC9C0\uBBFC"));
+    QCOMPARE(targetAfter->rows.at(37).at(0),
+        QStringLiteral("Target tail marker"));
 }
 
 void RosterTransferMenuTests::

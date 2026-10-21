@@ -38,8 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-22
-- Current note: F1318–F1325 are complete; F1326 selected-class roster read is
-  next (window scope discovery required).
+- Current note: F1318–F1326 are complete. F1327 selected-roster saving is
+  current; it must preserve stored rows beyond the 25-row editor window before
+  removing F1326's overflow write guard.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -126,6 +127,14 @@ Repositories must:
 - Report structured errors.
 - Avoid returning unnecessary columns or related records.
 - Avoid copying large collections repeatedly.
+
+For the selected roster editor, F1326 adds a bounded read of rows 0–24 while
+preserving the existing generic full-roster read behavior for other consumers.
+Keep ordered dynamic column names and widths. When stored rows extend beyond
+the editor window, prevent whole-roster saves and row transfers until F1327
+adds tail-preserving writes. Do not infer a total editor-column cap from
+output-specific limits; the editor still reads its complete column schema, so
+column-count memory remains a separate, unbounded dimension.
 
 For Sub Prep, the repository boundary must support a visible-class summary
 projection, teacher data shared by teacher ID, aggregated roster counts, and

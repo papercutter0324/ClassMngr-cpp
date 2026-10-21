@@ -9,9 +9,9 @@
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
 #include "features/roster/ui/roster_save_validation_adapter.h"
-#include "next/application/roster_read_query.h"
+#include "next/application/roster_window_read_query.h"
 #include "next/application/roster_save_use_case.h"
-#include "next/platform/application_services_roster_read_port.h"
+#include "next/platform/application_services_roster_window_read_port.h"
 #include "next/platform/application_services_roster_save_port.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/pages/autosave_coordinator.h"
@@ -245,6 +245,7 @@ void RosterEditorWidget::loadClass(
 {
     clearRosterSaveFailure();
     m_rosterReadFailed = false;
+    m_rosterOverflow = false;
     if (m_rosterLoadFailureMessage)
     {
         m_rosterLoadFailureMessage->clear();
@@ -266,19 +267,29 @@ void RosterEditorWidget::loadClass(
                 );
         if (classId)
         {
-            const ClassMngr::Next::Application::RosterReadQuery query{
+            const ClassMngr::Next::Application::RosterWindowReadQuery query{
                 .classId = *classId
             };
             const ClassMngr::Next::Platform::
-                ApplicationServicesRosterReadPort port(*m_services);
-            const ClassMngr::Next::Application::RosterReadResult loaded =
-                ClassMngr::Next::Application::RosterReadUseCase::execute(
+                ApplicationServicesRosterWindowReadPort port(*m_services);
+            const ClassMngr::Next::Application::RosterWindowReadResult loaded =
+                ClassMngr::Next::Application::RosterWindowReadUseCase::execute(
                     query,
                     port
                     );
             if (loaded)
             {
-                roster = rosterFromApplicationSnapshot(loaded.value());
+                roster = rosterFromApplicationSnapshot(loaded.value().roster);
+                if (loaded.value().hasRowsOutsideWindow)
+                {
+                    m_rosterOverflow = true;
+                    m_rosterReadFailed = true;
+                    rosterReadFailureDetail = tr(
+                        "This roster contains saved rows after row 25. "
+                        "Editing, saving, printing, and Save As are disabled "
+                        "because those actions could remove the additional rows."
+                        );
+                }
             }
             else
             {
@@ -324,14 +335,22 @@ void RosterEditorWidget::loadClass(
     {
         if (m_rosterLoadFailureMessage)
         {
-            QString message = tr(
-                "The roster could not be loaded. Editing, saving, printing, "
-                "and Save As are disabled until a successful reload."
-                );
-            if (!rosterReadFailureDetail.isEmpty())
+            QString message;
+            if (m_rosterOverflow)
             {
-                message.append(QLatin1Char('\n'));
-                message.append(rosterReadFailureDetail);
+                message = rosterReadFailureDetail;
+            }
+            else
+            {
+                message = tr(
+                    "The roster could not be loaded. Editing, saving, printing, "
+                    "and Save As are disabled until a successful reload."
+                    );
+                if (!rosterReadFailureDetail.isEmpty())
+                {
+                    message.append(QLatin1Char('\n'));
+                    message.append(rosterReadFailureDetail);
+                }
             }
             m_rosterLoadFailureMessage->setText(message);
             m_rosterLoadFailureMessage->show();

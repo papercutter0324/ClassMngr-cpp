@@ -1,4 +1,5 @@
 #include "next/application/roster_row_transfer_use_case.h"
+#include "next/application/roster_window_read_query.h"
 
 #include <array>
 #include <cstdio>
@@ -52,6 +53,22 @@ struct Ports final : RosterReadPort, RosterRowTransferSavePort
         saved = request;
         return saveError ? Domain::Result<void>::failure(*saveError)
                          : Domain::Result<void>::success();
+    }
+};
+
+struct WindowPort final : RosterWindowReadPort
+{
+    RosterWindowReadSnapshot snapshot;
+    mutable int callCount = 0;
+    mutable std::optional<Domain::ClassId> readId;
+
+    RosterWindowReadResult readRosterWindow(
+        const RosterWindowReadQuery& query
+        ) const override
+    {
+        ++callCount;
+        readId = query.classId;
+        return RosterWindowReadResult::success(snapshot);
     }
 };
 
@@ -295,6 +312,38 @@ bool invalidTargetSnapshotDoesNotReachSave()
         && req.sourceRoster == sourceBefore && ports.target == targetBefore;
 }
 
+bool targetWindowOverflowBlocksTransferBeforeSave()
+{
+    const auto req = request();
+    Ports savePort;
+    WindowPort windowPort;
+    windowPort.snapshot.roster = {
+        .columns = base,
+        .columnWidths = std::vector<RosterSnapshotColumnWidth>(
+            base.size(), RosterSnapshotColumnWidth{100}
+            ),
+        .rows = {{u"Existing", u"\uBC15\uC9C0\uBBFC"}}
+    };
+    windowPort.snapshot.hasRowsOutsideWindow = true;
+    RosterWindowAsRosterReadPort readPort(windowPort);
+
+    const auto result = RosterRowTransferUseCase::execute(
+        req,
+        readPort,
+        savePort,
+        equals
+        );
+    const auto* error = std::get_if<Domain::OperationError>(&result);
+    return error
+        && error->code == Domain::ErrorCode::Validation
+        && !error->recoverable
+        && error->message.find("beyond row 25") != std::string::npos
+        && windowPort.callCount == 1
+        && windowPort.readId == req.targetClassId
+        && savePort.calls.empty()
+        && !savePort.saved;
+}
+
 bool emptyTargetUsesCanonicalBaseAndRowZero()
 {
     auto req = request();
@@ -471,6 +520,7 @@ int main()
         {"invalid IDs",invalidIdsPreventReadAndSave},
         {"maximum class ID forwarding",maximumClassIdForwardsThroughReadAndSave},
         {"invalid target snapshot",invalidTargetSnapshotDoesNotReachSave},
+        {"target window overflow blocks transfer",targetWindowOverflowBlocksTransferBeforeSave},
         {"empty target base columns and row zero",emptyTargetUsesCanonicalBaseAndRowZero},
         {"warning-only roster preparation",warningOnlySnapshotPreparationStillSaves},
         {"rejected target name lengths cancel before saving",rejectedTargetQuestionableKoreanLengthCancelsBeforeSave},

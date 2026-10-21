@@ -264,6 +264,7 @@ private slots:
     void literalLeadingBomInNameRemainsInvalid();
     void failedRosterSaveKeepsTestingClassSelection();
     void loadClassPreservesModelNormalizationWidthsAndCleanState();
+    void overflowingRosterWindowBlocksEditingAndSavePreservesTail();
     void emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities();
     void malformedReadBlocksReplacementAndRecovers();
 };
@@ -1472,6 +1473,122 @@ loadClassPreservesModelNormalizationWidthsAndCleanState()
     QVERIFY(!editor.hasUnsavedChanges());
     QVERIFY(editor.outputCapabilities().printEnabled);
     QVERIFY(editor.outputCapabilities().saveAsEnabled);
+}
+
+void RosterEditorWidgetSaveTests::
+overflowingRosterWindowBlocksEditingAndSavePreservesTail()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    Roster stored;
+    stored.columns = Roster::BaseColumns;
+    stored.columns[5] = QStringLiteral("Autumn");
+    stored.columns.append(QStringLiteral("Advisory"));
+    stored.columnWidths = {211, 143, 166, 167, 168, 169, 242};
+    QStringList firstRow(7, QString());
+    firstRow[0] = QStringLiteral("Stored student");
+    firstRow[1] = QStringLiteral("\uAE40\uBBFC\uC9C0");
+    firstRow[6] = QStringLiteral("Keep this note");
+    stored.rows = {firstRow};
+    QVERIFY(fixture.services.rosterService()->saveRoster(
+        fixture.classId,
+        stored
+        ));
+
+    QSqlQuery insertTail(fixture.services.databaseSession()->database());
+    QVERIFY2(insertTail.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, ?, ?, ?)"
+        )), qPrintable(insertTail.lastError().text()));
+    const auto insertCell = [&insertTail, &fixture](
+        const int row,
+        const QString& value
+        )
+    {
+        insertTail.bindValue(0, fixture.classId);
+        insertTail.bindValue(1, row);
+        insertTail.bindValue(2, 6);
+        insertTail.bindValue(3, value);
+        return insertTail.exec();
+    };
+    QVERIFY2(
+        insertCell(24, QStringLiteral("Visible sparse row")),
+        qPrintable(insertTail.lastError().text())
+        );
+    QVERIFY2(
+        insertCell(37, QStringLiteral("High-index tail marker")),
+        qPrintable(insertTail.lastError().text())
+        );
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+    RosterEditorWidget editor(&fixture.services);
+    editor.setSaveMode(SaveMode::Manual);
+    editor.loadClass(Classroom(QStringLiteral("Overflowing roster"), fixture.classId));
+
+    auto* const model = editor.findChild<RosterModel*>();
+    auto* const table = editor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    auto* const failureMessage = editor.findChild<QLabel*>(
+        QStringLiteral("rosterLoadFailureMessage")
+        );
+    auto* const autosave = editor.findChild<AutosaveCoordinator*>();
+    auto* const autosaveTimer = autosave
+        ? autosave->findChild<QTimer*>()
+        : nullptr;
+    QPushButton* const saveButton = findSaveButton(editor);
+    QVERIFY(model);
+    QVERIFY(table);
+    QVERIFY(failureMessage);
+    QVERIFY(autosave);
+    QVERIFY(autosaveTimer);
+    QVERIFY(saveButton);
+
+    QCOMPARE(model->rowCount(), 25);
+    QCOMPARE(model->columnName(5), QStringLiteral("Fall"));
+    QCOMPARE(model->columnName(6), QStringLiteral("Advisory"));
+    QCOMPARE(model->data(model->index(24, 6)).toString(),
+        QStringLiteral("Visible sparse row"));
+    QCOMPARE(table->columnWidth(5), 169);
+    QCOMPARE(table->columnWidth(6), 242);
+    QVERIFY(!table->isEnabled());
+    QVERIFY(!editor.outputCapabilities().printEnabled);
+    QVERIFY(!editor.outputCapabilities().saveAsEnabled);
+    QVERIFY(!failureMessage->isHidden());
+    QVERIFY(failureMessage->text().contains(
+        QStringLiteral("saved rows after row 25")
+        ));
+    QVERIFY(!autosave->isSaveAvailable());
+    QVERIFY(!saveButton->isEnabled());
+
+    const int englishColumn = columnByName(model, QStringLiteral("English"));
+    QVERIFY(englishColumn >= 0);
+    QVERIFY(model->setData(
+        model->index(0, englishColumn),
+        QStringLiteral("Unsaved edit"),
+        Qt::EditRole
+        ));
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(!autosave->isSaveAvailable());
+    QVERIFY(!autosaveTimer->isActive());
+
+    editor.saveData();
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(prompts.messages.isEmpty());
+
+    const auto persisted = fixture.services.rosterService()->roster(
+        fixture.classId
+        );
+    QVERIFY(persisted);
+    QCOMPARE(persisted->rows.size(), 38);
+    QCOMPARE(persisted->rows.at(0).at(0), QStringLiteral("Stored Student"));
+    QCOMPARE(persisted->rows.at(24).at(6),
+        QStringLiteral("Visible sparse row"));
+    QCOMPARE(persisted->rows.at(37).at(6),
+        QStringLiteral("High-index tail marker"));
 }
 
 void RosterEditorWidgetSaveTests::

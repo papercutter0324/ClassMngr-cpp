@@ -68,6 +68,34 @@ ctest --test-dir build/macos-clang-debug -R '^ClassMngrNextPlatformApplicationSe
 cmake --build build/macos-clang-debug --target ClassMngr
 ```
 
+## F1326 — Selected-class roster window read — 2026-10-22
+
+Added a separate selected-roster window read for rows `[0, 25)`. It keeps all
+ordered column names and widths, reports stored rows outside the window, and
+does not expand the row vector to a high sparse index. The existing generic
+roster read remains a full snapshot, including its 38-row parity case. When
+tail rows exist, the editor explains the condition and disables editing,
+autosave, manual save, printing, Save As, and source transfer. Row transfer
+reads the target through the bounded path and refuses to rewrite a target with
+tail rows. F1327 will replace this temporary guard with tail-preserving writes.
+
+Focused coverage checks bounded sparse reads, dynamic column ordering and
+widths, the full 38-row read, overflow protection for editor save and both
+transfer sides, and the new window port's missing-parent, closed-store, and
+repository-error mappings. The executor built the focused targets and
+`ClassMngr`; an independent Tester rebuilt the platform port and reran the
+focused CTests: **4/4 passed**. `git diff --check` passed. Ninja emitted a
+premature-end-of-file warning during builds, recovered, and completed. These
+were incremental checks in the existing macOS Debug tree; no full suite or
+cross-platform build was run. The editor's total column count remains
+unbounded because no compatible editor cap is established; output-specific
+limits were not reused as an editor policy.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesRosterReadPortTests ClassMngrNextApplicationRosterRowTransferUseCaseTests ClassMngrRosterEditorWidgetSaveTests ClassMngrRosterTransferMenuTests ClassMngr
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextPlatformApplicationServicesRosterReadPortTests|ClassMngrNextApplicationRosterRowTransferUseCaseTests|ClassMngrRosterEditorWidgetSaveTests|ClassMngrRosterTransferMenuTests)$'
+```
+
 ## F1321 — Teacher-profile persistence-port migration — 2026-10-22
 
 Moved the existing teacher-profile read and edit persistence adapters and

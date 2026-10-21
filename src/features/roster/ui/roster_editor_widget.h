@@ -167,6 +167,7 @@ private:
     Classroom m_classroom;
     bool m_loadingRoster = false;
     bool m_rosterReadFailed = false;
+    bool m_rosterOverflow = false;
     bool m_widthsDirty = false;
     bool m_resolvingDuplicateName = false;
     bool m_removingRosterRow = false;

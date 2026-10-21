@@ -149,13 +149,16 @@ void RosterEditorWidget::updateActions()
         return;
     }
 
-    m_autosave->setSaveAvailable(m_classroom.id > 0);
+    m_autosave->setSaveAvailable(
+        m_classroom.id > 0 && !m_rosterReadFailed
+        );
     m_autosave->setSaveMode(m_autosave->saveMode());
 
     QString reason;
 
     m_removeColumnButton->setEnabled(
-        m_model
+        !m_rosterReadFailed
+        && m_model
         && m_model->canRemoveColumn(
             m_table->currentIndex().column(),
             &reason
@@ -164,7 +167,9 @@ void RosterEditorWidget::updateActions()
 
     if (m_koreanKeyboardButton)
     {
-        m_koreanKeyboardButton->setEnabled(m_classroom.id > 0);
+        m_koreanKeyboardButton->setEnabled(
+            m_classroom.id > 0 && !m_rosterReadFailed
+            );
     }
 }
 

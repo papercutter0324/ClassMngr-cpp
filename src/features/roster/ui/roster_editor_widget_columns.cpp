@@ -10,6 +10,11 @@
 
 void RosterEditorWidget::addColumn()
 {
+    if (m_rosterReadFailed)
+    {
+        return;
+    }
+
     bool accepted = false;
     const QString name = QInputDialog::getText(
         this,
@@ -50,6 +55,11 @@ void RosterEditorWidget::addColumn()
 
 void RosterEditorWidget::removeColumn()
 {
+    if (m_rosterReadFailed)
+    {
+        return;
+    }
+
     const QModelIndex current = m_table->currentIndex();
     QString reason;
 

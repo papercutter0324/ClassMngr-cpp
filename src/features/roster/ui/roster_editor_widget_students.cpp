@@ -12,7 +12,7 @@ void RosterEditorWidget::moveStudentRow(
     int destinationRow
     )
 {
-    if (!m_model || !m_table)
+    if (m_rosterReadFailed || !m_model || !m_table)
     {
         return;
     }
@@ -200,7 +200,7 @@ bool RosterEditorWidget::removeRosterRow(
     int row
     )
 {
-    if (!m_model || !m_table)
+    if (m_rosterReadFailed || !m_model || !m_table)
     {
         return false;
     }
