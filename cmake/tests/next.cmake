@@ -187,6 +187,37 @@ add_test(
     COMMAND ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests
 )
 
+# Class Analytics grade attention remains independent of Qt and the feature layer.
+add_executable(
+    ClassMngrNextApplicationClassAnalyticsGradeAttentionPolicyTests
+    tests/next_application_class_analytics_grade_attention_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationClassAnalyticsGradeAttentionPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationClassAnalyticsGradeAttentionPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationClassAnalyticsGradeAttentionPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationClassAnalyticsGradeAttentionPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationClassAnalyticsGradeAttentionPolicyTests
+    COMMAND ClassMngrNextApplicationClassAnalyticsGradeAttentionPolicyTests
+)
+
 # Strongest/focus criterion selection remains Qt-free and preserves ties.
 add_executable(
     ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests

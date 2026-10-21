@@ -10,6 +10,8 @@ class ClassAnalyticsRankingModelTests : public QObject
 
 private slots:
     void exposesRankingColumnsAndDelegateRoles();
+    void typedAttentionPolicyOverridesGradeLabelAndOnlyAffectsAverage();
+    void missingTypedAttentionKeepsGradeLabelFallback();
     void updatesHeadersAndRowsWithModelReset();
 };
 
@@ -62,6 +64,16 @@ void ClassAnalyticsRankingModelTests::exposesRankingColumnsAndDelegateRoles()
             AnalyticsRankingRoles::NeedsAttention
             ).toBool()
         );
+    for (int column = 0; column < model.columnCount(); ++column)
+    {
+        QCOMPARE(
+            model.data(
+                model.index(0, column),
+                AnalyticsRankingRoles::NeedsAttention
+                ).toBool(),
+            column == ClassAnalyticsRankingModel::AverageColumn
+            );
+    }
     QCOMPARE(
         model.data(
             model.index(0, ClassAnalyticsRankingModel::GrammarColumn),
@@ -83,6 +95,76 @@ void ClassAnalyticsRankingModelTests::exposesRankingColumnsAndDelegateRoles()
             ).toInt(),
         static_cast<int>(Qt::AlignCenter)
         );
+}
+
+void ClassAnalyticsRankingModelTests::
+typedAttentionPolicyOverridesGradeLabelAndOnlyAffectsAverage()
+{
+    ClassAnalyticsRankingModel model;
+    SpeakingAnalytics::StudentRank typedAttention;
+    typedAttention.overallLetter = QStringLiteral("A+");
+    typedAttention.gradeNeedsAttention = true;
+    SpeakingAnalytics::StudentRank typedNoAttention;
+    typedNoAttention.overallLetter = QStringLiteral("C");
+    typedNoAttention.gradeNeedsAttention = false;
+    model.setRankings({typedAttention, typedNoAttention});
+
+    QVERIFY(
+        model.data(
+            model.index(0, ClassAnalyticsRankingModel::AverageColumn),
+            AnalyticsRankingRoles::NeedsAttention
+            ).toBool()
+        );
+    QVERIFY(
+        !model.data(
+            model.index(1, ClassAnalyticsRankingModel::AverageColumn),
+            AnalyticsRankingRoles::NeedsAttention
+            ).toBool()
+        );
+    for (int row = 0; row < model.rowCount(); ++row)
+    {
+        for (int column = 0; column < model.columnCount(); ++column)
+        {
+            if (column == ClassAnalyticsRankingModel::AverageColumn)
+            {
+                continue;
+            }
+
+            QVERIFY(
+                !model.data(
+                    model.index(row, column),
+                    AnalyticsRankingRoles::NeedsAttention
+                    ).toBool()
+                );
+        }
+    }
+}
+
+void ClassAnalyticsRankingModelTests::
+missingTypedAttentionKeepsGradeLabelFallback()
+{
+    ClassAnalyticsRankingModel model;
+    SpeakingAnalytics::StudentRank emptyGrade;
+    emptyGrade.overallLetter = QString();
+    SpeakingAnalytics::StudentRank unrecognizedGrade;
+    unrecognizedGrade.overallLetter = QStringLiteral("not a grade");
+    model.setRankings({emptyGrade, unrecognizedGrade});
+
+    for (int row = 0; row < model.rowCount(); ++row)
+    {
+        QVERIFY(
+            model.data(
+                model.index(row, ClassAnalyticsRankingModel::AverageColumn),
+                AnalyticsRankingRoles::NeedsAttention
+                ).toBool()
+            );
+        QVERIFY(
+            !model.data(
+                model.index(row, ClassAnalyticsRankingModel::GrammarColumn),
+                AnalyticsRankingRoles::NeedsAttention
+                ).toBool()
+            );
+    }
 }
 
 void ClassAnalyticsRankingModelTests::updatesHeadersAndRowsWithModelReset()
@@ -110,6 +192,18 @@ void ClassAnalyticsRankingModelTests::updatesHeadersAndRowsWithModelReset()
     second.overallLetter = QStringLiteral("A+");
     model.setRankings({first, second});
     QCOMPARE(model.rowCount(), 2);
+    QVERIFY(
+        !model.data(
+            model.index(0, ClassAnalyticsRankingModel::AverageColumn),
+            AnalyticsRankingRoles::NeedsAttention
+            ).toBool()
+        );
+    QVERIFY(
+        !model.data(
+            model.index(1, ClassAnalyticsRankingModel::AverageColumn),
+            AnalyticsRankingRoles::NeedsAttention
+            ).toBool()
+        );
 
     model.setRankings({});
     QCOMPARE(model.rowCount(), 0);

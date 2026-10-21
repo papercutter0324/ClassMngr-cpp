@@ -169,6 +169,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/class_analytics_average_thousandths.h
     src/next/application/class_analytics_dashboard_read_port.h
     src/next/application/class_analytics_criterion_extrema_policy.h
+    src/next/application/class_analytics_grade_attention_policy.h
     src/next/application/class_analytics_criterion_student_count.h
     src/next/application/class_analytics_numeric_policy.h
     src/next/application/class_analytics_ranking_order_policy.h

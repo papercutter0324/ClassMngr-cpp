@@ -1,6 +1,8 @@
 #include "core/application_services.h"
 #include "features/classes/ui/class_analytics_charts.h"
 #include "features/classes/ui/class_analytics_page.h"
+#include "features/classes/ui/class_analytics_ranking_header.h"
+#include "features/classes/ui/class_analytics_ranking_model.h"
 #include "next/application/class_analytics_dashboard_read_port.h"
 
 #include <QComboBox>
@@ -12,6 +14,7 @@
 #include <QLabel>
 #include <QLocale>
 #include <QPainter>
+#include <QTableView>
 #include <QtTest/QtTest>
 
 #include <array>
@@ -291,6 +294,7 @@ class ClassAnalyticsPageReadParityTests final : public QObject
 private slots:
     void visibleSummaryShapeAndYearToDateMatchFixture();
     void visibleAverageUsesLocaleWithOneDecimal();
+    void rankingAttentionUsesTypedGradesAndRetainsPartialRank();
     void noScoredDataShowsEmptyStateAndBlankCharts();
 };
 
@@ -387,6 +391,149 @@ void ClassAnalyticsPageReadParityTests::visibleAverageUsesLocaleWithOneDecimal()
 
     QCOMPARE(visibleLabelsWithText(page, QStringLiteral("A · 3,5")).size(), 1);
     QCOMPARE(visibleLabelsWithText(page, QStringLiteral("A · 3,50")).size(), 0);
+}
+
+void ClassAnalyticsPageReadParityTests::
+rankingAttentionUsesTypedGradesAndRetainsPartialRank()
+{
+    DefaultLocaleScope localeScope;
+    ApplicationServices services;
+    InMemoryDashboardReadPort readPort;
+    readPort.roster = {
+        .rowCount = ClassAnalyticsRosterRowCount{6},
+        .hasEnglishColumn = true,
+        .hasKoreanColumn = false,
+        .englishNames = {
+            u"C Student",
+            u"B Student",
+            u"B Plus Student",
+            u"A Student",
+            u"A Plus Student",
+            u"Partial B Student"
+        }
+    };
+    readPort.evaluations[static_cast<std::size_t>(
+        ClassAnalyticsEvaluation::Winter)] = {
+        row(u"C Student", u"C"),
+        row(u"B Student", u"B"),
+        row(u"B Plus Student", u"B+"),
+        row(u"A Student", u"A"),
+        row(u"A Plus Student", u"A+")
+    };
+    ClassAnalyticsEvaluationRow partialRow;
+    partialRow.englishName = u"Partial B Student";
+    partialRow.scores[0] = u"B";
+    readPort.evaluations[static_cast<std::size_t>(
+        ClassAnalyticsEvaluation::Winter)].push_back(partialRow);
+
+    const TestNameSemantics names;
+    ClassAnalyticsPage page(
+        &services,
+        { .readPort = &readPort, .nameSemantics = &names });
+    page.resize(1100, 1000);
+    page.loadClass(Classroom(QStringLiteral("Typed Grade Attention"), 45));
+    page.show();
+    QCoreApplication::processEvents();
+
+    QTableView* const rankingTable = page.findChild<QTableView*>(
+        QStringLiteral("classAnalyticsRankingTable")
+        );
+    QVERIFY(rankingTable);
+    auto* const model = static_cast<ClassAnalyticsRankingModel*>(
+        rankingTable->model()
+        );
+    QVERIFY(model);
+    QCOMPARE(model->rowCount(), 6);
+    QCOMPARE(visibleLabelsWithText(page, QStringLiteral("5 / 6")).size(), 1);
+
+    const auto rowForStudent = [model](const QString& englishName)
+    {
+        for (int rowIndex = 0; rowIndex < model->rowCount(); ++rowIndex)
+        {
+            if (model->data(
+                    model->index(
+                        rowIndex,
+                        ClassAnalyticsRankingModel::EnglishNameColumn
+                        )
+                    ).toString() == englishName)
+            {
+                return rowIndex;
+            }
+        }
+
+        return -1;
+    };
+    struct GradeAttentionCase
+    {
+        QString student;
+        QString grade;
+        bool needsAttention;
+    };
+    const QList<GradeAttentionCase> gradeCases{
+        {
+            QStringLiteral("C Student"),
+            QStringLiteral("C"),
+            true
+        },
+        {
+            QStringLiteral("B Student"),
+            QStringLiteral("B"),
+            true
+        },
+        {
+            QStringLiteral("B Plus Student"),
+            QStringLiteral("B+"),
+            false
+        },
+        {
+            QStringLiteral("A Student"),
+            QStringLiteral("A"),
+            false
+        },
+        {
+            QStringLiteral("A Plus Student"),
+            QStringLiteral("A+"),
+            false
+        },
+        {
+            QStringLiteral("Partial B Student"),
+            QStringLiteral("B"),
+            true
+        }
+    };
+
+    for (const GradeAttentionCase& gradeCase : gradeCases)
+    {
+        const int rowIndex = rowForStudent(gradeCase.student);
+        QVERIFY2(rowIndex >= 0, qPrintable(gradeCase.student));
+        const QModelIndex averageIndex = model->index(
+            rowIndex,
+            ClassAnalyticsRankingModel::AverageColumn
+            );
+        QCOMPARE(
+            model->data(averageIndex, AnalyticsRankingRoles::Grade).toString(),
+            gradeCase.grade
+            );
+        QCOMPARE(
+            model->data(
+                averageIndex,
+                AnalyticsRankingRoles::NeedsAttention
+                ).toBool(),
+            gradeCase.needsAttention
+            );
+
+        for (int column = 0; column < model->columnCount(); ++column)
+        {
+            QCOMPARE(
+                model->data(
+                    model->index(rowIndex, column),
+                    AnalyticsRankingRoles::NeedsAttention
+                    ).toBool(),
+                column == ClassAnalyticsRankingModel::AverageColumn
+                    && gradeCase.needsAttention
+                );
+        }
+    }
 }
 
 void ClassAnalyticsPageReadParityTests::

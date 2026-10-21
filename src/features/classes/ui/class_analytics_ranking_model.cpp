@@ -82,8 +82,17 @@ QVariant ClassAnalyticsRankingModel::data(
 
     if (role == AnalyticsRankingRoles::NeedsAttention)
     {
-        return column == AverageColumn
-            && SpeakingAnalytics::gradeToNumber(student.overallLetter) <= 2;
+        if (column != AverageColumn)
+        {
+            return false;
+        }
+
+        if (student.gradeNeedsAttention.has_value())
+        {
+            return *student.gradeNeedsAttention;
+        }
+
+        return SpeakingAnalytics::gradeToNumber(student.overallLetter) <= 2;
     }
 
     if (role == AnalyticsRankingRoles::Grade)

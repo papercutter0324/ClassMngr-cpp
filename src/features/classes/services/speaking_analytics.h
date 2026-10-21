@@ -43,6 +43,7 @@ struct StudentRank
     QString koreanName;
     double overall3 = 0.0;
     QString overallLetter;
+    std::optional<bool> gradeNeedsAttention;
     QList<QString> criterionLetters;
     bool fullyScored = false;
 };

@@ -9,6 +9,7 @@
 #include "features/classes/ui/class_analytics_ranking_header.h"
 #include "features/classes/ui/class_analytics_ranking_model.h"
 #include "next/application/class_analytics_dashboard_read_query.h"
+#include "next/application/class_analytics_grade_attention_policy.h"
 #include "next/platform/application_services_class_analytics_dashboard_read_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/pages/scrollable_page_body.h"
@@ -124,6 +125,10 @@ SpeakingAnalytics::Snapshot toUiSnapshot(
         rank.englishName = toQString(sourceRank.englishName);
         rank.koreanName = toQString(sourceRank.koreanName);
         rank.overall3 = sourceRank.overall3.toDouble();
+        rank.gradeNeedsAttention =
+            ApplicationAnalytics::classAnalyticsGradeNeedsAttention(
+                sourceRank.overallLetter
+                );
         rank.overallLetter = toQString(sourceRank.overallLetter);
         for (const auto& letter : sourceRank.criterionLetters)
             rank.criterionLetters.append(toQString(letter));
