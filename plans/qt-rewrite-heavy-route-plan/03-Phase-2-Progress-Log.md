@@ -63681,3 +63681,38 @@ no other slices, and no leads beyond the 20-candidate limit; no candidate is
 queued. The next Phase 2 action is to review and execute remaining open
 exit-gate evidence. Gate 1 and Gate 2 remain Partial, the Phase 2 exit gate
 remains Open, and F629's post-F1303 Windows x64 evidence remains outstanding.
+
+### F1312 Class Details Unicode validation policy complete; Batch539 in progress - 2026-10-22
+
+F1312 completed locally at implementation commit `6d2db847` (`F1312: match
+Unicode class detail validation`). It injects the Qt
+`QStringView::compare(..., Qt::CaseInsensitive)` comparator through the
+Qt-free Class Details Application policy/workflow. An app-less regression
+covers U+017F long-s class-name canonicalization.
+
+The Executor build and 53 total focused QtTests passed. Independent Tester
+verification passed all three focused targets and diff check. Verification
+used macOS universal Debug/offscreen; no full suite or native-UI check was run.
+
+Batch539 is in progress with F1312 complete and closeout/push pending. The next
+audit-discovery work, Batch540, is active; discovery evidence and outcome are
+pending. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
+Open pending closure-grade audit. F629 Windows x64 evidence remains separate
+and outstanding.
+
+### Batch539 locally closed; Batch540 F1313 accepted - 2026-10-22
+
+Batch539 is locally closed around F1312 commit `6d2db847`; push is pending.
+Batch540 discovery identified F1313, Schedule Import Skip-target validation
+parity. In baseline `48fc5c5c...`, legacy apply accepts a unique positive
+suggested Skip target even when its teacher differs. The current
+`src/next/application/schedule_import_state_validation.h` rejects that
+reachable case; the current same-course matcher suggests the target and the UI
+carries its ID.
+
+Acceptance: retain target uniqueness and canonical checks while matching
+legacy apply, yielding one skipped class and no change to the target schedule.
+F1313 is accepted as Batch540's next implementation. Batch541 discovery is due
+when F1313 implementation begins. Gate 1 and Gate 2 remain Partial; the Phase 2
+exit gate remains Open pending cumulative audit, and F629's Windows x64
+evidence remains separately outstanding.

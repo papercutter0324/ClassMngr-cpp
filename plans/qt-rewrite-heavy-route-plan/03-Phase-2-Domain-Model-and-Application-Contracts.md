@@ -59,14 +59,15 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ### Latest Progress Update
 
-F1311 (`536e5dd3`) completed Testing Classes autosave failure feedback; four
-focused test functions passed (QtTest reported six including init/cleanup).
-The full target was not run due known unrelated failures.
-Batch537 closeout `8c06b019` was pushed to `origin/Qt-Rewrite`, advancing it
-from `4312e1fe`. Batch538 discovery is complete with no eligible candidates;
-no candidate is queued. Next Phase 2 action: review and execute remaining open
-exit-gate evidence. Gate 1 and Gate 2 remain Partial, the exit gate remains
-Open, and F629's post-F1303 Windows x64 evidence remains outstanding.
+F1312 (`6d2db847`) routes the Qt case-insensitive Class Details comparator
+through the Qt-free Application policy/workflow; an app-less regression covers
+U+017F long-s canonicalization. The Executor build and 53 focused QtTests
+passed; the independent Tester passed all three focused targets in macOS
+universal Debug/offscreen verification. Batch539 is locally closed with push
+pending. Batch540 is in progress with F1313, Schedule Import Skip-target
+validation parity, accepted next. Gate 1 and Gate 2 remain Partial; the exit
+gate remains Open pending cumulative audit, and F629's Windows x64 evidence
+remains outstanding separately.
 
 ### Slice batches
 

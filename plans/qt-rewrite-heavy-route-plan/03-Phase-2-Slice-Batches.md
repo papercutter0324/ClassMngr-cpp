@@ -85,5 +85,22 @@ Closeout `8c06b019` was pushed; `origin/Qt-Rewrite` advanced from
 
 Discovery at F1309 implementation start found no eligible candidate in either
 lane. No other slices or leads beyond the 20-candidate limit were found. No
-candidate is queued. Current Phase 2 work is to review and execute remaining
-exit-gate evidence.
+candidate is queued from this discovery; the follow-up F1312 slice is tracked
+under Batch539.
+
+## Batch539 — Closed locally; push pending
+
+- F1312 — Complete at implementation commit `6d2db847`. Class Details injects
+  the Qt case-insensitive comparator through the Qt-free Application policy
+  and workflow; an app-less regression covers U+017F long-s canonicalization.
+
+## Batch540 — In progress; F1313 accepted/next
+
+- F1313 — Schedule Import Skip-target validation parity; accepted/queued.
+  Preserve target uniqueness and canonical checks while matching legacy apply:
+  accept a unique positive suggested Skip target even when its teacher differs,
+  producing one skipped class and leaving the target schedule unchanged.
+
+Batch539 is locally closed around F1312; push is pending. Batch540 is active
+with F1313 as its next implementation. Start Batch541 discovery when F1313
+implementation begins.
