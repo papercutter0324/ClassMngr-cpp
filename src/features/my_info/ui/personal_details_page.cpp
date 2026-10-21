@@ -47,6 +47,7 @@ void PersonalDetailsPage::clearDatabaseState()
 {
     m_autosave->setLoading(true);
     m_storedNameKnown = false;
+    m_currentCampusKnown = false;
     m_signatureImageKnown = false;
     m_signaturePreferencesKnown = false;
     m_zoomPreferencesKnown = false;

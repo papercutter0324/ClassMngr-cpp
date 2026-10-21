@@ -879,6 +879,7 @@ void PersonalDetailsPage::loadPageData()
 }
 bool PersonalDetailsPage::loadStoredSettings()
 {
+    m_currentCampusKnown = false;
     m_zoomPreferencesKnown = false;
 
     const auto storedNameResult =
@@ -944,6 +945,7 @@ bool PersonalDetailsPage::loadStoredSettings()
     const auto currentCampusResult = currentCampusPreferencesPort.read();
     if (!currentCampusResult)
     {
+        m_currentCampusKnown = false;
         const auto& error = currentCampusResult.error();
         QString diagnostic = QString::fromUtf8(
             error.message.data(),
@@ -968,6 +970,7 @@ bool PersonalDetailsPage::loadStoredSettings()
     }
     else
     {
+        m_currentCampusKnown = true;
         const QByteArray storedCampus = QByteArray::fromStdString(
             currentCampusResult.value().value()
             );
@@ -1247,6 +1250,19 @@ bool PersonalDetailsPage::saveMyInfoInternal(QString* errorMessage)
             *errorMessage = tr(
                 "The stored personal name is unknown. Reload My Details "
                 "successfully before saving."
+                );
+        }
+        return false;
+    }
+
+    if (!m_currentCampusKnown)
+    {
+        if (errorMessage)
+        {
+            *errorMessage = tr(
+                "The current campus could not be read. Your displayed "
+                "campus selection has been preserved. Refresh this page to "
+                "try again."
                 );
         }
         return false;
