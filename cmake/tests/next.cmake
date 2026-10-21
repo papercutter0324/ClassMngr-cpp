@@ -1149,6 +1149,37 @@ add_test(
     COMMAND ClassMngrNextApplicationInitialSetupTeacherEntrySkipPolicyTests
 )
 
+# Keep Initial Setup's four required Class Details facts independent of Qt.
+add_executable(
+    ClassMngrNextApplicationInitialSetupClassDetailsRequirementsTests
+    tests/next_application_initial_setup_class_details_requirements_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationInitialSetupClassDetailsRequirementsTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationInitialSetupClassDetailsRequirementsTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationInitialSetupClassDetailsRequirementsTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationInitialSetupClassDetailsRequirementsTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationInitialSetupClassDetailsRequirementsTests
+    COMMAND ClassMngrNextApplicationInitialSetupClassDetailsRequirementsTests
+)
+
 # Keep automatic-update startup eligibility app-less and Qt-free.
 add_executable(
     ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests

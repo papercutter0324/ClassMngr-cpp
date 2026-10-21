@@ -10,6 +10,7 @@
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "next/platform/application_services_teacher_import_apply_port.h"
+#include "next/application/initial_setup_class_details_requirements.h"
 #include "next/application/initial_setup_personal_name_requirement.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
 #include "next/application/initial_setup_teacher_entry_skip_policy.h"
@@ -1297,29 +1298,40 @@ public:
 
     bool validatePage() override
     {
-        QStringList missingFields;
         const std::string selectedTeacherId =
             m_teacher->currentData().toString().toStdString();
-        if (!ClassMngr::Next::Application::isCanonicalPositiveDecimalId64(
-                selectedTeacherId))
+        const bool selectedTeacherPresent =
+            ClassMngr::Next::Application::isCanonicalPositiveDecimalId64(
+                selectedTeacherId
+                );
+        const auto requirements =
+            ClassMngr::Next::Application::initialSetupClassDetailsRequirements(
+                selectedTeacherPresent,
+                m_colorChosen,
+                !m_grade->currentText().isEmpty(),
+                !m_level->currentText().isEmpty()
+                );
+        if (!requirements.complete())
         {
-            missingFields.append(tr("Korean Teacher"));
-        }
-        if (!m_colorChosen)
-        {
-            missingFields.append(tr("Class Color"));
-        }
-        if (m_grade->currentText().isEmpty())
-        {
-            missingFields.append(tr("Grade"));
-        }
-        if (m_level->currentText().isEmpty())
-        {
-            missingFields.append(tr("Level"));
-        }
-        if (showMissingFields(
-                this, tr("Class Information"), missingFields))
-        {
+            QStringList missingFields;
+            if (requirements.koreanTeacherMissing())
+            {
+                missingFields.append(tr("Korean Teacher"));
+            }
+            if (requirements.classColorMissing())
+            {
+                missingFields.append(tr("Class Color"));
+            }
+            if (requirements.gradeMissing())
+            {
+                missingFields.append(tr("Grade"));
+            }
+            if (requirements.levelMissing())
+            {
+                missingFields.append(tr("Level"));
+            }
+
+            showMissingFields(this, tr("Class Information"), missingFields);
             return false;
         }
 

@@ -13,6 +13,7 @@
 #include <QColorDialog>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QPixmap>
 #include <QSqlQuery>
 #include <QPushButton>
 #include <QTimer>
@@ -130,6 +131,9 @@ public:
         draft.fontColor = QStringLiteral("#FFFFFF");
         wizard->setClassDraft(draft);
         wizard->setStartId(InitialSetupWizard::ClassTimesPage);
+        QPixmap transparentBackground(1, 1);
+        transparentBackground.fill(Qt::transparent);
+        wizard->setPixmap(QWizard::BackgroundPixmap, transparentBackground);
         wizard->show();
         QApplication::processEvents();
 

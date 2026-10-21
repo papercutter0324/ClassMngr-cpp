@@ -13,6 +13,7 @@
 
 #include <QApplication>
 #include <QBuffer>
+#include <QColorDialog>
 #include <QComboBox>
 #include <QImage>
 #include <QLabel>
@@ -21,6 +22,7 @@
 #include <QPushButton>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QUuid>
 #include <QtTest>
 
@@ -95,6 +97,39 @@ void showPersonalDetailsPage(InitialSetupWizard& wizard)
 {
     wizard.setStartId(InitialSetupWizard::PersonalDetailsPage);
     showSetupWizard(wizard);
+}
+
+bool selectInitialSetupColor(
+    InitialSetupWizard& wizard,
+    const QColor& color
+    )
+{
+    auto* const colorButton = wizard.findChild<QPushButton*>(
+        QStringLiteral("setupClassColorButton")
+        );
+    if (!colorButton)
+    {
+        return false;
+    }
+
+    bool colorAccepted = false;
+    QTimer::singleShot(0, [&colorAccepted, color]
+    {
+        auto* const dialog = qobject_cast<QColorDialog*>(
+            QApplication::activeModalWidget()
+            );
+        if (!dialog)
+        {
+            return;
+        }
+
+        dialog->setCurrentColor(color);
+        colorAccepted = true;
+        dialog->accept();
+    });
+    colorButton->click();
+    QApplication::processEvents();
+    return colorAccepted;
 }
 
 bool executeSql(
@@ -251,6 +286,8 @@ private slots:
     void missingAndUnavailableDisplayNameStayEmpty();
     void classDetailsShowsOrderedPreferredTeacherNamesAndSelectsSingleTeacher();
     void classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty();
+    void classDetailsRequiredInformationPrompt_data();
+    void classDetailsRequiredInformationPrompt();
     void classTimesRejectsNoncanonicalWeekdaysAfterCreatingBlankClass();
     void missingPersonalNameBlocksValidationWithoutSaving();
     void personalDetailsRoutesToClassDetailsWhenTeachersExist();
@@ -468,6 +505,174 @@ classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty()
         QStringLiteral("setupClassTeacher"));
     QVERIFY(teachers);
     QCOMPARE(teachers->count(), 0);
+}
+
+void InitialSetupWizardTests::classDetailsRequiredInformationPrompt_data()
+{
+    QTest::addColumn<bool>("selectedTeacherPresent");
+    QTest::addColumn<bool>("colorChosen");
+    QTest::addColumn<bool>("gradePresent");
+    QTest::addColumn<bool>("levelPresent");
+    QTest::addColumn<QString>("expectedMessage");
+
+    QTest::newRow("all-missing")
+        << false << false << false << false
+        << QStringLiteral(
+            "Complete the following required fields before continuing:\n\n"
+            "- Korean Teacher\n- Class Color\n- Grade\n- Level"
+            );
+    QTest::newRow("teacher-missing")
+        << false << true << true << true
+        << QStringLiteral(
+            "Complete the following required fields before continuing:\n\n"
+            "- Korean Teacher"
+            );
+    QTest::newRow("color-missing")
+        << true << false << true << true
+        << QStringLiteral(
+            "Complete the following required fields before continuing:\n\n"
+            "- Class Color"
+            );
+    QTest::newRow("grade-missing")
+        << true << true << false << true
+        << QStringLiteral(
+            "Complete the following required fields before continuing:\n\n"
+            "- Grade"
+            );
+    QTest::newRow("level-missing")
+        << true << true << true << false
+        << QStringLiteral(
+            "Complete the following required fields before continuing:\n\n"
+            "- Level"
+            );
+    QTest::newRow("combined-teacher-grade-level-missing")
+        << false << true << false << false
+        << QStringLiteral(
+            "Complete the following required fields before continuing:\n\n"
+            "- Korean Teacher\n- Grade\n- Level"
+            );
+}
+
+void InitialSetupWizardTests::classDetailsRequiredInformationPrompt()
+{
+    QFETCH(bool, selectedTeacherPresent);
+    QFETCH(bool, colorChosen);
+    QFETCH(bool, gradePresent);
+    QFETCH(bool, levelPresent);
+    QFETCH(QString, expectedMessage);
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.teacherService());
+    if (selectedTeacherPresent)
+    {
+        QVERIFY(addTeacher(services, QStringLiteral("Selected Teacher")));
+    }
+    else
+    {
+        QVERIFY(addTeacher(services, QStringLiteral("First Teacher")));
+        QVERIFY(addTeacher(services, QStringLiteral("Second Teacher")));
+    }
+
+    FakeUserPromptService prompts;
+    [[maybe_unused]] const ScopedUserPromptService promptService(&prompts);
+
+    ClassInfo draft;
+    draft.classId = 19;
+    draft.teacherId = 731;
+    draft.teacherKr = QStringLiteral("Draft Korean Teacher");
+    draft.teacherEn = QStringLiteral("Draft English Teacher");
+    draft.classGrade = QStringLiteral("Draft Grade");
+    draft.classLevel = QStringLiteral("Draft Level");
+    draft.readingBook = QStringLiteral("Draft Reading Book");
+    draft.essayBook = QStringLiteral("Draft Essay Book");
+    draft.classColor = QStringLiteral("#123456");
+    draft.fontColor = QStringLiteral("#654321");
+
+    InitialSetupWizard wizard(&services);
+    wizard.setClassDraft(draft);
+    const auto originalDraftTeacherId = wizard.classDraftTeacherId();
+    QVERIFY(originalDraftTeacherId);
+    wizard.setStartId(InitialSetupWizard::ClassDetailsPage);
+    showSetupWizard(wizard);
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::ClassDetailsPage);
+    auto* const teacher = wizard.findChild<QComboBox*>(
+        QStringLiteral("setupClassTeacher")
+        );
+    auto* const grade = wizard.findChild<QComboBox*>(
+        QStringLiteral("setupClassGrade")
+        );
+    auto* const level = wizard.findChild<QComboBox*>(
+        QStringLiteral("setupClassLevel")
+        );
+    QVERIFY(teacher);
+    QVERIFY(grade);
+    QVERIFY(level);
+
+    if (selectedTeacherPresent)
+    {
+        QVERIFY(teacher->currentData().toInt() > 0);
+    }
+    else
+    {
+        QCOMPARE(teacher->currentData().toInt(), -1);
+    }
+
+    if (colorChosen)
+    {
+        QVERIFY(selectInitialSetupColor(wizard, QColor(Qt::white)));
+    }
+
+    if (gradePresent)
+    {
+        QVERIFY(!grade->currentText().isEmpty());
+    }
+    else
+    {
+        grade->setCurrentIndex(-1);
+    }
+    if (levelPresent && !gradePresent)
+    {
+        level->addItem(QStringLiteral("Synthetic Level"));
+        level->setCurrentIndex(0);
+    }
+    else if (!levelPresent)
+    {
+        level->setCurrentIndex(-1);
+    }
+    QCOMPARE(!grade->currentText().isEmpty(), gradePresent);
+    QCOMPARE(!level->currentText().isEmpty(), levelPresent);
+
+    auto* const next = wizard.button(QWizard::NextButton);
+    QVERIFY(next);
+    next->click();
+    QApplication::processEvents();
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::ClassDetailsPage);
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& prompt = prompts.messages.constFirst();
+    QCOMPARE(prompt.severity, PromptSeverity::Information);
+    QCOMPARE(prompt.title, QStringLiteral("Class Information"));
+    QCOMPARE(prompt.message, expectedMessage);
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+
+    const ClassInfo unchangedDraft = wizard.classDraft();
+    QCOMPARE(unchangedDraft.classId, draft.classId);
+    QCOMPARE(unchangedDraft.teacherId, draft.teacherId);
+    QCOMPARE(unchangedDraft.classColor, draft.classColor);
+    QCOMPARE(unchangedDraft.fontColor, draft.fontColor);
+    QCOMPARE(unchangedDraft.classGrade, draft.classGrade);
+    QCOMPARE(unchangedDraft.classLevel, draft.classLevel);
+    QCOMPARE(unchangedDraft.readingBook, draft.readingBook);
+    QCOMPARE(unchangedDraft.essayBook, draft.essayBook);
+
+    const auto unchangedDraftTeacherId = wizard.classDraftTeacherId();
+    QVERIFY(unchangedDraftTeacherId);
+    QCOMPARE(
+        unchangedDraftTeacherId->value(),
+        originalDraftTeacherId->value()
+        );
 }
 
 void InitialSetupWizardTests::
