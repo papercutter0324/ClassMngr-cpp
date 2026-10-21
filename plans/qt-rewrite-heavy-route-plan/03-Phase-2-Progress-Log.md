@@ -62359,3 +62359,32 @@ accepted and next for implementation; F1291 remains discovered and unaccepted.
 Batch525 discovery is recorded with F1292-F1294, all provisional and
 unaccepted. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
 Open.
+
+### F1290 Class Transfer Export validates successful source snapshots complete locally - 2026-10-21
+
+F1290 is complete locally in three commits: acceptance
+`968fdfd2239fec4ab587597804796de12a17b2de`, production
+`b16f06fd7ed20646d92e1ee654cb612030425f54`, and tests
+`6afde7835c034bf24908255ef9488471e60441a2`. Incomplete successful source
+snapshots now return a nonrecoverable structured Technical failure after
+staged-error replay and deferred-selection precedence; complete snapshot
+projection is unchanged.
+
+Using the existing incremental `build/macos-clang-debug`, the Executor built
+`ClassMngr`; the independent Tester built
+`ClassMngrNextApplicationClassTransferExportQueryTests`. Direct QtTest
+selectors passed, including init/cleanup counts:
+
+- `incompleteClassStagesAreTechnicalFailures`: four data rows; 6 passed.
+- `missingReferencedTeacherIsTechnicalFailure`: 3 passed.
+- `unattemptedReferencedTeacherProfileIsTechnicalFailure`: 3 passed.
+- `stagedFailurePrecedesDeferredSelectionAndUnattemptedValues`: 3 passed.
+- `preservesRequestAndAssemblesFirstSeenKeysAndFullPayload`: 3 passed.
+
+Registered CTest #321 passed 1/1, and `git diff --check` passed. No full suite
+or Windows run was performed; no phase-gate result is claimed.
+
+F1288-F1290 are complete locally; Batch524 remains active and unpushed. F1291
+is next/last in Batch524 and remains discovered and unaccepted. Batch525
+discovery is recorded with provisional F1292-F1294, all unaccepted. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open.

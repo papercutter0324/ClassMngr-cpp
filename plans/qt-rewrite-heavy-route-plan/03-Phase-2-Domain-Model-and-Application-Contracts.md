@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1290 is accepted for implementation in unpushed Batch524; F1291 is discovered and unaccepted, and Batch525 has provisional unaccepted candidates F1292-F1294; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: F1291 is next and last in unpushed Batch524; Batch525 candidates F1292-F1294 remain provisional and unaccepted; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1290 is accepted for implementation in unpushed Batch524; F1288-F1289 are complete locally, and F1291 remains discovered and unaccepted. Batch525 discovery is recorded with provisional F1292-F1294. See the [Batch525 discovery](03-Phase-2-Progress-Log.md#batch525-discovery-2026-10-21-triggered-at-f1290) and [F1290 acceptance](03-Phase-2-Progress-Log.md#f1290-class-transfer-export-validates-successful-source-snapshots-accepted-before-implementation-2026-10-21).
+F1290 is complete locally in unpushed Batch524; F1291 is next/last and remains unaccepted. Batch525 discovery is recorded with provisional F1292-F1294. See the [F1290 completion](03-Phase-2-Progress-Log.md#f1290-class-transfer-export-validates-successful-source-snapshots-complete-locally-2026-10-21) and [Batch525 discovery](03-Phase-2-Progress-Log.md#batch525-discovery-2026-10-21-triggered-at-f1290).
 
 ### Slice discovery batches
 
@@ -78,8 +78,8 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active Batch524
 
-F1288-F1289 are complete locally; F1290 is accepted for implementation and
-F1291 remains discovered and unaccepted. Batch524 remains unpushed.
+F1288-F1290 are complete locally; F1291 remains discovered, unaccepted, and
+next/last in unpushed Batch524.
 
 1. F1288 - Complete locally: track current-campus read state and block the
    aggregate My Details save after a failed read, preserving the displayed
@@ -88,11 +88,11 @@ F1291 remains discovered and unaccepted. Batch524 remains unpushed.
    noninteractive My Details saves while retaining editable dirty values; clear
    it after save success, successful discard/reload, or database-state clear.
    Preserve the modal warning for explicit save failure.
-3. F1290 - Accepted for implementation: return a structured Technical failure
+3. F1290 - Complete locally: return a structured Technical failure
    instead of throwing when a successful source snapshot omits a consumed class
    stage or referenced teacher profile; preserve staged-error order, deferred
    selection precedence, and complete-snapshot output.
-4. F1291 - Discovered; last in Batch524, after F1290: the Class Transfer
+4. F1291 - Discovered; next/last in Batch524 after F1290: the Class Transfer
    legacy apply adapter may turn malformed non-sentinel IDs into `nullopt`;
    API-contract uncertainty remains.
 
