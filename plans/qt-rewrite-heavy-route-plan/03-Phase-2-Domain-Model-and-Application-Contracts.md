@@ -53,11 +53,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch505 (F1265) is complete and pushed at `270039b3` (see [push receipt](03-Phase-2-Progress-Log.md#batch505-push-receipt-2026-10-21)); no slice batch is active; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+- Current note: Batch506 is active with F1266, Calendar Event editor validation in Application, accepted before implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Latest Progress Update
 
-F1265 is complete in Batch505 at `a415e057964a4ff7cc9bdc18b0fe962ce4f75c8c` (see [F1265 closeout](03-Phase-2-Progress-Log.md#f1265-manual-save-eligibility-policy-in-application-complete-2026-10-21)). Incremental macOS build and the focused Application and selected UI cases passed; the independently reproduced `outputReportsUsesProjectedRegularSchedule` failure at `tests/speaking_eval_page_save_tests.cpp:2466` reports missing `/E5 Athena (MW - 4pm)/Winter`, and no pre-change baseline was run, so its baseline status is unproven. No clean, Windows, or full-suite verification is claimed. Batch505 is complete and pushed at `270039b3` (see [push receipt](03-Phase-2-Progress-Log.md#batch505-push-receipt-2026-10-21)); no slice batch is active. Gate 1 and Gate 2 remain Partial, the Phase 2 exit gate remains Open, and F629's separate Windows x64 requalification remains outstanding.
+F1266, Calendar Event editor validation in Application, is accepted before
+implementation in active Batch506 (see [acceptance](03-Phase-2-Progress-Log.md#f1266-calendar-event-editor-validation-in-application-accepted-before-implementation-2026-10-21)). It adds structured ordered field diagnostics to a Qt-free contract over `CalendarEventEditDraft` and explicit recurrence inputs, moving v2 dialog validation decisions into Application while preserving legacy diagnostics and UI binding/focus behavior. Incremental macOS verification is planned for `ClassMngr`, the Application Calendar Event tests, and affected dialog tests; implementation and verification have not started.
 
 ### Slice discovery batches
 
@@ -72,8 +73,13 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-No slice batch is active. Batch505 (F1265) is complete and pushed at
-`270039b3` (see the [push receipt](03-Phase-2-Progress-Log.md#batch505-push-receipt-2026-10-21)).
+### Active batch: Batch506 (0 complete, 1 accepted, 0 discovered)
+
+- F1266 - Calendar Event editor validation in Application: Accepted before
+  implementation; next action is to add the Qt-free Application diagnostics
+  contract, adapt the v2 dialog validation boundary, and add direct and dialog
+  integration coverage.
+
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.

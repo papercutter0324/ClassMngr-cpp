@@ -59749,3 +59749,62 @@ was up to date. Batch505 (F1265) is complete and pushed. Gate 1 and Gate 2
 remain Partial, and the Phase 2 exit gate remains Open. The separately
 reproduced Speaking Evaluation report-output test failure has no established
 pre-change baseline; the push receipt does not change that limitation.
+
+### Superseded latest progress update - 2026-10-21 (F1265 complete, Batch505 pushed)
+
+F1265's implementation, verification, and known Speaking Evaluation
+report-output test limitation are recorded in the [F1265 closeout](03-Phase-2-Progress-Log.md#f1265-manual-save-eligibility-policy-in-application-complete-2026-10-21).
+Batch505's successful push is recorded in its [receipt](03-Phase-2-Progress-Log.md#batch505-push-receipt-2026-10-21).
+
+### Batch506 discovery - 2026-10-21
+
+Two independent read-only reviews found one supported candidate: F1266,
+Calendar Event editor validation in Application. The v2 dialog's
+`CalendarEventDialog::validateForm()` converts its typed edit draft to legacy
+`CalendarEvent` values and calls `CalendarEventValidator::validate()` and
+`validateRecurrence()` (`src/features/calendar/ui/calendar_event_dialog.cpp:1078`,
+with conversion at `:174`). Application's
+`CalendarEventEditDraft::validate()` (`src/next/application/calendar_event_edit_draft.h:160`)
+covers structural validity but does not provide the legacy field-level,
+ordered diagnostics. Typed repeat planning and its occurrence cap already
+exist in `calendar_event_repeat_occurrence_plan.h:199` and the series-create
+port; the legacy validator's field rules remain in
+`src/domain/validation/calendar_event_validator.cpp:65,204`. Existing coverage
+is in `tests/next_application_calendar_event_tests.cpp`,
+`tests/shared_policy_tests.cpp`, and Calendar Event dialog tests in
+`tests/dialog_shell_tests.cpp`.
+
+No other slices were found.
+
+### F1266 Calendar Event editor validation in Application accepted before implementation - 2026-10-21
+
+Add a Qt-free Application validation contract over the typed
+`CalendarEventEditDraft`, plus explicit repeat-frequency and repeat-until
+inputs when recurrence is enabled. It returns structured, ordered,
+field-level issues. Move the v2 dialog's validation decisions into this
+contract; keep Qt conversion, translation and rendering through the existing
+validation binder, and focus behavior at the UI boundary.
+
+Preserve the legacy validator's normalized behavior and exact diagnostics,
+including issue codes, fields, severity, arguments, and ordering for required
+and 255-character title rules; event-type and time-status enums; 128-character
+repeat-series IDs; invalid and reversed dates; all-day, timed, and
+unconfirmed-time rules; end-not-after-start; recurrence frequency; invalid or
+before-start recurrence-until dates; and the 366-occurrence cap. Preserve
+recurrence-disabled behavior, inline issue refresh and focus behavior, save
+flows, and series generation.
+
+Keep Qt and legacy `CalendarEvent`/`ValidationResult` types out of Next
+Application. Retain the legacy validator for legacy consumers; do not change
+`validateSeries`, Platform save validation, or recurrence generation. Add
+direct app-less cases in `tests/next_application_calendar_event_tests.cpp`
+covering each rule and base-plus-recurrence issue ordering, including 366
+allowed and 367 rejected. Retain or extend `tests/dialog_shell_tests.cpp` to
+verify displayed issue mapping, focus, and refresh behavior.
+
+For focused incremental macOS verification, build `ClassMngr`, the Application
+Calendar Event test target, and affected dialog test targets, then run their
+focused CTests. This slice adds Gate 1 app-less behavior evidence and makes no
+Gate 2 baseline-parity claim. F1007, F1103, and F285 are out of scope. F1266
+is accepted as the sole Batch506 slice before implementation; no source,
+build, or test work has started.
