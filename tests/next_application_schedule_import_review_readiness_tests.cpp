@@ -10,6 +10,7 @@ using namespace ClassMngr::Next::Application;
 namespace
 {
 using DecisionIssueCode = ScheduleImportReviewDecisionIssueCode;
+using TeacherKey = ScheduleImportReviewTeacherKey;
 using StateAction = ScheduleImportStateTeacherAction;
 using StateErrorCode = ScheduleImportStateValidationErrorCode;
 using StateStatus = ScheduleImportStateEvaluationStatus;
@@ -25,7 +26,7 @@ void require(bool condition, const std::string& message)
 ScheduleImportReviewDecisionRequest invalidDecisions()
 {
     ScheduleImportReviewDecisionRequest request;
-    request.candidates = {{"teacher-a", {}}};
+    request.candidates = {{TeacherKey{"teacher-a"}, {}}};
     return request;
 }
 
@@ -33,7 +34,7 @@ ScheduleImportStateValidationRequest invalidStateInput()
 {
     ScheduleImportStateValidationRequest request;
     request.teacherResolutions.push_back(
-        {"teacher-a", StateAction::Reuse, std::nullopt, false}
+        {TeacherKey{"teacher-a"}, StateAction::Reuse, std::nullopt, false}
         );
     return request;
 }

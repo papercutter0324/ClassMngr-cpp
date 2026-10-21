@@ -639,7 +639,7 @@ void setUnresolvedTestingClassAssignment(
 
 ApplicationServices::ApplicationServices()
 {
-    m_databaseSession = std::make_unique<DatabaseSession>();
+    m_workspaceStore = std::make_unique<WorkspaceStore>();
     m_dataService =
         std::make_unique<DataService>();
 }
@@ -1432,12 +1432,17 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
 
 DatabaseSession* ApplicationServices::databaseSession() const
 {
-    return m_databaseSession.get();
+    return m_workspaceStore.get();
 }
 
 DataService* ApplicationServices::dataService() const
 {
     return m_dataService.get();
+}
+
+WorkspaceStore* ApplicationServices::workspaceStore() const
+{
+    return m_workspaceStore.get();
 }
 
 SettingsService* ApplicationServices::settingsService() const

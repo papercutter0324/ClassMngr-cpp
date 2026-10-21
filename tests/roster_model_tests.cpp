@@ -703,6 +703,11 @@ firstEmptyRowUsesLowestBlankAndReturnsNoRowWhenFull()
 void RosterModelTests::
 sharedAvailabilityProjectionMatchesModelNameCellOccupancy()
 {
+    using RowIndex = ClassMngr::Next::Application::
+        RosterAvailabilityAccumulatorRowIndex;
+    using SourceColumnIndex = ClassMngr::Next::Application::
+        RosterAvailabilityAccumulatorSourceColumnIndex;
+
     const char16_t malformedCodeUnit[] = {
         static_cast<char16_t>(0xD800),
         u'\0'
@@ -764,8 +769,8 @@ sharedAvailabilityProjectionMatchesModelNameCellOccupancy()
                     qtCaseInsensitiveEquals
                     );
             availability.observeCell(
-                0,
-                sourceColumn,
+                RowIndex{0},
+                SourceColumnIndex{sourceColumn},
                 Ui::QtTextAdapter::toUtf16String(rawName)
                 );
 

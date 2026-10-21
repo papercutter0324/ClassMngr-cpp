@@ -41,7 +41,7 @@ ClassSummary summary(
         .displayLabel = std::string(grade) + " " + level,
         .meetingText = meeting,
         .studentCount = ClassSummaryStudentCount{12},
-        .order = order
+        .order = ClassSummaryOrder{order}
     };
 }
 
