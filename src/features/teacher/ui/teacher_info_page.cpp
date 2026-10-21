@@ -1227,7 +1227,6 @@ void TeacherInfoPage::loadTeacher(const Teacher& teacher, const qint64 teacherId
     m_autosave->setLoading(false);
     m_validationBinder->clear();
     clearDirty();
-    clearSavedButReloadFailedStatus();
 }
 
 bool TeacherInfoPage::reloadTeacherProfile(
@@ -1469,6 +1468,12 @@ bool TeacherInfoPage::saveTeacherInternal(bool showErrors)
                         QString::fromStdString(failure.cause.message)
                         );
                 }
+                else if (
+                    failure.cause.code == NextDomain::ErrorCode::Technical
+                    )
+                {
+                    showAutomaticSaveFailureStatus();
+                }
                 return false;
 
             case NextApplication::TeacherProfileEditFailureKind::ReloadFailed:
@@ -1518,12 +1523,30 @@ bool TeacherInfoPage::saveTeacherInternal(bool showErrors)
 
 void TeacherInfoPage::clearDirty()
 {
+    clearSaveStatus();
     m_autosave->markClean();
     updateActions();
 }
 
+void TeacherInfoPage::showAutomaticSaveFailureStatus()
+{
+    m_automaticSaveFailureStatusActive = true;
+    m_savedButReloadFailedStatusActive = false;
+    if (m_reloadFailureStatusLabel)
+    {
+        m_reloadFailureStatusLabel->setText(
+            tr(
+                "Your teacher information could not be saved automatically. "
+                "Your changes are still here."
+                )
+            );
+        m_reloadFailureStatusLabel->show();
+    }
+}
+
 void TeacherInfoPage::showSavedButReloadFailedStatus()
 {
+    m_automaticSaveFailureStatusActive = false;
     m_savedButReloadFailedStatusActive = true;
     if (m_reloadFailureStatusLabel)
     {
@@ -1538,8 +1561,9 @@ void TeacherInfoPage::showSavedButReloadFailedStatus()
     }
 }
 
-void TeacherInfoPage::clearSavedButReloadFailedStatus()
+void TeacherInfoPage::clearSaveStatus()
 {
+    m_automaticSaveFailureStatusActive = false;
     m_savedButReloadFailedStatusActive = false;
     if (m_reloadFailureStatusLabel)
     {
@@ -1944,6 +1968,10 @@ void TeacherInfoPage::retranslateUi()
         if (m_savedButReloadFailedStatusActive)
         {
             showSavedButReloadFailedStatus();
+        }
+        else if (m_automaticSaveFailureStatusActive)
+        {
+            showAutomaticSaveFailureStatus();
         }
     }
 

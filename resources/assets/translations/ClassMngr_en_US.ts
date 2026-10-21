@@ -8964,6 +8964,11 @@ Version: %2</source>
         <source>Save Changes</source>
         <translation>Save Changes</translation>
     </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1539"/>
+        <source>Your teacher information could not be saved automatically. Your changes are still here.</source>
+        <translation>Your teacher information could not be saved automatically. Your changes are still here.</translation>
+    </message>
 </context>
 <context>
     <name>TeacherInfoSection</name>

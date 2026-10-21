@@ -101,8 +101,9 @@ private:
 
     void clearDirty();
     void setReloadRequired(bool required);
+    void showAutomaticSaveFailureStatus();
     void showSavedButReloadFailedStatus();
-    void clearSavedButReloadFailedStatus();
+    void clearSaveStatus();
 
     void updateActions();
     void updateFieldWidths();
@@ -126,6 +127,7 @@ private:
     Teacher m_teacher;
     qint64 m_teacherId = -1;
     bool m_reloadRequired = false;
+    bool m_automaticSaveFailureStatusActive = false;
     AutosaveCoordinator* m_autosave = nullptr;
     FormValidationBinder* m_validationBinder = nullptr;
 

@@ -21,9 +21,11 @@
 #include <QInputDialog>
 #include <QPushButton>
 #include <QSqlQuery>
+#include <QTextEdit>
 #include <QTimer>
 #include <QTemporaryDir>
 #include <QSignalSpy>
+#include <QTranslator>
 #include <QtTest>
 
 namespace
@@ -95,6 +97,65 @@ public:
 private:
     ClassMngr::Next::Domain::TeacherProfileFields m_fields;
 };
+
+class KoreanTeacherInfoAutosaveStatusTranslator final : public QTranslator
+{
+public:
+    QString translate(
+        const char* context,
+        const char* sourceText,
+        const char* disambiguation = nullptr,
+        int n = -1
+        ) const override
+    {
+        Q_UNUSED(disambiguation);
+        Q_UNUSED(n);
+        if (
+            context
+            && sourceText
+            && qstrcmp(context, "TeacherInfoPage") == 0
+            && qstrcmp(
+                sourceText,
+                "Your teacher information could not be saved automatically. "
+                "Your changes are still here."
+                ) == 0
+            )
+        {
+            return QStringLiteral(
+                "교사 정보를 자동으로 저장하지 못했습니다. "
+                "변경 사항은 그대로 유지됩니다."
+                );
+        }
+        return {};
+    }
+};
+
+class ScopedTranslatorInstallation final
+{
+public:
+    explicit ScopedTranslatorInstallation(QTranslator& translator)
+        : m_translator(&translator)
+        , m_installed(QCoreApplication::installTranslator(m_translator))
+    {
+    }
+
+    ~ScopedTranslatorInstallation()
+    {
+        if (m_installed)
+        {
+            QCoreApplication::removeTranslator(m_translator);
+        }
+    }
+
+    [[nodiscard]] bool installed() const
+    {
+        return m_installed;
+    }
+
+private:
+    QTranslator* m_translator = nullptr;
+    bool m_installed = false;
+};
 } // namespace
 
 class TeacherInfoPageTests : public QObject
@@ -115,6 +176,7 @@ private slots:
     void applicationValidationBlocksInvalidTeacherWrite();
     void repositoryUpdateFailureKeepsDirtyStateAndShowsWarning();
     void repositoryReloadFailureRetainsSavedValuesAndRequiresReload();
+    void automaticUpdateFailureShowsStatusAndRetryClearsIt();
     void automaticReloadFailureKeepsSubmittedValuesAndShowsStatus();
 };
 
@@ -690,6 +752,117 @@ repositoryReloadFailureRetainsSavedValuesAndRequiresReload()
     QVERIFY(english->isEnabled());
     QVERIFY(!page.hasUnsavedChanges());
     QCOMPARE(english->text(), QStringLiteral("Reload Failure"));
+}
+
+void TeacherInfoPageTests::
+automaticUpdateFailureShowsStatusAndRetryClearsIt()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("teacher-profile-auto-update-failure.tps"))));
+
+    Teacher original;
+    original.teacherKr = QStringLiteral("김선생");
+    original.teacherEn = QStringLiteral("Alex");
+    original.notes = QStringLiteral("Original note");
+    const Result<int> created = services.teacherService()->create(original);
+    QVERIFY(created);
+    original.id = *created;
+
+    QSqlQuery trigger(services.databaseSession()->database());
+    QVERIFY(trigger.exec(QStringLiteral(
+        "CREATE TRIGGER reject_teacher_profile_update "
+        "BEFORE UPDATE ON teachers "
+        "WHEN NEW.teacher_en = 'Reject Autosave' "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected autosave profile update failure'); "
+        "END"
+        )));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    TeacherInfoPage page(&services);
+    page.setSaveMode(SaveMode::Automatic);
+    page.loadTeacher(original);
+
+    auto* english = page.findChild<QLineEdit*>(
+        QStringLiteral("teacherEnEdit"));
+    auto* notes = page.findChild<QTextEdit*>(
+        QStringLiteral("teacherNotesEdit"));
+    auto* status = page.findChild<QLabel*>(
+        QStringLiteral("teacherInfoReloadFailureStatus"));
+    auto* autosave = page.findChild<AutosaveCoordinator*>();
+    QVERIFY(english);
+    QVERIFY(notes);
+    QVERIFY(status);
+    QVERIFY(autosave);
+    autosave->setDebounceInterval(0);
+
+    QSignalSpy saveRequests(autosave, &AutosaveCoordinator::saveRequested);
+    QSignalSpy saved(&page, &TeacherInfoPage::teacherSaved);
+    english->setText(QStringLiteral("Reject Autosave"));
+    notes->setPlainText(QStringLiteral("Retained note"));
+    QVERIFY(autosave->isDirty());
+
+    QTRY_COMPARE(saveRequests.count(), 1);
+    QVERIFY(!saveRequests.constFirst().constFirst().toBool());
+    QTRY_VERIFY(!status->isHidden());
+    QCOMPARE(saved.count(), 0);
+    QCOMPARE(prompts.messages.size(), 0);
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(english->isEnabled());
+    QCOMPARE(english->text(), QStringLiteral("Reject Autosave"));
+    QCOMPARE(notes->toPlainText(), QStringLiteral("Retained note"));
+    QCOMPARE(page.teacher().teacherEn, QStringLiteral("Alex"));
+    QCOMPARE(
+        status->text(),
+        QStringLiteral(
+            "Your teacher information could not be saved automatically. "
+            "Your changes are still here."
+            )
+        );
+
+    KoreanTeacherInfoAutosaveStatusTranslator translator;
+    {
+        ScopedTranslatorInstallation installation(translator);
+        QVERIFY(installation.installed());
+        page.retranslateUi();
+        QCOMPARE(
+            status->text(),
+            QStringLiteral(
+                "교사 정보를 자동으로 저장하지 못했습니다. "
+                "변경 사항은 그대로 유지됩니다."
+                )
+            );
+    }
+    page.retranslateUi();
+    QCOMPARE(
+        status->text(),
+        QStringLiteral(
+            "Your teacher information could not be saved automatically. "
+            "Your changes are still here."
+            )
+        );
+
+    english->setText(QStringLiteral("Retried Profile"));
+    QTRY_COMPARE(saveRequests.count(), 2);
+    QTRY_VERIFY(status->isHidden());
+    QVERIFY(status->text().isEmpty());
+    QTRY_VERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(saved.count(), 1);
+    QCOMPARE(prompts.messages.size(), 0);
+    QCOMPARE(english->text(), QStringLiteral("Retried Profile"));
+    QCOMPARE(notes->toPlainText(), QStringLiteral("Retained note"));
+    QCOMPARE(page.teacher().teacherEn, QStringLiteral("Retried Profile"));
+
+    const Result<Teacher> persisted = services.databaseSession()
+        ->teacherRepository()->getTeacher(original.id);
+    QVERIFY(persisted);
+    QCOMPARE(persisted->teacherEn, QStringLiteral("Retried Profile"));
+    QCOMPARE(persisted->notes, QStringLiteral("Retained note"));
 }
 
 void TeacherInfoPageTests::
