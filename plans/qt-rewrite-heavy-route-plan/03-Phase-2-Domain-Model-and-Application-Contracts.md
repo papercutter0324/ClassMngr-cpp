@@ -53,8 +53,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-22
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch542 is complete locally at F1315 and awaits push; Batch543
-  discovery is in progress with a Teacher Import parity trace pending. Current
+- Current note: Batch542 is pushed through closeout at `917ce665`; Batch543
+  discovery remains in progress with a deeper Teacher Import parity trace and
+  cumulative gate audit pending. Current
   and upcoming detail is maintained in the
   [Phase 2 slice-batch register](03-Phase-2-Slice-Batches.md). Gate 1 and Gate 2
   remain Partial, and the Phase 2 exit gate remains Open.
@@ -74,15 +75,17 @@ F1315 (`91ba6c99`) implements the user's match-legacy decision by removing
 only the Calendar Import total filtered save-batch cap. Executor's five focused
 targets passed 189 QtTests; independent Tester passed 35 focused cases,
 including 4,097-event single-query/ordered-save and Platform persistence checks.
-No full suite or greater-than-4,097 stress test ran. Batch542 is complete
-locally and awaits push.
+No full suite or greater-than-4,097 stress test ran. Batch542 was pushed through
+closeout by `3719f3b2..917ce665 Qt-Rewrite -> Qt-Rewrite`, including F1315 and
+closeout docs at `917ce665`.
 
 Schema v6 remains the only supported open version; migration for schemas below
 v6 is not offered. Batch540's F1313 proposal was a false positive, withdrawn
 after full legacy-chain review; no candidate is queued. Batch543 discovery
 started with F1315: the contract lane and feature broad scan found no candidate,
-while a deeper Teacher Import parity trace remains pending. Gate 1 and Gate 2
-remain Partial; the exit gate remains Open pending cumulative audit.
+while a deeper Teacher Import parity trace remains pending. Batch543 discovery
+is not closed and no conclusion about other slices is recorded yet. Gate 1 and
+Gate 2 remain Partial; the exit gate remains Open pending cumulative audit.
 Gate 2 retains a documented Class Transfer identity-free package exception;
 exact parity is not claimed for that input. F629's Windows x64 evidence remains
 outstanding separately.

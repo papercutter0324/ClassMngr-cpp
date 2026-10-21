@@ -116,7 +116,7 @@ implemented. See the progress log for corrected call-chain evidence.
 Batch541 push receipt: `3bf10cd5..3719f3b2 Qt-Rewrite -> Qt-Rewrite`;
 the range included F1314 source `5738d486` and closeout docs `3719f3b2`.
 
-## Batch542 — Complete locally; awaiting push
+## Batch542 — Pushed through closeout
 
 Both contract and feature discovery lanes found no other ready candidate.
 Per the user's selection, F1315 — Calendar Import 4,097-event save parity — is
@@ -126,6 +126,9 @@ Batch541 is pushed through closeout. F1315 is complete at source commit
 test targets passed 189 QtTests; independent Tester passed 35 focused cases.
 No full suite or greater-than-4,097-event stress test ran. See the progress log
 for focused acceptance and verification details.
+
+Batch542 push receipt: `3719f3b2..917ce665 Qt-Rewrite -> Qt-Rewrite`; the
+range included F1315 source `91ba6c99` and closeout docs `917ce665`.
 
 Acceptance: remove only the total filtered save-batch cap. Preserve per-event
 create-only validation, duplicate filtering and order, and failure precedence.
@@ -143,4 +146,6 @@ Focused CTest targets: `NextApplicationCalendarEvent`,
 
 Discovery started at F1315 implementation start. The contract lane found no
 candidate, and the feature lane's broad scan found none; a deeper Teacher Import
-parity trace is still pending. Keep discovery open until that review returns.
+parity trace is still pending. Keep discovery open until that review returns;
+do not treat the broad scan as a completed candidate review. The cumulative
+Gate 1/2 audit also remains open.

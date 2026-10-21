@@ -63847,3 +63847,16 @@ the feature lane's broad scan found none, but a deeper Teacher Import parity
 trace remains pending, so discovery stays in progress. Gate 1 and Gate 2 remain
 Partial, the Phase 2 exit gate remains Open pending cumulative audit, and
 F629's Windows x64 evidence remains separately outstanding.
+
+### Batch542 push receipt; Batch543 discovery remains in progress - 2026-10-22
+
+Push succeeded with `3719f3b2..917ce665 Qt-Rewrite -> Qt-Rewrite`, advancing
+the remote to `917ce665`. The pushed range included F1315 source `91ba6c99`
+and Batch542 closeout docs `917ce665`; Batch542 is pushed through closeout.
+
+Batch543 remains open. The contract lane and broad feature scan found no
+candidate, but the deeper Teacher Import parity trace is pending; do not close
+discovery or conclude that no other slices exist before that review returns.
+The cumulative Gate 1/2 audit remains pending; Gate 1 and Gate 2 remain
+Partial, the Phase 2 exit gate remains Open, and F629's Windows x64 evidence
+remains separately outstanding.
