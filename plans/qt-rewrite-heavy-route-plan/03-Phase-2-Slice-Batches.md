@@ -20,12 +20,20 @@ and chronology.
 
 No other slices were found.
 
+## Batch535 — Discovered; one accepted candidate
+
+1. F1303 — Accepted for Batch535 after Batch534 closes. Show the existing
+   localized, nonmodal CalendarPage notice when a Technical first-day
+   preference read fails, while preserving the locale fallback and current
+   Calendar Preferences behavior. Keep successful missing/unavailable fallback
+   quiet and clear the notice on provider recovery. Preserve F1301 behavior.
+   See the progress log for full acceptance criteria and discovery evidence.
+
+No other slices were found.
+
 ## Next discovery
 
-Batch535 discovery is in progress, triggered when F1302 implementation started
-under the one-candidate rule. The contract lane is complete with no eligible
-candidate; the feature lane is pending. Do not mark discovery complete or
-record candidate names until the feature lane is screened. Search for up to 20
-ordered candidates. No possible candidates beyond the 20-candidate limit are
-currently recorded; include any newly found candidates and revisit any such
-reminders during discovery.
+Batch536 discovery is due when F1303 implementation starts, following the
+one-candidate trigger. Search for up to 20 ordered candidates. No possible
+candidates beyond the 20-candidate limit were found in Batch535; include any
+newly found candidates and revisit any such reminders when discovery starts.

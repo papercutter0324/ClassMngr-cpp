@@ -63267,3 +63267,30 @@ F1302 implementation started in Batch534. Batch535 bounded discovery began at
 the one-candidate trigger. The contract lane completed with no eligible
 candidate; the feature lane is pending. Batch535 discovery remains incomplete,
 with no candidate names or acceptance recorded.
+
+### Batch535 bounded discovery complete at F1302 implementation start - 2026-10-21
+
+The feature lane found exactly one candidate, F1303, with no possible leads
+beyond the 20-candidate limit. `AcademicCalendarProvider::loadOptions()` stores
+a first-day preference load error and falls back to
+`QLocale().firstDayOfWeek()` (`src/features/calendar/ui/academic_calendar_provider.cpp:363-411`);
+`EventCalendar.qml:49-51` uses that value. CalendarPage currently detects
+event-display and schedule-display preference failures but does not include
+`firstDayOfWeekLoadError()` in its notice condition
+(`src/features/calendar/ui/calendar_page_upcoming_events.cpp:943-1055`).
+
+F1085 covers the Calendar Preferences screen only
+(`03-Phase-2-Progress-Log.md:46292-46296`). The provider test covers locale
+fallback and recovery, but not the CalendarPage notice
+(`tests/academic_calendar_tests.cpp:618-646`). The contract lane found no
+additional eligible candidate in its sampled surfaces. The likely focused
+target is `ClassMngrCalendarPageEventMutationParityTests`.
+
+F1303 is accepted for Batch535 after Batch534 closes; it is not active while
+F1302 implementation is underway. On a Technical first-day preference read
+failure, show the existing localized, nonmodal CalendarPage notice while
+preserving the `QLocale().firstDayOfWeek()` fallback and current Calendar
+Preferences behavior. Keep successful missing or unavailable preference
+fallback quiet, and clear the notice when the provider recovers. Preserve
+F1301's event-display, schedule-display, current-campus, and event-range
+failure behavior. Batch535 discovery is complete with one accepted candidate.
