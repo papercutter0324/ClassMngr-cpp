@@ -226,6 +226,33 @@ bool installFailingSignatureImageReadView(
             );
 }
 
+bool installFailingCurrentCampusReadView(
+    ApplicationServices& services
+    )
+{
+    return executeSql(
+               services,
+               QStringLiteral(
+                   "ALTER TABLE app_settings "
+                   "RENAME TO app_settings_preserved"
+                   )
+               )
+        && executeSql(
+            services,
+            QStringLiteral(R"(
+                CREATE VIEW app_settings AS
+                SELECT
+                    key,
+                    CASE
+                        WHEN key = 'myInfo/campus'
+                        THEN abs(-9223372036854775807 - 1)
+                        ELSE value
+                    END AS value
+                FROM app_settings_preserved
+            )")
+            );
+}
+
 bool installFailingZoomUnavailableReadView(
     ApplicationServices& services
     )
@@ -416,6 +443,7 @@ private slots:
     void failedCampusCorrectionRetriesAndSuppressesRepeatedWarnings();
     void failedMatchedCampusIdCorrectionWarnsAndRecovers();
     void settingsReadFailurePreservesDisplayedCampusChoice();
+    void currentCampusReadFailurePreservesChoiceAndBlocksSaveUntilReload();
     void storedDisplayNamePrefillsWithUtf8AndWhitespace();
     void displayNameReadFailurePreservesDraftAndBlocksSaveUntilReload();
     void missingAndUnavailableDisplayNamePrefillEmpty();
@@ -1361,6 +1389,191 @@ void MyWorkspacePageTests::settingsReadFailurePreservesDisplayedCampusChoice()
         )));
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toString(), displayedCampus);
+}
+
+void MyWorkspacePageTests::
+currentCampusReadFailurePreservesChoiceAndBlocksSaveUntilReload()
+{
+    FakeUserPromptService prompts;
+    ScopedUserPromptService promptScope(prompts);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+
+    const QByteArray source = sourcePng();
+    QVERIFY(!source.isEmpty());
+    const QString encodedImage = QString::fromLatin1(source.toBase64());
+    const QString storedName = QStringLiteral("Stored Name");
+    const QString storedSignatureText = QStringLiteral("Stored Signature");
+    const QVariantMap initialValues = {
+        {QString::fromUtf8(DisplayNameKey), storedName},
+        {QString::fromUtf8(CurrentCampusKey), QStringLiteral("Jeongja")},
+        {QString::fromUtf8(ZoomLoginIdKey), QStringLiteral("stored login")},
+        {QString::fromUtf8(ZoomPasswordKey), QStringLiteral("stored password")},
+        {QString::fromUtf8(ZoomNotAvailableKey), false},
+        {QString::fromUtf8(SignatureImageKey), encodedImage},
+        {QString::fromUtf8(SignatureModeKey), 1},
+        {QString::fromUtf8(TypedSignatureTextKey), storedSignatureText},
+        {QString::fromUtf8(TypedSignatureFontKey), 2},
+        {QString::fromUtf8(UnrelatedKey), QStringLiteral("preserved")}
+    };
+    QVERIFY(services.dataService()->saveSettings(initialValues));
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+
+    PersonalDetailsPage* const details = page.personalDetailsPage();
+    QVERIFY(details);
+    QLineEdit* const name = personalNameEditor(page);
+    QComboBox* const campus = details->findChild<QComboBox*>();
+    QVERIFY(name);
+    QVERIFY(campus);
+    QCOMPARE(campus->currentText(), QStringLiteral("Jeongja"));
+
+    const int campusAIndex = campus->currentIndex();
+    QVERIFY(campusAIndex >= 0);
+    QVERIFY(campus->count() > 1);
+    const int campusBIndex = campusAIndex == 0 ? 1 : 0;
+    const QString campusB = campus->itemText(campusBIndex);
+    QVERIFY(!campusB.isEmpty());
+    QVERIFY(campusB != campus->currentText());
+    QVERIFY(services.dataService()->saveSetting(
+        QString::fromUtf8(CurrentCampusKey),
+        campusB
+        ));
+
+    QVERIFY(installFailingCurrentCampusReadView(services));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*myInfo/campus.*")
+            )
+        );
+    details->discardChanges();
+
+    QCOMPARE(campus->currentText(), QStringLiteral("Jeongja"));
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& readWarning = prompts.messages.constFirst();
+    QCOMPARE(readWarning.severity, PromptSeverity::Warning);
+    QCOMPARE(
+        readWarning.title,
+        QStringLiteral("Campus Preference Could Not Be Loaded")
+        );
+    QCOMPARE(
+        readWarning.message,
+        QStringLiteral(
+            "The current campus could not be read. Your displayed campus "
+            "selection has been preserved. Refresh this page to try again."
+            )
+        );
+
+    QVERIFY(restoreSettingsTable(services));
+
+    const auto campusBeforeSave = services.dataService()->loadSetting(
+        QString::fromUtf8(CurrentCampusKey)
+        );
+    QVERIFY(campusBeforeSave);
+    QCOMPARE(campusBeforeSave->toString(), campusB);
+
+    name->setText(QStringLiteral("Unsaved Draft Name"));
+    QCOMPARE(name->text(), QStringLiteral("Unsaved Draft Name"));
+    QVERIFY(details->hasUnsavedChanges());
+    QVERIFY(!details->saveChanges());
+
+    QCOMPARE(campus->currentText(), QStringLiteral("Jeongja"));
+    QCOMPARE(name->text(), QStringLiteral("Unsaved Draft Name"));
+    QVERIFY(details->hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 2);
+    const PromptRequest& saveWarning = prompts.messages.constLast();
+    QCOMPARE(saveWarning.severity, PromptSeverity::Warning);
+    QCOMPARE(
+        saveWarning.title,
+        QStringLiteral("My Details Could Not Be Saved")
+        );
+    QCOMPARE(
+        saveWarning.details,
+        QStringLiteral(
+            "The current campus could not be read. Your displayed campus "
+            "selection has been preserved. Refresh this page to try again."
+            )
+        );
+
+    const auto savedName = services.dataService()->loadSetting(
+        QString::fromUtf8(DisplayNameKey)
+        );
+    QVERIFY(savedName);
+    QCOMPARE(savedName->toString(), storedName);
+    const auto savedCampus = services.dataService()->loadSetting(
+        QString::fromUtf8(CurrentCampusKey)
+        );
+    QVERIFY(savedCampus);
+    QCOMPARE(savedCampus->toString(), campusB);
+    const auto savedZoomLogin = services.dataService()->loadSetting(
+        QString::fromUtf8(ZoomLoginIdKey)
+        );
+    QVERIFY(savedZoomLogin);
+    QCOMPARE(savedZoomLogin->toString(), QStringLiteral("stored login"));
+    const auto savedZoomPassword = services.dataService()->loadSetting(
+        QString::fromUtf8(ZoomPasswordKey)
+        );
+    QVERIFY(savedZoomPassword);
+    QCOMPARE(savedZoomPassword->toString(), QStringLiteral("stored password"));
+    const auto savedZoomUnavailable = services.dataService()->loadSetting(
+        QString::fromUtf8(ZoomNotAvailableKey)
+        );
+    QVERIFY(savedZoomUnavailable);
+    QCOMPARE(savedZoomUnavailable->toBool(), false);
+    const auto savedImage = services.dataService()->loadSetting(
+        QString::fromUtf8(SignatureImageKey)
+        );
+    QVERIFY(savedImage);
+    QCOMPARE(savedImage->toString(), encodedImage);
+    const auto savedSignatureMode = services.dataService()->loadSetting(
+        QString::fromUtf8(SignatureModeKey)
+        );
+    QVERIFY(savedSignatureMode);
+    QCOMPARE(savedSignatureMode->toInt(), 1);
+    const auto savedSignatureText = services.dataService()->loadSetting(
+        QString::fromUtf8(TypedSignatureTextKey)
+        );
+    QVERIFY(savedSignatureText);
+    QCOMPARE(savedSignatureText->toString(), storedSignatureText);
+    const auto savedSignatureFont = services.dataService()->loadSetting(
+        QString::fromUtf8(TypedSignatureFontKey)
+        );
+    QVERIFY(savedSignatureFont);
+    QCOMPARE(savedSignatureFont->toInt(), 2);
+    const auto savedUnrelated = services.dataService()->loadSetting(
+        QString::fromUtf8(UnrelatedKey)
+        );
+    QVERIFY(savedUnrelated);
+    QCOMPARE(savedUnrelated->toString(), QStringLiteral("preserved"));
+
+    details->discardChanges();
+    QCOMPARE(name->text(), storedName);
+    QCOMPARE(campus->currentText(), campusB);
+    QVERIFY(!details->hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 2);
+
+    name->setText(QStringLiteral("Recovered Name"));
+    QVERIFY(details->hasUnsavedChanges());
+    QVERIFY(details->saveChanges());
+    QCOMPARE(prompts.messages.size(), 2);
+    const auto recoveredName = services.dataService()->loadSetting(
+        QString::fromUtf8(DisplayNameKey)
+        );
+    QVERIFY(recoveredName);
+    QCOMPARE(recoveredName->toString(), QStringLiteral("Recovered Name"));
+    const auto recoveredCampus = services.dataService()->loadSetting(
+        QString::fromUtf8(CurrentCampusKey)
+        );
+    QVERIFY(recoveredCampus);
+    QCOMPARE(recoveredCampus->toString(), campusB);
+    QVERIFY(!details->hasUnsavedChanges());
 }
 
 void MyWorkspacePageTests::storedDisplayNamePrefillsWithUtf8AndWhitespace()
