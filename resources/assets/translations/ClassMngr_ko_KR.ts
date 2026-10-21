@@ -5737,6 +5737,18 @@ Rm: %1</source>
         <source>Remove Student</source>
         <translation>학생 제거</translation>
     </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget.cpp" line="364"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget.cpp" line="762"/>
+        <source>The roster could not be saved. Your changes are still here.</source>
+        <translation>명단을 저장할 수 없습니다. 변경 사항은 그대로 유지됩니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget.cpp" line="161"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget.cpp" line="369"/>
+        <source>Retry</source>
+        <translation>다시 시도</translation>
+    </message>
 </context>
 <context>
     <name>RosterHeaderView</name>

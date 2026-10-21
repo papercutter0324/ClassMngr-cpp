@@ -17,6 +17,8 @@
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/validation/form_validation_binder.h"
 
+#include <QEvent>
+#include <QHBoxLayout>
 #include <QItemSelectionModel>
 #include <QLabel>
 #include <QPushButton>
@@ -141,12 +143,46 @@ RosterEditorWidget::RosterEditorWidget(
         m_rosterLoadFailureMessage
         );
 
+    m_rosterSaveFailureContainer = new QWidget(this);
+    m_rosterSaveFailureContainer->setObjectName(
+        QStringLiteral("rosterSaveFailureStatus")
+        );
+    auto* saveFailureLayout = new QHBoxLayout(m_rosterSaveFailureContainer);
+    saveFailureLayout->setContentsMargins(0, 0, 0, 0);
+    m_rosterSaveFailureMessage = new QLabel(m_rosterSaveFailureContainer);
+    m_rosterSaveFailureMessage->setObjectName(
+        QStringLiteral("rosterSaveFailureMessage")
+        );
+    m_rosterSaveFailureMessage->setWordWrap(true);
+    m_rosterSaveRetryButton = new QPushButton(m_rosterSaveFailureContainer);
+    m_rosterSaveRetryButton->setObjectName(
+        QStringLiteral("rosterSaveRetryButton")
+        );
+    m_rosterSaveRetryButton->setText(tr("Retry"));
+    saveFailureLayout->addWidget(m_rosterSaveFailureMessage, 1);
+    saveFailureLayout->addWidget(m_rosterSaveRetryButton);
+    m_rosterSaveFailureContainer->hide();
+    const int validationLayoutIndex =
+        contentLayout()->indexOf(m_validationMessage);
+    contentLayout()->insertWidget(
+        validationLayoutIndex >= 0
+            ? validationLayoutIndex + 1
+            : contentLayout()->count(),
+        m_rosterSaveFailureContainer
+        );
+
     m_autosave->bindSaveButton(m_saveButton);
     connect(
         m_autosave,
         &AutosaveCoordinator::stateChanged,
         this,
         &RosterEditorWidget::applyRosterReadFailureRestrictions
+        );
+    connect(
+        m_autosave,
+        &AutosaveCoordinator::stateChanged,
+        this,
+        &RosterEditorWidget::updateRosterSaveFailureRetryAvailability
         );
     connect(
         m_model,
@@ -175,6 +211,26 @@ RosterEditorWidget::RosterEditorWidget(
         }
         );
     connect(
+        m_rosterSaveRetryButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            updateRosterSaveFailureRetryAvailability();
+            if (!m_rosterSaveFailureRetryable
+                || !m_rosterSaveRetryButton->isEnabled())
+            {
+                return;
+            }
+
+            m_autosave->cancelPendingSave();
+            m_rosterSaveFailureRetryConsumed = true;
+            m_rosterSaveFailureRetryable = false;
+            m_rosterSaveRetryButton->hide();
+            saveRosterInternal(false, false);
+        }
+        );
+    connect(
         m_autosave,
         &AutosaveCoordinator::dirtyChanged,
         this,
@@ -187,6 +243,7 @@ void RosterEditorWidget::loadClass(
     const Classroom& classroom
     )
 {
+    clearRosterSaveFailure();
     m_rosterReadFailed = false;
     if (m_rosterLoadFailureMessage)
     {
@@ -291,6 +348,27 @@ void RosterEditorWidget::loadClass(
     updateActions();
     applyRosterReadFailureRestrictions();
     emit outputCapabilitiesChanged();
+}
+
+void RosterEditorWidget::changeEvent(QEvent* event)
+{
+    BasePage::changeEvent(event);
+
+    if (event && event->type() == QEvent::LanguageChange)
+    {
+        if (m_rosterSaveFailureMessage
+            && m_rosterSaveFailureContainer
+            && m_rosterSaveFailureContainer->isVisible())
+        {
+            m_rosterSaveFailureMessage->setText(
+                tr("The roster could not be saved. Your changes are still here.")
+                );
+        }
+        if (m_rosterSaveRetryButton)
+        {
+            m_rosterSaveRetryButton->setText(tr("Retry"));
+        }
+    }
 }
 
 PageOutputCapabilities RosterEditorWidget::outputCapabilities() const
@@ -480,9 +558,15 @@ bool RosterEditorWidget::saveRosterInternal(
                     )
                 );
         }
+        else if (saved.error().code
+            != ClassMngr::Next::Domain::ErrorCode::Validation)
+        {
+            showRosterSaveFailure(saved.error().recoverable);
+        }
         return false;
     }
 
+    clearRosterSaveFailure();
     m_model->clearDirty();
     m_widthsDirty = false;
     m_autosave->markClean();
@@ -663,6 +747,61 @@ void RosterEditorWidget::focusFirstRosterError()
     }
 
     m_validationBinder->focusFirstError();
+}
+
+void RosterEditorWidget::showRosterSaveFailure(bool retryable)
+{
+    if (!m_rosterSaveFailureContainer || !m_rosterSaveFailureMessage)
+    {
+        return;
+    }
+
+    m_rosterSaveFailureRetryable =
+        retryable && !m_rosterSaveFailureRetryConsumed;
+    m_rosterSaveFailureMessage->setText(
+        tr("The roster could not be saved. Your changes are still here.")
+        );
+    m_rosterSaveRetryButton->setVisible(m_rosterSaveFailureRetryable);
+    m_rosterSaveFailureContainer->show();
+    updateRosterSaveFailureRetryAvailability();
+}
+
+void RosterEditorWidget::clearRosterSaveFailure()
+{
+    m_rosterSaveFailureRetryable = false;
+    m_rosterSaveFailureRetryConsumed = false;
+    if (m_rosterSaveFailureMessage)
+    {
+        m_rosterSaveFailureMessage->clear();
+    }
+    if (m_rosterSaveRetryButton)
+    {
+        m_rosterSaveRetryButton->hide();
+    }
+    if (m_rosterSaveFailureContainer)
+    {
+        m_rosterSaveFailureContainer->hide();
+    }
+}
+
+void RosterEditorWidget::updateRosterSaveFailureRetryAvailability()
+{
+    if (!m_rosterSaveRetryButton)
+    {
+        return;
+    }
+
+    m_rosterSaveRetryButton->setEnabled(
+        m_rosterSaveFailureRetryable
+        && m_autosave
+        && m_autosave->isDirty()
+        && m_autosave->isValid()
+        && !m_autosave->isLoading()
+        && m_autosave->isSaveAvailable()
+        && !m_rosterReadFailed
+        && m_services
+        && m_classroom.id > 0
+        );
 }
 
 Roster RosterEditorWidget::currentRosterForSave() const

@@ -10,6 +10,7 @@
 
 class ApplicationServices;
 class AutosaveCoordinator;
+class QEvent;
 class FormValidationBinder;
 class PageHeader;
 class QLabel;
@@ -22,6 +23,7 @@ class RosterItemDelegate;
 class RosterModel;
 class RosterTableView;
 class OnScreenKeyboard;
+class QWidget;
 
 class RosterEditorWidget : public BasePage
 {
@@ -91,6 +93,7 @@ private slots:
         );
 
 private:
+    void changeEvent(QEvent* event) override;
     void buildUi();
     void outputRosters(
         bool print
@@ -116,6 +119,9 @@ private:
 
     void updateRosterValidation();
     void focusFirstRosterError();
+    void showRosterSaveFailure(bool retryable);
+    void clearRosterSaveFailure();
+    void updateRosterSaveFailureRetryAvailability();
 
     void scheduleAutosave();
 
@@ -166,6 +172,8 @@ private:
     bool m_removingRosterRow = false;
     bool m_movingRosterRow = false;
     bool m_updatingValidation = false;
+    bool m_rosterSaveFailureRetryable = false;
+    bool m_rosterSaveFailureRetryConsumed = false;
     AutosaveCoordinator* m_autosave = nullptr;
     FormValidationBinder* m_validationBinder = nullptr;
     bool m_embedded = false;
@@ -182,6 +190,8 @@ private:
     RosterItemDelegate* m_delegate = nullptr;
     QLabel* m_validationMessage = nullptr;
     QLabel* m_rosterLoadFailureMessage = nullptr;
+    QWidget* m_rosterSaveFailureContainer = nullptr;
+    QLabel* m_rosterSaveFailureMessage = nullptr;
 
     QPushButton* m_importButton = nullptr;
     QPushButton* m_koreanKeyboardButton = nullptr;
@@ -189,4 +199,5 @@ private:
     QPushButton* m_addColumnButton = nullptr;
     QPushButton* m_removeColumnButton = nullptr;
     QPushButton* m_saveButton = nullptr;
+    QPushButton* m_rosterSaveRetryButton = nullptr;
 };

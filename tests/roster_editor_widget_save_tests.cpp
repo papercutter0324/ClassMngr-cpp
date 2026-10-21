@@ -16,6 +16,7 @@
 #include <QAction>
 #include <QApplication>
 #include <QDialog>
+#include <QEvent>
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QLabel>
@@ -28,6 +29,7 @@
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QTimer>
+#include <QTranslator>
 #include <QtTest/QtTest>
 #include <QUuid>
 
@@ -48,6 +50,67 @@ public:
     }
 };
 
+class RosterSaveFailureTranslator final : public QTranslator
+{
+public:
+    QString translate(
+        const char* context,
+        const char* sourceText,
+        const char* disambiguation = nullptr,
+        const int n = -1
+        ) const override
+    {
+        Q_UNUSED(disambiguation);
+        Q_UNUSED(n);
+        if (!context || !sourceText
+            || qstrcmp(context, "RosterEditorWidget") != 0)
+        {
+            return {};
+        }
+
+        if (qstrcmp(
+                sourceText,
+                "The roster could not be saved. Your changes are still here."
+                ) == 0)
+        {
+            return QStringLiteral(
+                "Localized roster save failure status.");
+        }
+        if (qstrcmp(sourceText, "Retry") == 0)
+        {
+            return QStringLiteral("Localized retry");
+        }
+        return {};
+    }
+};
+
+class ScopedTranslatorInstallation final
+{
+public:
+    explicit ScopedTranslatorInstallation(QTranslator* translator)
+        : m_translator(translator)
+        , m_installed(QCoreApplication::installTranslator(m_translator))
+    {
+    }
+
+    ~ScopedTranslatorInstallation()
+    {
+        if (m_installed)
+        {
+            QCoreApplication::removeTranslator(m_translator);
+        }
+    }
+
+    [[nodiscard]] bool installed() const
+    {
+        return m_installed;
+    }
+
+private:
+    QTranslator* m_translator = nullptr;
+    bool m_installed = false;
+};
+
 TestingClass makeTestingClass(const QString& name)
 {
     TestingClass testingClass;
@@ -63,6 +126,7 @@ struct RosterEditorFixture final
     QTemporaryDir directory;
     ApplicationServices services;
     int classId = 0;
+    QString databasePath;
 
     bool initialize(QString* error)
     {
@@ -72,12 +136,12 @@ struct RosterEditorFixture final
             return false;
         }
 
-        const QString path = directory.filePath(
+        databasePath = directory.filePath(
             QStringLiteral("roster-editor-save-%1.tps").arg(
                 QUuid::createUuid().toString(QUuid::WithoutBraces)
                 )
             );
-        const Status opened = services.openDatabase(path);
+        const Status opened = services.openDatabase(databasePath);
         if (!opened)
         {
             *error = opened.error();
@@ -152,6 +216,27 @@ QPushButton* findSaveButton(RosterEditorWidget& editor)
     return nullptr;
 }
 
+QLabel* findSaveFailureMessage(RosterEditorWidget& editor)
+{
+    return editor.findChild<QLabel*>(
+        QStringLiteral("rosterSaveFailureMessage")
+        );
+}
+
+QWidget* findSaveFailureContainer(RosterEditorWidget& editor)
+{
+    return editor.findChild<QWidget*>(
+        QStringLiteral("rosterSaveFailureStatus")
+        );
+}
+
+QPushButton* findSaveRetryButton(RosterEditorWidget& editor)
+{
+    return editor.findChild<QPushButton*>(
+        QStringLiteral("rosterSaveRetryButton")
+        );
+}
+
 }
 
 class RosterEditorWidgetSaveTests final : public QObject
@@ -167,6 +252,11 @@ private slots:
     void customColumnRemovalConfirmationSelectionWidthAndAutosave();
     void invalidRosterSaveSelectsFirstInvalidCell();
     void autosaveFailureRemainsSilentAndDirty();
+    void autosaveFailureShowsLocalizedInlineStatusAndRetainsDraft();
+    void recoverableAutosaveFailureRetriesLatestDraftOnce();
+    void failedAutosaveRetryKeepsStatusAndConsumesRetry();
+    void unrecoverableAutosaveFailureDoesNotOfferRetry();
+    void successfulDiscardAndDatabaseClearClearAutosaveFailure();
     void manualSaveButtonConfirmsQuestionableKoreanNameLengths();
     void manualSaveButtonBlocksOtherErrorsAndAutomaticMode();
     void confirmedInteractiveSaveAllowsQuestionableKoreanNameLength();
@@ -736,6 +826,335 @@ autosaveFailureRemainsSilentAndDirty()
     QTRY_VERIFY_WITH_TIMEOUT(saveSpy.count() >= 1, 5'000);
     QCOMPARE(saveSpy.constFirst().at(0).toBool(), false);
     QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void RosterEditorWidgetSaveTests::
+autosaveFailureShowsLocalizedInlineStatusAndRetainsDraft()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    const auto storedBefore =
+        fixture.services.rosterService()->roster(fixture.classId);
+    QVERIFY(storedBefore);
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Inline failure test"), fixture.classId));
+    editor.show();
+    auto* const model = editor.findChild<RosterModel*>();
+    auto* const autosave = editor.findChild<AutosaveCoordinator*>();
+    QLabel* const failureMessage = findSaveFailureMessage(editor);
+    QWidget* const failureContainer = findSaveFailureContainer(editor);
+    QPushButton* const retryButton = findSaveRetryButton(editor);
+    QPushButton* const saveButton = findSaveButton(editor);
+    QVERIFY(model);
+    QVERIFY(autosave);
+    QVERIFY(failureMessage);
+    QVERIFY(failureContainer);
+    QVERIFY(retryButton);
+    QVERIFY(saveButton);
+    autosave->setDebounceInterval(60'000);
+    autosave->cancelPendingSave();
+
+    QSignalSpy saveSpy(autosave, &AutosaveCoordinator::saveRequested);
+    QVERIFY(saveSpy.isValid());
+    QVERIFY(setStudent(model, 0, QStringLiteral("Alice"), QStringLiteral("김민지")));
+    QVERIFY(editor.hasUnsavedChanges());
+    fixture.services.closeDatabase();
+    autosave->requestSave(false);
+
+    QCOMPARE(saveSpy.count(), 1);
+    QVERIFY(editor.hasUnsavedChanges());
+    QCOMPARE(model->data(model->index(0, columnByName(
+        model,
+        QStringLiteral("English")
+        ))).toString(), QStringLiteral("Alice"));
+    QVERIFY(!failureContainer->isHidden());
+    QVERIFY(failureContainer->isVisible());
+    QCOMPARE(
+        failureMessage->text(),
+        QStringLiteral("The roster could not be saved. Your changes are still here.")
+        );
+    QVERIFY(!retryButton->isHidden());
+    QVERIFY(retryButton->isEnabled());
+    QVERIFY(saveButton->isHidden());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+
+    RosterSaveFailureTranslator translator;
+    ScopedTranslatorInstallation translatorScope(&translator);
+    QVERIFY(translatorScope.installed());
+    QEvent languageChange(QEvent::LanguageChange);
+    QCoreApplication::sendEvent(&editor, &languageChange);
+    QCOMPARE(
+        failureMessage->text(),
+        QStringLiteral("Localized roster save failure status.")
+        );
+    QCOMPARE(retryButton->text(), QStringLiteral("Localized retry"));
+
+    QVERIFY(setStudent(model, 0, QStringLiteral("Alicia"), QStringLiteral("박지훈")));
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(!failureContainer->isHidden());
+    QCOMPARE(
+        failureMessage->text(),
+        QStringLiteral("Localized roster save failure status.")
+        );
+    QCOMPARE(saveSpy.count(), 1);
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+    QVERIFY(prompts.messages.isEmpty());
+
+    autosave->setSaveAvailable(false);
+    QVERIFY(fixture.services.openDatabase(fixture.databasePath));
+    const auto storedAfter =
+        fixture.services.rosterService()->roster(fixture.classId);
+    QVERIFY(storedAfter);
+    QCOMPARE(storedAfter->rows, storedBefore->rows);
+}
+
+void RosterEditorWidgetSaveTests::
+recoverableAutosaveFailureRetriesLatestDraftOnce()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Retry current draft test"), fixture.classId));
+    editor.show();
+    auto* const model = editor.findChild<RosterModel*>();
+    auto* const autosave = editor.findChild<AutosaveCoordinator*>();
+    QLabel* const failureMessage = findSaveFailureMessage(editor);
+    QWidget* const failureContainer = findSaveFailureContainer(editor);
+    QPushButton* const retryButton = findSaveRetryButton(editor);
+    QPushButton* const saveButton = findSaveButton(editor);
+    QVERIFY(model);
+    QVERIFY(autosave);
+    QVERIFY(failureMessage);
+    QVERIFY(failureContainer);
+    QVERIFY(retryButton);
+    QVERIFY(saveButton);
+    autosave->setDebounceInterval(60'000);
+    autosave->cancelPendingSave();
+
+    QSignalSpy saveSpy(autosave, &AutosaveCoordinator::saveRequested);
+    QVERIFY(saveSpy.isValid());
+    QVERIFY(setStudent(model, 0, QStringLiteral("Alice"), QStringLiteral("김민지")));
+    fixture.services.closeDatabase();
+    autosave->requestSave(false);
+
+    QCOMPARE(saveSpy.count(), 1);
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(!failureContainer->isHidden());
+    QVERIFY(!retryButton->isHidden());
+    QVERIFY(retryButton->isEnabled());
+    QVERIFY(saveButton->isHidden());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    QVERIFY(setStudent(model, 0, QStringLiteral("Beatrice"), QStringLiteral("박지훈")));
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(!failureContainer->isHidden());
+    QVERIFY(!retryButton->isHidden());
+    QVERIFY(retryButton->isEnabled());
+    QCOMPARE(saveSpy.count(), 1);
+
+    autosave->cancelPendingSave();
+    QVERIFY(fixture.services.openDatabase(fixture.databasePath));
+    QTest::mouseClick(retryButton, Qt::LeftButton);
+
+    QCOMPARE(saveSpy.count(), 1);
+    QVERIFY(!editor.hasUnsavedChanges());
+    QVERIFY(failureContainer->isHidden());
+    QVERIFY(failureMessage->text().isEmpty());
+    QVERIFY(retryButton->isHidden());
+    QVERIFY(saveButton->isHidden());
+    const auto persisted = fixture.services.rosterService()->roster(fixture.classId);
+    QVERIFY(persisted);
+    QCOMPARE(persisted->rows.at(0).at(0), QStringLiteral("Beatrice"));
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void RosterEditorWidgetSaveTests::
+failedAutosaveRetryKeepsStatusAndConsumesRetry()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Failed retry test"), fixture.classId));
+    editor.show();
+    auto* const model = editor.findChild<RosterModel*>();
+    auto* const autosave = editor.findChild<AutosaveCoordinator*>();
+    QLabel* const failureMessage = findSaveFailureMessage(editor);
+    QWidget* const failureContainer = findSaveFailureContainer(editor);
+    QPushButton* const retryButton = findSaveRetryButton(editor);
+    QVERIFY(model);
+    QVERIFY(autosave);
+    QVERIFY(failureMessage);
+    QVERIFY(failureContainer);
+    QVERIFY(retryButton);
+    autosave->setDebounceInterval(60'000);
+    autosave->cancelPendingSave();
+
+    QSignalSpy saveSpy(autosave, &AutosaveCoordinator::saveRequested);
+    QVERIFY(saveSpy.isValid());
+    QVERIFY(setStudent(model, 0, QStringLiteral("Alice"), QStringLiteral("김민지")));
+    fixture.services.closeDatabase();
+    autosave->requestSave(false);
+
+    QCOMPARE(saveSpy.count(), 1);
+    QVERIFY(!failureContainer->isHidden());
+    QVERIFY(!retryButton->isHidden());
+    QVERIFY(retryButton->isEnabled());
+    QTest::mouseClick(retryButton, Qt::LeftButton);
+
+    QCOMPARE(saveSpy.count(), 1);
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(!failureContainer->isHidden());
+    QVERIFY(!failureMessage->text().isEmpty());
+    QVERIFY(retryButton->isHidden());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+    QVERIFY(prompts.messages.isEmpty());
+
+    QVERIFY(setStudent(model, 0, QStringLiteral("Alice Updated"), QStringLiteral("박지훈")));
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(!failureContainer->isHidden());
+    QVERIFY(retryButton->isHidden());
+    autosave->requestSave(false);
+    QCOMPARE(saveSpy.count(), 2);
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(!failureContainer->isHidden());
+    QVERIFY(retryButton->isHidden());
+
+    autosave->cancelPendingSave();
+    QVERIFY(fixture.services.openDatabase(fixture.databasePath));
+    editor.discardChanges();
+    QVERIFY(!editor.hasUnsavedChanges());
+    QVERIFY(failureContainer->isHidden());
+    QVERIFY(failureMessage->text().isEmpty());
+    QVERIFY(retryButton->isHidden());
+    QCOMPARE(model->data(model->index(0, columnByName(
+        model,
+        QStringLiteral("English")
+        ))).toString(), QString());
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void RosterEditorWidgetSaveTests::
+unrecoverableAutosaveFailureDoesNotOfferRetry()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Unrecoverable failure test"), fixture.classId));
+    editor.show();
+    auto* const model = editor.findChild<RosterModel*>();
+    auto* const autosave = editor.findChild<AutosaveCoordinator*>();
+    QLabel* const failureMessage = findSaveFailureMessage(editor);
+    QWidget* const failureContainer = findSaveFailureContainer(editor);
+    QPushButton* const retryButton = findSaveRetryButton(editor);
+    QVERIFY(model);
+    QVERIFY(autosave);
+    QVERIFY(failureMessage);
+    QVERIFY(failureContainer);
+    QVERIFY(retryButton);
+    autosave->setDebounceInterval(60'000);
+    autosave->cancelPendingSave();
+
+    QSqlQuery removeClass(fixture.services.databaseSession()->database());
+    QVERIFY(removeClass.prepare(QStringLiteral("DELETE FROM classes WHERE id=?")));
+    removeClass.addBindValue(fixture.classId);
+    QVERIFY2(removeClass.exec(), qPrintable(removeClass.lastError().text()));
+    QCOMPARE(removeClass.numRowsAffected(), 1);
+
+    QSignalSpy saveSpy(autosave, &AutosaveCoordinator::saveRequested);
+    QVERIFY(saveSpy.isValid());
+    QVERIFY(setStudent(model, 0, QStringLiteral("Alice"), QStringLiteral("김민지")));
+    autosave->requestSave(false);
+
+    QCOMPARE(saveSpy.count(), 1);
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(!failureContainer->isHidden());
+    QVERIFY(!failureMessage->text().isEmpty());
+    QVERIFY(retryButton->isHidden());
+    QTest::mouseClick(retryButton, Qt::LeftButton);
+    QCOMPARE(saveSpy.count(), 1);
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void RosterEditorWidgetSaveTests::
+successfulDiscardAndDatabaseClearClearAutosaveFailure()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Clear failure status test"), fixture.classId));
+    editor.show();
+    auto* const model = editor.findChild<RosterModel*>();
+    auto* const autosave = editor.findChild<AutosaveCoordinator*>();
+    QLabel* const failureMessage = findSaveFailureMessage(editor);
+    QWidget* const failureContainer = findSaveFailureContainer(editor);
+    QPushButton* const retryButton = findSaveRetryButton(editor);
+    QVERIFY(model);
+    QVERIFY(autosave);
+    QVERIFY(failureMessage);
+    QVERIFY(failureContainer);
+    QVERIFY(retryButton);
+    autosave->setDebounceInterval(60'000);
+    autosave->cancelPendingSave();
+
+    QVERIFY(setStudent(model, 0, QStringLiteral("Alice"), QStringLiteral("김민지")));
+    fixture.services.closeDatabase();
+    autosave->requestSave(false);
+    QVERIFY(!failureContainer->isHidden());
+
+    autosave->cancelPendingSave();
+    QVERIFY(fixture.services.openDatabase(fixture.databasePath));
+    editor.discardChanges();
+    QVERIFY(!editor.hasUnsavedChanges());
+    QVERIFY(failureContainer->isHidden());
+    QVERIFY(failureMessage->text().isEmpty());
+    QVERIFY(retryButton->isHidden());
+    QVERIFY(model->data(model->index(0, columnByName(
+        model,
+        QStringLiteral("English")
+        ))).toString().isEmpty());
+
+    QVERIFY(setStudent(model, 0, QStringLiteral("Alice Again"), QStringLiteral("김민지")));
+    fixture.services.closeDatabase();
+    autosave->requestSave(false);
+    QVERIFY(!failureContainer->isHidden());
+    editor.clearDatabaseState();
+    QVERIFY(!editor.hasUnsavedChanges());
+    QVERIFY(failureContainer->isHidden());
+    QVERIFY(failureMessage->text().isEmpty());
+    QVERIFY(retryButton->isHidden());
+    QCOMPARE(model->rowCount(), 25);
+    QVERIFY(model->data(model->index(0, 0)).toString().isEmpty());
     QVERIFY(prompts.messages.isEmpty());
 }
 
