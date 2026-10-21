@@ -7,6 +7,7 @@
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include <QLabel>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QSqlError>
@@ -159,7 +160,7 @@ private slots:
     void unavailableSessionIsSilentAndRetainsDirtyRows();
     void deletedTeacherSaveIsSilentAndRetainsEditedRows();
     void repositoryFailureWarnsAndRetainsDirtyRows();
-    void automaticSaveKeepsRepositoryFailuresQuiet();
+    void automaticRepositoryFailureShowsStatusAndCanBeRetried();
     void automaticSavePersistsEditAndEmitsSaved();
     void successfulWriteWithFailedReloadRequiresReloadBeforeEditingOrSaving();
 };
@@ -490,10 +491,14 @@ repositoryFailureWarnsAndRetainsDirtyRows()
     QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
     QCOMPARE(prompts.messages.first().title, QStringLiteral("Save Directory"));
     QVERIFY(!prompts.messages.first().message.isEmpty());
+    auto* status = page.findChild<QLabel*>(
+        QStringLiteral("staffDirectoryAutosaveFailureStatus"));
+    QVERIFY(status);
+    QVERIFY(status->isHidden());
 }
 
 void StaffDirectoryNativeEnglishSaveTests::
-automaticSaveKeepsRepositoryFailuresQuiet()
+automaticRepositoryFailureShowsStatusAndCanBeRetried()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -508,23 +513,57 @@ automaticSaveKeepsRepositoryFailuresQuiet()
     auto* table = page.findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
+    const int editedTeacherId = staffDirectoryCellData(
+        *table, 0, 0, NativeEnglishIdRole).toInt();
+    QVERIFY(editedTeacherId > 0);
 
-    QSqlQuery drop(services.databaseSession()->database());
-    QVERIFY2(drop.exec(QStringLiteral("DROP TABLE native_english_teachers")),
-        qPrintable(drop.lastError().text()));
+    QSqlQuery createTrigger(services.databaseSession()->database());
+    QVERIFY2(createTrigger.exec(QStringLiteral(
+        "CREATE TRIGGER reject_native_english_update "
+        "BEFORE UPDATE ON native_english_teachers "
+        "BEGIN SELECT RAISE(ABORT, 'reject update'); END")),
+        qPrintable(createTrigger.lastError().text()));
 
     FakeUserPromptService prompts;
     DialogServices::setUserPromptServiceForTesting(&prompts);
     QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+    auto* status = page.findChild<QLabel*>(
+        QStringLiteral("staffDirectoryAutosaveFailureStatus"));
+    QVERIFY(status);
+    QVERIFY(status->isHidden());
     setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("Automatic Edit"));
     QVERIFY(page.hasUnsavedChanges());
 
-    QTest::qWait(1100);
+    QTest::qWait(1000);
 
     QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(table->model()->rowCount(), 2);
     QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Automatic Edit"));
     QCOMPARE(saved.count(), 0);
     QCOMPARE(prompts.messages.size(), 0);
+    QVERIFY(!status->isHidden());
+    QCOMPARE(status->text(), QStringLiteral(
+        "Staff directory changes could not be saved automatically. "
+        "Your edits are still here."));
+
+    QSqlQuery dropTrigger(services.databaseSession()->database());
+    QVERIFY2(dropTrigger.exec(QStringLiteral(
+        "DROP TRIGGER reject_native_english_update")),
+        qPrintable(dropTrigger.lastError().text()));
+    QVERIFY(setStaffDirectoryCellText(
+        *table, 0, 0, QStringLiteral("Recovered Edit")));
+    QTRY_COMPARE_WITH_TIMEOUT(saved.count(), 1, 3000);
+
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 0);
+    QVERIFY(status->isHidden());
+    QVERIFY(status->text().isEmpty());
+    const auto persisted = services.databaseSession()
+        ->nativeEnglishTeacherRepository()->getAll();
+    QVERIFY(persisted);
+    QCOMPARE(persisted->size(), 2);
+    QCOMPARE(teacherNamed(*persisted, QStringLiteral("Recovered Edit")).id,
+        editedTeacherId);
 }
 
 void StaffDirectoryNativeEnglishSaveTests::

@@ -8213,6 +8213,16 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
 <context>
     <name>StaffDirectoryPage</name>
     <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp"/>
+        <source>Save status</source>
+        <translation>저장 상태</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp"/>
+        <source>Staff directory changes could not be saved automatically. Your edits are still here.</source>
+        <translation>직원 디렉터리 변경 사항을 자동으로 저장하지 못했습니다. 수정 내용은 그대로 유지됩니다.</translation>
+    </message>
+    <message>
         <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="+56"/>
         <source>Coordinator</source>
         <translation>코디네이터</translation>

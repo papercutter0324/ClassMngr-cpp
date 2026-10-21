@@ -8123,6 +8123,16 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
 <context>
     <name>StaffDirectoryPage</name>
     <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp"/>
+        <source>Save status</source>
+        <translation>Save status</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp"/>
+        <source>Staff directory changes could not be saved automatically. Your edits are still here.</source>
+        <translation>Staff directory changes could not be saved automatically. Your edits are still here.</translation>
+    </message>
+    <message>
         <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="+56"/>
         <source>Coordinator</source>
         <translation type="unfinished"></translation>

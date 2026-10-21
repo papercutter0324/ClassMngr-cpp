@@ -63,6 +63,8 @@ private:
     void deleteSelectedRows();
     void markDirty(bool scheduleAutosave = true);
     bool saveDirectory(bool showErrors);
+    void showAutosaveFailureStatus();
+    void clearAutosaveFailureStatus();
     void reloadAfterSuccessfulSave();
     bool loadDirectoryImpl(bool importRefresh, QString* readError);
     void reportDirectoryLoadFailure(
@@ -78,6 +80,7 @@ private:
     bool m_loading = false;
     bool m_dirty = false;
     bool m_reloadRequired = false;
+    bool m_autosaveFailureStatusActive = false;
     enum class ReloadReason
     {
         None,
@@ -93,6 +96,7 @@ private:
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
+    QLabel* m_autosaveFailureStatusLabel = nullptr;
     QPushButton* m_koreanKeyboardButton = nullptr;
     OnScreenKeyboard* m_onScreenKeyboard = nullptr;
     QTableView* m_table = nullptr;

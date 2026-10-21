@@ -7,13 +7,16 @@
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include <QLabel>
 #include <QPushButton>
+#include <QCoreApplication>
 #include <QItemSelectionModel>
 #include <QSignalSpy>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTableView>
 #include <QTemporaryDir>
+#include <QTranslator>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -149,6 +152,78 @@ void setKoreanName(QTableView& table, const int row, const QString& name)
     setStaffDirectoryCellText(table, row, 1, name);
 }
 
+class KoreanStaffDirectoryStatusTranslator final : public QTranslator
+{
+public:
+    QString translate(
+        const char* context,
+        const char* sourceText,
+        const char* disambiguation = nullptr,
+        int n = -1
+        ) const override
+    {
+        Q_UNUSED(disambiguation);
+        Q_UNUSED(n);
+        if (!context || !sourceText
+            || qstrcmp(context, "StaffDirectoryPage") != 0)
+        {
+            return {};
+        }
+
+        if (qstrcmp(sourceText, "Save status") == 0)
+        {
+            return QStringLiteral("저장 상태");
+        }
+        if (qstrcmp(
+                sourceText,
+                "Staff directory changes could not be saved automatically. "
+                "Your edits are still here.") == 0)
+        {
+            return QStringLiteral(
+                "직원 디렉터리 변경 사항을 자동으로 저장하지 못했습니다. "
+                "수정 내용은 그대로 유지됩니다.");
+        }
+        return {};
+    }
+};
+
+class ScopedTranslatorInstallation final
+{
+public:
+    explicit ScopedTranslatorInstallation(QTranslator& translator)
+        : m_translator(&translator)
+        , m_installed(QCoreApplication::installTranslator(m_translator))
+    {
+    }
+
+    ~ScopedTranslatorInstallation()
+    {
+        if (m_installed)
+        {
+            QCoreApplication::removeTranslator(m_translator);
+        }
+    }
+
+    bool installed() const
+    {
+        return m_installed;
+    }
+
+    bool remove()
+    {
+        if (!m_installed)
+        {
+            return false;
+        }
+        m_installed = false;
+        return QCoreApplication::removeTranslator(m_translator);
+    }
+
+private:
+    QTranslator* m_translator = nullptr;
+    bool m_installed = false;
+};
+
 }
 
 class StaffDirectoryGsTeamSaveTests final : public QObject
@@ -166,7 +241,7 @@ private slots:
     void unavailableSessionIsSilentAndRetainsEditedRows();
     void deletedMemberSaveIsSilentAndRetainsEditedRows();
     void repositoryFailureRetainsEditsAndDeletionThenCanBeRetried();
-    void automaticRepositoryFailureIsQuietAndKeepsDirtyState();
+    void automaticRepositoryFailureShowsStatusAndCanBeRetried();
     void automaticSavePersistsEditAndEmitsSaved();
     void deletesOnlySelectedPersistedRowsWithOneConfirmation();
     void manualDiscardRestoresRowsAndClearsPendingDeletes();
@@ -623,6 +698,10 @@ repositoryFailureRetainsEditsAndDeletionThenCanBeRetried()
     QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
     QCOMPARE(prompts.messages.first().title, QStringLiteral("Save Directory"));
     QVERIFY(!prompts.messages.first().message.isEmpty());
+    auto* status = page.findChild<QLabel*>(
+        QStringLiteral("staffDirectoryAutosaveFailureStatus"));
+    QVERIFY(status);
+    QVERIFY(status->isHidden());
 
     const auto rolledBack = services.databaseSession()
         ->gsTeamRepository()->getAll();
@@ -650,7 +729,7 @@ repositoryFailureRetainsEditsAndDeletionThenCanBeRetried()
 }
 
 void StaffDirectoryGsTeamSaveTests::
-automaticRepositoryFailureIsQuietAndKeepsDirtyState()
+automaticRepositoryFailureShowsStatusAndCanBeRetried()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -662,6 +741,9 @@ automaticRepositoryFailureIsQuietAndKeepsDirtyState()
     QVERIFY(page.loadDirectory());
     auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
+    const int editedMemberId =
+        staffDirectoryCellData(*table, 0, 0, IdRole).toInt();
+    QVERIFY(editedMemberId > 0);
 
     QSqlQuery createTrigger(services.databaseSession()->database());
     QVERIFY2(createTrigger.exec(QStringLiteral(
@@ -672,15 +754,57 @@ automaticRepositoryFailureIsQuietAndKeepsDirtyState()
     FakeUserPromptService prompts;
     DialogServices::setUserPromptServiceForTesting(&prompts);
     QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+    auto* status = page.findChild<QLabel*>(
+        QStringLiteral("staffDirectoryAutosaveFailureStatus"));
+    QVERIFY(status);
+    QVERIFY(status->isHidden());
     setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("Automatic Edit"));
     QVERIFY(page.hasUnsavedChanges());
 
     QTest::qWait(1000);
 
     QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(table->model()->rowCount(), 2);
     QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Automatic Edit"));
     QCOMPARE(saved.count(), 0);
     QCOMPARE(prompts.messages.size(), 0);
+    QVERIFY(!status->isHidden());
+    QCOMPARE(status->text(), QStringLiteral(
+        "Staff directory changes could not be saved automatically. "
+        "Your edits are still here."));
+
+    KoreanStaffDirectoryStatusTranslator koreanTranslator;
+    ScopedTranslatorInstallation translatorInstallation(koreanTranslator);
+    QVERIFY(translatorInstallation.installed());
+    page.retranslateUi();
+    QCOMPARE(status->text(), QStringLiteral(
+        "직원 디렉터리 변경 사항을 자동으로 저장하지 못했습니다. "
+        "수정 내용은 그대로 유지됩니다."));
+    QCOMPARE(status->accessibleName(), QStringLiteral("저장 상태"));
+    QVERIFY(translatorInstallation.remove());
+    page.retranslateUi();
+    QCOMPARE(status->text(), QStringLiteral(
+        "Staff directory changes could not be saved automatically. "
+        "Your edits are still here."));
+
+    QSqlQuery dropTrigger(services.databaseSession()->database());
+    QVERIFY2(dropTrigger.exec(QStringLiteral(
+        "DROP TRIGGER reject_gs_team_update")),
+        qPrintable(dropTrigger.lastError().text()));
+    QVERIFY(setStaffDirectoryCellText(
+        *table, 0, 0, QStringLiteral("Recovered Edit")));
+    QTRY_COMPARE_WITH_TIMEOUT(saved.count(), 1, 3000);
+
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 0);
+    QVERIFY(status->isHidden());
+    QVERIFY(status->text().isEmpty());
+    const auto persisted = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(persisted);
+    QCOMPARE(persisted->size(), 2);
+    QCOMPARE(memberNamed(*persisted, QStringLiteral("Recovered Edit")).id,
+        editedMemberId);
 }
 
 void StaffDirectoryGsTeamSaveTests::

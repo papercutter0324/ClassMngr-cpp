@@ -442,6 +442,17 @@ void StaffDirectoryPage::buildUi()
         UiConstants::Pages::SubtitleFontSize));
     m_subtitleLabel->setWordWrap(true);
 
+    m_autosaveFailureStatusLabel = new QLabel(this);
+    m_autosaveFailureStatusLabel->setObjectName(
+        QStringLiteral("staffDirectoryAutosaveFailureStatus")
+        );
+    m_autosaveFailureStatusLabel->setAccessibleName(tr("Save status"));
+    m_autosaveFailureStatusLabel->setAlignment(
+        Qt::AlignLeft | Qt::AlignVCenter
+        );
+    m_autosaveFailureStatusLabel->setWordWrap(true);
+    m_autosaveFailureStatusLabel->hide();
+
     auto* titleRow = new QHBoxLayout;
     titleRow->setContentsMargins(0, 0, 0, 0);
     titleRow->setSpacing(UiConstants::Pages::HeaderSpacing);
@@ -466,6 +477,7 @@ void StaffDirectoryPage::buildUi()
 
     headerLayout->addLayout(titleRow);
     headerLayout->addWidget(m_subtitleLabel);
+    headerLayout->addWidget(m_autosaveFailureStatusLabel);
     contentLayout()->addLayout(headerLayout);
     contentLayout()->addSpacing(UiConstants::Pages::HeaderContentSpacing);
 
@@ -565,6 +577,7 @@ bool StaffDirectoryPage::refreshAfterTeacherImport(
         return loadDirectory();
     }
 
+    clearAutosaveFailureStatus();
     m_reloadRequired = true;
     m_reloadReason = ReloadReason::Import;
     m_dirty = false;
@@ -715,6 +728,7 @@ bool StaffDirectoryPage::loadDirectoryImpl(
     m_reloadReason = ReloadReason::None;
     m_loading = false;
     m_autosaveTimer->stop();
+    clearAutosaveFailureStatus();
     updateActions();
     markRefreshed();
     return true;
@@ -955,9 +969,16 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
                             static_cast<qsizetype>(message.size()))
                     );
             }
+            else if (outcome.error
+                && outcome.error->code
+                    == ClassMngr::Next::Domain::ErrorCode::Technical)
+            {
+                showAutosaveFailureStatus();
+            }
             return false;
         }
 
+        clearAutosaveFailureStatus();
         reloadAfterSuccessfulSave();
         emit directorySaved();
         return true;
@@ -1040,12 +1061,49 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
                         static_cast<qsizetype>(message.size()))
                 );
         }
+        else if (outcome.error
+            && outcome.error->code
+                == ClassMngr::Next::Domain::ErrorCode::Technical)
+        {
+            showAutosaveFailureStatus();
+        }
         return false;
     }
 
+    clearAutosaveFailureStatus();
     reloadAfterSuccessfulSave();
     emit directorySaved();
     return true;
+}
+
+void StaffDirectoryPage::showAutosaveFailureStatus()
+{
+    m_autosaveFailureStatusActive = true;
+    if (!m_autosaveFailureStatusLabel)
+    {
+        return;
+    }
+
+    m_autosaveFailureStatusLabel->setAccessibleName(tr("Save status"));
+    m_autosaveFailureStatusLabel->setText(
+        tr(
+            "Staff directory changes could not be saved automatically. "
+            "Your edits are still here."
+            )
+        );
+    m_autosaveFailureStatusLabel->show();
+}
+
+void StaffDirectoryPage::clearAutosaveFailureStatus()
+{
+    m_autosaveFailureStatusActive = false;
+    if (!m_autosaveFailureStatusLabel)
+    {
+        return;
+    }
+
+    m_autosaveFailureStatusLabel->clear();
+    m_autosaveFailureStatusLabel->hide();
 }
 
 void StaffDirectoryPage::markDirty(bool scheduleAutosave)
@@ -1093,6 +1151,10 @@ QString StaffDirectoryPage::unsavedChangesMessage() const
 void StaffDirectoryPage::setSaveMode(SaveMode mode)
 {
     m_saveMode = mode;
+    if (mode != SaveMode::Automatic)
+    {
+        clearAutosaveFailureStatus();
+    }
     updateActions();
     if (mode == SaveMode::Automatic && m_dirty) m_autosaveTimer->start();
     else m_autosaveTimer->stop();
@@ -1119,6 +1181,7 @@ void StaffDirectoryPage::clearDatabaseState()
     m_reloadReason = ReloadReason::None;
     m_loading = false;
     m_autosaveTimer->stop();
+    clearAutosaveFailureStatus();
     updateActions();
 }
 
@@ -1143,6 +1206,21 @@ void StaffDirectoryPage::retranslateUi()
         m_koreanKeyboardButton->setAccessibleName(
             tr("Korean Keyboard")
             );
+    }
+    if (m_autosaveFailureStatusLabel)
+    {
+        m_autosaveFailureStatusLabel->setAccessibleName(
+            tr("Save status")
+            );
+        if (m_autosaveFailureStatusActive)
+        {
+            m_autosaveFailureStatusLabel->setText(
+                tr(
+                    "Staff directory changes could not be saved automatically. "
+                    "Your edits are still here."
+                    )
+                );
+        }
     }
     updateActions();
 }
