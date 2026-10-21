@@ -62524,3 +62524,33 @@ No other slices were found.
 Batch525 remains active and unpushed: F1292 is complete locally, F1293 is next
 for acceptance, and F1294 is last. Gate 1 and Gate 2 remain Partial, and the
 Phase 2 exit gate remains Open.
+
+### F1293 preserve the active profile on failed new-profile creation accepted before implementation - 2026-10-21
+
+In normal New Teacher Profile creation, if an active profile was open before
+the operation and new-profile creation fails, preserve access to the prior
+profile when recovery is safe. Capture its path before closing. Reopen it only
+after the failed candidate workspace is confirmed closed and the previous file
+is safe: a different target leaves the prior file untouched; for same-path
+replacement, reopen only when lifecycle reports `originalProfileRestored`.
+Restore the service session, current-file/UI loaded state, and recent-history
+behavior through the existing open path.
+
+If there is no prior path, rollback is incomplete, the candidate workspace did
+not close, or reopening fails, remain in no-database state and preserve or
+report available recovery paths; never reopen a partial replacement. Successful
+creation and Initial Setup behavior remain unchanged.
+
+Focused verification: incrementally build `ClassMngr` and
+`ClassMngrFileControllerWorkspaceLifecycleTests` in
+`build/macos-clang-debug`; cover active-profile different-target failure and
+same-target rollback success, plus relevant existing no-active create failure,
+successful create replacement, and failed replacement open selectors. Confirm
+CTest registration, run that target, and run `git diff --check`. At acceptance,
+implementation, build, and tests have not started. No full-suite, Windows,
+clean-build, hosted-CI, or phase-gate result is claimed.
+
+F1293 is accepted before implementation in active, unpushed Batch525. F1292 is
+complete locally and F1294 remains last. Batch526 has provisional, unaccepted
+F1295. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
+Open.

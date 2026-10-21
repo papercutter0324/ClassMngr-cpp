@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1293 is next for acceptance in unpushed Batch525; its work start triggered bounded Batch526 discovery with provisional, unaccepted F1295; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: F1293 is accepted before implementation to preserve the prior active profile after safe failed normal-profile creation; F1294 is last in unpushed Batch525 and Batch526 has provisional, unaccepted F1295; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-Batch526 discovery was triggered when work started on F1293, the next slice for acceptance in unpushed Batch525. The bounded sample found provisional, unaccepted F1295; F1292 is complete locally and F1294 remains last in Batch525. See the [Batch526 discovery record](03-Phase-2-Progress-Log.md#batch526-discovery-triggered-at-f1293-2026-10-21).
+F1293 is accepted before implementation in unpushed Batch525; F1292 is complete locally and F1294 remains last. Batch526 has provisional, unaccepted F1295. See the [F1293 acceptance record](03-Phase-2-Progress-Log.md#f1293-preserve-the-active-profile-on-failed-new-profile-creation-accepted-before-implementation-2026-10-21).
 
 ### Slice discovery batches
 
@@ -83,9 +83,8 @@ screened out. F1292 is complete locally in unpushed Batch525.
 
 1. F1292 - Complete locally: on a successful write followed by reload failure,
    lock the stale Teacher Info page until a successful reopen.
-2. F1293 - Discovered; next for acceptance; work start triggered Batch526 discovery:
-   new-profile replacement may close the active profile before replacement
-   creation succeeds; expected behavior needs acceptance.
+2. F1293 - Accepted before implementation: preserve access to the prior active
+   profile after failed normal New Teacher Profile creation when recovery is safe.
 3. F1294 - Discovered; last after F1293: nested-folder parent metadata through
    the legacy catalog adapter has an integration-coverage gap; no runtime
    failure is demonstrated.
