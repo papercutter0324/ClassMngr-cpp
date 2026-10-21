@@ -39,6 +39,7 @@
 #include <QTemporaryDir>
 #include <QTimeEdit>
 #include <QTimer>
+#include <QTranslator>
 #include <QWidget>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -56,6 +57,63 @@ struct CalendarWorkspace final
     QTemporaryDir directory;
     ApplicationServices services;
     int preservedEventId = -1;
+};
+
+class CalendarPreferenceNoticeTranslator final : public QTranslator
+{
+public:
+    QString translate(
+        const char* context,
+        const char* sourceText,
+        const char* disambiguation = nullptr,
+        const int n = -1
+        ) const override
+    {
+        Q_UNUSED(disambiguation);
+        Q_UNUSED(n);
+        if (!context || !sourceText
+            || qstrcmp(context, "CalendarPage") != 0)
+        {
+            return {};
+        }
+
+        if (qstrcmp(
+                sourceText,
+                "Some calendar display preferences could not be loaded. "
+                "Default values are being used."
+                ) == 0)
+        {
+            return QStringLiteral("Localized calendar preference notice.");
+        }
+        return {};
+    }
+};
+
+class ScopedTranslatorInstallation final
+{
+public:
+    explicit ScopedTranslatorInstallation(QTranslator* translator)
+        : m_translator(translator)
+        , m_installed(QCoreApplication::installTranslator(m_translator))
+    {
+    }
+
+    ~ScopedTranslatorInstallation()
+    {
+        if (m_installed)
+        {
+            QCoreApplication::removeTranslator(m_translator);
+        }
+    }
+
+    [[nodiscard]] bool installed() const
+    {
+        return m_installed;
+    }
+
+private:
+    QTranslator* m_translator = nullptr;
+    bool m_installed = false;
 };
 
 struct PersistedEventRows final
@@ -920,6 +978,13 @@ QString visibleUpcomingFailure(QWidget* scopePage)
     return label ? label->text() : QString();
 }
 
+QLabel* displayPreferencesNotice(CalendarPage& page)
+{
+    return page.findChild<QLabel*>(
+        QStringLiteral("calendarDisplayPreferencesNotice")
+        );
+}
+
 QPushButton* upcomingRetryButton(QWidget* scopePage)
 {
     return scopePage
@@ -1628,6 +1693,9 @@ private slots:
     void currentMonthNavigationEvictsPriorMonthResources();
     void next30DaysIncludesBoundariesAndFiltersEventTypes();
     void campusReadFailureKeepsAllEventsVisible();
+    void calendarDisplayPreferenceFailuresShowNoticeAndRecover();
+    void calendarDisplayPreferenceFailuresAreDetectedIndependently();
+    void calendarDisplayPreferenceDefaultsDoNotShowNotice();
     void unknownNonemptyCampusDoesNotUseEmptyFallback();
     void currentCampusIdAliasShowsMatchingCampusEvents();
     void nextTenUpcomingEventsUseStableVisibleOrderAndLimit();
@@ -4429,6 +4497,293 @@ campusReadFailureKeepsAllEventsVisible()
 }
 
 void CalendarPageEventMutationParityTests::
+calendarDisplayPreferenceFailuresShowNoticeAndRecover()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        removePreservedFixtureEvent(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        enable24HourFixtureTime(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    const QDate eventDate = QDate::currentDate().addDays(2);
+    CalendarEvent event;
+    event.title = QStringLiteral("F1301 Preference fallback event");
+    event.eventType = QStringLiteral("Workshop");
+    event.timeStatus = QStringLiteral("Timed");
+    event.startDate = eventDate;
+    event.startTime = QTime(9, 0);
+    event.endDate = eventDate;
+    event.endTime = QTime(10, 0);
+    QVERIFY2(
+        saveFixtureEvent(workspace, event, &setupError) > 0,
+        qPrintable(setupError)
+        );
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "ALTER TABLE app_settings "
+                "RENAME TO app_settings_temporarily_unavailable"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+
+    CalendarPreferenceNoticeTranslator translator;
+    CalendarPage page(&workspace.services);
+    page.show();
+    auto* const tabs = upcomingTabs(page);
+    QLabel* const notice = displayPreferencesNotice(page);
+    QVERIFY(tabs);
+    QVERIFY(notice);
+    tabs->setCurrentIndex(1);
+    QTRY_VERIFY_WITH_TIMEOUT(!notice->isHidden(), 5000);
+    QCOMPARE(
+        notice->text(),
+        QStringLiteral(
+            "Some calendar display preferences could not be loaded. "
+            "Default values are being used."
+            )
+        );
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    ScopedTranslatorInstallation translatorScope(&translator);
+    QVERIFY(translatorScope.installed());
+    page.retranslateUi();
+    QCOMPARE(
+        notice->text(),
+        QStringLiteral("Localized calendar preference notice.")
+        );
+
+    QTRY_VERIFY_WITH_TIMEOUT(
+        visibleUpcomingRows(tabs->currentWidget())
+            .join(QLatin1Char('\n'))
+            .contains(event.title),
+        15000
+        );
+    QStringList rows = visibleUpcomingRows(tabs->currentWidget());
+    QCOMPARE(rows.size(), 1);
+    QVERIFY(rows.constFirst().contains(QStringLiteral("9:00 AM - 10:00 AM")));
+    QVERIFY(visibleUpcomingFailure(tabs->currentWidget()).isEmpty());
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "ALTER TABLE app_settings_temporarily_unavailable "
+                "RENAME TO app_settings"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+    page.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(notice->isHidden(), 5000);
+    QVERIFY(notice->text().isEmpty());
+    QTRY_VERIFY_WITH_TIMEOUT(
+        visibleUpcomingRows(tabs->currentWidget())
+            .join(QLatin1Char('\n'))
+            .contains(event.title),
+        15000
+        );
+    rows = visibleUpcomingRows(tabs->currentWidget());
+    QCOMPARE(rows.size(), 1);
+    QVERIFY(rows.constFirst().contains(QStringLiteral("09:00 - 10:00")));
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void CalendarPageEventMutationParityTests::
+calendarDisplayPreferenceDefaultsDoNotShowNotice()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        removePreservedFixtureEvent(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    CalendarPage page(&workspace.services);
+    QLabel* const notice = displayPreferencesNotice(page);
+    QVERIFY(notice);
+    QVERIFY(notice->isHidden());
+    QVERIFY(notice->text().isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    workspace.services.closeDatabase();
+    page.refresh();
+    QVERIFY(notice->isHidden());
+    QVERIFY(notice->text().isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void CalendarPageEventMutationParityTests::
+calendarDisplayPreferenceFailuresAreDetectedIndependently()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        removePreservedFixtureEvent(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        enable24HourFixtureTime(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "ALTER TABLE app_settings "
+                "RENAME TO app_settings_base"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "INSERT OR IGNORE INTO app_settings_base (key, value) "
+                "VALUES ('calendar/showEventsAtAllCampuses', 'false')"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "INSERT OR IGNORE INTO app_settings_base (key, value) "
+                "VALUES ('myInfo/campus', 'j')"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "CREATE TABLE app_settings_read_fault (key TEXT NOT NULL)"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "INSERT INTO app_settings_read_fault (key) "
+                "VALUES ('myInfo/campus')"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "CREATE VIEW app_settings AS "
+                "SELECT key, CASE WHEN key = ("
+                "SELECT key FROM app_settings_read_fault LIMIT 1) "
+                "THEN json_extract('not-json', '$.value') "
+                "ELSE value END AS value FROM app_settings_base"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+
+    CalendarPage page(&workspace.services);
+    QLabel* const notice = displayPreferencesNotice(page);
+    QVERIFY(notice);
+    QVERIFY(notice->isHidden());
+    QVERIFY(notice->text().isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "UPDATE app_settings_read_fault "
+                "SET key = 'calendar/showEventsAtAllCampuses'"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+    page.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(!notice->isHidden(), 5000);
+    QCOMPARE(
+        notice->text(),
+        QStringLiteral(
+            "Some calendar display preferences could not be loaded. "
+            "Default values are being used."
+            )
+        );
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "UPDATE app_settings_read_fault "
+                "SET key = 'schedule_use_24h'"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+    page.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(!notice->isHidden(), 5000);
+    QCOMPARE(
+        notice->text(),
+        QStringLiteral(
+            "Some calendar display preferences could not be loaded. "
+            "Default values are being used."
+            )
+        );
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral("DELETE FROM app_settings_read_fault"),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+    page.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(notice->isHidden(), 5000);
+    QVERIFY(notice->text().isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void CalendarPageEventMutationParityTests::
 unknownNonemptyCampusDoesNotUseEmptyFallback()
 {
     CalendarWorkspace workspace;
@@ -5107,8 +5462,11 @@ upcomingRangeFailuresOfferRetryAndRecover()
     CalendarEventCache* const cache =
         page.findChild<CalendarEventCache*>();
     NavigationTabWidget* const tabs = upcomingTabs(page);
+    QLabel* const displayNotice = displayPreferencesNotice(page);
     QVERIFY(cache);
     QVERIFY(tabs);
+    QVERIFY(displayNotice);
+    QVERIFY(displayNotice->isHidden());
 
     const QDate visibleMonth(
         qMax(today.year(), 2026),
@@ -5132,6 +5490,7 @@ upcomingRangeFailuresOfferRetryAndRecover()
     QVERIFY(visibleUpcomingEmptyLabel(tabs->widget(0)).isEmpty());
     QVERIFY(!currentMonthFailure.contains(QStringLiteral("Loading events")));
     QVERIFY(!currentMonthFailure.contains(QStringLiteral("No upcoming events")));
+    QVERIFY(displayNotice->isHidden());
 
     tabs->setCurrentIndex(1);
     const QDate next30End = today.addDays(30);
@@ -5149,6 +5508,7 @@ upcomingRangeFailuresOfferRetryAndRecover()
     QVERIFY(visibleUpcomingEmptyLabel(tabs->currentWidget()).isEmpty());
     QVERIFY(!next30Failure.contains(QStringLiteral("Loading events")));
     QVERIFY(!next30Failure.contains(QStringLiteral("No upcoming events")));
+    QVERIFY(displayNotice->isHidden());
 
     QVERIFY2(
         executeWorkspaceSql(
@@ -5181,6 +5541,7 @@ upcomingRangeFailuresOfferRetryAndRecover()
             .contains(event.title)
         );
     QVERIFY(cache->rangeError(today, next30End).isEmpty());
+    QVERIFY(displayNotice->isHidden());
 }
 
 void CalendarPageEventMutationParityTests::

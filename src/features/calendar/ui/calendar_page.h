@@ -165,7 +165,7 @@ private:
             ClassMngr::Next::Application::CalendarEventSummary
             >& events
         ) const;
-    CalendarEventDisplayOptions calendarEventDisplayOptions() const;
+    CalendarEventDisplayOptions calendarEventDisplayOptions();
     std::vector<
         ClassMngr::Next::Application::CalendarEventSummary
         > filterUpcomingEvents(
@@ -232,6 +232,7 @@ private:
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
     QLabel* m_upcomingEventsHeading = nullptr;
+    QLabel* m_displayPreferencesNotice = nullptr;
     CalendarEventCache* m_calendarCache = nullptr;
     CalendarEventModel* m_calendarModel = nullptr;
     AcademicCalendarProvider* m_academicCalendarProvider = nullptr;

@@ -323,6 +323,20 @@ void CalendarPage::buildUpcomingEventsPanel(
     cardLayout->addSpacing(24);
     cardLayout->addWidget(m_upcomingEventsHeading);
 
+    if (!m_displayPreferencesNotice)
+    {
+        m_displayPreferencesNotice = new QLabel(m_scrollContent);
+        m_displayPreferencesNotice->setObjectName(
+            QStringLiteral("calendarDisplayPreferencesNotice")
+            );
+        m_displayPreferencesNotice->setWordWrap(true);
+        m_displayPreferencesNotice->hide();
+        m_scrollContentLayout->insertWidget(
+            qMax(0, m_scrollContentLayout->count() - 1),
+            m_displayPreferencesNotice
+            );
+    }
+
     for (const QString& eventType : calendarEventTypes())
     {
         if (!m_eventTypeFilterStates.contains(eventType))
@@ -927,11 +941,12 @@ bool CalendarPage::upcomingEventsLoading(
 }
 
 CalendarPage::CalendarEventDisplayOptions
-CalendarPage::calendarEventDisplayOptions() const
+CalendarPage::calendarEventDisplayOptions()
 {
     CalendarEventDisplayOptions options;
     options.activeTypes =
         activeCalendarEventTypes();
+    bool displayPreferenceReadFailed = false;
 
     ClassMngr::Next::Platform::
         ApplicationServicesCurrentCampusPreferencesPort
@@ -950,14 +965,25 @@ CalendarPage::calendarEventDisplayOptions() const
             options.hideStartOfTermEvents =
                 eventDisplayPreferences.value().hideStartOfTermEvents;
         }
+        else if (eventDisplayPreferences.error().code
+            == ClassMngr::Next::Domain::ErrorCode::Technical)
+        {
+            displayPreferenceReadFailed = true;
+        }
         ClassMngr::Next::Platform::
             ApplicationServicesScheduleDisplayPreferencesPort
             displayPreferencesPort(*m_services);
         const auto displayPreferences = displayPreferencesPort.load();
-        options.use24HourTime =
-            displayPreferences
-                ? displayPreferences.value().use24HourTime
-                : false;
+        if (displayPreferences)
+        {
+            options.use24HourTime =
+                displayPreferences.value().use24HourTime;
+        }
+        else if (displayPreferences.error().code
+            == ClassMngr::Next::Domain::ErrorCode::Technical)
+        {
+            displayPreferenceReadFailed = true;
+        }
 
         const auto currentCampus = currentCampusPreferencesPort.read();
         const QString currentName = currentCampus
@@ -1008,6 +1034,23 @@ CalendarPage::calendarEventDisplayOptions() const
                     );
                 options.currentCampusCodes.append(campusDisplayName(campus));
             }
+        }
+    }
+
+    if (m_displayPreferencesNotice)
+    {
+        if (displayPreferenceReadFailed)
+        {
+            m_displayPreferencesNotice->setText(
+                tr("Some calendar display preferences could not be loaded. "
+                   "Default values are being used.")
+                );
+            m_displayPreferencesNotice->show();
+        }
+        else
+        {
+            m_displayPreferencesNotice->clear();
+            m_displayPreferencesNotice->hide();
         }
     }
 

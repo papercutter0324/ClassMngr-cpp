@@ -1085,6 +1085,11 @@
         <source>Choose %1 color</source>
         <translation>%1 색상 선택</translation>
     </message>
+    <message>
+        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="1045"/>
+        <source>Some calendar display preferences could not be loaded. Default values are being used.</source>
+        <translation>일부 달력 표시 설정을 불러오지 못했습니다. 기본값을 사용합니다.</translation>
+    </message>
 </context>
 <context>
     <name>CalendarSettingsDialog</name>
