@@ -53,15 +53,15 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch519's sole slice, F1279, is accepted/in progress before implementation; Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current note: Batch519 is complete locally and awaiting its normal push; Batch520 discovery starts after the push, with no implementation slice active; Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-Batch519's sole slice, F1279, is accepted/in progress before implementation. See the [Batch519 discovery and acceptance record](03-Phase-2-Progress-Log.md#batch519-discovery-2026-10-21). Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+Batch519's sole slice, F1279, is complete locally and awaiting its normal push. Batch520 discovery starts after the push; no implementation slice is active. See the [F1279 completion record](03-Phase-2-Progress-Log.md#f1279-localized-campus-fallback-identity-protection-complete-2026-10-21). Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
-### Active batch — Batch519
+### Active batch — none
 
-1. F1279 — Preserve reserved Campus Default identity protection for localized blank-name fallback (accepted/in progress; implementation not started; next action: implement the accepted provenance rule).
+Batch519 is complete locally and awaiting its normal push. Batch520 discovery starts after the push; no implementation slice is active.
 
 ### Slice discovery batches
 

@@ -61319,3 +61319,48 @@ from Phase 0's 2026-09-18 Complete declaration.
 
 Batch519 is active with F1279 accepted/in progress before implementation. Gate
 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### F1279 localized Campus fallback identity protection complete - 2026-10-21
+
+F1279 is complete locally in Batch519. Acceptance was recorded at
+`a3eced0cf325b154e05ed2edc4d4a9a96b2c802d`, verification scope was clarified
+at `079ec764800ede589273473afb995698bd258d2f`, and source/test changes are at
+`77cc30a2e85d1ab73a67ed19395e2e4573fda2c7`.
+
+Transient typed name-origin metadata flows through the Campus save request to
+the Qt-free Application identity policy. A localized default fallback is
+rejected for Create and Update before mutation, while its localized display
+remains. Fallback provenance survives `editingFinished`, clears on user
+editing, and is not persisted. Explicit English `Default` remains rejected;
+user-entered Korean `기본값` remains ordinary input. F951 conflict behavior,
+repository reads/listing, and dirty/error/no-Saved behavior remain intact.
+
+The incremental build in the existing `build/macos-clang-debug` tree succeeded
+for `ClassMngr`,
+`ClassMngrNextApplicationCampusDashboardCampusSavePortTests`,
+`ClassMngrNextApplicationCampusDashboardCampusIdentitySavePolicyTests`,
+`ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`, and
+`ClassMngrCampusDashboardPageTests`. Three focused CTests passed 3/3:
+`ClassMngrNextApplicationCampusDashboardCampusSavePortTests`,
+`ClassMngrNextApplicationCampusDashboardCampusIdentitySavePolicyTests`, and
+`ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`.
+
+Five offscreen page cases passed (QtTest reported 7 passed including
+init/cleanup, 0 failed or skipped):
+`localizedDefaultFallbackIsRejectedAfterEditingFinished` for Create and
+Update, `userEnteredLocalizedDefaultRemainsOrdinaryAfterFallback`,
+`reservedCreateIdentityFailureRetainsDirtyForm`, and
+`reservedUpdateNameFailureRetainsDirtyForm`. The test-local Korean translator
+maps only `Default` to `기본값`; Create/Update checks covered dirty and error
+feedback, no Saved result, and unchanged storage, while user-entered Korean
+input saved successfully. The user-edit case directly emits the connected
+`textEdited` signal and does not simulate keyboard/IME delivery.
+`git diff --check` passed. A nonfatal missing `Sans Serif` family warning
+occurred. No full Campus page suite, full suite, Windows run, clean build, or
+Gate 2 result is claimed.
+
+Batch519 is complete locally and awaiting its normal push. Batch520 discovery
+starts after the push; no implementation slice is active. Gate 1 and Gate 2
+remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound
+Windows x64 requalification remains outstanding separately from Phase 0's
+2026-09-18 Complete declaration.
