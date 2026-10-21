@@ -506,6 +506,18 @@ failedSourceResultsKeepDefaultAndIndependentDisplayBehavior()
     const QList<QTextEdit*> editors = page.findChildren<QTextEdit*>();
     QCOMPARE(editors.size(), 2);
 
+    readPort.result = readSnapshot(
+        classId,
+        Domain::Result<Application::ClassNotesPageFields>::success(
+            Application::ClassNotesPageFields{}
+            ),
+        Domain::Result<std::u16string>::success(u"")
+        );
+    page.loadClass(classroom);
+    QVERIFY(editors[0]->toPlainText().isEmpty());
+    QVERIFY(editors[1]->toPlainText().isEmpty());
+    QVERIFY(m_promptService.requests.empty());
+
     readPort.result = Application::ClassNotesPageReadResult::failure({
         .code = Domain::ErrorCode::Technical,
         .message = "page snapshot unavailable",
@@ -517,6 +529,12 @@ failedSourceResultsKeepDefaultAndIndependentDisplayBehavior()
     QVERIFY(editors[0]->toPlainText().isEmpty());
     QVERIFY(editors[1]->toPlainText().isEmpty());
     QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(m_promptService.requests.size(), std::size_t(1));
+    QCOMPARE(m_promptService.requests.front().severity, PromptSeverity::Warning);
+    QCOMPARE(m_promptService.requests.front().title,
+        QStringLiteral("Load Class Notes"));
+    QCOMPARE(m_promptService.requests.front().message,
+        QStringLiteral("page snapshot unavailable"));
 
     readPort.result = readSnapshot(
         classId,
@@ -534,6 +552,12 @@ failedSourceResultsKeepDefaultAndIndependentDisplayBehavior()
         ClassInfo{}, availableTeacher));
     QVERIFY(editors[0]->toPlainText().isEmpty());
     QVERIFY(editors[1]->toPlainText().isEmpty());
+    QCOMPARE(m_promptService.requests.size(), std::size_t(2));
+    QCOMPARE(m_promptService.requests.back().severity, PromptSeverity::Warning);
+    QCOMPARE(m_promptService.requests.back().title,
+        QStringLiteral("Load Class Notes"));
+    QCOMPARE(m_promptService.requests.back().message,
+        QStringLiteral("class source failed"));
 
     readPort.result = readSnapshot(
         classId,
@@ -562,7 +586,8 @@ failedSourceResultsKeepDefaultAndIndependentDisplayBehavior()
     QCOMPARE(header->subtitle(), SidebarNodeNaming::formatClassDisplayName(
         classFields, Teacher{}));
     QVERIFY(!page.hasUnsavedChanges());
-    QCOMPARE(readPort.callCount, 3);
+    QCOMPARE(m_promptService.requests.size(), std::size_t(2));
+    QCOMPARE(readPort.callCount, 4);
 }
 
 void NextFeatureClassNotesPageTests::
@@ -585,13 +610,21 @@ topLevelReadFailureBlocksManualAndAutomaticSaves()
 
     ClassNotesPage page(&services, false, nullptr, &savePort, &readPort);
     page.setSaveMode(SaveMode::Manual);
-    page.loadClass(Classroom(QStringLiteral("Unavailable class"), classId));
+    const Classroom classroom(QStringLiteral("Unavailable class"), classId);
+    page.loadClass(classroom);
 
     const QList<QTextEdit*> editors = page.findChildren<QTextEdit*>();
     QCOMPARE(editors.size(), 2);
     auto* saveButton = page.findChild<QPushButton*>();
     QVERIFY(saveButton);
     QVERIFY(!saveButton->isEnabled());
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(m_promptService.requests.size(), std::size_t(1));
+    QCOMPARE(m_promptService.requests.front().severity, PromptSeverity::Warning);
+    QCOMPARE(m_promptService.requests.front().title,
+        QStringLiteral("Load Class Notes"));
+    QCOMPARE(m_promptService.requests.front().message,
+        QStringLiteral("page snapshot unavailable"));
 
     editors[0]->setPlainText(QStringLiteral("Edit after failed page read"));
     QVERIFY(page.hasUnsavedChanges());
@@ -599,12 +632,37 @@ topLevelReadFailureBlocksManualAndAutomaticSaves()
     QVERIFY(!page.saveChanges());
     QCOMPARE(savePort.callCount, 0);
     QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(m_promptService.requests.size(), std::size_t(1));
 
+    page.saveData();
     page.setSaveMode(SaveMode::Automatic);
     QTest::qWait(AutosaveCoordinator::DefaultDebounceIntervalMs + 100);
     QCOMPARE(savePort.callCount, 0);
     QVERIFY(page.hasUnsavedChanges());
-    QVERIFY(m_promptService.requests.empty());
+    QCOMPARE(m_promptService.requests.size(), std::size_t(1));
+
+    readPort.result = readSnapshot(
+        classId,
+        Domain::Result<Application::ClassNotesPageFields>::success(
+            notesPageFields(
+                u"E5", u"Recovered", u"Reloaded notes", u"Reloaded activities"
+                )
+            ),
+        Domain::Result<std::u16string>::success(u"Recovered teacher")
+        );
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(classroom);
+    QCOMPARE(editors[0]->toPlainText(), QStringLiteral("Reloaded notes"));
+    QCOMPARE(editors[1]->toPlainText(), QStringLiteral("Reloaded activities"));
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+    QCOMPARE(m_promptService.requests.size(), std::size_t(1));
+
+    editors[0]->setPlainText(QStringLiteral("Save after recovery"));
+    QVERIFY(saveButton->isEnabled());
+    QVERIFY(page.saveChanges());
+    QCOMPARE(savePort.callCount, 1);
+    QVERIFY(!page.hasUnsavedChanges());
 }
 
 void NextFeatureClassNotesPageTests::
@@ -638,6 +696,13 @@ classFieldsFailureBlocksManualAndAutomaticSaves()
     auto* saveButton = page.findChild<QPushButton*>();
     QVERIFY(saveButton);
     QVERIFY(!saveButton->isEnabled());
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(m_promptService.requests.size(), std::size_t(1));
+    QCOMPARE(m_promptService.requests.front().severity, PromptSeverity::Warning);
+    QCOMPARE(m_promptService.requests.front().title,
+        QStringLiteral("Load Class Notes"));
+    QCOMPARE(m_promptService.requests.front().message,
+        QStringLiteral("class source failed"));
 
     editors[1]->setPlainText(QStringLiteral("Edit after failed fields read"));
     QVERIFY(page.hasUnsavedChanges());
@@ -646,12 +711,13 @@ classFieldsFailureBlocksManualAndAutomaticSaves()
     QVERIFY(!page.saveChanges());
     QCOMPARE(savePort.callCount, 0);
     QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(m_promptService.requests.size(), std::size_t(1));
 
     page.setSaveMode(SaveMode::Automatic);
     QTest::qWait(AutosaveCoordinator::DefaultDebounceIntervalMs + 100);
     QCOMPARE(savePort.callCount, 0);
     QVERIFY(page.hasUnsavedChanges());
-    QVERIFY(m_promptService.requests.empty());
+    QCOMPARE(m_promptService.requests.size(), std::size_t(1));
 }
 
 void NextFeatureClassNotesPageTests::
@@ -691,6 +757,7 @@ teacherReadFailureStillAllowsClassNotesSave()
     QVERIFY(page.saveChanges());
     QCOMPARE(savePort.callCount, 1);
     QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(m_promptService.requests.empty());
 }
 
 void NextFeatureClassNotesPageTests::

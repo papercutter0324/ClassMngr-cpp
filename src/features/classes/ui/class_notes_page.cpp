@@ -75,6 +75,8 @@ void ClassNotesPage::loadClass(
 
     ClassInfo info;
     Teacher teacher;
+    bool classNotesReadFailed = false;
+    QString classNotesReadError;
     const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
         std::to_string(classroom.id)
         );
@@ -89,7 +91,16 @@ void ClassNotesPage::loadClass(
             );
         const auto snapshot = query.execute(*classId);
 
-        if (snapshot)
+        if (!snapshot)
+        {
+            classNotesReadFailed = true;
+            const std::string& message = snapshot.error().message;
+            classNotesReadError = QString::fromUtf8(
+                message.data(),
+                static_cast<qsizetype>(message.size())
+                );
+        }
+        else
         {
             const auto& classFields = snapshot.value().classFields;
             if (classFields)
@@ -113,6 +124,15 @@ void ClassNotesPage::loadClass(
                     time.startTime = QString::fromStdU16String(row.startTime);
                     info.classTimes.append(std::move(time));
                 }
+            }
+            else
+            {
+                classNotesReadFailed = true;
+                const std::string& message = classFields.error().message;
+                classNotesReadError = QString::fromUtf8(
+                    message.data(),
+                    static_cast<qsizetype>(message.size())
+                    );
             }
 
             const auto& teacherDisplayName = snapshot.value().teacherDisplayName;
@@ -157,6 +177,15 @@ void ClassNotesPage::loadClass(
 
     m_autosave->setLoading(false);
     clearDirty();
+
+    if (classNotesReadFailed)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Load Class Notes"),
+            classNotesReadError
+            );
+    }
 }
 
 void ClassNotesPage::clearDatabaseState()
