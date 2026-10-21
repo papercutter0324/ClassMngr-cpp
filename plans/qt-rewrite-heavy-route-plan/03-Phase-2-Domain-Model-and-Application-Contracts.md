@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch520 (F1280) is complete and pushed at `9fa83678`; Batch521 discovery is next, with no active implementation slice, Gate 1 and Gate 2 Partial, and the Phase 2 exit gate Open.
+- Current note: Batch521 has one accepted candidate, F1281, awaiting implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-Batch520 (F1280) is complete and pushed at `9fa83678`. See the [F1280 completion record](03-Phase-2-Progress-Log.md#f1280-co-teacher-post-save-refresh-preservation-complete-2026-10-21) and [Batch520 push receipt](03-Phase-2-Progress-Log.md#batch520-push-receipt-2026-10-21). Batch521 discovery is next; no implementation slice is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+Batch520 (F1280) is complete and pushed at `9fa83678`. See the [F1280 completion record](03-Phase-2-Progress-Log.md#f1280-co-teacher-post-save-refresh-preservation-complete-2026-10-21) and [Batch520 push receipt](03-Phase-2-Progress-Log.md#batch520-push-receipt-2026-10-21). Batch521 is active with F1281 accepted before implementation; no F1281 implementation, build, or tests have started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Slice discovery batches
 
@@ -75,6 +75,11 @@ Treat this plan as an operational summary, not a history:
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+
+### Active batch - Batch521
+
+1. F1281 - Surface Class Notes read failures while keeping saving unavailable — Accepted before implementation.
+   Next action: Show the localized warning for required page/class-fields read failures, preserve safe defaults and blocked saving, then extend and run the focused page tests as recorded in the progress log.
 
 #### Deferred candidates
 

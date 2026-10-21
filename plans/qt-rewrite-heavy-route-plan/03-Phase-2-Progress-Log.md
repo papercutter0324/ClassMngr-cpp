@@ -61487,3 +61487,66 @@ Batch520 is complete and pushed. Batch521 discovery is next, with no
 implementation slice active. Gate 1 and Gate 2 remain Partial, and the Phase 2
 exit gate remains Open. F629's source-bound Windows x64 requalification remains
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+
+### Batch521 discovery - 2026-10-21
+
+Three independent discovery lanes were reconciled. The Application-contract
+scan found no new candidate in sampled teacher profile edit/create, class
+creation, roster save, calendar-event save, or Speaking Eval contracts; recent
+F1277-F1280 work and deferred entries were also checked. The mapping scan found
+no candidate in Sub Prep campus metadata: blank IDs are repaired by
+`CampusJsonCodec` before adapter conversion (F1101). It also found no candidate
+in selected-class subtitle batching or projection.
+
+The active-feature consumer scan found F1281 in
+`src/features/classes/ui/class_notes_page.cpp:74-159`. `loadClass()` defaults
+`ClassInfo` and maps it only when both the top-level snapshot and nested
+`classFields` succeed; it then fills blank editors, updates the header, clears
+dirty state, and reports neither failure. `m_classFieldsAvailable` remains
+false, so saving is unavailable (`:483-490`). The snapshot exposes independent
+`classFields` and `teacherDisplayName` results
+(`src/next/application/class_notes_page_read_snapshot.h:37-42`). Existing page
+tests cover top-level and component failures, blocked saves, and assert no
+prompt (`tests/next_feature_class_notes_page_tests.cpp:492-650`); the separate
+`teacherReadFailureStillAllowsClassNotesSave()` case allows saving when only
+teacher display-name retrieval fails (line 658).
+
+F891 acceptance/completion (`03-Phase-2-Progress-Log.md:36691-36759`)
+distinguishes missing parents from optional metadata and typed technical read
+outcomes while keeping the outer snapshot successful; it did not define
+page-level feedback. Phase 2 section 2.2 calls for user-facing and technical
+errors. F1281 addresses user-facing visibility for required Class Notes and
+class-fields read failures, not an Application-contract gap. The current
+no-prompt assertion describes behavior to revise, not immutable product policy.
+
+The sole ordered Batch521 candidate is:
+
+1. F1281 - Surface Class Notes read failures while keeping saving unavailable.
+
+No other slices were found.
+
+### F1281 Class Notes required-read feedback accepted before implementation - 2026-10-21
+
+On page load or reload, when the top-level `ClassNotesPageReadQuery` fails or
+the required nested `classFields` result fails, show one existing warning with
+localized title `Load Class Notes` and the structured failure message. Keep
+fields safely unavailable/defaulted, the page clean, and saving blocked until
+a successful reload. Valid empty values are not failures and show no warning.
+Preserve independent `teacherDisplayName` behavior: its failure with valid
+class fields remains saveable and must not be labeled a Class Notes read
+failure. A later successful reload displays notes/activities, restores save
+availability, and shows no failure warning.
+
+Update only the existing `NextFeatureClassNotesPageTests`: cover top-level and
+class-fields errors/messages, blocked manual and automatic saves without a
+duplicate save prompt, successful recovery, and continued independent teacher
+name failure behavior. Use the existing `RecordingPromptService` and read
+port. Focused verification is to build `ClassMngr` and
+`ClassMngrNextFeatureClassNotesPageTests` in the existing
+`build/macos-clang-debug` tree, run that target's focused CTest, and run
+`git diff --check`. No full suite, Windows run, clean build, or Gate 2 result
+is planned. F1281 is accepted as Batch521's sole candidate before
+implementation; implementation, builds, and tests have not started. Gate 1
+and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. Phase 0
+remains Complete; F629's source-bound Windows x64 requalification remains
+outstanding separately.
