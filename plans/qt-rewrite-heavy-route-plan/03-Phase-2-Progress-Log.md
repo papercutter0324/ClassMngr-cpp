@@ -61862,3 +61862,45 @@ by F1286 and F1287 in order. Gate 1 and Gate 2 remain Partial, and the Phase 2
 exit gate remains Open. Phase 0 remains Complete; F629's source-bound Windows
 x64 requalification remains outstanding separately. No full-suite, Windows,
 hosted-CI, or gate result is implied by this receipt.
+
+### F1285 Protect Staff Directory after Teacher Import refresh failures accepted before implementation - 2026-10-21
+
+When a successful Teacher Import commits created or updated records for a
+loaded Native English or GS Team Staff Directory, a failed follow-up
+`loadDirectory()` read must leave the committed import intact and keep the
+prior rows visible or use another safe unavailable presentation. Show a
+localized warning that the import/update committed but the directory refresh
+failed, including the structured read error. Mark the page reload-required,
+stop autosave, and block edits, add, delete, manual save, and automatic save
+until a successful reload. Do not retry or roll back the import. A later
+successful reload displays the imported values, clears reload-required, and
+restores the configured save mode. Scope this behavior to a directory the
+import actually changed; preserve successful import behavior and unrelated
+Teacher Info refresh. Cover both Native English and GS Team.
+
+Add focused coverage to the existing Teacher Import apply-parity integration
+tests, with a narrow Staff Directory read-failure injection seam or equivalent.
+Use the matched Native English Alex to Team Leader and GS Team Taylor to Branch
+Manager fixture data, seed prior persisted values, load both pages, and inject
+Technical failures only on their post-import refresh reads. Exercise Manual and
+Automatic save modes. Verify reload-required blocks edits, add, delete, manual
+and automatic saves with zero writes and imported database values intact; then
+verify successful reload restores imported display, editing, and the configured
+save path. `PageManager` exposes the loaded pages through
+`ensureNativeEnglishTeachersPage()` and `ensureGsTeamPage()`; the
+existing import refresh path has no failure injection, so a narrow seam or
+read-port injection is required.
+
+Build `ClassMngr` and the existing TeacherImportUiApplyParity test target in
+`build/macos-clang-debug`, run the focused F1285 CTest entry and relevant
+focused Staff Directory regressions, and run `git diff --check`. The exact
+registered test target name must be confirmed from CMake by the Executor;
+do not infer it. No full suite, Windows run, clean build, hosted CI, or Gate 2
+claim is planned. F1285 is accepted as Batch523's first candidate before
+implementation. F1286 and F1287 remain discovered and ordered behind it.
+Batch522 was pushed through receipt
+`1854742da10a5b0ff549ed216518e453da6395a4`; Batch523 is active with F1285
+implementation next.
+Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+Phase 0 remains Complete; F629's source-bound Windows x64 requalification
+remains outstanding separately.
