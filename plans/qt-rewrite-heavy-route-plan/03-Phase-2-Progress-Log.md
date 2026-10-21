@@ -61259,3 +61259,62 @@ next, with no implementation batch active. Gate 1 and Gate 2 remain Partial,
 and the Phase 2 exit gate remains Open. F629's source-bound Windows x64
 requalification remains outstanding separately from Phase 0's 2026-09-18
 Complete declaration.
+
+### Batch519 discovery - 2026-10-21
+
+Three discovery lanes were reconciled. The Application-contract scan found no
+new candidate. The active-consumer scan surfaced F1279: in
+`CampusDashboardPage::normalizeCampusNameField()`, blank input becomes
+`tr("Default")` on `editingFinished`, and `readFieldsIntoCampus()` repeats the
+fallback before creating the snapshot. The projection/validation scan found
+no additional candidate and did not reopen F1007 or F1103.
+
+The JSON slugger produces `campus` for Korean `기본값`, while the F1028
+Application policy checks only ASCII-case-insensitive `default` ID/name. The
+typed Campus save port reaches that policy before storage mutation, so a
+localized fallback Create or Update can pass where English `Default` is
+blocked. F1028 acceptance/test at lines 43951-43980 covered literal English
+Default only; F1279 is a distinct locale/fallback provenance gap and does not
+reopen F1028 broadly.
+
+The sole ordered Batch519 candidate is:
+
+1. F1279 - Preserve reserved Campus Default identity protection for localized
+   blank-name fallback.
+
+No other slices were found.
+
+### F1279 localized Campus fallback identity protection accepted before implementation - 2026-10-21
+
+Keep the localized visible fallback and existing normalization, while carrying
+an explicit typed source/origin for a user-entered name versus a localized
+default fallback through the save request to the Qt-free Application policy.
+Reject `LocalizedDefaultFallback` for both Create and Update with the existing
+nonrecoverable `InvalidInput` reserved-Default failure before storage
+mutation. Preserve draft dirty/error feedback and no Saved result; retain
+explicit English `Default` ID/name rejection and ordinary Create/Update. A
+user-entered localized value such as `기본값` remains ordinary user input.
+Preserve F951 conflict behavior and repository list/load contracts. Keep
+provenance as transient request metadata, not persisted Campus snapshot state;
+preserve it through `editingFinished` normalization and clear it after later
+user edits.
+
+Extend the existing Application identity-policy tests for both intents and a
+user-entered localized name, and adapt Platform adapter coverage if the save
+request changes. Add deterministic, test-local Korean translation coverage in
+the existing `CampusDashboardPageTests` for Create and Update: invoke
+`editingFinished`, verify that the Korean fallback is shown, then verify save
+failure, a still-dirty draft, and unchanged storage. In the existing
+`build/macos-clang-debug` tree, build only `ClassMngr`,
+`ClassMngrNextApplicationCampusDashboardCampusIdentitySavePolicyTests`,
+`ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`, and
+`ClassMngrCampusDashboardPageTests`; run the focused three CTests and the named
+UI selectors, with `git diff --check`. Do not run the full suite or Windows
+checks, or claim Gate 2. F1279 is accepted as Batch519's sole slice before
+implementation; no source implementation, builds, or tests have started.
+Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+F629's source-bound Windows x64 requalification remains outstanding separately
+from Phase 0's 2026-09-18 Complete declaration.
+
+Batch519 is active with F1279 accepted/in progress before implementation. Gate
+1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
