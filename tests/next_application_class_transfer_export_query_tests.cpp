@@ -128,6 +128,10 @@ private slots:
     void errorsReplayInOriginalClassOrder_data();
     void errorsReplayInOriginalClassOrder();
     void stagedFailurePrecedesDeferredSelectionAndUnattemptedValues();
+    void incompleteClassStagesAreTechnicalFailures_data();
+    void incompleteClassStagesAreTechnicalFailures();
+    void missingReferencedTeacherIsTechnicalFailure();
+    void unattemptedReferencedTeacherProfileIsTechnicalFailure();
     void emptyAndDuplicateRequestsRemainSourceOwned();
     void noImportProjectionCapsApply();
     void outputClassKeysUseExplicitSelectionOrdinals();
@@ -291,6 +295,72 @@ void ClassTransferExportQueryTests::stagedFailurePrecedesDeferredSelectionAndUna
     port.source = {}; port.source.deferredSelectionOrLookupError = error("selection");
     result = ClassTransferExportQuery(port).execute({});
     QVERIFY(!result); QVERIFY(result.error().message == "selection");
+
+    port.source.classes = {item(1)};
+    port.source.classes.front().roster = {};
+    result = ClassTransferExportQuery(port).execute({{id(1)}});
+    QVERIFY(!result);
+    QVERIFY(result.error().message == "selection");
+}
+void ClassTransferExportQueryTests::incompleteClassStagesAreTechnicalFailures_data()
+{
+    QTest::addColumn<int>("stage");
+    QTest::newRow("class-info") << 0;
+    QTest::newRow("class-roster") << 1;
+    QTest::newRow("class-teacher") << 2;
+    QTest::newRow("class-evaluations") << 3;
+}
+void ClassTransferExportQueryTests::incompleteClassStagesAreTechnicalFailures()
+{
+    QFETCH(int, stage);
+
+    Port port;
+    port.source.classes = {item(1)};
+    auto& sourceClass = port.source.classes.front();
+    switch (stage)
+    {
+    case 0:
+        sourceClass.info = {};
+        break;
+    case 1:
+        sourceClass.roster = {};
+        break;
+    case 2:
+        sourceClass.teacher = {};
+        break;
+    case 3:
+        sourceClass.evaluations = {};
+        break;
+    default:
+        QFAIL("Unexpected class stage data row");
+    }
+
+    const auto result = ClassTransferExportQuery(port).execute({{id(1)}});
+    QVERIFY(!result);
+    QVERIFY(result.error().code == Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().recoverable);
+}
+void ClassTransferExportQueryTests::missingReferencedTeacherIsTechnicalFailure()
+{
+    Port port;
+    port.source.classes = {item(1, teacherId(7))};
+
+    const auto result = ClassTransferExportQuery(port).execute({{id(1)}});
+    QVERIFY(!result);
+    QVERIFY(result.error().code == Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().recoverable);
+}
+void ClassTransferExportQueryTests::
+unattemptedReferencedTeacherProfileIsTechnicalFailure()
+{
+    Port port;
+    port.source.classes = {item(1, teacherId(7))};
+    port.source.teachers = {{teacherId(7), {}}};
+
+    const auto result = ClassTransferExportQuery(port).execute({{id(1)}});
+    QVERIFY(!result);
+    QVERIFY(result.error().code == Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().recoverable);
 }
 void ClassTransferExportQueryTests::emptyAndDuplicateRequestsRemainSourceOwned()
 {
