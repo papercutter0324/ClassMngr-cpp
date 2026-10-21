@@ -1288,6 +1288,14 @@
     </message>
 </context>
 <context>
+    <name>CalendarPreferencesPanel</name>
+    <message>
+        <location filename="../../../src/features/calendar/ui/calendar_preferences_panel.cpp" line="922"/>
+        <source>The displayed term schedule may be default or cached data and may not match the persisted schedule. Schedule controls are disabled until a successful reload.</source>
+        <translation>표시된 학기 일정은 기본값 또는 캐시된 데이터일 수 있으며 저장된 일정과 다를 수 있습니다. 성공적으로 다시 불러올 때까지 학기 일정 설정이 비활성화됩니다.</translation>
+    </message>
+</context>
+<context>
     <name>CampusDashboardPage</name>
     <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="+91"/>

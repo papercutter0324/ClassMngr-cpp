@@ -58,6 +58,7 @@ private:
     [[nodiscard]] bool saveEventDisplayOptions();
     [[nodiscard]] bool saveFirstDayOfWeekOption();
     void updateLoadWarning();
+    void updateScheduleReadStatus();
     void refreshFields();
     void commitDate(int schoolIndex, int termIndex);
     void clearDate(int schoolIndex, int termIndex);
@@ -82,6 +83,7 @@ private:
     QCheckBox* m_hideStartOfTermEventsCheck = nullptr;
     QCheckBox* m_startWeekOnMondayCheck = nullptr;
     QLabel* m_optionsLoadWarningLabel = nullptr;
+    QLabel* m_scheduleReadWarningLabel = nullptr;
     QCheckBox* m_linkCheck = nullptr;
     QLineEdit* m_importUrlEdit = nullptr;
     QLabel* m_importStatusLabel = nullptr;

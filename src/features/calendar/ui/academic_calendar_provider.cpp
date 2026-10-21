@@ -69,6 +69,11 @@ const AcademicCalendarSchedule& AcademicCalendarProvider::schedule() const
     return m_schedule;
 }
 
+bool AcademicCalendarProvider::schedulePersistenceKnown() const
+{
+    return m_schedulePersistenceKnown;
+}
+
 QString AcademicCalendarProvider::monthTitle(
     int year,
     int zeroBasedMonth
@@ -288,6 +293,7 @@ void AcademicCalendarProvider::reload()
 {
     using ScheduleReadResult = ClassMngr::Next::Application::
         AcademicCalendarSchedulePreferencesReadResult;
+    const bool schedulePersistenceWasKnown = m_schedulePersistenceKnown;
 
     const ScheduleReadResult stored = m_schedulePreferences
         ? m_schedulePreferences->read()
@@ -296,6 +302,10 @@ void AcademicCalendarProvider::reload()
     {
         m_scheduleReadError = stored.error();
         m_schedulePersistenceKnown = false;
+        if (schedulePersistenceWasKnown)
+        {
+            emit scheduleReadStatusChanged();
+        }
         return;
     }
 
@@ -343,6 +353,10 @@ void AcademicCalendarProvider::reload()
     {
         ++m_revision;
         emit revisionChanged();
+    }
+    if (!schedulePersistenceWasKnown)
+    {
+        emit scheduleReadStatusChanged();
     }
 }
 

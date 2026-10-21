@@ -69,13 +69,23 @@ CalendarPreferencesPanel::CalendarPreferencesPanel(
     }
 
     buildUi();
+    if (m_provider)
+    {
+        connect(
+            m_provider,
+            &AcademicCalendarProvider::scheduleReadStatusChanged,
+            this,
+            &CalendarPreferencesPanel::updateScheduleReadStatus
+            );
+    }
+    updateScheduleReadStatus();
     loadOptions();
     loadSchedules();
 }
 
 void CalendarPreferencesPanel::saveTermSchedules()
 {
-    if (!m_provider)
+    if (!m_provider || !m_provider->schedulePersistenceKnown())
     {
         return;
     }
@@ -169,7 +179,7 @@ void CalendarPreferencesPanel::saveTermSchedules()
 
 void CalendarPreferencesPanel::restoreDefaults()
 {
-    if (!m_provider)
+    if (!m_provider || !m_provider->schedulePersistenceKnown())
     {
         return;
     }
@@ -247,7 +257,11 @@ void CalendarPreferencesPanel::resetCalendarEvents()
 
 void CalendarPreferencesPanel::linkWinterSpring(bool linked)
 {
-    if (m_refreshing)
+    if (
+        m_refreshing
+        || !m_provider
+        || !m_provider->schedulePersistenceKnown()
+        )
     {
         return;
     }
@@ -314,7 +328,12 @@ void CalendarPreferencesPanel::handleImportFailed(const QString& message)
 
 void CalendarPreferencesPanel::setTermYear(int termYear)
 {
-    if (m_refreshing || termYear == m_termYear)
+    if (
+        m_refreshing
+        || !m_provider
+        || !m_provider->schedulePersistenceKnown()
+        || termYear == m_termYear
+        )
     {
         return;
     }
@@ -446,6 +465,17 @@ QWidget* CalendarPreferencesPanel::buildTermSchedulesSection()
     m_termYearSpin->setValue(m_termYear);
     yearForm->addRow(tr("Academic Year:"), m_termYearSpin);
     mainLayout->addLayout(yearForm);
+
+    m_scheduleReadWarningLabel = new QLabel(section);
+    m_scheduleReadWarningLabel->setObjectName(
+        QStringLiteral("preferencesCalendarScheduleReadWarning")
+        );
+    m_scheduleReadWarningLabel->setWordWrap(true);
+    m_scheduleReadWarningLabel->setStyleSheet(
+        QStringLiteral("color: #a33; font-weight: 600;")
+        );
+    m_scheduleReadWarningLabel->hide();
+    mainLayout->addWidget(m_scheduleReadWarningLabel);
 
     auto* fields = new QGridLayout;
     fields->setHorizontalSpacing(10);
@@ -876,6 +906,48 @@ void CalendarPreferencesPanel::updateLoadWarning()
     m_optionsLoadWarningLabel->show();
 }
 
+void CalendarPreferencesPanel::updateScheduleReadStatus()
+{
+    const bool schedulePersistenceKnown =
+        m_provider && m_provider->schedulePersistenceKnown();
+    if (m_scheduleReadWarningLabel)
+    {
+        if (schedulePersistenceKnown)
+        {
+            m_scheduleReadWarningLabel->clear();
+            m_scheduleReadWarningLabel->hide();
+        }
+        else
+        {
+            m_scheduleReadWarningLabel->setText(
+                tr("The displayed term schedule may be default or cached data "
+                   "and may not match the persisted schedule. Schedule controls "
+                   "are disabled until a successful reload.")
+                );
+            m_scheduleReadWarningLabel->show();
+        }
+    }
+
+    if (m_termYearSpin)
+    {
+        m_termYearSpin->setEnabled(schedulePersistenceKnown);
+    }
+    if (m_linkCheck)
+    {
+        m_linkCheck->setEnabled(schedulePersistenceKnown);
+    }
+    if (m_restoreButton)
+    {
+        m_restoreButton->setEnabled(schedulePersistenceKnown);
+    }
+    if (m_saveSchedulesButton)
+    {
+        m_saveSchedulesButton->setEnabled(schedulePersistenceKnown);
+    }
+
+    updateLinkedFieldAvailability();
+}
+
 void CalendarPreferencesPanel::refreshFields()
 {
     m_refreshing = true;
@@ -900,7 +972,11 @@ void CalendarPreferencesPanel::refreshFields()
 
 void CalendarPreferencesPanel::commitDate(int schoolIndex, int termIndex)
 {
-    if (m_refreshing)
+    if (
+        m_refreshing
+        || !m_provider
+        || !m_provider->schedulePersistenceKnown()
+        )
     {
         return;
     }
@@ -961,7 +1037,11 @@ void CalendarPreferencesPanel::commitDate(int schoolIndex, int termIndex)
 
 void CalendarPreferencesPanel::clearDate(int schoolIndex, int termIndex)
 {
-    if (m_refreshing || !m_provider)
+    if (
+        m_refreshing
+        || !m_provider
+        || !m_provider->schedulePersistenceKnown()
+        )
     {
         return;
     }
@@ -986,7 +1066,11 @@ void CalendarPreferencesPanel::clearDate(int schoolIndex, int termIndex)
 
 void CalendarPreferencesPanel::commitWeeks(int schoolIndex, int termIndex)
 {
-    if (m_refreshing)
+    if (
+        m_refreshing
+        || !m_provider
+        || !m_provider->schedulePersistenceKnown()
+        )
     {
         return;
     }
@@ -1018,15 +1102,25 @@ void CalendarPreferencesPanel::synchronizeLinkedTerms()
 void CalendarPreferencesPanel::updateLinkedFieldAvailability()
 {
     const bool linked = m_linkCheck && m_linkCheck->isChecked();
+    const bool schedulePersistenceKnown =
+        m_provider && m_provider->schedulePersistenceKnown();
 
-    for (int term = 0; term <= 1; ++term)
+    for (int school = 0; school < SchoolCount; ++school)
     {
-        m_weekEdits[1][term]->setEnabled(!linked);
-    }
+        for (int term = 0; term < AcademicTermCount; ++term)
+        {
+            const bool linkedField =
+                school == 1 && term <= 1 && linked;
+            m_weekEdits[school][term]->setEnabled(
+                schedulePersistenceKnown && !linkedField
+                );
 
-    for (int term = 0; term <= 2; ++term)
-    {
-        m_dateEdits[1][term]->setEnabled(!linked);
+            const bool linkedDate =
+                school == 1 && term <= 2 && linked;
+            m_dateEdits[school][term]->setEnabled(
+                schedulePersistenceKnown && !linkedDate
+                );
+        }
     }
 }
 

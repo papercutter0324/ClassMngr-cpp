@@ -16,6 +16,11 @@ class AcademicCalendarProvider : public QObject
     Q_OBJECT
     Q_PROPERTY(int revision READ revision NOTIFY revisionChanged)
     Q_PROPERTY(int firstDayOfWeek READ firstDayOfWeek NOTIFY firstDayOfWeekChanged)
+    Q_PROPERTY(
+        bool schedulePersistenceKnown
+        READ schedulePersistenceKnown
+        NOTIFY scheduleReadStatusChanged
+        )
 
 public:
     explicit AcademicCalendarProvider(
@@ -31,6 +36,7 @@ public:
     [[nodiscard]] const std::optional<ClassMngr::Next::Domain::OperationError>&
         firstDayOfWeekLoadError() const;
     [[nodiscard]] const AcademicCalendarSchedule& schedule() const;
+    [[nodiscard]] bool schedulePersistenceKnown() const;
 
     Q_INVOKABLE QString monthTitle(
         int year,
@@ -61,6 +67,7 @@ public:
 signals:
     void revisionChanged();
     void firstDayOfWeekChanged();
+    void scheduleReadStatusChanged();
 
 private:
     [[nodiscard]] QString termName(AcademicTerm term) const;
