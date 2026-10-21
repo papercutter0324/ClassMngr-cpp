@@ -60042,3 +60042,117 @@ named UI selectors, then check the diff. No full-suite or Gate 2 claim is
 planned. F1268 adds Gate 1 app-less behavior evidence. It is accepted before
 implementation as the first Batch508 slice; F1269 remains discovered second.
 No implementation, build, or tests have started for Batch508.
+
+### Batch509 discovery - 2026-10-21
+
+Discovery began when F1268, the second-last slice in active Batch508, entered
+independent verification. Explorer reports `B509_HISTORY` and
+`B509_SOURCE_SCAN`, with Investigator feasibility reports `B509_FEASIBILITY`
+and its follow-up, support an ordered discovery-only list: F1270 first, then
+F1271. Batch508 remains active; Batch509 is not active, and neither discovered
+slice is accepted.
+
+**F1270 - Sub Prep `configuredLevelOrder` explicit int32 value type.**
+`configuredLevelOrder` is a production key in
+`src/next/application/sub_prep_visible_class_ordering_policy.h`; it defaults
+to `kClassSummaryUnknownNavigationOrder` (1000) and is the comparator's first
+key. The Feature helper in
+`src/features/sub_prep/ui/sub_prep_class_information_list_model.cpp` computes
+the order from the retained index or uses 1000. F1209, recorded around
+progress-log line 55210, typed only day/time ranks and explicitly left
+`configuredLevelOrder` unchanged in that slice, so this is a distinct
+follow-up. Preserve comparator behavior, ordering, and sentinel without
+adding a range rule. Existing direct-test location and target are
+`tests/next_application_sub_prep_visible_class_ordering_policy_tests.cpp` and
+`ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests`; candidate
+coverage should assert the explicit value type, default, raw value, and order.
+
+**F1271 - Initial Setup Class Times row-presence requirement policy.**
+`ClassTimesWizardPage::validatePage()` blocks only when both returned row
+lists are empty, before setup/class creation. The constructor seeds a regular
+`ClassTime{}` row, whose defaults are Monday 16:00–16:50 in
+`src/domain/models/class_info.h`; users can remove rows, and
+`ClassScheduleSection::regularTimes()` / `intensiveTimes()` serialize every
+remaining row in `src/ui/shared/widgets/sections/class_schedule_section.cpp`.
+This is a row-presence rule, not schedule-content validation. Preserve F365's
+create/save sequence and the existing
+`classTimesRejectsNoncanonicalWeekdaysAfterCreatingBlankClass` behavior for
+invalid nonempty schedules. Candidate tests are direct app-less coverage of
+all four row-presence combinations plus UI coverage that removing the seeded
+regular row shows the current prompt before class creation, using the existing
+parity coverage in `tests/initial_setup_wizard_tests.cpp`. Explorer
+`B509_HISTORY` found this lead; the Investigator follow-up recommends it
+after F1270. It remains discovery-only, not accepted.
+
+The reviews also excluded Batch508's F1268/F1269, deferred F285/F1103/F1007,
+and `ScheduleViewRow.day`, which has no supported typed-value candidate. No
+other candidates were supported.
+
+No other slices were found.
+
+
+### F1268 Initial Setup Teacher Entry skip policy in Application complete - 2026-10-21
+
+F1268 is complete in Batch508 at source commit
+`698b015a30d2410e5e119661e6dee047a108b950`. The Qt-free Application policy
+owns the existing early Teacher Entry skip decision over two UI-prepared
+facts: all four identity/room fields are blank after existing trimming, and a
+successful teacher-choice query reports at least one existing teacher. The
+wizard retains query placement, failure/no-service/empty-as-unavailable
+behavior and falls through to the existing identity prompt without insertion
+when teachers are unavailable. The current field trimming/aggregation,
+prompt/navigation, and Add Another path remain unchanged; F1016,
+`TeacherValidator`, and F285 are unchanged.
+
+The independent Tester incrementally built with Ninja using
+`cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationInitialSetupTeacherEntrySkipPolicyTests ClassMngrInitialSetupWizardTests`; it exited 0 with no work to do. The focused policy CTest passed 1/1. Five selected UI selectors passed 5/5:
+`blankTeacherEntrySkipsWhenTeachersExist`,
+`blankTeacherEntryWithoutTeachersPromptsForIdentityWithoutCreating`,
+`teacherChoiceReadFailuresBehaveAsEmptyWithoutWarnings`,
+`personalDetailsRoutesToTeacherEntryWhenNoTeachersExist`, and
+`personalDetailsRoutesToClassDetailsWhenTeachersExist`. The read-failure
+selector also exercised the blank Add Another prompt. `git diff --check`
+passed; a Sans Serif font-alias warning was non-failing. No full-suite,
+Windows, or Gate 2 result is claimed. This is focused Gate 1 app-less
+behavior evidence.
+
+Batch508 now has one complete slice and one remaining candidate, F1269.
+F1268 preserves failure-as-empty identity validation and does not change
+generic ports or persistence.
+
+### Superseded latest progress update - 2026-10-21 (F1268 accepted)
+
+F1268's discovery evidence and pre-implementation criteria remain recorded in
+the [F1268 acceptance](03-Phase-2-Progress-Log.md#f1268-initial-setup-teacher-entry-skip-policy-in-application-accepted-before-implementation-2026-10-21).
+
+### F1269 Initial Setup Class Details required-information gate in Application accepted before implementation - 2026-10-21
+
+Add a Qt-free Application policy for Initial Setup's mandatory facts over
+four values prepared by the UI: the selected teacher ID is canonical-positive
+under the existing ID policy, a class color was explicitly chosen, grade is
+nonempty, and level is nonempty. Return completion/missing-requirement facts
+to the UI so it can produce the existing translated missing-fields prompt in
+fixed order: Korean Teacher, Class Color, Grade, Level.
+
+Keep selected-ID parsing and Qt widgets in the UI. This setup rule remains
+distinct from ordinary `ClassDetailsValidationPolicy`, which allows an
+unassigned teacher and paired empty grade/level; default white is valid in
+ordinary mode, while Initial Setup requires an explicit user color choice.
+Preserve the existing prompt title/text, page retention for invalid inputs,
+and checking every requirement before mutating the class draft or teacher
+association. Do not change database/service calls or the class create/save
+flow.
+
+Add direct app-less tests for all 16 combinations of the four facts, including
+each missing requirement and complete-result consistency. Add focused UI
+coverage for missing and combined requirements, prompt order, remaining on
+the page, and unchanged class draft; retain successful save parity in
+`tests/initial_setup_wizard_class_create_save_parity_tests.cpp`.
+
+Build incrementally in `build/macos-clang-debug`: `ClassMngr`, the new
+Application policy test target, and affected Initial Setup test targets. Run
+the exact focused app CTest and named UI selectors, then check the diff. No
+full-suite or Gate 2 claim is planned. F1269 is accepted before
+implementation as Batch508's second slice; F1270 and F1271 remain discovery
+only in Batch509, which is not active. No F1269 implementation, build, or
+tests have started.
