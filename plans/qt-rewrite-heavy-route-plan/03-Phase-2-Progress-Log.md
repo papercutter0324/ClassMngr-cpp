@@ -87,6 +87,22 @@ accepted `ClassMngrNextApplicationClassDetailsSaveUseCaseTests`: incremental
 build, Ninja reported no work, CTest passed 1/1, and 27 QtTest cases passed. No
 page test or full suite ran.
 
+#### Final focused re-verification at source tip `45ac83c6`
+
+An independent Tester re-verified current source on macOS arm64 with Qt 6.12.0;
+later changes were documentation-only. The incremental build succeeded for
+`ClassMngr`, the three app-less gate targets, F1316 validation/page targets,
+F1317, and the Sub Prep package-service target. App-less gate CTest passed
+3/3; F1316 validation CTest passed 1/1. F1316 page selectors
+`pageGenerationKeepsVacationDateAndCheckedWeekdayScopesSeparate` and
+`pageGenerationRejectsInvalidPlanBeforeSourceReadsAndEffects` passed, as did
+Sub Prep package-service selector
+`generationConsumesTypedPlanForRosterQueryAndFolderOutput`. F1317 CTest passed
+1/1 with 27 QtTest cases. This was incremental macOS verification, not a clean
+build or full suite. The known unrelated
+`largePackageGeneratesOutputReferenceWhenConfigured` macOS golden-text failure
+was not rerun.
+
 ## Durable parity and product decisions
 
 - Class Details save fails closed on validation-context read failure or class-ID
