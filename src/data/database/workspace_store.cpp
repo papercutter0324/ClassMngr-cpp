@@ -1,4 +1,4 @@
-#include "database_session.h"
+#include "data/database/workspace_store.h"
 
 #include "data/database/database_schema_manager.h"
 #include "data/repositories/calendar_event_repository.h"
@@ -53,7 +53,7 @@ QString sqliteReadWriteUri(const QString& absolutePath)
     return uri.toString(QUrl::FullyEncoded);
 }
 
-QString nextConnectionName(const DatabaseSession* session)
+QString nextConnectionName(const WorkspaceStore* session)
 {
     static std::atomic<quint64> sequence{0};
     const quint64 suffix = sequence.fetch_add(1, std::memory_order_relaxed);
@@ -63,19 +63,19 @@ QString nextConnectionName(const DatabaseSession* session)
 }
 }
 
-DatabaseSession::DatabaseSession()
+WorkspaceStore::WorkspaceStore()
     : m_connectionName(nextConnectionName(this))
 {
 }
 
-DatabaseSession::~DatabaseSession()
+WorkspaceStore::~WorkspaceStore()
 {
     close();
 }
 
-Status DatabaseSession::open(const QString& databasePath)
+Status WorkspaceStore::open(const QString& databasePath)
 {
-    DatabaseSession candidate;
+    WorkspaceStore candidate;
     const Status status = candidate.openCandidate(
         databasePath,
         OpenBehavior::CreateIfMissing
@@ -89,9 +89,9 @@ Status DatabaseSession::open(const QString& databasePath)
     return {};
 }
 
-Status DatabaseSession::openExisting(const QString& databasePath)
+Status WorkspaceStore::openExisting(const QString& databasePath)
 {
-    DatabaseSession candidate;
+    WorkspaceStore candidate;
     const Status status = candidate.openCandidate(
         databasePath,
         OpenBehavior::ExistingOnly
@@ -105,7 +105,7 @@ Status DatabaseSession::openExisting(const QString& databasePath)
     return {};
 }
 
-Status DatabaseSession::openCandidate(
+Status WorkspaceStore::openCandidate(
     const QString& databasePath,
     const OpenBehavior behavior
     )
@@ -207,7 +207,7 @@ Status DatabaseSession::openCandidate(
     return {};
 }
 
-void DatabaseSession::swapResources(DatabaseSession& other) noexcept
+void WorkspaceStore::swapResources(WorkspaceStore& other) noexcept
 {
     using std::swap;
     swap(m_databasePath, other.m_databasePath);
@@ -231,7 +231,7 @@ void DatabaseSession::swapResources(DatabaseSession& other) noexcept
     swap(m_speakingEvalRepository, other.m_speakingEvalRepository);
 }
 
-void DatabaseSession::close()
+void WorkspaceStore::close()
 {
     m_teacherImportRepository.reset();
     m_gsTeamRepository.reset();
@@ -263,23 +263,23 @@ void DatabaseSession::close()
     m_databasePath.clear();
 }
 
-bool DatabaseSession::isOpen() const
+bool WorkspaceStore::isOpen() const
 {
     return m_database && m_database->isValid() && m_database->isOpen();
 }
 
-QString DatabaseSession::databasePath() const
+QString WorkspaceStore::databasePath() const
 {
     return m_databasePath;
 }
 
-QSqlDatabase DatabaseSession::database() const
+QSqlDatabase WorkspaceStore::database() const
 {
     return m_database ? *m_database : QSqlDatabase();
 }
 
 #define CLASSMNGR_REPOSITORY_ACCESSOR(Type, name, member) \
-    Type* DatabaseSession::name() const { return member.get(); }
+    Type* WorkspaceStore::name() const { return member.get(); }
 
 CLASSMNGR_REPOSITORY_ACCESSOR(SettingsRepository, settingsRepository, m_settingsRepository)
 CLASSMNGR_REPOSITORY_ACCESSOR(CampusRecordRepository, campusRecordRepository, m_campusRecordRepository)

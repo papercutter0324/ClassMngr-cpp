@@ -1,5 +1,7 @@
 #pragma once
 
+#include "data/database/workspace_store_fwd.h"
+
 #include "core/application_services.h"
 #include "next/application/sub_prep_personal_zoom_preferences.h"
 
@@ -9,7 +11,6 @@
 #include <cstddef>
 #include <string>
 
-class DatabaseSession;
 
 namespace ClassMngr::Next::Platform
 {

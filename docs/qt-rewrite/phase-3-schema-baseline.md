@@ -99,20 +99,25 @@ enforcement around their table rebuilds.
 ## Current file and session behavior
 
 `.tps` is the native suffix and `.db` the legacy suffix; both are accepted
-inputs. Both go through the same SQLite `DatabaseSession` and schema-manager
+inputs. Both go through the same SQLite `WorkspaceStore` and schema-manager
 path, with no suffix-specific schema migration. Existing-only opens use a
-SQLite URI in read-write mode so SQLite does not create a missing file. A
-session opens a candidate connection and repositories, then swaps it in only
+SQLite URI in read-write mode so SQLite does not create a missing file. The
+store opens a candidate connection and repositories, then swaps it in only
 after success; it owns the repositories and releases them before closing and
-removing the connection. `FileController` wires `WorkspaceCoordinator`
+removing the connection. F1319 renamed the F1318 `DatabaseSession` owner to
+`WorkspaceStore`; `DatabaseSession` remains a compatibility alias for that
+same type. `FileController` wires `WorkspaceCoordinator`
 through the workspace use case and gateway to
-`ApplicationServicesWorkspacePort`, which forwards to `ApplicationServices` /
-`DatabaseSession`. Create/replacement and Initial Setup recovery are separate
-lifecycle policies. Save-as/export copies use `QSaveFile` and a 64 KiB buffer.
+`ApplicationServicesWorkspacePort`, which delegates lifecycle calls through
+`ApplicationServices` to `WorkspaceStore`. The `DatabaseSession` accessor
+remains for callers not yet migrated. Create/replacement and Initial Setup
+recovery are separate lifecycle policies. Save-as/export copies use `QSaveFile`
+and a 64 KiB buffer.
 
 Sources: [`DatabaseFileFormat`](../../src/core/database_file_format.cpp#L7-L88),
-[`DatabaseSession`](../../src/data/database/database_session.cpp#L76-L207)
-and [#L210-L264](../../src/data/database/database_session.cpp#L210-L264),
+[`WorkspaceStore`](../../src/data/database/workspace_store.cpp#L76-L207)
+and [#L210-L264](../../src/data/database/workspace_store.cpp#L210-L264),
+with the [`DatabaseSession` compatibility header](../../src/data/database/database_session.h),
 [`FileController` wiring](../../src/app/controllers/file_controller.cpp#L199-L245),
 [`WorkspaceCoordinator`](../../src/next/application/workspace_coordinator.h#L12-L85),
 [`ApplicationServicesWorkspacePort`](../../src/next/platform/application_services_workspace_port.h#L17-L105),

@@ -250,7 +250,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
         tests/data_service_lifecycle_tests.cpp
         src/app/services/feature_services.cpp
         src/data/data_service.cpp
-        src/data/database/database_session.cpp
+        src/data/database/workspace_store.cpp
         src/data/database/database_schema_manager.cpp
         src/data/database/database_transaction.cpp
         src/data/database/sql_query_utils.cpp

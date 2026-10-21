@@ -7,10 +7,12 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-22
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 1 is active with F1318 schema-v6 behavior baseline; F1319 WorkspaceStore
-  lifecycle seam is next. See the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
+  Batch 1 is active with F1318 schema-v6 behavior baseline and F1319
+  WorkspaceStore lifecycle seam complete; F1320 calendar display-preferences
+  persistence is next. See the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md), and
-  [current batch tracker](Current-Slice-Batches.md). Phase 2 closure evidence
+  [progress log](04-Phase-3-Progress-Log.md) and [current batch
+  tracker](Current-Slice-Batches.md). Phase 2 closure evidence
   and limitations remain in its [plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
   and [progress log](03-Phase-2-Progress-Log.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate

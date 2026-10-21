@@ -1,6 +1,7 @@
 #include "data/data_service.h"
 #include "data/database/database_file_operations.h"
-#include "data/database/database_session.h"
+#include "data/database/database_schema_manager.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
@@ -310,10 +311,13 @@ void DataServiceLifecycleTests::applicationServicesShareCanonicalSessionAcrossLi
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
     ApplicationServices services;
+    WorkspaceStore* const store = services.workspaceStore();
     DatabaseSession* const session = services.databaseSession();
     DataService* const facade = services.dataService();
+    QVERIFY(store != nullptr);
     QVERIFY(session != nullptr);
     QVERIFY(facade != nullptr);
+    QCOMPARE(store, session);
     QCOMPARE(facade->databaseSession(), session);
     const QList<FeatureService*> features = {
         services.settingsService(), services.teacherService(), services.classService(),
@@ -323,15 +327,38 @@ void DataServiceLifecycleTests::applicationServicesShareCanonicalSessionAcrossLi
     for (FeatureService* feature : features)
         QVERIFY(!feature->isAvailable());
     QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(!store->isOpen());
     QVERIFY(!session->isOpen());
     QVERIFY(!facade->isOpen());
     const QString path = directory.filePath(QStringLiteral("canonical.db"));
+    const QStringList connectionsBeforeOpen = QSqlDatabase::connectionNames();
     QVERIFY(services.openDatabase(path));
+    QCOMPARE(services.workspaceStore(), store);
+    QCOMPARE(services.databaseSession(), session);
+    QCOMPARE(store, session);
     QVERIFY(session->isOpen());
+    QVERIFY(store->isOpen());
     QVERIFY(facade->isOpen());
     QVERIFY(services.hasOpenDatabase());
     QCOMPARE(services.currentDatabasePath(), session->databasePath());
     QCOMPARE(facade->currentDatabasePath(), session->databasePath());
+    QCOMPARE(store->databasePath(), session->databasePath());
+    QStringList addedConnections;
+    for (const QString& name : QSqlDatabase::connectionNames())
+    {
+        if (!connectionsBeforeOpen.contains(name))
+        {
+            addedConnections.append(name);
+        }
+    }
+    QCOMPARE(addedConnections.size(), 1);
+    QCOMPARE(addedConnections.first(), store->database().connectionName());
+    QCOMPARE(store->settingsRepository(), session->settingsRepository());
+    QSqlDatabase storeDatabase = store->database();
+    const Result<int> schemaVersion =
+        DatabaseSchemaManager::schemaVersion(storeDatabase);
+    QVERIFY(schemaVersion);
+    QCOMPARE(*schemaVersion, DatabaseSchemaManager::LatestSchemaVersion);
     for (FeatureService* feature : features)
         QVERIFY(feature->isAvailable());
     QVERIFY(services.settingsService()->save(QStringLiteral("canonical/value"), 73));
@@ -347,6 +374,14 @@ void DataServiceLifecycleTests::applicationServicesShareCanonicalSessionAcrossLi
     QCOMPARE(featureTeacher->teacherEn, teacher.teacherEn);
     const QString connection = session->database().connectionName();
     const QStringList connections = QSqlDatabase::connectionNames();
+    const QString missingPath = directory.filePath(QStringLiteral("missing.db"));
+    QVERIFY(!services.openExistingDatabase(missingPath));
+    QVERIFY(!QFileInfo::exists(missingPath));
+    QCOMPARE(services.workspaceStore(), store);
+    QCOMPARE(services.databaseSession(), session);
+    QCOMPARE(store->database().connectionName(), connection);
+    QCOMPARE(QSqlDatabase::connectionNames(), connections);
+    QCOMPARE(services.currentDatabasePath(), QFileInfo(path).absoluteFilePath());
     const QString invalidPath = directory.filePath(QStringLiteral("invalid.db"));
     QFile invalidFile(invalidPath);
     QVERIFY(invalidFile.open(QIODevice::WriteOnly));
@@ -354,7 +389,9 @@ void DataServiceLifecycleTests::applicationServicesShareCanonicalSessionAcrossLi
     QCOMPARE(invalidFile.write(invalidBytes), qint64(invalidBytes.size()));
     invalidFile.close();
     QVERIFY(!services.openDatabase(invalidPath));
+    QCOMPARE(services.workspaceStore(), store);
     QCOMPARE(services.databaseSession(), session);
+    QCOMPARE(store, session);
     QCOMPARE(facade->databaseSession(), session);
     QCOMPARE(session->database().connectionName(), connection);
     QCOMPARE(QSqlDatabase::connectionNames(), connections);
@@ -365,6 +402,10 @@ void DataServiceLifecycleTests::applicationServicesShareCanonicalSessionAcrossLi
     QVERIFY(retained);
     QCOMPARE(retained->toInt(), 73);
     services.closeDatabase();
+    QCOMPARE(services.workspaceStore(), store);
+    QCOMPARE(services.databaseSession(), session);
+    QCOMPARE(store, session);
+    QVERIFY(!store->isOpen());
     QVERIFY(!session->isOpen());
     QVERIFY(!facade->isOpen());
     QVERIFY(!services.hasOpenDatabase());
@@ -375,8 +416,10 @@ void DataServiceLifecycleTests::applicationServicesShareCanonicalSessionAcrossLi
         QVERIFY(!feature->isAvailable());
     QVERIFY(!facade->loadSetting(QStringLiteral("canonical/value")));
     QVERIFY(!services.settingsService()->load(QStringLiteral("canonical/value")));
-    QVERIFY(services.openDatabase(path));
+    QVERIFY(services.openExistingDatabase(path));
+    QCOMPARE(services.workspaceStore(), store);
     QCOMPARE(services.databaseSession(), session);
+    QCOMPARE(store, session);
     QCOMPARE(facade->databaseSession(), session);
     for (FeatureService* feature : features)
         QVERIFY(feature->isAvailable());

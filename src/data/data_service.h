@@ -19,6 +19,7 @@
 #include "domain/models/teacher.h"
 #include "domain/models/teacher_import.h"
 #include "core/result.h"
+#include "data/database/workspace_store_fwd.h"
 
 #include <QList>
 #include <QPair>
@@ -28,8 +29,6 @@
 #include <cstddef>
 
 #include <memory>
-
-class DatabaseSession;
 
 // =========================================================
 // Data Service

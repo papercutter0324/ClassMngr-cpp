@@ -3,12 +3,12 @@
 
 #include "core/result.h"
 #include "features/documents/document_catalog.h"
+#include "data/database/workspace_store_fwd.h"
 
 #include <QString>
 #include <memory>
 
 class DataService;
-class DatabaseSession;
 class ThemeService;
 class SettingsService;
 class TeacherService;
@@ -56,8 +56,9 @@ public:
         );
 
     [[nodiscard]] DataService* dataService() const;
-    // Session identity and narrow-service binding. The compatibility facade
-    // resolves repository access through this canonical session.
+    [[nodiscard]] WorkspaceStore* workspaceStore() const;
+    // Transitional compatibility accessor for the canonical workspace store.
+    // It returns the same object as workspaceStore().
     [[nodiscard]] DatabaseSession* databaseSession() const;
     [[nodiscard]] SettingsService* settingsService() const;
     [[nodiscard]] TeacherService* teacherService() const;
@@ -70,8 +71,8 @@ public:
     [[nodiscard]] const DocumentCatalog* documentCatalog() const;
 
 private:
-    // Declared first so the session outlives the facade and all feature services.
-    std::unique_ptr<DatabaseSession> m_databaseSession;
+    // Declared first so workspace persistence outlives all service facades.
+    std::unique_ptr<WorkspaceStore> m_workspaceStore;
     std::unique_ptr<DataService> m_dataService;
     mutable std::unique_ptr<SettingsService> m_settingsService;
     mutable std::unique_ptr<TeacherService> m_teacherService;

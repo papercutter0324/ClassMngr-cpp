@@ -2,6 +2,7 @@
 
 #include "core/enums/schedule_type.h"
 #include "core/result.h"
+#include "data/database/workspace_store_fwd.h"
 #include "domain/models/calendar_event.h"
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
@@ -30,8 +31,6 @@
 #include <cstddef>
 
 class DataService;
-class DatabaseSession;
-
 // The distinct views required by the Class Analytics dashboard.  The selected
 // snapshot keeps the existing current-roster policy; the Class Shape snapshot
 // may instead be the latest completed named evaluation when All is selected.

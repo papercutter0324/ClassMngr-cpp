@@ -1,9 +1,10 @@
 #pragma once
 
+#include "data/database/workspace_store_fwd.h"
+
 #include "core/application_services.h"
 #include "next/application/speaking_evaluation_save_use_case.h"
 
-class DatabaseSession;
 
 namespace ClassMngr::Next::Platform
 {

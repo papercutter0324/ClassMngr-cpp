@@ -38,10 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-22
-- Current note: F1318 is active to close the source-derived schema-v6 behavior
-  baseline; F1319 WorkspaceStore lifecycle seam is next. See the [schema
-  baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md) and [current
-  batch tracker](Current-Slice-Batches.md).
+- Current note: F1318 schema-v6 baseline and F1319 WorkspaceStore lifecycle
+  seam are complete; F1320 calendar display-preferences persistence is next.
+  See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
+  [progress log](04-Phase-3-Progress-Log.md), and [current batch
+  tracker](Current-Slice-Batches.md).
 
 ### Slice batches
 
