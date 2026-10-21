@@ -82,7 +82,8 @@ private:
     void populateTeachers();
     void updateLevelOptions();
     void rebuildClassList(
-        int preferredClassId = -1
+        int preferredClassId = -1,
+        const TestingClass* savedClassOnReadFailure = nullptr
         );
     void loadClass(
         int classId

@@ -512,7 +512,7 @@ bool TestingClassesPage::saveChanges()
         testingClass.classId
         );
     m_rosterEditor->loadClass(classroom);
-    rebuildClassList(m_currentClassId);
+    rebuildClassList(m_currentClassId, &testingClass);
     updateActions();
     emit testingDataChanged();
     return true;
@@ -1198,11 +1198,48 @@ void TestingClassesPage::updateLevelOptions()
 }
 
 void TestingClassesPage::rebuildClassList(
-    int preferredClassId
+    int preferredClassId,
+    const TestingClass* savedClassOnReadFailure
     )
 {
     const QSignalBlocker blocker(m_classList);
-    m_classList->clear();
+    if (!savedClassOnReadFailure)
+    {
+        m_classList->clear();
+    }
+
+    const auto retainSavedClass = [this, savedClassOnReadFailure]
+    {
+        if (!savedClassOnReadFailure)
+        {
+            return;
+        }
+
+        QListWidgetItem* savedItem = nullptr;
+        for (int row = 0; row < m_classList->count(); ++row)
+        {
+            QListWidgetItem* const item = m_classList->item(row);
+            if (
+                item->data(Qt::UserRole).toInt()
+                == savedClassOnReadFailure->classId
+                )
+            {
+                savedItem = item;
+                break;
+            }
+        }
+
+        if (!savedItem)
+        {
+            savedItem = new QListWidgetItem(m_classList);
+            savedItem->setData(
+                Qt::UserRole,
+                savedClassOnReadFailure->classId
+                );
+        }
+        savedItem->setText(classListLabel(*savedClassOnReadFailure));
+        m_classList->setCurrentItem(savedItem);
+    };
 
     ClassMngr::Next::Platform::
         ApplicationServicesScheduleTestingClassChoicesReadPort defaultReadPort(
@@ -1227,9 +1264,12 @@ void TestingClassesPage::rebuildClassList(
             == ClassMngr::Next::Domain::ErrorCode::NotFound
             )
         {
+            retainSavedClass();
             updateActions();
             return;
         }
+
+        retainSavedClass();
 
         const std::string& message = loaded.error().message;
         DialogServices::showWarning(
@@ -1241,6 +1281,11 @@ void TestingClassesPage::rebuildClassList(
                 )
             );
         return;
+    }
+
+    if (savedClassOnReadFailure)
+    {
+        m_classList->clear();
     }
 
     QList<TestingClass> testingClasses;

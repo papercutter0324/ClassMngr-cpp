@@ -18,6 +18,7 @@
 #include "next/application/testing_teacher_choices_read_query.h"
 #include "next/platform/application_services_testing_class_create_port.h"
 #include "next/platform/application_services_testing_class_delete_port.h"
+#include "next/platform/application_services_testing_class_details_update_port.h"
 #include "ui/shared/widgets/marquee_item_delegate.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -241,9 +242,13 @@ public:
     {
         ++callCount;
         lastRequest = request;
-        return result;
+        return delegate
+            ? delegate->updateTestingClassDetails(request)
+            : result;
     }
 
+    const ClassMngr::Next::Application::TestingClassDetailsUpdatePort*
+        delegate = nullptr;
     mutable int callCount = 0;
     mutable std::optional<ClassMngr::Next::Application::
         TestingClassDetailsUpdateRequest> lastRequest;
@@ -553,6 +558,9 @@ private slots:
     void dirtyTestingClassSelectionFailureWithoutPriorRowClearsTarget();
     void dirtyTestingClassSelectionSaveFailureKeepsDraftAndSkipsRead();
     void existingTestingClassUpdateRetainsSelectionAndRefreshesList();
+    void testingClassUpdateReadFailureRetainsSavedRowAndReconciles();
+    void testingClassSaveNotFoundRefreshRetainsSelectionQuietly();
+    void newTestingClassCreateReadFailureRetainsSavedRowAndReconciles();
     void wideTeacherSelectionSurvivesRefreshUpdateAndCreate();
     void testingClassDetailsUpdateFailureRetainsDraftAndShowsWarning();
     void newTestingClassCreationDoesNotUseDetailsUpdatePort();
@@ -2548,6 +2556,424 @@ existingTestingClassUpdateRetainsSelectionAndRefreshesList()
     const auto saved = repository->loadTestingClass(*targetId);
     QVERIFY(saved);
     QCOMPARE(saved->name, QStringLiteral("Zulu Updated Target"));
+}
+
+void TestingClassesPageTests::
+testingClassUpdateReadFailureRetainsSavedRowAndReconciles()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TestingClassRepository* const repository = services.databaseSession()
+        ->testingClassRepository();
+    QVERIFY(repository);
+
+    TestingClass target = testingClass(QStringLiteral("Alpha Target"));
+    target.teacherId = -1;
+    const auto targetId = repository->createTestingClass(target);
+    QVERIFY(targetId);
+    TestingClass sibling = testingClass(QStringLiteral("Beta Sibling"));
+    sibling.teacherId = -1;
+    const auto siblingId = repository->createTestingClass(sibling);
+    QVERIFY(siblingId);
+
+    using Choice = ClassMngr::Next::Application::ScheduleTestingClassChoice;
+    const auto choice = [](const int classId, const QString& name) -> Choice
+    {
+        return {
+            .classId = typedClassId(classId),
+            .name = name.toStdU16String(),
+            .grade = u"M1",
+            .level = u"Major",
+            .room = u"401"
+        };
+    };
+    FixedTestingClassChoicesReadPort choicesReadPort;
+    choicesReadPort.resultsByCall = {
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::success({
+                .choices = {
+                    choice(*targetId, QStringLiteral("Alpha Target")),
+                    choice(*siblingId, QStringLiteral("Beta Sibling"))
+                }
+            }),
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                .message = "injected post-update choices read failure",
+                .recoverable = false
+            }),
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::success({
+                .choices = {
+                    choice(*targetId, QStringLiteral("Zulu Updated Target")),
+                    choice(*siblingId, QStringLiteral("Beta Sibling"))
+                }
+            }),
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::success({
+                .choices = {
+                    choice(*targetId, QStringLiteral("Aardvark Second Save")),
+                    choice(*siblingId, QStringLiteral("Beta Sibling"))
+                }
+            })
+    };
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesTestingClassDetailsUpdatePort persistedUpdatePort(
+            services
+            );
+    RecordingTestingClassDetailsUpdatePort updatePort;
+    updatePort.delegate = &persistedUpdatePort;
+    RecordingTestingClassCreatePort createPort;
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        &choicesReadPort,
+        nullptr,
+        nullptr,
+        &updatePort,
+        &createPort
+        );
+    page.openTestingClass(*targetId);
+    page.refresh();
+
+    auto* const list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* const nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    QVERIFY(list);
+    QVERIFY(nameEdit);
+    QCOMPARE(list->count(), 2);
+    QVERIFY(list->currentItem());
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), *targetId);
+
+    nameEdit->setText(QStringLiteral("Zulu Updated Target"));
+    QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
+    QVERIFY(changedSpy.isValid());
+    QVERIFY(page.saveChanges());
+
+    QCOMPARE(updatePort.callCount, 1);
+    QVERIFY(updatePort.lastRequest.has_value());
+    QCOMPARE(updatePort.lastRequest->classId.value(), std::to_string(*targetId));
+    QCOMPARE(createPort.callCount, 0);
+    QCOMPARE(changedSpy.size(), 1);
+    QCOMPARE(list->count(), 2);
+    QVERIFY(list->currentItem());
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), *targetId);
+    const int retainedTargetRow = testingClassRow(list, *targetId);
+    QVERIFY(retainedTargetRow >= 0);
+    QCOMPARE(
+        list->item(retainedTargetRow)->text(),
+        QStringLiteral("Zulu Updated Target — M1 — Major")
+        );
+    const int retainedSiblingRow = testingClassRow(list, *siblingId);
+    QVERIFY(retainedSiblingRow >= 0);
+    QCOMPARE(
+        list->item(retainedSiblingRow)->text(),
+        QStringLiteral("Beta Sibling — M1 — Major")
+        );
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Testing Classes"));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("injected post-update choices read failure")
+        );
+    QCOMPARE(nameEdit->text(), QStringLiteral("Zulu Updated Target"));
+    QVERIFY(!page.hasUnsavedChanges());
+
+    const auto stored = repository->loadTestingClass(*targetId);
+    QVERIFY(stored);
+    QCOMPARE(stored->name, QStringLiteral("Zulu Updated Target"));
+
+    page.refresh();
+    QCOMPARE(choicesReadPort.callCount, 3);
+    QCOMPARE(list->count(), 2);
+    QVERIFY(list->currentItem());
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), *targetId);
+    const int refreshedTargetRow = testingClassRow(list, *targetId);
+    QVERIFY(refreshedTargetRow >= 0);
+    QCOMPARE(
+        list->item(refreshedTargetRow)->text(),
+        QStringLiteral("Zulu Updated Target — M1 — Major")
+        );
+    QCOMPARE(nameEdit->text(), QStringLiteral("Zulu Updated Target"));
+    QVERIFY(!page.hasUnsavedChanges());
+
+    nameEdit->setText(QStringLiteral("Aardvark Second Save"));
+    QVERIFY(page.saveChanges());
+    QCOMPARE(updatePort.callCount, 2);
+    QVERIFY(updatePort.lastRequest.has_value());
+    QCOMPARE(updatePort.lastRequest->classId.value(), std::to_string(*targetId));
+    QCOMPARE(createPort.callCount, 0);
+    QCOMPARE(changedSpy.size(), 2);
+    QCOMPARE(choicesReadPort.callCount, 4);
+    const auto savedAgain = repository->loadTestingClass(*targetId);
+    QVERIFY(savedAgain);
+    QCOMPARE(savedAgain->name, QStringLiteral("Aardvark Second Save"));
+    QVERIFY(prompts.messages.size() == 1);
+}
+
+void TestingClassesPageTests::
+testingClassSaveNotFoundRefreshRetainsSelectionQuietly()
+{
+    constexpr int targetId = 31;
+    constexpr int siblingId = 32;
+    using Choice = ClassMngr::Next::Application::ScheduleTestingClassChoice;
+    const auto choice = [](const int classId, const QString& name) -> Choice
+    {
+        return {
+            .classId = typedClassId(classId),
+            .name = name.toStdU16String(),
+            .grade = u"M1",
+            .level = u"Major",
+            .room = u"401"
+        };
+    };
+    FixedTestingClassChoicesReadPort choicesReadPort;
+    choicesReadPort.resultsByCall = {
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::success({
+                .choices = {
+                    choice(targetId, QStringLiteral("Original Target")),
+                    choice(siblingId, QStringLiteral("Stable Sibling"))
+                }
+            }),
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::NotFound,
+                .message = "The active database session is unavailable.",
+                .recoverable = true
+            })
+    };
+    FixedTestingClassDetailsReadPort detailsReadPort;
+    detailsReadPort.result = ClassMngr::Next::Application::
+        TestingClassDetailsReadResult::success(
+            testingClassDetails(targetId, QStringLiteral("Original Target"))
+            );
+    RecordingTestingClassDetailsUpdatePort updatePort;
+    RecordingTestingClassCreatePort createPort;
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    ApplicationServices services;
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        &choicesReadPort,
+        &detailsReadPort,
+        nullptr,
+        &updatePort,
+        &createPort
+        );
+    page.openTestingClass(targetId);
+    page.refresh();
+
+    auto* const list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* const nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    QVERIFY(list);
+    QVERIFY(nameEdit);
+    QCOMPARE(list->count(), 2);
+
+    nameEdit->setText(QStringLiteral("Saved Despite Quiet Read Failure"));
+    QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
+    QVERIFY(changedSpy.isValid());
+    QVERIFY(page.saveChanges());
+
+    QCOMPARE(updatePort.callCount, 1);
+    QVERIFY(updatePort.lastRequest.has_value());
+    QCOMPARE(updatePort.lastRequest->classId.value(), std::string("31"));
+    QCOMPARE(createPort.callCount, 0);
+    QCOMPARE(changedSpy.size(), 1);
+    QCOMPARE(choicesReadPort.callCount, 2);
+    QCOMPARE(list->count(), 2);
+    QVERIFY(list->currentItem());
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), targetId);
+    const int targetRow = testingClassRow(list, targetId);
+    QVERIFY(targetRow >= 0);
+    QCOMPARE(
+        list->item(targetRow)->text(),
+        QStringLiteral("Saved Despite Quiet Read Failure — M1 — Major")
+        );
+    const int siblingRow = testingClassRow(list, siblingId);
+    QVERIFY(siblingRow >= 0);
+    QCOMPARE(
+        list->item(siblingRow)->text(),
+        QStringLiteral("Stable Sibling — M1 — Major")
+        );
+    QCOMPARE(nameEdit->text(), QStringLiteral("Saved Despite Quiet Read Failure"));
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void TestingClassesPageTests::
+newTestingClassCreateReadFailureRetainsSavedRowAndReconciles()
+{
+    constexpr int firstClassId = 41;
+    constexpr int secondClassId = 42;
+    constexpr int createdClassId = 77;
+    using Choice = ClassMngr::Next::Application::ScheduleTestingClassChoice;
+    const auto choice = [](const int classId, const QString& name) -> Choice
+    {
+        return {
+            .classId = typedClassId(classId),
+            .name = name.toStdU16String(),
+            .grade = u"M1",
+            .level = u"Major",
+            .room = u"401"
+        };
+    };
+    const auto choicesResult = [
+        choice,
+        firstClassId,
+        secondClassId,
+        createdClassId
+    ](
+        const QString& createdName
+        )
+    {
+        return ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::success({
+                .choices = {
+                    choice(firstClassId, QStringLiteral("Alpha Prior")),
+                    choice(secondClassId, QStringLiteral("Beta Prior")),
+                    choice(createdClassId, createdName)
+                }
+            });
+    };
+
+    FixedTestingClassChoicesReadPort choicesReadPort;
+    choicesReadPort.resultsByCall = {
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::success({
+                .choices = {
+                    choice(firstClassId, QStringLiteral("Alpha Prior")),
+                    choice(secondClassId, QStringLiteral("Beta Prior"))
+                }
+            }),
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                .message = "injected post-create choices read failure",
+                .recoverable = false
+            }),
+        choicesResult(QStringLiteral("Created After Failure")),
+        choicesResult(QStringLiteral("Aardvark Second Save"))
+    };
+    FixedTestingClassDetailsReadPort detailsReadPort;
+    detailsReadPort.resultsByCall = {
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::success(
+            testingClassDetails(firstClassId, QStringLiteral("Alpha Prior"))
+            ),
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::success(
+            testingClassDetails(
+                createdClassId,
+                QStringLiteral("Created After Failure")
+                )
+            )
+    };
+    FixedTestingTeacherChoicesReadPort teacherChoicesReadPort;
+    RecordingTestingClassDetailsUpdatePort updatePort;
+    RecordingTestingClassCreatePort createPort;
+    createPort.result = ClassMngr::Next::Application::TestingClassCreateResult::
+        success(typedClassId(createdClassId));
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    ApplicationServices services;
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        &choicesReadPort,
+        &detailsReadPort,
+        &teacherChoicesReadPort,
+        &updatePort,
+        &createPort
+        );
+    page.openTestingClass(firstClassId);
+    page.refresh();
+
+    auto* const list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* const addButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesAddButton")
+        );
+    auto* const nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* const roomEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassRoomEdit")
+        );
+    QVERIFY(list);
+    QVERIFY(addButton);
+    QVERIFY(nameEdit);
+    QVERIFY(roomEdit);
+    QCOMPARE(list->count(), 2);
+    addButton->click();
+    nameEdit->setText(QStringLiteral("Created After Failure"));
+    roomEdit->setText(QStringLiteral("401"));
+
+    QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
+    QVERIFY(changedSpy.isValid());
+    QVERIFY(page.saveChanges());
+
+    QCOMPARE(createPort.callCount, 1);
+    QVERIFY(createPort.lastResult.has_value());
+    QVERIFY(*createPort.lastResult);
+    QCOMPARE(updatePort.callCount, 0);
+    QCOMPARE(changedSpy.size(), 1);
+    QCOMPARE(choicesReadPort.callCount, 2);
+    QCOMPARE(list->count(), 3);
+    QVERIFY(list->currentItem());
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), createdClassId);
+    QCOMPARE(
+        list->currentItem()->text(),
+        QStringLiteral("Created After Failure — M1 — Major")
+        );
+    QVERIFY(testingClassRow(list, firstClassId) >= 0);
+    QVERIFY(testingClassRow(list, secondClassId) >= 0);
+    QCOMPARE(nameEdit->text(), QStringLiteral("Created After Failure"));
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Testing Classes"));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("injected post-create choices read failure")
+        );
+
+    page.refresh();
+    QCOMPARE(choicesReadPort.callCount, 3);
+    QCOMPARE(list->count(), 3);
+    QVERIFY(list->currentItem());
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), createdClassId);
+    QCOMPARE(
+        list->currentItem()->text(),
+        QStringLiteral("Created After Failure — M1 — Major")
+        );
+    QCOMPARE(nameEdit->text(), QStringLiteral("Created After Failure"));
+    QVERIFY(!page.hasUnsavedChanges());
+
+    nameEdit->setText(QStringLiteral("Aardvark Second Save"));
+    QVERIFY(page.saveChanges());
+    QCOMPARE(updatePort.callCount, 1);
+    QVERIFY(updatePort.lastRequest.has_value());
+    QCOMPARE(updatePort.lastRequest->classId.value(), std::string("77"));
+    QCOMPARE(createPort.callCount, 1);
+    QCOMPARE(changedSpy.size(), 2);
+    QCOMPARE(choicesReadPort.callCount, 4);
+    QVERIFY(prompts.messages.size() == 1);
 }
 
 void TestingClassesPageTests::
