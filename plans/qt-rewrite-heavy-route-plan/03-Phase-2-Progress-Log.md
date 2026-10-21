@@ -59921,3 +59921,39 @@ test target, and the Initial Setup wizard test target; run only the focused
 CTest cases/selectors. This adds Gate 1 app-less behavior evidence and makes
 no Gate 2 claim. F1267 is accepted before implementation as the sole
 Batch507 slice; no source, build, or test work has started.
+
+### Superseded latest progress update - 2026-10-21 (F1267 accepted)
+
+F1267's discovery evidence and acceptance criteria are recorded in the
+[F1267 acceptance](03-Phase-2-Progress-Log.md#f1267-initial-setup-personal-name-requirement-in-application-accepted-before-implementation-2026-10-21).
+
+### F1267 Initial Setup personal-name requirement in Application complete - 2026-10-21
+
+F1267 is complete in Batch507 at source commit
+`f4b95d4d900fa4366589dafabda500ad0d5bde7f`. The setup-specific Qt-free
+Application policy now answers whether the UI-trimmed personal-name presence
+fact meets the Initial Setup requirement. The wizard retains trimming,
+translation, prompt presentation, and navigation. Its validation return
+remains before setup/campus availability checks, validation-time campus/Zoom
+reads and preflight, and any save. `initializePage()`'s earlier
+display-name/signature preference reads remain unchanged. The generic
+personal-details port and My Workspace whitespace behavior are unchanged;
+F1016, shared `TeacherValidator`, and F285 were not changed.
+
+The independent Tester ran the incremental macOS Ninja build command
+`cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationInitialSetupPersonalNameRequirementTests ClassMngrInitialSetupWizardTests`; it exited 0 with no work to do. The app-less policy CTest passed 1/1. Four selected Initial Setup QtTest functions passed:
+`missingPersonalNameBlocksValidationWithoutSaving`,
+`personalDetailsRoutesToClassDetailsWhenTeachersExist`,
+`personalDetailsRoutesToTeacherEntryWhenNoTeachersExist`, and
+`aggregateSavePreservesAllPersonalDetailsWithoutDataLoss`; the missing-name
+function covered empty and whitespace-only data rows. The generic port test
+`savesAllNineExactKeysWithUtf8AndPreparedImage` also passed, preserving its
+whitespace semantics. The Executor additionally reports five focused wizard
+selectors passed 7/7. `git diff --check` passed; the only build output noted
+was a font alias warning. No full-suite, Windows, or Gate 2 result is claimed.
+
+Batch507 is complete locally and awaits the normal push. F1267 adds Gate 1
+app-less behavior evidence only; Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open. The separately recorded F1265
+`outputReportsUsesProjectedRegularSchedule` failure and its unproven
+pre-change baseline remain unchanged.

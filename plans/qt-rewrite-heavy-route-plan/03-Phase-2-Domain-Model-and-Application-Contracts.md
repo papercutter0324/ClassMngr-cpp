@@ -53,12 +53,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch507 is active with F1267, Initial Setup personal-name requirement in Application, accepted before implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+- Current note: Batch507 (F1267) is complete locally and awaits push; no slice batch is active; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Latest Progress Update
 
-F1267, Initial Setup personal-name requirement in Application, is accepted
-before implementation in active Batch507 (see [acceptance](03-Phase-2-Progress-Log.md#f1267-initial-setup-personal-name-requirement-in-application-accepted-before-implementation-2026-10-21)). Add a Qt-free setup-specific policy over the trimmed-name presence fact; retain trimming, prompt text/translation, and navigation in the wizard, and keep initialization-time preference reads unchanged. Incremental macOS verification is planned for `ClassMngr`, the Application policy tests, and Initial Setup wizard tests; implementation and verification have not started.
+F1267 is complete locally in Batch507 at source commit
+`f4b95d4d900fa4366589dafabda500ad0d5bde7f` (see [F1267 closeout](03-Phase-2-Progress-Log.md#f1267-initial-setup-personal-name-requirement-in-application-complete-2026-10-21)). The setup-specific Application policy governs only the trimmed-name presence fact in Initial Setup; UI trimming, prompt and navigation remain at the boundary, and initialization-time preference reads remain unchanged. Incremental macOS build and focused app-less and UI checks passed; no full-suite, Windows, or Gate 2 claim is made. Batch507 is complete locally and awaits push; no slice batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -73,12 +73,8 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-### Active batch: Batch507 (0 complete, 1 accepted, 0 discovered)
-
-- F1267 - Initial Setup personal-name requirement in Application: Accepted
-  before implementation; next action is to add the Qt-free presence policy,
-  route wizard validation through it, and cover its behavior in app-less and
-  Initial Setup integration tests.
+No slice batch is active. Batch507 (F1267) is complete locally and awaits
+push.
 
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
