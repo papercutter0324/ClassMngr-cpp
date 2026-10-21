@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/teacher.h"
 #include "next/application/teacher_profile_read_port.h"
@@ -44,15 +44,15 @@ public:
             });
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return Application::TeacherProfileReadResult::failure(
                 unavailableError());
         }
 
-        TeacherRepository* const repository = session->teacherRepository();
+        TeacherRepository* const repository = store->teacherRepository();
         if (!repository)
         {
             return Application::TeacherProfileReadResult::failure(

@@ -8,8 +8,10 @@
 - Last updated: 2026-10-22
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
   Batch 1 is active with F1318 schema-v6 behavior baseline, F1319
-  WorkspaceStore lifecycle seam, and F1320 calendar display-preferences
-  persistence complete; F1321 existing-teacher profile read/edit is next. See
+  WorkspaceStore lifecycle seam, F1320 calendar display-preferences
+  persistence, and F1321 existing-teacher profile persistence-port migration
+  complete; F1322 ClassesPage class-list read is next. F1320 is committed as
+  `c6ea61d6`. See
   the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md), and
   [progress log](04-Phase-3-Progress-Log.md) and [current batch

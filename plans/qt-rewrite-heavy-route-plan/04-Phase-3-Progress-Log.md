@@ -67,3 +67,25 @@ cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationS
 ctest --test-dir build/macos-clang-debug -R '^ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests$' --output-on-failure
 cmake --build build/macos-clang-debug --target ClassMngr
 ```
+
+## F1321 — Teacher-profile persistence-port migration — 2026-10-22
+
+Moved the existing teacher-profile read and edit persistence adapters and
+their tests from the `databaseSession()` compatibility accessor to
+`ApplicationServices::workspaceStore()` and `WorkspaceStore::teacherRepository()`.
+The Phase 2 application contracts and page wiring already provided read/edit
+behavior; this slice changes only the persistence owner boundary. ID parsing,
+all 14 field mappings, unavailable/missing/error results, and update/reload
+behavior are unchanged.
+
+The executor built both focused test targets and `ClassMngr`; the two focused
+CTests passed 2/2, and `git diff --check` passed. An independent Tester
+reviewed the adapters and reran both focused CTests: **2/2 passed**. Verification
+used the existing macOS Debug tree; the full suite and cross-platform builds
+were not run.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests ClassMngrNextPlatformApplicationServicesTeacherProfileReadPortTests
+ctest --test-dir build/macos-clang-debug -R '^ClassMngrNextPlatformApplicationServicesTeacherProfile(EditPersistence|Read)PortTests$' --output-on-failure
+cmake --build build/macos-clang-debug --target ClassMngr
+```

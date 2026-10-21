@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/teacher.h"
 #include "next/platform/application_services_teacher_profile_read_port.h"
@@ -55,7 +55,7 @@ Domain::TeacherId teacherId(const qint64 value)
 int createTeacher(ApplicationServices& services)
 {
     const auto result =
-        services.databaseSession()->teacherRepository()->createTeacher(
+        services.workspaceStore()->teacherRepository()->createTeacher(
             teacherFixture()
             );
     return result.value_or(-1);
@@ -128,7 +128,7 @@ readsCompleteTeacherProfileForWideDatabaseId()
 
     constexpr qint64 wideTeacherId = 2147483648LL;
     const Teacher expected = teacherFixture();
-    QSqlQuery insert(services.databaseSession()->database());
+    QSqlQuery insert(services.workspaceStore()->database());
     QVERIFY2(insert.prepare(QStringLiteral(R"(
         INSERT INTO teachers (
             id,
@@ -165,7 +165,7 @@ readsCompleteTeacherProfileForWideDatabaseId()
     insert.addBindValue(expected.notes);
     QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
 
-    QSqlQuery storedId(services.databaseSession()->database());
+    QSqlQuery storedId(services.workspaceStore()->database());
     QVERIFY(storedId.prepare(QStringLiteral(
         "SELECT typeof(id), id FROM teachers WHERE id=?")));
     storedId.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
@@ -262,7 +262,7 @@ reportsUnavailableMissingAndRepositoryFailureWithoutFallback()
 
     const int missingId = id + 1000;
     TeacherRepository* const repository =
-        services.databaseSession()->teacherRepository();
+        services.workspaceStore()->teacherRepository();
     const TeacherProfileLookupResult typedProfileMissing =
         repository->lookupTeacherProfileById(missingId);
     QCOMPARE(typedProfileMissing.code, TeacherProfileLookupCode::Missing);
@@ -284,7 +284,7 @@ reportsUnavailableMissingAndRepositoryFailureWithoutFallback()
     QCOMPARE(missing.error().message, utf8(typedProfileMissing.diagnostic));
     QVERIFY(missing.error().recoverable);
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE teachers")),
         qPrintable(query.lastError().text()));
     const TeacherProfileLookupResult typedProfileFailure =

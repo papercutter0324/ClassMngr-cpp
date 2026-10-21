@@ -39,8 +39,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Unassigned
 - Last updated: 2026-10-22
 - Current note: F1318 schema-v6 baseline and F1319 WorkspaceStore lifecycle
-  seam and F1320 calendar display-preferences persistence are complete; F1321
-  existing-teacher profile read/edit is next.
+  seam, F1320 calendar display-preferences persistence, and F1321 existing-
+  teacher profile persistence-port migration are complete; F1322 ClassesPage
+  class-list read is next.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).

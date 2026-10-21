@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/teacher.h"
 #include "next/application/teacher_profile_edit_use_case.h"
@@ -189,13 +189,13 @@ private:
 
     [[nodiscard]] TeacherRepository* activeRepository() const noexcept
     {
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return nullptr;
         }
-        return session->teacherRepository();
+        return store->teacherRepository();
     }
 
     [[nodiscard]] static QString legacyText(

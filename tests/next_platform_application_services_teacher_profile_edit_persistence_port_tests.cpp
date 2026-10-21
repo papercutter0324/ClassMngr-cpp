@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/teacher.h"
 #include "next/domain/teacher_profile.h"
@@ -97,13 +97,13 @@ wideIdentitiesUpdateAndReloadWithoutAffectingSibling()
     QVERIFY(services.openDatabase(databasePath(directory)));
     const int siblingId = createTeacher(services);
     QVERIFY(siblingId > 0);
-    auto* repository = services.databaseSession()->teacherRepository();
+    auto* repository = services.workspaceStore()->teacherRepository();
     const auto sibling = repository->getTeacher(siblingId);
     QVERIFY(sibling);
     Platform::ApplicationServicesTeacherProfileEditPersistencePort port(services);
     for (const std::string value : {"2147483648", "9223372036854775807"})
     {
-        QSqlQuery seed(services.databaseSession()->database());
+        QSqlQuery seed(services.workspaceStore()->database());
         seed.prepare(QStringLiteral("INSERT INTO teachers (id, teacher_en) VALUES (?, 'Wide Before')"));
         seed.addBindValue(QString::fromStdString(value).toLongLong());
         QVERIFY2(seed.exec(), qPrintable(seed.lastError().text()));
@@ -152,7 +152,7 @@ updatesAndReloadsEveryProfileFieldThroughActiveRepository()
     QVERIFY(updated);
 
     TeacherRepository* const repository =
-        services.databaseSession()->teacherRepository();
+        services.workspaceStore()->teacherRepository();
     QVERIFY(repository);
     const Result<Teacher> stored = repository->getTeacher(teacherId);
     QVERIFY(stored);
@@ -204,7 +204,7 @@ mapsDeletedTeacherUpdateAndReloadToNotFound()
     QVERIFY(teacherId > 0);
 
     TeacherRepository* const repository =
-        services.databaseSession()->teacherRepository();
+        services.workspaceStore()->teacherRepository();
     QVERIFY(repository);
     QVERIFY(repository->deleteTeacher(teacherId));
 
@@ -250,7 +250,7 @@ mapsUnavailableSessionAndRepositoryFailures()
     const int teacherId = createTeacher(services);
     QVERIFY(teacherId > 0);
 
-    QSqlQuery trigger(services.databaseSession()->database());
+    QSqlQuery trigger(services.workspaceStore()->database());
     QVERIFY(trigger.exec(QStringLiteral(
         "CREATE TRIGGER reject_teacher_profile_update "
         "BEFORE UPDATE ON teachers "
@@ -272,7 +272,7 @@ mapsUnavailableSessionAndRepositoryFailures()
         std::to_string(teacherId + 1000));
     QVERIFY(missingId);
     TeacherRepository* const repository =
-        services.databaseSession()->teacherRepository();
+        services.workspaceStore()->teacherRepository();
     QVERIFY(repository);
     const TeacherByIdLookupResult missingLookup =
         repository->lookupTeacherById(teacherId + 1000);
@@ -286,7 +286,7 @@ mapsUnavailableSessionAndRepositoryFailures()
     QCOMPARE(missingReload.error().message,
         missingLookup.diagnostic.toStdString());
 
-    QSqlQuery dropTeachers(services.databaseSession()->database());
+    QSqlQuery dropTeachers(services.workspaceStore()->database());
     QVERIFY2(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")),
         qPrintable(dropTeachers.lastError().text()));
     const TeacherByIdLookupResult queryFailure =

@@ -9,15 +9,15 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 1 is active: F1318, F1319, and F1320 are complete; F1321 is next.
+- Batch 1 is active: F1318, F1319, F1320, and F1321 are complete; F1322 is next.
 - Begin Batch 2 discovery when F1336 starts; do not add Batch 2 candidates before then.
 
 ## Phase 3 — Batch 1 (active)
 
 1. F1318 — Close schema-v6 behavior baseline (complete; commit `991c046e`)
 2. F1319 — WorkspaceStore lifecycle seam (complete; commit `f78a0b50`)
-3. F1320 — Calendar display preferences persistence (complete)
-4. F1321 — Existing-teacher profile read/edit
+3. F1320 — Calendar display preferences persistence (complete; commit `c6ea61d6`)
+4. F1321 — Existing-teacher profile persistence-port migration (complete)
 5. F1322 — ClassesPage class-list read
 6. F1323 — My Classes student-count batch read
 7. F1324 — Class Details display snapshot
