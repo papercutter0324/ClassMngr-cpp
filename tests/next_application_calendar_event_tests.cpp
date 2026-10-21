@@ -6,6 +6,7 @@
 #include "next/application/calendar_event_delete_all_port.h"
 #include "next/application/calendar_event_delete_all_use_case.h"
 #include "next/application/calendar_event_edit_draft.h"
+#include "next/application/calendar_event_edit_validation.h"
 #include "next/application/calendar_event_import_save_port.h"
 #include "next/application/calendar_event_projection.h"
 #include "next/application/calendar_event_repeat_occurrence_plan.h"
@@ -511,6 +512,8 @@ private slots:
     void deleteAllUseCaseDeletesOnceAndReturnsSuccess();
     void deleteAllUseCasePropagatesPortFailure();
     void editDraftBoundsAndTimeStatusPolicyIsExplicit();
+    void editFormValidationPreservesOrderedFieldDiagnostics();
+    void editFormValidationPreservesRecurrenceRulesAndOrdering();
     void editDraftIsCopyableEqualAndIndependentlyReleasable();
     void editDraftContractHasNoQtOrLegacySurface();
     void seriesCreateRequestBoundsAndOccurrencesRemainTyped();
@@ -2606,6 +2609,383 @@ editDraftBoundsAndTimeStatusPolicyIsExplicit()
     unconfirmedWithTime.startTime = "09:00";
     unconfirmedWithTime.endTime = "10:00";
     QVERIFY(!unconfirmedWithTime.validate());
+}
+
+void NextApplicationCalendarEventTests::
+editFormValidationPreservesOrderedFieldDiagnostics()
+{
+    auto draft = validEditDraft();
+    QVERIFY(validateCalendarEventEditForm(draft).empty());
+
+    auto blankTitle = draft;
+    blankTitle.title = " \t\xE3\x80\x80";
+    const auto requiredTitle = validateCalendarEventEditForm(blankTitle);
+    QCOMPARE(requiredTitle.size(), std::size_t{1});
+    QCOMPARE(requiredTitle.at(0).code, std::string("calendar.title.required"));
+    QCOMPARE(requiredTitle.at(0).field, std::string("title"));
+
+    auto tooLongTitle = draft;
+    tooLongTitle.title = std::string(256, 't');
+    const auto titleLength = validateCalendarEventEditForm(tooLongTitle);
+    QCOMPARE(titleLength.size(), std::size_t{1});
+    QCOMPARE(
+        titleLength.at(0).code,
+        std::string("validation.length.out_of_bounds")
+        );
+    QCOMPARE(
+        std::get<std::int64_t>(titleLength.at(0).arguments.at("length")),
+        std::int64_t{256}
+        );
+    QCOMPARE(
+        std::get<std::int64_t>(titleLength.at(0).arguments.at("minimum")),
+        std::int64_t{1}
+        );
+    QCOMPARE(
+        std::get<std::int64_t>(titleLength.at(0).arguments.at("maximum")),
+        std::int64_t{255}
+        );
+
+    auto simplifiedTitle = draft;
+    simplifiedTitle.title = std::string(127, 'a') + " \n\t"
+        + std::string(127, 'b');
+    QVERIFY(validateCalendarEventEditForm(simplifiedTitle).empty());
+
+    std::string supplementaryTitle;
+    for (int index = 0; index < 127; ++index)
+    {
+        supplementaryTitle += "\xF0\x9F\x98\x80";
+    }
+    auto exactUtf16Title = draft;
+    exactUtf16Title.title = supplementaryTitle + "x";
+    QVERIFY(validateCalendarEventEditForm(exactUtf16Title).empty());
+
+    auto overUtf16Title = draft;
+    overUtf16Title.title = supplementaryTitle + "xy";
+    const auto utf16TitleLength =
+        validateCalendarEventEditForm(overUtf16Title);
+    QCOMPARE(utf16TitleLength.size(), std::size_t{1});
+    QCOMPARE(
+        utf16TitleLength.at(0).code,
+        std::string("validation.length.out_of_bounds")
+        );
+    QCOMPARE(
+        std::get<std::int64_t>(
+            utf16TitleLength.at(0).arguments.at("length")
+            ),
+        std::int64_t{256}
+        );
+
+    auto invalidType = draft;
+    invalidType.eventType = " Webinar ";
+    const auto eventType = validateCalendarEventEditForm(invalidType);
+    QCOMPARE(eventType.size(), std::size_t{1});
+    QCOMPARE(
+        eventType.at(0).code,
+        std::string("validation.enum.invalid_value")
+        );
+    QCOMPARE(eventType.at(0).field, std::string("eventType"));
+    QCOMPARE(
+        std::get<std::string>(eventType.at(0).arguments.at("value")),
+        std::string("Webinar")
+        );
+    const std::vector<std::string> allowedEventTypes{
+        "Vacation", "Holiday", "Workshop", "CM", "Meeting", "Other"
+    };
+    QVERIFY(std::get<std::vector<std::string>>(
+                eventType.at(0).arguments.at("allowedValues")
+                )
+            == allowedEventTypes);
+
+    auto invalidTimeStatus = draft;
+    invalidTimeStatus.timeStatus = static_cast<CalendarEventTimeStatus>(99);
+    const auto timeStatus = validateCalendarEventEditForm(invalidTimeStatus);
+    QCOMPARE(timeStatus.size(), std::size_t{1});
+    QCOMPARE(
+        timeStatus.at(0).code,
+        std::string("validation.enum.invalid_value")
+        );
+    QCOMPARE(timeStatus.at(0).field, std::string("timeStatus"));
+    QCOMPARE(
+        timeStatus.at(0).severity,
+        CalendarEventEditValidationSeverity::Error
+        );
+    QCOMPARE(
+        std::get<std::string>(timeStatus.at(0).arguments.at("value")),
+        std::string{}
+        );
+    const std::vector<std::string> allowedTimeStatuses{
+        "Timed", "Unknown", "Unconfirmed"
+    };
+    QVERIFY(std::get<std::vector<std::string>>(
+                timeStatus.at(0).arguments.at("allowedValues")
+                )
+            == allowedTimeStatuses);
+
+    auto longSeriesId = draft;
+    longSeriesId.repeatSeriesId = calendarEventSeriesId(
+        std::string(129, 'r')
+        );
+    const auto seriesId = validateCalendarEventEditForm(longSeriesId);
+    QCOMPARE(seriesId.size(), std::size_t{1});
+    QCOMPARE(seriesId.at(0).field, std::string("repeatSeriesId"));
+    QCOMPARE(
+        std::get<std::int64_t>(seriesId.at(0).arguments.at("length")),
+        std::int64_t{129}
+        );
+    QCOMPARE(
+        std::get<std::int64_t>(seriesId.at(0).arguments.at("minimum")),
+        std::int64_t{0}
+        );
+    QCOMPARE(
+        std::get<std::int64_t>(seriesId.at(0).arguments.at("maximum")),
+        std::int64_t{128}
+        );
+
+    auto exactSeriesId = draft;
+    exactSeriesId.repeatSeriesId = calendarEventSeriesId(
+        std::string(128, 's')
+        );
+    QVERIFY(validateCalendarEventEditForm(exactSeriesId).empty());
+
+    auto invalidDates = draft;
+    invalidDates.startDate = "2026-02-30";
+    invalidDates.endDate = "not-a-date";
+    const auto dateIssues = validateCalendarEventEditForm(invalidDates);
+    QCOMPARE(dateIssues.size(), std::size_t{2});
+    QCOMPARE(dateIssues.at(0).code, std::string("calendar.date.invalid"));
+    QCOMPARE(dateIssues.at(0).field, std::string("startDate"));
+    QCOMPARE(dateIssues.at(1).code, std::string("calendar.date.invalid"));
+    QCOMPARE(dateIssues.at(1).field, std::string("endDate"));
+
+    auto reversedDates = draft;
+    reversedDates.startDate = "2026-09-21";
+    reversedDates.endDate = "2026-09-20";
+    reversedDates.endTime = "09:00";
+    const auto reversed = validateCalendarEventEditForm(reversedDates);
+    QCOMPARE(reversed.size(), std::size_t{2});
+    QCOMPARE(
+        reversed.at(0).code,
+        std::string("calendar.date.end_before_start")
+        );
+    QCOMPARE(reversed.at(0).field, std::string("endDate"));
+    QCOMPARE(
+        std::get<GregorianDate>(reversed.at(0).arguments.at("startDate")),
+        gregorianDate("2026-09-21")
+        );
+    QCOMPARE(
+        reversed.at(1).code,
+        std::string("calendar.time.end_not_after_start")
+        );
+    QCOMPARE(reversed.at(1).field, std::string("endTime"));
+    QCOMPARE(
+        std::get<CalendarEventClockTime>(
+            reversed.at(1).arguments.at("endTime")
+            ).toCanonicalString(),
+        std::string("09:00")
+        );
+
+    auto invalidTimes = draft;
+    invalidTimes.startTime = "9:00";
+    invalidTimes.endTime = "not-a-time";
+    const auto timeIssues = validateCalendarEventEditForm(invalidTimes);
+    QCOMPARE(timeIssues.size(), std::size_t{2});
+    QCOMPARE(timeIssues.at(0).code, std::string("calendar.time.invalid"));
+    QCOMPARE(timeIssues.at(0).field, std::string("startTime"));
+    QCOMPARE(timeIssues.at(1).code, std::string("calendar.time.invalid"));
+    QCOMPARE(timeIssues.at(1).field, std::string("endTime"));
+
+    auto missingTimedTimes = draft;
+    missingTimedTimes.startTime.reset();
+    missingTimedTimes.endTime.reset();
+    const auto missingTimeIssues =
+        validateCalendarEventEditForm(missingTimedTimes);
+    QCOMPARE(missingTimeIssues.size(), std::size_t{2});
+    QCOMPARE(missingTimeIssues.at(0).field, std::string("startTime"));
+    QCOMPARE(missingTimeIssues.at(1).field, std::string("endTime"));
+
+    auto validAllDay = draft;
+    validAllDay.allDay = true;
+    validAllDay.startTime.reset();
+    validAllDay.endTime.reset();
+    QVERIFY(validateCalendarEventEditForm(validAllDay).empty());
+
+    auto allDayWithUnconfirmedStatus = draft;
+    allDayWithUnconfirmedStatus.allDay = true;
+    allDayWithUnconfirmedStatus.timeStatus =
+        CalendarEventTimeStatus::Unconfirmed;
+    const auto allDayIssues =
+        validateCalendarEventEditForm(allDayWithUnconfirmedStatus);
+    QCOMPARE(allDayIssues.size(), std::size_t{1});
+    QCOMPARE(
+        allDayIssues.at(0).code,
+        std::string("calendar.time_status.all_day_requires_timed")
+        );
+    QCOMPARE(allDayIssues.at(0).field, std::string("timeStatus"));
+
+    auto nonTimedWithTimes = draft;
+    nonTimedWithTimes.timeStatus = CalendarEventTimeStatus::Unknown;
+    const auto nonTimedIssues = validateCalendarEventEditForm(nonTimedWithTimes);
+    QCOMPARE(nonTimedIssues.size(), std::size_t{1});
+    QCOMPARE(
+        nonTimedIssues.at(0).code,
+        std::string("calendar.time_status.requires_empty_times")
+        );
+    QCOMPARE(nonTimedIssues.at(0).field, std::string("timeStatus"));
+    QCOMPARE(
+        std::get<std::string>(
+            nonTimedIssues.at(0).arguments.at("timeStatus")
+            ),
+        std::string("Unknown")
+        );
+
+    auto validUnconfirmed = draft;
+    validUnconfirmed.timeStatus = CalendarEventTimeStatus::Unconfirmed;
+    validUnconfirmed.startTime.reset();
+    validUnconfirmed.endTime.reset();
+    QVERIFY(validateCalendarEventEditForm(validUnconfirmed).empty());
+
+    auto unorderedTimes = draft;
+    unorderedTimes.endTime = "09:00";
+    const auto endTime = validateCalendarEventEditForm(unorderedTimes);
+    QCOMPARE(endTime.size(), std::size_t{1});
+    QCOMPARE(
+        endTime.at(0).code,
+        std::string("calendar.time.end_not_after_start")
+        );
+    QCOMPARE(endTime.at(0).field, std::string("endTime"));
+    QCOMPARE(endTime.at(0).severity, CalendarEventEditValidationSeverity::Error);
+
+}
+
+void NextApplicationCalendarEventTests::
+editFormValidationPreservesRecurrenceRulesAndOrdering()
+{
+    const auto draft = validEditDraft();
+    QVERIFY(validateCalendarEventEditForm(draft).empty());
+
+    const auto invalidFrequency = validateCalendarEventEditForm(
+        draft,
+        CalendarEventRepeatValidationInput{
+            static_cast<CalendarEventRepeatFrequency>(99),
+            "2026-12-31"
+        }
+        );
+    QCOMPARE(invalidFrequency.size(), std::size_t{1});
+    QCOMPARE(
+        invalidFrequency.at(0).code,
+        std::string("validation.enum.invalid_value")
+        );
+    QCOMPARE(invalidFrequency.at(0).field, std::string("repeat.frequency"));
+    QCOMPARE(
+        std::get<std::int64_t>(invalidFrequency.at(0).arguments.at("value")),
+        std::int64_t{99}
+        );
+    const std::vector<std::int64_t> allowedFrequencies{0, 1, 2};
+    QVERIFY(std::get<std::vector<std::int64_t>>(
+                invalidFrequency.at(0).arguments.at("allowedValues")
+                )
+            == allowedFrequencies);
+
+    const auto invalidUntil = validateCalendarEventEditForm(
+        draft,
+        CalendarEventRepeatValidationInput{
+            CalendarEventRepeatFrequency::Weekly,
+            "not-a-date"
+        }
+        );
+    QCOMPARE(invalidUntil.size(), std::size_t{1});
+    QCOMPARE(
+        invalidUntil.at(0).code,
+        std::string("calendar.repeat.until_date.invalid")
+        );
+    QCOMPARE(invalidUntil.at(0).field, std::string("repeat.untilDate"));
+
+    const auto untilBeforeStart = validateCalendarEventEditForm(
+        draft,
+        CalendarEventRepeatValidationInput{
+            CalendarEventRepeatFrequency::Weekly,
+            "2026-09-19"
+        }
+        );
+    QCOMPARE(untilBeforeStart.size(), std::size_t{1});
+    QCOMPARE(
+        untilBeforeStart.at(0).code,
+        std::string("calendar.repeat.until_before_start")
+        );
+    QCOMPARE(
+        std::get<GregorianDate>(
+            untilBeforeStart.at(0).arguments.at("untilDate")
+            ),
+        gregorianDate("2026-09-19")
+        );
+
+    auto combinedIssuesDraft = draft;
+    combinedIssuesDraft.title.clear();
+    combinedIssuesDraft.eventType = "Webinar";
+    combinedIssuesDraft.repeatSeriesId = calendarEventSeriesId(
+        std::string(129, 'r')
+        );
+    combinedIssuesDraft.startDate = "2026-09-21";
+    combinedIssuesDraft.endDate = "2026-09-20";
+    combinedIssuesDraft.endTime = "09:00";
+    const auto combinedIssues = validateCalendarEventEditForm(
+        combinedIssuesDraft,
+        CalendarEventRepeatValidationInput{
+            static_cast<CalendarEventRepeatFrequency>(99),
+            "invalid"
+        }
+        );
+    QCOMPARE(combinedIssues.size(), std::size_t{7});
+    QCOMPARE(combinedIssues.at(0).code, std::string("calendar.title.required"));
+    QCOMPARE(combinedIssues.at(1).field, std::string("eventType"));
+    QCOMPARE(combinedIssues.at(2).field, std::string("repeatSeriesId"));
+    QCOMPARE(
+        combinedIssues.at(3).code,
+        std::string("calendar.date.end_before_start")
+        );
+    QCOMPARE(
+        combinedIssues.at(4).code,
+        std::string("calendar.time.end_not_after_start")
+        );
+    QCOMPARE(combinedIssues.at(5).field, std::string("repeat.frequency"));
+    QCOMPARE(
+        combinedIssues.at(6).code,
+        std::string("calendar.repeat.until_date.invalid")
+        );
+
+    auto boundaryDraft = draft;
+    boundaryDraft.startDate = "2024-01-01";
+    boundaryDraft.endDate = "2024-01-01";
+    const auto maximumAccepted = validateCalendarEventEditForm(
+        boundaryDraft,
+        CalendarEventRepeatValidationInput{
+            CalendarEventRepeatFrequency::Daily,
+            "2024-12-31"
+        }
+        );
+    QVERIFY(maximumAccepted.empty());
+
+    const auto overMaximum = validateCalendarEventEditForm(
+        boundaryDraft,
+        CalendarEventRepeatValidationInput{
+            CalendarEventRepeatFrequency::Daily,
+            "2025-01-01"
+        }
+        );
+    QCOMPARE(overMaximum.size(), std::size_t{1});
+    QCOMPARE(
+        overMaximum.at(0).code,
+        std::string("calendar.repeat.too_many_occurrences")
+        );
+    QCOMPARE(overMaximum.at(0).field, std::string("repeat.untilDate"));
+    QCOMPARE(
+        std::get<std::int64_t>(overMaximum.at(0).arguments.at("count")),
+        std::int64_t{367}
+        );
+    QCOMPARE(
+        std::get<std::int64_t>(overMaximum.at(0).arguments.at("maximum")),
+        std::int64_t{366}
+        );
 }
 
 void NextApplicationCalendarEventTests::

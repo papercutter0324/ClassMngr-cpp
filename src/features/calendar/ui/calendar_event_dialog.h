@@ -47,7 +47,6 @@ private slots:
 
 private:
     void buildUi();
-    CalendarEvent legacyEventData() const;
     void loadEvent();
     void validateForm(bool focusFirstError = false);
     void updateValidationIfDisplayed();

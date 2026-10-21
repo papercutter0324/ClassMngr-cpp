@@ -157,6 +157,7 @@ private slots:
     void calendarEventDialogAppliesTypedDefaults();
     void calendarEventDialogRepeatUntilDefaultTracksStartDate();
     void calendarEventDialogShowsInlineValidation();
+    void calendarEventDialogMapsAndRefreshesDateValidation();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -747,6 +748,61 @@ void DialogShellTests::calendarEventDialogShowsInlineValidation()
     QVERIFY(!message->isHidden());
     QVERIFY(titleEdit->hasFocus());
     QVERIFY(dialog.isVisible());
+}
+
+void DialogShellTests::calendarEventDialogMapsAndRefreshesDateValidation()
+{
+    CalendarEventEditDraft draft;
+    draft.title = "Date validation";
+    draft.startDate = "2026-09-21";
+    draft.endDate = "2026-09-20";
+    draft.startTime = "09:00";
+    draft.endTime = "10:00";
+
+    CalendarEventDialog dialog(draft, false, true);
+    dialog.show();
+    QApplication::processEvents();
+
+    auto* endDate = dialog.findChild<QDateEdit*>(
+        QStringLiteral("calendarEventEndDateEdit")
+        );
+    auto* endDateMessage = dialog.findChild<QLabel*>(
+        QStringLiteral("calendarEventEndDateValidationMessage")
+        );
+    auto* endTimeMessage = dialog.findChild<QLabel*>(
+        QStringLiteral("calendarEventEndTimeValidationMessage")
+        );
+    auto* buttons = dialog.findChild<QDialogButtonBox*>();
+    QVERIFY(endDate);
+    QVERIFY(endDateMessage);
+    QVERIFY(endTimeMessage);
+    QVERIFY(buttons);
+
+    buttons->button(QDialogButtonBox::Save)->click();
+    QApplication::processEvents();
+
+    QCOMPARE(
+        endDate->property("formValidationState").toString(),
+        QStringLiteral("error")
+        );
+    QCOMPARE(
+        endDateMessage->text(),
+        QStringLiteral("The end date must not be before the start date.")
+        );
+    QVERIFY(!endDateMessage->isHidden());
+    QCOMPARE(
+        endTimeMessage->text(),
+        QStringLiteral("The end time must be after the start time.")
+        );
+    QVERIFY(!endTimeMessage->isHidden());
+    QVERIFY(endDate->hasFocus());
+
+    endDate->setDate(QDate(2026, 9, 21));
+    QApplication::processEvents();
+
+    QVERIFY(endDate->property("formValidationState").toString().isEmpty());
+    QVERIFY(endDateMessage->isHidden());
+    QVERIFY(endTimeMessage->isHidden());
 }
 
 QTEST_MAIN(DialogShellTests)

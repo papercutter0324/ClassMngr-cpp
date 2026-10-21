@@ -2,7 +2,7 @@
 
 #include "core/fontmanager.h"
 #include "domain/rules/schedule_value_parser.h"
-#include "domain/validation/calendar_event_validator.h"
+#include "next/application/calendar_event_edit_validation.h"
 #include "next/application/calendar_event_repeat_occurrence_plan.h"
 #include "next/platform/calendar_event_time_status_adapter.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -28,11 +28,16 @@
 #include <QSignalBlocker>
 #include <QSpacerItem>
 #include <QTimeEdit>
+#include <QVariantList>
+#include <QVariantMap>
 #include <QVBoxLayout>
 
 #include <array>
+#include <cstdint>
 #include <string>
+#include <type_traits>
 #include <utility>
+#include <variant>
 
 namespace
 {
@@ -51,6 +56,100 @@ QString draftText(
         value.data(),
         static_cast<qsizetype>(value.size())
         );
+}
+
+QVariant validationArgumentVariant(
+    const ClassMngr::Next::Application::CalendarEventEditValidationArgument& argument
+    )
+{
+    return std::visit(
+        [](const auto& value) -> QVariant
+        {
+            using Value = std::decay_t<decltype(value)>;
+            if constexpr (std::is_same_v<Value, std::string>)
+            {
+                return draftText(value);
+            }
+            else if constexpr (std::is_same_v<Value, std::int64_t>)
+            {
+                return QVariant::fromValue<qlonglong>(
+                    static_cast<qlonglong>(value)
+                    );
+            }
+            else if constexpr (std::is_same_v<
+                                   Value,
+                                   std::vector<std::string>
+                                   >)
+            {
+                QVariantList values;
+                values.reserve(static_cast<qsizetype>(value.size()));
+                for (const std::string& item : value)
+                {
+                    values.append(draftText(item));
+                }
+                return values;
+            }
+            else if constexpr (std::is_same_v<
+                                   Value,
+                                   std::vector<std::int64_t>
+                                   >)
+            {
+                QVariantList values;
+                values.reserve(static_cast<qsizetype>(value.size()));
+                for (const std::int64_t item : value)
+                {
+                    values.append(QVariant::fromValue<qlonglong>(
+                        static_cast<qlonglong>(item)
+                        ));
+                }
+                return values;
+            }
+            else if constexpr (std::is_same_v<
+                                   Value,
+                                   ClassMngr::Next::Domain::GregorianDate
+                                   >)
+            {
+                return QDate(value.year(), value.month(), value.day());
+            }
+            else
+            {
+                return QTime(
+                    value.minuteOfDay() / 60,
+                    value.minuteOfDay() % 60
+                    );
+            }
+        },
+        argument
+        );
+}
+
+ValidationResult calendarEventEditValidationResult(
+    const ClassMngr::Next::Application::CalendarEventEditValidationResult& source
+    )
+{
+    ValidationResult result;
+    for (const auto& issue : source)
+    {
+        QVariantMap arguments;
+        for (const auto& [name, value] : issue.arguments)
+        {
+            arguments.insert(draftText(name), validationArgumentVariant(value));
+        }
+
+        result.add({
+            .code = draftText(issue.code),
+            .field = draftText(issue.field),
+            .row = -1,
+            .column = -1,
+            .severity = issue.severity
+                    == ClassMngr::Next::Application::
+                        CalendarEventEditValidationSeverity::Warning
+                ? ValidationSeverity::Warning
+                : ValidationSeverity::Error,
+            .arguments = std::move(arguments)
+        });
+    }
+    return result;
 }
 
 QTime draftTime(
@@ -169,64 +268,6 @@ CalendarEventDialog::CalendarEventDialog(
 {
     buildUi();
     loadEvent();
-}
-
-CalendarEvent CalendarEventDialog::legacyEventData() const
-{
-    CalendarEvent event =
-        legacyEventFromDraft(m_draft);
-
-    event.title =
-        m_titleEdit->text().trimmed();
-    event.startDate =
-        m_startDateEdit->date();
-    event.startTime =
-        m_startTimeEdit->time();
-    event.endDate =
-        m_endDateEdit->date();
-    event.endTime =
-        m_endTimeEdit->time();
-    event.allDay =
-        m_allDayCheck
-        && m_allDayCheck->isChecked();
-    event.timeStatus =
-        !event.allDay
-        && m_unconfirmedTimeCheck
-        && m_unconfirmedTimeCheck->isChecked()
-            ? QStringLiteral("Unconfirmed")
-            : QStringLiteral("Timed");
-
-    if (event.allDay)
-    {
-        event.startTime =
-            QTime(0, 0);
-        event.endTime =
-            QTime(23, 59);
-    }
-    else if (event.timeStatus == QStringLiteral("Unconfirmed"))
-    {
-        event.startTime =
-            QTime();
-        event.endTime =
-            QTime();
-    }
-
-    event.eventType =
-        QStringLiteral("Other");
-
-    if (m_eventTypeGroup)
-    {
-        if (const auto* checkedButton =
-                m_eventTypeGroup->checkedButton())
-        {
-            event.eventType =
-                checkedButton
-                    ->property("eventType")
-                    .toString();
-        }
-    }
-
-    return event;
 }
 
 ClassMngr::Next::Application::CalendarEventEditDraft
@@ -1082,20 +1123,29 @@ void CalendarEventDialog::validateForm(bool focusFirstError)
         return;
     }
 
-    const CalendarEvent event =
-        CalendarEventValidator::normalized(legacyEventData());
-    ValidationResult validation = CalendarEventValidator::validate(event);
-
+    std::optional<
+        ClassMngr::Next::Application::CalendarEventRepeatValidationInput
+        > repetition;
     if (repeatEnabled())
     {
-        validation = CalendarEventValidator::validateRecurrence(
-            event,
-            repeatFrequency(),
-            repeatUntilDate()
-            );
+        const QDate untilDate = repeatUntilDate();
+        repetition =
+            ClassMngr::Next::Application::CalendarEventRepeatValidationInput{
+                static_cast<
+                    ClassMngr::Next::Application::CalendarEventRepeatFrequency
+                    >(repeatFrequency()),
+                untilDate.isValid()
+                    ? untilDate.toString(Qt::ISODate).toStdString()
+                    : std::string{}
+            };
     }
 
-    m_validationBinder->setValidation(std::move(validation));
+    m_validationBinder->setValidation(calendarEventEditValidationResult(
+        ClassMngr::Next::Application::validateCalendarEventEditForm(
+            eventData(),
+            repetition
+            )
+        ));
     if (focusFirstError && m_validationBinder->hasErrors())
     {
         m_validationBinder->focusFirstError();
