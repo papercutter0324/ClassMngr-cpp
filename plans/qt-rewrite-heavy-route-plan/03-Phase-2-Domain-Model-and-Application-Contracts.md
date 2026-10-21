@@ -53,13 +53,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch531 (F1299) is pushed through closeout `3108ace0`; Batch532 F1300 is active and accepted before implementation, and Batch533 discovery is due when F1300 implementation starts under the one-slice trigger; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch532 is active with F1300 implementation underway; F1301 is accepted for Batch533 after Batch532 closes, and Gate 1 and Gate 2 remain Partial while the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1299's latest slice commit is test commit `ded75ea4`. Batch532 F1300 is
-accepted before implementation; Batch533 discovery is due when F1300
-implementation starts under the one-slice trigger.
+F1299's latest slice commit is test commit `ded75ea4`. F1300 implementation is
+underway; Batch533 discovery selected and accepted F1301 for the next batch
+after Batch532 closes.
 
 ### Slice discovery batches
 
@@ -80,12 +80,13 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active Batch532
 
-1. F1300 - Accepted before implementation: report automatic Roster Editor
+1. F1300 - Implementation underway: report automatic Roster Editor
    persistence failures inline while retaining the editable dirty draft.
    See the progress log for full criteria.
 
-Batch533 discovery is due when F1300 implementation starts, under the
-one-slice trigger. See the progress log for full criteria and discovery history.
+Batch533 is a discovery record only. F1301 is accepted for the next batch
+after Batch532 closes; do not activate it before closure. See the progress log
+for acceptance criteria and discovery evidence.
 
 ### Deferred candidates
 

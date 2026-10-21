@@ -63091,3 +63091,39 @@ Batch531 (F1299) is pushed through closeout `3108ace0`. Batch532 F1300 remains
 active and accepted before implementation. Batch533 discovery is due when
 F1300 implementation starts, under the one-slice trigger. Gate 1 and Gate 2
 remain Partial, and the Phase 2 exit gate remains Open.
+
+### Batch533 bounded discovery at F1300 implementation start - 2026-10-21
+
+The feature lane found F1301: distinguish Technical failures loading
+CalendarPage event-display and schedule-display preferences from successful
+missing/unavailable defaults, and disclose failures to the user. Evidence is
+the preference-loading path in
+[`CalendarPage::calendarEventDisplayOptions()`](../../src/features/calendar/ui/calendar_page_upcoming_events.cpp#L929)
+and the
+[event-display](../../src/next/platform/application_services_calendar_event_display_preferences_port.h#L50)
+and
+[schedule-display](../../src/next/platform/application_services_schedule_display_preferences_port.h#L44)
+preference ports. The current-campus read failure fallback is documented in
+the same function [at its fallback branch](../../src/features/calendar/ui/calendar_page_upcoming_events.cpp#L970).
+This is distinct from F1085's Calendar
+Preferences-screen diagnostics ([F1085 completion](#L46292)).
+
+The contract lane found no eligible candidate. Discovery ran read-only at
+F1300 implementation start; the pass made no changes and ran no tests or
+builds.
+
+No other slices were found.
+
+### F1301 CalendarPage preference-read failure disclosure accepted for Batch533 - 2026-10-21
+
+Root screening accepted F1301 for the next batch after Batch532 closes. Show a
+localized, nonmodal CalendarPage disclosure when either event-display or
+schedule-display preference loading returns a Technical failure. Preserve the
+established display fallbacks for successful missing or unavailable
+preferences and the current-campus failure fallback; do not change the
+Preferences-screen behavior already covered by F1085.
+
+Batch532 remains active with F1300 implementation underway. Batch533 is a
+discovery record only; F1301 is accepted for the next batch and is not active
+before Batch532 closes. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit
+gate remains Open.
