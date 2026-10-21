@@ -53,19 +53,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch510 (F1272) is complete and pushed at `ccea3d1a`, and F1273 is accepted as the sole active Batch511 slice with implementation not started; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch511 (F1273) is complete locally at source/test commit `32769cf7752248ab5f9b068f66306664f1014ddd` and awaiting its normal push, with no implementation batch active; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-Batch510 (F1272) is complete and pushed at `ccea3d1a` (see its [push receipt](03-Phase-2-Progress-Log.md#batch510-push-receipt-2026-10-21)). Batch511 is active with F1273 accepted before implementation; no F1273 implementation, build, or tests have started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
-
-### Active slice batch
-
-Batch511 currently has 0 complete, 1 accepted, and 0 discovered slices:
-
-1. F1273 - Schedule display mode → intensive schedule source policy — accepted; next action: implement the Application policy and wire the four production consumers.
-
-No F1273 implementation, build, or tests have started.
+Batch511 (F1273) is complete locally at source/test commit
+`32769cf7752248ab5f9b068f66306664f1014ddd` and awaits its normal push. The
+incremental macOS build and focused verification passed as recorded in the
+[F1273 closeout](03-Phase-2-Progress-Log.md#f1273-schedule-display-mode-intensive-schedule-source-policy-complete-2026-10-21); no full-suite, Windows, or Gate 2 claim is made. No implementation batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 

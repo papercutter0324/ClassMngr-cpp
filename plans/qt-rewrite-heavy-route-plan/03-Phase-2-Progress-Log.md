@@ -60547,3 +60547,44 @@ No hosted or CI verification is implied.
 Batch510 (F1272) is complete and pushed. Batch511 remains active with F1273
 accepted before implementation; no F1273 implementation has started. Gate 1
 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### Superseded latest progress update - 2026-10-21 (F1273 implementation in progress)
+
+Batch510 (F1272) was complete and pushed. Batch511 was active with F1273
+implementation started; no build or test verification had occurred yet.
+
+### F1273 Schedule display mode intensive schedule source policy complete - 2026-10-21
+
+F1273 is complete in Batch511 at source/test commit
+`32769cf7752248ab5f9b068f66306664f1014ddd` (`Phase2 - Type Schedule display
+mode source policy (F1273)`). The Application policy returns true only for
+Intensive schedule display mode, and the existing Feature enum name aliases
+the Application enum. Schedule, Classes, Speaking Evaluation, and Sub Prep
+production consumers use the policy under the accepted boundaries; the
+separate Sub Prep schedule view mode remains unchanged.
+
+The phase-standard Windows preset was disabled on this macOS host, so
+verification used the existing `build/macos-clang-debug` tree. The broad
+incremental build passed for `ClassMngr`, the Application policy target, and
+the affected Schedule Widget/Print Model, Classes, Speaking Evaluation, and
+Sub Prep targets. The app-less policy CTest passed 1/1, and six focused
+feature selectors passed: Schedule's
+`sourceQueryBuildsRegularIntensiveAndTestingSchedules` and its Testing
+regular-slot regression; Classes'
+`testingModeUsesRegularMeetingsForDayFiltering`; Speaking Evaluation's
+`scheduleModesAndVisibilityScopeFilterNavigationTabs`; and Sub Prep's
+`scheduleDisplayModeRefreshesClassInformationInPlace` and
+`pageGenerationForwardsIntensiveModeWithFilteredClasses`.
+
+After Sub Prep test coverage repair, the incremental `SubPrepPageTests` build
+passed. `pageGenerationForwardsIntensiveModeWithFilteredClasses` passed both
+data rows (Intensive→Intensive and Testing→Regular), and
+`scheduleDisplayModeRefreshesClassInformationInPlace` passed.
+`git diff --check` passed. Non-failing output included a Sans Serif font
+alias, the expected calendar-read fallback in the repair run, Classes
+database-not-open notices, a missing Speaking Evaluation keyboard SVG, and Sub
+Prep fallback output. No full-suite, Windows, or Gate 2 result is claimed.
+
+Batch511 (F1273) is complete locally and awaiting its normal push. No
+implementation batch is active. Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open.
