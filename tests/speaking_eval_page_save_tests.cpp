@@ -355,6 +355,7 @@ class SpeakingEvalPageSaveTests final : public QObject
 private slots:
     void automaticSavePersistsMatrixWithoutInteractiveNotices();
     void liveScoreAndCommentValidationUsesApplicationCellRules();
+    void liveNotesLengthValidationUsesApplicationCellRules();
     void manualValidationAndConfirmedSaveKeepTheirCurrentTiming();
     void manualSaveButtonConfirmsShortAndLongKoreanNames();
     void manualSaveButtonRejectsMixedValidationErrors();
@@ -527,6 +528,66 @@ liveScoreAndCommentValidationUsesApplicationCellRules()
     QVERIFY(model->setData(commentsIndex, QString(), Qt::EditRole));
     QVERIFY(model->errorsForCell(0, commentsColumn).isEmpty());
     QCOMPARE(model->data(commentsIndex).toString(), QString());
+}
+
+void SpeakingEvalPageSaveTests::
+liveNotesLengthValidationUsesApplicationCellRules()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* const model = page.findChild<SpeakingEvalModel*>();
+    QVERIFY(model);
+
+    const int notesColumn = SpeakingEval::toInt(SpeakingEvalColumn::Notes);
+    const QModelIndex notesIndex = model->index(0, notesColumn);
+    const QString lengthMessage = QStringLiteral(
+        "Notes must be <= 10000 characters."
+        );
+    const QString domainLengthMessage = QStringLiteral(
+        "This value is too long."
+        );
+    const QStringList lengthMessages{
+        lengthMessage,
+        domainLengthMessage
+    };
+    const QString exactLimitNotes(10000, QLatin1Char('n'));
+    const QString overLimitNotes(10001, QLatin1Char('n'));
+    const QString overLimitWhitespace(10001, QLatin1Char(' '));
+    const QString atLimitWhitespace(10000, QLatin1Char(' '));
+
+    QVERIFY(model->setData(notesIndex, exactLimitNotes, Qt::EditRole));
+    QVERIFY(model->errorsForCell(0, notesColumn).isEmpty());
+    QCOMPARE(model->data(notesIndex).toString(), exactLimitNotes);
+
+    QVERIFY(model->setData(notesIndex, overLimitNotes, Qt::EditRole));
+    QCOMPARE(model->errorsForCell(0, notesColumn), lengthMessages);
+    QCOMPARE(model->data(notesIndex).toString(), overLimitNotes);
+
+    QVERIFY(model->setData(notesIndex, overLimitWhitespace, Qt::EditRole));
+    QCOMPARE(model->errorsForCell(0, notesColumn), QStringList{lengthMessage});
+    QCOMPARE(model->data(notesIndex).toString(), overLimitWhitespace);
+
+    QVERIFY(model->setData(notesIndex, atLimitWhitespace, Qt::EditRole));
+    QVERIFY(model->errorsForCell(0, notesColumn).isEmpty());
+    QCOMPARE(model->data(notesIndex).toString(), atLimitWhitespace);
+
+    QVERIFY(model->setData(notesIndex, QString(), Qt::EditRole));
+    QVERIFY(model->errorsForCell(0, notesColumn).isEmpty());
+    QCOMPARE(model->data(notesIndex).toString(), QString());
+
+    const QString underLimitWhitespace = QStringLiteral("  \t ");
+    QVERIFY(model->setData(notesIndex, underLimitWhitespace, Qt::EditRole));
+    QVERIFY(model->errorsForCell(0, notesColumn).isEmpty());
+    QCOMPARE(model->data(notesIndex).toString(), underLimitWhitespace);
 }
 
 void SpeakingEvalPageSaveTests::

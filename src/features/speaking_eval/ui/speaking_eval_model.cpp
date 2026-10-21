@@ -740,6 +740,21 @@ QStringList SpeakingEvalModel::validateValue(
                 );
         }
     }
+    else if (columnId == SpeakingEvalColumn::Notes)
+    {
+        const std::u16string notesValue = value.toStdU16String();
+        if (!ClassMngr::Next::Application::isSpeakingEvaluationNotesWithinLimit(
+                notesValue
+                ))
+        {
+            errors.append(
+                tr("Notes must be <= %1 characters.")
+                    .arg(static_cast<qulonglong>(
+                        ClassMngr::Next::Application::SpeakingEvaluationMaximumNotesLength
+                        ))
+                );
+        }
+    }
 
     if (value.trimmed().isEmpty())
     {

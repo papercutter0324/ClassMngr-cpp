@@ -1030,6 +1030,14 @@ inline void appendDuplicateNameIssues(
     return value.size() <= SpeakingEvaluationMaximumCommentLength;
 }
 
+// std::u16string::size() counts UTF-16 code units, matching QString::size().
+[[nodiscard]] inline bool isSpeakingEvaluationNotesWithinLimit(
+    const std::u16string_view value
+    ) noexcept
+{
+    return value.size() <= SpeakingEvaluationMaximumNotesLength;
+}
+
 // Normalizes the request before checking its content. The save use case owns
 // matrix-shape and changed-cell checks; the content rules below mirror the
 // legacy speaking-evaluation validator without importing its Qt types.
@@ -1240,7 +1248,7 @@ validateAndNormalizeSpeakingEvaluation(
                     );
             }
             else if (columnNumber == 10
-                     && value.size() > SpeakingEvaluationMaximumNotesLength)
+                     && !isSpeakingEvaluationNotesWithinLimit(value))
             {
                 appendIssue(
                     result,

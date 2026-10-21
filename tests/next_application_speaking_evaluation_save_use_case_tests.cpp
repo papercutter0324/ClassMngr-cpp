@@ -238,6 +238,18 @@ speakingEvaluationCellRulesCoverScoresAndUtf16CommentLengths()
     const std::u16string whitespaceCommentOverLimit(451, u' ');
     const std::u16string surrogatePairOverLimit =
         std::u16string(449, u'x') + u"\U0001F4DA";
+    const std::u16string notesAtLimit(
+        Application::SpeakingEvaluationMaximumNotesLength,
+        u'n'
+        );
+    const std::u16string notesOverLimit(
+        Application::SpeakingEvaluationMaximumNotesLength + 1,
+        u'n'
+        );
+    const std::u16string whitespaceNotesOverLimit(
+        Application::SpeakingEvaluationMaximumNotesLength + 1,
+        u' '
+        );
 
     QVERIFY(Application::isSpeakingEvaluationCommentWithinLimit(u""));
     QVERIFY(Application::isSpeakingEvaluationCommentWithinLimit(commentAtLimit));
@@ -253,6 +265,13 @@ speakingEvaluationCellRulesCoverScoresAndUtf16CommentLengths()
         ));
     QVERIFY(!Application::isSpeakingEvaluationCommentWithinLimit(
         surrogatePairOverLimit
+        ));
+
+    QVERIFY(Application::isSpeakingEvaluationNotesWithinLimit(u""));
+    QVERIFY(Application::isSpeakingEvaluationNotesWithinLimit(notesAtLimit));
+    QVERIFY(!Application::isSpeakingEvaluationNotesWithinLimit(notesOverLimit));
+    QVERIFY(!Application::isSpeakingEvaluationNotesWithinLimit(
+        whitespaceNotesOverLimit
         ));
 }
 
