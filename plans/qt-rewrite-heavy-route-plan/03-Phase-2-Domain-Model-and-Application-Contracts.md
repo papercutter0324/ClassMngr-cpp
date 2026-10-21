@@ -53,13 +53,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch526 (F1295) is pushed through closeout `156e5fa2` with local and remote tips matching; Batch527 is active with F1296 discovered, provisional, and unaccepted pending formal acceptance; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch526 (F1295) is pushed through closeout `156e5fa2` and receipt `89657716` with local and remote tips matching; Batch527 is active with F1296 accepted before implementation and no Batch528 discovery recorded; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1295 is complete locally; its latest commit is
-`3d6d60db384698c68fd3d1850ce1988cdc7a1a8c`. See the progress log for
-verification and Batch526 closeout.
+F1296 is accepted before implementation in active Batch527; see the progress
+log for its contract and focused verification plan.
 
 ### Slice discovery batches
 
@@ -80,14 +79,13 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active Batch527
 
-Batch526 (F1295) is pushed through closeout `156e5fa2`; local and remote tips
-match. F1296 remains pending formal acceptance.
+Batch526 (F1295) is pushed through closeout `156e5fa2` and receipt `89657716`;
+local and remote tips match.
 
-1. F1296 - Discovered, provisional, and unaccepted: disclose when the initial
-   Co-Teacher assignment snapshot is unknown, show a persistent structured
-   warning, and require deliberate/manual save while it remains unknown; retain
-   explicit unassignment and recovery after a successful reload. See the
-   progress log for discovery evidence.
+1. F1296 - Accepted before implementation: disclose unknown assignment state
+   with a persistent structured warning; require deliberate Save Changes while
+   unknown, guard implicit write paths, and preserve explicit assignment,
+   unassignment, and reload recovery. See the progress log for full criteria.
 
 See the progress log for bounded discovery evidence and limitations.
 

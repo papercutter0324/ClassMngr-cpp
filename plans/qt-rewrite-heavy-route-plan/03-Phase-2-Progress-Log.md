@@ -62706,8 +62706,43 @@ from `34240255a6856094533ba99df13b5d696f80f12d` to
 `156e5fa2feab823cb17ef62f7bd5f3b5efc8afc2`. Local `HEAD` and the remote tip
 match at `156e5fa2feab823cb17ef62f7bd5f3b5efc8afc2`; the worktree was clean.
 Ordinary network DNS failed; the authorized escalated push and verification
-succeeded.
+succeeded. The Batch526 push receipt is recorded as `89657716`.
 
 Batch526 (F1295) is pushed through closeout `156e5fa2`. Batch527 is active
 with F1296 discovered, provisional, and unaccepted pending formal acceptance.
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### F1296 Co-Teacher unknown assignment state accepted before implementation - 2026-10-21
+
+On class load or explicit reload/discard, a failed top-level
+`ClassCoTeacherPageReadQuery` or required `classFields` result must show
+persistent localized status that the assignment is unconfirmed and include the
+structured error. A successful `classFields` result with no teacher ID remains
+unassigned; optional `teacherDisplayName` failure stays independent. Keep the
+picker usable and do not mutate the assignment on read failure.
+
+While status is unknown, stop autosave, require manual-save-required behavior,
+and allow deliberate Save Changes-button confirmation. Guard `saveChanges()`
+and `saveData()` so implicit active-editor class/section switches and outer
+save paths cannot commit the fallback; keep the dirty draft when blocked. The
+button still permits explicit assignment or explicit unassignment. After a
+successful explicit write, clear the unknown status and restore ordinary saving
+even if post-save readback fails, preserving F1280's committed selection,
+details, and title. A failed write retains the status and dirty draft. A
+successful required read clears the warning/barrier; database-state clear
+removes both.
+
+Focused verification plan: incrementally build `ClassMngr` and
+`ClassMngrNextFeatureClassCoTeacherPageTests` in `build/macos-clang-debug`.
+Cover top-level and nested required-read failures, no writes on load/autosave,
+`saveChanges()`/`saveData()` guards, explicit assignment and `-1`
+unassignment, successful reload recovery, independent optional display-name
+failure, failed write, and F1280 post-save readback. Run the owning CTest and
+`git diff --check`. At acceptance, implementation, build, and tests have not
+started. No full-suite, Windows, clean-build, hosted-CI, or gate result is
+claimed.
+
+Batch526 (F1295) is pushed through closeout `156e5fa2` with receipt
+`89657716`; local and remote tips match. Batch527 is active with F1296 accepted
+before implementation. No Batch528 discovery has been recorded. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
