@@ -60588,3 +60588,22 @@ Prep fallback output. No full-suite, Windows, or Gate 2 result is claimed.
 Batch511 (F1273) is complete locally and awaiting its normal push. No
 implementation batch is active. Gate 1 and Gate 2 remain Partial, and the
 Phase 2 exit gate remains Open.
+
+### Superseded latest progress update - 2026-10-21 (Batch511 complete locally, push pending)
+
+Batch511 (F1273) was complete locally at source/test commit
+`32769cf7752248ab5f9b068f66306664f1014ddd` and awaiting its normal push; no
+implementation batch was active.
+
+### Batch511 push receipt - 2026-10-21
+
+The normal push on `Qt-Rewrite` succeeded for range `2111e820..d9a91397`.
+It includes F1273 source/test commit
+`32769cf7752248ab5f9b068f66306664f1014ddd` and closeout documentation commit
+`d9a913975795fda71f8cf94650262e5ec81d72b6`. At push confirmation, the remote
+tip matched local HEAD at `d9a913975795fda71f8cf94650262e5ec81d72b6`, and
+the branch was clean and up to date. No hosted or CI verification is implied.
+
+Batch511 (F1273) is complete and pushed. No implementation batch is active;
+no Batch512 decision is recorded here. Gate 1 and Gate 2 remain Partial, and
+the Phase 2 exit gate remains Open.
