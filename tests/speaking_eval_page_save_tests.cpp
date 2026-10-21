@@ -43,6 +43,7 @@
 #include <QTimer>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QTranslator>
 #include <QUndoStack>
 #include <QtTest/QtTest>
 #include <QUuid>
@@ -64,6 +65,40 @@ public:
     {
         DialogServices::setUserPromptServiceForTesting(nullptr);
     }
+};
+
+class PrefixingTranslator final : public QTranslator
+{
+public:
+    QString translate(
+        const char*,
+        const char* sourceText,
+        const char*,
+        int
+        ) const override
+    {
+        return sourceText
+            ? QStringLiteral("Localized: %1").arg(QString::fromUtf8(sourceText))
+            : QString();
+    }
+};
+
+class ScopedTranslator final
+{
+public:
+    explicit ScopedTranslator(QTranslator* translator)
+        : m_translator(translator)
+    {
+        QCoreApplication::installTranslator(m_translator);
+    }
+
+    ~ScopedTranslator()
+    {
+        QCoreApplication::removeTranslator(m_translator);
+    }
+
+private:
+    QTranslator* m_translator = nullptr;
 };
 
 struct SpeakingEvalPageFixture final
@@ -234,6 +269,53 @@ bool seedRosterWithoutValidation(
     return true;
 }
 
+bool dropSpeakingEvalDataTable(
+    QSqlDatabase database,
+    QString* error
+    )
+{
+    QSqlQuery query(database);
+    if (query.exec(QStringLiteral("DROP TABLE speaking_eval_data")))
+    {
+        return true;
+    }
+
+    *error = query.lastError().text();
+    return false;
+}
+
+bool createSpeakingEvalDataTable(
+    QSqlDatabase database,
+    QString* error
+    )
+{
+    QSqlQuery query(database);
+    if (query.exec(QStringLiteral(R"(
+        CREATE TABLE speaking_eval_data (
+            evaluation_id INTEGER,
+            row_index INTEGER,
+            col_0 TEXT,
+            col_1 TEXT,
+            col_2 TEXT,
+            col_3 TEXT,
+            col_4 TEXT,
+            col_5 TEXT,
+            col_6 TEXT,
+            col_7 TEXT,
+            col_8 TEXT,
+            col_9 TEXT,
+            col_10 TEXT,
+            PRIMARY KEY (evaluation_id, row_index)
+        )
+    )")))
+    {
+        return true;
+    }
+
+    *error = query.lastError().text();
+    return false;
+}
+
 QPushButton* findImportNamesButton(SpeakingEvalPage& page)
 {
     QPushButton* importNamesButton = nullptr;
@@ -371,8 +453,10 @@ private slots:
     void failedNavigationReadKeepsNameOnlyTabs();
     void perEntryNavigationFailureKeepsIdentityAndValidSiblingDetails();
     void successfulLoadPreservesOrderedUnicodeMatrixAndCleanState();
-    void emptyReadFallsBackToBlankGridAndCleanState();
-    void failedReadFallsBackToBlankGridAndCleanState();
+    void emptyReadRemainsBlankCleanAndEditable();
+    void initialFailedReadShowsLocalizedInlineErrorAndRecoversOnRetry();
+    void sameEvaluationReloadFailurePreservesRowsAndDirtyDraft();
+    void failedActivationDoesNotShowPriorEvaluationRows();
     void speakingEvalModelSuggestionMatchesLegacyHelper();
     void suffixChoiceAppliesSuggestedNameThroughExistingPageFlow();
     void duplicateLocateSelectsFirstPeerRow();
@@ -1797,46 +1881,14 @@ successfulLoadPreservesOrderedUnicodeMatrixAndCleanState()
 }
 
 void SpeakingEvalPageSaveTests::
-emptyReadFallsBackToBlankGridAndCleanState()
+emptyReadRemainsBlankCleanAndEditable()
 {
     SpeakingEvalPageFixture fixture;
     QString error;
     QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
 
     SpeakingEvalPage page(&fixture.services);
-    page.loadEvaluation(
-        Classroom(fixture.classNames.first(), fixture.classIds.first()),
-        QStringLiteral("Winter")
-        );
-
-    auto* model = page.findChild<SpeakingEvalModel*>();
-    QVERIFY(model);
-    QCOMPARE(model->rowCount(), 25);
-    QCOMPARE(model->columnCount(), 11);
-    QVERIFY(model->data(model->index(0, 1)).toString().isEmpty());
-    QVERIFY(model->data(model->index(24, 10)).toString().isEmpty());
-    QVERIFY(!page.hasUnsavedChanges());
-}
-
-void SpeakingEvalPageSaveTests::
-failedReadFallsBackToBlankGridAndCleanState()
-{
-    SpeakingEvalPageFixture fixture;
-    QString error;
-    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
-
-    SpeakingEvalRows expected = SpeakingEval::emptyRows();
-    expected[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
-        QStringLiteral("Persisted");
-    expected[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
-        QStringLiteral("\uAE40\uBBFC\uC9C0");
-    QVERIFY(fixture.services.speakingEvaluationService()->saveEvaluation(
-        fixture.classIds.first(),
-        QStringLiteral("Winter"),
-        expected
-        ));
-
-    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
     page.setSaveMode(SaveMode::Manual);
     page.loadEvaluation(
         Classroom(fixture.classNames.first(), fixture.classIds.first()),
@@ -1844,26 +1896,452 @@ failedReadFallsBackToBlankGridAndCleanState()
         );
 
     auto* model = page.findChild<SpeakingEvalModel*>();
+    auto* table = page.findChild<SpeakingEvalTableView*>();
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalSaveButton")
+        );
+    auto* readErrorContainer = page.findChild<QWidget*>(
+        QStringLiteral("speakingEvalReadErrorContainer")
+        );
     QVERIFY(model);
-    QCOMPARE(model->data(model->index(0, 1)).toString(), QStringLiteral("Persisted"));
-    QVERIFY(model->setData(model->index(0, 1), QStringLiteral("Unsaved"), Qt::EditRole));
-    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(table);
+    QVERIFY(saveButton);
+    QVERIFY(readErrorContainer);
+    QCOMPARE(model->rowCount(), 25);
+    QCOMPARE(model->columnCount(), 11);
+    QVERIFY(model->data(model->index(0, 1)).toString().isEmpty());
+    QVERIFY(model->data(model->index(24, 10)).toString().isEmpty());
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(table->isEnabled());
+    QVERIFY(!table->isHidden());
+    QVERIFY(readErrorContainer->isHidden());
 
-    QSqlQuery dropDataTable(fixture.services.databaseSession()->database());
+    QVERIFY(setStudent(
+        model,
+        0,
+        QStringLiteral("Alice"),
+        QStringLiteral("\uAE40\uBBFC\uC9C0")
+        ));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(saveButton->isEnabled());
+    page.discardChanges();
+    QVERIFY(!page.hasUnsavedChanges());
+}
+
+void SpeakingEvalPageSaveTests::
+initialFailedReadShowsLocalizedInlineErrorAndRecoversOnRetry()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    const QSqlDatabase database =
+        fixture.services.databaseSession()->database();
     QVERIFY2(
-        dropDataTable.exec(QStringLiteral("DROP TABLE speaking_eval_data")),
-        qPrintable(dropDataTable.lastError().text())
+        dropSpeakingEvalDataTable(database, &error),
+        qPrintable(error)
         );
 
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
     page.loadEvaluation(
         Classroom(fixture.classNames.first(), fixture.classIds.first()),
         QStringLiteral("Winter")
         );
 
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    auto* table = page.findChild<SpeakingEvalTableView*>();
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalSaveButton")
+        );
+    auto* keyboardButton = page.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalKoreanKeyboardButton")
+        );
+    auto* readErrorContainer = page.findChild<QWidget*>(
+        QStringLiteral("speakingEvalReadErrorContainer")
+        );
+    auto* readErrorLabel = page.findChild<QLabel*>(
+        QStringLiteral("speakingEvalReadErrorLabel")
+        );
+    auto* retryButton = page.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalReadRetryButton")
+        );
+    QVERIFY(model);
+    QVERIFY(table);
+    QVERIFY(saveButton);
+    QVERIFY(keyboardButton);
+    QVERIFY(readErrorContainer);
+    QVERIFY(readErrorLabel);
+    QVERIFY(retryButton);
+    QCOMPARE(model->rowCount(), 25);
+    QVERIFY(model->data(model->index(0, 1)).toString().isEmpty());
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(table->isHidden());
+    QVERIFY(!table->isEnabled());
+    QVERIFY(!saveButton->isEnabled());
+    QVERIFY(!keyboardButton->isEnabled());
+    QPushButton* const importNamesButton = findImportNamesButton(page);
+    QVERIFY(importNamesButton);
+    QVERIFY(!importNamesButton->isEnabled());
+    QVERIFY(!readErrorContainer->isHidden());
+    QVERIFY(!readErrorLabel->text().isEmpty());
+    QVERIFY(!retryButton->text().isEmpty());
+    QVERIFY(retryButton->isEnabled());
+    QCOMPARE(page.outputCapabilities().printEnabled, false);
+    QCOMPARE(page.outputCapabilities().saveAsEnabled, false);
+
+    int reportButtonCount = 0;
+    for (QPushButton* const button : page.findChildren<QPushButton*>())
+    {
+        if (
+            button->text() == QStringLiteral("Report Editor")
+            || button->text() == QStringLiteral("Generate Comments")
+            )
+        {
+            ++reportButtonCount;
+            QVERIFY(!button->isEnabled());
+        }
+    }
+    QCOMPARE(reportButtonCount, 2);
+
+    page.show();
+    QTRY_VERIFY(readErrorContainer->isVisible());
+    QTRY_VERIFY(retryButton->isVisible());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+
+    QString localizedError;
+    {
+        PrefixingTranslator translator;
+        ScopedTranslator translationScope(&translator);
+        page.retranslateUi();
+        localizedError = readErrorLabel->text();
+        QCOMPARE(retryButton->text(), QStringLiteral("Localized: Retry"));
+    }
+    QVERIFY(localizedError.startsWith(QStringLiteral("Localized: ")));
+    QVERIFY(!localizedError.contains(
+        QStringLiteral("speaking_eval_data"),
+        Qt::CaseInsensitive
+        ));
+    QVERIFY(!localizedError.contains(
+        QStringLiteral("no such table"),
+        Qt::CaseInsensitive
+        ));
+    QVERIFY(!localizedError.contains(
+        QStringLiteral("sqlite"),
+        Qt::CaseInsensitive
+        ));
+
+    retryButton->click();
+    QTRY_VERIFY(!readErrorContainer->isHidden());
+    QVERIFY(!readErrorLabel->text().isEmpty());
+    QVERIFY(table->isHidden());
+    QVERIFY(!table->isEnabled());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    QVERIFY2(
+        createSpeakingEvalDataTable(database, &error),
+        qPrintable(error)
+        );
+    page.saveData();
+    QSqlQuery dataCount(database);
+    QVERIFY(dataCount.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM speaking_eval_data"
+        )));
+    QVERIFY(dataCount.next());
+    QCOMPARE(dataCount.value(0).toInt(), 0);
+    QSqlQuery evaluationCount(database);
+    QVERIFY(evaluationCount.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM speaking_evaluations "
+        "WHERE class_id=? AND evaluation_name=?"
+        )));
+    evaluationCount.addBindValue(fixture.classIds.first());
+    evaluationCount.addBindValue(QStringLiteral("Winter"));
+    QVERIFY(evaluationCount.exec());
+    QVERIFY(evaluationCount.next());
+    QCOMPARE(evaluationCount.value(0).toInt(), 0);
+    QVERIFY(prompts.messages.isEmpty());
+
+    retryButton->click();
+    QTRY_VERIFY(readErrorContainer->isHidden());
+    QVERIFY(!table->isHidden());
+    QVERIFY(table->isEnabled());
     QCOMPARE(model->rowCount(), 25);
     QCOMPARE(model->columnCount(), 11);
     QVERIFY(model->data(model->index(0, 1)).toString().isEmpty());
     QVERIFY(model->data(model->index(24, 10)).toString().isEmpty());
+    QVERIFY(!page.hasUnsavedChanges());
+
+    QVERIFY(setStudent(
+        model,
+        0,
+        QStringLiteral("Alice"),
+        QStringLiteral("\uAE40\uBBFC\uC9C0")
+        ));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(table->isEnabled());
+    page.discardChanges();
+    QVERIFY(!page.hasUnsavedChanges());
+}
+
+void SpeakingEvalPageSaveTests::
+sameEvaluationReloadFailurePreservesRowsAndDirtyDraft()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    const QString evaluationName = QStringLiteral("Winter");
+    SpeakingEvalRows savedRows = SpeakingEval::emptyRows();
+    savedRows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Persisted");
+    savedRows[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("\uAE40\uBBFC\uC9C0");
+    savedRows[7][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Bob");
+    savedRows[7][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("\uC774\uC11C\uC5F0");
+    savedRows[7][SpeakingEval::toInt(SpeakingEvalColumn::Comments)] =
+        QStringLiteral("Preserved row");
+    const auto saved = fixture.services.speakingEvaluationService()->saveEvaluation(
+        fixture.classIds.first(),
+        evaluationName,
+        savedRows
+        );
+    QVERIFY(saved);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        evaluationName
+        );
+
+    auto* pageHeader = page.findChild<PageHeader*>();
+    QVERIFY(pageHeader);
+    const QString originalClassSubtitle = pageHeader->subtitle();
+
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    QVERIFY(model);
+    QVERIFY(model->setData(
+        model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)),
+        QStringLiteral("Draft"),
+        Qt::EditRole
+        ));
+    SpeakingEvalRows expectedDraft = savedRows;
+    expectedDraft[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Draft");
+    QVERIFY(page.hasUnsavedChanges());
+
+    const QSqlDatabase database =
+        fixture.services.databaseSession()->database();
+    QVERIFY2(
+        dropSpeakingEvalDataTable(database, &error),
+        qPrintable(error)
+        );
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        evaluationName
+        );
+
+    auto* table = page.findChild<SpeakingEvalTableView*>();
+    auto* readErrorContainer = page.findChild<QWidget*>(
+        QStringLiteral("speakingEvalReadErrorContainer")
+        );
+    auto* evaluationTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("speakingEvalEvaluationTabs")
+        );
+    auto* retryButton = page.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalReadRetryButton")
+        );
+    QVERIFY(table);
+    QVERIFY(readErrorContainer);
+    QVERIFY(evaluationTabs);
+    QVERIFY(retryButton);
+    QVERIFY(pageHeader);
+    QCOMPARE(model->rows(), expectedDraft);
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(table->isEnabled());
+    QVERIFY(!table->isHidden());
+    QVERIFY(!readErrorContainer->isHidden());
+    QCOMPARE(pageHeader->title(), QStringLiteral("Winter Speaking Evaluation"));
+    QCOMPARE(pageHeader->subtitle(), originalClassSubtitle);
+    QCOMPARE(
+        evaluationTabs->currentWidget()->property("evaluation_name").toString(),
+        evaluationName
+        );
+
+    QVERIFY2(
+        createSpeakingEvalDataTable(database, &error),
+        qPrintable(error)
+        );
+    retryButton->click();
+    QVERIFY(readErrorContainer->isHidden());
+    QVERIFY(!page.hasUnsavedChanges());
+}
+
+void SpeakingEvalPageSaveTests::
+failedActivationDoesNotShowPriorEvaluationRows()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    const QString currentEvaluation = QStringLiteral("Winter");
+    const QString requestedEvaluation = QStringLiteral("Speech Contest");
+    SpeakingEvalRows priorRows = SpeakingEval::emptyRows();
+    priorRows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Alice");
+    priorRows[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("\uAE40\uBBFC\uC9C0");
+    SpeakingEvalRows requestedRows = SpeakingEval::emptyRows();
+    requestedRows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Carol");
+    requestedRows[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("\uC774\uC11C\uC5F0");
+    const auto priorSaved = fixture.services.speakingEvaluationService()->saveEvaluation(
+        fixture.classIds.first(),
+        currentEvaluation,
+        priorRows
+        );
+    QVERIFY(priorSaved);
+    const auto requestedSaved = fixture.services.speakingEvaluationService()->saveEvaluation(
+        fixture.classIds.first(),
+        requestedEvaluation,
+        requestedRows
+        );
+    QVERIFY(requestedSaved);
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        currentEvaluation
+        );
+    page.show();
+
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    auto* table = page.findChild<SpeakingEvalTableView*>();
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalSaveButton")
+        );
+    auto* readErrorContainer = page.findChild<QWidget*>(
+        QStringLiteral("speakingEvalReadErrorContainer")
+        );
+    auto* retryButton = page.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalReadRetryButton")
+        );
+    auto* evaluationTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("speakingEvalEvaluationTabs")
+        );
+    auto* pageHeader = page.findChild<PageHeader*>();
+    QVERIFY(model);
+    QVERIFY(table);
+    QVERIFY(saveButton);
+    QVERIFY(readErrorContainer);
+    QVERIFY(retryButton);
+    QVERIFY(evaluationTabs);
+    QVERIFY(pageHeader);
+    const QString originalClassSubtitle = pageHeader->subtitle();
+    QVERIFY(table->isEnabled());
+    QCOMPARE(
+        model->data(model->index(
+            0,
+            SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
+            )).toString(),
+        QStringLiteral("Alice")
+        );
+
+    const QSqlDatabase database =
+        fixture.services.databaseSession()->database();
+    QVERIFY2(
+        dropSpeakingEvalDataTable(database, &error),
+        qPrintable(error)
+        );
+
+    int requestedIndex = -1;
+    for (int index = 0; index < evaluationTabs->count(); ++index)
+    {
+        QWidget* const tab = evaluationTabs->widget(index);
+        if (
+            tab
+            && tab->property("evaluation_name").toString()
+                == requestedEvaluation
+        )
+        {
+            requestedIndex = index;
+            break;
+        }
+    }
+    QVERIFY(requestedIndex >= 0);
+    evaluationTabs->setCurrentIndex(requestedIndex);
+
+    QTRY_VERIFY(!readErrorContainer->isHidden());
+    QCOMPARE(
+        evaluationTabs->currentWidget()->property("evaluation_name").toString(),
+        requestedEvaluation
+        );
+    QCOMPARE(
+        pageHeader->title(),
+        QStringLiteral("Speech Contest Speaking Evaluation")
+        );
+    QCOMPARE(pageHeader->subtitle(), originalClassSubtitle);
+    QCOMPARE(model->rows(), SpeakingEval::emptyRows());
+    QVERIFY(table->isHidden());
+    QVERIFY(!table->isEnabled());
+    QVERIFY(!saveButton->isEnabled());
+    QVERIFY(evaluationTabs->isEnabled());
+    NavigationTabStrip* classTabs = activeClassTabStrip(page);
+    QVERIFY(classTabs);
+    QVERIFY(classTabs->isEnabled());
+    QCOMPARE(page.outputCapabilities().printEnabled, false);
+    QCOMPARE(page.outputCapabilities().saveAsEnabled, false);
+    QVERIFY(prompts.messages.isEmpty());
+
+    QVERIFY2(
+        createSpeakingEvalDataTable(database, &error),
+        qPrintable(error)
+        );
+    page.saveData();
+    QSqlQuery requestedRowsCount(database);
+    QVERIFY(requestedRowsCount.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM speaking_eval_data "
+        "WHERE evaluation_id=(SELECT id FROM speaking_evaluations "
+        "WHERE class_id=? AND evaluation_name=?)"
+        )));
+    requestedRowsCount.addBindValue(fixture.classIds.first());
+    requestedRowsCount.addBindValue(requestedEvaluation);
+    QVERIFY(requestedRowsCount.exec());
+    QVERIFY(requestedRowsCount.next());
+    QCOMPARE(requestedRowsCount.value(0).toInt(), 0);
+    QVERIFY(prompts.messages.isEmpty());
+
+    const auto recoveredRequestedSaved = fixture.services.speakingEvaluationService()->saveEvaluation(
+        fixture.classIds.first(),
+        requestedEvaluation,
+        requestedRows
+        );
+    QVERIFY(recoveredRequestedSaved);
+    retryButton->click();
+    QTRY_VERIFY(readErrorContainer->isHidden());
+    QVERIFY(table->isEnabled());
+    QCOMPARE(
+        model->data(model->index(
+            0,
+            SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
+            )).toString(),
+        QStringLiteral("Carol")
+        );
     QVERIFY(!page.hasUnsavedChanges());
 }
 
@@ -2625,7 +3103,7 @@ outputReportsUsesProjectedRegularSchedule()
     const QString normalizedOutputDirectory =
         QDir::fromNativeSeparators(outputCapture.directory);
     QVERIFY(normalizedOutputDirectory.contains(
-        QStringLiteral("/E5 Athena (MW - 4pm)/Winter")
+        QStringLiteral("/E5 Athena (M - 4pm, W - 5pm)/Winter")
         ));
     QVERIFY(!normalizedOutputDirectory.contains(QStringLiteral("Tuesday")));
 }
