@@ -62981,3 +62981,25 @@ on `NotFound`, success, database-state clearing, and preview. Preserve
 independent slot/testing reads, navigation, and normal schedule interactions.
 
 At acceptance, F1299 implementation has not started.
+
+### F1298 Speaking Evaluation failed-read recovery complete locally; Batch529 closed - 2026-10-21
+
+F1298 was completed locally in production commit
+`aacbbba71474ff93f8ddcc4ad001504a13c2ab27` and test commit `20fd5eec`
+(`Phase2 - Test Speaking Evaluation read recovery`).
+
+On macOS Clang Debug, `cmake --build build/macos-clang-debug --target
+ClassMngr ClassMngrSpeakingEvalPageSaveTests` passed. The focused QtTest
+selection passed 10/10 (seven F1298/save functions plus
+`outputReportsUsesProjectedRegularSchedule`), and owning CTest
+`^ClassMngrSpeakingEvalPageSaveTests$` passed 1/1. The tester corrected a
+stale projected-output expected directory from Monday/Wednesday both at 4pm
+to the fixture's Monday 4pm/Wednesday 5pm schedule, preserving the Tuesday
+exclusion assertion. Diff-check passed.
+
+Verification was macOS Clang Debug only. No full suite, clean build, Windows,
+hosted CI, packaged translation render, or Phase 2 gate completion is claimed.
+Batch529 (F1298) is complete locally and push is pending. Batch531 is active
+with F1299 accepted before implementation; begin the next discovery when work
+starts on F1299. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate
+remains Open.

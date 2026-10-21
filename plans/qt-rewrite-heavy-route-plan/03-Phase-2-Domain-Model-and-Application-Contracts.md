@@ -53,12 +53,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch528 (F1297) closeout `44827af3` and receipt documentation commit `fbff55fa` are pushed; Batch529 F1298 implementation is underway; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch529 (F1298) is complete locally with push pending; Batch531 F1299 is accepted before implementation, and the next discovery is due when work starts on F1299; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1297's latest slice commit is test commit `be1b5460`. Batch529 F1298
-implementation is underway.
+F1298's latest slice commit is test commit `20fd5eec`. Batch531 F1299 is
+accepted before implementation; begin the next discovery when work starts on
+F1299.
 
 ### Slice discovery batches
 
@@ -77,21 +78,14 @@ Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
-### Active Batch529
+### Active Batch531
 
-Batch527 (F1296) is pushed through closeout
-`e164340fd00857d5d8b5d20243adaadf156f0cfc` and receipt
-`3b54c31ac1c90b6e509586149e38a7a739fbf86f`; local and remote tips matched
-at push. Batch528 (F1297) is pushed through closeout
-`44827af383069077917794c6590469050bdbfbab`; its receipt documentation commit
-`fbff55fa` is pushed. Batch529 F1298 implementation is underway.
+1. F1299 - Accepted before implementation: add typed failure status to
+   ScheduleWidget source reads while preserving F141's `NotFound` behavior.
+   See the progress log for full criteria.
 
-1. F1298 - Implementation underway: distinguish failed evaluation reads
-   from a successful empty grid, retain safe same-evaluation drafts, and prevent
-   writes under an unconfirmed evaluation identity. See the progress log for
-   full criteria.
-
-See the progress log for bounded discovery evidence and limitations.
+Begin the next discovery when work starts on F1299. See the progress log for
+Batch531 discovery evidence and limitations.
 
 ### Deferred candidates
 
