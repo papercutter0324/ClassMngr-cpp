@@ -59860,3 +59860,64 @@ was up to date. Batch506 (F1266) is complete and pushed. Gate 1 and Gate 2
 remain Partial, and the Phase 2 exit gate remains Open. F1265's separately
 reproduced report-output fixture failure remains documented with its
 pre-change baseline unproven.
+
+### Superseded latest progress update - 2026-10-21 (F1266 complete, Batch506 pushed)
+
+F1266's implementation and focused verification are recorded in its
+[closeout](03-Phase-2-Progress-Log.md#f1266-calendar-event-editor-validation-in-application-complete-2026-10-21),
+and Batch506's push is recorded in its [receipt](03-Phase-2-Progress-Log.md#batch506-push-receipt-2026-10-21).
+
+### Batch507 discovery - 2026-10-21
+
+Two independent read-only reviews found one supported candidate: F1267,
+Initial Setup personal-name requirement in Application.
+`PersonalDetailsWizardPage::validatePage()` trims `m_name`, shows the
+“Your Name” missing-field prompt when empty, and returns before setup/campus
+availability checks and validation-time preflight
+(`src/features/setup/ui/initial_setup_wizard.cpp:550-562`). Setup later saves
+the name as trimmed UTF-8 (`:730-736`). The wizard's
+`initializePage()` already reads stored display-name/signature preferences;
+F1267 does not claim to prevent those initialization-time reads.
+
+`PersonalDetailsSaveRequest` and `PersonalDetailsSavePort`
+(`src/next/application/personal_details_save.h:13-36`) are generic and allow
+any name. My Workspace calls this path without trimming, and an existing
+Platform test asserts whitespace preservation. F1016 is a precedent for a
+setup-specific Qt-free policy over presence facts, but its Teacher Entry
+at-least-two-of-three rule is distinct. Academic Calendar term arithmetic
+remains at Feature under F1010/F1011/F1255. Teacher Profile validation remains
+delegated to legacy `TeacherValidator` under F117. No other candidates were
+supported.
+
+No other slices were found.
+
+### F1267 Initial Setup personal-name requirement in Application accepted before implementation - 2026-10-21
+
+Add a small Qt-free setup-specific Application policy over the personal-name
+presence fact after the UI applies `QString::trimmed()`. The wizard asks
+Application whether the requirement is met. Keep trimming, translation,
+prompt title/text/field ordering, and page navigation in the UI.
+
+Preserve the existing `validatePage()` order: after the name requirement and
+prompt, setup/campus availability checks and validation-time campus/Zoom
+preference reads and preflight run, followed by writes/saves. Keep
+`initializePage()`'s earlier display-name/signature preference reads
+unchanged. Do not add a nonblank requirement to generic
+`PersonalDetailsSaveRequest`/`PersonalDetailsSavePort`, call this policy from
+My Workspace, or alter My Workspace's raw/whitespace save behavior. Keep
+F1016's Teacher Entry identity policy, shared `TeacherValidator`, and F285
+unchanged.
+
+Add direct app-less tests for present and absent name-presence facts. Add
+focused Initial Setup UI integration coverage showing that an empty or
+whitespace-only name stays on the page with the current prompt and performs
+no save; retain coverage for nonblank routing and trimmed UTF-8 persistence
+in `tests/initial_setup_wizard_tests.cpp:475-513,874-889`. Verify the My
+Workspace path remains unchanged through scope review and its existing port
+whitespace test.
+
+Build incrementally on macOS: `ClassMngr`, the new app-less Application policy
+test target, and the Initial Setup wizard test target; run only the focused
+CTest cases/selectors. This adds Gate 1 app-less behavior evidence and makes
+no Gate 2 claim. F1267 is accepted before implementation as the sole
+Batch507 slice; no source, build, or test work has started.
