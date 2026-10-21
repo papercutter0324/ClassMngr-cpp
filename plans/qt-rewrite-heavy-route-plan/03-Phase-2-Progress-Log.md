@@ -62075,3 +62075,32 @@ work starts, as it is the second-last Batch524 candidate. Gate 1 and Gate 2
 remain Partial, and the Phase 2 exit gate remains Open. Phase 0 remains
 Complete; F629's source-bound Windows x64 requalification remains outstanding
 separately.
+
+### F1287 Testing Classes preserve saved class after list-refresh failure complete locally - 2026-10-21
+
+F1287 is implemented in commit `cff949772dda58aa199fc4b130a5703a109b2ba0`;
+its acceptance record is commit `b88812912804811ec32955aa1c871b26e615730e`.
+`ClassMngrTestingClassesPageTests` built successfully. The independent Tester
+confirmed generated CTest registration includes all three F1287 methods and
+ran these focused CTest entries, each passing 1/1:
+
+- `ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrTestingClassesPageF1287SaveRefreshTests$'`
+- `ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrTestingClassesPageF147DeleteTests$'`
+
+CTest command listing confirmed invocation of
+`testingClassUpdateReadFailureRetainsSavedRowAndReconciles`,
+`testingClassSaveNotFoundRefreshRetainsSelectionQuietly`, and
+`newTestingClassCreateReadFailureRetainsSavedRowAndReconciles`.
+
+Coverage confirms a post-save list-read failure preserves prior rows, adds or
+updates the persisted class row and selection, retains Technical warnings and
+quiet NotFound behavior, emits one change signal, reconciles on later refresh,
+and keeps subsequent saves on the update path. `git diff --check` passed. No
+full suite, Windows run, clean build, hosted CI, or gate completion is claimed.
+
+F1285-F1287 are complete locally in Batch523, which is ready for closeout/push
+but remains unpushed. F1288 follows after push. Batch524 discovery remains
+recorded with F1288-F1291 provisional; begin Batch525 discovery when F1290
+work starts. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate
+remains Open. Phase 0 remains Complete; F629's source-bound Windows x64
+requalification remains outstanding separately.

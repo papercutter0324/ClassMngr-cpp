@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch523 is active and unpushed with F1285 and F1286 complete locally and F1287 accepted, next for implementation; Batch524 discovery is recorded, and Batch525 discovery is due when F1290 work starts, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: F1285-F1287 are complete locally in active, unpushed Batch523, which is ready for closeout/push; F1288 follows after the push, Batch524 discovery is recorded, and Batch525 discovery is due when F1290 work starts, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1286 is complete locally in source/test/CMake commit `746eab472f160d752235b6e0458204c5c8328a80`; F1287 is accepted and next for implementation. See the [F1286 completion record](03-Phase-2-Progress-Log.md#f1286-testing-classes-delete-fallback-draft-preservation-complete-locally-2026-10-21) and [F1287 acceptance](03-Phase-2-Progress-Log.md#f1287-testing-classes-preserve-saved-class-after-list-refresh-failure-accepted-before-implementation-2026-10-21).
+F1287 is complete locally in implementation commit `cff949772dda58aa199fc4b130a5703a109b2ba0`; acceptance is in `b88812912804811ec32955aa1c871b26e615730e`. Batch523 is ready for closeout/push but remains unpushed; F1288 follows after push. See the [F1287 completion record](03-Phase-2-Progress-Log.md#f1287-testing-classes-preserve-saved-class-after-list-refresh-failure-complete-locally-2026-10-21).
 
 ### Slice discovery batches
 
@@ -82,8 +82,9 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
    Directory after a committed Teacher Import is followed by a failed refresh.
 2. F1286 - Complete locally: preserve the clean new-class draft when a
    post-delete sibling details read fails.
-3. F1287 - Accepted; next for implementation. Batch524 discovery is recorded;
-   begin Batch525 discovery when F1290 work starts.
+3. F1287 - Complete locally. Batch523 is ready for closeout/push but remains
+   unpushed; F1288 follows after push. Batch524 discovery is recorded; begin
+   Batch525 discovery when F1290 work starts.
 
 ### Deferred candidates
 
