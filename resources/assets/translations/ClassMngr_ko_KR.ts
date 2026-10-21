@@ -1946,6 +1946,18 @@
         <source>Save Changes</source>
         <translation>변경 사항 저장</translation>
     </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="355"/>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="485"/>
+        <source>Save status</source>
+        <translation>저장 상태</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="359"/>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="553"/>
+        <source>Your class notes could not be saved. Your changes are still here.</source>
+        <translation>수업 노트를 저장하지 못했습니다. 변경 사항은 그대로 유지됩니다.</translation>
+    </message>
 </context>
 <context>
     <name>ClassScheduleSection</name>

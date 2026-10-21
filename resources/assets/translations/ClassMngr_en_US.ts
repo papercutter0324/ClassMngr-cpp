@@ -1938,6 +1938,18 @@
         <source>Save Changes</source>
         <translation>Save Changes</translation>
     </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="355"/>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="485"/>
+        <source>Save status</source>
+        <translation>Save status</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="359"/>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="553"/>
+        <source>Your class notes could not be saved. Your changes are still here.</source>
+        <translation>Your class notes could not be saved. Your changes are still here.</translation>
+    </message>
 </context>
 <context>
     <name>ClassScheduleSection</name>

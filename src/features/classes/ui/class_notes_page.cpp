@@ -22,6 +22,7 @@
 #include <QFont>
 #include <QLabel>
 #include <QPushButton>
+#include <QSizePolicy>
 #include <QTextEdit>
 #include <QVBoxLayout>
 #include <QtAssert>
@@ -301,6 +302,13 @@ bool ClassNotesPage::saveClassNotesInternal(
                     )
                 );
         }
+        else if (
+            saved.error().code
+                == ClassMngr::Next::Domain::ErrorCode::Technical
+            )
+        {
+            showNoninteractiveSaveFailureStatus();
+        }
 
         return false;
     }
@@ -340,6 +348,17 @@ void ClassNotesPage::retranslateUi()
         m_timeFillerActivitiesLabel->setText(
             tr("Time Filler Activities")
             );
+    }
+
+    if (m_saveFailureStatusLabel)
+    {
+        m_saveFailureStatusLabel->setAccessibleName(tr("Save status"));
+        if (m_saveFailureStatusActive)
+        {
+            m_saveFailureStatusLabel->setText(
+                tr("Your class notes could not be saved. Your changes are still here.")
+                );
+        }
     }
 
     updateActions();
@@ -458,6 +477,21 @@ void ClassNotesPage::buildUi()
         );
 
     contentLayout()->addWidget(m_notesCard);
+
+    m_saveFailureStatusLabel = new QLabel(this);
+    m_saveFailureStatusLabel->setObjectName(
+        QStringLiteral("classNotesSaveFailureStatus")
+        );
+    m_saveFailureStatusLabel->setAccessibleName(tr("Save status"));
+    m_saveFailureStatusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    m_saveFailureStatusLabel->setWordWrap(true);
+    m_saveFailureStatusLabel->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Preferred
+        );
+    m_saveFailureStatusLabel->hide();
+    contentLayout()->addWidget(m_saveFailureStatusLabel);
+
     contentLayout()->addStretch();
 
     m_saveButton =
@@ -505,8 +539,31 @@ void ClassNotesPage::updateHeaderText()
 
 void ClassNotesPage::clearDirty()
 {
+    clearSaveFailureStatus();
     m_autosave->markClean();
     updateActions();
+}
+
+void ClassNotesPage::showNoninteractiveSaveFailureStatus()
+{
+    m_saveFailureStatusActive = true;
+    if (m_saveFailureStatusLabel)
+    {
+        m_saveFailureStatusLabel->setText(
+            tr("Your class notes could not be saved. Your changes are still here.")
+            );
+        m_saveFailureStatusLabel->show();
+    }
+}
+
+void ClassNotesPage::clearSaveFailureStatus()
+{
+    m_saveFailureStatusActive = false;
+    if (m_saveFailureStatusLabel)
+    {
+        m_saveFailureStatusLabel->clear();
+        m_saveFailureStatusLabel->hide();
+    }
 }
 
 void ClassNotesPage::updateActions()

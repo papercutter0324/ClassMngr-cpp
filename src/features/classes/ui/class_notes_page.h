@@ -57,6 +57,8 @@ private:
         );
     void updateHeaderText();
     void clearDirty();
+    void showNoninteractiveSaveFailureStatus();
+    void clearSaveFailureStatus();
     void updateActions();
 
 private:
@@ -69,10 +71,12 @@ private:
     QString m_subtitleText;
     bool m_embedded = false;
     bool m_classFieldsAvailable = false;
+    bool m_saveFailureStatusActive = false;
 
     AutosaveCoordinator* m_autosave = nullptr;
     PageHeader* m_pageHeader = nullptr;
     QLabel* m_embeddedHeading = nullptr;
+    QLabel* m_saveFailureStatusLabel = nullptr;
     SectionCard* m_notesCard = nullptr;
     QLabel* m_timeFillerActivitiesLabel = nullptr;
     QTextEdit* m_notesEdit = nullptr;

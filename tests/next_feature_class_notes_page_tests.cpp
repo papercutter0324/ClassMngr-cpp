@@ -3,14 +3,19 @@
 #include "features/classes/ui/class_notes_page.h"
 #include "next/application/class_notes_page_read_query.h"
 #include "next/application/class_notes_save_port.h"
+#include "next/platform/application_services_class_notes_save_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/pages/page_header.h"
 #include "core/utils/sidebar_node_naming.h"
 
+#include <QApplication>
+#include <QCoreApplication>
+#include <QLabel>
 #include <QPushButton>
 #include <QTemporaryDir>
 #include <QTextEdit>
+#include <QTranslator>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -127,6 +132,101 @@ public:
         Application::ClassNotesSaveResult::success();
 };
 
+class FailingFirstClassNotesSavePort final
+    : public Application::ClassNotesSavePort
+{
+public:
+    explicit FailingFirstClassNotesSavePort(ApplicationServices* services)
+        : m_services(services)
+    {
+    }
+
+    [[nodiscard]] Application::ClassNotesSaveResult saveClassNotes(
+        const Application::ClassNotesSaveRequest& request
+        ) const override
+    {
+        ++callCount;
+        if (callCount == 1)
+        {
+            return Application::ClassNotesSaveResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "injected class notes write failure",
+                .recoverable = false
+            });
+        }
+
+        Platform::ApplicationServicesClassNotesSavePort savePort(m_services);
+        return savePort.saveClassNotes(request);
+    }
+
+    mutable int callCount = 0;
+
+private:
+    ApplicationServices* m_services = nullptr;
+};
+
+class KoreanClassNotesStatusTranslator final : public QTranslator
+{
+public:
+    QString translate(
+        const char* context,
+        const char* sourceText,
+        const char* disambiguation = nullptr,
+        const int n = -1
+        ) const override
+    {
+        Q_UNUSED(disambiguation);
+        Q_UNUSED(n);
+        if (!context || !sourceText
+            || qstrcmp(context, "ClassNotesPage") != 0)
+        {
+            return {};
+        }
+
+        if (qstrcmp(
+                sourceText,
+                "Your class notes could not be saved. Your changes are still here."
+                ) == 0)
+        {
+            return QStringLiteral(
+                "수업 노트를 저장하지 못했습니다. 변경 사항은 그대로 유지됩니다."
+                );
+        }
+        if (qstrcmp(sourceText, "Save status") == 0)
+        {
+            return QStringLiteral("저장 상태");
+        }
+        return {};
+    }
+};
+
+class ScopedTranslatorInstallation final
+{
+public:
+    explicit ScopedTranslatorInstallation(QTranslator& translator)
+        : m_translator(&translator)
+        , m_installed(QCoreApplication::installTranslator(m_translator))
+    {
+    }
+
+    ~ScopedTranslatorInstallation()
+    {
+        if (m_installed)
+        {
+            QCoreApplication::removeTranslator(m_translator);
+        }
+    }
+
+    [[nodiscard]] bool installed() const
+    {
+        return m_installed;
+    }
+
+private:
+    QTranslator* m_translator = nullptr;
+    bool m_installed = false;
+};
+
 class RecordingPromptService final : public IUserPromptService
 {
 public:
@@ -173,7 +273,7 @@ private slots:
     void successfulManualSaveTrimsFieldsAndCancelsAutosave();
     void oversizedManualSaveWarnsWithoutCallingPort();
     void manualFailureWarnsAndRetainsDirtyState();
-    void autosaveFailureRetainsDirtyStateWithoutWarning();
+    void autosaveFailureShowsInlineStatusAndClearsAfterPersistentRetry();
     void discardReloadsSavedValuesAndCancelsAutosave();
     void loadsTypedSnapshotAndReadsOnlyForLoadOrDiscard();
     void failedSourceResultsKeepDefaultAndIndependentDisplayBehavior();
@@ -335,7 +435,7 @@ void NextFeatureClassNotesPageTests::manualFailureWarnsAndRetainsDirtyState()
 }
 
 void NextFeatureClassNotesPageTests::
-autosaveFailureRetainsDirtyStateWithoutWarning()
+autosaveFailureShowsInlineStatusAndClearsAfterPersistentRetry()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -344,22 +444,69 @@ autosaveFailureRetainsDirtyStateWithoutWarning()
     const int classId = createSeededClass(services);
     QVERIFY(classId > 0);
 
-    RecordingClassNotesSavePort savePort;
-    savePort.result = Application::ClassNotesSaveResult::failure({
-        .code = Domain::ErrorCode::Technical,
-        .message = "autosave rejected",
-        .recoverable = false
-    });
+    FailingFirstClassNotesSavePort savePort(&services);
     ClassNotesPage page(&services, false, nullptr, &savePort);
     page.loadClass(Classroom(QStringLiteral("Class Notes Page Test"), classId));
+    page.show();
+
+    QLabel* const saveFailureStatus = page.findChild<QLabel*>(
+        QStringLiteral("classNotesSaveFailureStatus")
+        );
+    QVERIFY(saveFailureStatus);
+    QVERIFY(saveFailureStatus->isHidden());
 
     const QList<QTextEdit*> editors = page.findChildren<QTextEdit*>();
     QCOMPARE(editors.size(), 2);
     editors[0]->setPlainText(QStringLiteral("Changed notes"));
 
     QTRY_COMPARE_WITH_TIMEOUT(savePort.callCount, 1, 2'500);
+    QVERIFY(!saveFailureStatus->isHidden());
+    QCOMPARE(
+        saveFailureStatus->text(),
+        QStringLiteral(
+            "Your class notes could not be saved. Your changes are still here."
+            )
+        );
+    QCOMPARE(saveFailureStatus->accessibleName(), QStringLiteral("Save status"));
     QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(editors[0]->toPlainText(), QStringLiteral("Changed notes"));
     QVERIFY(m_promptService.requests.empty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    KoreanClassNotesStatusTranslator koreanTranslator;
+    {
+        ScopedTranslatorInstallation translatorScope(koreanTranslator);
+        QVERIFY(translatorScope.installed());
+        page.retranslateUi();
+        QCOMPARE(
+            saveFailureStatus->text(),
+            QStringLiteral(
+                "수업 노트를 저장하지 못했습니다. 변경 사항은 그대로 유지됩니다."
+                )
+            );
+        QCOMPARE(saveFailureStatus->accessibleName(), QStringLiteral("저장 상태"));
+    }
+    page.retranslateUi();
+    QCOMPARE(
+        saveFailureStatus->text(),
+        QStringLiteral(
+            "Your class notes could not be saved. Your changes are still here."
+            )
+        );
+    QCOMPARE(saveFailureStatus->accessibleName(), QStringLiteral("Save status"));
+
+    editors[0]->setPlainText(QStringLiteral("Recovered notes"));
+
+    QTRY_COMPARE_WITH_TIMEOUT(savePort.callCount, 2, 2'500);
+    QTRY_VERIFY_WITH_TIMEOUT(!page.hasUnsavedChanges(), 2'500);
+    QVERIFY(saveFailureStatus->isHidden());
+    QVERIFY(saveFailureStatus->text().isEmpty());
+    const auto loaded = services.classService()->classInfo(classId);
+    QVERIFY(loaded);
+    QCOMPARE(loaded->notes, QStringLiteral("Recovered notes"));
+    QCOMPARE(loaded->timeFillerActivities, QStringLiteral("Saved activities"));
+    QVERIFY(m_promptService.requests.empty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 void NextFeatureClassNotesPageTests::discardReloadsSavedValuesAndCancelsAutosave()
