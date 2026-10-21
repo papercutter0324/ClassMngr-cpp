@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1292 is accepted for implementation in Batch525; F1293-F1294 remain discovered and unaccepted, and Gate 1 and Gate 2 remain Partial with the Phase 2 exit gate Open.
+- Current note: F1293 is next for acceptance in unpushed Batch525 and triggers Batch526 discovery when work starts; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1292 is accepted for implementation in Batch525; F1293 and F1294 remain discovered and unaccepted. See the [F1292 acceptance](03-Phase-2-Progress-Log.md#f1292-teacher-info-require-reload-after-post-write-refresh-failure-accepted-before-implementation-2026-10-21).
+F1292 is complete locally in unpushed Batch525; F1293 is next for acceptance and triggers Batch526 discovery when work starts, with F1294 last. See the [F1292 completion](03-Phase-2-Progress-Log.md#f1292-teacher-info-require-reload-after-post-write-refresh-failure-complete-locally-2026-10-21).
 
 ### Slice discovery batches
 
@@ -79,13 +79,13 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 ### Active Batch525
 
 Batch524 (F1288-F1290) is pushed through closeout `3480c791`; F1291 was
-screened out. Batch525 candidates:
+screened out. F1292 is complete locally in unpushed Batch525.
 
-1. F1292 - Accepted for implementation: on a successful write followed by
-   reload failure, lock the stale Teacher Info page until a successful reopen.
-2. F1293 - Discovered; next after F1292: new-profile replacement may close the
-   active profile before replacement creation succeeds; expected behavior
-   needs acceptance.
+1. F1292 - Complete locally: on a successful write followed by reload failure,
+   lock the stale Teacher Info page until a successful reopen.
+2. F1293 - Discovered; next for acceptance, then start Batch526 discovery:
+   new-profile replacement may close the active profile before replacement
+   creation succeeds; expected behavior needs acceptance.
 3. F1294 - Discovered; last after F1293: nested-folder parent metadata through
    the legacy catalog adapter has an integration-coverage gap; no runtime
    failure is demonstrated.

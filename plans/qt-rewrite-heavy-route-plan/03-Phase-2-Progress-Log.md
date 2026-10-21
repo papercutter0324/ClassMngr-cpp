@@ -62467,3 +62467,31 @@ reload-recovery selector, confirm CTest registration, run that target, and run
 `git diff --check`. At acceptance, implementation, build, and tests have not
 started. No full suite, Windows run, clean build, hosted CI, or gate result is
 claimed.
+
+### F1292 Teacher Info post-write reload failure complete locally - 2026-10-21
+
+F1292 is complete locally in four commits: acceptance
+`41911734561cd71dd8ef4fa6dffe1f502ddec4a8`, production
+`0f5580d5c829b5de36eb6323b34543c554941d83`, focused tests
+`10437bebff59ef4b7b9539dd6ac74a2ffc6569df`, and Korean catalog
+`ec58a2f6e0886d8203ae338ee028c4f553f4992c`, adding the localized status and
+accessible name. After a successful write and reload failure, the page locks
+all editing while retaining submitted values, marks clean, emits no saved
+signal, blocks manual/programmatic/autosave writes, and shows persistent
+nonmodal recovery guidance in all save modes. Successful load or database-state
+clear removes the status and lock.
+
+Incremental `ClassMngr` and `ClassMngrTeacherInfoPageTests` builds passed in
+`build/macos-clang-debug`; a separate incremental `ClassMngr` build compiled
+`ClassMngr_ko_KR.qm`. These selectors passed:
+`repositoryReloadFailureRetainsSavedValuesAndRequiresReload`,
+`automaticReloadFailureKeepsSubmittedValuesAndShowsStatus`,
+`repositoryUpdateFailureKeepsDirtyStateAndShowsWarning`, and
+`saveUsesApplicationEditAndReloadsCanonicalTeacher`. CTest target
+`ClassMngrTeacherInfoPageTests` passed 1/1, and `git diff --check` passed.
+No full suite, Windows run, clean build, hosted CI, or phase-gate result is
+claimed.
+
+F1292 is complete locally; Batch525 remains active and unpushed. F1293 is next
+for acceptance and triggers Batch526 discovery when work starts; F1294 follows.
+Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
