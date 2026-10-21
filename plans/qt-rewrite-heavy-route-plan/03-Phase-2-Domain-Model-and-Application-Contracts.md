@@ -53,11 +53,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch525 (F1292-F1293) is pushed through closeout `655cf042` with F1294 screened out; F1295 is accepted before implementation in active Batch526; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch526 (F1295) is closed locally and awaits push; Batch527 is active with F1296 discovered, provisional, and unaccepted; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1295 is accepted before implementation in Batch526: disclose unknown schedule persistence in Calendar Preferences and disable schedule controls until a successful reload. See the [F1295 acceptance record](03-Phase-2-Progress-Log.md#f1295-calendar-preferences-schedule-read-failure-status-accepted-before-implementation-2026-10-21).
+F1295 is complete locally; its latest commit is
+`3d6d60db384698c68fd3d1850ce1988cdc7a1a8c`. See the progress log for
+verification and Batch526 closeout.
 
 ### Slice discovery batches
 
@@ -76,15 +78,16 @@ Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
-### Active Batch526
+### Active Batch527
 
-Batch525 (F1292-F1293) was pushed through closeout `655cf042`; push receipt
-tip is `34240255`. F1294 was screened out.
+Batch526 (F1295) is closed locally and awaits push. Formal acceptance for
+F1296 follows that push.
 
-1. F1295 - Accepted before implementation: in Calendar Preferences, disclose
-   unknown schedule persistence and disable schedule controls until a
-   successful reload; retain drafts and keep unrelated preference failures
-   from locking the schedule. See the progress log for full criteria.
+1. F1296 - Discovered, provisional, and unaccepted: disclose when the initial
+   Co-Teacher assignment snapshot is unknown, show a persistent structured
+   warning, and require deliberate/manual save while it remains unknown; retain
+   explicit unassignment and recovery after a successful reload. See the
+   progress log for discovery evidence.
 
 See the progress log for bounded discovery evidence and limitations.
 

@@ -62647,3 +62647,54 @@ F1295 is accepted before implementation in active Batch526. Batch525
 (F1292-F1293) is pushed through closeout `655cf042`, with receipt tip
 `34240255`; F1294 was screened out. Gate 1 and Gate 2 remain Partial, and the
 Phase 2 exit gate remains Open.
+
+### F1295 Calendar Preferences schedule-read failure status complete locally - 2026-10-21
+
+F1295 is complete locally in three commits: acceptance
+`e07501d8bd4a31966d80d10ad9c4d046db4f239f`, production
+`039d799dd35dec58118eda5fa6108d2f087342ff`, and independent tests
+`3d6d60db384698c68fd3d1850ce1988cdc7a1a8c`. Calendar Preferences now shows a
+persistent localized schedule-read failure status, disables schedule controls
+while persistence is unknown, preserves cached schedule/revision and panel
+drafts, and clears the status and lock after successful reload. Unrelated
+event-display or first-day preference failures do not lock schedule controls.
+
+Incremental builds passed in `build/macos-clang-debug`: the Executor built
+`ClassMngr`; the Tester built `ClassMngr`,
+`ClassMngrAcademicCalendarTests`, and
+`ClassMngrCalendarPreferencesRestoreDefaultsTests`. Five focused QtTest
+selectors passed, both owning CTests passed (2/2), and `git diff --check`
+passed. No full suite, Windows build, clean build, or visual render was run.
+
+Batch526 (F1295) is closed locally and awaits push. Batch527 is active with
+F1296 discovered, provisional, and unaccepted; formal acceptance follows the
+Batch526 push. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate
+remains Open.
+
+### Batch527 bounded discovery following the Batch526 F1293 trigger - 2026-10-21
+
+Two independent read-only lanes found one provisional feature candidate, F1296:
+a failed initial Co-Teacher page snapshot or required `classFields` read is
+discarded, so selection falls back to `-1` / “No Teacher”; a later user change
+then autosaves after 750 ms. The assignment use case and adapter treat `-1` as
+an explicit unassignment written through the one-field setter
+(`src/features/classes/ui/class_co_teacher_page.cpp:579-608,616-631,480-530`,
+`src/next/application/class_co_teacher_assignment_use_case.h:63-93`,
+`src/next/platform/application_services_class_co_teacher_assignment_port.h:64-66,169-175`,
+`src/ui/shared/pages/autosave_coordinator.h:15`). Existing
+`readFailuresKeepDefaultSelectionAndIndependentTitleSources` verifies the
+fallback but not a later save
+(`tests/next_feature_class_co_teacher_page_tests.cpp:781-840`).
+The Investigator found an unknown-versus-unassigned disclosure gap, distinct
+from F1280's post-save refresh case. Assignment is a direct one-field write, so
+a full edit lock is unnecessary. Proposed direction is a persistent structured
+warning and deliberate/manual save while the read state is unknown, while
+retaining explicit unassignment and recovery after a successful reload. F1296
+remains provisional and unaccepted pending formal acceptance after the
+Batch526 push.
+
+The contract lane sampled Class Notes read/save contracts and GS Team directory
+save use case/adapter and found no additional slices. The bounded sample found
+no other candidates. No tests ran.
+
+No other slices were found.
