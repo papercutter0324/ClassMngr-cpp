@@ -2,6 +2,7 @@
 #include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "next/application/calendar_event_by_id_query_port.h"
 #include "next/application/calendar_event_delete_port.h"
@@ -461,7 +462,9 @@ void NextPlatformApplicationServicesCalendarEventPortTests::widePersistedIdentit
     QFETCH(qint64, wideId);
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    auto* repository = services.databaseSession()->calendarEventRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    auto* repository = store->calendarEventRepository();
     auto lowEvent = validSaveRequest();
     ApplicationServicesCalendarEventSavePort savePort(services);
     const auto low = savePort.saveEvent(lowEvent);
@@ -471,7 +474,7 @@ void NextPlatformApplicationServicesCalendarEventPortTests::widePersistedIdentit
     wideEvent.title = "Wide event";
     const auto created = savePort.saveEvent(wideEvent);
     QVERIFY(created);
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(store->database());
     query.prepare("UPDATE calendar_events SET id=? WHERE id=2");
     query.addBindValue(wideId);
     QVERIFY(query.exec());
@@ -560,13 +563,15 @@ void NextPlatformApplicationServicesCalendarEventPortTests::generatedWideIdentit
     QFETCH(qint64, sequence);
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    auto* repository = services.databaseSession()->calendarEventRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    auto* repository = store->calendarEventRepository();
     CalendarEvent event = makeEvent(QStringLiteral("Low"), QDate(2026,12,10), QDate(2026,12,10));
     event.allDay = true;
     const auto low = repository->saveCalendarEvent(event);
     QVERIFY(low);
     QCOMPARE(*low, qint64(1));
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(store->database());
     query.prepare("UPDATE sqlite_sequence SET seq=? WHERE name='calendar_events'");
     query.addBindValue(sequence);
     QVERIFY(query.exec());
@@ -1077,6 +1082,8 @@ titleAdaptersUseUtf16UnitBoundariesForSqlReadAndWrite()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     const QDate eventDate(2026, 12, 10);
 
     ApplicationServicesCalendarEventSavePort savePort(services);
@@ -1094,7 +1101,7 @@ titleAdaptersUseUtf16UnitBoundariesForSqlReadAndWrite()
     QVERIFY(idConverted);
     QVERIFY(legacyId > 0);
     CalendarEventRepository* const repository =
-        services.databaseSession()->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
     const auto stored = repository->getCalendarEvent(legacyId);
     QVERIFY(stored);
@@ -1113,9 +1120,7 @@ titleAdaptersUseUtf16UnitBoundariesForSqlReadAndWrite()
         ErrorCode::InvalidInput
         );
 
-    QSqlQuery rawInsert(
-        services.dataService()->databaseSession()->database()
-        );
+    QSqlQuery rawInsert(store->database());
     rawInsert.prepare(QStringLiteral(
         "INSERT INTO calendar_events ("
         "title, event_type, time_status, repeat_series_id, all_day, "
@@ -1712,11 +1717,11 @@ createsAndUpdatesValidEventWithTypedIdMapping()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
     ApplicationServicesCalendarEventSavePort port(services);
@@ -1780,11 +1785,11 @@ reportsMissingCalendarEventUpdateStructurally()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
     const auto created = repository->saveCalendarEvent(
@@ -1831,11 +1836,11 @@ reportsCalendarEventUpdateSqlFailureStructurally()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
     const auto created = repository->saveCalendarEvent(
@@ -1849,7 +1854,7 @@ reportsCalendarEventUpdateSqlFailureStructurally()
     const int eventId = *created;
     QVERIFY(eventId > 0);
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_update "
         "BEFORE UPDATE ON calendar_events "
@@ -1960,11 +1965,11 @@ rejectsPaddedAndMalformedTypedTimesAtPublicBoundary()
         static_cast<CalendarEventWriteOperation>(operation);
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
     const QString repeatSeriesId =
@@ -1997,13 +2002,13 @@ rejectsPaddedAndMalformedTypedTimesAtPublicBoundary()
             "BEFORE INSERT ON calendar_events "
             "BEGIN SELECT RAISE(ABORT, 'invalid typed time reached insert'); END"
             );
-    QSqlQuery persistenceGuard(session->database());
+    QSqlQuery persistenceGuard(store->database());
     QVERIFY2(
         persistenceGuard.exec(triggerSql),
         qPrintable(persistenceGuard.lastError().text())
         );
 
-    QSqlQuery countBefore(session->database());
+    QSqlQuery countBefore(store->database());
     QVERIFY(countBefore.exec(QStringLiteral(
         "SELECT COUNT(*) FROM calendar_events"
         )));
@@ -2101,7 +2106,7 @@ rejectsPaddedAndMalformedTypedTimesAtPublicBoundary()
     }
     }
 
-    QSqlQuery countAfter(session->database());
+    QSqlQuery countAfter(store->database());
     QVERIFY(countAfter.exec(QStringLiteral(
         "SELECT COUNT(*) FROM calendar_events"
         )));
@@ -2123,9 +2128,9 @@ reportsUnavailableSaveSessionStructurally()
 {
     ApplicationServices services;
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(!session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(!store->isOpen());
 
     ApplicationServicesCalendarEventSavePort port(services);
 
@@ -2166,10 +2171,10 @@ reportsUnavailableSaveSessionStructurally()
         );
 
     QVERIFY(openDatabase(services, m_directory));
-    QVERIFY(session->isOpen());
+    QVERIFY(store->isOpen());
     services.closeDatabase();
     QVERIFY(services.dataService());
-    QVERIFY(!session->isOpen());
+    QVERIFY(!store->isOpen());
 
     verifyFailure(
         port.saveEvent(invalidUpdateId),
@@ -2191,9 +2196,9 @@ reportsSaveServiceFailureStructurally()
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
 
-    QSqlQuery query(
-        services.databaseSession()->database()
-        );
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlQuery query(store->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_save "
         "BEFORE INSERT ON calendar_events "

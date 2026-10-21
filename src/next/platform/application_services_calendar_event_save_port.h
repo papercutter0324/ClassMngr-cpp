@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/calendar_event_validator.h"
@@ -92,8 +92,8 @@ public:
                 }
             }
 
-            DatabaseSession* const session = m_services.databaseSession();
-            if (!session || !session->isOpen())
+            WorkspaceStore* const store = m_services.workspaceStore();
+            if (!store || !store->isOpen())
             {
                 return unavailableSessionFailure();
             }
@@ -146,7 +146,7 @@ public:
             }
 
             CalendarEventRepository* const repository =
-                session->calendarEventRepository();
+                store->calendarEventRepository();
             if (!repository)
             {
                 return failure(
@@ -159,7 +159,7 @@ public:
                 repository->saveCalendarEventWithOutcome(normalized);
             if (saved.code != CalendarEventSaveOutcomeCode::Saved)
             {
-                if (!session->isOpen())
+                if (!store->isOpen())
                 {
                     return unavailableSessionFailure();
                 }

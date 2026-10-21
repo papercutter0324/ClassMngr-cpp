@@ -386,3 +386,32 @@ cmake --build build/macos-clang-debug --target ClassMngrCalendarEventCacheTests 
 ctest --test-dir build/macos-clang-debug -R 'ClassMngrCalendarEvent(Cache|Repository)Tests' --output-on-failure
 git diff --check
 ```
+
+Commit: `c5289ae2`.
+
+## F1333 — Single Calendar Event save — 2026-10-22
+
+Migrated the typed single-event save adapter and its direct fixture to
+`ApplicationServices::workspaceStore()` and the existing
+`CalendarEventRepository`. The adapter still validates and converts the typed
+request, saves through `saveCalendarEventWithOutcome()`, and clears the repeat
+series ID for an occurrence-only edit. Repository transaction behavior,
+create/update handling, structured failure mapping, and retry behavior remain
+unchanged. Batch import, series save, and suffix deletion stay on their
+separate paths.
+
+The focused Platform save-port, Application calendar-event, CalendarEvent
+repository, and Calendar Page mutation-parity CTests passed **4/4**. The
+independent review rebuilt the targets and confirmed all **211 test cases**
+passed, including create/update ID mapping, missing updates, SQL failures,
+rollback behavior, and selected-occurrence detachment with sibling series IDs
+preserved. `git diff --check` passed. The existing dialog can convert an
+`Unknown` event status to `Timed` when opened and saved; this pre-existing UI
+behavior was left unchanged. Verification used the existing macOS Debug tree;
+no broad suite or cross-platform build was run.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesCalendarEventPortTests ClassMngrNextApplicationCalendarEventTests ClassMngrCalendarEventRepositoryTests ClassMngrCalendarPageEventMutationParityTests
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextPlatformApplicationServicesCalendarEventPortTests|ClassMngrNextApplicationCalendarEventTests|ClassMngrCalendarEventRepositoryTests|ClassMngrCalendarPageEventMutationParityTests)$'
+git diff --check
+```
