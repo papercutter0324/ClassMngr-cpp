@@ -53,12 +53,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch507 (F1267) is complete and pushed at `311897f0` (see [push receipt](03-Phase-2-Progress-Log.md#batch507-push-receipt-2026-10-21)); no slice batch is active; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+- Current note: Batch508 is active with F1268 accepted first and F1269 discovered second; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Latest Progress Update
 
-F1267 is complete locally in Batch507 at source commit
-`f4b95d4d900fa4366589dafabda500ad0d5bde7f` (see [F1267 closeout](03-Phase-2-Progress-Log.md#f1267-initial-setup-personal-name-requirement-in-application-complete-2026-10-21)). The setup-specific Application policy governs only the trimmed-name presence fact in Initial Setup; UI trimming, prompt and navigation remain at the boundary, and initialization-time preference reads remain unchanged. Incremental macOS build and focused app-less and UI checks passed; no full-suite, Windows, or Gate 2 claim is made. Batch507 is complete and pushed at `311897f0` (see [push receipt](03-Phase-2-Progress-Log.md#batch507-push-receipt-2026-10-21)); no slice batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+F1268, Initial Setup Teacher Entry skip policy in Application, is accepted
+before implementation as Batch508's first slice (see [acceptance](03-Phase-2-Progress-Log.md#f1268-initial-setup-teacher-entry-skip-policy-in-application-accepted-before-implementation-2026-10-21)); F1269, the Initial Setup Class Details required-information gate, is the second discovered slice. F1268 moves only the existing skip decision over two prepared presence facts into a Qt-free setup policy; its implementation and verification have not started. Batch507 is complete and pushed (receipt documentation commit `9291afc23ab5f9fe5a3a624f1f6925872bbcc782`); Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -73,7 +73,14 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-No slice batch is active. Batch507 (F1267) is complete and pushed at `311897f0` (see [push receipt](03-Phase-2-Progress-Log.md#batch507-push-receipt-2026-10-21)).
+### Active batch: Batch508 (0 complete, 1 accepted, 1 discovered)
+
+- F1268 - Initial Setup Teacher Entry skip policy in Application: Accepted
+  before implementation; next action is to add the Qt-free two-fact policy,
+  route the existing early skip decision through it, and cover app-less and UI
+  behavior.
+- F1269 - Initial Setup Class Details required-information gate: Discovered;
+  review for acceptance after F1268 closes.
 
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain

@@ -59967,3 +59967,78 @@ The normal, non-forced push succeeded from previous upstream tip
 is up to date. Batch507 (F1267) is complete and pushed. No Batch508 discovery
 or active slice batch is recorded. Gate 1 and Gate 2 remain Partial, and the
 Phase 2 exit gate remains Open.
+
+### Batch507 push-receipt documentation commit pushed - 2026-10-21
+
+The commit recording Batch507's push receipt,
+`9291afc23ab5f9fe5a3a624f1f6925872bbcc782`, is at the verified clean local
+and upstream tip. Batch507's push receipt above remains the source-push
+record; this entry records publication of that receipt documentation.
+
+### Superseded latest progress update - 2026-10-21 (F1267 complete, Batch507 pushed)
+
+F1267's implementation and focused verification are recorded in the
+[F1267 closeout](03-Phase-2-Progress-Log.md#f1267-initial-setup-personal-name-requirement-in-application-complete-2026-10-21),
+and Batch507's source push and receipt-documentation push are recorded in
+their [push receipt](03-Phase-2-Progress-Log.md#batch507-push-receipt-2026-10-21)
+and [receipt documentation commit record](03-Phase-2-Progress-Log.md#batch507-push-receipt-documentation-commit-pushed-2026-10-21).
+
+### Batch508 discovery - 2026-10-21
+
+Explorer tasks `B508_DOC_HISTORY` and `B508_CODE_SCAN`, followed by
+Investigator task `B508_FEASIBILITY`, support an ordered two-slice batch:
+F1268 first and F1269 second.
+
+F1268, Initial Setup Teacher Entry skip policy in Application, isolates the
+wizard's existing early skip decision. `PersonalDetailsWizardPage::validatePage()`
+checks that all four teacher identity/room fields are blank after the existing
+`QString` trimming/aggregation in `currentFieldsEmpty()` and that the teacher
+choice query succeeded with at least one existing teacher. It skips Teacher
+Entry before `saveCurrentTeacher(false)` only when both facts hold. Failed or
+unavailable queries and empty results remain “not available” and proceed to
+the existing identity validation without insertion. The Add Another path and
+query/read placement remain unchanged. The policy does not replace F1016's
+Teacher Entry at-least-two-of-three identity threshold.
+
+F1269, Initial Setup Class Details required-information gate in Application,
+is the second discovered candidate. The page currently requires a selected
+canonical positive teacher ID, explicit class-color choice, and nonempty
+grade and level (`src/features/setup/ui/initial_setup_wizard.cpp` around
+line 1287). This setup gate is distinct from ordinary
+`ClassDetailsValidationPolicy`, which permits an unassigned teacher and paired
+empty grade/level. The existing parity target is
+`tests/initial_setup_wizard_class_create_save_parity_tests.cpp`. Keep widget
+parsing/color selection/prompt ordering at the UI boundary and evaluate the
+gate before draft mutation. F1269 is discovered, not accepted; no third
+candidate was found.
+
+No other slices were found.
+
+### F1268 Initial Setup Teacher Entry skip policy in Application accepted before implementation - 2026-10-21
+
+Add a small Qt-free setup-specific Application policy over two UI-prepared
+facts: all four teacher identity/room fields are blank after the existing UI
+`QString` trimming, and a successful query indicates at least one existing
+teacher. Return true only when both facts hold. The wizard retains query/read
+placement, query error/no-service/empty-results-as-not-available behavior,
+`currentFieldsEmpty()` trimming and aggregation, and the existing prompt and
+navigation. The early skip remains only in `validatePage()` before
+`saveCurrentTeacher(false)`. On query failure or no available teachers, keep
+the current fall-through to identity validation without insertion. Do not
+change Add Another behavior, generic create/read ports, or persistence.
+
+Keep F1016's identity threshold, shared `TeacherValidator`, and F285
+unchanged. Add direct app-less tests for all four boolean combinations. Retain
+or add focused UI assertions that blank fields with existing teachers skip,
+while no teachers or read failures continue to the current identity prompt
+without insertion, and nonblank behavior remains unchanged. Existing anchors
+are `blankTeacherEntrySkipsWhenTeachersExist` and
+`teacherChoiceReadFailuresBehaveAsEmptyWithoutWarnings` in
+`tests/initial_setup_wizard_tests.cpp`.
+
+Build incrementally on macOS: `ClassMngr`, the new app policy test target, and
+the Initial Setup wizard test target; run the exact focused app CTest and
+named UI selectors, then check the diff. No full-suite or Gate 2 claim is
+planned. F1268 adds Gate 1 app-less behavior evidence. It is accepted before
+implementation as the first Batch508 slice; F1269 remains discovered second.
+No implementation, build, or tests have started for Batch508.
