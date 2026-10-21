@@ -252,6 +252,7 @@ private slots:
     void classDetailsShowsOrderedPreferredTeacherNamesAndSelectsSingleTeacher();
     void classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty();
     void classTimesRejectsNoncanonicalWeekdaysAfterCreatingBlankClass();
+    void missingPersonalNameBlocksValidationWithoutSaving();
     void personalDetailsRoutesToClassDetailsWhenTeachersExist();
     void personalDetailsRoutesToTeacherEntryWhenNoTeachersExist();
     void blankTeacherEntrySkipsWhenTeachersExist();
@@ -466,6 +467,91 @@ classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty()
         QStringLiteral("setupClassTeacher"));
     QVERIFY(teachers);
     QCOMPARE(teachers->count(), 0);
+}
+
+void InitialSetupWizardTests::
+missingPersonalNameBlocksValidationWithoutSaving()
+{
+    for (const QString& enteredName : {
+             QString(),
+             QStringLiteral("   \t  ")})
+    {
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, m_directory));
+        QVERIFY(services.settingsService());
+
+        const QByteArray signatureImage = sourcePng();
+        QVERIFY(!signatureImage.isEmpty());
+        const QVariantMap initialValues = {
+            {
+                QString::fromUtf8(DisplayNameKey),
+                QStringLiteral("Existing Name")
+            },
+            {QString::fromUtf8(CampusKey), QStringLiteral("Jeongja")},
+            {
+                QString::fromUtf8(ZoomLoginIdKey),
+                QStringLiteral("existing-login")
+            },
+            {
+                QString::fromUtf8(ZoomPasswordKey),
+                QStringLiteral("existing-password")
+            },
+            {QString::fromUtf8(ZoomNotAvailableKey), false},
+            {
+                QString::fromUtf8(SignatureImageKey),
+                QString::fromLatin1(signatureImage.toBase64())
+            },
+            {QString::fromUtf8(SignatureModeKey), 1},
+            {
+                QString::fromUtf8(TypedSignatureTextKey),
+                QStringLiteral("Existing Signature")
+            },
+            {QString::fromUtf8(TypedSignatureFontKey), 2}
+        };
+        QVERIFY(services.settingsService()->saveAll(initialValues));
+
+        FakeUserPromptService prompts;
+        [[maybe_unused]] const ScopedUserPromptService promptService(&prompts);
+
+        InitialSetupWizard wizard(&services);
+        showPersonalDetailsPage(wizard);
+
+        auto* const name = wizard.findChild<QLineEdit*>(
+            QStringLiteral("setupUserName")
+            );
+        auto* const next = wizard.button(QWizard::NextButton);
+        QVERIFY(name);
+        QVERIFY(next);
+        name->setText(enteredName);
+        next->click();
+        QApplication::processEvents();
+
+        QCOMPARE(wizard.currentId(), InitialSetupWizard::PersonalDetailsPage);
+        QCOMPARE(prompts.messages.size(), 1);
+        const PromptRequest& prompt = prompts.messages.constFirst();
+        QCOMPARE(prompt.severity, PromptSeverity::Information);
+        QCOMPARE(prompt.title, QStringLiteral("Your Information"));
+        QCOMPARE(
+            prompt.message,
+            QStringLiteral(
+                "Complete the following required fields before continuing:\n\n"
+                "- Your Name"
+                )
+            );
+        QVERIFY(prompts.asynchronousMessages.isEmpty());
+
+        for (auto setting = initialValues.cbegin();
+             setting != initialValues.cend();
+             ++setting)
+        {
+            QCOMPARE(
+                services.settingsService()->loadOrDefault(
+                    setting.key(), QVariant()
+                    ),
+                setting.value()
+                );
+        }
+    }
 }
 
 void InitialSetupWizardTests::
@@ -874,7 +960,7 @@ aggregateSavePreservesAllPersonalDetailsWithoutDataLoss()
     auto* name = wizard.findChild<QLineEdit*>(
         QStringLiteral("setupUserName"));
     QVERIFY(name);
-    name->setText(QStringLiteral("  New Teacher  "));
+    name->setText(QStringLiteral("  홍길동  "));
 
     auto* next = wizard.button(QWizard::NextButton);
     QVERIFY(next);
@@ -885,7 +971,7 @@ aggregateSavePreservesAllPersonalDetailsWithoutDataLoss()
         services.settingsService()->loadOrDefault(
             QString::fromUtf8(DisplayNameKey), QVariant()
             ).toString(),
-        QStringLiteral("New Teacher")
+        QStringLiteral("홍길동")
         );
     QCOMPARE(
         services.settingsService()->loadOrDefault(

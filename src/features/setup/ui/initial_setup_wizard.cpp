@@ -10,6 +10,7 @@
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "next/platform/application_services_teacher_import_apply_port.h"
+#include "next/application/initial_setup_personal_name_requirement.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
 #include "next/application/initial_setup_teacher_identity_validation.h"
 #include "next/application/class_create_use_case.h"
@@ -549,12 +550,17 @@ public:
 
     bool validatePage() override
     {
+        const bool trimmedNamePresent =
+            !m_name->text().trimmed().isEmpty();
+        const bool nameRequirementMet =
+            ClassMngr::Next::Application::
+                initialSetupPersonalNameRequirementMet(trimmedNamePresent);
         if (showMissingFields(
                 this,
                 tr("Your Information"),
-                m_name->text().trimmed().isEmpty()
-                    ? QStringList{tr("Your Name")}
-                    : QStringList{}))
+                nameRequirementMet
+                    ? QStringList{}
+                    : QStringList{tr("Your Name")}))
         {
             return false;
         }

@@ -1087,6 +1087,37 @@ add_test(
     COMMAND ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests
 )
 
+# Keep the Initial Setup personal-name requirement independent of Qt.
+add_executable(
+    ClassMngrNextApplicationInitialSetupPersonalNameRequirementTests
+    tests/next_application_initial_setup_personal_name_requirement_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationInitialSetupPersonalNameRequirementTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationInitialSetupPersonalNameRequirementTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationInitialSetupPersonalNameRequirementTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationInitialSetupPersonalNameRequirementTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationInitialSetupPersonalNameRequirementTests
+    COMMAND ClassMngrNextApplicationInitialSetupPersonalNameRequirementTests
+)
+
 # Keep automatic-update startup eligibility app-less and Qt-free.
 add_executable(
     ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests
