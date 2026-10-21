@@ -61364,3 +61364,20 @@ starts after the push; no implementation slice is active. Gate 1 and Gate 2
 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound
 Windows x64 requalification remains outstanding separately from Phase 0's
 2026-09-18 Complete declaration.
+
+### Batch519 push receipt - 2026-10-21
+
+The normal, non-force push completed successfully through closeout commit
+`39aa7e2f4994ca1f55dbc940f0c61cc056ee888c`. The Batch519 commits, in order,
+are acceptance `a3eced0cf325b154e05ed2edc4d4a9a96b2c802d`, scope clarification
+`079ec764800ede589273473afb995698bd258d2f`, implementation
+`77cc30a2e85d1ab73a67ed19395e2e4573fda2c7`, and closeout
+`39aa7e2f4994ca1f55dbc940f0c61cc056ee888c`. Push verification confirmed
+`origin/Qt-Rewrite` equals local HEAD at the closeout commit and the worktree
+was clean. This records remote push and local repository state only; no hosted
+CI verification is implied.
+
+Batch519 (F1279) is complete and pushed. Batch520 discovery is next, with no
+implementation slice active. Gate 1 and Gate 2 remain Partial, and the Phase 2
+exit gate remains Open. F629's source-bound Windows x64 requalification
+remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.

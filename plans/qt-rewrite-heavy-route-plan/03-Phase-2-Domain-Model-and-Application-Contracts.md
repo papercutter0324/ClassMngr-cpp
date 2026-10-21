@@ -53,15 +53,15 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch519 is complete locally and awaiting its normal push; Batch520 discovery starts after the push, with no implementation slice active; Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current note: Batch519 (F1279) is complete and pushed at `39aa7e2f`; Batch520 discovery is next, no implementation slice is active, Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-Batch519's sole slice, F1279, is complete locally and awaiting its normal push. Batch520 discovery starts after the push; no implementation slice is active. See the [F1279 completion record](03-Phase-2-Progress-Log.md#f1279-localized-campus-fallback-identity-protection-complete-2026-10-21). Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+Batch519's sole slice, F1279, is complete and pushed through closeout commit `39aa7e2f`. See the [Batch519 push receipt](03-Phase-2-Progress-Log.md#batch519-push-receipt-2026-10-21). Batch520 discovery is next; no implementation slice is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active batch — none
 
-Batch519 is complete locally and awaiting its normal push. Batch520 discovery starts after the push; no implementation slice is active.
+Batch519 is complete and pushed. Batch520 discovery is next; no implementation slice is active.
 
 ### Slice discovery batches
 
