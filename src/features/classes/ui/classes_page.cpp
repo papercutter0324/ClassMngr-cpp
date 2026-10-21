@@ -20,6 +20,7 @@
 #include "ui/shared/widgets/sections/class_schedule_section.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/classes_navigation_snapshot.h"
+#include "next/application/schedule_display_mode_source_policy.h"
 #include "next/application/selected_class_subtitle_read_query.h"
 #include "next/application/selected_class_grade_read_query.h"
 #include "next/domain/course.h"
@@ -154,7 +155,8 @@ ClassTabNavigation::ScheduleSource scheduleSourceForMode(
     ScheduleDisplayMode mode
     )
 {
-    return mode == ScheduleDisplayMode::Intensive
+    return ClassMngr::Next::Application::
+            scheduleDisplayModeUsesIntensiveSource(mode)
         ? ClassTabNavigation::ScheduleSource::Intensive
         : ClassTabNavigation::ScheduleSource::Regular;
 }

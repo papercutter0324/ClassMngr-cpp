@@ -2,6 +2,7 @@
 
 #include "domain/models/testing_block.h"
 #include "features/schedule/ui/schedule_builder.h"
+#include "next/application/schedule_display_mode_preferences.h"
 
 #include <QList>
 #include <QMap>
@@ -14,12 +15,8 @@ enum class ScheduleRowFilter
     TrimEmptyOuterRows
 };
 
-enum class ScheduleDisplayMode
-{
-    Regular,
-    Intensive,
-    Testing
-};
+using ScheduleDisplayMode =
+    ClassMngr::Next::Application::ScheduleDisplayMode;
 
 struct TestingAssignmentView
 {

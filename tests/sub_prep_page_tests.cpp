@@ -436,6 +436,7 @@ private slots:
     void clearDatabaseStateStopsAutosaveAndRemovesLoadedContent();
     void pageGenerationReportsFolderOpenFailureAndWritesInformationPdf();
     void pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder();
+    void pageGenerationForwardsIntensiveModeWithFilteredClasses_data();
     void pageGenerationForwardsIntensiveModeWithFilteredClasses();
 
 private:
@@ -1156,7 +1157,7 @@ void SubPrepPageTests
         schedule,
         "setDisplayMode",
         Qt::DirectConnection,
-        Q_ARG(int, static_cast<int>(ScheduleDisplayMode::Intensive))
+        Q_ARG(int, static_cast<int>(::ScheduleDisplayMode::Intensive))
         ));
 
     QCOMPARE(
@@ -1166,6 +1167,30 @@ void SubPrepPageTests
     QCOMPARE(
         page.runtimeMetrics().classInformationRebuildCount,
         originalRebuildCount + 1
+        );
+    QVERIFY(QMetaObject::invokeMethod(
+        schedule,
+        "setDisplayMode",
+        Qt::DirectConnection,
+        Q_ARG(int, static_cast<int>(::ScheduleDisplayMode::Testing))
+        ));
+    QCOMPARE(
+        harness.summaryReadPort.lastRequest.mode,
+        ScheduleViewMode::Regular
+        );
+    QVERIFY(QMetaObject::invokeMethod(
+        schedule,
+        "setDisplayMode",
+        Qt::DirectConnection,
+        Q_ARG(int, static_cast<int>(::ScheduleDisplayMode::Intensive))
+        ));
+    QCOMPARE(
+        harness.summaryReadPort.lastRequest.mode,
+        ScheduleViewMode::Intensive
+        );
+    QCOMPARE(
+        page.runtimeMetrics().classInformationRebuildCount,
+        originalRebuildCount + 3
         );
     QCOMPARE(
         page.runtimeMetrics().classInformationVisibleClassCount,
@@ -1207,7 +1232,7 @@ void SubPrepPageTests
         schedule,
         "setDisplayMode",
         Qt::DirectConnection,
-        Q_ARG(int, static_cast<int>(ScheduleDisplayMode::Intensive))
+        Q_ARG(int, static_cast<int>(::ScheduleDisplayMode::Intensive))
         ));
 
     QCOMPARE(
@@ -4050,8 +4075,25 @@ pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder()
 }
 
 void SubPrepPageTests
+    ::pageGenerationForwardsIntensiveModeWithFilteredClasses_data()
+{
+    QTest::addColumn<int>("displayMode");
+    QTest::addColumn<int>("expectedScheduleMode");
+
+    QTest::addRow("intensive")
+        << static_cast<int>(::ScheduleDisplayMode::Intensive)
+        << static_cast<int>(ScheduleViewMode::Intensive);
+    QTest::addRow("testing uses regular source")
+        << static_cast<int>(::ScheduleDisplayMode::Testing)
+        << static_cast<int>(ScheduleViewMode::Regular);
+}
+
+void SubPrepPageTests
     ::pageGenerationForwardsIntensiveModeWithFilteredClasses()
 {
+    QFETCH(int, displayMode);
+    QFETCH(int, expectedScheduleMode);
+
     QTemporaryDir outputRoot;
     QVERIFY(outputRoot.isValid());
 
@@ -4123,11 +4165,11 @@ void SubPrepPageTests
         scheduleWidget,
         "setDisplayMode",
         Qt::DirectConnection,
-        Q_ARG(int, static_cast<int>(ScheduleDisplayMode::Intensive))
+        Q_ARG(int, displayMode)
         ));
     QCOMPARE(
-        scheduleWidget->displayState().displayMode,
-        ScheduleDisplayMode::Intensive
+        static_cast<int>(scheduleWidget->displayState().displayMode),
+        displayMode
         );
 
     bool dialogOpened = false;
@@ -4260,7 +4302,7 @@ void SubPrepPageTests
     QCOMPARE(harness.printSourceReadPort.loadCount, 1);
     const SubPrepPrintSourceRequest& request =
         harness.printSourceReadPort.lastRequest;
-    QCOMPARE(request.mode, ScheduleViewMode::Intensive);
+    QCOMPARE(static_cast<int>(request.mode), expectedScheduleMode);
     QCOMPARE(request.selectedDays.size(), std::size_t(1));
     QCOMPARE(
         static_cast<int>(request.selectedDays.front()),

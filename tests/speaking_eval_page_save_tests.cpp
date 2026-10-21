@@ -1336,6 +1336,11 @@ scheduleModesAndVisibilityScopeFilterNavigationTabs()
         fixture.classIds.at(2)
         );
 
+    page.setScheduleDisplayMode(ScheduleDisplayMode::Testing);
+    QCOMPARE(visibleClassIds(), regularClassIds);
+    page.setScheduleDisplayMode(ScheduleDisplayMode::Intensive);
+    QCOMPARE(visibleClassIds(), intensiveClassIds);
+
     QVERIFY(visibilityPreferences.save(
         ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
         ));

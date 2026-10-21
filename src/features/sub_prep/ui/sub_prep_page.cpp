@@ -1,6 +1,7 @@
 #include "sub_prep_page_p.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "next/application/sub_prep_calendar_event_intervals_query.h"
+#include "next/application/schedule_display_mode_source_policy.h"
 #include "next/platform/application_services_sub_prep_calendar_event_intervals_port.h"
 #include "next/platform/application_services_sub_prep_roster_output_source_port.h"
 
@@ -665,8 +666,10 @@ void SubPrepPage::generateSubPrep()
             );
     const bool useIntensiveSchedule =
         m_scheduleWidget
-        && m_scheduleWidget->displayState().displayMode
-            == ScheduleDisplayMode::Intensive;
+        && ClassMngr::Next::Application::
+            scheduleDisplayModeUsesIntensiveSource(
+                m_scheduleWidget->displayState().displayMode
+                );
     QString classInformationError;
     if (!buildPrintClassInformation(
             dialog.selectedClassIds(),

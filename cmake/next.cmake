@@ -370,6 +370,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/selection_state.h
     src/next/application/schedule_display_preferences.h
     src/next/application/schedule_display_mode_preferences.h
+    src/next/application/schedule_display_mode_source_policy.h
     src/next/application/schedule_slot_canonical_hour.h
     src/next/application/schedule_slot_state_read_query.h
     src/next/application/schedule_slot_policy.h

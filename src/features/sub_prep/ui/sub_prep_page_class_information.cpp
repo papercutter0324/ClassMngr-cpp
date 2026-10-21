@@ -7,6 +7,7 @@
 #include "next/application/sub_prep_class_information_state.h"
 #include "next/application/sub_prep_print_source_query.h"
 #include "next/application/sub_prep_schedule_summary_query.h"
+#include "next/application/schedule_display_mode_source_policy.h"
 #include "next/platform/application_services_sub_prep_class_details_port.h"
 #include "next/platform/application_services_sub_prep_print_source_port.h"
 #include "next/platform/application_services_sub_prep_schedule_summary_port.h"
@@ -223,7 +224,9 @@ Application::SubPrepScheduleScopeRequest scheduleScopeRequest(
         }
     }
 
-    request.mode = displayMode == ScheduleDisplayMode::Intensive
+    request.mode = Application::scheduleDisplayModeUsesIntensiveSource(
+            displayMode
+            )
         ? Application::ScheduleViewMode::Intensive
         : Application::ScheduleViewMode::Regular;
     return request;

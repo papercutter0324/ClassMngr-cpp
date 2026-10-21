@@ -2,6 +2,7 @@
 
 #include "domain/rules/schedule_value_parser.h"
 #include "features/schedule/ui/schedule_time_formatter.h"
+#include "next/application/schedule_display_mode_source_policy.h"
 #include "next/application/schedule_slot_policy.h"
 #include "next/application/schedule_testing_grade_suppression_policy.h"
 #include "next/domain/course.h"
@@ -191,7 +192,8 @@ bool scheduleModeUsesIntensiveTimes(
     ScheduleDisplayMode mode
     )
 {
-    return mode == ScheduleDisplayMode::Intensive;
+    return ClassMngr::Next::Application::
+        scheduleDisplayModeUsesIntensiveSource(mode);
 }
 
 QString nextScheduleSlotState(
