@@ -61726,3 +61726,98 @@ remains unpushed until F1283 and F1284 complete. Gate 1 and Gate 2 remain
 Partial, and the Phase 2 exit gate remains Open. Phase 0 remains Complete;
 F629's source-bound Windows x64 requalification remains outstanding
 separately.
+
+### Batch523 discovery - 2026-10-21
+
+The Application-contract scan found no additional candidate in its sampled
+contracts. The Feature scan supplied F1286 and F1287 in
+`src/features/classes/ui/testing_classes_page.cpp`, with page coverage in
+`tests/testing_classes_page_tests.cpp`. F1286 is in the successful-delete
+fallback (`:1687-1705`): the sibling row is selected before `loadClass()`,
+whose failed details read returns without replacing the new-class draft
+(`:1358-1381`). This differs from F1060's NotFound-delete reconciliation.
+F1287 is in `saveChanges()` and its list rebuild (`:322-518,1200-1244`): a
+successful create/update marks the form clean before a failed class-list
+refresh clears the list. It is distinct from F1280's Co-Teacher post-save
+refresh and F1064's Staff Directory own post-save reload.
+
+The Mapping scan supplied F1285 across Teacher Import refresh handling in
+`src/app/controllers/sidebar_controller_teacher_import.cpp:91-128` and loaded
+directories in `src/features/teacher/ui/staff_directory_page.cpp:549-647`:
+after the import commits, a failed Native English or GS Team directory read
+returns before replacing the rows, leaving stale values editable so a later
+save can overwrite imported values. This is separate from F1061's Teacher
+Info post-import refresh and F1064's directory own post-save reload.
+
+The ordered Batch523 candidates are:
+
+1. F1285 - Protect an already loaded Native English or GS Team Staff Directory
+   after Teacher Import commits changes but its post-import directory refresh
+   fails.
+2. F1286 - Keep Testing Classes selection and editor identity coherent when a
+   fallback class-details read fails after successful deletion.
+3. F1287 - Preserve Testing Classes state when a successful create/update is
+   followed by a failed class-list refresh.
+
+No other slices were found.
+
+Batch523 discovery is complete. F1283 remains incomplete: implementation
+commit `603aa0bdc12c7baec7161d452167687a06215495` is under focused test-only
+verification repair after the Tester found no immediate clean-state assertion
+after top-level and nested required-read failures; the Tester recheck is
+underway. F1284 remains Batch522's final candidate, awaiting acceptance and
+next after F1283 closes. Batch522 is unpushed. Gate 1 and Gate 2 remain
+Partial, and the Phase 2 exit gate remains Open. Phase 0 remains Complete;
+F629's source-bound Windows x64 requalification remains outstanding
+separately.
+
+### F1283 required-read failure clean-state assertions complete locally - 2026-10-21
+
+F1283 is complete locally in Batch522. Its acceptance record is commit
+`45e81d88`; the production/test commit is
+`603aa0bdc12c7baec7161d452167687a06215495`; and the follow-up assertion commit
+is `43e30b211f31c4603730301eca7682e7d005c771`. Independent focused
+verification passed:
+
+- `cmake --build build/macos-clang-debug --target ClassMngr ClassMngrClassDetailsPageDisplayTests`
+- Focused `ClassMngrClassDetailsPageDisplayTests` CTest: 1/1.
+- `git diff --check` and `git show --check` for the assertion repair.
+
+The Tester confirmed
+`failedReadsKeepFallbackFormUnavailableForAllSaveRoutes()` directly asserts
+`!page.hasUnsavedChanges()` after both top-level and nested required-read
+failures. No gaps remain. No full suite, Windows run, clean build, hosted CI,
+or Gate 2 result is claimed. F1284 is now accepted before implementation as
+Batch522's next action; Batch522 remains unpushed. Gate 1 and Gate 2 remain
+Partial, and the Phase 2 exit gate remains Open. Phase 0 remains Complete;
+F629's source-bound Windows x64 requalification remains outstanding separately.
+
+### F1284 Schedule Editor initial-read feedback accepted before implementation - 2026-10-21
+
+In `src/features/schedule/ui/schedule_editor_dialog.cpp`,
+`ScheduleEditorDialog::loadData()` runs the required
+`ScheduleEditorClassInfoQuery` during construction. If that query returns a
+structured failure, show exactly one localized warning titled `Load Class
+Information` with the returned error message. Keep the existing empty/default
+field state and `m_hasLoadedData == false`; do not persist, and keep the modal
+dialog open. Preserve blocked Save behavior: a later Save remains blocked,
+performs zero writes, and shows the existing `Could Not Save` warning. A
+successful read, including a valid snapshot with empty fields, remains
+non-warning and follows existing editor behavior. This warning covers
+structured query failures only; the earlier pre-query invalid-`ClassId` return
+is outside the slice.
+
+Update `tests/schedule_editor_dialog_tests.cpp`
+(`ClassMngrScheduleEditorDialogTests`) to assert the load-time title and
+message for both existing failed-read rows, safe/default display and blocked
+zero-write Save, while preserving successful read/save cases. Focused
+verification: build `ClassMngr` and
+`ClassMngrScheduleEditorDialogTests` in `build/macos-clang-debug`, run its
+matching focused CTest, and run `git diff --check`. No full suite, Windows
+run, clean build, or Gate 2 claim is planned. F1284 is accepted as Batch522's
+third candidate before implementation; implementation, build, and tests have
+not started. F1282 and F1283 are complete locally. Batch522 remains unpushed;
+Batch523 discovery is complete with its three candidates recorded. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open. Phase 0 remains
+Complete; F629's source-bound Windows x64 requalification remains outstanding
+separately.

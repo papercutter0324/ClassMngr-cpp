@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch522 is active with F1282 complete, F1283 accepted for implementation, and F1284 discovered; Batch523 discovery is underway, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch522 remains active and unpushed with F1282 and F1283 complete locally and F1284 accepted as the next implementation; Batch523 discovery is complete with three candidates recorded, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1282 acceptance (`d67758e5`) and production/test work (`b6f605f2`) are complete locally in active Batch522; see the [F1282 completion record](03-Phase-2-Progress-Log.md#f1282-calendar-event-activation-load-error-feedback-complete-locally-2026-10-21). Current Batch522 status and F1283 acceptance are recorded below and in the [F1283 acceptance record](03-Phase-2-Progress-Log.md#f1283-surface-class-details-required-read-failures-accepted-before-implementation-2026-10-21).
+F1283 is complete locally at follow-up assertion commit `43e30b211f31c4603730301eca7682e7d005c771`; F1284 is accepted before implementation and is next. See the [F1283 completion record](03-Phase-2-Progress-Log.md#f1283-required-read-failure-clean-state-assertions-complete-locally-2026-10-21) and [F1284 acceptance](03-Phase-2-Progress-Log.md#f1284-schedule-editor-initial-read-feedback-accepted-before-implementation-2026-10-21).
 
 ### Slice discovery batches
 
@@ -78,11 +78,24 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active Batch522
 
-1. F1282 - Complete: Calendar event activation load-error feedback; batch
-   remains unpushed until F1283 and F1284 complete.
-2. F1283 - Accepted: implement Class Details required-read feedback and its
-   focused regression coverage defined in the progress log.
-3. F1284 - Discovered: define and accept Schedule Editor initial-read feedback.
+1. F1282 - Complete locally: Calendar event activation load-error feedback.
+2. F1283 - Complete locally.
+3. F1284 - Accepted before implementation: show structured initial-read
+   feedback in Schedule Editor; implementation is next. Batch522 remains
+   unpushed until F1284 closes.
+
+### Recorded Batch523 candidates (activate after Batch522 closes)
+
+1. F1285 - Protect a loaded Native English or GS Team Staff Directory when a
+   committed Teacher Import is followed by a failed directory refresh; stale
+   rows otherwise remain editable and can overwrite imported values.
+2. F1286 - Keep Testing Classes selection and editor identity coherent when
+   the fallback class-details read fails after successful deletion.
+3. F1287 - Preserve Testing Classes state when a successful create/update is
+   followed by a failed class-list refresh.
+
+These candidates are discovered, not accepted. Batch523 starts after Batch522
+closes.
 
 ### Deferred candidates
 

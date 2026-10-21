@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is active with F1282 complete, F1283 accepted for implementation, and F1284 discovered. Batch523 discovery is underway. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is active and unpushed, with F1282 and F1283 complete locally and F1284 accepted as the next implementation. Batch523 discovery is complete with three candidates recorded. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -42,10 +42,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 Batch521 (F1281) is pushed through closeout `779d21b88f87aee17a447c62503971f78cd42b68`
 and receipt `53e556756cfbdc552e50b97a6bffdc77731c6f3f`; local and remote tips
-match. Batch522 is active: F1282 is complete locally, F1283 is accepted for
-implementation, and F1284 is discovered. Batch523 discovery is underway
-because F1283 is the second-last Batch522 candidate; discovery lanes are
-running, with no candidate list recorded yet. Gate 1 and Gate 2 remain
+match. Batch522 is active and unpushed: F1282 and F1283 are complete locally;
+F1284 is accepted and is the next implementation. Batch523 discovery is
+complete with three ordered candidates recorded. Gate 1 and Gate 2 remain
 Partial, and the Phase 2 exit gate remains Open. Phase 0 remains Complete;
 F629's source-bound Windows x64 requalification remains outstanding
 separately. The [Phase 2 progress log](03-Phase-2-Progress-Log.md) holds
