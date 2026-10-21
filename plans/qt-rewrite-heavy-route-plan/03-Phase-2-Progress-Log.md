@@ -63087,10 +63087,11 @@ matched at the new SHA, and the worktree was clean at push.
 The push also included the earlier Batch529 receipt documentation commit
 `4768d8d102dd1a9166d045b0dc9bb87a571bc229`.
 
-Batch531 (F1299) is pushed through closeout `3108ace0`. Batch532 F1300 remains
-active and accepted before implementation. Batch533 discovery is due when
-F1300 implementation starts, under the one-slice trigger. Gate 1 and Gate 2
-remain Partial, and the Phase 2 exit gate remains Open.
+Batch531 (F1299) is pushed through closeout `3108ace0` and receipt
+`ef056e4b`. Batch532 F1300 remains active and accepted before implementation.
+Batch533 discovery is due when F1300 implementation starts, under the
+one-slice trigger. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate
+remains Open.
 
 ### Batch533 bounded discovery at F1300 implementation start - 2026-10-21
 
@@ -63127,3 +63128,30 @@ Batch532 remains active with F1300 implementation underway. Batch533 is a
 discovery record only; F1301 is accepted for the next batch and is not active
 before Batch532 closes. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit
 gate remains Open.
+
+### F1300 Roster Editor autosave failure status complete locally; Batch532 closed - 2026-10-21
+
+F1300 completed locally in implementation commit
+`f4775b91a8c3bcc7bb34d7cf2729bcd0bb2e90c6`
+(`Phase2: F1300 roster editor save`). Automatic roster-save failures now show
+a localized, nonmodal inline status while preserving the editable dirty draft.
+Recoverable failures offer a one-shot Retry. A retry-consumption regression
+was found and fixed before final verification: Retry is consumed after use
+while the failure status remains visible. The
+[Korean catalog](../../resources/assets/translations/ClassMngr_ko_KR.ts#L5737) adds
+`The roster could not be saved. Your changes are still here.` →
+`명단을 저장할 수 없습니다. 변경 사항은 그대로 유지됩니다.` and
+`Retry` → `다시 시도`.
+
+Independent final verification used an incremental macOS Clang Debug build:
+target `ClassMngrRosterEditorWidgetSaveTests` passed; focused QtTest passed
+10 tests with 0 failures; owning CTest `ClassMngrRosterEditorWidgetSaveTests` passed 1/1 in
+3.24s. Production target `ClassMngrFeatures`, `xmllint` parsing of the Korean
+catalog, and `git diff --check` passed. No full suite, fresh build, or other
+platform verification was run.
+
+Batch532 (F1300) is closed locally at `f4775b91`; its push is pending. Batch531
+(F1299) is pushed through closeout `3108ace0` and receipt `ef056e4b`. Batch533
+is active with F1301 accepted before implementation. Batch534 discovery is due
+when F1301 implementation starts, under the one-slice trigger. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
