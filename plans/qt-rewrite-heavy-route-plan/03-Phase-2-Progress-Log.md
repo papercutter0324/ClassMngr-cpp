@@ -63407,3 +63407,13 @@ Batch535 (F1303) is closed locally at `1f21e364`; push is pending. Batch536 is
 next with five accepted candidates. Gate 1 and Gate 2 remain Partial, and the
 Phase 2 exit gate remains Open; F629's post-F1303 Windows x64 evidence remains
 outstanding.
+
+### Batch535 push receipt; Batch536 activated - 2026-10-22
+
+`git push origin Qt-Rewrite` advanced `origin/Qt-Rewrite` from `d2c2eabc` to
+`6239d350`. The pushed range included F1303 implementation commit `1f21e364`
+and closeout `6239d350`. Batch535 is pushed through closeout; Batch536 is
+active with five ordered accepted candidates, F1304 Speaking Evaluation
+autosave failure feedback first. Batch537 discovery is due when F1304
+implementation starts. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit
+gate remains Open; F629's post-F1303 Windows x64 evidence remains outstanding.

@@ -19,16 +19,18 @@ and chronology.
 
 No other slices were found.
 
-## Batch535 — Closed locally; push pending
+## Batch535 — Pushed through closeout
 
 - F1303 — Complete at implementation commit `1f21e364`. CalendarPage now
   includes Technical first-day preference read failures in its existing
   localized, nonmodal notice; locale fallback and Calendar Preferences
   behavior remain unchanged.
+- Closeout `6239d350` was pushed; `origin/Qt-Rewrite` advanced from
+  `d2c2eabc`.
 
 No other slices were found.
 
-## Batch536 — Next; accepted candidates
+## Batch536 — Active; five accepted candidates (F1304 first)
 
 Batch536 discovery completed when F1303 implementation started. The five
 ordered candidates below were accepted; no other slices or possible candidates
@@ -50,6 +52,6 @@ beyond the 20-candidate limit were found.
    assignment-write failures while preserving selection and dirty state; clear
    feedback on recovery.
 
-See the progress log for discovery evidence and source references. Batch536
-remains next until Batch535 is pushed and closed out. Batch537 discovery is due
-when F1304 implementation starts, following the one-slice trigger.
+See the progress log for discovery evidence and source references. F1304 is
+the first candidate in Batch536. Batch537 discovery is due when F1304
+implementation starts, following the one-slice trigger.

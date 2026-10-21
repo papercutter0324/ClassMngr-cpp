@@ -59,13 +59,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ### Latest Progress Update
 
-F1303 completed locally at implementation commit `1f21e364`; CalendarPage now
-shows its existing localized, nonmodal notice for Technical first-day
-preference read failures while preserving locale fallback and Calendar
-Preferences behavior. Focused macOS Clang Debug checks passed. Batch535 is
-closed locally with push pending; Batch536 has five accepted candidates and
-remains next. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate is
-Open.
+F1303 completed at implementation commit `1f21e364`; its Batch535 closeout
+`6239d350` was pushed to `origin/Qt-Rewrite`, advancing the remote from
+`d2c2eabc`. CalendarPage now shows its existing localized, nonmodal notice for
+Technical first-day preference read failures while preserving locale fallback
+and Calendar Preferences behavior. Focused macOS Clang Debug checks passed.
+Batch536 is active with five accepted candidates, F1304 first. Gate 1 and Gate
+2 remain Partial, and the Phase 2 exit gate is Open.
 
 ### Slice batches
 
