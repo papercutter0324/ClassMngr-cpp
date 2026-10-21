@@ -29,6 +29,11 @@ add_test(
         failedImportRefreshRequiresFreshTeacherProfileLoad
 )
 add_test(
+    NAME TeacherImportUiApplyParityF1285DirectoryReloadFailure
+    COMMAND ClassMngrTeacherImportUiApplyParityTests
+        failedStaffDirectoryImportRefreshLocksStalePage
+)
+add_test(
     NAME TeacherImportUiApplyParityF1061SidebarSuccess
     COMMAND ClassMngrTeacherImportUiApplyParityTests
         sidebarSuccessTranscript
@@ -46,6 +51,7 @@ add_test(
 set_tests_properties(
     TeacherImportUiApplyParityF1061Refresh
     TeacherImportUiApplyParityF1061ReloadFailure
+    TeacherImportUiApplyParityF1285DirectoryReloadFailure
     TeacherImportUiApplyParityF1061SidebarSuccess
     TeacherImportUiApplyParityF1061SidebarCancel
     TeacherImportUiApplyParityF1061SidebarApplyFailure
@@ -55,6 +61,7 @@ if(WIN32)
     set_tests_properties(
         TeacherImportUiApplyParityF1061Refresh
         TeacherImportUiApplyParityF1061ReloadFailure
+        TeacherImportUiApplyParityF1285DirectoryReloadFailure
         TeacherImportUiApplyParityF1061SidebarSuccess
         TeacherImportUiApplyParityF1061SidebarCancel
         TeacherImportUiApplyParityF1061SidebarApplyFailure

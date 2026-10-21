@@ -32,7 +32,12 @@ public:
         );
 
     bool loadDirectory();
+    bool refreshAfterTeacherImport(
+        bool importChangedRecords,
+        QString* readError = nullptr
+        );
     void failNextPostSaveDirectoryReadForTesting();
+    void failNextImportRefreshDirectoryReadForTesting();
 
     void saveData() override;
     bool saveChanges() override;
@@ -59,7 +64,11 @@ private:
     void markDirty(bool scheduleAutosave = true);
     bool saveDirectory(bool showErrors);
     void reloadAfterSuccessfulSave();
-    void reportDirectoryLoadFailure(const QString& message);
+    bool loadDirectoryImpl(bool importRefresh, QString* readError);
+    void reportDirectoryLoadFailure(
+        const QString& message,
+        bool importRefresh = false
+        );
     void updateActions();
     void updateTableMetrics();
 
@@ -69,7 +78,15 @@ private:
     bool m_loading = false;
     bool m_dirty = false;
     bool m_reloadRequired = false;
+    enum class ReloadReason
+    {
+        None,
+        Save,
+        Import
+    };
+    ReloadReason m_reloadReason = ReloadReason::None;
     bool m_failNextPostSaveDirectoryReadForTesting = false;
+    bool m_failNextImportRefreshDirectoryReadForTesting = false;
     QList<ClassMngr::Next::Domain::GsTeamMemberId> m_deletedGsTeamMemberIds;
     QList<ClassMngr::Next::Domain::NativeEnglishTeacherId>
         m_deletedNativeEnglishTeacherIds;

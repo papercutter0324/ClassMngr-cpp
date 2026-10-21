@@ -14,6 +14,7 @@ using namespace SidebarControllerPrivate;
 #include "next/platform/application_services_teacher_import_apply_port.h"
 
 #include <optional>
+#include <QStringList>
 
 
 void SidebarController::importTeachers()
@@ -118,13 +119,31 @@ void SidebarController::importTeachers()
     }
 
     refreshTeacherSidebar();
-    if (m_pages->nativeEnglishTeachersPage())
+    QStringList directoryRefreshFailures;
+    if (StaffDirectoryPage* const page =
+            m_pages->nativeEnglishTeachersPage())
     {
-        m_pages->nativeEnglishTeachersPage()->loadDirectory();
+        const bool changed =
+            summary.nativeEnglishTeachers.created.rawValue() > 0
+            || summary.nativeEnglishTeachers.updated.rawValue() > 0;
+        QString readError;
+        if (!page->refreshAfterTeacherImport(changed, &readError) && changed)
+        {
+            directoryRefreshFailures.append(
+                tr("Native English Teachers: %1").arg(readError));
+        }
     }
-    if (m_pages->gsTeamPage())
+    if (StaffDirectoryPage* const page = m_pages->gsTeamPage())
     {
-        m_pages->gsTeamPage()->loadDirectory();
+        const bool changed =
+            summary.gsTeamMembers.created.rawValue() > 0
+            || summary.gsTeamMembers.updated.rawValue() > 0;
+        QString readError;
+        if (!page->refreshAfterTeacherImport(changed, &readError) && changed)
+        {
+            directoryRefreshFailures.append(
+                tr("GS Team: %1").arg(readError));
+        }
     }
     updateActionStates();
 
@@ -144,6 +163,17 @@ void SidebarController::importTeachers()
             .arg(summary.gsTeamMembers.created.rawValue())
             .arg(summary.gsTeamMembers.updated.rawValue())
             .arg(summary.gsTeamMembers.unchanged.rawValue()));
+
+    if (!directoryRefreshFailures.isEmpty())
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Import Teachers"),
+            tr("The teacher import committed its changes, but a staff directory refresh failed. "
+               "Reload the affected directory before editing or saving.\n\n%1")
+                .arg(directoryRefreshFailures.join(QStringLiteral("\n")))
+            );
+    }
 
     if (teacherInfoReloadFailed)
     {

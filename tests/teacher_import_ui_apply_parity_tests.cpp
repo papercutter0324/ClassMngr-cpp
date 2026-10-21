@@ -4,8 +4,13 @@
 #include "data/database/database_session.h"
 #include "data/repositories/teacher_repository.h"
 #include "data/repositories/teacher_import_repository.h"
+#include "data/repositories/native_english_teacher_repository.h"
+#include "data/repositories/gs_team_repository.h"
+#include "domain/models/native_english_teacher.h"
+#include "domain/models/gs_team_member.h"
 #include "features/setup/ui/initial_setup_wizard.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
+#include "features/teacher/ui/staff_directory_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "next/application/teacher_profile_read_port.h"
@@ -18,11 +23,13 @@
 #include <QApplication>
 #include <QDir>
 #include <QFileInfo>
+#include <QItemSelectionModel>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QTableView>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTreeWidget>
@@ -203,6 +210,47 @@ QString singleLine(QString value)
     return value;
 }
 
+int rowForName(const QTableView& table, const QString& name)
+{
+    for (int row = 0; row < table.model()->rowCount(); ++row)
+    {
+        if (table.model()->index(row, 0).data(Qt::EditRole).toString() == name)
+        {
+            return row;
+        }
+    }
+    return -1;
+}
+
+QString persistedDirectoryPosition(
+    ApplicationServices& services,
+    const bool nativeEnglish,
+    const QString& name
+    )
+{
+    QSqlQuery query(services.databaseSession()->database());
+    query.prepare(nativeEnglish
+        ? QStringLiteral(
+              "SELECT position FROM native_english_teachers WHERE name=?")
+        : QStringLiteral("SELECT position FROM gs_team WHERE name=?"));
+    query.addBindValue(name);
+    return query.exec() && query.next()
+        ? query.value(0).toString()
+        : QString();
+}
+
+QPushButton* buttonWithText(QWidget& page, const QString& text)
+{
+    for (QPushButton* button : page.findChildren<QPushButton*>())
+    {
+        if (button->text() == text)
+        {
+            return button;
+        }
+    }
+    return nullptr;
+}
+
 struct ScopedPromptService final
 {
     explicit ScopedPromptService(IUserPromptService& service)
@@ -253,6 +301,8 @@ private slots:
     void sidebarSuccessTranscript();
     void importRefreshesActiveTeacherPageBeforeFurtherEdit();
     void failedImportRefreshRequiresFreshTeacherProfileLoad();
+    void failedStaffDirectoryImportRefreshLocksStalePage_data();
+    void failedStaffDirectoryImportRefreshLocksStalePage();
     void sidebarCancelTranscript();
     void sidebarErrorTranscript();
     void wizardSuccessTranscript();
@@ -290,6 +340,189 @@ void TeacherImportUiApplyParityTests::sidebarSuccessTranscript()
     emitTranscript(QStringLiteral("sidebar"), QStringLiteral("success"),
         counts + QStringLiteral("|sidebarKoreanTeachers=%1|notice=information|summary=")
             .arg(refreshedKoreanTeachers) + summary);
+}
+
+void TeacherImportUiApplyParityTests::
+failedStaffDirectoryImportRefreshLocksStalePage_data()
+{
+    QTest::addColumn<bool>("nativeEnglish");
+    QTest::addColumn<bool>("automaticSave");
+
+    QTest::newRow("native-english-manual") << true << false;
+    QTest::newRow("native-english-automatic") << true << true;
+    QTest::newRow("gs-team-manual") << false << false;
+    QTest::newRow("gs-team-automatic") << false << true;
+}
+
+void TeacherImportUiApplyParityTests::
+failedStaffDirectoryImportRefreshLocksStalePage()
+{
+    QFETCH(bool, nativeEnglish);
+    QFETCH(bool, automaticSave);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    QVERIFY(QFileInfo::exists(fixturePath()));
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    NativeEnglishTeacher alex;
+    alex.name = QStringLiteral("Alex");
+    alex.position = QStringLiteral("Prior Native Position");
+    alex.phoneNumber = QStringLiteral("010-1234-0001");
+    alex.email = QStringLiteral("alex@example.test");
+    alex.birthday = QStringLiteral("01-02");
+    alex.nationality = QStringLiteral("Australia");
+    QVERIFY(services.databaseSession()->nativeEnglishTeacherRepository()
+        ->saveDirectory({alex}, {}));
+
+    GsTeamMember taylor;
+    taylor.name = QStringLiteral("Taylor");
+    taylor.koreanName = QStringLiteral("\uD14C\uC77C\uB7EC");
+    taylor.position = QStringLiteral("Prior GS Position");
+    taylor.phoneNumber = QStringLiteral("010-1234-0002");
+    taylor.birthday = QStringLiteral("02-03");
+    QVERIFY(services.databaseSession()->gsTeamRepository()
+        ->saveDirectory({taylor}, {}));
+
+    PageManager pages;
+    pages.initialize(&services, false);
+    StaffDirectoryPage* const nativePage =
+        pages.ensureNativeEnglishTeachersPage();
+    StaffDirectoryPage* const gsPage = pages.ensureGsTeamPage();
+    QVERIFY(nativePage);
+    QVERIFY(gsPage);
+    QVERIFY(nativePage->loadDirectory());
+    QVERIFY(gsPage->loadDirectory());
+
+    StaffDirectoryPage* const page = nativeEnglish ? nativePage : gsPage;
+    const QString targetName = nativeEnglish
+        ? QStringLiteral("Alex")
+        : QStringLiteral("Taylor");
+    const QString priorPosition = nativeEnglish
+        ? QStringLiteral("Prior Native Position")
+        : QStringLiteral("Prior GS Position");
+    const QString importedPosition = nativeEnglish
+        ? QStringLiteral("Team Leader")
+        : QStringLiteral("M2");
+    const int positionColumn = nativeEnglish ? 1 : 2;
+    page->setSaveMode(
+        automaticSave ? SaveMode::Automatic : SaveMode::Manual);
+
+    QTableView* const table = page->findChild<QTableView*>(
+        nativeEnglish
+            ? QStringLiteral("nativeEnglishTeachersTable")
+            : QStringLiteral("gsTeamTable"));
+    QVERIFY(table);
+    const int originalRow = rowForName(*table, targetName);
+    QVERIFY(originalRow >= 0);
+    QCOMPARE(
+        table->model()->index(originalRow, positionColumn)
+            .data(Qt::EditRole).toString(),
+        priorPosition);
+
+    QPushButton* const addButton = buttonWithText(*page, QStringLiteral("Add"));
+    QPushButton* const deleteButton = buttonWithText(
+        *page, QStringLiteral("Delete"));
+    QPushButton* const saveButton = buttonWithText(
+        *page, QStringLiteral("Save Changes"));
+    QVERIFY(addButton);
+    QVERIFY(deleteButton);
+    QVERIFY(saveButton);
+    page->failNextImportRefreshDirectoryReadForTesting();
+
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    ActionRegistry actions;
+    actions.createActions();
+    controller.connectActions(actions);
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(prompts);
+
+    DialogRun dialog;
+    QVERIFY(runWithTeacherDialog(&sidebar, true,
+        [&] { actions.importTeachers->trigger(); }, dialog));
+
+    QCOMPARE(prompts.messages.size(), 2);
+    QCOMPARE(prompts.messages.at(0).severity, PromptSeverity::Information);
+    QCOMPARE(prompts.messages.at(1).severity, PromptSeverity::Warning);
+    const QString warning = prompts.messages.at(1).message;
+    QVERIFY(warning.contains(QStringLiteral("committed")));
+    QVERIFY(warning.contains(QStringLiteral("refresh failed")));
+    QVERIFY(warning.contains(nativeEnglish
+        ? QStringLiteral("Injected Native English directory read failure.")
+        : QStringLiteral("Injected GS Team directory read failure.")));
+
+    QCOMPARE(
+        persistedDirectoryPosition(services, nativeEnglish, targetName),
+        importedPosition);
+    QCOMPARE(table->model()->rowCount(), 1);
+    QCOMPARE(rowForName(*table, targetName), originalRow);
+    QCOMPARE(
+        table->model()->index(originalRow, positionColumn)
+            .data(Qt::EditRole).toString(),
+        priorPosition);
+    QVERIFY(!(table->model()->flags(
+        table->model()->index(originalRow, positionColumn))
+        & Qt::ItemIsEditable));
+    QVERIFY(!table->model()->setData(
+        table->model()->index(originalRow, positionColumn),
+        QStringLiteral("Stale overwrite"), Qt::EditRole));
+    QVERIFY(!table->model()->insertRows(table->model()->rowCount(), 1));
+    QVERIFY(!table->model()->removeRows(originalRow, 1));
+    QVERIFY(!addButton->isEnabled());
+    table->selectionModel()->select(
+        table->model()->index(originalRow, 0),
+        QItemSelectionModel::Select | QItemSelectionModel::Rows);
+    QVERIFY(!deleteButton->isEnabled());
+    QCOMPARE(saveButton->isHidden(), automaticSave);
+    QVERIFY(!saveButton->isEnabled());
+    QVERIFY(!page->hasUnsavedChanges());
+    QVERIFY(!page->saveChanges());
+    page->saveData();
+    QTest::qWait(800);
+    QCOMPARE(
+        persistedDirectoryPosition(services, nativeEnglish, targetName),
+        importedPosition);
+
+    QVERIFY(page->loadDirectory());
+    const int reloadedRow = rowForName(*table, targetName);
+    QVERIFY(reloadedRow >= 0);
+    QCOMPARE(
+        table->model()->index(reloadedRow, positionColumn)
+            .data(Qt::EditRole).toString(),
+        importedPosition);
+    QVERIFY(table->model()->flags(
+        table->model()->index(reloadedRow, positionColumn))
+        & Qt::ItemIsEditable);
+    QVERIFY(!page->hasUnsavedChanges());
+    QCOMPARE(saveButton->isHidden(), automaticSave);
+
+    const QString localPosition = QStringLiteral("Local edit after reload");
+    QVERIFY(table->model()->setData(
+        table->model()->index(reloadedRow, positionColumn),
+        localPosition,
+        Qt::EditRole));
+    QVERIFY(page->hasUnsavedChanges());
+    if (automaticSave)
+    {
+        QVERIFY(saveButton->isHidden());
+        QTRY_COMPARE(
+            persistedDirectoryPosition(services, nativeEnglish, targetName),
+            localPosition);
+    }
+    else
+    {
+        QVERIFY(!saveButton->isHidden());
+        QVERIFY(saveButton->isEnabled());
+        QCOMPARE(
+            persistedDirectoryPosition(services, nativeEnglish, targetName),
+            importedPosition);
+        page->saveData();
+        QCOMPARE(
+            persistedDirectoryPosition(services, nativeEnglish, targetName),
+            localPosition);
+    }
 }
 
 void TeacherImportUiApplyParityTests::sidebarCancelTranscript()

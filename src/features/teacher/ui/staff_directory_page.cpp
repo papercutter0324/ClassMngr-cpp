@@ -548,20 +548,64 @@ void StaffDirectoryPage::buildUi()
 
 bool StaffDirectoryPage::loadDirectory()
 {
+    return loadDirectoryImpl(false, nullptr);
+}
+
+bool StaffDirectoryPage::refreshAfterTeacherImport(
+    const bool importChangedRecords,
+    QString* readError
+    )
+{
+    if (readError)
+    {
+        readError->clear();
+    }
+    if (!importChangedRecords)
+    {
+        return loadDirectory();
+    }
+
+    m_reloadRequired = true;
+    m_reloadReason = ReloadReason::Import;
+    m_dirty = false;
+    m_autosaveTimer->stop();
+    updateActions();
+    return loadDirectoryImpl(true, readError);
+}
+
+bool StaffDirectoryPage::loadDirectoryImpl(
+    const bool importRefresh,
+    QString* readError
+    )
+{
     auto* model = static_cast<StaffDirectoryTableModel*>(m_model);
     m_loading = true;
     QVector<StaffDirectoryRow> rows;
 
     if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
     {
-        const ClassMngr::Next::Platform::
-            ApplicationServicesNativeEnglishTeacherDirectoryReadPort port(
-                m_services);
         const ClassMngr::Next::Application::
-            NativeEnglishTeacherDirectoryReadQuery query(port);
-        const ClassMngr::Next::Application::
-            NativeEnglishTeacherDirectoryReadResult loadedTeachers =
-                query.execute();
+            NativeEnglishTeacherDirectoryReadResult loadedTeachers = [&]()
+        {
+            if (importRefresh
+                && m_failNextImportRefreshDirectoryReadForTesting)
+            {
+                m_failNextImportRefreshDirectoryReadForTesting = false;
+                return ClassMngr::Next::Application::
+                    NativeEnglishTeacherDirectoryReadResult::failure({
+                        .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                        .message = "Injected Native English directory read failure.",
+                        .recoverable = true
+                    });
+            }
+
+            const ClassMngr::Next::Platform::
+                ApplicationServicesNativeEnglishTeacherDirectoryReadPort port(
+                    m_services);
+            const ClassMngr::Next::Application::
+                NativeEnglishTeacherDirectoryReadQuery query(port);
+            return query.execute();
+        }();
         if (!loadedTeachers)
         {
             if (loadedTeachers.error().code
@@ -573,9 +617,14 @@ bool StaffDirectoryPage::loadDirectory()
             }
 
             const std::string& message = loadedTeachers.error().message;
-            reportDirectoryLoadFailure(QString::fromUtf8(
+            const QString detail = QString::fromUtf8(
                 message.data(),
-                static_cast<qsizetype>(message.size())));
+                static_cast<qsizetype>(message.size()));
+            if (readError)
+            {
+                *readError = detail;
+            }
+            reportDirectoryLoadFailure(detail, importRefresh);
             return false;
         }
 
@@ -598,11 +647,27 @@ bool StaffDirectoryPage::loadDirectory()
     }
     else
     {
-        const ClassMngr::Next::Platform::
-            ApplicationServicesGsTeamDirectoryReadPort port(m_services);
-        const ClassMngr::Next::Application::GsTeamDirectoryReadQuery query(port);
         const ClassMngr::Next::Application::GsTeamDirectoryReadResult
-            loadedMembers = query.execute();
+            loadedMembers = [&]()
+        {
+            if (importRefresh
+                && m_failNextImportRefreshDirectoryReadForTesting)
+            {
+                m_failNextImportRefreshDirectoryReadForTesting = false;
+                return ClassMngr::Next::Application::
+                    GsTeamDirectoryReadResult::failure({
+                        .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                        .message = "Injected GS Team directory read failure.",
+                        .recoverable = true
+                    });
+            }
+
+            const ClassMngr::Next::Platform::
+                ApplicationServicesGsTeamDirectoryReadPort port(m_services);
+            const ClassMngr::Next::Application::GsTeamDirectoryReadQuery query(
+                port);
+            return query.execute();
+        }();
         if (!loadedMembers)
         {
             if (loadedMembers.error().code
@@ -614,9 +679,14 @@ bool StaffDirectoryPage::loadDirectory()
             }
 
             const std::string& message = loadedMembers.error().message;
-            reportDirectoryLoadFailure(QString::fromUtf8(
+            const QString detail = QString::fromUtf8(
                 message.data(),
-                static_cast<qsizetype>(message.size())));
+                static_cast<qsizetype>(message.size()));
+            if (readError)
+            {
+                *readError = detail;
+            }
+            reportDirectoryLoadFailure(detail, importRefresh);
             return false;
         }
 
@@ -642,6 +712,7 @@ bool StaffDirectoryPage::loadDirectory()
     m_deletedNativeEnglishTeacherIds.clear();
     m_dirty = false;
     m_reloadRequired = false;
+    m_reloadReason = ReloadReason::None;
     m_loading = false;
     m_autosaveTimer->stop();
     updateActions();
@@ -654,10 +725,16 @@ void StaffDirectoryPage::failNextPostSaveDirectoryReadForTesting()
     m_failNextPostSaveDirectoryReadForTesting = true;
 }
 
+void StaffDirectoryPage::failNextImportRefreshDirectoryReadForTesting()
+{
+    m_failNextImportRefreshDirectoryReadForTesting = true;
+}
+
 void StaffDirectoryPage::reloadAfterSuccessfulSave()
 {
     m_dirty = false;
     m_reloadRequired = true;
+    m_reloadReason = ReloadReason::Save;
     m_autosaveTimer->stop();
 
     if (m_failNextPostSaveDirectoryReadForTesting)
@@ -670,7 +747,10 @@ void StaffDirectoryPage::reloadAfterSuccessfulSave()
     loadDirectory();
 }
 
-void StaffDirectoryPage::reportDirectoryLoadFailure(const QString& message)
+void StaffDirectoryPage::reportDirectoryLoadFailure(
+    const QString& message,
+    const bool importRefresh
+    )
 {
     m_loading = false;
 
@@ -679,6 +759,21 @@ void StaffDirectoryPage::reportDirectoryLoadFailure(const QString& message)
         m_dirty = false;
         m_autosaveTimer->stop();
         updateActions();
+
+        if (importRefresh)
+        {
+            return;
+        }
+
+        if (m_reloadReason != ReloadReason::Save)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Load Directory"),
+                message
+                );
+            return;
+        }
 
         const QString directoryName =
             m_kind == StaffDirectoryKind::NativeEnglishTeachers
@@ -1021,6 +1116,7 @@ void StaffDirectoryPage::clearDatabaseState()
     m_deletedNativeEnglishTeacherIds.clear();
     m_dirty = false;
     m_reloadRequired = false;
+    m_reloadReason = ReloadReason::None;
     m_loading = false;
     m_autosaveTimer->stop();
     updateActions();
