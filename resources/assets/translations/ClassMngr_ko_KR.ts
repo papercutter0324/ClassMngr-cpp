@@ -1711,6 +1711,14 @@
         <translation>수업 정보를 저장할 수 없습니다.</translation>
     </message>
     <message>
+        <source>Save status</source>
+        <translation>저장 상태</translation>
+    </message>
+    <message>
+        <source>Your class information could not be saved. Your changes are still here.</source>
+        <translation>수업 정보를 저장하지 못했습니다. 변경 사항은 그대로 유지됩니다.</translation>
+    </message>
+    <message>
         <location line="+131"/>
         <source>another time in this class</source>
         <translation>이 수업의 다른 시간</translation>

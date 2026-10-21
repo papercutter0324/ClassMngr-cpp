@@ -680,6 +680,22 @@ void ClassDetailsPage::buildUi()
         m_scheduleSection
         );
 
+    m_automaticSaveFailureStatusLabel = new QLabel(m_scrollContent);
+    m_automaticSaveFailureStatusLabel->setObjectName(
+        QStringLiteral("classInfoAutosaveFailureStatus")
+        );
+    m_automaticSaveFailureStatusLabel->setAccessibleName(tr("Save status"));
+    m_automaticSaveFailureStatusLabel->setAlignment(
+        Qt::AlignLeft | Qt::AlignVCenter
+        );
+    m_automaticSaveFailureStatusLabel->setWordWrap(true);
+    m_automaticSaveFailureStatusLabel->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Preferred
+        );
+    m_automaticSaveFailureStatusLabel->hide();
+    m_scrollContentLayout->addWidget(m_automaticSaveFailureStatusLabel);
+
     m_validationBinder = new FormValidationBinder(
         m_autosave,
         m_pageBody,
@@ -813,8 +829,37 @@ void ClassDetailsPage::markDirty()
 
 void ClassDetailsPage::clearDirty()
 {
+    clearAutomaticSaveFailureStatus();
     m_autosave->markClean();
     updateActions();
+}
+
+void ClassDetailsPage::showAutomaticSaveFailureStatus()
+{
+    m_automaticSaveFailureStatusActive = true;
+    if (!m_automaticSaveFailureStatusLabel)
+    {
+        return;
+    }
+
+    m_automaticSaveFailureStatusLabel->setText(
+        tr(
+            "Your class information could not be saved. Your changes are still here."
+            )
+        );
+    m_automaticSaveFailureStatusLabel->show();
+}
+
+void ClassDetailsPage::clearAutomaticSaveFailureStatus()
+{
+    m_automaticSaveFailureStatusActive = false;
+    if (!m_automaticSaveFailureStatusLabel)
+    {
+        return;
+    }
+
+    m_automaticSaveFailureStatusLabel->clear();
+    m_automaticSaveFailureStatusLabel->hide();
 }
 
 void ClassDetailsPage::loadClass(
@@ -1200,7 +1245,17 @@ bool ClassDetailsPage::saveClassInfoInternal(
     {
         using Stage = ClassMngr::Next::Application::ClassDetailsSaveWorkflowStage;
         if (failure->stage == Stage::Save)
+        {
             m_autosave->markDirty(false);
+            if (
+                !showMessages
+                && failure->error.code
+                    == ClassMngr::Next::Domain::ErrorCode::Technical
+                )
+            {
+                showAutomaticSaveFailureStatus();
+            }
+        }
         if (showMessages)
         {
             const QString title = failure->stage == Stage::RegularConflicts
@@ -1314,6 +1369,19 @@ void ClassDetailsPage::retranslateUi()
     if (m_scheduleSection)
     {
         m_scheduleSection->retranslateUi();
+    }
+
+    if (m_automaticSaveFailureStatusLabel)
+    {
+        m_automaticSaveFailureStatusLabel->setAccessibleName(tr("Save status"));
+        if (m_automaticSaveFailureStatusActive)
+        {
+            m_automaticSaveFailureStatusLabel->setText(
+                tr(
+                    "Your class information could not be saved. Your changes are still here."
+                    )
+                );
+        }
     }
 
     updateScrollContentMinimumWidth();

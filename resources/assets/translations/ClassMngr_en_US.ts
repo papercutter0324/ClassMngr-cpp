@@ -1703,6 +1703,14 @@
         <translation>Class information could not be saved.</translation>
     </message>
     <message>
+        <source>Save status</source>
+        <translation>Save status</translation>
+    </message>
+    <message>
+        <source>Your class information could not be saved. Your changes are still here.</source>
+        <translation>Your class information could not be saved. Your changes are still here.</translation>
+    </message>
+    <message>
         <location line="+131"/>
         <source>another time in this class</source>
         <translation>another time in this class</translation>

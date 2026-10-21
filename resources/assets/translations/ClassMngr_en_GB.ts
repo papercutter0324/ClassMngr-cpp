@@ -1703,6 +1703,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Save status</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your class information could not be saved. Your changes are still here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+131"/>
         <source>another time in this class</source>
         <translation type="unfinished"></translation>

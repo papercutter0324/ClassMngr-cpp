@@ -14,9 +14,12 @@
 #include "ui/shared/widgets/sectioncards/class_time_row.h"
 
 #include <QComboBox>
+#include <QCoreApplication>
+#include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QTemporaryDir>
+#include <QTranslator>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -103,9 +106,10 @@ public:
     {
         ++callCount;
         lastRequest = request;
-        return Domain::Result<void>::success();
+        return result;
     }
 
+    mutable Domain::Result<void> result = Domain::Result<void>::success();
     mutable int callCount = 0;
     mutable std::optional<Application::ClassDetailsSaveRequest> lastRequest;
 };
@@ -181,6 +185,68 @@ public:
     std::vector<PromptRequest> requests;
 };
 
+class KoreanClassDetailsStatusTranslator final : public QTranslator
+{
+public:
+    QString translate(
+        const char* context,
+        const char* sourceText,
+        const char* disambiguation = nullptr,
+        const int n = -1
+        ) const override
+    {
+        Q_UNUSED(disambiguation);
+        Q_UNUSED(n);
+        if (!context || !sourceText
+            || qstrcmp(context, "ClassDetailsPage") != 0)
+        {
+            return {};
+        }
+
+        if (qstrcmp(sourceText, "Save status") == 0)
+        {
+            return QStringLiteral("저장 상태");
+        }
+        if (qstrcmp(
+                sourceText,
+                "Your class information could not be saved. Your changes are still here."
+                ) == 0)
+        {
+            return QStringLiteral(
+                "수업 정보를 저장하지 못했습니다. 변경 사항은 그대로 유지됩니다."
+                );
+        }
+        return {};
+    }
+};
+
+class ScopedTranslatorInstallation final
+{
+public:
+    explicit ScopedTranslatorInstallation(QTranslator& translator)
+        : m_translator(&translator)
+        , m_installed(QCoreApplication::installTranslator(m_translator))
+    {
+    }
+
+    ~ScopedTranslatorInstallation()
+    {
+        if (m_installed)
+        {
+            QCoreApplication::removeTranslator(m_translator);
+        }
+    }
+
+    [[nodiscard]] bool installed() const
+    {
+        return m_installed;
+    }
+
+private:
+    QTranslator* m_translator = nullptr;
+    bool m_installed = false;
+};
+
 Application::ClassDetailsPageReadResult failedPageRead()
 {
     return Application::ClassDetailsPageReadResult::failure({
@@ -250,6 +316,8 @@ private slots:
     void loadRetranslateDiscardAndClearUseSnapshot();
     void independentFailuresUseThePageFallbacks();
     void successfulSaveRefreshesTeacherAndKeepsSavedFields();
+    void automaticTechnicalFailureShowsLocalizedStatusAndClearsAfterRetry();
+    void successfulAutomaticSaveRemainsQuiet();
     void failedReadsKeepFallbackFormUnavailableForAllSaveRoutes();
     void failedClassSwitchAndReloadInvalidateAvailability();
     void clearAndRestoreRequireSuccessfulClassFields();
@@ -496,6 +564,149 @@ void ClassDetailsPageDisplayTests::successfulSaveRefreshesTeacherAndKeepsSavedFi
     QVERIFY(!header->subtitle().contains(QStringLiteral("Teacher One")));
     QVERIFY(!page.hasUnsavedChanges());
     QCOMPARE(readPort.requests.size(), std::size_t(2));
+}
+
+void ClassDetailsPageDisplayTests::
+automaticTechnicalFailureShowsLocalizedStatusAndClearsAfterRetry()
+{
+    ApplicationServices services;
+    FakeReadPort readPort;
+    readPort.result = Application::ClassDetailsPageReadResult::success(
+        makeSnapshot(73, firstFields(), "Teacher", 4)
+        );
+    FakeSavePort savePort;
+    savePort.result = Domain::Result<void>::failure({
+        .code = Domain::ErrorCode::Technical,
+        .message = "write rejected",
+        .recoverable = false
+    });
+    FakeValidationContextPort contextPort;
+    FakeScheduleConflictPort conflictPort;
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &savePort,
+        &readPort,
+        &conflictPort,
+        &contextPort
+        );
+    page.setSaveMode(SaveMode::Automatic);
+    page.loadClass(Classroom(QStringLiteral("Selected"), 73));
+
+    auto* const details = page.findChild<ClassDetailsSection*>();
+    auto* const autosave = page.findChild<AutosaveCoordinator*>();
+    auto* const failureStatus = page.findChild<QLabel*>(
+        QStringLiteral("classInfoAutosaveFailureStatus")
+        );
+    QVERIFY(details && autosave && failureStatus);
+    QVERIFY(failureStatus->isHidden());
+    autosave->setDebounceInterval(60'000);
+
+    details->gradeEditor()->setCurrentText(QStringLiteral("E5"));
+    details->levelEditor()->setCurrentText(QStringLiteral("Artemis"));
+    details->readingBookEditor()->setCurrentText(
+        QStringLiteral("Reading Explorer 2")
+        );
+    details->essayBookEditor()->setCurrentText(QStringLiteral("5A"));
+    QVERIFY(page.hasUnsavedChanges());
+    autosave->cancelPendingSave();
+    autosave->requestSave(false);
+
+    QCOMPARE(savePort.callCount, 1);
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(details->grade(), QStringLiteral("E5"));
+    QVERIFY(!failureStatus->isHidden());
+    QCOMPARE(
+        failureStatus->text(),
+        QStringLiteral(
+            "Your class information could not be saved. Your changes are still here."
+            )
+        );
+    QCOMPARE(failureStatus->accessibleName(), QStringLiteral("Save status"));
+    QVERIFY(m_promptService.requests.empty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    KoreanClassDetailsStatusTranslator koreanTranslator;
+    {
+        ScopedTranslatorInstallation translatorScope(koreanTranslator);
+        QVERIFY(translatorScope.installed());
+        page.retranslateUi();
+        QCOMPARE(
+            failureStatus->text(),
+            QStringLiteral(
+                "수업 정보를 저장하지 못했습니다. 변경 사항은 그대로 유지됩니다."
+                )
+            );
+        QCOMPARE(failureStatus->accessibleName(), QStringLiteral("저장 상태"));
+    }
+    page.retranslateUi();
+    QCOMPARE(
+        failureStatus->text(),
+        QStringLiteral(
+            "Your class information could not be saved. Your changes are still here."
+            )
+        );
+    QCOMPARE(failureStatus->accessibleName(), QStringLiteral("Save status"));
+
+    savePort.result = Domain::Result<void>::success();
+    autosave->requestSave(false);
+
+    QCOMPARE(savePort.callCount, 2);
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(failureStatus->isHidden());
+    QVERIFY(failureStatus->text().isEmpty());
+    QVERIFY(m_promptService.requests.empty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void ClassDetailsPageDisplayTests::successfulAutomaticSaveRemainsQuiet()
+{
+    ApplicationServices services;
+    FakeReadPort readPort;
+    readPort.result = Application::ClassDetailsPageReadResult::success(
+        makeSnapshot(73, firstFields(), "Teacher", 4)
+        );
+    FakeSavePort savePort;
+    FakeValidationContextPort contextPort;
+    FakeScheduleConflictPort conflictPort;
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &savePort,
+        &readPort,
+        &conflictPort,
+        &contextPort
+        );
+    page.setSaveMode(SaveMode::Automatic);
+    page.loadClass(Classroom(QStringLiteral("Selected"), 73));
+
+    auto* const details = page.findChild<ClassDetailsSection*>();
+    auto* const autosave = page.findChild<AutosaveCoordinator*>();
+    auto* const failureStatus = page.findChild<QLabel*>(
+        QStringLiteral("classInfoAutosaveFailureStatus")
+        );
+    QVERIFY(details && autosave && failureStatus);
+    QVERIFY(failureStatus->isHidden());
+    autosave->setDebounceInterval(60'000);
+
+    details->gradeEditor()->setCurrentText(QStringLiteral("E5"));
+    details->levelEditor()->setCurrentText(QStringLiteral("Artemis"));
+    details->readingBookEditor()->setCurrentText(
+        QStringLiteral("Reading Explorer 2")
+        );
+    details->essayBookEditor()->setCurrentText(QStringLiteral("5A"));
+    QVERIFY(page.hasUnsavedChanges());
+    autosave->cancelPendingSave();
+    autosave->requestSave(false);
+
+    QCOMPARE(savePort.callCount, 1);
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(failureStatus->isHidden());
+    QVERIFY(failureStatus->text().isEmpty());
+    QVERIFY(m_promptService.requests.empty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 void ClassDetailsPageDisplayTests::

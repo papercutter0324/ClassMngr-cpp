@@ -85,6 +85,8 @@ private:
 
     void markDirty();
     void clearDirty();
+    void showAutomaticSaveFailureStatus();
+    void clearAutomaticSaveFailureStatus();
     void updateActions();
     ClassInfo classInfoFromForm() const;
     void refreshScheduleValidationBindings();
@@ -116,6 +118,7 @@ private:
     bool m_embedded{false};
     // Tracks the source of the editable values currently shown in the form.
     bool m_classFieldsAvailable{false};
+    bool m_automaticSaveFailureStatusActive{false};
     AutosaveCoordinator* m_autosave{nullptr};
     FormValidationBinder* m_validationBinder{nullptr};
 
@@ -132,6 +135,7 @@ private:
     QLabel* m_colorValidationMessage{nullptr};
     QLabel* m_regularScheduleValidationMessage{nullptr};
     QLabel* m_intensiveScheduleValidationMessage{nullptr};
+    QLabel* m_automaticSaveFailureStatusLabel{nullptr};
 
     ScrollablePageBody* m_pageBody{nullptr};
     QWidget* m_scrollContent{nullptr};
