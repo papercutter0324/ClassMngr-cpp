@@ -62746,3 +62746,29 @@ Batch526 (F1295) is pushed through closeout `156e5fa2` with receipt
 `89657716`; local and remote tips match. Batch527 is active with F1296 accepted
 before implementation. No Batch528 discovery has been recorded. Gate 1 and
 Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### Batch528 bounded discovery following F1296 acceptance - 2026-10-21
+
+The bounded feature lane found one provisional candidate, F1297: a failed
+Class Analytics dashboard read can be presented as a successful empty-data
+state. `ClassAnalyticsPage::rebuild()` discards a failed
+`ClassAnalyticsDashboardReadQuery`, while the empty state says there are no
+scored evaluations (`src/features/classes/ui/class_analytics_page.cpp:687-700`
+and around line 523). The existing
+`readFailureAndNoDataUseTheExistingEmptyState` test explicitly conflates roster
+read failure and an empty result (`tests/class_analytics_page_tests.cpp:115-138`);
+the application query propagates roster failures
+(`src/next/application/class_analytics_dashboard_read_query.h:640`). The test
+is registered as `ClassAnalyticsPage`
+(`cmake/tests/pages_and_output.cmake:1736-1747`). F1297 remains provisional
+and unaccepted; acceptance should decide whether a roster read failure needs
+distinct disclosure from a genuine no-data result.
+
+The independent contract lane sampled Classes Navigation, Roster Availability,
+Sub Prep, and directory contracts and found no additional slice. F1145 already
+covers Sub Prep filters; F1103 remains deferred. The bounded lanes found no
+other candidates. F1296 implementation is underway in active Batch527 under
+its accepted contract. The discovery lanes made no code or test changes and ran
+no tests.
+
+No other slices were found.

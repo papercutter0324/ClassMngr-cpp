@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch526 (F1295) is pushed through closeout `156e5fa2` and receipt `89657716` with local and remote tips matching; Batch527 is active with F1296 accepted before implementation and no Batch528 discovery recorded; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch526 (F1295) is pushed through closeout `156e5fa2` and receipt `89657716` with local and remote tips matching; Batch527 is active with F1296 accepted/in progress; Batch528 has provisional F1297 Class Analytics discovery pending acceptance; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
