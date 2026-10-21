@@ -60607,3 +60607,63 @@ the branch was clean and up to date. No hosted or CI verification is implied.
 Batch511 (F1273) is complete and pushed. No implementation batch is active;
 no Batch512 decision is recorded here. Gate 1 and Gate 2 remain Partial, and
 the Phase 2 exit gate remains Open.
+
+### Superseded latest progress update - 2026-10-21 (Batch511 pushed, discovery pending)
+
+Batch511 (F1273) was complete and pushed; no implementation batch was active.
+Gate 1 and Gate 2 remained Partial, and the Phase 2 exit gate remained Open.
+
+### Batch512 discovery - 2026-10-21
+
+The discovery pass after Batch511's push identified one supported candidate.
+One Explorer found no fresh consumer candidates: teacher, student, and
+calendar behavior already have typed contracts, and the Class Analytics
+arbitrary allocation cap remains deferred. A second Explorer found the
+Class Analytics ranking `NeedsAttention` rule; an Investigator independently
+recommended it as a narrow Application policy, distinct from F1192 counts,
+F1193 distributions, F1237 roster row count, and F794's official allocation
+cap deferral. F794 is not reopened.
+
+Evidence is in `src/features/classes/ui/class_analytics_ranking_model.cpp`
+lines 83–86 for the ranking rule, the typed grade source in
+`src/features/classes/ui/class_analytics_page.cpp` lines 121–132 and
+`src/next/application/class_analytics_dashboard_read_query.h` lines 509–521,
+and `src/next/domain/speaking_evaluation_grade.h` for the grade enum. Existing
+coverage includes `tests/class_analytics_ranking_model_tests.cpp`,
+`tests/class_analytics_page_read_parity_tests.cpp`, and
+`tests/next_application_class_analytics_dashboard_read_query_tests.cpp`.
+
+The sole ordered Batch512 candidate is:
+
+1. F1274 - Class Analytics grade attention policy.
+
+No other slices were found.
+
+### F1274 Class Analytics grade attention policy accepted before implementation - 2026-10-21
+
+Add a Qt-free Application policy over
+`Domain::SpeakingEvaluationGrade`: return true for C and B; false for B+, A,
+and A+; and true for invalid enum values, matching the current page
+conversion's fallback to C. Carry the typed page projection's policy result
+into the ranking model before its QString conversion.
+
+Preserve `NeedsAttention` on the Average column only. C and B grades remain
+attention rows, including partial-score ranks; higher grades remain
+non-attention rows. Keep the ranking model's empty/unrecognized-label fallback
+as true, matching `gradeToNumber` returning 0. Preserve invalid stored score
+text handling, partial ranking/scoring, `fullyScored`, grade display, and all
+other dashboard behavior.
+
+Add app-less policy tests for every `SpeakingEvaluationGrade` and an invalid
+enum value. Add or update `ClassAnalyticsRankingModel` role/fallback
+regression coverage and a `ClassAnalyticsPageReadParity` production-path case
+covering every grade, Average-column-only role assignment, and a partial rank.
+
+Build `ClassMngr`, the new policy test and affected Class Analytics targets
+(including the existing read-query target if needed) in the existing
+`build/macos-clang-debug` tree because
+the Windows preset is disabled on this macOS host. Run only the exact focused
+selectors and `git diff --check`. No full-suite, Windows, or Gate 2 claim is
+planned. F1274 is accepted as the sole Batch512 slice before implementation;
+no implementation, build, or tests have started. Gate 1 and Gate 2 remain
+Partial, and the Phase 2 exit gate remains Open.
