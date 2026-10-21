@@ -60844,3 +60844,72 @@ active, and Batch515 discovery is the next action. Gate 1 and Gate 2 remain
 Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows
 x64 requalification remains outstanding separately from Phase 0's 2026-09-18
 Complete declaration.
+
+### Superseded latest progress update - 2026-10-21 (Batch515 accepted before implementation)
+
+Batch513 (F1275) remained complete and pushed at `a63fa9b8`, with its receipt
+documentation commit `c0da0b81` also pushed. No implementation batch was
+active. Gate 1 and Gate 2 remained Partial, and the Phase 2 exit gate remained
+Open.
+
+### Batch515 discovery - 2026-10-21
+
+Three independent Batch515 reports were reconciled. The Application scan found
+no separate broad behavior gap or newly actionable deferred item. The
+consumer scan identified Sub Prep vacation-block selection as a candidate.
+The projection audit's general pass found no gap; its focused review confirmed
+F1276 fits without overlap because the existing Application query already
+owns interval retrieval and validation. The remaining Qt `CalendarEvent`
+conversion and selection policy are at the Feature edge. The existing
+`SubPrepCalendarEventIntervalsQuery` and read-port expose typed calendar
+intervals; see `src/next/application/sub_prep_calendar_event_intervals_query.h`.
+The page invokes that query in `src/features/sub_prep/ui/sub_prep_page.cpp`
+around lines 554–561, then converts successful typed intervals back into Qt
+`CalendarEvent` values around lines 579–591. The vacation-block and
+four-week-lookahead selection currently lives in
+`src/features/sub_prep/ui/sub_prep_print_dialog.cpp` around lines 151–220.
+Existing integration coverage is in `tests/sub_prep_page_tests.cpp`, including
+`printDialogSelectsNextVacationBlock`,
+`printDialogOnlyOffersVacationModeWithinFourWeeks`, and
+`printDialogCombinesVacationDatesAcrossHolidayBlocks`, plus
+`printDialogCalendarReadUsesTwoYearWindowAndFallsBackOnFailure` for the
+existing query-failure fallback.
+
+The sole ordered Batch515 candidate is:
+
+1. F1276 - Sub Prep vacation-block selection policy.
+
+No other slices were found.
+
+### F1276 Sub Prep vacation-block selection policy accepted before implementation - 2026-10-21
+
+Add a Qt-free Application policy that consumes the typed vacation and holiday
+intervals returned by the existing `SubPrepCalendarEventIntervalsQuery`.
+Preserve valid inclusive interval ranges and ignore weekends. Its output
+contains vacation dates only. A holiday interval bridges vacation blocks only
+when every intervening weekday is a holiday. Select the first connected block
+whose last vacation date is on or after the reference date, then return the
+whole block only when it contains at least one vacation date in the inclusive
+range from the reference date through reference date plus 28 days. The returned
+block may include vacation dates before the reference date and after the
+28-day boundary. Return an empty selection when no block meets those rules.
+
+Keep query retrieval and validation, the dialog checkbox and localized
+weekday behavior, and Monday week-start conversion at their existing
+boundaries. As part of implementation, remove the page's conversion from typed
+intervals back to Qt `CalendarEvent`; preserve the existing empty-selection
+fallback when the query fails. Do not change the Application query's
+retrieval/validation contract.
+
+Acceptance verification is a focused app-less policy matrix plus the existing
+Sub Prep UI parity selectors `printDialogSelectsNextVacationBlock`,
+`printDialogOnlyOffersVacationModeWithinFourWeeks`, and
+`printDialogCombinesVacationDatesAcrossHolidayBlocks`, and
+`printDialogCalendarReadUsesTwoYearWindowAndFallsBackOnFailure`. Incrementally
+build `ClassMngr`, the new policy test target, and `ClassMngrSubPrepPageTests`
+in the existing macOS Debug tree, then run only the focused policy CTest and
+those UI selectors with `git diff --check`. No full-suite, Windows, or Gate 2
+claim is planned. F1276 is accepted as the sole Batch515 slice before
+implementation; no implementation, build, or tests have started. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F1103 and all
+other deferred candidates remain unchanged.

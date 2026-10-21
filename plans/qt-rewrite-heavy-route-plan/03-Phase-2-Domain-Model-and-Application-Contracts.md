@@ -53,11 +53,19 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch513 (F1275) is complete and pushed at `a63fa9b8`; no implementation batch is active and Batch515 discovery is next, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch515 has F1276 accepted as its sole slice before implementation, with implementation next; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1275 is complete and pushed at `a63fa9b8` (see its [Batch513 push receipt](03-Phase-2-Progress-Log.md#batch513-push-receipt-2026-10-21)); its receipt documentation commit `c0da0b81` is also pushed. The next action is Batch515 discovery; no implementation batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+F1276 is accepted before implementation as the sole slice in active Batch515; the next action is implementation. F1275 is complete and pushed at `a63fa9b8` (see its [Batch513 push receipt](03-Phase-2-Progress-Log.md#batch513-push-receipt-2026-10-21)), and its receipt documentation commit `c0da0b81` is also pushed. No F1276 implementation, build, or tests have started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+
+### Active slice batch
+
+Batch515 currently has 0 complete, 1 accepted, and 0 discovered slices:
+
+1. F1276 - Sub Prep vacation-block selection policy — accepted; next action: implement the Qt-free Application policy over the typed calendar interval contract and replace the page's conversion back to Qt `CalendarEvent`.
+
+No F1276 implementation, build, or tests have started.
 
 ### Slice discovery batches
 
