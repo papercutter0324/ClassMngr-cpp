@@ -1009,6 +1009,27 @@ inline void appendDuplicateNameIssues(
 
 } // namespace SpeakingEvaluationValidationDetail
 
+// Score inputs are normalized by each caller before this rule is applied.
+// An empty normalized value represents an intentionally blank score cell.
+[[nodiscard]] inline bool isValidSpeakingEvaluationScoreCellValue(
+    const std::u16string_view normalizedValue
+    ) noexcept
+{
+    return normalizedValue.empty()
+        || std::ranges::find(
+            SpeakingEvaluationValidationDetail::ScoreValues,
+            normalizedValue
+            ) != SpeakingEvaluationValidationDetail::ScoreValues.end();
+}
+
+// std::u16string::size() counts UTF-16 code units, matching QString::size().
+[[nodiscard]] inline bool isSpeakingEvaluationCommentWithinLimit(
+    const std::u16string_view value
+    ) noexcept
+{
+    return value.size() <= SpeakingEvaluationMaximumCommentLength;
+}
+
 // Normalizes the request before checking its content. The save use case owns
 // matrix-shape and changed-cell checks; the content rules below mirror the
 // legacy speaking-evaluation validator without importing its Qt types.
@@ -1186,32 +1207,23 @@ validateAndNormalizeSpeakingEvaluation(
             const std::u16string_view value = row[column];
             const int columnNumber = static_cast<int>(column);
             const std::string field = fieldName(rowNumber, columnNumber);
-            if (isScoringColumn(columnNumber) && !trim(value).empty())
+            if (isScoringColumn(columnNumber)
+                && !isValidSpeakingEvaluationScoreCellValue(value))
             {
-                const bool allowed = std::ranges::any_of(
-                    ScoreValues,
-                    [value](const std::u16string_view score)
-                    {
-                        return value == score;
-                    }
+                appendIssue(
+                    result,
+                    SpeakingEvaluationValidationCode::ValidationEnumInvalidValue,
+                    field,
+                    rowNumber,
+                    columnNumber,
+                    SpeakingEvaluationValidationSeverity::Error,
+                    {{"allowedValues", std::vector<std::u16string>{
+                         u"A+", u"A", u"B+", u"B", u"C"}},
+                     {"value", std::u16string(value)}}
                     );
-                if (!allowed)
-                {
-                    appendIssue(
-                        result,
-                        SpeakingEvaluationValidationCode::ValidationEnumInvalidValue,
-                        field,
-                        rowNumber,
-                        columnNumber,
-                        SpeakingEvaluationValidationSeverity::Error,
-                        {{"allowedValues", std::vector<std::u16string>{
-                             u"A+", u"A", u"B+", u"B", u"C"}},
-                         {"value", std::u16string(value)}}
-                        );
-                }
             }
             else if (columnNumber == 9
-                     && value.size() > SpeakingEvaluationMaximumCommentLength)
+                     && !isSpeakingEvaluationCommentWithinLimit(value))
             {
                 appendIssue(
                     result,

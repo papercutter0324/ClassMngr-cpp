@@ -354,6 +354,7 @@ class SpeakingEvalPageSaveTests final : public QObject
 
 private slots:
     void automaticSavePersistsMatrixWithoutInteractiveNotices();
+    void liveScoreAndCommentValidationUsesApplicationCellRules();
     void manualValidationAndConfirmedSaveKeepTheirCurrentTiming();
     void manualSaveButtonConfirmsShortAndLongKoreanNames();
     void manualSaveButtonRejectsMixedValidationErrors();
@@ -430,6 +431,102 @@ automaticSavePersistsMatrixWithoutInteractiveNotices()
     QCOMPARE(persisted->at(0).size(), 11);
     QCOMPARE(persisted->at(0).at(1), QStringLiteral("Alice"));
     QCOMPARE(persisted->at(0).at(2), QStringLiteral("\uAE40\uBBFC\uC9C0"));
+}
+
+void SpeakingEvalPageSaveTests::
+liveScoreAndCommentValidationUsesApplicationCellRules()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* const model = page.findChild<SpeakingEvalModel*>();
+    QVERIFY(model);
+
+    const int scoreColumn = SpeakingEval::toInt(SpeakingEvalColumn::Grammar);
+    const int commentsColumn = SpeakingEval::toInt(SpeakingEvalColumn::Comments);
+    const QModelIndex scoreIndex = model->index(0, scoreColumn);
+    const QModelIndex commentsIndex = model->index(0, commentsColumn);
+    const QString invalidScoreMessage = QStringLiteral("Invalid score 'D'.");
+    const QString domainInvalidScoreMessage =
+        QStringLiteral("Choose a listed score.");
+    const QString commentLengthMessage =
+        QStringLiteral("Comment must be <= 450 characters.");
+    const QString domainCommentLengthMessage =
+        QStringLiteral("This value is too long.");
+
+    QVERIFY(model->setData(scoreIndex, QStringLiteral("D"), Qt::EditRole));
+    // Preserve both the existing cell-level and page-level score feedback.
+    const QStringList invalidScoreMessages{
+        invalidScoreMessage,
+        domainInvalidScoreMessage
+    };
+    QCOMPARE(model->errorsForCell(0, scoreColumn), invalidScoreMessages);
+    QCOMPARE(
+        model->data(scoreIndex, Qt::ToolTipRole).toString(),
+        invalidScoreMessages.join(QLatin1Char('\n'))
+        );
+
+    QVERIFY(model->setData(scoreIndex, QString(), Qt::EditRole));
+    QVERIFY(model->errorsForCell(0, scoreColumn).isEmpty());
+    QCOMPARE(model->data(scoreIndex).toString(), QString());
+    (void)model->setData(scoreIndex, QStringLiteral(" \t "), Qt::EditRole);
+    QVERIFY(model->errorsForCell(0, scoreColumn).isEmpty());
+    QCOMPARE(model->data(scoreIndex).toString(), QString());
+
+    QVERIFY(model->setData(scoreIndex, QStringLiteral("3"), Qt::EditRole));
+    QVERIFY(model->errorsForCell(0, scoreColumn).isEmpty());
+    QCOMPARE(model->data(scoreIndex).toString(), QStringLiteral("B+"));
+
+    QVERIFY(model->setData(
+        commentsIndex,
+        QString(451, QLatin1Char('x')),
+        Qt::EditRole
+        ));
+    const QStringList commentLengthMessages{
+        commentLengthMessage,
+        domainCommentLengthMessage
+    };
+    QCOMPARE(
+        model->errorsForCell(0, commentsColumn),
+        commentLengthMessages
+        );
+    QCOMPARE(
+        model->data(commentsIndex, Qt::ToolTipRole).toString(),
+        commentLengthMessages.join(QLatin1Char('\n'))
+        );
+
+    QVERIFY(model->setData(
+        commentsIndex,
+        QString(450, QLatin1Char(' ')),
+        Qt::EditRole
+        ));
+    QVERIFY(model->errorsForCell(0, commentsColumn).isEmpty());
+
+    QVERIFY(model->setData(
+        commentsIndex,
+        QString(451, QLatin1Char(' ')),
+        Qt::EditRole
+        ));
+    QCOMPARE(
+        model->errorsForCell(0, commentsColumn),
+        commentLengthMessages
+        );
+    QCOMPARE(
+        model->data(commentsIndex, Qt::ToolTipRole).toString(),
+        commentLengthMessages.join(QLatin1Char('\n'))
+        );
+
+    QVERIFY(model->setData(commentsIndex, QString(), Qt::EditRole));
+    QVERIFY(model->errorsForCell(0, commentsColumn).isEmpty());
+    QCOMPARE(model->data(commentsIndex).toString(), QString());
 }
 
 void SpeakingEvalPageSaveTests::

@@ -165,6 +165,7 @@ private slots:
     void acceptsMaximumClassIdAndForwardsUnchanged();
     void rejectsIncompleteMatrixAndInvalidCoordinates();
     void rejectsOversizedMatrixRowsAndCellsBeforeCallingPort();
+    void speakingEvaluationCellRulesCoverScoresAndUtf16CommentLengths();
     void normalizesValidRequestBeforePortAndPreservesUnicodeAndCellOrder();
     void rejectsInvalidContentBeforeCallingPort();
     void groupsDuplicateNamesAfterUnicodeTrimmingInFirstSeenOrder();
@@ -215,6 +216,44 @@ manualSaveEligibilityAllowsOnlyQuestionableLengthErrors()
         {Code::StudentNameKoreanUnusualLength, Severity::Warning},
         {Code::StudentNameKoreanTooShort, Severity::Error}
     }));
+}
+
+void NextApplicationSpeakingEvaluationSaveUseCaseTests::
+speakingEvaluationCellRulesCoverScoresAndUtf16CommentLengths()
+{
+    for (const std::u16string_view score : {
+             u"A+", u"A", u"B+", u"B", u"C"
+         })
+    {
+        QVERIFY(Application::isValidSpeakingEvaluationScoreCellValue(score));
+    }
+    QVERIFY(Application::isValidSpeakingEvaluationScoreCellValue(u""));
+    QVERIFY(!Application::isValidSpeakingEvaluationScoreCellValue(u"D"));
+
+    const std::u16string commentAtLimit(450, u'x');
+    const std::u16string whitespaceCommentAtLimit(450, u' ');
+    const std::u16string surrogatePairAtLimit =
+        std::u16string(448, u'x') + u"\U0001F4DA";
+    const std::u16string commentOverLimit(451, u'x');
+    const std::u16string whitespaceCommentOverLimit(451, u' ');
+    const std::u16string surrogatePairOverLimit =
+        std::u16string(449, u'x') + u"\U0001F4DA";
+
+    QVERIFY(Application::isSpeakingEvaluationCommentWithinLimit(u""));
+    QVERIFY(Application::isSpeakingEvaluationCommentWithinLimit(commentAtLimit));
+    QVERIFY(Application::isSpeakingEvaluationCommentWithinLimit(
+        whitespaceCommentAtLimit
+        ));
+    QVERIFY(Application::isSpeakingEvaluationCommentWithinLimit(
+        surrogatePairAtLimit
+        ));
+    QVERIFY(!Application::isSpeakingEvaluationCommentWithinLimit(commentOverLimit));
+    QVERIFY(!Application::isSpeakingEvaluationCommentWithinLimit(
+        whitespaceCommentOverLimit
+        ));
+    QVERIFY(!Application::isSpeakingEvaluationCommentWithinLimit(
+        surrogatePairOverLimit
+        ));
 }
 
 void NextApplicationSpeakingEvaluationSaveUseCaseTests::

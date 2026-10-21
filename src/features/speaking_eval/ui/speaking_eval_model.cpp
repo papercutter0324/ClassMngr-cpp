@@ -2,6 +2,7 @@
 
 #include "core/utils/student_name_utils.h"
 #include "domain/validation/speaking_eval_validator.h"
+#include "next/application/speaking_evaluation_validation.h"
 #include "next/application/student_name_pair_lookup.h"
 #include "next/application/student_korean_name_suffix_suggestion.h"
 #include "next/domain/student_name_pair.h"
@@ -10,6 +11,7 @@
 #include <QRegularExpression>
 
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -722,13 +724,27 @@ QStringList SpeakingEvalModel::validateValue(
 
     QStringList errors;
 
+    const auto columnId =
+        SpeakingEval::columnFromInt(column);
+
+    if (columnId == SpeakingEvalColumn::Comments)
+    {
+        const std::u16string commentValue = value.toStdU16String();
+        if (!ClassMngr::Next::Application::isSpeakingEvaluationCommentWithinLimit(
+                commentValue
+                ))
+        {
+            errors.append(
+                tr("Comment must be <= %1 characters.")
+                    .arg(SpeakingEval::CommentMaxLength)
+                );
+        }
+    }
+
     if (value.trimmed().isEmpty())
     {
         return errors;
     }
-
-    const auto columnId =
-        SpeakingEval::columnFromInt(column);
 
     if (columnId == SpeakingEvalColumn::EnglishName)
     {
@@ -770,7 +786,10 @@ QStringList SpeakingEvalModel::validateValue(
     }
     else if (SpeakingEval::isScoringColumn(columnId))
     {
-        if (!SpeakingEval::scoreValues().contains(value))
+        const std::u16string scoreValue = value.toStdU16String();
+        if (!ClassMngr::Next::Application::isValidSpeakingEvaluationScoreCellValue(
+                scoreValue
+                ))
         {
             errors.append(
                 tr("Invalid score '%1'.")
@@ -778,17 +797,6 @@ QStringList SpeakingEvalModel::validateValue(
                 );
         }
     }
-    else if (columnId == SpeakingEvalColumn::Comments)
-    {
-        if (value.size() > SpeakingEval::CommentMaxLength)
-        {
-            errors.append(
-                tr("Comment must be <= %1 characters.")
-                    .arg(SpeakingEval::CommentMaxLength)
-                );
-        }
-    }
-
     return errors;
 }
 
