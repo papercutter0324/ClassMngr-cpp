@@ -61160,3 +61160,51 @@ next, with no implementation batch active. Gate 1 and Gate 2 remain Partial,
 and the Phase 2 exit gate remains Open. F629's source-bound Windows x64
 requalification remains outstanding separately from Phase 0's 2026-09-18
 Complete declaration.
+
+### Batch518 discovery - 2026-10-21
+
+Three independent lanes were reconciled. The Application-boundary scan found
+F1278: whole-save validation already checks Notes against the 10,000 UTF-16
+code-unit limit and emits `ValidationLengthOutOfBounds`
+(`src/next/application/speaking_evaluation_validation.h:1242-1256`), while
+`SpeakingEvalModel::validateValue()` has no Notes length branch
+(`src/features/speaking_eval/ui/speaking_eval_model.cpp:717-785`). The active
+consumer scan found no additional candidate; the projection-gap scan found no
+additional candidate, and no deferred item was reopened.
+
+The sole ordered Batch518 candidate is:
+
+1. F1278 - Speaking Evaluation Notes length validation.
+
+No other slices were found.
+
+### F1278 Speaking Evaluation Notes length validation accepted before implementation - 2026-10-21
+
+Add a Qt-free Application predicate for Speaking Evaluation Notes length in
+UTF-16 code units and reuse it in whole-save validation and live cell
+validation. Keep the existing 10,000-code-unit limit: exactly 10,000 passes and
+10,001 fails, including whitespace-only values over the limit. Preserve raw
+Notes text; do not truncate it or set an editor cap. Keep the whole-save
+`ValidationLengthOutOfBounds` issue's field, coordinates, severity, and
+arguments unchanged, and surface localized live field validation. F1277's
+score/Comment behavior, names, all other fields, save normalization, and
+editing behavior remain unchanged.
+
+Extend the existing app-less
+`speakingEvaluationCellRulesCoverScoresAndUtf16CommentLengths` coverage with a
+10,000/10,001-unit Notes matrix, including whitespace-only over-limit input,
+and extend page-save coverage with the
+`liveNotesLengthValidationUsesApplicationCellRules` selector for the same
+boundary plus recovery/clearing. In the existing `build/macos-clang-debug`
+tree, build only `ClassMngr`,
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`, and
+`ClassMngrSpeakingEvalPageSaveTests`; run the focused app-less coverage and the
+`liveNotesLengthValidationUsesApplicationCellRules` UI selector. No full-suite,
+Windows, or Gate 2 claim is planned. F1278 is accepted as Batch518's sole
+slice before implementation; implementation, builds, and tests have not
+started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
+Open. F629's source-bound Windows x64 requalification remains outstanding
+separately from Phase 0's 2026-09-18 Complete declaration.
+
+Batch518 is active with F1278 accepted/in progress before implementation. Gate
+1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
