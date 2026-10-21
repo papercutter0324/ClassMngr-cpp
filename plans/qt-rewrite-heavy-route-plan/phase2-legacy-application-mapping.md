@@ -19,8 +19,8 @@ value end-to-end, the Schedule Import state-validation, repository pre-write, an
 projection/persistence cutovers, F60 typed review-decision targets, F62
 apply-boundary action/sentinel
 characterization, F63 production no-suggestion sentinel assertion, F64's
-typed student-name pair at the roster score-import join, and F65's verified
-legacy profile startup/migration path through FileController, the F70 Class
+typed student-name pair at the roster score-import join, and F65's historical
+legacy profile startup/migration coverage through FileController, the F70 Class
 Transfer preview-matching policy, and F71's typed Class Transfer review-decision
 identities with legacy integer adapters,
 and Sub Prep print-source, selected-class details, schedule-summary,
@@ -122,9 +122,15 @@ seam, not the v2 contracts, owns conversion to or from `QString` and legacy
 path types. v2 operations return `Domain::Result<T>` or `Domain::Result<void>`
 with `Domain::OperationError`.
 
+Current workspace-opening scope: existing schema-v6 `.db` files remain
+supported; existing schemas below v6 are unsupported, and no migration is
+offered. F1314 is implementing rejection of existing schemas below v6. That
+implementation is in progress; Executor and Tester verification is pending,
+so rejection behavior is not yet shipped.
+
 | Legacy symbol | Current call sites / role | v2 destination / status | Owner / layer |
 | --- | --- | --- | --- |
-| `openDatabase(QString)` | [`FileController::loadDatabase`](../../src/app/controllers/file_controller.cpp#L552) routes the selected path through the workspace coordinator; startup uses `FileController::loadDatabaseOnStartup`. New-database and initial-setup paths prepare replacement in FileController before coordinator create/open. F65 verifies legacy `.db` startup, migrated service values, latest schema, and retained pre-v4 backup. | `WorkspaceGateway::openWorkspace` -> `WorkspaceUseCase::openWorkspace` -> `WorkspaceCoordinator::openWorkspace`; successful commit uses `WorkspaceState::open` and clears `SelectionState`. Integrated in FileController through `ApplicationServicesWorkspacePort` and `WorkspaceCoordinator`. | Qt/file outer adapter; v2 application use case, coordinator, and state. |
+| `openDatabase(QString)` | [`FileController::loadDatabase`](../../src/app/controllers/file_controller.cpp#L552) routes the selected path through the workspace coordinator; startup uses `FileController::loadDatabaseOnStartup`. New-database and initial-setup paths prepare replacement in FileController before coordinator create/open. F65 historically verified legacy `.db` startup, migrated service values, latest schema, and retained pre-v4 backup; current support is schema v6 only, with no migration for lower versions (scope above). | `WorkspaceGateway::openWorkspace` -> `WorkspaceUseCase::openWorkspace` -> `WorkspaceCoordinator::openWorkspace`; successful commit uses `WorkspaceState::open` and clears `SelectionState`. Integrated in FileController through `ApplicationServicesWorkspacePort` and `WorkspaceCoordinator`. | Qt/file outer adapter; v2 application use case, coordinator, and state. |
 | `closeDatabase()` | [`FileController::closeActiveDatabase`](../../src/app/controllers/file_controller.cpp#L1108) uses the workspace coordinator for an open v2 session, then clears UI file state on success. | `WorkspaceGateway::closeWorkspace` -> `WorkspaceUseCase::closeWorkspace` -> `WorkspaceCoordinator::closeWorkspace`; successful close uses `WorkspaceState::close` and clears `SelectionState`. Integrated in FileController through `ApplicationServicesWorkspacePort` and `WorkspaceCoordinator`. | FileController UI boundary, `ApplicationServicesWorkspacePort`, and v2 coordinator/state. |
 | `hasOpenDatabase()` | FileController and MainWindow retain direct `ApplicationServices::hasOpenDatabase()` guards; the workspace port also provides the gateway read used for handle validation. | Read `WorkspaceState::snapshot()` and its optional session/lifecycle; do not add a v2 boolean wrapper around `ApplicationServices`. `ApplicationServicesWorkspacePort` provides the gateway read; FileController and MainWindow retain direct legacy availability guards at the outer UI boundary. | v2 application state; UI adapter consumes a copy. |
 | `currentDatabasePath()` | [`FileController`](../../src/app/controllers/file_controller.cpp) still reads it for UI dialog/current-file paths; the workspace port normalizes it into the gateway handle and session location. | Read the current `WorkspaceSession::location()` from `WorkspaceStateSnapshot`; convert the adapter-neutral location back to a UI path at the outer boundary. The port normalizes the legacy path into the workspace gateway; FileController retains legacy path reads for UI location and fallback behavior. | v2 workspace state; Qt/file adapter owns conversion. |

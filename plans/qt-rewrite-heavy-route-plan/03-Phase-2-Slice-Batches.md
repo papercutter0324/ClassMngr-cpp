@@ -88,19 +88,24 @@ lane. No other slices or leads beyond the 20-candidate limit were found. No
 candidate is queued from this discovery; the follow-up F1312 slice is tracked
 under Batch539.
 
-## Batch539 — Closed locally; push pending
+## Batch539 — Pushed
 
 - F1312 — Complete at implementation commit `6d2db847`. Class Details injects
   the Qt case-insensitive comparator through the Qt-free Application policy
   and workflow; an app-less regression covers U+017F long-s canonicalization.
 
-## Batch540 — In progress; F1313 accepted/next
+Batch539 push receipt: `cc4e1f63..a493b68f Qt-Rewrite -> Qt-Rewrite`;
+the range contained F1312 plus closeout docs.
 
-- F1313 — Schedule Import Skip-target validation parity; accepted/queued.
-  Preserve target uniqueness and canonical checks while matching legacy apply:
-  accept a unique positive suggested Skip target even when its teacher differs,
-  producing one skipped class and leaving the target schedule unchanged.
+## Batch540 — Discovery reviewed; no candidate queued
 
-Batch539 is locally closed around F1312; push is pending. Batch540 is active
-with F1313 as its next implementation. Start Batch541 discovery when F1313
-implementation begins.
+The proposed F1313 Schedule Import Skip-target parity issue was a false
+positive. The pinned legacy apply chain runs `ScheduleImportStateValidator`
+and rejects the mismatched-teacher Skip just like current v2. F1313 was never
+implemented. See the progress log for corrected call-chain evidence.
+
+## Batch541 — In progress; F1314 active
+
+- F1314 — In progress. Reject existing workspace schemas below v6 while
+  retaining current schema-v6 opening support. Implementation is in progress
+  and verification is pending; rejection behavior is not shipped.

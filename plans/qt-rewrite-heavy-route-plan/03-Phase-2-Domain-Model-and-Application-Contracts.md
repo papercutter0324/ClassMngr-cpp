@@ -63,11 +63,19 @@ F1312 (`6d2db847`) routes the Qt case-insensitive Class Details comparator
 through the Qt-free Application policy/workflow; an app-less regression covers
 U+017F long-s canonicalization. The Executor build and 53 focused QtTests
 passed; the independent Tester passed all three focused targets in macOS
-universal Debug/offscreen verification. Batch539 is locally closed with push
-pending. Batch540 is in progress with F1313, Schedule Import Skip-target
-validation parity, accepted next. Gate 1 and Gate 2 remain Partial; the exit
-gate remains Open pending cumulative audit, and F629's Windows x64 evidence
-remains outstanding separately.
+universal Debug/offscreen verification. Batch539 closeout `a493b68f` was pushed
+to `origin/Qt-Rewrite`, advancing it from `cc4e1f63`; the range contained F1312
+and closeout docs. Batch540's proposed F1313 Skip-target parity issue was a
+false positive: the pinned legacy apply chain runs `ScheduleImportStateValidator`
+and rejects the mismatched-teacher Skip just like current v2. F1313 was never
+implemented; no candidate is queued from Batch540. User scope keeps current
+schema v6 workspace opening supported, drops support for existing schemas
+below v6, and offers no migration. F1314's rejection of schemas below v6 is in
+progress in Batch541; behavior is not yet verified or shipped. Gate 1 and Gate 2
+remain Partial; the exit gate remains Open pending cumulative audit, and
+F629's Windows x64 evidence remains outstanding separately. Gate 2 audit also
+records the intentional Class Transfer identity-free package exception to
+baseline; see the progress log. Exact parity is not claimed for that input.
 
 ### Slice batches
 
@@ -167,7 +175,6 @@ An import result, for example, should separately expose imported records, warnin
 Create use cases for:
 
 - Creating, opening, closing, saving, and exporting a workspace.
-- Importing a legacy database.
 - Importing teachers, schedules, calendars, rosters, and class transfers.
 - Editing teachers, classes, schedules, calendar events, rosters, and evaluations.
 - Generating reports and substitute documents.
@@ -175,6 +182,11 @@ Create use cases for:
 - Opening document content on demand for a viewer or output operation.
 - Performing backups and recovery.
 - Checking for application updates after startup.
+
+Workspace opening continues to support existing schema-v6 `.db` files.
+Existing schemas below v6 are unsupported, and migration is not offered.
+F1314 is implementing the rejection of those older schemas; this behavior is
+still in progress and is not yet verified or shipped.
 
 The Sub Prep slice also requires explicit summary, selected-detail, and
 operation-scoped print-source contracts. Their feature-level implementation

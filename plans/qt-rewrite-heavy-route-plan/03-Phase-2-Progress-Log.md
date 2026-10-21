@@ -63700,19 +63700,44 @@ pending. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
 Open pending closure-grade audit. F629 Windows x64 evidence remains separate
 and outstanding.
 
-### Batch539 locally closed; Batch540 F1313 accepted - 2026-10-22
+### Batch539 locally closed; Batch540 F1313 proposal later corrected - 2026-10-22
 
 Batch539 is locally closed around F1312 commit `6d2db847`; push is pending.
-Batch540 discovery identified F1313, Schedule Import Skip-target validation
-parity. In baseline `48fc5c5c...`, legacy apply accepts a unique positive
-suggested Skip target even when its teacher differs. The current
-`src/next/application/schedule_import_state_validation.h` rejects that
-reachable case; the current same-course matcher suggests the target and the UI
-carries its ID.
+The initial Batch540 discovery proposed F1313, Schedule Import Skip-target
+validation parity, after seeing the same-course matcher suggest a target ID
+carried by the UI. Follow-up review of the full pinned legacy apply chain at
+baseline `48fc5c5c` found that it runs `ScheduleImportStateValidator`, which
+rejects the mismatched-teacher Skip just like current v2. The apparent gap was a
+false positive caused by stopping before the legacy validator. F1313 was never
+implemented and is withdrawn; no candidate is queued from Batch540.
 
-Acceptance: retain target uniqueness and canonical checks while matching
-legacy apply, yielding one skipped class and no change to the target schedule.
-F1313 is accepted as Batch540's next implementation. Batch541 discovery is due
-when F1313 implementation begins. Gate 1 and Gate 2 remain Partial; the Phase 2
-exit gate remains Open pending cumulative audit, and F629's Windows x64
-evidence remains separately outstanding.
+### Batch539 push receipt - 2026-10-22
+
+`git push origin Qt-Rewrite` advanced `origin/Qt-Rewrite` from `cc4e1f63` to
+closeout `a493b68f` (`cc4e1f63..a493b68f Qt-Rewrite -> Qt-Rewrite`). The
+pushed range contained F1312 implementation `6d2db847` and Batch539 closeout
+docs `a493b68f`. Batch539 is pushed. Batch540's initial F1313 proposal was
+subsequently withdrawn as a false positive; no candidate is queued.
+
+### User schema-support scope; Batch541 F1314 in progress - 2026-10-22
+
+The user clarified that opening current schema-v6 `.db` workspaces remains in
+scope, but existing schemas below v6 are unsupported and no migration will be
+offered. The separate legacy-database-import use case has been removed from
+Phase 2 §2.3.
+
+F1314 is active in Batch541 to reject existing workspace schemas below v6.
+Implementation is in progress and Executor/Tester verification is pending;
+rejection behavior is not yet verified or shipped. Gate 1 and Gate 2 remain
+Partial, the Phase 2 exit gate remains Open pending cumulative audit, and
+F629's Windows x64 evidence remains separately outstanding.
+
+### Gate 2 audit note: Class Transfer identity-free package - 2026-10-22
+
+Class Transfer identity-free package acceptance is an intentional exception
+to exact parity with pinned Aug 27 baseline `48fc5c5c`, which rejected the input
+because its JSON omitted a local ID. The exception is supported by Phase 0
+correction commit `542aedac`, the Phase 2 extraction/F617, and current
+`ClassTransferPackageValidator` tests. Preserve it as a documented Gate 2
+exception; do not claim exact parity for this input. This records the audit
+interpretation and does not describe a new behavior change.
