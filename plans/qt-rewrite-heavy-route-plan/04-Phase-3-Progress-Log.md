@@ -111,3 +111,26 @@ cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationS
 ctest --test-dir build/macos-clang-debug -R '^ClassMngrNextPlatformApplicationServicesClassesListReadPortTests$' --output-on-failure
 cmake --build build/macos-clang-debug --target ClassMngr
 ```
+
+## F1323 — My Classes student-count persistence-port migration — 2026-10-22
+
+Moved the My Classes student-count platform port and its repository test setup
+from the `databaseSession()` compatibility accessor to
+`ApplicationServices::workspaceStore()` and
+`WorkspaceStore::rosterRepository()`. The existing application batch query,
+set-based repository read, per-class results, and page behavior that requests
+only the selected class remain unchanged. Added focused coverage for a
+nonnull-but-closed store, retaining the null-services case.
+
+The executor built the focused port-test target and `ClassMngr`; the focused
+CTest passed 1/1, and `git diff --check` passed. Ninja printed a
+premature-end-of-file warning during the `ClassMngr` build, recovered, and
+completed successfully. An independent Tester reviewed the diff and reran the
+focused CTest: **1/1 passed**. Verification used the existing macOS Debug
+tree; the full suite and cross-platform builds were not run.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests
+ctest --test-dir build/macos-clang-debug -R '^ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests$' --output-on-failure
+cmake --build build/macos-clang-debug --target ClassMngr
+```

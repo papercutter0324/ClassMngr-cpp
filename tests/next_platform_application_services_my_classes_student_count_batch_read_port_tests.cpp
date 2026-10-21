@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
 #include "domain/models/roster.h"
 #include "next/application/my_classes_student_count_batch_read_query.h"
@@ -47,8 +47,8 @@ bool saveRoster(
     const Roster& roster
     )
 {
-    RosterRepository* const repository = services.databaseSession()
-        ? services.databaseSession()->rosterRepository()
+    RosterRepository* const repository = services.workspaceStore()
+        ? services.workspaceStore()->rosterRepository()
         : nullptr;
     return repository && repository->saveRoster(classIdValue, roster).has_value();
 }
@@ -127,7 +127,7 @@ private slots:
     void countsDistinctRowsAboveIntMax();
     void fallsBackPerClassWhenBatchCellReadFails();
     void emptyInputAvoidsRepositoryWork();
-    void unavailableSessionReturnsPerClassFailures();
+    void unavailableStoreReturnsPerClassFailures();
 };
 
 void NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests::
@@ -224,9 +224,9 @@ readsCountsInRequestedOrderWithExactHeadersAndQtWhitespace()
     });
     QVERIFY(saveRoster(services, sparseId, sparseRoster));
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    RosterRepository* const repository = session->rosterRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    RosterRepository* const repository = store->rosterRepository();
     QVERIFY(repository);
     const auto before = repository->myClassesStudentCountBatchReadMetrics();
 
@@ -302,17 +302,17 @@ reportsMissingParentsInBatchWithoutCountingOrphans()
             )
         ));
     QVERIFY(deleteClassParentOnly(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         orphanId
         ));
 
     const int neverPresentId = nextMissingClassId(
-        services.databaseSession()->database()
+        services.workspaceStore()->database()
         );
     QVERIFY(neverPresentId > 0);
     QVERIFY(neverPresentId != orphanId);
 
-    RosterRepository* const repository = services.databaseSession()
+    RosterRepository* const repository = services.workspaceStore()
         ->rosterRepository();
     QVERIFY(repository);
     const auto before = repository->myClassesStudentCountBatchReadMetrics();
@@ -393,7 +393,7 @@ rejectsFractionalRowIndexInBatchAndFallbackStudentCounts()
             )
         ));
 
-    QSqlQuery insertEmptyRow(services.databaseSession()->database());
+    QSqlQuery insertEmptyRow(services.workspaceStore()->database());
     QVERIFY2(insertEmptyRow.prepare(QStringLiteral(
         "INSERT INTO roster_data (class_id, row_index, col_index, value) "
         "VALUES (?, 0, 0, '')"
@@ -403,12 +403,12 @@ rejectsFractionalRowIndexInBatchAndFallbackStudentCounts()
 
     const QString fractionalValue = QStringLiteral("Fractional student");
     QVERIFY(seedFractionalRowIndexCell(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         fractionalId,
         fractionalValue
         ));
 
-    QSqlQuery storedRow(services.databaseSession()->database());
+    QSqlQuery storedRow(services.workspaceStore()->database());
     QVERIFY2(storedRow.prepare(QStringLiteral(
         "SELECT row_index, typeof(row_index) AS storage_type, "
         "col_index, typeof(col_index) AS column_storage_type, value "
@@ -425,7 +425,7 @@ rejectsFractionalRowIndexInBatchAndFallbackStudentCounts()
     QCOMPARE(storedRow.value("value").toString(), fractionalValue);
     QVERIFY(!storedRow.next());
 
-    QSqlQuery storedEmptyRow(services.databaseSession()->database());
+    QSqlQuery storedEmptyRow(services.workspaceStore()->database());
     QVERIFY2(storedEmptyRow.prepare(QStringLiteral(
         "SELECT typeof(row_index) AS storage_type, value "
         "FROM roster_data WHERE class_id=? AND row_index=0 AND col_index=0"
@@ -437,7 +437,7 @@ rejectsFractionalRowIndexInBatchAndFallbackStudentCounts()
     QVERIFY(storedEmptyRow.value("value").toString().isEmpty());
     QVERIFY(!storedEmptyRow.next());
 
-    RosterRepository* const repository = services.databaseSession()
+    RosterRepository* const repository = services.workspaceStore()
         ->rosterRepository();
     QVERIFY(repository);
     const auto before = repository->myClassesStudentCountBatchReadMetrics();
@@ -521,22 +521,22 @@ reportsMissingParentsAfterPerClassFallback()
         roster({QStringLiteral("English")}, {{QString()}})
         ));
     QVERIFY(seedFractionalRowIndexCell(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         malformedId,
         QStringLiteral("Fractional trigger")
         ));
     QVERIFY(deleteClassParentOnly(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         orphanId
         ));
 
     const int neverPresentId = nextMissingClassId(
-        services.databaseSession()->database()
+        services.workspaceStore()->database()
         );
     QVERIFY(neverPresentId > 0);
     QVERIFY(neverPresentId != orphanId);
 
-    RosterRepository* const repository = services.databaseSession()
+    RosterRepository* const repository = services.workspaceStore()
         ->rosterRepository();
     QVERIFY(repository);
     const auto before = repository->myClassesStudentCountBatchReadMetrics();
@@ -607,7 +607,7 @@ countsDistinctRowsAboveIntMax()
     const qlonglong firstRowIndex =
         static_cast<qlonglong>(std::numeric_limits<int>::max()) + 1;
     const qlonglong secondRowIndex = firstRowIndex + 1;
-    QSqlQuery insertCell(services.databaseSession()->database());
+    QSqlQuery insertCell(services.workspaceStore()->database());
     QVERIFY2(
         insertCell.prepare(QStringLiteral(
             "INSERT INTO roster_data (class_id, row_index, col_index, value) "
@@ -643,7 +643,7 @@ countsDistinctRowsAboveIntMax()
         qPrintable(insertCell.lastError().text())
         );
 
-    QSqlQuery storedIndexes(services.databaseSession()->database());
+    QSqlQuery storedIndexes(services.workspaceStore()->database());
     QVERIFY2(
         storedIndexes.prepare(QStringLiteral(
             "SELECT row_index, typeof(row_index) "
@@ -708,11 +708,11 @@ fallsBackPerClassWhenBatchCellReadFails()
         roster({QStringLiteral("Korean")}, {{QStringLiteral("\uD559\uC0DD")}})
         ));
 
-    RosterRepository* const repository = services.databaseSession()
+    RosterRepository* const repository = services.workspaceStore()
         ->rosterRepository();
     QVERIFY(repository);
     const auto before = repository->myClassesStudentCountBatchReadMetrics();
-    QSqlQuery dropData(services.databaseSession()->database());
+    QSqlQuery dropData(services.workspaceStore()->database());
     QVERIFY2(dropData.exec(QStringLiteral("DROP TABLE roster_data")),
              qPrintable(dropData.lastError().text()));
 
@@ -745,7 +745,7 @@ emptyInputAvoidsRepositoryWork()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    RosterRepository* const repository = services.databaseSession()
+    RosterRepository* const repository = services.workspaceStore()
         ->rosterRepository();
     QVERIFY(repository);
     const auto before = repository->myClassesStudentCountBatchReadMetrics();
@@ -766,8 +766,27 @@ emptyInputAvoidsRepositoryWork()
 }
 
 void NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests::
-unavailableSessionReturnsPerClassFailures()
+unavailableStoreReturnsPerClassFailures()
 {
+    ApplicationServices services;
+    QVERIFY(services.workspaceStore());
+    QVERIFY(!services.workspaceStore()->isOpen());
+
+    Platform::ApplicationServicesMyClassesStudentCountBatchReadPort closedPort(
+        &services
+        );
+    const auto closedStore = closedPort.readMyClassesStudentCounts({
+        classId(7)
+    });
+
+    QVERIFY(closedStore);
+    QCOMPARE(closedStore.value().size(), std::size_t(1));
+    QVERIFY(closedStore.value().front().classId == classId(7));
+    QVERIFY(!closedStore.value().front().studentCount);
+    QCOMPARE(closedStore.value().front().studentCount.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(closedStore.value().front().studentCount.error().recoverable);
+
     Platform::ApplicationServicesMyClassesStudentCountBatchReadPort port(
         nullptr
         );
@@ -779,6 +798,7 @@ unavailableSessionReturnsPerClassFailures()
     QVERIFY(!loaded.value().front().studentCount);
     QCOMPARE(loaded.value().front().studentCount.error().code,
              Domain::ErrorCode::NotFound);
+    QVERIFY(loaded.value().front().studentCount.error().recoverable);
 }
 
 QTEST_MAIN(

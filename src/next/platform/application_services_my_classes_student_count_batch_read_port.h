@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
 #include "next/application/my_classes_student_count_batch_read_port.h"
 
@@ -83,9 +83,9 @@ public:
             legacyClassIds.append(*legacyId);
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return failedEntries(
                 classIds,
@@ -97,7 +97,7 @@ public:
                 );
         }
 
-        RosterRepository* const repository = session->rosterRepository();
+        RosterRepository* const repository = store->rosterRepository();
         if (!repository)
         {
             return failedEntries(
