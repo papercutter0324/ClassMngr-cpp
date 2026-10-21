@@ -60667,3 +60667,31 @@ selectors and `git diff --check`. No full-suite, Windows, or Gate 2 claim is
 planned. F1274 is accepted as the sole Batch512 slice before implementation;
 no implementation, build, or tests have started. Gate 1 and Gate 2 remain
 Partial, and the Phase 2 exit gate remains Open.
+
+### Superseded latest progress update - 2026-10-21 (F1274 implementation in progress)
+
+F1274 was in progress as the sole Batch512 slice; no build or test verification
+had started. Batch511 (F1273) remained complete and pushed, and the Phase 2
+gates remained Partial/Open.
+
+### F1274 Class Analytics grade attention policy complete - 2026-10-21
+
+F1274 is complete in Batch512 at source/test commit
+`85ff86737b81c6da74cdc162f85edc2b44f2ccb0`. The Application grade-attention
+policy is wired into the typed Class Analytics page projection and ranking
+model. The closeout preserves the accepted C/B and invalid-grade attention
+behavior, Average-column-only role, label fallback, and existing score,
+ranking, and dashboard behavior.
+
+Focused macOS verification passed: the policy CTest passed 1/1; Class Analytics
+ranking-model typed-override and label-fallback selectors each passed 3/3;
+the dashboard read-query test passed 1/1; and the
+`ClassAnalyticsPageReadParity` selector
+`rankingAttentionUsesTypedGradesAndRetainsPartialRank` passed 3/3. A Qt test
+lookup was repaired to locate the named `QTableView`; the rerun passed with
+nonfatal font and offscreen warnings. `git diff --check` passed. No full-suite,
+Windows, or Gate 2 result is claimed.
+
+Batch512 (F1274) is complete locally and awaiting its normal push. No
+implementation batch is active. Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open.

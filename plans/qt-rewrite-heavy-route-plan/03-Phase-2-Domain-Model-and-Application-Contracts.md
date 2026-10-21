@@ -53,19 +53,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1274 is accepted as the sole active Batch512 slice before implementation, while Batch511 (F1273) remains complete and pushed at `d9a91397`; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch512 (F1274) is complete locally at source/test commit `85ff86737b81c6da74cdc162f85edc2b44f2ccb0` and awaiting its normal push, with no implementation batch active; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1274 is accepted before implementation as the sole slice in active Batch512. Batch511 (F1273) remains complete and pushed at `d9a91397` (see its [push receipt](03-Phase-2-Progress-Log.md#batch511-push-receipt-2026-10-21)); its implementation and focused verification are recorded in the [F1273 closeout](03-Phase-2-Progress-Log.md#f1273-schedule-display-mode-intensive-schedule-source-policy-complete-2026-10-21). No F1274 implementation, build, or tests have started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
-
-### Active slice batch
-
-Batch512 currently has 0 complete, 1 accepted, and 0 discovered slices:
-
-1. F1274 - Class Analytics grade attention policy — accepted; next action: implement the typed Application grade-attention policy and carry its result into the ranking model.
-
-No F1274 implementation, build, or tests have started.
+Batch512 (F1274) is complete locally at source/test commit
+`85ff86737b81c6da74cdc162f85edc2b44f2ccb0` and awaits its normal push. The
+focused macOS verification is recorded in the [F1274 closeout](03-Phase-2-Progress-Log.md#f1274-class-analytics-grade-attention-policy-complete-2026-10-21); no full-suite, Windows, or Gate 2 claim is made. No implementation batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
