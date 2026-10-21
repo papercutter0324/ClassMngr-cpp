@@ -53,12 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch509 (F1270–F1271) is complete locally and awaiting its normal push receipt, with no implementation batch active during the handoff; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch510 is active with F1272 accepted before implementation as its sole slice; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1271 is complete in Batch509 at source commit
-`d445b4046ad83e6aebbfb8dee572f344d92cc7be` (see [F1271 closeout](03-Phase-2-Progress-Log.md#f1271-initial-setup-class-times-row-presence-requirement-policy-in-application-complete-2026-10-21)). Its focused policy CTest and selected Initial Setup checks passed; no full-suite, Windows, or Gate 2 claim is made. Batch509 (F1270–F1271) is complete locally and awaiting its normal push receipt. No implementation batch is active during the handoff. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+Batch509 (F1270–F1271) is complete and pushed at `9ae5ea2d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch509-push-receipt-2026-10-21)). The refreshed Batch510 discovery found one supported candidate, F1272 Schedule Testing grade-suppression Application policy; it is accepted before implementation as the sole slice (see [F1272 acceptance](03-Phase-2-Progress-Log.md#f1272-schedule-testing-grade-suppression-application-policy-accepted-before-implementation-2026-10-21)). No implementation, build, or tests have started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -72,6 +71,12 @@ Treat this plan as an operational summary, not a history:
 - When a slice is accepted, record its evidence in the progress log and update its status in this plan. Remove the batch list when the batch closes; replace it in place with the next active batch and do not carry forward history.
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
+
+### Active batch: Batch510 (0 complete, 1 accepted, 0 discovered)
+
+- F1272 - Schedule Testing grade-suppression Application policy:
+  Accepted before implementation as the sole Batch510 slice; add the
+  Application policy and direct tests, then verify Feature adapter parity.
 
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain

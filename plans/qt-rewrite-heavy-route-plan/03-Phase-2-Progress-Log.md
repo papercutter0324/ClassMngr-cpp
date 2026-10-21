@@ -60238,7 +60238,10 @@ F1270 is accepted before implementation as the
 first Batch509 slice; F1271 remains discovered second. No F1270
 implementation, build, or tests have started.
 
-### Batch510 discovery - 2026-10-21
+### Batch510 first-pass discovery shortfall (superseded by refreshed discovery below) - 2026-10-21
+
+This first-pass shortfall is preserved as dated history and is superseded by
+the later source-supported Batch510 refresh below.
 
 Discovery began when F1270, the second-last slice in active Batch509, started.
 `B510_HISTORY` found no additional documented candidate. `B510_SOURCE_SCAN`
@@ -60345,3 +60348,78 @@ Batch509 (F1270–F1271) is complete locally and awaiting its normal push
 receipt. No implementation batch is active during the handoff. Batch510's
 discovery shortfall remains recorded above and is not activated. Gate 1 and
 Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### Superseded latest progress update - 2026-10-21 (Batch509 complete locally, push pending)
+
+F1271's closeout and focused verification are recorded in its
+[F1271 completion entry](03-Phase-2-Progress-Log.md#f1271-initial-setup-class-times-row-presence-requirement-policy-in-application-complete-2026-10-21).
+
+### Batch509 push receipt - 2026-10-21
+
+The normal push on `Qt-Rewrite` succeeded from
+`9c6a8788c565fe4562d812cc6a614ba308f41381` to
+`9ae5ea2daaf74babd90960b2171c403e554f4fde`. Local and upstream now both
+point to `9ae5ea2daaf74babd90960b2171c403e554f4fde`; the branch is clean and
+up to date. The push completed without errors or force. No hosted or CI
+verification is implied.
+
+Batch509 (F1270–F1271) is complete and pushed. No implementation batch is
+active while slice discovery is refreshed. The Batch510 shortfall remains a
+dated first pass, not an activated batch. Gate 1 and Gate 2 remain Partial,
+and the Phase 2 exit gate remains Open.
+
+### Superseded latest progress update - 2026-10-21 (Batch509 pushed, discovery refresh underway)
+
+Batch509's normal push is recorded in its [receipt](03-Phase-2-Progress-Log.md#batch509-push-receipt-2026-10-21), and F1271's completed slice and focused verification are recorded in its [closeout](03-Phase-2-Progress-Log.md#f1271-initial-setup-class-times-row-presence-requirement-policy-in-application-complete-2026-10-21). The earlier Batch510 first-pass shortfall remains preserved and is superseded by the refreshed discovery below.
+
+### Batch510 refreshed discovery - 2026-10-21
+
+After Batch509 was pushed, two independent source explorations found one
+supported candidate and no other candidate in their assigned surfaces. Main
+reviewed the decisive source and test evidence. The original Batch510
+first-pass shortfall above remains dated history and is superseded by this
+refreshed discovery; its rejected QWizard route lead is not reopened.
+
+`src/features/schedule/ui/schedule_view_model.cpp` defines private
+`testingSuppressesEntry` around line 151 and calls it around line 365. The
+Feature normalizes grade by trimming and uppercasing, then maps it through
+`Course::gradeBandForName`. In Testing mode it suppresses M2/M3 and suppresses
+M1 only when `testingAffectsM1` is true. Explicit assignment bypasses
+suppression; other display modes do not use this rule. Existing source tests
+in `tests/schedule_print_model_tests.cpp` are
+`testingModeFiltersAffectedGradesAndPreservesPriority` and
+`testingModeSuppressesAffectedGradesWithoutAssignments`. F55 documents the
+normalization and caller policy; F1006 acceptance kept grade suppression out
+of its separate slot-default/toggle scope. Independent non-calendar workspace
+and use-case rescans and historical/source reviews found no other candidate;
+F709 and wizard routing remain blocked or rejected.
+
+The ordered Batch510 candidate list contains one slice:
+
+1. F1272 - Schedule Testing grade-suppression Application policy.
+
+No other slices were found.
+
+### F1272 Schedule Testing grade-suppression Application policy accepted before implementation - 2026-10-21
+
+Add a Qt-free Next Application boolean policy over
+`Domain::CourseGradeBand` and `testingAffectsM1`. Return true for M2 and M3;
+return true for M1 only when `testingAffectsM1` is true; return false for E4,
+E5, E6, Other, and unknown enum values.
+
+The Feature keeps QString trimming and uppercasing and
+`Course::gradeBandForName` mapping at its edge. Call the Application policy
+only for Testing-mode entries without explicit assignment. Preserve reverse
+removal and the resulting slot-state/block-availability behavior. Do not
+change assignment precedence, summary or rendering, other display modes,
+grade normalization, or flags/preferences.
+
+Add direct app-less matrix tests for the policy. Retain or update the exact
+Feature regressions in `tests/schedule_print_model_tests.cpp` to verify
+adapter parity and integration behavior. Build incrementally in the standard
+Windows x64 Debug tree with `ClassMngr`, the new policy test target, and
+`ClassMngrSchedulePrintModelTests`; run the app-less CTest and only the two
+existing Feature method selectors, then check the diff. No full-suite or Gate
+2 claim is planned. F1272 is accepted before implementation as the sole
+Batch510 slice. No F1272 implementation, build, or tests have started. Gate 1
+and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
