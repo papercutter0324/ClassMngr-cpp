@@ -9686,6 +9686,19 @@ Version: %2</source>
     </message>
 </context>
 <context>
+    <name>ClassAnalyticsPage</name>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_analytics_page.cpp" line="557"/>
+        <source>Class analytics data could not be loaded. Please try again.</source>
+        <translation>수업 분석 데이터를 불러오지 못했습니다. 다시 시도해 주세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_analytics_page.cpp" line="558"/>
+        <source>Retry</source>
+        <translation>다시 시도</translation>
+    </message>
+</context>
+<context>
     <name>OnScreenKeyboard</name>
     <message>
         <source>On-Screen Keyboard</source>

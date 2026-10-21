@@ -26,6 +26,7 @@
 #include <QLabel>
 #include <QLayout>
 #include <QLayoutItem>
+#include <QPushButton>
 #include <QShowEvent>
 #include <QScrollBar>
 #include <QTableView>
@@ -460,6 +461,35 @@ void ClassAnalyticsPage::buildUi()
     m_emptyLabel->setFont(FontManager::getUiFont(12));
     m_emptyLabel->setMinimumHeight(180);
     content->addWidget(m_emptyLabel);
+
+    m_readErrorContainer = new QWidget(body);
+    m_readErrorContainer->setObjectName(
+        QStringLiteral("classAnalyticsReadErrorContainer"));
+    m_readErrorContainer->setMinimumHeight(180);
+    auto* readErrorLayout = new QVBoxLayout(m_readErrorContainer);
+    readErrorLayout->setContentsMargins(12, 12, 12, 12);
+    readErrorLayout->addStretch();
+    m_readErrorLabel = new QLabel(m_readErrorContainer);
+    m_readErrorLabel->setObjectName(
+        QStringLiteral("classAnalyticsReadErrorLabel"));
+    m_readErrorLabel->setAlignment(Qt::AlignCenter);
+    m_readErrorLabel->setWordWrap(true);
+    m_readErrorLabel->setFont(FontManager::getUiFont(12));
+    readErrorLayout->addWidget(m_readErrorLabel);
+    auto* retryLayout = new QHBoxLayout();
+    retryLayout->addStretch();
+    m_retryButton = new QPushButton(m_readErrorContainer);
+    m_retryButton->setObjectName(
+        QStringLiteral("classAnalyticsRetryButton"));
+    retryLayout->addWidget(m_retryButton);
+    retryLayout->addStretch();
+    readErrorLayout->addLayout(retryLayout);
+    readErrorLayout->addStretch();
+    content->addWidget(m_readErrorContainer);
+    connect(m_retryButton,
+            &QPushButton::clicked,
+            this,
+            &ClassAnalyticsPage::refresh);
     content->addStretch();
 
     retranslateUi();
@@ -492,6 +522,7 @@ void ClassAnalyticsPage::clearDatabaseState()
 {
     m_classId = -1;
     m_initialEvaluationSelectionApplied = false;
+    m_dashboardReadError.reset();
     clearDisplay();
     showEmpty(true);
 }
@@ -522,6 +553,9 @@ void ClassAnalyticsPage::retranslateUi()
     m_rankingCard->setTitle(tr("Student Ranking"));
     m_emptyLabel->setText(
         tr("No scored speaking evaluations have been recorded for this class yet."));
+    m_readErrorLabel->setText(
+        tr("Class analytics data could not be loaded. Please try again."));
+    m_retryButton->setText(tr("Retry"));
     setRankingHeaders();
     populateEvaluationSelector(selected);
 
@@ -597,10 +631,13 @@ void ClassAnalyticsPage::clearDisplay()
 
 void ClassAnalyticsPage::showEmpty(bool empty)
 {
-    m_summaryContainer->setVisible(!empty);
-    m_chartsContainer->setVisible(!empty);
-    m_rankingCard->setVisible(!empty);
-    m_emptyLabel->setVisible(empty);
+    const bool hasReadError = m_dashboardReadError.has_value();
+    const bool showDashboard = !empty && !hasReadError;
+    m_summaryContainer->setVisible(showDashboard);
+    m_chartsContainer->setVisible(showDashboard);
+    m_rankingCard->setVisible(showDashboard);
+    m_emptyLabel->setVisible(empty && !hasReadError);
+    m_readErrorContainer->setVisible(hasReadError);
 }
 
 QString ClassAnalyticsPage::areaText(
@@ -644,6 +681,7 @@ void ClassAnalyticsPage::refreshAreaValueTexts()
 void ClassAnalyticsPage::rebuild()
 {
     m_rebuilding = true;
+    m_dashboardReadError.reset();
     clearDisplay();
 
     SpeakingEvaluationDashboard dashboard;
@@ -689,6 +727,8 @@ void ClassAnalyticsPage::rebuild()
                     request, *readPort, *names);
             if (result)
                 dashboard = toUiDashboard(result.value());
+            else
+                m_dashboardReadError = result.error();
         }
     }
 

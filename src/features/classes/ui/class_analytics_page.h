@@ -3,10 +3,13 @@
 #include "domain/models/classroom.h"
 #include "features/classes/services/speaking_analytics.h"
 #include "next/application/class_analytics_dashboard_read_port.h"
+#include "next/domain/operation_result.h"
 #include "ui/shared/pages/basepage.h"
 
 #include <QList>
 #include <QString>
+
+#include <optional>
 
 class ApplicationServices;
 class CriterionDistributionBar;
@@ -17,6 +20,7 @@ class QComboBox;
 class QEvent;
 class QGridLayout;
 class QLabel;
+class QPushButton;
 class QShowEvent;
 class QTableView;
 class SectionCard;
@@ -94,11 +98,16 @@ private:
     int m_classId = -1;
     bool m_rebuilding = false;
     bool m_initialEvaluationSelectionApplied = false;
+    std::optional<ClassMngr::Next::Domain::OperationError>
+        m_dashboardReadError;
 
     QWidget* m_dashboardBody = nullptr;
     QLabel* m_heading = nullptr;
     QLabel* m_evaluationLabel = nullptr;
     QComboBox* m_evaluationCombo = nullptr;
+    QWidget* m_readErrorContainer = nullptr;
+    QLabel* m_readErrorLabel = nullptr;
+    QPushButton* m_retryButton = nullptr;
 
     QWidget* m_summaryContainer = nullptr;
     QGridLayout* m_summaryLayout = nullptr;
