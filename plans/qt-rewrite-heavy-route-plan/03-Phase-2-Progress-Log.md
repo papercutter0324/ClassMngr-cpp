@@ -60423,3 +60423,110 @@ existing Feature method selectors, then check the diff. No full-suite or Gate
 2 claim is planned. F1272 is accepted before implementation as the sole
 Batch510 slice. No F1272 implementation, build, or tests have started. Gate 1
 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### Superseded latest progress update - 2026-10-21 (F1272 accepted, implementation pending)
+
+F1272's refreshed discovery evidence and pre-implementation criteria remain in its
+[acceptance record](03-Phase-2-Progress-Log.md#f1272-schedule-testing-grade-suppression-application-policy-accepted-before-implementation-2026-10-21). The initial Batch510 shortfall remains superseded by the refreshed discovery above.
+
+### F1272 Schedule Testing grade-suppression Application policy complete - 2026-10-21
+
+F1272 is complete in Batch510. Its acceptance documentation was committed at
+`be9428a9bc01f48476d9e2169998b47d158fb66d`, followed by source/test commit
+`3979d21f28f50027e1fff85b1380414d4d005ef8`. The Qt-free policy owns the
+accepted `CourseGradeBand` and `testingAffectsM1` decision. The Feature retains
+grade trimming, uppercasing, and `Course::gradeBandForName` mapping at its
+edge, and calls the policy only for Testing-mode entries without explicit
+assignment. Independent review confirmed the input/output rule, adapter
+boundary, reverse removal, assignment priority, slot-state effects, and
+summary counts remained as accepted.
+
+The phase-standard Windows x64 preset was unavailable on this macOS host:
+`cmake --list-presets` listed only macOS presets and
+`cmake --preset windows-x64-debug` reported a disabled preset. Verification
+therefore used the existing standard host-native `build/macos-clang-debug`
+Debug tree. CMake configure/generate ran because the change added manifests.
+The incremental Ninja build of `ClassMngr`,
+`ClassMngrNextApplicationScheduleTestingGradeSuppressionPolicyTests`, and
+`ClassMngrSchedulePrintModelTests` passed. The app-less CTest passed 1/1. The
+Feature selectors `testingModeFiltersAffectedGradesAndPreservesPriority` and
+`testingModeSuppressesAffectedGradesWithoutAssignments` passed 2/2.
+`git diff --check` passed, with no warnings. No full-suite, Windows, or Gate
+2 result is claimed.
+
+Batch510's sole slice, F1272, is complete locally and awaiting normal push.
+Batch511 discovery is underway; no implementation batch is active. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### Superseded latest progress update - 2026-10-21 (Batch510 complete locally, push pending)
+
+F1272's implementation and focused verification are recorded in its
+[closeout](03-Phase-2-Progress-Log.md#f1272-schedule-testing-grade-suppression-application-policy-complete-2026-10-21); Batch510 is complete locally and awaits its normal push.
+
+### Batch510 closeout - 2026-10-21
+
+Batch510 contained only F1272 and is complete locally at source/test commit
+`3979d21f28f50027e1fff85b1380414d4d005ef8`. Its focused macOS build and tests,
+the unavailable Windows preset, and the scope/verification limits are recorded
+in the [F1272 closeout](03-Phase-2-Progress-Log.md#f1272-schedule-testing-grade-suppression-application-policy-complete-2026-10-21).
+Batch510 awaits its normal push receipt; no full-suite, Windows, or Gate 2
+result is claimed. The legacy Application mapping's `settingsService()` row
+now records F190–F208 as complete active-session `SettingsRepository`
+adapters; generic/sessionless `SettingsService` behavior remains per F111.
+
+### Batch511 discovery - 2026-10-21
+
+The source scan found one supported candidate. The Schedule feature's
+`scheduleModeUsesIntensiveTimes`, Classes' `scheduleSourceForMode`, Speaking
+Evaluation's matching helper, and Sub Prep's direct comparisons repeat the
+rule that only Intensive mode selects intensive schedule data. The global
+Feature `ScheduleDisplayMode` enum duplicates the three values in the
+Application enum. Historical review found no other unaccepted actionable
+candidate. The Investigator confirmed the narrow Application predicate and
+recommended aliasing the existing global enum spelling to the Application
+enum, while checking the rebuild implications for this public enum and its
+typed signal through the focused build and AUTOMOC.
+
+The sole ordered Batch511 candidate is:
+
+1. F1273 - Schedule display mode → intensive schedule source policy.
+
+No other slices were found.
+
+### F1273 Schedule display mode → intensive schedule source policy accepted before implementation - 2026-10-21
+
+Add a Qt-free Application predicate over
+`Application::ScheduleDisplayMode`: return true only for `Intensive`, and
+false for `Regular`, `Testing`, and invalid enum values. Replace the duplicate
+Feature enum declaration in `schedule_view_model.h` with an alias to the
+Application enum, preserving the global spelling, value names/order/IDs, and
+invalid-mode fallback. Wire the production consumers in Schedule, Classes,
+Speaking Evaluation, and Sub Prep to the Application predicate; a policy-only
+helper without these call sites does not complete the slice.
+
+Keep UI comparisons that control buttons, visibility, and row trimming, plus
+F1006 slot-default/toggle behavior, F1272 grade suppression, preference
+save/load fallback, Classes and Speaking Evaluation tab filtering, and
+Sub Prep's separate `Application::ScheduleViewMode` validation and regular
+metadata fallback unchanged. Preserve the existing three-mode display
+behavior and assignment precedence.
+
+Add app-less policy tests for all three enum values and an invalid cast.
+Retain or update focused integration coverage: Schedule's
+`sourceQueryBuildsRegularIntensiveAndTestingSchedules` and its Testing
+regular-slot regression; Classes'
+`testingModeUsesRegularMeetingsForDayFiltering`; Speaking Evaluation's
+`scheduleModesAndVisibilityScopeFilterNavigationTabs` with Testing included;
+and Sub Prep's `scheduleDisplayModeRefreshesClassInformationInPlace`,
+`pageGenerationForwardsIntensiveModeWithFilteredClasses`, and a
+Testing-to-Regular assertion where needed.
+
+Build `ClassMngr`, the Application policy target, and affected test targets in
+the standard Windows x64 Debug tree when that preset is supported. On the
+current macOS host, use the existing standard `build/macos-clang-debug` tree
+because the Windows preset is disabled; verify the build/AUTOMOC effects and
+run only the exact focused selectors above, followed by `git diff --check`.
+No full-suite or Gate 2 claim is planned. F1273 is accepted as the sole
+Batch511 slice before implementation; no implementation, build, or tests have
+started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
+Open.
