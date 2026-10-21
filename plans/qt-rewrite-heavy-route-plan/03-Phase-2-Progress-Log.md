@@ -61013,3 +61013,74 @@ Batch515 (F1276) remains complete and pushed through closeout commit
 no implementation slice active. Gate 1 and Gate 2 remain Partial, and the
 Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification
 remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+
+### Superseded latest progress update - 2026-10-21 (Batch516 shortfall, Batch517 discovery pending)
+
+Batch515 (F1276) remained complete and pushed through closeout commit
+`ad802adca5177ddcf3fa28dc49b040bdc1e31293`. Batch516 found no supported slice;
+Batch517 discovery was complete, but no implementation slice was active. Gate 1
+and Gate 2 remained Partial, and the Phase 2 exit gate remained Open.
+
+### Batch517 discovery - 2026-10-21
+
+Three discovery lanes were reconciled under `phase2-batch517-discovery`, with
+the novelty decision recorded as `phase2-b517-acceptance-review`. The
+Application-boundary lane found no new candidate. The active-consumer lane
+surfaced Schedule Import user selection, but the novelty review excluded it:
+Batch395 had already screened Schedule Import and found no eligible production
+mismatch, and this pass found no fresh behavior mismatch
+(`03-Phase-2-Progress-Log.md:43918`). The projection lane identified live
+Speaking Evaluation score and Comment validation as a distinct candidate: the
+whole-save Application validator defines score values and comment-length issues
+in `src/next/application/speaking_evaluation_validation.h:314-318,1189-1228`,
+and is used by the save use case and Feature validation adapter
+(`src/next/application/speaking_evaluation_save_use_case.h:58-60`,
+`src/features/speaking_eval/ui/speaking_eval_page_ui.cpp:480-494`).
+`SpeakingEvalModel::validateValue()` separately validates the same cell values
+in `src/features/speaking_eval/ui/speaking_eval_model.cpp:715-785`.
+
+The sole ordered Batch517 candidate is:
+
+1. F1277 - Speaking Evaluation live score/comment cell-value policy.
+
+No other slices were found.
+
+### F1277 Speaking Evaluation live score/comment cell-value policy accepted before implementation - 2026-10-21
+
+Add a narrowly typed, Qt-free Application rule for Speaking Evaluation score
+cells and Comments. Reuse it from the existing whole-save validation boundary
+and `SpeakingEvalModel` live cell validation. Keep Feature-side conversion and
+the surrounding Application request and structured-issue contracts in place.
+
+Preserve the accepted score values `A+`, `A`, `B+`, `B`, and `C`. Blank or
+trimmed-empty scores remain valid in both whole-save and live validation, and
+each caller keeps its existing score normalization. Comments of at most 450
+UTF-16 code units pass; values longer than 450 fail regardless of content.
+Move the live Comment length check ahead of the trimmed-empty early return so
+overlong whitespace-only Comments receive the same field-level issue as the
+whole-save path; ordinary blank or short whitespace Comments remain valid.
+Preserve localized UI messages and the save issue codes
+`ValidationEnumInvalidValue` for invalid scores and
+`ValidationLengthOutOfBounds` for overlong Comments, along with their field,
+row/column coordinates, severity, and arguments. Keep validation timing and
+behavior for Notes, names, row rules, and all other fields unchanged. F1007
+shared student name reconciliation and F1264 Korean-name whitespace behavior
+remain outside this slice.
+
+Add the focused app-less helper matrix in
+`tests/next_application_speaking_evaluation_save_use_case_tests.cpp` for
+allowed, invalid, and blank scores plus Comments at 450 and 451 UTF-16 code
+units, including whitespace-only values; retain the existing whole-save
+validator coverage there. In
+`tests/speaking_eval_page_save_tests.cpp` / `SpeakingEvalPageSave`, run only
+selectors covering invalid scores, long Comments, overlong whitespace-only
+Comments, clearing/recovery, and blank scores. Incrementally build `ClassMngr`,
+the existing
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests` target, and
+`SpeakingEvalPageSave` in the existing macOS Debug tree, then run the focused
+app-less CTest and those UI selectors with `git diff --check`. No full-suite,
+Windows, or Gate 2 claim is planned. F1277 is accepted as the sole Batch517
+slice before implementation; no source implementation, build, or tests have
+started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
+Open. F629's source-bound Windows x64 requalification remains outstanding
+separately from Phase 0's 2026-09-18 Complete declaration.
