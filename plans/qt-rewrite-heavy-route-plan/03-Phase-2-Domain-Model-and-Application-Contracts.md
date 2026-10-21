@@ -53,12 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch508 is complete locally and awaiting its push receipt; after that receipt, the discovered Batch509 (F1270 then F1271) is next to activate, with no implementation batch active during the handoff; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch508 is complete and pushed at `b305bffe`; Batch509 is active with F1270 accepted before implementation and F1271 discovered second; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1269 is complete in Batch508 at source commit
-`da3905300dbb5aa9e6295512c900355d0edb201b` (see [F1269 closeout](03-Phase-2-Progress-Log.md#f1269-initial-setup-class-details-required-information-gate-in-application-complete-2026-10-21)). Its focused app-less and Initial Setup UI checks passed; no full-suite, Windows, or Gate 2 claim is made. Batch508 is complete locally and awaiting its normal push receipt. No implementation batch is active during the push handoff; the discovered Batch509 (F1270 then F1271) is next to activate after that receipt. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+Batch508 (F1268–F1269) is complete and pushed at `b305bffe` (see its [push receipt](03-Phase-2-Progress-Log.md#batch508-push-receipt-2026-10-21)). Batch509 is active: F1270, the Sub Prep `configuredLevelOrder` value type, is accepted before implementation; F1271, the Initial Setup Class Times row-presence policy, is discovered second. See the [F1270 acceptance](03-Phase-2-Progress-Log.md#f1270-sub-prep-configuredlevelorder-explicit-int32-value-type-accepted-before-implementation-2026-10-21). Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -72,6 +71,16 @@ Treat this plan as an operational summary, not a history:
 - When a slice is accepted, record its evidence in the progress log and update its status in this plan. Remove the batch list when the batch closes; replace it in place with the next active batch and do not carry forward history.
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
+
+### Active batch: Batch509 (0 complete, 1 accepted, 1 discovered)
+
+- F1270 - Sub Prep `configuredLevelOrder` explicit int32 value type:
+  Accepted before implementation; add the Application-owned value type and
+  type only the configured-level ordering fact, preserving current ordering
+  and sentinel behavior.
+- F1271 - Initial Setup Class Times row-presence requirement policy:
+  Discovered second; acceptance follows F1270, preserving row-presence-only
+  behavior and existing class creation flow.
 
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain

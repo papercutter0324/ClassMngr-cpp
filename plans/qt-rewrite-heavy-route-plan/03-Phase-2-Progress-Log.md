@@ -60187,3 +60187,53 @@ discovered next batch only; F1270 and F1271 are not accepted or active. After
 the Batch508 push receipt, Batch509 can be activated for its first candidate,
 F1270. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
 Open.
+
+### Superseded latest progress update - 2026-10-21 (F1269 complete, Batch508 awaiting push)
+
+F1269's completion and focused verification are recorded in the
+[F1269 closeout](03-Phase-2-Progress-Log.md#f1269-initial-setup-class-details-required-information-gate-in-application-complete-2026-10-21).
+
+### Batch508 push receipt - 2026-10-21
+
+The normal push on `Qt-Rewrite` succeeded from
+`9291afc23ab5f9fe5a3a624f1f6925872bbcc782` to
+`b305bffeb972759f2d448a3321fecb46f0eff3a3`. The local branch and
+`origin/Qt-Rewrite` both point to `b305bffeb972759f2d448a3321fecb46f0eff3a3`;
+the branch is clean and up to date. Push completed without errors or force.
+This records the Batch508 push only and makes no hosted or CI verification
+claim.
+
+Batch508 (F1268–F1269) is complete and pushed. Batch509 is now active with
+F1270 accepted before implementation and F1271 discovered second. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### F1270 Sub Prep `configuredLevelOrder` explicit int32 value type accepted before implementation - 2026-10-21
+
+Add a distinct Qt-free Application value type,
+`SubPrepConfiguredLevelOrder`, and use it only for
+`SubPrepVisibleClassOrderingFact::configuredLevelOrder`. It stores exactly
+`std::int32_t`, has explicit construction, `rawValue()`, and same-type value
+equality, with no implicit conversions and no range rule. Its default raw
+value remains `kClassSummaryUnknownNavigationOrder` (`1000`).
+
+The Feature `levelOrder(grade, level)` continues computing the configured
+index or `1000` and explicitly wraps that value when constructing the
+ordering fact. Preserve the comparator sequence: configured level,
+navigation day, navigation time, injected base label, `ClassId`, then stable
+exact ties. Preserve raw numeric ordering and sentinel collisions. Keep
+`ClassTabNavigationOrderRank`, `SubPrepPrintLevelOrder`, F1209 semantics, and
+all other fact fields unchanged; this follow-up types only the field F1209
+left raw.
+
+Add app-less probes for the exact field type, explicit/no-implicit integer
+conversion, `std::int32_t` minimum and maximum round trips, same-type
+equality, and default `1000`. Retain or adjust existing priority,
+unknown-level, and tie-order coverage in
+`tests/next_application_sub_prep_visible_class_ordering_policy_tests.cpp`.
+Build incrementally in the existing Debug tree with `ClassMngr` and
+`ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests`; run the
+focused policy CTest and check the diff. No full-suite or Gate 2 claim is
+planned; the slice is intended to provide focused Gate 1 app-less evidence.
+F1270 is accepted before implementation as the
+first Batch509 slice; F1271 remains discovered second. No F1270
+implementation, build, or tests have started.
