@@ -53,12 +53,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch527 (F1296) is closed locally and awaits push; Batch528 is active with F1297 accepted before implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch527 (F1296) is pushed through closeout `e164340f`; Batch528 F1297 implementation is underway with focused verification pending; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1297 is accepted before implementation in active Batch528; see the progress
-log for its contract and focused verification plan.
+F1297 implementation is underway in active Batch528; focused build and test
+verification is pending. See the progress log for its contract and plan.
 
 ### Slice discovery batches
 
@@ -79,9 +79,9 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active Batch528
 
-Batch527 (F1296) is closed locally and awaits push.
+Batch527 (F1296) is pushed through closeout `e164340fd00857d5d8b5d20243adaadf156f0cfc`; local and remote tips matched at push.
 
-1. F1297 - Accepted before implementation: distinguish failed dashboard reads
+1. F1297 - Accepted; implementation underway: distinguish failed dashboard reads
    from successful empty data using an inline retryable error state; preserve
    successful-empty behavior and keep navigation usable. See the progress log
    for full criteria.
