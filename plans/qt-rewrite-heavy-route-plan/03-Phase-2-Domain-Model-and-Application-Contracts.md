@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch521 (F1281) is complete and pushed at `779d21b8`; Batch522 discovery is next, with no implementation slice active. Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch522 is active with F1282 accepted before implementation and F1283/F1284 discovered; start Batch523 discovery when work starts on F1283, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1281 acceptance (`79bb5174`) and production/test work (`7222d23c`) are included in the Batch521 closeout pushed at `779d21b8`. See the [F1281 completion record](03-Phase-2-Progress-Log.md#f1281-class-notes-required-read-feedback-complete-locally-2026-10-21) and [Batch521 push receipt](03-Phase-2-Progress-Log.md#batch521-push-receipt-2026-10-21). Batch522 discovery is next, with no implementation slice active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+F1281 acceptance (`79bb5174`) and production/test work (`7222d23c`) are included in the Batch521 closeout pushed at `779d21b8`. See the [F1281 completion record](03-Phase-2-Progress-Log.md#f1281-class-notes-required-read-feedback-complete-locally-2026-10-21) and [Batch521 push receipt](03-Phase-2-Progress-Log.md#batch521-push-receipt-2026-10-21). Current Batch522 status and F1282 acceptance are recorded below and in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#batch522-discovery-2026-10-21).
 
 ### Slice discovery batches
 
@@ -75,6 +75,14 @@ Treat this plan as an operational summary, not a history:
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+
+### Active Batch522
+
+1. F1282 - Accepted: implement Calendar event activation load-error feedback
+   and the focused regression coverage defined in the progress log.
+2. F1283 - Discovered: define and accept Class Details required-read feedback
+   when work starts; begin Batch523 discovery at that point.
+3. F1284 - Discovered: define and accept Schedule Editor initial-read feedback.
 
 ### Deferred candidates
 

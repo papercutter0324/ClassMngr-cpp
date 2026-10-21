@@ -61595,3 +61595,78 @@ implementation slice active. Gate 1 and Gate 2 remain Partial, and the Phase 2
 exit gate remains Open. Phase 0 remains Complete; F629's source-bound Windows
 x64 requalification remains outstanding separately. No hosted CI or new test
 run is implied by this receipt.
+
+### Batch522 discovery - 2026-10-21
+
+Three discovery lanes were reconciled. The Application-contract scan found no
+supported new candidate in the sampled Teacher profile, Class Create, Roster
+save, Calendar save, or Speaking Eval paths. It screened out a conditional
+Teacher Import mismatch request: the current only production adapter derives
+normalized keys and payload from the same source, and F87/F1120 assign
+normalization to that adapter. The evidence does not establish inconsistent
+direct request construction as supported behavior, so this is not counted as
+a slice; that support question remains uncertain.
+
+The read/write mapping scan found no candidate in the Roster column batch, My
+Classes information batch (F306 existing behavior), Speaking Evaluation
+batch, or Schedule Import snapshot. It did not reopen F1062 or F1103.
+
+The active-feature consumer scan found three supported candidates. F1282 is
+in `src/features/calendar/ui/calendar_page_events.cpp:185-218`: a failed
+`CalendarEventByIdQueryUseCase` lookup returns without warning or opening the
+editor. The platform port distinguishes NotFound, Technical, and projection
+errors (`src/next/platform/application_services_calendar_event_port.h:129-185`).
+Existing `ClassMngrCalendarPageEventMutationParityTests`
+(`tests/calendar_page_event_mutation_parity_tests.cpp`) cover successful open
+and mutation plus other read retries, but not failed event activation. F1098
+covers CRUD parity and F1099 types the request; neither defines feature-level
+feedback.
+
+F1283 is in `src/features/classes/ui/class_details_page.cpp`: a top-level read
+error is dropped to `nullopt` (`:473-519`); failed outer or nested
+`classFields` reads fill defaults and clear dirty state (`:814-918`); saving
+is blocked without feedback (`:1046-1052`). Existing
+`tests/class_details_page_display_tests.cpp:309-365,435-499` cover fallback
+and blocked save. F1103 is its separate deferred save-validation-context
+fallback path; F1281 covers the Class Notes page, not Class Details.
+
+F1284 is in `src/features/schedule/ui/schedule_editor_dialog.cpp:400-472`:
+`ScheduleEditorDialog::loadData()` returns silently on a failed initial read;
+a later blocked Save shows generic `Could Not Save` feedback (`:164-173`).
+Existing `tests/schedule_editor_dialog_tests.cpp:326-392` confirm no prompt at
+load and the generic Save warning. F765/F893 cover Application request,
+snapshot, and parent provenance, not feature-level feedback. The feature lane
+found no additional supported candidate and did not reopen F217 roster-score
+import.
+
+The ordered Batch522 candidates are:
+
+1. F1282 - Calendar event activation load-error feedback.
+2. F1283 - Class Details required-read feedback.
+3. F1284 - Schedule Editor initial-read feedback.
+
+No other slices were found.
+
+### F1282 Calendar event activation load-error feedback accepted before implementation - 2026-10-21
+
+For a nonempty event ID, if `CalendarEventByIdQueryUseCase` fails, show one
+localized warning titled `Load Calendar Event` with the returned structured
+error message. Do not open or prefill the editor, mutate, delete, or create
+events, or silently ignore the failed user activation. Preserve successful
+activation opening the existing event editor unchanged.
+
+Extend the existing `ClassMngrCalendarPageEventMutationParityTests`: create
+and project a valid event, then make its row stale or otherwise inject a
+by-ID failure before activation; assert the warning title and message, that
+the editor remains closed, and that event state is unchanged. Retain a
+successful activation case. Build `ClassMngr` and
+`ClassMngrCalendarPageEventMutationParityTests` with dependencies in the
+existing `build/macos-clang-debug` tree, run that target's focused CTest, and
+run `git diff --check`. No full suite, Windows run, clean build, hosted CI, or
+Gate 2 claim is planned. F1282 is accepted as Batch522's first candidate
+before implementation; implementation, builds, and tests have not started.
+F1283 and F1284 remain discovered without detailed acceptance. Start Batch523
+discovery when work starts on F1283, the second-last Batch522 candidate. Gate
+1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. Phase 0
+remains Complete; F629's source-bound Windows x64 requalification remains
+outstanding separately.

@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch521 (F1281) is complete and pushed at `779d21b8`; Batch522 discovery is next, with no implementation slice active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is active with F1282 accepted before implementation and F1283/F1284 discovered. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -40,13 +40,14 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 work
 
-Batch521 (F1281) is complete and pushed at `779d21b8`; Batch522 discovery is
-next, with no implementation slice active. Gate 1 and Gate 2 remain Partial,
-and the Phase 2 exit gate remains Open. F629's source-bound Windows x64
-requalification remains outstanding separately from Phase 0's Complete
-declaration. The [Phase 2 progress
-log](03-Phase-2-Progress-Log.md) holds acceptance, verification, and exact
-batch history.
+Batch521 (F1281) is pushed through closeout `779d21b88f87aee17a447c62503971f78cd42b68`
+and receipt `53e556756cfbdc552e50b97a6bffdc77731c6f3f`; local and remote tips
+match. Batch522 is active: F1282 is accepted before implementation, while
+F1283 and F1284 are discovered. Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open. Phase 0 remains Complete; F629's source-bound
+Windows x64 requalification remains outstanding separately. The [Phase 2
+progress log](03-Phase-2-Progress-Log.md) holds acceptance, verification, and
+exact batch history.
 
 The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
 shows current status; the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
