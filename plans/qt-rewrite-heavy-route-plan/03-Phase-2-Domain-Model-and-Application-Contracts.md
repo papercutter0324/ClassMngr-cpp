@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch526 (F1295) is closed locally and awaits push; Batch527 is active with F1296 discovered, provisional, and unaccepted; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch526 (F1295) is pushed through closeout `156e5fa2` with local and remote tips matching; Batch527 is active with F1296 discovered, provisional, and unaccepted pending formal acceptance; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
@@ -80,8 +80,8 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active Batch527
 
-Batch526 (F1295) is closed locally and awaits push. Formal acceptance for
-F1296 follows that push.
+Batch526 (F1295) is pushed through closeout `156e5fa2`; local and remote tips
+match. F1296 remains pending formal acceptance.
 
 1. F1296 - Discovered, provisional, and unaccepted: disclose when the initial
    Co-Teacher assignment snapshot is unknown, show a persistent structured

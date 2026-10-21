@@ -62690,11 +62690,24 @@ from F1280's post-save refresh case. Assignment is a direct one-field write, so
 a full edit lock is unnecessary. Proposed direction is a persistent structured
 warning and deliberate/manual save while the read state is unknown, while
 retaining explicit unassignment and recovery after a successful reload. F1296
-remains provisional and unaccepted pending formal acceptance after the
-Batch526 push.
+remains provisional and unaccepted pending formal acceptance.
 
 The contract lane sampled Class Notes read/save contracts and GS Team directory
 save use case/adapter and found no additional slices. The bounded sample found
 no other candidates. No tests ran.
 
 No other slices were found.
+
+### Batch526 push receipt - 2026-10-21
+
+`git push` published Batch526 to configured `origin/Qt-Rewrite`
+(`https://github.com/papercutter0324/ClassMngr-cpp.git`), advancing the remote
+from `34240255a6856094533ba99df13b5d696f80f12d` to
+`156e5fa2feab823cb17ef62f7bd5f3b5efc8afc2`. Local `HEAD` and the remote tip
+match at `156e5fa2feab823cb17ef62f7bd5f3b5efc8afc2`; the worktree was clean.
+Ordinary network DNS failed; the authorized escalated push and verification
+succeeded.
+
+Batch526 (F1295) is pushed through closeout `156e5fa2`. Batch527 is active
+with F1296 discovered, provisional, and unaccepted pending formal acceptance.
+Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
