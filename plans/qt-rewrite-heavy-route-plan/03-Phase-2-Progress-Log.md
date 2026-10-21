@@ -59808,3 +59808,45 @@ focused CTests. This slice adds Gate 1 app-less behavior evidence and makes no
 Gate 2 baseline-parity claim. F1007, F1103, and F285 are out of scope. F1266
 is accepted as the sole Batch506 slice before implementation; no source,
 build, or test work has started.
+
+### Superseded latest progress update - 2026-10-21 (F1266 accepted)
+
+F1266's acceptance criteria, discovery evidence, and pre-implementation status
+are recorded in the [F1266 acceptance](03-Phase-2-Progress-Log.md#f1266-calendar-event-editor-validation-in-application-accepted-before-implementation-2026-10-21).
+
+### F1266 Calendar Event editor validation in Application complete - 2026-10-21
+
+F1266 is complete in Batch506 at implementation commit
+`dffd270ed476439897e3712511c6b9f2bc6a1c1f`. The six changed paths are
+`cmake/next.cmake`,
+`src/next/application/calendar_event_edit_validation.h`,
+`src/features/calendar/ui/calendar_event_dialog.cpp`,
+`src/features/calendar/ui/calendar_event_dialog.h`,
+`tests/next_application_calendar_event_tests.cpp`, and
+`tests/dialog_shell_tests.cpp`.
+
+The Qt-free Application validation contract now returns structured ordered
+field issues over the typed `CalendarEventEditDraft` and recurrence inputs.
+The v2 dialog routes validation decisions through that contract while
+retaining Qt conversion, translation and rendering through the existing
+validation binder, and UI focus/refresh behavior. The legacy validator remains
+available to its other consumers; recurrence generation and Platform save
+validation are unchanged.
+
+The Executor incrementally built macOS Debug targets `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrDialogShellTests`; the focused CTests passed 2/2. Independent
+selected app-less edit-validation methods and the dialog issue-mapping,
+refresh, and focus case passed. After adding a supplementary-codepoint title
+boundary assertion (255 UTF-16 units accepted; 256 rejected with length 256)
+and an exact invalid-`timeStatus` diagnostic assertion, the focused
+Application CTest passed 1/1 and direct app-less cases reported 2/0/0. The
+Executor reported `git diff --check` passed. No clean build, Windows build,
+full-suite verification, or Gate 2 baseline-parity claim is made; this is
+focused Gate 1 app-less behavior evidence.
+
+Batch506 is complete locally and awaits push. Gate 1 and Gate 2 remain
+Partial, and the Phase 2 exit gate remains Open. The separate F1265
+`outputReportsUsesProjectedRegularSchedule` fixture failure remains recorded
+at `tests/speaking_eval_page_save_tests.cpp:2466`; its pre-change baseline is
+unproven, and F1266 does not change that evidence.
