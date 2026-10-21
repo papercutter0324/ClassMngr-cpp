@@ -9,6 +9,7 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 #include "next/application/sub_prep_class_details_query.h"
 #include "next/application/sub_prep_calendar_event_intervals_query.h"
+#include "next/application/sub_prep_vacation_selection_policy.h"
 #include "next/application/sub_prep_schedule_summary_query.h"
 #include "next/application/sub_prep_print_source_query.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
@@ -288,6 +289,10 @@ public:
     {
         ++loadCount;
         lastRequest = request;
+        if (!shouldFail)
+        {
+            return SubPrepCalendarEventIntervalsReadResult::success(intervals);
+        }
         return SubPrepCalendarEventIntervalsReadResult::failure({
             .code = Domain::ErrorCode::Technical,
             .message = "calendar read failed",
@@ -297,6 +302,8 @@ public:
 
     int loadCount = 0;
     SubPrepCalendarEventIntervalsReadRequest lastRequest;
+    SubPrepCalendarEventIntervalReads intervals;
+    bool shouldFail = true;
 };
 
 class SubPrepPageHarness final
@@ -389,6 +396,82 @@ CalendarEvent calendarEvent(
     return event;
 }
 
+QList<QDate> selectedVacationDates(
+    const QList<CalendarEvent>& calendarEvents,
+    const QDate& referenceDate
+    )
+{
+    SubPrepCalendarEventIntervals intervals;
+    intervals.reserve(static_cast<std::size_t>(calendarEvents.size()));
+    for (const CalendarEvent& event : calendarEvents)
+    {
+        const auto eventType = Domain::calendarEventTypeFromName(
+            event.eventType.toStdString()
+            );
+        intervals.push_back({
+            eventType.value_or(Domain::CalendarEventType::Other),
+            CalendarEventDate(event.startDate.toString(Qt::ISODate).toStdString()),
+            CalendarEventDate(event.endDate.toString(Qt::ISODate).toStdString())
+        });
+    }
+
+    const auto domainDates = selectNextSubPrepVacationBlock(
+        intervals,
+        CalendarEventDate(referenceDate.toString(Qt::ISODate).toStdString())
+        );
+    QList<QDate> dates;
+    dates.reserve(static_cast<qsizetype>(domainDates.size()));
+    for (const Domain::GregorianDate& domainDate : domainDates)
+    {
+        dates.append(
+            QDate::fromString(
+                QString::fromStdString(domainDate.toIsoString()),
+                Qt::ISODate
+                )
+            );
+    }
+    return dates;
+}
+
+QStringList selectedVacationDays(const QList<QDate>& dates)
+{
+    const QStringList weekdays{
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday")
+    };
+    QStringList selected;
+    for (int index = 0; index < weekdays.size(); ++index)
+    {
+        const int dayOfWeek = Qt::Monday + index;
+        if (std::any_of(
+                dates.cbegin(),
+                dates.cend(),
+                [dayOfWeek](const QDate& date)
+                {
+                    return date.dayOfWeek() == dayOfWeek;
+                }
+                ))
+        {
+            selected.append(weekdays.at(index));
+        }
+    }
+    return selected;
+}
+
+QDate weekStartForSelectedDates(
+    const QList<QDate>& dates,
+    const QDate& referenceDate
+    )
+{
+    const QDate basisDate = dates.isEmpty() ? referenceDate : dates.first();
+    return basisDate.isValid()
+        ? basisDate.addDays(Qt::Monday - basisDate.dayOfWeek())
+        : QDate();
+}
+
 void activatePage(SubPrepPage& page)
 {
     page.setDatabaseOpen(true);
@@ -428,6 +511,7 @@ private slots:
     void printDialogOnlyOffersVacationModeWithinFourWeeks();
     void printDialogCombinesVacationDatesAcrossHolidayBlocks();
     void printDialogCalendarReadUsesTwoYearWindowAndFallsBackOnFailure();
+    void printDialogReceivesApplicationVacationSelection();
     void printDialogPreflightPreservesMessagesAndAcceptanceGating();
     void generateSubPrepCancelButtonSkipsGenerationAndDestroysDialog();
     void packageFolderNamesCoverDateRangesAndUnsafeCharacters();
@@ -2374,9 +2458,8 @@ void SubPrepPageTests
     };
 
     QCOMPARE(
-        SubPrepPrintDialog::defaultSelectedDays(
-            calendarEvents,
-            wednesday
+        selectedVacationDays(
+            selectedVacationDates(calendarEvents, wednesday)
             ),
         QStringList({
             QStringLiteral("Monday"),
@@ -2386,10 +2469,7 @@ void SubPrepPageTests
         })
         );
     QCOMPARE(
-        SubPrepPrintDialog::defaultSelectedDates(
-            calendarEvents,
-            wednesday
-            ),
+        selectedVacationDates(calendarEvents, wednesday),
         QList<QDate>({
             QDate(2026, 7, 16),
             QDate(2026, 7, 17),
@@ -2398,28 +2478,25 @@ void SubPrepPageTests
         })
         );
     QVERIFY(
-        SubPrepPrintDialog::defaultSelectedDays(
-            {
+        selectedVacationDays(
+            selectedVacationDates({
                 calendarEvent(
                     QStringLiteral("Holiday"),
                     QDate(2026, 7, 20),
                     QDate(2026, 7, 24)
                     )
-            },
-            wednesday
+            }, wednesday)
             ).isEmpty()
         );
     QCOMPARE(
-        SubPrepPrintDialog::defaultSelectedDates(
+        selectedVacationDates(
             {
                 calendarEvent(
                     QStringLiteral("Vacation"),
                     QDate(2026, 7, 14),
                     QDate(2026, 7, 16)
                     )
-            },
-            wednesday
-            ),
+            }, wednesday),
         QList<QDate>({
             QDate(2026, 7, 14),
             QDate(2026, 7, 15),
@@ -2428,13 +2505,13 @@ void SubPrepPageTests
         );
 
     SubPrepPrintDialog dialog(
-        calendarEvents,
+        selectedVacationDates(calendarEvents, wednesday),
         wednesday
         );
     QCOMPARE(dialog.windowTitle(), QStringLiteral("Generate Sub Prep"));
     QCOMPARE(
-        SubPrepPrintDialog::defaultWeekStart(
-            calendarEvents,
+        weekStartForSelectedDates(
+            selectedVacationDates(calendarEvents, wednesday),
             wednesday
             ),
         QDate(2026, 7, 13)
@@ -2628,14 +2705,14 @@ void SubPrepPageTests
             );
 
     QCOMPARE(
-        SubPrepPrintDialog::defaultSelectedDates(
+        selectedVacationDates(
             {boundaryVacation},
             referenceDate
             ),
         QList<QDate>({referenceDate.addDays(28)})
         );
     SubPrepPrintDialog boundaryDialog(
-        {boundaryVacation},
+        selectedVacationDates({boundaryVacation}, referenceDate),
         referenceDate
         );
     QVERIFY(
@@ -2667,14 +2744,14 @@ void SubPrepPageTests
         referenceDate.addDays(32)
     };
     QCOMPARE(
-        SubPrepPrintDialog::defaultSelectedDates(
+        selectedVacationDates(
             connectedBlockPastLookahead,
             referenceDate
             ),
         connectedBlockDates
         );
     SubPrepPrintDialog connectedBlockDialog(
-        connectedBlockPastLookahead,
+        selectedVacationDates(connectedBlockPastLookahead, referenceDate),
         referenceDate
         );
     QVERIFY(
@@ -2685,13 +2762,13 @@ void SubPrepPageTests
     QCOMPARE(connectedBlockDialog.selectedDates(), connectedBlockDates);
 
     QVERIFY(
-        SubPrepPrintDialog::defaultSelectedDates(
+        selectedVacationDates(
             {tooDistantVacation},
             referenceDate
             ).isEmpty()
         );
     SubPrepPrintDialog manualDialog(
-        {tooDistantVacation},
+        selectedVacationDates({tooDistantVacation}, referenceDate),
         referenceDate
         );
     QVERIFY(
@@ -2793,7 +2870,7 @@ void SubPrepPageTests
     };
 
     QCOMPARE(
-        SubPrepPrintDialog::defaultSelectedDates(
+        selectedVacationDates(
             multipleBeforeHoliday,
             referenceDate
             ),
@@ -2804,7 +2881,7 @@ void SubPrepPageTests
         })
         );
     SubPrepPrintDialog bridgedDialog(
-        multipleBeforeHoliday,
+        selectedVacationDates(multipleBeforeHoliday, referenceDate),
         referenceDate
         );
     auto* bridgedNameEdit = bridgedDialog.findChild<QLineEdit*>(
@@ -2821,7 +2898,7 @@ void SubPrepPageTests
         QStringLiteral(".../Jamie (06 - 10 Jul 2026)")
         );
     QCOMPARE(
-        SubPrepPrintDialog::defaultSelectedDates(
+        selectedVacationDates(
             {
                 vacation(QDate(2026, 7, 6), QDate(2026, 7, 6)),
                 holiday(QDate(2026, 7, 7), QDate(2026, 7, 8)),
@@ -2836,7 +2913,7 @@ void SubPrepPageTests
         })
         );
     QCOMPARE(
-        SubPrepPrintDialog::defaultSelectedDates(
+        selectedVacationDates(
             {
                 vacation(QDate(2026, 7, 6), QDate(2026, 7, 7)),
                 holiday(QDate(2026, 7, 8), QDate(2026, 7, 8)),
@@ -2852,7 +2929,7 @@ void SubPrepPageTests
         })
         );
     QCOMPARE(
-        SubPrepPrintDialog::defaultSelectedDates(
+        selectedVacationDates(
             {
                 vacation(QDate(2026, 7, 6), QDate(2026, 7, 7)),
                 holiday(QDate(2026, 7, 8), QDate(2026, 7, 8)),
@@ -2869,7 +2946,7 @@ void SubPrepPageTests
         );
 
     QCOMPARE(
-        SubPrepPrintDialog::defaultSelectedDates(
+        selectedVacationDates(
             {
                 vacation(QDate(2026, 7, 6), QDate(2026, 7, 7)),
                 holiday(QDate(2026, 7, 8), QDate(2026, 7, 8)),
@@ -2887,9 +2964,8 @@ void SubPrepPageTests
         vacation(QDate(2026, 7, 8), QDate(2026, 7, 14))
     };
     QCOMPARE(
-        SubPrepPrintDialog::defaultSelectedDays(
-            spanningVacation,
-            referenceDate
+        selectedVacationDays(
+            selectedVacationDates(spanningVacation, referenceDate)
             ),
         QStringList({
             QStringLiteral("Monday"),
@@ -2900,7 +2976,7 @@ void SubPrepPageTests
         })
         );
     QCOMPARE(
-        SubPrepPrintDialog::defaultSelectedDates(
+        selectedVacationDates(
             spanningVacation,
             referenceDate
             ),
@@ -2913,15 +2989,15 @@ void SubPrepPageTests
         })
         );
     QCOMPARE(
-        SubPrepPrintDialog::defaultWeekStart(
-            spanningVacation,
+        weekStartForSelectedDates(
+            selectedVacationDates(spanningVacation, referenceDate),
             referenceDate
             ),
         QDate(2026, 7, 6)
         );
 
     QCOMPARE(
-        SubPrepPrintDialog::defaultSelectedDates(
+        selectedVacationDates(
             {
                 vacation(QDate(2026, 7, 10), QDate(2026, 7, 10)),
                 vacation(QDate(2026, 7, 13), QDate(2026, 7, 13))
@@ -2985,6 +3061,69 @@ printDialogCalendarReadUsesTwoYearWindowAndFallsBackOnFailure()
         calendarIntervalsReadPort.lastRequest.endDate.value(),
         expectedEndDate.toString(Qt::ISODate).toStdString()
         );
+}
+
+void SubPrepPageTests::printDialogReceivesApplicationVacationSelection()
+{
+    ApplicationServices services;
+    SubPrepTestCalendarIntervalsReadPort calendarIntervalsReadPort;
+    calendarIntervalsReadPort.shouldFail = false;
+    SubPrepPageHarness harness(&services, calendarIntervalsReadPort);
+
+    const QDate referenceDate = QDate::currentDate();
+    QDate firstVacationDate = referenceDate;
+    while (firstVacationDate.dayOfWeek() > Qt::Friday)
+    {
+        firstVacationDate = firstVacationDate.addDays(1);
+    }
+    calendarIntervalsReadPort.intervals = {
+        {
+            " Vacation ",
+            CalendarEventDate(
+                firstVacationDate.toString(Qt::ISODate).toStdString()
+                ),
+            CalendarEventDate(
+                firstVacationDate.toString(Qt::ISODate).toStdString()
+                )
+        }
+    };
+
+    bool dialogOpened = false;
+    bool selectedVacationWasShown = false;
+    QTimer::singleShot(
+        0,
+        &harness.page,
+        [&]
+        {
+            auto* dialog = qobject_cast<SubPrepPrintDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                return;
+            }
+
+            dialogOpened = true;
+            auto* nextVacationCheck = dialog->findChild<QCheckBox*>(
+                QStringLiteral("subPrepNextVacationCheckBox")
+                );
+            selectedVacationWasShown =
+                nextVacationCheck
+                && nextVacationCheck->isChecked()
+                && dialog->selectedDates() == QList<QDate>{firstVacationDate};
+            dialog->reject();
+        }
+        );
+
+    QVERIFY(QMetaObject::invokeMethod(
+        &harness.page,
+        "generateSubPrep",
+        Qt::DirectConnection
+        ));
+
+    QVERIFY(dialogOpened);
+    QVERIFY(selectedVacationWasShown);
+    QCOMPARE(calendarIntervalsReadPort.loadCount, 1);
 }
 
 void SubPrepPageTests::
@@ -4558,15 +4697,10 @@ void SubPrepPageTests::printDialogRequiresAndSavesMissingUserName()
     row.cells.append(cell);
     schedule.rows.append(row);
 
-    CalendarEvent vacation;
-    vacation.eventType = QStringLiteral("Vacation");
-    vacation.startDate = QDate(2026, 7, 14);
-    vacation.endDate = QDate(2026, 7, 14);
-
     SubPrepPrintDialog dialog(
         &services,
         schedule,
-        {vacation},
+        QList<QDate>{QDate(2026, 7, 14)},
         QDate(2026, 7, 13)
         );
     auto* nameEdit = dialog.findChild<QLineEdit*>(
@@ -4765,15 +4899,10 @@ void SubPrepPageTests::printDialogAcceptsWhenRememberedNameSaveFails()
     row.cells.append(cell);
     schedule.rows.append(row);
 
-    CalendarEvent vacation;
-    vacation.eventType = QStringLiteral("Vacation");
-    vacation.startDate = QDate(2026, 7, 14);
-    vacation.endDate = QDate(2026, 7, 14);
-
     SubPrepPrintDialog dialog(
         &services,
         schedule,
-        {vacation},
+        QList<QDate>{QDate(2026, 7, 14)},
         QDate(2026, 7, 13)
         );
     auto* nameEdit = dialog.findChild<QLineEdit*>(

@@ -24,7 +24,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QSet>
 #include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QVBoxLayout>
@@ -38,8 +37,6 @@ const QStringList Weekdays{
     QStringLiteral("Thursday"),
     QStringLiteral("Friday")
 };
-constexpr int VacationLookaheadDays = 28;
-
 QDate weekStartFor(
     const QDate& date
     )
@@ -79,185 +76,19 @@ QString displayDay(
     return SubPrepPrintDialog::tr("Friday");
 }
 
-bool isWeekday(
-    const QDate& date
+bool containsWeekday(
+    const QList<QDate>& dates,
+    const Qt::DayOfWeek dayOfWeek
     )
 {
-    return date.dayOfWeek() >= Qt::Monday
-        && date.dayOfWeek() <= Qt::Friday;
-}
-
-QSet<QDate> eventWeekdays(
-    const QList<CalendarEvent>& calendarEvents,
-    const QString& eventType
-    )
-{
-    QSet<QDate> dates;
-
-    for (const CalendarEvent& event : calendarEvents)
-    {
-        if (
-            normalizedCalendarEventType(event.eventType) != eventType
-            || !event.startDate.isValid()
-            || !event.endDate.isValid()
-            || event.endDate < event.startDate
-            )
+    return std::any_of(
+        dates.cbegin(),
+        dates.cend(),
+        [dayOfWeek](const QDate& date)
         {
-            continue;
-        }
-
-        for (
-            QDate date = event.startDate;
-            date.isValid() && date <= event.endDate;
-            date = date.addDays(1)
-            )
-        {
-            if (isWeekday(date))
-            {
-                dates.insert(date);
-            }
-
-            if (date == event.endDate)
-            {
-                break;
-            }
-        }
-    }
-
-    return dates;
-}
-
-bool datesAreConnected(
-    const QDate& previousVacationDate,
-    const QDate& nextVacationDate,
-    const QSet<QDate>& holidayDates
-    )
-{
-    for (
-        QDate date = previousVacationDate.addDays(1);
-        date.isValid() && date < nextVacationDate;
-        date = date.addDays(1)
-        )
-    {
-        if (isWeekday(date) && !holidayDates.contains(date))
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-QList<QDate> nextVacationDates(
-    const QList<CalendarEvent>& calendarEvents,
-    const QDate& referenceDate
-    )
-{
-    if (!referenceDate.isValid())
-    {
-        return {};
-    }
-
-    QList<QDate> vacationDates =
-        eventWeekdays(
-            calendarEvents,
-            QStringLiteral("Vacation")
-            ).values();
-    std::sort(vacationDates.begin(), vacationDates.end());
-
-    if (vacationDates.isEmpty())
-    {
-        return {};
-    }
-
-    const QSet<QDate> holidayDates =
-        eventWeekdays(
-            calendarEvents,
-            QStringLiteral("Holiday")
-            );
-    QList<QDate> block;
-
-    for (const QDate& vacationDate : std::as_const(vacationDates))
-    {
-        if (
-            !block.isEmpty()
-            && !datesAreConnected(
-                block.last(),
-                vacationDate,
-                holidayDates
-                )
-            )
-        {
-            if (block.last() >= referenceDate)
-            {
-                return block;
-            }
-            block.clear();
-        }
-
-        block.append(vacationDate);
-    }
-
-    return !block.isEmpty() && block.last() >= referenceDate
-        ? block
-        : QList<QDate>();
-}
-
-QList<QDate> nextVacationDatesWithinLookahead(
-    const QList<CalendarEvent>& calendarEvents,
-    const QDate& referenceDate
-    )
-{
-    const QList<QDate> vacationDates =
-        nextVacationDates(calendarEvents, referenceDate);
-
-    if (vacationDates.isEmpty() || !referenceDate.isValid())
-    {
-        return {};
-    }
-
-    const QDate lookaheadEnd =
-        referenceDate.addDays(VacationLookaheadDays);
-    const bool fallsWithinLookahead = std::any_of(
-        vacationDates.cbegin(),
-        vacationDates.cend(),
-        [&referenceDate, &lookaheadEnd](const QDate& date)
-        {
-            return date >= referenceDate && date <= lookaheadEnd;
+            return date.dayOfWeek() == dayOfWeek;
         }
         );
-
-    return fallsWithinLookahead
-        ? vacationDates
-        : QList<QDate>();
-}
-
-QStringList weekdayNamesForDates(
-    const QList<QDate>& dates
-    )
-{
-    QStringList days;
-
-    for (int index = 0; index < Weekdays.size(); ++index)
-    {
-        const Qt::DayOfWeek dayOfWeek =
-            static_cast<Qt::DayOfWeek>(Qt::Monday + index);
-        const bool selected = std::any_of(
-            dates.cbegin(),
-            dates.cend(),
-            [dayOfWeek](const QDate& date)
-            {
-                return date.dayOfWeek() == dayOfWeek;
-            }
-            );
-
-        if (selected)
-        {
-            days.append(Weekdays.at(index));
-        }
-    }
-
-    return days;
 }
 
 }
@@ -265,7 +96,7 @@ QStringList weekdayNamesForDates(
 SubPrepPrintDialog::SubPrepPrintDialog(
     ApplicationServices* services,
     const ScheduleViewModel& schedule,
-    const QList<CalendarEvent>& calendarEvents,
+    const QList<QDate>& selectedVacationDates,
     const QDate& referenceDate,
     QWidget* parent
     )
@@ -289,9 +120,12 @@ SubPrepPrintDialog::SubPrepPrintDialog(
             ).trimmed();
     }
 
-    m_vacationDates =
-        defaultSelectedDates(calendarEvents, referenceDate);
-    m_weekStart = defaultWeekStart(calendarEvents, referenceDate);
+    m_vacationDates = selectedVacationDates;
+    m_weekStart = weekStartFor(
+        m_vacationDates.isEmpty()
+            ? referenceDate
+            : m_vacationDates.first()
+        );
 
     buildUi();
     initializeDays();
@@ -302,14 +136,14 @@ SubPrepPrintDialog::SubPrepPrintDialog(
 }
 
 SubPrepPrintDialog::SubPrepPrintDialog(
-    const QList<CalendarEvent>& calendarEvents,
+    const QList<QDate>& selectedVacationDates,
     const QDate& referenceDate,
     QWidget* parent
     )
     : SubPrepPrintDialog(
         nullptr,
         ScheduleViewModel(),
-        calendarEvents,
+        selectedVacationDates,
         referenceDate,
         parent
         )
@@ -591,15 +425,12 @@ void SubPrepPrintDialog::buildUi()
 
 void SubPrepPrintDialog::initializeDays()
 {
-    const QStringList vacationDays =
-        weekdayNamesForDates(m_vacationDates);
-
     for (int index = 0; index < m_dayChecks.size(); ++index)
     {
         QCheckBox* checkBox = m_dayChecks.at(index);
-        const QString day = Weekdays.at(index);
+        const auto dayOfWeek = static_cast<Qt::DayOfWeek>(Qt::Monday + index);
         const QSignalBlocker blocker(checkBox);
-        checkBox->setChecked(vacationDays.contains(day));
+        checkBox->setChecked(containsWeekday(m_vacationDates, dayOfWeek));
     }
 
     if (m_nextVacationCheck)
@@ -627,16 +458,14 @@ void SubPrepPrintDialog::updateVacationMode()
 
     if (useNextVacation)
     {
-        const QStringList vacationDays =
-            weekdayNamesForDates(m_vacationDates);
-
-        for (QCheckBox* checkBox : std::as_const(m_dayChecks))
+        for (int index = 0; index < m_dayChecks.size(); ++index)
         {
+            QCheckBox* checkBox = m_dayChecks.at(index);
+            const auto dayOfWeek =
+                static_cast<Qt::DayOfWeek>(Qt::Monday + index);
             const QSignalBlocker blocker(checkBox);
             checkBox->setChecked(
-                vacationDays.contains(
-                    checkBox->property("day").toString()
-                    )
+                containsWeekday(m_vacationDates, dayOfWeek)
                 );
         }
     }
@@ -941,38 +770,4 @@ QString SubPrepPrintDialog::outputDirectory() const
             selectedDates()
             )
         );
-}
-
-QStringList SubPrepPrintDialog::defaultSelectedDays(
-    const QList<CalendarEvent>& calendarEvents,
-    const QDate& referenceDate
-    )
-{
-    return weekdayNamesForDates(
-        defaultSelectedDates(calendarEvents, referenceDate)
-        );
-}
-
-QList<QDate> SubPrepPrintDialog::defaultSelectedDates(
-    const QList<CalendarEvent>& calendarEvents,
-    const QDate& referenceDate
-    )
-{
-    return nextVacationDatesWithinLookahead(
-        calendarEvents,
-        referenceDate
-        );
-}
-
-QDate SubPrepPrintDialog::defaultWeekStart(
-    const QList<CalendarEvent>& calendarEvents,
-    const QDate& referenceDate
-    )
-{
-    const QList<QDate> vacationDates =
-        defaultSelectedDates(calendarEvents, referenceDate);
-
-    return !vacationDates.isEmpty()
-        ? weekStartFor(vacationDates.first())
-        : weekStartFor(referenceDate);
 }

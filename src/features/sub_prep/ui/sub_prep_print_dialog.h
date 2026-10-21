@@ -1,6 +1,5 @@
 #pragma once
 
-#include "domain/models/calendar_event.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 
@@ -23,13 +22,13 @@ public:
     explicit SubPrepPrintDialog(
         ApplicationServices* services,
         const ScheduleViewModel& schedule,
-        const QList<CalendarEvent>& calendarEvents,
+        const QList<QDate>& selectedVacationDates,
         const QDate& referenceDate = QDate::currentDate(),
         QWidget* parent = nullptr
         );
 
     explicit SubPrepPrintDialog(
-        const QList<CalendarEvent>& calendarEvents,
+        const QList<QDate>& selectedVacationDates,
         const QDate& referenceDate = QDate::currentDate(),
         QWidget* parent = nullptr
         );
@@ -44,21 +43,6 @@ public:
     [[nodiscard]] bool openFolderAfterGeneration() const;
     [[nodiscard]] bool replaceExisting() const;
     [[nodiscard]] QString outputDirectory() const;
-
-    [[nodiscard]] static QStringList defaultSelectedDays(
-        const QList<CalendarEvent>& calendarEvents,
-        const QDate& referenceDate
-        );
-
-    [[nodiscard]] static QList<QDate> defaultSelectedDates(
-        const QList<CalendarEvent>& calendarEvents,
-        const QDate& referenceDate
-        );
-
-    [[nodiscard]] static QDate defaultWeekStart(
-        const QList<CalendarEvent>& calendarEvents,
-        const QDate& referenceDate
-        );
 
 private:
     void buildUi();

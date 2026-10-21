@@ -1716,6 +1716,15 @@ add_test(
     COMMAND ClassMngrNextApplicationSubPrepSelectedClassIdsTests
 )
 
+classmngr_add_qt_test(
+    NAME NextApplicationSubPrepVacationSelectionPolicy
+    SOURCES
+        tests/next_application_sub_prep_vacation_selection_policy_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
 # Keep Sub Prep class-information selection independent of Qt.
 add_executable(
     ClassMngrNextApplicationSubPrepClassInformationSelectionPolicyTests

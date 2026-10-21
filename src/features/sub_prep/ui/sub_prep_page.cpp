@@ -1,6 +1,7 @@
 #include "sub_prep_page_p.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "next/application/sub_prep_calendar_event_intervals_query.h"
+#include "next/application/sub_prep_vacation_selection_policy.h"
 #include "next/application/schedule_display_mode_source_policy.h"
 #include "next/platform/application_services_sub_prep_calendar_event_intervals_port.h"
 #include "next/platform/application_services_sub_prep_roster_output_source_port.h"
@@ -535,7 +536,7 @@ void SubPrepPage::generateSubPrep()
     refreshGeneratedContent();
 
     const QDate currentDate = subPrepReferenceDate();
-    QList<CalendarEvent> calendarEvents;
+    QList<QDate> selectedVacationDates;
     std::unique_ptr<
         ClassMngr::Next::Application::SubPrepCalendarEventIntervalsReadPort
         > ownedCalendarIntervalsReadPort;
@@ -554,59 +555,54 @@ void SubPrepPage::generateSubPrep()
         ClassMngr::Next::Application::SubPrepCalendarEventIntervalsQuery query(
             *calendarIntervalsReadPort
             );
-        const auto loadedIntervals = query.execute({
-            ClassMngr::Next::Application::CalendarEventDate(
-                currentDate.toString(Qt::ISODate).toStdString()
-                )
-        });
+        const ClassMngr::Next::Application::CalendarEventDate
+            referenceDate(currentDate.toString(Qt::ISODate).toStdString());
+        const auto loadedIntervals = query.execute({referenceDate});
         if (loadedIntervals)
         {
-            const std::size_t maxQtListSize = static_cast<std::size_t>(
-                std::numeric_limits<qsizetype>::max()
-                );
-            if (loadedIntervals.value().size() > maxQtListSize)
+            try
             {
-                qWarning()
-                    << "Sub Prep calendar interval count exceeds the UI list capacity; using an empty calendar.";
-            }
-            else
-            {
-                try
+                const auto selectedDomainDates =
+                    ClassMngr::Next::Application::
+                        selectNextSubPrepVacationBlock(
+                            loadedIntervals.value(),
+                            referenceDate
+                            );
+                const std::size_t maxQtListSize = static_cast<std::size_t>(
+                    std::numeric_limits<qsizetype>::max()
+                    );
+                if (selectedDomainDates.size() > maxQtListSize)
                 {
-                    calendarEvents.reserve(
-                        static_cast<qsizetype>(loadedIntervals.value().size())
+                    qWarning()
+                        << "Sub Prep vacation date count exceeds the UI list capacity; using an empty selection.";
+                }
+                else
+                {
+                    selectedVacationDates.reserve(
+                        static_cast<qsizetype>(selectedDomainDates.size())
                         );
-                    for (const auto& interval : loadedIntervals.value())
+                    for (const auto& domainDate : selectedDomainDates)
                     {
-                        CalendarEvent event;
-                        event.eventType = QString::fromStdString(
-                            std::string(
-                                ClassMngr::Next::Domain::calendarEventTypeName(
-                                    interval.eventType
-                                    )
-                                )
-                            );
-                        event.startDate = QDate::fromString(
-                            QString::fromStdString(
-                                interval.startDate.value()
-                                ),
+                        const QDate date = QDate::fromString(
+                            QString::fromStdString(domainDate.toIsoString()),
                             Qt::ISODate
                             );
-                        event.endDate = QDate::fromString(
-                            QString::fromStdString(
-                                interval.endDate.value()
-                                ),
-                            Qt::ISODate
-                            );
-                        calendarEvents.append(std::move(event));
+                        if (!date.isValid())
+                        {
+                            selectedVacationDates.clear();
+                            qWarning()
+                                << "Sub Prep selected vacation date conversion failed; using an empty selection.";
+                            break;
+                        }
+                        selectedVacationDates.append(date);
                     }
                 }
-                catch (...)
-                {
-                    calendarEvents.clear();
-                    qWarning()
-                        << "Sub Prep calendar interval conversion failed; using an empty calendar.";
-                }
+            }
+            catch (...)
+            {
+                selectedVacationDates.clear();
+                qWarning()
+                    << "Sub Prep vacation selection conversion failed; using an empty selection.";
             }
         }
         else
@@ -625,7 +621,7 @@ void SubPrepPage::generateSubPrep()
     SubPrepPrintDialog dialog(
         m_services,
         fullSchedule,
-        calendarEvents,
+        selectedVacationDates,
         currentDate,
         this
         );
