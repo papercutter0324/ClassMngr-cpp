@@ -290,11 +290,13 @@ inline bool isUnicodeSpace(const char16_t character) noexcept
         || character == 0x3000;
 }
 
-inline bool isKoreanNameWhitespace(const char16_t character) noexcept
+inline bool isSpeakingEvaluationKoreanNameWhitespace(
+    const char16_t character
+    ) noexcept
 {
-    // The legacy Korean-name expression does not accept NEL or NBSP between
-    // name characters. Keep them in the input so normalization and validation
-    // can report the same invalid-character and length issues.
+    // Legacy Speaking Evaluation validation does not accept NEL or NBSP
+    // between name characters. Keep them so validation can report the same
+    // invalid-character and length issues.
     return isUnicodeSpace(character)
         && character != 0x0085
         && character != 0x00A0;
@@ -518,7 +520,11 @@ inline std::u16string normalizeEnglishName(std::u16string_view value)
     return trim(normalized);
 }
 
-inline bool isValidKoreanNameCharacters(std::u16string_view value)
+template <typename IsWhitespace>
+inline bool isValidKoreanNameCharactersImpl(
+    const std::u16string_view value,
+    IsWhitespace isWhitespace
+    )
 {
     if (trim(value).empty())
     {
@@ -527,7 +533,7 @@ inline bool isValidKoreanNameCharacters(std::u16string_view value)
 
     std::size_t position = 0;
     while (position < value.size()
-           && (isKoreanNameWhitespace(value[position])
+           && (isWhitespace(value[position])
                || isHangulSyllable(value[position])))
     {
         ++position;
@@ -538,7 +544,7 @@ inline bool isValidKoreanNameCharacters(std::u16string_view value)
     }
 
     while (position < value.size()
-           && isKoreanNameWhitespace(value[position]))
+           && isWhitespace(value[position]))
     {
         ++position;
     }
@@ -552,11 +558,32 @@ inline bool isValidKoreanNameCharacters(std::u16string_view value)
     }
 
     while (position < value.size()
-           && isKoreanNameWhitespace(value[position]))
+           && isWhitespace(value[position]))
     {
         ++position;
     }
     return position == value.size();
+}
+
+inline bool isValidKoreanNameCharacters(std::u16string_view value)
+{
+    return isValidKoreanNameCharactersImpl(
+        value,
+        [](const char16_t character)
+        {
+            return isUnicodeSpace(character);
+        }
+        );
+}
+
+inline bool isValidSpeakingEvaluationKoreanNameCharacters(
+    std::u16string_view value
+    )
+{
+    return isValidKoreanNameCharactersImpl(
+        value,
+        isSpeakingEvaluationKoreanNameWhitespace
+        );
 }
 
 struct KoreanSuffix final
@@ -585,10 +612,13 @@ inline std::optional<KoreanSuffix> trailingKoreanSuffix(
     return std::nullopt;
 }
 
-inline std::u16string normalizeKoreanName(std::u16string_view value)
+inline std::u16string normalizeKoreanNameImpl(
+    const std::u16string_view value,
+    const bool validNameCharacters
+    )
 {
     const std::u16string trimmed = trim(value);
-    if (!isValidKoreanNameCharacters(value))
+    if (!validNameCharacters)
     {
         return trimmed;
     }
@@ -617,6 +647,24 @@ inline std::u16string normalizeKoreanName(std::u16string_view value)
         normalized.push_back(u')');
     }
     return normalized;
+}
+
+inline std::u16string normalizeKoreanName(std::u16string_view value)
+{
+    return normalizeKoreanNameImpl(
+        value,
+        isValidKoreanNameCharacters(value)
+        );
+}
+
+inline std::u16string normalizeSpeakingEvaluationKoreanName(
+    std::u16string_view value
+    )
+{
+    return normalizeKoreanNameImpl(
+        value,
+        isValidSpeakingEvaluationKoreanNameCharacters(value)
+        );
 }
 
 inline std::u16string normalizeScore(std::u16string_view value)
@@ -732,9 +780,11 @@ lengthArguments(
     };
 }
 
-inline std::size_t koreanBaseNameLength(std::u16string_view value)
+inline std::size_t speakingEvaluationKoreanBaseNameLength(
+    std::u16string_view value
+    )
 {
-    const std::u16string normalized = normalizeKoreanName(value);
+    const std::u16string normalized = normalizeSpeakingEvaluationKoreanName(value);
     if (const auto suffix = trailingKoreanSuffix(normalized);
         suffix && suffix->letter >= u'A' && suffix->letter <= u'Z')
     {
@@ -795,7 +845,7 @@ inline void validateKoreanName(
     )
 {
     const std::string field = fieldName(row, column);
-    if (!isValidKoreanNameCharacters(value))
+    if (!isValidSpeakingEvaluationKoreanNameCharacters(value))
     {
         appendIssue(
             result,
@@ -806,7 +856,7 @@ inline void validateKoreanName(
             );
     }
 
-    const std::size_t length = koreanBaseNameLength(value);
+    const std::size_t length = speakingEvaluationKoreanBaseNameLength(value);
     if (length == 0 || length == 3)
     {
         return;
@@ -939,7 +989,9 @@ validateAndNormalizeSpeakingEvaluation(
                 row[column] = normalizeEnglishName(row[column]);
                 break;
             case 2:
-                row[column] = normalizeKoreanName(row[column]);
+                row[column] = normalizeSpeakingEvaluationKoreanName(
+                    row[column]
+                    );
                 break;
             case 3:
             case 4:

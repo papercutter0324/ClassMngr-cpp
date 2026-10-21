@@ -128,6 +128,31 @@ bool mapsAndNormalizesWithoutChangingTheTarget()
         && targetRows == originalRows;
 }
 
+bool koreanNameTransferKeepsLegacyUnicodeWhitespaceNormalization()
+{
+    for (const char16_t separator : {char16_t{0x00A0}, char16_t{0x0085}})
+    {
+        const std::u16string sourceKoreanName{
+            u'\uAC00', separator, u'\uB098', u'\uB2E4'
+        };
+        const auto result = prepare(
+            {u"English", u"Korean"},
+            {{u"", u""}},
+            {u"English", u"Korean"},
+            {u"Amy", sourceKoreanName}
+            );
+        const auto* prepared = std::get_if<RosterRowTransferPreparation>(&result);
+        if (!prepared
+            || prepared->mappedRow
+                != std::vector<std::u16string>{u"Amy", u"\uAC00\uB098\uB2E4"})
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool headerMatchingKeepsLegacyTargetCellClassification()
 {
     const auto result = prepare(
@@ -249,6 +274,11 @@ int main()
     if (!mapsAndNormalizesWithoutChangingTheTarget())
     {
         std::fprintf(stderr, "Transfer preparation lost mapping or normalization behavior.\n");
+        return EXIT_FAILURE;
+    }
+    if (!koreanNameTransferKeepsLegacyUnicodeWhitespaceNormalization())
+    {
+        std::fprintf(stderr, "Transfer changed legacy Korean Unicode-space normalization.\n");
         return EXIT_FAILURE;
     }
     if (!headerMatchingKeepsLegacyTargetCellClassification())
