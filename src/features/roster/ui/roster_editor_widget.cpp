@@ -106,34 +106,6 @@ Roster rosterFromApplicationSnapshot(
     return roster;
 }
 
-bool hasOnlyQuestionableKoreanNameLengthErrors(
-    const ClassMngr::Next::Application::RosterSavePreparation& prepared
-    )
-{
-    bool foundQuestionableLengthError = false;
-    for (const auto& issue : prepared.issues)
-    {
-        if (issue.severity
-            != ClassMngr::Next::Application::RosterSaveIssueSeverity::Error)
-        {
-            continue;
-        }
-
-        if (issue.code
-                == ClassMngr::Next::Application::RosterSaveIssueCode::StudentNameKoreanTooShort
-            || issue.code
-                == ClassMngr::Next::Application::RosterSaveIssueCode::StudentNameKoreanTooLong)
-        {
-            foundQuestionableLengthError = true;
-            continue;
-        }
-
-        return false;
-    }
-
-    return foundQuestionableLengthError;
-}
-
 } // namespace
 
 RosterEditorWidget::RosterEditorWidget(
@@ -655,7 +627,9 @@ void RosterEditorWidget::updateRosterValidation()
         ClassMngr::Next::Platform::rosterSaveCaseInsensitiveEquals);
     const ValidationResult validation = RosterSaveValidationAdapter::validation(prepared);
     const bool manualSaveEligible =
-        hasOnlyQuestionableKoreanNameLengthErrors(prepared);
+        ClassMngr::Next::Application::hasOnlyQuestionableKoreanNameLengthErrors(
+            prepared
+            );
 
     m_updatingValidation = true;
     m_validationBinder->setValidation(

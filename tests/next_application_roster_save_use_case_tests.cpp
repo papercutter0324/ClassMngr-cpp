@@ -163,7 +163,49 @@ private slots:
     void duplicateNamePairDiagnosticsKeepTypedRowsAndIssueOrder();
     void rawBomConversionDoesNotMutateRequestOrAddSentinels();
     void policyAcceptsBoundarySizesAndCountsUtf16Units();
+    void manualSaveEligibilityAllowsOnlyQuestionableLengthErrors();
 };
+
+void NextApplicationRosterSaveUseCaseTests::
+manualSaveEligibilityAllowsOnlyQuestionableLengthErrors()
+{
+    using Code = Application::RosterSaveIssueCode;
+    using Severity = Application::RosterSaveIssueSeverity;
+
+    const auto eligible = [](const std::initializer_list<std::pair<Code, Severity>> issues)
+    {
+        Application::RosterSavePreparation prepared;
+        for (const auto& [code, severity] : issues)
+        {
+            prepared.issues.push_back({
+                .code = code,
+                .field = u"rows[0].Korean",
+                .row = Application::RosterSaveIssueRowIndex{0},
+                .column = Application::RosterSaveIssueColumnIndex{1},
+                .severity = severity
+            });
+        }
+        return Application::hasOnlyQuestionableKoreanNameLengthErrors(prepared);
+    };
+
+    QVERIFY(eligible({{Code::StudentNameKoreanTooShort, Severity::Error}}));
+    QVERIFY(eligible({{Code::StudentNameKoreanTooLong, Severity::Error}}));
+    QVERIFY(eligible({
+        {Code::StudentNameKoreanTooShort, Severity::Error},
+        {Code::StudentNameKoreanTooLong, Severity::Error}
+    }));
+    QVERIFY(!eligible({}));
+    QVERIFY(!eligible({{Code::StudentNameEnglishTooLong, Severity::Error}}));
+    QVERIFY(!eligible({
+        {Code::StudentNameKoreanTooShort, Severity::Error},
+        {Code::StudentNameDuplicatePair, Severity::Error}
+    }));
+    QVERIFY(!eligible({{Code::StudentNameKoreanUnusualLength, Severity::Warning}}));
+    QVERIFY(eligible({
+        {Code::StudentNameKoreanUnusualLength, Severity::Warning},
+        {Code::StudentNameKoreanTooShort, Severity::Error}
+    }));
+}
 
 void NextApplicationRosterSaveUseCaseTests::issueCodesKeepStableLegacyKeys()
 {

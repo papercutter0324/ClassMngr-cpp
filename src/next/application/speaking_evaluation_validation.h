@@ -244,6 +244,55 @@ struct SpeakingEvaluationValidationResult final
     }
 };
 
+namespace ManualSaveEligibilityDetail
+{
+
+template<typename Issues, typename IsError, typename IsQuestionableLengthError>
+[[nodiscard]] inline bool hasOnlyQuestionableKoreanNameLengthErrors(
+    const Issues& issues,
+    IsError isError,
+    IsQuestionableLengthError isQuestionableLengthError
+    )
+{
+    bool foundQuestionableLengthError = false;
+    for (const auto& issue : issues)
+    {
+        if (!isError(issue))
+        {
+            continue;
+        }
+
+        if (!isQuestionableLengthError(issue))
+        {
+            return false;
+        }
+
+        foundQuestionableLengthError = true;
+    }
+
+    return foundQuestionableLengthError;
+}
+
+} // namespace ManualSaveEligibilityDetail
+
+[[nodiscard]] inline bool hasOnlyQuestionableKoreanNameLengthErrors(
+    const SpeakingEvaluationValidationResult& validation
+    )
+{
+    return ManualSaveEligibilityDetail::hasOnlyQuestionableKoreanNameLengthErrors(
+        validation.issues,
+        [](const SpeakingEvaluationValidationIssue& issue)
+        {
+            return issue.severity == SpeakingEvaluationValidationSeverity::Error;
+        },
+        [](const SpeakingEvaluationValidationIssue& issue)
+        {
+            return issue.code == SpeakingEvaluationValidationCode::StudentNameKoreanTooShort
+                || issue.code == SpeakingEvaluationValidationCode::StudentNameKoreanTooLong;
+        }
+        );
+}
+
 namespace SpeakingEvaluationValidationDetail
 {
 

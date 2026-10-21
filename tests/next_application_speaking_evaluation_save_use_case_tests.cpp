@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <initializer_list>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -170,7 +171,51 @@ private slots:
     void preservesQuestionableKoreanLengthWarningAndAllowSemantics();
     void preservesEmptyDeltaAsAllCellsRequest();
     void preservesPortFailure();
+    void manualSaveEligibilityAllowsOnlyQuestionableLengthErrors();
 };
+
+void NextApplicationSpeakingEvaluationSaveUseCaseTests::
+manualSaveEligibilityAllowsOnlyQuestionableLengthErrors()
+{
+    using Code = Application::SpeakingEvaluationValidationCode;
+    using Severity = Application::SpeakingEvaluationValidationSeverity;
+
+    const auto eligible = [](const std::initializer_list<std::pair<Code, Severity>> issues)
+    {
+        Application::SpeakingEvaluationValidationResult validation{
+            .normalizedRequest = request("42")
+        };
+        for (const auto& [code, severity] : issues)
+        {
+            validation.issues.push_back({
+                .code = code,
+                .field = "rows[0].Korean Name",
+                .row = Application::SpeakingEvaluationValidationIssueRowIndex{0},
+                .column = Application::SpeakingEvaluationValidationIssueColumnIndex{2},
+                .severity = severity
+            });
+        }
+        return Application::hasOnlyQuestionableKoreanNameLengthErrors(validation);
+    };
+
+    QVERIFY(eligible({{Code::StudentNameKoreanTooShort, Severity::Error}}));
+    QVERIFY(eligible({{Code::StudentNameKoreanTooLong, Severity::Error}}));
+    QVERIFY(eligible({
+        {Code::StudentNameKoreanTooShort, Severity::Error},
+        {Code::StudentNameKoreanTooLong, Severity::Error}
+    }));
+    QVERIFY(!eligible({}));
+    QVERIFY(!eligible({{Code::StudentNameEnglishTooLong, Severity::Error}}));
+    QVERIFY(!eligible({
+        {Code::StudentNameKoreanTooShort, Severity::Error},
+        {Code::StudentNameDuplicatePair, Severity::Error}
+    }));
+    QVERIFY(!eligible({{Code::StudentNameKoreanUnusualLength, Severity::Warning}}));
+    QVERIFY(eligible({
+        {Code::StudentNameKoreanUnusualLength, Severity::Warning},
+        {Code::StudentNameKoreanTooShort, Severity::Error}
+    }));
+}
 
 void NextApplicationSpeakingEvaluationSaveUseCaseTests::
 rejectsInvalidClassIdsWithoutCallingPort()

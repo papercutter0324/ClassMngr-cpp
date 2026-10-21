@@ -3,31 +3,6 @@
 #include "features/speaking_eval/ui/speaking_eval_page_validation_adapter.h"
 #include "ui/shared/validation/form_validation_binder.h"
 
-namespace
-{
-
-bool hasOnlyQuestionableKoreanNameLengthErrors(
-    const ValidationResult& validation
-    )
-{
-    bool foundQuestionableLengthError = false;
-    for (const ValidationIssue& issue : validation.errors())
-    {
-        if (issue.code == QStringLiteral("student_name.korean.too_short")
-            || issue.code == QStringLiteral("student_name.korean.too_long"))
-        {
-            foundQuestionableLengthError = true;
-            continue;
-        }
-
-        return false;
-    }
-
-    return foundQuestionableLengthError;
-}
-
-} // namespace
-
 void SpeakingEvalPage::buildUi()
 {
     const int pageMargin = m_embedded ? 0 : UiConstants::Pages::Margin;
@@ -530,7 +505,9 @@ void SpeakingEvalPage::updateEvaluationValidation()
         );
     m_model->setDomainValidation(validation);
     m_autosave->setManualSaveEligible(
-        hasOnlyQuestionableKoreanNameLengthErrors(validation)
+        ClassMngr::Next::Application::hasOnlyQuestionableKoreanNameLengthErrors(
+            applicationValidation
+            )
         );
     m_updatingValidation = false;
 

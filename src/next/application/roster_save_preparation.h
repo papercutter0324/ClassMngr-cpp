@@ -165,6 +165,24 @@ struct RosterSavePreparation final
     }
 };
 
+[[nodiscard]] inline bool hasOnlyQuestionableKoreanNameLengthErrors(
+    const RosterSavePreparation& prepared
+    )
+{
+    return ManualSaveEligibilityDetail::hasOnlyQuestionableKoreanNameLengthErrors(
+        prepared.issues,
+        [](const RosterSaveIssue& issue)
+        {
+            return issue.severity == RosterSaveIssueSeverity::Error;
+        },
+        [](const RosterSaveIssue& issue)
+        {
+            return issue.code == RosterSaveIssueCode::StudentNameKoreanTooShort
+                || issue.code == RosterSaveIssueCode::StudentNameKoreanTooLong;
+        }
+        );
+}
+
 inline constexpr std::size_t RosterSaveMaximumRows = RosterModeledRowCount;
 inline constexpr std::size_t RosterSaveMaximumColumnNameLength =
     RosterMaximumColumnNameLength;
