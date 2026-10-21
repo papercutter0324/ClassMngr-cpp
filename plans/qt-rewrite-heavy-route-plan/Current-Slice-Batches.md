@@ -9,7 +9,7 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 1 is active: F1318, F1319, F1320, F1321, F1322, and F1323 are complete; F1324 is next.
+- Batch 1 is active: F1318–F1324 are complete; F1325 is next.
 - Begin Batch 2 discovery when F1336 starts; do not add Batch 2 candidates before then.
 
 ## Phase 3 — Batch 1 (active)
@@ -19,8 +19,8 @@ record useful implementation and verification evidence in its progress log.
 3. F1320 — Calendar display preferences persistence (complete; commit `c6ea61d6`)
 4. F1321 — Existing-teacher profile persistence-port migration (complete; commit `d0f888e4`)
 5. F1322 — ClassesPage list persistence-port migration (complete; commit `582460e2`)
-6. F1323 — My Classes student-count persistence-port migration (complete)
-7. F1324 — Class Details display snapshot
+6. F1323 — My Classes student-count persistence-port migration (complete; commit `79004e09`)
+7. F1324 — Class Details display persistence-port migration (complete)
 8. F1325 — Class Details save
 9. F1326 — Selected-class roster read (window scope discovery required)
 10. F1327 — Selected-class roster save

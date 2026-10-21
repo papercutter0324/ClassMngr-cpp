@@ -38,12 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-22
-- Current note: F1318 schema-v6 baseline and F1319 WorkspaceStore lifecycle
-  seam, F1320 calendar display-preferences persistence, and F1321 existing-
-  teacher profile persistence-port migration, and F1322 ClassesPage list
-  persistence-port migration, and F1323 My Classes student-count
-  persistence-port migration are complete; F1324 Class Details display
-  snapshot is next.
+- Current note: F1318–F1324 are complete; F1325 Class Details save is next.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).

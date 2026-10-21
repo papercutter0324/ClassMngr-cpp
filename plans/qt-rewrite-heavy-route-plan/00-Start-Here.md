@@ -7,12 +7,8 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-22
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 1 is active with F1318 schema-v6 behavior baseline, F1319
-  WorkspaceStore lifecycle seam, F1320 calendar display-preferences
-  persistence, and F1321 existing-teacher profile persistence-port migration
-  F1322 ClassesPage list persistence-port migration, and F1323 My Classes
-  student-count persistence-port migration complete; F1324 Class Details
-  display snapshot is next. See
+  Batch 1 is active; F1318–F1324 are complete, and F1325 Class Details save is
+  next. See
   the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md), and
   [progress log](04-Phase-3-Progress-Log.md) and [current batch

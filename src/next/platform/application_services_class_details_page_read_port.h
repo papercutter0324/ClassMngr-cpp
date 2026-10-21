@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/teacher_repository.h"
@@ -24,7 +24,7 @@ namespace ClassMngr::Next::Platform
 {
 
 // Reads the selected class, its teacher label, and its roster count through
-// the active ApplicationServices session. Source outcomes are kept separate
+// the active ApplicationServices workspace. Source outcomes are kept separate
 // so one failed lookup does not discard successful reads from the others.
 class ApplicationServicesClassDetailsPageReadPort final
     : public Application::ClassDetailsPageReadPort
@@ -83,8 +83,8 @@ public:
                 );
         }
 
-        DatabaseSession* session = m_services.databaseSession();
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store = m_services.workspaceStore();
+        if (!store || !store->isOpen())
         {
             return Application::ClassDetailsPageReadResult::success(
                 std::move(snapshot)
@@ -92,11 +92,11 @@ public:
         }
 
         ClassInfoRepository* const classInfoRepository =
-            session->classInfoRepository();
+            store->classInfoRepository();
         TeacherRepository* const teacherRepository =
-            session->teacherRepository();
+            store->teacherRepository();
         RosterRepository* const rosterRepository =
-            session->rosterRepository();
+            store->rosterRepository();
 
         std::optional<ClassDetailsPageReadRecord> loadedClassDetails;
         bool confirmedParentMissing = false;

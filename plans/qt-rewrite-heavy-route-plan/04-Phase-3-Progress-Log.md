@@ -134,3 +134,25 @@ cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationS
 ctest --test-dir build/macos-clang-debug -R '^ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests$' --output-on-failure
 cmake --build build/macos-clang-debug --target ClassMngr
 ```
+
+## F1324 — Class Details display persistence-port migration — 2026-10-22
+
+Moved the existing Class Details display-read port and its platform test
+setup to `ApplicationServices::workspaceStore()` and its class-info, teacher,
+and roster repositories. The application query and UI remain unchanged. The
+snapshot still reports class fields, teacher display name, and student count
+independently, preserving partial-source results and display fallbacks.
+
+The executor built the focused platform-test target and `ClassMngr`; the
+platform port, application query, and visible read-parity CTests passed 3/3,
+and `git diff --check` passed. Ninja printed a premature-end-of-file warning
+during both builds, recovered, and completed successfully. An independent
+Tester reviewed the diff and reran those three CTests: **3/3 passed**.
+Verification used the existing macOS Debug tree; the full suite and
+cross-platform builds were not run.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests
+ctest --test-dir build/macos-clang-debug -R '^(ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests|ClassMngrNextApplicationClassDetailsPageQueryTests|ClassMngrClassDetailsPageReadParityTests)$' --output-on-failure
+cmake --build build/macos-clang-debug --target ClassMngr
+```

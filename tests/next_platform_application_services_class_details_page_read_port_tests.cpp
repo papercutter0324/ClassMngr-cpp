@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "next/application/class_details_page_query.h"
 #include "next/platform/application_services_class_details_page_read_port.h"
 
@@ -71,7 +71,7 @@ readsFieldsOrderedRawSchedulesTeacherAndRosterFromSession()
     teacher.preferredRomanization = QStringLiteral("Romanized Teacher");
     teacher.preferredName = QStringLiteral("Preferred Teacher");
     const auto createdTeacher =
-        services.databaseSession()->teacherRepository()->saveTeacher(teacher);
+        services.workspaceStore()->teacherRepository()->saveTeacher(teacher);
     QVERIFY(createdTeacher);
 
     const auto original = services.classService()->classInfo(*createdClass);
@@ -96,7 +96,7 @@ readsFieldsOrderedRawSchedulesTeacherAndRosterFromSession()
 
     // Seed legacy values directly because the current service save validates
     // schedule text; the display read must still copy stored rows unchanged.
-    QSqlQuery scheduleRows(services.databaseSession()->database());
+    QSqlQuery scheduleRows(services.workspaceStore()->database());
     scheduleRows.prepare(QStringLiteral(
         "DELETE FROM class_times WHERE class_id=?"
         ));
@@ -196,7 +196,7 @@ readsFieldsOrderedRawSchedulesTeacherAndRosterFromSession()
              std::string("Preferred Teacher"));
     QCOMPARE(snapshot.studentCount.value().rawValue(), 1);
 
-    const auto& metrics = services.databaseSession()->classInfoRepository()
+    const auto& metrics = services.workspaceStore()->classInfoRepository()
                               ->classDetailsPageReadMetrics();
     QCOMPARE(metrics.callCount, 1);
     QCOMPARE(metrics.metadataStatementCount, 1);
@@ -230,7 +230,7 @@ wideTeacherIdResolvesDisplayNameAndPreservesOtherReads()
         );
     QVERIFY(createdClass);
 
-    QSqlQuery insertClassFields(services.databaseSession()->database());
+    QSqlQuery insertClassFields(services.workspaceStore()->database());
     QVERIFY(insertClassFields.prepare(QStringLiteral(R"(
         INSERT INTO class_info (
             class_id, class_grade, class_level, reading_book, essay_book
@@ -245,7 +245,7 @@ wideTeacherIdResolvesDisplayNameAndPreservesOtherReads()
              qPrintable(insertClassFields.lastError().text()));
     QCOMPARE(insertClassFields.numRowsAffected(), 1);
 
-    QSqlQuery insertTeacher(services.databaseSession()->database());
+    QSqlQuery insertTeacher(services.workspaceStore()->database());
     QVERIFY(insertTeacher.prepare(QStringLiteral(R"(
         INSERT INTO teachers (
             id, teacher_en, preferred_romanization, preferred_name
@@ -257,7 +257,7 @@ wideTeacherIdResolvesDisplayNameAndPreservesOtherReads()
     insertTeacher.addBindValue(QStringLiteral("Wide-ID Preferred Name"));
     QVERIFY2(insertTeacher.exec(), qPrintable(insertTeacher.lastError().text()));
 
-    QSqlQuery assignTeacher(services.databaseSession()->database());
+    QSqlQuery assignTeacher(services.workspaceStore()->database());
     QVERIFY(assignTeacher.prepare(QStringLiteral(
         "UPDATE class_info SET teacher_id=? WHERE class_id=?"
         )));
@@ -266,7 +266,7 @@ wideTeacherIdResolvesDisplayNameAndPreservesOtherReads()
     QVERIFY2(assignTeacher.exec(), qPrintable(assignTeacher.lastError().text()));
     QCOMPARE(assignTeacher.numRowsAffected(), 1);
 
-    QSqlQuery verifyStoredIds(services.databaseSession()->database());
+    QSqlQuery verifyStoredIds(services.workspaceStore()->database());
     QVERIFY(verifyStoredIds.prepare(QStringLiteral(R"(
         SELECT typeof(teachers.id), teachers.id,
                typeof(class_info.teacher_id), class_info.teacher_id
@@ -323,7 +323,7 @@ missingMetadataRetainsDefaultsAndReadsSchedules()
         QStringLiteral("Class Details Without Metadata")
         );
     QVERIFY(createdClass);
-    QSqlQuery removeMetadata(services.databaseSession()->database());
+    QSqlQuery removeMetadata(services.workspaceStore()->database());
     removeMetadata.prepare(QStringLiteral(
         "DELETE FROM class_info WHERE class_id=?"
         ));
@@ -331,7 +331,7 @@ missingMetadataRetainsDefaultsAndReadsSchedules()
     QVERIFY2(removeMetadata.exec(), qPrintable(removeMetadata.lastError().text()));
 
     const auto insertSchedule = [
-        database = services.databaseSession()->database(), createdClass
+        database = services.workspaceStore()->database(), createdClass
         ](
         const QString& table,
         const QString& day,
@@ -392,7 +392,7 @@ missingMetadataRetainsDefaultsAndReadsSchedules()
             "Legacy intensive day", "raw intensive start", "raw intensive end"
         }));
 
-    const auto& metrics = services.databaseSession()->classInfoRepository()
+    const auto& metrics = services.workspaceStore()->classInfoRepository()
                               ->classDetailsPageReadMetrics();
     QCOMPARE(metrics.callCount, 1);
     QCOMPARE(metrics.metadataStatementCount, 1);
@@ -411,7 +411,7 @@ missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
         QStringLiteral("Class Details Deleted Parent")
         );
     QVERIFY(deletedClass);
-    QSqlQuery deleteParent(services.databaseSession()->database());
+    QSqlQuery deleteParent(services.workspaceStore()->database());
     QVERIFY(deleteParent.prepare(QStringLiteral(
         "DELETE FROM classes WHERE id=?"
         )));
@@ -419,12 +419,12 @@ missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
     QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
     QCOMPARE(deleteParent.numRowsAffected(), 1);
 
-    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QSqlQuery disableForeignKeys(services.workspaceStore()->database());
     QVERIFY2(
         disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys = OFF")),
         qPrintable(disableForeignKeys.lastError().text())
         );
-    QSqlQuery insertOrphanColumn(services.databaseSession()->database());
+    QSqlQuery insertOrphanColumn(services.workspaceStore()->database());
     QVERIFY(insertOrphanColumn.prepare(QStringLiteral(
         "INSERT INTO roster_columns (class_id, name, position, width) "
         "VALUES (?, ?, ?, ?)"
@@ -445,7 +445,7 @@ missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
             );
         insertOrphanColumn.finish();
     }
-    QSqlQuery insertOrphanCell(services.databaseSession()->database());
+    QSqlQuery insertOrphanCell(services.workspaceStore()->database());
     QVERIFY(insertOrphanCell.prepare(QStringLiteral(
         "INSERT INTO roster_data (class_id, row_index, col_index, value) "
         "VALUES (?, ?, ?, ?)"
@@ -467,7 +467,7 @@ missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
         insertOrphanCell.finish();
     }
 
-    const auto legacyOrphanCount = services.databaseSession()
+    const auto legacyOrphanCount = services.workspaceStore()
                                        ->rosterRepository()
                                        ->getRosterStudentCount(*deletedClass);
     QVERIFY(legacyOrphanCount);
@@ -478,7 +478,7 @@ missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
     Platform::ApplicationServicesClassDetailsPageReadPort port(services);
     for (const int missingClassId : missingClassIds)
     {
-        const auto metricsBefore = services.databaseSession()
+        const auto metricsBefore = services.workspaceStore()
                                        ->classInfoRepository()
                                        ->classDetailsPageReadMetrics();
         const auto result = port.readClassDetailsPage(classId(missingClassId));
@@ -496,7 +496,7 @@ missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
                  Domain::ErrorCode::NotFound);
         QVERIFY(snapshot.studentCount.error().recoverable);
 
-        const auto metricsAfter = services.databaseSession()
+        const auto metricsAfter = services.workspaceStore()
                                       ->classInfoRepository()
                                       ->classDetailsPageReadMetrics();
         QCOMPARE(metricsAfter.callCount, metricsBefore.callCount + 1);
@@ -506,7 +506,7 @@ missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
                  metricsBefore.scheduleStatementCount + 1);
     }
 
-    const auto legacy = services.databaseSession()->classInfoRepository()
+    const auto legacy = services.workspaceStore()->classInfoRepository()
                             ->loadClassDetailsPageRecord(unknownClassId);
     QVERIFY(legacy);
     QCOMPARE(legacy->classId, unknownClassId);
@@ -550,7 +550,7 @@ classReadFailureDoesNotDiscardRosterCount()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
 
-    QSqlQuery damageClassRead(services.databaseSession()->database());
+    QSqlQuery damageClassRead(services.workspaceStore()->database());
     QVERIFY2(
         damageClassRead.exec(QStringLiteral("DROP TABLE class_times")),
         qPrintable(damageClassRead.lastError().text())
@@ -578,7 +578,7 @@ intensiveScheduleReadFailureDoesNotDiscardRosterCount()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
 
-    QSqlQuery damageClassRead(services.databaseSession()->database());
+    QSqlQuery damageClassRead(services.workspaceStore()->database());
     QVERIFY2(
         damageClassRead.exec(QStringLiteral(
             "DROP TABLE class_intensive_times")),
@@ -624,7 +624,7 @@ teacherReadFailureDoesNotDiscardClassOrRoster()
     info.teacherId = *createdTeacher;
     QVERIFY(services.classService()->saveClassInfo(info));
 
-    QSqlQuery damageTeacherRead(services.databaseSession()->database());
+    QSqlQuery damageTeacherRead(services.workspaceStore()->database());
     QVERIFY2(
         damageTeacherRead.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
         qPrintable(damageTeacherRead.lastError().text())
@@ -676,7 +676,7 @@ teacherProjectionSqlFailureDoesNotDiscardClassOrRoster()
     QVERIFY(services.classService()->saveClassInfo(info));
 
     QSqlQuery damageTeacherProjection(
-        services.databaseSession()->database()
+        services.workspaceStore()->database()
         );
     QVERIFY2(damageTeacherProjection.exec(QStringLiteral(
         "ALTER TABLE teachers RENAME COLUMN preferred_name "
@@ -710,7 +710,7 @@ rosterReadFailureDoesNotDiscardClassOrTeacher()
         );
     QVERIFY(createdClass);
 
-    QSqlQuery damageRosterRead(services.databaseSession()->database());
+    QSqlQuery damageRosterRead(services.workspaceStore()->database());
     QVERIFY2(
         damageRosterRead.exec(QStringLiteral("DROP TABLE roster_columns")),
         qPrintable(damageRosterRead.lastError().text())
