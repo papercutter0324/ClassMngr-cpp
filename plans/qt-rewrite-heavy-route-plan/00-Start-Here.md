@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is pushed through receipt `1854742`; Batch523 (F1285-F1287) is pushed through closeout `12936f8f`, with local and remote tips matching. Batch524 (F1288-F1290) is pushed through closeout `3480c791`; F1291 was screened out. Batch525 (F1292-F1293) is pushed through closeout `655cf042`, with receipt tip `34240255`; F1294 was screened out. Batch526 (F1295) is pushed through closeout `156e5fa2` and receipt `89657716`, with local and remote tips matching. Batch527 (F1296) is pushed through closeout `e164340f` and receipt `3b54c31a`, with local and remote tips matching at receipt push. Batch528 (F1297) is pushed through closeout `44827af3`; its receipt documentation commit `fbff55fa` is pushed. Batch529 (F1298) is pushed through closeout `4115e7fe`; its receipt is pending. Batch531 is active with F1299 implementation underway. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is pushed through receipt `1854742`; Batch523 (F1285-F1287) is pushed through closeout `12936f8f`, with local and remote tips matching. Batch524 (F1288-F1290) is pushed through closeout `3480c791`; F1291 was screened out. Batch525 (F1292-F1293) is pushed through closeout `655cf042`, with receipt tip `34240255`; F1294 was screened out. Batch526 (F1295) is pushed through closeout `156e5fa2` and receipt `89657716`, with local and remote tips matching. Batch527 (F1296) is pushed through closeout `e164340f` and receipt `3b54c31a`, with local and remote tips matching at receipt push. Batch528 (F1297) is pushed through closeout `44827af3`; its receipt documentation commit `fbff55fa` is pushed. Batch529 (F1298) is pushed through closeout `4115e7fe`; its receipt is pending. Batch531 (F1299) is complete locally with push pending. Batch532 is active with F1300 accepted before implementation; Batch533 discovery is due when F1300 implementation starts. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -55,8 +55,10 @@ closeout `e164340fd00857d5d8b5d20243adaadf156f0cfc` and receipt
 matching at receipt push. Batch528 (F1297) is pushed through closeout
 `44827af383069077917794c6590469050bdbfbab`; its receipt documentation commit
 `fbff55fa` is pushed. Batch529 (F1298) is pushed through closeout
-`4115e7fe`; its receipt is pending. Batch531 is active with F1299
-implementation underway.
+`4115e7fe`; its receipt is pending. Batch531 (F1299) is complete locally with
+push pending. Batch532 is active with F1300 accepted
+before implementation; Batch533 discovery is due when F1300 implementation
+starts.
 Gate 1 and Gate 2 remain Partial,
 and the Phase 2 exit gate remains Open. Phase 0 remains
 Complete; F629's

@@ -63050,3 +63050,27 @@ This changes F129's silent autosave failure behavior only by adding inline
 status; its no-modal behavior and dirty-draft protection remain.
 
 At acceptance, F1300 implementation has not started.
+
+### F1299 ScheduleWidget source-read recovery complete locally; Batch531 closed - 2026-10-21
+
+F1299 was completed locally in production commit
+`55e4cf90cac1b85864c53e6575f7a0e8c0a46c0c` and test commit `ded75ea4`
+(`Phase2 - Test ScheduleWidget source read recovery`).
+
+The macOS Clang Debug build `cmake --build build/macos-clang-debug --target
+ClassMngr ClassMngrScheduleWidgetTests -j2` passed. The focused F1299 QtTest
+selection passed 10/10. Owning CTest `ClassMngrScheduleWidgetTests` passed
+1/1; its QtTest report was 71 passed, 0 failed, 0 skipped. `git diff --check`
+passed.
+
+The pre-existing CTest hang reproduced at parent `4115e7fe` was fixed in test
+support with a detailed-save stub delegating to existing in-memory behavior;
+this repair made no production changes. Verification was macOS Clang Debug
+only. No full suite was run, and no fresh build, Windows verification, hosted
+CI, or packaged translation render was performed. No Phase 2 gate completion
+is claimed.
+
+Batch531 (F1299) is complete locally and push is pending. Batch532 F1300 is
+active and accepted before implementation. Batch533 discovery is due when
+F1300 implementation starts, under the one-slice trigger. Gate 1 and Gate 2
+remain Partial, and the Phase 2 exit gate remains Open.

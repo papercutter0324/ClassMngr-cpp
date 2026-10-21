@@ -53,12 +53,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch529 (F1298) is pushed through closeout `4115e7fe` with its receipt pending; Batch531 F1299 implementation is underway; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch531 (F1299) is complete locally with push pending; Batch532 F1300 is accepted before implementation, and Batch533 discovery is due when F1300 implementation starts under the one-slice trigger; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1299's latest slice commit is production commit `55e4cf90`. Batch531 F1299
-implementation is underway.
+F1299's latest slice commit is test commit `ded75ea4`. Batch532 F1300 is
+accepted before implementation; Batch533 discovery is due when F1300
+implementation starts under the one-slice trigger.
 
 ### Slice discovery batches
 
@@ -77,13 +78,14 @@ Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
-### Active Batch531
+### Active Batch532
 
-1. F1299 - Implementation underway: add typed failure status to
-   ScheduleWidget source reads while preserving F141's `NotFound` behavior.
+1. F1300 - Accepted before implementation: report automatic Roster Editor
+   persistence failures inline while retaining the editable dirty draft.
    See the progress log for full criteria.
 
-See the progress log for F1299's full criteria and Batch531 discovery evidence.
+Batch533 discovery is due when F1300 implementation starts, under the
+one-slice trigger. See the progress log for full criteria and discovery history.
 
 ### Deferred candidates
 
