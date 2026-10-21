@@ -4,8 +4,10 @@
 
 - Heavy route; branch `Qt-Rewrite`. Phase 2 is complete. Gate 1 and Gate 2
   satisfy their exit criteria. Batch543 was pushed without force from remote
-  base `2d324b08` through `4f965da5`; `origin/Qt-Rewrite` matched the pushed
-  tip and the worktree was clean.
+  base `2d324b08` through `4f965da5`. Follow-up documentation pushes recorded
+  the deployment handoff (`4f965da5..45ac83c6`), corrected the legacy mapping
+  status (`45ac83c6..be770863`), and added final focused verification
+  (`be770863..646ad678`).
 - Batch543 includes F1316 `11ee8d80` (Sub Prep generation planning), F1317
   `28f77666` (Class Details rejects canonical validation-context read errors
   or mismatches), and closeout docs `4f965da5`. The user's F1103 decision was
@@ -14,12 +16,23 @@
   and [progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md);
   the [slice-batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
   has no active batch.
+- A current-source audit confirmed the named Phase 2 deliverables and exit
+  criteria. It found the legacy mapping's F1314 schema-policy note stale; the
+  note now records the verified schema-v6-only policy, and prior gate-status
+  statements are identified as historical. Broader legacy feature migration
+  and Sub Prep memory acceptance remain outside this phase.
+- Fresh focused checks passed: the three app-less gate CTests (3/3), F1316
+  validation CTest (1/1), both required weekday-scope page selectors, the typed
+  plan package-service selector, and F1317 CTest (1/1, 27 QtTest cases). The
+  macOS run was incremental, not a clean build or full suite.
 - The incremental 169-target audit built 168/169 targets; 167/170 selected
   registrations passed. One Schedule Import review-readiness target did not
   compile because its test uses raw-string initialization after the typed-key
   API change; three tests have stale `2147483648` invalid-ID expectations. No
-  stale test assertions were changed and no full suite ran. F629's Windows x64
-  requalification remains separate. The next milestone is Phase 3.
+  stale test assertions were changed and no full suite ran. The F1316 macOS
+  golden-text mismatch was not rerun; controlled comparison found it unrelated
+  to the slice. F629's Windows x64 requalification remains separate. The next
+  milestone is Phase 3.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 

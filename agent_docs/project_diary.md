@@ -8479,3 +8479,9 @@ log. Closed-batch archives and routine chronology were removed. Batch543
 (F1316, F1317, and closeout docs) was pushed from `2d324b08` through `4f965da5`.
 The incremental audit's stale-test limitations remain recorded as-is; do not
 weaken tests or imply the full suite passed.
+
+The current-state completion audit found that the legacy mapping still labeled
+F1314 below-v6 rejection as in progress. Update present-tense policy statements
+and add one current-status pointer while preserving dated historical gate
+snapshots; do not mass-rewrite useful history. Current acceptance status belongs
+in the Phase 2 plan, and focused verification belongs in its progress log.

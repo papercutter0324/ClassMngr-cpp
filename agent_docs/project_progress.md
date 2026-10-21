@@ -53,22 +53,33 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-22 (Phase 2 complete; Batch543 pushed)
+### Current checkpoint - 2026-10-22 (Phase 2 complete; completion audit passed)
 
 Phase 2 Gate 1 and Gate 2 satisfy their exit criteria. Batch543, containing
 F1316 (`11ee8d80`), F1317 (`28f77666`), and closeout documentation
 (`4f965da5`), was pushed without force to `origin/Qt-Rewrite` from
-`2d324b08` through `4f965da5`; the remote tip was verified and the worktree
-was clean. The current Phase 2 status and evidence are in the [phase plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
-and [progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
+`2d324b08` through `4f965da5`. Follow-up documentation pushes recorded the
+deployment handoff (`4f965da5..45ac83c6`), corrected the stale F1314 status in
+the legacy mapping (`45ac83c6..be770863`), and added final focused verification
+(`be770863..646ad678`).
+
+A current-source requirements audit confirmed the named Domain/Application
+deliverables and literal workspace/app-less exit criteria. Fresh independent
+macOS verification passed the three app-less gate CTests, F1316 validation and
+required weekday-scope selectors, and F1317's 27-case use-case suite. Current
+status and exact evidence are in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md),
+[progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md),
+and [legacy mapping](../plans/qt-rewrite-heavy-route-plan/phase2-legacy-application-mapping.md).
 
 The cumulative incremental audit built 168/169 targets; 167/170 selected
 registrations passed. One Schedule Import target failed to compile against a
 typed-key API because its test uses stale raw-string initialization; three
 tests retain stale expectations that teacher ID `2147483648` is invalid. The
-full suite was not run. These limits are recorded without weakening tests or
-claiming exhaustive parity. F629's source-bound Windows x64 requalification
-remains separate from Phase 2. The next milestone is Phase 3.
+full suite was not run, and the F1316 macOS golden-text mismatch remains
+unrerun after its controlled comparison found it unrelated to the slice. These
+limits are recorded without weakening tests or claiming exhaustive parity.
+F629's source-bound Windows x64 requalification remains separate from Phase 2.
+The next milestone is Phase 3.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 
