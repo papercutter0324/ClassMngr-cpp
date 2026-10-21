@@ -6,6 +6,7 @@
 #include "next/application/class_details_save_use_case.h"
 #include "next/application/class_details_page_read_port.h"
 #include "next/application/class_details_validation_context_query.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/pages/page_header.h"
 #include "ui/shared/widgets/sections/class_details_section.h"
@@ -147,6 +148,39 @@ public:
         requests;
 };
 
+class RecordingPromptService final : public IUserPromptService
+{
+public:
+    void showMessage(const PromptRequest& request) override
+    {
+        requests.push_back(request);
+    }
+
+    void showMessageAsync(const PromptRequest& request) override
+    {
+        requests.push_back(request);
+    }
+
+    PromptChoice confirm(const PromptRequest&) override
+    {
+        return PromptChoice::Canceled;
+    }
+
+    UnsavedChangesChoice confirmUnsavedChanges(
+        const UnsavedChangesRequest&
+        ) override
+    {
+        return UnsavedChangesChoice::Cancel;
+    }
+
+    QString chooseAction(const ActionPromptRequest&) override
+    {
+        return {};
+    }
+
+    std::vector<PromptRequest> requests;
+};
+
 Application::ClassDetailsPageReadResult failedPageRead()
 {
     return Application::ClassDetailsPageReadResult::failure({
@@ -211,6 +245,8 @@ class ClassDetailsPageDisplayTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void init();
+    void cleanup();
     void loadRetranslateDiscardAndClearUseSnapshot();
     void independentFailuresUseThePageFallbacks();
     void successfulSaveRefreshesTeacherAndKeepsSavedFields();
@@ -219,7 +255,21 @@ private slots:
     void clearAndRestoreRequireSuccessfulClassFields();
     void retranslationPreservesAvailabilityOfVisibleControls();
     void successfulClassFieldsSaveDespiteTeacherAndRosterFailures();
+
+private:
+    RecordingPromptService m_promptService;
 };
+
+void ClassDetailsPageDisplayTests::init()
+{
+    m_promptService.requests.clear();
+    DialogServices::setUserPromptServiceForTesting(&m_promptService);
+}
+
+void ClassDetailsPageDisplayTests::cleanup()
+{
+    DialogServices::setUserPromptServiceForTesting(nullptr);
+}
 
 void ClassDetailsPageDisplayTests::loadRetranslateDiscardAndClearUseSnapshot()
 {
@@ -310,6 +360,17 @@ void ClassDetailsPageDisplayTests::independentFailuresUseThePageFallbacks()
 {
     ApplicationServices services;
     FakeReadPort readPort;
+    readPort.result = Application::ClassDetailsPageReadResult::success(
+        makeSnapshot(73, {}, "Teacher for empty fields", 0)
+        );
+
+    ClassDetailsPage page(&services, false, nullptr, nullptr, &readPort);
+    page.loadClass(Classroom(QStringLiteral("Selected Fallback"), 73));
+    QVERIFY(m_promptService.requests.empty());
+    auto* emptyFieldsAutosave = page.findChild<AutosaveCoordinator*>();
+    QVERIFY(emptyFieldsAutosave);
+    QVERIFY(emptyFieldsAutosave->isSaveAvailable());
+
     readPort.result = Application::ClassDetailsPageReadResult::success({
         classId(73),
         Domain::Result<Application::ClassDetailsPageFields>::failure({
@@ -323,7 +384,6 @@ void ClassDetailsPageDisplayTests::independentFailuresUseThePageFallbacks()
             )
     });
 
-    ClassDetailsPage page(&services, false, nullptr, nullptr, &readPort);
     page.loadClass(Classroom(QStringLiteral("Selected Fallback"), 73));
     auto* details = page.findChild<ClassDetailsSection*>();
     auto* schedule = page.findChild<ClassScheduleSection*>();
@@ -337,6 +397,12 @@ void ClassDetailsPageDisplayTests::independentFailuresUseThePageFallbacks()
     QCOMPARE(countEdit->text(), QStringLiteral("9"));
     QVERIFY(schedule->regularRows().isEmpty());
     QCOMPARE(header->subtitle(), QStringLiteral("Selected Fallback"));
+    QCOMPARE(m_promptService.requests.size(), std::size_t(1));
+    QCOMPARE(m_promptService.requests.front().severity, PromptSeverity::Warning);
+    QCOMPARE(m_promptService.requests.front().title,
+        QStringLiteral("Load Class Details"));
+    QCOMPARE(m_promptService.requests.front().message,
+        QStringLiteral("class information unavailable"));
 
     Application::ClassDetailsPageFields fields = firstFields();
     readPort.result = Application::ClassDetailsPageReadResult::success({
@@ -362,6 +428,7 @@ void ClassDetailsPageDisplayTests::independentFailuresUseThePageFallbacks()
     QVERIFY(header->subtitle().contains(QStringLiteral("E4 Theseus")));
     QVERIFY(header->subtitle().contains(QStringLiteral("No Teacher")));
     QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(m_promptService.requests.size(), std::size_t(1));
 }
 
 void ClassDetailsPageDisplayTests::successfulSaveRefreshesTeacherAndKeepsSavedFields()
@@ -436,6 +503,7 @@ failedReadsKeepFallbackFormUnavailableForAllSaveRoutes()
 {
     for (const bool nestedFailure : {false, true})
     {
+        m_promptService.requests.clear();
         ApplicationServices services;
         FakeReadPort readPort;
         readPort.result = nestedFailure
@@ -457,6 +525,16 @@ failedReadsKeepFallbackFormUnavailableForAllSaveRoutes()
             );
         page.setSaveMode(SaveMode::Manual);
         page.loadClass(Classroom(QStringLiteral("Selected Fallback"), 73));
+
+        QCOMPARE(m_promptService.requests.size(), std::size_t(1));
+        QCOMPARE(m_promptService.requests.front().severity,
+            PromptSeverity::Warning);
+        QCOMPARE(m_promptService.requests.front().title,
+            QStringLiteral("Load Class Details"));
+        QCOMPARE(m_promptService.requests.front().message,
+            nestedFailure
+                ? QStringLiteral("class information unavailable")
+                : QStringLiteral("class details unavailable"));
 
         auto* details = page.findChild<ClassDetailsSection*>();
         auto* schedule = page.findChild<ClassScheduleSection*>();
@@ -495,6 +573,19 @@ failedReadsKeepFallbackFormUnavailableForAllSaveRoutes()
         QCOMPARE(savePort.callCount, 0);
         QVERIFY(page.hasUnsavedChanges());
         QVERIFY(!saveButton->isEnabled());
+
+        readPort.result = Application::ClassDetailsPageReadResult::success(
+            makeSnapshot(73, firstFields(), "Reloaded Teacher", 12)
+            );
+        page.loadClass(Classroom(QStringLiteral("Selected Fallback"), 73));
+        page.setSaveMode(SaveMode::Manual);
+        QCOMPARE(details->grade(), QStringLiteral("E4"));
+        QCOMPARE(details->level(), QStringLiteral("Theseus"));
+        QCOMPARE(countEdit->text(), QStringLiteral("12"));
+        QVERIFY(!page.hasUnsavedChanges());
+        QVERIFY(autosave->isSaveAvailable());
+        QVERIFY(!saveButton->isEnabled());
+        QCOMPARE(m_promptService.requests.size(), std::size_t(1));
     }
 }
 
@@ -741,6 +832,7 @@ successfulClassFieldsSaveDespiteTeacherAndRosterFailures()
     QVERIFY(details && saveButton);
     QCOMPARE(details->grade(), QStringLiteral("E4"));
     QCOMPARE(studentCountEdit(page)->text(), QStringLiteral("0"));
+    QVERIFY(m_promptService.requests.empty());
     details->gradeEditor()->setCurrentText(QStringLiteral("E5"));
     details->levelEditor()->setCurrentText(QStringLiteral("Artemis"));
     details->readingBookEditor()->setCurrentText(

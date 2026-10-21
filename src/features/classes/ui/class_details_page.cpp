@@ -470,7 +470,15 @@ QList<ClassTime> displaySchedule(
     return result;
 }
 
-std::optional<ClassMngr::Next::Application::ClassDetailsPageReadSnapshot>
+struct ClassDetailsPageDisplayRead
+{
+    std::optional<
+        ClassMngr::Next::Application::ClassDetailsPageReadSnapshot
+        > snapshot;
+    std::optional<ClassMngr::Next::Domain::OperationError> error;
+};
+
+ClassDetailsPageDisplayRead
 readDisplaySnapshot(
     ApplicationServices* services,
     ClassMngr::Next::Application::ClassDetailsPageReadPort* injectedPort,
@@ -479,7 +487,7 @@ readDisplaySnapshot(
 {
     if (!services || classId < 0)
     {
-        return std::nullopt;
+        return {};
     }
 
     const auto typedClassId =
@@ -488,14 +496,12 @@ readDisplaySnapshot(
             );
     if (!typedClassId)
     {
-        return std::nullopt;
+        return {};
     }
 
     const auto execute = [&typedClassId](
         ClassMngr::Next::Application::ClassDetailsPageReadPort& readPort
-        ) -> std::optional<
-            ClassMngr::Next::Application::ClassDetailsPageReadSnapshot
-            >
+        ) -> ClassDetailsPageDisplayRead
     {
         const ClassMngr::Next::Application::ClassDetailsPageQuery query(
             readPort
@@ -503,9 +509,9 @@ readDisplaySnapshot(
         auto loaded = query.execute(*typedClassId);
         if (!loaded)
         {
-            return std::nullopt;
+            return {.error = loaded.error()};
         }
-        return std::move(loaded.value());
+        return {.snapshot = std::move(loaded.value())};
     };
 
     if (injectedPort)
@@ -824,16 +830,32 @@ void ClassDetailsPage::loadClass(
 
     m_classroom = classroom;
 
-    m_displaySnapshot = readDisplaySnapshot(
+    auto displayRead = readDisplaySnapshot(
         m_services,
         m_displayReadPort,
         classroom.id
         );
+    m_displaySnapshot = std::move(displayRead.snapshot);
     applyDisplaySnapshot(scrollPosition);
 
     m_autosave->setLoading(false);
 
     clearDirty();
+
+    const ClassMngr::Next::Domain::OperationError* readError =
+        displayRead.error ? &*displayRead.error : nullptr;
+    if (!readError && m_displaySnapshot && !m_displaySnapshot->classFields)
+    {
+        readError = &m_displaySnapshot->classFields.error();
+    }
+    if (readError)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Load Class Details"),
+            displayText(readError->message)
+            );
+    }
 }
 
 std::optional<ClassDetailsPageRestorationState>
@@ -1195,13 +1217,14 @@ bool ClassDetailsPage::saveClassInfoInternal(
 
     clearDirty();
 
-    if (auto refreshedSnapshot = readDisplaySnapshot(
+    auto refreshedRead = readDisplaySnapshot(
             m_services,
             m_displayReadPort,
             m_classroom.id
-            ))
+            );
+    if (refreshedRead.snapshot)
     {
-        m_displaySnapshot = std::move(refreshedSnapshot);
+        m_displaySnapshot = std::move(refreshedRead.snapshot);
     }
 
     if (m_displaySnapshot)
@@ -1261,11 +1284,12 @@ void ClassDetailsPage::retranslateUi()
         m_embeddedHeading->setText(tr("Class Details"));
     }
 
-    m_displaySnapshot = readDisplaySnapshot(
+    auto displayRead = readDisplaySnapshot(
         m_services,
         m_displayReadPort,
         m_classroom.id
         );
+    m_displaySnapshot = std::move(displayRead.snapshot);
     updateTitle(m_displaySnapshot ? &*m_displaySnapshot : nullptr);
 
     if (m_detailsCard)
