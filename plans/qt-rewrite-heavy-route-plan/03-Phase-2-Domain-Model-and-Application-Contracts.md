@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch524 (F1288-F1290) is complete locally and awaiting push after F1291 was screened out; after that push, F1292 is next for acceptance in Batch525; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch524 (F1288-F1290) is pushed through closeout `3480c791` after F1291 was screened out; F1292 is next for acceptance in Batch525, and Gate 1 and Gate 2 remain Partial with the Phase 2 exit gate Open.
 
 ### Latest Progress Update
 
-F1291 was screened out; Batch524 (F1288-F1290) is complete locally and awaits push. Batch525 is active with F1292 next for acceptance after that push, followed by F1293 and F1294. See the [F1291 screening](03-Phase-2-Progress-Log.md#f1291-class-transfer-apply-adapter-screened-out-2026-10-21), [Batch524 local closeout](03-Phase-2-Progress-Log.md#batch524-local-closeout-2026-10-21), and [Batch525 discovery](03-Phase-2-Progress-Log.md#batch525-discovery-2026-10-21-triggered-at-f1290).
+Batch524 (F1288-F1290) was pushed through closeout `3480c791` after F1291 was screened out. Batch525 is active with F1292 next for acceptance, followed by F1293 and F1294. See the [Batch524 push receipt](03-Phase-2-Progress-Log.md#batch524-push-receipt-2026-10-21) and [Batch525 discovery](03-Phase-2-Progress-Log.md#batch525-discovery-2026-10-21-triggered-at-f1290).
 
 ### Slice discovery batches
 
@@ -78,10 +78,11 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active Batch525
 
-Batch524 is complete locally and awaits push. Batch525 has three discovered,
-provisional, unaccepted candidates in order:
+Batch524 (F1288-F1290) is pushed through closeout `3480c791`; F1291 was
+screened out. Batch525 has three discovered, provisional, unaccepted
+candidates in order:
 
-1. F1292 - Discovered; next for acceptance after Batch524 push: Teacher Info
+1. F1292 - Discovered; next for acceptance: Teacher Info
    may retain an editable dirty page after a successful write followed by
    reload failure, allowing a later stale overwrite.
 2. F1293 - Discovered; after F1292: new-profile replacement may close the

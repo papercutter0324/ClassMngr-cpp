@@ -62423,3 +62423,17 @@ No push has occurred. After the Batch524 push, F1292 is next for acceptance in
 Batch525; F1293 and F1294 follow in order. All Batch525 candidates remain
 provisional and unaccepted. Gate 1 and Gate 2 remain Partial, and the Phase 2
 exit gate remains Open.
+
+### Batch524 push receipt - 2026-10-21
+
+`git push origin Qt-Rewrite` exited successfully and advanced
+`origin/Qt-Rewrite` from `61d7126c61d85d5fcc5bcca9a0b5427439c217d2` to
+`3480c791b65ea1cd57dd3ea03a89941eb2fcc4fd`. Local `HEAD` and
+`origin/Qt-Rewrite` match at `3480c791b65ea1cd57dd3ea03a89941eb2fcc4fd`; the
+worktree was clean.
+
+Batch524 (F1288-F1290) is pushed. F1291 was screened out. Batch525 is active
+with provisional, unaccepted F1292-F1294; F1292 is next for acceptance,
+followed by F1293 and F1294. Gate 1 and Gate 2 remain Partial, and the Phase 2
+exit gate remains Open. This receipt does not imply a full-suite, Windows, or
+gate result.
