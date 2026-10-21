@@ -61670,3 +61670,59 @@ discovery when work starts on F1283, the second-last Batch522 candidate. Gate
 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. Phase 0
 remains Complete; F629's source-bound Windows x64 requalification remains
 outstanding separately.
+
+### F1282 Calendar event activation load-error feedback complete locally - 2026-10-21
+
+F1282 is complete locally in active Batch522. The acceptance commit is
+`d67758e51044acdc27c68f73d55440248b2cc53e`; the production/test commit is
+`b6f605f24e6366ba420389ebe212ccd148545b77`. Independent Tester review passed.
+The stale-row regression projects an event, deletes its database row, then
+activates it; it confirms one `Load Calendar Event` warning with the structured
+message, a closed editor, and unchanged database state. The existing
+successful event open/edit case passed. The failure regression covers
+NotFound/stale-row behavior; no separate injected Technical case was added
+because it shares the handler branch.
+
+Independent verification passed:
+
+- `cmake --build build/macos-clang-debug --target ClassMngr ClassMngrCalendarPageEventMutationParityTests` exited 0 incrementally (Ninja had no work).
+- `ctest --test-dir build/macos-clang-debug -R '^ClassMngrCalendarPageEventMutationParityTests$' --output-on-failure` passed 1/1.
+- `git diff --check` and `git show --check --oneline --no-renames b6f605f2` passed.
+
+No full suite, Windows run, clean build, hosted CI, or Gate 2 result is
+claimed. The worktree was clean at the source commit; the branch is two
+commits ahead and no push has occurred. F1282 is complete; F1283 and F1284
+must complete before Batch522 is pushed.
+
+### F1283 - Surface Class Details required-read failures accepted before implementation - 2026-10-21
+
+In `src/features/classes/ui/class_details_page.cpp`, show one page-level
+warning titled localized `Load Class Details` when the top-level required read
+or nested required `classFields` read fails. Use that failure's structured
+message. Keep safe default display, keep the page clean, and keep saving
+unavailable until a successful reload; do not write data or emit a misleading
+save result. Valid empty fields remain successful and show no warning. Preserve
+independent teacher-name and student-count fallbacks, including valid fields
+remaining usable when only optional metadata fails. A later successful reload
+restores field display and save availability.
+
+Extend the existing `tests/class_details_page_display_tests.cpp` for both
+required-read failure messages and prompts, save blocking with no write,
+successful reload recovery, and optional teacher/count fallback behavior. The
+registered target is `ClassMngrClassDetailsPageDisplayTests`. Focused
+verification is to build `ClassMngr` and that target in the existing
+`build/macos-clang-debug` tree, run the matching focused CTest, and run
+`git diff --check`. No full suite, Windows run, clean build, or Gate 2 claim is
+planned. F1103 save-validation-context fallback remains distinct; F1281 is
+Class Notes, not this page.
+
+F1283 is accepted as Batch522's second candidate before implementation; its
+implementation, build, and tests have not started. F1282 is complete locally;
+F1284 remains discovered as the final candidate, with its acceptance and
+implementation next after F1283. Batch523 discovery is underway because F1283
+is the second-last candidate in Batch522: three discovery lanes are running,
+one report has arrived, and no candidate list is recorded yet. Batch522
+remains unpushed until F1283 and F1284 complete. Gate 1 and Gate 2 remain
+Partial, and the Phase 2 exit gate remains Open. Phase 0 remains Complete;
+F629's source-bound Windows x64 requalification remains outstanding
+separately.

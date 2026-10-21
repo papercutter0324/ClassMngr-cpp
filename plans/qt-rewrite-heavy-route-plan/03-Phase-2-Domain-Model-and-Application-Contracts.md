@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch522 is active with F1282 accepted before implementation and F1283/F1284 discovered; start Batch523 discovery when work starts on F1283, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch522 is active with F1282 complete, F1283 accepted for implementation, and F1284 discovered; Batch523 discovery is underway, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1281 acceptance (`79bb5174`) and production/test work (`7222d23c`) are included in the Batch521 closeout pushed at `779d21b8`. See the [F1281 completion record](03-Phase-2-Progress-Log.md#f1281-class-notes-required-read-feedback-complete-locally-2026-10-21) and [Batch521 push receipt](03-Phase-2-Progress-Log.md#batch521-push-receipt-2026-10-21). Current Batch522 status and F1282 acceptance are recorded below and in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#batch522-discovery-2026-10-21).
+F1282 acceptance (`d67758e5`) and production/test work (`b6f605f2`) are complete locally in active Batch522; see the [F1282 completion record](03-Phase-2-Progress-Log.md#f1282-calendar-event-activation-load-error-feedback-complete-locally-2026-10-21). Current Batch522 status and F1283 acceptance are recorded below and in the [F1283 acceptance record](03-Phase-2-Progress-Log.md#f1283-surface-class-details-required-read-failures-accepted-before-implementation-2026-10-21).
 
 ### Slice discovery batches
 
@@ -78,10 +78,10 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Active Batch522
 
-1. F1282 - Accepted: implement Calendar event activation load-error feedback
-   and the focused regression coverage defined in the progress log.
-2. F1283 - Discovered: define and accept Class Details required-read feedback
-   when work starts; begin Batch523 discovery at that point.
+1. F1282 - Complete: Calendar event activation load-error feedback; batch
+   remains unpushed until F1283 and F1284 complete.
+2. F1283 - Accepted: implement Class Details required-read feedback and its
+   focused regression coverage defined in the progress log.
 3. F1284 - Discovered: define and accept Schedule Editor initial-read feedback.
 
 ### Deferred candidates
