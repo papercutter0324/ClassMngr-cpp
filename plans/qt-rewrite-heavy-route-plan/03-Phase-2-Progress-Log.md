@@ -59957,3 +59957,13 @@ app-less behavior evidence only; Gate 1 and Gate 2 remain Partial, and the
 Phase 2 exit gate remains Open. The separately recorded F1265
 `outputReportsUsesProjectedRegularSchedule` failure and its unproven
 pre-change baseline remain unchanged.
+
+### Batch507 push receipt - 2026-10-21
+
+The normal, non-forced push succeeded from previous upstream tip
+`9ee84e849abcc65f42106945d77d627fa7e4ef1f` to
+`311897f0a32070f8f4185e66388640ed5a583a2a`, the local and upstream tip of
+`Qt-Rewrite`. There were no push errors; the worktree is clean and the branch
+is up to date. Batch507 (F1267) is complete and pushed. No Batch508 discovery
+or active slice batch is recorded. Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open.
