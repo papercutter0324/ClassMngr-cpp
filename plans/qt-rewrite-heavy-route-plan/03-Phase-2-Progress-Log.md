@@ -59687,3 +59687,11 @@ adds Gate 1 app-less behavior evidence and makes no Gate 2 baseline-parity
 claim. F1007's broader validation-policy issue remains unresolved, and F1103
 remains deferred. F1265 is accepted before implementation; no implementation,
 build, or tests have started.
+
+### Batch504 push receipt - 2026-10-21
+
+The normal push succeeded with receipt `e14513c1..4b42d4c9`. The upstream
+`origin/Qt-Rewrite` tip is `4b42d4c9cddb86b1ea08a31b36e8dca81b92fcff`, equal
+to local `HEAD`. At push completion, the worktree was clean and the branch was
+up to date. Batch504 (F1264) is pushed; Batch505 remains active with F1265
+accepted for implementation.
