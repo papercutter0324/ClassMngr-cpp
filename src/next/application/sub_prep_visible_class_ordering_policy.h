@@ -2,6 +2,7 @@
 
 #include "next/application/class_summary_projection.h"
 #include "next/application/navigation_order_rank.h"
+#include "next/application/sub_prep_configured_level_order.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -19,8 +20,7 @@ namespace ClassMngr::Next::Application
 // stays independent of Qt and locale choices.
 struct SubPrepVisibleClassOrderingFact final
 {
-    std::int32_t configuredLevelOrder =
-        kClassSummaryUnknownNavigationOrder;
+    SubPrepConfiguredLevelOrder configuredLevelOrder;
     ClassTabNavigationOrderRank navigationFirstDayOrder;
     ClassTabNavigationOrderRank navigationFirstTimeOrder;
     std::string baseLabel;
@@ -84,10 +84,13 @@ orderSubPrepVisibleClassRows(
         {
             const auto& left = rows[leftIndex.rawValue()];
             const auto& right = rows[rightIndex.rawValue()];
-            if (left.configuredLevelOrder != right.configuredLevelOrder)
+            if (
+                left.configuredLevelOrder.rawValue()
+                != right.configuredLevelOrder.rawValue()
+                )
             {
-                return left.configuredLevelOrder
-                    < right.configuredLevelOrder;
+                return left.configuredLevelOrder.rawValue()
+                    < right.configuredLevelOrder.rawValue();
             }
             if (
                 left.navigationFirstDayOrder.rawValue()

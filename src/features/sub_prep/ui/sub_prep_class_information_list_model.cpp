@@ -314,10 +314,13 @@ void SubPrepClassInformationListModel::rebuildVisibleRows()
         const QString grade = fromUtf8(summary.grade).trimmed();
         const QString baseLabel = baseClassLabel(summary);
         orderingFacts.push_back({
-            .configuredLevelOrder = levelOrder(
-                grade,
-                fromUtf8(summary.level).trimmed()
-                ),
+            .configuredLevelOrder =
+                ClassMngr::Next::Application::SubPrepConfiguredLevelOrder{
+                    levelOrder(
+                        grade,
+                        fromUtf8(summary.level).trimmed()
+                        )
+                },
             .navigationFirstDayOrder = summary.navigationFirstDayOrder,
             .navigationFirstTimeOrder = summary.navigationFirstTimeOrder,
             .baseLabel = baseLabel.toUtf8().toStdString(),

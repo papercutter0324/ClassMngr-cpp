@@ -1,9 +1,11 @@
+#include "next/application/sub_prep_configured_level_order.h"
 #include "next/application/sub_prep_visible_class_ordering_policy.h"
 
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -15,6 +17,7 @@ namespace
 {
 
 using Fact = SubPrepVisibleClassOrderingFact;
+using LevelOrder = SubPrepConfiguredLevelOrder;
 using Rank = ClassTabNavigationOrderRank;
 using RowIndex = SubPrepVisibleClassRowIndex;
 using ClassId = ClassMngr::Next::Domain::ClassId;
@@ -22,7 +25,7 @@ using ClassId = ClassMngr::Next::Domain::ClassId;
 static_assert(
     std::is_same_v<
         decltype(std::declval<Fact&>().configuredLevelOrder),
-        std::int32_t
+        LevelOrder
         >
     );
 static_assert(
@@ -40,6 +43,25 @@ static_assert(
 static_assert(Rank{}.rawValue() == 1'000);
 static_assert(!std::is_convertible_v<std::int32_t, Rank>);
 static_assert(!std::is_convertible_v<Rank, std::int32_t>);
+static_assert(
+    LevelOrder{}.rawValue() == kClassSummaryUnknownNavigationOrder
+    );
+static_assert(std::is_constructible_v<LevelOrder, std::int32_t>);
+static_assert(!std::is_convertible_v<std::int32_t, LevelOrder>);
+static_assert(!std::is_convertible_v<LevelOrder, std::int32_t>);
+static_assert(
+    std::is_same_v<decltype(LevelOrder{}.rawValue()), std::int32_t>
+    );
+static_assert(
+    LevelOrder{std::numeric_limits<std::int32_t>::min()}.rawValue()
+    == std::numeric_limits<std::int32_t>::min()
+    );
+static_assert(
+    LevelOrder{std::numeric_limits<std::int32_t>::max()}.rawValue()
+    == std::numeric_limits<std::int32_t>::max()
+    );
+static_assert(LevelOrder{7} == LevelOrder{7});
+static_assert(!(LevelOrder{7} == LevelOrder{8}));
 static_assert(std::is_same_v<decltype(RowIndex{}.rawValue()), std::size_t>);
 static_assert(RowIndex{}.rawValue() == 0);
 static_assert(RowIndex{7}.rawValue() == 7);
@@ -82,20 +104,45 @@ int compareUtf8(
 bool configuredLevelRankHasHighestPriority()
 {
     const std::vector<Fact> rows{
-        {3, Rank{0}, Rank{100}, "A", classId("1")},
-        {2, Rank{6}, Rank{1'300}, "Z", classId("9")},
-        {1, Rank{6}, Rank{1'300}, "Z", classId("8")}
+        {LevelOrder{3}, Rank{0}, Rank{100}, "A", classId("1")},
+        {LevelOrder{2}, Rank{6}, Rank{1'300}, "Z", classId("9")},
+        {LevelOrder{1}, Rank{6}, Rank{1'300}, "Z", classId("8")}
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
         == std::vector<RowIndex>{RowIndex{2}, RowIndex{1}, RowIndex{0}};
 }
 
+bool unknownConfiguredLevelUsesLiteralSentinelAndPreservesCollision()
+{
+    const std::vector<Fact> rows{
+        {
+            LevelOrder{kClassSummaryUnknownNavigationOrder + 1},
+            Rank{-1},
+            Rank{},
+            "A",
+            classId("1")
+        },
+        {LevelOrder{}, Rank{1}, Rank{}, "Z", classId("9")},
+        {
+            LevelOrder{kClassSummaryUnknownNavigationOrder},
+            Rank{0},
+            Rank{},
+            "Y",
+            classId("8")
+        }
+    };
+
+    return rows[1].configuredLevelOrder == rows[2].configuredLevelOrder
+        && orderSubPrepVisibleClassRows(rows, compareUtf8)
+            == std::vector<RowIndex>{RowIndex{2}, RowIndex{1}, RowIndex{0}};
+}
+
 bool navigationDayPrecedesMinuteLabelAndClassId()
 {
     const std::vector<Fact> rows{
-        {1, Rank{1}, Rank{0}, "A", classId("1")},
-        {1, Rank{0}, Rank{1'300}, "Z", classId("9")}
+        {LevelOrder{1}, Rank{1}, Rank{0}, "A", classId("1")},
+        {LevelOrder{1}, Rank{0}, Rank{1'300}, "Z", classId("9")}
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
@@ -105,8 +152,8 @@ bool navigationDayPrecedesMinuteLabelAndClassId()
 bool navigationMinutePrecedesLabelAndClassId()
 {
     const std::vector<Fact> rows{
-        {1, Rank{0}, Rank{600}, "A", classId("1")},
-        {1, Rank{0}, Rank{500}, "Z", classId("9")}
+        {LevelOrder{1}, Rank{0}, Rank{600}, "A", classId("1")},
+        {LevelOrder{1}, Rank{0}, Rank{500}, "Z", classId("9")}
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
@@ -116,8 +163,8 @@ bool navigationMinutePrecedesLabelAndClassId()
 bool injectedLabelComparisonPrecedesClassId()
 {
     const std::vector<Fact> rows{
-        {1, Rank{0}, Rank{500}, "A", classId("1")},
-        {1, Rank{0}, Rank{500}, "Z", classId("9")}
+        {LevelOrder{1}, Rank{0}, Rank{500}, "A", classId("1")},
+        {LevelOrder{1}, Rank{0}, Rank{500}, "Z", classId("9")}
     };
     bool comparatorWasCalled = false;
     const auto reverseLabels = [&comparatorWasCalled](
@@ -137,8 +184,8 @@ bool injectedLabelComparisonPrecedesClassId()
 bool classIdBreaksEqualEarlierTupleFields()
 {
     const std::vector<Fact> rows{
-        {1, Rank{0}, Rank{500}, "Same", classId("2")},
-        {1, Rank{0}, Rank{500}, "Same", classId("10")}
+        {LevelOrder{1}, Rank{0}, Rank{500}, "Same", classId("2")},
+        {LevelOrder{1}, Rank{0}, Rank{500}, "Same", classId("10")}
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
@@ -148,9 +195,9 @@ bool classIdBreaksEqualEarlierTupleFields()
 bool numericUnknownTimeSentinelPrecedesLargerValidMinute()
 {
     const std::vector<Fact> rows{
-        {1, Rank{0}, Rank{1'020}, "A", classId("1")},
+        {LevelOrder{1}, Rank{0}, Rank{1'020}, "A", classId("1")},
         {
-            1,
+            LevelOrder{1},
             Rank{0},
             Rank{kClassSummaryUnknownNavigationOrder},
             "Z",
@@ -165,14 +212,14 @@ bool numericUnknownTimeSentinelPrecedesLargerValidMinute()
 bool validSixteenFortyAndUnknownTimeFallThroughToLabelComparison()
 {
     const Fact validSixteenForty{
-        .configuredLevelOrder = 1,
+        .configuredLevelOrder = LevelOrder{1},
         .navigationFirstDayOrder = Rank{0},
         .navigationFirstTimeOrder = Rank{16 * 60 + 40},
         .baseLabel = "A",
         .classId = classId("9")
     };
     const Fact unknownTime{
-        .configuredLevelOrder = 1,
+        .configuredLevelOrder = LevelOrder{1},
         .navigationFirstDayOrder = Rank{0},
         .baseLabel = "Z",
         .classId = classId("1")
@@ -188,9 +235,9 @@ bool validSixteenFortyAndUnknownTimeFallThroughToLabelComparison()
 bool exactTupleTiesRetainInputOrder()
 {
     const std::vector<Fact> rows{
-        {1, Rank{0}, Rank{500}, "Same", classId("same-id")},
-        {1, Rank{0}, Rank{500}, "Same", classId("same-id")},
-        {1, Rank{0}, Rank{500}, "Same", classId("same-id")}
+        {LevelOrder{1}, Rank{0}, Rank{500}, "Same", classId("same-id")},
+        {LevelOrder{1}, Rank{0}, Rank{500}, "Same", classId("same-id")},
+        {LevelOrder{1}, Rank{0}, Rank{500}, "Same", classId("same-id")}
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
@@ -221,6 +268,12 @@ int main()
     if (!configuredLevelRankHasHighestPriority())
     {
         std::cerr << "Configured level rank should have highest priority.\n";
+        return EXIT_FAILURE;
+    }
+    if (!unknownConfiguredLevelUsesLiteralSentinelAndPreservesCollision())
+    {
+        std::cerr
+            << "Unknown configured level should keep literal sentinel ordering.\n";
         return EXIT_FAILURE;
     }
     if (!navigationDayPrecedesMinuteLabelAndClassId())
