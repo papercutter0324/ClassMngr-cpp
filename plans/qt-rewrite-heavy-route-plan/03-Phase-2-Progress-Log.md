@@ -60712,3 +60712,63 @@ to date. No hosted or CI verification is implied.
 Batch512 (F1274) is complete and pushed at `e16135f5`. No implementation
 batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate
 remains Open.
+
+### Superseded latest progress update - 2026-10-21 (Batch512 pushed, Batch513 discovery pending)
+
+Batch512 (F1274) was complete and pushed at `e16135f5`; its receipt
+documentation commit `9ac3e4be6717d5cb460d279a7bc14012afc42d9f` was also
+pushed. No implementation batch was active. Gate 1 and Gate 2 remained
+Partial, and the Phase 2 exit gate remained Open.
+
+### Batch513 discovery - 2026-10-21
+
+Three independent Heavy-route discovery reports were reviewed. The consumer
+Explorer found the Initial Setup wizard's successful-import gate, but screened
+it out as a Qt wizard-flow condition that is too small and overlaps the
+F1268/F1271 setup work. The Application Explorer found duplicate
+`isMiddleSchoolGrade` and `schoolLevelForClassGrade` rules in
+`src/features/classes/ui/classes_page.cpp` around line 88 and
+`src/features/classes/evaluation_default_selection.cpp` around line 33. The
+Investigator identified a Class Tab Navigation source-precedence lead and
+screened it out: F1019 intentionally keeps that policy at its feature
+boundary, and its sorting and label fallbacks differ. F55 centralizes grade
+name parsing but explicitly leaves caller policy in place; F1275 centralizes
+only shared typed school-level mapping, not Schedule's grade suppression.
+F1272's Testing suppression and F1274's Analytics attention remain separate.
+No deferred candidates were reopened.
+
+The sole ordered Batch513 candidate is:
+
+1. F1275 - `CourseGradeBand` to school-level Domain classification.
+
+No other slices were found.
+
+### F1275 `CourseGradeBand` to school-level Domain classification accepted before implementation - 2026-10-21
+
+Add a Qt-free Domain contract over `CourseGradeBand` that classifies M1, M2,
+and M3 as Middle, and E4, E5, E6, Other, and invalid enum values as
+Elementary. Preserve both current consumer fallbacks.
+
+The Classes page keeps its QString trimming, uppercasing, and
+`gradeBandForName` parsing at the feature edge, then uses the shared
+classification for Analytics/Evaluations visibility. Evaluation Default
+Selection keeps its existing normalization and parsing and maps the shared
+classification to its current `SchoolLevel` for the default choice. Preserve
+classes preference behavior, evaluation/calendar/default-selection behavior,
+unknown text → Other → Elementary/visible tabs, and all existing feature text
+normalization.
+
+Do not change F1272 Testing suppression for M2/M3 and flagged M1, F55's grade
+name parser, F1274 Analytics attention, F1019 Class Tab Navigation
+source/label precedence, or any deferred candidate.
+
+Add an app-less Domain matrix across every grade band and an invalid enum
+value. Retain or update focused Classes page and Evaluation Default Selection
+parity tests. Verify incrementally in the existing macOS tree by building
+`ClassMngr` and affected Domain, Classes, and Evaluation targets; run only the
+exact focused tests and `git diff --check`. No full-suite, Windows, or Gate 2
+claim is planned. F1275 is accepted as the sole Batch513 slice before
+implementation. No F1275 implementation, build, or tests have started. Gate 1
+and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's
+source-bound Windows x64 requalification remains outstanding separately from
+Phase 0's 2026-09-18 Complete declaration.

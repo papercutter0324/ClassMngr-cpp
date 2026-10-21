@@ -53,11 +53,19 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch512 (F1274) is complete and pushed at `e16135f5`, with no implementation batch active; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch512 (F1274) is complete and pushed at `e16135f5`, its receipt documentation commit `9ac3e4be6717d5cb460d279a7bc14012afc42d9f` is pushed, and F1275 is accepted as the sole active Batch513 slice before implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-Batch512 (F1274) is complete and pushed at `e16135f5` (see its [push receipt](03-Phase-2-Progress-Log.md#batch512-push-receipt-2026-10-21)). Its source/test commit is `85ff86737b81c6da74cdc162f85edc2b44f2ccb0`; focused macOS verification is recorded in the [F1274 closeout](03-Phase-2-Progress-Log.md#f1274-class-analytics-grade-attention-policy-complete-2026-10-21). No implementation batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+F1275 is accepted before implementation as the sole slice in active Batch513. Batch512 (F1274) remains complete and pushed at `e16135f5` (see its [push receipt](03-Phase-2-Progress-Log.md#batch512-push-receipt-2026-10-21)); its receipt documentation commit `9ac3e4be6717d5cb460d279a7bc14012afc42d9f` is pushed. F1274's implementation and focused verification are recorded in the [F1274 closeout](03-Phase-2-Progress-Log.md#f1274-class-analytics-grade-attention-policy-complete-2026-10-21). No F1275 implementation, build, or tests have started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### Active slice batch
+
+Batch513 currently has 0 complete, 1 accepted, and 0 discovered slices:
+
+1. F1275 - `CourseGradeBand` to school-level Domain classification — accepted; next action: implement the shared Qt-free Domain classification contract and update its two consumers.
+
+No F1275 implementation, build, or tests have started.
 
 ### Slice discovery batches
 
