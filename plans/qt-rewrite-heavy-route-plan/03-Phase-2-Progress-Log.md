@@ -60772,3 +60772,34 @@ implementation. No F1275 implementation, build, or tests have started. Gate 1
 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's
 source-bound Windows x64 requalification remains outstanding separately from
 Phase 0's 2026-09-18 Complete declaration.
+
+### Superseded latest progress update - 2026-10-21 (F1275 accepted, implementation pending)
+
+F1275 was accepted as the sole Batch513 slice before implementation. Batch512
+(F1274) remained complete and pushed at `e16135f5`; no F1275 implementation,
+build, or tests had started. Gate 1 and Gate 2 remained Partial, and the Phase
+2 exit gate remained Open.
+
+### F1275 `CourseGradeBand` to school-level Domain classification complete - 2026-10-21
+
+F1275 is complete locally in Batch513 at source/test commit
+`3a68bd49f4bbc5b03c3902bc649e8b3da64e6371`; the pre-implementation acceptance
+was recorded at `67df163d255a33c9d1a8fe4b33e926f80e01e425`. The change adds a
+Qt-free `CourseSchoolLevel` grade-band mapping and routes the Classes and
+Evaluation Default Selection consumers through it, preserving their existing
+text normalization and fallback behavior.
+
+Incremental macOS Debug build passed in the existing
+`build/macos-clang-debug` tree for `ClassMngr`,
+`ClassMngrNextDomainContractTests`, `ClassMngrClassesPageTests`, and
+`ClassMngrEvaluationDefaultSelectionTests`. The Domain matrix selector passed
+3/3 (8 cases), `middleSchoolAnalyticsAndEvaluationsTabsFollowPreference`
+passed 3/3, and `classGradeChoiceUsesCourseGradeBands` passed 3/3.
+`git diff --check` passed. The Classes page selector emitted nonfatal font
+alias and closed-database query warnings; all checks passed. No full-suite,
+Windows, clean-build, or Gate 2 result is claimed.
+
+Batch513 (F1275) is complete locally and awaiting its normal push. No
+implementation batch is active. Gate 1 and Gate 2 remain Partial, and the
+Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification
+remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
