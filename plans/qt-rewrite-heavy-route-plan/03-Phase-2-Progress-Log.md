@@ -61084,3 +61084,59 @@ slice before implementation; no source implementation, build, or tests have
 started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
 Open. F629's source-bound Windows x64 requalification remains outstanding
 separately from Phase 0's 2026-09-18 Complete declaration.
+
+### Superseded latest progress update - 2026-10-21 (F1277 accepted, implementation pending)
+
+F1277 was accepted as the sole Batch517 slice before implementation. Batch516
+found no supported candidate. No F1277 implementation, build, or tests had
+started. Gate 1 and Gate 2 remained Partial, and the Phase 2 exit gate remained
+Open.
+
+### F1277 Speaking Evaluation live score/comment cell-value policy complete - 2026-10-21
+
+F1277 is complete locally in Batch517 at source/test commit
+`c9a39af2e7b72b30add628f5d891b93c8cbd41cd`; its acceptance was recorded at
+`4f78c840eda0d34d22978a5af2f818c0d4059642`. A narrowly typed, Qt-free
+Application cell-value rule is now shared by whole-save and `SpeakingEvalModel`
+live validation. Scores `A+`, `A`, `B+`, `B`, and `C` remain accepted, and
+blank or trimmed-empty scores remain valid with each caller's existing
+normalization. Comments up to 450 UTF-16 code units remain valid; longer values
+fail regardless of content. The live validation now checks Comment length
+before its trimmed-empty return, so overlong whitespace-only Comments receive
+the field-level error before save. Localized messages, save issue codes and
+coordinates, and other field validation behavior remain at their accepted
+boundaries.
+
+Incremental macOS Debug build passed:
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests ClassMngrSpeakingEvalPageSaveTests
+```
+
+The focused app-less CTest command
+`ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests$'`
+passed 1/1. These offscreen selectors each passed 3/0:
+
+```sh
+QT_QPA_PLATFORM=offscreen build/macos-clang-debug/ClassMngrSpeakingEvalPageSaveTests liveScoreAndCommentValidationUsesApplicationCellRules
+QT_QPA_PLATFORM=offscreen build/macos-clang-debug/ClassMngrSpeakingEvalPageSaveTests manualValidationAndConfirmedSaveKeepTheirCurrentTiming
+```
+
+The initial live assertion was corrected to preserve the existing paired
+model/page validation messages; the final selector passed. The final test target
+rebuild also passed:
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrSpeakingEvalPageSaveTests
+```
+
+`git diff --check` passed.
+Nonfatal missing Sans Serif font-alias and keyboard-icon resource warnings
+occurred. No full suite, Windows, or Gate 2 result is claimed.
+
+Batch517 (F1277) is complete locally and awaiting its normal push; push is the
+next action, and no implementation batch is active. These are focused
+implementation checks only and do not complete Gate 1 or Gate 2. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's
+source-bound Windows x64 requalification remains
+outstanding separately from Phase 0's 2026-09-18 Complete declaration.

@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch517's F1277 Speaking Evaluation live score/comment cell-value policy is accepted and next for implementation; Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current note: Batch517 (F1277) is complete locally and awaiting normal push, with push next and no implementation batch active; Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-Batch515 (F1276) is complete and pushed; the closeout commit is `ad802adca5177ddcf3fa28dc49b040bdc1e31293` (see the [push receipt](03-Phase-2-Progress-Log.md#batch515-push-receipt-2026-10-21)). Batch516 discovery found no supported slice. Batch517's sole candidate, F1277, is accepted before implementation and implementation is next; no build or tests have started. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+Batch517 (F1277) is complete locally and awaits normal push. Focused macOS verification is recorded in the chronological F1277 closeout below. Push is next, and no implementation batch is active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Slice discovery batches
 
@@ -75,12 +75,6 @@ Treat this plan as an operational summary, not a history:
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
-
-#### Active batch: Batch517
-
-1. F1277 - Speaking Evaluation live score/comment cell-value policy — accepted
-   before implementation; next action: implement the shared typed Application
-   policy and route whole-save and live-cell validation through it.
 
 #### Deferred candidates
 
