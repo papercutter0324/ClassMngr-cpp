@@ -62232,3 +62232,30 @@ F1288 is complete locally; Batch524 remains unpushed. F1289 is next and remains
 unaccepted pending review. F1290 triggers Batch525 discovery when work starts;
 F1291 remains last in Batch524. Gate 1 and Gate 2 remain Partial, and the Phase
 2 exit gate remains Open.
+
+### F1289 My Details noninteractive save failure feedback accepted before implementation - 2026-10-21
+
+F1289 is accepted for implementation in Batch524. Add visible, localized,
+nonmodal status to the My Details page when a noninteractive save fails,
+including the autosave callback and `saveData()` when it uses the same path.
+Keep every edited value editable and dirty, and preserve the existing
+transactional write behavior. Clear the failure status after a successful
+save, discard, successful reload, or database-state clear. Do not prompt
+modally for noninteractive failures; preserve the existing modal warning when
+explicit `saveChanges()` fails. Keep the change local to My Details without a
+shared `AutosaveCoordinator` redesign or automatic retry loop.
+
+Add focused coverage that injects aggregate-save failure and verifies visible
+status, no modal prompt, editable draft values, dirty state, and unchanged
+persisted values. Then remove the failure and verify a successful retry clears
+the status and dirty state. Focused verification is an incremental build of
+`ClassMngr` and `ClassMngrMyWorkspacePageTests` in
+`build/macos-clang-debug`, the new regression and relevant existing save
+failure selectors, generated CTest target confirmation, and `git diff --check`.
+At acceptance, implementation, build, and tests have not started. No full
+suite, Windows run, or Phase 2 gate result is claimed.
+
+F1288 is complete locally and Batch524 remains unpushed. F1289 is accepted and
+next for implementation. F1290 triggers Batch525 discovery when work starts;
+F1291 remains last in Batch524. Gate 1 and Gate 2 remain Partial, and the Phase
+2 exit gate remains Open.
