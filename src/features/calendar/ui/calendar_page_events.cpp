@@ -207,6 +207,11 @@ void CalendarPage::handleCalendarEventActivated(
             );
     if (!projectedEvent)
     {
+        DialogServices::showWarning(
+            this,
+            tr("Load Calendar Event"),
+            projectionText(projectedEvent.error().message)
+            );
         return;
     }
 

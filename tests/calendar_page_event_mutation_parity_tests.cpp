@@ -1613,6 +1613,7 @@ private slots:
     void workspaceCalendarResourcesReleaseAndRestore();
     void ordinaryCreateEditAndDeleteUseCalendarPageSignals_data();
     void ordinaryCreateEditAndDeleteUseCalendarPageSignals();
+    void staleEventActivationShowsWarningWithoutMutation();
     void ordinaryCreateAndEditKeepDialogOpenAfterSaveFailure_data();
     void ordinaryCreateAndEditKeepDialogOpenAfterSaveFailure();
     void repeatSeriesCreateKeepsDialogOpenAfterSaveFailure_data();
@@ -2001,6 +2002,177 @@ ordinaryCreateEditAndDeleteUseCalendarPageSignals()
         {QStringLiteral("after_update"), afterUpdateTranscript},
         {QStringLiteral("after_delete"), afterDeleteTranscript}
     });
+}
+
+void CalendarPageEventMutationParityTests::
+staleEventActivationShowsWarningWithoutMutation()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    const QDate staleEventDate(2026, 10, 24);
+    CalendarEvent staleEvent;
+    staleEvent.title = QStringLiteral("F1282 Stale Activation");
+    staleEvent.eventType = QStringLiteral("Workshop");
+    staleEvent.timeStatus = QStringLiteral("Timed");
+    staleEvent.startDate = staleEventDate;
+    staleEvent.startTime = QTime(9, 30);
+    staleEvent.endDate = staleEventDate;
+    staleEvent.endTime = QTime(11, 0);
+    const int staleEventId = saveFixtureEvent(
+        workspace,
+        staleEvent,
+        &setupError
+        );
+    QVERIFY2(staleEventId > 0, qPrintable(setupError));
+
+    CalendarPage page(&workspace.services);
+    QQuickItem* const root = calendarRoot(page);
+    QVERIFY(root);
+    QVERIFY(
+        root->metaObject()->indexOfSignal(
+            "eventActivated(QString)"
+            ) >= 0
+        );
+    QVERIFY(
+        root->metaObject()->indexOfSignal(
+            "displayedMonthChanged(int,int)"
+            ) >= 0
+        );
+    QVERIFY(QMetaObject::invokeMethod(
+        root,
+        "displayedMonthChanged",
+        Qt::DirectConnection,
+        Q_ARG(int, staleEventDate.year()),
+        Q_ARG(int, staleEventDate.month())
+        ));
+
+    CalendarEventModel* const model = calendarModel(page);
+    QVERIFY(model);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        model->isMonthLoaded(staleEventDate.year(), staleEventDate.month()),
+        5000
+        );
+    const QVariantList projectedEvents = model->eventsForDate(
+        staleEventDate.year(),
+        staleEventDate.month(),
+        staleEventDate.day()
+        );
+    QCOMPARE(projectedEvents.size(), 1);
+    QCOMPARE(
+        projectedEvents.first().toMap()
+            .value(QStringLiteral("id")).toLongLong(),
+        staleEventId
+        );
+
+    QSqlQuery removeStaleEvent(
+        workspace.services.databaseSession()->database()
+        );
+    removeStaleEvent.prepare(QStringLiteral(
+        "DELETE FROM calendar_events WHERE id=?"
+        ));
+    removeStaleEvent.addBindValue(staleEventId);
+    QVERIFY2(
+        removeStaleEvent.exec(),
+        qPrintable(removeStaleEvent.lastError().text())
+        );
+    QCOMPARE(removeStaleEvent.numRowsAffected(), 1);
+
+    const PersistedEventRows beforeActivation = persistedEventRows(
+        workspace.services
+        );
+    QVERIFY2(beforeActivation.succeeded, qPrintable(beforeActivation.error));
+    QCOMPARE(
+        beforeActivation.rows,
+        QStringList({
+            expectedEventRow(
+                workspace.preservedEventId,
+                QStringLiteral("F375 Preserved Ordinary"),
+                QStringLiteral("Holiday"),
+                QStringLiteral("2026-10-22"),
+                QStringLiteral("11:00"),
+                QStringLiteral("2026-10-22"),
+                QStringLiteral("12:00")
+                )
+        })
+        );
+
+    int warningCount = 0;
+    QString warningTitle;
+    QString warningText;
+    bool warningIcon = false;
+    bool editorRemainedClosed = false;
+    bool persistedStateUnchangedWhileWarningWasShown = false;
+    QString interactionError;
+    QTimer warningTimer;
+    warningTimer.setSingleShot(true);
+    QObject::connect(
+        &warningTimer,
+        &QTimer::timeout,
+        &page,
+        [&]
+        {
+            QWidget* const activeModal = QApplication::activeModalWidget();
+            auto* const warning = qobject_cast<QMessageBox*>(activeModal);
+            if (!warning)
+            {
+                interactionError = activeModal
+                    ? QStringLiteral(
+                        "Stale event activation opened an unexpected modal dialog."
+                        )
+                    : QStringLiteral(
+                        "Stale event activation did not show a warning."
+                        );
+                if (activeModal)
+                {
+                    activeModal->close();
+                }
+                return;
+            }
+
+            ++warningCount;
+            warningTitle = warning->windowTitle();
+            warningText = warning->text();
+            warningIcon = warning->icon() == QMessageBox::Warning;
+            editorRemainedClosed = page.findChildren<CalendarEventDialog*>()
+                .isEmpty();
+            const PersistedEventRows whileWarningIsShown = persistedEventRows(
+                workspace.services
+                );
+            persistedStateUnchangedWhileWarningWasShown =
+                whileWarningIsShown.succeeded
+                && whileWarningIsShown.rows == beforeActivation.rows;
+            warning->accept();
+        }
+        );
+    warningTimer.start(0);
+    QVERIFY(QMetaObject::invokeMethod(
+        root,
+        "eventActivated",
+        Qt::DirectConnection,
+        Q_ARG(QString, QString::number(staleEventId))
+        ));
+    QApplication::processEvents();
+
+    QVERIFY2(interactionError.isEmpty(), qPrintable(interactionError));
+    QCOMPARE(warningCount, 1);
+    QCOMPARE(warningTitle, QStringLiteral("Load Calendar Event"));
+    QCOMPARE(warningText, QStringLiteral("The calendar event was not found."));
+    QVERIFY(warningIcon);
+    QVERIFY(editorRemainedClosed);
+    QVERIFY(persistedStateUnchangedWhileWarningWasShown);
+    QVERIFY(!QApplication::activeModalWidget());
+    QVERIFY(page.findChildren<CalendarEventDialog*>().isEmpty());
+
+    const PersistedEventRows afterActivation = persistedEventRows(
+        workspace.services
+        );
+    QVERIFY2(afterActivation.succeeded, qPrintable(afterActivation.error));
+    QCOMPARE(afterActivation.rows, beforeActivation.rows);
 }
 
 void CalendarPageEventMutationParityTests::
