@@ -180,6 +180,16 @@ void SpeakingEvalPage::buildUi()
         m_validationMessage
         );
 
+    m_saveFailureMessage = new QLabel(this);
+    m_saveFailureMessage->setObjectName(
+        QStringLiteral("speakingEvalSaveFailureMessage")
+        );
+    m_saveFailureMessage->setWordWrap(true);
+    m_saveFailureMessage->setTextInteractionFlags(
+        Qt::TextSelectableByMouse
+        );
+    m_saveFailureMessage->hide();
+
     m_emptyLabel =
         new QLabel(
             tr("No classes available"),
@@ -228,6 +238,7 @@ void SpeakingEvalPage::buildUi()
 
     contentLayout()->addWidget(m_table);
     contentLayout()->addWidget(m_validationMessage);
+    contentLayout()->addWidget(m_saveFailureMessage);
 
     setupTable();
 

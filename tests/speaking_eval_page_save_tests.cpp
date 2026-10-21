@@ -284,6 +284,46 @@ bool dropSpeakingEvalDataTable(
     return false;
 }
 
+bool createSpeakingEvalUpdateFailureTrigger(
+    QSqlDatabase database,
+    QString* error
+    )
+{
+    QSqlQuery query(database);
+    if (query.exec(QStringLiteral(R"(
+        CREATE TRIGGER speaking_eval_test_fail_update
+        BEFORE UPDATE ON speaking_eval_data
+        BEGIN
+            SELECT RAISE(ABORT, 'injected speaking evaluation write failure');
+        END
+    )")))
+    {
+        return true;
+    }
+
+    *error = query.lastError().text();
+    return false;
+}
+
+bool dropSpeakingEvalUpdateFailureTrigger(
+    QSqlDatabase database,
+    QString* error
+    )
+{
+    QSqlQuery query(database);
+    if (query.exec(
+            QStringLiteral(
+                "DROP TRIGGER speaking_eval_test_fail_update"
+                )
+            ))
+    {
+        return true;
+    }
+
+    *error = query.lastError().text();
+    return false;
+}
+
 bool createSpeakingEvalDataTable(
     QSqlDatabase database,
     QString* error
@@ -436,6 +476,8 @@ class SpeakingEvalPageSaveTests final : public QObject
 
 private slots:
     void automaticSavePersistsMatrixWithoutInteractiveNotices();
+    void automaticSaveFailureShowsLocalizedFeedbackAndRecovers();
+    void manualSaveFailureRetainsWarningBehavior();
     void liveScoreAndCommentValidationUsesApplicationCellRules();
     void liveNotesLengthValidationUsesApplicationCellRules();
     void manualValidationAndConfirmedSaveKeepTheirCurrentTiming();
@@ -494,8 +536,13 @@ automaticSavePersistsMatrixWithoutInteractiveNotices()
 
     auto* model = page.findChild<SpeakingEvalModel*>();
     auto* autosave = page.findChild<AutosaveCoordinator*>();
+    auto* const saveFailureMessage = page.findChild<QLabel*>(
+        QStringLiteral("speakingEvalSaveFailureMessage")
+        );
     QVERIFY(model);
     QVERIFY(autosave);
+    QVERIFY(saveFailureMessage);
+    QVERIFY(saveFailureMessage->isHidden());
     QSignalSpy saveSpy(autosave, &AutosaveCoordinator::saveRequested);
     QVERIFY(saveSpy.isValid());
 
@@ -504,6 +551,7 @@ automaticSavePersistsMatrixWithoutInteractiveNotices()
     QTRY_VERIFY_WITH_TIMEOUT(saveSpy.count() >= 1, 5'000);
     QCOMPARE(saveSpy.constFirst().at(0).toBool(), false);
     QTRY_VERIFY_WITH_TIMEOUT(!page.hasUnsavedChanges(), 5'000);
+    QVERIFY(saveFailureMessage->isHidden());
     QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(prompts.messages.isEmpty());
 
@@ -516,6 +564,211 @@ automaticSavePersistsMatrixWithoutInteractiveNotices()
     QCOMPARE(persisted->at(0).size(), 11);
     QCOMPARE(persisted->at(0).at(1), QStringLiteral("Alice"));
     QCOMPARE(persisted->at(0).at(2), QStringLiteral("\uAE40\uBBFC\uC9C0"));
+}
+
+void SpeakingEvalPageSaveTests::
+automaticSaveFailureShowsLocalizedFeedbackAndRecovers()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    SpeakingEvalRows originalRows = SpeakingEval::emptyRows();
+    originalRows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Alice");
+    originalRows[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("\uAE40\uBBFC\uC9C0");
+    originalRows[0][SpeakingEval::toInt(SpeakingEvalColumn::Grammar)] =
+        QStringLiteral("B");
+    originalRows[0][SpeakingEval::toInt(SpeakingEvalColumn::Comments)] =
+        QStringLiteral("Original comment");
+    QVERIFY(fixture.services.speakingEvaluationService()->saveEvaluation(
+        fixture.classIds.first(),
+        QStringLiteral("Winter"),
+        originalRows
+        ));
+
+    const QSqlDatabase database =
+        fixture.services.databaseSession()->database();
+    QVERIFY2(
+        createSpeakingEvalUpdateFailureTrigger(database, &error),
+        qPrintable(error)
+        );
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* const model = page.findChild<SpeakingEvalModel*>();
+    auto* const autosave = page.findChild<AutosaveCoordinator*>();
+    auto* const failureMessage = page.findChild<QLabel*>(
+        QStringLiteral("speakingEvalSaveFailureMessage")
+        );
+    QVERIFY(model);
+    QVERIFY(autosave);
+    QVERIFY(failureMessage);
+    QVERIFY(failureMessage->isHidden());
+    QSignalSpy saveSpy(autosave, &AutosaveCoordinator::saveRequested);
+    QVERIFY(saveSpy.isValid());
+
+    PrefixingTranslator translator;
+    ScopedTranslator translationScope(&translator);
+    QVERIFY(model->setData(
+        model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::Grammar)),
+        QStringLiteral("A+"),
+        Qt::EditRole
+        ));
+    QVERIFY(model->setData(
+        model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::Comments)),
+        QStringLiteral("Updated comment"),
+        Qt::EditRole
+        ));
+    QVERIFY(page.hasUnsavedChanges());
+
+    QTRY_COMPARE_WITH_TIMEOUT(saveSpy.count(), 1, 5'000);
+    QTRY_VERIFY_WITH_TIMEOUT(!failureMessage->isHidden(), 5'000);
+    QCOMPARE(
+        failureMessage->text(),
+        QStringLiteral(
+            "Localized: The speaking evaluation could not be saved."
+            )
+        );
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(
+        model->data(
+            model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::Grammar)),
+            Qt::EditRole
+            ).toString(),
+        QStringLiteral("A+")
+        );
+    QCOMPARE(
+        model->data(
+            model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::Comments)),
+            Qt::EditRole
+            ).toString(),
+        QStringLiteral("Updated comment")
+        );
+    QCOMPARE(QApplication::activeModalWidget(), nullptr);
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+
+    const auto persistedAfterFailure =
+        fixture.services.speakingEvaluationService()->evaluation(
+            fixture.classIds.first(),
+            QStringLiteral("Winter")
+            );
+    QVERIFY(persistedAfterFailure);
+    QCOMPARE(
+        persistedAfterFailure->at(0).at(
+            SpeakingEval::toInt(SpeakingEvalColumn::Grammar)
+            ),
+        QStringLiteral("B")
+        );
+    QCOMPARE(
+        persistedAfterFailure->at(0).at(
+            SpeakingEval::toInt(SpeakingEvalColumn::Comments)
+            ),
+        QStringLiteral("Original comment")
+        );
+
+    QVERIFY2(
+        dropSpeakingEvalUpdateFailureTrigger(database, &error),
+        qPrintable(error)
+        );
+    autosave->requestSave(false);
+    QCOMPARE(saveSpy.count(), 2);
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(failureMessage->isHidden());
+    QVERIFY(failureMessage->text().isEmpty());
+    QCOMPARE(QApplication::activeModalWidget(), nullptr);
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+
+    const auto recovered = fixture.services.speakingEvaluationService()->evaluation(
+        fixture.classIds.first(),
+        QStringLiteral("Winter")
+        );
+    QVERIFY(recovered);
+    QCOMPARE(
+        recovered->at(0).at(SpeakingEval::toInt(SpeakingEvalColumn::Grammar)),
+        QStringLiteral("A+")
+        );
+    QCOMPARE(
+        recovered->at(0).at(SpeakingEval::toInt(SpeakingEvalColumn::Comments)),
+        QStringLiteral("Updated comment")
+        );
+}
+
+void SpeakingEvalPageSaveTests::
+manualSaveFailureRetainsWarningBehavior()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    SpeakingEvalRows originalRows = SpeakingEval::emptyRows();
+    originalRows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Alice");
+    originalRows[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("\uAE40\uBBFC\uC9C0");
+    originalRows[0][SpeakingEval::toInt(SpeakingEvalColumn::Grammar)] =
+        QStringLiteral("B");
+    QVERIFY(fixture.services.speakingEvaluationService()->saveEvaluation(
+        fixture.classIds.first(),
+        QStringLiteral("Winter"),
+        originalRows
+        ));
+
+    const QSqlDatabase database =
+        fixture.services.databaseSession()->database();
+    QVERIFY2(
+        createSpeakingEvalUpdateFailureTrigger(database, &error),
+        qPrintable(error)
+        );
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* const model = page.findChild<SpeakingEvalModel*>();
+    auto* const saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalSaveButton")
+        );
+    auto* const failureMessage = page.findChild<QLabel*>(
+        QStringLiteral("speakingEvalSaveFailureMessage")
+        );
+    QVERIFY(model);
+    QVERIFY(saveButton);
+    QVERIFY(failureMessage);
+
+    QVERIFY(model->setData(
+        model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::Grammar)),
+        QStringLiteral("A+"),
+        Qt::EditRole
+        ));
+    QVERIFY(page.hasUnsavedChanges());
+    saveButton->click();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Save Failed"));
+    QVERIFY(prompts.messages.constFirst().message.contains(
+        QStringLiteral("injected speaking evaluation write failure")
+        ));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(failureMessage->isHidden());
 }
 
 void SpeakingEvalPageSaveTests::

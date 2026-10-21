@@ -53,6 +53,13 @@ void SpeakingEvalPage::retranslateUi()
             );
     }
 
+    if (m_saveFailureMessage && !m_saveFailureMessage->isHidden())
+    {
+        m_saveFailureMessage->setText(
+            tr("The speaking evaluation could not be saved.")
+            );
+    }
+
     if (m_retryReadButton)
     {
         m_retryReadButton->setText(tr("Retry"));

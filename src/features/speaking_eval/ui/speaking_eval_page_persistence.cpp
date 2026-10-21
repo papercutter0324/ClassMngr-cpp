@@ -123,8 +123,21 @@ bool SpeakingEvalPage::saveEvaluationInternal(
                     )
                 );
         }
+        else if (m_saveFailureMessage)
+        {
+            m_saveFailureMessage->setText(
+                tr("The speaking evaluation could not be saved.")
+                );
+            m_saveFailureMessage->show();
+        }
 
         return false;
+    }
+
+    if (m_saveFailureMessage)
+    {
+        m_saveFailureMessage->clear();
+        m_saveFailureMessage->hide();
     }
 
     m_model->markSaved();

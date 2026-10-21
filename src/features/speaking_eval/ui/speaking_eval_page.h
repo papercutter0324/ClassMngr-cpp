@@ -254,6 +254,7 @@ private:
     SpeakingEvalTableView* m_table = nullptr;
     SpeakingEvalDelegate* m_delegate = nullptr;
     QLabel* m_validationMessage = nullptr;
+    QLabel* m_saveFailureMessage = nullptr;
     QUndoStack* m_undoStack = nullptr;
 
     QPushButton* m_importNamesButton = nullptr;
