@@ -53,11 +53,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch532 (F1300) is pushed through closeout `17102713` and receipt `7d34b92a`; Batch533 is active with F1301 implementation underway, and Batch534 discovery is complete with F1302 accepted after Batch533 closes while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch533 (F1301) is closed locally at `eeb68067` with push pending; Batch534 is active with F1302 accepted before implementation, and Batch535 discovery is due when F1302 implementation starts while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1300 completed locally at implementation commit `f4775b91` with its focused
+F1301 completed locally at implementation commit `eeb68067`; CalendarPage now
+shows localized notice on technical preference-read failures, with focused
 macOS Clang Debug verification recorded in the progress log.
 
 ### Slice discovery batches
@@ -77,18 +78,16 @@ Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
-### Active Batch533
+### Active Batch534
 
-1. F1301 - Implementation underway: disclose Technical failures loading
-   CalendarPage event-display or schedule-display preferences while preserving
-   established successful-load defaults and current-campus failure fallback.
-   Next: complete implementation and focused verification against the
-   progress-log criteria.
+1. F1302 - Accepted before implementation: preserve assigned Testing Classes
+   teachers when a Technical teacher-choice read failure leaves only the `None`
+   fallback, so an unrelated field save cannot clear the assignment.
+   Next: implement and verify against the progress-log criteria.
 
-Batch534 discovery is complete with F1302 accepted for the next batch after
-Batch533 closes; do not activate F1302 while F1301 remains in Batch533. Batch535
-discovery is due when F1302 implementation starts, under the one-slice trigger.
-See the progress log for discovery evidence and acceptance criteria.
+Batch535 discovery is due when F1302 implementation starts, under the
+one-slice trigger. See the progress log for discovery evidence and acceptance
+criteria.
 
 ### Deferred candidates
 

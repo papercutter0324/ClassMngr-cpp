@@ -63228,3 +63228,35 @@ Batch534 discovery is complete with one accepted candidate, F1302. Batch533
 remains active with F1301 implementation underway. Batch535 discovery is due
 when F1302 implementation starts, under the one-slice trigger. Gate 1 and
 Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+
+### F1301 CalendarPage preference-read failure notice complete locally; Batch533 closed - 2026-10-21
+
+F1301 completed locally in implementation commit
+`eeb68067379e87d0a2dd02b4bf2b4876a9e25d6c`
+(`Phase2 - Disclose Calendar display preference read failures`). CalendarPage
+now detects Technical failures from event-display and schedule-display
+preference loads independently and shows a localized, nonmodal inline notice
+while retaining the established display defaults. Successful missing or
+unavailable preferences do not show the notice; current-campus failure keeps
+the established all-events fallback. The Korean catalog adds
+`Some calendar display preferences could not be loaded. Default values are being used.`
+→ `일부 달력 표시 설정을 불러오지 못했습니다. 기본값을 사용합니다.`
+(`resources/assets/translations/ClassMngr_ko_KR.ts:1085`). The catalog was
+inspected; runtime translation was tested with an injected translator.
+
+Independent Tester verification used an incremental macOS Clang Debug build:
+`cmake --build build/macos-clang-debug --target
+ClassMngrCalendarPageEventMutationParityTests` passed. Focused QtTest selectors
+`calendarDisplayPreferenceFailuresAreDetectedIndependently`,
+`calendarDisplayPreferenceFailuresShowNoticeAndRecover`,
+`calendarDisplayPreferenceDefaultsDoNotShowNotice`,
+`campusReadFailureKeepsAllEventsVisible`, and
+`upcomingRangeFailuresOfferRetryAndRecover` reported 7 passed, 0 failed.
+Owning CTest `ClassMngrCalendarPageEventMutationParityTests` passed 1/1, and
+`git diff --check` passed. Verification was macOS Clang Debug incremental
+only; no full suite or other platform verification was run.
+
+Batch533 (F1301) is closed locally at `eeb68067`; its push is pending. Batch534
+is active with F1302 accepted before implementation. Batch535 discovery is due
+when F1302 implementation starts, under the one-slice trigger. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
