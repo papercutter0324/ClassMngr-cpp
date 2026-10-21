@@ -60311,3 +60311,37 @@ focused UI selector, then check the diff. No full-suite or Gate 2 claim is
 planned; F1271 adds focused Gate 1 app-less behavior evidence. It is accepted
 as the second Batch509 slice. No F1271 implementation, build, or tests have
 started.
+
+### Superseded latest progress update - 2026-10-21 (F1270 complete, F1271 accepted)
+
+F1270's implementation and focused verification are recorded in its
+[closeout](03-Phase-2-Progress-Log.md#f1270-sub-prep-configuredlevelorder-explicit-int32-value-type-complete-2026-10-21), and F1271's pre-implementation decision is recorded in its [acceptance](03-Phase-2-Progress-Log.md#f1271-initial-setup-class-times-row-presence-requirement-policy-in-application-accepted-before-implementation-2026-10-21). Batch510's discovery shortfall remains preserved above and is not activated here.
+
+### F1271 Initial Setup Class Times row-presence requirement policy in Application complete - 2026-10-21
+
+F1271 is complete in Batch509 at source commit
+`d445b4046ad83e6aebbfb8dee572f344d92cc7be`. The Qt-free Application policy
+returns true when either UI-prepared fact, `hasRegularRows` or
+`hasIntensiveRows`, is true. It owns row presence only; schedule-row content
+validation remains unchanged. The Class Times page keeps its seeded regular
+`ClassTime{}` (Monday 16:00–16:50), current `ClassScheduleSection` list
+derivation, row removal and serialization, prompt behavior, page retention,
+and call order. The policy runs before setup/class-service checks and before
+`ClassCreateUseCase`. F365's create/save sequence and the invalid-nonempty
+schedule path remain unchanged.
+
+The independent Tester incrementally built with Ninja using
+`cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationInitialSetupClassTimesRequirementTests ClassMngrInitialSetupWizardTests`; it exited 0 with no work to do. The policy CTest passed 1/1, covering all four fact combinations. Both selected UI checks passed:
+`emptyClassTimesStayOnPageWithoutCreatingClass` and
+`classTimesRejectsNoncanonicalWeekdaysAfterCreatingBlankClass`. The empty-row
+test removed the seeded regular row, confirmed both lists were empty, checked
+the current prompt and page retention, and verified no class creation or
+state mutation. The invalid-nonempty regression still reached its existing
+downstream conversion/error behavior. `git diff --check` passed; a Sans Serif
+font-alias warning was nonfatal. No full-suite, Windows, or Gate 2 result is
+claimed. This is focused Gate 1 app-less evidence.
+
+Batch509 (F1270–F1271) is complete locally and awaiting its normal push
+receipt. No implementation batch is active during the handoff. Batch510's
+discovery shortfall remains recorded above and is not activated. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
