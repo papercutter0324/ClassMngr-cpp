@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch523 is closed locally and awaiting push; Batch524 is active with F1288 next, F1289 following, F1290 triggering Batch525 discovery when work starts, and F1291 last, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch523 is pushed through closeout `12936f8f` with local and remote tips matching; Batch524 is active with F1288 next, F1289 following, F1290 triggering Batch525 discovery when work starts, and F1291 last, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-Batch523 is closed locally and awaiting push at remote baseline `1854742da10a5b0ff549ed216518e453da6395a4`. Batch524 is active with F1288 next for acceptance and implementation; F1289 follows, F1290 triggers Batch525 discovery when work starts, and F1291 is last. See the [Batch523 closeout record](03-Phase-2-Progress-Log.md#batch523-local-closeout-2026-10-21).
+Batch523 (F1285-F1287) is pushed through closeout `12936f8fb0d70d24da8eeb897815fc1db4832cb7`, with local and remote tips matching. Batch524 is active with F1288 next for acceptance and implementation; F1289 follows, F1290 triggers Batch525 discovery when work starts, and F1291 is last. See the [Batch523 push receipt](03-Phase-2-Progress-Log.md#batch523-push-receipt-2026-10-21).
 
 ### Slice discovery batches
 

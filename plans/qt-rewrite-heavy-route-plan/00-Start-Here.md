@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is pushed through receipt `1854742`. Batch523 is closed locally and awaiting push at baseline `1854742`; Batch524 is active with F1288 next for acceptance and implementation, F1289 following, F1290 triggering Batch525 discovery when work starts, and F1291 last. All Batch524 candidates remain provisional and unaccepted. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is pushed through receipt `1854742`; Batch523 (F1285-F1287) is pushed through closeout `12936f8f`, with local and remote tips matching. Batch524 is active with F1288 next for acceptance and implementation, F1289 following, F1290 triggering Batch525 discovery when work starts, and F1291 last. All Batch524 candidates remain provisional and unaccepted. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -43,8 +43,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 Batch521 (F1281) is pushed through closeout `779d21b88f87aee17a447c62503971f78cd42b68`
 and receipt `53e556756cfbdc552e50b97a6bffdc77731c6f3f`; local and remote tips
 match. Batch522 (F1282-F1284) is complete and pushed through receipt
-`1854742da10a5b0ff549ed216518e453da6395a4`. Batch523 is closed locally and
-awaiting push. Batch524 discovery is recorded and active with four provisional
+`1854742da10a5b0ff549ed216518e453da6395a4`. Batch523 (F1285-F1287) is
+pushed through closeout `12936f8fb0d70d24da8eeb897815fc1db4832cb7`, with
+local and remote tips matching. Batch524 discovery is recorded and active with four provisional
 candidates: F1288 is next for acceptance and implementation, F1289 follows,
 F1290 triggers Batch525 discovery when work starts, and F1291 is last. Gate 1
 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. Phase 0

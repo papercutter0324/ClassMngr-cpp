@@ -62161,3 +62161,18 @@ F1290, which triggers Batch525 discovery when work starts; F1291 is last.
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 Phase 0 remains Complete; F629's source-bound Windows x64 requalification
 remains outstanding separately.
+
+### Batch523 push receipt - 2026-10-21
+
+`git push origin Qt-Rewrite` exited successfully and reported that the branch
+was already up to date. Local and remote-tracking tips match at
+`12936f8fb0d70d24da8eeb897815fc1db4832cb7`, the Batch523 closeout commit; the
+worktree is clean. No commit transfer or additional test run was needed.
+
+Batch523 (F1285-F1287) is pushed. Batch524 is active with F1288 next for
+acceptance and implementation, followed by F1289, F1290, and F1291 in order.
+Begin Batch525 discovery when work starts on F1290. Gate 1 and Gate 2 remain
+Partial, and the Phase 2 exit gate remains Open. Phase 0 remains Complete;
+F629's source-bound Windows x64 requalification remains outstanding
+separately. This receipt does not imply a full-suite, Windows, hosted-CI, or
+gate result.
