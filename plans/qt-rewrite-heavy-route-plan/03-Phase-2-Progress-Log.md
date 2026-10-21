@@ -62010,3 +62010,37 @@ discovery is recorded with F1288-F1291 as provisional, unaccepted candidates.
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 Phase 0 remains Complete; F629's source-bound Windows x64 requalification
 remains outstanding separately.
+
+### F1286 Testing Classes delete-fallback draft preservation complete locally - 2026-10-21
+
+F1286 is complete locally in source/test/CMake commit
+`746eab472f160d752235b6e0458204c5c8328a80`; its acceptance and discovery
+documentation is in commit `06be5fe0ef558fc68deaf859c24b579966443e43`.
+`ClassMngrTestingClassesPageTests` built. The focused
+`testingClassDeletionSuccessFallbackReadFailureKeepsNewDraft` method covers
+Technical and NotFound read failures, a clean new-class draft, cleared
+selection, disabled delete, create-on-save behavior, one fallback read, one
+`testingDataChanged()`, and the existing warning policy.
+`testingClassDeletionSuccessSelectsSiblingAndEmitsOnce` covers normal sibling
+selection and one read.
+
+The independent Tester directly ran both methods successfully, then confirmed
+the CMake mapping includes the F1286 method and ran
+`ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrTestingClassesPageF147DeleteTests$'`;
+the focused CTest passed 1/1. `git diff --check` passed. An executor's broader
+`ClassMngrTestingClassesPageTests` CTest attempt reported three failures
+outside F1286: `rosterKeyboardTriggerOpensInAppPalette`,
+`rosterKeyboardWritesToKoreanNameCell`, and
+`outputAvailabilityFollowsRosterTabAndLoadedClass`. The independent Tester
+did not rerun those cases and judged them outside F1286 based on the scoped
+deletion diff; no broader pass or failure claim is made from the focused run.
+No full suite, Windows run, clean build, hosted CI, or gate completion is
+claimed.
+
+F1286 is complete locally and Batch523 remains unpushed. F1285 is also complete
+locally; F1287 is next for acceptance and implementation. Batch524 remains
+recorded with four provisional candidates. Begin Batch525 discovery when F1290
+work starts, because F1290 is Batch524's second-last candidate. Gate 1 and
+Gate 2 remain Partial, and the Phase 2 exit gate remains Open. Phase 0 remains
+Complete; F629's source-bound Windows x64 requalification remains outstanding
+separately.

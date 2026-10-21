@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is pushed through receipt `1854742`. Batch523 is active and unpushed with F1285 complete locally and F1286 accepted, next for implementation; Batch524 discovery is recorded with F1288-F1291 provisional, and F1287 follows after F1286. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is pushed through receipt `1854742`. Batch523 is active and unpushed with F1285 and F1286 complete locally; F1287 is next for acceptance and implementation. Batch524 discovery is recorded with F1288-F1291 provisional; begin Batch525 discovery when F1290 work starts. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -44,10 +44,11 @@ Batch521 (F1281) is pushed through closeout `779d21b88f87aee17a447c62503971f78cd
 and receipt `53e556756cfbdc552e50b97a6bffdc77731c6f3f`; local and remote tips
 match. Batch522 (F1282-F1284) is complete and pushed through receipt
 `1854742da10a5b0ff549ed216518e453da6395a4`. Batch523 is active and unpushed:
-F1285 is complete locally, and F1286 is accepted and next for implementation.
-Batch524 discovery is recorded with four provisional candidates; F1287 follows
-after F1286. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate
-remains Open. Phase 0 remains Complete; F629's
+F1285 and F1286 are complete locally, and F1287 is next for acceptance and
+implementation. Batch524 discovery is recorded with four provisional
+candidates; begin Batch525 discovery when F1290 work starts. Gate 1 and Gate 2
+remain Partial, and the Phase 2 exit gate remains Open. Phase 0 remains
+Complete; F629's
 source-bound Windows x64 requalification remains outstanding separately. The
 [Phase 2 progress log](03-Phase-2-Progress-Log.md) holds acceptance,
 verification, and exact batch history.
