@@ -62209,3 +62209,26 @@ selector and `settingsReadFailurePreservesDisplayedCampusChoice`; confirm the
 registered CTest target; and run `git diff --check`. No full suite, Windows
 run, clean build, or Phase 2 gate result is claimed. At acceptance, no
 implementation, build, or test execution had started.
+
+### F1288 My Details campus read state complete locally - 2026-10-21
+
+F1288 is complete locally in three commits: acceptance `31808a17`, production
+change `f29fcf49`, and focused regression `c0fddd3f`. The campus read-state
+guard blocks aggregate save after a failed current-campus read and permits
+save after a successful reload. The focused regression preserves the displayed
+choice and unsaved edits while confirming that persisted values are not
+overwritten.
+
+Incremental build passed for `ClassMngr` and
+`ClassMngrMyWorkspacePageTests` with
+`cmake --build build/macos-clang-debug --target ClassMngr ClassMngrMyWorkspacePageTests --parallel 4`.
+The new selector `currentCampusReadFailurePreservesChoiceAndBlocksSaveUntilReload`
+and the existing `settingsReadFailurePreservesDisplayedCampusChoice` each
+passed (3 passed, 0 failed). CTest listing found
+`ClassMngrMyWorkspacePageTests` as target #69, and `git diff --check` passed.
+No full suite, clean build, Windows run, hosted CI, or gate result is claimed.
+
+F1288 is complete locally; Batch524 remains unpushed. F1289 is next and remains
+unaccepted pending review. F1290 triggers Batch525 discovery when work starts;
+F1291 remains last in Batch524. Gate 1 and Gate 2 remain Partial, and the Phase
+2 exit gate remains Open.
