@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch522 is complete locally and unpushed; Batch523 is active with F1285 next and F1286-F1287 following in order, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch522 is complete and pushed; Batch523 is active with F1285 next and F1286-F1287 following in order, while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1284 is complete locally at focused query-mismatch test commit `bd74e19b383515ae7d3bf031f30fecb16aa6b563`; Batch522 is closed locally and Batch523 is active with F1285 next. See the [F1284 completion record](03-Phase-2-Progress-Log.md#f1284-schedule-editor-initial-read-feedback-complete-locally-2026-10-21).
+F1284 is complete locally at focused query-mismatch test commit `bd74e19b383515ae7d3bf031f30fecb16aa6b563`; Batch522 is pushed and Batch523 is active with F1285 next. See the [F1284 completion record](03-Phase-2-Progress-Log.md#f1284-schedule-editor-initial-read-feedback-complete-locally-2026-10-21).
 
 ### Slice discovery batches
 

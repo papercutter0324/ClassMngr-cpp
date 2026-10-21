@@ -61847,3 +61847,18 @@ discovered and will be accepted and implemented in order. Gate 1 and Gate 2
 remain Partial, and the Phase 2 exit gate remains Open. Phase 0 remains
 Complete; F629's source-bound Windows x64 requalification remains outstanding
 separately.
+
+### Batch522 push receipt - 2026-10-21
+
+The normal non-force `git push origin Qt-Rewrite` succeeded. Before the push,
+the remote tip `53e556756cfbdc552e50b97a6bffdc77731c6f3f` was an ancestor of
+local HEAD, with nine local-only and zero remote-only commits; all nine were
+the expected Batch522 commits. The remote now points to
+`ca55a6209a27d9711c0ce7e883de432ce73bce8a`, matching local HEAD with zero
+ahead and zero behind. The worktree is clean.
+
+Batch522 is complete and pushed. Batch523 is active with F1285 next, followed
+by F1286 and F1287 in order. Gate 1 and Gate 2 remain Partial, and the Phase 2
+exit gate remains Open. Phase 0 remains Complete; F629's source-bound Windows
+x64 requalification remains outstanding separately. No full-suite, Windows,
+hosted-CI, or gate result is implied by this receipt.

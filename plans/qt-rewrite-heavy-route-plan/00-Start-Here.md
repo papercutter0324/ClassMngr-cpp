@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is complete locally and unpushed. Batch523 is active with F1285 next, followed by F1286 and F1287 in order. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is pushed through closeout `ca55a620`. Batch523 is active with F1285 next, followed by F1286 and F1287 in order. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -42,13 +42,13 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 Batch521 (F1281) is pushed through closeout `779d21b88f87aee17a447c62503971f78cd42b68`
 and receipt `53e556756cfbdc552e50b97a6bffdc77731c6f3f`; local and remote tips
-match. Batch522 (F1282-F1284) is complete locally and remains unpushed.
-Batch523 is active: F1285 is next for acceptance and implementation, followed
-by F1286 and F1287 in order. Gate 1 and Gate 2 remain Partial, and the Phase 2
-exit gate remains Open. Phase 0 remains Complete; F629's source-bound Windows
-x64 requalification remains outstanding separately. The [Phase 2 progress
-log](03-Phase-2-Progress-Log.md) holds acceptance, verification, and exact
-batch history.
+match. Batch522 (F1282-F1284) is complete and pushed; local and remote tips
+match. Batch523 is active: F1285 is next for acceptance and implementation,
+followed by F1286 and F1287 in order. Gate 1 and Gate 2 remain Partial, and
+the Phase 2 exit gate remains Open. Phase 0 remains Complete; F629's
+source-bound Windows x64 requalification remains outstanding separately. The
+[Phase 2 progress log](03-Phase-2-Progress-Log.md) holds acceptance,
+verification, and exact batch history.
 
 The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
 shows current status; the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
