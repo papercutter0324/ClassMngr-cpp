@@ -35,6 +35,23 @@
 
 struct FileControllerWorkspaceLifecycleTestAccess final
 {
+    static void installWorkspaceCreationLifecycle(
+        FileController& controller,
+        ClassMngr::Next::Application::WorkspaceCreationLifecyclePort& port
+        )
+    {
+        controller.m_workspaceCreationLifecycle = std::make_unique<
+            ClassMngr::Next::Application::WorkspaceCreationLifecycle
+            >(port);
+    }
+
+    [[nodiscard]] static QString currentFile(
+        const FileController& controller
+        )
+    {
+        return controller.m_currentFile;
+    }
+
     [[nodiscard]] static ClassMngr::Next::Application::InitialSetupBeginResult
     beginInitialSetup(
         FileController& controller,
@@ -272,7 +289,10 @@ public:
     {
         // Keep the failed replacement at the selected path so restoring the
         // original is rejected without overwriting either file.
-        if (toQString(location) == targetPath)
+        if (
+            retainPartialReplacementAtTarget
+            && toQString(location) == targetPath
+            )
         {
             return false;
         }
@@ -324,6 +344,7 @@ public:
     QByteArray partialReplacementContents = QByteArrayLiteral(
         "partial replacement must remain untouched"
         );
+    bool retainPartialReplacementAtTarget = true;
     bool workspaceCloseAttempted = false;
     bool createAttempted = false;
 
@@ -560,6 +581,9 @@ private slots:
     void startupUsesListFirstAndLastFileFallback();
     void normalCreateReplacesExistingTarget();
     void normalCreateFailureRestoresExistingTarget();
+    void normalCreateFailureOnDifferentTargetRestoresActiveProfileAndHistory();
+    void normalCreateFailureOnSameTargetRestoresActiveProfileAndHistory();
+    void normalCreateFailureWithoutSafeRestoreLeavesNoActiveProfile();
     void workspaceCreationRollbackFailureRetainsOriginalRecoveryCopy();
     void createDoesNotPrepareAfterCloseFailure();
     void initialSetupBackupIsRemovedOnFinish();
@@ -1419,6 +1443,268 @@ normalCreateFailureRestoresExistingTarget()
         QDir::Name
         );
     QVERIFY(recoveryCopies.isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::
+normalCreateFailureOnDifferentTargetRestoresActiveProfileAndHistory()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString activePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("active-profile.tps"))
+        ).absoluteFilePath();
+    const QString targetPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("failed-new-profile.tps"))
+        ).absoluteFilePath();
+    const QString otherRecentPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("other-recent.tps"))
+        ).absoluteFilePath();
+    const QByteArray originalTargetContents = QByteArrayLiteral(
+        "existing different-target profile must survive"
+        );
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(activePath));
+    QVERIFY(seedServices.settingsService()->save(
+        QStringLiteral("file-controller/sentinel"),
+        QStringLiteral("active profile survives")
+        ));
+    seedServices.closeDatabase();
+    QVERIFY(writeFile(targetPath, originalTargetContents));
+
+    // SQLite cannot initialize the selected replacement while its journal
+    // path is occupied by a directory.
+    QVERIFY(QDir().mkdir(targetPath + QStringLiteral("-journal")));
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(targetPath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    SettingsService* const retainedSettings = services.settingsService();
+    FileController controller(&services, nullptr);
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+
+    controller.loadDatabaseOnStartup(activePath);
+    const QString normalizedActivePath = QFileInfo(activePath).absoluteFilePath();
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedActivePath);
+    QCOMPARE(FileControllerWorkspaceLifecycleTestAccess::currentFile(controller),
+        normalizedActivePath);
+
+    SettingsManager& settings = SettingsManager::instance();
+    const QStringList priorHistory{normalizedActivePath, otherRecentPath};
+    settings.setRecentFiles(priorHistory);
+    settings.setLastFile(normalizedActivePath);
+
+    QVERIFY(!controller.createNewDatabaseInteractive());
+
+    QCOMPARE(readFile(targetPath), originalTargetContents);
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedActivePath);
+    QCOMPARE(FileControllerWorkspaceLifecycleTestAccess::currentFile(controller),
+        normalizedActivePath);
+    QCOMPARE(settings.getRecentFiles(), priorHistory);
+    QCOMPARE(settings.getLastFile(), normalizedActivePath);
+    QVERIFY(actions.saveFile->isEnabled());
+    QVERIFY(actions.closeFile->isEnabled());
+    QVERIFY(retainedSettings->load(
+        QStringLiteral("file-controller/sentinel")
+        ).has_value());
+    QCOMPARE(
+        retainedSettings->load(
+            QStringLiteral("file-controller/sentinel")
+            )->toString(),
+        QStringLiteral("active profile survives")
+        );
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("New Teacher Profile"));
+    QCOMPARE(
+        static_cast<int>(warning.severity),
+        static_cast<int>(PromptSeverity::Warning)
+        );
+    QVERIFY(warning.message.contains(
+        QStringLiteral("Unable to initialize Teacher Profile")
+        ));
+    QVERIFY(warning.message.contains(targetPath));
+    QVERIFY(!warning.message.contains(
+        QStringLiteral("previous Teacher Profile could not be reopened")
+        ));
+}
+
+void FileControllerWorkspaceLifecycleTests::
+normalCreateFailureOnSameTargetRestoresActiveProfileAndHistory()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString activePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("active-profile.tps"))
+        ).absoluteFilePath();
+    const QString otherRecentPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("other-recent.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(activePath));
+    QVERIFY(seedServices.settingsService()->save(
+        QStringLiteral("file-controller/sentinel"),
+        QStringLiteral("same-target profile survives")
+        ));
+    seedServices.closeDatabase();
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(activePath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    SettingsService* const retainedSettings = services.settingsService();
+    FileController controller(&services, nullptr);
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+
+    controller.loadDatabaseOnStartup(activePath);
+    const QString normalizedActivePath = QFileInfo(activePath).absoluteFilePath();
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedActivePath);
+    QCOMPARE(FileControllerWorkspaceLifecycleTestAccess::currentFile(controller),
+        normalizedActivePath);
+
+    SettingsManager& settings = SettingsManager::instance();
+    const QStringList priorHistory{normalizedActivePath, otherRecentPath};
+    settings.setRecentFiles(priorHistory);
+    settings.setLastFile(normalizedActivePath);
+
+    // The scripted create fails after the lifecycle backs up the original.
+    // Allowing removal of the partial candidate exercises successful rollback
+    // and the controller's same-path reopen path without obstructing reload.
+    FailingWorkspaceCreationPort port(activePath);
+    port.retainPartialReplacementAtTarget = false;
+    FileControllerWorkspaceLifecycleTestAccess::
+        installWorkspaceCreationLifecycle(controller, port);
+
+    QVERIFY(!controller.createNewDatabaseInteractive());
+
+    QVERIFY(port.createAttempted);
+    QVERIFY(port.workspaceCloseAttempted);
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedActivePath);
+    QCOMPARE(FileControllerWorkspaceLifecycleTestAccess::currentFile(controller),
+        normalizedActivePath);
+    QCOMPARE(settings.getRecentFiles(), priorHistory);
+    QCOMPARE(settings.getLastFile(), normalizedActivePath);
+    QVERIFY(actions.saveFile->isEnabled());
+    QVERIFY(actions.closeFile->isEnabled());
+    QVERIFY(retainedSettings->load(
+        QStringLiteral("file-controller/sentinel")
+        ).has_value());
+    QCOMPARE(
+        retainedSettings->load(
+            QStringLiteral("file-controller/sentinel")
+            )->toString(),
+        QStringLiteral("same-target profile survives")
+        );
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("New Teacher Profile"));
+    QCOMPARE(
+        static_cast<int>(warning.severity),
+        static_cast<int>(PromptSeverity::Warning)
+        );
+    QVERIFY(warning.message.contains(
+        QStringLiteral("Injected workspace creation failure")
+        ));
+    QVERIFY(!warning.message.contains(
+        QStringLiteral("previous Teacher Profile could not be reopened")
+        ));
+}
+
+void FileControllerWorkspaceLifecycleTests::
+normalCreateFailureWithoutSafeRestoreLeavesNoActiveProfile()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString activePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("active-profile.tps"))
+        ).absoluteFilePath();
+    const QString unrelatedRecentPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("unrelated-recent.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(activePath));
+    QVERIFY(seedServices.settingsService()->save(
+        QStringLiteral("file-controller/sentinel"),
+        QStringLiteral("original active profile")
+        ));
+    seedServices.closeDatabase();
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(activePath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+    controller.loadDatabaseOnStartup(activePath);
+    QVERIFY(services.hasOpenDatabase());
+
+    SettingsManager& settings = SettingsManager::instance();
+    const QStringList priorHistory{unrelatedRecentPath};
+    settings.setRecentFiles(priorHistory);
+    settings.setLastFile(unrelatedRecentPath);
+
+    FailingWorkspaceCreationPort port(activePath);
+    FileControllerWorkspaceLifecycleTestAccess::
+        installWorkspaceCreationLifecycle(controller, port);
+
+    QVERIFY(!controller.createNewDatabaseInteractive());
+
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(services.currentDatabasePath().isEmpty());
+    QVERIFY(FileControllerWorkspaceLifecycleTestAccess::currentFile(controller)
+        .isEmpty());
+    QVERIFY(!actions.saveFile->isEnabled());
+    QVERIFY(!actions.closeFile->isEnabled());
+    QCOMPARE(settings.getRecentFiles(), priorHistory);
+    QCOMPARE(settings.getLastFile(), unrelatedRecentPath);
+    QVERIFY(!settings.getRecentFiles().contains(activePath));
+    QVERIFY(port.createAttempted);
+    QCOMPARE(port.recoveryPaths.size(), 2);
+    QVERIFY(QFileInfo::exists(port.recoveryPaths.constFirst()));
+    QCOMPARE(readFile(activePath), port.partialReplacementContents);
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("New Teacher Profile"));
+    QCOMPARE(
+        static_cast<int>(warning.severity),
+        static_cast<int>(PromptSeverity::Warning)
+        );
+    QVERIFY(warning.message.contains(
+        QStringLiteral("original Teacher Profile could not be restored")
+        ));
+    QVERIFY(warning.message.contains(port.recoveryPaths.constFirst()));
+    QVERIFY(warning.message.contains(activePath));
 }
 
 void FileControllerWorkspaceLifecycleTests::
