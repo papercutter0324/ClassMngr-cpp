@@ -53,13 +53,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch528 (F1297) is closed locally and awaits push; Batch529 F1298 is accepted before implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch528 (F1297) is pushed through closeout `44827af3` with its receipt pending; Batch529 F1298 is accepted before implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1298 is accepted before implementation in active Batch529; implementation and
-focused verification are pending. See the progress log for its contract and
-verification plan.
+F1297's latest slice commit is test commit `be1b5460`. Batch529 F1298 remains
+accepted before implementation.
 
 ### Slice discovery batches
 
@@ -83,7 +82,9 @@ outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 Batch527 (F1296) is pushed through closeout
 `e164340fd00857d5d8b5d20243adaadf156f0cfc` and receipt
 `3b54c31ac1c90b6e509586149e38a7a739fbf86f`; local and remote tips matched
-at push. Batch528 (F1297) is closed locally and awaits push.
+at push. Batch528 (F1297) is pushed through closeout
+`44827af383069077917794c6590469050bdbfbab`; its receipt is pending. Batch529
+F1298 remains accepted before implementation.
 
 1. F1298 - Accepted before implementation: distinguish failed evaluation reads
    from a successful empty grid, retain safe same-evaluation drafts, and prevent
