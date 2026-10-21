@@ -171,6 +171,57 @@ public:
         if (source.deferredSelectionOrLookupError)
             return ClassTransferExportResult::failure(*source.deferredSelectionOrLookupError);
 
+        const auto incompleteSource = [](const char* message)
+        {
+            return ClassTransferExportResult::failure(
+                Domain::OperationError{
+                    .code = Domain::ErrorCode::Technical,
+                    .message = message,
+                    .recoverable = false
+                }
+                );
+        };
+        for (const auto& item : source.classes)
+        {
+            if (item.info.state() != ClassExportStageState::Value)
+                return incompleteSource(
+                    "The class transfer export source is missing class information."
+                    );
+            if (item.roster.state() != ClassExportStageState::Value)
+                return incompleteSource(
+                    "The class transfer export source is missing roster data."
+                    );
+            if (item.teacher.state() != ClassExportStageState::Value)
+                return incompleteSource(
+                    "The class transfer export source is missing teacher selection data."
+                    );
+            if (item.teacher.value())
+            {
+                const auto& id = *item.teacher.value();
+                const ClassExportSourceTeacher* selectedTeacher = nullptr;
+                for (const auto& teacher : source.teachers)
+                {
+                    if (teacher.id == id)
+                    {
+                        selectedTeacher = &teacher;
+                        break;
+                    }
+                }
+                if (!selectedTeacher)
+                    return incompleteSource(
+                        "The class transfer export source is missing a referenced teacher profile entry."
+                        );
+                if (selectedTeacher->profile.state() != ClassExportStageState::Value)
+                    return incompleteSource(
+                        "The class transfer export source is missing the referenced teacher profile."
+                        );
+            }
+            if (item.evaluations.state() != ClassExportStageState::Value)
+                return incompleteSource(
+                    "The class transfer export source is missing evaluation data."
+                    );
+        }
+
         // Successful source snapshots contain every attempted value. Projection
         // performs no additional validation or reads after the transaction.
         ClassTransferPortablePackage result;
