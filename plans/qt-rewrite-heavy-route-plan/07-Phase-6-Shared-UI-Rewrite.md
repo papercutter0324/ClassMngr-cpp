@@ -40,23 +40,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-09-16
 - Current note: Replace page/controller ownership with explicit presentation lifecycles.
 
-### Slice discovery batches
+### Slice batches
 
-Discover upcoming slices in ordered batches of up to ten (or all remaining
-slices if fewer than ten remain). Record each batch as an ordered list under
-`Recorded batches` below and work through those slices in order. Begin discovering
-and recording the next batch when starting work on the second-last slice in the
-current batch. If a discovery pass finds fewer than ten slices, add the exact
-standalone line `No other slices were found.` beneath that batch.
-
-Keep the Status `Current note` limited to the latest information relevant to the
-current or next slice. Keep only the most recent slice commit in the
-`Latest Progress Update` section. When writing a newer update, move the previous
-one to this phase's progress log before replacing it.
-
-#### Recorded batches
-
-Add each ordered discovery result here as it is found.
+Track ordered candidate lists, per-slice status, and beyond-cap discovery
+reminders in the [Phase 6 slice-batch register](07-Phase-6-Slice-Batches.md).
+Use the phase progress log for discovery evidence, acceptance criteria,
+verification results, and chronology.
 
 ## Progress log
 

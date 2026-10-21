@@ -53,7 +53,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch533 (F1301) is closed locally at `eeb68067` with push pending; Batch534 is active with F1302 accepted before implementation, and Batch535 discovery is due when F1302 implementation starts while Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch533 (F1301) is closed; Batch534 is active with F1302
+  accepted before implementation, and Batch535 discovery is due when F1302
+  implementation starts. Gate 1 and Gate 2 remain Partial, and the Phase 2
+  exit gate remains Open.
 
 ### Latest Progress Update
 
@@ -61,33 +64,15 @@ F1301 completed locally at implementation commit `eeb68067`; CalendarPage now
 shows localized notice on technical preference-read failures, with focused
 macOS Clang Debug verification recorded in the progress log.
 
-### Slice discovery batches
+### Slice batches
 
-Discover upcoming slices in ordered batches of up to ten (or all remaining when fewer than ten remain). Begin recording the next batch when work starts on the second-last candidate in the active batch.
-
-Treat this plan as an operational summary, not a history:
-
-- Keep `Current note` to one sentence about the current or next slice and open gate state; update it in place.
-- Keep the active batch's complete ordered slice list, including accepted slices, until the batch closes; mark each slice's status and give remaining slices a one-line next action. Keep unresolved deferred candidates here as well.
-- Store discovery evidence, full acceptance criteria, verification results, commit details, completed-batch summaries, and prior-batch history only in the chronological [Phase 2 progress log](03-Phase-2-Progress-Log.md).
-- When a slice is accepted, record its evidence in the progress log and update its status in this plan. Remove the batch list when the batch closes; replace it in place with the next active batch and do not carry forward history.
-- Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
-- Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
-
-Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
-F629's source-bound Windows x64 layout trace and requalification remain
-outstanding separately from Phase 0's 2026-09-18 Complete declaration.
-
-### Active Batch534
-
-1. F1302 - Accepted before implementation: preserve assigned Testing Classes
-   teachers when a Technical teacher-choice read failure leaves only the `None`
-   fallback, so an unrelated field save cannot clear the assignment.
-   Next: implement and verify against the progress-log criteria.
-
-Batch535 discovery is due when F1302 implementation starts, under the
-one-slice trigger. See the progress log for discovery evidence and acceptance
-criteria.
+Track ordered candidate lists, per-slice status, and beyond-cap discovery
+reminders in the [Phase 2 slice-batch register](03-Phase-2-Slice-Batches.md).
+Keep discovery evidence, acceptance criteria, verification results, and
+chronology in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Gate 1
+and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's
+source-bound Windows x64 layout trace and requalification remain outstanding
+separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Deferred candidates
 

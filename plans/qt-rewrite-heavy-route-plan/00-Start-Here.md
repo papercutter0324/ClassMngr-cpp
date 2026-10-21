@@ -6,7 +6,9 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch521 is pushed through closeout `779d21b8` and receipt `53e55675`; Batch522 is pushed through receipt `1854742`; Batch523 (F1285-F1287) is pushed through closeout `12936f8f`, with local and remote tips matching. Batch524 (F1288-F1290) is pushed through closeout `3480c791`; F1291 was screened out. Batch525 (F1292-F1293) is pushed through closeout `655cf042`, with receipt tip `34240255`; F1294 was screened out. Batch526 (F1295) is pushed through closeout `156e5fa2` and receipt `89657716`, with local and remote tips matching. Batch527 (F1296) is pushed through closeout `e164340f` and receipt `3b54c31a`, with local and remote tips matching at receipt push. Batch528 (F1297) is pushed through closeout `44827af3`; its receipt documentation commit `fbff55fa` is pushed. Batch529 (F1298) is pushed through closeout `4115e7fe`; its receipt documentation commit `4768d8d1` is pushed. Batch531 (F1299) is pushed through closeout `3108ace0` and receipt `ef056e4b`. Batch532 (F1300) is pushed through closeout `17102713` and push receipt `7d34b92a`. Batch533 (F1301) is closed locally at `eeb68067` with push pending. Batch534 is active with F1302 accepted before implementation; Batch535 discovery is due when F1302 implementation starts. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current milestone: Batch534 is active with F1302 accepted before
+  implementation; Batch535 discovery is due when F1302 implementation starts.
+  Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -40,37 +42,13 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 work
 
-Batch521 (F1281) is pushed through closeout `779d21b88f87aee17a447c62503971f78cd42b68`
-and receipt `53e556756cfbdc552e50b97a6bffdc77731c6f3f`; local and remote tips
-match. Batch522 (F1282-F1284) is complete and pushed through receipt
-`1854742da10a5b0ff549ed216518e453da6395a4`. Batch523 (F1285-F1287) is
-pushed through closeout `12936f8fb0d70d24da8eeb897815fc1db4832cb7`, with
-local and remote tips matching. Batch524 (F1288-F1290) is pushed through
-closeout `3480c791`; F1291 was screened out. Batch525 (F1292-F1293) is pushed
-through closeout `655cf042`, with receipt tip `34240255`; F1294 was screened out.
-Batch526 (F1295) is pushed through closeout `156e5fa2` and receipt `89657716`,
-with local and remote tips matching. Batch527 (F1296) is pushed through
-closeout `e164340fd00857d5d8b5d20243adaadf156f0cfc` and receipt
-`3b54c31ac1c90b6e509586149e38a7a739fbf86f`, with local and remote tips
-matching at receipt push. Batch528 (F1297) is pushed through closeout
-`44827af383069077917794c6590469050bdbfbab`; its receipt documentation commit
-`fbff55fa` is pushed. Batch529 (F1298) is pushed through closeout
-`4115e7fe`; its receipt documentation commit `4768d8d1` is pushed. Batch531
-(F1299) is pushed through closeout `3108ace0` and receipt `ef056e4b`. Batch532
-(F1300) is pushed through closeout `17102713` and push receipt `7d34b92a`.
-Batch533 (F1301) is closed locally at `eeb68067` with push pending. Batch534 is
-active with F1302 accepted before implementation. Batch535 discovery is due
-when F1302 implementation starts.
-Gate 1 and Gate 2 remain Partial,
-and the Phase 2 exit gate remains Open. Phase 0 remains
-Complete; F629's
-source-bound Windows x64 requalification remains outstanding separately. The
-[Phase 2 progress log](03-Phase-2-Progress-Log.md) holds acceptance,
-verification, and exact batch history.
-
-The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
-shows current status; the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
-holds acceptance and verification evidence.
+F1302 is the active candidate in Batch534; Batch535 discovery is due when
+implementation starts. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit
+gate remains Open. Phase 0 remains Complete; F629’s source-bound Windows x64
+requalification remains outstanding separately. See the [Phase 2 slice-batch
+register](03-Phase-2-Slice-Batches.md) for ordered batch status and the [Phase 2
+progress log](03-Phase-2-Progress-Log.md) for discovery evidence and acceptance
+criteria.
 
 ## Phase notes, slice batches, and progress logs
 
@@ -81,19 +59,27 @@ holds acceptance and verification evidence.
 - Keep only the most recent slice commit in the phase plan's
   `Latest Progress Update` section. When a newer progress update is written,
   move the previous update into that phase's progress log before replacing it.
-- Discover upcoming slices in ordered batches of up to ten (or all remaining
-  slices when fewer than ten remain) and record each batch in its phase plan's
-  `Slice discovery batches` section. Work through the recorded slices in order.
-  Begin discovering and recording the next batch when starting work on the
-  second-last slice in the current batch. If a discovery pass finds fewer than
-  ten slices, add the standalone line `No other slices were found.` after that
-  batch.
+- Keep the `Current milestone` note to the most recent milestone only. Replace
+  the entire note when updating it; remove the previous note instead of
+  appending or preserving earlier milestones.
+- Track each phase's ordered slice batches, candidate statuses, and discovery
+  reminders in its own `-Slice-Batches.md` document, not in the phase plan or
+  progress log. Discover up to 20 ordered candidates per batch, or all remaining
+  candidates when fewer than 20 remain, and work through them in order. Begin
+  discovering the next batch when starting the second-to-last candidate in the
+  active batch; for a one-candidate batch, begin when work on that candidate
+  starts. If discovery identifies possible candidates beyond the 20-candidate
+  limit, record a reminder in the batch document to search for those candidates
+  and any others when next-batch discovery is due. If a pass finds fewer than
+  20 candidates and no other candidates, add the standalone line `No other
+  slices were found.` beneath that batch in the batch document.
 - Use a sibling file named from the phase plan and ending in `-Progress-Log.md`
   when that phase has one (for example,
   `03-Phase-2-Progress-Log.md`); otherwise use its `Progress log` section.
-  Preserve historical entries in date order, including verified-slice reports
-  and dated exit-gate snapshots. Keep requirements, decisions, and current
-  status in the phase plan.
+  Preserve historical entries in date order, including verified-slice reports,
+  discovery evidence, and dated exit-gate snapshots. Keep requirements,
+  decisions, and current status in the phase plan; keep current and upcoming
+  batch lists and statuses only in the phase's slice-batch document.
 
 ## Build and test verification
 
