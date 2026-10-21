@@ -9759,6 +9759,14 @@ Version: %2</source>
         <source>The saved Co-Teacher assignment could not be confirmed, so the current selection may not match the saved value. Use the Save Changes button on this page to explicitly assign or unassign a teacher. Read error: code %1; recoverable: %2; details: %3</source>
         <translation>저장된 공동 교사 배정을 확인할 수 없어 현재 선택이 저장된 값과 다를 수 있습니다. 이 페이지의 Save Changes 버튼을 사용하여 교사를 명시적으로 배정하거나 배정 해제하세요. 읽기 오류: 코드 %1, 복구 가능: %2, 세부 정보: %3</translation>
     </message>
+    <message>
+        <source>Save status</source>
+        <translation>저장 상태</translation>
+    </message>
+    <message>
+        <source>Your co-teacher assignment could not be saved. Your changes are still here.</source>
+        <translation>공동 교사 배정을 저장하지 못했습니다. 변경 사항은 그대로 유지됩니다.</translation>
+    </message>
 </context>
 <context>
     <name>ClassAnalyticsPage</name>

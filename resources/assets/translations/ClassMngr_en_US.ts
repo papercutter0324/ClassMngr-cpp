@@ -9667,4 +9667,15 @@ Version: %2</source>
         <translation>Select an editable text cell to use the on-screen keyboard.</translation>
     </message>
 </context>
+<context>
+    <name>ClassCoTeacherPage</name>
+    <message>
+        <source>Save status</source>
+        <translation>Save status</translation>
+    </message>
+    <message>
+        <source>Your co-teacher assignment could not be saved. Your changes are still here.</source>
+        <translation>Your co-teacher assignment could not be saved. Your changes are still here.</translation>
+    </message>
+</context>
 </TS>

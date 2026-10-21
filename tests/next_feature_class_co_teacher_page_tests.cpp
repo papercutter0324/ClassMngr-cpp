@@ -6,13 +6,16 @@
 #include "next/application/class_co_teacher_assignment_use_case.h"
 #include "next/application/class_co_teacher_page_read_query.h"
 #include "next/application/class_co_teacher_teacher_choices_read_query.h"
+#include "next/platform/application_services_class_co_teacher_assignment_port.h"
 #include "next/platform/application_services_class_co_teacher_page_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/pages/page_header.h"
 #include "ui/shared/widgets/sections/teacher_info_section.h"
 
+#include <QApplication>
 #include <QComboBox>
+#include <QCoreApplication>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -21,6 +24,7 @@
 #include <QSignalSpy>
 #include <QStringList>
 #include <QTemporaryDir>
+#include <QTranslator>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -222,6 +226,106 @@ public:
     Domain::Result<void> result = Domain::Result<void>::success();
 };
 
+class FailFirstAssignmentPort final
+    : public Application::ClassCoTeacherAssignmentPort
+{
+public:
+    explicit FailFirstAssignmentPort(ApplicationServices* services)
+        : m_services(services)
+    {
+    }
+
+    [[nodiscard]] Domain::Result<void> assignClassCoTeacher(
+        const Application::ClassCoTeacherAssignmentRequest& request
+        ) const override
+    {
+        ++callCount;
+        requests.push_back(request);
+        if (callCount == 1)
+        {
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "assignment rejected",
+                .recoverable = false
+            });
+        }
+
+        Platform::ApplicationServicesClassCoTeacherAssignmentPort port(
+            m_services
+            );
+        return port.assignClassCoTeacher(request);
+    }
+
+    mutable int callCount = 0;
+    mutable std::vector<Application::ClassCoTeacherAssignmentRequest> requests;
+
+private:
+    ApplicationServices* m_services = nullptr;
+};
+
+class KoreanCoTeacherAutosaveStatusTranslator final : public QTranslator
+{
+public:
+    QString translate(
+        const char* context,
+        const char* sourceText,
+        const char* disambiguation = nullptr,
+        const int n = -1
+        ) const override
+    {
+        Q_UNUSED(disambiguation);
+        Q_UNUSED(n);
+        if (!context || !sourceText
+            || qstrcmp(context, "ClassCoTeacherPage") != 0)
+        {
+            return {};
+        }
+
+        if (qstrcmp(sourceText, "Save status") == 0)
+        {
+            return QStringLiteral("저장 상태");
+        }
+        if (qstrcmp(
+                sourceText,
+                "Your co-teacher assignment could not be saved. "
+                "Your changes are still here."
+                ) == 0)
+        {
+            return QStringLiteral(
+                "공동 교사 배정을 저장하지 못했습니다. 변경 사항은 그대로 유지됩니다."
+                );
+        }
+        return {};
+    }
+};
+
+class ScopedTranslatorInstallation final
+{
+public:
+    explicit ScopedTranslatorInstallation(QTranslator& translator)
+        : m_translator(&translator)
+        , m_installed(QCoreApplication::installTranslator(m_translator))
+    {
+    }
+
+    ~ScopedTranslatorInstallation()
+    {
+        if (m_installed)
+        {
+            QCoreApplication::removeTranslator(m_translator);
+        }
+    }
+
+    [[nodiscard]] bool installed() const
+    {
+        return m_installed;
+    }
+
+private:
+    QTranslator* m_translator = nullptr;
+    bool m_installed = false;
+};
+
 class RecordingPageReadPort final
     : public Application::ClassCoTeacherPageReadPort
 {
@@ -331,6 +435,7 @@ private slots:
     void defaultPortSavesAssignmentAndRefreshesTitle();
     void successfulAssignmentSurvivesFailedFollowupRead();
     void manualFailureWarnsAndRetainsDirtyState();
+    void autosaveFailureShowsStatusAndClearsAfterPersistentRetry();
     void loadDiscardAndSuccessfulSaveUseFreshSnapshotsAtExpectedTimes();
     void readFailuresKeepDefaultSelectionAndIndependentTitleSources();
     void unknownAssignmentAllowsOnlyExplicitButtonSaveAndUnassignment();
@@ -371,8 +476,13 @@ defaultPortSavesAssignmentAndRefreshesTitle()
     page.loadClass(Classroom(QStringLiteral("Co-Teacher Page Test"), classId));
     auto* section = page.findChild<TeacherInfoSection*>();
     auto* header = page.findChild<PageHeader*>();
+    auto* autosaveFailureStatus = page.findChild<QLabel*>(
+        QStringLiteral("classCoTeacherAutosaveFailureStatus")
+        );
     QVERIFY(section);
     QVERIFY(header);
+    QVERIFY(autosaveFailureStatus);
+    QVERIFY(autosaveFailureStatus->isHidden());
     const QString initialSubtitle = header->subtitle();
 
     QComboBox* teacherSelector = section->teacherSelector();
@@ -395,7 +505,9 @@ defaultPortSavesAssignmentAndRefreshesTitle()
     QCOMPARE(section->teacherId(), teacherId);
     QVERIFY(header->subtitle() != initialSubtitle);
     QVERIFY(header->subtitle().contains(QStringLiteral("Page Teacher")));
+    QVERIFY(autosaveFailureStatus->isHidden());
     QVERIFY(m_promptService.requests.empty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 void NextFeatureClassCoTeacherPageTests::
@@ -592,7 +704,12 @@ void NextFeatureClassCoTeacherPageTests::manualFailureWarnsAndRetainsDirtyState(
     page.loadClass(Classroom(QStringLiteral("Co-Teacher Page Test"), classId));
     QCOMPARE(readPort.callCount, 1);
     auto* section = page.findChild<TeacherInfoSection*>();
+    auto* autosaveFailureStatus = page.findChild<QLabel*>(
+        QStringLiteral("classCoTeacherAutosaveFailureStatus")
+        );
     QVERIFY(section);
+    QVERIFY(autosaveFailureStatus);
+    QVERIFY(autosaveFailureStatus->isHidden());
     QComboBox* teacherSelector = section->teacherSelector();
     QVERIFY(teacherSelector);
     const int teacherIndex = teacherSelector->findData(teacherId);
@@ -614,12 +731,104 @@ void NextFeatureClassCoTeacherPageTests::manualFailureWarnsAndRetainsDirtyState(
         std::to_string(teacherId));
     QVERIFY(page.hasUnsavedChanges());
     QVERIFY(savedSpy.isEmpty());
+    QVERIFY(autosaveFailureStatus->isHidden());
     QCOMPARE(m_promptService.requests.size(), std::size_t(1));
     QCOMPARE(m_promptService.requests.front().severity, PromptSeverity::Warning);
     QCOMPARE(m_promptService.requests.front().title,
         QStringLiteral("Save Co-Teacher"));
     QCOMPARE(m_promptService.requests.front().message,
         QStringLiteral("assignment rejected"));
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void NextFeatureClassCoTeacherPageTests::
+autosaveFailureShowsStatusAndClearsAfterPersistentRetry()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(services);
+    const int teacherId = createTeacher(services);
+    QVERIFY(classId > 0);
+    QVERIFY(teacherId > 0);
+
+    FailFirstAssignmentPort assignmentPort(&services);
+    ClassCoTeacherPage page(&services, false, nullptr, &assignmentPort);
+    page.loadClass(Classroom(QStringLiteral("Co-Teacher Page Test"), classId));
+
+    auto* section = page.findChild<TeacherInfoSection*>();
+    auto* autosave = page.findChild<AutosaveCoordinator*>();
+    auto* status = page.findChild<QLabel*>(
+        QStringLiteral("classCoTeacherAutosaveFailureStatus")
+        );
+    QVERIFY(section);
+    QVERIFY(autosave);
+    QVERIFY(status);
+    QVERIFY(status->isHidden());
+    QCOMPARE(status->accessibleName(), QStringLiteral("Save status"));
+    autosave->setDebounceInterval(60'000);
+
+    QComboBox* const selector = section->teacherSelector();
+    QVERIFY(selector);
+    const int teacherIndex = selector->findData(teacherId);
+    QVERIFY(teacherIndex > 0);
+    selector->setCurrentIndex(teacherIndex);
+    QVERIFY(page.hasUnsavedChanges());
+    autosave->cancelPendingSave();
+    autosave->requestSave(false);
+
+    QCOMPARE(assignmentPort.callCount, 1);
+    QCOMPARE(assignmentPort.requests.size(), std::size_t(1));
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(selector->currentData().toInt(), teacherId);
+    QVERIFY(!status->isHidden());
+    QCOMPARE(
+        status->text(),
+        QStringLiteral(
+            "Your co-teacher assignment could not be saved. "
+            "Your changes are still here."
+            )
+        );
+    QVERIFY(m_promptService.requests.empty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    KoreanCoTeacherAutosaveStatusTranslator koreanTranslator;
+    {
+        ScopedTranslatorInstallation translatorScope(koreanTranslator);
+        QVERIFY(translatorScope.installed());
+        page.retranslateUi();
+        QCOMPARE(
+            status->text(),
+            QStringLiteral(
+                "공동 교사 배정을 저장하지 못했습니다. "
+                "변경 사항은 그대로 유지됩니다."
+                )
+            );
+        QCOMPARE(status->accessibleName(), QStringLiteral("저장 상태"));
+    }
+    page.retranslateUi();
+    QCOMPARE(
+        status->text(),
+        QStringLiteral(
+            "Your co-teacher assignment could not be saved. "
+            "Your changes are still here."
+            )
+        );
+    QCOMPARE(status->accessibleName(), QStringLiteral("Save status"));
+
+    autosave->requestSave(false);
+
+    QCOMPARE(assignmentPort.callCount, 2);
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(selector->currentData().toInt(), teacherId);
+    QVERIFY(status->isHidden());
+    QVERIFY(status->text().isEmpty());
+    const auto persisted = services.classService()->classInfo(classId);
+    QVERIFY(persisted);
+    QCOMPARE(persisted->teacherId, teacherId);
+    QVERIFY(m_promptService.requests.empty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 void NextFeatureClassCoTeacherPageTests::
@@ -955,15 +1164,22 @@ unknownAssignmentAllowsOnlyExplicitButtonSaveAndUnassignment()
     });
     ClassCoTeacherPage page(
         &services, false, nullptr, &assignmentPort, &readPort);
-    page.setSaveMode(SaveMode::Manual);
+    page.setSaveMode(SaveMode::Automatic);
     page.loadClass(Classroom(QStringLiteral("Fallback Class"), classId));
 
     auto* section = page.findChild<TeacherInfoSection*>();
     auto* status = assignmentReadStatus(page);
+    auto* autosave = page.findChild<AutosaveCoordinator*>();
+    auto* autosaveFailureStatus = page.findChild<QLabel*>(
+        QStringLiteral("classCoTeacherAutosaveFailureStatus")
+        );
     auto* saveButton = coTeacherSaveButton(page);
     QVERIFY(section);
     QVERIFY(status);
+    QVERIFY(autosave);
+    QVERIFY(autosaveFailureStatus);
     QVERIFY(saveButton);
+    QVERIFY(autosaveFailureStatus->isHidden());
     verifyUnknownAssignmentStatus(
         status,
         QStringLiteral("Technical"),
@@ -976,6 +1192,9 @@ unknownAssignmentAllowsOnlyExplicitButtonSaveAndUnassignment()
     QVERIFY(page.hasUnsavedChanges());
     QVERIFY(!saveButton->isHidden());
     QVERIFY(saveButton->isEnabled());
+    autosave->requestSave(false);
+    QCOMPARE(assignmentPort.callCount, 0);
+    QVERIFY(autosaveFailureStatus->isHidden());
     QVERIFY(!page.saveChanges());
     page.saveData();
     QCOMPARE(assignmentPort.callCount, 0);
@@ -995,6 +1214,7 @@ unknownAssignmentAllowsOnlyExplicitButtonSaveAndUnassignment()
         std::to_string(teacherId));
     QVERIFY(!page.hasUnsavedChanges());
     QVERIFY(status->isHidden());
+    QVERIFY(autosaveFailureStatus->isHidden());
     QCOMPARE(section->teacherId(), teacherId);
 
     readPort.failOnCall = 3;

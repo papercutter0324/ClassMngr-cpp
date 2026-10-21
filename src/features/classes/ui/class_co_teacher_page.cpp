@@ -225,6 +225,28 @@ void ClassCoTeacherPage::buildUi()
         Qt::AlignTop
         );
 
+    m_automaticSaveFailureStatusLabel = new QLabel(
+        m_pageBody->contentWidget()
+        );
+    m_automaticSaveFailureStatusLabel->setObjectName(
+        QStringLiteral("classCoTeacherAutosaveFailureStatus")
+        );
+    m_automaticSaveFailureStatusLabel->setAccessibleName(tr("Save status"));
+    m_automaticSaveFailureStatusLabel->setAlignment(
+        Qt::AlignLeft | Qt::AlignVCenter
+        );
+    m_automaticSaveFailureStatusLabel->setWordWrap(true);
+    m_automaticSaveFailureStatusLabel->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Preferred
+        );
+    m_automaticSaveFailureStatusLabel->hide();
+    m_pageBody->contentLayout()->addWidget(
+        m_automaticSaveFailureStatusLabel,
+        0,
+        Qt::AlignTop
+        );
+
     m_teacherCard = new SectionCard(
         tr("Korean Teacher"),
         m_pageBody->contentWidget()
@@ -466,6 +488,20 @@ void ClassCoTeacherPage::retranslateUi()
         updateAssignmentReadStatus();
     }
 
+    if (m_automaticSaveFailureStatusLabel)
+    {
+        m_automaticSaveFailureStatusLabel->setAccessibleName(tr("Save status"));
+        if (m_automaticSaveFailureStatusActive)
+        {
+            m_automaticSaveFailureStatusLabel->setText(
+                tr(
+                    "Your co-teacher assignment could not be saved. "
+                    "Your changes are still here."
+                    )
+                );
+        }
+    }
+
     updateActions();
 }
 
@@ -555,8 +591,38 @@ void ClassCoTeacherPage::markDirty()
 
 void ClassCoTeacherPage::clearDirty()
 {
+    clearAutomaticSaveFailureStatus();
     m_autosave->markClean();
     updateActions();
+}
+
+void ClassCoTeacherPage::showAutomaticSaveFailureStatus()
+{
+    m_automaticSaveFailureStatusActive = true;
+    if (!m_automaticSaveFailureStatusLabel)
+    {
+        return;
+    }
+
+    m_automaticSaveFailureStatusLabel->setText(
+        tr(
+            "Your co-teacher assignment could not be saved. "
+            "Your changes are still here."
+            )
+        );
+    m_automaticSaveFailureStatusLabel->show();
+}
+
+void ClassCoTeacherPage::clearAutomaticSaveFailureStatus()
+{
+    m_automaticSaveFailureStatusActive = false;
+    if (!m_automaticSaveFailureStatusLabel)
+    {
+        return;
+    }
+
+    m_automaticSaveFailureStatusLabel->clear();
+    m_automaticSaveFailureStatusLabel->hide();
 }
 
 void ClassCoTeacherPage::updateActions()
@@ -615,6 +681,13 @@ bool ClassCoTeacherPage::saveCoTeacherInternal(
                     static_cast<qsizetype>(saved.error().message.size())
                     )
                 );
+        }
+        else if (
+            saved.error().code
+                == ClassMngr::Next::Domain::ErrorCode::Technical
+            )
+        {
+            showAutomaticSaveFailureStatus();
         }
 
         return false;

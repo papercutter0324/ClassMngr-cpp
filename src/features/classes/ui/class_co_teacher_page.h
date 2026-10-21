@@ -80,6 +80,8 @@ private:
     void updateTitle();
     void markDirty();
     void clearDirty();
+    void showAutomaticSaveFailureStatus();
+    void clearAutomaticSaveFailureStatus();
     void updateActions();
     bool saveCoTeacherInternal(
         bool showMessages
@@ -111,5 +113,7 @@ private:
     PageHeader* m_pageHeader{nullptr};
     QLabel* m_embeddedHeading{nullptr};
     QLabel* m_assignmentReadStatusLabel{nullptr};
+    QLabel* m_automaticSaveFailureStatusLabel{nullptr};
     QPushButton* m_saveButton{nullptr};
+    bool m_automaticSaveFailureStatusActive{false};
 };
