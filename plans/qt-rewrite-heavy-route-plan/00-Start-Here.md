@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch520 (F1280) is complete locally and awaiting its normal push; Batch521 discovery starts after the push, with no implementation slice active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+- Current milestone: Batch520 (F1280) is complete and pushed at `9fa83678`; Batch521 discovery is next, with no implementation slice active. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -40,9 +40,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 work
 
-Batch520 (F1280) is complete locally and awaiting its normal push. Batch521
-discovery starts after the push; no implementation slice is active. Gate 1
-and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F629's
+Batch520 (F1280) is complete and pushed at `9fa83678`. Batch521 discovery is
+next; no implementation slice is active. Gate 1 and Gate 2 remain Partial,
+and the Phase 2 exit gate remains Open. F629's
 source-bound Windows x64 requalification remains outstanding separately from
 Phase 0's Complete declaration. The [Phase 2 progress log](03-Phase-2-Progress-Log.md)
 holds acceptance, verification, and exact batch history.

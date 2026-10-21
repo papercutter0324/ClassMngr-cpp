@@ -61472,3 +61472,18 @@ starts after the push; no implementation slice is active. Gate 1 and Gate 2
 remain Partial, and the Phase 2 exit gate remains Open. F629's source-bound
 Windows x64 requalification remains outstanding separately from Phase 0's
 2026-09-18 Complete declaration.
+
+### Batch520 push receipt - 2026-10-21
+
+Batch520/F1280 acceptance is at `4ad6e48d`; its source/test commit is
+`6955c973115b8e4fac9d30df1e7d8817ca85491e`; and the closeout commit is
+`9fa83678ce7049ddee86c92aa0bca755e805b648`. The normal non-force
+`git push origin Qt-Rewrite` succeeded (`6556d524..9fa83678`). A subsequent
+`git ls-remote` confirmed `origin/Qt-Rewrite` equals local HEAD at the closeout
+commit. The worktree was clean after push, and `git show --check` passed. No
+hosted CI or additional verification is implied by this receipt.
+
+Batch520 is complete and pushed. Batch521 discovery is next, with no
+implementation slice active. Gate 1 and Gate 2 remain Partial, and the Phase 2
+exit gate remains Open. F629's source-bound Windows x64 requalification remains
+outstanding separately from Phase 0's 2026-09-18 Complete declaration.
