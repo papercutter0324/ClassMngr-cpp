@@ -219,6 +219,8 @@ private:
     QList<Classroom> m_evaluationClasses;
     QString m_evaluationName;
     bool m_loadingEvaluation = false;
+    bool m_hasSuccessfulEvaluationSnapshot = false;
+    bool m_evaluationReadFailed = false;
     bool m_importingNames = false;
     bool m_resolvingDuplicateName = false;
     bool m_updatingValidation = false;
@@ -238,6 +240,9 @@ private:
     QLabel* m_embeddedEvaluationLabel = nullptr;
     QComboBox* m_embeddedEvaluationCombo = nullptr;
     QLabel* m_emptyLabel = nullptr;
+    QWidget* m_readErrorContainer = nullptr;
+    QLabel* m_readErrorLabel = nullptr;
+    QPushButton* m_retryReadButton = nullptr;
     QWidget* m_tabsContainer = nullptr;
     QWidget* m_classTabsContainer = nullptr;
     QVBoxLayout* m_classTabsLayout = nullptr;

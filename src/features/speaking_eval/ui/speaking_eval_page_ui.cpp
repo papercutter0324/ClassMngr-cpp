@@ -192,6 +192,40 @@ void SpeakingEvalPage::buildUi()
         );
 
     contentLayout()->addWidget(m_emptyLabel);
+
+    m_readErrorContainer = new QWidget(this);
+    m_readErrorContainer->setObjectName(
+        QStringLiteral("speakingEvalReadErrorContainer")
+        );
+    auto* readErrorLayout = new QVBoxLayout(m_readErrorContainer);
+    readErrorLayout->setContentsMargins(12, 12, 12, 12);
+    readErrorLayout->addStretch();
+
+    m_readErrorLabel = new QLabel(m_readErrorContainer);
+    m_readErrorLabel->setObjectName(
+        QStringLiteral("speakingEvalReadErrorLabel")
+        );
+    m_readErrorLabel->setAlignment(Qt::AlignCenter);
+    m_readErrorLabel->setWordWrap(true);
+    m_readErrorLabel->setFont(FontManager::getUiFont(12));
+    m_readErrorLabel->setText(
+        tr("Evaluation data could not be loaded. Please try again.")
+        );
+    readErrorLayout->addWidget(m_readErrorLabel);
+
+    auto* retryLayout = new QHBoxLayout();
+    retryLayout->addStretch();
+    m_retryReadButton = new QPushButton(m_readErrorContainer);
+    m_retryReadButton->setObjectName(
+        QStringLiteral("speakingEvalReadRetryButton")
+        );
+    m_retryReadButton->setText(tr("Retry"));
+    retryLayout->addWidget(m_retryReadButton);
+    retryLayout->addStretch();
+    readErrorLayout->addLayout(retryLayout);
+    readErrorLayout->addStretch();
+    contentLayout()->addWidget(m_readErrorContainer);
+
     contentLayout()->addWidget(m_table);
     contentLayout()->addWidget(m_validationMessage);
 
@@ -321,6 +355,25 @@ void SpeakingEvalPage::buildUi()
         &QPushButton::clicked,
         this,
         &SpeakingEvalPage::importNames
+        );
+
+    connect(
+        m_retryReadButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            if (
+                m_classroom.id <= 0
+                || m_evaluationName.trimmed().isEmpty()
+                )
+            {
+                return;
+            }
+
+            loadEvaluationData(m_classroom, m_evaluationName);
+            setEvaluationEditorAvailable(m_classroom.id > 0);
+        }
         );
 
     if (!m_reportButtons.isEmpty())
@@ -466,6 +519,7 @@ void SpeakingEvalPage::scheduleAutosave()
     m_autosave->setSaveAvailable(
         m_classroom.id > 0
         && !m_evaluationName.trimmed().isEmpty()
+        && m_hasSuccessfulEvaluationSnapshot
         );
     m_autosave->setDirty(m_model && m_model->isDirty());
 }

@@ -274,6 +274,10 @@ void SpeakingEvalPage::loadEvaluationData(
     const QString& evaluationName
     )
 {
+    const bool sameEvaluation =
+        m_classroom.id == classroom.id
+        && m_evaluationName == evaluationName;
+
     m_autosave->setLoading(true);
     m_loadingEvaluation = true;
 
@@ -284,8 +288,13 @@ void SpeakingEvalPage::loadEvaluationData(
         evaluationName;
 
     SpeakingEvalRows rows;
+    bool readSucceeded = false;
 
-    if (m_services && m_classroom.id > 0)
+    if (
+        m_services
+        && m_classroom.id > 0
+        && !m_evaluationName.trimmed().isEmpty()
+        )
     {
         const auto classId =
             ClassMngr::Next::Domain::ClassId::fromString(
@@ -306,6 +315,7 @@ void SpeakingEvalPage::loadEvaluationData(
                     );
             if (loaded)
             {
+                readSucceeded = true;
                 const ClassMngr::Next::Application::SpeakingEvaluationReadSnapshot&
                     snapshot = loaded.value();
                 rows.reserve(static_cast<qsizetype>(snapshot.rows.size()));
@@ -326,21 +336,63 @@ void SpeakingEvalPage::loadEvaluationData(
         }
     }
 
-    if (rows.isEmpty())
+    const bool hasRequestedEvaluation =
+        m_classroom.id > 0
+        && !m_evaluationName.trimmed().isEmpty();
+
+    if (readSucceeded)
     {
-        rows =
-            SpeakingEval::emptyRows();
+        if (rows.isEmpty())
+        {
+            rows = SpeakingEval::emptyRows();
+        }
+
+        m_hasSuccessfulEvaluationSnapshot = true;
+        m_evaluationReadFailed = false;
+        if (m_undoStack)
+        {
+            m_undoStack->clear();
+        }
+        m_model->loadData(rows);
+        setupTable();
+        updateEvaluationValidation();
+        m_autosave->markClean();
+    }
+    else if (hasRequestedEvaluation)
+    {
+        m_evaluationReadFailed = true;
+
+        if (!sameEvaluation || !m_hasSuccessfulEvaluationSnapshot)
+        {
+            m_hasSuccessfulEvaluationSnapshot = false;
+            if (m_undoStack)
+            {
+                m_undoStack->clear();
+            }
+            m_model->loadData(SpeakingEval::emptyRows());
+            setupTable();
+            updateEvaluationValidation();
+            m_autosave->markClean();
+        }
+    }
+    else
+    {
+        m_hasSuccessfulEvaluationSnapshot = false;
+        m_evaluationReadFailed = false;
+        if (m_undoStack)
+        {
+            m_undoStack->clear();
+        }
+        m_model->loadData(SpeakingEval::emptyRows());
+        setupTable();
+        updateEvaluationValidation();
+        m_autosave->markClean();
     }
 
-    m_model->loadData(rows);
-    setupTable();
-    updateEvaluationValidation();
     updateHeaderText();
-    updateActions();
 
     m_loadingEvaluation = false;
     m_autosave->setLoading(false);
-    m_autosave->markClean();
     updateActions();
 }
 
@@ -1115,10 +1167,19 @@ void SpeakingEvalPage::setEvaluationEditorAvailable(
         m_emptyLabel->setVisible(!available);
     }
 
+    if (m_readErrorContainer)
+    {
+        m_readErrorContainer->setVisible(
+            available && m_evaluationReadFailed
+            );
+    }
+
     if (m_table)
     {
-        m_table->setVisible(available);
-        m_table->setEnabled(available);
+        const bool hasSnapshot =
+            available && m_hasSuccessfulEvaluationSnapshot;
+        m_table->setVisible(hasSnapshot);
+        m_table->setEnabled(hasSnapshot);
     }
 
     updateActions();

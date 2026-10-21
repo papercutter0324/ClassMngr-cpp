@@ -46,6 +46,18 @@ void SpeakingEvalPage::retranslateUi()
             );
     }
 
+    if (m_readErrorLabel)
+    {
+        m_readErrorLabel->setText(
+            tr("Evaluation data could not be loaded. Please try again.")
+            );
+    }
+
+    if (m_retryReadButton)
+    {
+        m_retryReadButton->setText(tr("Retry"));
+    }
+
     if (m_evaluationTabs)
     {
         for (int index = 0; index < m_evaluationTabs->count(); ++index)
@@ -122,6 +134,7 @@ void SpeakingEvalPage::importNames()
     if (
         !m_services
         || m_classroom.id <= 0
+        || !m_hasSuccessfulEvaluationSnapshot
         )
     {
         return;
@@ -188,7 +201,7 @@ void SpeakingEvalPage::importNames()
 
 void SpeakingEvalPage::openKoreanKeyboard()
 {
-    if (m_onScreenKeyboard)
+    if (m_onScreenKeyboard && m_hasSuccessfulEvaluationSnapshot)
     {
         m_onScreenKeyboard->showFor(m_table);
     }
@@ -208,9 +221,12 @@ void SpeakingEvalPage::updateActions()
 
     const bool hasActiveClass =
         m_classroom.id > 0;
-    m_autosave->setSaveAvailable(
+    const bool hasLoadedEvaluation =
         hasActiveClass
         && !m_evaluationName.trimmed().isEmpty()
+        && m_hasSuccessfulEvaluationSnapshot;
+    m_autosave->setSaveAvailable(
+        hasLoadedEvaluation
         );
     m_autosave->setValid(!m_model->hasErrors());
     m_autosave->setDirty(m_model->isDirty());
@@ -219,32 +235,36 @@ void SpeakingEvalPage::updateActions()
     if (m_importNamesButton)
     {
         m_importNamesButton->setEnabled(
-            hasActiveClass
+            hasLoadedEvaluation
             );
     }
 
     if (m_koreanKeyboardButton)
     {
         m_koreanKeyboardButton->setEnabled(
-            hasActiveClass
+            hasLoadedEvaluation
             );
     }
 
     const bool hasStudents = hasReportStudents();
+    const bool canCreateReports =
+        hasLoadedEvaluation && hasStudents;
 
     for (QPushButton* button : m_reportButtons)
     {
         if (button)
         {
             button->setEnabled(
-                hasActiveClass && hasStudents
+                canCreateReports
                 );
             button->setToolTip(
-                hasActiveClass && hasStudents
+                canCreateReports
                     ? QString()
-                    : hasActiveClass
-                        ? tr("Import or enter a student name to create reports.")
-                        : tr("Select a class to create reports.")
+                    : !hasActiveClass
+                        ? tr("Select a class to create reports.")
+                        : hasLoadedEvaluation
+                            ? tr("Import or enter a student name to create reports.")
+                            : QString()
             );
         }
     }
@@ -282,6 +302,7 @@ PageOutputCapabilities SpeakingEvalPage::outputCapabilities() const
     const bool enabled =
         isDatabaseOpen()
         && m_classroom.id > 0
+        && m_hasSuccessfulEvaluationSnapshot
         && hasReportStudents();
     return {enabled, enabled};
 }
@@ -298,7 +319,11 @@ void SpeakingEvalPage::saveCurrentPageAs()
 
 void SpeakingEvalPage::showReports()
 {
-    if (!m_model || m_classroom.id <= 0)
+    if (
+        !m_model
+        || m_classroom.id <= 0
+        || !m_hasSuccessfulEvaluationSnapshot
+        )
     {
         return;
     }
@@ -379,7 +404,12 @@ void SpeakingEvalPage::showReports()
 
 void SpeakingEvalPage::generateClassAiComments()
 {
-    if (!m_model || !m_table || m_classroom.id <= 0)
+    if (
+        !m_model
+        || !m_table
+        || m_classroom.id <= 0
+        || !m_hasSuccessfulEvaluationSnapshot
+        )
     {
         return;
     }
@@ -447,7 +477,11 @@ void SpeakingEvalPage::outputReports(
     bool print
     )
 {
-    if (!m_model || m_classroom.id <= 0)
+    if (
+        !m_model
+        || m_classroom.id <= 0
+        || !m_hasSuccessfulEvaluationSnapshot
+        )
     {
         return;
     }

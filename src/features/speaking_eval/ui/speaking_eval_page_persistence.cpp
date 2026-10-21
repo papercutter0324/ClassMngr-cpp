@@ -65,6 +65,7 @@ bool SpeakingEvalPage::saveEvaluationInternal(
         !m_services
         || m_classroom.id <= 0
         || m_evaluationName.trimmed().isEmpty()
+        || !m_hasSuccessfulEvaluationSnapshot
         )
     {
         return false;

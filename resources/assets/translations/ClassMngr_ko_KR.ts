@@ -7722,6 +7722,18 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
 <context>
     <name>SpeakingEvalPage</name>
     <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="52"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="213"/>
+        <source>Evaluation data could not be loaded. Please try again.</source>
+        <translation>평가 데이터를 불러오지 못했습니다. 다시 시도해 주세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="57"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="224"/>
+        <source>Retry</source>
+        <translation>다시 시도</translation>
+    </message>
+    <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="+98"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+220"/>
         <source>Korean Keyboard</source>
