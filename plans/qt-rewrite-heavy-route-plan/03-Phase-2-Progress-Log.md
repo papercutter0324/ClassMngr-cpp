@@ -62758,9 +62758,11 @@ and around line 523). The existing
 `readFailureAndNoDataUseTheExistingEmptyState` test explicitly conflates roster
 read failure and an empty result (`tests/class_analytics_page_tests.cpp:115-138`);
 the application query propagates roster failures
-(`src/next/application/class_analytics_dashboard_read_query.h:640`). The test
-is registered as `ClassAnalyticsPage`
-(`cmake/tests/pages_and_output.cmake:1736-1747`). F1297 remains provisional
+(`src/next/application/class_analytics_dashboard_read_query.h:640`).
+`ClassAnalyticsPage` is the test-registration macro NAME in
+`cmake/tests/pages_and_output.cmake:1736-1747`; the macro creates target and
+CTest name `ClassMngrClassAnalyticsPageTests`
+(`cmake/tests.cmake:100-105,144-147`). F1297 remains provisional
 and unaccepted; acceptance should decide whether a roster read failure needs
 distinct disclosure from a genuine no-data result.
 
@@ -62772,3 +62774,61 @@ its accepted contract. The discovery lanes made no code or test changes and ran
 no tests.
 
 No other slices were found.
+
+### F1296 Co-Teacher unknown assignment disclosure complete locally - 2026-10-21
+
+F1296 is complete locally in four commits: pre-implementation acceptance
+`af57e26b535c5526f2c341b8ebd44e801b882f18`, Batch528 discovery documentation
+`a2b5295cd7ff72969ae422e86730cb860470ad7c`, production
+`936b38ec53c428a7c95cdad880295bf0401b7c63`, and independent tests
+`03bc89a297d98a5acf7932496d2d7ae8fcd7b871`.
+
+The page now shows persistent Korean-localized structured unknown status for
+top-level or required `classFields` read failure while keeping the chooser
+editable. Autosave stops, and `saveChanges()`/`saveData()` are blocked while
+unknown and dirty. The page's Save Changes button still allows deliberate
+assignment or unassignment. Successful required reads and successful writes
+clear the barrier; optional display-name failure remains independent. A
+successful write clears the barrier even if readback fails and preserves
+F1280's committed state; failed writes retain the status and draft. Database
+clear removes the status and barrier.
+
+Incremental builds of `ClassMngr` and
+`ClassMngrNextFeatureClassCoTeacherPageTests` passed in
+`build/macos-clang-debug`. The targeted case set reported 8 passed / 0 failed
+before displaced header assertions were restored; after restoration, the
+affected selector reported 3 passed / 0 failed and the owning CTest passed
+1/1. CTest registration and `git diff --check` passed. No full suite, Windows
+or clean build, hosted CI, runtime translation or render, or parent-page
+navigation integration was run.
+
+Batch527 (F1296) is closed locally and awaits push. Batch528 is active with
+F1297 accepted before implementation. Gate 1 and Gate 2 remain Partial, and
+the Phase 2 exit gate remains Open.
+
+### F1297 Class Analytics dashboard read failure accepted before implementation - 2026-10-21
+
+In `ClassAnalyticsPage`, preserve the dashboard query's structured failure. A
+roster or evaluation-batch read failure clears stale dashboard data and shows
+an inline generic localized error state with a Retry button, distinct from the
+successful empty-data message. Do not display raw `OperationError::message`.
+Keep the page non-modal and navigation usable. Retry uses the existing
+refresh/rebuild path; success clears the error and shows actual results or the
+genuine no-data state, while a subsequent failure remains an error. Preserve
+successful-empty behavior. Do not change unrelated analytics computations or
+other pages.
+
+Focused verification plan: incrementally build `ClassMngr` and
+`ClassMngrClassAnalyticsPageTests` in `build/macos-clang-debug`; run selectors
+`successfulEmptyDashboardShowsNoDataState`,
+`rosterReadFailureShowsRetryAndRecovers`,
+`evaluationBatchReadFailureShowsRetryAndRecovers`, and
+`failedRefreshDoesNotPresentPreviousClassResultsAsCurrent`. Confirm and run
+the owning CTest `ClassMngrClassAnalyticsPageTests`, then run
+`git diff --check`. At acceptance, F1297 implementation, builds, and tests
+have not started. No full-suite, Windows, clean-build, hosted-CI, or gate
+completion is claimed.
+
+Batch527 (F1296) is closed locally and awaits push. Batch528 is active with
+F1297 accepted before implementation. Gate 1 and Gate 2 remain Partial, and
+the Phase 2 exit gate remains Open.

@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch526 (F1295) is pushed through closeout `156e5fa2` and receipt `89657716` with local and remote tips matching; Batch527 is active with F1296 accepted/in progress; Batch528 has provisional F1297 Class Analytics discovery pending acceptance; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
+- Current note: Batch527 (F1296) is closed locally and awaits push; Batch528 is active with F1297 accepted before implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1296 is accepted before implementation in active Batch527; see the progress
+F1297 is accepted before implementation in active Batch528; see the progress
 log for its contract and focused verification plan.
 
 ### Slice discovery batches
@@ -77,15 +77,14 @@ Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
 outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
-### Active Batch527
+### Active Batch528
 
-Batch526 (F1295) is pushed through closeout `156e5fa2` and receipt `89657716`;
-local and remote tips match.
+Batch527 (F1296) is closed locally and awaits push.
 
-1. F1296 - Accepted before implementation: disclose unknown assignment state
-   with a persistent structured warning; require deliberate Save Changes while
-   unknown, guard implicit write paths, and preserve explicit assignment,
-   unassignment, and reload recovery. See the progress log for full criteria.
+1. F1297 - Accepted before implementation: distinguish failed dashboard reads
+   from successful empty data using an inline retryable error state; preserve
+   successful-empty behavior and keep navigation usable. See the progress log
+   for full criteria.
 
 See the progress log for bounded discovery evidence and limitations.
 
