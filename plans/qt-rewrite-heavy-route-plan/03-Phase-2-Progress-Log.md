@@ -60156,3 +60156,34 @@ full-suite or Gate 2 claim is planned. F1269 is accepted before
 implementation as Batch508's second slice; F1270 and F1271 remain discovery
 only in Batch509, which is not active. No F1269 implementation, build, or
 tests have started.
+
+### Superseded latest progress update - 2026-10-21 (F1268 complete, F1269 accepted)
+
+F1268's focused closeout and F1269's pre-implementation acceptance are
+recorded in their respective [F1268 closeout](03-Phase-2-Progress-Log.md#f1268-initial-setup-teacher-entry-skip-policy-in-application-complete-2026-10-21)
+and [F1269 acceptance](03-Phase-2-Progress-Log.md#f1269-initial-setup-class-details-required-information-gate-in-application-accepted-before-implementation-2026-10-21).
+
+### F1269 Initial Setup Class Details required-information gate in Application complete - 2026-10-21
+
+F1269 is complete in Batch508 at source commit
+`da3905300dbb5aa9e6295512c900355d0edb201b`. The Qt-free Application policy
+owns only Initial Setup's four mandatory facts: a canonical-positive selected
+teacher ID, an explicitly chosen class color, nonempty grade, and nonempty
+level. It returns completion and missing-requirement facts for the UI to show
+in its existing fixed prompt order: Korean Teacher, Class Color, Grade,
+Level. The UI retains selected-ID parsing, widgets, translation, prompt
+behavior, and page retention; all requirements are checked before class-draft
+or teacher-association mutation. Ordinary `ClassDetailsValidationPolicy`
+continues to allow an unassigned teacher and paired empty grade/level, with
+default white remaining valid there. F365's create/save flow and service and
+database calls are unchanged.
+
+The independent Tester incrementally built with Ninja using
+`cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationInitialSetupClassDetailsRequirementsTests ClassMngrInitialSetupWizardTests ClassMngrInitialSetupWizardClassCreateSaveParityTests`; it exited 0 with no work to do. The app-less policy CTest passed 1/1, covering all 16 fact combinations. `classDetailsRequiredInformationPrompt` passed all six data rows, and `successfulSaveAdvancesWithDetailsAndTeacher` passed. `git diff --check` passed. Nonfatal font-alias and `propagateSizeHints` warnings appeared; no full-suite, Windows, or Gate 2 result is claimed. This is focused Gate 1 app-less evidence.
+
+Batch508 is complete locally and awaiting its normal push receipt. No
+implementation batch is active during the push handoff. Batch509 remains the
+discovered next batch only; F1270 and F1271 are not accepted or active. After
+the Batch508 push receipt, Batch509 can be activated for its first candidate,
+F1270. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains
+Open.

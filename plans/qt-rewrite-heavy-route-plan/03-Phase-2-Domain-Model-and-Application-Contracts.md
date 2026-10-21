@@ -53,12 +53,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch508 is active with F1268 complete and F1269 accepted before implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+- Current note: Batch508 is complete locally and awaiting its push receipt; after that receipt, the discovered Batch509 (F1270 then F1271) is next to activate, with no implementation batch active during the handoff; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open.
 
 ### Latest Progress Update
 
-F1268 is complete in Batch508 at source commit
-`698b015a30d2410e5e119661e6dee047a108b950` (see [F1268 closeout](03-Phase-2-Progress-Log.md#f1268-initial-setup-teacher-entry-skip-policy-in-application-complete-2026-10-21)). The independent app-less policy CTest and selected Initial Setup UI checks passed; no full-suite, Windows, or Gate 2 claim is made. F1269, the Initial Setup Class Details required-information gate, is accepted before implementation as Batch508's second slice (see [acceptance](03-Phase-2-Progress-Log.md#f1269-initial-setup-class-details-required-information-gate-in-application-accepted-before-implementation-2026-10-21)). Batch508 has 1 complete and 1 accepted slice; Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
+F1269 is complete in Batch508 at source commit
+`da3905300dbb5aa9e6295512c900355d0edb201b` (see [F1269 closeout](03-Phase-2-Progress-Log.md#f1269-initial-setup-class-details-required-information-gate-in-application-complete-2026-10-21)). Its focused app-less and Initial Setup UI checks passed; no full-suite, Windows, or Gate 2 claim is made. Batch508 is complete locally and awaiting its normal push receipt. No implementation batch is active during the push handoff; the discovered Batch509 (F1270 then F1271) is next to activate after that receipt. Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -72,15 +72,6 @@ Treat this plan as an operational summary, not a history:
 - When a slice is accepted, record its evidence in the progress log and update its status in this plan. Remove the batch list when the batch closes; replace it in place with the next active batch and do not carry forward history.
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
-
-### Active batch: Batch508 (1 complete, 1 accepted, 0 discovered)
-
-- F1268 - Initial Setup Teacher Entry skip policy in Application: Complete at
-  source commit `698b015a`; closeout and focused verification are in the
-  progress log.
-- F1269 - Initial Setup Class Details required-information gate: Accepted
-  before implementation; next action is to add the Qt-free four-fact policy,
-  route Initial Setup's gate through it, and cover app-less and UI behavior.
 
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
