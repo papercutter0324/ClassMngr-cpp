@@ -62044,3 +62044,34 @@ work starts, because F1290 is Batch524's second-last candidate. Gate 1 and
 Gate 2 remain Partial, and the Phase 2 exit gate remains Open. Phase 0 remains
 Complete; F629's source-bound Windows x64 requalification remains outstanding
 separately.
+
+### F1287 Testing Classes preserve saved class after list-refresh failure accepted before implementation - 2026-10-21
+
+After a successful create or update, preserve the persisted class ID and clean
+editor. If the following class-list read fails, retain other available prior
+rows and keep the saved current class visible and selected with a label matching
+the saved values. For create, add the newly created class if it is absent; for
+update, refresh its local row label. Keep the existing warning policy:
+Technical errors warn and NotFound remains quiet. Emit
+`testingDataChanged()` once. A later successful refresh must reconcile the list
+while preserving the saved class identity, and another save of the displayed
+class must update it rather than create a duplicate. Do not expand into
+save-failure behavior or other page refresh paths.
+
+In `TestingClassesPage::saveChanges()` at
+`src/features/classes/ui/testing_classes_page.cpp:322-518`, a successful
+create/update stores the saved ID, marks the editor clean, reloads the roster,
+rebuilds the class list, then emits `testingDataChanged()`. The rebuild at
+`:1200-1244` clears the list before reading choices; a failed read leaves the
+saved editor identity and values intact but the list empty. This is distinct
+from F1286's post-delete sibling-details read and F1280/F1064's other feature
+refresh paths.
+
+F1287 is accepted as Batch523's final candidate before implementation;
+implementation, build, and tests have not started. F1285 and F1286 are
+complete locally, and Batch523 remains unpushed. Batch524 discovery remains
+recorded with F1288-F1291 provisional; begin Batch525 discovery when F1290
+work starts, as it is the second-last Batch524 candidate. Gate 1 and Gate 2
+remain Partial, and the Phase 2 exit gate remains Open. Phase 0 remains
+Complete; F629's source-bound Windows x64 requalification remains outstanding
+separately.
