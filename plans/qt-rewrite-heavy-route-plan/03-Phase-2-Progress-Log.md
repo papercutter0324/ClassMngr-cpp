@@ -61307,8 +61307,9 @@ the existing `CampusDashboardPageTests` for Create and Update: invoke
 failure, a still-dirty draft, and unchanged storage. In the existing
 `build/macos-clang-debug` tree, build only `ClassMngr`,
 `ClassMngrNextApplicationCampusDashboardCampusIdentitySavePolicyTests`,
+`ClassMngrNextApplicationCampusDashboardCampusSavePortTests`,
 `ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`, and
-`ClassMngrCampusDashboardPageTests`; run the focused three CTests and the named
+`ClassMngrCampusDashboardPageTests`; run the focused four CTests and the named
 UI selectors, with `git diff --check`. Do not run the full suite or Windows
 checks, or claim Gate 2. F1279 is accepted as Batch519's sole slice before
 implementation; no source implementation, builds, or tests have started.
