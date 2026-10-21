@@ -59739,3 +59739,13 @@ and Gate 2 remain Partial, and the Phase 2 exit gate remains Open. F1007's
 broad validation policy remains unresolved, F1103 remains deferred, Phase 0
 retains its 2026-09-18 Complete declaration, and F629's separate source-bound
 Windows x64 requalification remains outstanding.
+
+### Batch505 push receipt - 2026-10-21
+
+The normal push succeeded with receipt `bf8d8c42..270039b3`. The upstream
+`origin/Qt-Rewrite` tip is `270039b3d6c7eab304d06b4b182afab789d9687d`, equal
+to local `HEAD`. At push completion, the worktree was clean and the branch
+was up to date. Batch505 (F1265) is complete and pushed. Gate 1 and Gate 2
+remain Partial, and the Phase 2 exit gate remains Open. The separately
+reproduced Speaking Evaluation report-output test failure has no established
+pre-change baseline; the push receipt does not change that limitation.
