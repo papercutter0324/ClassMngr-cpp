@@ -59615,3 +59615,75 @@ The Batch503 shortfall remains historical and inactive; F1103 remains
 deferred. Gate 1 and Gate 2 remain Partial, the Phase 2 exit gate remains
 Open, and the Phase 0 declaration and separate F629 Windows requalification
 status remain as recorded above.
+
+### Superseded latest progress update - 2026-10-21 (F1261 complete, Batch502 pushed)
+
+The F1261 implementation and focused verification are recorded in the
+[F1261 closeout](03-Phase-2-Progress-Log.md#f1261-calendareventorder-complete-2026-10-21),
+and the Batch502 push is recorded in its [receipt](03-Phase-2-Progress-Log.md#batch502-push-receipt-2026-10-21).
+
+### F1264 Speaking Evaluation Korean-name Unicode whitespace parity complete - 2026-10-21
+
+F1264 is complete locally in Batch504. The implementation commit is
+`53a8747258c5ffd3087bae3941334957112e567f`; follow-up scope-correction commit
+`ef10c11de306acbcd5fcb3706050038e2f9b75b6` narrows the normalization behavior
+to Speaking Evaluation and adds a Roster regression. Across both commits, the
+changed paths are `src/next/application/speaking_evaluation_validation.h`,
+`tests/next_platform_application_services_speaking_evaluation_save_port_tests.cpp`,
+and `tests/next_application_roster_row_transfer_preparation_tests.cpp`.
+
+The first independent verification pass exposed shared/Roster behavior
+leaking into the change. The correction scoped the policy to Speaking
+Evaluation and added regression coverage that Roster behavior remains intact.
+After correction, the Executor incrementally built `ClassMngr` and both
+affected test targets; both focused CTests passed 2/2. The independent Tester
+also rebuilt the affected targets and reran both focused CTests; 2/2 passed.
+`git diff --check` passed. No clean build, Windows build, or full-suite
+verification is claimed.
+
+Batch504 (F1264) is complete locally and awaits push. Gate 1 receives focused
+app-less parity evidence; no Gate 2 baseline-parity claim is made. Gate 1 and
+Gate 2 remain Partial, the Phase 2 exit gate remains Open, Phase 0 retains its
+2026-09-18 Complete declaration, and F629's separate source-bound Windows x64
+requalification remains outstanding.
+
+### Batch505 discovery - 2026-10-21
+
+Batch505 has one actionable candidate, F1265, Manual Save eligibility policy
+in Application. A second independent review confirmed the exact duplicated
+eligibility rule in the Roster and Speaking Evaluation UI consumers. The evaluation-list rule
+already lives in Application and matches current behavior; the
+report-availability predicate already matches an Application projection.
+F1007's broad validation-policy issue remains unresolved, and F1103 remains
+deferred pending policy reconciliation. No other candidates are actionable.
+
+No other slices were found.
+
+### F1265 Manual Save eligibility policy in Application accepted before implementation - 2026-10-21
+
+Add a pure Qt-free Application predicate over the typed Roster
+`RosterSavePreparation` and Speaking Evaluation
+`SpeakingEvaluationValidationResult` issue contracts. Provide overloads or a
+shared internal algorithm as appropriate. Eligibility is true only when at
+least one Error has code `StudentNameKoreanTooShort` or
+`StudentNameKoreanTooLong`, and no other Error exists. Warnings are ignored and
+never qualify or disqualify. No errors or no qualifying Error yields false;
+a qualifying Error mixed with any other Error also yields false. A warning
+alone yields false; a warning with a qualifying Error yields true.
+
+Route both UI consumers through the typed Application policy and remove their
+duplicated UI string-code scans. Preserve confirmation and save flows,
+validation thresholds, issue codes/severities, Manual-mode behavior, and the
+Automatic-mode valid-form requirement. Add direct app-less tests for the
+short-only, long-only, both qualifying errors, no qualifying Error, other
+Error, mixed errors, warning alone, and warning plus qualifying Error cases
+for the typed contracts. Retain the existing Roster and Speaking Evaluation
+UI integration coverage.
+
+Build incrementally on macOS: `ClassMngr`, both Application test targets, and
+the affected Roster and Speaking Evaluation UI test targets; run only their
+focused CTests. No full-suite verification is planned or claimed. This slice
+adds Gate 1 app-less behavior evidence and makes no Gate 2 baseline-parity
+claim. F1007's broader validation-policy issue remains unresolved, and F1103
+remains deferred. F1265 is accepted before implementation; no implementation,
+build, or tests have started.

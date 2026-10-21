@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-21
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch504 contains only F1264, accepted for implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
+- Current note: Batch505 contains only F1265, accepted for implementation; Gate 1 and Gate 2 remain Partial and the Phase 2 exit gate remains Open; F629's source-bound Windows x64 requalification remains outstanding separately from Phase 0's 2026-09-18 Complete declaration.
 
 ### Latest Progress Update
 
-F1261 is complete in pushed Batch502 as `8e985ecdd21d561bc6088bac361ab20d8c85a6c3` (see [F1261 closeout](03-Phase-2-Progress-Log.md#f1261-calendareventorder-complete-2026-10-21)). The four focused CTests passed 4/4; after adding reverse non-convertibility and the 4,096th ordinal assertions, the Application and Platform tests passed again 2/2. No clean, Windows, or full-suite verification is claimed. Batch502 was pushed at `20385114` (see the [push receipt](03-Phase-2-Progress-Log.md#batch502-push-receipt-2026-10-21)); no slice batch is active, and Phase 2 exit-gate work is next. F629 and the Phase 0 and Phase 2 gates remain open.
+F1264 is complete locally in Batch504 with implementation commit `53a8747258c5ffd3087bae3941334957112e567f` and scope-correction commit `ef10c11de306acbcd5fcb3706050038e2f9b75b6` (see [F1264 closeout](03-Phase-2-Progress-Log.md#f1264-speaking-evaluation-korean-name-unicode-whitespace-parity-complete-2026-10-21)). The Executor and independent Tester each passed both focused CTests 2/2 after the correction; the first independent pass exposed shared/Roster leakage, which the correction narrowed and covered with a Roster regression. No clean, Windows, or full-suite verification is claimed. Batch504 awaits push; Batch505 is active with F1265 accepted. Gate 1 and Gate 2 remain Partial, the Phase 2 exit gate remains Open, and F629's separate Windows x64 requalification remains outstanding.
 
 ### Slice discovery batches
 
@@ -72,14 +72,13 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-Batch504 is active with one accepted slice (0 complete, 1 accepted, 0
+Batch505 is active with one accepted slice (0 complete, 1 accepted, 0
 discovered):
 
-- F1264 - Accepted for implementation: Speaking Evaluation Korean-name
-  Unicode whitespace parity. Next action: preserve leading Unicode-space
-  trimming and validate U+00A0/U+0085 interior-character parity within the
-  Speaking Evaluation app-less path, without changing shared normalization or
-  Roster.
+- F1265 - Accepted for implementation: Manual Save eligibility policy in
+  Application. Next action: centralize the typed Roster and Speaking Evaluation
+  issue-code rule in the Qt-free Application layer, then route both UI consumers
+  through it while preserving their existing confirmation and save behavior.
 
 Gate 1 and Gate 2 remain Partial, and the Phase 2 exit gate remains Open.
 F629's source-bound Windows x64 layout trace and requalification remain
