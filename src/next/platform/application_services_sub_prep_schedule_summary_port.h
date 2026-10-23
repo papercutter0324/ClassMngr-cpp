@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "domain/rules/schedule_value_parser.h"
 #include "next/application/sub_prep_meeting_time_grouping_policy.h"
@@ -33,7 +33,7 @@ namespace ClassMngr::Next::Platform
 {
 
 // Reads the requested Sub Prep class/day/mode scope through the active
-// repository session and returns only copied Application summary values.
+// workspace store and returns only copied Application summary values.
 class ApplicationServicesSubPrepScheduleSummaryPort final
     : public Application::SubPrepScheduleSummaryReadPort
 {
@@ -162,8 +162,8 @@ public:
                 return Application::SubPrepScheduleSummaryReadResult::success({});
             }
 
-            DatabaseSession* const session = m_services.databaseSession();
-            if (!session || !session->isOpen())
+            WorkspaceStore* const store = m_services.workspaceStore();
+            if (!store || !store->isOpen())
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
@@ -172,7 +172,7 @@ public:
             }
 
             ClassInfoRepository* const repository =
-                session->classInfoRepository();
+                store->classInfoRepository();
             if (!repository)
             {
                 return failure(
@@ -199,7 +199,7 @@ public:
                     );
             if (!records)
             {
-                if (!session->isOpen())
+                if (!store->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
@@ -263,8 +263,9 @@ public:
 
             std::unordered_map<int, NavigationMetadata>
                 regularNavigationByClassId;
-            const ::Result<QList<SubPrepClassSummaryRecord>> regularRecords =
-                repository->loadSubPrepClassSummaries(
+            const ::Result<
+                QList<SubPrepClassSummaryNavigationReadRecord>> regularRecords =
+                repository->loadSubPrepClassNavigationSummaries(
                     legacyClassIds,
                     allLegacyDays,
                     ScheduleType::Regular,
@@ -280,7 +281,7 @@ public:
                 regularNavigationByClassId.reserve(
                     static_cast<std::size_t>(regularRecords->size())
                     );
-                for (const SubPrepClassSummaryRecord& record
+                for (const SubPrepClassSummaryNavigationReadRecord& record
                      : regularRecords.value())
                 {
                     if (record.classId <= 0 || record.teacherId <= 0
@@ -317,8 +318,10 @@ public:
                 intensiveNavigationByClassId;
             if (needsIntensiveNavigation)
             {
-                const ::Result<QList<SubPrepClassSummaryRecord>> intensiveRecords =
-                    repository->loadSubPrepClassSummaries(
+                const ::Result<
+                    QList<SubPrepClassSummaryNavigationReadRecord>>
+                    intensiveRecords =
+                    repository->loadSubPrepClassNavigationSummaries(
                         legacyClassIds,
                         allLegacyDays,
                         ScheduleType::Intensive,
@@ -334,7 +337,7 @@ public:
                     intensiveNavigationByClassId.reserve(
                         static_cast<std::size_t>(intensiveRecords->size())
                         );
-                    for (const SubPrepClassSummaryRecord& record
+                    for (const SubPrepClassSummaryNavigationReadRecord& record
                          : intensiveRecords.value())
                     {
                         if (record.classId <= 0 || record.teacherId <= 0
@@ -518,8 +521,9 @@ private:
             Application::kClassSummaryUnknownNavigationOrder;
     };
 
+    template <typename SummaryRecord>
     [[nodiscard]] static NavigationMetadata navigationMetadataFor(
-        const SubPrepClassSummaryRecord& record,
+        const SummaryRecord& record,
         const Application::ScheduleViewMode mode
         )
     {
@@ -806,8 +810,9 @@ private:
         return labels.join(QStringLiteral("; "));
     }
 
+    template <typename SummaryRecord>
     [[nodiscard]] static QString navigationLabelFor(
-        const SubPrepClassSummaryRecord& record,
+        const SummaryRecord& record,
         const Application::ScheduleViewMode mode
         )
     {
@@ -827,8 +832,9 @@ private:
         return QStringLiteral("%1 • %2").arg(name, preferredSchedule);
     }
 
+    template <typename SummaryRecord>
     [[nodiscard]] static QString navigationTeacherLabelFor(
-        const SubPrepClassSummaryRecord& record
+        const SummaryRecord& record
         )
     {
         const QString english = record.teacherEn.trimmed();

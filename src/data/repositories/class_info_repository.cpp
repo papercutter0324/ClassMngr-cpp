@@ -5009,6 +5009,70 @@ ClassInfoRepository::loadSubPrepClassSummaries(
     const int maxTotalMeetings
     )
 {
+    return loadSubPrepClassSummariesImpl(
+        classIds,
+        selectedDays,
+        type,
+        maxMeetingsPerClass,
+        maxTotalMeetings,
+        true
+        );
+}
+
+Result<QList<SubPrepClassSummaryNavigationReadRecord>>
+ClassInfoRepository::loadSubPrepClassNavigationSummaries(
+    const QList<int>& classIds,
+    const QStringList& selectedDays,
+    const ScheduleType type,
+    const int maxMeetingsPerClass,
+    const int maxTotalMeetings
+    )
+{
+    Result<QList<SubPrepClassSummaryRecord>> summaries =
+        loadSubPrepClassSummariesImpl(
+            classIds,
+            selectedDays,
+            type,
+            maxMeetingsPerClass,
+            maxTotalMeetings,
+            false
+            );
+    if (!summaries)
+    {
+        return std::unexpected(summaries.error());
+    }
+
+    QList<SubPrepClassSummaryNavigationReadRecord> navigationRecords;
+    navigationRecords.reserve(summaries->size());
+    for (SubPrepClassSummaryRecord& summary : *summaries)
+    {
+        navigationRecords.append({
+            .classId = summary.classId,
+            .teacherId = summary.teacherId,
+            .classGrade = std::move(summary.classGrade),
+            .classLevel = std::move(summary.classLevel),
+            .teacherKr = std::move(summary.teacherKr),
+            .teacherEn = std::move(summary.teacherEn),
+            .teacherPreferredRomanization =
+                std::move(summary.teacherPreferredRomanization),
+            .teacherPreferredName = std::move(summary.teacherPreferredName),
+            .studentCount = std::nullopt,
+            .meetings = std::move(summary.meetings)
+        });
+    }
+    return navigationRecords;
+}
+
+Result<QList<SubPrepClassSummaryRecord>>
+ClassInfoRepository::loadSubPrepClassSummariesImpl(
+    const QList<int>& classIds,
+    const QStringList& selectedDays,
+    const ScheduleType type,
+    const int maxMeetingsPerClass,
+    const int maxTotalMeetings,
+    const bool includeStudentCounts
+    )
+{
     if (classIds.isEmpty() || selectedDays.isEmpty())
     {
         return QList<SubPrepClassSummaryRecord>{};
@@ -5288,6 +5352,11 @@ ClassInfoRepository::loadSubPrepClassSummaries(
     }
 
     if (summaries.isEmpty())
+    {
+        return summaries;
+    }
+
+    if (!includeStudentCounts)
     {
         return summaries;
     }

@@ -37,11 +37,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 1 and 2
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
-- Last updated: 2026-10-22
-- Current note: F1335 migrated the repeat-series suffix delete adapter to
-  `WorkspaceStore`, preserving the repository's single date-inclusive delete
-  and existing error mapping. F1336 Sub Prep visible schedule summaries is
-  current; scope discovery is required.
+- Last updated: 2026-10-23
+- Current note: F1336 Sub Prep visible schedule summaries is complete; F1337
+  Selected Sub Prep class details is current. Batch 1 remains active, and
+  discovered Batch 2 remains inactive until Batch 1 closes and is pushed.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).

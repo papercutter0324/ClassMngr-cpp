@@ -490,6 +490,22 @@ struct MyClassesClassSummaryBatchReadMetrics final
     int fallbackClassReadCount = 0;
 };
 
+// Navigation summaries contain only the fields used to build schedule
+// navigation metadata. Student counts are explicitly absent on this read path.
+struct SubPrepClassSummaryNavigationReadRecord final
+{
+    int classId = -1;
+    qint64 teacherId = -1;
+    QString classGrade;
+    QString classLevel;
+    QString teacherKr;
+    QString teacherEn;
+    QString teacherPreferredRomanization;
+    QString teacherPreferredName;
+    std::optional<qint64> studentCount;
+    QList<SubPrepScheduleMeetingRecord> meetings;
+};
+
 class ClassInfoRepository
 {
 public:
@@ -718,6 +734,14 @@ public:
             int maxMeetingsPerClass,
             int maxTotalMeetings
             );
+    [[nodiscard]] Result<QList<SubPrepClassSummaryNavigationReadRecord>>
+        loadSubPrepClassNavigationSummaries(
+            const QList<int>& classIds,
+            const QStringList& selectedDays,
+            ScheduleType type,
+            int maxMeetingsPerClass,
+            int maxTotalMeetings
+            );
 
     [[nodiscard]] Result<QList<ClassInfo>> loadClassInfosForScheduleScope(
         const QList<int>& classIds,
@@ -760,6 +784,16 @@ private:
         Legacy,
         Typed
     };
+
+    [[nodiscard]] Result<QList<SubPrepClassSummaryRecord>>
+        loadSubPrepClassSummariesImpl(
+            const QList<int>& classIds,
+            const QStringList& selectedDays,
+            ScheduleType type,
+            int maxMeetingsPerClass,
+            int maxTotalMeetings,
+            bool includeStudentCounts
+            );
 
     [[nodiscard]] Status writeClassNotes(
         int classId,

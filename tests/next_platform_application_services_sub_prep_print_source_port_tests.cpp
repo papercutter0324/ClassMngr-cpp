@@ -3,6 +3,7 @@
 #include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/roster.h"
@@ -264,6 +265,7 @@ class NextPlatformApplicationServicesSubPrepPrintSourcePortTests final
 private slots:
     void initTestCase();
     void projectsVisibleScheduleSummariesAndAggregatesRosterCounts();
+    void navigationSummaryOmitsRosterCountAndMatchesCountedSummary();
     void scheduleSummaryDoesNotAliasFractionalRosterRows();
     void wideAssignedTeacherIdRemainsInScheduleSummaries();
     void selectsModeAndOmitsUnusableOrOutOfScopeClasses();
@@ -456,6 +458,139 @@ projectsVisibleScheduleSummariesAndAggregatesRosterCounts()
     services.closeDatabase();
     QVERIFY(ownedCopy == result.value());
     QCOMPARE(ownedCopy.classes()[1].meetingText, std::string("MonWed 9am"));
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+navigationSummaryOmitsRosterCountAndMatchesCountedSummary()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("English Name"),
+        QStringLiteral("Preferred Name"),
+        QStringLiteral("navigation-summary")
+        );
+    QVERIFY(teacher > 0);
+    QVERIFY(updateTeacherDisplayNames(
+        services,
+        teacher,
+        QString::fromUtf8("\xEA\xB0\x80\xEB\x82\x98"),
+        QStringLiteral("English Display"),
+        QStringLiteral("Romanized Display"),
+        QStringLiteral("Preferred Display")
+        ));
+
+    const int selectedClass = createClass(
+        services,
+        QStringLiteral("Navigation summary class"),
+        teacher,
+        QStringLiteral("E5"),
+        QStringLiteral("Apollo"),
+        QStringLiteral("Class notes"),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")}
+        }
+        );
+    QVERIFY(selectedClass > 0);
+    QVERIFY(services.rosterService()->saveRoster(
+        selectedClass,
+        rosterWithTwoStudents()
+        ));
+
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    ClassInfoRepository* const repository = store->classInfoRepository();
+    QVERIFY(repository);
+
+    const QList<int> classIds{selectedClass};
+    const QStringList selectedDays{QStringLiteral("Monday")};
+    const auto counted = repository->loadSubPrepClassSummaries(
+        classIds,
+        selectedDays,
+        ScheduleType::Regular,
+        static_cast<int>(kSubPrepScheduleSummaryMaxMeetingsPerClass),
+        static_cast<int>(kSubPrepScheduleSummaryMaxMeetings)
+        );
+    QVERIFY(counted);
+    QCOMPARE(counted->size(), 1);
+    const SubPrepClassSummaryRecord& selectedSummary = counted->front();
+    QCOMPARE(selectedSummary.studentCount, qint64(2));
+
+    const auto navigation = repository->loadSubPrepClassNavigationSummaries(
+        classIds,
+        selectedDays,
+        ScheduleType::Regular,
+        static_cast<int>(kSubPrepScheduleSummaryMaxMeetingsPerClass),
+        static_cast<int>(kSubPrepScheduleSummaryMaxMeetings)
+        );
+    QVERIFY(navigation);
+    QCOMPARE(navigation->size(), 1);
+    const SubPrepClassSummaryNavigationReadRecord& navigationSummary =
+        navigation->front();
+
+    QCOMPARE(navigationSummary.classId, selectedSummary.classId);
+    QCOMPARE(navigationSummary.teacherId, selectedSummary.teacherId);
+    QCOMPARE(navigationSummary.teacherKr, selectedSummary.teacherKr);
+    QCOMPARE(navigationSummary.teacherEn, selectedSummary.teacherEn);
+    QCOMPARE(
+        navigationSummary.teacherPreferredRomanization,
+        selectedSummary.teacherPreferredRomanization
+        );
+    QCOMPARE(
+        navigationSummary.teacherPreferredName,
+        selectedSummary.teacherPreferredName
+        );
+    QCOMPARE(navigationSummary.classGrade, selectedSummary.classGrade);
+    QCOMPARE(navigationSummary.classLevel, selectedSummary.classLevel);
+    QCOMPARE(navigationSummary.teacherId, qint64(teacher));
+    QCOMPARE(
+        navigationSummary.teacherKr,
+        QString::fromUtf8("\xEA\xB0\x80\xEB\x82\x98")
+        );
+    QCOMPARE(navigationSummary.teacherEn, QStringLiteral("English Display"));
+    QCOMPARE(
+        navigationSummary.teacherPreferredRomanization,
+        QStringLiteral("Romanized Display")
+        );
+    QCOMPARE(
+        navigationSummary.teacherPreferredName,
+        QStringLiteral("Preferred Display")
+        );
+    QCOMPARE(navigationSummary.classGrade, QStringLiteral("E5"));
+    QCOMPARE(navigationSummary.classLevel, QStringLiteral("Apollo"));
+    QVERIFY(!navigationSummary.studentCount.has_value());
+
+    QCOMPARE(
+        navigationSummary.meetings.size(),
+        selectedSummary.meetings.size()
+        );
+    QCOMPARE(navigationSummary.meetings.size(), 1);
+    for (qsizetype index = 0;
+         index < selectedSummary.meetings.size();
+         ++index)
+    {
+        QCOMPARE(
+            navigationSummary.meetings.at(index).day,
+            selectedSummary.meetings.at(index).day
+            );
+        QCOMPARE(
+            navigationSummary.meetings.at(index).startTime,
+            selectedSummary.meetings.at(index).startTime
+            );
+    }
+    QCOMPARE(
+        navigationSummary.meetings.front().day,
+        QStringLiteral("Monday")
+        );
+    QCOMPARE(
+        navigationSummary.meetings.front().startTime,
+        QStringLiteral("9:00 AM")
+        );
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::

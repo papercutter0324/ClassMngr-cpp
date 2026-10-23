@@ -478,3 +478,23 @@ cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationS
 ctest --test-dir build/macos-clang-debug --output-on-failure -R 'ClassMngrNextPlatformApplicationServicesCalendarEventPortTests|ClassMngrCalendarEventRepositoryTests|ClassMngrNextApplicationCalendarEventTests'
 git diff --check
 ```
+
+## F1336 — Sub Prep visible schedule summaries — 2026-10-23
+
+Independent review accepted the change. The summary Platform port now uses
+`workspaceStore()` and `ClassInfoRepository`. Selected-scope reads retain
+roster counts; separate navigation records omit counts and avoid roster
+aggregation. Existing teacher projection, error mapping, and fallback behavior
+remain unchanged.
+Source review confirmed the count-free return precedes roster aggregate SQL;
+no SQL instrumentation was added.
+
+The incremental macOS Debug build command passed:
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngr -j 4
+```
+
+The focused Platform port, Application schedule-summary query, and Application
+class-summary CTests passed **3/3**. `git diff --check` passed. No full suite or
+cross-platform build was run.
