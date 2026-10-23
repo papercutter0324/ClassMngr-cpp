@@ -9,10 +9,10 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 2 is active and unpushed; F1339 Sub Prep roster-output source read is
-  complete, and F1340 Sub Prep calendar-interval read is current.
+- Batch 2 is active and unpushed; F1340 Sub Prep calendar-interval read is
+  complete, and F1341 is current: Calendar availability and event-by-ID reads.
 
-## Phase 3 — Batch 2 (active; current: F1340)
+## Phase 3 — Batch 2 (active; current: F1341)
 
 1. F1338 — Sub Prep information-sheet print-source read
 2. F1339 — Sub Prep roster-output source read

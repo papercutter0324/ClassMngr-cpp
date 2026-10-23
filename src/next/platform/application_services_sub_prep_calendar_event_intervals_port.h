@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "next/application/sub_prep_calendar_event_intervals_query.h"
 
@@ -17,7 +17,7 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Reads a narrow calendar interval snapshot through the active session's
+// Reads a narrow calendar interval snapshot through the active store's
 // calendar repository and copies only the three values required by Sub Prep.
 class ApplicationServicesSubPrepCalendarEventIntervalsPort final
     : public Application::SubPrepCalendarEventIntervalsReadPort
@@ -75,14 +75,14 @@ public:
 
         try
         {
-            DatabaseSession* session = nullptr;
+            WorkspaceStore* store = nullptr;
             CalendarEventRepository* repository = nullptr;
             if (!m_intervalRangeReader)
             {
-                session = m_services
-                    ? m_services->databaseSession()
+                store = m_services
+                    ? m_services->workspaceStore()
                     : nullptr;
-                if (!session || !session->isOpen())
+                if (!store || !store->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
@@ -90,7 +90,7 @@ public:
                         );
                 }
 
-                repository = session->calendarEventRepository();
+                repository = store->calendarEventRepository();
                 if (!repository)
                 {
                     return failure(
@@ -109,7 +109,7 @@ public:
                         );
             if (!loaded)
             {
-                if (session && !session->isOpen())
+                if (store && !store->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,

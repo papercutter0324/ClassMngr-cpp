@@ -337,6 +337,8 @@ private slots:
     void generatedWideIdentities_data();
     void generatedWideIdentities();
     void reportsCalendarEventPortAvailability();
+    void returnsEmptySubPrepIntervalsSuccessfully();
+    void rejectsInvalidDirectSubPrepIntervalRequestsWithTheExpectedError();
     void projectsOverlappingRangeAsOwnedTypedMetadata();
     void readsTwoCalendarYearsOfSubPrepIntervalsWithoutProjectionTruncation();
     void readsTwoYearSubPrepIntervalsThroughApplicationServices();
@@ -682,6 +684,88 @@ reportsCalendarEventPortAvailability()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
+returnsEmptySubPrepIntervalsSuccessfully()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    WorkspaceStore* store = services.workspaceStore();
+    QVERIFY(store);
+    CalendarEventRepository* repository = store->calendarEventRepository();
+    QVERIFY(repository);
+
+    ApplicationServicesSubPrepCalendarEventIntervalsPort port(services);
+    const auto result = SubPrepCalendarEventIntervalsQuery(port).execute({
+        CalendarEventDate("2026-07-01")
+    });
+
+    QVERIFY(result);
+    QVERIFY(result.value().empty());
+
+    CalendarEvent event = makeEvent(
+        QStringLiteral("Added between interval reads"),
+        QDate(2026, 7, 3),
+        QDate(2026, 7, 7)
+        );
+    event.eventType = QStringLiteral("Vacation");
+    QVERIFY(repository->saveCalendarEvent(event));
+
+    const auto refreshedResult = SubPrepCalendarEventIntervalsQuery(port).execute({
+        CalendarEventDate("2026-07-01")
+    });
+    QVERIFY(refreshedResult);
+    QCOMPARE(refreshedResult.value().size(), std::size_t(1));
+    QCOMPARE(
+        refreshedResult.value()[0].startDate.value(),
+        std::string("2026-07-03")
+        );
+    QCOMPARE(
+        refreshedResult.value()[0].endDate.value(),
+        std::string("2026-07-07")
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+rejectsInvalidDirectSubPrepIntervalRequestsWithTheExpectedError()
+{
+    bool readerCalled = false;
+    ApplicationServicesSubPrepCalendarEventIntervalsPort port(
+        [&](const QDate&, const QDate&)
+        {
+            readerCalled = true;
+            return ::Result<QList<CalendarEventDateInterval>>(
+                QList<CalendarEventDateInterval>{}
+                );
+        }
+        );
+
+    const auto invalidDate = port.loadIntervals({
+        CalendarEventDate("2026-02-30"),
+        CalendarEventDate("2026-12-31")
+    });
+    QVERIFY(!invalidDate);
+    QCOMPARE(invalidDate.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        invalidDate.error().message,
+        std::string(
+            "Sub Prep calendar interval range must contain valid ordered dates."
+            )
+        );
+    QVERIFY(!invalidDate.error().recoverable);
+    QVERIFY(!readerCalled);
+
+    const auto reversedRange = port.loadIntervals({
+        CalendarEventDate("2026-12-31"),
+        CalendarEventDate("2026-01-01")
+    });
+    QVERIFY(!reversedRange);
+    QCOMPARE(reversedRange.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(reversedRange.error().message, invalidDate.error().message);
+    QVERIFY(!reversedRange.error().recoverable);
+    QVERIFY(!readerCalled);
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
 readsTwoCalendarYearsOfSubPrepIntervalsWithoutProjectionTruncation()
 {
     constexpr int matchingEvents = 4'097;
@@ -694,11 +778,21 @@ readsTwoCalendarYearsOfSubPrepIntervalsWithoutProjectionTruncation()
             requestedEndDate = endDate;
 
             QList<CalendarEventDateInterval> intervals;
-            intervals.reserve(matchingEvents + 4);
+            intervals.reserve(matchingEvents + 6);
             intervals.append({
                 .eventType = QStringLiteral("Vacation"),
                 .startDate = QDate(2025, 12, 20),
                 .endDate = QDate(2026, 1, 7)
+            });
+            intervals.append({
+                .eventType = QStringLiteral(" Vacation "),
+                .startDate = QDate(2026, 6, 28),
+                .endDate = QDate(2026, 7, 3)
+            });
+            intervals.append({
+                .eventType = QStringLiteral("Other"),
+                .startDate = QDate(2026, 6, 29),
+                .endDate = QDate(2026, 7, 2)
             });
             for (int index = 0; index < matchingEvents; ++index)
             {
@@ -734,7 +828,7 @@ readsTwoCalendarYearsOfSubPrepIntervalsWithoutProjectionTruncation()
     QVERIFY(result);
     QCOMPARE(requestedStartDate, QDate(2026, 1, 1));
     QCOMPARE(requestedEndDate, QDate(2027, 12, 31));
-    QCOMPARE(result.value().size(), std::size_t(matchingEvents + 2));
+    QCOMPARE(result.value().size(), std::size_t(matchingEvents + 3));
     QVERIFY(std::any_of(
         result.value().cbegin(),
         result.value().cend(),
@@ -742,6 +836,16 @@ readsTwoCalendarYearsOfSubPrepIntervalsWithoutProjectionTruncation()
         {
             return interval.startDate.value() == "2025-12-20"
                 && interval.endDate.value() == "2026-01-07";
+        }
+        ));
+    QVERIFY(std::any_of(
+        result.value().cbegin(),
+        result.value().cend(),
+        [](const SubPrepCalendarEventInterval& interval)
+        {
+            return interval.eventType == CalendarEventType::Vacation
+                && interval.startDate.value() == "2026-06-28"
+                && interval.endDate.value() == "2026-07-03";
         }
         ));
     QVERIFY(std::any_of(
@@ -765,11 +869,9 @@ readsTwoYearSubPrepIntervalsThroughApplicationServices()
     QVERIFY(calendarService);
     QVERIFY(calendarService->isAvailable());
 
-    DataService* dataService = services.dataService();
-    QVERIFY(dataService);
-    DatabaseSession* session = dataService->databaseSession();
-    QVERIFY(session);
-    QSqlDatabase database = session->database();
+    WorkspaceStore* store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlDatabase database = store->database();
 
     struct StoredInterval final
     {
@@ -796,6 +898,12 @@ readsTwoYearSubPrepIntervalsThroughApplicationServices()
             QStringLiteral("Vacation"),
             QDate(2026, 7, 10),
             QDate(2026, 7, 12)
+        },
+        {
+            QStringLiteral("Unsupported overlapping type"),
+            QStringLiteral("Other"),
+            QDate(2026, 7, 15),
+            QDate(2026, 7, 16)
         },
         {
             QStringLiteral("Following year boundary"),
@@ -855,11 +963,16 @@ reportsUnavailableSubPrepIntervalSessionsStructurally()
     ApplicationServicesSubPrepCalendarEventIntervalsPort unopenedPort(
         unopenedServices
         );
-    verifyFailure(
+    const auto unopenedResult =
         SubPrepCalendarEventIntervalsQuery(unopenedPort).execute({
             CalendarEventDate("2026-07-01")
-        }),
-        ErrorCode::NotFound
+        });
+    verifyFailure(unopenedResult, ErrorCode::NotFound);
+    QCOMPARE(
+        unopenedResult.error().message,
+        std::string(
+            "The active database session for calendar intervals is unavailable."
+            )
         );
 
     ApplicationServices closedServices;
@@ -870,12 +983,12 @@ reportsUnavailableSubPrepIntervalSessionsStructurally()
     ApplicationServicesSubPrepCalendarEventIntervalsPort closedPort(
         closedServices
         );
-    verifyFailure(
+    const auto closedResult =
         SubPrepCalendarEventIntervalsQuery(closedPort).execute({
             CalendarEventDate("2026-07-01")
-        }),
-        ErrorCode::NotFound
-        );
+        });
+    verifyFailure(closedResult, ErrorCode::NotFound);
+    QCOMPARE(closedResult.error().message, unopenedResult.error().message);
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -884,18 +997,30 @@ reportsSubPrepIntervalRepositoryFailureStructurally()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
 
-    QSqlQuery query(services.databaseSession()->database());
+    WorkspaceStore* store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlQuery query(store->database());
     QVERIFY2(
         query.exec(QStringLiteral("DROP TABLE calendar_events")),
         qPrintable(query.lastError().text())
         );
 
+    const auto repositoryFailure = store->calendarEventRepository()
+        ->loadCalendarEventDateIntervalsInRange(
+            QDate(2026, 1, 1),
+            QDate(2027, 12, 31)
+            );
+    QVERIFY(!repositoryFailure);
+
     ApplicationServicesSubPrepCalendarEventIntervalsPort port(services);
-    verifyFailure(
-        SubPrepCalendarEventIntervalsQuery(port).execute({
+    const auto portFailure = SubPrepCalendarEventIntervalsQuery(port).execute({
             CalendarEventDate("2026-07-01")
-        }),
-        ErrorCode::Technical
+        });
+    verifyFailure(portFailure, ErrorCode::Technical);
+    QCOMPARE(
+        portFailure.error().message,
+        std::string("Sub Prep calendar intervals could not be loaded: ")
+            + repositoryFailure.error().toUtf8().toStdString()
         );
 }
 

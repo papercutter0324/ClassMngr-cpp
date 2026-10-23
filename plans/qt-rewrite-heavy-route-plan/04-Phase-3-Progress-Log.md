@@ -560,3 +560,27 @@ isolation with `g_rosterOutputSourceReadPort` set to a fake, confirming the
 case does not call the F1339 adapter. This does not establish whether the
 failure is pre-existing or a regression. No full suite or cross-platform
 build ran.
+
+## F1340 — Sub Prep calendar-interval read — 2026-10-23
+
+The port in
+`src/next/platform/application_services_sub_prep_calendar_event_intervals_port.h`
+now uses `workspaceStore()` to check availability and obtain the existing
+`CalendarEventRepository`. The injected `IntervalRangeReader`, date parsing
+and range checks, repository call, filtering, projection, owning result, and
+exact error messages/codes remain unchanged. The port has no SQL or
+`DatabaseSession` access. Direct fixtures in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp` now
+use `WorkspaceStore`; assertions were retained, with focused coverage added
+for empty/fresh reads, invalid and reversed request exact errors, trimmed and
+unsupported types, and repository-error mapping.
+
+Executor and Tester built `ClassMngr` in the existing macOS Debug tree; Tester
+also built `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests`, and
+`ClassMngrNextApplicationSubPrepVacationSelectionPolicyTests`. These three
+focused CTests passed **3/3**. `git diff --check` passed. Main source review
+confirmed `SubPrepPage::generateSubPrep` still logs a read failure and opens
+the dialog with an empty calendar selection. No page suite, full suite, or
+cross-platform build ran. The separate F1339 package-service PDF reference
+failure remains documented above and is not an F1340 result.

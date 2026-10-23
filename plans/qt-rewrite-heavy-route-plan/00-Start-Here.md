@@ -7,8 +7,9 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-23
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 2 remains active and unpushed; F1339 Sub Prep roster-output source
-  read is complete, and F1340 Sub Prep calendar-interval read is current.
+  Batch 2 remains active and unpushed; F1340 Sub Prep calendar-interval read
+  is complete, and F1341 is current: Calendar availability and event-by-ID
+  reads.
   The Batch 1 push receipt is recorded in the Phase 3 progress log.
   See
   the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
