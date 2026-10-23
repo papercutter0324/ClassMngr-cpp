@@ -7,9 +7,9 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-23
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  F1337 Selected Sub Prep class details is complete locally; Batch 1's 20
-  slices are complete and awaiting the user-requested push. Batch 2 discovery
-  is complete with 20 ordered candidates and remains inactive until that push.
+  Batch 2 is active; F1338 Sub Prep information-sheet print-source read is
+  complete locally, and F1339 Sub Prep roster-output source read is current.
+  The Batch 1 push receipt is recorded in the Phase 3 progress log.
   See
   the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md), and

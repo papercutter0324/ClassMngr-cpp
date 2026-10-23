@@ -2,7 +2,7 @@
 
 #include "core/application_services.h"
 #include "core/startup_profiler.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/teacher_repository.h"
@@ -117,8 +117,8 @@ public:
                 ? ScheduleType::Regular
                 : ScheduleType::Intensive;
 
-            DatabaseSession* const session = m_services.databaseSession();
-            if (!session || !session->isOpen())
+            WorkspaceStore* const store = m_services.workspaceStore();
+            if (!store || !store->isOpen())
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
@@ -127,11 +127,11 @@ public:
             }
 
             ClassInfoRepository* const classRepository =
-                session->classInfoRepository();
+                store->classInfoRepository();
             TeacherRepository* const teacherRepository =
-                session->teacherRepository();
+                store->teacherRepository();
             RosterRepository* const rosterRepository =
-                session->rosterRepository();
+                store->rosterRepository();
             if (!classRepository || !teacherRepository || !rosterRepository)
             {
                 return failure(
@@ -156,7 +156,7 @@ public:
                     );
             if (!loadedInfos)
             {
-                if (!session->isOpen())
+                if (!store->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
@@ -404,7 +404,7 @@ public:
                     if (loadedTeacherProfiles
                         && !loadedTeacherProfiles->has_value())
                     {
-                        if (!session->isOpen())
+                        if (!store->isOpen())
                         {
                             return failure(
                                 Domain::ErrorCode::NotFound,
@@ -434,7 +434,7 @@ public:
                         profileEntry->second->profile;
                     if (!loadedTeacher)
                     {
-                        if (!session->isOpen())
+                        if (!store->isOpen())
                         {
                             return failure(
                                 Domain::ErrorCode::NotFound,

@@ -1948,9 +1948,10 @@ batchesTeacherProfilesInFirstReferenceOrderWithoutUnassignedReads()
     QVERIFY(firstTeacherClass > 0);
     QVERIFY(secondTeacherRepeatedClass > 0);
 
-    TeacherRepository* const teacherRepository = services.databaseSession()
-        ? services.databaseSession()->teacherRepository()
-        : nullptr;
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    TeacherRepository* const teacherRepository = store->teacherRepository();
     QVERIFY(teacherRepository);
     ApplicationServicesSubPrepPrintSourcePort port(services);
 
@@ -2141,9 +2142,10 @@ printSourcePreservesWideTeacherIdAndCompleteProfile()
     QCOMPARE(teacher.projectionType, std::string("Zoom"));
     QCOMPARE(teacher.teacherNotes, std::string("Wide print teacher notes"));
 
-    TeacherRepository* const teacherRepository = services.databaseSession()
-        ? services.databaseSession()->teacherRepository()
-        : nullptr;
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    TeacherRepository* const teacherRepository = store->teacherRepository();
     QVERIFY(teacherRepository);
     const auto& metrics =
         teacherRepository->subPrepPrintSourceTeacherProfileBatchReadMetrics();
@@ -2275,9 +2277,10 @@ batchesRosterCountsAfterPrintScopeAndPreservesLegacyMetrics()
     QVERIFY(populatedClass > 0);
     QVERIFY(outOfScopeClass > 0);
 
-    RosterRepository* const rosterRepository = services.databaseSession()
-        ? services.databaseSession()->rosterRepository()
-        : nullptr;
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    RosterRepository* const rosterRepository = store->rosterRepository();
     QVERIFY(rosterRepository);
 
     Roster noNameColumnsRoster;
@@ -2428,9 +2431,10 @@ subPrepCountDoesNotAliasFractionalRosterColumns()
     QVERIFY(ordinaryClass > 0);
     QVERIFY(emptyRosterClass > 0);
 
-    RosterRepository* const rosterRepository = services.databaseSession()
-        ? services.databaseSession()->rosterRepository()
-        : nullptr;
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    RosterRepository* const rosterRepository = store->rosterRepository();
     QVERIFY(rosterRepository);
     Roster fractionalRoster;
     fractionalRoster.columns = {
@@ -2603,9 +2607,10 @@ subPrepCountDoesNotAliasFractionalRosterRows()
     QVERIFY(sparseClass > 0);
     QVERIFY(emptyRosterClass > 0);
 
-    RosterRepository* const rosterRepository = services.databaseSession()
-        ? services.databaseSession()->rosterRepository()
-        : nullptr;
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    RosterRepository* const rosterRepository = store->rosterRepository();
     QVERIFY(rosterRepository);
     Roster fractionalRoster;
     fractionalRoster.columns = {
@@ -2739,9 +2744,10 @@ batchesRosterCountsWideRowIndicesAndSaturatesMetrics()
         );
     QVERIFY(populatedClass > 0);
 
-    RosterRepository* const rosterRepository = services.databaseSession()
-        ? services.databaseSession()->rosterRepository()
-        : nullptr;
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    RosterRepository* const rosterRepository = store->rosterRepository();
     QVERIFY(rosterRepository);
     Roster roster;
     roster.columns = {QStringLiteral("English"), QStringLiteral("Korean")};
@@ -2880,9 +2886,10 @@ rosterBatchFailureFallsBackPerClassAndKeepsSuccessfulSibling()
         );
     QVERIFY(classWithData > 0);
     QVERIFY(classWithoutColumns > 0);
-    RosterRepository* const rosterRepository = services.databaseSession()
-        ? services.databaseSession()->rosterRepository()
-        : nullptr;
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    RosterRepository* const rosterRepository = store->rosterRepository();
     QVERIFY(rosterRepository);
     QVERIFY(rosterRepository->saveRoster(
         classWithData,
@@ -2995,9 +3002,10 @@ omittedPrintClassesDoNotReadRosters()
         qPrintable(missingTeacherAssignment.lastError().text())
         );
     QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = ON")));
-    RosterRepository* const rosterRepository = services.databaseSession()
-        ? services.databaseSession()->rosterRepository()
-        : nullptr;
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    RosterRepository* const rosterRepository = store->rosterRepository();
     QVERIFY(rosterRepository);
 
     ApplicationServicesSubPrepPrintSourcePort port(services);

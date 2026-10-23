@@ -509,3 +509,30 @@ The incremental standard macOS Debug build of `ClassMngr`, the Platform Sub
 Prep port suite, and the Application details-query suite passed. Their focused
 CTests passed **2/2**; `git diff --check` passed. No full suite or
 cross-platform build was run.
+
+## Batch 1 push receipt — 2026-10-23
+
+F1336 (`d0553b4915053e56376c0e761c157b4f0a6ff039`) and F1337
+(`9b7ad2b6a2190c0bf1f71c245ba4b6429e24b339`) were pushed to
+`origin/Qt-Rewrite` in range `b709aa76..9b7ad2b6`. Verification confirmed
+local HEAD and remote `refs/heads/Qt-Rewrite` both at
+`9b7ad2b6a2190c0bf1f71c245ba4b6429e24b339`; the worktree was clean.
+
+## F1338 — Sub Prep information-sheet print-source read — 2026-10-23
+
+The production print-source port now uses `ApplicationServices::workspaceStore()`
+for store availability and its ClassInfo, Teacher, and Roster repositories.
+Direct fixture repository handles use `WorkspaceStore`. Query selection,
+projection, ordering and limits; teacher batching; roster-count mapping and
+fallback; owning result; error mapping and text; and package lifecycle are
+unchanged. No raw SQL was added.
+
+The incremental build and focused CTests passed in the existing macOS Debug
+tree; an independent Tester confirmed the result. `git diff --check` passed.
+No page suite, full suite, or cross-platform build ran.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests ClassMngrNextApplicationSubPrepPrintSourceQueryTests ClassMngrSubPrepPrintSourceMapperTests
+```
+
+The three focused CTest suites passed **3/3**.

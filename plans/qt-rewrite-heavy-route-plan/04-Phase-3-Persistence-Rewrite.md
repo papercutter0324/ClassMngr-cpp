@@ -38,9 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-23
-- Current note: F1337 Selected Sub Prep class details is complete locally.
-  Batch 1's 20 slices are complete and awaiting the user-requested push;
-  discovered Batch 2 remains inactive until that push.
+- Current note: Batch 2 is active; F1338 Sub Prep information-sheet
+  print-source read is the most recently completed slice, and F1339 Sub Prep
+  roster-output source read is current. The Batch 1 push receipt is in the
+  progress log.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -57,6 +58,14 @@ Use this section only when a decision, acceptance result, verification
 finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
+
+## Latest Progress Update — F1338 — 2026-10-23
+
+Migrated the Sub Prep information-sheet print-source port and its direct
+fixtures to `WorkspaceStore`; query behavior and error handling remain
+unchanged. The incremental macOS Debug build and focused CTests passed, with
+independent review accepted. Detailed scope and limitations are in the
+[progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
 
