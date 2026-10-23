@@ -536,3 +536,27 @@ cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextPlatformAp
 ```
 
 The three focused CTest suites passed **3/3**.
+
+## F1339 — Sub Prep roster-output source read — 2026-10-23
+
+The production port in
+`src/next/platform/application_services_sub_prep_roster_output_source_port.h`
+now uses `workspaceStore()` and obtains/checks the same four repositories
+through `WorkspaceStore`. Its direct fixture/repository handles and SQL
+fixture database handles in
+`tests/next_platform_application_services_sub_prep_roster_output_source_port_tests.cpp`
+also use `WorkspaceStore`. Request inputs, repository calls, output/error
+behavior, ordering, bounds, and owning result are unchanged. The port has no
+`DatabaseSession`/`databaseSession()` reference or SQL. Package-service source
+and tests were untouched. Independent review accepted the scoped migration.
+
+Executor and Tester builds of `ClassMngr` succeeded in the existing macOS
+Debug tree; Tester also built all four F1339 test targets. The focused port,
+query, parity, and class-ID projection CTests passed. `git diff --check`
+passed. `ClassMngrSubPrepPackageServiceTests` had one failure:
+`largePackageGeneratesOutputReferenceWhenConfigured` reported a generated PDF
+page 1 text/reference mismatch (13 passed, 1 failed). Tester reproduced it in
+isolation with `g_rosterOutputSourceReadPort` set to a fake, confirming the
+case does not call the F1339 adapter. This does not establish whether the
+failure is pre-existing or a regression. No full suite or cross-platform
+build ran.

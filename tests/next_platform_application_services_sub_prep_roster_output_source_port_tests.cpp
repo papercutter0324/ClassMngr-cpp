@@ -1,7 +1,6 @@
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
-#include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/roster.h"
@@ -62,12 +61,12 @@ std::string utf8(const QString& value)
 
 bool executeSql(ApplicationServices& services, const QString& statement)
 {
-    DataService* dataService = services.dataService();
-    if (!dataService || !dataService->databaseSession())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store)
     {
         return false;
     }
-    QSqlQuery query(dataService->databaseSession()->database());
+    QSqlQuery query(store->database());
     return query.exec(statement);
 }
 
@@ -99,13 +98,13 @@ bool installMalformedRosterColumnsCursorFixture(
         return false;
     }
 
-    DatabaseSession* const session = services.databaseSession();
-    if (!session)
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store)
     {
         return false;
     }
 
-    QSqlQuery insert(session->database());
+    QSqlQuery insert(store->database());
     if (!insert.prepare(QStringLiteral(
             "INSERT INTO roster_columns_cursor_fixture "
             "(id, class_id, position, payload) VALUES (?, ?, ?, ?)"
@@ -165,13 +164,13 @@ bool installMalformedRosterDataCursorFixture(
         return false;
     }
 
-    DatabaseSession* const session = services.databaseSession();
-    if (!session)
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store)
     {
         return false;
     }
 
-    QSqlQuery insert(session->database());
+    QSqlQuery insert(store->database());
     if (!insert.prepare(QStringLiteral(
             "INSERT INTO roster_data_cursor_fixture "
             "(class_id, row_index, col_index, payload) VALUES (?, ?, ?, ?)"
@@ -210,13 +209,13 @@ bool insertRosterOutputColumns(
     const QStringList& columns
     )
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session)
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store)
     {
         return false;
     }
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     for (qsizetype index = 0; index < columns.size(); ++index)
     {
         if (!query.prepare(QStringLiteral(
@@ -246,13 +245,13 @@ bool insertRosterOutputCell(
     const QString& value
     )
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session)
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store)
     {
         return false;
     }
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     if (!query.prepare(QStringLiteral(
             "INSERT INTO roster_data (class_id, row_index, col_index, value) "
             "VALUES (?, ?, ?, ?)"
@@ -476,11 +475,11 @@ readsSelectedClassesModeAndRequestedRosterColumns()
         rosterWithColumns()
         ));
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    ClassRepository* const classRepository = session->classRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    ClassRepository* const classRepository = store->classRepository();
     ClassInfoRepository* const classInfoRepository =
-        session->classInfoRepository();
+        store->classInfoRepository();
     QVERIFY(classRepository);
     QVERIFY(classInfoRepository);
     const ClassRepository::ReadMetrics classReadMetricsBefore =
@@ -491,7 +490,7 @@ readsSelectedClassesModeAndRequestedRosterColumns()
         classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
     const ScheduleClassInfoReadMetrics scheduleReadMetricsBefore =
         classInfoRepository->scheduleClassInfoReadMetrics();
-    TeacherRepository* const teacherRepository = session->teacherRepository();
+    TeacherRepository* const teacherRepository = store->teacherRepository();
     QVERIFY(teacherRepository);
     const SubPrepRosterOutputTeacherProfileBatchReadMetrics
         teacherProfileMetricsBefore =
@@ -672,9 +671,9 @@ rejectsFractionalRosterRowIndexAsTechnical()
         );
     QVERIFY(classIdValue > 0);
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    const QSqlDatabase database = session->database();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    const QSqlDatabase database = store->database();
     QSqlQuery insertColumn(database);
     for (qsizetype index = 0; index < Roster::BaseColumns.size(); ++index)
     {
@@ -765,9 +764,9 @@ rejectsLateRosterColumnFetchFailureAsTechnical()
     QVERIFY(classIdValue > 0);
     QVERIFY(installMalformedRosterColumnsCursorFixture(services, classIdValue));
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QSqlQuery preflight(session->database());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlQuery preflight(store->database());
     preflight.setForwardOnly(true);
     QVERIFY(preflight.prepare(QStringLiteral(R"(
         SELECT substr(name, 1, 257) AS bounded_name,
@@ -832,9 +831,9 @@ rejectsLateRosterCellFetchFailureAsTechnical()
     QVERIFY(insertRosterOutputColumns(services, classIdValue, columns));
     QVERIFY(installMalformedRosterDataCursorFixture(services, classIdValue));
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QSqlQuery preflight(session->database());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlQuery preflight(store->database());
     preflight.setForwardOnly(true);
     QVERIFY(preflight.prepare(QStringLiteral(R"(
         SELECT row_index, col_index,
@@ -909,9 +908,9 @@ returnsEmptyRosterOutputWhenHeadersHaveNoStoredCells()
     columns.append(QStringLiteral("Unused"));
     QVERIFY(insertRosterOutputColumns(services, classIdValue, columns));
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QSqlQuery emptyRoster(session->database());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlQuery emptyRoster(store->database());
     QVERIFY(emptyRoster.prepare(QStringLiteral(
         "SELECT COUNT(*) FROM roster_data WHERE class_id=?"
         )));
@@ -996,9 +995,9 @@ projectsSparseIntegerRosterRowsWithBlankGaps()
         QStringLiteral("Unrequested extra value")
         ));
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QSqlQuery storedRow(session->database());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlQuery storedRow(store->database());
     QVERIFY(storedRow.prepare(QStringLiteral(
         "SELECT DISTINCT row_index, typeof(row_index) AS storage_type "
         "FROM roster_data WHERE class_id=? ORDER BY row_index"
@@ -1059,9 +1058,9 @@ preservesWideTeacherIdFromSqliteThroughRosterOutputSourcePort()
     QVERIFY(classIdValue > 0);
     QVERIFY(classIdValue < 1000);
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QSqlDatabase database = session->database();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlDatabase database = store->database();
 
     QSqlQuery insertTeacher(database);
     QVERIFY(insertTeacher.prepare(QStringLiteral(
@@ -1276,9 +1275,9 @@ batchesDistinctAssignedTeachersInFirstSeenOrder()
             ));
     }
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    TeacherRepository* const teacherRepository = session->teacherRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    TeacherRepository* const teacherRepository = store->teacherRepository();
     QVERIFY(teacherRepository);
     const SubPrepRosterOutputTeacherProfileBatchReadMetrics before =
         teacherRepository->subPrepRosterOutputTeacherProfileBatchReadMetrics();
@@ -1349,14 +1348,14 @@ includesUnassignedTeacherAndUsesSelectedMode()
     const std::vector<ClassId> ids{classId(intensiveClass)};
     const std::vector<SubPrepWeekday> days{SubPrepWeekday::Monday};
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    ClassRepository* const classRepository = session->classRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    ClassRepository* const classRepository = store->classRepository();
     ClassInfoRepository* const classInfoRepository =
-        session->classInfoRepository();
+        store->classInfoRepository();
     QVERIFY(classRepository);
     QVERIFY(classInfoRepository);
-    TeacherRepository* const teacherRepository = session->teacherRepository();
+    TeacherRepository* const teacherRepository = store->teacherRepository();
     QVERIFY(teacherRepository);
     const ClassRepository::ReadMetrics classMetricsBefore =
         classRepository->readMetrics();
@@ -1546,7 +1545,7 @@ staleTeacherFailureDoesNotReturnPartialInput()
     QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = ON")));
 
     TeacherRepository* const teacherRepository =
-        services.databaseSession()->teacherRepository();
+        services.workspaceStore()->teacherRepository();
     QVERIFY(teacherRepository);
     const SubPrepRosterOutputTeacherProfileBatchReadMetrics
         teacherProfileMetricsBefore =
@@ -1589,10 +1588,10 @@ activeSessionScheduleReadFailureIsTechnical()
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(executeSql(services, QStringLiteral("DROP TABLE class_times")));
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     ClassInfoRepository* const classInfoRepository =
-        session->classInfoRepository();
+        store->classInfoRepository();
     QVERIFY(classInfoRepository);
     const auto scheduleMetricsBefore =
         classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
@@ -1639,11 +1638,11 @@ classNameBatchFailureAbortsSource()
         rosterWithColumns()
         ));
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    ClassRepository* const classRepository = session->classRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    ClassRepository* const classRepository = store->classRepository();
     ClassInfoRepository* const classInfoRepository =
-        session->classInfoRepository();
+        store->classInfoRepository();
     QVERIFY(classRepository);
     QVERIFY(classInfoRepository);
     const ClassRepository::ReadMetrics classMetricsBefore =
@@ -1703,11 +1702,11 @@ classInfoBatchFailureAbortsSource()
         rosterWithColumns()
         ));
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    ClassRepository* const classRepository = session->classRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    ClassRepository* const classRepository = store->classRepository();
     ClassInfoRepository* const classInfoRepository =
-        session->classInfoRepository();
+        store->classInfoRepository();
     QVERIFY(classRepository);
     QVERIFY(classInfoRepository);
     const ClassRepository::ReadMetrics classMetricsBefore =
@@ -1759,10 +1758,10 @@ classInfoBatchRejectsMissingMetadataRecord()
     QVERIFY(createdClass);
     QVERIFY(*createdClass > 0);
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     ClassInfoRepository* const classInfoRepository =
-        session->classInfoRepository();
+        store->classInfoRepository();
     QVERIFY(classInfoRepository);
 
     ApplicationServicesSubPrepRosterOutputSourcePort port(services);
@@ -1876,10 +1875,10 @@ rejectsScheduleMeetingOverflow()
             ));
     }
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     ClassInfoRepository* const classInfoRepository =
-        session->classInfoRepository();
+        store->classInfoRepository();
     QVERIFY(classInfoRepository);
     const auto scheduleMetricsBefore =
         classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
@@ -1917,10 +1916,10 @@ rejectsAggregateMeetingOverflow()
 
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     ClassInfoRepository* const classInfoRepository =
-        session->classInfoRepository();
+        store->classInfoRepository();
     QVERIFY(classInfoRepository);
 
     constexpr int firstClassId = 700'000;
@@ -1955,7 +1954,7 @@ rejectsAggregateMeetingOverflow()
         }
     }
 
-    QSqlDatabase database = session->database();
+    QSqlDatabase database = store->database();
     QVERIFY(database.transaction());
     QVERIFY(executeSql(
         services,
@@ -2026,8 +2025,8 @@ rejectsAggregateRosterRowOverflowAcrossClasses()
 
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
 
     constexpr int firstClassId = 800'000;
     std::vector<ClassId> selectedClassIds;
@@ -2072,7 +2071,7 @@ rejectsAggregateRosterRowOverflowAcrossClasses()
             );
     }
 
-    QSqlDatabase database = session->database();
+    QSqlDatabase database = store->database();
     QVERIFY(database.transaction());
     QVERIFY(executeSql(
         services,
@@ -2137,8 +2136,8 @@ rejectsAggregateRosterCellOverflowAcrossClasses()
 
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
 
     constexpr int firstClassId = 900'000;
     std::vector<ClassId> selectedClassIds;
@@ -2196,7 +2195,7 @@ rejectsAggregateRosterCellOverflowAcrossClasses()
             );
     }
 
-    QSqlDatabase database = session->database();
+    QSqlDatabase database = store->database();
     QVERIFY(database.transaction());
     QVERIFY(executeSql(
         services,
@@ -2275,9 +2274,9 @@ rejectsAggregateRosterTextOverflowBeforeReturningInput()
             ).arg(classIdValue)
         ));
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QSqlQuery rosterData(session->database());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlQuery rosterData(store->database());
     QVERIFY(rosterData.prepare(QStringLiteral(
         "INSERT INTO roster_data (class_id, row_index, col_index, value) "
         "VALUES (?, ?, 0, ?)"
@@ -2291,7 +2290,7 @@ rejectsAggregateRosterTextOverflowBeforeReturningInput()
                 / kSubPrepRosterOutputMaxCellBytes
             + 1
             );
-    QSqlDatabase database = session->database();
+    QSqlDatabase database = store->database();
     QVERIFY(database.transaction());
     for (int row = 0; row < rowCount; ++row)
     {

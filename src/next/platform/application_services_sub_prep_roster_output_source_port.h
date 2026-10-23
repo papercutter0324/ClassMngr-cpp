@@ -2,7 +2,7 @@
 
 #include "core/application_services.h"
 #include "core/startup_profiler.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/roster_repository.h"
@@ -29,9 +29,9 @@ namespace ClassMngr::Next::Platform
 {
 
 // Reads only the selected classes and schedule facts from the active
-// ApplicationServices session. RosterRepository projects requested columns
-// under caller-supplied remaining budgets before this adapter copies them into
-// the owning Application values.
+// ApplicationServices workspace store. RosterRepository projects requested
+// columns under caller-supplied remaining budgets before this adapter copies
+// them into the owning Application values.
 class ApplicationServicesSubPrepRosterOutputSourcePort final
     : public Application::SubPrepRosterOutputSourceReadPort
 {
@@ -157,8 +157,8 @@ public:
                 rosterColumns.append(*decoded);
             }
 
-            DatabaseSession* const session = m_services.databaseSession();
-            if (!session || !session->isOpen())
+            WorkspaceStore* const store = m_services.workspaceStore();
+            if (!store || !store->isOpen())
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
@@ -167,13 +167,13 @@ public:
             }
 
             ClassInfoRepository* const classInfoRepository =
-                session->classInfoRepository();
+                store->classInfoRepository();
             ClassRepository* const classRepository =
-                session->classRepository();
+                store->classRepository();
             TeacherRepository* const teacherRepository =
-                session->teacherRepository();
+                store->teacherRepository();
             RosterRepository* const rosterRepository =
-                session->rosterRepository();
+                store->rosterRepository();
             if (!classInfoRepository || !classRepository
                 || !teacherRepository || !rosterRepository)
             {
@@ -202,7 +202,7 @@ public:
                     );
             if (!loadedSchedule)
             {
-                if (!session->isOpen())
+                if (!store->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
@@ -284,7 +284,7 @@ public:
                     classRepository->getClassesByIds(scopedClassIds);
                 if (!loadedClasses)
                 {
-                    if (!session->isOpen())
+                    if (!store->isOpen())
                     {
                         return failure(
                             Domain::ErrorCode::NotFound,
@@ -323,7 +323,7 @@ public:
                         );
                 if (!loadedClassInfoRecords)
                 {
-                    if (!session->isOpen())
+                    if (!store->isOpen())
                     {
                         return failure(
                             Domain::ErrorCode::NotFound,
@@ -403,7 +403,7 @@ public:
                         );
                 if (!loadedProfiles)
                 {
-                    if (!session->isOpen())
+                    if (!store->isOpen())
                     {
                         return failure(
                             Domain::ErrorCode::NotFound,
@@ -578,7 +578,7 @@ public:
                             loadedTeacherProfiles[teacherProfileIndex].profile;
                         if (!loadedTeacher)
                         {
-                            if (!session->isOpen())
+                            if (!store->isOpen())
                             {
                                 return failure(
                                     Domain::ErrorCode::NotFound,
@@ -690,7 +690,7 @@ public:
                         );
                 if (!loadedRoster)
                 {
-                    if (!session->isOpen())
+                    if (!store->isOpen())
                     {
                         return failure(
                             Domain::ErrorCode::NotFound,
