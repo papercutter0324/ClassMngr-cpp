@@ -38,9 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-23
-- Current note: F1336 Sub Prep visible schedule summaries is complete; F1337
-  Selected Sub Prep class details is current. Batch 1 remains active, and
-  discovered Batch 2 remains inactive until Batch 1 closes and is pushed.
+- Current note: F1337 Selected Sub Prep class details is complete locally.
+  Batch 1's 20 slices are complete and awaiting the user-requested push;
+  discovered Batch 2 remains inactive until that push.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).

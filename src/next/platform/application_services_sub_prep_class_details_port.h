@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/application/sub_prep_class_details_query.h"
 #include "next/domain/teacher_display_name.h"
@@ -20,9 +20,9 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Reads one selected Sub Prep class detail record through the active session
-// and copies its bounded fields into the application-owned value. The adapter
-// retains only ApplicationServices and does not expose legacy record objects.
+// Reads one selected Sub Prep class detail record through the active workspace
+// store and copies its bounded fields into the application-owned value. The
+// adapter retains only ApplicationServices and does not expose legacy records.
 class ApplicationServicesSubPrepClassDetailsPort final
     : public Application::SubPrepClassDetailsReadPort
 {
@@ -70,8 +70,8 @@ public:
 
         try
         {
-            DatabaseSession* const session = m_services.databaseSession();
-            if (!session || !session->isOpen())
+            WorkspaceStore* const store = m_services.workspaceStore();
+            if (!store || !store->isOpen())
             {
                 return failure(
                     Domain::ErrorCode::Technical,
@@ -80,7 +80,7 @@ public:
             }
 
             ClassInfoRepository* const repository =
-                session->classInfoRepository();
+                store->classInfoRepository();
             if (!repository)
             {
                 return failure(
@@ -93,7 +93,7 @@ public:
                 repository->loadSubPrepClassDetailsDetailed(*legacyClassId);
             if (!source)
             {
-                if (!session->isOpen())
+                if (!store->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::Technical,

@@ -9,12 +9,12 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 1 is active: F1318–F1336 are complete; F1337 Selected Sub Prep class
-  details is current.
+- Batch 1's 20 slices, including F1337 Selected Sub Prep class details, are
+  complete locally and awaiting the user-requested push.
 - Batch 2 discovery is complete: the 20 ordered candidates below remain
-  inactive until Batch 1 closes and is pushed.
+  inactive until that push.
 
-## Phase 3 — Batch 1 (active)
+## Phase 3 — Batch 1 (locally complete; push pending)
 
 1. F1318 — Close schema-v6 behavior baseline (complete; commit `991c046e`)
 2. F1319 — WorkspaceStore lifecycle seam (complete; commit `f78a0b50`)
@@ -35,7 +35,7 @@ record useful implementation and verification evidence in its progress log.
 17. F1334 — Calendar Import batch save (complete; commit `abc8a278`)
 18. F1335 — Repeat-series suffix delete (complete)
 19. F1336 — Sub Prep visible schedule summaries (complete)
-20. F1337 — Selected Sub Prep class details (current)
+20. F1337 — Selected Sub Prep class details (complete)
 
 ## Phase 3 — Batch 2 (discovered; inactive)
 

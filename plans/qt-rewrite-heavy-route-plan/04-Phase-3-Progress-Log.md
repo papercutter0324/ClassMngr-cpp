@@ -498,3 +498,14 @@ cmake --build build/macos-clang-debug --target ClassMngr -j 4
 The focused Platform port, Application schedule-summary query, and Application
 class-summary CTests passed **3/3**. `git diff --check` passed. No full suite or
 cross-platform build was run.
+
+## F1337 — Selected Sub Prep class details — 2026-10-23
+
+The Platform details adapter now uses `workspaceStore()` and
+`ClassInfoRepository`; selected-details behavior and mappings are unchanged.
+Direct details fixtures now access the repository through `WorkspaceStore`.
+
+The incremental standard macOS Debug build of `ClassMngr`, the Platform Sub
+Prep port suite, and the Application details-query suite passed. Their focused
+CTests passed **2/2**; `git diff --check` passed. No full suite or
+cross-platform build was run.

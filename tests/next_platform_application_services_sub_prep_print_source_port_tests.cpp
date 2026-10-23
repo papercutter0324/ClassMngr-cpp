@@ -1385,10 +1385,10 @@ selectedClassDetailsPreservesWideTeacherId()
     const auto expectedTeacherId = TeacherId::fromString("2147483648");
     QVERIFY(expectedTeacherId.has_value());
 
-    DataService* const dataService = services.dataService();
-    QVERIFY(dataService);
-    QVERIFY(dataService->databaseSession());
-    const QSqlDatabase database = dataService->databaseSession()->database();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    const QSqlDatabase database = store->database();
 
     QSqlQuery insertTeacher(database);
     QVERIFY(insertTeacher.prepare(QStringLiteral(R"(
@@ -1528,9 +1528,12 @@ selectedClassDetailsUnavailableSessionsAreTechnical()
     QCOMPARE(result.error().code, ErrorCode::Technical);
 
     QVERIFY(closedServices.openDatabase(path));
-    const auto persisted = closedServices.databaseSession()
-        ->classInfoRepository()
-        ->loadSubPrepClassDetails(selectedClass);
+    WorkspaceStore* const store = closedServices.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    ClassInfoRepository* const repository = store->classInfoRepository();
+    QVERIFY(repository);
+    const auto persisted = repository->loadSubPrepClassDetails(selectedClass);
     QVERIFY(persisted);
     QCOMPARE(persisted->classNotes, QStringLiteral("Persisted class notes"));
 }
@@ -1540,6 +1543,9 @@ selectedClassDetailsSqlRepositoryFailureIsTechnical()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     const int selectedClass = createClass(
         services,
         QStringLiteral("Unreadable selected details"),
@@ -1554,16 +1560,17 @@ selectedClassDetailsSqlRepositoryFailureIsTechnical()
     QVERIFY(selectedClass > 0);
 
     QVERIFY(executeSql(services, QStringLiteral("DROP TABLE class_info")));
-    QSqlQuery confirmAbsent(services.databaseSession()->database());
+    QSqlQuery confirmAbsent(store->database());
     QVERIFY(confirmAbsent.exec(QStringLiteral(
         "SELECT name FROM sqlite_master "
         "WHERE type = 'table' AND name = 'class_info'"
         )));
     QVERIFY(!confirmAbsent.next());
 
-    const auto repositoryFailure = services.databaseSession()
-        ->classInfoRepository()
-        ->loadSubPrepClassDetailsDetailed(selectedClass);
+    ClassInfoRepository* const repository = store->classInfoRepository();
+    QVERIFY(repository);
+    const auto repositoryFailure =
+        repository->loadSubPrepClassDetailsDetailed(selectedClass);
     QVERIFY(!repositoryFailure);
     QCOMPARE(
         repositoryFailure.error().kind,
@@ -1584,6 +1591,9 @@ selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
 
     const int unassignedClass = createClass(
         services,
@@ -1617,10 +1627,7 @@ selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields()
     QVERIFY(classWithoutInfo);
 
     QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = OFF")));
-    DataService* dataService = services.dataService();
-    QVERIFY(dataService);
-    QVERIFY(dataService->databaseSession());
-    QSqlQuery orphanAssignment(dataService->databaseSession()->database());
+    QSqlQuery orphanAssignment(store->database());
     QVERIFY(orphanAssignment.prepare(QStringLiteral(
         "UPDATE class_info SET teacher_id = ? WHERE class_id = ?"
         )));
@@ -1651,9 +1658,10 @@ selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields()
     QCOMPARE(noInfo.value().classNotes, std::string());
     QVERIFY(!noInfo.value().teacherId.has_value());
 
-    const auto missingClassOutcome = services.databaseSession()
-        ->classInfoRepository()
-        ->loadSubPrepClassDetailsDetailed(999999);
+    ClassInfoRepository* const repository = store->classInfoRepository();
+    QVERIFY(repository);
+    const auto missingClassOutcome =
+        repository->loadSubPrepClassDetailsDetailed(999999);
     QVERIFY(missingClassOutcome);
     QVERIFY(missingClassOutcome->parentMissing);
 
@@ -1674,10 +1682,7 @@ selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields()
         QStringLiteral("oversized")
         );
     QVERIFY(oversizedTeacher > 0);
-    DataService* oversizedDataService = services.dataService();
-    QVERIFY(oversizedDataService);
-    QVERIFY(oversizedDataService->databaseSession());
-    QSqlQuery oversizedRoom(oversizedDataService->databaseSession()->database());
+    QSqlQuery oversizedRoom(store->database());
     QVERIFY(oversizedRoom.prepare(QStringLiteral(
         "UPDATE teachers SET room_number = ? WHERE id = ?"
         )));
