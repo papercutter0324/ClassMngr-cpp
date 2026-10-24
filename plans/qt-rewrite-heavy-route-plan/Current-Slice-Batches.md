@@ -9,20 +9,16 @@ predecessor. Keep implementation evidence in the phase progress log.
 - Phase 3 is In Progress on the mandatory Heavy route; its exit gate remains
   open.
 
-## Batch 17 — Implementation and docs complete; push pending
+## Batch 18 — Active at F1441
 
-Batch 16 is pushed to `origin/Qt-Rewrite` at verified tip
-`49ec21e783441fef616fae67cc633e9c7c6de578`. F1439 is committed at
-`070593edffd3293e6f3bbd2fc3cc241c2e468564`; F1440 is committed at
-`2d06dc1954ba5dcd5fae69532bc569696662bc76`. Both slices are accepted and
-documented. Push remains pending; evidence and limitations are in the [Phase
-3 progress log](04-Phase-3-Progress-Log.md).
+Batch 17 is pushed to `origin/Qt-Rewrite` at verified local/remote tip
+`11db3892c3533f7dd7d270be30905bd3d730fdd2`. F1441 is the active candidate.
+Its Online Backup API mechanism review is ongoing; no implementation or
+review outcome is recorded.
 
-## Batch 18 — Discovered; waiting for Batch 17 push
+## Batch 19 — Discovery complete; no new candidate accepted
 
 Discovery and bounded review completed under
-`PHASE3-BATCH18-DISCOVERY-20261024`. F1441, consistent SQLite snapshots for
-SaveAs/export from WAL-mode profiles, is the sole accepted candidate. It waits
-for the Batch 17 push. Begin Batch 19 discovery when F1441 starts; scope and
-constraints are in the [Phase 3 progress
-log](04-Phase-3-Progress-Log.md).
+`PHASE3-BATCH19-DISCOVERY-20261024`. No candidate was accepted beyond active
+F1441. The F1418 `void saveDatabase()` disposition is retained; see the
+[Phase 3 progress log](04-Phase-3-Progress-Log.md) for rationale.

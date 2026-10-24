@@ -38,11 +38,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 16 is pushed to `origin/Qt-Rewrite` at
-  `49ec21e783441fef616fae67cc633e9c7c6de578`. F1439 and F1440 are committed;
-  Batch 17 implementation and docs are complete with push pending. Batch 18
-  review accepted F1441, waiting for the Batch 17 push; begin Batch 19
-  discovery when F1441 starts. The Phase 3 exit gate remains open. The
+- Current note: Batch 17 is pushed to `origin/Qt-Rewrite` at verified
+  local/remote tip `11db3892c3533f7dd7d270be30905bd3d730fdd2`. Batch 18 is
+  active at F1441. Batch 19 discovery and bounded review found no accepted
+  candidate beyond F1441; F1441's Online Backup API mechanism review is
+  ongoing, with no outcome or implementation recorded. The Phase 3 exit gate
+  remains open. The
   [DataService migration
   map](../../docs/qt-rewrite/data-service-migration-map.md) records F1420's
   deliverable, including that `DataService::save()` has no ordinary production
@@ -63,14 +64,14 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — Batch 17 / Batch 18 — 2026-10-24
+## Latest Progress Update — F1441 / Batch 19 — 2026-10-24
 
-Batch 16 is pushed to `origin/Qt-Rewrite` at
-`49ec21e783441fef616fae67cc633e9c7c6de578`. F1439 and F1440 are committed;
-Batch 17 implementation and docs are complete with push pending. Batch 18
-review accepted F1441, waiting for the Batch 17 push; begin Batch 19 discovery
-when F1441 starts. F1432's parity limitation remains recorded in the progress
-log. Phase 3 remains In Progress with its exit gate open. See the
+Batch 17 is pushed to `origin/Qt-Rewrite` at verified local/remote tip
+`11db3892c3533f7dd7d270be30905bd3d730fdd2`. Batch 18 is active at F1441.
+Batch 19 discovery and bounded review found no accepted candidate beyond
+F1441. The Online Backup API mechanism review is ongoing; no outcome or
+implementation is recorded. F1432's parity limitation remains recorded in the
+progress log. Phase 3 remains In Progress with its exit gate open. See the
 [progress log](04-Phase-3-Progress-Log.md) and [current batch
 tracker](Current-Slice-Batches.md).
 

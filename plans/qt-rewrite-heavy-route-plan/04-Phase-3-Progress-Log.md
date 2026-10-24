@@ -2983,10 +2983,11 @@ complete and pushed to `origin/Qt-Rewrite` at verified tip
 `af1024d336241e0f2fe7db5e3af90785d604d50e`. F1438 is accepted and committed
 at `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`; Batch 16 slice work is
 complete and pushed to `origin/Qt-Rewrite` at verified tip
-`49ec21e783441fef616fae67cc633e9c7c6de578`. F1439 and F1440 are committed;
-Batch 17 implementation and docs are complete with push pending. Batch 18
-review accepted F1441, waiting for the Batch 17 push; begin Batch 19 discovery
-when F1441 starts. Phase 3 remains In Progress and its exit gate remains open.
+`49ec21e783441fef616fae67cc633e9c7c6de578`. Batch 17 is pushed to
+`origin/Qt-Rewrite` at verified local/remote tip
+`11db3892c3533f7dd7d270be30905bd3d730fdd2`. Batch 18 is active at F1441.
+Batch 19 discovery and bounded review found no accepted candidate beyond
+F1441. Phase 3 remains In Progress and its exit gate remains open.
 
 ## F1429 — Schedule Import row-count metrics — 2026-10-24
 
@@ -3397,11 +3398,27 @@ outputs and the source. No tests were run for this discovery. The reviewer
 found no in-repository WAL setup, which lowers likelihood but does not
 invalidate WAL-mode profiles.
 
-Lifetime dispositions: signature-image memory limits/decode caps remain in
+At Batch 18 review completion, F1441 awaited the Batch 17 push; Batch 19
+discovery was due to start when F1441 started. Lifetime dispositions:
+signature-image memory limits/decode caps remain in
 Phase 7A/7B because numeric caps change supported inputs and feature behavior.
 Teacher Import remains in Phase 7C and is not folded into F1439. No ZIP
 expansion cap is added without an owning requirement in the memory plan. The
 updater response cap belongs to Core Updater, outside Phase 3. F1439 remains
-limited to the shared workbook-reader paths described above. F1441 waits for
-the Batch 17 push; begin Batch 19 discovery when F1441 starts. Phase 3 remains
+limited to the shared workbook-reader paths described above. Phase 3 remains
 In Progress with its exit gate open.
+
+## Batch 19 discovery outcome — 2026-10-24
+
+Two independent scans and bounded review completed under
+`PHASE3-BATCH19-DISCOVERY-20261024`. No candidate was accepted beyond active
+F1441. The discovery review retained the existing `void saveDatabase()` API
+from F1418: v2 repositories own and check their local transactions, no
+production caller retains a transaction for FileController Save, and treating
+Qt's “no active transaction” result as a failure would reject normal Save
+behavior. Revisit this API only if production transaction ownership changes.
+
+F1441 remains active. Its mechanism review is checking a standalone,
+consistent SQLite Online Backup API dependency; no review outcome or
+implementation result is recorded yet. Phase 3 remains In Progress with its
+exit gate open.

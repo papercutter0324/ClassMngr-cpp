@@ -13,11 +13,15 @@ pushed and verified at `071560c8774f5c16c2b2502a5f561507e1f5f86f`. F1437 is
 committed at `91355e2c0483c550eca93bb9b0b20bc0a7c55547`. Batch 15 is pushed
 and verified at `af1024d336241e0f2fe7db5e3af90785d604d50e`. F1438 is committed
 at `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`. Batch 16 is pushed and verified
-at `49ec21e783441fef616fae67cc633e9c7c6de578`. Batch 17 is active at F1439,
-with F1440 next. Batch18 discovery and bounded review completed under
-`PHASE3-BATCH18-DISCOVERY-20261024`; F1441 is the sole accepted candidate and
-waits for the Batch17 push. Begin Batch19 discovery when F1441 starts. Phase 3
-remains In Progress and its exit gate is open.
+at `49ec21e783441fef616fae67cc633e9c7c6de578`. Batch 17 (F1439/F1440 and its
+closeout docs) is pushed and verified at `11db3892c3533f7dd7d270be30905bd3d730fdd2`.
+Batch 18 is active with F1441, the consistent SaveAs/export snapshot for
+committed WAL data. Batch 19 discovery and bounded review completed under
+`PHASE3-BATCH19-DISCOVERY-20261024` with no accepted candidate beyond F1441.
+The review retained F1418's void Save compatibility because v2 writes commit
+in checked local transactions and the ordinary FileController Save path has no
+pending transaction; propagating Qt's no-transaction result would falsely fail
+Save. Phase 3 remains In Progress and its exit gate is open.
 
 ## Goal
 
@@ -66,7 +70,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (F1440 active; Batch 18 discovery complete)
+### Current checkpoint - 2026-10-24 (F1441 active; Batch 19 discovery complete)
 
 Phase 3 remains In Progress on the mandatory Heavy route, with its exit gate
 open. Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
@@ -202,14 +206,33 @@ the shared workbook reader and live Schedule/Calendar inputs to seekable
 file-backed archives while preserving worksheet parsing and temporary-file
 cleanup. Independent focused verification passed all four affected CTests and
 `git diff --check`; no full suite or heap/RSS measurement was performed. F1440
-is active for target-specific discovery and user-directed recovery of normal
-profile-replacement backups after process interruption; candidates and partial
-targets must remain preserved, with no automatic restore, delete, or overwrite.
+is committed as `2d06dc1954ba5dcd5fae69532bc569696662bc76` for target-specific
+discovery and user-directed recovery of normal profile-replacement backups
+after process interruption. Its exact UUID matcher handles newline filenames;
+the explicit copy flow preserves candidates and targets and never auto-restores,
+deletes, or overwrites. Independent focused verification passed
+`ClassMngrFileControllerWorkspaceLifecycleTests` 1/1 and `git diff --check`.
+Batch 17 closeout docs are committed at `11db3892c3533f7dd7d270be30905bd3d730fdd2`
+and the push to `origin/Qt-Rewrite` was verified at that tip. F1441 is active
+as Batch 18's sole candidate. Batch19 discovery began at F1441 start under
+`PHASE3-BATCH19-DISCOVERY-20261024`; two independent scans and bounded review
+completed with no accepted candidate beyond F1441. Review confirmed F1418's
+void Save compatibility: v2 repositories own and check local transactions, no
+production v2 caller retains a transaction for the FileController Save action,
+and surfacing Qt's no-active-transaction result would falsely fail ordinary
+Save. Revisit only if a production caller begins retaining a transaction.
 Batch18 discovery and review
 completed under `PHASE3-BATCH18-DISCOVERY-20261024`; its sole candidate, F1441,
 is a consistent SQLite snapshot for Save As/export that includes committed WAL
-data while preserving destination atomicity and session/path invariants. F1441
-waits for the Batch17 push; begin Batch19 discovery when it starts. Signature
+data while preserving destination atomicity and session/path invariants. Batch19
+discovery began when F1441 started under
+`PHASE3-BATCH19-DISCOVERY-20261024`; two independent scans and bounded review
+completed with no accepted candidate beyond F1441. Review confirmed F1418's
+void Save compatibility: v2 repositories own and check local transactions,
+and the ordinary FileController Save action has no retained transaction to
+commit; propagating Qt's no-active-transaction result would falsely report
+failure. Revisit only if a production v2 caller begins retaining a transaction.
+Signature
 image memory work remains with Phase7A/7B, Teacher Import with Phase7C; no ZIP
 expansion cap will be added without an owning requirement. The Phase 0 `.db`
 matrix wording update

@@ -8516,7 +8516,7 @@ ordinary production caller. Phase 3 remains In Progress, its exit gate remains
 open, and its backlog is not exhausted. The current tracker has no active
 batch or candidate.
 
-## 2026-10-24 — Phase 3 F1439 active; Batch 18 discovery started
+## 2026-10-24 — Phase 3 Batch 17 pushed; F1441 active; Batch 19 discovery complete
 
 F1419–F1427 are accepted and pushed to `origin/Qt-Rewrite` at
 `7b4eaaf809ecdc17e4e14fae555b157c361c378d`; the remote tip matched and the
@@ -8631,11 +8631,24 @@ interrupted profile replacement) are accepted in order. F1439 is committed as
 passed all four affected CTests and `git diff --check`; the tests cover stored
 and deflated seekable inputs, Schedule/Calendar parity, cancellation, failed
 seeks, and Calendar staging cleanup. No full suite or heap/RSS measurement was
-performed. F1440 is active. Batch18 discovery and bounded review completed under
+performed. F1440 is committed as
+`2d06dc1954ba5dcd5fae69532bc569696662bc76`. Independent focused verification
+passed `ClassMngrFileControllerWorkspaceLifecycleTests` 1/1 and
+`git diff --check`, including exact UUID matching with a newline target name.
+Batch17 closeout docs are committed and pushed at verified tip
+`11db3892c3533f7dd7d270be30905bd3d730fdd2`. F1441 is active. Batch18 discovery
+and bounded review completed under
 `PHASE3-BATCH18-DISCOVERY-20261024`; F1441 is the sole accepted candidate, a
 consistent SQLite snapshot for Save As/export that includes committed WAL data
-while preserving destination atomicity and session invariants. F1441 waits for
-the Batch17 push; begin Batch19 discovery when it starts. Signature-image
+while preserving destination atomicity and session invariants. Batch19
+discovery started with F1441 under
+`PHASE3-BATCH19-DISCOVERY-20261024`. Two independent scans and bounded review
+completed with no accepted candidate beyond F1441. The review confirmed F1418's
+void Save compatibility: v2 repositories own and check their local write
+transactions, no production caller retains one for FileController Save, and
+propagating Qt's no-active-transaction result would falsely report ordinary
+Save as failed. Revisit only if a production v2 path begins retaining a
+transaction. Signature-image
 memory work remains with Phase7A/7B, Teacher Import with Phase7C, and no ZIP
 expansion cap will be set without an owning requirement. Review
 deferred unsupported ZIP-method coverage as a
