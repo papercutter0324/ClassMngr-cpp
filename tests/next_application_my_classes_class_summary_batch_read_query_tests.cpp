@@ -153,7 +153,7 @@ forwardsMaximumClassIdAndPreservesEntryOrder()
 {
     RecordingPort port;
     port.result = MyClassesClassSummaryBatchReadResult::success({
-        entry("2147483647", teacherId("2147483647")),
+        entry("2147483647", teacherId("2147483648")),
         entry("7")
     });
     const MyClassesClassSummaryBatchReadQuery query(port);
@@ -173,7 +173,7 @@ forwardsMaximumClassIdAndPreservesEntryOrder()
     QVERIFY(result.value()[0].summary.value().teacherId.has_value());
     QCOMPARE(
         result.value()[0].summary.value().teacherId->value(),
-        std::string("2147483647")
+        std::string("2147483648")
         );
 }
 
@@ -222,7 +222,7 @@ void NextApplicationMyClassesClassSummaryBatchReadQueryTests::
 rejectsInvalidReturnedTeacherIds()
 {
     const std::vector<std::string> invalidTeacherIds{
-        "0", "042", "42x", "-1", "2147483648"
+        "0", "042", "42x", "-1", "9223372036854775808"
     };
     for (const std::string& rawId : invalidTeacherIds)
     {

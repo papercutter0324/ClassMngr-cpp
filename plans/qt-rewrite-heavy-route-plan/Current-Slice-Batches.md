@@ -9,40 +9,11 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 3 is active: F1358–F1376 are accepted; F1377 — My Classes
-  class-summary batch read is current.
-- Batch 4 discovery is complete and queued as the next batch.
+- Batch 3 (F1358–F1377) is complete.
+- Batch 4 discovery is complete; Batch 4 is active with F1378 — My Classes
+  teacher-profile batch read current.
 
-## Phase 3 — Batch 3 (active; F1377 current)
-
-Batch 3 discovery began when F1356 started (candidate 19 of 20 in Batch 2) and
-is complete.
-Two complementary scans found more than 20 possible items; this is the
-priority-ordered shortlist for Batch 3, not an exhaustive inventory.
-
-1. F1358 — Testing Class details read (accepted)
-2. F1359 — Testing Class details update (accepted)
-3. F1360 — Testing Class delete (accepted)
-4. F1361 — Class Co-Teacher page read (accepted)
-5. F1362 — Class Co-Teacher teacher choices read (accepted)
-6. F1363 — Class Co-Teacher assignment save (accepted)
-7. F1364 — Class Notes page read (accepted)
-8. F1365 — Class Notes save (accepted; commit `5833f388eaefdf38d1be9812a72267b8f2169d20`)
-9. F1366 — Selected-class grade read (accepted; candidate 9 of 20)
-10. F1367 — Selected-class subtitle read (accepted; commit `b1da9e3545ce5d7f0816b3d3880e801f264d0702`)
-11. F1368 — Selected-class subtitle batch read (accepted; candidate 11 of 20)
-12. F1369 — Classes navigation read (accepted; candidate 12 of 20)
-13. F1370 — Class teacher assignments read (accepted; candidate 13 of 20)
-14. F1371 — Regular Class creation and post-create by-ID lookup (accepted;
-    one create flow; both ports)
-15. F1372 — Class delete (accepted)
-16. F1373 — Class Transfer preview read (accepted)
-17. F1374 — Class Transfer export source read (accepted)
-18. F1375 — Class Transfer apply (accepted)
-19. F1376 — My Classes class-information batch read (accepted)
-20. F1377 — My Classes class-summary batch read (current)
-
-## Phase 3 — Batch 4 (discovered; next)
+## Phase 3 — Batch 4 (active; F1378 current)
 
 Batch 4 discovery began when F1376 started (candidate 19 of 20 in Batch 3) and
 is complete. Two complementary scans found more than 20 possible active
@@ -51,7 +22,7 @@ ports, including F1376 and F1377, leaving 39 further port candidates. The
 feature-flow scan cross-checked user-facing workflows. This is the
 priority-ordered shortlist, not an exhaustive inventory.
 
-1. F1378 — My Classes teacher-profile batch read
+1. F1378 — My Classes teacher-profile batch read (current)
 2. F1379 — My Classes student-count batch read
 3. F1380 — My Classes teacher-display-name batch read
 4. F1381 — Roster snapshot read

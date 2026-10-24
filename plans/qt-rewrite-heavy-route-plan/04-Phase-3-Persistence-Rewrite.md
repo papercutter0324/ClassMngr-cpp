@@ -38,24 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 2 (F1338–F1357) is complete and pushed to
-  `origin/Qt-Rewrite` at `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`. Batch 3
-  discovery is complete and Batch 3 is active. F1358 (Testing Class details
-  read), F1359 (Testing Class details update), F1360 (Testing Class delete),
-  F1361 (Class Co-Teacher page read), F1362 (Class Co-Teacher teacher
-  choices read), F1363 (Class Co-Teacher assignment save), F1364 (Class
-  Notes page read), F1365 (Class Notes save), F1366 (Selected-class grade
-  read), F1367 (Selected-class subtitle read), F1368 (Selected-class
-  subtitle batch read), F1369 (Classes navigation read), and F1370 (Class
-  teacher assignments read) are accepted; F1371 (Regular Class creation and
-  post-create by-ID lookup) and F1372 (Class delete) are accepted; F1373
-  (Class Transfer preview read) and F1374 (Class Transfer export source read)
-  are accepted; F1375 (Class Transfer apply) is accepted; F1376 (My Classes
-  class-information batch read) is accepted; F1377 (My Classes class-summary
-  batch read) is current. Batch 4 discovery is complete and queued next.
-  F1358–F1376 implementation and verification evidence, plus the Batch 2 push
-  receipt, are in the
-  [progress log](04-Phase-3-Progress-Log.md).
+- Current note: Batch 3 (F1358–F1377) is complete. Batch 4 discovery is
+  complete and Batch 4 is active, with F1378 (My Classes teacher-profile batch
+  read) current. F1376/F1377 implementation and verification evidence, the
+  Batch 2 push receipt, and earlier UI limitations and attribution notes are
+  in the [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -73,16 +60,15 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1376 — 2026-10-24
+## Latest Progress Update — F1377 — 2026-10-24
 
-F1376 is accepted; F1377 is current. The My Classes class-information read
-port and six scoped slots in its shared Platform test file use `WorkspaceStore`;
-the unchanged F1377 summary slots remain. IDs, ordering, repository batch
-reads/fallbacks/errors, UI call order, and repository method are unchanged; no
-transaction was added. Four selected CTests passed. No full suite or
-cross-platform build ran. The [progress log](04-Phase-3-Progress-Log.md)
-records F1376 evidence and retains earlier UI limitations, attribution and
-coverage notes, baseline failure, and Batch 2 push receipt.
+F1377 is accepted; Batch 3 is complete, and F1378 is current in active Batch 4.
+The class-summary platform port and its two shared Platform test slots now use
+`WorkspaceStore`; query validation/order, repository batch/fallback behavior,
+and UI call order are unchanged. A query-test correction preserves validation
+coverage for wide canonical teacher IDs. Three selected CTests passed. No full
+suite or cross-platform build ran. The [progress log](04-Phase-3-Progress-Log.md)
+records F1377 evidence and retains Batch 4 discovery and overflow notes.
 
 ## Objective
 

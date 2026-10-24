@@ -1514,3 +1514,28 @@ Four selected targets built, and four serial CTests passed (4/4):
 executes the two unchanged F1377 summary slots. `git diff --check` passed.
 No full suite or cross-platform build ran. F1376 is accepted; F1377 (My
 Classes class-summary batch read) is current.
+
+Commit: `795952df3ab4e0ae2ddc39c14cd7fcabb1cb5396`.
+
+## F1377 — My Classes class-summary batch read (Batch 3 candidate 20 of 20) — 2026-10-24
+
+The only production change moved
+`src/next/platform/application_services_my_classes_class_summary_batch_read_port.h`
+to `WorkspaceStore`. The two F1377 summary slots in the shared Platform test
+file, `tests/next_platform_application_services_my_classes_class_information_batch_read_port_tests.cpp`,
+now use `WorkspaceStore`, removing the `DatabaseSession` include. F1376 slots
+remain unchanged. Repository batch/fallback behavior, query validation and
+ordering, and UI call order are unchanged; no transaction was added.
+
+The query test now treats `2147483648` as a valid canonical positive 64-bit
+teacher ID: `rejectsInvalidReturnedTeacherIds` uses `9223372036854775808` as
+its overflow case, and the success case verifies preservation of
+`2147483648`. This preserves validation coverage without changing production
+behavior.
+
+Built the summary-query, shared Platform-port, and My Classes page-summary
+parity targets. Three serial CTests passed (3/3). The shared Platform CTest
+also exercises the two F1377 summary slots. `git diff --check` passed. No full
+suite or cross-platform build ran. F1377 is accepted; Batch 3 is complete;
+F1378 (My Classes teacher-profile batch read) is current in Batch 4. Batch 3
+has not been pushed.

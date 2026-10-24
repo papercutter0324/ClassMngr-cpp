@@ -1,6 +1,5 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
@@ -808,11 +807,11 @@ classSummaryBatchDistinguishesMissingParentsAndKeepsPresentSchedules()
 
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("Summary batch teacher");
-    const auto createdTeacher = services.databaseSession()
+    const auto createdTeacher = services.workspaceStore()
         ->teacherRepository()->createTeacher(teacher);
     QVERIFY(createdTeacher);
 
-    ClassInfoRepository* const repository = services.databaseSession()
+    ClassInfoRepository* const repository = services.workspaceStore()
         ->classInfoRepository();
     QVERIFY(repository);
 
@@ -878,7 +877,7 @@ classSummaryBatchDistinguishesMissingParentsAndKeepsPresentSchedules()
     };
     QVERIFY(repository->saveClassInfo(noInformationInfo));
 
-    QSqlQuery deleteOptionalMetadata(services.databaseSession()->database());
+    QSqlQuery deleteOptionalMetadata(services.workspaceStore()->database());
     deleteOptionalMetadata.prepare(QStringLiteral(
         "DELETE FROM class_info WHERE class_id=?"));
     deleteOptionalMetadata.addBindValue(noInformationId);
@@ -887,19 +886,19 @@ classSummaryBatchDistinguishesMissingParentsAndKeepsPresentSchedules()
     QCOMPARE(deleteOptionalMetadata.numRowsAffected(), 1);
     deleteOptionalMetadata.finish();
 
-    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QSqlQuery disableForeignKeys(services.workspaceStore()->database());
     QVERIFY2(disableForeignKeys.exec(QStringLiteral(
                  "PRAGMA foreign_keys = OFF")),
              qPrintable(disableForeignKeys.lastError().text()));
     disableForeignKeys.finish();
-    QSqlQuery deleteParent(services.databaseSession()->database());
+    QSqlQuery deleteParent(services.workspaceStore()->database());
     deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id=?"));
     deleteParent.addBindValue(deletedId);
     QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
     QCOMPARE(deleteParent.numRowsAffected(), 1);
     deleteParent.finish();
 
-    QSqlQuery verifyOrphanChildren(services.databaseSession()->database());
+    QSqlQuery verifyOrphanChildren(services.workspaceStore()->database());
     verifyOrphanChildren.prepare(QStringLiteral(
         "SELECT "
         "(SELECT COUNT(*) FROM class_info WHERE class_id=?), "
@@ -917,7 +916,7 @@ classSummaryBatchDistinguishesMissingParentsAndKeepsPresentSchedules()
     QVERIFY(!verifyOrphanChildren.next());
     verifyOrphanChildren.finish();
 
-    QSqlQuery enableForeignKeys(services.databaseSession()->database());
+    QSqlQuery enableForeignKeys(services.workspaceStore()->database());
     QVERIFY2(enableForeignKeys.exec(QStringLiteral(
                  "PRAGMA foreign_keys = ON")),
              qPrintable(enableForeignKeys.lastError().text()));
@@ -1006,7 +1005,7 @@ classSummaryScheduleFailureUsesParentAwareFallback()
     QVERIFY(firstId > 0);
     QVERIFY(secondId > 0);
 
-    ClassInfoRepository* const repository = services.databaseSession()
+    ClassInfoRepository* const repository = services.workspaceStore()
         ->classInfoRepository();
     QVERIFY(repository);
     int intensiveStartHour = 9;
@@ -1046,25 +1045,25 @@ classSummaryScheduleFailureUsesParentAwareFallback()
         QVERIFY(repository->saveClassInfo(info));
     }
 
-    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QSqlQuery disableForeignKeys(services.workspaceStore()->database());
     QVERIFY2(disableForeignKeys.exec(QStringLiteral(
                  "PRAGMA foreign_keys = OFF")),
              qPrintable(disableForeignKeys.lastError().text()));
     disableForeignKeys.finish();
-    QSqlQuery deleteParent(services.databaseSession()->database());
+    QSqlQuery deleteParent(services.workspaceStore()->database());
     deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id=?"));
     deleteParent.addBindValue(deletedId);
     QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
     QCOMPARE(deleteParent.numRowsAffected(), 1);
     deleteParent.finish();
-    QSqlQuery enableForeignKeys(services.databaseSession()->database());
+    QSqlQuery enableForeignKeys(services.workspaceStore()->database());
     QVERIFY2(enableForeignKeys.exec(QStringLiteral(
                  "PRAGMA foreign_keys = ON")),
              qPrintable(enableForeignKeys.lastError().text()));
     enableForeignKeys.finish();
 
     QSqlQuery dropIntensiveSchedules(
-        services.databaseSession()->database());
+        services.workspaceStore()->database());
     QVERIFY2(dropIntensiveSchedules.exec(QStringLiteral(
                  "DROP TABLE class_intensive_times")),
              qPrintable(dropIntensiveSchedules.lastError().text()));

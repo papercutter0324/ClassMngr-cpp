@@ -7,30 +7,16 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 2 (F1338–F1357) is complete and pushed to `origin/Qt-Rewrite` at
-  `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`. Batch 3 discovery is complete
-  and Batch 3 is active: F1358 (Testing Class details read), F1359 (Testing
-  Class details update), F1360 (Testing Class delete), F1361 (Class
-  Co-Teacher page read), F1362 (Class Co-Teacher teacher choices read),
-  F1363 (Class Co-Teacher assignment save), F1364 (Class Notes page read),
-  F1365 (Class Notes save), F1366 (Selected-class grade read), F1367
-  (Selected-class subtitle read), F1368 (Selected-class subtitle batch read),
-  F1369 (Classes navigation read) and F1370 (Class teacher assignments read)
-  are accepted; F1371 (Regular Class creation and post-create by-ID lookup) is
-  accepted; F1372 (Class delete) is accepted; F1373 (Class Transfer preview
-  read) and F1374 (Class Transfer export source read) are accepted; F1375
-  (Class Transfer apply) is accepted; F1376 (My Classes class-information
-  batch read) is accepted; F1377 (My Classes class-summary batch read) is
-  current. Batch 4 discovery is complete and queued next. Evidence for
-  F1358–F1376 and the Batch 2 push receipt are in the Phase 3 progress log.
-  Earlier UI limitations,
-  baseline failures, attribution notes, and coverage notes remain recorded
-  there.
-  See
-  the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
-  [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
+  Batch 2 (F1338–F1357) remains complete and pushed to `origin/Qt-Rewrite` at
+  `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`. Batch 3 (F1358–F1377) is
+  complete. Batch 4 discovery is complete and Batch 4 is active, with F1378
+  (My Classes teacher-profile batch read) current. Slice evidence, the Batch 2
+  push receipt, and earlier UI limitations, baseline failures, attribution,
+  and coverage notes remain in the Phase 3 progress log. The [Phase 3
+  plan](04-Phase-3-Persistence-Rewrite.md), [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
-  tracker](Current-Slice-Batches.md). Phase 2 closure evidence
+  tracker](Current-Slice-Batches.md) contain the current detail.
+  Phase 2 closure evidence
   and limitations remain in its [plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
   and [progress log](03-Phase-2-Progress-Log.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
