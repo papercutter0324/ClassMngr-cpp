@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/native_english_teacher_repository.h"
 #include "domain/models/native_english_teacher.h"
 #include "next/application/native_english_teacher_directory_save.h"
@@ -46,7 +46,7 @@ bool seedDirectory(ApplicationServices& services)
         existingTeacher(QStringLiteral("Update Target")),
         existingTeacher(QStringLiteral("Delete Target"))
     };
-    return static_cast<bool>(services.databaseSession()
+    return static_cast<bool>(services.workspaceStore()
         ->nativeEnglishTeacherRepository()->saveDirectory(teachers, {}));
 }
 
@@ -103,7 +103,7 @@ mapsTypedRowsAndDeletesThroughTheActiveSessionRepository()
     QVERIFY(services.openDatabase(databasePath(directory)));
     QVERIFY(seedDirectory(services));
 
-    const auto before = services.databaseSession()
+    const auto before = services.workspaceStore()
         ->nativeEnglishTeacherRepository()->getAll();
     QVERIFY(before);
     QCOMPARE(before->size(), 2);
@@ -137,14 +137,14 @@ mapsTypedRowsAndDeletesThroughTheActiveSessionRepository()
 
     QVERIFY(result);
     QCOMPARE(scalarInt(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         QStringLiteral("SELECT COUNT(*) FROM native_english_teachers")), 3);
     QCOMPARE(scalarInt(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         QStringLiteral("SELECT COUNT(*) FROM native_english_teachers WHERE id=%1")
             .arg(deleteId)), 0);
 
-    QSqlQuery rows(services.databaseSession()->database());
+    QSqlQuery rows(services.workspaceStore()->database());
     QVERIFY2(rows.exec(QStringLiteral(
         "SELECT id, name, position, phone_number, email, birthday, nationality "
         "FROM native_english_teachers WHERE name IN "
@@ -208,7 +208,7 @@ repositoryFailureRollsBackTheEntireSaveTransaction()
     QVERIFY(services.openDatabase(databasePath(directory)));
     QVERIFY(seedDirectory(services));
 
-    const auto before = services.databaseSession()
+    const auto before = services.workspaceStore()
         ->nativeEnglishTeacherRepository()->getAll();
     QVERIFY(before);
     int updateId = -1;
@@ -227,7 +227,7 @@ repositoryFailureRollsBackTheEntireSaveTransaction()
     QVERIFY(updateId > 0);
     QVERIFY(deleteId > 0);
 
-    QSqlQuery trigger(services.databaseSession()->database());
+    QSqlQuery trigger(services.workspaceStore()->database());
     QVERIFY2(trigger.exec(QStringLiteral(
         "CREATE TRIGGER reject_directory_insert "
         "BEFORE INSERT ON native_english_teachers "
@@ -249,7 +249,7 @@ repositoryFailureRollsBackTheEntireSaveTransaction()
     QVERIFY(!result.error().recoverable);
     QVERIFY(!result.error().message.empty());
 
-    const auto after = services.databaseSession()
+    const auto after = services.workspaceStore()
         ->nativeEnglishTeacherRepository()->getAll();
     QVERIFY(after);
     QCOMPARE(after->size(), 2);
@@ -287,7 +287,7 @@ rollsBackCompanionWritesWhenUpdateFails()
     QVERIFY(services.openDatabase(databasePath(directory)));
     QVERIFY(seedDirectory(services));
     NativeEnglishTeacherRepository* const repository =
-        services.databaseSession()->nativeEnglishTeacherRepository();
+        services.workspaceStore()->nativeEnglishTeacherRepository();
     const auto original = repository->getAll();
     QVERIFY(original);
     int updateId = -1;
@@ -306,7 +306,7 @@ rollsBackCompanionWritesWhenUpdateFails()
     QVERIFY(updateId > 0);
     QVERIFY(deleteId > 0);
 
-    QSqlQuery setup(services.databaseSession()->database());
+    QSqlQuery setup(services.workspaceStore()->database());
     if (staleUpdate)
     {
         setup.prepare(QStringLiteral(

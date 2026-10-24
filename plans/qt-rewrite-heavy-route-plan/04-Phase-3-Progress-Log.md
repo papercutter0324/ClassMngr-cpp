@@ -1796,3 +1796,24 @@ CTests passed (4/4): #348
 `ClassMngrStaffDirectoryNativeEnglishReadParityTests`. `git diff --check`
 passed. No full suite or cross-platform build ran. F1387 is accepted; F1388
 (Native English teacher directory save) is current.
+
+Commit: `5afc11adf83d50a9904352b6197d66c29568ac3d`.
+
+## F1388 — Native English teacher directory save (Batch 4 candidate 11 of 20) — 2026-10-24
+
+The production Native English teacher directory save port,
+`src/next/platform/application_services_native_english_teacher_directory_save_port.h`,
+uses `WorkspaceStore` for `hasActiveSession()` and the save operation. Direct
+persistence accesses in its dedicated Platform fixture,
+`tests/next_platform_application_services_native_english_teacher_directory_save_port_tests.cpp`,
+also use `WorkspaceStore`. Insert/update/delete, stale-row, unavailable-store,
+and transactional-rollback assertions are unchanged. The pinned page fixture
+was left untouched.
+
+Built the Native English save use-case, Platform-port, and StaffDirectory
+save-parity targets. Three selected serial CTests passed (3/3): #351
+`ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests`, #419
+`ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests`,
+and #129 `ClassMngrStaffDirectoryNativeEnglishSaveParityTests`.
+`git diff --check` passed. No full suite or cross-platform build ran. F1388
+is accepted; F1389 (Korean teacher birthday directory read) is current.

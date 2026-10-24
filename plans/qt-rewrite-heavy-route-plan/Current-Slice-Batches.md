@@ -14,10 +14,10 @@ record useful implementation and verification evidence in its progress log.
   was later pushed as
   `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before Batch 4
   began.
-- Batch 4 discovery is complete; Batch 4 is active with F1388 — Native
-  English teacher directory save current.
+- Batch 4 discovery is complete; Batch 4 is active with F1389 — Korean
+  teacher birthday directory read current.
 
-## Phase 3 — Batch 4 (active; F1388 current)
+## Phase 3 — Batch 4 (active; F1389 current)
 
 Batch 4 discovery began when F1376 started (candidate 19 of 20 in Batch 3) and
 is complete. Two complementary scans found more than 20 possible active
@@ -36,8 +36,8 @@ priority-ordered shortlist, not an exhaustive inventory.
 8. F1385 — GS Team directory read (accepted)
 9. F1386 — GS Team directory save (accepted)
 10. F1387 — Native English teacher directory read (accepted)
-11. F1388 — Native English teacher directory save (current)
-12. F1389 — Korean teacher birthday directory read
+11. F1388 — Native English teacher directory save (accepted)
+12. F1389 — Korean teacher birthday directory read (current)
 13. F1390 — GS Team birthday directory read
 14. F1391 — Native English birthday directory read
 15. F1392 — Current-campus preferences
