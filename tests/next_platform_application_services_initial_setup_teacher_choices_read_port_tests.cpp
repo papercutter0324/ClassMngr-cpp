@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
 #include "next/platform/application_services_initial_setup_teacher_choices_read_port.h"
@@ -62,9 +62,9 @@ class NextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests
     Q_OBJECT
 
 private slots:
-    void mapsAllTeacherFieldsInRepositoryOrderFromTheActiveSession();
+    void mapsAllTeacherFieldsInRepositoryOrderFromTheActiveWorkspace();
     void preservesSuccessfulEmptyRepositoryResult();
-    void reportsUnavailableSessionAsRecoverableNotFound();
+    void reportsUnavailableWorkspaceAsRecoverableNotFound();
     void reportsTeacherRepositoryReadFailure();
     void preservesWideSqliteIntegerTeacherId();
     void rejectsPartialTeacherChoicesAfterCursorError();
@@ -77,7 +77,9 @@ preservesWideSqliteIntegerTeacherId()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlQuery seed(services.databaseSession()->database());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlQuery seed(store->database());
     QVERIFY(seed.exec(QStringLiteral(
         "INSERT INTO teachers (id, teacher_kr, teacher_en) "
         "VALUES (2147483648, 'Wide Teacher', 'Wide Teacher')")));
@@ -86,7 +88,7 @@ preservesWideSqliteIntegerTeacherId()
     QCOMPARE(seed.value(0).toLongLong(), qint64(2147483648LL));
     QCOMPARE(seed.value(1).toString(), QStringLiteral("integer"));
 
-    const auto records = services.databaseSession()->teacherRepository()
+    const auto records = store->teacherRepository()
         ->loadInitialSetupTeacherChoiceRecords();
     QVERIFY(records);
     QCOMPARE(records->size(), 1);
@@ -106,9 +108,9 @@ rejectsPartialTeacherChoicesAfterCursorError()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QSqlDatabase database = session->database();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlDatabase database = store->database();
 
     const QString setupError =
         TeacherChoicesCursorErrorFixture::install(database);
@@ -150,7 +152,7 @@ rejectsPartialTeacherChoicesAfterCursorError()
         QStringLiteral("malformed"), Qt::CaseInsensitive
         ));
 
-    TeacherRepository* const repository = session->teacherRepository();
+    TeacherRepository* const repository = store->teacherRepository();
     QVERIFY(repository);
     const auto records = repository->loadInitialSetupTeacherChoiceRecords();
     QVERIFY(!records);
@@ -167,15 +169,16 @@ rejectsPartialTeacherChoicesAfterCursorError()
 }
 
 void NextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests::
-mapsAllTeacherFieldsInRepositoryOrderFromTheActiveSession()
+mapsAllTeacherFieldsInRepositoryOrderFromTheActiveWorkspace()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    TeacherRepository* const repository =
-        services.databaseSession()->teacherRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    TeacherRepository* const repository = store->teacherRepository();
     QVERIFY(repository);
 
     const auto zuluId = repository->createTeacher(teacher(
@@ -249,7 +252,7 @@ preservesSuccessfulEmptyRepositoryResult()
 }
 
 void NextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests::
-reportsUnavailableSessionAsRecoverableNotFound()
+reportsUnavailableWorkspaceAsRecoverableNotFound()
 {
     ApplicationServices services;
     Platform::ApplicationServicesInitialSetupTeacherChoicesReadPort port(
@@ -272,7 +275,9 @@ reportsTeacherRepositoryReadFailure()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlQuery dropTeachers(services.databaseSession()->database());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlQuery dropTeachers(store->database());
     QVERIFY(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")));
 
     Platform::ApplicationServicesInitialSetupTeacherChoicesReadPort port(

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/application/initial_setup_teacher_choices_read_port.h"
 
@@ -28,9 +28,9 @@ public:
     [[nodiscard]] Application::InitialSetupTeacherChoicesResult
     readInitialSetupTeacherChoices() const override
     {
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return failure(
                 Domain::ErrorCode::NotFound,
@@ -38,7 +38,7 @@ public:
                 );
         }
 
-        TeacherRepository* const repository = session->teacherRepository();
+        TeacherRepository* const repository = store->teacherRepository();
         if (!repository)
         {
             return failure(
