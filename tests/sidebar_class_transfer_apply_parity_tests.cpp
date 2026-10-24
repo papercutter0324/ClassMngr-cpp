@@ -1,7 +1,7 @@
 #include "app/controllers/sidebar_controller.h"
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/teacher_repository.h"
@@ -72,7 +72,7 @@ QString boolJson(const bool value)
 
 int rowCount(ApplicationServices& services, const QString& table)
 {
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     if (!query.exec(QStringLiteral("SELECT COUNT(*) FROM %1").arg(table))
         || !query.next())
     {
@@ -109,7 +109,7 @@ public:
         teacher.teacherEn = QStringLiteral("Shared Teacher");
         if (withMatchingDestination)
         {
-            const auto savedTeacher = services.databaseSession()
+            const auto savedTeacher = services.workspaceStore()
                 ->teacherRepository()->createTeacher(teacher);
             if (!savedTeacher)
             {
@@ -118,7 +118,7 @@ public:
             existingTeacherId = *savedTeacher;
         }
 
-        const auto existing = services.databaseSession()->classRepository()
+        const auto existing = services.workspaceStore()->classRepository()
             ->createClass(withMatchingDestination
                 ? QStringLiteral("Existing Matched Class")
                 : QStringLiteral("Existing Class"));
@@ -135,7 +135,7 @@ public:
             info.teacherId = existingTeacherId;
             info.classGrade = QStringLiteral("e4");
             info.classLevel = QStringLiteral("theseus");
-            if (!services.databaseSession()->classInfoRepository()
+            if (!services.workspaceStore()->classInfoRepository()
                     ->saveClassInfo(info))
             {
                 return false;
@@ -268,7 +268,7 @@ public:
 
     [[nodiscard]] bool installClassInsertFailure() const
     {
-        QSqlQuery trigger(services.databaseSession()->database());
+        QSqlQuery trigger(services.workspaceStore()->database());
         return trigger.exec(QStringLiteral(
             "CREATE TRIGGER fail_class_transfer_insert "
             "BEFORE INSERT ON classes "
@@ -277,7 +277,7 @@ public:
 
     [[nodiscard]] bool installClassPreviewReadFailure() const
     {
-        QSqlQuery trigger(services.databaseSession()->database());
+        QSqlQuery trigger(services.workspaceStore()->database());
         return trigger.exec(QStringLiteral(
             "ALTER TABLE class_times RENAME COLUMN day TO unavailable_day"));
     }

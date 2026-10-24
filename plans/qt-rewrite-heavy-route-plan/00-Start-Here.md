@@ -18,7 +18,8 @@
   F1369 (Classes navigation read) and F1370 (Class teacher assignments read)
   are accepted; F1371 (Regular Class creation and post-create by-ID lookup) is
   accepted; F1372 (Class delete) is accepted; F1373 (Class Transfer preview
-  read) is current. Evidence for F1358–F1372 and the
+  read) is accepted; F1374 (Class Transfer export source read) is current.
+  Evidence for F1358–F1373 and the
   Batch 2 push receipt are in the Phase 3 progress log. Earlier UI limitations,
   baseline failures, attribution notes, and coverage notes remain recorded
   there.

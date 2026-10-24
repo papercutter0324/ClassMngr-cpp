@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_transfer_repository.h"
 #include "next/application/class_transfer_preview_query.h"
 
@@ -34,9 +34,9 @@ public:
         const Application::ClassTransferPreviewRequest& request
         ) const override
     {
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return failure(
                 Domain::ErrorCode::NotFound,
@@ -46,7 +46,7 @@ public:
         }
 
         ClassTransferRepository* const repository =
-            session->classTransferRepository();
+            store->classTransferRepository();
         if (!repository)
         {
             return failure(

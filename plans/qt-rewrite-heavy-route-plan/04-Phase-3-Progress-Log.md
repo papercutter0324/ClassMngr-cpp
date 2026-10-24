@@ -1431,3 +1431,27 @@ Three targets built, and three serial registered CTests passed (3/3):
 `ClassMngrSidebarClassDeleteParityTests`. `git diff --check` passed. No full
 suite or cross-platform build ran. F1372 is accepted; F1373 (Class Transfer
 preview read) is current.
+
+Commit: `9eb1191923f8f009b201c7d43b183ba6e6271c96`.
+
+## F1373 — Class Transfer preview read (Batch 3 candidate 16 of 20) — 2026-10-24
+
+The only production change moved
+`src/next/platform/application_services_class_transfer_preview_read_port.h`
+to `WorkspaceStore`. The shared fixture
+`tests/sidebar_class_transfer_apply_parity_tests.cpp` now uses
+`WorkspaceStore` for setup, repository access, SQL handles, and failure
+helpers. Assertions and SQL semantics are unchanged. The
+`ClassTransferRepository` snapshot, query/normalization/matching, controller
+order, and export/apply production ports are unchanged.
+
+Built `ClassMngrClassTransferTests` and
+`ClassMngrSidebarClassTransferApplyParityTests`. Three selected serial CTests
+passed: `ClassTransferPreviewAdapterRegressionTests`,
+`SidebarClassTransferMatchedPreviewIntegrationTests`, and
+`SidebarClassTransferPreviewReadFailureIntegrationTests`. The full registered
+`ClassMngrSidebarClassTransferApplyParityTests` CTest also passed.
+These tests exercise the production port through the controller/query path;
+no dedicated direct Platform port test was added. `git diff --check` passed.
+No full suite or cross-platform build ran. F1373 is accepted; F1374 (Class
+Transfer export source read) is current.
