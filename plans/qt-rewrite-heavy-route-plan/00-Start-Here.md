@@ -8,8 +8,10 @@
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 is In Progress again on the mandatory Heavy route
   because the §3.3 structured-error audit reopened its exit gate. F1447 is
-  implemented and independently verified locally; its exact-path commit is
-  pending and not pushed. F1448 is next but not active. See the
+  committed locally as `ba685fbbc69d6b8564d2896671cd82ee3a0810ed` and is not
+  pushed. F1448 ClassRepository is implemented and independently verified;
+  its exact-path commit is pending and not pushed. F1449 is next but not
+  active. See the
   [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [F1420 DataService migration map](../../docs/qt-rewrite/data-service-migration-map.md),

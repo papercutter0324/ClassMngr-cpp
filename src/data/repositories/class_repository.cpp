@@ -15,13 +15,16 @@
 
 namespace
 {
-Status statusFromExecution(
+RepositoryStatus statusFromExecution(
     const SqlQueryUtils::ExecutionResult& result
     )
 {
     if (!result)
     {
-        return std::unexpected(result.error().userMessage());
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            result.error().userMessage()
+        });
     }
 
     return {};
@@ -40,7 +43,7 @@ ClassRepository::ClassRepository(
 {
 }
 
-Result<int> ClassRepository::createClass(
+RepositoryResult<int> ClassRepository::createClass(
     const QString& name
     )
 {
@@ -63,35 +66,40 @@ Result<int> ClassRepository::createClass(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            executed.error().userMessage()
+        });
     }
 
     bool idOk = false;
     const qint64 generatedClassId = query.lastInsertId().toLongLong(&idOk);
     if (!idOk || generatedClassId <= 0)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr(
                 "Creating class for %1 failed: the database did not return "
                 "a valid record id."
                 ).arg(identity)
-            );
+        });
     }
 
     if (generatedClassId > std::numeric_limits<int>::max())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr(
                 "Creating class for %1 failed: generated record id %2 is "
                 "outside the supported integer range."
                 ).arg(identity, QString::number(generatedClassId))
-            );
+        });
     }
 
     return static_cast<int>(generatedClassId);
 }
 
-Result<QList<Classroom>> ClassRepository::getClasses()
+RepositoryResult<QList<Classroom>> ClassRepository::getClasses()
 {
     ++m_readMetrics.getClassesCallCount;
 
@@ -114,7 +122,10 @@ Result<QList<Classroom>> ClassRepository::getClasses()
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            executed.error().userMessage()
+        });
     }
 
     while (query.next())
@@ -128,12 +139,13 @@ Result<QList<Classroom>> ClassRepository::getClasses()
             || storedClassId <= 0
             || storedClassId > std::numeric_limits<int>::max())
         {
-            return std::unexpected(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
                 QObject::tr(
                     "Loading classes failed: stored class id %1 is outside "
                     "the supported positive integer range."
                     ).arg(query.value("id").toString())
-                );
+            });
         }
 
         classroom.id = static_cast<int>(storedClassId);
@@ -146,39 +158,36 @@ Result<QList<Classroom>> ClassRepository::getClasses()
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(query.lastError().text());
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            query.lastError().text()
+        });
     }
 
     m_readMetrics.getClassesReturnedRowCount += classes.size();
     return classes;
 }
 
-Result<Classroom> ClassRepository::getClassById(
+RepositoryResult<Classroom> ClassRepository::getClassById(
     int classId
     )
 {
-    const ClassByIdLookupResult lookup = lookupClassById(classId);
-    if (lookup.code == ClassByIdLookupCode::Found)
-    {
-        return lookup.classroom;
-    }
-
-    return std::unexpected(lookup.diagnostic);
+    return lookupClassById(classId);
 }
 
-ClassRepository::ClassByIdLookupResult ClassRepository::lookupClassById(
+RepositoryResult<Classroom> ClassRepository::lookupClassById(
     int classId
     )
 {
     ++m_readMetrics.getClassByIdCallCount;
     if (classId <= 0)
     {
-        return {
-            .code = ClassByIdLookupCode::Failure,
-            .diagnostic = QObject::tr(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
+            QObject::tr(
                 "Loading class failed: invalid class id %1."
                 ).arg(classId)
-        };
+        });
     }
 
     QSqlQuery query(m_database);
@@ -198,49 +207,60 @@ ClassRepository::ClassByIdLookupResult ClassRepository::lookupClassById(
         );
     if (!executed)
     {
-        return {
-            .code = ClassByIdLookupCode::Failure,
-            .diagnostic = executed.error().userMessage()
-        };
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            executed.error().userMessage()
+        });
     }
 
     if (!query.next())
     {
         if (query.lastError().isValid())
         {
-            return {
-                .code = ClassByIdLookupCode::Failure,
-                .diagnostic = SqlQueryUtils::errorFor(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Technical,
+                SqlQueryUtils::errorFor(
                     query,
                     QObject::tr("Loading class"),
                     {},
                     classIdentity(classId)
                     ).userMessage()
-            };
+            });
         }
 
-        return {
-            .code = ClassByIdLookupCode::Missing,
-            .diagnostic = QObject::tr(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::NotFound,
+            QObject::tr(
                 "Loading class failed for %1: no matching record exists."
                 ).arg(classIdentity(classId))
-        };
+        });
     }
 
     Classroom classroom;
-    classroom.id =
-        query.value("id").toInt();
+    bool storedClassIdOk = false;
+    const qlonglong storedClassId = query.value("id")
+        .toLongLong(&storedClassIdOk);
+    if (!storedClassIdOk
+        || storedClassId <= 0
+        || storedClassId > std::numeric_limits<int>::max())
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
+            QObject::tr(
+                "Loading class failed: stored class id %1 is outside the "
+                "supported positive integer range."
+                ).arg(query.value("id").toString())
+        });
+    }
+    classroom.id = static_cast<int>(storedClassId);
 
     classroom.name =
         query.value("name").toString();
 
-    return {
-        .code = ClassByIdLookupCode::Found,
-        .classroom = std::move(classroom)
-    };
+    return classroom;
 }
 
-Result<QList<Classroom>> ClassRepository::getClassesByIds(
+RepositoryResult<QList<Classroom>> ClassRepository::getClassesByIds(
     const QList<int>& classIds
     )
 {
@@ -260,9 +280,12 @@ Result<QList<Classroom>> ClassRepository::getClassesByIds(
         const int classId = classIds[index];
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(QObject::tr(
-                "Loading classes failed: class identifiers must be positive and unique."
-                ));
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::InvalidInput,
+                QObject::tr(
+                    "Loading classes failed: class identifiers must be positive and unique."
+                    )
+            });
         }
 
         seenClassIds.insert(classId);
@@ -292,7 +315,10 @@ Result<QList<Classroom>> ClassRepository::getClassesByIds(
         );
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            loaded.error().userMessage()
+        });
     }
 
     QList<Classroom> classrooms;
@@ -305,25 +331,46 @@ Result<QList<Classroom>> ClassRepository::getClassesByIds(
         if (classrooms.size() >= classIds.size()
             || requestedClassId != classIds[classrooms.size()])
         {
-            return std::unexpected(QObject::tr(
-                "Loading selected classes failed: returned class order did not match the request."
-                ));
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "Loading selected classes failed: returned class order did not match the request."
+                    )
+            });
         }
         if (loadedClassId.isNull())
         {
-            return std::unexpected(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::NotFound,
                 QObject::tr(
                     "Loading class failed for class id %1: no matching record exists."
                     ).arg(requestedClassId)
-                );
+            });
         }
 
-        const int classId = loadedClassId.toInt();
+        bool classIdOk = false;
+        const qlonglong storedClassId = loadedClassId.toLongLong(&classIdOk);
+        if (!classIdOk
+            || storedClassId <= 0
+            || storedClassId > std::numeric_limits<int>::max())
+        {
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "Loading selected classes failed: stored class id %1 is "
+                    "outside the supported positive integer range."
+                    ).arg(loadedClassId.toString())
+            });
+        }
+        const int classId = static_cast<int>(storedClassId);
         if (classId != requestedClassId)
         {
-            return std::unexpected(QObject::tr(
-                "Loading selected classes failed: returned class identity did not match the request."
-                ));
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "Loading selected classes failed: returned class identity did not match the request."
+                    )
+            });
         }
 
         classrooms.append(Classroom(
@@ -334,13 +381,19 @@ Result<QList<Classroom>> ClassRepository::getClassesByIds(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(query.lastError().text());
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            query.lastError().text()
+        });
     }
     if (classrooms.size() != classIds.size())
     {
-        return std::unexpected(QObject::tr(
-            "Loading selected classes failed: the database returned an incomplete result."
-            ));
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
+            QObject::tr(
+                "Loading selected classes failed: the database returned an incomplete result."
+                )
+        });
     }
 
     return classrooms;
@@ -351,7 +404,7 @@ const ClassRepository::ReadMetrics& ClassRepository::readMetrics() const noexcep
     return m_readMetrics;
 }
 
-Status ClassRepository::updateClassName(
+RepositoryStatus ClassRepository::updateClassName(
     int classId,
     const QString& name
     )
@@ -376,31 +429,33 @@ Status ClassRepository::updateClassName(
         );
 }
 
-Status ClassRepository::deleteClass(
+RepositoryStatus ClassRepository::deleteClass(
     int classId
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
             QObject::tr("Deleting class failed: invalid class id %1.")
                 .arg(classId)
-            );
+        });
     }
 
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr("Starting class deletion transaction failed for %1: %2")
                 .arg(classIdentity(classId), m_database.lastError().text())
-            );
+        });
     }
 
     const QString identity = classIdentity(classId);
     QSqlQuery query(m_database);
     const auto executeClassStatement =
-        [&](const QString& sql, const QString& action) -> Status
+        [&](const QString& sql, const QString& action) -> RepositoryStatus
         {
             query.prepare(sql);
             query.addBindValue(classId);
@@ -427,7 +482,7 @@ Status ClassRepository::deleteClass(
                  QObject::tr("Deleting intensive class times")}
              })
     {
-        const Status deleted = executeClassStatement(sql, action);
+        const RepositoryStatus deleted = executeClassStatement(sql, action);
         if (!deleted)
         {
             return deleted;
@@ -443,7 +498,7 @@ Status ClassRepository::deleteClass(
         )
     )"));
     query.addBindValue(classId);
-    const Status evaluationDataDeleted = statusFromExecution(
+    const RepositoryStatus evaluationDataDeleted = statusFromExecution(
         SqlQueryUtils::executePrepared(
             query,
             QObject::tr("Deleting class speaking evaluation data"),
@@ -466,7 +521,7 @@ Status ClassRepository::deleteClass(
                  QObject::tr("Deleting class")}
              })
     {
-        const Status deleted = executeClassStatement(sql, action);
+        const RepositoryStatus deleted = executeClassStatement(sql, action);
         if (!deleted)
         {
             return deleted;
@@ -475,10 +530,11 @@ Status ClassRepository::deleteClass(
 
     if (!transaction.commit())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr("Committing class deletion failed for %1: %2")
                 .arg(identity, m_database.lastError().text())
-            );
+        });
     }
 
     return {};

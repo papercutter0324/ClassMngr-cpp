@@ -211,18 +211,30 @@ rejectsOutOfRangeStoredClassIdWithoutNarrowing()
         storedClassId);
     QCOMPARE(storedRow.value(QStringLiteral("name")).toString(), className);
 
+    const RepositoryResult<QList<Classroom>> repositoryResult =
+        services.workspaceStore()->classRepository()->getClasses();
+    QVERIFY(!repositoryResult);
+    QCOMPARE(repositoryResult.error().code, RepositoryErrorCode::Validation);
+    QCOMPARE(
+        repositoryResult.error().diagnostic,
+        QObject::tr(
+            "Loading classes failed: stored class id %1 is outside the "
+            "supported positive integer range."
+            ).arg(storedClassId)
+        );
+
     Platform::ApplicationServicesClassesListReadPort port(&services);
     const Application::ClassesListReadQuery query(port);
     const auto portResult = port.readClassesList();
 
     QVERIFY(!portResult);
-    QCOMPARE(portResult.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(portResult.error().code, Domain::ErrorCode::Validation);
     QVERIFY(!portResult.error().message.empty());
     QVERIFY(!portResult.error().recoverable);
 
     const auto queryResult = query.execute();
     QVERIFY(!queryResult);
-    QCOMPARE(queryResult.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(queryResult.error().code, Domain::ErrorCode::Validation);
     QVERIFY(!queryResult.error().message.empty());
     QVERIFY(!queryResult.error().recoverable);
 

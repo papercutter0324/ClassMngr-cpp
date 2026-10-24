@@ -106,7 +106,8 @@ rejectsClassIdBeyondIntRangeWithoutRemovingInsertedClass()
     const auto created = Application::ClassCreateUseCase::execute({}, port);
 
     QVERIFY(!created);
-    QCOMPARE(created.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(created.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!created.error().recoverable);
     QVERIFY(QString::fromStdString(created.error().message)
         .contains(QStringLiteral("4294967297")));
     QCOMPARE(classCount(services), 2);

@@ -280,7 +280,7 @@ public:
             QList<SubPrepRosterOutputClassInfoReadRecord> loadedClassInfos;
             if (!scopedClassIds.isEmpty())
             {
-                const ::Result<QList<Classroom>> loadedClasses =
+                const RepositoryResult<QList<Classroom>> loadedClasses =
                     classRepository->getClassesByIds(scopedClassIds);
                 if (!loadedClasses)
                 {
@@ -969,6 +969,40 @@ private:
             return QStringLiteral("Sunday");
         }
         return std::nullopt;
+    }
+
+    [[nodiscard]] static Application::SubPrepRosterOutputSourceReadResult
+    repositoryFailure(
+        const RepositoryError& error,
+        const char* fallback
+        )
+    {
+        Domain::ErrorCode code = Domain::ErrorCode::Technical;
+        switch (error.code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            code = Domain::ErrorCode::InvalidInput;
+            break;
+        case RepositoryErrorCode::NotFound:
+            code = Domain::ErrorCode::NotFound;
+            break;
+        case RepositoryErrorCode::Conflict:
+            code = Domain::ErrorCode::Conflict;
+            break;
+        case RepositoryErrorCode::Validation:
+            code = Domain::ErrorCode::Validation;
+            break;
+        case RepositoryErrorCode::Technical:
+            code = Domain::ErrorCode::Technical;
+            break;
+        }
+
+        const QString message = toLegacyDiagnostic(error);
+        const QByteArray bytes = message.toUtf8();
+        return failure(
+            code,
+            bytes.isEmpty() ? std::string(fallback) : bytes.toStdString()
+            );
     }
 
     [[nodiscard]] static Application::SubPrepRosterOutputSourceReadResult

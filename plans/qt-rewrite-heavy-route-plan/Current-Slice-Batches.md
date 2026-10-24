@@ -13,8 +13,11 @@ F1445 implementation and focused verification are complete; commit
 `0f9b8bf6f9165d51f53e3f46af616368a46bdba0` is local and not pushed. F1446
 is committed locally as `fe3edd1e4ff890eea1f1b57c9dc3b5afcd2cfae6` and not
 pushed; focused verification passed. F1447 implementation and independent
-focused verification are complete locally; its exact-path commit is pending
-and not pushed. F1448 is next but not active. Evidence is in the [progress
+focused verification are complete; commit
+`ba685fbbc69d6b8564d2896671cd82ee3a0810ed` is local and not pushed. F1448
+ClassRepository implementation and independent focused verification are
+complete; its exact-path commit is pending and not pushed. F1449 is next but
+not active. F1448 evidence is in the [progress
 log](04-Phase-3-Progress-Log.md). The accepted queue is:
 
 1. **F1444** — shared `RepositoryError`/`RepositoryResult`/status contract and SQL error mapping.

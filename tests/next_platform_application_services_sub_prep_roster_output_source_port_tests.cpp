@@ -394,6 +394,7 @@ private slots:
     void staleTeacherFailureDoesNotReturnPartialInput();
     void activeSessionScheduleReadFailureIsTechnical();
     void classNameBatchFailureAbortsSource();
+    void classNameBatchMissingRowPropagatesNotFound();
     void classInfoBatchFailureAbortsSource();
     void classInfoBatchRejectsMissingMetadataRecord();
     void rejectsOutOfBoundRosterAndClassText();
@@ -1676,6 +1677,62 @@ classNameBatchFailureAbortsSource()
     QCOMPARE(
         classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics().callCount,
         classInfoMetricsBefore.callCount
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+classNameBatchMissingRowPropagatesNotFound()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(services);
+    QVERIFY(teacher > 0);
+    const int classIdValue = createClass(
+        services,
+        QStringLiteral("Missing class row"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus"),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("10:00 AM")
+        );
+    QVERIFY(classIdValue > 0);
+    QVERIFY(services.rosterService()->saveRoster(
+        classIdValue,
+        rosterWithColumns()
+        ));
+
+    QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = OFF")));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("DELETE FROM classes WHERE id = %1").arg(classIdValue)
+        ));
+    QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = ON")));
+
+    ClassRepository* const classRepository =
+        services.workspaceStore()->classRepository();
+    QVERIFY(classRepository);
+    const auto missing = classRepository->getClassesByIds({classIdValue});
+    QVERIFY(!missing);
+    QCOMPARE(missing.error().code, RepositoryErrorCode::NotFound);
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(classIdValue)},
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::NotFound);
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(
+        result.error().message,
+        std::string(
+            "Loading class failed for class id "
+            + std::to_string(classIdValue)
+            + ": no matching record exists."
+            )
         );
 }
 

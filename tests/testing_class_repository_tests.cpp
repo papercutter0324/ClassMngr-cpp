@@ -480,7 +480,7 @@ void TestingClassRepositoryTests
         QVERIFY(createSchema(database));
 
         ClassRepository classRepository(database);
-        const Result<int> regularClass =
+        const RepositoryResult<int> regularClass =
             classRepository.createClass(QStringLiteral("Regular"));
         QVERIFY(regularClass);
         const int regularClassId = *regularClass;
@@ -501,7 +501,7 @@ void TestingClassRepositoryTests
         QVERIFY(created);
         QVERIFY(*created > regularClassId);
 
-        const Result<QList<Classroom>> regularClasses =
+        const RepositoryResult<QList<Classroom>> regularClasses =
             classRepository.getClasses();
         QVERIFY(regularClasses);
         QCOMPARE(regularClasses->size(), 1);
@@ -842,7 +842,7 @@ void TestingClassRepositoryTests
 
         ClassRepository classRepository(database);
         TestingClassRepository testingClassRepository(database);
-        const Result<int> existingClassId =
+        const RepositoryResult<int> existingClassId =
             classRepository.createClass(QStringLiteral("Existing ordinary"));
         QVERIFY(existingClassId);
         QCOMPARE(*existingClassId, 1);
@@ -904,7 +904,7 @@ void TestingClassRepositoryTests
 
         ClassRepository classRepository(database);
         TestingClassRepository testingClassRepository(database);
-        const Result<int> existingClassId =
+        const RepositoryResult<int> existingClassId =
             classRepository.createClass(QStringLiteral("Existing ordinary"));
         QVERIFY(existingClassId);
         QCOMPARE(*existingClassId, 1);

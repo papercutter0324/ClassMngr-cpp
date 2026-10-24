@@ -47,6 +47,7 @@ class NextPlatformApplicationServicesClassByIdReadPortTests final
 private slots:
     void readsClassIdAndNameFromActiveSession();
     void reportsMissingUnavailableAndRepositoryFailures();
+    void classRepositoryReturnsStructuredBatchAndLookupErrors();
 };
 
 void NextPlatformApplicationServicesClassByIdReadPortTests::
@@ -62,15 +63,13 @@ readsClassIdAndNameFromActiveSession()
 
     ClassRepository* const repository =
         services.workspaceStore()->classRepository();
-    const auto lookup = repository->lookupClassById(id);
-    QCOMPARE(
-        lookup.code,
-        ClassRepository::ClassByIdLookupCode::Found
-        );
-    QCOMPARE(lookup.classroom.id, id);
-    QCOMPARE(lookup.classroom.name, QStringLiteral("Orion"));
+    const RepositoryResult<Classroom> lookup =
+        repository->lookupClassById(id);
+    QVERIFY(lookup);
+    QCOMPARE(lookup->id, id);
+    QCOMPARE(lookup->name, QStringLiteral("Orion"));
 
-    const Result<Classroom> legacy = repository->getClassById(id);
+    const RepositoryResult<Classroom> legacy = repository->getClassById(id);
     QVERIFY(legacy);
     QCOMPARE(legacy->id, id);
     QCOMPARE(legacy->name, QStringLiteral("Orion"));
@@ -117,17 +116,17 @@ reportsMissingUnavailableAndRepositoryFailures()
     const QString missingDiagnostic = QObject::tr(
         "Loading class failed for %1: no matching record exists."
         ).arg(QObject::tr("class id %1").arg(missingId));
-    const auto missingLookup = repository->lookupClassById(missingId);
-    QCOMPARE(
-        missingLookup.code,
-        ClassRepository::ClassByIdLookupCode::Missing
-        );
-    QCOMPARE(missingLookup.diagnostic, missingDiagnostic);
+    const RepositoryResult<Classroom> missingLookup =
+        repository->lookupClassById(missingId);
+    QVERIFY(!missingLookup);
+    QCOMPARE(missingLookup.error().code, RepositoryErrorCode::NotFound);
+    QCOMPARE(missingLookup.error().diagnostic, missingDiagnostic);
 
-    const Result<Classroom> legacyMissing =
+    const RepositoryResult<Classroom> legacyMissing =
         repository->getClassById(missingId);
     QVERIFY(!legacyMissing);
-    QCOMPARE(legacyMissing.error(), missingDiagnostic);
+    QCOMPARE(legacyMissing.error().code, RepositoryErrorCode::NotFound);
+    QCOMPARE(legacyMissing.error().diagnostic, missingDiagnostic);
 
     const auto missing = port.readClassById(classId(missingId));
     QVERIFY(!missing);
@@ -138,12 +137,16 @@ reportsMissingUnavailableAndRepositoryFailures()
     QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE classes")),
         qPrintable(query.lastError().text()));
-    const auto failedLookup = repository->lookupClassById(id);
-    QCOMPARE(
-        failedLookup.code,
-        ClassRepository::ClassByIdLookupCode::Failure
-        );
-    QVERIFY(!failedLookup.diagnostic.isEmpty());
+    const RepositoryResult<Classroom> failedLookup =
+        repository->lookupClassById(id);
+    QVERIFY(!failedLookup);
+    QCOMPARE(failedLookup.error().code, RepositoryErrorCode::Technical);
+    QVERIFY(!failedLookup.error().diagnostic.isEmpty());
+
+    const RepositoryResult<Classroom> failedGet =
+        repository->getClassById(id);
+    QVERIFY(!failedGet);
+    QCOMPARE(failedGet.error().code, RepositoryErrorCode::Technical);
 
     const auto repositoryFailure = port.readClassById(classId(id));
     QVERIFY(!repositoryFailure);
@@ -159,6 +162,48 @@ reportsMissingUnavailableAndRepositoryFailures()
         std::string("The active database session for classes is unavailable.")
         );
     QVERIFY(result.error().recoverable);
+}
+
+void NextPlatformApplicationServicesClassByIdReadPortTests::
+classRepositoryReturnsStructuredBatchAndLookupErrors()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int id = createClass(services, QStringLiteral("Orion"));
+    QVERIFY(id > 0);
+
+    ClassRepository* const repository =
+        services.workspaceStore()->classRepository();
+    const auto invalidLookup = repository->lookupClassById(0);
+    QVERIFY(!invalidLookup);
+    QCOMPARE(invalidLookup.error().code, RepositoryErrorCode::InvalidInput);
+    QCOMPARE(
+        invalidLookup.error().diagnostic,
+        QObject::tr("Loading class failed: invalid class id 0.")
+        );
+
+    const int missingId = id + 1000;
+    const auto missingBatch = repository->getClassesByIds({id, missingId});
+    QVERIFY(!missingBatch);
+    QCOMPARE(missingBatch.error().code, RepositoryErrorCode::NotFound);
+    QCOMPARE(
+        missingBatch.error().diagnostic,
+        QObject::tr(
+            "Loading class failed for class id %1: no matching record exists."
+            ).arg(missingId)
+        );
+
+    const auto invalidBatch = repository->getClassesByIds({id, id});
+    QVERIFY(!invalidBatch);
+    QCOMPARE(invalidBatch.error().code, RepositoryErrorCode::InvalidInput);
+    QCOMPARE(
+        invalidBatch.error().diagnostic,
+        QObject::tr(
+            "Loading classes failed: class identifiers must be positive and unique."
+            )
+        );
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesClassByIdReadPortTests)

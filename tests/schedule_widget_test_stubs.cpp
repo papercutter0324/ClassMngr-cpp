@@ -941,7 +941,7 @@ ClassRepository::ClassRepository(QSqlDatabase& database)
 {
 }
 
-Result<QList<Classroom>> ClassRepository::getClasses()
+RepositoryResult<QList<Classroom>> ClassRepository::getClasses()
 {
     ++ScheduleWidgetTestStubs::repositoryClassListReadCount;
     return ScheduleWidgetTestStubs::classList();

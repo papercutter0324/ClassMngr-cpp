@@ -70,10 +70,15 @@ public:
                     );
             }
 
-            const Result<int> created = repository->createClass(QString());
+            const RepositoryResult<int> created =
+                repository->createClass(QString());
             if (!created)
             {
-                return failure(Domain::ErrorCode::Technical, toStdString(created.error()));
+                return failure(
+                    domainErrorCode(created.error().code),
+                    toStdString(toLegacyDiagnostic(created.error())),
+                    created.error().code != RepositoryErrorCode::Validation
+                    );
             }
             if (*created <= 0)
             {
@@ -113,6 +118,26 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        ) noexcept
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] static std::string toStdString(const QString& value)
     {
         const QByteArray bytes = value.toUtf8();
@@ -127,6 +152,19 @@ private:
         std::string message
         )
     {
+        return failure(
+            code,
+            std::move(message),
+            code != Domain::ErrorCode::Technical
+            );
+    }
+
+    [[nodiscard]] static Application::ClassCreateResult failure(
+        const Domain::ErrorCode code,
+        std::string message,
+        const bool recoverable
+        )
+    {
         if (message.empty())
         {
             message = "The class could not be created.";
@@ -135,7 +173,7 @@ private:
         return Application::ClassCreateResult::failure({
             .code = code,
             .message = std::move(message),
-            .recoverable = code != Domain::ErrorCode::Technical
+            .recoverable = recoverable
         });
     }
 

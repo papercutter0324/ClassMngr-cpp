@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <memory>
 #include <optional>
+#include <utility>
 
 namespace
 {
@@ -371,6 +372,7 @@ private slots:
     void previewUsesConditionalAssignedTeacherNames();
     void previewUsesClassInfoDefaultsWhenMissingOrUnassigned();
     void previewFailsWhenDestinationClassInfoBatchReadFails();
+    void previewMapsInvalidDestinationClassIdAsValidation();
     void previewSkipsClassInfoBatchWhenThereAreNoDestinations();
     void replacementRetainsIdAndClearsOldChildren();
     void teacherReplacementImportsCompleteSnapshot();
@@ -3477,6 +3479,49 @@ void ClassTransferTests::previewFailsWhenDestinationClassInfoBatchReadFails()
         "Loading regular classes navigation schedules failed")));
     QVERIFY(preview.error().contains(QStringLiteral("unavailable_day"))
             || preview.error().contains(QStringLiteral("schedule.day")));
+}
+
+void ClassTransferTests::previewMapsInvalidDestinationClassIdAsValidation()
+{
+    constexpr qint64 storedClassId = 2147483648LL;
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery insert(database);
+    QVERIFY(insert.prepare(QStringLiteral(
+        "INSERT INTO classes (id, name) VALUES (?, ?)"
+        )));
+    insert.addBindValue(storedClassId);
+    insert.addBindValue(QStringLiteral("Out of range class"));
+    QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+
+    ClassMngr::Next::Application::ClassTransferPreviewRequest request;
+    ClassMngr::Next::Application::ClassTransferMatchingSourceClass sourceClass;
+    sourceClass.grade = "e4";
+    sourceClass.level = "perseus";
+    request.classes.push_back(std::move(sourceClass));
+
+    ClassTransferRepository repository(database);
+    const auto result = repository.readSnapshot(request);
+    QVERIFY(!result.hasValue());
+    QCOMPARE(
+        result.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Validation
+        );
+    QVERIFY(result.error().recoverable);
+
+    const QString expectedDiagnostic = QObject::tr(
+        "Loading classes failed: stored class id %1 is outside the "
+        "supported positive integer range."
+        ).arg(storedClassId);
+    QCOMPARE(
+        result.error().message,
+        expectedDiagnostic.toUtf8().toStdString()
+        );
 }
 
 void ClassTransferTests::previewSkipsClassInfoBatchWhenThereAreNoDestinations()

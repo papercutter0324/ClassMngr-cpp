@@ -3637,7 +3637,7 @@ F1446 is committed locally as
 The accepted Batch 22 order and F1462 Batch 23 discovery trigger remain in the
 [current batch tracker](Current-Slice-Batches.md).
 
-## F1447 — TestingBlock and assignment structured errors — verified, commit pending — 2026-10-24
+## F1447 — TestingBlock and assignment structured errors — verified — 2026-10-24
 
 All public `TestingBlockRepository` APIs now return
 `RepositoryResult`/`RepositoryStatus`. Assignment save replaces
@@ -3670,5 +3670,61 @@ ScheduleService save diagnostics, and unrecoverable layout-clear failure with
 rows intact.
 
 No full suite or other-platform verification ran. The legacy boundary test
-covers a write diagnostic, not read failures. F1447 is accepted with its
-exact-path commit pending and not pushed; F1448 is next but not active.
+covers a write diagnostic, not read failures. F1447 is committed locally as
+`ba685fbbc69d6b8564d2896671cd82ee3a0810ed` and is not pushed.
+
+## F1448 — ClassRepository structured errors — verified, commit pending — 2026-10-24
+
+All fallible public `ClassRepository` operations now use
+`RepositoryResult`/`RepositoryStatus`. `ClassByIdLookupResult` was removed;
+`getClassById` and `lookupClassById` return `RepositoryResult<Classroom>`.
+No-row lookup maps to NotFound, nonpositive input to InvalidInput,
+query/cursor errors to Technical, and malformed stored IDs to Validation.
+Invalid/nonpositive generated insert IDs map to Technical; IDs above
+`INT_MAX` map to Validation.
+
+`getClassesByIds` retains empty-success and metrics: invalid/duplicate input
+maps to InvalidInput, missing requested rows to NotFound, query/cursor errors
+to Technical, and output-invariant failures to Validation. `updateClassName`
+maps only existing SQL errors and preserves zero-row success. `deleteClass`
+maps nonpositive IDs to InvalidInput and transaction/SQL/commit failures to
+Technical, preserving the positive missing-ID no-op. Legacy APIs convert at
+compatibility boundaries; direct v2 consumers map `RepositoryErrorCode` to
+matching Domain codes. Consumer policies: the class-by-ID consumer maps
+repository codes by name; NotFound and InvalidInput are recoverable, and all
+other repository errors are nonrecoverable. Class list maps by name and
+retains NotFound-only recovery;
+class create maps by name and keeps generated-ID Validation nonrecoverable
+despite the helper default that makes other non-Technical errors recoverable;
+class delete maps by name, keeps InvalidInput/NotFound recoverable and
+Technical nonrecoverable. Sub Prep uses typed code mapping rather than
+diagnostic inference for this repository's `getClassesByIds` call, keeps those
+errors nonrecoverable, and retains the string-error path for other
+repositories. ScheduleImport's state snapshot uses `FailureKind`/source, not
+Domain codes; typed class-read errors retain `RepositoryReadFailed`, source
+`Classes`, and the diagnostic.
+
+Two mechanical `TestingClassRepository` and ScheduleWidget test adaptations
+were needed as compile fixes; no F1449 production behavior changed.
+Independent review accepted the final diff with no production defect. In the
+existing `build/macos-clang-debug` tree (Ninja Debug, Qt 6.12.0), the Tester
+built `ClassMngr`, `ClassMngrTestingClassRepositoryTests`,
+`ClassMngrDataServiceLifecycleTests`, `ClassMngrScheduleImportTests`, six
+changed Next port test targets (ClassById, ClassesList, SubPrep, ClassCreate,
+ClassDelete, and ScheduleImport snapshot), `ClassMngrClassTransferTests`, and
+`ClassMngrScheduleWidgetTests`. Nine focused CTests passed **9/9**. Four
+isolated ClassTransfer slots passed **4/4**:
+`exportPreservesSelectedClassAndSparseEvaluationRowOrder`,
+`previewMatchesCourseAndTeacherIgnoringSchedule`,
+`typedPreviewQueryNormalizesAndReturnsTypedCandidates`, and
+`schedulePreflightReadFailureAbortsBeforeWrites`. The added
+`previewMapsInvalidDestinationClassIdAsValidation` was independently rerun
+and passed 3 QtTest cases with 0 failures, asserting Domain::Validation, the
+exact repository diagnostic, and recoverable=true. `git diff --check` passed.
+
+The executor's broader `ClassMngrClassTransferTests` selection reported
+419 passed and 1 failure, reproducing the known F1326 baseline failure
+`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`; the
+independent Tester did not rerun that broad target. No full suite or other-
+platform build ran. F1448 is accepted with its exact-path commit pending and
+not pushed; F1449 is next but not active.

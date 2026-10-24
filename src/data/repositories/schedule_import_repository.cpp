@@ -1022,11 +1022,11 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
         return std::unexpected(teachers.error());
     }
 
-    const Result<QList<Classroom>> classrooms =
+    const RepositoryResult<QList<Classroom>> classrooms =
         classRepository.getClasses();
     if (!classrooms)
     {
-        return std::unexpected(classrooms.error());
+        return std::unexpected(toLegacyDiagnostic(classrooms.error()));
     }
 
     QHash<int, ClassInfo> classInfo;
@@ -1236,11 +1236,11 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
         return std::unexpected(existingTeachers.error());
     }
 
-    const Result<QList<Classroom>> existingClasses =
+    const RepositoryResult<QList<Classroom>> existingClasses =
         classRepository.getClasses();
     if (!existingClasses)
     {
-        return std::unexpected(existingClasses.error());
+        return std::unexpected(toLegacyDiagnostic(existingClasses.error()));
     }
 
     const Result<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>

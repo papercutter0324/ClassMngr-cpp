@@ -32,6 +32,26 @@
 
 namespace
 {
+ClassMngr::Next::Domain::ErrorCode domainErrorCode(
+    const RepositoryErrorCode code
+    )
+{
+    switch (code)
+    {
+    case RepositoryErrorCode::InvalidInput:
+        return ClassMngr::Next::Domain::ErrorCode::InvalidInput;
+    case RepositoryErrorCode::NotFound:
+        return ClassMngr::Next::Domain::ErrorCode::NotFound;
+    case RepositoryErrorCode::Conflict:
+        return ClassMngr::Next::Domain::ErrorCode::Conflict;
+    case RepositoryErrorCode::Validation:
+        return ClassMngr::Next::Domain::ErrorCode::Validation;
+    case RepositoryErrorCode::Technical:
+        return ClassMngr::Next::Domain::ErrorCode::Technical;
+    }
+    return ClassMngr::Next::Domain::ErrorCode::Technical;
+}
+
 struct ScheduledTime
 {
     QString classLabel;
@@ -652,11 +672,11 @@ std::expected<void, ClassTransferImportError> preflightSchedules(
     ClassInfoRepository classInfoRepository(database);
     QList<ScheduledTime> existingSchedules;
 
-    const Result<QList<Classroom>> destinationClasses =
+    const RepositoryResult<QList<Classroom>> destinationClasses =
         classRepository.getClasses();
     if (!destinationClasses)
     {
-        return std::unexpected(destinationClasses.error());
+        return std::unexpected(toLegacyDiagnostic(destinationClasses.error()));
     }
 
     QList<Classroom> eligibleDestinationClasses;
@@ -1209,12 +1229,14 @@ ClassTransferRepository::readSnapshot(
     ClassRepository classRepository(m_database);
     ClassInfoRepository classInfoRepository(m_database);
     TeacherRepository teacherRepository(m_database);
-    const Result<QList<Classroom>> destinationClasses =
+    const RepositoryResult<QList<Classroom>> destinationClasses =
         classRepository.getClasses();
     if (!destinationClasses)
     {
-        return failure(Domain::ErrorCode::Technical,
-            destinationClasses.error());
+        return failure(
+            domainErrorCode(destinationClasses.error().code),
+            toLegacyDiagnostic(destinationClasses.error())
+            );
     }
 
     if (destinationClasses->isEmpty())
@@ -1400,11 +1422,11 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
             break;
         }
 
-        const Result<Classroom> classroom =
+        const RepositoryResult<Classroom> classroom =
             classRepository.getClassById(classId);
         if (!classroom)
         {
-            source.selectionOrReadError = classroom.error();
+            source.selectionOrReadError = toLegacyDiagnostic(classroom.error());
             break;
         }
 

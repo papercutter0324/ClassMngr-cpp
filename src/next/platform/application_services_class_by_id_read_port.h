@@ -79,24 +79,16 @@ public:
 
         try
         {
-            const ClassRepository::ClassByIdLookupResult loaded =
+            const RepositoryResult<Classroom> loaded =
                 repository->lookupClassById(*legacyClassId);
-            switch (loaded.code)
+            if (!loaded)
             {
-            case ClassRepository::ClassByIdLookupCode::Missing:
-                return Application::ClassByIdReadResult::failure({
-                    .code = Domain::ErrorCode::NotFound,
-                    .message = toStdString(loaded.diagnostic),
-                    .recoverable = true
-                });
-            case ClassRepository::ClassByIdLookupCode::Failure:
                 return Application::ClassByIdReadResult::failure(
-                    repositoryError(loaded.diagnostic));
-            case ClassRepository::ClassByIdLookupCode::Found:
-                break;
+                    repositoryError(loaded.error())
+                    );
             }
 
-            if (loaded.classroom.id != *legacyClassId)
+            if (loaded->id != *legacyClassId)
             {
                 return Application::ClassByIdReadResult::failure({
                     .code = Domain::ErrorCode::Validation,
@@ -107,7 +99,7 @@ public:
 
             return Application::ClassByIdReadResult::success({
                 .classId = classId,
-                .className = loaded.classroom.name.toStdU16String()
+                .className = loaded->name.toStdU16String()
             });
         }
         catch (const std::exception&)
@@ -159,17 +151,41 @@ private:
         };
     }
 
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        ) noexcept
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] static Domain::OperationError repositoryError(
-        const QString& message
+        const RepositoryError& error
         )
     {
-        const std::string detail = toStdString(message);
+        const std::string detail = toStdString(
+            toLegacyDiagnostic(error)
+            );
+        const Domain::ErrorCode code = domainErrorCode(error.code);
         return {
-            .code = Domain::ErrorCode::Technical,
+            .code = code,
             .message = detail.empty()
                 ? "The selected class could not be loaded."
                 : detail,
-            .recoverable = false
+            .recoverable = code == Domain::ErrorCode::InvalidInput
+                || code == Domain::ErrorCode::NotFound
         };
     }
 

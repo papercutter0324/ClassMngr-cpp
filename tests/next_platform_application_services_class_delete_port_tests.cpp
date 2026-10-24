@@ -244,6 +244,7 @@ class NextPlatformApplicationServicesClassDeletePortTests final
 private slots:
     void deletesThroughActiveSessionRepositoryAndPreservesSibling();
     void rollsBackEveryCascadeTableOnRepositoryFailure();
+    void missingPositiveClassUpdatesAndDeletesRemainSuccessfulNoOps();
     void reportsNullUnavailableAndClosedSessionsWithoutFallback();
 };
 
@@ -389,6 +390,28 @@ rollsBackEveryCascadeTableOnRepositoryFailure()
     QCOMPARE(tableCount(store->database(), QStringLiteral("speaking_eval_data")), 2);
     QVERIFY(repository->getClassById(*target));
     QVERIFY(repository->getClassById(*sibling));
+}
+
+void NextPlatformApplicationServicesClassDeletePortTests::
+missingPositiveClassUpdatesAndDeletesRemainSuccessfulNoOps()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    ClassRepository* const repository =
+        services.workspaceStore()->classRepository();
+    QVERIFY(repository);
+
+    const RepositoryStatus renamed = repository->updateClassName(
+        42,
+        QStringLiteral("Missing class")
+        );
+    QVERIFY(renamed);
+
+    const RepositoryStatus deleted = repository->deleteClass(42);
+    QVERIFY(deleted);
 }
 
 void NextPlatformApplicationServicesClassDeletePortTests::

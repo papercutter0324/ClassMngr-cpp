@@ -51,8 +51,11 @@ closes. F1446 Teacher Import structured-error implementation and focused
 independent verification passed; it is committed locally at
 `fe3edd1e4ff890eea1f1b57c9dc3b5afcd2cfae6` and will be pushed when Batch 22
 closes. F1447 TestingBlock assignment implementation and independent focused
-verification passed; its exact-path commit is pending. Batch 23 discovery is
-due when F1462 starts. Two more surfaces (DocumentCatalog and DataService
+verification passed; commit `ba685fbbc69d6b8564d2896671cd82ee3a0810ed` is local
+and will be pushed when Batch 22 closes. F1448 ClassRepository implementation
+and independent focused verification passed; its exact-path commit is
+pending. F1449 TestingClassRepository is next but not active. Batch 23
+discovery is due when F1462 starts. Two more surfaces (DocumentCatalog and DataService
 compatibility conversion) are reserved for that discovery. The prior
 completion status was premature; Phase 3 remains In Progress until the
 structured-error deliverable and full exit gate are fulfilled.
@@ -104,7 +107,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (Phase 3 reopened; F1447 verified)
+### Current checkpoint - 2026-10-24 (Phase 3 reopened; F1448 verified)
 
 Phase 3 is reopened on the mandatory Heavy route after a fresh audit found
 that §3.3's structured-error requirement is not fully met. `Status` and
@@ -127,10 +130,18 @@ TestingBlock assignment implementation is independently verified. The
 occupied-slot branch is Conflict based on its explicit existing-assignment
 check; missing parent, malformed/incomplete data, input, and technical paths
 retain separate codes. Its five focused CTests passed; the full suite and
-other-platform builds were not run. The exact-path F1447 commit is pending.
-Batch 23 discovery is due at F1462, the second-to-last Batch 22
-candidate. `DocumentCatalog` and `DataService`
-compatibility conversion are recorded for that discovery. The earlier file
+other-platform builds were not run. F1447 is committed locally at
+`ba685fbbc69d6b8564d2896671cd82ee3a0810ed`, pending the Batch 22 push. F1448
+typed all fallible ClassRepository operations, removed the custom lookup
+result, and preserves legacy diagnostic conversion, lookup categories,
+metrics, ordering, and successful no-op update/delete behavior. Nine focused
+CTests and four isolated ClassTransfer selectors passed; the new Validation
+propagation selector also passed. The broad ClassTransfer CTest reproduced the
+confirmed F1326 baseline failure (419 passed, one failed). No full suite or
+other-platform build ran. F1448's exact-path commit is pending; F1449 is next
+but not active. Batch 23 discovery is due at F1462, the second-to-last Batch
+22 candidate. `DocumentCatalog` and `DataService` compatibility conversion are
+recorded for that discovery. The earlier file
 compatibility and v2 source-boundary reviews remain valid; see the [Phase 3
 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
 and [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).

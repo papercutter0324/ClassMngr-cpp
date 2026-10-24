@@ -84,7 +84,7 @@ public:
             // Retain the legacy source ordering exactly: class names first,
             // all teachers second, then each class's schedule details. The
             // detail projection is re-indexed into the class repository order.
-            const Result<QList<Classroom>> loadedClasses =
+            const RepositoryResult<QList<Classroom>> loadedClasses =
                 classRepository->getClasses();
             const Result<QList<ScheduleImportTeacherReadRecord>>
                 loadedTeachers =
@@ -93,7 +93,7 @@ public:
             {
                 return readFailure(
                     FailureSource::Classes,
-                    loadedClasses.error()
+                    toLegacyDiagnostic(loadedClasses.error())
                     );
             }
             if (!loadedTeachers)

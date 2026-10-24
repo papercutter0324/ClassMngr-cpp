@@ -303,9 +303,7 @@ Result<int> DataService::createClass(
         return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
 
-    return m_session->classRepository()->createClass(
-        name
-        );
+    return toLegacyResult(m_session->classRepository()->createClass(name));
 }
 
 Result<QList<Classroom>> DataService::getClasses()
@@ -317,7 +315,7 @@ Result<QList<Classroom>> DataService::getClasses()
             );
     }
 
-    return m_session->classRepository()->getClasses();
+    return toLegacyResult(m_session->classRepository()->getClasses());
 }
 
 Result<Classroom> DataService::getClassById(
@@ -331,8 +329,8 @@ Result<Classroom> DataService::getClassById(
             );
     }
 
-    return m_session->classRepository()->getClassById(
-        classId
+    return toLegacyResult(
+        m_session->classRepository()->getClassById(classId)
         );
 }
 
@@ -346,7 +344,9 @@ Status DataService::updateClassName(
         return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
 
-    return m_session->classRepository()->updateClassName(classId, name);
+    return toLegacyStatus(
+        m_session->classRepository()->updateClassName(classId, name)
+        );
 }
 
 Status DataService::deleteClass(
@@ -358,7 +358,7 @@ Status DataService::deleteClass(
         return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
 
-    return m_session->classRepository()->deleteClass(classId);
+    return toLegacyStatus(m_session->classRepository()->deleteClass(classId));
 }
 
 Result<ClassTransferPackage> DataService::buildClassTransferPackage(

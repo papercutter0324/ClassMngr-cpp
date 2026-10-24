@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 #include "domain/models/classroom.h"
 
 #include <QList>
@@ -10,20 +10,6 @@
 class ClassRepository
 {
 public:
-    enum class ClassByIdLookupCode
-    {
-        Found,
-        Missing,
-        Failure
-    };
-
-    struct ClassByIdLookupResult final
-    {
-        ClassByIdLookupCode code = ClassByIdLookupCode::Failure;
-        Classroom classroom;
-        QString diagnostic;
-    };
-
     struct ReadMetrics final
     {
         int getClassByIdCallCount = 0;
@@ -41,29 +27,29 @@ public:
         QSqlDatabase& database
         );
 
-    [[nodiscard]] Result<int> createClass(
+    [[nodiscard]] RepositoryResult<int> createClass(
         const QString& name
         );
 
-    [[nodiscard]] Result<QList<Classroom>> getClasses();
+    [[nodiscard]] RepositoryResult<QList<Classroom>> getClasses();
 
-    [[nodiscard]] Result<Classroom> getClassById(
+    [[nodiscard]] RepositoryResult<Classroom> getClassById(
         int classId
         );
-    [[nodiscard]] ClassByIdLookupResult lookupClassById(
+    [[nodiscard]] RepositoryResult<Classroom> lookupClassById(
         int classId
         );
-    [[nodiscard]] Result<QList<Classroom>> getClassesByIds(
+    [[nodiscard]] RepositoryResult<QList<Classroom>> getClassesByIds(
         const QList<int>& classIds
         );
     [[nodiscard]] const ReadMetrics& readMetrics() const noexcept;
 
-    [[nodiscard]] Status updateClassName(
+    [[nodiscard]] RepositoryStatus updateClassName(
         int classId,
         const QString& name
         );
 
-    [[nodiscard]] Status deleteClass(
+    [[nodiscard]] RepositoryStatus deleteClass(
         int classId
         );
 

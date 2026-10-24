@@ -264,7 +264,7 @@ mapsActiveSessionRecordsInRepositoryOrder()
         QStringLiteral("9:50 AM")
         ));
 
-    const Result<QList<Classroom>> legacyOrder =
+    const RepositoryResult<QList<Classroom>> legacyOrder =
         services.workspaceStore()->classRepository()->getClasses();
     const Result<QList<Teacher>> teacherOrder =
         services.workspaceStore()->teacherRepository()->getAllTeachers();
@@ -586,7 +586,7 @@ preservesLargeWorkspaceRecordsAndReadCounts()
         services.workspaceStore()->teacherRepository();
     ClassInfoRepository* const classInfoRepository =
         services.workspaceStore()->classInfoRepository();
-    const Result<QList<Classroom>> expectedClasses =
+    const RepositoryResult<QList<Classroom>> expectedClasses =
         classRepository->getClasses();
     const Result<QList<ScheduleImportTeacherReadRecord>> expectedTeachers =
         teacherRepository->loadScheduleImportTeacherRecords();
@@ -831,8 +831,10 @@ preservesLargeWorkspaceRecordsAndReadCounts()
         );
     const ClassRepository::ReadMetrics failedReadMetricsBefore =
         classRepository->readMetrics();
-    const Result<QList<Classroom>> failedClasses = classRepository->getClasses();
+    const RepositoryResult<QList<Classroom>> failedClasses =
+        classRepository->getClasses();
     QVERIFY(!failedClasses);
+    QCOMPARE(failedClasses.error().code, RepositoryErrorCode::Validation);
     const ClassRepository::ReadMetrics failedReadMetricsAfter =
         classRepository->readMetrics();
     QCOMPARE(
@@ -1248,6 +1250,7 @@ reportsEachRepositoryReadFailureWithoutLegacyFallback()
         failure(classesFailure)->source,
         Application::ScheduleImportStateSnapshotFailureSource::Classes
         );
+    QVERIFY(!failure(classesFailure)->message.empty());
 
     const auto teachersFailure = runFailure(
         QStringLiteral("teachers-fail"),

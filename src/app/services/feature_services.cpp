@@ -420,7 +420,7 @@ Result<int> ClassService::create(const QString& name) const
 {
     if (auto* repository = session() ? session()->classRepository() : nullptr)
     {
-        return repository->createClass(name);
+        return toLegacyResult(repository->createClass(name));
     }
     return dataService()
         ? dataService()->createClass(name)
@@ -431,7 +431,7 @@ Result<QList<Classroom>> ClassService::classes() const
 {
     if (auto* repository = session() ? session()->classRepository() : nullptr)
     {
-        return repository->getClasses();
+        return toLegacyResult(repository->getClasses());
     }
     return dataService()
         ? dataService()->getClasses()
@@ -463,7 +463,7 @@ Result<Classroom> ClassService::classroom(int classId) const
     {
         if (auto* repository = session()->classRepository())
         {
-            return repository->getClassById(classId);
+            return toLegacyResult(repository->getClassById(classId));
         }
         return std::unexpected(unavailableError());
     }
@@ -476,7 +476,7 @@ Status ClassService::rename(int classId, const QString& name) const
 {
     if (auto* repository = session() ? session()->classRepository() : nullptr)
     {
-        return repository->updateClassName(classId, name);
+        return toLegacyStatus(repository->updateClassName(classId, name));
     }
     else if (dataService())
     {
@@ -490,7 +490,7 @@ Status ClassService::remove(int classId) const
 {
     if (auto* repository = session() ? session()->classRepository() : nullptr)
     {
-        return repository->deleteClass(classId);
+        return toLegacyStatus(repository->deleteClass(classId));
     }
     else if (dataService())
     {

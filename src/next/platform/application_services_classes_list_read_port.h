@@ -46,12 +46,13 @@ public:
 
         try
         {
-            const Result<QList<Classroom>> loaded = repository->getClasses();
+            const RepositoryResult<QList<Classroom>> loaded =
+                repository->getClasses();
             if (!loaded)
             {
                 return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(loaded.error())
+                    domainErrorCode(loaded.error().code),
+                    toStdString(toLegacyDiagnostic(loaded.error()))
                     );
             }
 
@@ -105,6 +106,26 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        ) noexcept
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] static std::string toStdString(const QString& value)
     {
         const QByteArray bytes = value.toUtf8();
