@@ -2623,6 +2623,31 @@ suite, UI suite, or cross-platform build ran.
 
 Commit: `e78f2056`.
 
+## F1417 — WorkspaceStore-owned roster availability read transaction (Batch 6 candidate 1 of 1) — 2026-10-24
+
+Moved F1348's roster-availability read transaction behind `WorkspaceStore`.
+The Platform adapter no longer includes or names `DatabaseTransaction` or
+`QSqlDatabase`; the parent-aware column read, sparse roster-cell stream, and
+snapshot assembly remain in one transaction. Start, operation, and commit
+failures retain their existing mapping, while result shapes, order, sparse
+streaming, and exception behavior remain unchanged. Added WorkspaceStore
+operation-failure rollback coverage and adapter transaction-start failure
+mapping coverage. F1417 is accepted; its source/acceptance commit and Batch 6
+push are pending. Batch 7/F1418 waits for that push.
+
+The incremental macOS Debug build passed for `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`:
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextPlatformApplicationServicesRosterReadPortTests --parallel 4
+ctest --test-dir build/macos-clang-debug --output-on-failure -R 'ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests|ClassMngrNextPlatformApplicationServicesRosterReadPortTests'
+```
+
+The focused Application query and Platform port CTests passed 2/2. No
+commit-failure injection or full, UI, or cross-platform suite ran. The final
+documentation diff passed `git diff --check`. No commit or push hash is
+recorded yet.
+
 ## F1416 — Schedule Import apply (Batch 5 candidate 19 of 19) — 2026-10-24
 
 Migrated the Schedule Import apply adapter to resolve

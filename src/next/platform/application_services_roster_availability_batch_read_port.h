@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_transaction.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
 #include "next/application/roster_availability_accumulator.h"
@@ -9,7 +8,6 @@
 
 #include <QByteArray>
 #include <QHash>
-#include <QSqlError>
 #include <QString>
 
 #include <charconv>
@@ -102,156 +100,187 @@ public:
 
         try
         {
-            QSqlDatabase database = store->database();
-            DatabaseTransaction transaction(database);
-            if (!transaction.started())
-            {
-                return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(QStringLiteral(
-                        "Starting the roster availability read transaction failed: %1"
-                        ).arg(transaction.startError()))
-                    );
-            }
-
-            const Result<
-                QList<RosterRepository::ParentAwareColumnNamesForClass>
-                > loaded = repository
-                    ->loadRosterColumnNamesForClassesWithParentProvenance(
-                        legacyClassIds
-                        );
-            if (!loaded)
-            {
-                return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(loaded.error())
-                    );
-            }
-            if (loaded->size() != legacyClassIds.size())
-            {
-                return failure(
-                    Domain::ErrorCode::Validation,
-                    "The roster column repository returned an incomplete class list."
-                    );
-            }
-
-            std::vector<std::u16string> requiredColumnNames = baseColumnNames;
-            std::vector<Application::RosterAvailabilityAccumulator>
-                accumulators;
-            accumulators.reserve(classIds.size());
-            for (std::size_t index = 0; index < classIds.size(); ++index)
-            {
-                const RosterRepository::ParentAwareColumnNamesForClass& record =
-                    loaded->at(static_cast<qsizetype>(index));
-                if (record.classId != legacyClassIds.at(
-                        static_cast<qsizetype>(index)
-                        ))
-                {
-                    return failure(
-                        Domain::ErrorCode::Validation,
-                        "The roster column repository returned a different class identifier order."
-                        );
-                }
-
-                std::vector<std::u16string> storedColumns;
-                storedColumns.reserve(
-                    static_cast<std::size_t>(record.columns.size())
-                    );
-                for (const QString& column : record.columns)
-                {
-                    storedColumns.push_back(column.toStdU16String());
-                }
-                accumulators.emplace_back(
-                    storedColumns,
-                    requiredColumnNames,
-                    qtCaseInsensitiveEquals
-                    );
-            }
-
-            bool sawUnexpectedClassId = false;
-            const Status streamed =
-                repository->forEachRosterDataCellForExistingClasses(
-                    legacyClassIds,
-                    static_cast<int>(Application::RosterModeledRowCount),
-                    [&accumulators,
-                     &recordIndexByClassId,
-                     &sawUnexpectedClassId](
-                        const int classId,
-                        const int rowIndex,
-                        const int columnIndex,
-                        const QString& value
-                        )
-                    {
-                        const auto recordIndex =
-                            recordIndexByClassId.constFind(classId);
-                        if (recordIndex == recordIndexByClassId.cend())
-                        {
-                            sawUnexpectedClassId = true;
-                            return;
-                        }
-
-                        const std::u16string text = value.toStdU16String();
-                        const Application::RosterAvailabilityAccumulatorRowIndex
-                            applicationRowIndex{rowIndex};
-                        const Application::RosterAvailabilityAccumulatorSourceColumnIndex
-                            applicationSourceColumnIndex{columnIndex};
-                        accumulators[static_cast<std::size_t>(*recordIndex)]
-                            .observeCell(
-                                applicationRowIndex,
-                                applicationSourceColumnIndex,
-                                text
-                                );
-                    }
-                    );
-            if (!streamed)
-            {
-                return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(streamed.error())
-                    );
-            }
-            if (sawUnexpectedClassId)
-            {
-                return failure(
-                    Domain::ErrorCode::Validation,
-                    "The roster cell repository returned an unexpected class id."
-                    );
-            }
-
             std::vector<Application::RosterAvailabilityReadSnapshot>
                 snapshots;
-            snapshots.reserve(classIds.size());
-            for (std::size_t index = 0; index < classIds.size(); ++index)
+            Domain::ErrorCode operationFailureCode =
+                Domain::ErrorCode::Technical;
+            const auto operationFailure = [
+                &operationFailureCode
+                ](
+                    const Domain::ErrorCode code,
+                    QString diagnostic
+                    ) -> Status
             {
-                const RosterRepository::ParentAwareColumnNamesForClass& record =
-                    loaded->at(static_cast<qsizetype>(index));
-                if (record.parentMissing)
-                {
-                    snapshots.push_back({
-                        .classId = classIds[index],
-                        .firstEmptyRowResult = Domain::Result<
-                            Application::RosterAvailabilityFirstEmptyRow
-                            >::failure({
-                                .code = Domain::ErrorCode::NotFound,
-                                .message = "The requested class does not exist.",
-                                .recoverable = true
-                            })
-                    });
-                }
-                else
-                {
-                    snapshots.push_back({
-                        .classId = classIds[index],
-                        .firstEmptyRowResult = Domain::Result<
-                            Application::RosterAvailabilityFirstEmptyRow
-                            >::success(accumulators[index].firstEmptyRow())
-                    });
-                }
-            }
+                operationFailureCode = code;
+                return std::unexpected(std::move(diagnostic));
+            };
 
-            if (!transaction.commit())
+            const auto transactionFailure = store->withReadTransaction(
+                [&]() -> Status
+                {
+                    const Result<
+                        QList<RosterRepository::ParentAwareColumnNamesForClass>
+                        > loaded = repository
+                            ->loadRosterColumnNamesForClassesWithParentProvenance(
+                                legacyClassIds
+                                );
+                    if (!loaded)
+                    {
+                        return operationFailure(
+                            Domain::ErrorCode::Technical,
+                            loaded.error()
+                            );
+                    }
+                    if (loaded->size() != legacyClassIds.size())
+                    {
+                        return operationFailure(
+                            Domain::ErrorCode::Validation,
+                            QStringLiteral(
+                                "The roster column repository returned an incomplete class list."
+                                )
+                            );
+                    }
+
+                    std::vector<std::u16string> requiredColumnNames = baseColumnNames;
+                    std::vector<Application::RosterAvailabilityAccumulator>
+                        accumulators;
+                    accumulators.reserve(classIds.size());
+                    for (std::size_t index = 0; index < classIds.size(); ++index)
+                    {
+                        const RosterRepository::ParentAwareColumnNamesForClass&
+                            record = loaded->at(static_cast<qsizetype>(index));
+                        if (record.classId != legacyClassIds.at(
+                                static_cast<qsizetype>(index)
+                                ))
+                        {
+                            return operationFailure(
+                                Domain::ErrorCode::Validation,
+                                QStringLiteral(
+                                    "The roster column repository returned a different class identifier order."
+                                    )
+                                );
+                        }
+
+                        std::vector<std::u16string> storedColumns;
+                        storedColumns.reserve(
+                            static_cast<std::size_t>(record.columns.size())
+                            );
+                        for (const QString& column : record.columns)
+                        {
+                            storedColumns.push_back(column.toStdU16String());
+                        }
+                        accumulators.emplace_back(
+                            storedColumns,
+                            requiredColumnNames,
+                            qtCaseInsensitiveEquals
+                            );
+                    }
+
+                    bool sawUnexpectedClassId = false;
+                    const Status streamed =
+                        repository->forEachRosterDataCellForExistingClasses(
+                            legacyClassIds,
+                            static_cast<int>(Application::RosterModeledRowCount),
+                            [&accumulators,
+                             &recordIndexByClassId,
+                             &sawUnexpectedClassId](
+                                const int classId,
+                                const int rowIndex,
+                                const int columnIndex,
+                                const QString& value
+                                )
+                            {
+                                const auto recordIndex =
+                                    recordIndexByClassId.constFind(classId);
+                                if (recordIndex == recordIndexByClassId.cend())
+                                {
+                                    sawUnexpectedClassId = true;
+                                    return;
+                                }
+
+                                const std::u16string text = value.toStdU16String();
+                                const Application::RosterAvailabilityAccumulatorRowIndex
+                                    applicationRowIndex{rowIndex};
+                                const Application::RosterAvailabilityAccumulatorSourceColumnIndex
+                                    applicationSourceColumnIndex{columnIndex};
+                                accumulators[static_cast<std::size_t>(*recordIndex)]
+                                    .observeCell(
+                                        applicationRowIndex,
+                                        applicationSourceColumnIndex,
+                                        text
+                                        );
+                            }
+                            );
+                    if (!streamed)
+                    {
+                        return operationFailure(
+                            Domain::ErrorCode::Technical,
+                            streamed.error()
+                            );
+                    }
+                    if (sawUnexpectedClassId)
+                    {
+                        return operationFailure(
+                            Domain::ErrorCode::Validation,
+                            QStringLiteral(
+                                "The roster cell repository returned an unexpected class id."
+                                )
+                            );
+                    }
+
+                    snapshots.reserve(classIds.size());
+                    for (std::size_t index = 0; index < classIds.size(); ++index)
+                    {
+                        const RosterRepository::ParentAwareColumnNamesForClass&
+                            record = loaded->at(static_cast<qsizetype>(index));
+                        if (record.parentMissing)
+                        {
+                            snapshots.push_back({
+                                .classId = classIds[index],
+                                .firstEmptyRowResult = Domain::Result<
+                                    Application::RosterAvailabilityFirstEmptyRow
+                                    >::failure({
+                                        .code = Domain::ErrorCode::NotFound,
+                                        .message = "The requested class does not exist.",
+                                        .recoverable = true
+                                    })
+                            });
+                        }
+                        else
+                        {
+                            snapshots.push_back({
+                                .classId = classIds[index],
+                                .firstEmptyRowResult = Domain::Result<
+                                    Application::RosterAvailabilityFirstEmptyRow
+                                    >::success(accumulators[index].firstEmptyRow())
+                            });
+                        }
+                    }
+                    return {};
+                }
+                );
+
+            if (transactionFailure)
             {
-                QString error = database.lastError().text();
+                using Stage = WorkspaceStore::ReadTransactionFailure::Stage;
+                if (transactionFailure->stage == Stage::Start)
+                {
+                    return failure(
+                        Domain::ErrorCode::Technical,
+                        toStdString(QStringLiteral(
+                            "Starting the roster availability read transaction failed: %1"
+                            ).arg(transactionFailure->diagnostic))
+                        );
+                }
+                if (transactionFailure->stage == Stage::Operation)
+                {
+                    return failure(
+                        operationFailureCode,
+                        toStdString(transactionFailure->diagnostic)
+                        );
+                }
+
+                QString error = transactionFailure->diagnostic;
                 if (error.isEmpty())
                 {
                     error = QStringLiteral("unknown database error");
@@ -263,6 +292,7 @@ public:
                         ).arg(error))
                     );
             }
+
             return Application::RosterAvailabilityBatchReadResult::success(
                 std::move(snapshots)
                 );

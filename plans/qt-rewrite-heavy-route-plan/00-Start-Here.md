@@ -7,18 +7,15 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 5 is complete and pushed (19/19 slices accepted); its implementation
-  tip is `61d1fc9f`. Its source/acceptance push reached
-  `5725e7234867505c0f9c7e9227971af105ccb9dc`; the follow-up push-receipt
-  documentation commit `8d74cf7a5655e0b7d6c2fbd776ac8afcb7931bc3` was also
-  pushed. The broader Batch 6 discovery
-  found no eligible slice (`No other slices were found.`); no batch or
-  candidate is active. Revisit the broad `FeatureServices`/`DataService` APIs
-  if production callers are added or service composition changes. The [Phase 3
-  plan](04-Phase-3-Persistence-Rewrite.md),
+  Batch 5 is complete (19/19 slices accepted) and pushed: source/acceptance
+  tip `5725e723`, follow-up receipts `8d74cf7a` and `ea91cb64`, and handoff
+  tip `b29a0c9b` are pushed. Batch 6's one candidate, F1417, is accepted and
+  ready for its source/acceptance commit and batch push. Batch 7 is discovered
+  and waiting for that push; F1418 is its first/current candidate. The current
+  details are in the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
-  tracker](Current-Slice-Batches.md) contain the current detail.
+  tracker](Current-Slice-Batches.md).
   Phase 2 closure evidence
   and limitations remain in its [plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
   and [progress log](03-Phase-2-Progress-Log.md).

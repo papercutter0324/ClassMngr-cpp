@@ -1,5 +1,6 @@
 #include "data/database/workspace_store.h"
 
+#include "data/database/database_transaction.h"
 #include "data/database/database_schema_manager.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "data/repositories/campus_record_repository.h"
@@ -276,6 +277,48 @@ QString WorkspaceStore::databasePath() const
 QSqlDatabase WorkspaceStore::database() const
 {
     return m_database ? *m_database : QSqlDatabase();
+}
+
+std::optional<WorkspaceStore::ReadTransactionFailure>
+WorkspaceStore::withReadTransaction(
+    const std::function<Status()>& operation
+    ) const
+{
+    if (!m_database || !m_database->isOpen())
+    {
+        return ReadTransactionFailure{
+            .stage = ReadTransactionFailure::Stage::Start,
+            .diagnostic = {}
+        };
+    }
+
+    DatabaseTransaction transaction(*m_database);
+    if (!transaction.started())
+    {
+        return ReadTransactionFailure{
+            .stage = ReadTransactionFailure::Stage::Start,
+            .diagnostic = transaction.startError()
+        };
+    }
+
+    const Status operationStatus = operation();
+    if (!operationStatus)
+    {
+        return ReadTransactionFailure{
+            .stage = ReadTransactionFailure::Stage::Operation,
+            .diagnostic = operationStatus.error()
+        };
+    }
+
+    if (!transaction.commit())
+    {
+        return ReadTransactionFailure{
+            .stage = ReadTransactionFailure::Stage::Commit,
+            .diagnostic = m_database->lastError().text()
+        };
+    }
+
+    return std::nullopt;
 }
 
 #define CLASSMNGR_REPOSITORY_ACCESSOR(Type, name, member) \

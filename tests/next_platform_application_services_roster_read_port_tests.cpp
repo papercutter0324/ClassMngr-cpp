@@ -266,6 +266,8 @@ private slots:
     void rejectsRowIndexBeyondIntRangeWithoutDenseExpansion();
     void readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit();
     void preservesMixedParentProvenanceOutcomesInRequestOrder();
+    void workspaceStoreReadTransactionReportsOperationFailure();
+    void batchAvailabilityNestedTransactionStartFailureMapsTechnicalError();
     void rejectsMalformedAvailabilityColumnIndex();
     void missingParentReturnsRecoverableNotFound();
     void deletedParentWithOrphanRosterKeepsLegacyData();
@@ -1386,6 +1388,71 @@ preservesMixedParentProvenanceOutcomesInRequestOrder()
     }
     QVERIFY(result.value()[5].firstEmptyRowResult);
     QVERIFY(result.value()[5].firstEmptyRowResult.value().isFull());
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+workspaceStoreReadTransactionReportsOperationFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    const auto failure = store->withReadTransaction([]() -> Status
+        {
+            return std::unexpected(QStringLiteral("operation probe failure"));
+        });
+
+    QVERIFY(failure);
+    QVERIFY(failure->stage
+        == WorkspaceStore::ReadTransactionFailure::Stage::Operation);
+    QCOMPARE(failure->diagnostic, QStringLiteral("operation probe failure"));
+
+    const auto nextTransaction = store->withReadTransaction([]() -> Status
+        {
+            return {};
+        });
+    QVERIFY(!nextTransaction);
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+batchAvailabilityNestedTransactionStartFailureMapsTechnicalError()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Nested Transaction Availability Read Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlDatabase database = services.workspaceStore()->database();
+    QVERIFY2(database.transaction(), qPrintable(database.lastError().text()));
+
+    Platform::ApplicationServicesRosterAvailabilityBatchReadPort port(services);
+    const auto result = port.readRosterAvailability(
+        {typedClassId(*createdClass)},
+        baseColumnNames()
+        );
+    const bool outerTransactionRolledBack = database.rollback();
+    QVERIFY2(
+        outerTransactionRolledBack,
+        qPrintable(database.lastError().text())
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(result.error().message);
+    QVERIFY2(
+        diagnostic.startsWith(QStringLiteral(
+            "Starting the roster availability read transaction failed:"
+            )),
+        qPrintable(diagnostic)
+        );
 }
 
 void NextPlatformApplicationServicesRosterReadPortTests::

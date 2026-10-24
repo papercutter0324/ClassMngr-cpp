@@ -6,7 +6,9 @@
 #include <QSqlDatabase>
 #include <QString>
 
+#include <functional>
 #include <memory>
+#include <optional>
 
 class CalendarEventRepository;
 class CampusRecordRepository;
@@ -28,6 +30,19 @@ class TestingClassRepository;
 class WorkspaceStore final
 {
 public:
+    struct ReadTransactionFailure final
+    {
+        enum class Stage
+        {
+            Start,
+            Operation,
+            Commit
+        };
+
+        Stage stage;
+        QString diagnostic;
+    };
+
     WorkspaceStore();
     ~WorkspaceStore();
 
@@ -41,6 +56,12 @@ public:
     [[nodiscard]] bool isOpen() const;
     [[nodiscard]] QString databasePath() const;
     [[nodiscard]] QSqlDatabase database() const;
+
+    // Runs the callback synchronously in a transaction owned by this store.
+    // A failed Status rolls back; callback exceptions propagate after rollback.
+    [[nodiscard]] std::optional<ReadTransactionFailure> withReadTransaction(
+        const std::function<Status()>& operation
+        ) const;
 
     SettingsRepository* settingsRepository() const;
     CampusRecordRepository* campusRecordRepository() const;

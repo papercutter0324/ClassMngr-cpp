@@ -38,15 +38,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 5 is complete and pushed (19/19 accepted), with
-  implementation tip `61d1fc9f`. Its source/acceptance push reached
-  `5725e7234867505c0f9c7e9227971af105ccb9dc`; the follow-up push-receipt
-  documentation commit `8d74cf7a5655e0b7d6c2fbd776ac8afcb7931bc3` was also
-  pushed.
-  The broader Batch 6 discovery
-  found no eligible slice (`No other slices were found.`); no batch or
-  candidate is active. Revisit `FeatureServices`/`DataService` if production
-  callers are added or composition changes. F1416 evidence is in the
+- Current note: Batch 5 is complete (19/19 accepted) and pushed: source/
+  acceptance tip `5725e723`, follow-up receipts `8d74cf7a` and `ea91cb64`, and
+  handoff tip `b29a0c9b`. Batch 6's one candidate, F1417, is accepted; its
+  source/acceptance commit and batch push are pending. It encapsulates
+  F1348's roster-availability read transaction in `WorkspaceStore`, preserving
+  snapshot behavior. Batch 7 is discovered and waiting for that push; F1418 is
+  its first/current candidate to move the
+  Workspace Save/autosave commit behind `WorkspaceStore`. `DataService::save()`
+  is unused in ordinary production composition, and no other Batch 7 candidates
+  were found. F1417 and F1416 evidence is in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
@@ -65,35 +66,16 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1416 — 2026-10-24
+## Latest Progress Update — F1417 — 2026-10-24
 
-F1416 — Schedule Import apply — is accepted at implementation tip `61d1fc9f`
-(`Phase3 - Migrate F1416 schedule import apply`). The adapter resolves
-`ApplicationServices::workspaceStore()` and its
-`ScheduleImportRepository` on each apply call; the Platform fixture uses
-`WorkspaceStore` for direct database access. ApplyUseCase, repository, and UI
-behavior are unchanged. Existing typed validation, qint64 teacher/int32 class
-IDs, transaction/result mapping, `No Teacher Profile is open.` failure, and
-the legacy `ScheduleService::importSchedule` comparison remain unchanged.
-
-The incremental macOS Debug build passed for
-`ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`.
-CTest #333 `ClassMngrNextApplicationScheduleImportApplyUseCaseTests` and
-CTest #486
-`ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`
-passed 2/2; the Platform QtTest had 9 passed. No broader suite or
-cross-platform build ran.
-
-Batch 5 (19/19 accepted) was pushed successfully at implementation tip
-`61d1fc9f`. Its source/acceptance push reached
-`5725e7234867505c0f9c7e9227971af105ccb9dc`; the follow-up push-receipt
-documentation commit `8d74cf7a5655e0b7d6c2fbd776ac8afcb7931bc3` was also
-pushed. A second read-only Batch 6 scan
-covering broader unranked service and fallback paths found no eligible slice:
-`No other slices were found.` There is no active batch or current candidate.
-Revisit the broad `FeatureServices`/`DataService` APIs if new production
-callers appear or service composition changes. Full evidence is in the
-[progress log](04-Phase-3-Progress-Log.md).
+F1417 — WorkspaceStore-owned roster availability read transaction — is
+accepted. The Platform adapter delegates transaction management to
+`WorkspaceStore`; the parent-aware column read, sparse cell stream, and
+snapshot assembly remain within the same transaction. Start, operation, and
+commit failure mapping, result ordering, sparse streaming, and exception
+behavior remain intact. Its source/acceptance commit and Batch 6 push are
+pending. Batch 7/F1418 remains queued until that push succeeds. Full evidence
+is in the [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
 
