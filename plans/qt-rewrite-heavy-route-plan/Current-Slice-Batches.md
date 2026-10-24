@@ -1,11 +1,11 @@
 # Current Slice Batches
 
 This is the single live tracker for slice batches across the Qt rewrite. Keep
-the active batch and the discovered next batch while it waits for its
-predecessor to close and push. Replace closed and pushed batches; do not
-maintain phase-specific batch files or an archive of completed batches. Keep
-slice requirements in the relevant phase plan, and record useful implementation
-and verification evidence in its progress log.
+the active batch and the next discovered batch while it waits for its
+predecessor to close and push. Replace closed batches; do not maintain
+phase-specific batch files or an archive of completed batches. Keep slice
+requirements in the relevant phase plan, and record useful implementation and
+verification evidence in its progress log.
 
 ## Current state
 
@@ -15,41 +15,12 @@ and verification evidence in its progress log.
   was later pushed as
   `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before Batch 4
   began.
-- Batch 4 discovery is complete; Batch 4 is complete and awaiting push.
-- Batch 5 discovery is complete; its 19 prioritized slices are queued until
-  the Batch 4 push receipt is recorded.
+- Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`; its
+  implementation tip is `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`.
+- Batch 5 discovery is complete and Batch 5 is active with F1398 — Middle-school
+  analytics preferences current.
 
-## Phase 3 — Batch 4 (complete; awaiting push)
-
-Batch 4 discovery began when F1376 started (candidate 19 of 20 in Batch 3) and
-is complete. Two complementary scans found more than 20 possible active
-candidates. The port-centric scan found 41 active Next Platform persistence
-ports, including F1376 and F1377, leaving 39 further port candidates. The
-feature-flow scan cross-checked user-facing workflows. This is the
-priority-ordered shortlist, not an exhaustive inventory.
-
-1. F1378 — My Classes teacher-profile batch read (accepted)
-2. F1379 — My Classes teacher-display-name batch read (accepted)
-3. F1380 — Roster snapshot read (accepted)
-4. F1381 — Roster column-name batch read (accepted)
-5. F1382 — Roster template-print source read (accepted)
-6. F1383 — Roster print class-info read (accepted)
-7. F1384 — Speaking-evaluation roster-name read (accepted)
-8. F1385 — GS Team directory read (accepted)
-9. F1386 — GS Team directory save (accepted)
-10. F1387 — Native English teacher directory read (accepted)
-11. F1388 — Native English teacher directory save (accepted)
-12. F1389 — Korean teacher birthday directory read (accepted)
-13. F1390 — GS Team birthday directory read (accepted)
-14. F1391 — Native English birthday directory read (accepted)
-15. F1392 — Current-campus preferences (accepted)
-16. F1393 — Class-visibility preferences (accepted)
-17. F1394 — Schedule-display preferences (accepted)
-18. F1395 — Schedule-display-mode preferences (accepted)
-19. F1396 — Calendar first-day-of-week preferences (accepted)
-20. F1397 — Academic-calendar schedule preferences (accepted)
-
-## Phase 3 — Batch 5 (discovered; queued until Batch 4 push receipt)
+## Phase 3 — Batch 5 (active; F1398 current)
 
 Two complementary scans found 19 prioritized, distinct persistence slices.
 The source scan found exactly 19 active Next Platform ports after excluding
@@ -58,7 +29,7 @@ cross-checked consumers and separately surfaced display-name preference,
 latest-source-date read, and residual Calendar Event range projection. Every
 scan-identified item is a candidate, not a test result.
 
-1. F1398 — Middle-school analytics preferences
+1. F1398 — Middle-school analytics preferences (current)
 2. F1399 — Calendar event-type color preferences
 3. F1400 — Class-day-filter reset policy
 4. F1401 — Class-selection reset policy

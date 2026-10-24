@@ -1994,8 +1994,9 @@ surfaced display-name preference, latest-source-date read, and residual
 Calendar Event range projection. A focused guard audit found the Speaking Eval,
 Teacher Info, and Sidebar direct session checks are incidental behavior guards,
 not independent persistence ports; they remain in overflow. The 19 prioritized
-slices are listed in `Current-Slice-Batches.md` and queued until the Batch 4
-push receipt is recorded. Scan registrations are candidates, not test results.
+slices are listed in `Current-Slice-Batches.md` and were queued until the Batch
+4 push receipt below was recorded. Scan registrations are candidates, not test
+results.
 
 ## F1397 — Academic-calendar schedule preferences (Batch 4 candidate 20 of 20) — 2026-10-24
 
@@ -2012,5 +2013,20 @@ and #168 passed (2/2). The older Phase 2 F193 summary conflicts with current
 source/test behavior. This slice preserves the existing behavior: unavailable
 or closed reads return empty success; writes and repository read errors map to
 Technical. No semantics changed. `git diff --check` passed. No full suite or
-cross-platform build ran. F1397 is accepted; Batch 4 is complete and awaiting
-push. Batch 5 remains queued until the Batch 4 push receipt is recorded.
+cross-platform build ran. F1397 is accepted; Batch 4 is complete and pushed.
+Batch 5 is active with F1398 (Middle-school analytics preferences) current.
+
+Commit: `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`.
+
+## Batch 4 push receipt — 2026-10-24
+
+The 20 Batch 4 slice commits, F1378–F1397, were pushed from `Qt-Rewrite` to
+configured `origin/Qt-Rewrite` with a normal non-force push. The remote
+advanced from prior tip `6597875f6036224767fa8db7331eac7eac856869` to Batch 4
+implementation tip `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Post-push
+verification showed local HEAD and `origin/Qt-Rewrite` matched at
+`544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`; the worktree was clean.
+
+Batch 4 is complete and pushed. Batch 5 discovery is complete and Batch 5 is
+active with F1398 (Middle-school analytics preferences) current. Its 19-slice
+priority list is in `Current-Slice-Batches.md`.
