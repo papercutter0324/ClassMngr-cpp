@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/application/class_notes_page_read_port.h"
@@ -43,9 +43,9 @@ public:
             });
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return snapshotWithFailures(
                 classId,
@@ -54,7 +54,7 @@ public:
         }
 
         ClassInfoRepository* const classInfoRepository =
-            session->classInfoRepository();
+            store->classInfoRepository();
         if (!classInfoRepository)
         {
             return snapshotWithFailures(
@@ -160,7 +160,7 @@ public:
         if (record.teacherId > 0)
         {
             teacherName = loadTeacherDisplayName(
-                session->teacherRepository(),
+                store->teacherRepository(),
                 record.teacherId
                 );
         }

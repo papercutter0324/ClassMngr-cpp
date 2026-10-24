@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
@@ -100,7 +100,7 @@ initialTextSubtitleAndDiscardReloadMatchCommonInput()
     QVERIFY(teacherId > 0);
 
     ClassInfo initial = parityInfo(classId, teacherId, false);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(initial));
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(initial));
 
     // Use the same leading public constructor on the baseline and current page.
     ClassNotesPage page(&services);
@@ -122,7 +122,7 @@ initialTextSubtitleAndDiscardReloadMatchCommonInput()
     QVERIFY(page.hasUnsavedChanges());
 
     const ClassInfo reloaded = parityInfo(classId, teacherId, true);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         reloaded
         ));
     page.discardChanges();

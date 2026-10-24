@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/platform/application_services_class_notes_page_read_port.h"
@@ -65,7 +65,7 @@ bool insertRegularTime(
     const QString& startTime
     )
 {
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     query.prepare(QStringLiteral(
         "INSERT INTO class_times (class_id, day, start_time) "
         "VALUES (?, ?, ?)"
@@ -112,12 +112,12 @@ readsProjectedFieldsAndPreferredTeacherNameFromActiveSession()
     teacher.teacherEn = QStringLiteral("English Name");
     teacher.preferredName = QStringLiteral(" Preferred Display ");
     const auto teacherId =
-        services.databaseSession()->teacherRepository()->createTeacher(teacher);
+        services.workspaceStore()->teacherRepository()->createTeacher(teacher);
     QVERIFY(teacherId);
 
     ClassInfo info = makeClassInfo(id);
     info.teacherId = *teacherId;
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(info));
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(info));
 
     Platform::ApplicationServicesClassNotesPageReadPort port(&services);
     const auto result = port.readClassNotesPage(classId(id));
@@ -138,7 +138,7 @@ readsProjectedFieldsAndPreferredTeacherNameFromActiveSession()
     QVERIFY(fields.timeFillerActivities == u"  exact activities  ");
     QVERIFY(result.value().teacherDisplayName.value() == u"Preferred Display");
 
-    const auto& metrics = services.databaseSession()->classInfoRepository()
+    const auto& metrics = services.workspaceStore()->classInfoRepository()
                               ->classNotesPageReadMetrics();
     QCOMPARE(metrics.callCount, 1);
     QCOMPARE(metrics.metadataStatementCount, 1);
@@ -158,9 +158,9 @@ wideTeacherIdResolvesPreferredDisplayName()
     QVERIFY(id > 0);
 
     ClassInfo info = makeClassInfo(id);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(info));
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(info));
 
-    QSqlQuery insertTeacher(services.databaseSession()->database());
+    QSqlQuery insertTeacher(services.workspaceStore()->database());
     QVERIFY(insertTeacher.prepare(QStringLiteral(R"(
         INSERT INTO teachers (
             id, teacher_kr, teacher_en, preferred_romanization, preferred_name
@@ -173,7 +173,7 @@ wideTeacherIdResolvesPreferredDisplayName()
     insertTeacher.addBindValue(QStringLiteral("  Wide Preferred Name  "));
     QVERIFY2(insertTeacher.exec(), qPrintable(insertTeacher.lastError().text()));
 
-    QSqlQuery assignTeacher(services.databaseSession()->database());
+    QSqlQuery assignTeacher(services.workspaceStore()->database());
     QVERIFY(assignTeacher.prepare(QStringLiteral(
         "UPDATE class_info SET teacher_id=? WHERE class_id=?"
         )));
@@ -182,7 +182,7 @@ wideTeacherIdResolvesPreferredDisplayName()
     QVERIFY2(assignTeacher.exec(), qPrintable(assignTeacher.lastError().text()));
     QCOMPARE(assignTeacher.numRowsAffected(), 1);
 
-    QSqlQuery verifyStoredIds(services.databaseSession()->database());
+    QSqlQuery verifyStoredIds(services.workspaceStore()->database());
     QVERIFY(verifyStoredIds.prepare(QStringLiteral(R"(
         SELECT typeof(teachers.id), teachers.id,
                typeof(class_info.teacher_id), class_info.teacher_id
@@ -240,7 +240,7 @@ skipsNonpositiveTeacherId()
     QVERIFY(services.openDatabase(databasePath(directory)));
     const int id = createClass(services, QStringLiteral("Unassigned class"));
     QVERIFY(id > 0);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         makeClassInfo(id)
         ));
 
@@ -263,7 +263,7 @@ existingClassWithoutInfoKeepsScheduleAndUnknownTeacher()
     QVERIFY(services.openDatabase(databasePath(directory)));
     const int id = createClass(services, QStringLiteral("Schedule without metadata"));
     QVERIFY(id > 0);
-    QSqlQuery metadataQuery(services.databaseSession()->database());
+    QSqlQuery metadataQuery(services.workspaceStore()->database());
     metadataQuery.prepare(QStringLiteral(
         "SELECT COUNT(*) FROM class_info WHERE class_id=?"
         ));
@@ -301,7 +301,7 @@ existingClassWithoutInfoKeepsScheduleAndUnknownTeacher()
         }));
     QVERIFY(scheduled.value().teacherDisplayName.value().empty());
 
-    const auto& metrics = services.databaseSession()->classInfoRepository()
+    const auto& metrics = services.workspaceStore()->classInfoRepository()
                               ->classNotesPageReadMetrics();
     QCOMPARE(metrics.callCount, 1);
     QCOMPARE(metrics.metadataStatementCount, 1);
@@ -320,7 +320,7 @@ missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
         QStringLiteral("Class Notes Deleted Parent")
         );
     QVERIFY(deletedClass);
-    QSqlQuery deleteParent(services.databaseSession()->database());
+    QSqlQuery deleteParent(services.workspaceStore()->database());
     QVERIFY(deleteParent.prepare(QStringLiteral(
         "DELETE FROM classes WHERE id=?"
         )));
@@ -333,7 +333,7 @@ missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
     Platform::ApplicationServicesClassNotesPageReadPort port(&services);
     for (const int missingClassId : missingClassIds)
     {
-        const auto metricsBefore = services.databaseSession()
+        const auto metricsBefore = services.workspaceStore()
                                        ->classInfoRepository()
                                        ->classNotesPageReadMetrics();
         const auto result = port.readClassNotesPage(classId(missingClassId));
@@ -347,7 +347,7 @@ missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
         QCOMPARE(snapshot.teacherDisplayName.error().code,
                  Domain::ErrorCode::NotFound);
 
-        const auto metricsAfter = services.databaseSession()
+        const auto metricsAfter = services.workspaceStore()
                                       ->classInfoRepository()
                                       ->classNotesPageReadMetrics();
         QCOMPARE(metricsAfter.callCount, metricsBefore.callCount + 1);
@@ -357,7 +357,7 @@ missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
                  metricsBefore.regularScheduleStatementCount + 1);
     }
 
-    const auto legacy = services.databaseSession()->classInfoRepository()
+    const auto legacy = services.workspaceStore()->classInfoRepository()
                             ->loadClassNotesPageRecord(neverPresentClassId);
     QVERIFY(legacy);
     QCOMPARE(legacy->classId, neverPresentClassId);
@@ -407,13 +407,13 @@ teacherDisplayNameUsesTrimmedFallbackOrder()
                 )
             );
         QVERIFY(id > 0);
-        const auto teacherId = services.databaseSession()
+        const auto teacherId = services.workspaceStore()
                                    ->teacherRepository()
                                    ->createTeacher(teachers[index]);
         QVERIFY(teacherId);
         ClassInfo info = makeClassInfo(id);
         info.teacherId = *teacherId;
-        QVERIFY(services.databaseSession()->classInfoRepository()
+        QVERIFY(services.workspaceStore()->classInfoRepository()
                     ->saveClassInfo(info));
 
         const auto result = port.readClassNotesPage(classId(id));
@@ -434,11 +434,11 @@ classFieldFailureIsReportedIndependently()
     QVERIFY(services.openDatabase(databasePath(directory)));
     const int id = createClass(services, QStringLiteral("Broken class fields"));
     QVERIFY(id > 0);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         makeClassInfo(id)
         ));
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE class_times")),
              qPrintable(query.lastError().text()));
 
@@ -467,7 +467,7 @@ metadataQueryFailureKeepsPageErrorMapping()
     const int id = createClass(services, QStringLiteral("Broken class metadata"));
     QVERIFY(id > 0);
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE class_info")),
              qPrintable(query.lastError().text()));
 
@@ -486,7 +486,7 @@ metadataQueryFailureKeepsPageErrorMapping()
     QCOMPARE(result.value().teacherDisplayName.error().message,
              std::string("The class teacher display name is unavailable."));
 
-    const auto& metrics = services.databaseSession()->classInfoRepository()
+    const auto& metrics = services.workspaceStore()->classInfoRepository()
                               ->classNotesPageReadMetrics();
     QCOMPARE(metrics.callCount, 1);
     QCOMPARE(metrics.metadataStatementCount, 1);
@@ -506,13 +506,13 @@ teacherFailurePreservesClassTextFields()
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("Teacher to replace");
     const auto teacherId =
-        services.databaseSession()->teacherRepository()->createTeacher(teacher);
+        services.workspaceStore()->teacherRepository()->createTeacher(teacher);
     QVERIFY(teacherId);
     ClassInfo info = makeClassInfo(id);
     info.teacherId = *teacherId;
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(info));
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(info));
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
              qPrintable(query.lastError().text()));
     query.prepare(QStringLiteral(
@@ -552,14 +552,14 @@ teacherProjectionFailurePreservesClassTextFields()
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("Teacher name");
     const auto teacherId =
-        services.databaseSession()->teacherRepository()->createTeacher(teacher);
+        services.workspaceStore()->teacherRepository()->createTeacher(teacher);
     QVERIFY(teacherId);
     ClassInfo info = makeClassInfo(id);
     info.teacherId = *teacherId;
-    QVERIFY(services.databaseSession()->classInfoRepository()
+    QVERIFY(services.workspaceStore()->classInfoRepository()
                 ->saveClassInfo(info));
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral(
                  "ALTER TABLE teachers RENAME COLUMN preferred_romanization "
                  "TO legacy_preferred_romanization"

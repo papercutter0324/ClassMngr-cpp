@@ -1120,4 +1120,36 @@ including separately registered `NextFeatureClassCoTeacherWideTeacherIdentity`.
 `DatabaseSession`, `databaseSession()`, or `database_session.h` references.
 Existing Platform tests still have no explicit null-services,
 missing-repository, injected-exception, or transaction-commit-failure slot.
-No full suite or cross-platform build ran. F1363 is accepted; F1364 is current.
+No full suite or cross-platform build ran. F1363 is accepted and committed as
+`2211d4f3dbc6586a7055b771eefb5e2c7da95441`.
+
+## F1364 — Class Notes page read — 2026-10-23
+
+The production port in
+`src/next/platform/application_services_class_notes_page_read_port.h` now
+includes `workspace_store.h` and uses `WorkspaceStore::isOpen()`,
+`classInfoRepository()`, and `teacherRepository()`; no `DatabaseSession` APIs
+remain. Its focused fixtures,
+`tests/next_platform_application_services_class_notes_page_read_port_tests.cpp`
+and `tests/class_notes_page_read_parity_tests.cpp`, use `WorkspaceStore`.
+Assertions, SQL, test slots, and parity behavior are unchanged. The
+Application query, repository projection/API/SQL, UI, and F1365 save port are
+unchanged.
+
+Preserved behavior includes canonical ID/query-response matching, independent
+class fields and teacher-name results, ordered regular schedule, exact notes
+and activities, missing-parent and metadata handling, teacher fallback and
+error mapping, no DataService fallback, read metrics, and SQL-failure
+visibility.
+
+`cmake --build build/macos-clang-debug --parallel 4` passed on macOS arm64 with
+Apple Clang and Qt 6.12. Four registered serial CTests passed:
+`ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests`,
+`ClassMngrNextApplicationClassNotesPageReadQueryTests`,
+`ClassMngrClassNotesPageReadParityTests`, and
+`ClassMngrNextFeatureClassNotesPageTests`. Across them, including init/cleanup,
+38 passed, 0 failed, and 0 skipped. `git diff --check` passed. The scoped
+adapter and fixtures contain no `DatabaseSession`, `databaseSession()`, or
+`database_session.h`. Feature tests emitted non-failing font-fallback and
+offscreen `propagateSizeHints` warnings. No full CTest suite or cross-platform
+build ran. F1364 is accepted; F1365 is current.

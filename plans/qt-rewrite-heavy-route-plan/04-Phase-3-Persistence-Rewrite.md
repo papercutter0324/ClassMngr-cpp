@@ -43,8 +43,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   discovery is complete and Batch 3 is active. F1358 (Testing Class details
   read), F1359 (Testing Class details update), F1360 (Testing Class delete),
   F1361 (Class Co-Teacher page read), F1362 (Class Co-Teacher teacher
-  choices read), and F1363 (Class Co-Teacher assignment save) are accepted;
-  F1364 (Class Notes page read) is current. F1358–F1363 implementation and
+  choices read), F1363 (Class Co-Teacher assignment save), and F1364 (Class
+  Notes page read) are accepted; F1365 (Class Notes save) is current.
+  F1358–F1364 implementation and
   verification evidence, plus the Batch 2 push receipt, are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -64,13 +65,13 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1363 — 2026-10-23
+## Latest Progress Update — F1364 — 2026-10-23
 
-F1363 is accepted; F1364 is current. The Class Co-Teacher assignment-save
-adapter and two direct fixtures now use `WorkspaceStore`; assertions, SQL
-semantics, and test slots are unchanged. Four targets built incrementally and
-five focused serial CTests passed. No full suite or cross-platform build ran.
-See the [progress log](04-Phase-3-Progress-Log.md) for exact results.
+F1364 is accepted; F1365 is current. The Class Notes read port and focused
+fixtures use `WorkspaceStore`; its query, repository, UI, and save port are
+unchanged. Four serial CTests passed (38 passed, 0 failed, 0 skipped). No full
+suite or cross-platform build ran. See the [progress log](04-Phase-3-Progress-Log.md)
+for exact results.
 
 ## Objective
 
