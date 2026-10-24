@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/teacher.h"
 #include "next/platform/application_services_korean_teacher_birthday_directory_read_port.h"
@@ -57,9 +57,9 @@ bool seedTeachers(ApplicationServices& services)
         QString(),
         QStringLiteral("02-03")
         );
-    const auto first = services.databaseSession()->teacherRepository()
+    const auto first = services.workspaceStore()->teacherRepository()
         ->createTeacher(alpha);
-    const auto second = services.databaseSession()->teacherRepository()
+    const auto second = services.workspaceStore()->teacherRepository()
         ->createTeacher(zulu);
     return first && second;
 }
@@ -88,7 +88,7 @@ repositoryReadsOnlyDirectoryFieldsInEnglishOrder()
     QVERIFY(services.openDatabase(databasePath(directory)));
     QVERIFY(seedTeachers(services));
     TeacherRepository* const repository =
-        services.databaseSession()->teacherRepository();
+        services.workspaceStore()->teacherRepository();
     QVERIFY(repository);
 
     const auto result =
@@ -176,7 +176,7 @@ distinguishesUnavailableSessionFromRepositoryFailure()
     QVERIFY(services.openDatabase(databasePath(directory)));
     QVERIFY(seedTeachers(services));
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE teachers")),
         qPrintable(query.lastError().text()));
     const auto repositoryFailure = port.readKoreanTeacherBirthdayDirectory();

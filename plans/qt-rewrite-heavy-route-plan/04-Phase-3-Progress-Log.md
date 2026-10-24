@@ -1817,3 +1817,30 @@ save-parity targets. Three selected serial CTests passed (3/3): #351
 and #129 `ClassMngrStaffDirectoryNativeEnglishSaveParityTests`.
 `git diff --check` passed. No full suite or cross-platform build ran. F1388
 is accepted; F1389 (Korean teacher birthday directory read) is current.
+
+Commit: `ddc645c1aedf2571c6cfb4fdf6927085dd7d2209`.
+
+## F1389 — Korean teacher birthday directory read (Batch 4 candidate 12 of 20) — 2026-10-24
+
+The Korean teacher birthday directory read port,
+`src/next/platform/application_services_korean_teacher_birthday_directory_read_port.h`,
+and its dedicated Platform fixture,
+`tests/next_platform_application_services_korean_teacher_birthday_directory_read_port_tests.cpp`,
+now use `WorkspaceStore`. The five raw fields, ordering, and assertions are
+unchanged.
+
+Built `ClassMngrNextApplicationKoreanTeacherBirthdayDirectoryReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPortTests`,
+and `ClassMngrNavigationTeacherReadTests`. Serial CTests #350
+`ClassMngrNextApplicationKoreanTeacherBirthdayDirectoryReadQueryTests` and #418
+`ClassMngrNextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPortTests`
+passed (2/2). CTest #86 `NavigationTeacherRead` reported 38 passed and 1
+failed at
+`selectedTeacherProfileReadFailureWarnsWithoutConfirmation()` due to an
+unrelated teacher-profile warning-text mismatch. The same failure was
+reproduced against isolated clean F1388 source at commit
+`ddc645c1aedf2571c6cfb4fdf6927085dd7d2209`; baseline and post-change outputs
+match, confirming no regression. This is separate from the F1383 orphan-data
+mismatch recorded above. `git diff --check` passed. No full suite or
+cross-platform build ran. F1389 is accepted; F1390 (GS Team birthday
+directory read) is current.
