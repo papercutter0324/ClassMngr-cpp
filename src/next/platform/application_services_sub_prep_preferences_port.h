@@ -18,7 +18,7 @@ namespace ClassMngr::Next::Platform
 {
 
 // Qt-boundary adapter for the Sub Prep saved-content settings. The exact
-// legacy keys, QVariant conversion, session availability, and atomic
+// legacy keys, QVariant conversion, workspace availability, and atomic
 // repository saves remain outside the application contract.
 class ApplicationServicesSubPrepPreferencesPort final
     : public Application::SubPrepPreferencesPort
@@ -27,14 +27,14 @@ public:
     explicit ApplicationServicesSubPrepPreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_session(services.databaseSession())
+        : m_store(services.workspaceStore())
     {
     }
 
     explicit ApplicationServicesSubPrepPreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_session(services ? services->databaseSession() : nullptr)
+        : m_store(services ? services->workspaceStore() : nullptr)
     {
     }
 
@@ -121,7 +121,7 @@ private:
         return toUtf8(value.toString());
     }
 
-    DatabaseSession* m_session = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/sub_prep_preferences.h"
 #include "next/platform/application_services_sub_prep_preferences_port.h"
@@ -49,9 +49,9 @@ bool openDatabase(
 
 SettingsRepository* settingsRepository(ApplicationServices& services)
 {
-    DatabaseSession* const session = services.databaseSession();
-    return session && session->isOpen()
-        ? session->settingsRepository()
+    WorkspaceStore* const store = services.workspaceStore();
+    return store && store->isOpen()
+        ? store->settingsRepository()
         : nullptr;
 }
 
@@ -60,13 +60,13 @@ bool executeSql(
     const QString& statement
     )
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     return query.exec(statement);
 }
 
@@ -93,7 +93,7 @@ private slots:
     void exactKeysRoundTripAndPreserveUnrelatedSettings();
     void atomicSaveFailureRollsBackAndPreservesUnrelatedSettings();
     void unavailableSettingsFailWithoutWrites();
-    void closedSessionFailsWithoutDataServiceFallback();
+    void closedStoreFailsWithoutDataServiceFallback();
     void repositoryReadFailureReturnsTechnicalResultAndWarns();
 
 private:
@@ -117,9 +117,9 @@ missingValuesPreserveOptionalDefaults()
     ApplicationServicesSubPrepPreferencesPort port(services);
     const auto loaded = port.load();
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QSqlQuery materializedRows(session->database());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlQuery materializedRows(store->database());
     QVERIFY(materializedRows.prepare(QStringLiteral(R"(
         SELECT COUNT(*)
         FROM app_settings
@@ -357,15 +357,15 @@ unavailableSettingsFailWithoutWrites()
 }
 
 void NextPlatformApplicationServicesSubPrepPreferencesPortTests::
-closedSessionFailsWithoutDataServiceFallback()
+closedStoreFailsWithoutDataServiceFallback()
 {
     ApplicationServices services;
     const QString path = databasePath(m_directory);
     QVERIFY(services.openDatabase(path));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    SettingsRepository* repository = session->settingsRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    SettingsRepository* repository = store->settingsRepository();
     QVERIFY(repository);
 
     const QString classMaterials = QStringLiteral("  saved materials  ");
@@ -395,7 +395,7 @@ closedSessionFailsWithoutDataServiceFallback()
 
     services.closeDatabase();
     QVERIFY(services.dataService());
-    QVERIFY(!session->isOpen());
+    QVERIFY(!store->isOpen());
 
     const auto loaded = port.load();
     QVERIFY(!loaded);
@@ -407,8 +407,8 @@ closedSessionFailsWithoutDataServiceFallback()
     QVERIFY(!saved.error().recoverable);
 
     QVERIFY(services.openDatabase(path));
-    QVERIFY(session->isOpen());
-    repository = session->settingsRepository();
+    QVERIFY(store->isOpen());
+    repository = store->settingsRepository();
     QVERIFY(repository);
 
     const auto storedClassMaterials = repository->loadSetting(
