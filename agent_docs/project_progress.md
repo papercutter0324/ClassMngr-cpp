@@ -2,10 +2,11 @@
 
 Active deployment plan: Qt Rewrite Phase 3 — Persistence Rewrite.
 Current deployment: `phase3_resume_oct24_followup`. Route: Heavy; this
-continuation is active. Batch 9 (F1419–F1427) is complete and committed
-locally; its push is pending. Batch 10 discovery is complete with F1428 as its
-sole candidate, waiting for that push. Begin Batch 11 discovery when F1428
-starts. Phase 3 remains In Progress and its exit gate is open.
+continuation is active. Batch 9 (F1419–F1427) was pushed and verified at
+`7b4eaaf809ecdc17e4e14fae555b157c361c378d`. Batch 10's F1428 is committed
+and verified locally; its closeout documentation and push are pending. Batch
+11 discovery is complete with four ordered candidates and waits for Batch 10's
+push. Phase 3 remains In Progress and its exit gate is open.
 
 ## Goal
 
@@ -54,11 +55,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (Batch 9 complete locally; push pending)
+### Current checkpoint - 2026-10-24 (Batch 10 locally complete; push pending)
 
 Phase 3 remains In Progress on the mandatory Heavy route, with its exit gate
-open. Batch 9's nine ordered slices, F1419–F1427, are accepted and committed
-locally; the batch push is pending. F1425 verified the full ordered 96-class
+open. Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
+`origin/Qt-Rewrite` at `7b4eaaf809ecdc17e4e14fae555b157c361c378d`; the remote
+tip matched and the worktree was clean. F1425 verified the full ordered 96-class
 Schedule Import snapshot (24 teachers, 768 regular and 24 intensive schedule
 rows). F1426 removed an entry-sized workbook scratch copy while keeping the
 archive and inflated worksheet lifetimes explicit. F1427 maps class-transfer
@@ -73,11 +75,17 @@ The [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-R
 and [progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md)
 contain exact evidence and limits.
 
-Batch 10 discovery found one remaining diagnostics deliverable, F1428, to
-expose `ClassRepository::getClasses()` query/result metrics under Phase 3
-§3.7. It waits for Batch 9 to close and push. Begin Batch 11 discovery when
-F1428 starts. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
-records this state; the Phase 3 backlog and exit gate remain open.
+Batch 10 is locally complete. F1428 exposes `ClassRepository::getClasses()`
+call, statement-attempt, and successful returned-row metrics under Phase 3
+§3.7. Independent macOS arm64 Qt 6.12 verification passed the affected CTest
+(1/1), executable (8/8), large case (3/3), and `git diff --check`; no full
+suite or heap/RSS result is claimed. Batch 11 discovery is complete with four
+ordered candidates: Schedule Import result counts, uncapped Speaking
+Evaluation result lifetime, bounded workbook parsing, and class-transfer JSON
+DOM/package overlap. Calendar parsed-event consumer lifetime is deferred to
+Phase 7F. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
+records the candidate scopes and start rule; Batch 11 waits for Batch 10's
+closeout push. The Phase 3 backlog and exit gate remain open.
 
 Phase 2 remains complete with its separate audit limitations and F629
 requalification recorded in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)

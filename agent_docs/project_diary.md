@@ -8516,19 +8516,31 @@ ordinary production caller. Phase 3 remains In Progress, its exit gate remains
 open, and its backlog is not exhausted. The current tracker has no active
 batch or candidate.
 
-## 2026-10-24 — Phase 3 Batch 9 complete locally
+## 2026-10-24 — Phase 3 Batch 10 complete locally; Batch 11 discovered
 
-F1419–F1427 are accepted and committed locally; Batch 9's push is pending.
+F1419–F1427 are accepted and pushed to `origin/Qt-Rewrite` at
+`7b4eaaf809ecdc17e4e14fae555b157c361c378d`; the remote tip matched and the
+worktree was clean.
 F1425's large Schedule Import test compares all 24 teachers, 96 classes, and
 792 schedule rows, while metrics cover teacher and class-info queries. The
-class-list query still lacks runtime metrics, so F1428 is queued under Phase
-3 §3.7. F1426 removes an entry-sized ZIP scratch copy; F1427 uses a mapped
+class-list query was missing runtime metrics; F1428 adds cumulative call,
+statement-attempt, and successful returned-row counters under Phase 3 §3.7.
+The 96-class case verifies +1 call, +1 statement, and +96 rows; late invalid
+ID coverage verifies no rows were counted on failure. Focused macOS arm64
+Qt 6.12 checks passed the affected CTest, executable, and large case. No heap
+or RSS reduction was measured.
+F1426 removes an entry-sized ZIP scratch copy; F1427 uses a mapped
 class-transfer input and releases it before package conversion. Neither
 establishes a measured RSS reduction: mapped pages can remain resident, and
 other representations still overlap at parse boundaries.
 
 The full Class Transfer target retains a previously documented teacher-name
 dialog failure that does not call the F1427 codec. Keep it distinct from the
-five passing focused codec cases. Batch 10 has only F1428 and waits for Batch
-9's push; begin Batch 11 discovery when F1428 starts. Phase 3 remains In
-Progress with its exit gate open.
+five passing focused codec cases. Two independent Batch 11 scans and a bounded
+solution review produced four ordered candidates: Schedule Import result
+counts, uncapped Speaking Evaluation result lifetime, bounded workbook
+parsing, and class-transfer JSON DOM/package overlap. Calendar parsed-event
+consumer lifetime is deferred to Phase 7F. Batch 10 is complete locally at
+F1428 commit `3279627d`; its documentation closeout and push remain pending.
+Batch 11 waits for that push. Phase 3 remains In Progress with its exit gate
+open.

@@ -2880,10 +2880,8 @@ not a production behavior defect.
 F1428 depends on accepted F1425. Proposed scope is minimal `getClasses()`
 call, statement, and returned-row metrics. The test should assert one
 statement and 96 rows on success, and not overstate failure results. Discovery
-made no code or test changes and ran no tests. At discovery completion, Batch
-9 was active with F1426 current and F1427 remaining; Batch 10 waited for Batch
-9 to close and push. F1428 had not started, and the Phase 3 exit gate remained
-open.
+made no code or test changes and ran no tests. At discovery completion, the
+Phase 3 exit gate remained open. The current batch state is recorded below.
 
 ## F1426 — Reduce workbook entry copies — 2026-10-24
 
@@ -2935,7 +2933,40 @@ an earlier baseline, so it is classified as an unrelated existing failure.
 `git diff --check` passed. No full-suite, Windows, heap-byte, or RSS result
 is claimed.
 
-Batch 9's nine slices are accepted and committed locally; its push is pending.
-Batch 10 discovery is complete with F1428 as its sole candidate, waiting for
-the Batch 9 push; F1428 has not started. Begin Batch 11 discovery when F1428
-starts. Phase 3 remains In Progress and its exit gate remains open.
+F1428 acceptance and the current batch state are recorded below.
+
+## F1428 — Expose all-class read diagnostics — 2026-10-24
+
+Accepted and committed locally at `3279627ddf4dbb0725a546ed4cd0ed6759c5a9f7`
+(`Phase3 - Expose all-class read diagnostics`). Added cumulative
+`ClassRepository::getClasses()` call, statement-attempt, and successfully
+returned-row metrics. The 96-class parity case asserts deltas of +1 call, +1
+statement attempt, and +96 returned rows. A late invalid-ID case asserts +1
+call, +1 attempt, and +0 successfully returned rows.
+
+Independent macOS arm64 / Qt 6.12 verification passed the affected CTest
+(1/1), test executable (8/8), large case (3/3), and `git diff --check`.
+This is focused counter and parity verification; no full-suite or heap/RSS
+result is claimed. Batch 10 is locally complete; its closeout docs commit and
+push remain pending. Phase 3 remains In Progress and its exit gate remains
+open.
+
+## Batch 11 discovery — 2026-10-24
+
+Two independent scans under Exploration ID
+`PHASE3-BATCH11-DISCOVERY-20261024` found no further data/API migration
+candidate and identified five memory/query candidates. A bounded solution
+review recommends four ordered Batch 11 candidates:
+
+1. **F1429 — Schedule Import row-count metrics** for teacher and
+   class-info/time rows.
+2. **F1430 — Speaking Evaluation result lifetime/streaming** without a row
+   cap.
+3. **F1431 — Bounded worksheet parsing** in the shared reader and consumers.
+4. **F1432 — Class-transfer JSON DOM/package overlap.**
+
+Calendar parsed-event consumer lifetime is the fifth candidate and is
+intentionally deferred to its owning phase, Phase 7F. Batch 11 is inactive
+until Batch 10 is pushed. Start Batch 12 discovery when F1431 begins, the
+second-to-last candidate. Phase 3 remains In Progress and its
+exit gate remains open.
