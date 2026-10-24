@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "next/application/speaking_evaluation_roster_names_read_query.h"
 #include "next/platform/application_services_speaking_evaluation_roster_names_read_port.h"
 
@@ -167,7 +167,7 @@ missingParentWithOrphansReturnsNotFoundAndPreservesLegacyRead()
     QString error;
     QVERIFY2(
         seedRoster(
-            services.databaseSession()->database(),
+            services.workspaceStore()->database(),
             *createdClass,
             {QStringLiteral("English"), QStringLiteral("Korean")},
             {
@@ -181,7 +181,7 @@ missingParentWithOrphansReturnsNotFoundAndPreservesLegacyRead()
         qPrintable(error)
         );
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QSqlQuery disableForeignKeys(database);
     QVERIFY2(
         disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
@@ -234,7 +234,7 @@ missingParentWithOrphansReturnsNotFoundAndPreservesLegacyRead()
     QVERIFY(result.error().recoverable);
 
     RosterRepository* const repository =
-        services.databaseSession()->rosterRepository();
+        services.workspaceStore()->rosterRepository();
     QVERIFY(repository != nullptr);
     const auto legacy =
         repository->loadSpeakingEvaluationRosterNames(*createdClass);
@@ -302,13 +302,13 @@ readsFirstCaseInsensitiveHeadersAndLegacySparseRows()
         {-1, 1, QStringLiteral("negative row")}
     };
     QString error;
-    QSqlQuery constraints(services.databaseSession()->database());
+    QSqlQuery constraints(services.workspaceStore()->database());
     QVERIFY2(
         constraints.exec(QStringLiteral("PRAGMA ignore_check_constraints=ON")),
         qPrintable(constraints.lastError().text())
         );
     const bool seeded = seedRoster(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         *createdClass,
         columns,
         cells,
@@ -369,7 +369,7 @@ rejectsFractionalRowIndexBeforeOverwritingRosterName()
     QString error;
     QVERIFY2(
         seedRoster(
-            services.databaseSession()->database(),
+            services.workspaceStore()->database(),
             *createdClass,
             {QStringLiteral("English"), QStringLiteral("Korean")},
             {{0, 0, integerName}},
@@ -378,7 +378,7 @@ rejectsFractionalRowIndexBeforeOverwritingRosterName()
         qPrintable(error)
         );
 
-    QSqlQuery insertFractionalCell(services.databaseSession()->database());
+    QSqlQuery insertFractionalCell(services.workspaceStore()->database());
     QVERIFY2(
         insertFractionalCell.prepare(QStringLiteral(
             "INSERT INTO roster_data (class_id, row_index, col_index, value) "
@@ -394,7 +394,7 @@ rejectsFractionalRowIndexBeforeOverwritingRosterName()
         qPrintable(insertFractionalCell.lastError().text())
         );
 
-    QSqlQuery storedRows(services.databaseSession()->database());
+    QSqlQuery storedRows(services.workspaceStore()->database());
     QVERIFY2(
         storedRows.prepare(QStringLiteral(
             "SELECT row_index, typeof(row_index) AS row_storage_type, "
@@ -459,7 +459,7 @@ rejectsRowIndexOutsideLegacyRange()
     QString error;
     QVERIFY2(
         seedRoster(
-            services.databaseSession()->database(),
+            services.workspaceStore()->database(),
             *createdClass,
             {QStringLiteral("English"), QStringLiteral("Korean")},
             {{wideRowIndex, 0, QStringLiteral("Out-of-range row")}},
@@ -468,7 +468,7 @@ rejectsRowIndexOutsideLegacyRange()
         qPrintable(error)
         );
 
-    QSqlQuery storedRow(services.databaseSession()->database());
+    QSqlQuery storedRow(services.workspaceStore()->database());
     storedRow.prepare(QStringLiteral(
         "SELECT typeof(row_index), row_index FROM roster_data "
         "WHERE class_id=? AND row_index=? AND col_index=0"
@@ -509,7 +509,7 @@ rejectsFractionalColumnIndex()
     QString error;
     QVERIFY2(
         seedRoster(
-            services.databaseSession()->database(),
+            services.workspaceStore()->database(),
             *createdClass,
             {
                 QStringLiteral("English"),
@@ -534,7 +534,7 @@ rejectsFractionalColumnIndex()
     QVERIFY(integerOnlyResult.value().rows[2].englishName.empty());
     QVERIFY(integerOnlyResult.value().rows[2].koreanName.empty());
 
-    QSqlQuery insertFractionalCell(services.databaseSession()->database());
+    QSqlQuery insertFractionalCell(services.workspaceStore()->database());
     QVERIFY2(
         insertFractionalCell.prepare(QStringLiteral(
             "INSERT INTO roster_data (class_id, row_index, col_index, value) "
@@ -551,7 +551,7 @@ rejectsFractionalColumnIndex()
         qPrintable(insertFractionalCell.lastError().text())
         );
 
-    QSqlQuery storedCell(services.databaseSession()->database());
+    QSqlQuery storedCell(services.workspaceStore()->database());
     storedCell.prepare(QStringLiteral(
         "SELECT typeof(col_index), col_index FROM roster_data "
         "WHERE class_id=? AND row_index=4"
@@ -588,7 +588,7 @@ preservesMissingHeadersAndRowsMaterializedByUnrelatedCells()
     QString error;
     QVERIFY2(
         seedRoster(
-            services.databaseSession()->database(),
+            services.workspaceStore()->database(),
             *createdClass,
             {QStringLiteral("Notes")},
             {
@@ -632,7 +632,7 @@ skipsCellReadWhenNoColumnsExist()
         );
     QVERIFY(createdClass);
 
-    QSqlQuery dropData(services.databaseSession()->database());
+    QSqlQuery dropData(services.workspaceStore()->database());
     QVERIFY2(
         dropData.exec(QStringLiteral("DROP TABLE roster_data")),
         qPrintable(dropData.lastError().text())
@@ -664,7 +664,7 @@ emptyRosterWithNameColumnsIsSuccessful()
         );
     QVERIFY(createdClass);
     QVERIFY(seedRoster(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         *createdClass,
         {QStringLiteral("English"), QStringLiteral("Korean")},
         {}
@@ -692,7 +692,7 @@ missingParentQueryFailureIsTechnical()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
 
-    QSqlQuery dropColumns(services.databaseSession()->database());
+    QSqlQuery dropColumns(services.workspaceStore()->database());
     QVERIFY2(
         dropColumns.exec(QStringLiteral("DROP TABLE roster_columns")),
         qPrintable(dropColumns.lastError().text())
@@ -722,12 +722,12 @@ repositoryFailureIsStructured()
         );
     QVERIFY(createdClass);
     QVERIFY(seedRoster(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         *createdClass,
         {QStringLiteral("English"), QStringLiteral("Korean")},
         {}
         ));
-    QSqlQuery dropData(services.databaseSession()->database());
+    QSqlQuery dropData(services.workspaceStore()->database());
     QVERIFY(dropData.exec(QStringLiteral("DROP TABLE roster_data")));
 
     Platform::ApplicationServicesSpeakingEvaluationRosterNamesReadPort port(

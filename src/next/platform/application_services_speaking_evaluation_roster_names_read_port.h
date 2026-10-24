@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
 #include "next/application/speaking_evaluation_roster_names_read_port.h"
 
@@ -64,9 +64,9 @@ public:
                 );
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return failure(
                 Domain::ErrorCode::NotFound,
@@ -74,7 +74,7 @@ public:
                 );
         }
 
-        RosterRepository* const repository = session->rosterRepository();
+        RosterRepository* const repository = store->rosterRepository();
         if (!repository)
         {
             return failure(

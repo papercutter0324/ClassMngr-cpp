@@ -1708,3 +1708,23 @@ post-change outputs match; this pre-existing repository/test mismatch remains
 unresolved and was not altered or hidden. `git diff --check` passed. No full
 suite or cross-platform build ran. F1383 is accepted; F1384
 (Speaking-evaluation roster-name read) is current.
+
+Commit: `e38da4fdcf1fe3468e16b5f7bc15bf709d18ddf9`.
+
+## F1384 — Speaking-evaluation roster-name read (Batch 4 candidate 7 of 20) — 2026-10-24
+
+The production port,
+`src/next/platform/application_services_speaking_evaluation_roster_names_read_port.h`,
+now uses `WorkspaceStore` for open-state and roster-repository access. Direct
+fixture accesses in
+`tests/next_platform_application_services_speaking_evaluation_roster_names_read_port_tests.cpp`
+also use `WorkspaceStore`; assertions are unchanged. The page fixture was
+left unchanged.
+
+Built the application-query, Platform-port, and SpeakingEvalPageSave targets.
+Three selected serial CTests passed (3/3): #223
+`ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests`, #395
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests`,
+and #137 `ClassMngrSpeakingEvalPageSaveTests`. `git diff --check` passed. No
+full suite or cross-platform build ran. F1384 is accepted; F1385 (GS Team
+directory read) is current.
