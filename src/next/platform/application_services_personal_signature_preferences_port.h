@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/personal_signature_preferences.h"
 
@@ -20,7 +20,7 @@ namespace ClassMngr::Next::Platform
 // Qt-boundary adapter for the read-only personal signature preferences. Exact
 // keys, QVariant conversion, and persisted-mode normalization remain here;
 // the caller receives only typed values and opaque UTF-8 text. Reads use only
-// the active session repository and never materialize missing defaults.
+// the active workspace repository and never materialize missing defaults.
 class ApplicationServicesPersonalSignaturePreferencesPort final
     : public Application::PersonalSignaturePreferencesPort
 {
@@ -28,14 +28,14 @@ public:
     explicit ApplicationServicesPersonalSignaturePreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_session(services.databaseSession())
+        : m_store(services.workspaceStore())
     {
     }
 
     explicit ApplicationServicesPersonalSignaturePreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_session(services ? services->databaseSession() : nullptr)
+        : m_store(services ? services->workspaceStore() : nullptr)
     {
     }
 
@@ -55,7 +55,7 @@ public:
     [[nodiscard]] Application::PersonalSignaturePreferencesResult load()
         const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return Application::
                 PersonalSignaturePreferencesResult::failure(
@@ -64,7 +64,7 @@ public:
         }
 
         SettingsRepository* const repository =
-            m_session->settingsRepository();
+            m_store->settingsRepository();
         if (!repository)
         {
             return Application::
@@ -212,7 +212,7 @@ private:
         };
     }
 
-    DatabaseSession* m_session = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform
