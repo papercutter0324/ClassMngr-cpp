@@ -2,13 +2,14 @@
 
 Status: Source-derived baseline for F1318, 2026-10-22
 
-This records the current source contract before Phase 3 persistence changes. It
-does not assert that a runtime database was inspected. The inventory comes
-from the initial DDL and conditional legacy-column declarations in
+This records the current source contract before Phase 3 persistence changes.
+The inventory comes from the initial DDL and conditional legacy-column
+declarations in
 [`database_schema_manager.cpp`](../../src/data/database/database_schema_manager.cpp#L176-L412),
 the final constrained table definitions in the same file
 [#L414-L616](../../src/data/database/database_schema_manager.cpp#L414-L616),
-and the migration list below.
+and the migration list below. F1419 added the runtime schema-v6 contract
+coverage summarized at the end of this baseline.
 
 ## Schema v6
 
@@ -146,7 +147,12 @@ preserving the active workspace and source file in
 Calendar repository coverage checks the calendar end-date index in
 [`calendar_event_repository_tests.cpp`](../../tests/calendar_event_repository_tests.cpp#L611-L647).
 
-There is no full table-by-table DDL-shape matrix and no direct test of all four
-explicit secondary indexes. This baseline is derived from declarations and
-tests; no runtime database metadata inspection or new tests were performed for
-this documentation slice.
+F1419 added runtime schema-v6 contract coverage. The
+[test](../../tests/database_schema_manager_tests.cpp#L249-L631) inspects
+runtime metadata through SQLite catalog queries and PRAGMAs, including the
+17-table column/type/nullability/default/primary-key contract; all four
+explicit secondary index names, owners, ordered columns, and non-unique origin;
+foreign-key edges, unique-index families, autoincrement declarations, schema
+version, and CHECK/FK behavior. It does not compare complete normalized
+`CREATE TABLE` SQL text or test conversion of existing pre-v6 profiles; those
+remain unsupported.
