@@ -1,8 +1,9 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 3 — Persistence Rewrite.
-Current deployment: `phase3_resume_oct24`. Route: Heavy; this continuation is
-complete. Phase 3 remains In Progress with no active batch or candidate.
+Current deployment: `phase3_resume_oct24_followup`. Route: Heavy; this
+continuation is complete. Phase 3 remains In Progress, with no active batch
+or candidate after current-source discovery; its backlog is not exhausted.
 
 ## Goal
 
@@ -51,24 +52,30 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (Batch 5 pushed; no active candidate)
+### Current checkpoint - 2026-10-24 (Batches 6 and 7 pushed; no active candidate)
 
-Phase 3 remains In Progress on the mandatory Heavy route. Batch 5 (F1398–F1416)
-is complete and pushed. The F1416 implementation tip is `61d1fc9f`; its
-source/acceptance push reached `5725e723`. Follow-up push-receipt documentation
-commits `8d74cf7a` and `ea91cb64` were also pushed. F1414, F1415, and F1416
-focused Application/Platform CTests each passed 2/2. Exact slice evidence and
-bounded macOS Debug build scope are in the [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
+Phase 3 remains In Progress on the mandatory Heavy route; its exit gate is
+open. This continuation accepted F1417 and F1418, completed and pushed
+one-slice Batches 6 and 7, and found no eligible next candidate in the
+complementary Batch 8 scans. F1417 moved roster-availability read transaction
+ownership into `WorkspaceStore` at `1a42b6ad`; F1418 moved the live workspace
+save commit into `WorkspaceStore::commit()` at `7e9760f3`.
+
+F1417's incremental macOS Debug build covered `ClassMngr` and the roster
+Platform test target; its focused Application query and Platform port CTests
+passed 2/2. F1418 built `ClassMngr`, the Workspace port test target, and the
+DataService lifecycle test target; the focused Workspace port and lifecycle
+CTests passed 2/2. No full, UI, or cross-platform suite ran, and commit-failure
+injection was not run. Exact evidence is in the [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
 and [progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md).
 
-Two complementary scans found no additional active Next persistence port at
-F1415. A second pair reviewed broader service and fallback paths and also
-found no eligible candidate: `No other slices were found.` There is no active
-batch. Normal `ApplicationServices` composition uses `WorkspaceStore` and
-leaves the `DataService` fallback inactive; remaining compatibility APIs have
-no active production composition. Revisit them if production callers are
-added or service composition changes. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
-records that continuation point. This does not close Phase 3 or its exit gate.
+Two complementary read-only scans found no other Batch 8 slice. The missing
+full DDL-shape/all-index tests were excluded as a coverage-only gap without a
+production behavior change. `DataService::save()` has no ordinary production
+caller. No batch or candidate is active; the current discovery does not
+exhaust Phase 3. Revisit on a new ordinary caller or source-backed persistence
+boundary gap. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
+records this state.
 
 Phase 2 remains complete with its separate audit limitations and F629
 requalification recorded in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)

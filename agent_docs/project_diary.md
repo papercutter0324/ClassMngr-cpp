@@ -8493,3 +8493,25 @@ F1314 below-v6 rejection as in progress. Update present-tense policy statements
 and add one current-status pointer while preserving dated historical gate
 snapshots; do not mass-rewrite useful history. Current acceptance status belongs
 in the Phase 2 plan, and focused verification belongs in its progress log.
+
+## 2026-10-24 — Phase 3 continuation F1417–F1418 complete
+
+This Heavy route continuation completed and pushed Batch 6/F1417 and
+Batch 7/F1418. F1417 moved the roster-availability read transaction behind
+`WorkspaceStore`; its source/acceptance commit is `1a42b6ad`. F1418 moved the
+active `ApplicationServices::saveDatabase()` commit into
+`WorkspaceStore::commit()` while preserving the void API, closed-store no-op,
+and ignored commit-failure behavior; its source/acceptance commit is
+`7e9760f3`. Receipt/discovery documentation commits `8b6ed541` and
+`136b7236` were pushed.
+
+F1417’s focused Application query and Platform port CTests passed 2/2 after
+incremental macOS Debug builds. F1418 built `ClassMngr`, the Workspace port
+test target, and the DataService lifecycle test target; independent focused
+CTests passed 2/2. No full, UI, or cross-platform suite ran, and commit-failure
+injection was not run. The Batch 8 complementary scans found no other
+eligible slice. The DDL-shape/all-index test gap remains excluded because no
+production behavior change was identified; `DataService::save()` has no
+ordinary production caller. Phase 3 remains In Progress, its exit gate remains
+open, and its backlog is not exhausted. The current tracker has no active
+batch or candidate.

@@ -1,6 +1,32 @@
 # Latest Session Work
 
-## Current Deployment Handoff — phase3_resume_oct24 (complete)
+## Current Deployment Handoff — phase3_resume_oct24_followup (complete)
+
+- Heavy route; branch `Qt-Rewrite`. This continuation accepted F1417 and
+  F1418, completed and pushed Batches 6 and 7, and recorded two complementary
+  Batch 8 discovery scans with no other eligible slice. Phase 3 remains In
+  Progress and its exit gate is not closed. No batch or candidate is active.
+- F1417 moved the roster-availability read transaction behind
+  `WorkspaceStore` at source/acceptance commit `1a42b6ad`; its focused
+  Application query and Platform port CTests passed 2/2. F1418 moved the
+  active workspace save commit into `WorkspaceStore::commit()` at
+  `7e9760f3`; the focused Workspace port and DataService lifecycle CTests
+  passed 2/2. Incremental macOS Debug builds passed for the affected targets.
+  No full, UI, or cross-platform suite ran, and no commit-failure injection
+  was run.
+- Batch 6 receipt/discovery documentation commit `8b6ed541` and Batch 7
+  receipt/discovery documentation commit `136b7236` were pushed. The second
+  scan pair excluded the DDL-shape/all-index test gap because no production
+  behavior change was identified. `DataService::save()` has no ordinary
+  production caller. The backlog remains open; reevaluate if new production
+  callers or persistence boundary gaps appear. Detailed evidence is in the
+  [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md),
+  [progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md),
+  and [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
+- Before the main-owned closure docs, `Qt-Rewrite` was clean and synchronized
+  at `136b7236`; the final read-only Git handoff will inspect the closure tip.
+
+## Historical Deployment Handoff — phase3_resume_oct24 (complete)
 
 - Heavy route; branch `Qt-Rewrite`. This continuation accepted F1414–F1416,
   completed Batch 5 (19/19 slices), and pushed it. Phase 3 remains In Progress;
