@@ -4,6 +4,7 @@
 #include "next/application/calendar_event_start_of_term_policy.h"
 
 #include <QtTest>
+#include <QBuffer>
 
 #include <zlib.h>
 
@@ -354,6 +355,28 @@ QByteArray singleSheetWorkbookArchive(
 
     return zipArchive(files, deflated);
 }
+
+class SequentialBuffer final : public QBuffer
+{
+public:
+    using QBuffer::QBuffer;
+
+    bool isSequential() const override
+    {
+        return true;
+    }
+};
+
+class FailedSeekBuffer final : public QBuffer
+{
+public:
+    using QBuffer::QBuffer;
+
+    bool seek(qint64) override
+    {
+        return false;
+    }
+};
 }
 
 class CalendarImportTests : public QObject
@@ -370,6 +393,7 @@ private slots:
     void readerRejectsUnreadableWorkbook();
     void readerRejectsMalformedLaterWorksheetAndAllEmptyWorkbook();
     void readerPreservesStoredAndDeflatedWorkbookValuesAfterInputLifetime();
+    void readerUsesSeekableDevicesAndRejectsUnsupportedSources();
     void readerStreamsStoredAndDeflatedWorksheetRows();
     void readerStreamingPreservesCancellationAndLaterSheetFailure();
     void calendarByteParserUsesFirstWorksheetAndReportsReadCounts();
@@ -594,6 +618,129 @@ void CalendarImportTests
         );
 }
 
+void CalendarImportTests
+    ::readerUsesSeekableDevicesAndRejectsUnsupportedSources()
+{
+    const QByteArray worksheetXml = QByteArrayLiteral(
+        "<worksheet><sheetData><row r=\"1\"><c r=\"A1\" t=\"inlineStr\">"
+        "<is><t>Device source</t></is></c></row></sheetData></worksheet>"
+        );
+
+    for (const bool deflated : {false, true})
+    {
+        const QByteArray archive =
+            singleSheetWorkbookArchive(worksheetXml, true, deflated);
+        QString byteError;
+        const CalendarImport::Workbook byteWorkbook =
+            CalendarImport::parseWorkbook(archive, &byteError);
+        QVERIFY2(byteError.isEmpty(), qPrintable(byteError));
+
+        QBuffer fullDevice;
+        fullDevice.setData(archive);
+        QVERIFY(fullDevice.open(QIODevice::ReadOnly));
+        QString deviceError;
+        const CalendarImport::Workbook deviceWorkbook =
+            CalendarImport::parseWorkbook(fullDevice, &deviceError);
+        QVERIFY2(deviceError.isEmpty(), qPrintable(deviceError));
+        QCOMPARE(deviceWorkbook.worksheets.size(), byteWorkbook.worksheets.size());
+        QCOMPARE(deviceWorkbook.worksheets.first().name, byteWorkbook.worksheets.first().name);
+        QCOMPARE(deviceWorkbook.worksheets.first().cells.size(), byteWorkbook.worksheets.first().cells.size());
+        QCOMPARE(
+            deviceWorkbook.worksheets.first().cells.first().value,
+            byteWorkbook.worksheets.first().cells.first().value
+            );
+
+        QBuffer rowDevice;
+        rowDevice.setData(archive);
+        QVERIFY(rowDevice.open(QIODevice::ReadOnly));
+        QVector<QString> discoveredValues;
+        QVector<QString> extractedValues;
+        QString rowError;
+        const bool rowsSucceeded = CalendarImport::forEachWorksheetRows(
+            rowDevice,
+            [&discoveredValues, &extractedValues](
+                const CalendarImport::WorkbookMetadata&,
+                const CalendarImport::Worksheet&,
+                const CalendarImport::WorksheetRowPass& discoveryPass,
+                const CalendarImport::WorksheetRowPass& extractionPass
+                )
+            {
+                const auto appendValues = [](QVector<QString>& output)
+                {
+                    return [&output](const QVector<CalendarImport::Cell>& row)
+                    {
+                        for (const CalendarImport::Cell& cell : row)
+                        {
+                            output.append(cell.value);
+                        }
+                        return true;
+                    };
+                };
+                return discoveryPass(appendValues(discoveredValues))
+                    && extractionPass(appendValues(extractedValues));
+            },
+            &rowError
+            );
+        QVERIFY2(rowsSucceeded, qPrintable(rowError));
+        QCOMPARE(discoveredValues, extractedValues);
+        QCOMPARE(extractedValues.size(), byteWorkbook.worksheets.first().cells.size());
+        QCOMPARE(extractedValues.first(), byteWorkbook.worksheets.first().cells.first().value);
+    }
+
+    const QByteArray validArchive =
+        singleSheetWorkbookArchive(worksheetXml, true);
+    const auto assertRejected = [&](QIODevice& device)
+    {
+        QString error;
+        QVERIFY(!CalendarImport::forEachWorksheetRows(
+            device,
+            CalendarImport::WorksheetStreamConsumer{},
+            &error
+            ));
+        QCOMPARE(
+            error,
+            QStringLiteral("The downloaded spreadsheet could not be read.")
+            );
+    };
+
+    QBuffer closedDevice;
+    closedDevice.setData(validArchive);
+    assertRejected(closedDevice);
+
+    QBuffer unreadableDevice;
+    unreadableDevice.setData(validArchive);
+    QVERIFY(unreadableDevice.open(QIODevice::WriteOnly));
+    assertRejected(unreadableDevice);
+
+    SequentialBuffer sequentialDevice;
+    sequentialDevice.setData(validArchive);
+    QVERIFY(sequentialDevice.open(QIODevice::ReadOnly));
+    assertRejected(sequentialDevice);
+
+    FailedSeekBuffer failedSeekDevice;
+    failedSeekDevice.setData(validArchive);
+    QVERIFY(failedSeekDevice.open(QIODevice::ReadOnly));
+    assertRejected(failedSeekDevice);
+
+    const QByteArray partialArchive = validArchive.left(validArchive.size() - 8);
+    QString partialBytesError;
+    QVERIFY(!CalendarImport::forEachWorksheetRows(
+        partialArchive,
+        CalendarImport::WorksheetStreamConsumer{},
+        &partialBytesError
+        ));
+    QBuffer partialDevice;
+    partialDevice.setData(partialArchive);
+    QVERIFY(partialDevice.open(QIODevice::ReadOnly));
+    QString partialDeviceError;
+    QVERIFY(!CalendarImport::forEachWorksheetRows(
+        partialDevice,
+        CalendarImport::WorksheetStreamConsumer{},
+        &partialDeviceError
+        ));
+    QCOMPARE(partialDeviceError, partialBytesError);
+}
+
 void CalendarImportTests::readerStreamsStoredAndDeflatedWorksheetRows()
 {
     const QByteArray worksheetXml = QByteArrayLiteral(
@@ -777,6 +924,67 @@ void CalendarImportTests
         laterSheetError,
         QStringLiteral("The spreadsheet is missing worksheet Later.")
         );
+
+    QBuffer cancellationDevice;
+    cancellationDevice.setData(calendarWorkbookArchive(1, true, false));
+    QVERIFY(cancellationDevice.open(QIODevice::ReadOnly));
+    QString deviceCancellationError;
+    int deviceCancellationCallbacks = 0;
+    const bool deviceCancellationSucceeded =
+        CalendarImport::forEachWorksheetRows(
+            cancellationDevice,
+            [&deviceCancellationCallbacks](
+                const CalendarImport::WorkbookMetadata&,
+                const CalendarImport::Worksheet&,
+                const CalendarImport::WorksheetRowPass& discoveryPass,
+                const CalendarImport::WorksheetRowPass& extractionPass
+                )
+            {
+                ++deviceCancellationCallbacks;
+                return discoveryPass({})
+                    && extractionPass(
+                        [](const QVector<CalendarImport::Cell>&)
+                        {
+                            return false;
+                        }
+                        );
+            },
+            &deviceCancellationError
+            );
+    QVERIFY(!deviceCancellationSucceeded);
+    QCOMPARE(deviceCancellationCallbacks, 1);
+    QCOMPARE(deviceCancellationError, cancellationError);
+
+    QBuffer laterSheetDevice;
+    laterSheetDevice.setData(calendarWorkbookArchive(2, true, true));
+    QVERIFY(laterSheetDevice.open(QIODevice::ReadOnly));
+    QString deviceLaterSheetError;
+    int deviceCompletedWorksheets = 0;
+    int deviceCompletedPasses = 0;
+    const bool deviceLaterSheetSucceeded =
+        CalendarImport::forEachWorksheetRows(
+            laterSheetDevice,
+            [&deviceCompletedWorksheets, &deviceCompletedPasses](
+                const CalendarImport::WorkbookMetadata&,
+                const CalendarImport::Worksheet&,
+                const CalendarImport::WorksheetRowPass& discoveryPass,
+                const CalendarImport::WorksheetRowPass& extractionPass
+                )
+            {
+                ++deviceCompletedWorksheets;
+                const bool discoverySucceeded = discoveryPass({});
+                const bool extractionSucceeded = extractionPass({});
+                deviceCompletedPasses +=
+                    static_cast<int>(discoverySucceeded)
+                    + static_cast<int>(extractionSucceeded);
+                return discoverySucceeded && extractionSucceeded;
+            },
+            &deviceLaterSheetError
+            );
+    QVERIFY(!deviceLaterSheetSucceeded);
+    QCOMPARE(deviceCompletedWorksheets, completedWorksheets);
+    QCOMPARE(deviceCompletedPasses, completedPasses);
+    QCOMPARE(deviceLaterSheetError, laterSheetError);
 }
 
 void CalendarImportTests

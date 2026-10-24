@@ -552,7 +552,7 @@ bool ScheduleImportDialog::loadWorkbook()
                 result.fileOpened = true;
                 const auto parsed =
                     parseScheduleImportWorkbook(
-                        file.readAll(),
+                        file,
                         kind
                         );
                 if (!parsed)

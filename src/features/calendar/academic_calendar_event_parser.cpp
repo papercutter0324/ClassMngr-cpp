@@ -1011,8 +1011,9 @@ ParsedCalendarImport parseCalendarEventsFromWorksheet(
     return result;
 }
 
-ParsedCalendarImport parseCalendarEventsFromWorkbookBytes(
-    const QByteArray& data,
+template<typename Archive>
+static ParsedCalendarImport parseCalendarEventsFromWorkbookSource(
+    Archive& data,
     const QStringList& campusCodes,
     QString* errorMessage,
     CalendarWorkbookReadCounts* readCounts
@@ -1601,6 +1602,36 @@ ParsedCalendarImport parseCalendarEventsFromWorkbookBytes(
         return {};
     }
     return result;
+}
+
+ParsedCalendarImport parseCalendarEventsFromWorkbookBytes(
+    const QByteArray& data,
+    const QStringList& campusCodes,
+    QString* errorMessage,
+    CalendarWorkbookReadCounts* readCounts
+    )
+{
+    return parseCalendarEventsFromWorkbookSource(
+        data,
+        campusCodes,
+        errorMessage,
+        readCounts
+        );
+}
+
+ParsedCalendarImport parseCalendarEventsFromWorkbookDevice(
+    QIODevice& device,
+    const QStringList& campusCodes,
+    QString* errorMessage,
+    CalendarWorkbookReadCounts* readCounts
+    )
+{
+    return parseCalendarEventsFromWorkbookSource(
+        device,
+        campusCodes,
+        errorMessage,
+        readCounts
+        );
 }
 
 ParsedCalendarImport parseCalendarEventsFromWorkbook(

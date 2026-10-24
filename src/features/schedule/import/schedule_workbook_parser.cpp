@@ -1257,8 +1257,9 @@ bool validHeader(
 }
 }
 
-Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
-    const QByteArray& data,
+template<typename Archive>
+static Result<ScheduleImportWorkbook> parseScheduleImportWorkbookFromArchive(
+    Archive& data,
     ScheduleImportKind kind
     )
 {
@@ -1454,6 +1455,22 @@ Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
     }
 
     return result;
+}
+
+Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
+    const QByteArray& data,
+    ScheduleImportKind kind
+    )
+{
+    return parseScheduleImportWorkbookFromArchive(data, kind);
+}
+
+Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
+    QIODevice& device,
+    ScheduleImportKind kind
+    )
+{
+    return parseScheduleImportWorkbookFromArchive(device, kind);
 }
 
 QString normalizedScheduleImportUserName(

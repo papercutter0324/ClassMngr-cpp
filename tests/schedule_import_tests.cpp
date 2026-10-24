@@ -47,6 +47,7 @@ private slots:
     void streamsWorksheetsInWorkbookOrder();
     void readerPreservesMissingAndAllEmptyWorkbookErrors();
     void readerStreamsSharedStringsAndRejectsNoWorksheets();
+    void scheduleDeviceParserMatchesByteOutput();
     void scheduleParserProjectsCheckedInWorkbookSheets();
     void rejectsAmbiguousIntensiveTimesWithCellDiagnostic();
     void convertsIntensiveTimesAcrossNoon();
@@ -785,6 +786,79 @@ QStringList persistedScheduleImportSnapshot(
     }
     return rows;
 }
+
+QStringList scheduleImportProjection(const ScheduleImportWorkbook& workbook)
+{
+    QStringList projection;
+    const auto append = [&projection](const QString& value)
+    {
+        projection.append(value);
+    };
+    const auto appendStringList = [&append](const QStringList& values)
+    {
+        append(QString::number(values.size()));
+        for (const QString& value : values)
+        {
+            append(value);
+        }
+    };
+    const auto appendDiagnostics = [&append](
+        const QList<ScheduleImportDiagnostic>& diagnostics
+        )
+    {
+        append(QString::number(diagnostics.size()));
+        for (const ScheduleImportDiagnostic& diagnostic : diagnostics)
+        {
+            append(diagnostic.sheetName);
+            append(diagnostic.userName);
+            append(diagnostic.cellReference);
+            append(diagnostic.value);
+            append(diagnostic.message);
+        }
+    };
+
+    append(QString::number(workbook.sheets.size()));
+    for (const ScheduleImportSheet& sheet : workbook.sheets)
+    {
+        append(sheet.name);
+        append(sheet.visible ? QStringLiteral("1") : QStringLiteral("0"));
+        append(QString::number(sheet.users.size()));
+        for (const ScheduleImportUserBlock& user : sheet.users)
+        {
+            append(user.name);
+            append(user.headerCell);
+            append(QString::number(user.classes.size()));
+            for (const ScheduleImportClassCandidate& candidate : user.classes)
+            {
+                append(candidate.teacherKey);
+                append(candidate.teacherKr);
+                appendStringList(candidate.rooms);
+                appendStringList(candidate.importedColors);
+                append(candidate.classGrade);
+                append(candidate.classLevel);
+                appendStringList(candidate.sourceCells);
+                append(candidate.meetingPatternError);
+                append(QString::number(candidate.times.size()));
+                for (const ClassTime& time : candidate.times)
+                {
+                    append(time.day);
+                    append(time.startTime);
+                    append(time.endTime);
+                }
+            }
+            append(QString::number(user.intensiveSlotStates.size()));
+            for (const IntensiveSlotState& state : user.intensiveSlotStates)
+            {
+                append(state.day);
+                append(state.startTime);
+                append(state.state);
+            }
+            appendDiagnostics(user.diagnostics);
+        }
+        appendDiagnostics(sheet.diagnostics);
+    }
+    return projection;
+}
 }
 
 void ScheduleImportTests::parsesUsersMergesAndDiagnostics()
@@ -1243,6 +1317,41 @@ void ScheduleImportTests::readerStreamsSharedStringsAndRejectsNoWorksheets()
     QVERIFY(!emptyStreamSucceeded);
     QCOMPARE(emptyStreamError, emptyParseError);
     QCOMPARE(emptyCallbacks, 0);
+}
+
+void ScheduleImportTests::scheduleDeviceParserMatchesByteOutput()
+{
+    QFile file(
+        QStringLiteral(
+            CLASSMNGR_SOURCE_DIR
+            "/tests/fixtures/imports/schedule_review.xlsx"
+            )
+        );
+    QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.errorString()));
+    const QByteArray data = file.readAll();
+    QVERIFY(!data.isEmpty());
+
+    const auto byteResult = parseScheduleImportWorkbook(
+        data,
+        ScheduleImportKind::Normal
+        );
+    QVERIFY2(
+        byteResult.has_value(),
+        byteResult.has_value() ? "" : qPrintable(byteResult.error())
+        );
+
+    const auto deviceResult = parseScheduleImportWorkbook(
+        file,
+        ScheduleImportKind::Normal
+        );
+    QVERIFY2(
+        deviceResult.has_value(),
+        deviceResult.has_value() ? "" : qPrintable(deviceResult.error())
+        );
+    QCOMPARE(
+        scheduleImportProjection(*deviceResult),
+        scheduleImportProjection(*byteResult)
+        );
 }
 
 void ScheduleImportTests::scheduleParserProjectsCheckedInWorkbookSheets()

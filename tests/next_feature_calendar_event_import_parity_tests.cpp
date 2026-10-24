@@ -6,11 +6,14 @@
 #include "features/calendar/calendar_workbook_reader.h"
 
 #include <QFile>
+#include <QBuffer>
 #include <QHostAddress>
 #include <QSignalSpy>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTemporaryDir>
+#include <QTemporaryFile>
+#include <QPointer>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -82,6 +85,9 @@ class NextFeatureCalendarEventImportParityTests final : public QObject
 private slots:
     void boundedCalendarParserMatchesGoldenFixture();
     void productionImportPathMatchesLegacyGoldenFixture();
+    void failedDownloadCleansStagedWorkbook();
+    void failedStagingWriteAbortsAndCleansStagedWorkbook();
+    void serviceDestructionCleansInProgressStagedWorkbook();
 };
 
 void NextFeatureCalendarEventImportParityTests::
@@ -139,6 +145,37 @@ boundedCalendarParserMatchesGoldenFixture()
         QCOMPARE(
             legacySignature(streamed.events.at(index)),
             legacySignature(buffered.events.at(index))
+            );
+    }
+
+    QBuffer device;
+    device.setData(workbookBytes);
+    QVERIFY(device.open(QIODevice::ReadOnly));
+    QString deviceError;
+    CalendarImport::CalendarWorkbookReadCounts deviceReadCounts;
+    const CalendarImport::ParsedCalendarImport deviceParsed =
+        CalendarImport::parseCalendarEventsFromWorkbookDevice(
+            device,
+            {},
+            &deviceError,
+            &deviceReadCounts
+            );
+    QVERIFY2(deviceError.isEmpty(), qPrintable(deviceError));
+    QCOMPARE(deviceReadCounts.worksheetCount, readCounts.worksheetCount);
+    QCOMPARE(deviceReadCounts.cellCount, readCounts.cellCount);
+    QCOMPARE(deviceReadCounts.mergedRangeCount, readCounts.mergedRangeCount);
+    QCOMPARE(deviceReadCounts.sharedStringCount, readCounts.sharedStringCount);
+    QCOMPARE(deviceReadCounts.styleCount, readCounts.styleCount);
+    QCOMPARE(deviceParsed.events.size(), streamed.events.size());
+    QCOMPARE(
+        deviceParsed.skippedCount.rawValue(),
+        streamed.skippedCount.rawValue()
+        );
+    for (qsizetype index = 0; index < streamed.events.size(); ++index)
+    {
+        QCOMPARE(
+            legacySignature(deviceParsed.events.at(index)),
+            legacySignature(streamed.events.at(index))
             );
     }
 }
@@ -329,6 +366,7 @@ productionImportPathMatchesLegacyGoldenFixture()
     QTRY_COMPARE_WITH_TIMEOUT(finishedSpy.size(), 1, 5000);
     QCOMPARE(failedSpy.size(), 0);
     QVERIFY(!importService.isImporting());
+    QVERIFY(importService.findChildren<QTemporaryFile*>().isEmpty());
     QVERIFY(receivedRequest.startsWith("GET /calendar-fixture.xlsx HTTP/"));
 
     const QList<QVariant> importResult = finishedSpy.takeFirst();
@@ -375,6 +413,214 @@ productionImportPathMatchesLegacyGoldenFixture()
     QVERIFY(persisted->at(0).repeatSeriesId.isEmpty());
     QVERIFY(persisted->at(1).repeatSeriesId.isEmpty());
     QVERIFY(persisted->at(3).repeatSeriesId.isEmpty());
+}
+
+void NextFeatureCalendarEventImportParityTests::
+failedDownloadCleansStagedWorkbook()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QTcpServer server;
+    QVERIFY(server.listen(QHostAddress::LocalHost, 0));
+    bool responseSent = false;
+    QByteArray requestBytes;
+    connect(
+        &server,
+        &QTcpServer::newConnection,
+        &server,
+        [&]()
+        {
+            while (server.hasPendingConnections())
+            {
+                QTcpSocket* socket = server.nextPendingConnection();
+                connect(
+                    socket,
+                    &QTcpSocket::readyRead,
+                    socket,
+                    [&, socket]()
+                    {
+                        requestBytes.append(socket->readAll());
+                        if (responseSent || !requestBytes.contains("\r\n\r\n"))
+                        {
+                            return;
+                        }
+                        responseSent = true;
+                        socket->write(
+                            "HTTP/1.1 500 Import Failure\r\n"
+                            "Content-Length: 5\r\n"
+                            "Connection: close\r\n\r\nerror"
+                            );
+                        socket->disconnectFromHost();
+                    }
+                    );
+            }
+        }
+        );
+
+    ScopedCalendarImportUrl importUrl(
+        QStringLiteral("http://127.0.0.1:%1/network-failure.xlsx")
+            .arg(server.serverPort())
+            .toUtf8()
+        );
+    CalendarEventImportService service(&services);
+    QSignalSpy finishedSpy(&service, &CalendarEventImportService::importFinished);
+    QSignalSpy failedSpy(&service, &CalendarEventImportService::importFailed);
+    service.importFromDefaultSource();
+
+    QTRY_VERIFY_WITH_TIMEOUT(responseSent, 5000);
+    QTRY_COMPARE_WITH_TIMEOUT(failedSpy.size(), 1, 5000);
+    QCOMPARE(finishedSpy.size(), 0);
+    QVERIFY(service.findChildren<QTemporaryFile*>().isEmpty());
+}
+
+void NextFeatureCalendarEventImportParityTests::
+failedStagingWriteAbortsAndCleansStagedWorkbook()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QTcpServer server;
+    QVERIFY(server.listen(QHostAddress::LocalHost, 0));
+    QByteArray body(128, 'x');
+    bool initialChunkSent = false;
+    QByteArray requestBytes;
+    QPointer<QTcpSocket> responseSocket;
+    connect(
+        &server,
+        &QTcpServer::newConnection,
+        &server,
+        [&]()
+        {
+            while (server.hasPendingConnections())
+            {
+                QTcpSocket* socket = server.nextPendingConnection();
+                responseSocket = socket;
+                connect(
+                    socket,
+                    &QTcpSocket::readyRead,
+                    socket,
+                    [&, socket]()
+                    {
+                        requestBytes.append(socket->readAll());
+                        if (
+                            initialChunkSent
+                            || !requestBytes.contains("\r\n\r\n")
+                            )
+                        {
+                            return;
+                        }
+                        initialChunkSent = true;
+                        QByteArray response =
+                            "HTTP/1.1 200 OK\r\nContent-Length: ";
+                        response.append(QByteArray::number(body.size()));
+                        response.append("\r\nConnection: keep-alive\r\n\r\n");
+                        response.append(body.left(2));
+                        socket->write(response);
+                        socket->flush();
+                    }
+                    );
+            }
+        }
+        );
+
+    ScopedCalendarImportUrl importUrl(
+        QStringLiteral("http://127.0.0.1:%1/write-failure.xlsx")
+            .arg(server.serverPort())
+            .toUtf8()
+        );
+    CalendarEventImportService service(&services);
+    QSignalSpy failedSpy(&service, &CalendarEventImportService::importFailed);
+    service.importFromDefaultSource();
+
+    QTRY_VERIFY_WITH_TIMEOUT(initialChunkSent, 5000);
+    QTemporaryFile* stagedWorkbook = nullptr;
+    QTRY_VERIFY_WITH_TIMEOUT(
+        (stagedWorkbook = service.findChild<QTemporaryFile*>())
+            && stagedWorkbook->size() == 2,
+        5000
+        );
+    stagedWorkbook->close();
+    QVERIFY(responseSocket);
+    responseSocket->write(body.mid(2));
+    responseSocket->disconnectFromHost();
+
+    QTRY_COMPARE_WITH_TIMEOUT(failedSpy.size(), 1, 5000);
+    QVERIFY(service.findChildren<QTemporaryFile*>().isEmpty());
+}
+
+void NextFeatureCalendarEventImportParityTests::
+serviceDestructionCleansInProgressStagedWorkbook()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QTcpServer server;
+    QVERIFY(server.listen(QHostAddress::LocalHost, 0));
+    bool partialResponseSent = false;
+    QByteArray requestBytes;
+    connect(
+        &server,
+        &QTcpServer::newConnection,
+        &server,
+        [&]()
+        {
+            while (server.hasPendingConnections())
+            {
+                QTcpSocket* socket = server.nextPendingConnection();
+                connect(
+                    socket,
+                    &QTcpSocket::readyRead,
+                    socket,
+                    [&, socket]()
+                    {
+                        requestBytes.append(socket->readAll());
+                        if (
+                            partialResponseSent
+                            || !requestBytes.contains("\r\n\r\n")
+                            )
+                        {
+                            return;
+                        }
+                        partialResponseSent = true;
+                        socket->write(
+                            "HTTP/1.1 200 OK\r\n"
+                            "Content-Length: 1000\r\n"
+                            "Connection: keep-alive\r\n\r\npartial"
+                            );
+                        socket->flush();
+                    }
+                    );
+            }
+        }
+        );
+
+    ScopedCalendarImportUrl importUrl(
+        QStringLiteral("http://127.0.0.1:%1/abandoned.xlsx")
+            .arg(server.serverPort())
+            .toUtf8()
+        );
+    auto* service = new CalendarEventImportService(&services);
+    service->importFromDefaultSource();
+
+    QTRY_VERIFY_WITH_TIMEOUT(partialResponseSent, 5000);
+    QTemporaryFile* stagedWorkbook = nullptr;
+    QTRY_VERIFY_WITH_TIMEOUT(
+        (stagedWorkbook = service->findChild<QTemporaryFile*>())
+            && stagedWorkbook->size() > 0,
+        5000
+        );
+    const QString stagedPath = stagedWorkbook->fileName();
+    QVERIFY(QFile::exists(stagedPath));
+
+    delete service;
+    QVERIFY(!QFile::exists(stagedPath));
 }
 
 QTEST_GUILESS_MAIN(NextFeatureCalendarEventImportParityTests)

@@ -17,9 +17,11 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QTemporaryFile>
 #include <QUrl>
 
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -199,20 +201,102 @@ void CalendarEventImportService::importFromDefaultSource()
         QNetworkRequest::NoLessSafeRedirectPolicy
         );
 
+    auto* stagedWorkbook = new QTemporaryFile(this);
+    if (!stagedWorkbook->open())
+    {
+        const QString message = stagedWorkbook->errorString();
+        delete stagedWorkbook;
+        StartupProfiler::recordCalendarImportFailed(message);
+        emit importFailed(message);
+        return;
+    }
+
     m_importing = true;
     StartupProfiler::recordCalendarImportStarted(
         importUrl.toString()
         );
-    m_network->get(request);
+    QNetworkReply* reply = m_network->get(request);
+    m_stagedWorkbooks.insert(reply, stagedWorkbook);
+    connect(
+        reply,
+        &QNetworkReply::readyRead,
+        this,
+        [this, reply]()
+        {
+            handleReadyRead(reply);
+        }
+        );
+}
+
+void CalendarEventImportService::handleReadyRead(
+    QNetworkReply* reply
+    )
+{
+    QTemporaryFile* stagedWorkbook = m_stagedWorkbooks.value(reply, nullptr);
+    if (!stagedWorkbook || m_stagingErrors.contains(reply))
+    {
+        return;
+    }
+
+    constexpr qint64 TransferChunkSize = 64 * 1024;
+    while (reply->bytesAvailable() > 0)
+    {
+        const qint64 requestedSize = qMin(
+            TransferChunkSize,
+            reply->bytesAvailable()
+            );
+        const QByteArray chunk = reply->read(requestedSize);
+        if (chunk.isEmpty())
+        {
+            break;
+        }
+
+        qint64 bytesWritten = 0;
+        while (bytesWritten < chunk.size())
+        {
+            const qint64 count = stagedWorkbook->write(
+                chunk.constData() + bytesWritten,
+                chunk.size() - bytesWritten
+                );
+            if (count <= 0)
+            {
+                QString message = stagedWorkbook->errorString();
+                if (message.isEmpty())
+                {
+                    message = tr("The downloaded spreadsheet could not be staged.");
+                }
+                m_stagingErrors.insert(reply, message);
+                reply->abort();
+                return;
+            }
+            bytesWritten += count;
+        }
+    }
 }
 
 void CalendarEventImportService::handleFinished(
     QNetworkReply* reply
     )
 {
+    handleReadyRead(reply);
+    QTemporaryFile* stagedWorkbook = m_stagedWorkbooks.take(reply);
+    const QString stagingError = m_stagingErrors.take(reply);
+    std::unique_ptr<QTemporaryFile> stagedWorkbookGuard(stagedWorkbook);
+    if (stagedWorkbook)
+    {
+        stagedWorkbook->setParent(nullptr);
+    }
+
     reply->deleteLater();
     m_importing = false;
     const CalendarImportOperationReleaseGuard releaseGuard;
+
+    if (!stagingError.isEmpty())
+    {
+        StartupProfiler::recordCalendarImportFailed(stagingError);
+        emit importFailed(stagingError);
+        return;
+    }
 
     if (reply->error() != QNetworkReply::NoError)
     {
@@ -225,10 +309,27 @@ void CalendarEventImportService::handleFinished(
         return;
     }
 
-    QByteArray workbookData = reply->readAll();
+    if (!stagedWorkbook || !stagedWorkbook->flush())
+    {
+        const QString message = stagedWorkbook
+            ? stagedWorkbook->errorString()
+            : tr("The downloaded spreadsheet could not be staged.");
+        StartupProfiler::recordCalendarImportFailed(message);
+        emit importFailed(message);
+        return;
+    }
+
     StartupProfiler::recordCalendarImportResponseReceived(
-        workbookData.size()
+        stagedWorkbook->size()
         );
+
+    if (!stagedWorkbook->seek(0))
+    {
+        const QString message = stagedWorkbook->errorString();
+        StartupProfiler::recordCalendarImportFailed(message);
+        emit importFailed(message);
+        return;
+    }
 
     QString errorMessage;
     const ClassMngr::Next::Platform::
@@ -238,16 +339,13 @@ void CalendarEventImportService::handleFinished(
             campusCodeQueryAdapter;
     CalendarImport::CalendarWorkbookReadCounts readCounts;
     CalendarImport::ParsedCalendarImport parsed =
-        CalendarImport::parseCalendarEventsFromWorkbookBytes(
-            workbookData,
+        CalendarImport::parseCalendarEventsFromWorkbookDevice(
+            *stagedWorkbook,
             calendarImportCampusCodes(campusCodeQueryPort),
             &errorMessage,
             &readCounts
             );
     const bool workbookParsed = errorMessage.isEmpty();
-
-    workbookData.clear();
-    workbookData.squeeze();
 
     if (!workbookParsed)
     {

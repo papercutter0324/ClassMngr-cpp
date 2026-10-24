@@ -1,10 +1,12 @@
 #pragma once
 
 #include <QObject>
+#include <QHash>
 
 class ApplicationServices;
 class QNetworkAccessManager;
 class QNetworkReply;
+class QTemporaryFile;
 
 class CalendarEventImportService : public QObject
 {
@@ -32,11 +34,17 @@ signals:
         );
 
 private:
+    void handleReadyRead(
+        QNetworkReply* reply
+        );
+
     void handleFinished(
         QNetworkReply* reply
         );
 
     ApplicationServices* m_services = nullptr;
     QNetworkAccessManager* m_network = nullptr;
+    QHash<QNetworkReply*, QTemporaryFile*> m_stagedWorkbooks;
+    QHash<QNetworkReply*, QString> m_stagingErrors;
     bool m_importing = false;
 };

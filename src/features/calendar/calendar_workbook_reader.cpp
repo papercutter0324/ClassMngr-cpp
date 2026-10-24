@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <limits>
+#include <utility>
 
 namespace CalendarImport
 {
@@ -29,6 +31,102 @@ struct ZipEntry
     quint32 compressedSize = 0;
     quint32 uncompressedSize = 0;
     quint32 localHeaderOffset = 0;
+};
+
+class ArchiveSource final
+{
+public:
+    explicit ArchiveSource(const QByteArray& bytes)
+        : m_bytes(&bytes)
+        , m_size(bytes.size())
+    {
+    }
+
+    explicit ArchiveSource(QIODevice& device)
+        : m_device(&device)
+        , m_size(device.size())
+    {
+        m_valid = device.isOpen()
+            && device.isReadable()
+            && !device.isSequential()
+            && m_size >= 0;
+    }
+
+    [[nodiscard]] qint64 size() const noexcept
+    {
+        return m_size;
+    }
+
+    [[nodiscard]] bool isValid() const noexcept
+    {
+        return m_valid;
+    }
+
+    [[nodiscard]] bool failed() const noexcept
+    {
+        return m_failed;
+    }
+
+    bool readAt(
+        qint64 offset,
+        qint64 count,
+        QByteArray* result
+        ) const
+    {
+        if (
+            !m_valid
+            || !result
+            || offset < 0
+            || count < 0
+            || offset > m_size
+            || count > m_size - offset
+            || count > std::numeric_limits<qsizetype>::max()
+            )
+        {
+            m_failed = true;
+            return false;
+        }
+
+        if (m_bytes)
+        {
+            *result = m_bytes->mid(
+                static_cast<qsizetype>(offset),
+                static_cast<qsizetype>(count)
+                );
+            return result->size() == count;
+        }
+
+        if (!m_device || !m_device->seek(offset))
+        {
+            m_failed = true;
+            return false;
+        }
+
+        result->resize(static_cast<qsizetype>(count));
+        qint64 totalRead = 0;
+        while (totalRead < count)
+        {
+            const qint64 bytesRead = m_device->read(
+                result->data() + totalRead,
+                count - totalRead
+                );
+            if (bytesRead <= 0)
+            {
+                m_failed = true;
+                result->clear();
+                return false;
+            }
+            totalRead += bytesRead;
+        }
+        return true;
+    }
+
+private:
+    const QByteArray* m_bytes = nullptr;
+    QIODevice* m_device = nullptr;
+    qint64 m_size = 0;
+    mutable bool m_valid = true;
+    mutable bool m_failed = false;
 };
 
 quint16 readLe16(
@@ -150,73 +248,32 @@ int spreadsheetRow(
     return ok ? row : 0;
 }
 
-QByteArray inflateRawDeflate(
-    const char* compressedData,
-    qsizetype compressedSize,
-    quint32 uncompressedSize
-    )
-{
-    QByteArray output;
-    output.resize(
-        static_cast<qsizetype>(uncompressedSize)
-        );
-
-    if (uncompressedSize == 0)
-    {
-        return output;
-    }
-
-    z_stream stream{};
-    stream.next_in =
-        reinterpret_cast<Bytef*>(
-            const_cast<char*>(compressedData)
-            );
-    stream.avail_in =
-        static_cast<uInt>(compressedSize);
-    stream.next_out =
-        reinterpret_cast<Bytef*>(output.data());
-    stream.avail_out =
-        static_cast<uInt>(output.size());
-
-    if (inflateInit2(&stream, -MAX_WBITS) != Z_OK)
-    {
-        return {};
-    }
-
-    const int result =
-        inflate(&stream, Z_FINISH);
-    inflateEnd(&stream);
-
-    if (result != Z_STREAM_END)
-    {
-        return {};
-    }
-
-    output.truncate(
-        static_cast<qsizetype>(stream.total_out)
-        );
-
-    return output;
-}
-
 QHash<QString, ZipEntry> zipEntries(
-    const QByteArray& zipData
+    const ArchiveSource& source
     )
 {
     QHash<QString, ZipEntry> entries;
+    if (source.size() < MinZipEocdSize)
+    {
+        return entries;
+    }
 
-    const qsizetype searchStart =
-        qMax<qsizetype>(
-            0,
-            zipData.size() - MinZipEocdSize - MaxZipCommentSize
-            );
+    const qint64 searchStart = qMax<qint64>(
+        0,
+        source.size() - MinZipEocdSize - MaxZipCommentSize
+        );
+    QByteArray tail;
+    if (!source.readAt(searchStart, source.size() - searchStart, &tail))
+    {
+        return entries;
+    }
 
     qsizetype eocdOffset = -1;
-    for (qsizetype offset = zipData.size() - MinZipEocdSize;
-         offset >= searchStart;
+    for (qsizetype offset = tail.size() - MinZipEocdSize;
+         offset >= 0;
          --offset)
     {
-        if (readLe32(zipData, offset) == ZipEocdSignature)
+        if (readLe32(tail, offset) == ZipEocdSignature)
         {
             eocdOffset = offset;
             break;
@@ -228,157 +285,92 @@ QHash<QString, ZipEntry> zipEntries(
         return entries;
     }
 
-    const quint16 entryCount =
-        readLe16(zipData, eocdOffset + 10);
-    const quint32 centralDirectoryOffset =
-        readLe32(zipData, eocdOffset + 16);
-
-    qsizetype offset =
-        static_cast<qsizetype>(centralDirectoryOffset);
+    const quint16 entryCount = readLe16(tail, eocdOffset + 10);
+    const quint32 centralDirectoryOffset = readLe32(tail, eocdOffset + 16);
+    qint64 offset = static_cast<qint64>(centralDirectoryOffset);
 
     for (int index = 0; index < entryCount; ++index)
     {
+        if (offset < 0 || offset > source.size() - 46)
+        {
+            return {};
+        }
+
+        QByteArray centralHeader;
         if (
-            offset + 46 > zipData.size()
-            || readLe32(zipData, offset) != ZipCentralFileSignature
+            !source.readAt(offset, 46, &centralHeader)
+            || readLe32(centralHeader, 0) != ZipCentralFileSignature
             )
         {
             return {};
         }
 
-        const quint16 method =
-            readLe16(zipData, offset + 10);
-        const quint32 compressedSize =
-            readLe32(zipData, offset + 20);
-        const quint32 uncompressedSize =
-            readLe32(zipData, offset + 24);
-        const quint16 fileNameLength =
-            readLe16(zipData, offset + 28);
-        const quint16 extraLength =
-            readLe16(zipData, offset + 30);
-        const quint16 commentLength =
-            readLe16(zipData, offset + 32);
-        const quint32 localHeaderOffset =
-            readLe32(zipData, offset + 42);
+        const quint16 method = readLe16(centralHeader, 10);
+        const quint32 compressedSize = readLe32(centralHeader, 20);
+        const quint32 uncompressedSize = readLe32(centralHeader, 24);
+        const quint16 fileNameLength = readLe16(centralHeader, 28);
+        const quint16 extraLength = readLe16(centralHeader, 30);
+        const quint16 commentLength = readLe16(centralHeader, 32);
+        const quint32 localHeaderOffset = readLe32(centralHeader, 42);
+        const qint64 recordLength =
+            46LL + fileNameLength + extraLength + commentLength;
+        if (recordLength > source.size() - offset)
+        {
+            return {};
+        }
 
-        if (offset + 46 + fileNameLength > zipData.size())
+        QByteArray fileName;
+        if (!source.readAt(offset + 46, fileNameLength, &fileName))
         {
             return {};
         }
 
         ZipEntry entry;
-        entry.name =
-            QString::fromUtf8(
-                zipData.mid(offset + 46, fileNameLength)
-                );
-        entry.method =
-            method;
-        entry.compressedSize =
-            compressedSize;
-        entry.uncompressedSize =
-            uncompressedSize;
-        entry.localHeaderOffset =
-            localHeaderOffset;
-
-        entries.insert(
-            entry.name,
-            entry
-            );
-
-        offset +=
-            46
-            + fileNameLength
-            + extraLength
-            + commentLength;
+        entry.name = QString::fromUtf8(fileName);
+        entry.method = method;
+        entry.compressedSize = compressedSize;
+        entry.uncompressedSize = uncompressedSize;
+        entry.localHeaderOffset = localHeaderOffset;
+        entries.insert(entry.name, entry);
+        offset += recordLength;
     }
 
     return entries;
-}
-
-QByteArray zipFileData(
-    const QByteArray& zipData,
-    const ZipEntry& entry
-    )
-{
-    const qsizetype localOffset =
-        static_cast<qsizetype>(entry.localHeaderOffset);
-
-    if (
-        localOffset + 30 > zipData.size()
-        || readLe32(zipData, localOffset) != ZipLocalFileSignature
-        )
-    {
-        return {};
-    }
-
-    const quint16 fileNameLength =
-        readLe16(zipData, localOffset + 26);
-    const quint16 extraLength =
-        readLe16(zipData, localOffset + 28);
-    const qsizetype dataOffset =
-        localOffset + 30 + fileNameLength + extraLength;
-
-    if (
-        dataOffset < 0
-        || dataOffset + entry.compressedSize > zipData.size()
-        )
-    {
-        return {};
-    }
-
-    if (entry.method == 0)
-    {
-        // Stored ZIP entries can be parsed directly from the caller-owned
-        // archive. Every use is synchronous and stays within the lifetime of
-        // zipData; the parsed workbook objects own their resulting strings.
-        return QByteArray::fromRawData(
-            zipData.constData() + dataOffset,
-            static_cast<qsizetype>(entry.compressedSize)
-            );
-    }
-
-    if (entry.method != 8)
-    {
-        return {};
-    }
-
-    return inflateRawDeflate(
-        zipData.constData() + dataOffset,
-        static_cast<qsizetype>(entry.compressedSize),
-        entry.uncompressedSize
-        );
 }
 
 class ZipEntryDevice final : public QIODevice
 {
 public:
     ZipEntryDevice(
-        const QByteArray& zipData,
+        const ArchiveSource& source,
         const ZipEntry& entry
         )
-        : m_zipData(zipData)
+        : m_source(source)
         , m_entry(entry)
     {
-        const qsizetype localOffset =
-            static_cast<qsizetype>(entry.localHeaderOffset);
+        const qint64 localOffset = entry.localHeaderOffset;
+        if (localOffset > source.size() - 30)
+        {
+            setErrorString(QStringLiteral("Invalid ZIP local file header."));
+            return;
+        }
+
+        QByteArray localHeader;
         if (
-            localOffset + 30 > zipData.size()
-            || readLe32(zipData, localOffset) != ZipLocalFileSignature
+            !source.readAt(localOffset, 30, &localHeader)
+            || readLe32(localHeader, 0) != ZipLocalFileSignature
             )
         {
             setErrorString(QStringLiteral("Invalid ZIP local file header."));
             return;
         }
 
-        const quint16 fileNameLength =
-            readLe16(zipData, localOffset + 26);
-        const quint16 extraLength =
-            readLe16(zipData, localOffset + 28);
-        m_dataOffset =
-            localOffset + 30 + fileNameLength + extraLength;
+        const quint16 fileNameLength = readLe16(localHeader, 26);
+        const quint16 extraLength = readLe16(localHeader, 28);
+        m_dataOffset = localOffset + 30 + fileNameLength + extraLength;
         if (
-            m_dataOffset < 0
-            || m_dataOffset + entry.compressedSize > zipData.size()
+            m_dataOffset > source.size()
+            || entry.compressedSize > source.size() - m_dataOffset
             || (entry.method != 0 && entry.method != 8)
             )
         {
@@ -413,16 +405,18 @@ public:
         return m_valid;
     }
 
+    [[nodiscard]] bool failed() const noexcept
+    {
+        return m_failed;
+    }
+
     [[nodiscard]] bool isSequential() const override
     {
         return true;
     }
 
 protected:
-    qint64 readData(
-        char* destination,
-        qint64 maximumSize
-        ) override
+    qint64 readData(char* destination, qint64 maximumSize) override
     {
         if (!m_valid || m_failed || maximumSize <= 0)
         {
@@ -438,14 +432,26 @@ protected:
                 return 0;
             }
 
-            const qint64 count =
-                qMin<qint64>(
-                    qMin<qint64>(maximumSize, 32 * 1024),
-                    remaining
-                    );
+            const qint64 count = qMin<qint64>(
+                qMin<qint64>(maximumSize, InputChunkSize),
+                remaining
+                );
+            QByteArray input;
+            if (
+                !m_source.readAt(
+                    m_dataOffset + m_compressedRead,
+                    count,
+                    &input
+                    )
+                )
+            {
+                fail(QStringLiteral("Could not read ZIP entry data."));
+                return -1;
+            }
+
             std::memcpy(
                 destination,
-                m_zipData.constData() + m_dataOffset + m_compressedRead,
+                input.constData(),
                 static_cast<size_t>(count)
                 );
             m_compressedRead += static_cast<quint32>(count);
@@ -463,13 +469,23 @@ protected:
         {
             if (m_stream.avail_in == 0 && m_compressedRemaining > 0)
             {
-                const quint32 inputSize =
-                    qMin<quint32>(m_compressedRemaining, 32 * 1024);
-                m_stream.next_in = reinterpret_cast<Bytef*>(
-                    const_cast<char*>(
-                        m_zipData.constData() + m_dataOffset + m_compressedRead
-                        )
+                const quint32 inputSize = qMin<quint32>(
+                    m_compressedRemaining,
+                    static_cast<quint32>(InputChunkSize)
                     );
+                if (
+                    !m_source.readAt(
+                        m_dataOffset + m_compressedRead,
+                        inputSize,
+                        &m_inputBuffer
+                        )
+                    )
+                {
+                    fail(QStringLiteral("Could not read ZIP entry data."));
+                    return -1;
+                }
+
+                m_stream.next_in = reinterpret_cast<Bytef*>(m_inputBuffer.data());
                 m_stream.avail_in = static_cast<uInt>(inputSize);
                 m_compressedRead += inputSize;
                 m_compressedRemaining -= inputSize;
@@ -493,12 +509,10 @@ protected:
                 return -1;
             }
 
-            const quint32 outputSize = static_cast<quint32>(
-                qMin<qint64>(
-                    qMin<qint64>(maximumSize - written, 32 * 1024),
-                    outputRemaining
-                    )
-                );
+            const quint32 outputSize = static_cast<quint32>(qMin<qint64>(
+                qMin<qint64>(maximumSize - written, InputChunkSize),
+                outputRemaining
+                ));
             m_stream.next_out = reinterpret_cast<Bytef*>(destination + written);
             m_stream.avail_out = static_cast<uInt>(outputSize);
             const int status = inflate(&m_stream, Z_NO_FLUSH);
@@ -534,33 +548,58 @@ protected:
         return written;
     }
 
-    qint64 writeData(
-        const char*,
-        qint64
-        ) override
+    qint64 writeData(const char*, qint64) override
     {
         return -1;
     }
 
 private:
+    static constexpr qint64 InputChunkSize = 32 * 1024;
+
     void fail(QString message)
     {
         m_failed = true;
         setErrorString(std::move(message));
     }
 
-    const QByteArray& m_zipData;
+    const ArchiveSource& m_source;
     ZipEntry m_entry;
-    qsizetype m_dataOffset = 0;
+    qint64 m_dataOffset = 0;
     quint32 m_compressedRead = 0;
     quint32 m_compressedRemaining = 0;
     quint32 m_uncompressedRead = 0;
+    QByteArray m_inputBuffer;
     z_stream m_stream{};
     bool m_inflateInitialized = false;
     bool m_streamEnded = false;
     bool m_valid = false;
     bool m_failed = false;
 };
+
+QByteArray zipFileData(
+    const ArchiveSource& source,
+    const ZipEntry& entry
+    )
+{
+    ZipEntryDevice device(source, entry);
+    if (!device.isValid())
+    {
+        return {};
+    }
+
+    QByteArray data;
+    while (true)
+    {
+        const QByteArray chunk = device.read(32 * 1024);
+        if (chunk.isEmpty())
+        {
+            break;
+        }
+        data.append(chunk);
+    }
+
+    return device.failed() ? QByteArray{} : data;
+}
 
 QStringList parseSharedStrings(
     const QByteArray& xmlData
@@ -1664,7 +1703,7 @@ QStringList worksheetNoteEntryNames(
 }
 
 QStringList worksheetNoteEntryNames(
-    const QByteArray& data,
+    const ArchiveSource& source,
     const QHash<QString, ZipEntry>& entries,
     const QString& worksheetEntryName
     )
@@ -1683,7 +1722,7 @@ QStringList worksheetNoteEntryNames(
     {
         return worksheetNoteEntryNames(
             zipFileData(
-                data,
+                source,
                 entries.value(relationshipsName)
                 )
             );
@@ -1718,14 +1757,14 @@ QStringList worksheetNoteEntryNames(
 }
 
 QHash<CellPosition, QString> workbookCellNotes(
-    const QByteArray& data,
+    const ArchiveSource& source,
     const QHash<QString, ZipEntry>& entries,
     const QString& worksheetEntryName
     )
 {
     QHash<CellPosition, QString> notes;
     const QStringList entryNames =
-        worksheetNoteEntryNames(data, entries, worksheetEntryName);
+        worksheetNoteEntryNames(source, entries, worksheetEntryName);
 
     for (const QString& name : entryNames)
     {
@@ -1736,7 +1775,7 @@ QHash<CellPosition, QString> workbookCellNotes(
 
         const QHash<CellPosition, QString> parsed =
             parseCellNotes(
-                zipFileData(data, entries.value(name))
+                zipFileData(source, entries.value(name))
                 );
 
         for (auto note = parsed.cbegin();
@@ -1754,14 +1793,14 @@ QHash<CellPosition, QString> workbookCellNotes(
 }
 }
 
-bool forEachWorksheet(
-    const QByteArray& data,
+static bool forEachWorksheetFromArchive(
+    const ArchiveSource& source,
     const WorksheetConsumer& consumer,
     QString* errorMessage
     )
 {
     const QHash<QString, ZipEntry> entries =
-        zipEntries(data);
+        zipEntries(source);
 
     const QStringList requiredFiles{
         QStringLiteral("xl/workbook.xml"),
@@ -1774,9 +1813,10 @@ bool forEachWorksheet(
         {
             if (errorMessage)
             {
-                *errorMessage =
-                    QStringLiteral("The downloaded spreadsheet is missing %1.")
-                        .arg(file);
+                *errorMessage = source.failed()
+                    ? QStringLiteral("The downloaded spreadsheet could not be read.")
+                    : QStringLiteral("The downloaded spreadsheet is missing %1.")
+                          .arg(file);
             }
             return false;
         }
@@ -1788,7 +1828,7 @@ bool forEachWorksheet(
         metadata.sharedStrings =
             parseSharedStrings(
                 zipFileData(
-                    data,
+                    source,
                     entries.value(QStringLiteral("xl/sharedStrings.xml"))
                     )
                 );
@@ -1806,7 +1846,7 @@ bool forEachWorksheet(
             themeColors =
                 parseThemeColors(
                     zipFileData(
-                        data,
+                        source,
                         entries.value(
                             QStringLiteral(
                                 "xl/theme/theme1.xml"
@@ -1818,7 +1858,7 @@ bool forEachWorksheet(
         metadata.styles =
             parseStyles(
                 zipFileData(
-                    data,
+                    source,
                     entries.value(QStringLiteral("xl/styles.xml"))
                     ),
                 themeColors
@@ -1830,11 +1870,11 @@ bool forEachWorksheet(
     }
     const QVector<WorksheetReference> worksheetReferences =
         parseWorksheetReferences(
-            zipFileData(data, entries.value(QStringLiteral("xl/workbook.xml")))
+            zipFileData(source, entries.value(QStringLiteral("xl/workbook.xml")))
             );
     const QHash<QString, QString> relationshipTargets =
         parseWorkbookRelationships(
-            zipFileData(data, entries.value(QStringLiteral("xl/_rels/workbook.xml.rels")))
+            zipFileData(source, entries.value(QStringLiteral("xl/_rels/workbook.xml.rels")))
             );
 
     bool anyWorksheetHasCells = false;
@@ -1858,11 +1898,11 @@ bool forEachWorksheet(
         worksheet.visible = reference.visible;
         {
             const QByteArray worksheetData =
-                zipFileData(data, entries.value(entryName));
+                zipFileData(source, entries.value(entryName));
             worksheet.cells = parseSheet(
                 worksheetData,
                 metadata.sharedStrings,
-                workbookCellNotes(data, entries, entryName)
+                workbookCellNotes(source, entries, entryName)
                 );
             worksheet.mergedRanges =
                 parseMergedRanges(worksheetData);
@@ -1891,16 +1931,25 @@ bool forEachWorksheet(
         return false;
     }
 
+    if (source.failed())
+    {
+        if (errorMessage)
+        {
+            *errorMessage = QStringLiteral("The downloaded spreadsheet could not be read.");
+        }
+        return false;
+    }
+
     return true;
 }
 
-bool forEachWorksheetRows(
-    const QByteArray& data,
+static bool forEachWorksheetRowsFromArchive(
+    const ArchiveSource& source,
     const WorksheetStreamConsumer& consumer,
     QString* errorMessage
     )
 {
-    const QHash<QString, ZipEntry> entries = zipEntries(data);
+    const QHash<QString, ZipEntry> entries = zipEntries(source);
     const QStringList requiredFiles{
         QStringLiteral("xl/workbook.xml"),
         QStringLiteral("xl/_rels/workbook.xml.rels")
@@ -1912,9 +1961,10 @@ bool forEachWorksheetRows(
         {
             if (errorMessage)
             {
-                *errorMessage =
-                    QStringLiteral("The downloaded spreadsheet is missing %1.")
-                        .arg(file);
+                *errorMessage = source.failed()
+                    ? QStringLiteral("The downloaded spreadsheet could not be read.")
+                    : QStringLiteral("The downloaded spreadsheet is missing %1.")
+                          .arg(file);
             }
             return false;
         }
@@ -1925,7 +1975,7 @@ bool forEachWorksheetRows(
     {
         metadata.sharedStrings = parseSharedStrings(
             zipFileData(
-                data,
+                source,
                 entries.value(QStringLiteral("xl/sharedStrings.xml"))
                 )
             );
@@ -1937,14 +1987,14 @@ bool forEachWorksheetRows(
         {
             themeColors = parseThemeColors(
                 zipFileData(
-                    data,
+                    source,
                     entries.value(QStringLiteral("xl/theme/theme1.xml"))
                     )
                 );
         }
         metadata.styles = parseStyles(
             zipFileData(
-                data,
+                source,
                 entries.value(QStringLiteral("xl/styles.xml"))
                 ),
             themeColors
@@ -1957,12 +2007,12 @@ bool forEachWorksheetRows(
 
     const QVector<WorksheetReference> worksheetReferences =
         parseWorksheetReferences(
-            zipFileData(data, entries.value(QStringLiteral("xl/workbook.xml")))
+            zipFileData(source, entries.value(QStringLiteral("xl/workbook.xml")))
             );
     const QHash<QString, QString> relationshipTargets =
         parseWorkbookRelationships(
             zipFileData(
-                data,
+                source,
                 entries.value(QStringLiteral("xl/_rels/workbook.xml.rels"))
                 )
             );
@@ -1987,7 +2037,7 @@ bool forEachWorksheetRows(
         worksheet.name = reference.name;
         worksheet.visible = reference.visible;
         const QHash<CellPosition, QString> notes =
-            workbookCellNotes(data, entries, entryName);
+            workbookCellNotes(source, entries, entryName);
 
         bool discoveryInvoked = false;
         bool extractionInvoked = false;
@@ -2003,7 +2053,7 @@ bool forEachWorksheetRows(
                 discoveryInvoked = true;
                 worksheet.mergedRanges.clear();
 
-                ZipEntryDevice device(data, entries.value(entryName));
+                ZipEntryDevice device(source, entries.value(entryName));
                 if (!device.isValid())
                 {
                     return false;
@@ -2033,7 +2083,7 @@ bool forEachWorksheetRows(
                 }
                 extractionInvoked = true;
 
-                ZipEntryDevice device(data, entries.value(entryName));
+                ZipEntryDevice device(source, entries.value(entryName));
                 if (!device.isValid())
                 {
                     return false;
@@ -2085,7 +2135,72 @@ bool forEachWorksheetRows(
         return false;
     }
 
+    if (source.failed())
+    {
+        if (errorMessage)
+        {
+            *errorMessage = QStringLiteral("The downloaded spreadsheet could not be read.");
+        }
+        return false;
+    }
+
     return true;
+}
+
+bool forEachWorksheet(
+    const QByteArray& data,
+    const WorksheetConsumer& consumer,
+    QString* errorMessage
+    )
+{
+    const ArchiveSource source(data);
+    return forEachWorksheetFromArchive(source, consumer, errorMessage);
+}
+
+bool forEachWorksheet(
+    QIODevice& device,
+    const WorksheetConsumer& consumer,
+    QString* errorMessage
+    )
+{
+    const ArchiveSource source(device);
+    if (!source.isValid())
+    {
+        if (errorMessage)
+        {
+            *errorMessage = QStringLiteral("The downloaded spreadsheet could not be read.");
+        }
+        return false;
+    }
+    return forEachWorksheetFromArchive(source, consumer, errorMessage);
+}
+
+bool forEachWorksheetRows(
+    const QByteArray& data,
+    const WorksheetStreamConsumer& consumer,
+    QString* errorMessage
+    )
+{
+    const ArchiveSource source(data);
+    return forEachWorksheetRowsFromArchive(source, consumer, errorMessage);
+}
+
+bool forEachWorksheetRows(
+    QIODevice& device,
+    const WorksheetStreamConsumer& consumer,
+    QString* errorMessage
+    )
+{
+    const ArchiveSource source(device);
+    if (!source.isValid())
+    {
+        if (errorMessage)
+        {
+            *errorMessage = QStringLiteral("The downloaded spreadsheet could not be read.");
+        }
+        return false;
+    }
+    return forEachWorksheetRowsFromArchive(source, consumer, errorMessage);
 }
 
 Workbook parseWorkbook(
@@ -2098,6 +2213,40 @@ Workbook parseWorkbook(
     const bool succeeded =
         forEachWorksheet(
             data,
+            [&workbook, &haveMetadata](
+                const WorkbookMetadata& metadata,
+                const Worksheet& worksheet
+                )
+            {
+                if (!haveMetadata)
+                {
+                    workbook.sharedStrings = metadata.sharedStrings;
+                    workbook.styles = metadata.styles;
+                    haveMetadata = true;
+                }
+                workbook.worksheets.append(worksheet);
+                return true;
+            },
+            errorMessage
+            );
+    if (!succeeded)
+    {
+        return {};
+    }
+
+    return workbook;
+}
+
+Workbook parseWorkbook(
+    QIODevice& device,
+    QString* errorMessage
+    )
+{
+    Workbook workbook;
+    bool haveMetadata = false;
+    const bool succeeded =
+        forEachWorksheet(
+            device,
             [&workbook, &haveMetadata](
                 const WorkbookMetadata& metadata,
                 const Worksheet& worksheet

@@ -5,6 +5,7 @@
 #include "next/application/calendar_event_import_count.h"
 
 #include <QByteArray>
+#include <QIODevice>
 #include <QList>
 #include <QStringList>
 
@@ -36,6 +37,13 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
 
 ParsedCalendarImport parseCalendarEventsFromWorkbookBytes(
     const QByteArray& data,
+    const QStringList& campusCodes,
+    QString* errorMessage,
+    CalendarWorkbookReadCounts* readCounts = nullptr
+    );
+
+ParsedCalendarImport parseCalendarEventsFromWorkbookDevice(
+    QIODevice& device,
     const QStringList& campusCodes,
     QString* errorMessage,
     CalendarWorkbookReadCounts* readCounts = nullptr

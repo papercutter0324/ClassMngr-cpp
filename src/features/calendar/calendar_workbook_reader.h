@@ -2,6 +2,7 @@
 
 #include <QByteArray>
 #include <QHashFunctions>
+#include <QIODevice>
 #include <QString>
 #include <QStringList>
 #include <QVector>
@@ -149,6 +150,13 @@ Workbook parseWorkbook(
     QString* errorMessage
     );
 
+// Device overloads require an open, readable, non-sequential device and use
+// seek-based exact reads. The device remains caller-owned for the full call.
+Workbook parseWorkbook(
+    QIODevice& device,
+    QString* errorMessage
+    );
+
 // Calls the consumer synchronously in workbook order. Metadata is valid for the
 // full call; the worksheet and its parsed cells are valid only during the
 // callback. The decompressed worksheet XML is released before the callback.
@@ -156,6 +164,12 @@ Workbook parseWorkbook(
 // error through errorMessage.
 bool forEachWorksheet(
     const QByteArray& data,
+    const WorksheetConsumer& consumer,
+    QString* errorMessage
+    );
+
+bool forEachWorksheet(
+    QIODevice& device,
     const WorksheetConsumer& consumer,
     QString* errorMessage
     );
@@ -168,6 +182,12 @@ bool forEachWorksheet(
 // must be consumed, in order, for the worksheet to succeed.
 bool forEachWorksheetRows(
     const QByteArray& data,
+    const WorksheetStreamConsumer& consumer,
+    QString* errorMessage
+    );
+
+bool forEachWorksheetRows(
+    QIODevice& device,
     const WorksheetStreamConsumer& consumer,
     QString* errorMessage
     );
