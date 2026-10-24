@@ -15,10 +15,10 @@
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   its receipt records implementation tip
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1406 (Personal signature preferences) current.
-  F1405 (Personal details save) is accepted at
-  `9fff0ca5b96d6eabe7b2e22692f9fe6a89205edc`; focused verification passed.
-  The current batch tracker retains the ordered list, with 11 prioritized
+  and Batch 5 is active with F1407 (Personal signature image) current. F1406
+  (Personal signature preferences) is accepted at
+  `62981ee18af676b405ba1cb4b5e1bdbbac74e5b7`; focused verification passed.
+  The current batch tracker retains the ordered list, with 10 prioritized
   candidates remaining.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI
   limitations, baseline failures, attribution, and coverage notes remain in

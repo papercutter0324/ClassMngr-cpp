@@ -17,12 +17,13 @@ verification evidence in its progress log.
   began.
 - Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`; its
   implementation tip is `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`.
-- Batch 5 discovery is complete and Batch 5 is active with F1406 — Personal
-  signature preferences current. F1405 — Personal details save is accepted at
-  `9fff0ca5b96d6eabe7b2e22692f9fe6a89205edc`; 11 prioritized candidates
-  remain.
+- Batch 5 discovery is complete and Batch 5 is active with F1407 — Personal
+  signature image current. F1406 — Personal signature preferences is accepted
+  at `62981ee18af676b405ba1cb4b5e1bdbbac74e5b7`; 10 prioritized candidates
+  remain. F1407's `myInfo/signatureImage` adapter and behavior are excluded
+  from F1406.
 
-## Phase 3 — Batch 5 (active; F1406 current)
+## Phase 3 — Batch 5 (active; F1407 current)
 
 Two complementary scans found 19 prioritized, distinct persistence slices.
 The source scan found exactly 19 active Next Platform ports after excluding
@@ -40,8 +41,8 @@ scan-identified item is a candidate, not a test result.
    prior F1341 operations stay excluded)
 7. F1404 — Personal display-name preferences (accepted)
 8. F1405 — Personal details save (accepted)
-9. F1406 — Personal signature preferences (current)
-10. F1407 — Personal signature image
+9. F1406 — Personal signature preferences (accepted)
+10. F1407 — Personal signature image (current)
 11. F1408 — Sub Prep preferences
 12. F1409 — Sub Prep personal Zoom preferences
 13. F1410 — Custom color palette preferences

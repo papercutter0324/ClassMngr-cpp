@@ -2305,3 +2305,42 @@ accepted; F1406 (Personal signature preferences) is current. Batch 5 remains
 unpushed until its remaining slices are complete.
 
 Commit: `9fff0ca5b96d6eabe7b2e22692f9fe6a89205edc`.
+
+## F1406 — Personal signature preferences (Batch 5 candidate 9 of 19) — 2026-10-24
+
+Only the `PersonalSignaturePreferencesPort` adapter and dedicated Platform
+fixture moved to `WorkspaceStore`. Reads remain sequential in this exact key
+order: `myInfo/signatureMode`, `myInfo/typedSignatureFont`, then
+`myInfo/typedSignatureText`. Missing values default to Image, empty text, and
+JustAnotherHand, with no writes. Stored mode `1` maps to Type; other values
+map to Image. Font values `0`–`3` map to JustAnotherHand, DancingScript,
+GreatVibes, and Caveat; invalid, noninteger, or unsupported values map to
+JustAnotherHand. Text conversion remains UTF-8 and preserves whitespace.
+
+Unavailable/closed stores or a missing repository return nonrecoverable
+`Technical`. Repository read failures are warning-logged at the first failing
+key and return nonrecoverable `Technical`; loading stops there, with no
+partial bundle or transaction. The F1405 cross-writer interoperability test
+remains covered. F1407's `myInfo/signatureImage` adapter and behavior are out
+of scope.
+
+Incremental build passed for the F1406/F1405 Platform, MyWorkspace, and
+InitialSetup targets. CTest #447,
+`ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests`,
+and CTest #445,
+`ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`,
+passed 2/2. Four selected UI slots passed
+individually 3/3 including init/cleanup with
+`QT_QPA_PLATFORM=offscreen` and absolute `TMP`, `TEMP`, and `TMPDIR` under
+`build/macos-clang-debug/f1406-selected-ui-tmp`: MyWorkspace's
+`storedSignaturePreferencesPopulateModeTextAndFont` and
+`signaturePreferenceReadFailurePreservesControlsAndBlocksSaveUntilReload`;
+Initial Setup's `signaturePreferenceReadFailureBlocksAggregateSaveAndCanRetry`
+and `aggregateSetupSavePreservesAllFourSignatureFontValues`. Only font-alias
+and MyWorkspace `propagateSizeHints` warnings occurred. No setup reruns
+occurred. `git diff --check` passed. Full UI suites, the full suite, and
+cross-platform builds did not run; F1407 was not tested. F1406 is accepted;
+F1407 (Personal signature image) is current. Batch 5 remains unpushed until
+its remaining slices are complete.
+
+Commit: `62981ee18af676b405ba1cb4b5e1bdbbac74e5b7`.
