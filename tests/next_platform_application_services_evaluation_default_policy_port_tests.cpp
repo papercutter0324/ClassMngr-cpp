@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/evaluation_default_policy_preferences.h"
 #include "next/platform/application_services_evaluation_default_policy_port.h"
@@ -39,7 +39,7 @@ bool openDatabase(
 
 SettingsRepository* settingsRepository(ApplicationServices& services)
 {
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     return session && session->isOpen()
         ? session->settingsRepository()
         : nullptr;
@@ -50,7 +50,7 @@ bool executeSql(
     const QString& statement
     )
 {
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     if (!session || !session->isOpen())
     {
         return false;
@@ -147,8 +147,8 @@ unavailableSettingsDefaultToAll()
     ApplicationServices services;
     ApplicationServicesEvaluationDefaultPolicyPort port(services);
     QVERIFY(services.dataService());
-    QVERIFY(!services.databaseSession()->isOpen());
-    QVERIFY(!services.databaseSession()->settingsRepository());
+    QVERIFY(!services.workspaceStore()->isOpen());
+    QVERIFY(!services.workspaceStore()->settingsRepository());
 
     const auto unavailablePolicy = port.load();
     QVERIFY(unavailablePolicy);
@@ -276,7 +276,7 @@ closedSessionDefaultsAndIgnoresSaveWithoutChangingSettings()
     const QString path = databasePath(m_directory);
     QVERIFY(services.openDatabase(path));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     SettingsRepository* repository = session->settingsRepository();
     QVERIFY(repository);
@@ -384,7 +384,7 @@ repositoryReadFailureReturnsTechnicalWithoutMaterializingFallback()
     QVERIFY(!loaded.error().recoverable);
     QVERIFY(!loaded.error().message.empty());
 
-    QSqlQuery tables(services.databaseSession()->database());
+    QSqlQuery tables(services.workspaceStore()->database());
     QVERIFY(tables.exec(QStringLiteral(
         "SELECT name FROM sqlite_master "
         "WHERE type = 'table' AND name = 'app_settings'"

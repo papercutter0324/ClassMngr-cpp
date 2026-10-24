@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/evaluation_default_policy_preferences.h"
 
@@ -14,8 +14,8 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Qt-boundary adapter for the evaluation-default policy. The active-session
-// settings access and stored-string conversion are kept here; callers consume
+// Qt-boundary adapter for the evaluation-default policy. Workspace settings
+// access and stored-string conversion are kept here; callers consume
 // only the typed application policy.
 class ApplicationServicesEvaluationDefaultPolicyPort final
     : public Application::EvaluationDefaultPolicyPreferencesPort
@@ -24,7 +24,7 @@ public:
     explicit ApplicationServicesEvaluationDefaultPolicyPort(
         ApplicationServices& services
         ) noexcept
-        : m_session(services.databaseSession())
+        : m_store(services.workspaceStore())
     {
     }
 
@@ -44,7 +44,7 @@ public:
     [[nodiscard]] Application::EvaluationDefaultPolicyPreferencesLoadResult
     load() const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return Application::
                 EvaluationDefaultPolicyPreferencesLoadResult::success(
@@ -52,7 +52,7 @@ public:
                     );
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return Application::
@@ -117,14 +117,14 @@ public:
                 });
         }
 
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return failure(
                 "Evaluation default policy cannot be saved because no database session is open."
                 );
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return failure(
@@ -181,7 +181,7 @@ private:
             : QStringLiteral("all");
     }
 
-    DatabaseSession* m_session = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform
