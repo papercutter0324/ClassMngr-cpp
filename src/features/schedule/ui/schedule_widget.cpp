@@ -10,7 +10,7 @@
 #include "core/application_services.h"
 #include "core/startup_profiler.h"
 #include "core/theme_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "domain/rules/schedule_value_parser.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
@@ -568,12 +568,12 @@ void ScheduleWidget::editTestingAssignment(
     const TestingAssignment* existingAssignment
     )
 {
-    DatabaseSession* const session =
+    WorkspaceStore* const store =
         m_services
-            ? m_services->databaseSession()
+            ? m_services->workspaceStore()
             : nullptr;
 
-    if (!session || !session->isOpen())
+    if (!store || !store->isOpen())
     {
         DialogServices::showWarning(
             this,

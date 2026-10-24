@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/testing_class_repository.h"
 #include "next/application/schedule_testing_class_choices_query.h"
 #include "next/platform/application_services_schedule_testing_class_choices_read_port.h"
@@ -79,11 +79,11 @@ readsOrderedCompactChoicesFromTheActiveSession()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     TestingClassRepository* const repository =
-        session->testingClassRepository();
+        store->testingClassRepository();
     QVERIFY(repository);
 
     const auto createdM2 = repository->createTestingClass(testingClass(
@@ -155,9 +155,9 @@ rejectsTestingClassIdsOutsidePositiveIntRange()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QSqlDatabase database = session->database();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlDatabase database = store->database();
 
     const qint64 classIds[] = { 1, 4294967297LL };
     const QString classNames[] = {
@@ -279,9 +279,9 @@ preservesMaximumPositiveTestingClassId()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QSqlDatabase database = session->database();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlDatabase database = store->database();
 
     const qint64 maximumClassId = std::numeric_limits<int>::max();
     QSqlQuery insertClass(database);
@@ -333,10 +333,10 @@ keepsTestingClassesWithoutClassInfoWithBlankGradeAndLevel()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     TestingClassRepository* const repository =
-        session->testingClassRepository();
+        store->testingClassRepository();
     QVERIFY(repository);
 
     const auto created = repository->createTestingClass(testingClass(
@@ -347,7 +347,7 @@ keepsTestingClassesWithoutClassInfoWithBlankGradeAndLevel()
         ));
     QVERIFY(created);
 
-    QSqlQuery removeClassInfo(session->database());
+    QSqlQuery removeClassInfo(store->database());
     removeClassInfo.prepare(QStringLiteral(
         "DELETE FROM class_info WHERE class_id=?"
         ));
@@ -448,7 +448,7 @@ forwardsTestingClassRepositoryFailures()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlQuery dropTestingClasses(services.databaseSession()->database());
+    QSqlQuery dropTestingClasses(services.workspaceStore()->database());
     QVERIFY(dropTestingClasses.exec(QStringLiteral(
         "DROP TABLE testing_classes"
         )));

@@ -842,3 +842,20 @@ Executor and Tester incrementally built `ClassMngr`,
 `ClassMngrScheduleWidgetTests` in the existing `build/macos-clang-debug` tree.
 The three focused CTests passed **3/3** serially. `git diff --check` passed.
 No full suite or cross-platform build ran.
+
+## F1352 — Schedule testing-class choices — 2026-10-23
+
+The testing-class choices Platform port and the pre-dialog owner-availability
+guard in `ScheduleWidget::editTestingAssignment()` now use `WorkspaceStore`.
+The repository API/query and choice mapping, order, fields, ID validation,
+errors, and dialog behavior remain unchanged. The dedicated Platform test
+fixtures and repository access use `WorkspaceStore`. The ScheduleWidget test
+helper does as well; its unavailable-store case closes the actual store,
+retains the legacy-service stub check, and verifies the same warning.
+
+Executor and Tester incrementally built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests`,
+`ClassMngrNextApplicationScheduleTestingClassChoicesReadQueryTests`, and
+`ClassMngrScheduleWidgetTests` in the existing `build/macos-clang-debug` tree.
+The three focused CTests passed **3/3** serially. `git diff --check` passed.
+No full suite or cross-platform build ran.

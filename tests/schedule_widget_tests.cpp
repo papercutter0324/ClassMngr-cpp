@@ -11,7 +11,7 @@
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/services/schedule_output_controller.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/testing_class_repository.h"
 #include "next/application/schedule_testing_class_choices_query.h"
 #include "next/application/schedule_testing_assignment_save.h"
@@ -552,13 +552,13 @@ bool seedTestingClassRecords(
     const QList<TestingClass>& testingClasses
     )
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
 
-    const QSqlDatabase database = session->database();
+    const QSqlDatabase database = store->database();
     for (const TestingClass& testingClass : testingClasses)
     {
         if (!insertTestingClassRecord(database, testingClass))
@@ -641,7 +641,7 @@ private slots:
     void testingAssignmentDialogSupportsEveryAction();
     void testingAssignmentWritesMapActionsAndReloadSuccessfulState();
     void testingAssignmentCancelAndManageDoNotWriteOrReload();
-    void unavailableTestingAssignmentSessionWarnsBeforeDialog();
+    void unavailableTestingAssignmentStoreWarnsBeforeDialog();
     void failedTestingAssignmentWriteWarnsAndDoesNotReload();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
     void sourceQueryBuildsRegularIntensiveAndTestingSchedules();
@@ -2096,7 +2096,7 @@ testingAssignmentCancelAndManageDoNotWriteOrReload()
 }
 
 void ScheduleWidgetTests::
-unavailableTestingAssignmentSessionWarnsBeforeDialog()
+unavailableTestingAssignmentStoreWarnsBeforeDialog()
 {
     FakeUserPromptService prompts;
     DialogServices::setUserPromptServiceForTesting(&prompts);
@@ -2161,10 +2161,11 @@ unavailableTestingAssignmentSessionWarnsBeforeDialog()
         ScheduleWidgetTestStubs::testingAssignmentsReadCount;
     const int slotStateReadCount =
         ScheduleWidgetTestStubs::slotStateReadCount;
-    QVERIFY(services.databaseSession()->isOpen());
+    QVERIFY(services.workspaceStore()->isOpen());
     QVERIFY(services.scheduleService()->isAvailable());
+    services.closeDatabase();
     ScheduleWidgetTestStubs::setDatabaseSessionOpen(false);
-    QVERIFY(!services.databaseSession()->isOpen());
+    QVERIFY(!services.workspaceStore()->isOpen());
     QVERIFY(!services.scheduleService()->isAvailable());
 
     bool closedSessionDialogShown = false;
