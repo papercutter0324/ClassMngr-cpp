@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_repository.h"
 #include "next/application/class_delete.h"
 #include "next/platform/application_services_class_delete_port.h"
@@ -254,9 +254,9 @@ deletesThroughActiveSessionRepositoryAndPreservesSibling()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    ClassRepository* const repository = session->classRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    ClassRepository* const repository = store->classRepository();
     QVERIFY(repository);
 
     const auto target = repository->createClass(QStringLiteral("Delete Target"));
@@ -266,18 +266,18 @@ deletesThroughActiveSessionRepositoryAndPreservesSibling()
     constexpr qint64 siblingEvaluationId = 1;
     constexpr qint64 targetEvaluationId = 4294967297LL;
     QVERIFY(insertCascadeRows(
-        session->database(),
+        store->database(),
         *target,
         targetEvaluationId,
         QStringLiteral("Target evaluation content")
         ));
     QVERIFY(insertCascadeRows(
-        session->database(),
+        store->database(),
         *sibling,
         siblingEvaluationId,
         QStringLiteral("Sibling evaluation content")
         ));
-    QCOMPARE(tableCount(session->database(), QStringLiteral("speaking_eval_data")), 2);
+    QCOMPARE(tableCount(store->database(), QStringLiteral("speaking_eval_data")), 2);
 
     Platform::ApplicationServicesClassDeletePort port(services);
     const auto result = port.deleteClass(request(*target));
@@ -285,19 +285,19 @@ deletesThroughActiveSessionRepositoryAndPreservesSibling()
     QVERIFY(result);
     for (const auto& [table, column] : ClassCascadeTables)
     {
-        QCOMPARE(countForClass(session->database(), table, column, *target), 0);
-        QCOMPARE(countForClass(session->database(), table, column, *sibling), 1);
+        QCOMPARE(countForClass(store->database(), table, column, *target), 0);
+        QCOMPARE(countForClass(store->database(), table, column, *sibling), 1);
     }
-    QCOMPARE(speakingDataCount(session->database(), *target), 0);
-    QCOMPARE(speakingDataCount(session->database(), *sibling), 1);
-    QCOMPARE(tableCount(session->database(), QStringLiteral("speaking_eval_data")), 1);
+    QCOMPARE(speakingDataCount(store->database(), *target), 0);
+    QCOMPARE(speakingDataCount(store->database(), *sibling), 1);
+    QCOMPARE(tableCount(store->database(), QStringLiteral("speaking_eval_data")), 1);
     const QVariant targetEvaluationKey =
         QVariant::fromValue<qint64>(targetEvaluationId);
     const QVariant siblingEvaluationKey =
         QVariant::fromValue<qint64>(siblingEvaluationId);
     QCOMPARE(
         scalar(
-            session->database(),
+            store->database(),
             QStringLiteral("SELECT COUNT(*) FROM speaking_evaluations WHERE id=?"),
             targetEvaluationKey
             ),
@@ -305,7 +305,7 @@ deletesThroughActiveSessionRepositoryAndPreservesSibling()
         );
     QCOMPARE(
         scalar(
-            session->database(),
+            store->database(),
             QStringLiteral("SELECT COUNT(*) FROM speaking_eval_data WHERE evaluation_id=?"),
             targetEvaluationKey
             ),
@@ -313,7 +313,7 @@ deletesThroughActiveSessionRepositoryAndPreservesSibling()
         );
     QCOMPARE(
         scalar(
-            session->database(),
+            store->database(),
             QStringLiteral("SELECT COUNT(*) FROM speaking_evaluations WHERE id=?"),
             siblingEvaluationKey
             ),
@@ -321,7 +321,7 @@ deletesThroughActiveSessionRepositoryAndPreservesSibling()
         );
     QCOMPARE(
         scalar(
-            session->database(),
+            store->database(),
             QStringLiteral("SELECT COUNT(*) FROM speaking_eval_data WHERE evaluation_id=?"),
             siblingEvaluationKey
             ),
@@ -329,7 +329,7 @@ deletesThroughActiveSessionRepositoryAndPreservesSibling()
         );
     QCOMPARE(
         scalarText(
-            session->database(),
+            store->database(),
             QStringLiteral(
                 "SELECT col_0 FROM speaking_eval_data "
                 "WHERE evaluation_id=? AND row_index=0"
@@ -351,19 +351,19 @@ rollsBackEveryCascadeTableOnRepositoryFailure()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    ClassRepository* const repository = session->classRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    ClassRepository* const repository = store->classRepository();
     QVERIFY(repository);
 
     const auto target = repository->createClass(QStringLiteral("Rollback Target"));
     const auto sibling = repository->createClass(QStringLiteral("Rollback Sibling"));
     QVERIFY(target);
     QVERIFY(sibling);
-    QVERIFY(insertCascadeRows(session->database(), *target));
-    QVERIFY(insertCascadeRows(session->database(), *sibling));
+    QVERIFY(insertCascadeRows(store->database(), *target));
+    QVERIFY(insertCascadeRows(store->database(), *sibling));
     QVERIFY(execute(
-        session->database(),
+        store->database(),
         QStringLiteral(
             "CREATE TRIGGER fail_class_delete "
             "BEFORE DELETE ON classes WHEN OLD.id=%1 "
@@ -381,12 +381,12 @@ rollsBackEveryCascadeTableOnRepositoryFailure()
             != std::string::npos);
     for (const auto& [table, column] : ClassCascadeTables)
     {
-        QCOMPARE(countForClass(session->database(), table, column, *target), 1);
-        QCOMPARE(countForClass(session->database(), table, column, *sibling), 1);
+        QCOMPARE(countForClass(store->database(), table, column, *target), 1);
+        QCOMPARE(countForClass(store->database(), table, column, *sibling), 1);
     }
-    QCOMPARE(speakingDataCount(session->database(), *target), 1);
-    QCOMPARE(speakingDataCount(session->database(), *sibling), 1);
-    QCOMPARE(tableCount(session->database(), QStringLiteral("speaking_eval_data")), 2);
+    QCOMPARE(speakingDataCount(store->database(), *target), 1);
+    QCOMPARE(speakingDataCount(store->database(), *sibling), 1);
+    QCOMPARE(tableCount(store->database(), QStringLiteral("speaking_eval_data")), 2);
     QVERIFY(repository->getClassById(*target));
     QVERIFY(repository->getClassById(*sibling));
 }

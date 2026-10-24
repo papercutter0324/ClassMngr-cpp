@@ -1411,3 +1411,23 @@ includes overflow behavior; there is no dedicated create/read transaction-
 state assertion because the pair remains nontransactional. `git diff --check`
 passed. No full suite or cross-platform build ran. F1371 is accepted; F1372
 (Class delete) is current.
+
+Commit: `371a3776ca2a0dbe3ca91c0f42f93ab2a308a5b8`.
+
+## F1372 — Class delete (Batch 3 candidate 15 of 20) — 2026-10-24
+
+The only production change moved
+`src/next/platform/application_services_class_delete_port.h` to
+`WorkspaceStore`. The focused direct-port fixture in
+`tests/next_platform_application_services_class_delete_port_tests.cpp` and
+sidebar-parity fixture in `tests/sidebar_class_delete_parity_tests.cpp` now
+also use `WorkspaceStore`; assertions and SQL are unchanged. Repository delete
+transaction/cascade behavior, ID validation, error mapping, and controller
+order are unchanged. This slice adds no behavior.
+
+Three targets built, and three serial registered CTests passed (3/3):
+`ClassMngrNextApplicationClassDeleteUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesClassDeletePortTests`, and
+`ClassMngrSidebarClassDeleteParityTests`. `git diff --check` passed. No full
+suite or cross-platform build ran. F1372 is accepted; F1373 (Class Transfer
+preview read) is current.

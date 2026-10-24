@@ -1,6 +1,6 @@
 #include "app/controllers/sidebar_controller.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_repository.h"
 #include "features/classes/ui/class_notes_page.h"
 #include "features/classes/ui/classes_page.h"
@@ -53,7 +53,7 @@ public:
         }
 
         ClassRepository* const repository =
-            services.databaseSession()->classRepository();
+            services.workspaceStore()->classRepository();
         if (!repository)
         {
             return false;
@@ -100,7 +100,7 @@ public:
         const QString& day
         ) const
     {
-        QSqlDatabase database = services.databaseSession()->database();
+        QSqlDatabase database = services.workspaceStore()->database();
         QSqlQuery info(database);
         info.prepare(QStringLiteral(
             "INSERT INTO class_info (class_id, class_grade, class_level) "
@@ -124,7 +124,7 @@ public:
 
     [[nodiscard]] ClassRepository* repository() const
     {
-        return services.databaseSession()->classRepository();
+        return services.workspaceStore()->classRepository();
     }
 
     [[nodiscard]] bool invokeDeleteSelectingTarget()
@@ -322,7 +322,7 @@ writeFailureWarnsWithoutRefreshingOrNavigating()
 {
     DeleteFixture fixture;
     QVERIFY(fixture.open());
-    QSqlQuery trigger(fixture.services.databaseSession()->database());
+    QSqlQuery trigger(fixture.services.workspaceStore()->database());
     QVERIFY(trigger.exec(QStringLiteral(
         "CREATE TRIGGER fail_sidebar_class_delete "
         "BEFORE DELETE ON classes WHEN OLD.id=%1 "
