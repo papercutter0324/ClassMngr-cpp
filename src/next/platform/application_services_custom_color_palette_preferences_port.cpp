@@ -1,6 +1,6 @@
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
 
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 
 #include <QByteArray>
@@ -45,14 +45,14 @@ namespace
 Domain::Result<Application::CustomColorPalette>
 ApplicationServicesCustomColorPalettePreferencesPort::read() const
 {
-    if (!m_session || !m_session->isOpen())
+    if (!m_store || !m_store->isOpen())
     {
         return Domain::Result<Application::CustomColorPalette>::success(
             Application::defaultCustomColorPalette()
             );
     }
 
-    SettingsRepository* const repository = m_session->settingsRepository();
+    SettingsRepository* const repository = m_store->settingsRepository();
     if (!repository)
     {
         qWarning()
@@ -100,12 +100,12 @@ ApplicationServicesCustomColorPalettePreferencesPort::write(
     const Application::CustomColorPalette& palette
     ) const
 {
-    if (!m_session || !m_session->isOpen())
+    if (!m_store || !m_store->isOpen())
     {
         return Domain::Result<void>::success();
     }
 
-    SettingsRepository* const repository = m_session->settingsRepository();
+    SettingsRepository* const repository = m_store->settingsRepository();
     if (!repository)
     {
         constexpr char diagnostic[] =

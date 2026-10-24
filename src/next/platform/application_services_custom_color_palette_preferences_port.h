@@ -32,14 +32,14 @@ public:
     explicit ApplicationServicesCustomColorPalettePreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_session(services.databaseSession())
+        : m_store(services.workspaceStore())
     {
     }
 
     explicit ApplicationServicesCustomColorPalettePreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_session(services ? services->databaseSession() : nullptr)
+        : m_store(services ? services->workspaceStore() : nullptr)
     {
     }
 
@@ -227,7 +227,7 @@ private:
         return QStringLiteral("custom_colors");
     }
 
-    DatabaseSession* m_session = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

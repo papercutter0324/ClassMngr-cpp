@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/custom_color_palette_preferences.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
@@ -55,9 +55,9 @@ bool openDatabase(
 
 SettingsRepository* settingsRepository(ApplicationServices& services)
 {
-    DatabaseSession* const session = services.databaseSession();
-    return session && session->isOpen()
-        ? session->settingsRepository()
+    WorkspaceStore* const store = services.workspaceStore();
+    return store && store->isOpen()
+        ? store->settingsRepository()
         : nullptr;
 }
 
@@ -66,13 +66,13 @@ bool executeSql(
     const QString& statement
     )
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     return query.exec(statement);
 }
 
@@ -135,7 +135,7 @@ private slots:
     void invalidEntriesUseFallbackAndNormalizeToSixteenCanonicalColors();
     void saveFailurePreservesStoredPaletteAndWarning();
     void preservesUnrelatedSettings();
-    void closedSessionDefaultsAndIgnoresWritesWithoutFallback();
+    void closedStoreDefaultsAndIgnoresWritesWithoutFallback();
     void repositoryReadFailureReturnsTechnicalError();
 
 private:
@@ -169,7 +169,10 @@ missingAndUnavailableReadDefaults()
 
     ApplicationServices unavailableServices;
     QVERIFY(unavailableServices.dataService());
-    QVERIFY(!unavailableServices.databaseSession()->isOpen());
+    WorkspaceStore* const unavailableStore =
+        unavailableServices.workspaceStore();
+    QVERIFY(unavailableStore);
+    QVERIFY(!unavailableStore->isOpen());
     ApplicationServicesCustomColorPalettePreferencesPort unavailablePort(
         unavailableServices
         );
@@ -469,15 +472,15 @@ preservesUnrelatedSettings()
 }
 
 void NextPlatformApplicationServicesCustomColorPalettePreferencesPortTests::
-closedSessionDefaultsAndIgnoresWritesWithoutFallback()
+closedStoreDefaultsAndIgnoresWritesWithoutFallback()
 {
     ApplicationServices services;
     const QString path = databasePath(m_directory);
     QVERIFY(services.openDatabase(path));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    SettingsRepository* repository = session->settingsRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    SettingsRepository* repository = store->settingsRepository();
     QVERIFY(repository);
 
     const QString initialPayload = compactJson(paletteWithTwoColors());
@@ -494,7 +497,7 @@ closedSessionDefaultsAndIgnoresWritesWithoutFallback()
     ApplicationServicesCustomColorPalettePreferencesPort port(services);
     services.closeDatabase();
     QVERIFY(services.dataService());
-    QVERIFY(!session->isOpen());
+    QVERIFY(!store->isOpen());
     const auto read = port.read();
     QVERIFY(read);
     QVERIFY(read.value() == defaultCustomColorPalette());
@@ -503,8 +506,8 @@ closedSessionDefaultsAndIgnoresWritesWithoutFallback()
     QVERIFY(port.write(attempted));
 
     QVERIFY(services.openDatabase(path));
-    QVERIFY(session->isOpen());
-    repository = session->settingsRepository();
+    QVERIFY(store->isOpen());
+    repository = store->settingsRepository();
     QVERIFY(repository);
     const auto storedPalette = repository->loadSetting(
         QString::fromUtf8(CustomColorsKey)
