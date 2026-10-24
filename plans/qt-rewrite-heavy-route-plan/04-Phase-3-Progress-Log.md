@@ -989,3 +989,33 @@ absent), `rosterKeyboardTriggerOpensInAppPalette` (keyboard not visible),
 tab selection). Read-only review found these cases do not invoke the changed
 F1358 port. No baseline ran, so attribution is unresolved. `git diff --check`
 passed. No full suite or cross-platform build ran.
+
+## F1359 — Testing Class details update — 2026-10-23
+
+The production details-update port in
+`src/next/platform/application_services_testing_class_details_update_port.h`
+now uses `workspaceStore()` for availability and repository access. The
+repository transaction/API and Application/UI paths are unchanged. F1359
+fixture accesses migrated in the dedicated Platform update-port tests, seven
+page update-path cases plus two final autosave/roster-recovery reads, and only
+the F145 cancel-failure slot. Assertions remain; F1357 F146/F147 and F1360
+delete accesses are unchanged.
+
+`ClassMngr` and the Application, Platform, page, and cancel-parity targets
+built incrementally in `build/macos-clang-debug`. Six focused serial CTests
+passed: `ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`,
+`ClassMngrTestingClassesPageF145UpdateTests`,
+`ClassMngrTestingClassesPageF1287SaveRefreshTests`,
+`ClassMngrTestingClassesPageWideTeacherIdentityTests`, and
+`ClassMngrTestingClassesPageCancelFailureParityTests`.
+
+The full registered `ClassMngrTestingClassesPageTests` CTest separately failed
+4/52. `testingClassDetailsAutomaticTechnicalFailureShowsStatusAndRetryPersists`
+passed. The failures were
+`rosterEditorOmitsRemoveButtonAndKeepsContextAction`,
+`rosterKeyboardTriggerOpensInAppPalette`,
+`rosterKeyboardWritesToKoreanNameCell`, and
+`outputAvailabilityFollowsRosterTabAndLoadedClass`. Attribution is unresolved;
+no baseline ran. `git diff --check` passed. No full suite or cross-platform
+build ran.

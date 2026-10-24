@@ -2722,7 +2722,7 @@ existingTestingClassUpdateRetainsSelectionAndRefreshesList()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     TestingClassRepository* const repository =
         session->testingClassRepository();
@@ -2793,7 +2793,7 @@ testingClassUpdateReadFailureRetainsSavedRowAndReconciles()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    TestingClassRepository* const repository = services.databaseSession()
+    TestingClassRepository* const repository = services.workspaceStore()
         ->testingClassRepository();
     QVERIFY(repository);
 
@@ -3210,7 +3210,7 @@ wideTeacherSelectionSurvivesRefreshUpdateAndCreate()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     TestingClassRepository* const repository = session->testingClassRepository();
     QVERIFY(repository);
@@ -3362,7 +3362,7 @@ testingClassDetailsUpdateFailureRetainsDraftAndShowsWarning()
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClass stored = testingClass(QStringLiteral("Stored Class"));
     stored.teacherId = -1;
-    const auto classId = services.databaseSession()
+    const auto classId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(stored);
     QVERIFY(classId);
 
@@ -3418,7 +3418,7 @@ testingClassDetailsUpdateFailureRetainsDraftAndShowsWarning()
              QStringLiteral("injected testing class details update failure"));
     QVERIFY(saveFailureStatus->isHidden());
 
-    const auto unchanged = services.databaseSession()
+    const auto unchanged = services.workspaceStore()
         ->testingClassRepository()->loadTestingClass(*classId);
     QVERIFY(unchanged);
     QCOMPARE(unchanged->name, QStringLiteral("Stored Class"));
@@ -3434,7 +3434,7 @@ testingClassDetailsAutomaticTechnicalFailureShowsStatusAndRetryPersists()
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClass stored = testingClass(QStringLiteral("Stored Class"));
     stored.teacherId = -1;
-    const auto classId = services.databaseSession()
+    const auto classId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(stored);
     QVERIFY(classId);
 
@@ -3496,7 +3496,7 @@ testingClassDetailsAutomaticTechnicalFailureShowsStatusAndRetryPersists()
     QVERIFY(prompts.messages.isEmpty());
     QVERIFY(QApplication::activeModalWidget() == nullptr);
 
-    const auto unchanged = services.databaseSession()
+    const auto unchanged = services.workspaceStore()
         ->testingClassRepository()->loadTestingClass(*classId);
     QVERIFY(unchanged);
     QCOMPARE(unchanged->name, QStringLiteral("Stored Class"));
@@ -3534,7 +3534,7 @@ testingClassDetailsAutomaticTechnicalFailureShowsStatusAndRetryPersists()
     QVERIFY(saveFailureStatus->text().isEmpty());
     QVERIFY(prompts.messages.isEmpty());
     QVERIFY(QApplication::activeModalWidget() == nullptr);
-    const auto persisted = services.databaseSession()
+    const auto persisted = services.workspaceStore()
         ->testingClassRepository()->loadTestingClass(*classId);
     QVERIFY(persisted);
     QCOMPARE(persisted->name, QStringLiteral("Draft Must Remain"));
@@ -4665,11 +4665,11 @@ rosterFailureBlocksTestingClassDetailsUpdate()
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClass stored = testingClass(QStringLiteral("Stored Class"));
     stored.teacherId = -1;
-    const auto classId = services.databaseSession()
+    const auto classId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(stored);
     QVERIFY(classId);
     RosterRepository* const rosterRepository =
-        services.databaseSession()->rosterRepository();
+        services.workspaceStore()->rosterRepository();
     QVERIFY(rosterRepository);
     QVERIFY(rosterRepository->saveRoster(
         *classId,
@@ -4734,11 +4734,11 @@ void TestingClassesPageTests::savedRosterRemainsCleanWhenDetailsUpdateFails()
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClass stored = testingClass(QStringLiteral("Stored Class"));
     stored.teacherId = -1;
-    const auto classId = services.databaseSession()
+    const auto classId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(stored);
     QVERIFY(classId);
     RosterRepository* const rosterRepository =
-        services.databaseSession()->rosterRepository();
+        services.workspaceStore()->rosterRepository();
     QVERIFY(rosterRepository);
     QVERIFY(rosterRepository->saveRoster(
         *classId,
@@ -4821,7 +4821,7 @@ void TestingClassesPageTests::savedRosterRemainsCleanWhenDetailsUpdateFails()
     QVERIFY(savedEnglishColumn >= 0);
     QCOMPARE(savedRoster->rows.value(0).value(savedEnglishColumn),
              QStringLiteral("Roster Edit"));
-    const auto unchangedClass = services.databaseSession()
+    const auto unchangedClass = services.workspaceStore()
         ->testingClassRepository()->loadTestingClass(*classId);
     QVERIFY(unchangedClass);
     QCOMPARE(unchangedClass->name, QStringLiteral("Stored Class"));

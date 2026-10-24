@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "data/repositories/testing_class_repository.h"
 #include "next/application/testing_class_details_update_use_case.h"
@@ -130,7 +130,7 @@ updatesEveryFieldThroughTheActiveSessionRepository()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     TestingClassRepository* const repository =
@@ -195,7 +195,7 @@ updatesWideTeacherIdentityAsSqliteIntegerAndCanUnassign()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     constexpr qint64 wideTeacherId = 2'147'483'648LL;
     QSqlQuery insertTeacher(session->database());
@@ -313,7 +313,7 @@ rejectsAnOrdinaryClassWithoutLegacyFallback()
     originalInfo->notes = QStringLiteral("Preserve ordinary class details");
     QVERIFY(services.classService()->saveClassInfo(*originalInfo));
 
-    QSqlQuery classNameQuery(services.databaseSession()->database());
+    QSqlQuery classNameQuery(services.workspaceStore()->database());
     classNameQuery.prepare(QStringLiteral("SELECT name FROM classes WHERE id=?"));
     classNameQuery.addBindValue(*createdClass);
     QVERIFY2(classNameQuery.exec(), qPrintable(classNameQuery.lastError().text()));
@@ -350,7 +350,7 @@ reportsDeletedParentAsNotFoundAndKeepsLegacyDiagnostic()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClassRepository* const repository =
-        services.databaseSession()->testingClassRepository();
+        services.workspaceStore()->testingClassRepository();
     QVERIFY(repository);
 
     TestingClass original = storedClass(QStringLiteral("Deleted Testing Class"));
@@ -372,7 +372,7 @@ reportsDeletedParentAsNotFoundAndKeepsLegacyDiagnostic()
             ).arg(*createdClass)
         );
 
-    QSqlQuery remainingRows(services.databaseSession()->database());
+    QSqlQuery remainingRows(services.workspaceStore()->database());
     QVERIFY2(remainingRows.prepare(QStringLiteral(R"(
         SELECT
             (SELECT COUNT(*) FROM classes WHERE id=?),
@@ -406,7 +406,7 @@ rollsBackEarlierWritesWhenTheTestingRoomUpdateFails()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClassRepository* const repository =
-        services.databaseSession()->testingClassRepository();
+        services.workspaceStore()->testingClassRepository();
     QVERIFY(repository);
 
     const TestingClass original =
@@ -414,7 +414,7 @@ rollsBackEarlierWritesWhenTheTestingRoomUpdateFails()
     const auto createdClass = repository->createTestingClass(original);
     QVERIFY(createdClass);
 
-    QSqlQuery createTrigger(services.databaseSession()->database());
+    QSqlQuery createTrigger(services.workspaceStore()->database());
     QVERIFY2(createTrigger.exec(QStringLiteral(R"(
         CREATE TRIGGER fail_testing_class_room_update
         BEFORE UPDATE ON testing_classes
@@ -452,14 +452,14 @@ forwardsRepositoryFailuresAsTechnicalErrors()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClassRepository* const repository =
-        services.databaseSession()->testingClassRepository();
+        services.workspaceStore()->testingClassRepository();
     QVERIFY(repository);
     const auto createdClass = repository->createTestingClass(
         storedClass(QStringLiteral("Repository Failure Source"))
         );
     QVERIFY(createdClass);
 
-    QSqlQuery dropTestingClasses(services.databaseSession()->database());
+    QSqlQuery dropTestingClasses(services.workspaceStore()->database());
     QVERIFY2(dropTestingClasses.exec(QStringLiteral("DROP TABLE testing_classes")),
              qPrintable(dropTestingClasses.lastError().text()));
 

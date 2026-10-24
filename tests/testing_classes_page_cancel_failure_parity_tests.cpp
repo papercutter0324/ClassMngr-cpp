@@ -191,7 +191,7 @@ f145UpdateFailureRetainsDraftAndShowsWarning()
         temporaryDatabasePath(directory, QStringLiteral("f145-update"))
         ));
     auto* const repository =
-        services.databaseSession()->testingClassRepository();
+        services.workspaceStore()->testingClassRepository();
     QVERIFY(repository);
     const auto classId = repository->createTestingClass(
         storedClass(QStringLiteral("Stored Class"))
