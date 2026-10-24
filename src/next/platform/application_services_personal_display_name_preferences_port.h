@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/personal_display_name_preferences.h"
 
@@ -26,14 +26,14 @@ public:
     explicit ApplicationServicesPersonalDisplayNamePreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_session(services.databaseSession())
+        : m_store(services.workspaceStore())
     {
     }
 
     explicit ApplicationServicesPersonalDisplayNamePreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_session(services ? services->databaseSession() : nullptr)
+        : m_store(services ? services->workspaceStore() : nullptr)
     {
     }
 
@@ -53,13 +53,13 @@ public:
     [[nodiscard]] Application::PersonalDisplayNamePreferencesReadResult
     read() const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return Application::PersonalDisplayNamePreferencesReadResult::
                 success({});
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return Application::PersonalDisplayNamePreferencesReadResult::
@@ -107,13 +107,13 @@ public:
         const std::string& name
         ) const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return Application::
                 PersonalDisplayNamePreferencesSaveResult::success();
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return failure("Personal display name could not be saved.");
@@ -163,7 +163,7 @@ private:
             );
     }
 
-    DatabaseSession* m_session = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

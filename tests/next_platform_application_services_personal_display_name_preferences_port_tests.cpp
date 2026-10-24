@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "next/application/personal_details_save.h"
 #include "next/platform/application_services_personal_details_save_port.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
@@ -44,13 +44,13 @@ bool executeSql(
     const QString& statement
     )
 {
-    DataService* dataService = services.dataService();
-    if (!dataService || !dataService->databaseSession())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(dataService->databaseSession()->database());
+    QSqlQuery query(store->database());
     return query.exec(statement);
 }
 
@@ -344,7 +344,8 @@ closedSessionReadsEmptyAndIgnoresWrites()
     ApplicationServicesPersonalDisplayNamePreferencesPort port(services);
     services.closeDatabase();
     QVERIFY(services.dataService());
-    QVERIFY(!services.databaseSession()->isOpen());
+    QVERIFY(services.workspaceStore());
+    QVERIFY(!services.workspaceStore()->isOpen());
 
     const auto closedName = port.read();
     QVERIFY(closedName);
