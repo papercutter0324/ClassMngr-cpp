@@ -78,13 +78,15 @@ and [#L1183-L1189](../../src/data/database/database_schema_manager.cpp#L1183-L11
 6. Valid persisted row indexes.
 
 Only explicit `AllowEmptyDatabase` creation intent for a version-0 database
-with no user objects initializes it; session creation uses this path only when
-the target file was missing. An existing file, including an empty version-0
-file, is opened with existing-file policy and rejected if its version is 0–5.
-Future versions are rejected too. Thus ordinary current opening does not run
-migrations on existing older profiles; a newly created database runs
-migrations 1–6 to reach v6. The database manager enables foreign keys and
-finishes setup with `PRAGMA foreign_key_check`.
+with no user objects initializes it. `WorkspaceStore` supplies that intent
+only when the target file is missing; ordinary `WorkspaceStore` opening of an
+existing file uses existing-file policy and rejects versions 0–5, including a
+zero-byte file. The explicit `DatabaseSchemaManager::createSchema()` API also
+uses `AllowEmptyDatabase` and may initialize a truly empty existing file, as
+covered by `emptyFileRequiresExplicitCreationIntent`. This is schema creation,
+not conversion of an existing pre-v6 profile. Future versions are rejected.
+A newly created database runs migrations 1–6 to reach v6. The database
+manager enables foreign keys and finishes setup with `PRAGMA foreign_key_check`.
 
 Each migration wraps its DDL/data work and `user_version` write in a
 `DatabaseTransaction`. The migration dispatcher contains a pre-migration
@@ -98,9 +100,10 @@ enforcement around their table rebuilds.
 
 ## Current file and session behavior
 
-`.tps` is the native suffix and `.db` the legacy suffix; both are accepted
-inputs. Both go through the same SQLite `WorkspaceStore` and schema-manager
-path, with no suffix-specific schema migration. Existing-only opens use a
+`.tps` is the native suffix and `.db` the legacy SQLite suffix; both are
+accepted inputs for schema-v6 profiles. `.db` does not imply conversion support
+for pre-v6 profiles. Both go through the same SQLite `WorkspaceStore` and
+schema-manager path, with no suffix-specific schema migration. Existing-only opens use a
 SQLite URI in read-write mode so SQLite does not create a missing file. The
 store opens a candidate connection and repositories, then swaps it in only
 after success; it owns the repositories and releases them before closing and

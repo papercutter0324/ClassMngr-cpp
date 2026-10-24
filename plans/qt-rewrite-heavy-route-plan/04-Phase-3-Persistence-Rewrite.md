@@ -38,13 +38,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 7 is complete and pushed with F1418 at `7e9760f3`.
-  Batch 8 discovery found no other slices; its two read-only scans and excluded
-  DDL-test coverage gap are recorded in the progress log. No batch or candidate
-  is active, but Phase 3 remains In Progress and its backlog is not exhausted.
-  `DataService::save()` has no ordinary production caller. F1418, F1417, and
-  F1416 evidence is in the
-  [progress log](04-Phase-3-Progress-Log.md).
+- Current note: Batch 9 is active with complete discovery and nine ordered
+  candidates. F1419 runtime schema-v6 DDL/index/constraint contract tests are
+  accepted; F1420 is current. Batch 10 discovery is due when F1426 (candidate
+  8 of 9) starts. The ordered scope and full-exit audit evidence are in the
+  current tracker and progress log.
+  `DataService::save()` has no ordinary production caller; F1420's scope is
+  the migration map.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -62,17 +62,12 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1418 — 2026-10-24
+## Latest Progress Update — F1419 — 2026-10-24
 
-F1418 — Workspace save commit ownership — is accepted. The live
-`ApplicationServices::saveDatabase()` path calls `WorkspaceStore::commit()`;
-the void signature, closed-store no-op, and ignored commit-failure behavior
-remain unchanged. `DataService::save()` has no ordinary production caller and
-is out of scope. Source/acceptance commit
-`7e9760f354a6be5c02936ff728fa0bc93ea8e6bc` was pushed to `origin/Qt-Rewrite`;
-local and remote tips matched and the worktree was clean. Batch 8 discovery
-found no other slices. No batch or candidate is active, and the backlog remains
-open. Full evidence is in the
+F1419 — Runtime v6 DDL/index/constraint contract tests — is accepted with its
+focused `ClassMngrDatabaseSchemaManagerTests` CTest passed 1/1; the verbose
+QtTest rerun passed 31 cases with no acceptance gap reported. F1420 is current
+in Batch 9. The Phase 3 exit gate and backlog remain open. Full evidence is in the
 [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
@@ -104,6 +99,16 @@ Replace the broad compatibility-heavy data path with one explicit workspace pers
 
 Reproduce the existing schema behavior before changing the schema.
 
+The Phase 2 compatibility decision remains authoritative: existing schema-v6
+profiles are supported; ordinary opens of existing versions 0–5 and future
+versions are rejected. Migrations 1–6 initialize only a truly empty v0
+database under explicit `AllowEmptyDatabase` intent. `WorkspaceStore` supplies
+that intent only when creating a missing target. The separate, explicitly
+called `DatabaseSchemaManager::createSchema()` can initialize a truly empty
+existing file; that creation API does not support converting a pre-v6 profile.
+`.db` denotes an accepted SQLite suffix for a v6 profile, not a pre-v6
+conversion path.
+
 Record:
 
 - Tables.
@@ -122,16 +127,29 @@ Do not combine a major schema redesign with the first UI migration.
 
 Implement explicit version-to-version migrations.
 
-For every supported version:
+Under the current policy, migrations 1–6 initialize a truly empty v0 database
+to v6 only under explicit `AllowEmptyDatabase` intent. `WorkspaceStore` uses
+that intent only when the target is missing; an explicit
+`DatabaseSchemaManager::createSchema()` call may initialize a truly empty
+existing zero-byte file. Ordinary `WorkspaceStore` opens reject existing
+versions 0–5 and future versions; existing v6 profiles open without
+migration. Test these distinct paths rather than treating each schema version
+as a supported existing-profile migration:
 
-- Create a fixture.
-- Migrate it.
+- Create a fixture for a missing-target `WorkspaceStore` creation and initialize
+  it through migrations 1–6.
+- Verify explicit `createSchema()` initializes a truly empty existing file.
 - Verify schema structure.
 - Verify all data.
 - Verify indexes and constraints.
 - Verify application behavior.
+- Verify ordinary-open rejection and preservation of existing v0–5 and
+  future-version files.
 
-Create backups before migration and preserve the original file if migration fails.
+Do not treat backup code for migrations 4 and 6 as support for converting
+existing pre-v6 profiles. If a future policy authorizes migration of an
+existing profile, require a backup and preserve the original on failure; the
+current policy does not authorize that conversion.
 
 ### 3.3 Repository APIs
 
@@ -186,7 +204,7 @@ separate from this source read.
 Preserve:
 
 - .tps opening and saving.
-- Legacy .db import.
+- `.db` as an accepted SQLite suffix for v6 profiles, not pre-v6 conversion.
 - Class-transfer JSON.
 - Teacher imports.
 - Schedule imports.
@@ -244,6 +262,13 @@ boundary:
 The v2 persistence layer must not use the current compatibility cell view or
 full-workbook retention as an implicit application contract. Any temporary
 adapter requires a named consumer and removal point.
+
+Keep shared memory work at its owning boundary: Phase 3 owns persistence/query
+result lifetimes, the workbook-reader boundary shared with Phase 7F, and the
+class-transfer codec boundary before dialog/UI. Phase 7 retains schedule and
+calendar review/presentation ownership; Phase 8 retains transfer/export
+operation ownership, as defined in the shared [memory hotspot
+plan](memory-hotspot-remediation-plan.md).
 
 ## Deliverables
 

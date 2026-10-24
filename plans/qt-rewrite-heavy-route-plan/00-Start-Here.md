@@ -7,10 +7,11 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 7 is complete and pushed with F1418 at `7e9760f3`. Batch 8 discovery
-  found no other slices; no batch or candidate is active. Phase 3 remains in
-  progress, and the discovery does not exhaust its backlog.
-  The current details are in the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
+  Batch 9 is active with discovery complete. F1419's runtime schema-v6 DDL,
+  index, and constraint contract tests are accepted; F1420 is current, with
+  seven later candidates. Begin Batch 10 discovery when F1426 (candidate 8 of
+  9) starts. The current details are in the
+  [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).

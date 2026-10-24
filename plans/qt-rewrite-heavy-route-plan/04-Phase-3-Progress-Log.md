@@ -2731,3 +2731,35 @@ routes belong to opt-in performance workflows and accepted boundaries. The
 composition. There is no active batch or current candidate; revisit these
 broad APIs if production callers are added or service composition changes.
 This discovery does not exhaust the Phase 3 backlog.
+
+## Batch 9 — Full Phase 3 exit audit and discovery — 2026-10-24
+
+The full exit audit produced nine ordered follow-up candidates, recorded in the
+[current batch tracker](Current-Slice-Batches.md). F1419 was selected as the
+runtime schema-v6 DDL, index, and constraint contract-test candidate. Batch 8
+had excluded the broader all-index test gap as coverage-only because it had no
+production behavior slice; the exit audit now identifies the narrower runtime v6
+contract-test work as a Phase 3 verification candidate. That test slice is
+accepted below; the remaining candidates are discovery only.
+
+The schema policy is clarified in this plan: existing schema-v6 profiles are
+supported; ordinary `WorkspaceStore` opens reject existing v0–5 and future
+versions. `WorkspaceStore` supplies `AllowEmptyDatabase` intent only when
+creating a missing target; explicit `DatabaseSchemaManager::createSchema()`
+may initialize a truly empty existing zero-byte file. Migrations 1–6 do not
+convert existing pre-v6 profiles. A `.db` suffix denotes a v6 SQLite profile,
+not a pre-v6 conversion path.
+The reader and pre-dialog codec candidates remain at the Phase 3 persistence
+boundaries shared with Phase 7F and Phase 8; those phases retain their review,
+presentation, and transfer/export operation ownership. Begin Batch 10
+discovery when F1426 (candidate 8 of 9) starts. The Phase 3 exit gate remains
+open; this audit does not establish that the supported workflows have passed.
+
+## F1419 — Runtime v6 DDL/index/constraint contract tests — 2026-10-24
+
+Accepted runtime schema-v6 DDL, explicit-index, and constraint contract
+coverage. The focused `ClassMngrDatabaseSchemaManagerTests` CTest passed 1/1;
+the verbose QtTest rerun passed 31 cases, with no acceptance gap reported by
+the independent Tester. This is focused verification; no broader suite result
+is claimed. F1420, the API-by-API `DataService` migration map, is current in
+Batch 9. No production behavior change was part of F1419.
