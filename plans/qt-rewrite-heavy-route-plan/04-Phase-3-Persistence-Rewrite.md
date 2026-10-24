@@ -38,9 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-23
-- Current note: Batch 2 remains active and unpushed; F1352 (Schedule
-  testing-class choices) is complete, and F1353 is current: Schedule
-  testing-assignment save. The Batch 1 push receipt is in the progress log.
+- Current note: Batch 2 remains active and unpushed; F1353 (Schedule
+  testing-assignment save) is complete, and F1354 is current: Clear Schedule
+  testing assignments. The Batch 1 push receipt is in the progress log.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -58,11 +58,11 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1352 — 2026-10-23
+## Latest Progress Update — F1353 — 2026-10-23
 
-Moved the Schedule testing-class choices port and pre-dialog availability
-guard to `WorkspaceStore`; the unavailable-store warning and repository
-behavior remain unchanged. Three focused CTests passed. Details are in the
+Moved the Schedule testing-assignment save port to `WorkspaceStore`; request
+validation, save branches, repository transaction behavior, and errors remain
+unchanged. Three focused CTests passed. Details are in the
 [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective

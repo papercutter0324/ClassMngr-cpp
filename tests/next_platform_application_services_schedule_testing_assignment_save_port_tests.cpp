@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/testing_block_repository.h"
 #include "next/application/schedule_testing_assignment_save_use_case.h"
 #include "next/platform/application_services_schedule_testing_assignment_save_port.h"
@@ -148,7 +148,7 @@ Application::ScheduleTestingAssignmentSaveResult executeSave(
 
 QList<TestingAssignment> loadedAssignments(ApplicationServices& services)
 {
-    return services.databaseSession()
+    return services.workspaceStore()
         ->testingBlockRepository()
         ->loadTestingAssignments()
         .value();
@@ -194,7 +194,7 @@ savesPlainAssignmentAndRemovesOnlyItsKey()
         );
     QVERIFY(saved);
 
-    QSqlQuery keyQuery(services.databaseSession()->database());
+    QSqlQuery keyQuery(services.workspaceStore()->database());
     QVERIFY(keyQuery.exec(QStringLiteral(R"(
         SELECT day, start_time, room, class_id
         FROM schedule_testing_blocks
@@ -234,7 +234,7 @@ enforcesReplaceExistingForClassAndPlainTransitions()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(m_directory)));
     const int classId = insertTestingClass(
-        services.databaseSession()->database()
+        services.workspaceStore()->database()
         );
     QVERIFY(classId > 0);
 
@@ -313,7 +313,7 @@ classifiesMissingParentAndRepositoryFailures()
 {
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(m_directory)));
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
 
     QSqlQuery ordinaryClassQuery(database);
     QVERIFY(ordinaryClassQuery.exec(QStringLiteral(R"(
@@ -423,7 +423,7 @@ forwardsRepositoryFailureAsStructuredError()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(m_directory)));
     QVERIFY(execute(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         QStringLiteral("DROP TABLE schedule_testing_blocks")
         ));
 

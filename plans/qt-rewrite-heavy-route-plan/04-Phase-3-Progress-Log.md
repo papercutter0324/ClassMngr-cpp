@@ -859,3 +859,19 @@ Executor and Tester incrementally built `ClassMngr`,
 `ClassMngrScheduleWidgetTests` in the existing `build/macos-clang-debug` tree.
 The three focused CTests passed **3/3** serially. `git diff --check` passed.
 No full suite or cross-platform build ran.
+
+## F1353 — Schedule testing-assignment save — 2026-10-23
+
+The Schedule testing-assignment save Platform port and its dedicated test
+fixtures now use `WorkspaceStore`. Request validation order, Qt
+case-insensitive weekday comparison, save/remove/class-assignment branches,
+repository transaction behavior, error mappings, and UI behavior remain
+unchanged.
+
+Executor and Tester incrementally built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentSavePortTests`,
+`ClassMngrNextApplicationScheduleTestingAssignmentSaveUseCaseTests`, and
+`ClassMngrScheduleWidgetTests` in the existing `build/macos-clang-debug` tree.
+The three focused CTests passed **3/3** serially (Platform #481, Application
+#461, UI #46). `git diff --check` passed. No full suite or cross-platform
+build ran.
