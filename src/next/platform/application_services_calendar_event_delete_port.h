@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "next/application/calendar_event_delete_port.h"
 
@@ -60,14 +60,14 @@ public:
 
         try
         {
-            DatabaseSession* const session = m_services.databaseSession();
-            if (!session || !session->isOpen())
+            WorkspaceStore* const store = m_services.workspaceStore();
+            if (!store || !store->isOpen())
             {
-                return unavailableSessionFailure();
+                return unavailableStoreFailure();
             }
 
             CalendarEventRepository* const repository =
-                session->calendarEventRepository();
+                store->calendarEventRepository();
             if (!repository)
             {
                 return failure(
@@ -80,9 +80,9 @@ public:
                 repository->deleteCalendarEvent(*legacyId);
             if (!deleted)
             {
-                if (!session->isOpen())
+                if (!store->isOpen())
                 {
-                    return unavailableSessionFailure();
+                    return unavailableStoreFailure();
                 }
 
                 const QByteArray errorBytes = deleted.error().toUtf8();
@@ -114,7 +114,7 @@ public:
 
 private:
     [[nodiscard]] static Application::CalendarEventDeleteResult
-    unavailableSessionFailure()
+    unavailableStoreFailure()
     {
         return Application::CalendarEventDeleteResult::failure({
             .code = Domain::ErrorCode::NotFound,

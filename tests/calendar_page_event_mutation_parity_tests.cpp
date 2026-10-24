@@ -1864,7 +1864,10 @@ ordinaryCreateEditAndDeleteUseCalendarPageSignals()
         qPrintable(setupError)
         );
 
-    QSqlQuery sequenceQuery(workspace.services.databaseSession()->database());
+    WorkspaceStore* const store = workspace.services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    QSqlQuery sequenceQuery(store->database());
     sequenceQuery.prepare("UPDATE sqlite_sequence SET seq=? WHERE name='calendar_events'");
     sequenceQuery.addBindValue(sequence);
     QVERIFY(sequenceQuery.exec());

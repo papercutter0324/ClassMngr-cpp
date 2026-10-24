@@ -38,10 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-23
-- Current note: Batch 2 remains active and unpushed; F1341 (Calendar
-  availability and event-by-ID reads) is the most recently completed slice,
-  and F1342 is current: Single Calendar Event delete. The Batch 1 push
-  receipt is in the progress log.
+- Current note: Batch 2 remains active and unpushed; F1342 (Single Calendar
+  Event delete) is the most recently completed slice, and F1343 is current:
+  Delete all Calendar Events. The Batch 1 push receipt is in the progress log.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -59,12 +58,12 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1341 — 2026-10-23
+## Latest Progress Update — F1342 — 2026-10-23
 
-Migrated the Calendar Event availability and by-ID paths to `WorkspaceStore`;
-the separate date-range `projection()` remains on `DatabaseSession`. Three
-focused CTests passed, and stale-event page parity remains covered. Details
-are in the [progress log](04-Phase-3-Progress-Log.md).
+Migrated the single-delete port to `WorkspaceStore`; its validation and error
+behavior remain unchanged. Three focused CTests passed. UI failure still
+warns and returns before invalidation; success invalidates calendar data.
+Details are in the [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
 

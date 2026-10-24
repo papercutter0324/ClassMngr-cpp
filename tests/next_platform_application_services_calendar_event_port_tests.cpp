@@ -1269,11 +1269,11 @@ deletesValidTypedEvent()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
     CalendarEvent event = makeEvent(
@@ -1302,11 +1302,11 @@ deletesMissingValidTypedEventSuccessfully()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
     QVERIFY(!repository->getCalendarEvent(1));
 
@@ -1344,9 +1344,9 @@ reportsUnavailableDeleteSessionStructurally()
 {
     ApplicationServices services;
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(!session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(!store->isOpen());
 
     ApplicationServicesCalendarEventDeletePort port(services);
 
@@ -1357,10 +1357,10 @@ reportsUnavailableDeleteSessionStructurally()
         );
 
     QVERIFY(openDatabase(services, m_directory));
-    QVERIFY(session->isOpen());
+    QVERIFY(store->isOpen());
     services.closeDatabase();
     QVERIFY(services.dataService());
-    QVERIFY(!session->isOpen());
+    QVERIFY(!store->isOpen());
 
     verifyRecoverableFailure(
         port.deleteEvent(calendarEventId(1)),
@@ -1375,11 +1375,11 @@ reportsDeleteServiceFailureStructurally()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
     CalendarEvent event = makeEvent(
@@ -1394,7 +1394,7 @@ reportsDeleteServiceFailureStructurally()
     const int eventId = *saved;
     QVERIFY(eventId > 0);
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_delete "
         "BEFORE DELETE ON calendar_events "

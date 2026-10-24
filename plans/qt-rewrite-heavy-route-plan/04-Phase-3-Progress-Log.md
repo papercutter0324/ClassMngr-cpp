@@ -609,3 +609,26 @@ availability/by-ID WorkspaceStore boundary and the unchanged range projection.
 Stale-event page parity still checks the warning, closed editor, and unchanged
 persisted state. No full suite or cross-platform build ran. The F1339
 package-service PDF mismatch remains documented in the F1339 entry.
+
+## F1342 — Single Calendar Event delete — 2026-10-23
+
+`src/next/platform/application_services_calendar_event_delete_port.h` now
+uses `ApplicationServices::workspaceStore()` to retrieve the
+`CalendarEventRepository`. The one repository delete call, canonical positive
+ID validation, success when a valid ID has no matching event, recoverable
+unavailable-store error and exact message, and repository/exception mappings
+remain unchanged.
+The four single-delete fixtures in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp` and
+the scoped sequence SQL handle in
+`tests/calendar_page_event_mutation_parity_tests.cpp` now use
+`WorkspaceStore`; assertions remain. Shared page helpers and other mutations
+were untouched. UI failure still warns and returns before invalidation;
+success invalidates calendar data.
+
+Executor and Tester built `ClassMngr` in the existing macOS Debug tree. Tester
+also built `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrCalendarPageEventMutationParityTests`. These three focused CTests
+passed **3/3** serially. `git diff --check` passed. No full suite or
+cross-platform build ran.
