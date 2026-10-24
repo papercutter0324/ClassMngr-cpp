@@ -39,8 +39,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Unassigned
 - Last updated: 2026-10-24
 - Current note: Batch 5 is complete and pushed (19/19 accepted), with
-  implementation tip `61d1fc9f`; local `Qt-Rewrite` and remote
-  `origin/Qt-Rewrite` both point to `5725e7234867505c0f9c7e9227971af105ccb9dc`.
+  implementation tip `61d1fc9f`. Its source/acceptance push reached
+  `5725e7234867505c0f9c7e9227971af105ccb9dc`; the follow-up push-receipt
+  documentation commit `8d74cf7a5655e0b7d6c2fbd776ac8afcb7931bc3` was also
+  pushed.
   The broader Batch 6 discovery
   found no eligible slice (`No other slices were found.`); no batch or
   candidate is active. Revisit `FeatureServices`/`DataService` if production
@@ -82,9 +84,11 @@ CTest #486
 passed 2/2; the Platform QtTest had 9 passed. No broader suite or
 cross-platform build ran.
 
-Batch 5 (19/19 accepted) was pushed successfully. The implementation tip is
-`61d1fc9f`; local `Qt-Rewrite` and remote `origin/Qt-Rewrite` both point to
-`5725e7234867505c0f9c7e9227971af105ccb9dc`. A second read-only Batch 6 scan
+Batch 5 (19/19 accepted) was pushed successfully at implementation tip
+`61d1fc9f`. Its source/acceptance push reached
+`5725e7234867505c0f9c7e9227971af105ccb9dc`; the follow-up push-receipt
+documentation commit `8d74cf7a5655e0b7d6c2fbd776ac8afcb7931bc3` was also
+pushed. A second read-only Batch 6 scan
 covering broader unranked service and fallback paths found no eligible slice:
 `No other slices were found.` There is no active batch or current candidate.
 Revisit the broad `FeatureServices`/`DataService` APIs if new production

@@ -2645,9 +2645,10 @@ The CTest log is
 `git diff --check` passed. No broader suite or cross-platform build ran.
 
 Batch 5 is complete and pushed (19/19 accepted). Its implementation tip is
-`61d1fc9f`; the final local `Qt-Rewrite` and remote `origin/Qt-Rewrite` tips are
-`5725e7234867505c0f9c7e9227971af105ccb9dc`. The push succeeded, the remote
-tip matched local `HEAD`, and the worktree was clean.
+`61d1fc9f`. Its source/acceptance push reached
+`5725e7234867505c0f9c7e9227971af105ccb9dc`; the follow-up push-receipt
+documentation commit `8d74cf7a5655e0b7d6c2fbd776ac8afcb7931bc3` was also
+pushed.
 
 The second read-only Batch 6 discovery covered broader unranked
 `databaseSession()`/`DataService` and fallback paths and found no eligible
