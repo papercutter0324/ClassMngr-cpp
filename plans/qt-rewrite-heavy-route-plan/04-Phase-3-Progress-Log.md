@@ -2259,3 +2259,49 @@ save) is current. Batch 5 remains unpushed until its remaining slices are
 complete.
 
 Commit: `a47c6d6a6fd54581a7fb2fc7f0a989b85ae751b5`.
+
+## F1405 — Personal details save (Batch 5 candidate 8 of 19) — 2026-10-24
+
+The aggregate `PersonalDetailsSavePort` adapter and dedicated Platform
+fixture now use `WorkspaceStore`; the write remains one transactional
+`saveSettings()` call over all nine exact keys: `myInfo/name`,
+`myInfo/campus`, `myInfo/zoomLoginId`, `myInfo/zoomPassword`,
+`myInfo/zoomNotAvailable`, `myInfo/signatureImage`, `myInfo/signatureMode`,
+`myInfo/typedSignatureText`, and `myInfo/typedSignatureFont`. The port does
+not trim or validate strings. Name, Zoom text, and typed signature text retain
+length-aware UTF-8 conversion; campus preserves embedded NUL bytes; Zoom
+availability remains a boolean. Empty or unpreparable signature image input
+stores an empty string; prepared images are Base64-encoded. Signature mode
+mapping stays Draw/Type → `0`/`1`. Fonts map JustAnotherHand, DancingScript,
+GreatVibes, and Caveat to `0`–`3`, respectively; unsupported values map to `0`.
+Failures remain nonrecoverable `Technical`.
+
+MyWorkspace passes name and campus as entered, preserving its draft on
+failure and allowing retry. Initial Setup trims the name before the aggregate
+request and remains on its page after failure; font-value preservation,
+aggregate rollback, and typed-read composition remain covered. The F1404
+`myInfo/name` interoperability check passed. Separate Schedule Import, legacy
+repository, and other adapter/writer paths were left untouched.
+
+Incremental build passed for
+`ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`,
+`ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests`,
+`ClassMngrMyWorkspacePageTests`, and `ClassMngrInitialSetupWizardTests`. CTest
+#445, the F1405 Platform target, and CTest #444, the F1404 Platform target,
+passed 2/2. Six selected UI slots passed individually 3/3 including
+init/cleanup with `QT_QPA_PLATFORM=offscreen` and absolute
+`TMP`, `TEMP`, and `TMPDIR` under
+`build/macos-clang-debug/f1405-selected-ui-tmp`: MyWorkspace's
+`aggregateSavePersistsAllPersonalDetailsKeys`,
+`aggregateSaveFailureRollsBackAndPreservesUnrelatedSettings`, and
+`aggregateSaveNoninteractiveFailureShowsStatusAndAllowsRetry`; Initial
+Setup's `aggregateSetupSavePreservesAllFourSignatureFontValues`,
+`aggregateSaveFailureLeavesAllPersonalDetailsUnchanged`, and
+`aggregateSaveComposesTypedReadsWithoutDataLoss`. Warnings were limited to
+MyWorkspace font/`propagateSizeHints` and Initial Setup font messages. No setup
+reruns occurred. `git diff --check` passed. Full MyWorkspace and Initial Setup
+suites, the full suite, and cross-platform builds did not run. F1405 is
+accepted; F1406 (Personal signature preferences) is current. Batch 5 remains
+unpushed until its remaining slices are complete.
+
+Commit: `9fff0ca5b96d6eabe7b2e22692f9fe6a89205edc`.
