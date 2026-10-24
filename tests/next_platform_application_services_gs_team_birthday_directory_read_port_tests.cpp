@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/gs_team_repository.h"
 #include "next/application/gs_team_birthday_directory_read_query.h"
 #include "next/platform/application_services_gs_team_birthday_directory_read_port.h"
@@ -108,9 +108,9 @@ readsRawBirthdayFieldsWithExactLegacySortOrder()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QVERIFY(keepOnlyBirthdayFields(services.databaseSession()->database()));
+    QVERIFY(keepOnlyBirthdayFields(services.workspaceStore()->database()));
     QVERIFY(seedMembers(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         {
             {QStringLiteral("Beta "), QStringLiteral("Korean Beta"),
                 QStringLiteral("M1"), QStringLiteral(" 03-14 ")},
@@ -155,7 +155,7 @@ returnsAnEmptySuccessfulProjection()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QVERIFY(keepOnlyBirthdayFields(services.databaseSession()->database()));
+    QVERIFY(keepOnlyBirthdayFields(services.workspaceStore()->database()));
 
     const auto result = readDirectory(services);
 
@@ -176,7 +176,7 @@ distinguishesUnavailableSessionFromRepositoryFailure()
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlQuery dropTable(services.databaseSession()->database());
+    QSqlQuery dropTable(services.workspaceStore()->database());
     QVERIFY2(
         dropTable.exec(QStringLiteral("DROP TABLE gs_team")),
         qPrintable(dropTable.lastError().text())

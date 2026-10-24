@@ -1844,3 +1844,28 @@ match, confirming no regression. This is separate from the F1383 orphan-data
 mismatch recorded above. `git diff --check` passed. No full suite or
 cross-platform build ran. F1389 is accepted; F1390 (GS Team birthday
 directory read) is current.
+
+Commit: `81eb58b97a2e15d8343473df9e606c2d123dba82`.
+
+## F1390 — GS Team birthday directory read (Batch 4 candidate 13 of 20) — 2026-10-24
+
+The GS Team birthday directory read port,
+`src/next/platform/application_services_gs_team_birthday_directory_read_port.h`,
+and its dedicated Platform fixture,
+`tests/next_platform_application_services_gs_team_birthday_directory_read_port_tests.cpp`,
+now use `WorkspaceStore`. The four raw fields, ordering, and assertions are
+unchanged; no ID projection was added.
+
+Built `ClassMngrNextApplicationGsTeamBirthdayDirectoryReadQueryTests` and
+`ClassMngrNextPlatformApplicationServicesGsTeamBirthdayDirectoryReadPortTests`.
+Serial CTests #354 `ClassMngrNextApplicationGsTeamBirthdayDirectoryReadQueryTests`
+and #422
+`ClassMngrNextPlatformApplicationServicesGsTeamBirthdayDirectoryReadPortTests`
+passed. CTest #86 `NavigationTeacherRead` again reported 38 passed and 1 failed
+at `selectedTeacherProfileReadFailureWarnsWithoutConfirmation()`, matching the
+confirmed clean F1388 baseline at commit
+`ddc645c1aedf2571c6cfb4fdf6927085dd7d2209`. No additional failures occurred.
+This repeats the F1389 warning-text baseline failure and is distinct from the
+F1383 orphan-data mismatch recorded above. `git diff --check` passed. No full
+suite or cross-platform build ran. F1390 is accepted; F1391 (Native English
+birthday directory read) is current.

@@ -50,9 +50,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   read), F1384 (Speaking-evaluation roster-name read), F1385 (GS Team
   directory read), F1386 (GS Team directory save), F1387 (Native English
   teacher directory read), F1388 (Native English teacher directory save),
-  and F1389 (Korean teacher birthday directory read) are accepted; F1390 (GS
-  Team birthday directory read) is current. F1376–F1389 implementation
-  evidence, Batch 2 and Batch 3 push receipts, and
+  F1389 (Korean teacher birthday directory read), and F1390 (GS Team birthday
+  directory read) are accepted; F1391 (Native English birthday directory
+  read) is current. F1376–F1390 implementation evidence, Batch 2 and Batch 3
+  push receipts, and
   earlier UI limitations and attribution notes are in the [progress
   log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -72,15 +73,15 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1389 — 2026-10-24
+## Latest Progress Update — F1390 — 2026-10-24
 
-F1389 is accepted; F1390 is current in Batch 4. The Korean teacher birthday
-read port and dedicated Platform fixture now use `WorkspaceStore`; raw fields,
-ordering, and assertions are unchanged. Its application-query and Platform
-CTests passed. The NavigationTeacherRead CTest retains a confirmed unrelated
-F1388-baseline failure; the distinct F1383 baseline mismatch is also preserved
-in the [progress log](04-Phase-3-Progress-Log.md). No full suite or
-cross-platform build ran.
+F1390 is accepted; F1391 is current in Batch 4. The GS Team birthday read
+port and dedicated Platform fixture now use `WorkspaceStore`; four raw fields,
+ordering, and assertions are unchanged, with no ID projection. The application
+query and Platform-port CTests passed. NavigationTeacherRead retains the same
+confirmed F1388-baseline failure documented for F1389, with no additional
+failures. The separate F1383 mismatch remains in the [progress
+log](04-Phase-3-Progress-Log.md). No full suite or cross-platform build ran.
 
 ## Objective
 

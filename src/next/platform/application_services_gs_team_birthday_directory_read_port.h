@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/gs_team_repository.h"
 #include "next/application/gs_team_birthday_directory_read_port.h"
 
@@ -30,15 +30,15 @@ public:
     [[nodiscard]] Application::GsTeamBirthdayDirectoryReadResult
     readGsTeamBirthdayDirectory() const override
     {
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return Application::GsTeamBirthdayDirectoryReadResult::failure(
                 unavailableError());
         }
 
-        GsTeamRepository* const repository = session->gsTeamRepository();
+        GsTeamRepository* const repository = store->gsTeamRepository();
         if (!repository)
         {
             return Application::GsTeamBirthdayDirectoryReadResult::failure(
