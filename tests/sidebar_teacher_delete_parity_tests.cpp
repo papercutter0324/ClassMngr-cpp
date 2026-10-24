@@ -1,6 +1,6 @@
 #include "app/controllers/sidebar_controller.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/teacher.h"
 #include "fakes/fake_user_prompt_service.h"
@@ -64,7 +64,7 @@ public:
             return false;
         }
         TeacherRepository* const repository =
-            services.databaseSession()->teacherRepository();
+            services.workspaceStore()->teacherRepository();
         targetId = createTeacher(
             repository,
             QStringLiteral("Target Korean"),
@@ -127,7 +127,7 @@ public:
 
     [[nodiscard]] TeacherRepository* repository() const
     {
-        return services.databaseSession()->teacherRepository();
+        return services.workspaceStore()->teacherRepository();
     }
 
     [[nodiscard]] bool targetExists() const
@@ -204,7 +204,7 @@ writeFailureWarnsWithoutRefreshingOrNavigating()
 {
     DeleteFixture fixture;
     QVERIFY(fixture.open());
-    QSqlQuery trigger(fixture.services.databaseSession()->database());
+    QSqlQuery trigger(fixture.services.workspaceStore()->database());
     QVERIFY(trigger.exec(QStringLiteral(
         "CREATE TRIGGER fail_sidebar_teacher_delete "
         "BEFORE DELETE ON teachers WHEN OLD.id=%1 "

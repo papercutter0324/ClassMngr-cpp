@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/teacher.h"
 #include "next/application/teacher_delete.h"
@@ -148,7 +148,7 @@ private slots:
     void wideIdentityDeletionRollsBackOnFailureAndClearsOnlyItsAssignments();
     void deletesTeacherAndClearsOnlyItsAssignments();
     void rollsBackAssignmentClearingWhenTeacherDeleteFails();
-    void reportsNullUnavailableAndClosedSessionsWithoutFallback();
+    void reportsNullUnavailableAndClosedStoresWithoutFallback();
 };
 
 void NextPlatformApplicationServicesTeacherDeletePortTests::
@@ -158,35 +158,37 @@ wideIdentityDeletionRollsBackOnFailureAndClearsOnlyItsAssignments()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    auto* session = services.databaseSession();
-    auto* repository = session->teacherRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    auto* repository = store->teacherRepository();
+    QVERIFY(repository);
     const int siblingId = createTeacher(repository, QStringLiteral("Keep Sibling"));
     QVERIFY(siblingId > 0);
-    const int siblingClass = insertClass(session->database(), QStringLiteral("Sibling Class"), siblingId, QStringLiteral("Monday"));
+    const int siblingClass = insertClass(store->database(), QStringLiteral("Sibling Class"), siblingId, QStringLiteral("Monday"));
     QVERIFY(siblingClass > 0);
     Platform::ApplicationServicesTeacherDeletePort port(services);
     for (const qint64 id : {qint64{2147483648LL}, qint64{9223372036854775807LL}})
     {
-        QVERIFY(execute(session->database(), QStringLiteral(
+        QVERIFY(execute(store->database(), QStringLiteral(
             "INSERT INTO teachers (id, teacher_en) VALUES (?, 'Wide Target')"), {id}));
-        const int targetClass = insertClass(session->database(), QStringLiteral("Wide Class"), id, QStringLiteral("Tuesday"));
+        const int targetClass = insertClass(store->database(), QStringLiteral("Wide Class"), id, QStringLiteral("Tuesday"));
         QVERIFY(targetClass > 0);
-        QVERIFY(execute(session->database(), QStringLiteral(
+        QVERIFY(execute(store->database(), QStringLiteral(
             "CREATE TRIGGER reject_wide_delete BEFORE DELETE ON teachers "
             "BEGIN SELECT RAISE(ABORT, 'wide deletion rejected'); END")));
         const auto rejected = port.deleteTeacher(request(id));
         QVERIFY(!rejected);
         QCOMPARE(rejected.error().code, Domain::ErrorCode::Technical);
         QVERIFY(!rejected.error().recoverable);
-        QCOMPARE(value(session->database(), QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=?"), targetClass).toLongLong(), id);
-        QCOMPARE(scalar(session->database(), QStringLiteral("SELECT COUNT(*) FROM teachers WHERE id=?"), id), 1);
-        QVERIFY(execute(session->database(), QStringLiteral("DROP TRIGGER reject_wide_delete")));
+        QCOMPARE(value(store->database(), QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=?"), targetClass).toLongLong(), id);
+        QCOMPARE(scalar(store->database(), QStringLiteral("SELECT COUNT(*) FROM teachers WHERE id=?"), id), 1);
+        QVERIFY(execute(store->database(), QStringLiteral("DROP TRIGGER reject_wide_delete")));
         QVERIFY(port.deleteTeacher(request(id)));
-        QCOMPARE(scalar(session->database(), QStringLiteral("SELECT COUNT(*) FROM teachers WHERE id=?"), id), 0);
-        QVERIFY(value(session->database(), QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=?"), targetClass).isNull());
-        QCOMPARE(value(session->database(), QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=?"), siblingClass).toLongLong(), qint64{siblingId});
-        QCOMPARE(scalar(session->database(), QStringLiteral("SELECT COUNT(*) FROM teachers WHERE id=?"), siblingId), 1);
-        QCOMPARE(scalar(session->database(), QStringLiteral("SELECT COUNT(*) FROM class_times WHERE class_id=?"), targetClass), 1);
+        QCOMPARE(scalar(store->database(), QStringLiteral("SELECT COUNT(*) FROM teachers WHERE id=?"), id), 0);
+        QVERIFY(value(store->database(), QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=?"), targetClass).isNull());
+        QCOMPARE(value(store->database(), QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=?"), siblingClass).toLongLong(), qint64{siblingId});
+        QCOMPARE(scalar(store->database(), QStringLiteral("SELECT COUNT(*) FROM teachers WHERE id=?"), siblingId), 1);
+        QCOMPARE(scalar(store->database(), QStringLiteral("SELECT COUNT(*) FROM class_times WHERE class_id=?"), targetClass), 1);
     }
 }
 
@@ -197,9 +199,9 @@ deletesTeacherAndClearsOnlyItsAssignments()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    TeacherRepository* const repository = session->teacherRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    TeacherRepository* const repository = store->teacherRepository();
     QVERIFY(repository);
 
     const int targetId = createTeacher(repository, QStringLiteral("Delete Target"));
@@ -207,19 +209,19 @@ deletesTeacherAndClearsOnlyItsAssignments()
     QVERIFY(targetId > 0);
     QVERIFY(siblingId > 0);
     const int targetClass = insertClass(
-        session->database(),
+        store->database(),
         QStringLiteral("Target Assignment"),
         targetId,
         QStringLiteral("Monday")
         );
     const int secondTargetClass = insertClass(
-        session->database(),
+        store->database(),
         QStringLiteral("Second Target Assignment"),
         targetId,
         QStringLiteral("Wednesday")
         );
     const int siblingClass = insertClass(
-        session->database(),
+        store->database(),
         QStringLiteral("Sibling Assignment"),
         siblingId,
         QStringLiteral("Tuesday")
@@ -232,14 +234,14 @@ deletesTeacherAndClearsOnlyItsAssignments()
     const auto result = port.deleteTeacher(request(targetId));
 
     QVERIFY(result);
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT COUNT(*) FROM teachers WHERE id=?"),
                     targetId), 0);
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT COUNT(*) FROM teachers WHERE id=?"),
                     siblingId), 1);
 
-    QSqlQuery targetInfo(session->database());
+    QSqlQuery targetInfo(store->database());
     targetInfo.prepare(QStringLiteral(
         "SELECT teacher_id, class_grade, class_level, reading_book, notes "
         "FROM class_info WHERE class_id=?"
@@ -253,29 +255,29 @@ deletesTeacherAndClearsOnlyItsAssignments()
     QCOMPARE(targetInfo.value(3).toString(), QStringLiteral("Reader 1"));
     QCOMPARE(targetInfo.value(4).toString(), QStringLiteral("Keep class notes"));
 
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT COUNT(*) FROM class_info WHERE class_id=?"),
                     secondTargetClass), 1);
-    QVERIFY(value(session->database(),
+    QVERIFY(value(store->database(),
                   QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=?"),
                   secondTargetClass).isNull());
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT COUNT(*) FROM classes WHERE id=?"),
                     secondTargetClass), 1);
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT COUNT(*) FROM class_times WHERE class_id=?"),
                     secondTargetClass), 1);
 
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT COUNT(*) FROM classes WHERE id=?"),
                     targetClass), 1);
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT COUNT(*) FROM class_times WHERE class_id=?"),
                     targetClass), 1);
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=?"),
                     siblingClass), siblingId);
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT COUNT(*) FROM class_times WHERE class_id=?"),
                     siblingClass), 1);
 }
@@ -287,9 +289,9 @@ rollsBackAssignmentClearingWhenTeacherDeleteFails()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    TeacherRepository* const repository = session->teacherRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    TeacherRepository* const repository = store->teacherRepository();
     QVERIFY(repository);
 
     const int targetId = createTeacher(repository, QStringLiteral("Rollback Target"));
@@ -297,13 +299,13 @@ rollsBackAssignmentClearingWhenTeacherDeleteFails()
     QVERIFY(targetId > 0);
     QVERIFY(siblingId > 0);
     const int targetClass = insertClass(
-        session->database(),
+        store->database(),
         QStringLiteral("Rollback Target Assignment"),
         targetId,
         QStringLiteral("Wednesday")
         );
     const int siblingClass = insertClass(
-        session->database(),
+        store->database(),
         QStringLiteral("Rollback Sibling Assignment"),
         siblingId,
         QStringLiteral("Thursday")
@@ -311,7 +313,7 @@ rollsBackAssignmentClearingWhenTeacherDeleteFails()
     QVERIFY(targetClass > 0);
     QVERIFY(siblingClass > 0);
     QVERIFY(execute(
-        session->database(),
+        store->database(),
         QStringLiteral(
             "CREATE TRIGGER fail_teacher_delete "
             "BEFORE DELETE ON teachers WHEN OLD.id=%1 "
@@ -327,25 +329,25 @@ rollsBackAssignmentClearingWhenTeacherDeleteFails()
     QVERIFY(!result.error().recoverable);
     QVERIFY(result.error().message.find("F363 injected teacher delete failure")
             != std::string::npos);
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT COUNT(*) FROM teachers WHERE id=?"),
                     targetId), 1);
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=?"),
                     targetClass), targetId);
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=?"),
                     siblingClass), siblingId);
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT COUNT(*) FROM class_times WHERE class_id=?"),
                     targetClass), 1);
-    QCOMPARE(scalar(session->database(),
+    QCOMPARE(scalar(store->database(),
                     QStringLiteral("SELECT COUNT(*) FROM class_times WHERE class_id=?"),
                     siblingClass), 1);
 }
 
 void NextPlatformApplicationServicesTeacherDeletePortTests::
-reportsNullUnavailableAndClosedSessionsWithoutFallback()
+reportsNullUnavailableAndClosedStoresWithoutFallback()
 {
     Platform::ApplicationServicesTeacherDeletePort nullPort(
         static_cast<ApplicationServices*>(nullptr)
