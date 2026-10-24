@@ -45,14 +45,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   the verified implementation tip is
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1408 (Sub Prep preferences) current. F1407
-  (Personal signature image) is accepted at
-  `67474823037b3f8841f3403d9287e08e5965c0c7`; focused verification passed.
-  Its 9 prioritized candidates remain in the current batch tracker. Batch 5
+  and Batch 5 is active with F1409 (Sub Prep personal Zoom preferences)
+  current. F1408 (Sub Prep preferences) is accepted at
+  `d8cb586497ce64ca700f1f4deb500bdc1d8375e0`; focused verification passed.
+  Its 8 prioritized candidates remain in the current batch tracker. Batch 5
   remains unpushed until its remaining slices are complete. F1403 was
   limited to residual range projection and excluded F1341 availability/by-ID
   work and the existing WorkspaceStore-backed query/cache path.
-  F1376–F1407 implementation evidence, Batch 2 and Batch 3 push receipts, and
+  F1376–F1408 implementation evidence, Batch 2 and Batch 3 push receipts, and
   earlier UI limitations and attribution notes are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -72,30 +72,41 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1407 — 2026-10-24
+## Latest Progress Update — F1408 — 2026-10-24
 
-F1407 is accepted at `67474823037b3f8841f3403d9287e08e5965c0c7`. Only the
-`ApplicationServicesPersonalSignatureImagePort` adapter and its direct
-Platform fixture moved from `DatabaseSession` to `WorkspaceStore`. The exact
-`myInfo/signatureImage` key, Base64 decoding, `SignatureImage` preparation,
-empty-success cases, and warning-logged nonrecoverable `Technical` result for
-repository read failure are unchanged. F1405's aggregate writer still stores
-the same Base64 key/form; F1406's mode, text, and font preferences are outside
-this slice.
+F1408 is accepted at `d8cb586497ce64ca700f1f4deb500bdc1d8375e0`. Only the
+`ApplicationServicesSubPrepPreferencesPort` header/implementation and its
+dedicated Platform fixture moved from `DatabaseSession` to `WorkspaceStore`.
+Reads remain sequential across `subPrep/classMaterials`,
+`subPrep/bookReportGrading`, `subPrep/bookReportSpecialInstructions`, then
+`subPrep/subComments`, preserving UTF-8 bytes. Missing required values become
+empty, missing optional values become `nullopt`, and present-empty optionals
+remain present. The first repository read failure is logged and returns
+nonrecoverable `Technical` without a partial bundle. An open store without a
+repository retains load-default/warn behavior; save without a repository
+returns `Technical`. Saving remains one atomic four-setting repository call.
+F1409's Zoom keys were not changed. F1392's current-campus port and page-owned
+missing-value defaults remain separate: the page supplies the grading default
+when grading is absent and the special-instructions default only when grading
+is also absent.
 
-The five affected Platform, MyWorkspace, Initial Setup, save-port, and image
-processor targets built incrementally without compiler warnings or errors.
-CTest #181, #445, and #446 passed 3/3. The three selected MyWorkspace slots
-and three selected Initial Setup slots passed 3/3 each with the offscreen Qt
-platform. Qt `propagateSizeHints` and Sans Serif font-alias timing warnings
-were non-fatal; no setup reruns were needed. Full UI suites, the full suite,
-and cross-platform builds did not run. Batch 5 is active with F1408 (Sub Prep
-preferences) current and 9 prioritized candidates remaining. The F1383
-orphan-data, F1389/F1390/F1391
-NavigationTeacherRead warning-text, F1392 SubPrep timeout, and F1394 schedule
-parity fixture-setup findings remain separately documented in the
-[progress log](04-Phase-3-Progress-Log.md); prior baseline findings retain
-their separate attribution.
+The Platform port and Sub Prep page targets built incrementally without
+compiler warnings or errors. CTest #448, the dedicated port target, passed
+9/9. CTest #147 for the page was interrupted after 147.28 seconds: its first
+16 slots passed, then `unavailablePreferenceLoadsPreservePageValues` had run
+for 145.482 seconds. It was stopped as the known F1392 baseline timeout; this
+run is incomplete, not a natural timeout result, and that slot remains
+unverified. The four-slot focused UI invocation passed all slots, including
+`freshAndExistingGradingSettingsResolveWithoutDataLoss`,
+`unavailablePreferenceSaveHasNoSideEffects`,
+`failedPreferenceSaveReportsOnlyExplicitFailureAndPreservesDraft`, and
+`repositoryReadFailureBlocksWritesUntilSuccessfulReload`; the last three
+safe slots also passed when rerun after correction. Qt offscreen size/raise
+and font-alias warnings and the expected injected F1079 read-failure error
+were observed. Full suites and cross-platform builds did not run. F1408 is
+accepted; F1409 (Sub Prep personal Zoom preferences) is current with 8
+prioritized candidates remaining. Earlier baseline findings retain their
+separate attribution in the progress log.
 
 ## Objective
 

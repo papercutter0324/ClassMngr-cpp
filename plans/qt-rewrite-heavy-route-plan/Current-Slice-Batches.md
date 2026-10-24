@@ -17,12 +17,12 @@ verification evidence in its progress log.
   began.
 - Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`; its
   implementation tip is `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`.
-- Batch 5 discovery is complete and Batch 5 is active with F1408 — Sub Prep
-  preferences current. F1407 — Personal signature image is accepted at
-  `67474823037b3f8841f3403d9287e08e5965c0c7`; 9 prioritized candidates
+- Batch 5 discovery is complete and Batch 5 is active with F1409 — Sub Prep
+  personal Zoom preferences current. F1408 — Sub Prep preferences is accepted
+  at `d8cb586497ce64ca700f1f4deb500bdc1d8375e0`; 8 prioritized candidates
   remain. Batch 5 remains unpushed until its remaining slices are complete.
 
-## Phase 3 — Batch 5 (active; F1408 current)
+## Phase 3 — Batch 5 (active; F1409 current)
 
 Two complementary scans found 19 prioritized, distinct persistence slices.
 The source scan found exactly 19 active Next Platform ports after excluding
@@ -42,8 +42,8 @@ scan-identified item is a candidate, not a test result.
 8. F1405 — Personal details save (accepted)
 9. F1406 — Personal signature preferences (accepted)
 10. F1407 — Personal signature image (accepted)
-11. F1408 — Sub Prep preferences (current)
-12. F1409 — Sub Prep personal Zoom preferences
+11. F1408 — Sub Prep preferences (accepted)
+12. F1409 — Sub Prep personal Zoom preferences (current)
 13. F1410 — Custom color palette preferences
 14. F1411 — Initial Setup teacher choices read
 15. F1412 — Teacher create

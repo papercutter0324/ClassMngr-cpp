@@ -2379,3 +2379,39 @@ builds did not run. F1407 is accepted; F1408 (Sub Prep preferences) is
 current. Batch 5 remains unpushed until its remaining slices are complete.
 
 Commit: `67474823037b3f8841f3403d9287e08e5965c0c7`.
+
+## F1408 — Sub Prep preferences (Batch 5 candidate 11 of 19) — 2026-10-24
+
+Only the `ApplicationServicesSubPrepPreferencesPort` header/implementation
+and dedicated Platform fixture moved to `WorkspaceStore`. Reads remain
+sequential in this exact order: `subPrep/classMaterials`,
+`subPrep/bookReportGrading`, `subPrep/bookReportSpecialInstructions`, then
+`subPrep/subComments`; UTF-8 bytes remain preserved. Missing required values
+become empty, missing optional values become `nullopt`, and present-empty
+optional values remain present. The first repository read failure is logged
+and returns nonrecoverable `Technical` without a partial bundle. An open
+store with no repository still loads defaults and warns, while save with no
+repository returns `Technical`. Save remains one atomic four-setting
+repository call. F1409 Zoom keys are unchanged. F1392's current-campus port
+remains separate. Page defaults remain page-owned: it supplies the grading
+default when grading is absent, and the special-instructions default only
+when grading is also absent.
+
+Both `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`
+and `ClassMngrSubPrepPageTests` built incrementally without compiler warnings
+or errors. CTest #448, the dedicated Platform target, passed 9/9. CTest #147
+for the page was interrupted after 147.28 seconds: its first 16 slots passed,
+then `unavailablePreferenceLoadsPreservePageValues` had run for 145.482
+seconds. It was stopped as the known F1392 baseline timeout; this was not a
+natural timeout result, and that slot remains unverified. The focused UI run
+passed `freshAndExistingGradingSettingsResolveWithoutDataLoss`,
+`unavailablePreferenceSaveHasNoSideEffects`,
+`failedPreferenceSaveReportsOnlyExplicitFailureAndPreservesDraft`, and
+`repositoryReadFailureBlocksWritesUntilSuccessfulReload`; the last three safe
+slots were also rerun after correction and passed. Qt offscreen size/raise and
+font-alias warnings and the expected injected F1079 read-failure error were
+observed. Full suites and cross-platform builds did not run. F1408 is
+accepted; F1409 (Sub Prep personal Zoom preferences) is current. Batch 5
+remains unpushed until its remaining slices are complete.
+
+Commit: `d8cb586497ce64ca700f1f4deb500bdc1d8375e0`.
