@@ -71,6 +71,8 @@ set(CLASSMNGR_DATA_SOURCES
     "src/data/database/database_schema_manager.cpp"
     "src/data/database/database_schema_manager.h"
     "src/data/database/database_session.h"
+    "src/data/database/sqlite_online_backup.cpp"
+    "src/data/database/sqlite_online_backup.h"
     "src/data/database/workspace_store.cpp"
     "src/data/database/workspace_store.h"
     "src/data/database/workspace_store_fwd.h"

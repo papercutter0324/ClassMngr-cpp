@@ -1,12 +1,16 @@
 #include "database_file_operations.h"
 #include "database_file_operations_internal.h"
+#include "data/database/sqlite_online_backup.h"
 
+#include <QByteArray>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QSaveFile>
+#include <QTemporaryDir>
 
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -186,6 +190,47 @@ Status DatabaseFileOperations::copyDatabaseFile(
     const QString replacementError =
         QStringLiteral("Unable to replace existing Teacher Profile file:\n%1")
             .arg(targetPath);
+
+    const QByteArray sqliteHeader =
+        QByteArray::fromRawData("SQLite format 3\0", 16);
+    const bool isSqliteDatabase =
+        source.peek(sqliteHeader.size()) == sqliteHeader;
+
+    std::unique_ptr<QTemporaryDir> stagingDirectory;
+    std::unique_ptr<QFile> stagedSnapshot;
+    QFile* sourceForSaveFile = &source;
+    if (isSqliteDatabase)
+    {
+        stagingDirectory = std::make_unique<QTemporaryDir>(
+            QDir(QDir::tempPath()).filePath(
+                QStringLiteral("classmngr-sqlite-snapshot-XXXXXX")
+                )
+            );
+        if (!stagingDirectory->isValid())
+        {
+            return std::unexpected(copyError);
+        }
+
+        const QString snapshotPath = QDir(stagingDirectory->path())
+            .filePath(QStringLiteral("snapshot.sqlite"));
+        const Status snapshotResult =
+            Internal::createOnlineBackupSnapshot(
+                absoluteSourcePath,
+                snapshotPath
+                );
+        if (!snapshotResult)
+        {
+            return std::unexpected(copyError);
+        }
+
+        stagedSnapshot = std::make_unique<QFile>(snapshotPath);
+        if (!stagedSnapshot->open(QIODevice::ReadOnly))
+        {
+            return std::unexpected(copyError);
+        }
+        sourceForSaveFile = stagedSnapshot.get();
+    }
+
     QSaveFile destination(targetPath);
     destination.setDirectWriteFallback(false);
     if (!destination.open(QIODevice::WriteOnly))
@@ -200,7 +245,7 @@ Status DatabaseFileOperations::copyDatabaseFile(
     }
 
     return Internal::copyOpenSourceToSaveFile(
-        source,
+        *sourceForSaveFile,
         destination,
         targetPath,
         targetExisted,

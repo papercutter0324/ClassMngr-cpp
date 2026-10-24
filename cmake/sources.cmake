@@ -108,6 +108,7 @@ classmngr_add_production_objects(
     TARGET ClassMngrData
     SOURCES ${CLASSMNGR_DATA_SOURCES}
     LIBRARIES
+        ClassMngrSQLiteSnapshot
         Qt6::Gui
         Qt6::Sql
 )
@@ -188,6 +189,8 @@ target_link_libraries(ClassMngrRuntime
     PUBLIC
         ClassMngrBuildSettings
         ${_classmngr_legacy_runtime_dependencies}
+    PRIVATE
+        ClassMngrSQLiteSnapshot
 )
 
 # macOS test doubles cannot override symbols from a static archive with the
@@ -208,6 +211,8 @@ if(APPLE AND BUILD_TESTING)
         PUBLIC
             ClassMngrBuildSettings
             ${_classmngr_legacy_runtime_dependencies}
+        PRIVATE
+            ClassMngrSQLiteSnapshot
     )
 
     target_link_options(ClassMngrTestRuntime

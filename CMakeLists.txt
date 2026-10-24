@@ -9,7 +9,7 @@ endif()
 
 project(ClassMngr
     VERSION 0.19.0
-    LANGUAGES CXX
+    LANGUAGES C CXX
 )
 
 # Keep every multi-configuration generator focused on the supported build
@@ -78,6 +78,8 @@ find_package(Qt6 6.12.0 REQUIRED COMPONENTS
     Network
     LinguistTools
 )
+
+include(cmake/sqlite.cmake)
 
 option(CLASSMNGR_PREFER_QT_ZLIB_FALLBACK
     "Prefer Qt's bundled zlib fallback on Windows before searching for system zlib"

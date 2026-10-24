@@ -34,6 +34,7 @@ on:
       - "scripts/write_build_report.py"
       - "scripts/phase0/**"
       - "src/**"
+      - "third_party/sqlite/**"
   pull_request:
     paths:
       - ".github/workflows/linux-release.yml"
@@ -46,6 +47,7 @@ on:
       - "scripts/write_build_report.py"
       - "scripts/phase0/**"
       - "src/**"
+      - "third_party/sqlite/**"
 
 permissions:
   contents: read

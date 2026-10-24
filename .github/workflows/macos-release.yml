@@ -24,6 +24,7 @@ on:
       - "scripts/deploy_release_macos.sh"
       - "scripts/write_build_report.py"
       - "src/**"
+      - "third_party/sqlite/**"
   pull_request:
     paths:
       - ".github/workflows/macos-release.yml"
@@ -37,6 +38,7 @@ on:
       - "scripts/deploy_release_macos.sh"
       - "scripts/write_build_report.py"
       - "src/**"
+      - "third_party/sqlite/**"
 
 permissions:
   contents: read

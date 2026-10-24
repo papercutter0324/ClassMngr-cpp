@@ -1,16 +1,22 @@
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
+#include "data/database/database_file_operations.h"
 #include "data/database/database_session.h"
 #include "next/platform/application_services_workspace_port.h"
 
+#include <QByteArray>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QSqlDatabase>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QUuid>
 #include <QtTest/QtTest>
 
+#include <QVector>
+#include <utility>
 #include <string>
 
 using namespace ClassMngr::Next::Platform;
@@ -52,6 +58,140 @@ bool createAndCloseWorkspace(
     }
 
     return static_cast<bool>(port.closeDatabase(created.value()));
+}
+
+class SqliteConnection final
+{
+public:
+    SqliteConnection()
+        : m_name(
+            QStringLiteral("f1441-%1")
+                .arg(QUuid::createUuid().toString(QUuid::WithoutBraces))
+            ),
+          m_database(QSqlDatabase::addDatabase(
+              QStringLiteral("QSQLITE"),
+              m_name
+              ))
+    {
+        m_database.setConnectOptions(QStringLiteral("QSQLITE_BUSY_TIMEOUT=5000"));
+    }
+
+    SqliteConnection(const SqliteConnection&) = delete;
+    SqliteConnection& operator=(const SqliteConnection&) = delete;
+
+    ~SqliteConnection()
+    {
+        m_database.close();
+        m_database = QSqlDatabase();
+        QSqlDatabase::removeDatabase(m_name);
+    }
+
+    [[nodiscard]] bool open(const QString& path)
+    {
+        m_database.setDatabaseName(path);
+        return m_database.open();
+    }
+
+    [[nodiscard]] QSqlDatabase& database() noexcept
+    {
+        return m_database;
+    }
+
+private:
+    QString m_name;
+    QSqlDatabase m_database;
+};
+
+bool executeSql(
+    QSqlDatabase& database,
+    const QString& sql,
+    QString* errorMessage = nullptr
+    )
+{
+    QSqlQuery query(database);
+    if (query.exec(sql))
+    {
+        return true;
+    }
+
+    if (errorMessage)
+    {
+        *errorMessage = query.lastError().text();
+    }
+    return false;
+}
+
+bool snapshotHasWalAndOpaqueRows(
+    const QString& path,
+    QString* errorMessage
+    )
+{
+    SqliteConnection connection;
+    if (!connection.open(path))
+    {
+        *errorMessage = connection.database().lastError().text();
+        return false;
+    }
+
+    QSqlQuery integrityQuery(connection.database());
+    if (
+        !integrityQuery.exec(QStringLiteral("PRAGMA integrity_check"))
+        || !integrityQuery.next()
+        || integrityQuery.value(0).toString() != QStringLiteral("ok")
+        )
+    {
+        *errorMessage = integrityQuery.lastError().text();
+        return false;
+    }
+    integrityQuery.finish();
+
+    QSqlQuery rowQuery(connection.database());
+    if (!rowQuery.exec(QStringLiteral(
+            "SELECT rowid, payload FROM opaque_profile_rows ORDER BY rowid"
+            )))
+    {
+        *errorMessage = rowQuery.lastError().text();
+        return false;
+    }
+
+    QVector<QPair<qlonglong, QString>> rows;
+    while (rowQuery.next())
+    {
+        rows.append(qMakePair(
+            rowQuery.value(0).toLongLong(),
+            rowQuery.value(1).toString()
+            ));
+    }
+    rowQuery.finish();
+
+    const QVector<QPair<qlonglong, QString>> expectedRows{
+        qMakePair(qlonglong(-17), QStringLiteral("negative rowid")),
+        qMakePair(qlonglong(9001), QStringLiteral("opaque rowid"))
+    };
+    if (rows != expectedRows)
+    {
+        *errorMessage = QStringLiteral(
+            "The snapshot did not preserve opaque rowids and contents."
+            );
+        return false;
+    }
+
+    QSqlQuery markerQuery(connection.database());
+    if (
+        !markerQuery.exec(QStringLiteral(
+            "SELECT marker FROM committed_wal_markers"
+            ))
+        || !markerQuery.next()
+        || markerQuery.value(0).toString()
+            != QStringLiteral("committed-after-reader-snapshot")
+        )
+    {
+        *errorMessage = markerQuery.lastError().text();
+        return false;
+    }
+    markerQuery.finish();
+
+    return true;
 }
 
 void verifyPopulatedWorkspace(
@@ -119,6 +259,8 @@ private slots:
     void saveAsPreservesIdentityAndReopensNormalizedDestination();
     void exportReturnsNormalizedDestinationWithoutChangingCurrentPath();
     void populatedDbSaveAsAndExportRoundTripThroughExistingOpen();
+    void walSaveAsAndExportPreserveCommittedRowsAndRowids();
+    void snapshotFailurePreservesExistingDestinationSentinel();
     void openPreservesLegacyErrorMessage();
     void portsUseIndependentServicesWithoutSessionSnapshots();
 
@@ -802,6 +944,250 @@ populatedDbSaveAsAndExportRoundTripThroughExistingOpen()
         expectedSetting
         );
     QVERIFY(port.closeDatabase(sourceAfterExport.value()));
+}
+
+void NextPlatformApplicationServicesWorkspacePortTests::
+walSaveAsAndExportPreserveCommittedRowsAndRowids()
+{
+    const QString sourcePath = m_directory.filePath(
+        QStringLiteral("wal-snapshot/source.tps")
+        );
+    const QString exportPath = m_directory.filePath(
+        QStringLiteral("wal-snapshot/export.tps")
+        );
+    const QString saveAsPath = m_directory.filePath(
+        QStringLiteral("wal-snapshot/save-as.tps")
+        );
+    const std::string expectedSource = normalizedPath(sourcePath);
+    const std::string expectedExport = normalizedPath(exportPath);
+    const std::string expectedSaveAs = normalizedPath(saveAsPath);
+
+    {
+        ApplicationServices setupServices;
+        ApplicationServicesWorkspacePort setupPort(setupServices);
+        QVERIFY(createAndCloseWorkspace(setupPort, utf8(sourcePath)));
+    }
+
+    QString sqlError;
+    {
+        SqliteConnection setup;
+        QVERIFY2(
+            setup.open(sourcePath),
+            qPrintable(setup.database().lastError().text())
+            );
+
+        QSqlQuery journalMode(setup.database());
+        QVERIFY2(
+            journalMode.exec(QStringLiteral("PRAGMA journal_mode=WAL")),
+            qPrintable(journalMode.lastError().text())
+            );
+        QVERIFY(journalMode.next());
+        QCOMPARE(
+            journalMode.value(0).toString().toLower(),
+            QStringLiteral("wal")
+            );
+        journalMode.finish();
+
+        QVERIFY2(
+            executeSql(
+                setup.database(),
+                QStringLiteral("PRAGMA wal_autocheckpoint=0"),
+                &sqlError
+                ),
+            qPrintable(sqlError)
+            );
+        QVERIFY2(
+            executeSql(
+                setup.database(),
+                QStringLiteral(
+                    "CREATE TABLE opaque_profile_rows (payload TEXT NOT NULL)"
+                    ),
+                &sqlError
+                ),
+            qPrintable(sqlError)
+            );
+        QVERIFY2(
+            executeSql(
+                setup.database(),
+                QStringLiteral(
+                    "INSERT INTO opaque_profile_rows(rowid, payload) VALUES "
+                    "(-17, 'negative rowid'), (9001, 'opaque rowid')"
+                    ),
+                &sqlError
+                ),
+            qPrintable(sqlError)
+            );
+        QVERIFY2(
+            executeSql(
+                setup.database(),
+                QStringLiteral(
+                    "CREATE INDEX opaque_profile_rows_payload_idx "
+                    "ON opaque_profile_rows(payload)"
+                    ),
+                &sqlError
+                ),
+            qPrintable(sqlError)
+            );
+        QVERIFY2(
+            executeSql(
+                setup.database(),
+                QStringLiteral(
+                    "CREATE TABLE committed_wal_markers (marker TEXT NOT NULL)"
+                    ),
+                &sqlError
+                ),
+            qPrintable(sqlError)
+            );
+    }
+
+    SqliteConnection oldReader;
+    QVERIFY2(
+        oldReader.open(sourcePath),
+        qPrintable(oldReader.database().lastError().text())
+        );
+    QVERIFY(oldReader.database().transaction());
+    {
+        QSqlQuery oldSnapshot(oldReader.database());
+        QVERIFY2(
+            oldSnapshot.exec(QStringLiteral(
+                "SELECT COUNT(*) FROM committed_wal_markers"
+                )),
+            qPrintable(oldSnapshot.lastError().text())
+            );
+        QVERIFY(oldSnapshot.next());
+        QCOMPARE(oldSnapshot.value(0).toInt(), 0);
+        oldSnapshot.finish();
+    }
+
+    SqliteConnection writer;
+    QVERIFY2(
+        writer.open(sourcePath),
+        qPrintable(writer.database().lastError().text())
+        );
+    QVERIFY2(
+        executeSql(
+            writer.database(),
+            QStringLiteral("PRAGMA wal_autocheckpoint=0"),
+            &sqlError
+            ),
+        qPrintable(sqlError)
+        );
+    QVERIFY(writer.database().transaction());
+    QVERIFY2(
+        executeSql(
+            writer.database(),
+            QStringLiteral(
+                "INSERT INTO committed_wal_markers(marker) VALUES "
+                "('committed-after-reader-snapshot')"
+                ),
+            &sqlError
+            ),
+        qPrintable(sqlError)
+        );
+    QVERIFY(writer.database().commit());
+
+    {
+        QSqlQuery oldSnapshot(oldReader.database());
+        QVERIFY2(
+            oldSnapshot.exec(QStringLiteral(
+                "SELECT COUNT(*) FROM committed_wal_markers"
+                )),
+            qPrintable(oldSnapshot.lastError().text())
+            );
+        QVERIFY(oldSnapshot.next());
+        QCOMPARE(oldSnapshot.value(0).toInt(), 0);
+        oldSnapshot.finish();
+    }
+    const QString walPath = sourcePath + QStringLiteral("-wal");
+    QVERIFY(QFileInfo::exists(walPath));
+    QVERIFY(QFileInfo(walPath).size() > 32);
+
+    ApplicationServices services;
+    ApplicationServicesWorkspacePort port(services);
+    const auto opened = port.openDatabase(utf8(sourcePath));
+    QVERIFY(opened);
+    const std::string originalIdentity = opened.value().workspaceId();
+    DatabaseSession* const sourceSession = services.databaseSession();
+    const QString sourceConnection =
+        sourceSession->database().connectionName();
+
+    const auto exported = port.exportDatabaseAs(
+        opened.value(),
+        utf8(exportPath)
+        );
+    QVERIFY(exported);
+    QCOMPARE(exported.value(), expectedExport);
+    QCOMPARE(port.currentDatabasePath(), expectedSource);
+    QCOMPARE(utf8(services.currentDatabasePath()), expectedSource);
+    QCOMPARE(services.databaseSession(), sourceSession);
+    QCOMPARE(
+        services.databaseSession()->database().connectionName(),
+        sourceConnection
+        );
+    QVERIFY(services.hasOpenDatabase());
+    QVERIFY(QFileInfo::exists(walPath));
+    QString snapshotError;
+    QVERIFY2(
+        snapshotHasWalAndOpaqueRows(exportPath, &snapshotError),
+        qPrintable(snapshotError)
+        );
+
+    const auto savedAs = port.saveDatabaseAs(
+        opened.value(),
+        utf8(saveAsPath)
+        );
+    QVERIFY(savedAs);
+    QCOMPARE(savedAs.value().workspaceId(), originalIdentity);
+    QCOMPARE(savedAs.value().location(), expectedSaveAs);
+    QCOMPARE(port.currentDatabasePath(), expectedSaveAs);
+    QCOMPARE(utf8(services.currentDatabasePath()), expectedSaveAs);
+    QVERIFY(services.hasOpenDatabase());
+    QVERIFY2(
+        snapshotHasWalAndOpaqueRows(saveAsPath, &snapshotError),
+        qPrintable(snapshotError)
+        );
+
+    QVERIFY(port.closeDatabase(savedAs.value()));
+    const auto reopenedSource = port.openDatabase(utf8(sourcePath));
+    QVERIFY(reopenedSource);
+    QCOMPARE(reopenedSource.value().location(), expectedSource);
+    QCOMPARE(port.currentDatabasePath(), expectedSource);
+    QVERIFY(services.hasOpenDatabase());
+    QVERIFY2(
+        snapshotHasWalAndOpaqueRows(sourcePath, &snapshotError),
+        qPrintable(snapshotError)
+        );
+    QVERIFY(port.closeDatabase(reopenedSource.value()));
+    QVERIFY(oldReader.database().rollback());
+}
+
+void NextPlatformApplicationServicesWorkspacePortTests::
+snapshotFailurePreservesExistingDestinationSentinel()
+{
+    const QString sourcePath = m_directory.filePath(
+        QStringLiteral("snapshot-failure/source.tps")
+        );
+    const QString destinationPath = m_directory.filePath(
+        QStringLiteral("snapshot-failure/destination.tps")
+        );
+    const QByteArray invalidSqlite =
+        QByteArray("SQLite format 3\0", 16)
+        + QByteArray("invalid SQLite contents");
+    const QByteArray sentinel("destination sentinel survives snapshot failure");
+    QVERIFY(QDir().mkpath(QFileInfo(sourcePath).absolutePath()));
+    writeInvalidWorkspace(sourcePath, invalidSqlite);
+    writeInvalidWorkspace(destinationPath, sentinel);
+
+    const Status result = DatabaseFileOperations::copyDatabaseFile(
+        sourcePath,
+        destinationPath
+        );
+
+    QVERIFY(!result);
+    QFile destination(destinationPath);
+    QVERIFY(destination.open(QIODevice::ReadOnly));
+    QCOMPARE(destination.readAll(), sentinel);
+    destination.close();
 }
 
 void NextPlatformApplicationServicesWorkspacePortTests::openPreservesLegacyErrorMessage()

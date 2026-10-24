@@ -39,6 +39,7 @@ on:
       - "scripts/installer/**"
       - "scripts/write_build_report.py"
       - "src/**"
+      - "third_party/sqlite/**"
   pull_request:
     paths:
       - ".github/workflows/windows-release.yml"
@@ -51,6 +52,7 @@ on:
       - "scripts/installer/**"
       - "scripts/write_build_report.py"
       - "src/**"
+      - "third_party/sqlite/**"
 
 permissions:
   contents: read
