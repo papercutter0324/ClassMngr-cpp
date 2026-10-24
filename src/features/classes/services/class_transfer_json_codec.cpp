@@ -653,6 +653,244 @@ Result<ClassTransferClass> classFromJson(
 
     return result;
 }
+// These cursors only locate values in JSON already validated by Qt. They do
+// not interpret JSON strings, numbers, duplicate fields, or schema values.
+struct JsonRange
+{
+    qsizetype begin = 0;
+    qsizetype end = 0;
+};
+
+class ValidatedJsonCursor
+{
+public:
+    explicit ValidatedJsonCursor(const QByteArray& bytes, qsizetype position = 0)
+        : bytes_(bytes), position_(position)
+    {
+    }
+
+    void skipWhitespace()
+    {
+        while (position_ < bytes_.size()
+               && (bytes_[position_] == ' ' || bytes_[position_] == '\t'
+                   || bytes_[position_] == '\r' || bytes_[position_] == '\n'))
+        {
+            ++position_;
+        }
+    }
+
+    char peek() const { return bytes_[position_]; }
+    void advance() { ++position_; }
+
+    JsonRange takeValue()
+    {
+        skipWhitespace();
+        const qsizetype begin = position_;
+        if (peek() == '"')
+        {
+            skipString();
+        }
+        else if (peek() == '{' || peek() == '[')
+        {
+            int depth = 0;
+            do
+            {
+                if (peek() == '"')
+                {
+                    skipString();
+                }
+                else
+                {
+                    const char token = peek();
+                    advance();
+                    if (token == '{' || token == '[') ++depth;
+                    else if (token == '}' || token == ']') --depth;
+                }
+            }
+            while (depth > 0);
+        }
+        else
+        {
+            while (position_ < bytes_.size() && peek() != ','
+                   && peek() != '}' && peek() != ']' && peek() != ' '
+                   && peek() != '\t' && peek() != '\r' && peek() != '\n')
+            {
+                advance();
+            }
+        }
+        return {begin, position_};
+    }
+
+private:
+    void skipString()
+    {
+        advance(); // opening quote
+        while (peek() != '"')
+        {
+            if (peek() == '\\') advance();
+            advance();
+        }
+        advance(); // closing quote
+    }
+
+    const QByteArray& bytes_;
+    qsizetype position_;
+};
+
+QByteArray jsonFragment(const QByteArray& bytes, JsonRange range)
+{
+    return QByteArray::fromRawData(bytes.constData() + range.begin,
+                                  range.end - range.begin);
+}
+
+QJsonValue scalarFragment(const QByteArray& bytes, JsonRange range)
+{
+    // An array wrapper lets Qt decode scalar values and escaped property names.
+    QByteArray wrapped("[");
+    wrapped.append(jsonFragment(bytes, range));
+    wrapped.append(']');
+    return QJsonDocument::fromJson(wrapped).array().first();
+}
+
+Status jsonDocumentStatus(
+    const QJsonDocument& document,
+    const QJsonParseError& parseError
+    )
+{
+    if (parseError.error != QJsonParseError::NoError)
+    {
+        return std::unexpected(
+            QObject::tr("The class package is not valid JSON:\n%1")
+                .arg(parseError.errorString()));
+    }
+    if (!document.isObject())
+    {
+        return std::unexpected(
+            QObject::tr("The class package root must be an object."));
+    }
+    return {};
+}
+
+Status validateMappedJsonObject(const QByteArray& bytes)
+{
+    QJsonParseError error;
+    const QJsonDocument document = QJsonDocument::fromJson(bytes, &error);
+    return jsonDocumentStatus(document, error);
+}
+
+Result<ClassTransferPackage> packageFromValidatedMappedJson(
+    const QByteArray& bytes
+    )
+{
+    // Lifetime boundary: validateMappedJsonObject has returned, destroying the
+    // complete Qt DOM before any package is constructed here. Only source byte
+    // ranges, scalar metadata, and one record's Qt DOM are retained below.
+    ValidatedJsonCursor root(bytes, bytes.startsWith("\xEF\xBB\xBF") ? 3 : 0);
+    root.skipWhitespace();
+    root.advance(); // opening object
+    root.skipWhitespace();
+    QJsonObject metadata;
+    JsonRange teachers;
+    JsonRange classes;
+    while (root.peek() != '}')
+    {
+        const QString key = scalarFragment(bytes, root.takeValue()).toString();
+        root.skipWhitespace();
+        root.advance(); // colon
+        const JsonRange value = root.takeValue();
+        if (key == QStringLiteral("teachers")) teachers = value;
+        else if (key == QStringLiteral("classes")) classes = value;
+        else if (key == QStringLiteral("format")
+                 || key == QStringLiteral("version")
+                 || key == QStringLiteral("exported_at_utc"))
+        {
+            // Containers cannot satisfy these scalar fields. Avoid building a
+            // DOM for even an arbitrarily large invalid metadata container.
+            metadata.insert(key, bytes[value.begin] == '{' || bytes[value.begin] == '['
+                ? QJsonValue(QJsonValue::Null) : scalarFragment(bytes, value));
+        }
+        root.skipWhitespace();
+        if (root.peek() == ',')
+        {
+            root.advance();
+            root.skipWhitespace();
+        }
+    }
+
+    // Match fromJson's schema/error precedence independently of root key order.
+    const auto format = requiredString(
+        metadata, QStringLiteral("format"), QStringLiteral("package"), false);
+    if (!format) return std::unexpected(format.error());
+    if (*format != FormatName)
+        return std::unexpected(QObject::tr("This is not a ClassMngr class package."));
+    const QJsonValue versionValue = metadata.value(QStringLiteral("version"));
+    if (!versionValue.isDouble() || versionValue.toInt() != versionValue.toDouble())
+        return std::unexpected(QObject::tr("package.version must be an integer."));
+    const int version = versionValue.toInt();
+    if (version != ClassTransferPackage::CurrentVersion)
+        return std::unexpected(QObject::tr("Unsupported class package version: %1").arg(version));
+    // The timestamp string requirement precedes both array requirements;
+    // parsing that string as a timestamp must wait until both arrays exist.
+    const auto timestamp = requiredString(metadata, QStringLiteral("exported_at_utc"),
+                                         QStringLiteral("package"), false);
+    if (!timestamp) return std::unexpected(timestamp.error());
+    if (teachers.end == 0 || bytes[teachers.begin] != '[')
+        return std::unexpected(QObject::tr("package.teachers must be an array."));
+    if (classes.end == 0 || bytes[classes.begin] != '[')
+        return std::unexpected(QObject::tr("package.classes must be an array."));
+    const QDateTime exportedAt = QDateTime::fromString(*timestamp, Qt::ISODateWithMs);
+    if (!exportedAt.isValid())
+        return std::unexpected(QObject::tr("package.exported_at_utc is not a valid timestamp."));
+    ValidatedJsonCursor classCursor(bytes, classes.begin + 1);
+    classCursor.skipWhitespace();
+    if (classCursor.peek() == ']')
+        return std::unexpected(QObject::tr("The class package does not contain any classes."));
+
+    ClassTransferPackage package;
+    package.version = version;
+    package.exportedAtUtc = exportedAt.toUTC();
+    QSet<QString> teacherKeys;
+    QSet<QString> classKeys;
+    ValidatedJsonCursor teacherCursor(bytes, teachers.begin + 1);
+    teacherCursor.skipWhitespace();
+    for (int index = 0; teacherCursor.peek() != ']'; ++index)
+    {
+        const JsonRange value = teacherCursor.takeValue();
+        if (bytes[value.begin] != '{')
+            return std::unexpected(QObject::tr("teachers[%1] must be an object.").arg(index));
+        auto teacher = teacherFromJson(
+            QJsonDocument::fromJson(jsonFragment(bytes, value)).object(), index);
+        if (!teacher) return std::unexpected(teacher.error());
+        if (teacherKeys.contains(teacher->key))
+            return std::unexpected(QObject::tr("Duplicate teacher key: %1").arg(teacher->key));
+        teacherKeys.insert(teacher->key);
+        package.teachers.append(*teacher);
+        teacherCursor.skipWhitespace();
+        if (teacherCursor.peek() == ',') teacherCursor.advance();
+        teacherCursor.skipWhitespace();
+    }
+    for (int index = 0; classCursor.peek() != ']'; ++index)
+    {
+        const JsonRange value = classCursor.takeValue();
+        if (bytes[value.begin] != '{')
+            return std::unexpected(QObject::tr("classes[%1] must be an object.").arg(index));
+        auto transferClass = classFromJson(
+            QJsonDocument::fromJson(jsonFragment(bytes, value)).object(), index);
+        if (!transferClass) return std::unexpected(transferClass.error());
+        if (classKeys.contains(transferClass->key))
+            return std::unexpected(QObject::tr("Duplicate class key: %1").arg(transferClass->key));
+        if (!transferClass->teacherKey.isEmpty() && !teacherKeys.contains(transferClass->teacherKey))
+            return std::unexpected(QObject::tr("Class %1 references an unknown teacher key: %2")
+                                       .arg(transferClass->key, transferClass->teacherKey));
+        classKeys.insert(transferClass->key);
+        package.classes.append(*transferClass);
+        classCursor.skipWhitespace();
+        if (classCursor.peek() == ',') classCursor.advance();
+        classCursor.skipWhitespace();
+    }
+    return package;
+}
+
 using namespace ClassMngr::Next::Application;
 QString exportText(const ClassExportText& value) { return QString::fromStdU16String(value); }
 QString exportKey(const ClassExportClassKey& value) { return QString::fromStdU16String(value.value()); }
@@ -1021,51 +1259,29 @@ Result<ClassTransferPackage> ClassTransferJsonCodec::loadFile(
             );
     }
 
-    QJsonParseError parseError;
-    QJsonDocument document;
     const qint64 fileSize = file.size();
-
     if (fileSize > 0
         && fileSize <= std::numeric_limits<qsizetype>::max())
     {
         uchar* const mappedData = file.map(0, fileSize);
-
         if (mappedData)
         {
-            {
-                const QByteArray mappedBytes = QByteArray::fromRawData(
-                    reinterpret_cast<const char*>(mappedData),
-                    static_cast<qsizetype>(fileSize)
-                    );
-                document = QJsonDocument::fromJson(mappedBytes, &parseError);
-            }
-
+            const QByteArray mappedBytes = QByteArray::fromRawData(
+                reinterpret_cast<const char*>(mappedData),
+                static_cast<qsizetype>(fileSize));
+            const Status valid = validateMappedJsonObject(mappedBytes);
+            auto result = valid
+                ? packageFromValidatedMappedJson(mappedBytes)
+                : Result<ClassTransferPackage>(std::unexpected(valid.error()));
             file.unmap(mappedData);
-        }
-        else
-        {
-            document = QJsonDocument::fromJson(file.readAll(), &parseError);
+            return result;
         }
     }
-    else
-    {
-        document = QJsonDocument::fromJson(file.readAll(), &parseError);
-    }
 
-    if (parseError.error != QJsonParseError::NoError)
-    {
-        return std::unexpected(
-            QObject::tr("The class package is not valid JSON:\n%1")
-                .arg(parseError.errorString())
-            );
-    }
-
-    if (!document.isObject())
-    {
-        return std::unexpected(
-            QObject::tr("The class package root must be an object.")
-            );
-    }
-
+    // Preserve readAll for empty, unrepresentable, or unmappable files.
+    QJsonParseError parseError;
+    const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &parseError);
+    const Status valid = jsonDocumentStatus(document, parseError);
+    if (!valid) return std::unexpected(valid.error());
     return fromJson(document.object());
 }

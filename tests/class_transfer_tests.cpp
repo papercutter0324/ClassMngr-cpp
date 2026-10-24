@@ -23,6 +23,7 @@
 #include <QFontDatabase>
 #include <QLabel>
 #include <QJsonDocument>
+#include <QJsonParseError>
 #include <QListWidget>
 #include <QPixmap>
 #include <QPushButton>
@@ -383,6 +384,8 @@ private slots:
     void incompleteCourseSignatureDoesNotMatch();
     void codecRejectsMalformedAndUnsupportedPackages();
     void codecLoadFilePreservesOpenAndRootErrors();
+    void codecMappedFileMatchesQt_data();
+    void codecMappedFileMatchesQt();
     void requiredSuccessFixtureTraversesReviewAndPersistsResults();
     void successFixtureReplacesMatchingTeacherThroughReview();
     void successFixtureReplacesMatchingDestinationAndChildren();
@@ -2761,6 +2764,9 @@ void ClassTransferTests::codecLoadFilePreservesOpenAndRootErrors()
         QStringLiteral("Unable to open the class package:\n");
     QVERIFY(missingFile.error().startsWith(openErrorPrefix));
     QVERIFY(missingFile.error().size() > openErrorPrefix.size());
+    QFile unavailableFile(missingPath);
+    QVERIFY(!unavailableFile.open(QIODevice::ReadOnly | QIODevice::Text));
+    QCOMPARE(missingFile.error(), openErrorPrefix + unavailableFile.errorString());
 
     const QString emptyPath = directory.filePath(
         QStringLiteral("empty.classmngr-classes.json"));
@@ -2784,6 +2790,255 @@ void ClassTransferTests::codecLoadFilePreservesOpenAndRootErrors()
     QVERIFY(!arrayRoot.has_value());
     QCOMPARE(arrayRoot.error(),
              QStringLiteral("The class package root must be an object."));
+}
+
+void ClassTransferTests::codecMappedFileMatchesQt_data()
+{
+    QTest::addColumn<QByteArray>("bytes");
+    QTest::addColumn<bool>("expectSuccess");
+    QTest::addColumn<QString>("expectedError");
+
+    ClassTransferPackage package;
+    package.exportedAtUtc = QDateTime::fromString(
+        QStringLiteral("2026-07-20T12:34:56.789Z"), Qt::ISODateWithMs);
+    package.teachers.append({QStringLiteral("teacher-1"), completeTeacher()});
+    package.teachers.append({QStringLiteral("teacher-2"), completeTeacher("Second")});
+    ClassTransferClass first;
+    first.key = QStringLiteral("class-1");
+    first.name = QStringLiteral("Escaped { [ ] } \\\" text\n한글");
+    first.teacherKey = QStringLiteral("teacher-2");
+    first.info = completeClassInfo(-1, -1, "E4", "Perseus", "Monday");
+    first.roster = completeRoster(QStringLiteral("Student } ] \\\""));
+    first.evaluations.append({QStringLiteral("任意 / {Evaluation} [\\\"]"),
+                              completeEvaluation("Student")});
+    package.classes.append(first);
+    first.key = QStringLiteral("class-2");
+    first.teacherKey = QStringLiteral("teacher-1");
+    package.classes.append(first);
+    const QJsonObject base = ClassTransferJsonCodec::toJson(package);
+    const auto encode = [](const QJsonValue& value) {
+        QByteArray bytes = QJsonDocument(QJsonArray{value}).toJson(QJsonDocument::Compact);
+        return bytes.mid(1, bytes.size() - 2);
+    };
+    const auto add = [](const QByteArray& name, const QByteArray& bytes,
+                        bool success, const QString& expectedError = {}) {
+        QTest::newRow(name.constData()) << bytes << success << expectedError;
+    };
+    const auto addObject = [&](const char* name, const QJsonObject& object,
+                              bool success = false, const QString& expectedError = {}) {
+        add(name, QJsonDocument(object).toJson(), success, expectedError);
+    };
+
+    // Exercise every root field order; schema validation must not use source order.
+    QStringList keys = base.keys();
+    int permutation = 0;
+    do
+    {
+        QByteArray bytes("{\n");
+        for (const QString& key : keys)
+            bytes += encode(key) + ':' + encode(base.value(key)) + ",\n";
+        bytes.chop(2);
+        bytes += "\n}";
+        add("root-order-" + QByteArray::number(permutation++), bytes, true);
+        bytes.replace("\n", "\r\n");
+        add("root-order-crlf-" + QByteArray::number(permutation), bytes, true);
+    }
+    while (std::next_permutation(keys.begin(), keys.end()));
+
+    const QByteArray compact = QJsonDocument(base).toJson(QJsonDocument::Compact);
+    add("utf8-bom", QByteArray::fromHex("efbbbf") + " \r\n" + compact, true);
+    add("unknown-nested-values", "{\"unknown\":[{},[true,false,null,-1.2e3,\"} ] \\\"\"]],"
+        + compact.mid(1), true);
+    add("unknown-nested-schema-names",
+        "{\"unknown { [ \\\"\":[{\"teachers\":[{\"classes\":[]}]}]," + compact.mid(1), true);
+    const QByteArray nestedUnknown = QByteArray(64, '[') + "{\"teachers\":null}"
+        + QByteArray(64, ']');
+    add("deep-unknown-values", "{\"unknown\":" + nestedUnknown + ',' + compact.mid(1), true);
+    for (const QString& key : base.keys())
+    {
+        const QByteArray property = encode(key) + ':';
+        add("duplicate-root-last-valid-" + key.toUtf8(),
+            '{' + property + "null," + compact.mid(1), true);
+        add("duplicate-root-last-invalid-" + key.toUtf8(),
+            compact.left(compact.size() - 1) + ',' + property + "null}", false);
+    }
+    QByteArray escapedKeys = compact;
+    escapedKeys.replace("\"version\":", "\"versi\\u006fn\":");
+    add("escaped-root-name", escapedKeys, true);
+    add("escaped-duplicate-root-last-invalid",
+        escapedKeys.left(escapedKeys.size() - 1) + ",\"vers\\u0069on\":null}", false);
+
+    QJsonObject object = base;
+    QJsonArray teachers = object.value("teachers").toArray();
+    QJsonObject teacher = teachers.first().toObject();
+    for (const auto& key : {"preferred_romanization", "preferred_name", "birthday", "phone_number"})
+        teacher.remove(key);
+    teacher.insert("unknown", QJsonArray{QJsonObject{{"nested", QJsonArray{1, 2, "[}]"}}}});
+    teachers[0] = teacher;
+    object.insert("teachers", teachers);
+    addObject("optional-teacher-fields-absent", object, true);
+    teacher.insert("preferred_name", false);
+    teachers[0] = teacher;
+    object.insert("teachers", teachers);
+    addObject("optional-teacher-field-wrong-type", object);
+
+    // Raw nested duplicate fields must be interpreted by Qt within each record.
+    QByteArray duplicateRecords = compact;
+    duplicateRecords.replace("\"teacher_en\":", "\"teacher_en\":false,\"teacher_en\":");
+    duplicateRecords.replace("\"key\":", "\"key\":null,\"key\":");
+    duplicateRecords.replace("\"notes\":", "\"notes\":[],\"notes\":");
+    duplicateRecords.replace("\"columns\":", "\"columns\":false,\"columns\":");
+    duplicateRecords.replace("\"name\":", "\"name\":{},\"name\":");
+    add("nested-duplicate-fields-last-valid", duplicateRecords, true);
+    duplicateRecords = compact;
+    duplicateRecords.replace("\"teacher_en\":\"Alex Kim\"", "\"teacher_en\":\"Alex Kim\",\"teacher_en\":false");
+    add("nested-duplicate-fields-last-invalid", duplicateRecords, false);
+
+    const QList<QPair<QString, QJsonValue>> invalidMetadata{
+        {"format", QJsonValue()}, {"format", " "}, {"format", "Other"},
+        {"format", QJsonArray{QJsonObject{{"nested", QJsonArray{1, 2}}}}},
+        {"version", QJsonValue()}, {"version", "1"}, {"version", true},
+        {"version", 1.5}, {"version", 99}, {"version", 2147483648.0},
+        {"version", QJsonObject{{"nested", QJsonArray{1, 2}}}},
+        {"exported_at_utc", false}, {"exported_at_utc", " "},
+        {"exported_at_utc", "invalid timestamp"},
+        {"teachers", QJsonValue()}, {"teachers", QJsonObject{}},
+        {"classes", QJsonValue()}, {"classes", QJsonObject{}}
+    };
+    int invalidIndex = 0;
+    for (const auto& [key, value] : invalidMetadata)
+    {
+        object = base;
+        object.insert(key, value);
+        addObject(qPrintable(QStringLiteral("invalid-metadata-%1").arg(invalidIndex++)), object);
+    }
+    for (const QString& key : base.keys())
+    {
+        object = base;
+        object.remove(key);
+        addObject(qPrintable("missing-" + key), object);
+    }
+    const auto invalidRecords = [&](const char* name, QJsonArray teachers, QJsonArray classes) {
+        QJsonObject object = base;
+        object.insert("teachers", teachers);
+        object.insert("classes", classes);
+        addObject(name, object);
+    };
+    const QJsonArray validTeachers = base.value("teachers").toArray();
+    const QJsonArray validClasses = base.value("classes").toArray();
+    invalidRecords("empty-classes-before-invalid-teacher", QJsonArray{false}, {});
+    invalidRecords("teacher-type-before-class-type", QJsonArray{false}, QJsonArray{false});
+    invalidRecords("class-record-not-object", validTeachers, QJsonArray{false});
+    object = base;
+    QJsonArray unassignedClasses = validClasses;
+    for (int index = 0; index < unassignedClasses.size(); ++index)
+    {
+        QJsonObject unassigned = unassignedClasses[index].toObject();
+        unassigned.insert("teacher_ref", "");
+        unassigned.insert("unknown", QJsonObject{{"nested", QJsonArray{false, "} ]"}}});
+        unassignedClasses[index] = unassigned;
+    }
+    object.insert("teachers", QJsonArray{});
+    object.insert("classes", unassignedClasses);
+    addObject("empty-teachers-with-unassigned-classes", object, true);
+    invalidRecords("duplicate-teacher-key", QJsonArray{validTeachers[0], validTeachers[0]}, validClasses);
+    invalidRecords("duplicate-class-key", validTeachers, QJsonArray{validClasses[0], validClasses[0]});
+    QJsonObject classroom = validClasses.first().toObject();
+    classroom.insert("teacher_ref", "unknown");
+    invalidRecords("unknown-teacher-reference", validTeachers, QJsonArray{classroom});
+    invalidRecords("duplicate-class-before-unknown-reference", validTeachers,
+                   QJsonArray{validClasses[0], classroom});
+    invalidRecords("teacher-decode-before-class-reference", QJsonArray{QJsonObject{}}, QJsonArray{classroom});
+    classroom = validClasses.first().toObject();
+    const QJsonValue evaluation = classroom.value("speaking_evaluations").toArray().first();
+    classroom.insert("speaking_evaluations", QJsonArray{evaluation, evaluation});
+    invalidRecords("duplicate-evaluation-name", validTeachers, QJsonArray{classroom});
+    object = base;
+    object.insert("exported_at_utc", "invalid timestamp");
+    object.remove("teachers");
+    object.remove("classes");
+    addObject("required-arrays-before-timestamp-parsing", object);
+    object.insert("teachers", validTeachers);
+    addObject("required-classes-before-timestamp-parsing", object);
+    object.insert("exported_at_utc", false);
+    addObject("timestamp-type-before-required-arrays", object);
+    object.insert("version", 99);
+    addObject("version-before-timestamp", object);
+    object.insert("format", "Other");
+    addObject("format-before-version", object);
+
+    const QStringList arrayStates{QStringLiteral("valid"), QStringLiteral("missing"),
+                                  QStringLiteral("wrong-type")};
+    for (const bool missingTimestamp : {false, true})
+    {
+        for (int teacherState = 0; teacherState < arrayStates.size(); ++teacherState)
+        {
+            for (int classState = 0; classState < arrayStates.size(); ++classState)
+            {
+                if (teacherState == 0 && classState == 0) continue;
+                object = base;
+                if (missingTimestamp) object.remove("exported_at_utc");
+                else object.insert("exported_at_utc", false);
+                if (teacherState == 1) object.remove("teachers");
+                else if (teacherState == 2) object.insert("teachers", false);
+                if (classState == 1) object.remove("classes");
+                else if (classState == 2) object.insert("classes", false);
+                const QString name = QStringLiteral("timestamp-%1-before-teachers-%2-classes-%3")
+                    .arg(missingTimestamp ? QStringLiteral("missing") : QStringLiteral("wrong-type"),
+                         arrayStates[teacherState], arrayStates[classState]);
+                addObject(qPrintable(name), object, false,
+                          QStringLiteral("package.exported_at_utc must be a string."));
+            }
+        }
+    }
+
+    const QList<QByteArray> malformed{
+        {}, " ", "{not-json", "{", "[", "true", "null", "1", "\"text\"",
+        "{\"format\":\"unterminated}", "{\"x\":\"bad\\q\"}", "{\"x\":\"bad\\u12\"}",
+        "{\"x\":1e}", "{\"x\":[1,]}", "{\"x\":{\"a\":1,}}", "{} garbage",
+        "{\"classes\":[]", compact.left(compact.size() - 1), "[]", "[{},[]]"
+    };
+    add("qt-nesting-limit-error", "{\"unknown\":" + QByteArray(2000, '[') + '0'
+        + QByteArray(2000, ']') + ',' + compact.mid(1), false);
+    for (int index = 0; index < malformed.size(); ++index)
+        add("qt-parser-error-" + QByteArray::number(index), malformed[index], false);
+}
+
+void ClassTransferTests::codecMappedFileMatchesQt()
+{
+    QFETCH(QByteArray, bytes);
+    QFETCH(bool, expectSuccess);
+    QFETCH(QString, expectedError);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("package.json"));
+    QFile file(path);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    QCOMPARE(file.write(bytes), bytes.size());
+    file.close();
+
+    QJsonParseError parseError;
+    const QJsonDocument document = QJsonDocument::fromJson(bytes, &parseError);
+    const auto expected = [&]() -> Result<ClassTransferPackage> {
+        if (parseError.error != QJsonParseError::NoError)
+            return std::unexpected(QStringLiteral("The class package is not valid JSON:\n%1")
+                                       .arg(parseError.errorString()));
+        if (!document.isObject())
+            return std::unexpected(QStringLiteral("The class package root must be an object."));
+        return ClassTransferJsonCodec::fromJson(document.object());
+    }();
+    QCOMPARE(expected.has_value(), expectSuccess);
+    if (!expectedError.isEmpty())
+    {
+        QVERIFY(!expected.has_value());
+        QCOMPARE(expected.error(), expectedError);
+    }
+    const auto loaded = ClassTransferJsonCodec::loadFile(path);
+    QCOMPARE(loaded.has_value(), expected.has_value());
+    if (expected)
+        QCOMPARE(ClassTransferJsonCodec::toJson(*loaded), ClassTransferJsonCodec::toJson(*expected));
+    else
+        QCOMPARE(loaded.error(), expected.error());
 }
 
 void ClassTransferTests::previewPreservesQtNameAndCourseNormalization()
