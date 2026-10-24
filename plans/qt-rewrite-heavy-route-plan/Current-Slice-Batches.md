@@ -17,15 +17,13 @@ verification evidence in its progress log.
   began.
 - Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`; its
   implementation tip is `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`.
-- Batch 5 discovery is complete and Batch 5 is active with F1416 — Schedule
-  Import apply current. F1415 — Schedule Import current-state snapshot is
-  accepted at `e78f2056`; 1 prioritized candidate remains. Batch 5 remains
-  unpushed until its remaining slice is complete.
-- Batch 6 discovery is complete and waits for Batch 5 to close and push. No
-  prioritized candidates were identified. No other slices were found. Broader
-  `databaseSession()`/`DataService` paths remain unranked for future discovery.
+- Batch 5 is complete locally (19/19 slices accepted) at implementation tip
+  `61d1fc9f`; it remains unpushed.
+- Batch 6 discovery found no prioritized candidates: `No other slices were
+  found.` Broader `databaseSession()`/`DataService` paths remain unranked for
+  future discovery; this does not exhaust the Phase 3 backlog.
 
-## Phase 3 — Batch 5 (active; F1416 current)
+## Phase 3 — Batch 5 (complete locally; unpushed)
 
 Two complementary scans found 19 prioritized, distinct persistence slices.
 The source scan found exactly 19 active Next Platform ports after excluding
@@ -54,7 +52,7 @@ scan-identified item is a candidate, not a test result.
 17. F1414 — Teacher Import latest-source-date read (accepted; F1349 apply
     already done)
 18. F1415 — Schedule Import current-state snapshot (accepted at `e78f2056`)
-19. F1416 — Schedule Import apply (current)
+19. F1416 — Schedule Import apply (accepted; implementation tip `61d1fc9f`)
 
 Three direct session-check guards—Speaking Eval, Teacher Info, and Sidebar—
 were audited as incidental behavior guards, not independent persistence

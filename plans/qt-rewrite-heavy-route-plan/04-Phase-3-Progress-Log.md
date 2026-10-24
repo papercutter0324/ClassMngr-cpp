@@ -2622,3 +2622,30 @@ passed 2/2, with no warnings or retries. The CTest log is
 suite, UI suite, or cross-platform build ran.
 
 Commit: `e78f2056`.
+
+## F1416 — Schedule Import apply (Batch 5 candidate 19 of 19) — 2026-10-24
+
+Migrated the Schedule Import apply adapter to resolve
+`ApplicationServices::workspaceStore()` and its `ScheduleImportRepository`
+on each apply call. Direct Platform fixture persistence now uses
+`WorkspaceStore`. ApplyUseCase, repository, and UI behavior are unchanged.
+Existing typed validation, qint64 teacher/int32 class IDs,
+repository transaction/result mapping, the `No Teacher Profile is open.`
+failure, and the legacy `ScheduleService::importSchedule` comparison remain
+unchanged.
+
+The incremental macOS Debug build in `build/macos-clang-debug` passed for
+`ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`.
+CTest #333 `ClassMngrNextApplicationScheduleImportApplyUseCaseTests` and
+CTest #486
+`ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`
+passed 2/2 with no warnings or retries; the Platform QtTest had 9 passed.
+The CTest log is
+`build/macos-clang-debug/Testing/Temporary/LastTest.log`;
+`git diff --check` passed. No broader suite or cross-platform build ran.
+
+Batch 5 is complete locally (19/19 accepted) at implementation tip
+`61d1fc9f`; it remains unpushed. Batch 6 discovery found no prioritized
+candidates: `No other slices were found.` Broader unranked
+`databaseSession()`/`DataService` paths remain for future discovery; this does
+not exhaust the Phase 3 backlog.
