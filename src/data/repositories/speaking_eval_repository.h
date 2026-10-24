@@ -51,6 +51,11 @@ public:
     using ReadResult = std::expected<SpeakingEvalRows, ReadFailure>;
     using BatchReadResult =
         std::expected<QList<SpeakingEvalNamedRows>, ReadFailure>;
+    using ReadStreamResult = std::expected<void, ReadFailure>;
+    using BatchReadStreamResult = std::expected<void, ReadFailure>;
+    using ReadRowConsumer = std::function<void(const QStringList&)>;
+    using BatchReadRowConsumer =
+        std::function<void(qsizetype, const QStringList&)>;
 
     struct ClassAnalyticsEvaluationRow final
     {
@@ -92,6 +97,17 @@ public:
         const QString& evaluationName
         );
 
+    // Streams validated rows in persisted row order. The const QStringList&
+    // row is borrowed and valid only for the callback duration; copy it if it
+    // must be retained. Rows delivered before a failure are provisional, so
+    // consumers must only publish accumulated results after success. Consumer
+    // exceptions propagate.
+    [[nodiscard]] ReadStreamResult forEachSpeakingEvalRowDetailed(
+        int classId,
+        const QString& evaluationName,
+        const ReadRowConsumer& consumer
+        );
+
     [[nodiscard]] Result<QList<SpeakingEvalNamedRows>> loadSpeakingEvalBatch(
         int classId,
         const QStringList& evaluationNames
@@ -102,6 +118,17 @@ public:
     [[nodiscard]] BatchReadResult loadSpeakingEvalBatchDetailed(
         int classId,
         const QStringList& evaluationNames
+        );
+
+    // Streams validated rows in requested evaluation order and persisted row
+    // order. Each callback receives the zero-based requested evaluation
+    // position and a borrowed const QStringList& row that is valid only for
+    // the callback duration; copy it if it must be retained. Rows delivered
+    // before a failure are provisional. Consumer exceptions propagate.
+    [[nodiscard]] BatchReadStreamResult forEachSpeakingEvalBatchRowDetailed(
+        int classId,
+        const QStringList& evaluationNames,
+        const BatchReadRowConsumer& consumer
         );
 
     // Streams the eight dashboard cells in request order, then persisted row

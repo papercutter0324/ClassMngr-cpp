@@ -46,24 +46,16 @@ QString legacyText(const std::u16string& value)
         );
 }
 
-std::vector<std::vector<std::u16string>> applicationRows(
-    const SpeakingEvalRows& rows
-    )
+std::vector<std::u16string> applicationRow(const QStringList& sourceRow)
 {
-    std::vector<std::vector<std::u16string>> result;
-    result.reserve(static_cast<std::size_t>(rows.size()));
-    for (const QStringList& sourceRow : rows)
+    std::vector<std::u16string> row;
+    row.reserve(static_cast<std::size_t>(sourceRow.size()));
+    for (const QString& cell : sourceRow)
     {
-        std::vector<std::u16string> row;
-        row.reserve(static_cast<std::size_t>(sourceRow.size()));
-        for (const QString& cell : sourceRow)
-        {
-            row.push_back(cell.toStdU16String());
-        }
-        result.push_back(std::move(row));
+        row.push_back(cell.toStdU16String());
     }
 
-    return result;
+    return row;
 }
 
 std::string toStdString(const QString& value)
@@ -121,6 +113,12 @@ ApplicationServicesSpeakingEvaluationReadPort(
 {
 }
 
+std::size_t
+ApplicationServicesSpeakingEvaluationReadPort::successfulCompletedRows() const noexcept
+{
+    return m_successfulCompletedRows.load(std::memory_order_relaxed);
+}
+
 Application::SpeakingEvaluationReadResult
 ApplicationServicesSpeakingEvaluationReadPort::readEvaluation(
     const Application::SpeakingEvaluationReadQuery& query
@@ -153,11 +151,19 @@ ApplicationServicesSpeakingEvaluationReadPort::readEvaluation(
 
     try
     {
-        const SpeakingEvalRepository::ReadResult loaded =
-            repository->loadSpeakingEvalDetailed(
-            *classId,
-            legacyText(query.evaluationName)
-            );
+        Application::SpeakingEvaluationReadSnapshot snapshot{
+            .classId = query.classId,
+            .evaluationName = query.evaluationName
+        };
+        const SpeakingEvalRepository::ReadStreamResult loaded =
+            repository->forEachSpeakingEvalRowDetailed(
+                *classId,
+                legacyText(query.evaluationName),
+                [&snapshot](const QStringList& row)
+                {
+                    snapshot.rows.push_back(applicationRow(row));
+                }
+                );
         if (!loaded)
         {
             if (
@@ -177,11 +183,18 @@ ApplicationServicesSpeakingEvaluationReadPort::readEvaluation(
                 );
         }
 
-        return Application::SpeakingEvaluationReadResult::success({
-            .classId = query.classId,
-            .evaluationName = query.evaluationName,
-            .rows = applicationRows(*loaded)
-        });
+        const std::size_t completedRows = snapshot.rows.size();
+        auto result = Application::SpeakingEvaluationReadResult::success(
+            std::move(snapshot)
+            );
+        if (result)
+        {
+            m_successfulCompletedRows.fetch_add(
+                completedRows,
+                std::memory_order_relaxed
+                );
+        }
+        return result;
     }
     catch (const std::exception&)
     {

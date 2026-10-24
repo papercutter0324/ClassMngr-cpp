@@ -81,24 +81,16 @@ unavailableFailure()
         });
 }
 
-std::vector<std::vector<std::u16string>> applicationRows(
-    const SpeakingEvalRows& rows
-    )
+std::vector<std::u16string> applicationRow(const QStringList& sourceRow)
 {
-    std::vector<std::vector<std::u16string>> result;
-    result.reserve(static_cast<std::size_t>(rows.size()));
-    for (const QStringList& sourceRow : rows)
+    std::vector<std::u16string> row;
+    row.reserve(static_cast<std::size_t>(sourceRow.size()));
+    for (const QString& cell : sourceRow)
     {
-        std::vector<std::u16string> row;
-        row.reserve(static_cast<std::size_t>(sourceRow.size()));
-        for (const QString& cell : sourceRow)
-        {
-            row.push_back(cell.toStdU16String());
-        }
-        result.push_back(std::move(row));
+        row.push_back(cell.toStdU16String());
     }
 
-    return result;
+    return row;
 }
 
 } // namespace
@@ -120,6 +112,12 @@ ApplicationServicesSpeakingEvaluationBatchReadPort(
     ) noexcept
     : m_services(services)
 {
+}
+
+std::size_t
+ApplicationServicesSpeakingEvaluationBatchReadPort::successfulCompletedRows() const noexcept
+{
+    return m_successfulCompletedRows.load(std::memory_order_relaxed);
 }
 
 Application::SpeakingEvaluationReadBatchResult
@@ -168,10 +166,26 @@ ApplicationServicesSpeakingEvaluationBatchReadPort::readEvaluations(
             evaluationNames.append(legacyText(name));
         }
 
-        const SpeakingEvalRepository::BatchReadResult loaded =
-            repository->loadSpeakingEvalBatchDetailed(
+        Application::SpeakingEvaluationReadBatchSnapshot snapshot;
+        snapshot.evaluations.reserve(query.evaluationNames.size());
+        for (const std::u16string& name : query.evaluationNames)
+        {
+            snapshot.evaluations.push_back({
+                .classId = query.classId,
+                .evaluationName = name
+            });
+        }
+
+        const SpeakingEvalRepository::BatchReadStreamResult loaded =
+            repository->forEachSpeakingEvalBatchRowDetailed(
                 *classId,
-                evaluationNames
+                evaluationNames,
+                [&snapshot](const qsizetype index, const QStringList& row)
+                {
+                    snapshot.evaluations[
+                        static_cast<std::size_t>(index)
+                        ].rows.push_back(applicationRow(row));
+                }
                 );
         if (!loaded)
         {
@@ -185,7 +199,7 @@ ApplicationServicesSpeakingEvaluationBatchReadPort::readEvaluations(
                 );
         }
 
-        if (loaded->size() != static_cast<qsizetype>(query.evaluationNames.size()))
+        if (snapshot.evaluations.size() != query.evaluationNames.size())
         {
             return failure(
                 Domain::ErrorCode::Validation,
@@ -194,22 +208,33 @@ ApplicationServicesSpeakingEvaluationBatchReadPort::readEvaluations(
                 );
         }
 
-        Application::SpeakingEvaluationReadBatchSnapshot snapshot;
-        snapshot.evaluations.reserve(query.evaluationNames.size());
+        std::size_t completedRows = 0;
         for (std::size_t index = 0; index < query.evaluationNames.size(); ++index)
         {
-            const SpeakingEvalNamedRows& source =
-                loaded->at(static_cast<qsizetype>(index));
-            snapshot.evaluations.push_back({
-                .classId = query.classId,
-                .evaluationName = source.evaluationName.toStdU16String(),
-                .rows = applicationRows(source.rows)
-            });
+            const auto& evaluation = snapshot.evaluations[index];
+            if (evaluation.classId != query.classId
+                || evaluation.evaluationName != query.evaluationNames[index])
+            {
+                return failure(
+                    Domain::ErrorCode::Validation,
+                    "The speaking evaluation repository returned a different "
+                    "query identity or order."
+                    );
+            }
+            completedRows += evaluation.rows.size();
         }
 
-        return Application::SpeakingEvaluationReadBatchResult::success(
+        auto result = Application::SpeakingEvaluationReadBatchResult::success(
             std::move(snapshot)
             );
+        if (result)
+        {
+            m_successfulCompletedRows.fetch_add(
+                completedRows,
+                std::memory_order_relaxed
+                );
+        }
+        return result;
     }
     catch (const std::exception&)
     {

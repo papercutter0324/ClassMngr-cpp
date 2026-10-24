@@ -643,7 +643,31 @@ SpeakingEvalRepository::loadSpeakingEvalDetailed(
     const QString& evaluationName
     )
 {
-    const auto technicalFailure = [](QString diagnostic) -> ReadResult
+    SpeakingEvalRows rows;
+    const ReadStreamResult loaded = forEachSpeakingEvalRowDetailed(
+        classId,
+        evaluationName,
+        [&rows](const QStringList& row)
+        {
+            rows.append(row);
+        }
+        );
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+
+    return rows;
+}
+
+SpeakingEvalRepository::ReadStreamResult
+SpeakingEvalRepository::forEachSpeakingEvalRowDetailed(
+    const int classId,
+    const QString& evaluationName,
+    const ReadRowConsumer& consumer
+    )
+{
+    const auto technicalFailure = [](QString diagnostic) -> ReadStreamResult
     {
         return std::unexpected(ReadFailure{
             .kind = ReadFailure::Kind::Technical,
@@ -706,7 +730,6 @@ SpeakingEvalRepository::loadSpeakingEvalDetailed(
         return technicalFailure(loaded.error().userMessage());
     }
 
-    SpeakingEvalRows rows;
     bool parentClassFound = false;
     while (query.next())
     {
@@ -751,7 +774,7 @@ SpeakingEvalRepository::loadSpeakingEvalDetailed(
                 query.value(QStringLiteral("col_%1").arg(column)).toString()
                 );
         }
-        rows.append(std::move(row));
+        consumer(row);
     }
 
     if (query.lastError().isValid())
@@ -777,7 +800,7 @@ SpeakingEvalRepository::loadSpeakingEvalDetailed(
         });
     }
 
-    return rows;
+    return {};
 }
 
 Result<QList<SpeakingEvalNamedRows>>
@@ -947,14 +970,6 @@ SpeakingEvalRepository::loadSpeakingEvalBatchDetailed(
     const QStringList& evaluationNames
     )
 {
-    const auto technicalFailure = [](QString diagnostic) -> BatchReadResult
-    {
-        return std::unexpected(ReadFailure{
-            .kind = ReadFailure::Kind::Technical,
-            .diagnostic = std::move(diagnostic)
-        });
-    };
-
     QList<SpeakingEvalNamedRows> evaluations;
     evaluations.reserve(evaluationNames.size());
     for (const QString& evaluationName : evaluationNames)
@@ -968,6 +983,43 @@ SpeakingEvalRepository::loadSpeakingEvalBatchDetailed(
     if (evaluationNames.isEmpty())
     {
         return evaluations;
+    }
+
+    const BatchReadStreamResult loaded = forEachSpeakingEvalBatchRowDetailed(
+        classId,
+        evaluationNames,
+        [&evaluations](const qsizetype ordinal, const QStringList& row)
+        {
+            evaluations[ordinal].rows.append(row);
+        }
+        );
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+
+    return evaluations;
+}
+
+SpeakingEvalRepository::BatchReadStreamResult
+SpeakingEvalRepository::forEachSpeakingEvalBatchRowDetailed(
+    const int classId,
+    const QStringList& evaluationNames,
+    const BatchReadRowConsumer& consumer
+    )
+{
+    const auto technicalFailure = [](QString diagnostic)
+        -> BatchReadStreamResult
+    {
+        return std::unexpected(ReadFailure{
+            .kind = ReadFailure::Kind::Technical,
+            .diagnostic = std::move(diagnostic)
+        });
+    };
+
+    if (evaluationNames.isEmpty())
+    {
+        return {};
     }
 
     if (classId <= 0)
@@ -1063,7 +1115,9 @@ SpeakingEvalRepository::loadSpeakingEvalBatchDetailed(
     {
         bool ordinalValid = false;
         const int ordinal = query.value(0).toInt(&ordinalValid);
-        if (!ordinalValid || ordinal < 0 || ordinal >= evaluations.size())
+        if (!ordinalValid
+            || ordinal < 0
+            || static_cast<qsizetype>(ordinal) >= evaluationNames.size())
         {
             return technicalFailure(
                 QObject::tr(
@@ -1107,7 +1161,7 @@ SpeakingEvalRepository::loadSpeakingEvalBatchDetailed(
         {
             row.append(query.value(6 + column).toString());
         }
-        evaluations[ordinal].rows.append(std::move(row));
+        consumer(static_cast<qsizetype>(ordinal), row);
     }
 
     if (query.lastError().isValid())
@@ -1133,7 +1187,7 @@ SpeakingEvalRepository::loadSpeakingEvalBatchDetailed(
         });
     }
 
-    return evaluations;
+    return {};
 }
 
 Result<QList<SpeakingEvalScore>> SpeakingEvalRepository::buildRosterScoreImport(
