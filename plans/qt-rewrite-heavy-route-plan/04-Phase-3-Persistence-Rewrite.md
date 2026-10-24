@@ -48,8 +48,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   read), F1380 (Roster snapshot read), F1381 (Roster column-name batch read),
   F1382 (Roster template-print source read), F1383 (Roster print class-info
   read), and F1384 (Speaking-evaluation roster-name read) are accepted;
-  F1385 (GS Team directory read) is current. F1376–F1384 implementation
-  evidence,
+  F1385 (GS Team directory read) is accepted; F1386 (GS Team directory save)
+  is current. F1376–F1385 implementation evidence,
   Batch 2 and Batch 3 push receipts, and earlier UI limitations and
   attribution notes are in the [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -69,14 +69,14 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1384 — 2026-10-24
+## Latest Progress Update — F1385 — 2026-10-24
 
-F1384 is accepted; F1385 is current in Batch 4. The Speaking-evaluation
-roster-name port and direct Platform fixture accesses now use `WorkspaceStore`;
-assertions are unchanged, and the page fixture is untouched. The application
-query, Platform-port, and SpeakingEvalPageSave CTests passed serially (3/3).
-No full suite or cross-platform build ran. The [progress log](04-Phase-3-Progress-Log.md)
-records F1384 evidence and preserves the F1383 Platform baseline limitation.
+F1385 is accepted; F1386 is current in Batch 4. The GS Team directory read
+port and its dedicated Platform fixture now use `WorkspaceStore`; assertions,
+including the intentional stored-ID failure case `4294967297`, are unchanged.
+The save port is untouched. Four selected serial CTests passed (4/4). No full
+suite or cross-platform build ran. The [progress log](04-Phase-3-Progress-Log.md)
+records F1385 evidence and preserves the F1383 Platform baseline limitation.
 
 ## Objective
 

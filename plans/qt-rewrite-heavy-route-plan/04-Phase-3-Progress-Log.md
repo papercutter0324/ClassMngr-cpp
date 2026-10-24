@@ -1728,3 +1728,25 @@ Three selected serial CTests passed (3/3): #223
 and #137 `ClassMngrSpeakingEvalPageSaveTests`. `git diff --check` passed. No
 full suite or cross-platform build ran. F1384 is accepted; F1385 (GS Team
 directory read) is current.
+
+Commit: `d29a05c176ec2d3e383b15a768d236ffb069d91b`.
+
+## F1385 — GS Team directory read (Batch 4 candidate 8 of 20) — 2026-10-24
+
+The production GS Team directory read port,
+`src/next/platform/application_services_gs_team_directory_read_port.h`, and
+its dedicated Platform fixture,
+`tests/next_platform_application_services_gs_team_directory_read_port_tests.cpp`,
+now use `WorkspaceStore`. Assertions are unchanged, including intentional
+stored-ID failure coverage for `4294967297`. The save port was untouched.
+
+Built `ClassMngrNextApplicationGsTeamDirectoryReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesGsTeamDirectoryReadPortTests`,
+`ClassMngrStaffDirectoryGsTeamReadTests`, and
+`ClassMngrStaffDirectoryGsTeamReadParityTests`. Four selected serial CTests
+passed (4/4): #353 `ClassMngrNextApplicationGsTeamDirectoryReadQueryTests`,
+#421 `ClassMngrNextPlatformApplicationServicesGsTeamDirectoryReadPortTests`,
+#130 `ClassMngrStaffDirectoryGsTeamReadTests`, and #131
+`ClassMngrStaffDirectoryGsTeamReadParityTests`. `git diff --check` passed. No
+full suite or cross-platform build ran. F1385 is accepted; F1386 (GS Team
+directory save) is current.

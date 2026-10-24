@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/gs_team_repository.h"
 #include "domain/models/gs_team_member.h"
 #include "next/domain/domain_types.h"
@@ -84,14 +84,14 @@ bool seedDirectory(ApplicationServices& services)
             QStringLiteral("M1"), QStringLiteral("010-2000-0002"),
             QStringLiteral("02-03"))
     };
-    const Status saved = services.databaseSession()
+    const Status saved = services.workspaceStore()
         ->gsTeamRepository()->saveDirectory(members, {});
     return static_cast<bool>(saved);
 }
 
 QString persistedWideIdRowsMismatch(ApplicationServices& services)
 {
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     if (!query.exec(QStringLiteral(R"(
         SELECT id, typeof(id) AS id_type, name, korean_name, position,
                phone_number, birthday
@@ -178,7 +178,7 @@ readsMappedRowsInRepositoryOrderFromActiveSession()
     QVERIFY(services.openDatabase(databasePath(directory)));
     QVERIFY(seedDirectory(services));
 
-    const auto persisted = services.databaseSession()
+    const auto persisted = services.workspaceStore()
         ->gsTeamRepository()->getAll();
     QVERIFY(persisted);
     Application::GsTeamDirectorySnapshot expected;
@@ -227,7 +227,7 @@ reportsUnavailableSessionSeparatelyFromRepositoryFailure()
     QVERIFY(services.openDatabase(databasePath(directory)));
     QVERIFY(seedDirectory(services));
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE gs_team")),
         qPrintable(query.lastError().text()));
     const auto repositoryFailure = port.readGsTeamDirectory();
@@ -250,7 +250,7 @@ rejectsTerminalCursorFailureWithoutPartialSnapshot()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
 
     QSqlQuery schema(database);
     QVERIFY2(schema.exec(QStringLiteral("DROP TABLE gs_team")),
@@ -350,7 +350,7 @@ rejectsTerminalCursorFailureWithoutPartialSnapshot()
         qPrintable(rawCursorError.text()));
     rawQuery.finish();
 
-    const auto repositoryResult = services.databaseSession()
+    const auto repositoryResult = services.workspaceStore()
         ->gsTeamRepository()->getAll();
     QVERIFY(!repositoryResult);
     QVERIFY(repositoryResult.error().contains(
@@ -378,7 +378,7 @@ rejectsWidePersistedIdsWithoutChangingStoredRows()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
 
-    QSqlQuery insert(services.databaseSession()->database());
+    QSqlQuery insert(services.workspaceStore()->database());
     QVERIFY2(insert.exec(QStringLiteral(R"(
         INSERT INTO gs_team
             (id, name, korean_name, position, phone_number, birthday)
