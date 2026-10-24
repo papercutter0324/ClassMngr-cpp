@@ -50,12 +50,16 @@ verification evidence in its progress log.
    4097-event cases passed. No production changes; no full-suite or Windows
    claim.
 7. **F1425 — Compact Schedule Import persistence snapshot plus large 96-class
-   query/result/lifetime evidence (current).** Phase 3 owns the
-   persistence/query side; Schedule Import review and presentation remain
-   Phase 7E work.
+   query/result/lifetime evidence (accepted).** Focused macOS arm64/Qt 6.12.0
+   verification passed 8/8 executable cases, 3/3 for the large case, and CTest
+   1/1. The full ordered output was checked; query counts cover teacher,
+   metadata, regular, and intensive queries. The class-name query is not
+   instrumented. No heap-byte or full-suite claim. Phase 7E retains review and
+   presentation ownership.
 8. **F1426 — Staged/file-backed workbook representation lifetime at the
-   reader boundary.** This preserves the shared Phase 3/7F boundary.
-9. **F1427 — Class-transfer codec representation lifetime before dialog/UI.**
+   reader boundary (current).** This preserves the shared Phase 3/7F boundary.
+9. **F1427 — Class-transfer codec representation lifetime before dialog/UI
+   (remaining).**
    Phase 3.4 retains the codec boundary; Phase 8 retains transfer/export
    operation ownership.
 

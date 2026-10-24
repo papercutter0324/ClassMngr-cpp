@@ -6,15 +6,10 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-24
-- Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 9 is active with discovery complete. F1419's runtime schema-v6 DDL,
-  index, and constraint contract tests are accepted; F1420's docs-only API
-  inventory and F1421's populated-v6 SaveAs/export slice are
-  accepted; F1422's locked/truncated-file preservation slice is accepted, and
-  F1423's interrupted-copy preservation slice and F1424's Calendar Import
-  transaction coverage are accepted; F1425 is current with two later
-  candidates. Begin Batch 10 discovery when F1426 (candidate 8 of 9) starts.
-  The current details are in the
+- Current milestone: Phase 3 remains In Progress on the mandatory Heavy route
+  with its exit gate open. Batch 9 is active: F1425 is accepted, F1426
+  (candidate 8 of 9) is current, and F1427 remains. Begin Batch 10 discovery
+  when F1426 starts. Current details are in the
   [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [F1420 DataService migration map](../../docs/qt-rewrite/data-service-migration-map.md),

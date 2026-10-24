@@ -2831,7 +2831,27 @@ nested-transaction start failure was checked for zero calendar rows and the
 expected sequence both before and after outer rollback. A deferred-FK commit
 failure returned `Technical` and rolled back calendar/child rows and sequence.
 Existing mid-write small and 4097-event cases still passed. No production
-changes were made; no full-suite or Windows claim is made. F1425, the compact
-Schedule Import persistence snapshot and large 96-class query/result/lifetime
-evidence, is current in Batch 9. Batch 10 discovery remains due when F1426
-(candidate 8 of 9, the second-to-last) starts. Phase 3 remains In Progress.
+changes were made; no full-suite or Windows claim is made.
+
+## F1425 — Compact Schedule Import snapshot assembly — 2026-10-24
+
+Accepted at commit `6c250b1083253566f8023b088f6942abf283f3b9` (`Phase3 -
+Compact Schedule Import snapshot assembly`). The adapter replaced redundant
+class-name and teacher-pointer hash maps with short-lived ID membership sets,
+preserving source read sequence, failure paths, duplicate and invalid ID
+checks, output, and repository order. It retains the class-info ID-to-record
+lookup used to restore class repository order. No read consolidation, review
+UI, or feature behavior changed.
+
+Independent macOS arm64 / Qt 6.12.0 verification in `build/macos-clang-debug`
+passed for the affected executable (8/8), the new large case (3/3 Qt setup,
+test, and cleanup), and its focused CTest (1/1); `git diff --check` passed.
+Assertions compared full ordered output for 24 teachers and 96 classes,
+every projected field and regular/intensive time tuple, and totals of 768
+regular and 24 intensive schedule rows. Metrics asserted one teacher
+statement and one each for metadata, regular, and intensive queries. The
+ClassRepository class-name query is not instrumented: source executes it once,
+with no test metric claim for it. No heap-byte measurement, full-suite result,
+or platform-wide result is claimed. F1426 is current (candidate 8 of 9), F1427
+remains, Batch 10 discovery begins when F1426 starts, and the Phase 3 exit
+gate remains open; Phase 3 remains In Progress.

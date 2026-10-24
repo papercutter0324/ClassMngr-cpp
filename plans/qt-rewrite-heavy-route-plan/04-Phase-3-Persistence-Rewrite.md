@@ -38,18 +38,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 9 is active with complete discovery and nine ordered
-  candidates. F1419 runtime schema-v6 DDL/index/constraint contract tests are
-  accepted; F1420's documentation-only API inventory and F1421's populated-v6
-  SaveAs/export slice are accepted; F1422's locked/truncated-file preservation
-  slice, F1423's interrupted-copy preservation slice, and F1424's Calendar
-  Import transaction coverage are accepted; F1425 is current. Batch 10
-  discovery is due when F1426 (candidate 8 of 9) starts. The [DataService migration
+- Current note: Batch 9 remains active with F1426 (candidate 8 of 9) current;
+  F1425 is accepted and F1427 remains. Begin Batch 10 discovery when F1426
+  starts. The Phase 3 exit gate remains open. The [DataService migration
   map](../../docs/qt-rewrite/data-service-migration-map.md) records F1420's
-  deliverable. The ordered scope and full-exit audit evidence are in the
-  current tracker and progress log.
-  The map records that `DataService::save()` has no ordinary production caller.
-  See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
+  deliverable, including that `DataService::save()` has no ordinary production
+  caller. See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
 
@@ -66,17 +60,28 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1424 — 2026-10-24
+## Latest Progress Update — F1425 — 2026-10-24
 
-F1424's Calendar Import transaction coverage is accepted. On focused macOS
-arm64/Qt 6.12.0, `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`
-CTest passed 1/1; the verbose run passed 81 Qt cases with zero failed or
-skipped. Nested-transaction start failure left zero calendar rows and the
-expected sequence both before and after outer rollback. Deferred-FK commit
-failure returned `Technical` and rolled back calendar/child rows and sequence;
-existing mid-write small and 4097-event cases still passed. No production
-changes were made; no full-suite or Windows claim is made. F1425 is current in
-Batch 9, and the Phase 3 exit gate and backlog remain open. See the [progress
+F1425, `Phase3 - Compact Schedule Import snapshot assembly`, is accepted at
+`6c250b1083253566f8023b088f6942abf283f3b9`. The adapter replaced redundant
+class-name and teacher-pointer hash maps with short-lived ID membership sets,
+while preserving source read sequence, failure paths, duplicate and invalid
+ID checks, output, and repository order. It retains the class-info ID-to-record
+lookup needed to restore class repository order. No read consolidation, review
+UI, or feature behavior changed.
+
+Independent macOS arm64 / Qt 6.12.0 verification in `build/macos-clang-debug`
+passed for the affected executable (8/8), the new large case (3/3 Qt setup,
+test, and cleanup), and its focused CTest (1/1); `git diff --check` passed.
+Assertions compared the full ordered output for 24 teachers and 96 classes,
+all projected fields and regular/intensive time tuples, and totals of 768
+regular plus 24 intensive schedule rows. Metrics asserted one teacher
+statement and one each for metadata, regular, and intensive queries. The
+ClassRepository class-name query has no instrumentation: source executes it
+once, with no test metric claim for it. No heap-byte measurement or full-suite
+or platform-wide claim is made. F1426 is current (candidate 8 of 9), F1427
+remains, and Batch 10 discovery starts when F1426 starts. Phase 3 and its exit
+gate remain open; Phase 3 remains In Progress. See the [progress
 log](04-Phase-3-Progress-Log.md).
 
 ## Objective
