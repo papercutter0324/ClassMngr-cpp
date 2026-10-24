@@ -15,10 +15,10 @@
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   its receipt records implementation tip
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1399 (Calendar event-type color preferences)
-  current. F1398 (Middle-school analytics preferences) is accepted at
-  `4d19087140f1d4723087c6c460afa06f32ae0f37`; its focused verification passed.
-  The current batch tracker retains the ordered list, with 18 slices remaining.
+  and Batch 5 is active with F1400 (Class-day-filter reset policy) current.
+  F1399 (Calendar event-type color preferences) is accepted at
+  `d6d20fa4fc804c094bbe304bfd2a90707f111014`; its focused verification passed.
+  The current batch tracker retains the ordered list, with 17 slices remaining.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI
   limitations, baseline failures, attribution, and coverage notes remain in
   the Phase 3 progress log. The [Phase 3

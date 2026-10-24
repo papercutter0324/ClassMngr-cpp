@@ -17,11 +17,11 @@ verification evidence in its progress log.
   began.
 - Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`; its
   implementation tip is `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`.
-- Batch 5 discovery is complete and Batch 5 is active with F1399 — Calendar
-  event-type color preferences current. F1398 — Middle-school analytics
-  preferences is accepted at `4d19087140f1d4723087c6c460afa06f32ae0f37`.
+- Batch 5 discovery is complete and Batch 5 is active with F1400 — Class-day-
+  filter reset policy current. F1399 — Calendar event-type color preferences
+  is accepted at `d6d20fa4fc804c094bbe304bfd2a90707f111014`.
 
-## Phase 3 — Batch 5 (active; F1399 current)
+## Phase 3 — Batch 5 (active; F1400 current)
 
 Two complementary scans found 19 prioritized, distinct persistence slices.
 The source scan found exactly 19 active Next Platform ports after excluding
@@ -31,8 +31,8 @@ latest-source-date read, and residual Calendar Event range projection. Every
 scan-identified item is a candidate, not a test result.
 
 1. F1398 — Middle-school analytics preferences (accepted)
-2. F1399 — Calendar event-type color preferences (current)
-3. F1400 — Class-day-filter reset policy
+2. F1399 — Calendar event-type color preferences (accepted)
+3. F1400 — Class-day-filter reset policy (current)
 4. F1401 — Class-selection reset policy
 5. F1402 — Evaluation default policy
 6. F1403 — Calendar event range projection (residual projection only; prior

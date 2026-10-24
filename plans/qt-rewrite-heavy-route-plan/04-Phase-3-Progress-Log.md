@@ -2052,3 +2052,33 @@ unassessed. F1398 is accepted; F1399 (Calendar event-type color preferences)
 is current. Batch 5 remains unpushed until its remaining slices are complete.
 
 Commit: `4d19087140f1d4723087c6c460afa06f32ae0f37`.
+
+## F1399 — Calendar event-type color preferences (Batch 5 candidate 2 of 19) — 2026-10-24
+
+The Calendar event-type color adapter and dedicated Platform fixture, plus
+only the F1399 picker-retry integration slot, now use `WorkspaceStore`. The
+six exact keys (`calendar/eventTypeColor/Vacation`,
+`calendar/eventTypeColor/Holiday`, `calendar/eventTypeColor/Workshop`,
+`calendar/eventTypeColor/CM`, `calendar/eventTypeColor/Meeting`, and
+`calendar/eventTypeColor/Other`), unknown-type Other fallback, UTF-8
+pass-through, empty read fallbacks, and nonrecoverable Technical write
+failures are unchanged. The UI defaults remain Vacation `#4b6f91`, Holiday
+`#7a5f9e`, Workshop `#5f7f52`, CM `#9a6b3f`, Meeting `#8a4f5d`, and Other
+`#66727a`; picker warning, resync, cancel, and retry behavior and all
+assertions are unchanged.
+
+An incremental build in `build/macos-clang-debug` passed for
+`ClassMngrNextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests`
+and `ClassMngrCalendarPageEventMutationParityTests`. CTest #435,
+`ClassMngrNextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests`,
+passed 1/1. With `QT_QPA_PLATFORM=offscreen`, direct QtTest
+`CalendarPageEventMutationParityTests::eventTypeColorPickerFailureResyncsAndRetries`
+passed 3/3 including init/cleanup; the successful offscreen run emitted font
+and size-hint warnings. The initial direct invocation without offscreen
+aborted because no screen was available; this was invocation environment
+setup, not a test failure. `git diff --check` passed. The full parity CTest,
+full suite, and cross-platform builds did not run. F1399 is accepted; F1400
+(Class-day-filter reset policy) is current. Batch 5 remains unpushed until its
+remaining slices are complete.
+
+Commit: `d6d20fa4fc804c094bbe304bfd2a90707f111014`.
