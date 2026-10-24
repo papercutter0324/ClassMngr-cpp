@@ -26,6 +26,7 @@ struct DatabaseIds
     int eventId = -1;
     int campusId = -1;
     bool settingSaved = false;
+    bool classInfoSaved = false;
     bool intensiveSlotStateSaved = false;
     bool testingBlockSaved = false;
     bool rosterSaved = false;
@@ -72,9 +73,7 @@ DatabaseIds populateDatabase(
             QStringLiteral("4:50 PM")
         }
         );
-    const bool classInfoSaved =
-        service.saveClassInfo(classInfo).has_value();
-    Q_UNUSED(classInfoSaved);
+    ids.classInfoSaved = service.saveClassInfo(classInfo).has_value();
 
     ids.intensiveSlotStateSaved = service.saveIntensiveSlotState(
         QStringLiteral("Tuesday"),
@@ -433,33 +432,74 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
     QVERIFY(directory.isValid());
 
     const QString sourcePath =
-        directory.filePath(QStringLiteral("source.db"));
+        directory.filePath(QStringLiteral("source.tps"));
     const QString savedPath =
-        directory.filePath(QStringLiteral("saved.db"));
+        directory.filePath(QStringLiteral("saved.tps"));
     const QString exportedPath =
-        directory.filePath(QStringLiteral("exported.db"));
+        directory.filePath(QStringLiteral("exported.tps"));
+    const QString prefix = QStringLiteral("Application Services Profile");
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(sourcePath).has_value());
-    QVERIFY(services.settingsService()->save(
-        QStringLiteral("application-services/value"),
-        QStringLiteral("saved")
-        ).has_value());
+    QVERIFY(services.dataService());
+    const DatabaseIds ids = populateDatabase(*services.dataService(), prefix);
+    QVERIFY(ids.settingSaved);
+    QVERIFY(ids.teacherId > 0);
+    QVERIFY(ids.classId > 0);
+    QVERIFY(ids.eventId > 0);
+    QVERIFY(ids.campusId > 0);
+    QVERIFY(ids.classInfoSaved);
+    QVERIFY(ids.intensiveSlotStateSaved);
+    QVERIFY(ids.testingBlockSaved);
+    QVERIFY(ids.rosterSaved);
+    QVERIFY(ids.speakingEvaluationSaved);
+
+    const QString activeSourcePath = services.currentDatabasePath();
+    QCOMPARE(activeSourcePath, QFileInfo(sourcePath).absoluteFilePath());
     services.saveDatabase();
+
+    {
+        QSqlDatabase sourceDatabase = services.workspaceStore()->database();
+        const Result<int> sourceVersion =
+            DatabaseSchemaManager::schemaVersion(sourceDatabase);
+        QVERIFY(sourceVersion);
+        QCOMPARE(*sourceVersion, 6);
+    }
 
     QVERIFY(services.saveDatabaseAs(savedPath).has_value());
     QVERIFY(services.exportDatabaseAs(exportedPath).has_value());
     QVERIFY(QFileInfo::exists(savedPath));
     QVERIFY(QFileInfo::exists(exportedPath));
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), activeSourcePath);
 
-    ApplicationServices copiedServices;
-    QVERIFY(copiedServices.openDatabase(savedPath).has_value());
-    QCOMPARE(
-        copiedServices.settingsService()
-            ->load(QStringLiteral("application-services/value"))
-            ->toString(),
-        QStringLiteral("saved")
-        );
+    ApplicationServices savedServices;
+    QVERIFY(savedServices.openExistingDatabase(savedPath).has_value());
+    QVERIFY(savedServices.dataService());
+    {
+        QSqlDatabase savedDatabase = savedServices.workspaceStore()->database();
+        const Result<int> savedVersion =
+            DatabaseSchemaManager::schemaVersion(savedDatabase);
+        QVERIFY(savedVersion);
+        QCOMPARE(*savedVersion, 6);
+    }
+    verifyDatabase(*savedServices.dataService(), prefix, ids);
+
+    ApplicationServices exportedServices;
+    QVERIFY(exportedServices.openExistingDatabase(exportedPath).has_value());
+    QVERIFY(exportedServices.dataService());
+    {
+        QSqlDatabase exportedDatabase = exportedServices.workspaceStore()->database();
+        const Result<int> exportedVersion =
+            DatabaseSchemaManager::schemaVersion(exportedDatabase);
+        QVERIFY(exportedVersion);
+        QCOMPARE(*exportedVersion, 6);
+    }
+    verifyDatabase(*exportedServices.dataService(), prefix, ids);
+
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), activeSourcePath);
+    verifyDatabase(*services.dataService(), prefix, ids);
 
     services.closeDatabase();
     QVERIFY(!services.saveDatabaseAs(savedPath).has_value());

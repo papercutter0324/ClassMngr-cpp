@@ -21,8 +21,8 @@ verification evidence in its progress log.
    constructor/destructor ownership, and 101 source links. No tests or builds
    were run. See the [DataService migration
    map](../../docs/qt-rewrite/data-service-migration-map.md).
-3. **F1421 — Populated v6 `.tps` SaveAs/export round-trip and backup comparison (current).**
-4. **F1422 — Valid-v6 locked and truncated-file preservation.**
+3. **F1421 — Populated v6 `.tps` SaveAs/export round-trip and backup comparison (accepted).** Focused macOS arm64 CTest passed 1/1; verbose rerun passed 40 QtTest cases. Both destinations reopened existing-only with expected fixture data, while source path/open/data were preserved. No Windows or interrupted-copy claim; interruption remains F1423.
+4. **F1422 — Valid-v6 locked and truncated-file preservation (current).**
 5. **F1423 — Deterministic post-write `QSaveFile` interruption and atomic
    destination preservation.**
 6. **F1424 — Calendar Import transaction-start, commit, and error coverage.**

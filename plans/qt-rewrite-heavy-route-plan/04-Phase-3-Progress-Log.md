@@ -2773,7 +2773,20 @@ constructor/destructor ownership notes, and 101 source links. The map records
 v2 owners, current legacy/test routes, removal prerequisites, and the open SQL
 `CampusRecord` typed-service gap. No source or test changes were part of this
 slice; no tests or builds were run. F1421, populated v6 `.tps` SaveAs/export
-round-trip and backup comparison, is current in Batch 9. Batch 10 discovery
-remains due when F1426 (candidate 8 of 9) starts; Phase 3 remains In Progress.
+round-trip and backup comparison, was next in Batch 9; its acceptance is
+recorded below. Batch 10 discovery remains due when F1426 (candidate 8 of 9)
+starts; Phase 3 remains In Progress.
 See the [DataService migration
 map](../../docs/qt-rewrite/data-service-migration-map.md).
+
+## F1421 — Populated v6 `.tps` SaveAs/export round-trip — 2026-10-24
+
+Accepted with focused macOS arm64 evidence: `ClassMngrDataServiceLifecycleTests`
+CTest passed 1/1, and the verbose rerun passed 40 QtTest cases. Starting from a
+populated v6 `.tps` source, both SaveAs and export destinations reopened via
+existing-only open and contained the expected fixture data. The source stayed
+open at its original path and retained its data. This does not claim Windows
+coverage or interrupted-copy behavior; deterministic interruption and atomic
+destination preservation remain F1423. F1422, valid-v6 locked and truncated-
+file preservation, is current in Batch 9. Batch 10 discovery remains due when
+F1426 (candidate 8 of 9) starts; Phase 3 remains In Progress.
