@@ -88,7 +88,7 @@ preservesOrderedPerTeacherSuccessAndFailure()
 {
     FakeMyClassesTeacherProfileBatchReadPort port;
     const std::vector<Domain::TeacherId> requested{
-        teacherId("42"), teacherId("7"), teacherId("100")
+        teacherId("42"), teacherId("7"), teacherId("2147483648")
     };
     Application::MyClassesTeacherProfileFields fields{
         .teacherKr = u"\uD55C\uAD6D\uC5B4",
@@ -143,7 +143,7 @@ rejectsInvalidAndDuplicateTeacherIdsBeforePortRead()
     FakeMyClassesTeacherProfileBatchReadPort port;
     const Application::MyClassesTeacherProfileBatchReadQuery query(port);
     const std::vector<std::string> invalidIds{
-        "0", "07", "-1", "+4", " 4", "4 ", "42x", "2147483648"
+        "0", "07", "-1", "+4", " 4", "4 ", "42x", "9223372036854775808"
     };
 
     for (const std::string& value : invalidIds)

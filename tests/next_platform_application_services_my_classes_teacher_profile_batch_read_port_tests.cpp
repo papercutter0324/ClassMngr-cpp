@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/teacher.h"
 #include "next/application/my_classes_teacher_profile_batch_read_query.h"
@@ -54,7 +54,7 @@ Teacher teacherFixture()
 
 int createTeacher(ApplicationServices& services, const Teacher& teacher)
 {
-    const auto result = services.databaseSession()
+    const auto result = services.workspaceStore()
         ->teacherRepository()->createTeacher(teacher);
     return result.value_or(-1);
 }
@@ -88,7 +88,7 @@ readsConsumedFieldsInRequestedOrderAndReportsMissingTeacher()
     QVERIFY(existingId > 0);
     const int missingId = existingId + 1000;
 
-    TeacherRepository* const repository = services.databaseSession()
+    TeacherRepository* const repository = services.workspaceStore()
         ->teacherRepository();
     QVERIFY(repository);
     const MyClassesTeacherProfileBatchReadMetrics before =
@@ -192,7 +192,7 @@ readsWideTeacherIdFromIntegerPrimaryKey()
     const Teacher expected = teacherFixture();
     const qint64 wideIdValue = 2147483648LL;
 
-    QSqlQuery insertTeacher(services.databaseSession()->database());
+    QSqlQuery insertTeacher(services.workspaceStore()->database());
     QVERIFY2(insertTeacher.prepare(QStringLiteral(R"(
         INSERT INTO teachers (
             id,
@@ -231,7 +231,7 @@ readsWideTeacherIdFromIntegerPrimaryKey()
     QVERIFY2(insertTeacher.exec(),
              qPrintable(insertTeacher.lastError().text()));
 
-    QSqlQuery verifyStoredId(services.databaseSession()->database());
+    QSqlQuery verifyStoredId(services.workspaceStore()->database());
     QVERIFY2(verifyStoredId.exec(QStringLiteral(
                  "SELECT typeof(id), id FROM teachers WHERE id=2147483648"
                  )),
@@ -278,13 +278,13 @@ batchSqlFailurePreservesIndependentPerTeacherFailures()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    TeacherRepository* const repository = services.databaseSession()
+    TeacherRepository* const repository = services.workspaceStore()
         ->teacherRepository();
     QVERIFY(repository);
     const MyClassesTeacherProfileBatchReadMetrics before =
         repository->myClassesTeacherProfileBatchReadMetrics();
 
-    QSqlQuery dropTeachers(services.databaseSession()->database());
+    QSqlQuery dropTeachers(services.workspaceStore()->database());
     QVERIFY2(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")),
              qPrintable(dropTeachers.lastError().text()));
 
@@ -323,7 +323,7 @@ emptyInputAvoidsRepositoryWork()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    TeacherRepository* const repository = services.databaseSession()
+    TeacherRepository* const repository = services.workspaceStore()
         ->teacherRepository();
     QVERIFY(repository);
     const MyClassesTeacherProfileBatchReadMetrics before =

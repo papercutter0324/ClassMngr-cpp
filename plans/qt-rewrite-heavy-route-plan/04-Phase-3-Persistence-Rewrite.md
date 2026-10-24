@@ -40,10 +40,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-24
 - Current note: Batch 3 (F1358–F1377) is complete and pushed to
   `origin/Qt-Rewrite` at `018b30b04ab713769f9e69b440ba7223310a2b87`. Batch 4
-  discovery is complete and Batch 4 is active, with F1378 (My Classes
-  teacher-profile batch read) current. F1376/F1377 implementation evidence,
-  Batch 2 and Batch 3 push receipts, and earlier UI limitations and attribution
-  notes are in the [progress log](04-Phase-3-Progress-Log.md).
+  discovery is complete and Batch 4 is active: F1378 (My Classes
+  teacher-profile batch read) is accepted; F1379 (My Classes student-count
+  batch read) is current. F1376–F1378 implementation evidence, Batch 2 and
+  Batch 3 push receipts, and earlier UI limitations and attribution notes are
+  in the [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -61,15 +62,16 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1377 — 2026-10-24
+## Latest Progress Update — F1378 — 2026-10-24
 
-F1377 is accepted; Batch 3 is complete, and F1378 is current in active Batch 4.
-The class-summary platform port and its two shared Platform test slots now use
-`WorkspaceStore`; query validation/order, repository batch/fallback behavior,
-and UI call order are unchanged. A query-test correction preserves validation
-coverage for wide canonical teacher IDs. Three selected CTests passed. No full
-suite or cross-platform build ran. The [progress log](04-Phase-3-Progress-Log.md)
-records F1377 evidence and retains Batch 4 discovery and overflow notes.
+F1378 is accepted; F1379 is current in Batch 4. The My Classes teacher-profile
+batch-read port and six-slot direct Platform fixture now use `WorkspaceStore`;
+repository batch query/order, error mapping, per-tab sequence, and fallback are
+unchanged. Ordered-success coverage now includes teacher ID `2147483648`, with
+`9223372036854775808` as the invalid overflow case; production logic is
+unchanged. Three selected CTests passed. No full suite or cross-platform build
+ran. The [progress log](04-Phase-3-Progress-Log.md) records F1378 evidence and
+retains Batch 4 discovery and overflow notes.
 
 ## Objective
 

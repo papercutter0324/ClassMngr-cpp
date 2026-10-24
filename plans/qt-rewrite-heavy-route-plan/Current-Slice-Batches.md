@@ -23,8 +23,8 @@ ports, including F1376 and F1377, leaving 39 further port candidates. The
 feature-flow scan cross-checked user-facing workflows. This is the
 priority-ordered shortlist, not an exhaustive inventory.
 
-1. F1378 — My Classes teacher-profile batch read (current)
-2. F1379 — My Classes student-count batch read
+1. F1378 — My Classes teacher-profile batch read (accepted)
+2. F1379 — My Classes student-count batch read (current)
 3. F1380 — My Classes teacher-display-name batch read
 4. F1381 — Roster snapshot read
 5. F1382 — Roster column-name batch read

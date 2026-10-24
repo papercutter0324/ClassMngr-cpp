@@ -1549,3 +1549,22 @@ non-force push advanced the remote from that prior tip to
 `018b30b04ab713769f9e69b440ba7223310a2b87`. Post-push verification confirmed
 the remote matched local HEAD; at that check, the worktree was clean and
 ahead/behind was 0/0.
+
+## F1378 — My Classes teacher-profile batch read (Batch 4 candidate 1 of 20) — 2026-10-24
+
+The only production change moved
+`src/next/platform/application_services_my_classes_teacher_profile_batch_read_port.h`
+to `WorkspaceStore`. Its six-slot direct Platform fixture,
+`tests/next_platform_application_services_my_classes_teacher_profile_batch_read_port_tests.cpp`,
+also migrated to `WorkspaceStore`. The repository batch query, ordering,
+error mapping, per-tab sequence, and fallback are unchanged.
+
+The query test now includes valid teacher ID `2147483648` in ordered-success
+coverage; the invalid case uses `9223372036854775808`, which is beyond signed
+int64. No production logic changed.
+
+Built `ClassMngrNextApplicationMyClassesTeacherProfileBatchReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests`,
+and `ClassMngrMyClassesPageTests`. Three serial CTests passed (3/3).
+`git diff --check` passed. No full suite or cross-platform build ran. F1378 is
+accepted; F1379 (My Classes student-count batch read) is current.
