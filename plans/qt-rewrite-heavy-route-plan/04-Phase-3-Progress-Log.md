@@ -2976,9 +2976,13 @@ committed; Batch 12 is pushed to `origin/Qt-Rewrite` at verified tip
 Batch 13 is pushed to `origin/Qt-Rewrite` at verified tip
 `41743d8676beee99274f4aacbe606002b4e38c30`. F1436 is accepted and committed
 at `cb6f90126dc2321b304cb87c5d6bcad642b18b27`; Batch 14 slice work is
-complete, with closeout docs/push pending. Batch 15 review accepted F1437 as
-its sole candidate, waiting for the Batch 14 push. Phase 3 remains In
-Progress and its exit gate remains open.
+complete and pushed to `origin/Qt-Rewrite` at verified local/remote tip
+`071560c8774f5c16c2b2502a5f561507e1f5f86f`. F1437 is accepted and committed
+at `91355e2c0483c550eca93bb9b0b20bc0a7c55547`; Batch 15 slice work is
+complete, with closeout docs/push pending. Batch 16 review accepted F1438 as
+its sole doc-only candidate, waiting for the Batch 15 push; begin Batch 17
+discovery when F1438 starts. Phase 3 remains In Progress and its exit gate
+remains open.
 
 ## F1429 — Schedule Import row-count metrics — 2026-10-24
 
@@ -3230,9 +3234,72 @@ is structural only, with no heap/RSS claim. Qt 6.12 API review confirms
 `QJsonDocument::fromJson()` creates a complete document and
 `QJsonValue::fromJson()` parses one value, not a stream.
 
+F1437 was accepted and committed at
+`91355e2c0483c550eca93bb9b0b20bc0a7c55547` (`Phase3 - F1437: validate mapped
+JSON without full DOM`). The commit changes only
+`class_transfer_json_codec.cpp` and `tests/class_transfer_tests.cpp`. The
+mapped-file path validates complete JSON object syntax, including unknown
+fields, with a conservative syntax gate; uncertain, unsupported, malformed,
+and non-object cases retain the Qt full-document fallback. Public `fromJson()`
+and `readAll()` fallbacks are unchanged. Differential parity coverage grew
+from 337 to 357 rows, including UTF-8/escape failures, number grammar/range
+fallback, malformed unknown fields and trailing data before schema errors,
+BOM, duplicate-root last-wins, nesting boundary, and package/error parity.
+
+Executor and independent Tester both report the target build (the Tester run
+was Ninja no work), the exact `codecMappedFileMatchesQt` selector passing
+357/357, and `git diff --check` passing. The full
+`ClassMngrClassTransferTests` CTest under offscreen passed 419 and failed one:
+`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure()` got
+`New Teacher` where `Romanized One` was expected. The same test reproduces
+standalone, constructs `ClassTransferPackage` without calling `loadFile()` or
+the changed codec, and was reproduced on pre-F880 commit `18202c79`; record it
+as a bounded unrelated full-target exception, not a pass. No heap/RSS result or
+memory-savings claim is made. Batch 15 slice work is complete; its closeout
+docs and push are pending.
+
 Other dispositions: Teacher Import's buffered `readAll()`/`parseWorkbook()`
 consumer remains owned by Phase 7C. The Class Transfer export projection
 remains in Phase 8. Existing Calendar/Schedule and DB copy/backup paths
-produced no new bounded Phase 3 candidate. F1437 waits for the Batch 14
-closeout push; begin Batch 16 discovery when F1437 starts. Phase 3 remains In
-Progress with its exit gate open.
+produced no new bounded Phase 3 candidate. Phase 3 remains In Progress with
+its exit gate open.
+
+## Batch 16 discovery start — 2026-10-24
+
+Two independent scans started simultaneously under
+`PHASE3-BATCH16-DISCOVERY-20261024` when Batch 15's sole candidate F1437
+started. The lifetime scan (`PH3-B16-LIFETIME-SCAN-01`) found no additional
+bounded Phase 3 candidate, citing existing F1428/F1430/F1431/F1434/F1435/F1436
+coverage and Phase 7C/Phase 8 ownership deferrals. The data/API scan remains
+pending at scan start.
+
+## Batch 16 discovery outcome — 2026-10-24
+
+Two scans and bounded review completed under
+`PHASE3-BATCH16-DISCOVERY-20261024`. The lifetime scan found no candidate
+beyond active F1437. The data/API scan found no new production/API candidate:
+DataService/direct SQL under `src/next` is absent, CampusRecord is test-only,
+`saveDatabase()` commit-result visibility overlaps F1418, and existing
+schema/file tests cover the cited requirements. It identified a stale claim
+in `docs/qt-rewrite/phase-3-schema-baseline.md` (lines 149–152) that no direct
+test covers the four explicit indexes and no runtime database metadata was
+inspected.
+
+Review accepted **F1438 — correct the Phase 3 schema baseline's stale F1419
+coverage statement** as the sole doc-only Batch 16 candidate. The existing
+`tests/database_schema_manager_tests.cpp` verifies the 17-table inventory;
+ordered columns, types, nullability, defaults, and primary keys; all four
+explicit index names, owners, ordered columns and non-unique origin;
+foreign-key edges, unique-index families, autoincrement, schema version, and
+CHECK/FK behavior. The F1419 log records
+focused runtime schema-v6 DDL/index/constraint coverage using SQLite catalog
+queries and PRAGMAs. The future edit should correct the stale claim while
+retaining these limits: no complete normalized `CREATE TABLE` SQL comparison
+and no existing pre-v6 conversion test. Do not make the baseline edit before
+Batch 16 starts after the Batch 15 push. The Phase 0 `.db` matrix remains
+deferred as a pinned historical artifact.
+
+F1437 is accepted and committed; Batch 15 slice work is complete with closeout
+docs and push pending. F1438 waits for the Batch 15 push. Begin Batch 17
+discovery when F1438 starts. Phase 3 remains In Progress with its exit gate
+open.

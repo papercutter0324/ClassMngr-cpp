@@ -8,12 +8,13 @@ and pushed at `01670f53d7924a5e68ce9288effe3a4bf12b3403`. Batch 11
 (F1429–F1432) is pushed at `ee6efe495d25136cf70297183af1aeaf5ae8d51c`.
 Batch 12 (F1433/F1434) is pushed at
 `5ca42a876a40ec74f49055530a3d7714aa5368f7`. Batch 13 (F1435) is pushed and
-verified at `41743d8676beee99274f4aacbe606002b4e38c30`. F1436 is committed at
-`cb6f90126dc2321b304cb87c5d6bcad642b18b27`; Batch 14 closeout documentation
-and push are pending. Batch 15 discovery and review completed under
-`PHASE3-BATCH15-DISCOVERY-20261024`; sole accepted candidate F1437 waits for the
-Batch 14 push. Begin Batch 16 discovery when F1437 starts. Phase 3 remains In
-Progress and its exit gate is open.
+verified at `41743d8676beee99274f4aacbe606002b4e38c30`. Batch 14 (F1436) is
+pushed and verified at `071560c8774f5c16c2b2502a5f561507e1f5f86f`. F1437 is
+committed at `91355e2c0483c550eca93bb9b0b20bc0a7c55547`; Batch 15 closeout
+documentation and push are pending. Batch 16 discovery and bounded review completed under
+`PHASE3-BATCH16-DISCOVERY-20261024`; F1438 is its sole accepted documentation
+candidate and waits for the Batch 15 push. Begin Batch 17 discovery when F1438
+starts. Phase 3 remains In Progress and its exit gate is open.
 
 ## Goal
 
@@ -62,7 +63,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (F1436 committed; Batch 14 closeout pending)
+### Current checkpoint - 2026-10-24 (F1437 committed; Batch 15 closeout pending)
 
 Phase 3 remains In Progress on the mandatory Heavy route, with its exit gate
 open. Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
@@ -170,14 +171,27 @@ compact vectors; the repository query and matching semantics remain unchanged.
 The focused Platform and Application query CTests passed 2/2; the independent
 Tester rebuilt (no work), reran 2/2, and `git diff --check` passed. The 4,097-row
 case now carries two English names and no Korean entries. No full suite,
-heap/RSS measurement, or memory-savings claim is made. Batch 14 closeout docs
-and push are pending. Batch 15 discovery and bounded review completed under
-`PHASE3-BATCH15-DISCOVERY-20261024`; F1437 is the sole accepted candidate and
-waits for the Batch 14 push. It will validate mapped class-transfer JSON syntax
-without a full validation DOM and fall back to Qt for unsupported, uncertain,
-or non-object inputs. The Phase 0 `.db` matrix wording update was deferred as a
-pinned historical artifact; Teacher Import remains Phase 7C-owned, and export
-remains Phase 8-owned. Begin Batch 16 discovery when F1437 starts. The
+heap/RSS measurement, or memory-savings claim is made. Batch 14 (F1436) is
+pushed and verified at `071560c8774f5c16c2b2502a5f561507e1f5f86f`. Batch 15
+discovery and bounded review completed under
+`PHASE3-BATCH15-DISCOVERY-20261024`; F1437 is accepted and committed at
+`91355e2c0483c550eca93bb9b0b20bc0a7c55547`. A conservative syntax gate
+validates the full mapped JSON object before schema conversion, avoiding the
+full-file Qt validation document when safe; uncertain, unsupported, malformed,
+or non-object input retains the Qt fallback. Public `fromJson()` and `readAll()`
+fallbacks remain unchanged. The focused mapped-file parity selector passed
+357/357, and `git diff --check` passed. The full Class Transfer target had 419
+passes and one failure in `importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`;
+it builds a package directly without the changed codec and was reproduced on
+pre-F880 commit `18202c79`. No full-target pass or memory measurement is
+claimed. Batch 15 closeout documentation and push are pending. Batch 16
+discovery and bounded review completed under
+`PHASE3-BATCH16-DISCOVERY-20261024`; its sole accepted candidate F1438
+corrects the active Phase 3 schema baseline's stale claim that F1419 did not
+directly test all four explicit indexes. F1438 waits for the Batch 15 push;
+begin Batch 17 discovery when it starts. The Phase 0 `.db` matrix wording
+update was deferred as a pinned historical artifact; Teacher Import remains
+Phase 7C-owned, and export remains Phase 8-owned. The
 unsupported ZIP-method test remains deferred as a test-only slice; no separate
 Windows F1433 slice was accepted, and analytics evaluation
 collection work remains with Phase 7D/7H. Classes/Speaking Evaluation

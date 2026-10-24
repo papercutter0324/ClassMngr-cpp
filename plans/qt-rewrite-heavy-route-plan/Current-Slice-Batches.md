@@ -9,20 +9,20 @@ predecessor. Keep implementation evidence in the phase progress log.
 - Phase 3 is In Progress on the mandatory Heavy route; its exit gate remains
   open.
 
-## Batch 14 — Slice work complete; closeout docs and push pending
+## Batch 15 — Slice work complete; closeout docs and push pending
 
-F1436 is accepted and committed at
-`cb6f90126dc2321b304cb87c5d6bcad642b18b27`. Batch 14 slice work is complete;
-its closeout docs and push are pending. Acceptance evidence is in the [Phase 3
-progress log](04-Phase-3-Progress-Log.md).
+Batch 14 is pushed to `origin/Qt-Rewrite` at verified local/remote tip
+`071560c8774f5c16c2b2502a5f561507e1f5f86f`. F1437 is accepted and committed
+at `91355e2c0483c550eca93bb9b0b20bc0a7c55547`; Batch 15 slice work is
+complete, with closeout docs and push pending. Acceptance evidence is in the
+[Phase 3 progress log](04-Phase-3-Progress-Log.md).
 
-## Batch 15 — Discovered; waiting for Batch 14 closeout push
+## Batch 16 — Discovered; waiting for Batch 15 closeout push
 
 Discovery and bounded review completed under
-`PHASE3-BATCH15-DISCOVERY-20261024`. F1437 is the sole accepted candidate:
-avoid the full JSON DOM during mapped class-transfer import validation, with
-a conservative Qt fallback. Its mapped-file validator must validate the
-whole document before schema conversion and preserve the existing Qt path for
-rejects, uncertain cases, and non-object roots. Keep public `fromJson()` and
-`readAll()` fallbacks unchanged. Begin Batch 16 discovery when F1437 starts,
-after Batch 14 closes and is pushed.
+`PHASE3-BATCH16-DISCOVERY-20261024`. F1438 is the sole accepted doc-only
+candidate: correct the stale F1419 schema coverage statement in
+`docs/qt-rewrite/phase-3-schema-baseline.md`. Its scope and retained coverage
+limits are recorded in the [Phase 3 progress log](04-Phase-3-Progress-Log.md).
+Start the edit after Batch 15 is pushed; begin Batch 17 discovery when F1438
+starts.

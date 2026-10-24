@@ -8516,7 +8516,7 @@ ordinary production caller. Phase 3 remains In Progress, its exit gate remains
 open, and its backlog is not exhausted. The current tracker has no active
 batch or candidate.
 
-## 2026-10-24 — Phase 3 F1436 committed; Batch 14 closeout pending
+## 2026-10-24 — Phase 3 F1437 committed; Batch 15 closeout pending
 
 F1419–F1427 are accepted and pushed to `origin/Qt-Rewrite` at
 `7b4eaaf809ecdc17e4e14fae555b157c361c378d`; the remote tip matched and the
@@ -8602,14 +8602,25 @@ logical row count. Batch 13 is pushed at verified tip
 F1436 start under `PHASE3-BATCH15-DISCOVERY-20261024`; bounded review accepted
 F1437 to remove the mapped import's complete JSON validation DOM through a
 strict syntax-only validator with the existing Qt path as fallback for
-uncertain inputs. The old Phase0 `.db` matrix wording cleanup was deferred as
-historical, Teacher Import remains Phase7C-owned, and transfer export remains
-Phase8-owned. F1436 is committed at
+uncertain inputs. F1437 is committed at
+`91355e2c0483c550eca93bb9b0b20bc0a7c55547`. Mapped-file parity passed 357/357;
+the full Class Transfer target had 419 passes and one known dialog-ordering
+failure that constructs a package directly, does not call the changed codec,
+and was reproduced before F1437. No full-target pass or memory measurement is
+claimed. Batch 15 closeout documentation and push remain pending. The old
+Phase0 `.db` matrix wording cleanup was deferred as historical, Teacher Import
+remains Phase7C-owned, and transfer export remains Phase8-owned. F1436 is committed at
 `cb6f90126dc2321b304cb87c5d6bcad642b18b27`; focused and independent Platform
 and Application CTests passed 2/2 with `git diff --check`. The 4,097-row roster
 case now stores two English names and no Korean entries while retaining its
-logical count. No full suite or measured memory savings are claimed; Batch 14
-closeout docs and push remain pending. Review deferred unsupported ZIP-method coverage as a
+logical count. No full suite or measured memory savings are claimed. Batch 14
+is pushed at verified tip `071560c8774f5c16c2b2502a5f561507e1f5f86f`. Batch16
+discovery and bounded review completed under
+`PHASE3-BATCH16-DISCOVERY-20261024`; F1438 is its sole accepted documentation
+candidate, correcting the active schema baseline's stale statement about
+F1419's four explicit-index assertions. F1438 waits for the Batch 15 push;
+begin Batch 17 discovery when it starts. Review
+deferred unsupported ZIP-method coverage as a
 test-only slice, rejected a separate Windows F1433 slice, and deferred
 evaluation collection lifetime to Phase 7D/7H. F1435 is committed at
 `b7dfd84cd025d83689d63aebc497f7795188810e`. Its forward-only Class Details
