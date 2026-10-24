@@ -57,12 +57,69 @@ struct TestArchiveEntry
 {
     QByteArray name;
     QByteArray contents;
+    QByteArray archiveContents;
     quint32 crc = 0;
     quint32 localOffset = 0;
+    quint16 method = 0;
 };
 
-QByteArray storedZipArchive(
-    const QList<std::pair<QByteArray, QByteArray>>& files
+QByteArray deflateRaw(
+    const QByteArray& contents
+    )
+{
+    z_stream stream{};
+    if (
+        deflateInit2(
+            &stream,
+            Z_DEFAULT_COMPRESSION,
+            Z_DEFLATED,
+            -MAX_WBITS,
+            8,
+            Z_DEFAULT_STRATEGY
+            ) != Z_OK
+        )
+    {
+        return {};
+    }
+
+    QByteArray compressed;
+    compressed.resize(
+        static_cast<qsizetype>(
+            deflateBound(
+                &stream,
+                static_cast<uLong>(contents.size())
+                )
+            )
+        );
+    stream.next_in =
+        reinterpret_cast<Bytef*>(
+            const_cast<char*>(contents.constData())
+            );
+    stream.avail_in =
+        static_cast<uInt>(contents.size());
+    stream.next_out =
+        reinterpret_cast<Bytef*>(compressed.data());
+    stream.avail_out =
+        static_cast<uInt>(compressed.size());
+
+    const int result =
+        deflate(&stream, Z_FINISH);
+    const qsizetype compressedSize =
+        static_cast<qsizetype>(stream.total_out);
+    deflateEnd(&stream);
+
+    if (result != Z_STREAM_END)
+    {
+        return {};
+    }
+
+    compressed.truncate(compressedSize);
+    return compressed;
+}
+
+QByteArray zipArchive(
+    const QList<std::pair<QByteArray, QByteArray>>& files,
+    bool deflated = false
     )
 {
     QByteArray archive;
@@ -74,6 +131,10 @@ QByteArray storedZipArchive(
         TestArchiveEntry entry;
         entry.name = name;
         entry.contents = contents;
+        entry.archiveContents = deflated
+            ? deflateRaw(contents)
+            : contents;
+        entry.method = deflated ? 8 : 0;
         entry.crc = static_cast<quint32>(
             crc32(
                 0L,
@@ -86,16 +147,16 @@ QByteArray storedZipArchive(
         appendLittleEndian(&archive, 0x04034b50, 4);
         appendLittleEndian(&archive, 20, 2);
         appendLittleEndian(&archive, 0, 2);
-        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, entry.method, 2);
         appendLittleEndian(&archive, 0, 2);
         appendLittleEndian(&archive, 0, 2);
         appendLittleEndian(&archive, entry.crc, 4);
-        appendLittleEndian(&archive, entry.contents.size(), 4);
+        appendLittleEndian(&archive, entry.archiveContents.size(), 4);
         appendLittleEndian(&archive, entry.contents.size(), 4);
         appendLittleEndian(&archive, entry.name.size(), 2);
         appendLittleEndian(&archive, 0, 2);
         archive.append(entry.name);
-        archive.append(entry.contents);
+        archive.append(entry.archiveContents);
         entries.append(std::move(entry));
     }
 
@@ -107,11 +168,11 @@ QByteArray storedZipArchive(
         appendLittleEndian(&archive, 20, 2);
         appendLittleEndian(&archive, 20, 2);
         appendLittleEndian(&archive, 0, 2);
-        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, entry.method, 2);
         appendLittleEndian(&archive, 0, 2);
         appendLittleEndian(&archive, 0, 2);
         appendLittleEndian(&archive, entry.crc, 4);
-        appendLittleEndian(&archive, entry.contents.size(), 4);
+        appendLittleEndian(&archive, entry.archiveContents.size(), 4);
         appendLittleEndian(&archive, entry.contents.size(), 4);
         appendLittleEndian(&archive, entry.name.size(), 2);
         appendLittleEndian(&archive, 0, 2);
@@ -216,12 +277,13 @@ QByteArray calendarWorkbookArchive(
                 )
         });
     }
-    return storedZipArchive(files);
+    return zipArchive(files);
 }
 
 QByteArray singleSheetWorkbookArchive(
     const QByteArray& worksheetXml,
-    bool withHighRowNote = false
+    bool withHighRowNote = false,
+    bool deflated = false
     )
 {
     QList<std::pair<QByteArray, QByteArray>> files{
@@ -268,7 +330,7 @@ QByteArray singleSheetWorkbookArchive(
         });
     }
 
-    return storedZipArchive(files);
+    return zipArchive(files, deflated);
 }
 }
 
@@ -285,6 +347,7 @@ private slots:
     void readerRejectsUnreadableWorkbook_data();
     void readerRejectsUnreadableWorkbook();
     void readerRejectsMalformedLaterWorksheetAndAllEmptyWorkbook();
+    void readerPreservesStoredAndDeflatedWorkbookValuesAfterInputLifetime();
     void cellPositionsEnforceWorksheetBoundsAndHashByPair();
     void cellRangesAreTypedInclusiveAndRejectInvalidEndpoints();
     void readerSkipsMalformedMergedRangesAndPreservesValidBoundaries();
@@ -423,6 +486,83 @@ void CalendarImportTests::readerRejectsUnreadableWorkbook()
     const auto parsed = CalendarImport::parseCalendarEventsFromWorkbook(workbook);
     QVERIFY(parsed.events.isEmpty());
     QCOMPARE(parsed.skippedCount.rawValue(), 0);
+}
+
+void CalendarImportTests
+    ::readerPreservesStoredAndDeflatedWorkbookValuesAfterInputLifetime()
+{
+    const QByteArray worksheetXml = QByteArrayLiteral(
+        "<worksheet><sheetData>"
+        "<row r=\"1\"><c r=\"A1\" t=\"inlineStr\">"
+        "<is><t xml:space=\"preserve\"> First &amp; final </t></is></c></row>"
+        "<row r=\"1048576\"><c r=\"A1048576\" t=\"inlineStr\"><is><t>Spring</t></is></c></row>"
+        "</sheetData><mergeCells><mergeCell ref=\"A1:B2\"/></mergeCells></worksheet>"
+        );
+
+    QString storedError;
+    const CalendarImport::Workbook stored =
+        CalendarImport::parseWorkbook(
+            singleSheetWorkbookArchive(worksheetXml, true),
+            &storedError
+            );
+    QVERIFY2(storedError.isEmpty(), qPrintable(storedError));
+    QVERIFY(!stored.worksheets.isEmpty());
+
+    QString deflatedError;
+    const CalendarImport::Workbook deflated =
+        CalendarImport::parseWorkbook(
+            singleSheetWorkbookArchive(worksheetXml, true, true),
+            &deflatedError
+            );
+    QVERIFY2(deflatedError.isEmpty(), qPrintable(deflatedError));
+    QCOMPARE(deflated.worksheets.size(), stored.worksheets.size());
+    QCOMPARE(deflated.sharedStrings, stored.sharedStrings);
+    QCOMPARE(deflated.styles.size(), stored.styles.size());
+
+    const CalendarImport::Worksheet& storedSheet =
+        stored.worksheets.first();
+    const CalendarImport::Worksheet& deflatedSheet =
+        deflated.worksheets.first();
+    QCOMPARE(deflatedSheet.name, storedSheet.name);
+    QCOMPARE(deflatedSheet.visible, storedSheet.visible);
+    QCOMPARE(deflatedSheet.cells.size(), 2);
+    QCOMPARE(deflatedSheet.cells.size(), storedSheet.cells.size());
+    QCOMPARE(
+        deflatedSheet.cells.at(0).position,
+        (CalendarImport::CellPosition{1, 1})
+        );
+    QCOMPARE(deflatedSheet.cells.at(0).position, storedSheet.cells.at(0).position);
+    QCOMPARE(deflatedSheet.cells.at(0).style, storedSheet.cells.at(0).style);
+    QCOMPARE(deflatedSheet.cells.at(0).value, QStringLiteral(" First & final "));
+    QCOMPARE(deflatedSheet.cells.at(0).value, storedSheet.cells.at(0).value);
+    QCOMPARE(deflatedSheet.cells.at(0).note, storedSheet.cells.at(0).note);
+    QCOMPARE(
+        deflatedSheet.cells.at(1).position,
+        (CalendarImport::CellPosition{1048576, 1})
+        );
+    QCOMPARE(deflatedSheet.cells.at(1).position, storedSheet.cells.at(1).position);
+    QCOMPARE(deflatedSheet.cells.at(1).value, QStringLiteral("Spring"));
+    QCOMPARE(deflatedSheet.cells.at(1).value, storedSheet.cells.at(1).value);
+    QCOMPARE(deflatedSheet.cells.at(1).note, QStringLiteral("Campus: BDG"));
+    QCOMPARE(deflatedSheet.cells.at(1).note, storedSheet.cells.at(1).note);
+    QCOMPARE(deflatedSheet.mergedRanges.size(), 1);
+    QCOMPARE(deflatedSheet.mergedRanges.size(), storedSheet.mergedRanges.size());
+    QCOMPARE(
+        deflatedSheet.mergedRanges.first().first,
+        (CalendarImport::CellPosition{1, 1})
+        );
+    QCOMPARE(
+        deflatedSheet.mergedRanges.first().last,
+        (CalendarImport::CellPosition{2, 2})
+        );
+    QCOMPARE(
+        deflatedSheet.mergedRanges.first().first,
+        storedSheet.mergedRanges.first().first
+        );
+    QCOMPARE(
+        deflatedSheet.mergedRanges.first().last,
+        storedSheet.mergedRanges.first().last
+        );
 }
 
 void CalendarImportTests::readerRejectsMalformedLaterWorksheetAndAllEmptyWorkbook()

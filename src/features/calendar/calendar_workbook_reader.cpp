@@ -149,7 +149,8 @@ int spreadsheetRow(
 }
 
 QByteArray inflateRawDeflate(
-    const QByteArray& compressed,
+    const char* compressedData,
+    qsizetype compressedSize,
     quint32 uncompressedSize
     )
 {
@@ -166,10 +167,10 @@ QByteArray inflateRawDeflate(
     z_stream stream{};
     stream.next_in =
         reinterpret_cast<Bytef*>(
-            const_cast<char*>(compressed.constData())
+            const_cast<char*>(compressedData)
             );
     stream.avail_in =
-        static_cast<uInt>(compressed.size());
+        static_cast<uInt>(compressedSize);
     stream.next_out =
         reinterpret_cast<Bytef*>(output.data());
     stream.avail_out =
@@ -323,15 +324,15 @@ QByteArray zipFileData(
         return {};
     }
 
-    const QByteArray compressed =
-        zipData.mid(
-            dataOffset,
-            static_cast<qsizetype>(entry.compressedSize)
-            );
-
     if (entry.method == 0)
     {
-        return compressed;
+        // Stored ZIP entries can be parsed directly from the caller-owned
+        // archive. Every use is synchronous and stays within the lifetime of
+        // zipData; the parsed workbook objects own their resulting strings.
+        return QByteArray::fromRawData(
+            zipData.constData() + dataOffset,
+            static_cast<qsizetype>(entry.compressedSize)
+            );
     }
 
     if (entry.method != 8)
@@ -340,7 +341,8 @@ QByteArray zipFileData(
     }
 
     return inflateRawDeflate(
-        compressed,
+        zipData.constData() + dataOffset,
+        static_cast<qsizetype>(entry.compressedSize),
         entry.uncompressedSize
         );
 }
