@@ -7,13 +7,13 @@ continuation is active. Batch 9 (F1419–F1427) was pushed and verified at
 and pushed at `01670f53d7924a5e68ce9288effe3a4bf12b3403`. Batch 11
 (F1429–F1432) is pushed at `ee6efe495d25136cf70297183af1aeaf5ae8d51c`.
 Batch 12 (F1433/F1434) is pushed at
-`5ca42a876a40ec74f49055530a3d7714aa5368f7`. F1435 is committed at
-`b7dfd84cd025d83689d63aebc497f7795188810e`; Batch 13 closeout documentation
-and push are pending.
-Batch 14 discovery completed under `PHASE3-BATCH14-DISCOVERY-20261024`; its
-sole accepted candidate is F1436, waiting for the Batch 13 closeout push. Begin
-Batch 15 discovery when F1436 starts. Phase 3 remains In Progress and its exit
-gate is open.
+`5ca42a876a40ec74f49055530a3d7714aa5368f7`. Batch 13 (F1435) is pushed and
+verified at `41743d8676beee99274f4aacbe606002b4e38c30`. F1436 is committed at
+`cb6f90126dc2321b304cb87c5d6bcad642b18b27`; Batch 14 closeout documentation
+and push are pending. Batch 15 discovery and review completed under
+`PHASE3-BATCH15-DISCOVERY-20261024`; sole accepted candidate F1437 waits for the
+Batch 14 push. Begin Batch 16 discovery when F1437 starts. Phase 3 remains In
+Progress and its exit gate is open.
 
 ## Goal
 
@@ -62,7 +62,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (F1435 committed; Batch 13 closeout pending)
+### Current checkpoint - 2026-10-24 (F1436 committed; Batch 14 closeout pending)
 
 Phase 3 remains In Progress on the mandatory Heavy route, with its exit gate
 open. Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
@@ -162,11 +162,24 @@ CTests passed 2/2; the independent Tester rebuilt (no work), reran 2/2, and
 `git diff --check` passed. Coverage includes sparse dimensions, malformed index
 parity and precedence, overflow saturation, and failed-read profiler silence.
 No full suite, Windows run, heap/RSS measurement, or memory-savings claim is
-made. Batch 13 closeout docs and push are pending. Batch 14 discovery completed
-under `PHASE3-BATCH14-DISCOVERY-20261024`; F1436 is its sole accepted candidate,
-waiting for the Batch 13 closeout push. Begin Batch 15 discovery when F1436
-starts. The unsupported ZIP-method test remains deferred as a test-only slice;
-no separate Windows F1433 slice was accepted, and analytics evaluation
+made. Batch 13 (F1435) is pushed and verified at
+`41743d8676beee99274f4aacbe606002b4e38c30`. F1436 is accepted and committed at
+`cb6f90126dc2321b304cb87c5d6bcad642b18b27`. It keeps the uncapped logical
+Class Analytics roster row count while storing only selected name cells in
+compact vectors; the repository query and matching semantics remain unchanged.
+The focused Platform and Application query CTests passed 2/2; the independent
+Tester rebuilt (no work), reran 2/2, and `git diff --check` passed. The 4,097-row
+case now carries two English names and no Korean entries. No full suite,
+heap/RSS measurement, or memory-savings claim is made. Batch 14 closeout docs
+and push are pending. Batch 15 discovery and bounded review completed under
+`PHASE3-BATCH15-DISCOVERY-20261024`; F1437 is the sole accepted candidate and
+waits for the Batch 14 push. It will validate mapped class-transfer JSON syntax
+without a full validation DOM and fall back to Qt for unsupported, uncertain,
+or non-object inputs. The Phase 0 `.db` matrix wording update was deferred as a
+pinned historical artifact; Teacher Import remains Phase 7C-owned, and export
+remains Phase 8-owned. Begin Batch 16 discovery when F1437 starts. The
+unsupported ZIP-method test remains deferred as a test-only slice; no separate
+Windows F1433 slice was accepted, and analytics evaluation
 collection work remains with Phase 7D/7H. Classes/Speaking Evaluation
 navigation detail lifetime is deferred to Phases 7D/7H because it requires
 page/model changes; Calendar parsed-event consumer lifetime remains deferred

@@ -9,21 +9,20 @@ predecessor. Keep implementation evidence in the phase progress log.
 - Phase 3 is In Progress on the mandatory Heavy route; its exit gate remains
   open.
 
-## Batch 13 — Slice work complete; closeout docs and push pending
+## Batch 14 — Slice work complete; closeout docs and push pending
 
-F1435 is accepted and committed at
-`b7dfd84cd025d83689d63aebc497f7795188810e`. Batch 13 slice work is complete;
+F1436 is accepted and committed at
+`cb6f90126dc2321b304cb87c5d6bcad642b18b27`. Batch 14 slice work is complete;
 its closeout docs and push are pending. Acceptance evidence is in the [Phase 3
 progress log](04-Phase-3-Progress-Log.md).
 
-## Batch 14 — Discovered; waiting for Batch 13 push
+## Batch 15 — Discovered; waiting for Batch 14 closeout push
 
 Discovery and bounded review completed under
-`PHASE3-BATCH14-DISCOVERY-20261024`. F1436 is the sole accepted candidate:
-sparse Class Analytics roster-name representation preserving uncapped logical
-row count. Keep the change at the Platform/Application read-result/filter
-boundary without page/model migration; preserve sparse row extent, first
-exact English/Korean headers, exact name matching, malformed-index errors,
-and uncapped behavior. The allocation concern is source-derived; no memory
-measurement is claimed. Begin Batch 15 discovery when F1436 starts, after
-Batch 13 closes and is pushed.
+`PHASE3-BATCH15-DISCOVERY-20261024`. F1437 is the sole accepted candidate:
+avoid the full JSON DOM during mapped class-transfer import validation, with
+a conservative Qt fallback. Its mapped-file validator must validate the
+whole document before schema conversion and preserve the existing Qt path for
+rejects, uncertain cases, and non-object roots. Keep public `fromJson()` and
+`readAll()` fallbacks unchanged. Begin Batch 16 discovery when F1437 starts,
+after Batch 14 closes and is pushed.

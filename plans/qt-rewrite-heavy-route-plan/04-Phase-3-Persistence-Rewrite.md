@@ -38,13 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 12 is pushed to `origin/Qt-Rewrite` at verified tip
-  `5ca42a876a40ec74f49055530a3d7714aa5368f7`. F1435 is accepted and committed
-  at `b7dfd84cd025d83689d63aebc497f7795188810e`; Batch 13 slice work is
-  complete, with closeout docs/push pending. Batch 14 discovery is complete
-  under `PHASE3-BATCH14-DISCOVERY-20261024`; its sole accepted candidate,
-  F1436, waits for the Batch 13 push. Begin Batch 15 discovery when F1436
-  starts. The Phase 3 exit gate remains open. The
+- Current note: F1436 is accepted and committed at
+  `cb6f90126dc2321b304cb87c5d6bcad642b18b27`; Batch 14 slice work is complete
+  with closeout docs/push pending. Batch 15 review accepted F1437 as its sole
+  candidate, waiting for the Batch 14 push. Begin Batch 16 discovery when
+  F1437 starts. The Phase 3 exit gate remains open. The
   [DataService migration
   map](../../docs/qt-rewrite/data-service-migration-map.md) records F1420's
   deliverable, including that `DataService::save()` has no ordinary production
@@ -65,16 +63,16 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1435 — 2026-10-24
+## Latest Progress Update — F1436 — 2026-10-24
 
-F1435 is accepted and committed at
-`b7dfd84cd025d83689d63aebc497f7795188810e`; focused macOS arm64 verification
-passed, with validation parity and profiler saturation details recorded in
-the progress log. Batch 13 slice work is complete; closeout docs/push are
-pending. Batch 14 discovery accepted F1436 as its sole candidate, waiting for
-the Batch 13 push. Begin Batch 15 discovery when F1436 starts. F1432's parity
-limitation remains recorded in the progress log. Phase 3 remains In Progress
-with its exit gate open. See the
+F1436 is accepted and committed at
+`cb6f90126dc2321b304cb87c5d6bcad642b18b27`; compact sparse-name representation
+and preserved logical row extent are recorded in the progress log. Batch 14
+slice work is complete with closeout docs/push pending. Batch 15 review
+accepted F1437 as its sole candidate, waiting for the Batch 14 push. Begin
+Batch 16 discovery when F1437 starts. F1432's parity limitation remains
+recorded in the progress log. Phase 3 remains In Progress with its exit gate
+open. See the
 [progress log](04-Phase-3-Progress-Log.md) and [current batch
 tracker](Current-Slice-Batches.md).
 

@@ -7,13 +7,11 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 remains In Progress on the mandatory Heavy route
-  with its exit gate open. Batch 12 is pushed to `origin/Qt-Rewrite` at
-  verified tip `5ca42a876a40ec74f49055530a3d7714aa5368f7`. F1435 is accepted
-  and committed at `b7dfd84cd025d83689d63aebc497f7795188810e`; Batch 13 slice
-  work is complete and its closeout docs/push are pending. Batch 14 discovery
-  is complete under `PHASE3-BATCH14-DISCOVERY-20261024`; its sole accepted
-  candidate, F1436, waits for the Batch 13 push. Begin Batch 15 discovery
-  when F1436 starts. Phase 3 details are in the
+  with its exit gate open. F1436 is accepted and committed at
+  `cb6f90126dc2321b304cb87c5d6bcad642b18b27`; Batch 14 slice work is complete
+  with closeout docs/push pending. Batch 15 review accepted F1437 as its sole
+  candidate, waiting for the Batch 14 push. Begin Batch 16 discovery when
+  F1437 starts. Phase 3 details are in the
   [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [F1420 DataService migration map](../../docs/qt-rewrite/data-service-migration-map.md),

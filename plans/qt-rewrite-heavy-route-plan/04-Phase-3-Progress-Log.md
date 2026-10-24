@@ -2973,11 +2973,12 @@ is closed and pushed to `origin/Qt-Rewrite` at verified tip
 `ee6efe495d25136cf70297183af1aeaf5ae8d51c`. F1433 and F1434 are accepted and
 committed; Batch 12 is pushed to `origin/Qt-Rewrite` at verified tip
 `5ca42a876a40ec74f49055530a3d7714aa5368f7`. F1435 is accepted and committed;
-Batch 13 slice work is complete, with closeout docs/push pending. Batch 14
-discovery is complete under
-`PHASE3-BATCH14-DISCOVERY-20261024`; F1436 is its sole accepted candidate and
-waits for the Batch 13 closeout push. Phase 3 remains In Progress and its exit
-gate remains open.
+Batch 13 is pushed to `origin/Qt-Rewrite` at verified tip
+`41743d8676beee99274f4aacbe606002b4e38c30`. F1436 is accepted and committed
+at `cb6f90126dc2321b304cb87c5d6bcad642b18b27`; Batch 14 slice work is
+complete, with closeout docs/push pending. Batch 15 review accepted F1437 as
+its sole candidate, waiting for the Batch 14 push. Phase 3 remains In
+Progress and its exit gate remains open.
 
 ## F1429 — Schedule Import row-count metrics — 2026-10-24
 
@@ -3124,7 +3125,8 @@ focused CTest selector passed 2/2. An independent Tester reran the build
 (Ninja reported no work), reran the exact selector 2/2, and passed
 `git diff --check`. Verification used macOS arm64 and Qt 6.12. No full suite,
 Windows run, heap/RSS measurement, or memory-savings claim is made. Batch 13
-slice work is complete; its closeout docs and push are pending.
+is pushed to `origin/Qt-Rewrite` at verified tip
+`41743d8676beee99274f4aacbe606002b4e38c30`.
 
 ## Batch 12 discovery — 2026-10-24
 
@@ -3154,8 +3156,9 @@ Preserve exact English/Korean first matching columns, trimmed nonblank count,
 malformed/out-of-range errors, and profiler dimensions. This is source-derived
 with no memory measurement. The export projection remains deferred to Phase 8
 because it owns query/operation assembly. F1435 is accepted and committed at
-`b7dfd84cd025d83689d63aebc497f7795188810e`; Batch 13 slice work is complete,
-with closeout docs and push pending.
+`b7dfd84cd025d83689d63aebc497f7795188810e`; Batch 13 is pushed to
+`origin/Qt-Rewrite` at verified tip
+`41743d8676beee99274f4aacbe606002b4e38c30`.
 
 ## Batch 14 discovery — 2026-10-24
 
@@ -3175,6 +3178,61 @@ found. Reject a separate Windows F1433 slice; use the existing Windows
 baseline workflow as release evidence if available. Defer Class Analytics
 evaluation collection overlap to Phase 7D/7H due feature query/model ownership.
 The Batch 13 Class Transfer export projection remains deferred to Phase 8.
-Batch 14 waits for the Batch 13 closeout push. Since F1436 is its sole
-candidate, begin Batch 15 discovery when F1436 starts. Phase 3 remains In
+F1436 is accepted and committed at
+`cb6f90126dc2321b304cb87c5d6bcad642b18b27`; Batch 14 slice work is complete,
+with closeout docs and push pending. Phase 3 remains In Progress with its exit
+gate open.
+
+## F1436 — Compact sparse roster names — 2026-10-24
+
+Accepted and committed at `cb6f90126dc2321b304cb87c5d6bcad642b18b27`
+(`Phase3 - F1436: compact sparse roster names`). The change is limited to the
+Application read-port contract and filter query, Platform adapter, and their
+Platform/Application tests. `rowCount` remains the uncapped logical extent;
+each name vector stores only cells from the selected exact header in row
+order. The repository query, first exact English/Korean header selection,
+sparse extent, normalized name semantics, blank handling, and malformed-index
+checks remain unchanged.
+
+Coverage includes first exact headers and ignored duplicates, sparse extent
+from unrelated cells, absent headers, empty roster, unknown class, malformed
+row index, and compact filter matching. A 4097-row extent with two English
+entries and no Korean entries exercises sparse representation. The executor's
+incremental Debug build and focused CTest passed 2/2. An independent Tester
+rebuilt (Ninja no work), reran the exact CTest 2/2, and passed
+`git diff --check`. Verification used macOS arm64 and Qt 6.12. No full-suite,
+heap/RSS result, or measured memory-savings claim is made. Batch 14 slice work
+is complete; its closeout docs and push are pending.
+
+## Batch 15 discovery — 2026-10-24
+
+Two independent scans and bounded review completed under
+`PHASE3-BATCH15-DISCOVERY-20261024`. The data/API scan found no production
+candidate and proposed reconciling the Phase 0 file compatibility matrix.
+Review deferred that edit because the matrix is a pinned Phase 0 snapshot;
+its stale `.db` wording is not active Phase 3 guidance. Preserve the v6-only
+policy in Phases 2 and 3.
+
+The lifetime scan proposed F1437, accepted as the sole Batch 15 candidate:
+avoid the full JSON DOM during mapped class-transfer import validation, with
+a conservative Qt fallback. Limit it to mapped-file `loadFile()` and
+`validateMappedJsonObject()`. A syntax-only validator must validate the entire
+document, including unknown fields, before schema conversion. Any reject,
+unsupported/uncertain case, or non-object root falls back to the current Qt
+document path to preserve diagnostics and behavior. Do not change public
+`fromJson()` or `readAll()` fallbacks; keep export/dialog work in Phase 8.
+Preserve duplicate-key last-wins, schema/error precedence, malformed JSON
+diagnostics, and package parity. Differential coverage includes invalid
+UTF-8/escapes, numbers, malformed unknown fields and trailing data alongside
+schema errors, BOM, escaped duplicate root keys, nesting boundaries, and the
+existing 337-row corpus (or equivalent). False positives are unsafe; evidence
+is structural only, with no heap/RSS claim. Qt 6.12 API review confirms
+`QJsonDocument::fromJson()` creates a complete document and
+`QJsonValue::fromJson()` parses one value, not a stream.
+
+Other dispositions: Teacher Import's buffered `readAll()`/`parseWorkbook()`
+consumer remains owned by Phase 7C. The Class Transfer export projection
+remains in Phase 8. Existing Calendar/Schedule and DB copy/backup paths
+produced no new bounded Phase 3 candidate. F1437 waits for the Batch 14
+closeout push; begin Batch 16 discovery when F1437 starts. Phase 3 remains In
 Progress with its exit gate open.
