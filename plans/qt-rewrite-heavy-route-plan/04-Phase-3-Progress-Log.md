@@ -1548,7 +1548,9 @@ the remote prior tip was `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`. A normal,
 non-force push advanced the remote from that prior tip to
 `018b30b04ab713769f9e69b440ba7223310a2b87`. Post-push verification confirmed
 the remote matched local HEAD; at that check, the worktree was clean and
-ahead/behind was 0/0.
+ahead/behind was 0/0. The receipt documentation was later committed and
+pushed as `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before
+Batch 4 began.
 
 ## F1378 — My Classes teacher-profile batch read (Batch 4 candidate 1 of 20) — 2026-10-24
 
@@ -1637,3 +1639,24 @@ targets. Three selected serial CTests passed (3/3):
 `ClassMngrRosterTemplatePrintServiceTests`. `git diff --check` passed. No full
 suite or cross-platform build ran. F1380 is accepted; F1381 (Roster
 column-name batch read) is current.
+
+Commit: `646790e13eb96b31f2759bdbf4b6f604a189919f`.
+
+## F1381 — Roster column-names batch read (Batch 4 candidate 4 of 20) — 2026-10-24
+
+The production roster-column-names batch-read port,
+`src/next/platform/application_services_roster_column_names_batch_read_port.h`,
+now uses `WorkspaceStore` for open-state and repository access. Direct
+persistence accesses in its dedicated Platform fixture,
+`tests/next_platform_application_services_roster_column_names_batch_read_port_tests.cpp`,
+migrated; assertions are unchanged. The application query, repository
+behavior, and UI flow are unchanged.
+
+Built `ClassMngrNextApplicationRosterColumnNamesBatchReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesRosterColumnNamesBatchReadPortTests`,
+and `ClassMngrRosterPrintDialogTests`. Three selected serial CTests passed
+(3/3): `NextApplicationRosterColumnNamesBatchReadQuery`,
+`NextPlatformApplicationServicesRosterColumnNamesBatchReadPort`, and
+`RosterPrintDialog`. `git diff --check` passed. No full suite or cross-platform
+build ran. F1381 is accepted; F1382 (Roster template-print source read) is
+current.

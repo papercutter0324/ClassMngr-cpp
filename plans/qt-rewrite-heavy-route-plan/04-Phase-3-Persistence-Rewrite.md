@@ -38,12 +38,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 3 (F1358–F1377) is complete and pushed to
-  `origin/Qt-Rewrite` at `018b30b04ab713769f9e69b440ba7223310a2b87`. Batch 4
+- Current note: Batch 3 (F1358–F1377) implementation tip was
+  `018b30b04ab713769f9e69b440ba7223310a2b87`; its push receipt documentation
+  was later pushed as
+  `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before Batch 4
+  began. Batch 4
   discovery is complete and Batch 4 is active: F1378 (My Classes
   teacher-profile batch read), F1379 (My Classes teacher-display-name batch
-  read), and F1380 (Roster snapshot read) are accepted; F1381 (Roster
-  column-name batch read) is current. F1376–F1380 implementation evidence,
+  read), F1380 (Roster snapshot read), and F1381 (Roster column-name batch
+  read) are accepted; F1382 (Roster template-print source read) is current.
+  F1376–F1381 implementation evidence,
   Batch 2 and Batch 3 push receipts, and earlier UI limitations and
   attribution notes are in the [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -63,15 +67,15 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1380 — 2026-10-24
+## Latest Progress Update — F1381 — 2026-10-24
 
-F1380 is accepted; F1381 is current in Batch 4. The Roster snapshot-read port
-now uses `WorkspaceStore` for open-state and repository lookup, and only the
-direct snapshot-read fixture accesses migrated. Repository/query/UI semantics
-and assertions are unchanged. The selected query, Platform-port, and
-roster-template-print-service CTests passed serially (3/3). No full suite or
-cross-platform build ran. The [progress log](04-Phase-3-Progress-Log.md)
-records F1380 evidence and retains Batch 4 discovery and overflow notes.
+F1381 is accepted; F1382 is current in Batch 4. The Roster column-names batch
+read port now uses `WorkspaceStore` for open-state and repository access; only
+direct persistence accesses in its dedicated Platform fixture migrated.
+Assertions, application query, repository behavior, and UI flow are unchanged.
+Three selected serial CTests passed (3/3). No full suite or cross-platform
+build ran. The [progress log](04-Phase-3-Progress-Log.md) records F1381
+evidence and retains Batch 4 discovery and overflow notes.
 
 ## Objective
 

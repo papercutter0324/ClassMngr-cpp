@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "next/application/roster_column_names_batch_read_query.h"
 #include "next/platform/application_services_roster_column_names_batch_read_port.h"
 
@@ -112,7 +112,7 @@ mapsOneOrderedBatchOfFourClassesAndReadsNamesOnly()
     QVERIFY(betaId > 0);
     QVERIFY(emptyId > 0);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(insertColumns(database, zuluId, {
         {QStringLiteral("Last"), 2},
         {QStringLiteral("First"), 0},
@@ -177,7 +177,7 @@ returnsSuccessfulEmptySlotsForMissingRosters()
     QVERIFY(withRosterId > 0);
     QVERIFY(withoutRosterId > 0);
     QVERIFY(insertColumns(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         withRosterId,
         {{QStringLiteral("Notes"), 0}}
         ));
@@ -231,18 +231,18 @@ retainsParentAbsencePerEntryAndPreservesSiblingColumns()
     QVERIFY(deletedEmptyId > 0);
     QVERIFY(orphanParentId > 0);
     QVERIFY(siblingId > 0);
-    QVERIFY(insertColumns(services.databaseSession()->database(), populatedId, {
+    QVERIFY(insertColumns(services.workspaceStore()->database(), populatedId, {
         {QStringLiteral("First"), 0},
         {QString::fromUtf8("\xED\x95\x99\xEC\x83\x9D"), 1}
     }));
-    QVERIFY(insertColumns(services.databaseSession()->database(), orphanParentId, {
+    QVERIFY(insertColumns(services.workspaceStore()->database(), orphanParentId, {
         {QStringLiteral("Orphan Secret"), 0}
     }));
-    QVERIFY(insertColumns(services.databaseSession()->database(), siblingId, {
+    QVERIFY(insertColumns(services.workspaceStore()->database(), siblingId, {
         {QStringLiteral("Sibling Note"), 0}
     }));
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QSqlQuery disableForeignKeys(database);
     QVERIFY2(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
         qPrintable(disableForeignKeys.lastError().text()));
@@ -328,7 +328,7 @@ doesNotApplyOutputColumnLimitToDiscovery()
             ));
     }
     QVERIFY(insertColumns(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         classId,
         columns
         ));
@@ -372,7 +372,7 @@ rosterColumnsStatementFailureIsStructured()
     const int classId = createClass(services, QStringLiteral("Broken Roster"));
     QVERIFY(classId > 0);
 
-    QSqlQuery dropRosterColumns(services.databaseSession()->database());
+    QSqlQuery dropRosterColumns(services.workspaceStore()->database());
     QVERIFY2(dropRosterColumns.exec(QStringLiteral("DROP TABLE roster_columns")),
         qPrintable(dropRosterColumns.lastError().text()));
 

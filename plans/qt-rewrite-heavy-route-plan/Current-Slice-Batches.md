@@ -9,12 +9,15 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 3 (F1358–F1377) is complete and pushed to `origin/Qt-Rewrite` at
-  `018b30b04ab713769f9e69b440ba7223310a2b87`.
-- Batch 4 discovery is complete; Batch 4 is active with F1381 — Roster
-  column-name batch read current.
+- Batch 3 (F1358–F1377) implementation tip was
+  `018b30b04ab713769f9e69b440ba7223310a2b87`; its push receipt documentation
+  was later pushed as
+  `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before Batch 4
+  began.
+- Batch 4 discovery is complete; Batch 4 is active with F1382 — Roster
+  template-print source read current.
 
-## Phase 3 — Batch 4 (active; F1381 current)
+## Phase 3 — Batch 4 (active; F1382 current)
 
 Batch 4 discovery began when F1376 started (candidate 19 of 20 in Batch 3) and
 is complete. Two complementary scans found more than 20 possible active
@@ -26,7 +29,7 @@ priority-ordered shortlist, not an exhaustive inventory.
 1. F1378 — My Classes teacher-profile batch read (accepted)
 2. F1379 — My Classes teacher-display-name batch read (accepted)
 3. F1380 — Roster snapshot read (accepted)
-4. F1381 — Roster column-name batch read (current)
+4. F1381 — Roster column-name batch read (accepted)
 5. F1382 — Roster template-print source read
 6. F1383 — Roster print class-info read
 7. F1384 — Speaking-evaluation roster-name read
