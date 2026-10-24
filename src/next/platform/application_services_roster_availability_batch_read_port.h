@@ -2,7 +2,7 @@
 
 #include "core/application_services.h"
 #include "data/database/database_transaction.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
 #include "next/application/roster_availability_accumulator.h"
 #include "next/application/roster_availability_batch_read_port.h"
@@ -81,9 +81,9 @@ public:
             legacyClassIds.append(*legacyClassId);
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return failure(
                 Domain::ErrorCode::NotFound,
@@ -91,7 +91,7 @@ public:
                 );
         }
 
-        RosterRepository* const repository = session->rosterRepository();
+        RosterRepository* const repository = store->rosterRepository();
         if (!repository)
         {
             return failure(
@@ -102,7 +102,7 @@ public:
 
         try
         {
-            QSqlDatabase database = session->database();
+            QSqlDatabase database = store->database();
             DatabaseTransaction transaction(database);
             if (!transaction.started())
             {

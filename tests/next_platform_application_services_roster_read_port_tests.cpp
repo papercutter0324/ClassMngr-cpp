@@ -937,7 +937,7 @@ rejectsFractionalAvailabilityColumnIndex()
         );
     QVERIFY(createdClass);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(seedSparseRoster(
         database,
         *createdClass,
@@ -993,7 +993,7 @@ rejectsFractionalAvailabilityRowIndex()
         );
     QVERIFY(createdClass);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(seedSparseRoster(
         database,
         *createdClass,
@@ -1152,7 +1152,7 @@ readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit()
     QVERIFY(customId > 0);
     QVERIFY(overflowId > 0);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     std::vector<CellValue> fullCells;
     fullCells.reserve(26);
     for (int row = 0; row < 25; ++row)
@@ -1237,7 +1237,7 @@ readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit()
 
     std::vector<std::tuple<int, int, int>> streamedOrder;
     const Status streamed =
-        services.databaseSession()->rosterRepository()
+        services.workspaceStore()->rosterRepository()
             ->forEachRosterDataCellForClasses(
                 orderedIds,
                 static_cast<int>(Application::RosterModeledRowCount),
@@ -1301,7 +1301,7 @@ preservesMixedParentProvenanceOutcomesInRequestOrder()
     QVERIFY(deletedWithoutChildren);
     QVERIFY(fullSibling);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(seedSparseRoster(
         database,
         *populated,
@@ -1401,7 +1401,7 @@ rejectsMalformedAvailabilityColumnIndex()
         );
     QVERIFY(createdClass);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(seedSparseRoster(
         database,
         *createdClass,

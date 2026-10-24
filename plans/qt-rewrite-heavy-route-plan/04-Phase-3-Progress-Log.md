@@ -764,3 +764,23 @@ coverage checks `INT_MAX`, values above it, and fractional positions, with the
 explicit size_t guard source-reviewed. Valid sparse indices below `INT_MAX`
 can still cause large allocations, preserving existing behavior. No full
 suite or cross-platform build ran.
+
+## F1348 — Roster availability batch read — 2026-10-23
+
+The roster-availability batch-read port now obtains its open state,
+`RosterRepository`, and transaction database through `WorkspaceStore`. Its
+existing repository calls, single transaction, validation, and result/error
+behavior remain unchanged. Availability-specific fixture access in
+`tests/next_platform_application_services_roster_read_port_tests.cpp` uses
+`WorkspaceStore`; assertions are preserved.
+
+Executor and Tester built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`,
+`ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests`, and
+`ClassMngrRosterTransferMenuTests` incrementally in the existing
+`build/macos-clang-debug` tree. The three focused CTests passed **3/3**
+serially (Platform #394, Application #297, UI #135). `git diff --check`
+passed. Transaction-start and commit-failure injection was not run; source
+review confirmed the existing checks and failure mappings. Repository query
+failure is covered by the focused tests. No full suite or cross-platform build
+ran.

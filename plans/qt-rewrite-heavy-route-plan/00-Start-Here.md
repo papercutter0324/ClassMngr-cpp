@@ -7,9 +7,8 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-23
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 2 remains active and unpushed; F1347 (Class Analytics dashboard
-  persistence boundary) is complete, and F1348 is current: Roster availability
-  batch read.
+  Batch 2 remains active and unpushed; F1348 (Roster availability batch read)
+  is complete, and F1349 is current: Teacher Import apply.
   The Batch 1 push receipt is recorded in the Phase 3 progress log.
   See
   the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
