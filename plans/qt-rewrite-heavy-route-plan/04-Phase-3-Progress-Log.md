@@ -2486,3 +2486,33 @@ commit. F1410 is accepted; F1411 (Initial Setup teacher choices read) is
 current. Batch 5 remains unpushed until its remaining slices are complete.
 
 Commit: `5030fdbfa6618e0a42afd578a3f704566cd360fa`.
+
+## F1411 — Initial Setup teacher choices read (Batch 5 candidate 14 of 19) — 2026-10-24
+
+Only the `ApplicationServicesInitialSetupTeacherChoicesReadPort` header and
+its direct Platform fixture moved to `WorkspaceStore`. The port retains its
+`ApplicationServices*` and resolves `workspaceStore()` dynamically for each
+read. TeacherRepository query/order and all returned fields remain unchanged:
+ID, Korean/English names, preferred romanization/name, and UTF-16 text.
+Unavailable store/repository returns recoverable `NotFound`; repository
+errors or exceptions return nonrecoverable `Technical`; invalid ID returns
+nonrecoverable `Validation`. Cursor failure returns no partial results.
+F1412 teacher create and F1413 teacher delete remain out of scope.
+
+Built `ClassMngrNextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests`,
+`ClassMngrNextApplicationInitialSetupTeacherChoicesReadQueryTests`, and
+`ClassMngrInitialSetupWizardTests` incrementally without compiler warnings
+or errors. CTest #471, the Platform port, passed 8 QtTest cases; #469, the
+Application query, passed 6. Six selected offscreen wizard slots passed, 8
+cases including init/cleanup: `classDetailsShowsOrderedPreferredTeacherNamesAndSelectsSingleTeacher`,
+`classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty`,
+`personalDetailsRoutesToClassDetailsWhenTeachersExist`,
+`personalDetailsRoutesToTeacherEntryWhenNoTeachersExist`,
+`blankTeacherEntrySkipsWhenTeachersExist`, and
+`teacherChoiceReadFailuresBehaveAsEmptyWithoutWarnings`. One Sans Serif
+font-alias timing warning occurred; no retries or hangs occurred. Full
+Initial Setup CTest and broader suite did not run. `git diff --check` passed
+before commit. F1411 is accepted; F1412 (Teacher create) is current. Batch 5
+remains unpushed until its remaining slices are complete.
+
+Commit: `4b591e7cfe916b32982ece2877a22f0300fbc2e7`.

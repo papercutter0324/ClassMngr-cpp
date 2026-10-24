@@ -45,14 +45,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   the verified implementation tip is
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1411 (Initial Setup teacher choices read)
-  current. F1410 (Custom color palette preferences) is accepted at
-  `5030fdbfa6618e0a42afd578a3f704566cd360fa`; focused verification passed.
-  Its 6 prioritized candidates remain in the current batch tracker. Batch 5
+  and Batch 5 is active with F1412 (Teacher create) current. F1411 (Initial
+  Setup teacher choices read) is accepted at
+  `4b591e7cfe916b32982ece2877a22f0300fbc2e7`; focused verification passed.
+  Its 5 prioritized candidates remain in the current batch tracker. Batch 5
   remains unpushed until its remaining slices are complete. F1403 was
   limited to residual range projection and excluded F1341 availability/by-ID
   work and the existing WorkspaceStore-backed query/cache path.
-  F1376–F1410 implementation evidence, Batch 2 and Batch 3 push receipts, and
+  F1376–F1411 implementation evidence, Batch 2 and Batch 3 push receipts, and
   earlier UI limitations and attribution notes are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -72,35 +72,32 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1410 — 2026-10-24
+## Latest Progress Update — F1411 — 2026-10-24
 
-F1410 is accepted at `5030fdbfa6618e0a42afd578a3f704566cd360fa`. Only the
-`ApplicationServicesCustomColorPalettePreferencesPort` header/implementation
-and its direct Platform fixture moved from `DatabaseSession` to
-`WorkspaceStore`. The `custom_colors` key and 16-entry default palette/order
-remain unchanged: `#F94144`, `#F3722C`, `#F8961E`, `#F9C74F`, `#90BE6D`,
-`#43AA8B`, `#577590`, `#277DA1`, `#9B5DE5`, `#F15BB5`, `#00BBF9`, `#00F5D4`,
-`#FFFFFF`, `#D9D9D9`, `#808080`, `#000000`.
+F1411 is accepted at `4b591e7cfe916b32982ece2877a22f0300fbc2e7`. Only the
+`ApplicationServicesInitialSetupTeacherChoicesReadPort` header and its direct
+Platform fixture moved from `DatabaseSession` to `WorkspaceStore`. The port
+retains its `ApplicationServices*` and resolves `workspaceStore()` on each
+read. TeacherRepository query/order and all returned fields remain unchanged:
+ID, Korean and English names, preferred romanization/name, and UTF-16 text.
+Unavailable store/repository returns recoverable `NotFound`; repository error
+or exception returns nonrecoverable `Technical`; invalid ID returns
+nonrecoverable `Validation`. Cursor failure returns no partial results.
+F1412 teacher create and F1413 teacher delete remain out of scope.
 
-Null/closed-store reads and missing/invalid stored values return defaults;
-null/closed-store writes succeed without saving. For open stores, missing
-repositories and read/write failures are logged nonrecoverable `Technical`
-results. Writes store all 16 supplied strings unchanged as compact JSON.
-Reads continue to accept `QStringList`, JSON arrays, and legacy newline,
-semicolon, or comma-separated text. Each of the first 16 entries is trimmed,
-parsed by `QColor`, and canonicalized as `HexRgb`; missing or invalid entries
-use that index's default, while extras are ignored. ColorUtils, callers,
-F1399 event-color preferences, F1408/F1409, and other code were unchanged.
-
-The F1410 port, ColorUtils palette, and Initial Setup class-create save parity
-targets built incrementally without compiler warnings or errors. All three
-offscreen CTests passed: #436, 12 QtTest cases; #437, 11 cases; and #76, 9
-cases including class-color dialog integration. Qt font-alias timing and
-`propagateSizeHints` warnings were non-fatal; no setup reruns were needed.
-Full suite and cross-platform builds did not run. `git diff --check` passed
-before commit. F1410 is accepted; F1411 (Initial Setup teacher choices read)
-is current with 6 prioritized candidates remaining. Batch 5 remains unpushed
-until its remaining slices are complete.
+The Platform port, Application query, and Initial Setup wizard targets built
+incrementally without compiler warnings or errors. CTest #471 passed 8 QtTest
+cases and #469 passed 6. Six selected offscreen wizard slots passed, 8 cases
+including init/cleanup: `classDetailsShowsOrderedPreferredTeacherNamesAndSelectsSingleTeacher`,
+`classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty`,
+`personalDetailsRoutesToClassDetailsWhenTeachersExist`,
+`personalDetailsRoutesToTeacherEntryWhenNoTeachersExist`,
+`blankTeacherEntrySkipsWhenTeachersExist`, and
+`teacherChoiceReadFailuresBehaveAsEmptyWithoutWarnings`. One Sans Serif
+font-alias timing warning occurred; there were no retries or hangs. Full
+Initial Setup CTest and broader suite did not run. F1411 is accepted; F1412
+(Teacher create) is current with 5 prioritized candidates remaining. Batch 5
+remains unpushed until its remaining slices are complete.
 
 ## Objective
 
