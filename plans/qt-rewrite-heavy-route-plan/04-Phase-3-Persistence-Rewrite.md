@@ -39,12 +39,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Unassigned
 - Last updated: 2026-10-24
 - Current note: The §3.3 structured-error audit reopened Phase 3's exit gate.
-  F1447 is committed locally as
-  `ba685fbbc69d6b8564d2896671cd82ee3a0810ed` and is not pushed. F1448
-  ClassRepository is implemented and independently verified; its exact-path
-  commit is pending and not pushed. F1449 is next but not active. Evidence and
-  limits are in the [progress log](04-Phase-3-Progress-Log.md); the queue is in
-  the [current batch tracker](Current-Slice-Batches.md).
+  F1448 is committed locally as
+  `28cd7f39def7cc701e02cd8b488a7f21505fc745` and is not pushed. F1449
+  TestingClassRepository is independently verified; its exact-path commit
+  is pending and not pushed. F1450 ClassInfoRepository is next, not active.
+  Evidence and limits are in
+  [progress log](04-Phase-3-Progress-Log.md); the queue is in the
+  [current batch tracker](Current-Slice-Batches.md).
 
 ### Slice batches
 
@@ -59,17 +60,12 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1447 TestingBlock and assignment structured errors — 2026-10-24
+## Latest Progress Update — F1449 TestingClassRepository structured errors — 2026-10-24
 
-F1447 implementation and independent focused verification are complete;
-`ClassMngrTestingBlockRepositoryTests` and four focused consumers passed 5/5.
-F1447 is committed locally as
-`ba685fbbc69d6b8564d2896671cd82ee3a0810ed` and is not pushed. F1448 has since
-been implemented and independently verified: nine focused CTests passed 9/9,
-four isolated ClassTransfer slots passed 4/4, and the added validation slot
-passed its independent rerun. Its exact-path commit is pending and not pushed;
-F1449 is next but not active. F1448 evidence and limits are in the
-[progress log](04-Phase-3-Progress-Log.md); the ordered queue remains in the
+F1449 implementation and independent verification are complete; its
+exact-path commit is pending and not pushed. Evidence and limitations are in
+the [progress log](04-Phase-3-Progress-Log.md). F1450 ClassInfoRepository is
+next but not active; the ordered queue remains in the
 [current batch tracker](Current-Slice-Batches.md).
 
 ## Objective

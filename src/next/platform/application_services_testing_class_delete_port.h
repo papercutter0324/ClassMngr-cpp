@@ -88,17 +88,14 @@ public:
                     );
             }
 
-            const TestingClassRepository::DeleteResult deleted =
+            const RepositoryStatus deleted =
                 repository->deleteTestingClassDetailed(classId);
             if (!deleted)
             {
-                const TestingClassRepository::DeleteFailure& error =
-                    deleted.error();
-                const Domain::ErrorCode code =
-                    error.kind == TestingClassRepository::DeleteFailure::Kind::TestingClassMissing
-                    ? Domain::ErrorCode::NotFound
-                    : Domain::ErrorCode::Technical;
-                return failure(code, toStdString(error.diagnostic));
+                return failure(
+                    mapRepositoryErrorCode(deleted.error().code),
+                    toStdString(deleted.error().diagnostic)
+                    );
             }
 
             return Application::TestingClassDeleteResult::success();
@@ -148,6 +145,26 @@ private:
             bytes.constData(),
             static_cast<std::size_t>(bytes.size())
             );
+    }
+
+    [[nodiscard]] static Domain::ErrorCode mapRepositoryErrorCode(
+        const RepositoryErrorCode code
+        )
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
     }
 
     [[nodiscard]] static Application::TestingClassDeleteResult failure(

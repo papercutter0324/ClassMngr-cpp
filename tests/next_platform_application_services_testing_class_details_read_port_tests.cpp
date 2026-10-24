@@ -353,16 +353,19 @@ rejectsMalformedStoredTeacherIdentifiers()
 
     const auto stored = repository->loadTestingClass(*createdClass);
     QVERIFY(!stored);
-    QVERIFY(stored.error().contains(QStringLiteral("teacher identifier"),
-                                   Qt::CaseInsensitive));
+    QCOMPARE(stored.error().code, RepositoryErrorCode::Validation);
+    QVERIFY(stored.error().diagnostic.contains(
+        QStringLiteral("teacher identifier"), Qt::CaseInsensitive));
     const auto listed = repository->loadTestingClasses();
     QVERIFY(!listed);
-    QCOMPARE(listed.error(), stored.error());
+    QCOMPARE(listed.error().code, RepositoryErrorCode::Validation);
+    QCOMPARE(listed.error().diagnostic, stored.error().diagnostic);
 
     const auto result = readDetails(services, *createdClass);
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!result.error().recoverable);
     QVERIFY(QString::fromStdString(result.error().message).contains(
         QStringLiteral("teacher identifier"), Qt::CaseInsensitive));
 }
@@ -447,7 +450,7 @@ reportsDeletedParentClassesAsNotFoundAndPreservesLegacyDiagnostic()
         repository->loadTestingClassDetailsReadRecord(*createdClass);
     QVERIFY(!legacyResult);
     QCOMPARE(
-        legacyResult.error(),
+        legacyResult.error().diagnostic,
         QStringLiteral("The testing class was not found.")
         );
 
@@ -458,6 +461,7 @@ reportsDeletedParentClassesAsNotFoundAndPreservesLegacyDiagnostic()
         repository->testingClassDetailsReadMetrics();
 
     verifyNotFound(result);
+    QVERIFY(result.error().recoverable);
     QCOMPARE(metricsAfter.callCount - metricsBefore.callCount, 1);
     QCOMPARE(metricsAfter.statementCount - metricsBefore.statementCount, 1);
     QCOMPARE(
@@ -506,7 +510,7 @@ reportsMissingTestingClassesAsWarningsWithoutFallback()
         repository->loadTestingClassDetailsReadRecord(*createdClass);
     QVERIFY(!legacyResult);
     QCOMPARE(
-        legacyResult.error(),
+        legacyResult.error().diagnostic,
         QStringLiteral("The testing class was not found.")
         );
 
@@ -519,7 +523,8 @@ reportsMissingTestingClassesAsWarningsWithoutFallback()
     QVERIFY(!result);
     QCOMPARE(metricsAfter.callCount - metricsBefore.callCount, 1);
     QCOMPARE(metricsAfter.statementCount - metricsBefore.statementCount, 1);
-    QVERIFY(result.error().code != Domain::ErrorCode::NotFound);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().recoverable);
     const QString errorText = QString::fromStdString(result.error().message);
     QCOMPARE(errorText, QStringLiteral("The testing class was not found."));
 }

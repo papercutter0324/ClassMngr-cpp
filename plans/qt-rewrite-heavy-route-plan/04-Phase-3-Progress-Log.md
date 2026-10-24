@@ -3673,7 +3673,7 @@ No full suite or other-platform verification ran. The legacy boundary test
 covers a write diagnostic, not read failures. F1447 is committed locally as
 `ba685fbbc69d6b8564d2896671cd82ee3a0810ed` and is not pushed.
 
-## F1448 — ClassRepository structured errors — verified, commit pending — 2026-10-24
+## F1448 — ClassRepository structured errors — verified — 2026-10-24
 
 All fallible public `ClassRepository` operations now use
 `RepositoryResult`/`RepositoryStatus`. `ClassByIdLookupResult` was removed;
@@ -3726,5 +3726,55 @@ The executor's broader `ClassMngrClassTransferTests` selection reported
 419 passed and 1 failure, reproducing the known F1326 baseline failure
 `importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`; the
 independent Tester did not rerun that broad target. No full suite or other-
-platform build ran. F1448 is accepted with its exact-path commit pending and
-not pushed; F1449 is next but not active.
+platform build ran. F1448 is committed locally as
+`28cd7f39def7cc701e02cd8b488a7f21505fc745` and is not pushed.
+
+## F1449 — TestingClassRepository structured errors — verified, commit pending — 2026-10-24
+
+All fallible public `TestingClassRepository` APIs now return
+`RepositoryResult`/`RepositoryStatus`; custom detailed Failure result types
+were removed and method names retained. Create maps missing required fields or
+malformed schedule data to Validation, and a partial optional assignment pair
+to InvalidInput. A known duplicate `(day, start_time)` maps to Conflict only
+when `QSqlError.nativeErrorCode()` is exactly SQLite extended unique code
+2067; generic query/constraint failures, including trigger/foreign-key errors,
+map to Technical. Diagnostics and transaction rollback are preserved.
+Generated invalid/nonpositive IDs map to Technical; IDs above `INT_MAX` map
+to Validation with explicit nonrecoverable metadata in the create port.
+Ordinary create Validation and slot Conflict remain recoverable.
+
+Simple load no-row maps to NotFound with its current diagnostic. Detailed
+read maps a missing parent to NotFound, a missing subtype to Technical with
+the same “not found” diagnostic, cursor failures to Technical, and malformed
+stored IDs to Validation. Simple update missing-row maps to NotFound with its
+exact current diagnostic; detailed update maps a missing parent to NotFound
+and missing subtype to Technical, preserving their exact diagnostics. Delete
+maps nonpositive IDs to InvalidInput with the legacy message, a missing target
+to NotFound, and SQL/row-count/rollback/commit failures to Technical.
+`isTestingClass` keeps invalid-ID successful false and maps cursor failures to
+Technical.
+
+Service APIs retain legacy strings via `toLegacyDiagnostic()`. Direct ports
+map codes by name while preserving existing recoverability, page warnings, and
+no-fallback behavior. Schedule choices retain empty success and map typed
+Validation.
+
+The executor built `ClassMngr`, the repository and five direct-port targets,
+and legacy consumer targets; its first six focused CTests passed. Independent
+review accepted the implementation with no production defect. In existing
+`build/macos-clang-debug` (macOS arm64, Ninja Debug, Qt 6.12.0), the Tester
+built `ClassMngr`, the repository, DataService lifecycle, five direct-port
+suites, three TestingClassesPage parity targets, and ScheduleImport. Eight
+focused CTests passed **8/8** (repository 23 cases, DataService 46, five direct
+ports 47 combined, TestingClassesPage persistence 5). The three page parity
+CTests passed **3/3** (Delete 3, Persistence 5, Cancel Failure 6). ScheduleImport
+passed 96 cases with one external-workbook test skipped because
+`CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was unset. `git diff --check` passed.
+
+The executor's broad ScheduleWidget and TestingClassesPage runs had current-run
+failures: SQLite Driver not loaded/database not open and four roster UI
+assertions. The independent Tester did not rerun those broad suites, and no
+same-revision baseline was run; these failures remain unresolved and are not
+established as pre-existing. No full suite or other-platform build ran. F1449
+is independently verified with its exact-path commit pending and not pushed;
+F1450 is next but not active.

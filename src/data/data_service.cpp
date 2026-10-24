@@ -687,10 +687,12 @@ Result<int> DataService::createTestingClass(
             );
     }
 
-    return m_session->testingClassRepository()->createTestingClass(
-        testingClass,
-        assignmentDay,
-        assignmentStartTime
+    return toLegacyResult(
+        m_session->testingClassRepository()->createTestingClass(
+            testingClass,
+            assignmentDay,
+            assignmentStartTime
+            )
         );
 }
 
@@ -705,7 +707,9 @@ Status DataService::updateTestingClass(
             );
     }
 
-    return m_session->testingClassRepository()->updateTestingClass(testingClass);
+    return toLegacyStatus(
+        m_session->testingClassRepository()->updateTestingClass(testingClass)
+        );
 }
 
 Result<TestingClass> DataService::loadTestingClass(
@@ -719,7 +723,9 @@ Result<TestingClass> DataService::loadTestingClass(
             );
     }
 
-    return m_session->testingClassRepository()->loadTestingClass(classId);
+    return toLegacyResult(
+        m_session->testingClassRepository()->loadTestingClass(classId)
+        );
 }
 
 Result<QList<TestingClass>> DataService::loadTestingClasses()
@@ -731,7 +737,9 @@ Result<QList<TestingClass>> DataService::loadTestingClasses()
             );
     }
 
-    return m_session->testingClassRepository()->loadTestingClasses();
+    return toLegacyResult(
+        m_session->testingClassRepository()->loadTestingClasses()
+        );
 }
 
 Status DataService::deleteTestingClass(
@@ -745,7 +753,9 @@ Status DataService::deleteTestingClass(
             );
     }
 
-    return m_session->testingClassRepository()->deleteTestingClass(classId);
+    return toLegacyStatus(
+        m_session->testingClassRepository()->deleteTestingClass(classId)
+        );
 }
 
 Result<bool> DataService::isTestingClass(
@@ -759,7 +769,9 @@ Result<bool> DataService::isTestingClass(
             );
     }
 
-    return m_session->testingClassRepository()->isTestingClass(classId);
+    return toLegacyResult(
+        m_session->testingClassRepository()->isTestingClass(classId)
+        );
 }
 
 Result<QList<CalendarEvent>> DataService::loadCalendarEventsForDate(

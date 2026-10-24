@@ -10,6 +10,7 @@
 
 #include <array>
 #include <limits>
+#include <utility>
 
 class TestingClassRepositoryTests : public QObject
 {
@@ -18,6 +19,11 @@ class TestingClassRepositoryTests : public QObject
 private slots:
     void createsUpdatesFiltersAndDeletesTestingClasses();
     void rejectsIncompleteTestingClasses();
+    void returnsTypedInputAndMissingRowErrors();
+    void rejectsUnavailableGeneratedTestingClassIds();
+    void classifiesAssignmentConflictsWithoutParsingDiagnostics();
+    void distinguishesMissingParentsAndTestingSubtypes();
+    void reportsCursorFailuresForTestingClassReads();
     void persistsEverySupportedMixedLevel();
     void exposesTestingWorkspaceGradeAndLevelChoices();
     void createsClassAndAssignmentAtomically();
@@ -275,7 +281,11 @@ struct InvalidTestingClassLoadEvidence
     bool rowsSeeded = false;
     bool beforeSnapshotRead = false;
     bool loadRejected = false;
+    RepositoryErrorCode errorCode = RepositoryErrorCode::Technical;
     QString error;
+    bool choicesRejected = false;
+    RepositoryErrorCode choicesErrorCode = RepositoryErrorCode::Technical;
+    QString choicesError;
     bool afterSnapshotRead = false;
     QStringList before;
     QStringList after;
@@ -333,18 +343,26 @@ InvalidTestingClassLoadEvidence loadTestingClassesWithInvalidPersistedId(
                 if (evidence.beforeSnapshotRead)
                 {
                     TestingClassRepository repository(database);
-                    const Result<QList<TestingClass>> loaded =
+                    const RepositoryResult<QList<TestingClass>> loaded =
                         repository.loadTestingClasses();
                     evidence.loadRejected = !loaded;
                     if (!loaded)
                     {
-                        evidence.error = loaded.error();
+                        evidence.errorCode = loaded.error().code;
+                        evidence.error = loaded.error().diagnostic;
                     }
                     evidence.afterSnapshotRead =
                         readPersistedTestingClassSnapshot(
                             database,
                             &evidence.after
                             );
+                    const auto choices = repository.loadTestingClassChoices();
+                    evidence.choicesRejected = !choices;
+                    if (!choices)
+                    {
+                        evidence.choicesErrorCode = choices.error().code;
+                        evidence.choicesError = choices.error().diagnostic;
+                    }
                 }
             }
         }
@@ -496,7 +514,7 @@ void TestingClassRepositoryTests
         testingClass.fontColor = QStringLiteral("#FFFFFF");
         testingClass.notes = QStringLiteral("Bring dictionaries.");
 
-        const Result<int> created =
+        const RepositoryResult<int> created =
             repository.createTestingClass(testingClass);
         QVERIFY(created);
         QVERIFY(*created > regularClassId);
@@ -620,21 +638,464 @@ void TestingClassRepositoryTests::rejectsIncompleteTestingClasses()
 
         TestingClassRepository repository(database);
         TestingClass testingClass;
-        QVERIFY(!repository.createTestingClass(testingClass));
+        const auto missingName = repository.createTestingClass(testingClass);
+        QVERIFY(!missingName);
+        QCOMPARE(missingName.error().code, RepositoryErrorCode::Validation);
+        QVERIFY(!missingName.error().recoverableOverride.has_value());
 
         testingClass.name = QStringLiteral("Support");
         testingClass.grade = QStringLiteral("M1");
         testingClass.level = QStringLiteral("Mixed (High)");
-        QVERIFY(!repository.createTestingClass(testingClass));
+        const auto missingRoom = repository.createTestingClass(testingClass);
+        QVERIFY(!missingRoom);
+        QCOMPARE(missingRoom.error().code, RepositoryErrorCode::Validation);
 
         testingClass.room = QStringLiteral("305");
-        const Result<int> created =
+        const RepositoryResult<int> created =
             repository.createTestingClass(testingClass);
         QVERIFY(created);
 
         testingClass.classId = *created;
         testingClass.level.clear();
         QVERIFY(!repository.updateTestingClass(testingClass));
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests::returnsTypedInputAndMissingRowErrors()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_typed_input");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+
+        TestingClassRepository repository(database);
+        TestingClass value;
+        value.name = QStringLiteral("Typed Validation");
+        value.grade = QStringLiteral("M1");
+        value.level = QStringLiteral("Major");
+        value.room = QStringLiteral("Room 1");
+
+        const std::array<std::pair<QString TestingClass::*, QString>, 4>
+            requiredFields{{
+                {&TestingClass::name, QStringLiteral("Testing class name is required.")},
+                {&TestingClass::grade, QStringLiteral("Testing class grade is required.")},
+                {&TestingClass::level, QStringLiteral("Testing class level is required.")},
+                {&TestingClass::room, QStringLiteral("Testing class room is required.")}
+            }};
+        for (const auto& [field, diagnostic] : requiredFields)
+        {
+            TestingClass invalid = value;
+            (invalid.*field).clear();
+            const auto validation = repository.createTestingClass(invalid);
+            QVERIFY(!validation);
+            QCOMPARE(validation.error().code, RepositoryErrorCode::Validation);
+            QCOMPARE(toLegacyDiagnostic(validation.error()), diagnostic);
+        }
+
+        const auto invalidClass = repository.loadTestingClass(0);
+        QVERIFY(!invalidClass);
+        QCOMPARE(invalidClass.error().code, RepositoryErrorCode::InvalidInput);
+        QCOMPARE(
+            toLegacyDiagnostic(invalidClass.error()),
+            QStringLiteral("A valid testing class is required.")
+            );
+
+        const auto missingClass = repository.loadTestingClass(4321);
+        QVERIFY(!missingClass);
+        QCOMPARE(missingClass.error().code, RepositoryErrorCode::NotFound);
+        QCOMPARE(
+            toLegacyDiagnostic(missingClass.error()),
+            QStringLiteral("The testing class was not found.")
+            );
+
+        const auto invalidDetailsId =
+            repository.loadTestingClassDetailsReadRecordDetailed(0);
+        QVERIFY(!invalidDetailsId);
+        QCOMPARE(
+            invalidDetailsId.error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+        const auto legacyInvalidDetailsId =
+            repository.loadTestingClassDetailsReadRecord(0);
+        QVERIFY(!legacyInvalidDetailsId);
+        QCOMPARE(
+            legacyInvalidDetailsId.error().code,
+            invalidDetailsId.error().code
+            );
+        QCOMPARE(
+            legacyInvalidDetailsId.error().diagnostic,
+            invalidDetailsId.error().diagnostic
+            );
+
+        const auto partialAssignment = repository.createTestingClass(
+            value,
+            QStringLiteral("Monday"),
+            QString{}
+            );
+        QVERIFY(!partialAssignment);
+        QCOMPARE(
+            partialAssignment.error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+
+        const auto malformedAssignment = repository.createTestingClass(
+            value,
+            QStringLiteral("Funday"),
+            QStringLiteral("16:00")
+            );
+        QVERIFY(!malformedAssignment);
+        QCOMPARE(
+            malformedAssignment.error().code,
+            RepositoryErrorCode::Validation
+            );
+
+        const auto blankAssignment = repository.createTestingClass(
+            value,
+            QStringLiteral("  "),
+            QStringLiteral("\t")
+            );
+        QVERIFY(blankAssignment);
+        QCOMPARE(
+            rowCount(database, QStringLiteral("schedule_testing_blocks")),
+            0
+            );
+
+        value.classId = 0;
+        const auto invalidUpdateId = repository.updateTestingClass(value);
+        QVERIFY(!invalidUpdateId);
+        QCOMPARE(invalidUpdateId.error().code, RepositoryErrorCode::InvalidInput);
+        const auto invalidDetailedUpdateId =
+            repository.updateTestingClassDetailed(value);
+        QVERIFY(!invalidDetailedUpdateId);
+        QCOMPARE(
+            invalidDetailedUpdateId.error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+
+        value.classId = 1;
+        value.grade.clear();
+        const auto incompleteUpdate = repository.updateTestingClass(value);
+        QVERIFY(!incompleteUpdate);
+        QCOMPARE(incompleteUpdate.error().code, RepositoryErrorCode::Validation);
+
+        const auto invalidDeleteId = repository.deleteTestingClass(0);
+        QVERIFY(!invalidDeleteId);
+        QCOMPARE(invalidDeleteId.error().code, RepositoryErrorCode::InvalidInput);
+        QCOMPARE(
+            toLegacyDiagnostic(invalidDeleteId.error()),
+            QStringLiteral("The testing class no longer exists.")
+            );
+
+        const auto nonpositivePredicate = repository.isTestingClass(0);
+        QVERIFY(nonpositivePredicate);
+        QVERIFY(!*nonpositivePredicate);
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests
+    ::rejectsUnavailableGeneratedTestingClassIds()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_missing_generated_id");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+
+        QSqlQuery trigger(database);
+        QVERIFY2(trigger.exec(QStringLiteral(R"(
+            CREATE TRIGGER ignore_testing_class_parent_insert
+            BEFORE INSERT ON classes
+            BEGIN
+                SELECT RAISE(IGNORE);
+            END
+        )")), qPrintable(trigger.lastError().text()));
+
+        TestingClass value;
+        value.name = QStringLiteral("No Generated ID");
+        value.grade = QStringLiteral("M1");
+        value.level = QStringLiteral("Major");
+        value.room = QStringLiteral("Room 1");
+        TestingClassRepository repository(database);
+
+        const auto result = repository.createTestingClass(value);
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, RepositoryErrorCode::Technical);
+        QCOMPARE(
+            toLegacyDiagnostic(result.error()),
+            QStringLiteral("Creating the testing class did not return a valid ID.")
+            );
+        QCOMPARE(rowCount(database, QStringLiteral("classes")), 0);
+        QCOMPARE(rowCount(database, QStringLiteral("class_info")), 0);
+        QCOMPARE(rowCount(database, QStringLiteral("testing_classes")), 0);
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests
+    ::classifiesAssignmentConflictsWithoutParsingDiagnostics()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_assignment_error_codes");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+
+        TestingClassRepository repository(database);
+        TestingClass value;
+        value.name = QStringLiteral("Slot Owner");
+        value.grade = QStringLiteral("M1");
+        value.level = QStringLiteral("Major");
+        value.room = QStringLiteral("Room 1");
+        const auto owner = repository.createTestingClass(
+            value,
+            QStringLiteral("Monday"),
+            QStringLiteral("16:00")
+            );
+        QVERIFY(owner);
+
+        value.name = QStringLiteral("Duplicate Slot");
+        const auto duplicate = repository.createTestingClass(
+            value,
+            QStringLiteral("Monday"),
+            QStringLiteral("16:00")
+            );
+        QVERIFY(!duplicate);
+        QCOMPARE(duplicate.error().code, RepositoryErrorCode::Conflict);
+        QVERIFY(toLegacyDiagnostic(duplicate.error()).contains(
+            QStringLiteral("Assigning the new testing class failed")
+            ));
+
+        QSqlQuery trigger(database);
+        QVERIFY2(trigger.exec(QStringLiteral(R"(
+            CREATE TRIGGER fail_testing_assignment_with_constraint_text
+            BEFORE INSERT ON schedule_testing_blocks
+            BEGIN
+                SELECT RAISE(ABORT,
+                    'UNIQUE constraint failed: schedule_testing_blocks.day');
+            END
+        )")), qPrintable(trigger.lastError().text()));
+
+        value.name = QStringLiteral("Trigger Failure");
+        const auto otherSqlFailure = repository.createTestingClass(
+            value,
+            QStringLiteral("Tuesday"),
+            QStringLiteral("16:00")
+            );
+        QVERIFY(!otherSqlFailure);
+        QCOMPARE(
+            otherSqlFailure.error().code,
+            RepositoryErrorCode::Technical
+            );
+        QVERIFY(toLegacyDiagnostic(otherSqlFailure.error()).contains(
+            QStringLiteral("UNIQUE constraint failed"),
+            Qt::CaseInsensitive
+            ));
+        QCOMPARE(rowCount(database, QStringLiteral("classes")), 1);
+        QCOMPARE(rowCount(database, QStringLiteral("class_info")), 1);
+        QCOMPARE(rowCount(database, QStringLiteral("testing_classes")), 1);
+        QCOMPARE(rowCount(database, QStringLiteral("schedule_testing_blocks")), 1);
+
+        QVERIFY2(trigger.exec(QStringLiteral(
+            "DROP TRIGGER fail_testing_assignment_with_constraint_text"
+            )), qPrintable(trigger.lastError().text()));
+        QVERIFY2(trigger.exec(QStringLiteral(
+            "DROP TABLE schedule_testing_blocks"
+            )), qPrintable(trigger.lastError().text()));
+        QVERIFY2(trigger.exec(QStringLiteral(
+            "CREATE TABLE teachers (id INTEGER PRIMARY KEY)"
+            )), qPrintable(trigger.lastError().text()));
+        QVERIFY2(trigger.exec(QStringLiteral(R"(
+            CREATE TABLE schedule_testing_blocks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                day TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                room TEXT NOT NULL DEFAULT '',
+                class_id INTEGER REFERENCES teachers(id),
+                UNIQUE(day, start_time)
+            )
+        )")), qPrintable(trigger.lastError().text()));
+        QVERIFY2(trigger.exec(QStringLiteral("PRAGMA foreign_keys=ON")),
+            qPrintable(trigger.lastError().text()));
+
+        value.name = QStringLiteral("Foreign Key Failure");
+        const auto foreignKeyFailure = repository.createTestingClass(
+            value,
+            QStringLiteral("Wednesday"),
+            QStringLiteral("17:00")
+            );
+        QVERIFY(!foreignKeyFailure);
+        QCOMPARE(
+            foreignKeyFailure.error().code,
+            RepositoryErrorCode::Technical
+            );
+        QVERIFY(toLegacyDiagnostic(foreignKeyFailure.error()).contains(
+            QStringLiteral("FOREIGN KEY constraint failed"),
+            Qt::CaseInsensitive
+            ));
+        QCOMPARE(rowCount(database, QStringLiteral("classes")), 1);
+        QCOMPARE(rowCount(database, QStringLiteral("class_info")), 1);
+        QCOMPARE(rowCount(database, QStringLiteral("testing_classes")), 1);
+        QCOMPARE(rowCount(database, QStringLiteral("schedule_testing_blocks")), 0);
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests
+    ::distinguishesMissingParentsAndTestingSubtypes()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_missing_targets");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+
+        ClassRepository classRepository(database);
+        TestingClassRepository repository(database);
+        TestingClass value;
+        value.name = QStringLiteral("Missing Target");
+        value.grade = QStringLiteral("M1");
+        value.level = QStringLiteral("Major");
+        value.room = QStringLiteral("Room 1");
+        value.classId = 87;
+
+        const auto missingParentUpdate =
+            repository.updateTestingClassDetailed(value);
+        QVERIFY(!missingParentUpdate);
+        QCOMPARE(
+            missingParentUpdate.error().code,
+            RepositoryErrorCode::NotFound
+            );
+        QCOMPARE(
+            toLegacyDiagnostic(missingParentUpdate.error()),
+            QStringLiteral("The testing class parent class was not found for class id 87.")
+            );
+
+        const auto regularClass = classRepository.createClass(
+            QStringLiteral("Regular Class")
+            );
+        QVERIFY(regularClass);
+        value.classId = *regularClass;
+
+        const auto missingSubtypeUpdate =
+            repository.updateTestingClassDetailed(value);
+        QVERIFY(!missingSubtypeUpdate);
+        QCOMPARE(
+            missingSubtypeUpdate.error().code,
+            RepositoryErrorCode::Technical
+            );
+        QCOMPARE(
+            toLegacyDiagnostic(missingSubtypeUpdate.error()),
+            QStringLiteral("The testing class no longer exists.")
+            );
+
+        const auto missingSubtypeRead =
+            repository.loadTestingClassDetailsReadRecordDetailed(*regularClass);
+        QVERIFY(!missingSubtypeRead);
+        QCOMPARE(
+            missingSubtypeRead.error().code,
+            RepositoryErrorCode::Technical
+            );
+        QCOMPARE(
+            toLegacyDiagnostic(missingSubtypeRead.error()),
+            QStringLiteral("The testing class was not found.")
+            );
+
+        const auto missingParentRead =
+            repository.loadTestingClassDetailsReadRecordDetailed(654321);
+        QVERIFY(!missingParentRead);
+        QCOMPARE(
+            missingParentRead.error().code,
+            RepositoryErrorCode::NotFound
+            );
+        QCOMPARE(
+            toLegacyDiagnostic(missingParentRead.error()),
+            QStringLiteral("The testing class was not found.")
+            );
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests::reportsCursorFailuresForTestingClassReads()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_cursor_failures");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (1, 'Valid'), (2, 'Bad JSON')"
+            )));
+        QVERIFY(query.exec(QStringLiteral("DROP TABLE testing_classes")));
+        QVERIFY(query.exec(QStringLiteral(R"(
+            CREATE TABLE testing_class_json_backing (
+                row_id INTEGER PRIMARY KEY,
+                payload TEXT NOT NULL
+            )
+        )")));
+        QVERIFY(query.exec(QStringLiteral(R"(
+            INSERT INTO testing_class_json_backing (row_id, payload)
+            VALUES (1, '{"class_id":1,"room":"A"}'), (2, '{')
+        )")));
+        QVERIFY(query.exec(QStringLiteral(R"(
+            CREATE VIEW testing_classes AS
+            SELECT
+                json_extract(payload, '$.class_id') AS class_id,
+                json_extract(payload, '$.room') AS room
+            FROM testing_class_json_backing
+            ORDER BY row_id
+        )")));
+
+        TestingClassRepository repository(database);
+        const auto predicate = repository.isTestingClass(999);
+        QVERIFY(!predicate);
+        QCOMPARE(predicate.error().code, RepositoryErrorCode::Technical);
+
+        const auto singleLoad = repository.loadTestingClass(999);
+        QVERIFY(!singleLoad);
+        QCOMPARE(singleLoad.error().code, RepositoryErrorCode::Technical);
+
+        const auto loaded = repository.loadTestingClasses();
+        QVERIFY(!loaded);
+        QCOMPARE(loaded.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(toLegacyDiagnostic(loaded.error()).contains(
+            QStringLiteral("Loading testing classes failed"),
+            Qt::CaseInsensitive
+            ));
+
+        const auto choices = repository.loadTestingClassChoices();
+        QVERIFY(!choices);
+        QCOMPARE(choices.error().code, RepositoryErrorCode::Technical);
     }
 
     QSqlDatabase::removeDatabase(connectionName);
@@ -665,11 +1126,11 @@ void TestingClassRepositoryTests::persistsEverySupportedMixedLevel()
             testingClass.level = level;
             testingClass.room = QStringLiteral("401");
 
-            const Result<int> created =
+            const RepositoryResult<int> created =
                 repository.createTestingClass(testingClass);
             QVERIFY(created);
 
-            const Result<TestingClass> loaded =
+            const RepositoryResult<TestingClass> loaded =
                 repository.loadTestingClass(*created);
             QVERIFY(loaded);
             QCOMPARE(loaded->level, level);
@@ -759,7 +1220,7 @@ void TestingClassRepositoryTests
         testingClass.level = QStringLiteral("Mixed (All)");
         testingClass.room = QStringLiteral("Library");
 
-        const Result<int> created =
+        const RepositoryResult<int> created =
             repository.createTestingClass(
                 testingClass,
                 QStringLiteral("monday"),
@@ -796,7 +1257,7 @@ void TestingClassRepositoryTests
         }
 
         testingClass.name = QStringLiteral("Must Roll Back");
-        const Result<int> rejected =
+        const RepositoryResult<int> rejected =
             repository.createTestingClass(
                 testingClass,
                 QStringLiteral("Monday"),
@@ -862,13 +1323,23 @@ void TestingClassRepositoryTests
         testingClass.grade = QStringLiteral("M1");
         testingClass.level = QStringLiteral("Mixed (All)");
         testingClass.room = QStringLiteral("Library");
-        const Result<int> rejected =
+        const RepositoryResult<int> rejected =
             testingClassRepository.createTestingClass(
                 testingClass,
                 QStringLiteral("Monday"),
                 QStringLiteral("16:00")
                 );
         QVERIFY(!rejected);
+        QCOMPARE(rejected.error().code, RepositoryErrorCode::Validation);
+        QVERIFY(rejected.error().recoverableOverride.has_value());
+        QVERIFY(!*rejected.error().recoverableOverride);
+        QCOMPARE(
+            toLegacyDiagnostic(rejected.error()),
+            QStringLiteral(
+                "Creating the testing class returned an ID outside the "
+                "supported integer range."
+                )
+            );
 
         QVERIFY(query.exec(QStringLiteral(
             "SELECT id, name FROM classes"
@@ -929,7 +1400,7 @@ void TestingClassRepositoryTests
         testingClass.grade = QStringLiteral("M1");
         testingClass.level = QStringLiteral("Mixed (All)");
         testingClass.room = QStringLiteral("Library");
-        const Result<int> created =
+        const RepositoryResult<int> created =
             testingClassRepository.createTestingClass(
                 testingClass,
                 QStringLiteral("Monday"),
@@ -1030,7 +1501,7 @@ void TestingClassRepositoryTests
             ));
 
         TestingClassRepository repository(database);
-        const Result<QList<TestingClass>> loaded =
+        const RepositoryResult<QList<TestingClass>> loaded =
             repository.loadTestingClasses();
         QVERIFY(loaded);
         QCOMPARE(loaded->size(), 2);
@@ -1053,7 +1524,7 @@ void TestingClassRepositoryTests
         QCOMPARE(loaded->at(1).fontColor, QStringLiteral("#FFFFFF"));
         QCOMPARE(loaded->at(1).notes, QStringLiteral("Supported row notes"));
 
-        const Result<QList<TestingClassChoiceRecord>> choices =
+        const RepositoryResult<QList<TestingClassChoiceRecord>> choices =
             repository.loadTestingClassChoices();
         QVERIFY(choices);
         QCOMPARE(choices->size(), 2);
@@ -1091,7 +1562,13 @@ void TestingClassRepositoryTests
         4294967297LL
         ));
     QVERIFY(wideIdEvidence.loadRejected);
+    QCOMPARE(wideIdEvidence.errorCode, RepositoryErrorCode::Validation);
     QVERIFY(wideIdEvidence.error.contains(
+        QStringLiteral("invalid class identifier")
+        ));
+    QVERIFY(wideIdEvidence.choicesRejected);
+    QCOMPARE(wideIdEvidence.choicesErrorCode, RepositoryErrorCode::Validation);
+    QVERIFY(wideIdEvidence.choicesError.contains(
         QStringLiteral("invalid class identifier")
         ));
     QVERIFY(wideIdEvidence.afterSnapshotRead);
@@ -1115,9 +1592,12 @@ void TestingClassRepositoryTests
         1
         ));
     QVERIFY(zeroIdEvidence.loadRejected);
+    QCOMPARE(zeroIdEvidence.errorCode, RepositoryErrorCode::Validation);
     QVERIFY(zeroIdEvidence.error.contains(
         QStringLiteral("invalid class identifier")
         ));
+    QVERIFY(zeroIdEvidence.choicesRejected);
+    QCOMPARE(zeroIdEvidence.choicesErrorCode, RepositoryErrorCode::Validation);
     QVERIFY(zeroIdEvidence.afterSnapshotRead);
     QCOMPARE(zeroIdEvidence.after, zeroIdEvidence.before);
 }
@@ -1209,10 +1689,7 @@ reportsTypedMissingAndPreservesLegacyDeleteDiagnostic()
         const auto missing =
             repository.deleteTestingClassDetailed(missingClassId);
         QVERIFY(!missing);
-        QCOMPARE(
-            missing.error().kind,
-            TestingClassRepository::DeleteFailure::Kind::TestingClassMissing
-            );
+        QCOMPARE(missing.error().code, RepositoryErrorCode::NotFound);
         QCOMPARE(
             missing.error().diagnostic,
             QStringLiteral("The testing class no longer exists.")
@@ -1227,11 +1704,11 @@ reportsTypedMissingAndPreservesLegacyDeleteDiagnostic()
         QVERIFY(orphanCount.next());
         QCOMPARE(orphanCount.value(0).toInt(), 1);
 
-        const Status legacyMissing =
+        const RepositoryStatus legacyMissing =
             repository.deleteTestingClass(missingClassId);
         QVERIFY(!legacyMissing);
         QCOMPARE(
-            legacyMissing.error(),
+            toLegacyDiagnostic(legacyMissing.error()),
             QStringLiteral("The testing class no longer exists.")
             );
 
@@ -1285,10 +1762,7 @@ preservesRegularClassWithoutTestingSubtype()
         const auto deletion =
             testingClassRepository.deleteTestingClassDetailed(*regularClassId);
         QVERIFY(!deletion);
-        QCOMPARE(
-            deletion.error().kind,
-            TestingClassRepository::DeleteFailure::Kind::TestingClassMissing
-            );
+        QCOMPARE(deletion.error().code, RepositoryErrorCode::NotFound);
 
         const auto regularClass = classRepository.getClassById(*regularClassId);
         QVERIFY(regularClass);
@@ -1370,10 +1844,7 @@ rollsBackEveryCascadeDeleteWhenFinalClassDeleteFails()
         const auto deletion =
             repository.deleteTestingClassDetailed(*targetId);
         QVERIFY(!deletion);
-        QCOMPARE(
-            deletion.error().kind,
-            TestingClassRepository::DeleteFailure::Kind::Technical
-            );
+        QCOMPARE(deletion.error().code, RepositoryErrorCode::Technical);
         QVERIFY(deletion.error().diagnostic.contains(
             QStringLiteral("injected final delete failure")
             ));

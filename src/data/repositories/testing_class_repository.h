@@ -1,12 +1,11 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 #include "domain/models/testing_class.h"
 
 #include <QList>
 #include <QSqlDatabase>
 
-#include <expected>
 
 struct TestingClassChoiceRecord final
 {
@@ -30,24 +29,6 @@ struct TestingClassDetailsReadRecord final
     QString notes;
 };
 
-struct TestingClassDetailsReadFailure final
-{
-    enum class Kind
-    {
-        ParentClassMissing,
-        Technical
-    };
-
-    Kind kind = Kind::Technical;
-    QString diagnostic;
-};
-
-using TestingClassDetailsReadResult =
-    std::expected<
-        TestingClassDetailsReadRecord,
-        TestingClassDetailsReadFailure
-        >;
-
 struct TestingClassChoicesReadMetrics final
 {
     int callCount = 0;
@@ -63,91 +44,57 @@ struct TestingClassDetailsReadMetrics final
 class TestingClassRepository
 {
 public:
-    struct UpdateFailure final
-    {
-        enum class Kind
-        {
-            ParentClassMissing,
-            Technical
-        };
-
-        Kind kind = Kind::Technical;
-        QString diagnostic;
-    };
-
-    using UpdateResult = std::expected<void, UpdateFailure>;
-
-    struct DeleteFailure final
-    {
-        enum class Kind
-        {
-            TestingClassMissing,
-            Technical
-        };
-
-        Kind kind = Kind::Technical;
-        QString diagnostic;
-    };
-
-    using DeleteResult = std::expected<void, DeleteFailure>;
-
     explicit TestingClassRepository(
         QSqlDatabase& database
         );
 
-    [[nodiscard]] Result<int> createTestingClass(
+    [[nodiscard]] RepositoryResult<int> createTestingClass(
         const TestingClass& testingClass,
         const QString& assignmentDay = {},
         const QString& assignmentStartTime = {}
         );
 
-    [[nodiscard]] Status updateTestingClass(
+    [[nodiscard]] RepositoryStatus updateTestingClass(
         const TestingClass& testingClass
         );
 
-    // The typed details-update path can distinguish a missing parent class
-    // while preserving the legacy Status diagnostic and behavior.
-    [[nodiscard]] UpdateResult updateTestingClassDetailed(
+    [[nodiscard]] RepositoryStatus updateTestingClassDetailed(
         const TestingClass& testingClass
         );
 
-    [[nodiscard]] Result<TestingClass> loadTestingClass(
+    [[nodiscard]] RepositoryResult<TestingClass> loadTestingClass(
         int classId
         );
 
-    [[nodiscard]] Result<TestingClassDetailsReadRecord>
+    [[nodiscard]] RepositoryResult<TestingClassDetailsReadRecord>
         loadTestingClassDetailsReadRecord(int classId);
 
-    // The typed details-read path can distinguish a missing parent class
-    // while preserving the legacy Result diagnostic and behavior.
-    [[nodiscard]] TestingClassDetailsReadResult
+    [[nodiscard]] RepositoryResult<TestingClassDetailsReadRecord>
         loadTestingClassDetailsReadRecordDetailed(int classId);
     [[nodiscard]] const TestingClassDetailsReadMetrics&
         testingClassDetailsReadMetrics() const noexcept;
 
-    [[nodiscard]] Result<QList<TestingClass>> loadTestingClasses();
+    [[nodiscard]] RepositoryResult<QList<TestingClass>> loadTestingClasses();
 
-    [[nodiscard]] Result<QList<TestingClassChoiceRecord>>
+    [[nodiscard]] RepositoryResult<QList<TestingClassChoiceRecord>>
         loadTestingClassChoices();
     [[nodiscard]] const TestingClassChoicesReadMetrics&
         testingClassChoicesReadMetrics() const noexcept;
 
-    [[nodiscard]] Status deleteTestingClass(
+    [[nodiscard]] RepositoryStatus deleteTestingClass(
         int classId
         );
 
-    // Typed deletion distinguishes a vanished target without changing the
-    // legacy Status diagnostic exposed by deleteTestingClass().
-    [[nodiscard]] DeleteResult deleteTestingClassDetailed(
+    [[nodiscard]] RepositoryStatus deleteTestingClassDetailed(
         int classId
         );
 
-    [[nodiscard]] Result<bool> isTestingClass(
+    [[nodiscard]] RepositoryResult<bool> isTestingClass(
         int classId
         );
 
 private:
-    [[nodiscard]] Status writeTestingClass(
+    [[nodiscard]] RepositoryStatus writeTestingClass(
         const TestingClass& testingClass
         );
 

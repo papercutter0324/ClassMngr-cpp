@@ -7,7 +7,6 @@
 #include "next/platform/application_services_schedule_testing_assignment_save_port.h"
 
 #include <QByteArray>
-#include <QObject>
 #include <QString>
 
 #include <charconv>
@@ -113,23 +112,22 @@ public:
                 ? legacyText(*request.assignmentStartTime)
                 : QString{};
 
-            const Result<int> created = repository->createTestingClass(
+            const RepositoryResult<int> created = repository->createTestingClass(
                 testingClass,
                 assignmentDay,
                 assignmentStartTime
                 );
             if (!created)
             {
-                const QString& message = created.error();
-                const Domain::ErrorCode errorCode =
-                    repositoryValidationError(message)
-                        ? Domain::ErrorCode::Validation
-                        : repositoryConflictError(message)
-                            ? Domain::ErrorCode::Conflict
-                            : Domain::ErrorCode::Technical;
+                const RepositoryError& error = created.error();
+                const bool recoverable =
+                    error.recoverableOverride.value_or(
+                        error.code != RepositoryErrorCode::Technical
+                        );
                 return failure(
-                    errorCode,
-                    toStdString(message)
+                    mapRepositoryErrorCode(error.code),
+                    toStdString(error.diagnostic),
+                    recoverable
                     );
             }
 
@@ -214,32 +212,30 @@ private:
             );
     }
 
-    [[nodiscard]] static bool repositoryValidationError(
-        const QString& message
+    [[nodiscard]] static Domain::ErrorCode mapRepositoryErrorCode(
+        const RepositoryErrorCode code
         )
     {
-        return message == QObject::tr("Testing class name is required.")
-            || message == QObject::tr("Testing class grade is required.")
-            || message == QObject::tr("Testing class level is required.")
-            || message == QObject::tr("Testing class room is required.")
-            || message == QObject::tr(
-                "A testing assignment requires a valid weekday and start time."
-                );
-    }
-
-    [[nodiscard]] static bool repositoryConflictError(
-        const QString& message
-        )
-    {
-        return message.contains(
-            QStringLiteral("constraint failed"),
-            Qt::CaseInsensitive
-            );
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
     }
 
     [[nodiscard]] static Application::TestingClassCreateResult failure(
         const Domain::ErrorCode code,
-        std::string message
+        std::string message,
+        const std::optional<bool> recoverableOverride = std::nullopt
         )
     {
         if (message.empty())
@@ -250,7 +246,9 @@ private:
         return Application::TestingClassCreateResult::failure({
             .code = code,
             .message = std::move(message),
-            .recoverable = code != Domain::ErrorCode::Technical
+            .recoverable = recoverableOverride.value_or(
+                code != Domain::ErrorCode::Technical
+                )
         });
     }
 

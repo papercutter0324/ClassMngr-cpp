@@ -54,13 +54,13 @@ public:
 
         try
         {
-            const Result<QList<TestingClassChoiceRecord>> loaded =
+            const RepositoryResult<QList<TestingClassChoiceRecord>> loaded =
                 repository->loadTestingClassChoices();
             if (!loaded)
             {
                 return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(loaded.error())
+                    mapRepositoryErrorCode(loaded.error().code),
+                    toStdString(loaded.error().diagnostic)
                     );
             }
 
@@ -119,6 +119,26 @@ private:
             bytes.constData(),
             static_cast<std::size_t>(bytes.size())
             );
+    }
+
+    [[nodiscard]] static Domain::ErrorCode mapRepositoryErrorCode(
+        const RepositoryErrorCode code
+        )
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
     }
 
     [[nodiscard]] static Application::ScheduleTestingClassChoicesReadResult

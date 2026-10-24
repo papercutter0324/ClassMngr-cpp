@@ -219,7 +219,8 @@ rejectsTestingClassIdsOutsidePositiveIntRange()
             );
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(result.error().recoverable);
     QVERIFY(result.error().message.find("Loading testing classes")
             != std::string::npos);
     QVERIFY(result.error().message.find("invalid class identifier")

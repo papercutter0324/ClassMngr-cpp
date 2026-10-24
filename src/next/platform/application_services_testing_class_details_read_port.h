@@ -70,19 +70,14 @@ public:
 
         try
         {
-            const TestingClassDetailsReadResult loaded =
+            const RepositoryResult<TestingClassDetailsReadRecord> loaded =
                 repository->loadTestingClassDetailsReadRecordDetailed(
                     *legacyClassId
                     );
             if (!loaded)
             {
-                const Domain::ErrorCode errorCode =
-                    loaded.error().kind
-                            == TestingClassDetailsReadFailure::Kind::ParentClassMissing
-                        ? Domain::ErrorCode::NotFound
-                        : Domain::ErrorCode::Technical;
                 return failure(
-                    errorCode,
+                    mapRepositoryErrorCode(loaded.error().code),
                     toStdString(loaded.error().diagnostic)
                     );
             }
@@ -185,6 +180,26 @@ private:
             );
     }
 
+    [[nodiscard]] static Domain::ErrorCode mapRepositoryErrorCode(
+        const RepositoryErrorCode code
+        )
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] static Application::TestingClassDetailsReadResult failure(
         const Domain::ErrorCode code,
         std::string message
@@ -198,7 +213,8 @@ private:
         return Application::TestingClassDetailsReadResult::failure({
             .code = code,
             .message = std::move(message),
-            .recoverable = code != Domain::ErrorCode::Validation
+            .recoverable = code == Domain::ErrorCode::NotFound
+                || code == Domain::ErrorCode::InvalidInput
         });
     }
 

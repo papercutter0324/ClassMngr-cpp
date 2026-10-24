@@ -930,8 +930,8 @@ Result<int> ScheduleService::createTestingClass(
     if (auto* repository = session()
             ? session()->testingClassRepository() : nullptr)
     {
-        return repository->createTestingClass(
-            testingClass, assignmentDay, assignmentStartTime);
+        return toLegacyResult(repository->createTestingClass(
+            testingClass, assignmentDay, assignmentStartTime));
     }
     return dataService()
         ? dataService()->createTestingClass(
@@ -944,7 +944,7 @@ Status ScheduleService::updateTestingClass(const TestingClass& testingClass) con
     if (auto* repository = session()
             ? session()->testingClassRepository() : nullptr)
     {
-        return repository->updateTestingClass(testingClass);
+        return toLegacyStatus(repository->updateTestingClass(testingClass));
     }
     return dataService()
         ? dataService()->updateTestingClass(testingClass)
@@ -956,7 +956,7 @@ Result<TestingClass> ScheduleService::testingClass(int classId) const
     if (auto* repository = session()
             ? session()->testingClassRepository() : nullptr)
     {
-        return repository->loadTestingClass(classId);
+        return toLegacyResult(repository->loadTestingClass(classId));
     }
     return dataService()
         ? dataService()->loadTestingClass(classId)
@@ -968,7 +968,7 @@ Result<QList<TestingClass>> ScheduleService::testingClasses() const
     if (auto* repository = session()
             ? session()->testingClassRepository() : nullptr)
     {
-        return repository->loadTestingClasses();
+        return toLegacyResult(repository->loadTestingClasses());
     }
     return dataService()
         ? dataService()->loadTestingClasses()
@@ -980,7 +980,7 @@ Status ScheduleService::deleteTestingClass(int classId) const
     if (auto* repository = session()
             ? session()->testingClassRepository() : nullptr)
     {
-        return repository->deleteTestingClass(classId);
+        return toLegacyStatus(repository->deleteTestingClass(classId));
     }
     return dataService()
         ? dataService()->deleteTestingClass(classId)
@@ -992,7 +992,7 @@ Result<bool> ScheduleService::isTestingClass(int classId) const
     if (auto* repository = session()
             ? session()->testingClassRepository() : nullptr)
     {
-        return repository->isTestingClass(classId);
+        return toLegacyResult(repository->isTestingClass(classId));
     }
     return dataService()
         ? dataService()->isTestingClass(classId)

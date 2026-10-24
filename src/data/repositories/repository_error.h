@@ -3,6 +3,7 @@
 #include <QString>
 
 #include <expected>
+#include <optional>
 #include <utility>
 
 enum class RepositoryErrorCode : int
@@ -24,14 +25,20 @@ struct RepositoryError
     {
     }
 
-    RepositoryError(RepositoryErrorCode code, QString diagnostic)
+    RepositoryError(
+        RepositoryErrorCode code,
+        QString diagnostic,
+        std::optional<bool> recoverableOverride = std::nullopt
+        )
         : code(code),
-          diagnostic(std::move(diagnostic))
+          diagnostic(std::move(diagnostic)),
+          recoverableOverride(recoverableOverride)
     {
     }
 
     RepositoryErrorCode code;
     QString diagnostic;
+    std::optional<bool> recoverableOverride;
 };
 
 template<class T>

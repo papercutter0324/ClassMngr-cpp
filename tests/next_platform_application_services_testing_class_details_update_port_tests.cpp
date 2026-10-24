@@ -117,6 +117,7 @@ private slots:
     void reportsUnavailableSessionsAsNotFound();
     void rejectsAnOrdinaryClassWithoutLegacyFallback();
     void reportsDeletedParentAsNotFoundAndKeepsLegacyDiagnostic();
+    void reportsMissingTestingSubtypeAsTechnical();
     void rollsBackEarlierWritesWhenTheTestingRoomUpdateFails();
     void forwardsRepositoryFailuresAsTechnicalErrors();
     void rejectsNoncanonicalIdentifiers();
@@ -390,10 +391,58 @@ reportsDeletedParentAsNotFoundAndKeepsLegacyDiagnostic()
 
     original.classId = *createdClass;
     original.name = QStringLiteral("Legacy update after deletion");
-    const Status legacyResult = repository->updateTestingClass(original);
+    const RepositoryStatus legacyResult = repository->updateTestingClass(original);
     QVERIFY(!legacyResult);
+    QCOMPARE(legacyResult.error().code, RepositoryErrorCode::NotFound);
     QCOMPARE(
-        legacyResult.error(),
+        toLegacyDiagnostic(legacyResult.error()),
+        QStringLiteral("The testing class no longer exists.")
+        );
+}
+
+void NextPlatformApplicationServicesTestingClassDetailsUpdatePortTests::
+reportsMissingTestingSubtypeAsTechnical()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    TestingClassRepository* const repository =
+        store->testingClassRepository();
+    QVERIFY(repository);
+
+    TestingClass original = storedClass(
+        QStringLiteral("Testing Subtype Removed")
+        );
+    const auto createdClass = repository->createTestingClass(original);
+    QVERIFY(createdClass);
+
+    QSqlQuery removeSubtype(store->database());
+    removeSubtype.prepare(QStringLiteral(
+        "DELETE FROM testing_classes WHERE class_id=?"
+        ));
+    removeSubtype.addBindValue(*createdClass);
+    QVERIFY2(removeSubtype.exec(), qPrintable(removeSubtype.lastError().text()));
+    QCOMPARE(removeSubtype.numRowsAffected(), 1);
+
+    original.classId = *createdClass;
+    original.name = QStringLiteral("Attempted update after subtype removal");
+    const auto result = update(services, requestForClass(*createdClass));
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(
+        QString::fromStdString(result.error().message),
+        QStringLiteral("The testing class no longer exists.")
+        );
+
+    const RepositoryStatus legacyResult = repository->updateTestingClass(original);
+    QVERIFY(!legacyResult);
+    QCOMPARE(legacyResult.error().code, RepositoryErrorCode::NotFound);
+    QCOMPARE(
+        toLegacyDiagnostic(legacyResult.error()),
         QStringLiteral("The testing class no longer exists.")
         );
 }

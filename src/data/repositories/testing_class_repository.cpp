@@ -14,58 +14,77 @@
 
 namespace
 {
-QString queryFailure(
+RepositoryError queryFailure(
     const QSqlQuery& query,
-    const QString& action
+    const QString& action,
+    const RepositoryErrorCode code = RepositoryErrorCode::Technical
     )
 {
-    return SqlQueryUtils::errorFor(query, action).userMessage();
+    return RepositoryError{
+        code,
+        SqlQueryUtils::errorFor(query, action).userMessage()
+    };
 }
 
-Status validateTestingClass(
+bool isUniqueConstraintViolation(const QSqlError& error)
+{
+    const QString nativeCodeText = error.nativeErrorCode();
+    bool codeOk = false;
+    const int nativeCode = nativeCodeText.toInt(&codeOk, 10);
+    return codeOk
+        && nativeCode == 2067
+        && nativeCodeText == QStringLiteral("2067");
+}
+
+RepositoryStatus validateTestingClass(
     const TestingClass& testingClass,
     bool requireId
     )
 {
     if (requireId && testingClass.classId <= 0)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
             QObject::tr("A valid testing class is required.")
-            );
+        });
     }
 
     if (testingClass.name.trimmed().isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr("Testing class name is required.")
-            );
+        });
     }
 
     if (testingClass.grade.trimmed().isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr("Testing class grade is required.")
-            );
+        });
     }
 
     if (testingClass.level.trimmed().isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr("Testing class level is required.")
-            );
+        });
     }
 
     if (testingClass.room.trimmed().isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr("Testing class room is required.")
-            );
+        });
     }
 
     return {};
 }
 
-Result<TestingClass> readTestingClass(
+RepositoryResult<TestingClass> readTestingClass(
     const QSqlQuery& query
     )
 {
@@ -79,9 +98,10 @@ Result<TestingClass> readTestingClass(
         || storedClassIdValue > std::numeric_limits<int>::max()
         )
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr("The testing class has an invalid class identifier.")
-            );
+        });
     }
 
     TestingClass testingClass;
@@ -101,9 +121,10 @@ Result<TestingClass> readTestingClass(
         testingClass.teacherId = storedTeacherId.toLongLong(&teacherIdOk);
         if (!teacherIdOk)
         {
-            return std::unexpected(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
                 QObject::tr("The testing class has an invalid teacher identifier.")
-                );
+            });
         }
     }
     testingClass.classColor =
@@ -125,7 +146,7 @@ Result<TestingClass> readTestingClass(
     return testingClass;
 }
 
-Result<TestingClassDetailsReadRecord> readTestingClassDetails(
+RepositoryResult<TestingClassDetailsReadRecord> readTestingClassDetails(
     const QSqlQuery& query
     )
 {
@@ -138,16 +159,28 @@ Result<TestingClassDetailsReadRecord> readTestingClassDetails(
         teacherId = storedTeacherId.toLongLong(&teacherIdOk);
         if (!teacherIdOk)
         {
-            return std::unexpected(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
                 QObject::tr(
                     "The testing class has an invalid teacher identifier."
                     )
-                );
+            });
         }
     }
 
+    bool classIdOk = false;
+    const qint64 classId =
+        query.value(QStringLiteral("class_id")).toLongLong(&classIdOk);
+    if (!classIdOk || classId <= 0 || classId > std::numeric_limits<int>::max())
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
+            QObject::tr("The testing class has an invalid class identifier.")
+        });
+    }
+
     TestingClassDetailsReadRecord record{
-        .classId = query.value(QStringLiteral("class_id")).toInt(),
+        .classId = static_cast<int>(classId),
         .name = query.value(QStringLiteral("name")).toString(),
         .grade = query.value(QStringLiteral("class_grade")).toString(),
         .level = query.value(QStringLiteral("class_level")).toString(),
@@ -224,13 +257,13 @@ TestingClassRepository::TestingClassRepository(
 {
 }
 
-Result<int> TestingClassRepository::createTestingClass(
+RepositoryResult<int> TestingClassRepository::createTestingClass(
     const TestingClass& testingClass,
     const QString& assignmentDay,
     const QString& assignmentStartTime
     )
 {
-    const Status valid =
+    const RepositoryStatus valid =
         validateTestingClass(
             testingClass,
             false
@@ -241,34 +274,41 @@ Result<int> TestingClassRepository::createTestingClass(
         return std::unexpected(valid.error());
     }
 
-    const bool hasAssignment =
-        !assignmentDay.trimmed().isEmpty()
-        || !assignmentStartTime.trimmed().isEmpty();
+    const bool hasDay = !assignmentDay.trimmed().isEmpty();
+    const bool hasStartTime = !assignmentStartTime.trimmed().isEmpty();
+    const bool hasAssignment = hasDay && hasStartTime;
+    if (hasDay != hasStartTime)
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
+            QObject::tr(
+                "A testing assignment requires a valid weekday and start time."
+                )
+        });
+    }
     const auto canonicalDay =
         ScheduleValueParser::parseWeekday(assignmentDay);
     const auto normalizedStartTime =
         ScheduleValueParser::parseTime(assignmentStartTime);
     if (
-        hasAssignment
-        && (
-            !canonicalDay
-            || !normalizedStartTime
-            )
+        hasAssignment && (!canonicalDay || !normalizedStartTime)
         )
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr(
                 "A testing assignment requires a valid weekday and start time."
                 )
-            );
+        });
     }
 
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr("Could not start the testing class transaction.")
-            );
+        });
     }
 
     QSqlQuery query(m_database);
@@ -280,7 +320,10 @@ Result<int> TestingClassRepository::createTestingClass(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            executed.error().userMessage()
+        });
     }
 
     bool classIdOk = false;
@@ -288,18 +331,21 @@ Result<int> TestingClassRepository::createTestingClass(
         query.lastInsertId().toLongLong(&classIdOk);
     if (!classIdOk || generatedClassId <= 0)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr("Creating the testing class did not return a valid ID.")
-            );
+        });
     }
     if (generatedClassId > std::numeric_limits<int>::max())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr(
                 "Creating the testing class returned an ID outside the "
                 "supported integer range."
-                )
-            );
+                ),
+            false
+        });
     }
     const int classId = static_cast<int>(generatedClassId);
 
@@ -369,7 +415,10 @@ Result<int> TestingClassRepository::createTestingClass(
             return std::unexpected(
                 queryFailure(
                     query,
-                    QObject::tr("Assigning the new testing class")
+                    QObject::tr("Assigning the new testing class"),
+                    isUniqueConstraintViolation(query.lastError())
+                        ? RepositoryErrorCode::Conflict
+                        : RepositoryErrorCode::Technical
                     )
                 );
         }
@@ -377,20 +426,21 @@ Result<int> TestingClassRepository::createTestingClass(
 
     if (!transaction.commit())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr("Committing the testing class transaction failed: %1")
                 .arg(m_database.lastError().text())
-            );
+        });
     }
 
     return classId;
 }
 
-Status TestingClassRepository::updateTestingClass(
+RepositoryStatus TestingClassRepository::updateTestingClass(
     const TestingClass& testingClass
     )
 {
-    const Status valid =
+    const RepositoryStatus valid =
         validateTestingClass(
             testingClass,
             true
@@ -401,7 +451,7 @@ Status TestingClassRepository::updateTestingClass(
         return valid;
     }
 
-    const Result<bool> existing =
+    const RepositoryResult<bool> existing =
         isTestingClass(testingClass.classId);
     if (!existing)
     {
@@ -409,20 +459,22 @@ Status TestingClassRepository::updateTestingClass(
     }
     if (!*existing)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::NotFound,
             QObject::tr("The testing class no longer exists.")
-            );
+        });
     }
 
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr("Could not start the testing class transaction.")
-            );
+        });
     }
 
-    const Status updated = writeTestingClass(testingClass);
+    const RepositoryStatus updated = writeTestingClass(testingClass);
     if (!updated)
     {
         return updated;
@@ -430,27 +482,25 @@ Status TestingClassRepository::updateTestingClass(
 
     if (!transaction.commit())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr("Committing the testing class transaction failed: %1")
                 .arg(m_database.lastError().text())
-            );
+        });
     }
 
     return {};
 }
 
-TestingClassRepository::UpdateResult
+RepositoryStatus
 TestingClassRepository::updateTestingClassDetailed(
     const TestingClass& testingClass
     )
 {
-    const Status valid = validateTestingClass(testingClass, true);
+    const RepositoryStatus valid = validateTestingClass(testingClass, true);
     if (!valid)
     {
-        return std::unexpected(UpdateFailure{
-            .kind = UpdateFailure::Kind::Technical,
-            .diagnostic = valid.error()
-        });
+        return std::unexpected(valid.error());
     }
 
     const QString identity =
@@ -461,9 +511,9 @@ TestingClassRepository::updateTestingClassDetailed(
         );
     if (!transaction.started())
     {
-        return std::unexpected(UpdateFailure{
-            .kind = UpdateFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr(
                 "Starting the testing class transaction failed for %1: %2"
                 ).arg(identity, transaction.startError())
         });
@@ -481,9 +531,9 @@ TestingClassRepository::updateTestingClassDetailed(
         );
     if (!parentQueryResult)
     {
-        return std::unexpected(UpdateFailure{
-            .kind = UpdateFailure::Kind::Technical,
-            .diagnostic = parentQueryResult.error().userMessage()
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            parentQueryResult.error().userMessage()
         });
     }
 
@@ -492,9 +542,9 @@ TestingClassRepository::updateTestingClassDetailed(
     parentQuery.finish();
     if (parentFetchError.isValid())
     {
-        return std::unexpected(UpdateFailure{
-            .kind = UpdateFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr(
                 "Checking testing class parent class failed for %1: %2"
                 ).arg(identity, parentFetchError.text())
         });
@@ -504,18 +554,18 @@ TestingClassRepository::updateTestingClassDetailed(
     {
         if (!transaction.rollbackChecked())
         {
-            return std::unexpected(UpdateFailure{
-                .kind = UpdateFailure::Kind::Technical,
-                .diagnostic = QObject::tr(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Technical,
+                QObject::tr(
                     "Rolling back the testing class transaction failed for "
                     "%1: %2"
                     ).arg(identity, m_database.lastError().text())
             });
         }
 
-        return std::unexpected(UpdateFailure{
-            .kind = UpdateFailure::Kind::ParentClassMissing,
-            .diagnostic = QObject::tr(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::NotFound,
+            QObject::tr(
                 "The testing class parent class was not found for %1."
                 ).arg(identity)
         });
@@ -533,9 +583,9 @@ TestingClassRepository::updateTestingClassDetailed(
         );
     if (!testingClassQueryResult)
     {
-        return std::unexpected(UpdateFailure{
-            .kind = UpdateFailure::Kind::Technical,
-            .diagnostic = testingClassQueryResult.error().userMessage()
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            testingClassQueryResult.error().userMessage()
         });
     }
 
@@ -544,9 +594,9 @@ TestingClassRepository::updateTestingClassDetailed(
     testingClassQuery.finish();
     if (testingClassFetchError.isValid())
     {
-        return std::unexpected(UpdateFailure{
-            .kind = UpdateFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr(
                 "Checking testing class details target failed for %1: %2"
                 ).arg(identity, testingClassFetchError.text())
         });
@@ -554,26 +604,23 @@ TestingClassRepository::updateTestingClassDetailed(
 
     if (!testingClassExists)
     {
-        return std::unexpected(UpdateFailure{
-            .kind = UpdateFailure::Kind::Technical,
-            .diagnostic = QObject::tr("The testing class no longer exists.")
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr("The testing class no longer exists.")
         });
     }
 
-    const Status updated = writeTestingClass(testingClass);
+    const RepositoryStatus updated = writeTestingClass(testingClass);
     if (!updated)
     {
-        return std::unexpected(UpdateFailure{
-            .kind = UpdateFailure::Kind::Technical,
-            .diagnostic = updated.error()
-        });
+        return std::unexpected(updated.error());
     }
 
     if (!transaction.commit())
     {
-        return std::unexpected(UpdateFailure{
-            .kind = UpdateFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr(
                 "Committing the testing class transaction failed: %1"
                 ).arg(m_database.lastError().text())
         });
@@ -582,7 +629,7 @@ TestingClassRepository::updateTestingClassDetailed(
     return {};
 }
 
-Status TestingClassRepository::writeTestingClass(
+RepositoryStatus TestingClassRepository::writeTestingClass(
     const TestingClass& testingClass
     )
 {
@@ -651,15 +698,16 @@ Status TestingClassRepository::writeTestingClass(
     return {};
 }
 
-Result<TestingClass> TestingClassRepository::loadTestingClass(
+RepositoryResult<TestingClass> TestingClassRepository::loadTestingClass(
     int classId
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
             QObject::tr("A valid testing class is required.")
-            );
+        });
     }
 
     QSqlQuery query(m_database);
@@ -678,30 +726,39 @@ Result<TestingClass> TestingClassRepository::loadTestingClass(
 
     if (!query.next())
     {
-        return std::unexpected(
+        if (query.lastError().isValid())
+        {
+            return std::unexpected(queryFailure(
+                query,
+                QObject::tr("Loading the testing class")
+                ));
+        }
+
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::NotFound,
             QObject::tr("The testing class was not found.")
-            );
+        });
     }
 
     return readTestingClass(query);
 }
 
-Result<TestingClassDetailsReadRecord>
+RepositoryResult<TestingClassDetailsReadRecord>
 TestingClassRepository::loadTestingClassDetailsReadRecord(
     int classId
     )
 {
-    const TestingClassDetailsReadResult detailedResult =
+    const RepositoryResult<TestingClassDetailsReadRecord> detailedResult =
         loadTestingClassDetailsReadRecordDetailed(classId);
     if (!detailedResult)
     {
-        return std::unexpected(detailedResult.error().diagnostic);
+        return std::unexpected(detailedResult.error());
     }
 
     return *detailedResult;
 }
 
-TestingClassDetailsReadResult
+RepositoryResult<TestingClassDetailsReadRecord>
 TestingClassRepository::loadTestingClassDetailsReadRecordDetailed(
     int classId
     )
@@ -710,9 +767,9 @@ TestingClassRepository::loadTestingClassDetailsReadRecordDetailed(
 
     if (classId <= 0)
     {
-        return std::unexpected(TestingClassDetailsReadFailure{
-            .kind = TestingClassDetailsReadFailure::Kind::Technical,
-            .diagnostic = QObject::tr("A valid testing class is required.")
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
+            QObject::tr("A valid testing class is required.")
         });
     }
 
@@ -722,13 +779,10 @@ TestingClassRepository::loadTestingClassDetailsReadRecordDetailed(
     ++m_testingClassDetailsReadMetrics.statementCount;
     if (!query.exec())
     {
-        return std::unexpected(TestingClassDetailsReadFailure{
-            .kind = TestingClassDetailsReadFailure::Kind::Technical,
-            .diagnostic = queryFailure(
+        return std::unexpected(queryFailure(
                 query,
                 QObject::tr("Loading the testing class")
-                )
-        });
+                ));
     }
 
     if (!query.next())
@@ -737,36 +791,33 @@ TestingClassRepository::loadTestingClassDetailsReadRecordDetailed(
         query.finish();
         if (fetchError.isValid())
         {
-            return std::unexpected(TestingClassDetailsReadFailure{
-                .kind = TestingClassDetailsReadFailure::Kind::Technical,
-                .diagnostic = QObject::tr(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Technical,
+                QObject::tr(
                     "Loading the testing class failed: %1"
                     ).arg(fetchError.text())
             });
         }
 
-        return std::unexpected(TestingClassDetailsReadFailure{
-            .kind = TestingClassDetailsReadFailure::Kind::ParentClassMissing,
-            .diagnostic = QObject::tr("The testing class was not found.")
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::NotFound,
+            QObject::tr("The testing class was not found.")
         });
     }
 
     if (query.value(QStringLiteral("testing_class_id")).isNull())
     {
-        return std::unexpected(TestingClassDetailsReadFailure{
-            .kind = TestingClassDetailsReadFailure::Kind::Technical,
-            .diagnostic = QObject::tr("The testing class was not found.")
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr("The testing class was not found.")
         });
     }
 
-    const Result<TestingClassDetailsReadRecord> details =
+    const RepositoryResult<TestingClassDetailsReadRecord> details =
         readTestingClassDetails(query);
     if (!details)
     {
-        return std::unexpected(TestingClassDetailsReadFailure{
-            .kind = TestingClassDetailsReadFailure::Kind::Technical,
-            .diagnostic = details.error()
-        });
+        return std::unexpected(details.error());
     }
 
     return *details;
@@ -778,7 +829,7 @@ TestingClassRepository::testingClassDetailsReadMetrics() const noexcept
     return m_testingClassDetailsReadMetrics;
 }
 
-Result<QList<TestingClass>>
+RepositoryResult<QList<TestingClass>>
 TestingClassRepository::loadTestingClasses()
 {
     QList<TestingClass> testingClasses;
@@ -816,7 +867,7 @@ TestingClassRepository::loadTestingClasses()
     return testingClasses;
 }
 
-Result<QList<TestingClassChoiceRecord>>
+RepositoryResult<QList<TestingClassChoiceRecord>>
 TestingClassRepository::loadTestingClassChoices()
 {
     ++m_testingClassChoicesReadMetrics.callCount;
@@ -855,11 +906,12 @@ TestingClassRepository::loadTestingClassChoices()
             || storedClassIdValue > std::numeric_limits<int>::max()
             )
         {
-            return std::unexpected(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
                 QObject::tr(
                     "Loading testing classes found an invalid class identifier."
                     )
-                );
+            });
         }
 
         choices.append({
@@ -887,38 +939,46 @@ TestingClassRepository::testingClassChoicesReadMetrics() const noexcept
     return m_testingClassChoicesReadMetrics;
 }
 
-Status TestingClassRepository::deleteTestingClass(
+RepositoryStatus TestingClassRepository::deleteTestingClass(
     int classId
     )
 {
-    const DeleteResult deleted = deleteTestingClassDetailed(classId);
+    const RepositoryStatus deleted = deleteTestingClassDetailed(classId);
     if (!deleted)
     {
-        return std::unexpected(deleted.error().diagnostic);
+        return std::unexpected(deleted.error());
     }
 
     return {};
 }
 
-TestingClassRepository::DeleteResult
+RepositoryStatus
 TestingClassRepository::deleteTestingClassDetailed(
     int classId
     )
 {
     const auto technicalFailure = [](const QString& diagnostic)
     {
-        return std::unexpected(DeleteFailure{
-            .kind = DeleteFailure::Kind::Technical,
-            .diagnostic = diagnostic
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            diagnostic
         });
     };
     const auto missingFailure = []
     {
-        return std::unexpected(DeleteFailure{
-            .kind = DeleteFailure::Kind::TestingClassMissing,
-            .diagnostic = QObject::tr("The testing class no longer exists.")
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::NotFound,
+            QObject::tr("The testing class no longer exists.")
         });
     };
+
+    if (classId <= 0)
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
+            QObject::tr("The testing class no longer exists.")
+        });
+    }
 
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
@@ -975,9 +1035,7 @@ TestingClassRepository::deleteTestingClassDetailed(
         query.addBindValue(classId);
         if (!query.exec())
         {
-            return technicalFailure(
-                queryFailure(query, deletion.second)
-                );
+            return std::unexpected(queryFailure(query, deletion.second));
         }
     }
 
@@ -992,9 +1050,10 @@ TestingClassRepository::deleteTestingClassDetailed(
     query.addBindValue(classId);
     if (!query.exec())
     {
-        return technicalFailure(
-            queryFailure(query, QObject::tr("Removing the testing class"))
-            );
+        return std::unexpected(queryFailure(
+            query,
+            QObject::tr("Removing the testing class")
+            ));
     }
 
     const int affectedRows = query.numRowsAffected();
@@ -1037,12 +1096,10 @@ TestingClassRepository::deleteTestingClassDetailed(
     query.addBindValue(classId);
     if (!query.exec())
     {
-        return technicalFailure(
-            queryFailure(
-                query,
-                QObject::tr("Removing the testing class profile")
-                )
-            );
+        return std::unexpected(queryFailure(
+            query,
+            QObject::tr("Removing the testing class profile")
+            ));
     }
 
     if (!transaction.commit())
@@ -1056,7 +1113,7 @@ TestingClassRepository::deleteTestingClassDetailed(
     return {};
 }
 
-Result<bool> TestingClassRepository::isTestingClass(
+RepositoryResult<bool> TestingClassRepository::isTestingClass(
     int classId
     )
 {
@@ -1079,5 +1136,14 @@ Result<bool> TestingClassRepository::isTestingClass(
             );
     }
 
-    return query.next();
+    const bool exists = query.next();
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(queryFailure(
+            query,
+            QObject::tr("Checking the testing class")
+            ));
+    }
+
+    return exists;
 }

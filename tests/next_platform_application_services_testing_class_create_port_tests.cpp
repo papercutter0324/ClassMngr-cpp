@@ -7,6 +7,7 @@
 #include "next/platform/application_services_testing_class_create_port.h"
 
 #include <QSqlDatabase>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -133,6 +134,7 @@ private slots:
     void createsWithoutAssignment();
     void reportsUnavailableSessionsWithoutFallback();
     void rejectsInvalidRequestsWithoutPersistence();
+    void reportsGeneratedIdValidationAsNonrecoverable();
     void reportsSlotConflictAndRollsBackEveryTable();
 };
 
@@ -342,6 +344,17 @@ rejectsInvalidRequestsWithoutPersistence()
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
     }
 
+    auto missingRequiredField = request(
+        std::nullopt,
+        std::nullopt,
+        std::nullopt
+        );
+    missingRequiredField.room.clear();
+    const auto validationResult = port.createTestingClass(missingRequiredField);
+    QVERIFY(!validationResult);
+    QCOMPARE(validationResult.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(validationResult.error().recoverable);
+
     QCOMPARE(testingClassTableCounts(store->database()), baseline);
 }
 
@@ -386,8 +399,48 @@ reportsSlotConflictAndRollsBackEveryTable()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Conflict);
+    QVERIFY(result.error().recoverable);
     QCOMPARE(testingClassTableCounts(store->database()), before);
     QCOMPARE(classNameCount(store->database(), QStringLiteral("Must Roll Back")), 0);
+}
+
+void NextPlatformApplicationServicesTestingClassCreatePortTests::
+reportsGeneratedIdValidationAsNonrecoverable()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+
+    QSqlQuery query(store->database());
+    QVERIFY2(query.exec(QStringLiteral(
+        "INSERT INTO classes (name) VALUES ('Sequence anchor')"
+        )), qPrintable(query.lastError().text()));
+    QVERIFY2(query.exec(QStringLiteral(
+        "UPDATE sqlite_sequence SET seq=2147483648 WHERE name='classes'"
+        )), qPrintable(query.lastError().text()));
+
+    Platform::ApplicationServicesTestingClassCreatePort port(services);
+    const auto result = port.createTestingClass(
+        request(std::nullopt, std::nullopt, std::nullopt)
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(
+        QString::fromStdString(result.error().message),
+        QStringLiteral(
+            "Creating the testing class returned an ID outside the "
+            "supported integer range."
+            )
+        );
+    QCOMPARE(rowCount(store->database(), QStringLiteral("classes")), 1);
+    QCOMPARE(rowCount(store->database(), QStringLiteral("class_info")), 0);
+    QCOMPARE(rowCount(store->database(), QStringLiteral("testing_classes")), 0);
+    QCOMPARE(rowCount(store->database(), QStringLiteral("schedule_testing_blocks")), 0);
 }
 
 QTEST_GUILESS_MAIN(NextPlatformApplicationServicesTestingClassCreatePortTests)

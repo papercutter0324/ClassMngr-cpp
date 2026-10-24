@@ -110,24 +110,13 @@ public:
                 );
             testingClass.notes = QString::fromStdU16String(request.notes);
 
-            const TestingClassRepository::UpdateResult saved =
+            const RepositoryStatus saved =
                 repository->updateTestingClassDetailed(testingClass);
             if (!saved)
             {
-                const auto& updateFailure = saved.error();
-                const Domain::ErrorCode code =
-                    updateFailure.kind
-                        == TestingClassRepository::UpdateFailure::Kind::
-                            ParentClassMissing
-                    ? Domain::ErrorCode::NotFound
-                    : Domain::ErrorCode::Technical;
-                const QByteArray errorBytes =
-                    updateFailure.diagnostic.toUtf8();
                 return failure(
-                    code,
-                    errorBytes.isEmpty()
-                        ? "Testing class details could not be saved."
-                        : errorBytes.toStdString()
+                    mapRepositoryErrorCode(saved.error().code),
+                    toStdString(saved.error().diagnostic)
                     );
             }
 
@@ -184,6 +173,26 @@ private:
             bytes.constData(),
             static_cast<std::size_t>(bytes.size())
             );
+    }
+
+    [[nodiscard]] static Domain::ErrorCode mapRepositoryErrorCode(
+        const RepositoryErrorCode code
+        )
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
     }
 
     [[nodiscard]] static Application::TestingClassDetailsUpdateResult
