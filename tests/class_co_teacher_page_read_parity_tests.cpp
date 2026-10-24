@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
@@ -154,7 +154,7 @@ loadDiscardAndSaveRefreshVisibleSelectionAndTitle()
     QVERIFY(teacherOne > 0);
     QVERIFY(teacherTwo > 0);
     QVERIFY(teacherThree > 0);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         readParityInfo(classId, teacherOne, false)
         ));
 
@@ -172,7 +172,7 @@ loadDiscardAndSaveRefreshVisibleSelectionAndTitle()
         QStringLiteral("E4 Theseus \u2022 First Teacher \u2022 Mon (4:00)")
         );
 
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         readParityInfo(classId, teacherTwo, true)
         ));
     QVERIFY(chooseTeacher(section, teacherThree) > 0);
@@ -233,7 +233,7 @@ loadAndDiscardRefreshVisibleTeacherChoicesAndDetails()
     QVERIFY(classId > 0);
     QVERIFY(teacherOne > 0);
     QVERIFY(teacherTwo > 0);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         readParityInfo(classId, teacherOne, false)
         ));
 
@@ -276,7 +276,7 @@ loadAndDiscardRefreshVisibleTeacherChoicesAndDetails()
         QStringLiteral("E4 Theseus \u2022 Zulu Teacher \u2022 Mon (4:00)")
         );
 
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         readParityInfo(classId, teacherTwo, true)
         ));
     page.discardChanges();

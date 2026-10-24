@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "features/classes/ui/class_co_teacher_page.h"
 #include "next/application/class_co_teacher_assignment_use_case.h"
@@ -59,7 +59,7 @@ int createTeacher(ApplicationServices& services)
 qint64 insertWideTeacher(ApplicationServices& services)
 {
     constexpr qint64 teacherId = 2147483648LL;
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     query.prepare(QStringLiteral(
         "INSERT INTO teachers (id, teacher_kr, teacher_en, preferred_name, "
         "room_number, internet_type, wifi_name, wifi_password, "
@@ -163,7 +163,7 @@ bool updatePersistedTeacherId(
     const int teacherId
     )
 {
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     if (!query.exec(QStringLiteral("PRAGMA foreign_keys=OFF")))
     {
         return false;
@@ -1462,7 +1462,7 @@ nonpositivePersistedTeacherIdRetainsClassTitleAndClearsSelection()
         {QStringLiteral("Monday"), QStringLiteral("4:15 PM"),
          QStringLiteral("5:00 PM")}
     };
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         persisted
         ));
     QVERIFY(updatePersistedTeacherId(services, classId, 0));
@@ -1567,7 +1567,7 @@ wideTeacherIdentitySurvivesSelectionSaveAndReadback()
     QCOMPARE(section->teacherId(), wideUiId);
     QCOMPARE(selector->currentText(), QStringLiteral("Wide Korean"));
 
-    QSqlQuery persisted(services.databaseSession()->database());
+    QSqlQuery persisted(services.workspaceStore()->database());
     persisted.prepare(QStringLiteral(
         "SELECT typeof(teacher_id), teacher_id "
         "FROM class_info WHERE class_id=?"

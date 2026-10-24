@@ -1041,3 +1041,27 @@ session references were unchanged. Repository code and tests were unchanged.
 `ClassMngrTestingClassRepositoryTests`. `git diff --check` passed. The broad
 page CTest and full suite were not run; no cross-platform build ran. F1360 is
 accepted.
+
+## F1361 — Class Co-Teacher page read — 2026-10-23
+
+The production read port in
+`src/next/platform/application_services_class_co_teacher_page_read_port.h`
+now obtains store availability, `ClassInfoRepository`, and
+`TeacherRepository` through `workspaceStore()`. Direct fixture access and
+includes in `tests/next_platform_application_services_class_co_teacher_page_read_port_tests.cpp`,
+`tests/class_co_teacher_page_read_parity_tests.cpp`, and
+`tests/next_feature_class_co_teacher_page_tests.cpp` now use `WorkspaceStore`;
+assertions and Qt test slots are unchanged. Repository projection/API/SQL,
+Application query, page/UI, teacher choices, and assignment save are
+unchanged.
+
+`ClassMngr` and four test targets built incrementally in
+`build/macos-clang-debug`. Four registered serial CTests passed: `ClassMngrNextApplicationClassCoTeacherPageReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests`,
+`ClassMngrClassCoTeacherPageReadParityTests`, and
+`ClassMngrNextFeatureClassCoTeacherPageTests`. The separate wide-teacher CTest
+was not run because its slot is covered by the feature target.
+`git diff --check` passed. No full suite or cross-platform build ran.
+Application query slots do not directly exercise the malformed returned
+teacher-ID guard; Platform tests cover malformed persisted IDs. F1361 is
+accepted.

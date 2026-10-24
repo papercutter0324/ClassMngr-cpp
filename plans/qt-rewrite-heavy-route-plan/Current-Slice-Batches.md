@@ -9,10 +9,10 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 3 discovery is complete. F1358, F1359, and F1360 are accepted; F1361 —
-  Class Co-Teacher page read is current.
+- Batch 3 discovery is complete. F1358–F1361 are accepted; F1362 — Class
+  Co-Teacher teacher choices read is current.
 
-## Phase 3 — Batch 3 (active; F1361 current)
+## Phase 3 — Batch 3 (active; F1362 current)
 
 Discovery was completed when F1356 started (candidate 19 of 20 in Batch 2).
 Two complementary scans found more than 20 possible items; this is the
@@ -21,7 +21,7 @@ priority-ordered shortlist for Batch 3, not an exhaustive inventory.
 1. F1358 — Testing Class details read (accepted)
 2. F1359 — Testing Class details update (accepted)
 3. F1360 — Testing Class delete (accepted)
-4. F1361 — Class Co-Teacher page read
+4. F1361 — Class Co-Teacher page read (accepted)
 5. F1362 — Class Co-Teacher teacher choices read
 6. F1363 — Class Co-Teacher assignment save
 7. F1364 — Class Notes page read
