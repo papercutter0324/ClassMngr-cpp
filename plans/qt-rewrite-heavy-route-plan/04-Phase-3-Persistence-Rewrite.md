@@ -45,9 +45,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   the verified implementation tip is
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1398 (Middle-school analytics preferences)
-  current. Its 19 prioritized slices are listed in the current batch tracker.
-  F1376–F1397 implementation evidence, Batch 2 and Batch 3 push receipts, and
+  and Batch 5 is active with F1399 (Calendar event-type color preferences)
+  current. F1398 (Middle-school analytics preferences) is accepted at
+  `4d19087140f1d4723087c6c460afa06f32ae0f37`; focused verification passed. Its
+  18 prioritized slices remain in the current batch tracker.
+  F1376–F1398 implementation evidence, Batch 2 and Batch 3 push receipts, and
   earlier UI limitations and attribution notes are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -67,18 +69,19 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1397 — 2026-10-24
+## Latest Progress Update — F1398 — 2026-10-24
 
-F1397 is accepted and Batch 4 (F1378–F1397) is complete and pushed to
-`origin/Qt-Rewrite`. The academic-calendar schedule port and dedicated Platform
-fixture use `WorkspaceStore`; key, opaque UTF-8, missing/unavailable,
-read/write error, and assertion semantics are unchanged. Platform and
-Evaluation Default integration CTests passed serially (2/2). Batch 5 discovery
-is complete and Batch 5 is active with F1398 current. The F1383 orphan-data,
-F1389/F1390/F1391 NavigationTeacherRead warning-text, F1392 SubPrep timeout,
-and F1394 schedule parity fixture-setup findings remain separate in the
-[progress log](04-Phase-3-Progress-Log.md). No full suite or cross-platform
-build ran.
+F1398 is accepted at `4d19087140f1d4723087c6c460afa06f32ae0f37`. The
+middle-school analytics preference adapter and dedicated Platform fixture now
+use `WorkspaceStore`; key, false default, `QVariant::toBool()` coercion,
+unavailable/closed-store behavior, repository error mapping, and all fixture
+assertions are unchanged. Incremental build and focused Platform, ClassesPage,
+and MainWindow verification passed. Batch 5 is active with F1399 current. The
+F1383 orphan-data, F1389/F1390/F1391 NavigationTeacherRead warning-text, F1392
+SubPrep timeout, and F1394 schedule parity fixture-setup findings remain
+separate in the [progress log](04-Phase-3-Progress-Log.md). The full
+ClassesPage suite, full suite, and cross-platform builds did not run; the
+previously documented full-suite timeout remains unassessed.
 
 ## Objective
 

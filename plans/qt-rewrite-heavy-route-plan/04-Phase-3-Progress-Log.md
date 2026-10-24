@@ -2030,3 +2030,25 @@ verification showed local HEAD and `origin/Qt-Rewrite` matched at
 Batch 4 is complete and pushed. Batch 5 discovery is complete and Batch 5 is
 active with F1398 (Middle-school analytics preferences) current. Its 19-slice
 priority list is in `Current-Slice-Batches.md`.
+
+## F1398 — Middle-school analytics preferences (Batch 5 candidate 1 of 19) — 2026-10-24
+
+The middle-school analytics preferences adapter and dedicated Platform
+fixture now use `WorkspaceStore`. The exact key,
+`classes_navigation_show_middle_school_analytics_and_evaluations`, false
+default and default-materialization behavior, `QVariant::toBool()` coercion,
+unavailable/closed-store behavior, Technical error mapping, and all fixture
+assertions are unchanged.
+
+An incremental build in `build/macos-clang-debug` succeeded for the Platform,
+ClassesPage, and MainWindow failure-test targets. CTest #493, the Platform
+target, passed 1/1. The direct QtTest selection
+`ClassesPageTests::middleSchoolAnalyticsAndEvaluationsTabsFollowPreference`
+passed 3/3 including init/cleanup. Both selected MainWindow slots passed
+individually 3/3 including init/cleanup. `git diff --check` passed for source
+and test changes. The full ClassesPage suite, full suite, and cross-platform
+builds did not run; the previously documented full-suite timeout remains
+unassessed. F1398 is accepted; F1399 (Calendar event-type color preferences)
+is current. Batch 5 remains unpushed until its remaining slices are complete.
+
+Commit: `4d19087140f1d4723087c6c460afa06f32ae0f37`.
