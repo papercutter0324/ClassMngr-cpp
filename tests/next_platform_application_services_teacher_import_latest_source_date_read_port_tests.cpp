@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "data/repositories/teacher_import_repository.h"
 #include "next/platform/application_services_teacher_import_latest_source_date_read_port.h"
@@ -65,7 +65,7 @@ readsCanonicalDateAndTreatsMissingOrMalformedValuesAsAbsent()
     QVERIFY(result);
     QVERIFY(!result.value().has_value());
 
-    QSqlQuery insertNull(services.databaseSession()->database());
+    QSqlQuery insertNull(services.workspaceStore()->database());
     insertNull.prepare(QStringLiteral(
         "INSERT INTO app_settings (key, value) VALUES (?, NULL) "
         "ON CONFLICT(key) DO UPDATE SET value=NULL"));
@@ -75,37 +75,37 @@ readsCanonicalDateAndTreatsMissingOrMalformedValuesAsAbsent()
     QVERIFY(result);
     QVERIFY(!result.value().has_value());
 
-    QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
+    QVERIFY(services.workspaceStore()->settingsRepository()->saveSetting(
         settingKey(), QString()));
     result = readDate(port);
     QVERIFY(result);
     QVERIFY(!result.value().has_value());
 
-    QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
+    QVERIFY(services.workspaceStore()->settingsRepository()->saveSetting(
         settingKey(), QStringLiteral("not-a-date")));
     result = readDate(port);
     QVERIFY(result);
     QVERIFY(!result.value().has_value());
 
-    QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
+    QVERIFY(services.workspaceStore()->settingsRepository()->saveSetting(
         settingKey(), QStringLiteral("2026-9-01")));
     result = readDate(port);
     QVERIFY(result);
     QVERIFY(!result.value().has_value());
 
-    QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
+    QVERIFY(services.workspaceStore()->settingsRepository()->saveSetting(
         settingKey(), QStringLiteral(" 2026-09-01")));
     result = readDate(port);
     QVERIFY(result);
     QVERIFY(!result.value().has_value());
 
-    QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
+    QVERIFY(services.workspaceStore()->settingsRepository()->saveSetting(
         settingKey(), QStringLiteral("2026-02-30")));
     result = readDate(port);
     QVERIFY(result);
     QVERIFY(!result.value().has_value());
 
-    QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
+    QVERIFY(services.workspaceStore()->settingsRepository()->saveSetting(
         settingKey(), QStringLiteral("2026-09-01")));
     result = readDate(port);
     QVERIFY(result);
@@ -138,7 +138,7 @@ reportsUnavailableSessionAndPersistenceErrors()
     Platform::ApplicationServicesTeacherImportLatestSourceDateReadPort port(
         &services);
 
-    QSqlQuery dropSettings(services.databaseSession()->database());
+    QSqlQuery dropSettings(services.workspaceStore()->database());
     QVERIFY2(dropSettings.exec(QStringLiteral("DROP TABLE app_settings")),
         qPrintable(dropSettings.lastError().text()));
 

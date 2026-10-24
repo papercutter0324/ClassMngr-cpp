@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "data/repositories/teacher_import_repository.h"
 #include "next/application/teacher_import_latest_source_date_read_port.h"
@@ -33,15 +33,15 @@ public:
     [[nodiscard]] Application::TeacherImportLatestSourceDateReadPortResult
         readLatestTeacherImportSourceDate() const override
     {
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return Application::TeacherImportLatestSourceDateReadPortResult::failure(
                 unavailableError());
         }
 
-        SettingsRepository* const repository = session->settingsRepository();
+        SettingsRepository* const repository = store->settingsRepository();
         if (!repository)
         {
             return Application::TeacherImportLatestSourceDateReadPortResult::failure(
