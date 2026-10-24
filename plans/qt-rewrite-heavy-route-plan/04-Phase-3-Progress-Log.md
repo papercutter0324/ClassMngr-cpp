@@ -2344,3 +2344,38 @@ F1407 (Personal signature image) is current. Batch 5 remains unpushed until
 its remaining slices are complete.
 
 Commit: `62981ee18af676b405ba1cb4b5e1bdbbac74e5b7`.
+
+## F1407 — Personal signature image (Batch 5 candidate 10 of 19) — 2026-10-24
+
+Only the `ApplicationServicesPersonalSignatureImagePort` adapter and its
+dedicated Platform fixture moved to `WorkspaceStore`. The adapter still reads
+the exact `myInfo/signatureImage` key, Base64-decodes it, and prepares the
+image through `SignatureImage`. Missing, unavailable, corrupt, unsupported,
+or empty images remain successful empty results; repository read failures
+remain warning-logged nonrecoverable `Technical` results. F1405's aggregate
+writer still uses the same Base64 key/form. F1406's mode, typed text, and font
+preferences are out of scope.
+
+The incremental build passed for
+`ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests`,
+`ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`,
+`ClassMngrMyWorkspacePageTests`, `ClassMngrInitialSetupWizardTests`, and
+`ClassMngrSignatureImageProcessorTests`, with no compiler warnings or errors.
+CTest #181 (`ClassMngrSignatureImageProcessorTests`), #445
+(`ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`), and
+#446
+(`ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests`)
+passed 3/3. With `QT_QPA_PLATFORM=offscreen`, these MyWorkspace slots passed
+3/3: `storedSignatureImageIsPreparedForPreview`,
+`missingCorruptAndUnavailableSignatureImagesStayEmpty`, and
+`signatureImageReadFailurePreservesImageAndBlocksSaveUntilReload`. These
+Initial Setup slots passed 3/3:
+`storedSignatureImagePreviewsAndSurvivesSaveWithoutReplacement`,
+`missingInvalidAndUnavailableSignatureImagesStayEmpty`, and
+`signatureImageReadFailureBlocksAggregateSaveAndCanRetry`. Qt
+`propagateSizeHints` and Sans Serif font-alias timing warnings were non-fatal;
+no setup reruns occurred. Full UI suites, the full suite, and cross-platform
+builds did not run. F1407 is accepted; F1408 (Sub Prep preferences) is
+current. Batch 5 remains unpushed until its remaining slices are complete.
+
+Commit: `67474823037b3f8841f3403d9287e08e5965c0c7`.

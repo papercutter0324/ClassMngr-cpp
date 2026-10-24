@@ -45,13 +45,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   the verified implementation tip is
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1407 (Personal signature image) current. F1406
-  (Personal signature preferences) is accepted at
-  `62981ee18af676b405ba1cb4b5e1bdbbac74e5b7`; focused verification passed. Its
-  10 prioritized candidates remain in the current batch tracker. F1403 was
+  and Batch 5 is active with F1408 (Sub Prep preferences) current. F1407
+  (Personal signature image) is accepted at
+  `67474823037b3f8841f3403d9287e08e5965c0c7`; focused verification passed.
+  Its 9 prioritized candidates remain in the current batch tracker. Batch 5
+  remains unpushed until its remaining slices are complete. F1403 was
   limited to residual range projection and excluded F1341 availability/by-ID
   work and the existing WorkspaceStore-backed query/cache path.
-  F1376–F1406 implementation evidence, Batch 2 and Batch 3 push receipts, and
+  F1376–F1407 implementation evidence, Batch 2 and Batch 3 push receipts, and
   earlier UI limitations and attribution notes are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -71,26 +72,30 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1406 — 2026-10-24
+## Latest Progress Update — F1407 — 2026-10-24
 
-F1406 is accepted at `62981ee18af676b405ba1cb4b5e1bdbbac74e5b7`. The
-`PersonalSignaturePreferencesPort` adapter and dedicated fixture now use
-`WorkspaceStore`. Reads remain sequential in key order: `myInfo/signatureMode`,
-`myInfo/typedSignatureFont`, then `myInfo/typedSignatureText`. Missing values
-default to Image, empty text, and JustAnotherHand without writes. Mode/font
-conversion and whitespace-preserving UTF-8 text are unchanged. Unavailable or
-closed stores/missing repositories and repository errors return
-nonrecoverable `Technical`; repository read failures log at the first failing
-key. Reads return no partial bundle and use no transaction. The F1405
-cross-writer interoperability test remains covered. F1407's
-`myInfo/signatureImage` adapter and behavior are excluded. Focused Platform,
-MyWorkspace, and Initial Setup verification passed. Batch 5 is active with
-F1407 current. The F1383 orphan-data, F1389/F1390/F1391
+F1407 is accepted at `67474823037b3f8841f3403d9287e08e5965c0c7`. Only the
+`ApplicationServicesPersonalSignatureImagePort` adapter and its direct
+Platform fixture moved from `DatabaseSession` to `WorkspaceStore`. The exact
+`myInfo/signatureImage` key, Base64 decoding, `SignatureImage` preparation,
+empty-success cases, and warning-logged nonrecoverable `Technical` result for
+repository read failure are unchanged. F1405's aggregate writer still stores
+the same Base64 key/form; F1406's mode, text, and font preferences are outside
+this slice.
+
+The five affected Platform, MyWorkspace, Initial Setup, save-port, and image
+processor targets built incrementally without compiler warnings or errors.
+CTest #181, #445, and #446 passed 3/3. The three selected MyWorkspace slots
+and three selected Initial Setup slots passed 3/3 each with the offscreen Qt
+platform. Qt `propagateSizeHints` and Sans Serif font-alias timing warnings
+were non-fatal; no setup reruns were needed. Full UI suites, the full suite,
+and cross-platform builds did not run. Batch 5 is active with F1408 (Sub Prep
+preferences) current and 9 prioritized candidates remaining. The F1383
+orphan-data, F1389/F1390/F1391
 NavigationTeacherRead warning-text, F1392 SubPrep timeout, and F1394 schedule
-parity fixture-setup findings remain separate in the
-[progress log](04-Phase-3-Progress-Log.md). Full UI suites, the full suite,
-and cross-platform builds did not run; F1407 was not tested and prior baseline
-findings remain distinct.
+parity fixture-setup findings remain separately documented in the
+[progress log](04-Phase-3-Progress-Log.md); prior baseline findings retain
+their separate attribution.
 
 ## Objective
 
