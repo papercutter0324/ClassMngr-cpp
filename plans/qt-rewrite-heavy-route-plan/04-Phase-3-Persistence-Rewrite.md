@@ -38,9 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-23
-- Current note: Batch 2 remains active and unpushed; F1345 (Repeat-series
-  edit) is the most recently completed slice, and F1346 is current: Calendar
-  Import signature lookup. The Batch 1 push receipt is in the progress log.
+- Current note: Batch 2 remains active and unpushed; F1346 (Calendar Import
+  signature lookup) is the most recently completed slice, and F1347 is
+  current: Class Analytics dashboard persistence boundary. The Batch 1 push
+  receipt is in the progress log.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -58,12 +59,13 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1345 — 2026-10-23
+## Latest Progress Update — F1346 — 2026-10-23
 
-Migrated the repeat-series edit port and its fixtures to `WorkspaceStore`;
-selection, suffix, save, and error behavior remain unchanged. Three focused
-CTests passed, including suffix rollback and UI parity coverage. Details are
-in the
+Moved Calendar Import signature selection into a repository-owned projection;
+the Platform adapter visits records through `WorkspaceStore` and maps them to
+normalized UTF-16 keys without retaining full event rows alongside the
+signature results. Five
+focused CTests passed. Details are in the
 [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective

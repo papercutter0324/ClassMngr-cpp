@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "next/application/calendar_event_import_signature.h"
 #include "next/application/calendar_event_import_signature_query_port.h"
@@ -50,10 +50,10 @@ public:
     {
         try
         {
-            DatabaseSession* const session = m_services.databaseSession();
-            return session
-                && session->isOpen()
-                && session->calendarEventRepository();
+            WorkspaceStore* const store = m_services.workspaceStore();
+            return store
+                && store->isOpen()
+                && store->calendarEventRepository();
         }
         catch (...)
         {
@@ -92,14 +92,14 @@ public:
 
         try
         {
-            DatabaseSession* const session = m_services.databaseSession();
-            if (!session || !session->isOpen())
+            WorkspaceStore* const store = m_services.workspaceStore();
+            if (!store || !store->isOpen())
             {
                 return unavailableSessionFailure();
             }
 
             CalendarEventRepository* const repository =
-                session->calendarEventRepository();
+                store->calendarEventRepository();
             if (!repository)
             {
                 return failure(
@@ -108,12 +108,23 @@ public:
                     );
             }
 
-            const ::Result<QList<CalendarEvent>> loaded =
-                repository->loadCalendarEventsInRange(startDate, endDate);
-            if (!loaded)
+            Application::CalendarEventImportSignatureKeys keys;
+            const Status visited =
+                repository->visitCalendarEventImportSignatureSourcesInRange(
+                    startDate,
+                    endDate,
+                    [&keys](
+                        const CalendarEventImportSignatureSourceRecord& record
+                        )
+                    {
+                        keys.push_back(importSignatureKey(record));
+                        return CalendarEventRangeVisitDecision::Continue;
+                    }
+                    );
+            if (!visited)
             {
-                const QString repositoryError = loaded.error();
-                if (!session->isOpen())
+                const QString repositoryError = visited.error();
+                if (!store->isOpen())
                 {
                     return unavailableSessionFailure();
                 }
@@ -122,14 +133,6 @@ public:
                     Domain::ErrorCode::Technical,
                     repositoryError.toUtf8().toStdString()
                     );
-            }
-
-            const QList<CalendarEvent>& events = loaded.value();
-            Application::CalendarEventImportSignatureKeys keys;
-            keys.reserve(static_cast<std::size_t>(events.size()));
-            for (const CalendarEvent& event : events)
-            {
-                keys.push_back(importSignatureKey(event));
             }
 
             return Application::CalendarEventImportSignatureQueryResult::
@@ -154,26 +157,26 @@ public:
 private:
     [[nodiscard]] static Application::CalendarEventImportSignature
     importSignatureKey(
-        const CalendarEvent& event
+        const CalendarEventImportSignatureSourceRecord& record
         )
     {
         // Keep normalization and ISO date conversion at the Qt adapter edge.
         // The Application value intentionally excludes time and row metadata.
         return Application::CalendarEventImportSignature::
             fromNormalizedFields({
-                .simplifiedTitle = event.title.simplified().toStdU16String(),
+                .simplifiedTitle = record.title.simplified().toStdU16String(),
                 .normalizedEventType = normalizedCalendarEventType(
-                    event.eventType
+                    record.eventType
                     ).toStdU16String(),
-                .startDateIso = event.startDate
+                .startDateIso = record.startDate
                     .toString(Qt::ISODate)
                     .toStdU16String(),
-                .endDateIso = event.endDate
+                .endDateIso = record.endDate
                     .toString(Qt::ISODate)
                     .toStdU16String(),
-                .allDay = event.allDay,
+                .allDay = record.allDay,
                 .normalizedTimeStatus = normalizedCalendarEventTimeStatus(
-                    event.timeStatus
+                    record.timeStatus
                     ).toStdU16String()
             });
     }

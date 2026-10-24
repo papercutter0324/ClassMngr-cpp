@@ -4,6 +4,7 @@
 #include "domain/models/calendar_event.h"
 
 #include <functional>
+#include <QDate>
 #include <QList>
 #include <QSqlDatabase>
 #include <QString>
@@ -46,6 +47,24 @@ using CalendarEventRangeVisitor = std::function<
     CalendarEventRangeVisitDecision(const CalendarEvent&)
     >;
 
+// Narrow source projection for import duplicate detection. Keep persistence
+// data types here so repository callers do not depend on Application keys.
+struct CalendarEventImportSignatureSourceRecord final
+{
+    QString title;
+    QString eventType;
+    QDate startDate;
+    QDate endDate;
+    bool allDay = false;
+    QString timeStatus;
+};
+
+using CalendarEventImportSignatureSourceRangeVisitor = std::function<
+    CalendarEventRangeVisitDecision(
+        const CalendarEventImportSignatureSourceRecord&
+        )
+    >;
+
 class CalendarEventRepository
 {
 public:
@@ -66,6 +85,12 @@ public:
         const QDate& startDate,
         const QDate& endDate,
         const CalendarEventRangeVisitor& visitor
+        );
+
+    [[nodiscard]] Status visitCalendarEventImportSignatureSourcesInRange(
+        const QDate& startDate,
+        const QDate& endDate,
+        const CalendarEventImportSignatureSourceRangeVisitor& visitor
         );
 
     [[nodiscard]] Result<QList<CalendarEventDateInterval>>

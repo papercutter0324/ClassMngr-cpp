@@ -149,6 +149,8 @@ private slots:
     void intervalRangeQueryReturnsFullInclusiveIntervals();
     void rangeQuerySortsByDateTimeAndTitle();
     void rangeVisitorPreservesOrderAndStopsAtRequestedPrefix();
+    void signatureSourceVisitorProjectsSelectedFieldsAndInclusiveOrder();
+    void signatureSourceVisitorRejectsInvalidRangesAndReadFailures();
     void upcomingQueryExcludesPastEventsAndLimitsResults();
     void nextEventQueryFindsEarliestFutureStartDate();
     void schemaCreatesEndDateIndex();
@@ -488,6 +490,286 @@ rangeVisitorPreservesOrderAndStopsAtRequestedPrefix()
                 QStringLiteral("Alpha")
             })
             );
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::
+signatureSourceVisitorProjectsSelectedFieldsAndInclusiveOrder()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_signature_source_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+
+        QVERIFY(database.open());
+        QSqlQuery schema(database);
+        QVERIFY(schema.exec(R"(
+            CREATE TABLE calendar_events (
+                title TEXT NOT NULL,
+                event_type TEXT,
+                start_date TEXT,
+                start_time TEXT,
+                end_date TEXT,
+                all_day INTEGER,
+                time_status TEXT
+            )
+        )"));
+
+        QSqlQuery insert(database);
+        QVERIFY(insert.prepare(R"(
+            INSERT INTO calendar_events (
+                title,
+                event_type,
+                start_date,
+                start_time,
+                end_date,
+                all_day,
+                time_status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        )"));
+        const auto insertSource = [&insert](
+            const QString& title,
+            const QString& eventType,
+            const QString& startDate,
+            const QString& startTime,
+            const QString& endDate,
+            const bool allDay,
+            const QString& timeStatus
+        )
+        {
+            insert.bindValue(0, title);
+            insert.bindValue(1, eventType);
+            insert.bindValue(2, startDate);
+            insert.bindValue(3, startTime);
+            insert.bindValue(4, endDate);
+            insert.bindValue(5, allDay ? 1 : 0);
+            insert.bindValue(6, timeStatus);
+            return insert.exec();
+        };
+
+        QVERIFY(insertSource(
+            QStringLiteral("Outside Before"),
+            QStringLiteral("Other"),
+            QStringLiteral("2026-04-01"),
+            QStringLiteral("09:00"),
+            QStringLiteral("2026-04-30"),
+            false,
+            QStringLiteral("Timed")
+            ));
+        QVERIFY(insertSource(
+            QStringLiteral("Overlap Start"),
+            QStringLiteral("Workshop"),
+            QStringLiteral("2026-04-30"),
+            QStringLiteral("14:00"),
+            QStringLiteral("2026-05-02"),
+            true,
+            QStringLiteral("Unconfirmed")
+            ));
+        QVERIFY(insertSource(
+            QStringLiteral("Boundary Start"),
+            QStringLiteral("Meeting"),
+            QStringLiteral("2026-05-01"),
+            QStringLiteral("07:30"),
+            QStringLiteral("2026-05-01"),
+            false,
+            QStringLiteral("Timed")
+            ));
+        QVERIFY(insertSource(
+            QStringLiteral("Early Time"),
+            QStringLiteral("Other"),
+            QStringLiteral("2026-05-15"),
+            QStringLiteral("08:30"),
+            QStringLiteral("2026-05-15"),
+            false,
+            QStringLiteral("Timed")
+            ));
+        QVERIFY(insertSource(
+            QStringLiteral("Late Time"),
+            QStringLiteral("Meeting"),
+            QStringLiteral("2026-05-15"),
+            QStringLiteral("10:00"),
+            QStringLiteral("2026-05-16"),
+            false,
+            QStringLiteral("Unknown")
+            ));
+        QVERIFY(insertSource(
+            QStringLiteral("Zulu Title"),
+            QStringLiteral("Other"),
+            QStringLiteral("2026-05-20"),
+            QStringLiteral("12:00"),
+            QStringLiteral("2026-05-20"),
+            false,
+            QStringLiteral("Timed")
+            ));
+        QVERIFY(insertSource(
+            QStringLiteral("Alpha Title"),
+            QStringLiteral("Other"),
+            QStringLiteral("2026-05-20"),
+            QStringLiteral("12:00"),
+            QStringLiteral("2026-05-20"),
+            false,
+            QStringLiteral("Timed")
+            ));
+        QVERIFY(insertSource(
+            QStringLiteral("Boundary End"),
+            QStringLiteral("Conference"),
+            QStringLiteral("2026-05-31"),
+            QStringLiteral("23:00"),
+            QStringLiteral("2026-06-01"),
+            true,
+            QStringLiteral("Unconfirmed")
+            ));
+        QVERIFY(insertSource(
+            QStringLiteral("Outside After"),
+            QStringLiteral("Other"),
+            QStringLiteral("2026-06-01"),
+            QStringLiteral("09:00"),
+            QStringLiteral("2026-06-03"),
+            false,
+            QStringLiteral("Timed")
+            ));
+
+        CalendarEventRepository repository(database);
+        QList<CalendarEventImportSignatureSourceRecord> records;
+        const Status visited =
+            repository.visitCalendarEventImportSignatureSourcesInRange(
+                QDate(2026, 5, 1),
+                QDate(2026, 5, 31),
+                [&records](
+                    const CalendarEventImportSignatureSourceRecord& record
+                )
+                {
+                    records.append(record);
+                    return CalendarEventRangeVisitDecision::Continue;
+                }
+                );
+
+        QVERIFY(visited);
+        const QList<CalendarEventImportSignatureSourceRecord> expected = {
+            {
+                .title = QStringLiteral("Overlap Start"),
+                .eventType = QStringLiteral("Workshop"),
+                .startDate = QDate(2026, 4, 30),
+                .endDate = QDate(2026, 5, 2),
+                .allDay = true,
+                .timeStatus = QStringLiteral("Unconfirmed")
+            },
+            {
+                .title = QStringLiteral("Boundary Start"),
+                .eventType = QStringLiteral("Meeting"),
+                .startDate = QDate(2026, 5, 1),
+                .endDate = QDate(2026, 5, 1),
+                .allDay = false,
+                .timeStatus = QStringLiteral("Timed")
+            },
+            {
+                .title = QStringLiteral("Early Time"),
+                .eventType = QStringLiteral("Other"),
+                .startDate = QDate(2026, 5, 15),
+                .endDate = QDate(2026, 5, 15),
+                .allDay = false,
+                .timeStatus = QStringLiteral("Timed")
+            },
+            {
+                .title = QStringLiteral("Late Time"),
+                .eventType = QStringLiteral("Meeting"),
+                .startDate = QDate(2026, 5, 15),
+                .endDate = QDate(2026, 5, 16),
+                .allDay = false,
+                .timeStatus = QStringLiteral("Unknown")
+            },
+            {
+                .title = QStringLiteral("Alpha Title"),
+                .eventType = QStringLiteral("Other"),
+                .startDate = QDate(2026, 5, 20),
+                .endDate = QDate(2026, 5, 20),
+                .allDay = false,
+                .timeStatus = QStringLiteral("Timed")
+            },
+            {
+                .title = QStringLiteral("Zulu Title"),
+                .eventType = QStringLiteral("Other"),
+                .startDate = QDate(2026, 5, 20),
+                .endDate = QDate(2026, 5, 20),
+                .allDay = false,
+                .timeStatus = QStringLiteral("Timed")
+            },
+            {
+                .title = QStringLiteral("Boundary End"),
+                .eventType = QStringLiteral("Conference"),
+                .startDate = QDate(2026, 5, 31),
+                .endDate = QDate(2026, 6, 1),
+                .allDay = true,
+                .timeStatus = QStringLiteral("Unconfirmed")
+            }
+        };
+        QCOMPARE(records.size(), expected.size());
+        for (qsizetype index = 0; index < expected.size(); ++index)
+        {
+            QCOMPARE(records.at(index).title, expected.at(index).title);
+            QCOMPARE(records.at(index).eventType, expected.at(index).eventType);
+            QCOMPARE(records.at(index).startDate, expected.at(index).startDate);
+            QCOMPARE(records.at(index).endDate, expected.at(index).endDate);
+            QCOMPARE(records.at(index).allDay, expected.at(index).allDay);
+            QCOMPARE(records.at(index).timeStatus, expected.at(index).timeStatus);
+        }
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::
+signatureSourceVisitorRejectsInvalidRangesAndReadFailures()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_signature_source_failure_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+        CalendarEventRepository repository(database);
+
+        int callbackCount = 0;
+        const CalendarEventImportSignatureSourceRangeVisitor visitor =
+            [&callbackCount](
+                const CalendarEventImportSignatureSourceRecord&
+            )
+            {
+                ++callbackCount;
+                return CalendarEventRangeVisitDecision::Continue;
+            };
+        const Status invalidRange =
+            repository.visitCalendarEventImportSignatureSourcesInRange(
+                QDate(2026, 5, 2),
+                QDate(2026, 5, 1),
+                visitor
+                );
+        QVERIFY(!invalidRange);
+        QCOMPARE(callbackCount, 0);
+
+        QSqlQuery dropTable(database);
+        QVERIFY(dropTable.exec(QStringLiteral("DROP TABLE calendar_events")));
+        const Status readFailure =
+            repository.visitCalendarEventImportSignatureSourcesInRange(
+                QDate(2026, 5, 1),
+                QDate(2026, 5, 31),
+                visitor
+                );
+        QVERIFY(!readFailure);
+        QCOMPARE(callbackCount, 0);
     }
 
     QSqlDatabase::removeDatabase(connectionName);

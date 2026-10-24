@@ -395,6 +395,7 @@ private slots:
     void reportsUnavailableAndInvalidRangesStructurally();
     void reportsCalendarEventRepositoryReadFailuresStructurally();
     void returnsLegacyImportSignatureKeysInRangeOrder();
+    void returnsAllImportSignatureKeysWithoutTruncation();
     void reportsUnavailableAndInvalidImportSignatureRangesStructurally();
     void reportsImportSignatureRangeReadFailureStructurally();
     void rejectsPartialSourceTimesAndProjectionOverflow();
@@ -4262,12 +4263,13 @@ returnsLegacyImportSignatureKeysInRangeOrder()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarService* legacyService = services.calendarService();
     QVERIFY(legacyService);
 
-    QSqlQuery query(
-        services.dataService()->databaseSession()->database()
-        );
+    QSqlQuery query(store->database());
     QVERIFY2(
         query.prepare(QStringLiteral(
             "INSERT INTO calendar_events ("
@@ -4402,10 +4404,64 @@ returnsLegacyImportSignatureKeysInRangeOrder()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
+returnsAllImportSignatureKeysWithoutTruncation()
+{
+    constexpr std::size_t expectedCount = 4'097;
+    const QDate date(2026, 9, 23);
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    CalendarEventRepository* const repository =
+        store->calendarEventRepository();
+    QVERIFY(repository);
+
+    QList<CalendarEvent> events;
+    events.reserve(static_cast<qsizetype>(expectedCount));
+    for (std::size_t index = 0; index < expectedCount; ++index)
+    {
+        CalendarEvent event = makeEvent(
+            QStringLiteral("  Duplicate   import title  "),
+            date,
+            date
+            );
+        event.eventType = QStringLiteral("Meeting");
+        event.timeStatus = QStringLiteral("Unconfirmed");
+        event.startTime = QTime(9, static_cast<int>(index % 60));
+        event.endTime = QTime(10, static_cast<int>(index % 60));
+        events.append(event);
+    }
+
+    const auto saved = repository->saveCalendarEvents(events);
+    QVERIFY(saved);
+    QCOMPARE(saved->size(), static_cast<qsizetype>(expectedCount));
+
+    ApplicationServicesCalendarEventImportSignatureQueryPort port(services);
+    const auto keys = port.loadSignaturesInRange(
+        importSignatureRange(date, date)
+        );
+    QVERIFY(keys);
+    QCOMPARE(keys.value().size(), expectedCount);
+
+    const QString expectedKey = QStringLiteral(
+        "Duplicate import title|Meeting|2026-09-23|2026-09-23|0|Unconfirmed"
+        );
+    for (const CalendarEventImportSignature& key : keys.value())
+    {
+        QCOMPARE(QString::fromStdU16String(key.value()), expectedKey);
+    }
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
 reportsUnavailableAndInvalidImportSignatureRangesStructurally()
 {
     ApplicationServices unavailableServices;
-    QVERIFY(unavailableServices.dataService());
+    WorkspaceStore* const unavailableStore =
+        unavailableServices.workspaceStore();
+    QVERIFY(unavailableStore);
+    QVERIFY(!unavailableStore->isOpen());
     ApplicationServicesCalendarEventImportSignatureQueryPort unavailablePort(
         unavailableServices
         );
@@ -4421,6 +4477,10 @@ reportsUnavailableAndInvalidImportSignatureRangesStructurally()
 
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    QVERIFY(store->calendarEventRepository());
     ApplicationServicesCalendarEventImportSignatureQueryPort port(services);
     QVERIFY(port.isAvailable());
     verifyFailure(
@@ -4446,7 +4506,7 @@ reportsUnavailableAndInvalidImportSignatureRangesStructurally()
         );
 
     services.closeDatabase();
-    QVERIFY(services.dataService());
+    QVERIFY(!store->isOpen());
     QVERIFY(!port.isAvailable());
     verifyRecoverableFailure(
         port.loadSignaturesInRange(importSignatureRange(
@@ -4463,10 +4523,11 @@ reportsImportSignatureRangeReadFailureStructurally()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
 
-    QSqlQuery query(
-        services.dataService()->databaseSession()->database()
-        );
+    QSqlQuery query(store->database());
     QVERIFY2(
         query.exec(QStringLiteral("DROP TABLE calendar_events")),
         qPrintable(query.lastError().text())

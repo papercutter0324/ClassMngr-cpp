@@ -696,3 +696,34 @@ Executor built `ClassMngr`; Tester built `ClassMngr`,
 **3/3** serially. Coverage includes ordered IDs and suffix boundaries, empty
 suffix, failure/rollback, and retry/cancel/refresh UI parity.
 `git diff --check` passed. No full suite or cross-platform build ran.
+
+## F1346 — Calendar Import signature lookup — 2026-10-23
+
+`CalendarEventRepository` now owns
+`CalendarEventImportSignatureSourceRecord` and
+`visitCalendarEventImportSignatureSourcesInRange()`. The projection selects
+only title, event type, start/end dates, all-day, and time status; it preserves
+inclusive overlap and exact `ORDER BY start_date, start_time, title`, with no
+row cap. Duplicate rows and the complete requested range remain available.
+The repository does not depend on the Application signature type.
+
+The Platform signature port uses `workspaceStore()` and maps each visited
+record at the Qt adapter edge into existing normalized UTF-16 keys. It no
+longer retains a full `QList<CalendarEvent>` alongside the signature vector.
+Generic range reads, imports, the use case, and save behavior remain
+unchanged. Repository tests cover selected fields, range/order, invalid
+ranges, and read failure. Platform fixture access uses `WorkspaceStore`; its
+normalization/order/duplicate/availability/error checks remain, with a
+4,097-row duplicate-key test confirming uncapped results.
+
+Executor built `ClassMngr`; Tester built `ClassMngr` and
+`ClassMngrCalendarEventRepositoryTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventImportSignatureQueryPortTests`,
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`, and
+`ClassMngrCalendarEventImportParityTests`. The five focused CTests passed
+**5/5** serially. `git diff --check` passed. Partial row-iteration failure was
+not injected; source review confirmed the adapter returns failure instead of
+exposing locally accumulated keys. An initial sandboxed import-parity run
+could not bind the loopback fixture; the complete five-test serial run passed
+with local socket access. No full suite or cross-platform build ran.

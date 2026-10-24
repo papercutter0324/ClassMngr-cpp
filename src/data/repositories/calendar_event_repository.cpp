@@ -280,6 +280,104 @@ Status CalendarEventRepository::visitCalendarEventsInRange(
     return {};
 }
 
+Status CalendarEventRepository::visitCalendarEventImportSignatureSourcesInRange(
+    const QDate& startDate,
+    const QDate& endDate,
+    const CalendarEventImportSignatureSourceRangeVisitor& visitor
+    )
+{
+    if (!visitor)
+    {
+        return std::unexpected(
+            QObject::tr("Loading calendar events failed: no range visitor was provided.")
+            );
+    }
+
+    if (
+        !startDate.isValid()
+        || !endDate.isValid()
+        || endDate < startDate
+        )
+    {
+        return std::unexpected(
+            QObject::tr("Loading calendar events failed: invalid date range.")
+            );
+    }
+
+    QSqlQuery query(m_database);
+
+    query.prepare(R"(
+        SELECT
+            title,
+            event_type,
+            start_date,
+            end_date,
+            all_day,
+            time_status
+        FROM calendar_events
+        WHERE end_date >= ?
+        AND start_date <= ?
+        ORDER BY start_date, start_time, title
+    )");
+
+    query.addBindValue(
+        startDate.toString(Qt::ISODate)
+        );
+    query.addBindValue(
+        endDate.toString(Qt::ISODate)
+        );
+
+    const QString detail =
+        QObject::tr("from %1 to %2")
+            .arg(startDate.toString(Qt::ISODate), endDate.toString(Qt::ISODate));
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading calendar events in range"),
+        detail
+        );
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        const CalendarEventImportSignatureSourceRecord record{
+            .title = query.value("title").toString(),
+            .eventType = query.value("event_type").toString(),
+            .startDate = QDate::fromString(
+                query.value("start_date").toString(),
+                Qt::ISODate
+                ),
+            .endDate = QDate::fromString(
+                query.value("end_date").toString(),
+                Qt::ISODate
+                ),
+            .allDay = query.value("all_day").toBool(),
+            .timeStatus = query.value("time_status").toString()
+        };
+
+        if (visitor(record) == CalendarEventRangeVisitDecision::Stop)
+        {
+            return {};
+        }
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading calendar events in range"),
+                {},
+                detail
+                ).userMessage()
+            );
+    }
+
+    return {};
+}
+
 Result<QList<CalendarEventDateInterval>>
 CalendarEventRepository::loadCalendarEventDateIntervalsInRange(
     const QDate& startDate,
