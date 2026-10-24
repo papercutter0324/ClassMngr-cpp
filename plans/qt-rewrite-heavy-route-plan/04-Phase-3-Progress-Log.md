@@ -653,3 +653,25 @@ Executor built `ClassMngr`; Tester built `ClassMngr`,
 `ClassMngrCalendarPreferencesRestoreDefaultsTests` in the existing macOS Debug
 tree. The three focused CTests passed **3/3** serially. `git diff --check`
 passed. No full suite or cross-platform build ran.
+
+## F1344 — Repeat-series creation — 2026-10-23
+
+`src/next/platform/application_services_calendar_event_series_create_port.h`
+now uses `workspaceStore()` and obtains the existing
+`CalendarEventRepository`. Request validation, series-ID normalization,
+occurrence count/order, the single `saveCalendarEvents()` call, ordered typed
+IDs, transaction/rollback behavior, and errors remain unchanged. F1344
+fixtures in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp` now
+use `WorkspaceStore` for daily/weekly/monthly parity, invalid requests,
+duplicate IDs, unavailable store, and failure/no-partial-rows; assertions
+remain. One unavailable-store test was renamed from Session to Store without
+behavior or assertion changes. Repository SQL, UI, and the separate F1345 edit
+path were unchanged.
+
+Executor built `ClassMngr`; Tester built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrCalendarEventRepositoryTests`. The three focused CTests passed
+**3/3** serially. `git diff --check` passed. No broader suite or
+cross-platform build ran.

@@ -373,7 +373,7 @@ private slots:
     void createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity();
     void reportsInvalidSeriesCreateRequestStructurally();
     void rejectsExistingOccurrenceIdBeforePersistence();
-    void reportsUnavailableSeriesCreateSessionStructurally();
+    void reportsUnavailableSeriesCreateStoreStructurally();
     void reportsSeriesCreateBatchFailureWithoutPartialRows();
     void editsValidRepeatSeriesSuffixWithTypedParity();
     void acceptsEmptyRepeatSeriesEditSuffixAsNoOp();
@@ -2383,11 +2383,11 @@ createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
     ApplicationServicesCalendarEventSeriesCreatePort port(services);
@@ -2551,12 +2551,12 @@ reportsInvalidSeriesCreateRequestStructurally()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     ApplicationServicesCalendarEventSeriesCreatePort port(services);
 
-    QSqlQuery countBefore(session->database());
+    QSqlQuery countBefore(store->database());
     QVERIFY(countBefore.exec(QStringLiteral(
         "SELECT COUNT(*) FROM calendar_events"
         )));
@@ -2580,7 +2580,7 @@ reportsInvalidSeriesCreateRequestStructurally()
         verifyFailure(result, ErrorCode::InvalidInput);
     }
 
-    QSqlQuery countAfterUnicodeWhitespace(session->database());
+    QSqlQuery countAfterUnicodeWhitespace(store->database());
     QVERIFY(countAfterUnicodeWhitespace.exec(QStringLiteral(
         "SELECT COUNT(*) FROM calendar_events"
         )));
@@ -2669,10 +2669,11 @@ rejectsExistingOccurrenceIdBeforePersistence()
     QVERIFY(openDatabase(services, m_directory));
     CalendarService* const calendarService = services.calendarService();
     QVERIFY(calendarService);
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
     CalendarEvent existingEvent = makeEvent(
@@ -2693,7 +2694,7 @@ rejectsExistingOccurrenceIdBeforePersistence()
     QVERIFY(seededRow);
     const CalendarEvent original = *seededRow;
 
-    QSqlQuery countBefore(session->database());
+    QSqlQuery countBefore(store->database());
     QVERIFY(countBefore.exec(QStringLiteral(
         "SELECT COUNT(*) FROM calendar_events"
         )));
@@ -2721,7 +2722,7 @@ rejectsExistingOccurrenceIdBeforePersistence()
         ErrorCode::InvalidInput
         );
 
-    QSqlQuery countAfter(session->database());
+    QSqlQuery countAfter(store->database());
     QVERIFY(countAfter.exec(QStringLiteral(
         "SELECT COUNT(*) FROM calendar_events"
         )));
@@ -2743,13 +2744,13 @@ rejectsExistingOccurrenceIdBeforePersistence()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
-reportsUnavailableSeriesCreateSessionStructurally()
+reportsUnavailableSeriesCreateStoreStructurally()
 {
     ApplicationServices services;
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(!session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(!store->isOpen());
     ApplicationServicesCalendarEventSeriesCreatePort port(services);
 
     auto invalidRequest = seriesCreateRequest(
@@ -2778,11 +2779,11 @@ reportsUnavailableSeriesCreateSessionStructurally()
         );
 
     QVERIFY(openDatabase(services, m_directory));
-    QVERIFY(session->isOpen());
-    QVERIFY(session->calendarEventRepository());
+    QVERIFY(store->isOpen());
+    QVERIFY(store->calendarEventRepository());
     services.closeDatabase();
     QVERIFY(services.dataService());
-    QVERIFY(!session->isOpen());
+    QVERIFY(!store->isOpen());
     verifyRecoverableFailure(
         port.createRepeatSeries(seriesCreateRequest(
             "series-closed",
@@ -2802,14 +2803,14 @@ reportsSeriesCreateBatchFailureWithoutPartialRows()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_series_second_occurrence "
         "BEFORE INSERT ON calendar_events "
