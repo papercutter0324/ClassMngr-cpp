@@ -252,7 +252,13 @@ enforcesReplaceExistingForClassAndPlainTransitions()
         port
         );
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Conflict);
+    QCOMPARE(
+        result.error().message,
+        std::string(
+            "This slot is assigned to a testing class. Confirm replacement first."
+            )
+        );
     QVERIFY(!result.error().recoverable);
     const QList<TestingAssignment> unchangedClassAssignment =
         loadedAssignments(services);
@@ -277,7 +283,13 @@ enforcesReplaceExistingForClassAndPlainTransitions()
         port
         );
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Conflict);
+    QCOMPARE(
+        result.error().message,
+        std::string(
+            "This slot already has a testing assignment. Confirm replacement first."
+            )
+        );
     assignments = loadedAssignments(services);
     QCOMPARE(assignments.size(), 1);
     QCOMPARE(assignments.first().classId, -1);
@@ -343,12 +355,24 @@ classifiesMissingParentAndRepositoryFailures()
         port
         );
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     QCOMPARE(
         result.error().message,
         std::string("The selected testing class no longer exists.")
         );
     QVERIFY(!result.error().recoverable);
+
+    result = executeSave(
+        classRequest(u"Monday", u"09:00", 0),
+        port
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("A valid testing class is required.")
+        );
+    QVERIFY(result.error().recoverable);
 
     const QList<TestingAssignment> afterClassFailures =
         loadedAssignments(services);

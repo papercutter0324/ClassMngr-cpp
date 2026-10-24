@@ -11,15 +11,16 @@ F1444 implementation and independent focused verification are complete; its
 commit `fef61c849b4f845ba89a008dcee697bc380895ce` is local and not pushed.
 F1445 implementation and focused verification are complete; commit
 `0f9b8bf6f9165d51f53e3f46af616368a46bdba0` is local and not pushed. F1446
-focused verification is complete and its slice commit is pending; F1447 is
-next. Its accepted error mapping, port-boundary, bridge removal condition, and
-verification limits are recorded in the [progress
+is committed locally as `fe3edd1e4ff890eea1f1b57c9dc3b5afcd2cfae6` and not
+pushed; focused verification passed. F1447 implementation and independent
+focused verification are complete locally; its exact-path commit is pending
+and not pushed. F1448 is next but not active. Evidence is in the [progress
 log](04-Phase-3-Progress-Log.md). The accepted queue is:
 
 1. **F1444** — shared `RepositoryError`/`RepositoryResult`/status contract and SQL error mapping.
 2. **F1445** — Workspace/database transaction, schema, lifecycle, and file-operation errors.
 3. **F1446** — Teacher Import repository/apply-port error preservation.
-4. **F1447** — TestingBlock/assignment errors, including occupied-slot `Conflict` currently classified `Technical`.
+4. **F1447** — TestingBlock/assignment structured errors, including occupied-slot classification from `Technical` to `Conflict`.
 5. **F1448** — ClassRepository.
 6. **F1449** — TestingClassRepository.
 7. **F1450** — ClassInfoRepository.
@@ -39,6 +40,9 @@ log](04-Phase-3-Progress-Log.md). The accepted queue is:
 
 Keep the F1418 `ApplicationServices::saveDatabase()` wrapper void; F1445 typed
 `WorkspaceStore` commit without changing that wrapper.
+
+F1447 does not include the separately queued ClassRepository (F1448) or
+TestingClassRepository (F1449).
 
 ## Batch 23 discovery reminder
 

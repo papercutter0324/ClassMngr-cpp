@@ -39,9 +39,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Unassigned
 - Last updated: 2026-10-24
 - Current note: The §3.3 structured-error audit reopened Phase 3's exit gate.
-  F1444 and F1445 are committed locally and not pushed. F1446 focused
-  verification is complete; its slice commit is pending and F1447 is next.
-  Exact evidence and accepted scope are in the
+  F1447 implementation and independent focused verification are complete
+  locally; its exact-path commit is pending and not pushed. F1448 is next,
+  not active. Evidence and limits are in
   [progress log](04-Phase-3-Progress-Log.md); the ordered queue is in the
   [current batch tracker](Current-Slice-Batches.md).
 
@@ -58,13 +58,14 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1446 Teacher Import structured errors — 2026-10-24
+## Latest Progress Update — F1447 TestingBlock and assignment structured errors — 2026-10-24
 
-F1446's focused verification is complete and its slice commit is pending.
-F1447 is next. The accepted error mapping, apply-port boundary, bridge removal
-condition, and verification limits are in the
-[progress log](04-Phase-3-Progress-Log.md); the full ordered queue remains in
-the [current batch tracker](Current-Slice-Batches.md).
+F1447 implementation and independent focused verification are complete;
+`ClassMngrTestingBlockRepositoryTests` and four focused consumers passed 5/5.
+The exact-path commit is pending and not pushed; F1448 is next but not active.
+Verification limits and the accepted contract are in the
+[progress log](04-Phase-3-Progress-Log.md); the ordered queue remains in the
+[current batch tracker](Current-Slice-Batches.md).
 
 ## Objective
 

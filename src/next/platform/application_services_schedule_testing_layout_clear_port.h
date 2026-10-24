@@ -84,7 +84,8 @@ public:
                     );
             }
 
-            const Status cleared = repository->clearTestingAssignments();
+            const RepositoryStatus cleared =
+                repository->clearTestingAssignments();
             if (!cleared)
             {
                 if (!store->isOpen())
@@ -92,7 +93,10 @@ public:
                     return unavailableFailure();
                 }
 
-                return failure(toStdString(cleared.error()));
+                return failure(
+                    domainErrorCode(cleared.error().code),
+                    toStdString(toLegacyDiagnostic(cleared.error()))
+                    );
             }
 
             return Application::ScheduleTestingLayoutClearResult::success();
@@ -108,6 +112,26 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        ) noexcept
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] static std::string toStdString(const QString& value)
     {
         const QByteArray bytes = value.toUtf8();

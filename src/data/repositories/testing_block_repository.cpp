@@ -19,7 +19,7 @@ struct CanonicalScheduleKey
     QString startTime;
 };
 
-Result<CanonicalScheduleKey> canonicalScheduleKey(
+RepositoryResult<CanonicalScheduleKey> canonicalScheduleKey(
     const QString& day,
     const QString& startTime
     )
@@ -29,23 +29,29 @@ Result<CanonicalScheduleKey> canonicalScheduleKey(
 
     if (!weekday || !time)
     {
-        return std::unexpected(
-            QObject::tr("A testing block requires a valid weekday and start time.")
-            );
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
+            QObject::tr(
+                "A testing block requires a valid weekday and start time."
+                )
+        });
     }
 
     return CanonicalScheduleKey{weekday->text, time->text};
 }
 
-QString queryFailure(
+RepositoryError queryFailure(
     const QSqlQuery& query,
     const QString& action
     )
 {
-    return SqlQueryUtils::errorFor(query, action).userMessage();
+    return RepositoryError{
+        RepositoryErrorCode::Technical,
+        SqlQueryUtils::errorFor(query, action).userMessage()
+    };
 }
 
-Result<int> decodeTestingClassId(
+RepositoryResult<int> decodeTestingClassId(
     const QVariant& storedValue,
     const QString& storageType,
     int nullValue
@@ -58,11 +64,12 @@ Result<int> decodeTestingClassId(
 
     if (storageType != QStringLiteral("integer"))
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr(
                 "A testing assignment contains an invalid class ID."
                 )
-            );
+        });
     }
 
     bool converted = false;
@@ -73,32 +80,36 @@ Result<int> decodeTestingClassId(
         || classId > std::numeric_limits<int>::max()
         )
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr(
                 "A testing assignment contains an invalid class ID."
                 )
-            );
+        });
     }
 
     return static_cast<int>(classId);
 }
 
-Status validateKey(
+RepositoryStatus validateKey(
     const QString& day,
     const QString& startTime
     )
 {
     if (!canonicalScheduleKey(day, startTime))
     {
-        return std::unexpected(
-            QObject::tr("A testing block requires a valid weekday and start time.")
-            );
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
+            QObject::tr(
+                "A testing block requires a valid weekday and start time."
+                )
+        });
     }
 
     return {};
 }
 
-Result<int> existingClassId(
+RepositoryResult<int> existingClassId(
     QSqlDatabase& database,
     const QString& day,
     const QString& startTime
@@ -128,11 +139,20 @@ Result<int> existingClassId(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(
+            executed.error()
+            ));
     }
 
     if (!query.next())
     {
+        if (query.lastError().isValid())
+        {
+            return std::unexpected(queryFailure(
+                query,
+                QObject::tr("Checking the testing assignment")
+                ));
+        }
         return -1;
     }
 
@@ -143,26 +163,22 @@ Result<int> existingClassId(
         );
 }
 
-TestingClassAssignmentSaveDetailedResult technicalAssignmentFailure(
-    const QString& message
-    )
+RepositoryError technicalAssignmentFailure(const QString& message)
 {
-    return std::unexpected(TestingClassAssignmentSaveFailure{
-        .kind = TestingClassAssignmentSaveFailureKind::Technical,
-        .message = message
-    });
+    return RepositoryError{RepositoryErrorCode::Technical, message};
 }
 
-TestingClassAssignmentSaveDetailedResult validateTestingClass(
+RepositoryStatus validateTestingClass(
     QSqlDatabase& database,
     int classId
     )
 {
     if (classId <= 0)
     {
-        return technicalAssignmentFailure(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
             QObject::tr("A valid testing class is required.")
-            );
+        });
     }
 
     QSqlQuery query(database);
@@ -185,30 +201,25 @@ TestingClassAssignmentSaveDetailedResult validateTestingClass(
 
     if (!query.exec())
     {
-        return technicalAssignmentFailure(
-            queryFailure(
+        return std::unexpected(queryFailure(
                 query,
                 QObject::tr("Checking the testing class")
-                )
-            );
+            ));
     }
 
     if (!query.next())
     {
         if (query.lastError().isValid())
         {
-            return technicalAssignmentFailure(
-                queryFailure(
+            return std::unexpected(queryFailure(
                     query,
                     QObject::tr("Checking the testing class")
-                    )
-                );
+                ));
         }
 
-        return std::unexpected(TestingClassAssignmentSaveFailure{
-            .kind =
-                TestingClassAssignmentSaveFailureKind::ParentClassMissing,
-            .message = QObject::tr(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::NotFound,
+            QObject::tr(
                 "The selected testing class no longer exists."
                 )
         });
@@ -219,9 +230,10 @@ TestingClassAssignmentSaveDetailedResult validateTestingClass(
         || query.value(QStringLiteral("class_info_id")).isNull()
         )
     {
-        return technicalAssignmentFailure(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr("The selected testing class no longer exists.")
-            );
+        });
     }
 
     if (
@@ -235,11 +247,12 @@ TestingClassAssignmentSaveDetailedResult validateTestingClass(
             .toString().trimmed().isEmpty()
         )
     {
-        return technicalAssignmentFailure(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr(
                 "The selected testing class is missing required details."
                 )
-            );
+        });
     }
 
     return {};
@@ -253,11 +266,11 @@ TestingBlockRepository::TestingBlockRepository(
 {
 }
 
-Result<QList<TestingBlock>>
+RepositoryResult<QList<TestingBlock>>
 TestingBlockRepository::loadTestingBlocks()
 {
     QList<TestingBlock> blocks;
-    const Result<QList<TestingAssignment>> assignments =
+    const RepositoryResult<QList<TestingAssignment>> assignments =
         loadTestingAssignments();
 
     if (!assignments)
@@ -284,7 +297,7 @@ TestingBlockRepository::loadTestingBlocks()
     return blocks;
 }
 
-Result<QList<TestingAssignment>>
+RepositoryResult<QList<TestingAssignment>>
 TestingBlockRepository::loadTestingAssignments()
 {
     QList<TestingAssignment> assignments;
@@ -348,7 +361,7 @@ TestingBlockRepository::loadTestingAssignments()
     return assignments;
 }
 
-Result<QList<TestingAssignmentDisplayRecord>>
+RepositoryResult<QList<TestingAssignmentDisplayRecord>>
 TestingBlockRepository::loadTestingAssignmentDisplayRecords()
 {
     ++m_testingAssignmentDisplayReadMetrics.callCount;
@@ -391,7 +404,9 @@ TestingBlockRepository::loadTestingAssignmentDisplayRecords()
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(
+            executed.error()
+            ));
     }
 
     while (query.next())
@@ -480,14 +495,14 @@ TestingBlockRepository::testingAssignmentDisplayReadMetrics() const noexcept
     return m_testingAssignmentDisplayReadMetrics;
 }
 
-Status TestingBlockRepository::saveTestingBlock(
+RepositoryStatus TestingBlockRepository::saveTestingBlock(
     const QString& day,
     const QString& startTime,
     const QString& room,
     bool replaceExisting
     )
 {
-    const Status valid =
+    const RepositoryStatus valid =
         validateKey(
             day,
             startTime
@@ -498,7 +513,7 @@ Status TestingBlockRepository::saveTestingBlock(
         return valid;
     }
 
-    const Result<int> existing =
+    const RepositoryResult<int> existing =
         existingClassId(
             m_database,
             day,
@@ -554,45 +569,25 @@ Status TestingBlockRepository::saveTestingBlock(
 
     if (query.numRowsAffected() == 0)
     {
-        return std::unexpected(
-            QObject::tr("This slot is assigned to a testing class. Confirm replacement first.")
-            );
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Conflict,
+            QObject::tr(
+                "This slot is assigned to a testing class. Confirm replacement first."
+                )
+        });
     }
 
     return {};
 }
 
-Status TestingBlockRepository::assignTestingClass(
+RepositoryStatus TestingBlockRepository::assignTestingClass(
     const QString& day,
     const QString& startTime,
     int classId,
     bool replaceExisting
     )
 {
-    const TestingClassAssignmentSaveDetailedResult assigned =
-        assignTestingClassDetailed(
-            day,
-            startTime,
-            classId,
-            replaceExisting
-            );
-    if (!assigned)
-    {
-        return std::unexpected(assigned.error().message);
-    }
-
-    return {};
-}
-
-TestingClassAssignmentSaveDetailedResult
-TestingBlockRepository::assignTestingClassDetailed(
-    const QString& day,
-    const QString& startTime,
-    int classId,
-    bool replaceExisting
-    )
-{
-    const Status valid =
+    const RepositoryStatus valid =
         validateKey(
             day,
             startTime
@@ -600,7 +595,7 @@ TestingBlockRepository::assignTestingClassDetailed(
 
     if (!valid)
     {
-        return technicalAssignmentFailure(valid.error());
+        return valid;
     }
 
     DatabaseTransaction transaction(
@@ -609,14 +604,14 @@ TestingBlockRepository::assignTestingClassDetailed(
         );
     if (!transaction.started())
     {
-        return technicalAssignmentFailure(
+        return std::unexpected(technicalAssignmentFailure(
             QObject::tr(
                 "Could not start the testing assignment transaction."
                 )
-            );
+            ));
     }
 
-    const TestingClassAssignmentSaveDetailedResult validClass =
+    const RepositoryStatus validClass =
         validateTestingClass(
             m_database,
             classId
@@ -627,7 +622,7 @@ TestingBlockRepository::assignTestingClassDetailed(
         return validClass;
     }
 
-    const Result<int> existing =
+    const RepositoryResult<int> existing =
         existingClassId(
             m_database,
             day,
@@ -636,7 +631,7 @@ TestingBlockRepository::assignTestingClassDetailed(
 
     if (!existing)
     {
-        return technicalAssignmentFailure(existing.error());
+        return std::unexpected(existing.error());
     }
 
     if (
@@ -645,9 +640,12 @@ TestingBlockRepository::assignTestingClassDetailed(
         && !replaceExisting
         )
     {
-        return technicalAssignmentFailure(
-            QObject::tr("This slot already has a testing assignment. Confirm replacement first.")
-            );
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Conflict,
+            QObject::tr(
+                "This slot already has a testing assignment. Confirm replacement first."
+                )
+        });
     }
 
     const auto key = canonicalScheduleKey(day, startTime);
@@ -674,28 +672,26 @@ TestingBlockRepository::assignTestingClassDetailed(
 
     if (!query.exec())
     {
-        return technicalAssignmentFailure(
-            queryFailure(
+        return std::unexpected(queryFailure(
                 query,
                 QObject::tr("Assigning the testing class")
-                )
-            );
+                ));
     }
 
     if (!transaction.commit())
     {
-        return technicalAssignmentFailure(
+        return std::unexpected(technicalAssignmentFailure(
             QObject::tr(
                 "Committing the testing assignment transaction failed: %1"
                 )
                 .arg(m_database.lastError().text())
-            );
+            ));
     }
 
     return {};
 }
 
-Status TestingBlockRepository::deleteTestingAssignment(
+RepositoryStatus TestingBlockRepository::deleteTestingAssignment(
     const QString& day,
     const QString& startTime
     )
@@ -706,12 +702,12 @@ Status TestingBlockRepository::deleteTestingAssignment(
         );
 }
 
-Status TestingBlockRepository::deleteTestingBlock(
+RepositoryStatus TestingBlockRepository::deleteTestingBlock(
     const QString& day,
     const QString& startTime
     )
 {
-    const Status valid =
+    const RepositoryStatus valid =
         validateKey(
             day,
             startTime
@@ -747,12 +743,12 @@ Status TestingBlockRepository::deleteTestingBlock(
     return {};
 }
 
-Status TestingBlockRepository::clearTestingBlocks()
+RepositoryStatus TestingBlockRepository::clearTestingBlocks()
 {
     return clearTestingAssignments();
 }
 
-Status TestingBlockRepository::clearTestingAssignments()
+RepositoryStatus TestingBlockRepository::clearTestingAssignments()
 {
     QSqlQuery query(m_database);
 

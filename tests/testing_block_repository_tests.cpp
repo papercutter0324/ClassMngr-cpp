@@ -122,9 +122,14 @@ void TestingBlockRepositoryTests
                 QStringLiteral("405")
                 );
         QVERIFY(!rejectedReplacement);
-        QVERIFY(
-            rejectedReplacement.error().contains(
-                QStringLiteral("Confirm replacement first.")
+        QCOMPARE(
+            rejectedReplacement.error().code,
+            RepositoryErrorCode::Conflict
+            );
+        QCOMPARE(
+            rejectedReplacement.error().diagnostic,
+            QStringLiteral(
+                "This slot is assigned to a testing class. Confirm replacement first."
                 )
             );
 
@@ -161,11 +166,21 @@ void TestingBlockRepositoryTests
         QCOMPARE(assignments->first().classId, -1);
         QCOMPARE(assignments->first().room, QStringLiteral("405"));
 
-        QVERIFY(
-            !repository.assignTestingClass(
+        const RepositoryStatus rejectedClassReplacement =
+            repository.assignTestingClass(
                 QStringLiteral("Monday"),
                 QStringLiteral("16:00"),
                 43
+                );
+        QVERIFY(!rejectedClassReplacement);
+        QCOMPARE(
+            rejectedClassReplacement.error().code,
+            RepositoryErrorCode::Conflict
+            );
+        QCOMPARE(
+            rejectedClassReplacement.error().diagnostic,
+            QStringLiteral(
+                "This slot already has a testing assignment. Confirm replacement first."
                 )
             );
         QVERIFY(
@@ -206,14 +221,19 @@ void TestingBlockRepositoryTests
             INSERT INTO testing_classes (class_id, room)
             VALUES (44, '403')
         )"));
-        const Status missingRequiredDetails = repository.assignTestingClass(
+        const RepositoryStatus missingRequiredDetails =
+            repository.assignTestingClass(
             QStringLiteral("Wednesday"),
             QStringLiteral("16:00"),
             44
             );
         QVERIFY(!missingRequiredDetails);
         QCOMPARE(
-            missingRequiredDetails.error(),
+            missingRequiredDetails.error().code,
+            RepositoryErrorCode::Validation
+            );
+        QCOMPARE(
+            missingRequiredDetails.error().diagnostic,
             QStringLiteral(
                 "The selected testing class is missing required details."
                 )
@@ -225,6 +245,10 @@ void TestingBlockRepositoryTests
                 QStringLiteral("16:00")
                 )
             );
+        QVERIFY(repository.deleteTestingAssignment(
+            QStringLiteral("Thursday"),
+            QStringLiteral("16:00")
+            ));
         assignments = repository.loadTestingAssignments();
         QVERIFY(assignments);
         QCOMPARE(assignments->size(), 1);
@@ -294,45 +318,46 @@ void TestingBlockRepositoryTests
             QStringLiteral("Original")
             ));
 
-        const auto missingParent = repository.assignTestingClassDetailed(
+        const auto missingParent = repository.assignTestingClass(
             QStringLiteral("Tuesday"),
             QStringLiteral("17:00"),
             2000000000
             );
         QVERIFY(!missingParent);
         QCOMPARE(
-            missingParent.error().kind,
-            TestingClassAssignmentSaveFailureKind::ParentClassMissing
+            missingParent.error().code,
+            RepositoryErrorCode::NotFound
             );
         QCOMPARE(
-            missingParent.error().message,
+            missingParent.error().diagnostic,
             QStringLiteral("The selected testing class no longer exists.")
             );
 
-        const auto incompleteClass = repository.assignTestingClassDetailed(
+        const auto incompleteClass = repository.assignTestingClass(
             QStringLiteral("Tuesday"),
             QStringLiteral("17:00"),
             42
             );
         QVERIFY(!incompleteClass);
         QCOMPARE(
-            incompleteClass.error().kind,
-            TestingClassAssignmentSaveFailureKind::Technical
+            incompleteClass.error().code,
+            RepositoryErrorCode::Validation
             );
         QCOMPARE(
-            incompleteClass.error().message,
+            incompleteClass.error().diagnostic,
             QStringLiteral("The selected testing class no longer exists.")
             );
 
-        const Status legacyFailure = repository.assignTestingClass(
+        const RepositoryStatus invalidClassId = repository.assignTestingClass(
             QStringLiteral("Tuesday"),
             QStringLiteral("17:00"),
-            42
+            0
             );
-        QVERIFY(!legacyFailure);
+        QVERIFY(!invalidClassId);
+        QCOMPARE(invalidClassId.error().code, RepositoryErrorCode::InvalidInput);
         QCOMPARE(
-            legacyFailure.error(),
-            QStringLiteral("The selected testing class no longer exists.")
+            invalidClassId.error().diagnostic,
+            QStringLiteral("A valid testing class is required.")
             );
 
         const auto assignments = repository.loadTestingAssignments();
@@ -521,20 +546,22 @@ void TestingBlockRepositoryTests
         TestingBlockRepository repository(database);
         const auto assignments = repository.loadTestingAssignments();
         QVERIFY(!assignments);
+        QCOMPARE(assignments.error().code, RepositoryErrorCode::Technical);
         QVERIFY2(
-            assignments.error().contains(legacyCursorDetail),
-            qPrintable(assignments.error())
+            assignments.error().diagnostic.contains(legacyCursorDetail),
+            qPrintable(assignments.error().diagnostic)
             );
-        QVERIFY(assignments.error().contains(
+        QVERIFY(assignments.error().diagnostic.contains(
             QStringLiteral("Loading testing blocks")
             ));
 
         const auto displayRecords =
             repository.loadTestingAssignmentDisplayRecords();
         QVERIFY(!displayRecords);
+        QCOMPARE(displayRecords.error().code, RepositoryErrorCode::Technical);
         QVERIFY2(
-            displayRecords.error().contains(displayCursorDetail),
-            qPrintable(displayRecords.error())
+            displayRecords.error().diagnostic.contains(displayCursorDetail),
+            qPrintable(displayRecords.error().diagnostic)
             );
     }
 
@@ -629,33 +656,62 @@ void TestingBlockRepositoryTests
         QVERIFY(database.open());
 
         TestingBlockRepository repository(database);
-        QVERIFY(
-            !repository.saveTestingBlock(
-                QStringLiteral("Funday"),
-                QStringLiteral("16:00"),
-                QString()
+        const auto invalidWeekday = repository.saveTestingBlock(
+            QStringLiteral("Funday"),
+            QStringLiteral("16:00"),
+            QString()
+            );
+        QVERIFY(!invalidWeekday);
+        QCOMPARE(invalidWeekday.error().code, RepositoryErrorCode::InvalidInput);
+        QCOMPARE(
+            invalidWeekday.error().diagnostic,
+            QStringLiteral(
+                "A testing block requires a valid weekday and start time."
                 )
             );
-        QVERIFY(
-            !repository.deleteTestingBlock(
-                QStringLiteral("Monday"),
-                QString()
-                )
+
+        const auto invalidDelete = repository.deleteTestingBlock(
+            QStringLiteral("Monday"),
+            QString()
             );
-        QVERIFY(
-            !repository.saveTestingBlock(
-                QStringLiteral("Monday"),
-                QStringLiteral("4:00 PM"),
-                QString()
-                )
+        QVERIFY(!invalidDelete);
+        QCOMPARE(invalidDelete.error().code, RepositoryErrorCode::InvalidInput);
+
+        const auto invalidTime = repository.saveTestingBlock(
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QString()
             );
-        QVERIFY(!repository.loadTestingBlocks());
-        QVERIFY(!repository.clearTestingBlocks());
+        QVERIFY(!invalidTime);
+        QCOMPARE(invalidTime.error().code, RepositoryErrorCode::InvalidInput);
+
+        const auto technicalRead = repository.loadTestingBlocks();
+        QVERIFY(!technicalRead);
+        QCOMPARE(technicalRead.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(technicalRead.error().diagnostic.contains(
+            QStringLiteral("Loading testing blocks")
+            ));
+
+        const auto technicalClear = repository.clearTestingBlocks();
+        QVERIFY(!technicalClear);
+        QCOMPARE(technicalClear.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(!technicalClear.error().diagnostic.isEmpty());
+
+        const auto technicalClassCheck = repository.assignTestingClass(
+            QStringLiteral("Monday"),
+            QStringLiteral("16:00"),
+            1
+            );
+        QVERIFY(!technicalClassCheck);
+        QCOMPARE(
+            technicalClassCheck.error().code,
+            RepositoryErrorCode::Technical
+            );
+        QVERIFY(!technicalClassCheck.error().diagnostic.isEmpty());
     }
 
     QSqlDatabase::removeDatabase(connectionName);
 }
-
 void TestingBlockRepositoryTests::
 rejectsMalformedClassIdsWithoutOverwritingBlocks()
 {
@@ -774,13 +830,24 @@ rejectsMalformedClassIdsWithoutOverwritingBlocks()
 
             const auto assignments = repository.loadTestingAssignments();
             QVERIFY2(!assignments, qPrintable(malformed.description));
-            QVERIFY(assignments.error().contains(
+            QCOMPARE(assignments.error().code, RepositoryErrorCode::Validation);
+            QVERIFY(assignments.error().diagnostic.contains(
                 QStringLiteral("invalid class ID"), Qt::CaseInsensitive));
+            QCOMPARE(
+                assignments.error().diagnostic,
+                QStringLiteral(
+                    "A testing assignment contains an invalid class ID."
+                    )
+                );
 
             const auto displayRecords =
                 repository.loadTestingAssignmentDisplayRecords();
             QVERIFY2(!displayRecords, qPrintable(malformed.description));
-            QVERIFY(displayRecords.error().contains(
+            QCOMPARE(
+                displayRecords.error().code,
+                RepositoryErrorCode::Validation
+                );
+            QVERIFY(displayRecords.error().diagnostic.contains(
                 QStringLiteral("invalid class ID"), Qt::CaseInsensitive));
 
             const auto save = repository.saveTestingBlock(
@@ -789,6 +856,13 @@ rejectsMalformedClassIdsWithoutOverwritingBlocks()
                 QStringLiteral("Replacement")
                 );
             QVERIFY2(!save, qPrintable(malformed.description));
+            QCOMPARE(save.error().code, RepositoryErrorCode::Validation);
+            QCOMPARE(
+                save.error().diagnostic,
+                QStringLiteral(
+                    "A testing assignment contains an invalid class ID."
+                    )
+                );
 
             QSqlQuery after(database);
             QVERIFY(after.exec(QStringLiteral(R"(

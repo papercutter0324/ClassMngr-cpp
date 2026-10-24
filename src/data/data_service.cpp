@@ -22,6 +22,29 @@
 
 #include <QObject>
 #include <QVariant>
+#include <utility>
+
+namespace
+{
+template<class T>
+Result<T> toLegacyResult(RepositoryResult<T> result)
+{
+    if (!result)
+    {
+        return std::unexpected(toLegacyDiagnostic(result.error()));
+    }
+    return std::move(result.value());
+}
+
+Status toLegacyStatus(RepositoryStatus result)
+{
+    if (!result)
+    {
+        return std::unexpected(toLegacyDiagnostic(result.error()));
+    }
+    return {};
+}
+}
 
 DataService::DataService(
     const QString &dbPath
@@ -515,7 +538,9 @@ Result<QList<TestingBlock>> DataService::loadTestingBlocks()
             );
     }
 
-    return m_session->testingBlockRepository()->loadTestingBlocks();
+    return toLegacyResult(
+        m_session->testingBlockRepository()->loadTestingBlocks()
+        );
 }
 
 Result<QList<TestingAssignment>>
@@ -528,7 +553,9 @@ DataService::loadTestingAssignments()
             );
     }
 
-    return m_session->testingBlockRepository()->loadTestingAssignments();
+    return toLegacyResult(
+        m_session->testingBlockRepository()->loadTestingAssignments()
+        );
 }
 
 Status DataService::saveTestingBlock(
@@ -545,11 +572,13 @@ Status DataService::saveTestingBlock(
             );
     }
 
-    return m_session->testingBlockRepository()->saveTestingBlock(
-        day,
-        startTime,
-        room,
-        replaceExisting
+    return toLegacyStatus(
+        m_session->testingBlockRepository()->saveTestingBlock(
+            day,
+            startTime,
+            room,
+            replaceExisting
+            )
         );
 }
 
@@ -567,11 +596,13 @@ Status DataService::assignTestingClass(
             );
     }
 
-    return m_session->testingBlockRepository()->assignTestingClass(
-        day,
-        startTime,
-        classId,
-        replaceExisting
+    return toLegacyStatus(
+        m_session->testingBlockRepository()->assignTestingClass(
+            day,
+            startTime,
+            classId,
+            replaceExisting
+            )
         );
 }
 
@@ -587,9 +618,11 @@ Status DataService::deleteTestingAssignment(
             );
     }
 
-    return m_session->testingBlockRepository()->deleteTestingAssignment(
-        day,
-        startTime
+    return toLegacyStatus(
+        m_session->testingBlockRepository()->deleteTestingAssignment(
+            day,
+            startTime
+            )
         );
 }
 
@@ -605,9 +638,11 @@ Status DataService::deleteTestingBlock(
             );
     }
 
-    return m_session->testingBlockRepository()->deleteTestingBlock(
-        day,
-        startTime
+    return toLegacyStatus(
+        m_session->testingBlockRepository()->deleteTestingBlock(
+            day,
+            startTime
+            )
         );
 }
 
@@ -620,7 +655,9 @@ Status DataService::clearTestingBlocks()
             );
     }
 
-    return m_session->testingBlockRepository()->clearTestingBlocks();
+    return toLegacyStatus(
+        m_session->testingBlockRepository()->clearTestingBlocks()
+        );
 }
 
 Status DataService::clearTestingAssignments()
@@ -632,7 +669,9 @@ Status DataService::clearTestingAssignments()
             );
     }
 
-    return m_session->testingBlockRepository()->clearTestingAssignments();
+    return toLegacyStatus(
+        m_session->testingBlockRepository()->clearTestingAssignments()
+        );
 }
 
 Result<int> DataService::createTestingClass(

@@ -32,6 +32,25 @@
 
 namespace
 {
+template<class T>
+Result<T> toLegacyResult(RepositoryResult<T> result)
+{
+    if (!result)
+    {
+        return std::unexpected(toLegacyDiagnostic(result.error()));
+    }
+    return std::move(result.value());
+}
+
+Status toLegacyStatus(RepositoryStatus result)
+{
+    if (!result)
+    {
+        return std::unexpected(toLegacyDiagnostic(result.error()));
+    }
+    return {};
+}
+
 QString unavailableError()
 {
     return QStringLiteral("No Teacher Profile service is available.");
@@ -790,7 +809,7 @@ Result<QList<TestingAssignment>> ScheduleService::testingAssignments() const
     if (auto* repository = session()
             ? session()->testingBlockRepository() : nullptr)
     {
-        return repository->loadTestingAssignments();
+        return toLegacyResult(repository->loadTestingAssignments());
     }
     return dataService()
         ? dataService()->loadTestingAssignments()
@@ -802,7 +821,7 @@ Result<QList<TestingBlock>> ScheduleService::testingBlocks() const
     if (auto* repository = session()
             ? session()->testingBlockRepository() : nullptr)
     {
-        return repository->loadTestingBlocks();
+        return toLegacyResult(repository->loadTestingBlocks());
     }
     return dataService()
         ? dataService()->loadTestingBlocks()
@@ -819,8 +838,8 @@ Status ScheduleService::saveTestingBlock(
     if (auto* repository = session()
             ? session()->testingBlockRepository() : nullptr)
     {
-        return repository->saveTestingBlock(
-            day, startTime, room, replaceExisting);
+        return toLegacyStatus(repository->saveTestingBlock(
+            day, startTime, room, replaceExisting));
     }
     return dataService()
         ? dataService()->saveTestingBlock(
@@ -838,8 +857,8 @@ Status ScheduleService::assignTestingClass(
     if (auto* repository = session()
             ? session()->testingBlockRepository() : nullptr)
     {
-        return repository->assignTestingClass(
-            day, startTime, classId, replaceExisting);
+        return toLegacyStatus(repository->assignTestingClass(
+            day, startTime, classId, replaceExisting));
     }
     return dataService()
         ? dataService()->assignTestingClass(
@@ -855,7 +874,8 @@ Status ScheduleService::deleteTestingAssignment(
     if (auto* repository = session()
             ? session()->testingBlockRepository() : nullptr)
     {
-        return repository->deleteTestingAssignment(day, startTime);
+        return toLegacyStatus(
+            repository->deleteTestingAssignment(day, startTime));
     }
     return dataService()
         ? dataService()->deleteTestingAssignment(day, startTime)
@@ -870,7 +890,7 @@ Status ScheduleService::deleteTestingBlock(
     if (auto* repository = session()
             ? session()->testingBlockRepository() : nullptr)
     {
-        return repository->deleteTestingBlock(day, startTime);
+        return toLegacyStatus(repository->deleteTestingBlock(day, startTime));
     }
     return dataService()
         ? dataService()->deleteTestingBlock(day, startTime)
@@ -882,7 +902,7 @@ Status ScheduleService::clearTestingAssignments() const
     if (auto* repository = session()
             ? session()->testingBlockRepository() : nullptr)
     {
-        return repository->clearTestingAssignments();
+        return toLegacyStatus(repository->clearTestingAssignments());
     }
     return dataService()
         ? dataService()->clearTestingAssignments()
@@ -894,7 +914,7 @@ Status ScheduleService::clearTestingBlocks() const
     if (auto* repository = session()
             ? session()->testingBlockRepository() : nullptr)
     {
-        return repository->clearTestingBlocks();
+        return toLegacyStatus(repository->clearTestingBlocks());
     }
     return dataService()
         ? dataService()->clearTestingBlocks()

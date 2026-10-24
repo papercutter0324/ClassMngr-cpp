@@ -7,13 +7,9 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 is In Progress again on the mandatory Heavy route
-  because the §3.3 structured-error audit reopened its exit gate. F1444's
-  shared repository error contract is committed locally as
-  `fef61c849b4f845ba89a008dcee697bc380895ce` and independently verified; it
-  is not pushed. F1445 is committed locally as
-  `0f9b8bf6f9165d51f53e3f46af616368a46bdba0` and focused verification is
-  complete; it is not pushed. F1446 focused verification is complete and its
-  slice commit is pending; F1447 is next. See the
+  because the §3.3 structured-error audit reopened its exit gate. F1447 is
+  implemented and independently verified locally; its exact-path commit is
+  pending and not pushed. F1448 is next but not active. See the
   [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [F1420 DataService migration map](../../docs/qt-rewrite/data-service-migration-map.md),

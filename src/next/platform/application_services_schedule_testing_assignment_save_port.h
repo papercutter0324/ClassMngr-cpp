@@ -108,13 +108,13 @@ public:
                 if (!classId)
                 {
                     return failure(
-                        Domain::ErrorCode::Technical,
+                        Domain::ErrorCode::InvalidInput,
                         "A valid testing class is required."
                         );
                 }
 
-                const TestingClassAssignmentSaveDetailedResult assigned =
-                    repository->assignTestingClassDetailed(
+                const RepositoryStatus assigned =
+                    repository->assignTestingClass(
                         day,
                         startTime,
                         *classId,
@@ -122,15 +122,9 @@ public:
                         );
                 if (!assigned)
                 {
-                    const Domain::ErrorCode code =
-                        assigned.error().kind
-                            == TestingClassAssignmentSaveFailureKind::
-                                ParentClassMissing
-                            ? Domain::ErrorCode::NotFound
-                            : Domain::ErrorCode::Technical;
                     return failure(
-                        code,
-                        toStdString(assigned.error().message)
+                        domainErrorCode(assigned.error().code),
+                        toStdString(toLegacyDiagnostic(assigned.error()))
                         );
                 }
 
@@ -138,7 +132,7 @@ public:
                     success();
             }
 
-            const Status saved = [&]() -> Status
+            const RepositoryStatus saved = [&]() -> RepositoryStatus
             {
                 switch (request.mutation)
                 {
@@ -163,16 +157,17 @@ public:
                     break;
                 }
 
-                return Status(std::unexpected(
+                return std::unexpected(RepositoryError{
+                    RepositoryErrorCode::InvalidInput,
                     QStringLiteral("Testing assignment action is invalid.")
-                    ));
+                });
             }();
 
             if (!saved)
             {
                 return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(saved.error())
+                    domainErrorCode(saved.error().code),
+                    toStdString(toLegacyDiagnostic(saved.error()))
                     );
             }
 
@@ -195,6 +190,26 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        ) noexcept
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] static std::optional<int> legacyClassId(
         const Domain::ClassId& id
         )

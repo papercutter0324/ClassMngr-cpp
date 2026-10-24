@@ -3598,7 +3598,7 @@ suite or other-platform build was run. F1445 is committed locally as
 (`Phase3 - Structure workspace persistence errors (F1445)`); it has not been
 pushed.
 
-## F1446 — Teacher Import structured errors — verified, commit pending — 2026-10-24
+## F1446 — Teacher Import structured errors — 2026-10-24
 
 `TeacherImportRepository::importTeachers()` now returns
 `RepositoryResult<TeacherImportSummary>` and maps typed
@@ -3631,6 +3631,44 @@ aborted in macOS `wizardSuccessTranscript()` with `NSInvalidArgumentException`
 from `NSBundle initWithURL:nil`. F1442's exact wizard-success slot passed
 with normal macOS service access, and F1446 changes only the wizard's
 apply-error display branch. No full suite or other-platform build was run.
-F1446 is verified with its slice commit pending; F1447 is next. The accepted
-Batch 22 order and F1462 Batch 23 discovery trigger remain in the
+F1446 is committed locally as
+`fe3edd1e4ff890eea1f1b57c9dc3b5afcd2cfae6`
+(`Phase3 - Preserve Teacher Import error structure (F1446)`) and is not pushed.
+The accepted Batch 22 order and F1462 Batch 23 discovery trigger remain in the
 [current batch tracker](Current-Slice-Batches.md).
+
+## F1447 — TestingBlock and assignment structured errors — verified, commit pending — 2026-10-24
+
+All public `TestingBlockRepository` APIs now return
+`RepositoryResult`/`RepositoryStatus`. Assignment save replaces
+`TestingClassAssignmentSaveDetailedResult` with `RepositoryError` and one typed
+API. Branch classification is explicit: invalid weekday, time, or class ID →
+InvalidInput; missing parent without SQL error → NotFound; existing parent
+with absent/incomplete required testing details or malformed stored ID →
+Validation; occupied class/slot with replace false or plain-save zero rows
+for an occupied slot → Conflict; SQL, cursor, or transaction failures →
+Technical. Deleting a valid key with no row remains success.
+
+`DataService`/`ScheduleService` retain string APIs through
+`toLegacyDiagnostic()`. The v2 schedule assignment save/read ports map error
+codes to Domain and keep recoverability policy at the port. ClassRepository
+(F1448) and TestingClassRepository (F1449) remain separate candidates and are
+out of scope.
+
+Independent review accepted the final diff with no production defect. In the
+existing Ninja Debug tree `build/macos-clang-debug`, the Tester built
+`ClassMngrTestingBlockRepositoryTests`,
+`ClassMngrDataServiceLifecycleTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentSavePortTests`,
+and `ClassMngrNextPlatformApplicationServicesScheduleTestingLayoutClearPortTests`.
+The matching focused CTest selection passed **5/5** in 7.21 seconds;
+`git diff --check` passed. Coverage includes
+typed category/diagnostic preservation, malformed stored IDs and rejected
+saves, port conflict/validation/invalid-input mapping, legacy DataService and
+ScheduleService save diagnostics, and unrecoverable layout-clear failure with
+rows intact.
+
+No full suite or other-platform verification ran. The legacy boundary test
+covers a write diagnostic, not read failures. F1447 is accepted with its
+exact-path commit pending and not pushed; F1448 is next but not active.

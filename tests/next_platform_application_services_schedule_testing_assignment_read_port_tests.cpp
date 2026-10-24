@@ -125,7 +125,7 @@ class NextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests
 private slots:
     void readsOrderedRawAssignmentsAndJoinedSpecialMetadata();
     void usesOneStatementAsAssignmentCountGrows();
-    void reportsMalformedClassIdAsTechnicalFailure();
+    void reportsMalformedClassIdAsValidationFailure();
     void distinguishesUnavailableSessionFromRepositoryFailure();
 };
 
@@ -375,7 +375,7 @@ usesOneStatementAsAssignmentCountGrows()
 }
 
 void NextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests::
-reportsMalformedClassIdAsTechnicalFailure()
+reportsMalformedClassIdAsValidationFailure()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -423,9 +423,12 @@ reportsMalformedClassIdAsTechnicalFailure()
         ScheduleTestingAssignmentReadQueryHandler::execute({}, port);
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
-    QVERIFY(result.error().message.find("invalid class ID")
-            != std::string::npos);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string("A testing assignment contains an invalid class ID.")
+        );
+    QVERIFY(!result.error().recoverable);
 }
 
 void NextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests::

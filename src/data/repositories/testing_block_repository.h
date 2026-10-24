@@ -1,29 +1,11 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 #include "domain/models/testing_block.h"
 
 #include <QList>
 #include <QSqlDatabase>
 #include <QString>
-
-#include <expected>
-
-enum class TestingClassAssignmentSaveFailureKind
-{
-    ParentClassMissing,
-    Technical
-};
-
-struct TestingClassAssignmentSaveFailure final
-{
-    TestingClassAssignmentSaveFailureKind kind =
-        TestingClassAssignmentSaveFailureKind::Technical;
-    QString message;
-};
-
-using TestingClassAssignmentSaveDetailedResult =
-    std::expected<void, TestingClassAssignmentSaveFailure>;
 
 struct TestingAssignmentDisplayRecord final
 {
@@ -56,51 +38,43 @@ public:
         QSqlDatabase& database
         );
 
-    [[nodiscard]] Result<QList<TestingAssignment>>
+    [[nodiscard]] RepositoryResult<QList<TestingAssignment>>
     loadTestingAssignments();
 
-    [[nodiscard]] Result<QList<TestingAssignmentDisplayRecord>>
+    [[nodiscard]] RepositoryResult<QList<TestingAssignmentDisplayRecord>>
     loadTestingAssignmentDisplayRecords();
     [[nodiscard]] const TestingAssignmentDisplayReadMetrics&
     testingAssignmentDisplayReadMetrics() const noexcept;
 
-    [[nodiscard]] Result<QList<TestingBlock>> loadTestingBlocks();
+    [[nodiscard]] RepositoryResult<QList<TestingBlock>> loadTestingBlocks();
 
-    [[nodiscard]] Status saveTestingBlock(
+    [[nodiscard]] RepositoryStatus saveTestingBlock(
         const QString& day,
         const QString& startTime,
         const QString& room,
         bool replaceExisting = false
         );
 
-    [[nodiscard]] Status assignTestingClass(
+    [[nodiscard]] RepositoryStatus assignTestingClass(
         const QString& day,
         const QString& startTime,
         int classId,
         bool replaceExisting = false
         );
 
-    [[nodiscard]] TestingClassAssignmentSaveDetailedResult
-    assignTestingClassDetailed(
-        const QString& day,
-        const QString& startTime,
-        int classId,
-        bool replaceExisting = false
-        );
-
-    [[nodiscard]] Status deleteTestingAssignment(
+    [[nodiscard]] RepositoryStatus deleteTestingAssignment(
         const QString& day,
         const QString& startTime
         );
 
-    [[nodiscard]] Status deleteTestingBlock(
+    [[nodiscard]] RepositoryStatus deleteTestingBlock(
         const QString& day,
         const QString& startTime
         );
 
-    [[nodiscard]] Status clearTestingAssignments();
+    [[nodiscard]] RepositoryStatus clearTestingAssignments();
 
-    [[nodiscard]] Status clearTestingBlocks();
+    [[nodiscard]] RepositoryStatus clearTestingBlocks();
 
 private:
     QSqlDatabase& m_database;

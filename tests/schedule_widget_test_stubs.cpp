@@ -826,7 +826,7 @@ TestingBlockRepository::TestingBlockRepository(QSqlDatabase& database)
 {
 }
 
-Result<QList<TestingAssignmentDisplayRecord>>
+RepositoryResult<QList<TestingAssignmentDisplayRecord>>
 TestingBlockRepository::loadTestingAssignmentDisplayRecords()
 {
     ++ScheduleWidgetTestStubs::testingAssignmentsReadCount;
@@ -834,9 +834,10 @@ TestingBlockRepository::loadTestingAssignmentDisplayRecords()
     ++ScheduleWidgetTestStubs::testingAssignmentDisplayReadMetrics.statementCount;
     if (!ScheduleWidgetTestStubs::testingAssignmentReadFailure.isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             ScheduleWidgetTestStubs::testingAssignmentReadFailure
-            );
+        });
     }
 
     QList<TestingAssignmentDisplayRecord> rows;
@@ -1778,7 +1779,7 @@ DataService::loadTestingAssignments()
     return assignments;
 }
 
-Status TestingBlockRepository::saveTestingBlock(
+RepositoryStatus TestingBlockRepository::saveTestingBlock(
     const QString& day,
     const QString& startTime,
     const QString& room,
@@ -1798,9 +1799,10 @@ Status TestingBlockRepository::saveTestingBlock(
 
     if (!ScheduleWidgetTestStubs::testingAssignmentWriteFailure.isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             ScheduleWidgetTestStubs::testingAssignmentWriteFailure
-            );
+        });
     }
 
     const QString key = day + QLatin1Char('\x1f') + startTime;
@@ -1809,11 +1811,12 @@ Status TestingBlockRepository::saveTestingBlock(
         && ScheduleWidgetTestStubs::testingClassAssignments.contains(key)
         )
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Conflict,
             QStringLiteral(
                 "This slot is assigned to a testing class. Confirm replacement first."
                 )
-            );
+        });
     }
 
     ScheduleWidgetTestStubs::testingBlocks.insert(key, room.trimmed());
@@ -1821,7 +1824,7 @@ Status TestingBlockRepository::saveTestingBlock(
     return {};
 }
 
-Status TestingBlockRepository::assignTestingClass(
+RepositoryStatus TestingBlockRepository::assignTestingClass(
     const QString& day,
     const QString& startTime,
     const int classId,
@@ -1841,9 +1844,10 @@ Status TestingBlockRepository::assignTestingClass(
 
     if (!ScheduleWidgetTestStubs::testingAssignmentWriteFailure.isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             ScheduleWidgetTestStubs::testingAssignmentWriteFailure
-            );
+        });
     }
 
     const QString key = day + QLatin1Char('\x1f') + startTime;
@@ -1857,11 +1861,12 @@ Status TestingBlockRepository::assignTestingClass(
         && existingClass.value() == classId;
     if (hasAssignment && !sameClass && !replaceExisting)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Conflict,
             QStringLiteral(
                 "This slot already has a testing assignment. Confirm replacement first."
                 )
-            );
+        });
     }
 
     ScheduleWidgetTestStubs::testingBlocks.remove(key);
@@ -1869,32 +1874,7 @@ Status TestingBlockRepository::assignTestingClass(
     return {};
 }
 
-TestingClassAssignmentSaveDetailedResult
-TestingBlockRepository::assignTestingClassDetailed(
-    const QString& day,
-    const QString& startTime,
-    const int classId,
-    const bool replaceExisting
-    )
-{
-    const Status result = assignTestingClass(
-        day,
-        startTime,
-        classId,
-        replaceExisting
-        );
-    if (!result)
-    {
-        return std::unexpected(TestingClassAssignmentSaveFailure{
-            .kind = TestingClassAssignmentSaveFailureKind::Technical,
-            .message = result.error()
-        });
-    }
-
-    return {};
-}
-
-Status TestingBlockRepository::deleteTestingAssignment(
+RepositoryStatus TestingBlockRepository::deleteTestingAssignment(
     const QString& day,
     const QString& startTime
     )
@@ -1911,9 +1891,10 @@ Status TestingBlockRepository::deleteTestingAssignment(
 
     if (!ScheduleWidgetTestStubs::testingAssignmentWriteFailure.isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             ScheduleWidgetTestStubs::testingAssignmentWriteFailure
-            );
+        });
     }
 
     const QString key = day + QLatin1Char('\x1f') + startTime;

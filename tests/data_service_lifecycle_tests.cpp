@@ -288,6 +288,7 @@ private slots:
     void calendarServiceDoesNotFallBackFromClosedSession();
     void classNotesServiceDoesNotFallBackFromClosedSession();
     void subPrepOutputReadsDoNotFallBackFromClosedSession();
+    void legacyTestingBlockApisPreserveRepositoryDiagnostics();
     void closeAndSwitchReleaseEveryRepository();
     void unsupportedSchemaClosesDatabaseSession();
     void classDeleteFailureRollsBackAllChanges();
@@ -4038,6 +4039,39 @@ void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
         idsA.classId,
         QStringLiteral("First Semester")
         ));
+}
+
+void DataServiceLifecycleTests::
+legacyTestingBlockApisPreserveRepositoryDiagnostics()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DatabaseSession session;
+    QVERIFY(session.open(
+        directory.filePath(QStringLiteral("testing-block-legacy.db"))
+        ));
+    DataService dataService(session);
+    ScheduleService scheduleService(&session, &dataService);
+
+    const QString expectedDiagnostic = QStringLiteral(
+        "A testing block requires a valid weekday and start time."
+        );
+    const Status dataServiceFailure = dataService.saveTestingBlock(
+        QStringLiteral("Funday"),
+        QStringLiteral("16:00"),
+        QStringLiteral("Room")
+        );
+    QVERIFY(!dataServiceFailure);
+    QCOMPARE(dataServiceFailure.error(), expectedDiagnostic);
+
+    const Status scheduleServiceFailure = scheduleService.saveTestingBlock(
+        QStringLiteral("Funday"),
+        QStringLiteral("16:00"),
+        QStringLiteral("Room")
+        );
+    QVERIFY(!scheduleServiceFailure);
+    QCOMPARE(scheduleServiceFailure.error(), expectedDiagnostic);
 }
 
 void DataServiceLifecycleTests

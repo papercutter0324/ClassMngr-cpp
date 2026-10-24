@@ -341,6 +341,13 @@ preservesEveryLayoutRowWhenDeleteFails()
             "BEGIN SELECT RAISE(ABORT, 'F364 injected layout clear failure'); END"
             )
         ));
+    const RepositoryStatus repositoryFailure =
+        repository->clearTestingAssignments();
+    QVERIFY(!repositoryFailure);
+    QCOMPARE(
+        repositoryFailure.error().code,
+        RepositoryErrorCode::Technical
+        );
 
     Platform::ApplicationServicesScheduleTestingLayoutClearPort port(services);
     const auto result = port.clearTestingLayout();
@@ -348,6 +355,10 @@ preservesEveryLayoutRowWhenDeleteFails()
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!result.error().recoverable);
+    QCOMPARE(
+        result.error().message,
+        repositoryFailure.error().diagnostic.toUtf8().toStdString()
+        );
     QVERIFY(result.error().message.find("F364 injected layout clear failure")
             != std::string::npos);
     QCOMPARE(blockRows(session->database()), expectedRows);
