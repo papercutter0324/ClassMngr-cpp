@@ -8,6 +8,7 @@
 #include <QSaveFile>
 #include <QSet>
 
+#include <cstring>
 #include <limits>
 
 namespace
@@ -653,8 +654,442 @@ Result<ClassTransferClass> classFromJson(
 
     return result;
 }
-// These cursors only locate values in JSON already validated by Qt. They do
-// not interpret JSON strings, numbers, duplicate fields, or schema values.
+
+// A false result means either invalid JSON or syntax outside the subset this
+// validator can prove safe. Callers must use Qt's document parser in both
+// cases so its diagnostics and acceptance behavior remain authoritative.
+class ConservativeMappedJsonValidator
+{
+public:
+    explicit ConservativeMappedJsonValidator(const QByteArray& bytes)
+        : bytes_(bytes)
+    {
+    }
+
+    bool validatesObjectDocument()
+    {
+        if (bytes_.startsWith("\xEF\xBB\xBF"))
+        {
+            position_ = 3;
+        }
+
+        skipWhitespace();
+        if (atEnd() || peek() != '{' || !parseObject(0))
+        {
+            return false;
+        }
+
+        skipWhitespace();
+        return atEnd();
+    }
+
+private:
+    static constexpr int MaximumContainerDepth = 128;
+    static constexpr int MaximumConservativeExponentMagnitude = 10;
+
+    bool atEnd() const { return position_ >= bytes_.size(); }
+
+    unsigned char peek() const
+    {
+        return static_cast<unsigned char>(bytes_[position_]);
+    }
+
+    void advance() { ++position_; }
+
+    void skipWhitespace()
+    {
+        while (!atEnd())
+        {
+            const unsigned char token = peek();
+            if (token != ' ' && token != '\t' && token != '\r' && token != '\n')
+            {
+                break;
+            }
+            advance();
+        }
+    }
+
+    static bool isDigit(unsigned char token)
+    {
+        return token >= '0' && token <= '9';
+    }
+
+    static bool isContinuation(unsigned char token)
+    {
+        return token >= 0x80 && token <= 0xBF;
+    }
+
+    bool consumeUtf8()
+    {
+        const unsigned char first = peek();
+        if (first >= 0xC2 && first <= 0xDF)
+        {
+            if (bytes_.size() - position_ < 2
+                || !isContinuation(static_cast<unsigned char>(bytes_[position_ + 1])))
+            {
+                return false;
+            }
+            position_ += 2;
+            return true;
+        }
+
+        if (first >= 0xE0 && first <= 0xEF)
+        {
+            if (bytes_.size() - position_ < 3)
+            {
+                return false;
+            }
+            const unsigned char second =
+                static_cast<unsigned char>(bytes_[position_ + 1]);
+            const unsigned char third =
+                static_cast<unsigned char>(bytes_[position_ + 2]);
+            const bool validSecond = first == 0xE0
+                ? second >= 0xA0 && second <= 0xBF
+                : first == 0xED
+                    ? second >= 0x80 && second <= 0x9F
+                    : isContinuation(second);
+            if (!validSecond || !isContinuation(third))
+            {
+                return false;
+            }
+            position_ += 3;
+            return true;
+        }
+
+        if (first >= 0xF0 && first <= 0xF4)
+        {
+            if (bytes_.size() - position_ < 4)
+            {
+                return false;
+            }
+            const unsigned char second =
+                static_cast<unsigned char>(bytes_[position_ + 1]);
+            const bool validSecond = first == 0xF0
+                ? second >= 0x90 && second <= 0xBF
+                : first == 0xF4
+                    ? second >= 0x80 && second <= 0x8F
+                    : isContinuation(second);
+            if (!validSecond
+                || !isContinuation(static_cast<unsigned char>(bytes_[position_ + 2]))
+                || !isContinuation(static_cast<unsigned char>(bytes_[position_ + 3])))
+            {
+                return false;
+            }
+            position_ += 4;
+            return true;
+        }
+
+        return false;
+    }
+
+    bool parseString()
+    {
+        if (atEnd() || peek() != '"')
+        {
+            return false;
+        }
+        advance();
+
+        while (!atEnd())
+        {
+            const unsigned char token = peek();
+            if (token == '"')
+            {
+                advance();
+                return true;
+            }
+            if (token < 0x20)
+            {
+                return false;
+            }
+            if (token == '\\')
+            {
+                advance();
+                if (atEnd())
+                {
+                    return false;
+                }
+                const unsigned char escaped = peek();
+                if (escaped == 'u')
+                {
+                    // Qt's surrogate handling is deliberately left to the
+                    // fallback parser, including otherwise valid \u escapes.
+                    return false;
+                }
+                if (escaped != '"' && escaped != '\\' && escaped != '/'
+                    && escaped != 'b' && escaped != 'f' && escaped != 'n'
+                    && escaped != 'r' && escaped != 't')
+                {
+                    return false;
+                }
+                advance();
+                continue;
+            }
+            if (token >= 0x80)
+            {
+                if (!consumeUtf8())
+                {
+                    return false;
+                }
+                continue;
+            }
+            advance();
+        }
+
+        return false;
+    }
+
+    bool parseLiteral(const char* literal, qsizetype length)
+    {
+        if (bytes_.size() - position_ < length
+            || std::memcmp(bytes_.constData() + position_, literal,
+                           static_cast<size_t>(length)) != 0)
+        {
+            return false;
+        }
+        position_ += length;
+        return true;
+    }
+
+    bool parseNumber()
+    {
+        const qsizetype begin = position_;
+        if (peek() == '-')
+        {
+            advance();
+            if (atEnd())
+            {
+                return false;
+            }
+        }
+
+        if (peek() == '0')
+        {
+            advance();
+            if (!atEnd() && isDigit(peek()))
+            {
+                return false;
+            }
+        }
+        else if (peek() >= '1' && peek() <= '9')
+        {
+            do
+            {
+                advance();
+            }
+            while (!atEnd() && isDigit(peek()));
+        }
+        else
+        {
+            return false;
+        }
+
+        if (!atEnd() && peek() == '.')
+        {
+            advance();
+            if (atEnd() || !isDigit(peek()))
+            {
+                return false;
+            }
+            do
+            {
+                advance();
+            }
+            while (!atEnd() && isDigit(peek()));
+        }
+
+        if (!atEnd() && (peek() == 'e' || peek() == 'E'))
+        {
+            advance();
+            if (!atEnd() && (peek() == '+' || peek() == '-'))
+            {
+                advance();
+            }
+            if (atEnd() || !isDigit(peek()))
+            {
+                return false;
+            }
+            do
+            {
+                advance();
+            }
+            while (!atEnd() && isDigit(peek()));
+        }
+
+        if (!hasConservativeNumericRange(begin, position_))
+        {
+            // Long or extreme numbers are delegated to Qt so its conversion
+            // limits and exact acceptance behavior remain authoritative.
+            return false;
+        }
+        return true;
+    }
+
+    bool hasConservativeNumericRange(qsizetype begin, qsizetype end) const
+    {
+        // An 18-digit mantissa, a short token, and an exponent no larger than
+        // 10 keep values well inside binary64's normal range without relying
+        // on platform-specific floating-point conversion routines. Tokens
+        // outside these bounds are valid candidates for Qt fallback.
+        if (end - begin > 24)
+        {
+            return false;
+        }
+
+        int mantissaDigits = 0;
+        int exponentMagnitude = 0;
+        int exponentDigits = 0;
+        bool inExponent = false;
+        for (qsizetype index = begin; index < end; ++index)
+        {
+            const unsigned char token =
+                static_cast<unsigned char>(bytes_[index]);
+            if (token == 'e' || token == 'E')
+            {
+                inExponent = true;
+                if (index + 1 < end
+                    && (bytes_[index + 1] == '+' || bytes_[index + 1] == '-'))
+                {
+                    ++index;
+                }
+                continue;
+            }
+            if (!isDigit(token))
+            {
+                continue;
+            }
+            if (!inExponent)
+            {
+                if (++mantissaDigits > 18)
+                {
+                    return false;
+                }
+                continue;
+            }
+            if (++exponentDigits > 2)
+            {
+                return false;
+            }
+            exponentMagnitude = exponentMagnitude * 10 + (token - '0');
+            if (exponentMagnitude > MaximumConservativeExponentMagnitude)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool parseValue(int depth)
+    {
+        skipWhitespace();
+        if (atEnd())
+        {
+            return false;
+        }
+
+        switch (peek())
+        {
+        case '{': return parseObject(depth);
+        case '[': return parseArray(depth);
+        case '"': return parseString();
+        case 't': return parseLiteral("true", 4);
+        case 'f': return parseLiteral("false", 5);
+        case 'n': return parseLiteral("null", 4);
+        default:
+            return peek() == '-' || isDigit(peek()) ? parseNumber() : false;
+        }
+    }
+
+    bool parseObject(int depth)
+    {
+        if (depth >= MaximumContainerDepth || atEnd() || peek() != '{')
+        {
+            return false;
+        }
+        advance();
+        skipWhitespace();
+        if (!atEnd() && peek() == '}')
+        {
+            advance();
+            return true;
+        }
+
+        while (!atEnd())
+        {
+            if (peek() != '"' || !parseString())
+            {
+                return false;
+            }
+            skipWhitespace();
+            if (atEnd() || peek() != ':')
+            {
+                return false;
+            }
+            advance();
+            if (!parseValue(depth + 1))
+            {
+                return false;
+            }
+            skipWhitespace();
+            if (!atEnd() && peek() == '}')
+            {
+                advance();
+                return true;
+            }
+            if (atEnd() || peek() != ',')
+            {
+                return false;
+            }
+            advance();
+            skipWhitespace();
+        }
+        return false;
+    }
+
+    bool parseArray(int depth)
+    {
+        if (depth >= MaximumContainerDepth || atEnd() || peek() != '[')
+        {
+            return false;
+        }
+        advance();
+        skipWhitespace();
+        if (!atEnd() && peek() == ']')
+        {
+            advance();
+            return true;
+        }
+
+        while (!atEnd())
+        {
+            if (!parseValue(depth + 1))
+            {
+                return false;
+            }
+            skipWhitespace();
+            if (!atEnd() && peek() == ']')
+            {
+                advance();
+                return true;
+            }
+            if (atEnd() || peek() != ',')
+            {
+                return false;
+            }
+            advance();
+            skipWhitespace();
+        }
+        return false;
+    }
+
+    const QByteArray& bytes_;
+    qsizetype position_ = 0;
+};
+
+// These cursors only locate values in JSON already proven valid by the
+// conservative syntax validator or validated by Qt's full-document parser.
+// They do not interpret JSON strings, numbers, duplicate fields, or schema values.
 struct JsonRange
 {
     qsizetype begin = 0;
@@ -778,13 +1213,18 @@ Status validateMappedJsonObject(const QByteArray& bytes)
     return jsonDocumentStatus(document, error);
 }
 
+bool hasProvenMappedJsonObjectSyntax(const QByteArray& bytes)
+{
+    return ConservativeMappedJsonValidator(bytes).validatesObjectDocument();
+}
+
 Result<ClassTransferPackage> packageFromValidatedMappedJson(
     const QByteArray& bytes
     )
 {
-    // Lifetime boundary: validateMappedJsonObject has returned, destroying the
-    // complete Qt DOM before any package is constructed here. Only source byte
-    // ranges, scalar metadata, and one record's Qt DOM are retained below.
+    // Only source byte ranges, scalar metadata, and one record's Qt DOM are
+    // retained below. The safe mapped path reaches here without constructing a
+    // full-file QJsonDocument.
     ValidatedJsonCursor root(bytes, bytes.startsWith("\xEF\xBB\xBF") ? 3 : 0);
     root.skipWhitespace();
     root.advance(); // opening object
@@ -1269,7 +1709,9 @@ Result<ClassTransferPackage> ClassTransferJsonCodec::loadFile(
             const QByteArray mappedBytes = QByteArray::fromRawData(
                 reinterpret_cast<const char*>(mappedData),
                 static_cast<qsizetype>(fileSize));
-            const Status valid = validateMappedJsonObject(mappedBytes);
+            const Status valid = hasProvenMappedJsonObjectSyntax(mappedBytes)
+                ? Status{}
+                : validateMappedJsonObject(mappedBytes);
             auto result = valid
                 ? packageFromValidatedMappedJson(mappedBytes)
                 : Result<ClassTransferPackage>(std::unexpected(valid.error()));

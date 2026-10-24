@@ -2851,9 +2851,18 @@ void ClassTransferTests::codecMappedFileMatchesQt_data()
         + compact.mid(1), true);
     add("unknown-nested-schema-names",
         "{\"unknown { [ \\\"\":[{\"teachers\":[{\"classes\":[]}]}]," + compact.mid(1), true);
+    add("uncertain-finite-number-fallback",
+        "{\"unknown\":1e281," + compact.mid(1), true);
     const QByteArray nestedUnknown = QByteArray(64, '[') + "{\"teachers\":null}"
         + QByteArray(64, ']');
     add("deep-unknown-values", "{\"unknown\":" + nestedUnknown + ',' + compact.mid(1), true);
+    for (const int depth : {127, 128, 129})
+    {
+        const QByteArray boundaryValue = QByteArray(depth, '[') + "0"
+            + QByteArray(depth, ']');
+        add("mapped-nesting-boundary-" + QByteArray::number(depth),
+            "{\"unknown\":" + boundaryValue + ',' + compact.mid(1), true);
+    }
     for (const QString& key : base.keys())
     {
         const QByteArray property = encode(key) + ':';
@@ -2867,6 +2876,10 @@ void ClassTransferTests::codecMappedFileMatchesQt_data()
     add("escaped-root-name", escapedKeys, true);
     add("escaped-duplicate-root-last-invalid",
         escapedKeys.left(escapedKeys.size() - 1) + ",\"vers\\u0069on\":null}", false);
+    add("escaped-duplicate-root-last-valid",
+        compact.left(1) + "\"versi\\u006fn\":null," + compact.mid(1), true);
+    add("escaped-duplicate-root-escaped-last-valid",
+        compact.left(compact.size() - 1) + ",\"versi\\u006fn\":1}", true);
 
     QJsonObject object = base;
     QJsonArray teachers = object.value("teachers").toArray();
@@ -2995,9 +3008,37 @@ void ClassTransferTests::codecMappedFileMatchesQt_data()
     const QList<QByteArray> malformed{
         {}, " ", "{not-json", "{", "[", "true", "null", "1", "\"text\"",
         "{\"format\":\"unterminated}", "{\"x\":\"bad\\q\"}", "{\"x\":\"bad\\u12\"}",
-        "{\"x\":1e}", "{\"x\":[1,]}", "{\"x\":{\"a\":1,}}", "{} garbage",
+        "{\"x\":\"bad\\x\"}", "{\"x\":\"bad\\\"}",
+        "{\"x\":1e}", "{\"x\":1e+}", "{\"x\":1.}", "{\"x\":01}",
+        "{\"x\":-01}", "{\"x\":+1}", "{\"x\":[1,]}",
+        "{\"x\":{\"a\":1,}}", "{} garbage",
         "{\"classes\":[]", compact.left(compact.size() - 1), "[]", "[{},[]]"
     };
+    QByteArray invalidUtf8 = "{\"unknown\":\"";
+    invalidUtf8 += QByteArray::fromHex("c328");
+    invalidUtf8 += "\"}";
+    add("invalid-utf8-continuation", invalidUtf8, false);
+    invalidUtf8 = "{\"unknown\":\"";
+    invalidUtf8 += QByteArray::fromHex("e282");
+    invalidUtf8 += "\"}";
+    add("invalid-utf8-truncated", invalidUtf8, false);
+    QByteArray trailingStringEscape = "{\"unknown\":\"bad";
+    trailingStringEscape += '\\';
+    add("invalid-escape-at-end-of-file", trailingStringEscape, false);
+    add("malformed-unknown-before-schema-error",
+        "{\"format\":\"Other\",\"version\":99,\"exported_at_utc\":\"bad\","
+        "\"teachers\":[],\"classes\":[],\"unknown\":[1,]}", false);
+    add("malformed-number-before-schema-error",
+        "{\"format\":\"Other\",\"version\":99,\"exported_at_utc\":\"bad\","
+        "\"teachers\":[],\"classes\":[],\"unknown\":1e}", false);
+    add("overflow-number-before-schema-error",
+        "{\"format\":\"Other\",\"version\":99,\"exported_at_utc\":\"bad\","
+        "\"teachers\":[],\"classes\":[],\"unknown\":1e999}", false);
+    QByteArray schemaWithTrailingData = compact;
+    schemaWithTrailingData.replace("\"format\":\"ClassMngr Classes\"",
+                                   "\"format\":\"Other\"");
+    schemaWithTrailingData += " trailing";
+    add("trailing-data-before-schema-error", schemaWithTrailingData, false);
     add("qt-nesting-limit-error", "{\"unknown\":" + QByteArray(2000, '[') + '0'
         + QByteArray(2000, ']') + ',' + compact.mid(1), false);
     for (int index = 0; index < malformed.size(); ++index)
