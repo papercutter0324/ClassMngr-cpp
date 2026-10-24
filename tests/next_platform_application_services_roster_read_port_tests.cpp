@@ -1,5 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "core/startup_profiler.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "data/repositories/roster_repository.h"
@@ -250,6 +251,9 @@ class NextPlatformApplicationServicesRosterReadPortTests final : public QObject
 private slots:
     void rejectsNonCanonicalIdsBeforeSessionAccess();
     void readsCompleteRawSnapshotWithoutUiRowLimit();
+    void singleClassStudentCountStreamsSparseRosterAndProfilesDimensions();
+    void singleClassStudentCountSaturatesProfilerDimensions();
+    void singleClassStudentCountMatchesFullLoaderValidation();
     void readsBoundedWindowWithSparseRowsAndReportsTailRows();
     void windowReadMissingParentReturnsRecoverableNotFound();
     void windowReadRepositoryFailureReturnsTechnicalError();
@@ -357,6 +361,378 @@ readsCompleteRawSnapshotWithoutUiRowLimit()
     QVERIFY(result.value().rows[23][4].empty());
     QCOMPARE(result.value().rows[24][2], std::u16string(u"Middle 25"));
     QCOMPARE(result.value().rows[37][4], std::u16string(u"\uC218\uC5C5 \U0001F4DA"));
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+singleClassStudentCountStreamsSparseRosterAndProfilesDimensions()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Single Class Student Count")
+        );
+    QVERIFY(createdClass);
+    QSqlDatabase database = services.workspaceStore()->database();
+    QVERIFY(seedSparseRoster(
+        database,
+        *createdClass,
+        {
+            QStringLiteral("English"),
+            QStringLiteral("English"),
+            QStringLiteral("Korean"),
+            QStringLiteral("Korean"),
+            QStringLiteral("Notes")
+        },
+        {
+            {0, 0, QString::fromUtf8("\xC2\xA0")},
+            {0, 2, QStringLiteral("\uAE40\uBBFC\uC9C0")},
+            {1, 0, QStringLiteral(" \t ")},
+            {1, 2, QString::fromUtf8("\xE2\x80\x83")},
+            {2, 1, QStringLiteral("Ignored duplicate English")},
+            {2, 3, QStringLiteral("Ignored duplicate Korean")},
+            {6, 4, QStringLiteral("Sparse note")},
+            {9, 0, QStringLiteral("  English student  ")},
+            {9, 2, QStringLiteral("\uD559\uC0DD")},
+            {12, 2, QStringLiteral("Korean student")}
+        }
+        ));
+
+    QSqlQuery ignoredColumns(database);
+    QVERIFY(ignoredColumns.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, ?, ?, ?)"
+        )));
+    ignoredColumns.addBindValue(*createdClass);
+    ignoredColumns.addBindValue(20);
+    ignoredColumns.addBindValue(99);
+    ignoredColumns.addBindValue(QStringLiteral("Out of range"));
+    QVERIFY2(ignoredColumns.exec(), qPrintable(ignoredColumns.lastError().text()));
+    ignoredColumns.finish();
+    ignoredColumns.bindValue(1, 21);
+    ignoredColumns.bindValue(2, QVariant::fromValue<qlonglong>(2147483648LL));
+    ignoredColumns.bindValue(3, QStringLiteral("Wide out of range"));
+    QVERIFY2(ignoredColumns.exec(), qPrintable(ignoredColumns.lastError().text()));
+
+    RosterRepository* repository = services.workspaceStore()->rosterRepository();
+    const auto fullRoster = repository->loadRoster(*createdClass);
+    QVERIFY(fullRoster);
+    QCOMPARE(fullRoster->columns.size(), 5);
+    QCOMPARE(fullRoster->rows.size(), 13);
+    const int englishColumn = fullRoster->columns.indexOf(QStringLiteral("English"));
+    const int koreanColumn = fullRoster->columns.indexOf(QStringLiteral("Korean"));
+    int expectedStudentCount = 0;
+    for (const QStringList& row : fullRoster->rows)
+    {
+        const bool hasEnglish =
+            englishColumn >= 0
+            && !row.at(englishColumn).trimmed().isEmpty();
+        const bool hasKorean =
+            koreanColumn >= 0
+            && !row.at(koreanColumn).trimmed().isEmpty();
+        if (hasEnglish || hasKorean)
+        {
+            ++expectedStudentCount;
+        }
+    }
+    QCOMPARE(expectedStudentCount, 3);
+
+    StartupProfiler profiler;
+    StartupProfiler::activate(&profiler);
+    StartupProfiler::setSubPrepDiagnosticsActive(true);
+    const auto count = repository->getRosterStudentCount(*createdClass);
+    const QList<StartupProfilingEvent> events = profiler.events();
+    StartupProfiler::setSubPrepDiagnosticsActive(false);
+    StartupProfiler::activate(nullptr);
+
+    QVERIFY(count);
+    QCOMPARE(*count, expectedStudentCount);
+    QCOMPARE(events.size(), 1);
+    QCOMPARE(events.front().name, QStringLiteral("sub-prep-roster-query"));
+    QCOMPARE(
+        events.front().detail,
+        QStringLiteral(
+            "classId=%1; columns=5; rows=13; cells=65; returnedStudents=3"
+            ).arg(*createdClass)
+        );
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+singleClassStudentCountSaturatesProfilerDimensions()
+{
+    constexpr int sparseRowIndex = 715827882;
+    constexpr int expectedRowCount = 715827883;
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Saturated Student Count Dimensions")
+        );
+    QVERIFY(createdClass);
+    QVERIFY(seedSparseRoster(
+        services.workspaceStore()->database(),
+        *createdClass,
+        {
+            QStringLiteral("English"),
+            QStringLiteral("Korean"),
+            QStringLiteral("Notes")
+        },
+        {{sparseRowIndex, 2, QStringLiteral("Sparse tail")}}
+        ));
+
+    StartupProfiler profiler;
+    StartupProfiler::activate(&profiler);
+    StartupProfiler::setSubPrepDiagnosticsActive(true);
+    const auto count = services.workspaceStore()
+                           ->rosterRepository()
+                           ->getRosterStudentCount(*createdClass);
+    const QList<StartupProfilingEvent> events = profiler.events();
+    StartupProfiler::setSubPrepDiagnosticsActive(false);
+    StartupProfiler::activate(nullptr);
+
+    QVERIFY(count);
+    QCOMPARE(*count, 0);
+    QCOMPARE(events.size(), 1);
+    QCOMPARE(
+        events.front().detail,
+        QStringLiteral(
+            "classId=%1; columns=3; rows=%2; cells=2147483647; returnedStudents=0"
+            ).arg(*createdClass).arg(expectedRowCount)
+        );
+
+    const auto boundaryClass = services.classService()->create(
+        QStringLiteral("INT_MAX Student Count Row Extent")
+        );
+    QVERIFY(boundaryClass);
+    QVERIFY(seedSparseRoster(
+        services.workspaceStore()->database(),
+        *boundaryClass,
+        {QStringLiteral("Notes")},
+        {{std::numeric_limits<int>::max(), 0, QStringLiteral("Sparse tail")}}
+        ));
+
+    StartupProfiler boundaryProfiler;
+    StartupProfiler::activate(&boundaryProfiler);
+    StartupProfiler::setSubPrepDiagnosticsActive(true);
+    const auto boundaryCount = services.workspaceStore()
+                                   ->rosterRepository()
+                                   ->getRosterStudentCount(*boundaryClass);
+    const QList<StartupProfilingEvent> boundaryEvents =
+        boundaryProfiler.events();
+    StartupProfiler::setSubPrepDiagnosticsActive(false);
+    StartupProfiler::activate(nullptr);
+
+    QVERIFY(boundaryCount);
+    QCOMPARE(*boundaryCount, 0);
+    QCOMPARE(boundaryEvents.size(), 1);
+    QCOMPARE(
+        boundaryEvents.front().detail,
+        QStringLiteral(
+            "classId=%1; columns=1; rows=2147483647; cells=2147483647; returnedStudents=0"
+            ).arg(*boundaryClass)
+        );
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+singleClassStudentCountMatchesFullLoaderValidation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlDatabase database = services.workspaceStore()->database();
+    RosterRepository* repository = services.workspaceStore()->rosterRepository();
+    const auto checkFailureParity = [repository](const int classId)
+    {
+        const auto fullRoster = repository->loadRoster(classId);
+        const auto singleCount = repository->getRosterStudentCount(classId);
+        return std::tuple{
+            static_cast<bool>(fullRoster),
+            static_cast<bool>(singleCount),
+            fullRoster ? QString() : fullRoster.error(),
+            singleCount ? QString() : singleCount.error()
+        };
+    };
+
+    struct MalformedCell final
+    {
+        QString name;
+        QVariant rowIndex;
+        QVariant columnIndex;
+        bool bypassRowConstraint = false;
+    };
+    const QList<MalformedCell> malformedCells{
+        {
+            QStringLiteral("Text row index"),
+            QVariant(QStringLiteral("not-a-row")),
+            QVariant(0),
+            false
+        },
+        {
+            QStringLiteral("Fractional row index"),
+            QVariant(0.25),
+            QVariant(0),
+            false
+        },
+        {
+            QStringLiteral("Negative row index"),
+            QVariant(-1),
+            QVariant(0),
+            true
+        },
+        {
+            QStringLiteral("Wide row index"),
+            QVariant::fromValue<qlonglong>(2147483648LL),
+            QVariant(0),
+            false
+        },
+        {
+            QStringLiteral("Wide row index before malformed column"),
+            QVariant::fromValue<qlonglong>(2147483648LL),
+            QVariant(QStringLiteral("not-a-column")),
+            false
+        },
+        {
+            QStringLiteral("Text column index"),
+            QVariant(0),
+            QVariant(QStringLiteral("not-a-column")),
+            false
+        },
+        {
+            QStringLiteral("Fractional out of range column index"),
+            QVariant(0),
+            QVariant(99.5),
+            false
+        }
+    };
+    for (const MalformedCell& malformed : malformedCells)
+    {
+        const auto createdClass = services.classService()->create(malformed.name);
+        QVERIFY(createdClass);
+        QVERIFY(seedSparseRoster(
+            database,
+            *createdClass,
+            {QStringLiteral("English"), QStringLiteral("Korean")},
+            {}
+            ));
+
+        QSqlQuery insertCell(database);
+        QVERIFY(insertCell.prepare(QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (?, ?, ?, ?)"
+            )));
+        if (malformed.bypassRowConstraint)
+        {
+            QSqlQuery ignoreCheck(database);
+            QVERIFY2(
+                ignoreCheck.exec(QStringLiteral(
+                    "PRAGMA ignore_check_constraints=ON"
+                    )),
+                qPrintable(ignoreCheck.lastError().text())
+                );
+        }
+        insertCell.addBindValue(*createdClass);
+        insertCell.addBindValue(malformed.rowIndex);
+        insertCell.addBindValue(malformed.columnIndex);
+        insertCell.addBindValue(QStringLiteral("Malformed"));
+        QVERIFY2(insertCell.exec(), qPrintable(insertCell.lastError().text()));
+        if (malformed.bypassRowConstraint)
+        {
+            QSqlQuery restoreCheck(database);
+            QVERIFY2(
+                restoreCheck.exec(QStringLiteral(
+                    "PRAGMA ignore_check_constraints=OFF"
+                    )),
+                qPrintable(restoreCheck.lastError().text())
+                );
+        }
+
+        const auto [fullSucceeded, countSucceeded, fullError, countError] =
+            checkFailureParity(*createdClass);
+        QVERIFY(!fullSucceeded);
+        QVERIFY(!countSucceeded);
+        QCOMPARE(countError, fullError);
+    }
+
+    for (const QString& malformedColumn : {
+             QStringLiteral("position"), QStringLiteral("width")
+         })
+    {
+        const auto createdClass = services.classService()->create(
+            QStringLiteral("Malformed roster %1").arg(malformedColumn)
+            );
+        QVERIFY(createdClass);
+        QVERIFY(seedSparseRoster(
+            database,
+            *createdClass,
+            {QStringLiteral("English"), QStringLiteral("Korean")},
+            {}
+            ));
+
+        QSqlQuery damageColumn(database);
+        const QString storedColumn = malformedColumn == QStringLiteral("position")
+            ? QStringLiteral("position")
+            : QStringLiteral("width");
+        QVERIFY(damageColumn.prepare(QStringLiteral(
+            "UPDATE roster_columns SET %1=? WHERE class_id=? AND position=0"
+            ).arg(storedColumn)));
+        damageColumn.addBindValue(
+            malformedColumn == QStringLiteral("position")
+                ? QVariant(QStringLiteral("not-an-integer"))
+                : QVariant::fromValue<qlonglong>(2147483648LL)
+            );
+        damageColumn.addBindValue(*createdClass);
+        QVERIFY2(damageColumn.exec(), qPrintable(damageColumn.lastError().text()));
+
+        const auto [fullSucceeded, countSucceeded, fullError, countError] =
+            checkFailureParity(*createdClass);
+        QVERIFY(!fullSucceeded);
+        QVERIFY(!countSucceeded);
+        QCOMPARE(countError, fullError);
+    }
+
+    const auto invalidClassCount = repository->getRosterStudentCount(0);
+    QVERIFY(!invalidClassCount);
+    QVERIFY(invalidClassCount.error().contains(QStringLiteral("invalid class id")));
+
+    const auto failedClass = services.classService()->create(
+        QStringLiteral("Failed Count Does Not Profile")
+        );
+    QVERIFY(failedClass);
+    QVERIFY(seedSparseRoster(
+        database,
+        *failedClass,
+        {QStringLiteral("English"), QStringLiteral("Korean")},
+        {}
+        ));
+    QSqlQuery insertMalformedRow(database);
+    QVERIFY(insertMalformedRow.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, ?, 0, ?)"
+        )));
+    insertMalformedRow.addBindValue(*failedClass);
+    insertMalformedRow.addBindValue(QStringLiteral("not-a-row"));
+    insertMalformedRow.addBindValue(QStringLiteral("Malformed"));
+    QVERIFY2(
+        insertMalformedRow.exec(),
+        qPrintable(insertMalformedRow.lastError().text())
+        );
+
+    StartupProfiler profiler;
+    StartupProfiler::activate(&profiler);
+    StartupProfiler::setSubPrepDiagnosticsActive(true);
+    const auto failedCount = repository->getRosterStudentCount(*failedClass);
+    const QList<StartupProfilingEvent> events = profiler.events();
+    StartupProfiler::setSubPrepDiagnosticsActive(false);
+    StartupProfiler::activate(nullptr);
+    QVERIFY(!failedCount);
+    QVERIFY(events.isEmpty());
 }
 
 void NextPlatformApplicationServicesRosterReadPortTests::

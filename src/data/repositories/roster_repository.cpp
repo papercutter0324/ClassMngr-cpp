@@ -3681,6 +3681,266 @@ Result<Roster> RosterRepository::loadRosterForOutput(
 }
 
 Result<RosterRepository::SubPrepStudentCountReadEntry>
+RosterRepository::loadSingleClassSubPrepStudentCountRecord(
+    const int classId
+    )
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading Sub Prep student count failed: invalid class id %1.")
+                .arg(classId)
+            );
+    }
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    query.prepare(R"(
+        WITH requested(class_id) AS (VALUES (?))
+        SELECT
+            requested.class_id AS requested_class_id,
+            classes.id AS parent_class_id,
+            roster_columns.id AS roster_column_id,
+            roster_columns.name,
+            roster_columns.width,
+            typeof(roster_columns.width) AS width_storage_type,
+            roster_columns.position,
+            typeof(roster_columns.position) AS position_storage_type
+        FROM requested
+        LEFT JOIN classes ON classes.id = requested.class_id
+        LEFT JOIN roster_columns
+            ON roster_columns.class_id = requested.class_id
+        ORDER BY roster_columns.position, roster_columns.id
+    )");
+    query.addBindValue(classId);
+
+    const auto loadedColumns = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading roster columns"),
+        identity
+        );
+    if (!loadedColumns)
+    {
+        return std::unexpected(loadedColumns.error().userMessage());
+    }
+
+    const bool parentRowFound = query.next();
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading roster columns"),
+            {},
+            identity
+            ).userMessage());
+    }
+    if (!parentRowFound)
+    {
+        return std::unexpected(QObject::tr(
+            "Loading roster columns failed: no result was returned for %1."
+            ).arg(identity));
+    }
+
+    QStringList columns;
+    do
+    {
+        if (query.value("roster_column_id").isNull())
+        {
+            continue;
+        }
+
+        bool positionValid = false;
+        const qlonglong position =
+            query.value("position").toLongLong(&positionValid);
+        if (!positionValid
+            || query.value("position_storage_type").toString()
+                != QStringLiteral("integer")
+            || position < 0)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading roster columns failed for %1: invalid position."
+                ).arg(identity));
+        }
+
+        columns.append(query.value("name").toString());
+
+        const QVariant widthValue = query.value("width");
+        if (!checkedRosterWidth(
+                widthValue,
+                query.value("width_storage_type").toString()))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading roster columns failed for class id %1: width %2 is outside the supported int range."
+                ).arg(classId).arg(widthValue.toString()));
+        }
+    }
+    while (query.next());
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading roster columns"),
+            {},
+            identity
+            ).userMessage());
+    }
+
+    const int englishColumn = columns.indexOf(QStringLiteral("English"));
+    const int koreanColumn = columns.indexOf(QStringLiteral("Korean"));
+    const int columnCount = static_cast<int>(columns.size());
+    if (columns.isEmpty())
+    {
+        return SubPrepStudentCountReadEntry{
+            .classId = classId,
+            .studentCount = 0,
+            .columnCount = columnCount,
+            .rowCount = 0,
+            .cellCount = 0
+        };
+    }
+
+    query.prepare(R"(
+        SELECT
+            row_index,
+            typeof(row_index) AS row_index_storage_type,
+            col_index,
+            typeof(col_index) AS col_index_storage_type,
+            value
+        FROM roster_data
+        WHERE class_id=?
+        ORDER BY row_index, col_index
+    )");
+    query.addBindValue(classId);
+
+    const auto loadedData = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading roster data"),
+        identity
+        );
+    if (!loadedData)
+    {
+        return std::unexpected(loadedData.error().userMessage());
+    }
+
+    int rowCount = 0;
+    int studentCount = 0;
+    qlonglong currentRow = -1;
+    bool currentRowHasStudent = false;
+    while (query.next())
+    {
+        if (query.value("row_index_storage_type").toString()
+            != QStringLiteral("integer"))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading roster data failed for %1: invalid row index."
+                ).arg(identity));
+        }
+
+        bool rowIndexValid = false;
+        const qlonglong rowIndex =
+            query.value("row_index").toLongLong(&rowIndexValid);
+        if (!rowIndexValid)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading roster data failed for %1: invalid row index."
+                ).arg(identity));
+        }
+        if (rowIndex < 0)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading roster data failed for %1: row index %2 is negative."
+                ).arg(identity).arg(rowIndex));
+        }
+        if (rowIndex > std::numeric_limits<int>::max())
+        {
+            return std::unexpected(QObject::tr(
+                "Loading roster data failed for %1: row index %2 exceeds the supported range."
+                ).arg(identity).arg(rowIndex));
+        }
+
+        if (query.value("col_index_storage_type").toString()
+            != QStringLiteral("integer"))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading roster data failed for %1: invalid column index."
+                ).arg(identity));
+        }
+
+        bool columnIndexValid = false;
+        const qlonglong columnIndex =
+            query.value("col_index").toLongLong(&columnIndexValid);
+        if (!columnIndexValid)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading roster data failed for %1: invalid column index."
+                ).arg(identity));
+        }
+
+        if (columnIndex < 0 || columnIndex >= columns.size())
+        {
+            continue;
+        }
+
+        if (rowIndex != currentRow)
+        {
+            if (currentRowHasStudent)
+            {
+                ++studentCount;
+            }
+            currentRow = rowIndex;
+            currentRowHasStudent = false;
+        }
+        const int rowExtent =
+            rowIndex >= std::numeric_limits<int>::max()
+                ? std::numeric_limits<int>::max()
+                : static_cast<int>(rowIndex) + 1;
+        rowCount = std::max(rowCount, rowExtent);
+
+        if ((columnIndex == englishColumn || columnIndex == koreanColumn)
+            && !query.value("value").toString().trimmed().isEmpty())
+        {
+            currentRowHasStudent = true;
+        }
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading roster data"),
+            {},
+            identity
+            ).userMessage());
+    }
+    if (currentRowHasStudent)
+    {
+        ++studentCount;
+    }
+
+    int cellCount = 0;
+    if (rowCount > 0 && columnCount > 0)
+    {
+        if (rowCount > std::numeric_limits<int>::max() / columnCount)
+        {
+            cellCount = std::numeric_limits<int>::max();
+        }
+        else
+        {
+            cellCount = rowCount * columnCount;
+        }
+    }
+    return SubPrepStudentCountReadEntry{
+        .classId = classId,
+        .studentCount = studentCount,
+        .columnCount = columnCount,
+        .rowCount = rowCount,
+        .cellCount = cellCount
+    };
+}
+
+Result<RosterRepository::SubPrepStudentCountReadEntry>
 RosterRepository::loadSubPrepStudentCountRecord(
     const int classId
     )
@@ -3751,7 +4011,7 @@ Result<int> RosterRepository::getRosterStudentCount(
     const int classId
     )
 {
-    const auto loaded = loadSubPrepStudentCountRecord(classId);
+    const auto loaded = loadSingleClassSubPrepStudentCountRecord(classId);
     if (!loaded)
     {
         return std::unexpected(loaded.error());

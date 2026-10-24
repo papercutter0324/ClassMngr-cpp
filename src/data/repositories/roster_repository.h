@@ -298,6 +298,8 @@ private:
     loadSpeakingEvaluationRosterNamesImpl(int classId, bool parentRooted);
     [[nodiscard]] Result<SubPrepStudentCountReadEntry>
     loadSubPrepStudentCountRecord(int classId);
+    [[nodiscard]] Result<SubPrepStudentCountReadEntry>
+    loadSingleClassSubPrepStudentCountRecord(int classId);
     [[nodiscard]] Result<RosterWindowReadOutcome> loadRosterDetailedImpl(
         int classId,
         std::optional<int> rowLimit
