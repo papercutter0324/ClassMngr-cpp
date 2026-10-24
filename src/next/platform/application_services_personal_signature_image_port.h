@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "next/application/personal_signature_image.h"
@@ -20,7 +20,7 @@ namespace ClassMngr::Next::Platform
 
 // Qt-boundary adapter for the read-only personal signature image. The exact
 // key, Base64 conversion, and one-time image preparation remain here; callers
-// receive only opaque prepared bytes. Reads use only the active session
+// receive only opaque prepared bytes. Reads use only the active workspace
 // repository.
 class ApplicationServicesPersonalSignatureImagePort final
     : public Application::PersonalSignatureImagePort
@@ -29,14 +29,14 @@ public:
     explicit ApplicationServicesPersonalSignatureImagePort(
         ApplicationServices& services
         ) noexcept
-        : m_session(services.databaseSession())
+        : m_store(services.workspaceStore())
     {
     }
 
     explicit ApplicationServicesPersonalSignatureImagePort(
         ApplicationServices* services
         ) noexcept
-        : m_session(services ? services->databaseSession() : nullptr)
+        : m_store(services ? services->workspaceStore() : nullptr)
     {
     }
 
@@ -56,7 +56,7 @@ public:
     [[nodiscard]] Application::PersonalSignatureImageResult read()
         const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return Application::PersonalSignatureImageResult::success(
                 Domain::PreparedPersonalSignatureImageBytes{}
@@ -64,7 +64,7 @@ public:
         }
 
         SettingsRepository* const repository =
-            m_session->settingsRepository();
+            m_store->settingsRepository();
         if (!repository)
         {
             return Application::PersonalSignatureImageResult::success(
@@ -145,7 +145,7 @@ private:
         return QStringLiteral("myInfo/signatureImage");
     }
 
-    DatabaseSession* m_session = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

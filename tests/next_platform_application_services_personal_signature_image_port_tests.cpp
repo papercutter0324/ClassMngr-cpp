@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "next/platform/application_services_personal_signature_image_port.h"
 
@@ -48,13 +48,13 @@ bool executeSql(
     const QString& statement
     )
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     return query.exec(statement);
 }
 
@@ -299,7 +299,7 @@ closedSessionReturnsEmptyAndPreservesSettingsOnReopen()
     ApplicationServicesPersonalSignatureImagePort port(services);
     services.closeDatabase();
     QVERIFY(services.dataService());
-    QVERIFY(!services.databaseSession()->isOpen());
+    QVERIFY(!services.workspaceStore()->isOpen());
     const auto unavailableImage = port.read();
     QVERIFY(unavailableImage);
     QVERIFY(unavailableImage.value().empty());
