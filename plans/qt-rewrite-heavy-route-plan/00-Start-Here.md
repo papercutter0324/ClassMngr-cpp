@@ -15,10 +15,11 @@
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   its receipt records implementation tip
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1412 (Teacher create) current. F1411 (Initial
-  Setup teacher choices read) is accepted at
-  `4b591e7cfe916b32982ece2877a22f0300fbc2e7`; focused verification passed.
-  The current batch tracker retains the ordered list, with 5 prioritized
+  and Batch 5 is active with F1413 (Teacher delete) current. F1412 (Teacher
+  create) is accepted at
+  `318affc4a7f651e29ae7b7b909588739891476cd`; focused verification passed
+  with an Initial Setup parity-test limitation. The current batch tracker
+  retains the ordered list, with 4 prioritized
   candidates remaining. Batch 5 remains unpushed until its remaining slices
   are complete.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI

@@ -2516,3 +2516,37 @@ before commit. F1411 is accepted; F1412 (Teacher create) is current. Batch 5
 remains unpushed until its remaining slices are complete.
 
 Commit: `4b591e7cfe916b32982ece2877a22f0300fbc2e7`.
+
+## F1412 — Teacher create (Batch 5 candidate 15 of 19) — 2026-10-24
+
+The `ApplicationServicesTeacherCreatePort` header now resolves
+`WorkspaceStore` dynamically during both preflight and create. Its direct
+Platform fixture and the dedicated
+`InitialSetupWizardTeacherCreateParityTests` fixture also use
+`WorkspaceStore`. Validation preflight order, post-validation repository
+recheck, error categories/messages, `TeacherValidator` normalization, all 14
+field mappings, and `createTeacherWithWideId()` 64-bit behavior remain
+unchanged. F1411 teacher read and F1413 teacher delete remain separate.
+
+Built `ClassMngrNextPlatformApplicationServicesTeacherCreatePortTests`,
+`ClassMngrNextApplicationTeacherCreateUseCaseTests`,
+`ClassMngrInitialSetupWizardTeacherCreateParityTests`, and
+`ClassMngrMainWindowTeacherSidebarNavigationParityTests` incrementally
+without compiler warnings or errors. CTest #480, the Platform port, passed 8
+QtTest cases; #460, the Application use case, passed 6. CTest #77,
+`ClassMngrInitialSetupWizardTeacherCreateParityTests`, aborted after init
+passed as `identityValidationKeepsFieldsAndPromptOrder` began. It raised an
+uncaught macOS `NSInvalidArgumentException`: `NSBundle initWithURL: nil URL
+argument`, with the stack through Qt `QWizard::page()/pixmap()` from
+`WizardFixture::open()`. This was before a behavior assertion; the cause is
+undetermined. No retry occurred. Remaining UI parity cases, including
+failed-write retry/field retention and Add Another, were not observed. The
+direct offscreen Sidebar slot
+`addTeacherActionPreservesRequiredNameValidationOutcome` passed, 3 cases
+including init/cleanup. Font-alias timing warnings occurred in parity and
+Sidebar runs; no setup retries occurred. Full suite did not run.
+`git diff --check` passed before commit. F1412 is accepted with this parity-
+test limitation; F1413 (Teacher delete) is current. Batch 5 remains unpushed
+until its remaining slices are complete.
+
+Commit: `318affc4a7f651e29ae7b7b909588739891476cd`.

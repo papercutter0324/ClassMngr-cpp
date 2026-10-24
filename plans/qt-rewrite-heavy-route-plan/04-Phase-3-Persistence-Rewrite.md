@@ -45,14 +45,15 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   the verified implementation tip is
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1412 (Teacher create) current. F1411 (Initial
-  Setup teacher choices read) is accepted at
-  `4b591e7cfe916b32982ece2877a22f0300fbc2e7`; focused verification passed.
-  Its 5 prioritized candidates remain in the current batch tracker. Batch 5
+  and Batch 5 is active with F1413 (Teacher delete) current. F1412 (Teacher
+  create) is accepted at
+  `318affc4a7f651e29ae7b7b909588739891476cd`; focused verification passed
+  with an Initial Setup parity test limitation. Its 4 prioritized candidates
+  remain in the current batch tracker. Batch 5
   remains unpushed until its remaining slices are complete. F1403 was
   limited to residual range projection and excluded F1341 availability/by-ID
   work and the existing WorkspaceStore-backed query/cache path.
-  F1376–F1411 implementation evidence, Batch 2 and Batch 3 push receipts, and
+  F1376–F1412 implementation evidence, Batch 2 and Batch 3 push receipts, and
   earlier UI limitations and attribution notes are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -72,32 +73,35 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1411 — 2026-10-24
+## Latest Progress Update — F1412 — 2026-10-24
 
-F1411 is accepted at `4b591e7cfe916b32982ece2877a22f0300fbc2e7`. Only the
-`ApplicationServicesInitialSetupTeacherChoicesReadPort` header and its direct
-Platform fixture moved from `DatabaseSession` to `WorkspaceStore`. The port
-retains its `ApplicationServices*` and resolves `workspaceStore()` on each
-read. TeacherRepository query/order and all returned fields remain unchanged:
-ID, Korean and English names, preferred romanization/name, and UTF-16 text.
-Unavailable store/repository returns recoverable `NotFound`; repository error
-or exception returns nonrecoverable `Technical`; invalid ID returns
-nonrecoverable `Validation`. Cursor failure returns no partial results.
-F1412 teacher create and F1413 teacher delete remain out of scope.
+F1412 is accepted at `318affc4a7f651e29ae7b7b909588739891476cd`. The
+`ApplicationServicesTeacherCreatePort` header now resolves `WorkspaceStore`
+dynamically during both preflight and create. Its direct Platform fixture and
+the dedicated `InitialSetupWizardTeacherCreateParityTests` fixture also use
+`WorkspaceStore`. Validation preflight order, the post-validation repository
+recheck, error categories/messages, `TeacherValidator` normalization, all 14
+field mappings, and `createTeacherWithWideId()` 64-bit behavior are
+preserved. F1411 teacher read and F1413 teacher delete remain separate.
 
-The Platform port, Application query, and Initial Setup wizard targets built
-incrementally without compiler warnings or errors. CTest #471 passed 8 QtTest
-cases and #469 passed 6. Six selected offscreen wizard slots passed, 8 cases
-including init/cleanup: `classDetailsShowsOrderedPreferredTeacherNamesAndSelectsSingleTeacher`,
-`classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty`,
-`personalDetailsRoutesToClassDetailsWhenTeachersExist`,
-`personalDetailsRoutesToTeacherEntryWhenNoTeachersExist`,
-`blankTeacherEntrySkipsWhenTeachersExist`, and
-`teacherChoiceReadFailuresBehaveAsEmptyWithoutWarnings`. One Sans Serif
-font-alias timing warning occurred; there were no retries or hangs. Full
-Initial Setup CTest and broader suite did not run. F1411 is accepted; F1412
-(Teacher create) is current with 5 prioritized candidates remaining. Batch 5
-remains unpushed until its remaining slices are complete.
+The Platform port, Application use case, Initial Setup teacher-create parity,
+and MainWindow sidebar-navigation parity targets built incrementally without
+compiler warnings or errors. CTest #480, the Platform port, passed 8 QtTest
+cases; #460, the Application use case, passed 6. CTest #77,
+`ClassMngrInitialSetupWizardTeacherCreateParityTests`, aborted after init
+passed when its first slot,
+`identityValidationKeepsFieldsAndPromptOrder`, started. An uncaught macOS
+`NSInvalidArgumentException` reported the exception text “NSBundle initWithURL: nil URL argument”; the stack passed through Qt `QWizard::page()/pixmap()` from
+`WizardFixture::open()`. This occurred before a behavior assertion; cause is
+undetermined. There was no retry. Remaining parity cases, including failed-
+write retry/field retention and Add Another, were not observed. The direct
+offscreen Sidebar slot
+`addTeacherActionPreservesRequiredNameValidationOutcome` passed, 3 cases
+including init/cleanup. Font-alias timing warnings occurred in parity and
+Sidebar runs; no setup retries occurred. Full suite did not run. `git
+diff --check` passed before commit. F1412 is accepted with this parity-test
+limitation; F1413 (Teacher delete) is current with 4 prioritized candidates
+remaining. Batch 5 remains unpushed until its remaining slices are complete.
 
 ## Objective
 
