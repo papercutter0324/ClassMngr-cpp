@@ -382,6 +382,7 @@ private slots:
     void databaseFailureRollsBackAllWrites();
     void incompleteCourseSignatureDoesNotMatch();
     void codecRejectsMalformedAndUnsupportedPackages();
+    void codecLoadFilePreservesOpenAndRootErrors();
     void requiredSuccessFixtureTraversesReviewAndPersistsResults();
     void successFixtureReplacesMatchingTeacherThroughReview();
     void successFixtureReplacesMatchingDestinationAndChildren();
@@ -465,6 +466,28 @@ void ClassTransferTests::jsonRoundTripPreservesCompletePackage()
     const auto loaded = ClassTransferJsonCodec::loadFile(path);
     QVERIFY2(loaded.has_value(),
              loaded ? "" : qPrintable(loaded.error()));
+    QCOMPARE(ClassTransferJsonCodec::toJson(*loaded),
+             ClassTransferJsonCodec::toJson(package));
+
+    QFile lfFile(path);
+    QVERIFY(lfFile.open(QIODevice::ReadOnly));
+    QByteArray crlfBytes = lfFile.readAll();
+    lfFile.close();
+    crlfBytes.replace("\r\n", "\n");
+    crlfBytes.replace("\n", "\r\n");
+
+    const QString crlfPath = directory.filePath(
+        QStringLiteral("roundtrip-crlf.classmngr-classes.json"));
+    QFile crlfFile(crlfPath);
+    QVERIFY(crlfFile.open(QIODevice::WriteOnly));
+    QCOMPARE(crlfFile.write(crlfBytes), crlfBytes.size());
+    crlfFile.close();
+
+    const auto crlfLoaded = ClassTransferJsonCodec::loadFile(crlfPath);
+    QVERIFY2(crlfLoaded.has_value(),
+             crlfLoaded ? "" : qPrintable(crlfLoaded.error()));
+    QCOMPARE(ClassTransferJsonCodec::toJson(*crlfLoaded),
+             ClassTransferJsonCodec::toJson(*loaded));
     QCOMPARE(loaded->version, ClassTransferPackage::CurrentVersion);
     QCOMPARE(loaded->teachers.size(), 1);
     QCOMPARE(loaded->classes.size(), 1);
@@ -2685,6 +2708,36 @@ void ClassTransferTests::codecRejectsMalformedAndUnsupportedPackages()
     QCOMPARE(unsupportedVersion.error(),
              QStringLiteral("Unsupported class package version: 99"));
 
+    const QByteArray unsupportedVersionBytes =
+        QJsonDocument(json).toJson(QJsonDocument::Indented);
+    QByteArray unsupportedVersionCrlfBytes = unsupportedVersionBytes;
+    unsupportedVersionCrlfBytes.replace("\r\n", "\n");
+    unsupportedVersionCrlfBytes.replace("\n", "\r\n");
+    const QString unsupportedVersionPath = directory.filePath(
+        QStringLiteral("unsupported-version.json"));
+    const QString unsupportedVersionCrlfPath = directory.filePath(
+        QStringLiteral("unsupported-version-crlf.json"));
+    QFile unsupportedVersionFile(unsupportedVersionPath);
+    QVERIFY(unsupportedVersionFile.open(QIODevice::WriteOnly));
+    QCOMPARE(unsupportedVersionFile.write(unsupportedVersionBytes),
+             unsupportedVersionBytes.size());
+    unsupportedVersionFile.close();
+    QFile unsupportedVersionCrlfFile(unsupportedVersionCrlfPath);
+    QVERIFY(unsupportedVersionCrlfFile.open(QIODevice::WriteOnly));
+    QCOMPARE(unsupportedVersionCrlfFile.write(unsupportedVersionCrlfBytes),
+             unsupportedVersionCrlfBytes.size());
+    unsupportedVersionCrlfFile.close();
+
+    const auto unsupportedVersionFromFile =
+        ClassTransferJsonCodec::loadFile(unsupportedVersionPath);
+    const auto unsupportedVersionFromCrlfFile =
+        ClassTransferJsonCodec::loadFile(unsupportedVersionCrlfPath);
+    QVERIFY(!unsupportedVersionFromFile.has_value());
+    QVERIFY(!unsupportedVersionFromCrlfFile.has_value());
+    QCOMPARE(unsupportedVersionFromFile.error(), unsupportedVersion.error());
+    QCOMPARE(unsupportedVersionFromCrlfFile.error(),
+             unsupportedVersionFromFile.error());
+
     json = ClassTransferJsonCodec::toJson(package);
     QJsonArray classes = json.value(QStringLiteral("classes")).toArray();
     QJsonObject firstClass = classes.first().toObject();
@@ -2693,6 +2746,44 @@ void ClassTransferTests::codecRejectsMalformedAndUnsupportedPackages()
     classes.replace(0, firstClass);
     json.insert(QStringLiteral("classes"), classes);
     QVERIFY(!ClassTransferJsonCodec::fromJson(json).has_value());
+}
+
+void ClassTransferTests::codecLoadFilePreservesOpenAndRootErrors()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString missingPath = directory.filePath(
+        QStringLiteral("missing.classmngr-classes.json"));
+    const auto missingFile = ClassTransferJsonCodec::loadFile(missingPath);
+    QVERIFY(!missingFile.has_value());
+    const QString openErrorPrefix =
+        QStringLiteral("Unable to open the class package:\n");
+    QVERIFY(missingFile.error().startsWith(openErrorPrefix));
+    QVERIFY(missingFile.error().size() > openErrorPrefix.size());
+
+    const QString emptyPath = directory.filePath(
+        QStringLiteral("empty.classmngr-classes.json"));
+    QFile emptyFile(emptyPath);
+    QVERIFY(emptyFile.open(QIODevice::WriteOnly));
+    emptyFile.close();
+
+    const auto emptyPackage = ClassTransferJsonCodec::loadFile(emptyPath);
+    QVERIFY(!emptyPackage.has_value());
+    QVERIFY(emptyPackage.error().startsWith(
+        QStringLiteral("The class package is not valid JSON:\n")));
+
+    const QString arrayRootPath = directory.filePath(
+        QStringLiteral("array-root.classmngr-classes.json"));
+    QFile arrayRootFile(arrayRootPath);
+    QVERIFY(arrayRootFile.open(QIODevice::WriteOnly));
+    QCOMPARE(arrayRootFile.write(QByteArrayLiteral("[]")), qint64(2));
+    arrayRootFile.close();
+
+    const auto arrayRoot = ClassTransferJsonCodec::loadFile(arrayRootPath);
+    QVERIFY(!arrayRoot.has_value());
+    QCOMPARE(arrayRoot.error(),
+             QStringLiteral("The class package root must be an object."));
 }
 
 void ClassTransferTests::previewPreservesQtNameAndCourseNormalization()

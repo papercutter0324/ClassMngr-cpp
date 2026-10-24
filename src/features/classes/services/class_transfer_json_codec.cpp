@@ -8,6 +8,8 @@
 #include <QSaveFile>
 #include <QSet>
 
+#include <limits>
+
 namespace
 {
 const QString FormatName = QStringLiteral("ClassMngr Classes");
@@ -1020,8 +1022,35 @@ Result<ClassTransferPackage> ClassTransferJsonCodec::loadFile(
     }
 
     QJsonParseError parseError;
-    const QJsonDocument document = QJsonDocument::fromJson(
-        file.readAll(), &parseError);
+    QJsonDocument document;
+    const qint64 fileSize = file.size();
+
+    if (fileSize > 0
+        && fileSize <= std::numeric_limits<qsizetype>::max())
+    {
+        uchar* const mappedData = file.map(0, fileSize);
+
+        if (mappedData)
+        {
+            {
+                const QByteArray mappedBytes = QByteArray::fromRawData(
+                    reinterpret_cast<const char*>(mappedData),
+                    static_cast<qsizetype>(fileSize)
+                    );
+                document = QJsonDocument::fromJson(mappedBytes, &parseError);
+            }
+
+            file.unmap(mappedData);
+        }
+        else
+        {
+            document = QJsonDocument::fromJson(file.readAll(), &parseError);
+        }
+    }
+    else
+    {
+        document = QJsonDocument::fromJson(file.readAll(), &parseError);
+    }
 
     if (parseError.error != QJsonParseError::NoError)
     {
