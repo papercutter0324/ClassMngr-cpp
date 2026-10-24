@@ -2,7 +2,6 @@
 
 #include "app/services/feature_services.h"
 #include "academic_calendar_event_parser.h"
-#include "calendar_workbook_reader.h"
 #include "core/application_services.h"
 #include "core/startup_profiler.h"
 #include "next/application/calendar_event_import_count.h"
@@ -232,53 +231,20 @@ void CalendarEventImportService::handleFinished(
         );
 
     QString errorMessage;
-    CalendarImport::ParsedCalendarImport parsed;
-    int workbookCellCount = 0;
-    int workbookMergedRangeCount = 0;
-    int workbookSheetCount = 0;
-    int workbookSharedStringCount = 0;
-    int workbookStyleCount = 0;
-    bool firstWorksheet = true;
-    const bool workbookParsed =
-        CalendarImport::forEachWorksheet(
+    const ClassMngr::Next::Platform::
+        CalendarEventImportCampusCodeQueryAdapter campusCodeQueryAdapter;
+    const ClassMngr::Next::Application::
+        CalendarEventImportCampusCodeQueryPort& campusCodeQueryPort =
+            campusCodeQueryAdapter;
+    CalendarImport::CalendarWorkbookReadCounts readCounts;
+    CalendarImport::ParsedCalendarImport parsed =
+        CalendarImport::parseCalendarEventsFromWorkbookBytes(
             workbookData,
-            [&parsed,
-             &workbookCellCount,
-             &workbookMergedRangeCount,
-             &workbookSheetCount,
-             &workbookSharedStringCount,
-             &workbookStyleCount,
-             &firstWorksheet](
-                const CalendarImport::WorkbookMetadata& metadata,
-                const CalendarImport::Worksheet& worksheet
-                )
-            {
-                ++workbookSheetCount;
-                workbookCellCount += worksheet.cells.size();
-                workbookMergedRangeCount += worksheet.mergedRanges.size();
-                if (firstWorksheet)
-                {
-                    workbookSharedStringCount =
-                        metadata.sharedStrings.size();
-                    workbookStyleCount = metadata.styles.size();
-                    const ClassMngr::Next::Platform::
-                        CalendarEventImportCampusCodeQueryAdapter
-                            campusCodeQueryAdapter;
-                    const ClassMngr::Next::Application::
-                        CalendarEventImportCampusCodeQueryPort&
-                            campusCodeQueryPort = campusCodeQueryAdapter;
-                    parsed =
-                        CalendarImport::parseCalendarEventsFromWorksheet(
-                            metadata,
-                            worksheet,
-                            calendarImportCampusCodes(campusCodeQueryPort)
-                            );
-                    firstWorksheet = false;
-                }
-                return true;
-            },
-            &errorMessage
+            calendarImportCampusCodes(campusCodeQueryPort),
+            &errorMessage,
+            &readCounts
             );
+    const bool workbookParsed = errorMessage.isEmpty();
 
     workbookData.clear();
     workbookData.squeeze();
@@ -292,11 +258,11 @@ void CalendarEventImportService::handleFinished(
     }
 
     StartupProfiler::recordCalendarImportWorkbookParsed(
-        workbookSheetCount,
-        workbookCellCount,
-        workbookMergedRangeCount,
-        workbookSharedStringCount,
-        workbookStyleCount
+        readCounts.worksheetCount,
+        readCounts.cellCount,
+        readCounts.mergedRangeCount,
+        readCounts.sharedStringCount,
+        readCounts.styleCount
         );
 
     StartupProfiler::recordCalendarImportEventsPrepared(

@@ -4,6 +4,7 @@
 #include "next/application/calendar_event_import_signature.h"
 #include "next/application/calendar_event_import_count.h"
 
+#include <QByteArray>
 #include <QList>
 #include <QStringList>
 
@@ -19,9 +20,25 @@ struct ParsedCalendarImport
     ClassMngr::Next::Application::CalendarEventImportCount skippedCount;
 };
 
+struct CalendarWorkbookReadCounts
+{
+    int worksheetCount = 0;
+    int cellCount = 0;
+    int mergedRangeCount = 0;
+    int sharedStringCount = 0;
+    int styleCount = 0;
+};
+
 ParsedCalendarImport parseCalendarEventsFromWorkbook(
     const Workbook& workbook,
     const QStringList& campusCodes = {}
+    );
+
+ParsedCalendarImport parseCalendarEventsFromWorkbookBytes(
+    const QByteArray& data,
+    const QStringList& campusCodes,
+    QString* errorMessage,
+    CalendarWorkbookReadCounts* readCounts = nullptr
     );
 
 ParsedCalendarImport parseCalendarEventsFromWorksheet(

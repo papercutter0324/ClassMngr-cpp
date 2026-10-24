@@ -120,6 +120,21 @@ struct WorkbookMetadata
     QVector<Style> styles;
 };
 
+using WorksheetRowConsumer = std::function<bool(
+    const QVector<Cell>& row
+    )>;
+
+using WorksheetRowPass = std::function<bool(
+    const WorksheetRowConsumer& consumer
+    )>;
+
+using WorksheetStreamConsumer = std::function<bool(
+    const WorkbookMetadata& metadata,
+    const Worksheet& worksheet,
+    const WorksheetRowPass& discoveryPass,
+    const WorksheetRowPass& extractionPass
+    )>;
+
 using WorksheetConsumer = std::function<bool(
     const WorkbookMetadata& metadata,
     const Worksheet& worksheet
@@ -142,6 +157,18 @@ Workbook parseWorkbook(
 bool forEachWorksheet(
     const QByteArray& data,
     const WorksheetConsumer& consumer,
+    QString* errorMessage
+    );
+
+// Calls the consumer once per worksheet. Its two row passes parse the sheet
+// through a fixed-size ZIP input buffer and deliver one valued row at a time.
+// The discovery pass also collects merged ranges; they are complete before
+// the extraction pass begins. Worksheet::cells remains empty. Each row and
+// its cells are valid only for the duration of that row callback. Both passes
+// must be consumed, in order, for the worksheet to succeed.
+bool forEachWorksheetRows(
+    const QByteArray& data,
+    const WorksheetStreamConsumer& consumer,
     QString* errorMessage
     );
 }

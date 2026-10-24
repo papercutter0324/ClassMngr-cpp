@@ -6,6 +6,7 @@
 #include "features/teacher/import/teacher_import_name_utils.h"
 
 #include <QHash>
+#include <QMap>
 #include <QObject>
 #include <QRegularExpression>
 #include <QSet>
@@ -1264,53 +1265,138 @@ Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
     QString errorMessage;
     ScheduleImportWorkbook result;
     const bool readSucceeded =
-        CalendarImport::forEachWorksheet(
+        CalendarImport::forEachWorksheetRows(
             data,
             [&result, kind](
                 const CalendarImport::WorkbookMetadata& metadata,
-                const CalendarImport::Worksheet& worksheet
+                const CalendarImport::Worksheet& worksheet,
+                const CalendarImport::WorksheetRowPass& discoveryPass,
+                const CalendarImport::WorksheetRowPass& extractionPass
                 )
             {
                 ScheduleImportSheet sheet;
                 sheet.name = worksheet.name;
                 sheet.visible = worksheet.visible;
 
-                QHash<CalendarImport::CellPosition, const CalendarImport::Cell*> cells;
-                for (const CalendarImport::Cell& cell : worksheet.cells)
+                if (!discoveryPass({}))
                 {
-                    cells.insert(
-                        cell.position,
-                        &cell
-                        );
+                    return false;
                 }
 
-                for (const CalendarImport::Cell& cell : worksheet.cells)
+                QMap<int, QVector<CalendarImport::Cell>> recentRows;
+                QVector<CalendarImport::Cell> pendingHeaders;
+
+                const auto appendReadyHeaders =
+                    [&](int latestRow, bool flushAll)
+                    {
+                        QHash<
+                            CalendarImport::CellPosition,
+                            const CalendarImport::Cell*
+                            > windowCells;
+                        for (auto row = recentRows.cbegin();
+                             row != recentRows.cend();
+                             ++row)
+                        {
+                            for (const CalendarImport::Cell& cell : row.value())
+                            {
+                                windowCells.insert(cell.position, &cell);
+                            }
+                        }
+
+                        int readyCount = 0;
+                        while (readyCount < pendingHeaders.size())
+                        {
+                            const CalendarImport::Cell& header =
+                                pendingHeaders[readyCount];
+                            if (
+                                !flushAll
+                                && latestRow < header.position.row + 20
+                                )
+                            {
+                                break;
+                            }
+
+                            ScheduleImportUserBlock block =
+                                parseBlock(
+                                    worksheet,
+                                    metadata.styles,
+                                    windowCells,
+                                    header,
+                                    kind
+                                    );
+
+                            if (!block.classes.isEmpty())
+                            {
+                                sheet.users.append(block);
+                            }
+                            else if (!block.diagnostics.isEmpty())
+                            {
+                                sheet.diagnostics.append(block.diagnostics);
+                            }
+                            ++readyCount;
+                        }
+                        if (readyCount > 0)
+                        {
+                            pendingHeaders.erase(
+                                pendingHeaders.begin(),
+                                pendingHeaders.begin() + readyCount
+                                );
+                        }
+                    };
+
+                const bool rowsSucceeded = extractionPass(
+                    [&](const QVector<CalendarImport::Cell>& row)
+                    {
+                        if (row.isEmpty())
+                        {
+                            return true;
+                        }
+
+                        const int rowNumber = row.first().position.row;
+                        recentRows.insert(rowNumber, row);
+
+                        QHash<
+                            CalendarImport::CellPosition,
+                            const CalendarImport::Cell*
+                            > currentRowCells;
+                        for (const CalendarImport::Cell& cell : row)
+                        {
+                            currentRowCells.insert(cell.position, &cell);
+                        }
+
+                        for (const CalendarImport::Cell& cell : row)
+                        {
+                            if (validHeader(cell, currentRowCells))
+                            {
+                                pendingHeaders.append(cell);
+                            }
+                        }
+
+                        appendReadyHeaders(rowNumber, false);
+
+                        const int oldestRetainedRow = rowNumber - 20;
+                        auto expired = recentRows.begin();
+                        while (
+                            expired != recentRows.end()
+                            && expired.key() < oldestRetainedRow
+                            )
+                        {
+                            expired = recentRows.erase(expired);
+                        }
+                        return true;
+                    }
+                    );
+                if (!rowsSucceeded)
                 {
-                    if (!validHeader(cell, cells))
-                    {
-                        continue;
-                    }
-
-                    ScheduleImportUserBlock block =
-                        parseBlock(
-                            worksheet,
-                            metadata.styles,
-                            cells,
-                            cell,
-                            kind
-                            );
-
-                    if (!block.classes.isEmpty())
-                    {
-                        sheet.users.append(block);
-                    }
-                    else if (!block.diagnostics.isEmpty())
-                    {
-                        sheet.diagnostics.append(
-                            block.diagnostics
-                            );
-                    }
+                    return false;
                 }
+
+                appendReadyHeaders(
+                    recentRows.isEmpty()
+                        ? 0
+                        : recentRows.lastKey(),
+                    true
+                    );
 
                 result.sheets.append(std::move(sheet));
                 return true;

@@ -43,6 +43,7 @@ class ScheduleImportTests : public QObject
 
 private slots:
     void parsesUsersMergesAndDiagnostics();
+    void streamsScheduleHeaderWithTwentyRowLookaheadAndMerge();
     void streamsWorksheetsInWorkbookOrder();
     void readerPreservesMissingAndAllEmptyWorkbookErrors();
     void readerStreamsSharedStringsAndRejectsNoWorksheets();
@@ -849,6 +850,83 @@ void ScheduleImportTests::parsesUsersMergesAndDiagnostics()
             ),
         QStringLiteral("alicejones")
         );
+}
+
+void ScheduleImportTests::
+streamsScheduleHeaderWithTwentyRowLookaheadAndMerge()
+{
+    QByteArray sheet = QByteArrayLiteral(
+        "<worksheet><sheetData><row r=\"1\">"
+        "<c r=\"A1\" t=\"inlineStr\"><is><t>Alice</t></is></c>"
+        "<c r=\"B1\" t=\"inlineStr\"><is><t>월(MON)</t></is></c>"
+        "<c r=\"C1\" t=\"inlineStr\"><is><t>화(TUE)</t></is></c>"
+        "<c r=\"D1\" t=\"inlineStr\"><is><t>수(WED)</t></is></c>"
+        "<c r=\"E1\" t=\"inlineStr\"><is><t>목(THU)</t></is></c>"
+        "<c r=\"F1\" t=\"inlineStr\"><is><t>금(FRI)</t></is></c>"
+        "</row>"
+        );
+    for (int row = 2; row <= 21; ++row)
+    {
+        sheet.append(
+            QByteArrayLiteral("<row r=\"")
+            + QByteArray::number(row)
+            + QByteArrayLiteral("\"><c r=\"A")
+            + QByteArray::number(row)
+            + QByteArrayLiteral("\" t=\"inlineStr\"><is><t>")
+            + (row == 3
+                ? QByteArrayLiteral("5:00~5:55")
+                : QByteArrayLiteral("4:00~4:55"))
+            + QByteArrayLiteral("</t></is></c>")
+            );
+        if (row == 2)
+        {
+            sheet.append(
+                QByteArrayLiteral(
+                    "<c r=\"B2\" t=\"inlineStr\"><is><t>홍길동TR (413)&#10;E5-Zeus</t></is></c>"
+                    )
+                );
+        }
+        else if (row == 21)
+        {
+            sheet.append(
+                QByteArrayLiteral(
+                    "<c r=\"B21\" t=\"inlineStr\"><is><t>김하늘 (414)&#10;E5-Apollo</t></is></c>"
+                    )
+                );
+        }
+        sheet.append(QByteArrayLiteral("</row>"));
+    }
+    sheet.append(
+        QByteArrayLiteral(
+            "</sheetData><mergeCells><mergeCell ref=\"B2:B3\"/>"
+            "</mergeCells></worksheet>"
+            )
+        );
+
+    const auto parsed = parseScheduleImportWorkbook(
+        singleSheetWorkbookData(sheet),
+        ScheduleImportKind::Normal
+        );
+    QVERIFY2(
+        parsed.has_value(),
+        parsed.has_value() ? "" : qPrintable(parsed.error())
+        );
+    QCOMPARE(parsed->sheets.size(), 1);
+    QCOMPARE(parsed->sheets.first().users.size(), 1);
+    const ScheduleImportUserBlock& user =
+        parsed->sheets.first().users.first();
+    QCOMPARE(user.headerCell, QStringLiteral("A1"));
+    QCOMPARE(user.classes.size(), 2);
+    QCOMPARE(user.classes[0].sourceCells, QStringList{QStringLiteral("B2")});
+    QCOMPARE(user.classes[0].times.size(), 1);
+    QCOMPARE(user.classes[0].times.first().day, QStringLiteral("Monday"));
+    QCOMPARE(user.classes[0].times.first().startTime, QStringLiteral("4:00 PM"));
+    QCOMPARE(user.classes[0].times.first().endTime, QStringLiteral("5:55 PM"));
+    QCOMPARE(user.classes[1].sourceCells, QStringList{QStringLiteral("B21")});
+    QCOMPARE(user.classes[1].times.size(), 1);
+    QCOMPARE(user.classes[1].times.first().day, QStringLiteral("Monday"));
+    QCOMPARE(user.classes[1].times.first().startTime, QStringLiteral("4:00 PM"));
+    QCOMPARE(user.classes[1].times.first().endTime, QStringLiteral("4:55 PM"));
 }
 
 void ScheduleImportTests::streamsWorksheetsInWorkbookOrder()

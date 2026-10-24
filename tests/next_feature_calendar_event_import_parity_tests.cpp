@@ -80,8 +80,68 @@ class NextFeatureCalendarEventImportParityTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void boundedCalendarParserMatchesGoldenFixture();
     void productionImportPathMatchesLegacyGoldenFixture();
 };
+
+void NextFeatureCalendarEventImportParityTests::
+boundedCalendarParserMatchesGoldenFixture()
+{
+    QFile fixtureFile(workbookFixturePath());
+    QVERIFY2(
+        fixtureFile.open(QIODevice::ReadOnly),
+        qPrintable(QStringLiteral("Required calendar parity fixture is missing: %1")
+            .arg(fixtureFile.fileName()))
+        );
+    const QByteArray workbookBytes = fixtureFile.readAll();
+    QVERIFY(!workbookBytes.isEmpty());
+
+    QString workbookError;
+    const CalendarImport::Workbook workbook =
+        CalendarImport::parseWorkbook(workbookBytes, &workbookError);
+    QVERIFY2(workbookError.isEmpty(), qPrintable(workbookError));
+
+    const CalendarImport::ParsedCalendarImport buffered =
+        CalendarImport::parseCalendarEventsFromWorkbook(workbook);
+    QCOMPARE(buffered.events.size(), 4);
+    QCOMPARE(buffered.skippedCount.rawValue(), 1);
+
+    QString streamingError;
+    CalendarImport::CalendarWorkbookReadCounts readCounts;
+    const CalendarImport::ParsedCalendarImport streamed =
+        CalendarImport::parseCalendarEventsFromWorkbookBytes(
+            workbookBytes,
+            {},
+            &streamingError,
+            &readCounts
+            );
+    QVERIFY2(streamingError.isEmpty(), qPrintable(streamingError));
+    int expectedCellCount = 0;
+    int expectedMergedRangeCount = 0;
+    for (const CalendarImport::Worksheet& worksheet : workbook.worksheets)
+    {
+        expectedCellCount += static_cast<int>(worksheet.cells.size());
+        expectedMergedRangeCount +=
+            static_cast<int>(worksheet.mergedRanges.size());
+    }
+    QCOMPARE(readCounts.worksheetCount, workbook.worksheets.size());
+    QCOMPARE(readCounts.cellCount, expectedCellCount);
+    QCOMPARE(readCounts.mergedRangeCount, expectedMergedRangeCount);
+    QCOMPARE(readCounts.sharedStringCount, workbook.sharedStrings.size());
+    QCOMPARE(readCounts.styleCount, workbook.styles.size());
+    QCOMPARE(streamed.events.size(), buffered.events.size());
+    QCOMPARE(
+        streamed.skippedCount.rawValue(),
+        buffered.skippedCount.rawValue()
+        );
+    for (qsizetype index = 0; index < buffered.events.size(); ++index)
+    {
+        QCOMPARE(
+            legacySignature(streamed.events.at(index)),
+            legacySignature(buffered.events.at(index))
+            );
+    }
+}
 
 void NextFeatureCalendarEventImportParityTests::
 productionImportPathMatchesLegacyGoldenFixture()
@@ -122,6 +182,27 @@ productionImportPathMatchesLegacyGoldenFixture()
             QStringLiteral("DYB Workshop|Workshop|2026-07-06|2026-07-06|0|Unknown")
         };
     QCOMPARE(actualParsedSignatures, expectedParsedSignatures);
+
+    QString boundedReaderError;
+    const CalendarImport::ParsedCalendarImport boundedParse =
+        CalendarImport::parseCalendarEventsFromWorkbookBytes(
+            workbookBytes,
+            {},
+            &boundedReaderError
+            );
+    QVERIFY2(boundedReaderError.isEmpty(), qPrintable(boundedReaderError));
+    QCOMPARE(
+        boundedParse.skippedCount.rawValue(),
+        parsed.skippedCount.rawValue()
+        );
+    QCOMPARE(boundedParse.events.size(), parsed.events.size());
+    for (qsizetype index = 0; index < parsed.events.size(); ++index)
+    {
+        QCOMPARE(
+            legacySignature(boundedParse.events.at(index)),
+            expectedParsedSignatures.at(index)
+            );
+    }
 
     CalendarImport::ParsedCalendarImport streamedParse;
     bool firstWorksheet = true;

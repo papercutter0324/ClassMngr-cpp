@@ -7,6 +7,7 @@
 
 #include <zlib.h>
 
+#include <algorithm>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -199,7 +200,8 @@ QByteArray zipArchive(
 }
 
 QByteArray calendarWorksheetXml(
-    bool populated
+    bool populated,
+    const QByteArray& legendLabel = QByteArrayLiteral("New Semester")
     )
 {
     if (!populated)
@@ -209,20 +211,24 @@ QByteArray calendarWorksheetXml(
             );
     }
 
-    return QByteArrayLiteral(
+    QByteArray worksheet = QByteArrayLiteral(
         "<worksheet><sheetData>"
         "<row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>JULY</t></is></c>"
         "<c r=\"B1\" t=\"inlineStr\"><is><t>2026</t></is></c></row>"
         "<row r=\"4\"><c r=\"A4\" s=\"1\" t=\"inlineStr\"><is><t>6</t></is></c></row>"
         "<row r=\"20\"><c r=\"Z20\" s=\"1\" t=\"inlineStr\"><is><t>New Semester</t></is></c></row>"
-        "</sheetData></worksheet>"
+        "</sheetData><mergeCells><mergeCell ref=\"A1:B1\"/></mergeCells></worksheet>"
         );
+    worksheet.replace(QByteArrayLiteral("New Semester"), legendLabel);
+    return worksheet;
 }
 
 QByteArray calendarWorkbookArchive(
     int worksheetCount,
     bool populatedWorksheets,
-    bool omitLastWorksheet
+    bool omitLastWorksheet,
+    bool malformedLastWorksheet = false,
+    const QVector<QByteArray>& worksheetXmlContents = {}
     )
 {
     QByteArray workbookXml = QByteArrayLiteral("<workbook><sheets>");
@@ -247,10 +253,20 @@ QByteArray calendarWorkbookArchive(
             );
         if (!(omitLastWorksheet && index == worksheetCount - 1))
         {
+            QByteArray worksheetContents = index < worksheetXmlContents.size()
+                ? worksheetXmlContents[index]
+                : calendarWorksheetXml(populatedWorksheets);
+            if (malformedLastWorksheet && index == worksheetCount - 1)
+            {
+                worksheetContents = QByteArrayLiteral(
+                    "<worksheet><sheetData><row r=\"1\"><c r=\"A1\" "
+                    "t=\"inlineStr\"><is><t>Broken"
+                    );
+            }
             files.append({
                 QByteArrayLiteral("xl/worksheets/sheet") + suffix
                     + QByteArrayLiteral(".xml"),
-                calendarWorksheetXml(populatedWorksheets)
+                worksheetContents
             });
         }
     }
@@ -267,6 +283,12 @@ QByteArray calendarWorkbookArchive(
     });
     if (populatedWorksheets)
     {
+        files.append({
+            QByteArrayLiteral("xl/sharedStrings.xml"),
+            QByteArrayLiteral(
+                "<sst><si><t>unused shared string</t></si></sst>"
+                )
+        });
         files.append({
             QByteArrayLiteral("xl/styles.xml"),
             QByteArrayLiteral(
@@ -348,6 +370,13 @@ private slots:
     void readerRejectsUnreadableWorkbook();
     void readerRejectsMalformedLaterWorksheetAndAllEmptyWorkbook();
     void readerPreservesStoredAndDeflatedWorkbookValuesAfterInputLifetime();
+    void readerStreamsStoredAndDeflatedWorksheetRows();
+    void readerStreamingPreservesCancellationAndLaterSheetFailure();
+    void calendarByteParserUsesFirstWorksheetAndReportsReadCounts();
+    void calendarByteParserDoesNotImportDistinctLaterWorksheetEvents();
+    void calendarByteParserDiscardsPartialResultOnLaterSheetFailure_data();
+    void calendarByteParserDiscardsPartialResultOnLaterSheetFailure();
+    void calendarByteParserDiscardsSkippedCountOnLaterSheetFailure();
     void cellPositionsEnforceWorksheetBoundsAndHashByPair();
     void cellRangesAreTypedInclusiveAndRejectInvalidEndpoints();
     void readerSkipsMalformedMergedRangesAndPreservesValidBoundaries();
@@ -563,6 +592,430 @@ void CalendarImportTests
         deflatedSheet.mergedRanges.first().last,
         storedSheet.mergedRanges.first().last
         );
+}
+
+void CalendarImportTests::readerStreamsStoredAndDeflatedWorksheetRows()
+{
+    const QByteArray worksheetXml = QByteArrayLiteral(
+        "<worksheet><sheetData>"
+        "<row r=\"1\"><c r=\"A1\" t=\"inlineStr\">"
+        "<is><t xml:space=\"preserve\"> First &amp; final </t></is></c></row>"
+        "<row r=\"1048576\"><c r=\"A1048576\" s=\"2\" t=\"inlineStr\">"
+        "<is><t>Spring</t></is></c></row>"
+        "</sheetData><mergeCells><mergeCell ref=\"A1:B2\"/></mergeCells></worksheet>"
+        );
+
+    const auto streamRows =
+        [&](const QByteArray& data,
+            QVector<QVector<CalendarImport::Cell>>* discoveryRows,
+            QVector<QVector<CalendarImport::Cell>>* extractionRows,
+            bool* extractionSawMerges)
+        {
+            QString error;
+            const bool succeeded = CalendarImport::forEachWorksheetRows(
+                data,
+                [&](
+                    const CalendarImport::WorkbookMetadata&,
+                    const CalendarImport::Worksheet& worksheet,
+                    const CalendarImport::WorksheetRowPass& discoveryPass,
+                    const CalendarImport::WorksheetRowPass& extractionPass
+                    )
+                {
+                    if (!worksheet.cells.isEmpty())
+                    {
+                        return false;
+                    }
+                    if (!discoveryPass(
+                            [discoveryRows](
+                                const QVector<CalendarImport::Cell>& row
+                                )
+                            {
+                                discoveryRows->append(row);
+                                return true;
+                            }
+                            ))
+                    {
+                        return false;
+                    }
+                    if (
+                        worksheet.mergedRanges.size() != 1
+                        || worksheet.mergedRanges.first().first
+                            != CalendarImport::CellPosition{1, 1}
+                        )
+                    {
+                        return false;
+                    }
+                    *extractionSawMerges = true;
+                    return extractionPass(
+                        [extractionRows](
+                            const QVector<CalendarImport::Cell>& row
+                            )
+                        {
+                            extractionRows->append(row);
+                            return true;
+                        }
+                        );
+                },
+                &error
+                );
+            QVERIFY2(succeeded, qPrintable(error));
+            QVERIFY(error.isEmpty());
+        };
+
+    QVector<QVector<CalendarImport::Cell>> storedDiscoveryRows;
+    QVector<QVector<CalendarImport::Cell>> storedExtractionRows;
+    bool storedSawMerges = false;
+    streamRows(
+        singleSheetWorkbookArchive(worksheetXml, true),
+        &storedDiscoveryRows,
+        &storedExtractionRows,
+        &storedSawMerges
+        );
+    QVector<QVector<CalendarImport::Cell>> deflatedDiscoveryRows;
+    QVector<QVector<CalendarImport::Cell>> deflatedExtractionRows;
+    bool deflatedSawMerges = false;
+    streamRows(
+        singleSheetWorkbookArchive(worksheetXml, true, true),
+        &deflatedDiscoveryRows,
+        &deflatedExtractionRows,
+        &deflatedSawMerges
+        );
+
+    QVERIFY(storedSawMerges);
+    QVERIFY(deflatedSawMerges);
+    QCOMPARE(storedDiscoveryRows.size(), 2);
+    QCOMPARE(storedExtractionRows.size(), storedDiscoveryRows.size());
+    QCOMPARE(deflatedDiscoveryRows.size(), storedDiscoveryRows.size());
+    QCOMPARE(deflatedExtractionRows.size(), storedExtractionRows.size());
+    for (int rowIndex = 0; rowIndex < storedDiscoveryRows.size(); ++rowIndex)
+    {
+        const auto& stored = storedDiscoveryRows[rowIndex];
+        const auto& deflated = deflatedDiscoveryRows[rowIndex];
+        QCOMPARE(deflated.size(), stored.size());
+        QCOMPARE(storedExtractionRows[rowIndex].size(), stored.size());
+        QCOMPARE(deflatedExtractionRows[rowIndex].size(), stored.size());
+        for (int cellIndex = 0; cellIndex < stored.size(); ++cellIndex)
+        {
+            const CalendarImport::Cell& expected = stored[cellIndex];
+            const CalendarImport::Cell& actual = deflated[cellIndex];
+            QCOMPARE(actual.position, expected.position);
+            QCOMPARE(actual.style, expected.style);
+            QCOMPARE(actual.value, expected.value);
+            QCOMPARE(actual.note, expected.note);
+            QCOMPARE(storedExtractionRows[rowIndex][cellIndex].value, expected.value);
+            QCOMPARE(deflatedExtractionRows[rowIndex][cellIndex].value, expected.value);
+        }
+    }
+    QCOMPARE(
+        storedDiscoveryRows.last().first().position,
+        (CalendarImport::CellPosition{1048576, 1})
+        );
+    QCOMPARE(storedDiscoveryRows.last().first().note, QStringLiteral("Campus: BDG"));
+}
+
+void CalendarImportTests
+    ::readerStreamingPreservesCancellationAndLaterSheetFailure()
+{
+    QString cancellationError;
+    int cancellationCallbacks = 0;
+    const bool cancellationSucceeded =
+        CalendarImport::forEachWorksheetRows(
+            calendarWorkbookArchive(1, true, false),
+            [&cancellationCallbacks](
+                const CalendarImport::WorkbookMetadata&,
+                const CalendarImport::Worksheet&,
+                const CalendarImport::WorksheetRowPass& discoveryPass,
+                const CalendarImport::WorksheetRowPass& extractionPass
+                )
+            {
+                ++cancellationCallbacks;
+                const bool discoverySucceeded = discoveryPass({});
+                const bool extractionSucceeded = extractionPass(
+                    [](const QVector<CalendarImport::Cell>&)
+                    {
+                        return false;
+                    }
+                    );
+                return discoverySucceeded && extractionSucceeded;
+            },
+            &cancellationError
+            );
+    QVERIFY(!cancellationSucceeded);
+    QCOMPARE(cancellationCallbacks, 1);
+    QCOMPARE(
+        cancellationError,
+        QStringLiteral("The downloaded spreadsheet could not be read.")
+        );
+
+    QString laterSheetError;
+    int completedWorksheets = 0;
+    int completedPasses = 0;
+    const bool laterSheetSucceeded =
+        CalendarImport::forEachWorksheetRows(
+            calendarWorkbookArchive(2, true, true),
+            [&completedWorksheets, &completedPasses](
+                const CalendarImport::WorkbookMetadata&,
+                const CalendarImport::Worksheet&,
+                const CalendarImport::WorksheetRowPass& discoveryPass,
+                const CalendarImport::WorksheetRowPass& extractionPass
+                )
+            {
+                ++completedWorksheets;
+                const bool discoverySucceeded = discoveryPass({});
+                const bool extractionSucceeded = extractionPass({});
+                completedPasses +=
+                    static_cast<int>(discoverySucceeded)
+                    + static_cast<int>(extractionSucceeded);
+                return discoverySucceeded && extractionSucceeded;
+            },
+            &laterSheetError
+            );
+    QVERIFY(!laterSheetSucceeded);
+    QCOMPARE(completedWorksheets, 1);
+    QCOMPARE(completedPasses, 2);
+    QCOMPARE(
+        laterSheetError,
+        QStringLiteral("The spreadsheet is missing worksheet Later.")
+        );
+}
+
+void CalendarImportTests
+    ::calendarByteParserUsesFirstWorksheetAndReportsReadCounts()
+{
+    const QByteArray data = calendarWorkbookArchive(2, true, false);
+    QString bufferedError;
+    const CalendarImport::Workbook bufferedWorkbook =
+        CalendarImport::parseWorkbook(data, &bufferedError);
+    QVERIFY2(bufferedError.isEmpty(), qPrintable(bufferedError));
+    QCOMPARE(bufferedWorkbook.worksheets.size(), 2);
+
+    const CalendarImport::ParsedCalendarImport buffered =
+        CalendarImport::parseCalendarEventsFromWorkbook(bufferedWorkbook);
+    QCOMPARE(buffered.events.size(), 1);
+
+    QString streamingError;
+    CalendarImport::CalendarWorkbookReadCounts readCounts;
+    const CalendarImport::ParsedCalendarImport streamed =
+        CalendarImport::parseCalendarEventsFromWorkbookBytes(
+            data,
+            {},
+            &streamingError,
+            &readCounts
+            );
+    QVERIFY2(streamingError.isEmpty(), qPrintable(streamingError));
+    QCOMPARE(streamed.events.size(), buffered.events.size());
+    QCOMPARE(
+        streamed.skippedCount.rawValue(),
+        buffered.skippedCount.rawValue()
+        );
+    for (qsizetype index = 0; index < buffered.events.size(); ++index)
+    {
+        const CalendarEvent& expected = buffered.events[index];
+        const CalendarEvent& actual = streamed.events[index];
+        QCOMPARE(actual.title, expected.title);
+        QCOMPARE(actual.eventType, expected.eventType);
+        QCOMPARE(actual.startDate, expected.startDate);
+        QCOMPARE(actual.endDate, expected.endDate);
+        QCOMPARE(actual.allDay, expected.allDay);
+        QCOMPARE(actual.timeStatus, expected.timeStatus);
+    }
+
+    int expectedCellCount = 0;
+    int expectedMergedRangeCount = 0;
+    for (const CalendarImport::Worksheet& worksheet :
+         bufferedWorkbook.worksheets)
+    {
+        expectedCellCount += static_cast<int>(worksheet.cells.size());
+        expectedMergedRangeCount +=
+            static_cast<int>(worksheet.mergedRanges.size());
+    }
+    QCOMPARE(readCounts.worksheetCount, bufferedWorkbook.worksheets.size());
+    QCOMPARE(readCounts.cellCount, expectedCellCount);
+    QCOMPARE(readCounts.mergedRangeCount, expectedMergedRangeCount);
+    QCOMPARE(readCounts.sharedStringCount, bufferedWorkbook.sharedStrings.size());
+    QCOMPARE(readCounts.styleCount, bufferedWorkbook.styles.size());
+    QCOMPARE(readCounts.cellCount, 8);
+    QCOMPARE(readCounts.mergedRangeCount, 2);
+    QCOMPARE(readCounts.sharedStringCount, 1);
+    QCOMPARE(readCounts.styleCount, 2);
+}
+
+void CalendarImportTests::
+calendarByteParserDoesNotImportDistinctLaterWorksheetEvents()
+{
+    const QVector<QByteArray> worksheetXmlContents{
+        calendarWorksheetXml(true, QByteArrayLiteral("First Only")),
+        calendarWorksheetXml(true, QByteArrayLiteral("Later Only"))
+    };
+    const QByteArray data = calendarWorkbookArchive(
+        2,
+        true,
+        false,
+        false,
+        worksheetXmlContents
+        );
+
+    QString bufferedError;
+    const CalendarImport::Workbook bufferedWorkbook =
+        CalendarImport::parseWorkbook(data, &bufferedError);
+    QVERIFY2(bufferedError.isEmpty(), qPrintable(bufferedError));
+    const CalendarImport::ParsedCalendarImport buffered =
+        CalendarImport::parseCalendarEventsFromWorkbook(bufferedWorkbook);
+    QVERIFY(!buffered.events.isEmpty());
+    QVERIFY(std::any_of(
+        buffered.events.cbegin(),
+        buffered.events.cend(),
+        [](const CalendarEvent& event)
+        {
+            return event.title == QStringLiteral("First Only");
+        }
+        ));
+    QVERIFY(std::none_of(
+        buffered.events.cbegin(),
+        buffered.events.cend(),
+        [](const CalendarEvent& event)
+        {
+            return event.title == QStringLiteral("Later Only");
+        }
+        ));
+
+    QString streamingError;
+    CalendarImport::CalendarWorkbookReadCounts readCounts;
+    const CalendarImport::ParsedCalendarImport streamed =
+        CalendarImport::parseCalendarEventsFromWorkbookBytes(
+            data,
+            {},
+            &streamingError,
+            &readCounts
+            );
+    QVERIFY2(streamingError.isEmpty(), qPrintable(streamingError));
+    QCOMPARE(streamed.events.size(), buffered.events.size());
+    QCOMPARE(
+        streamed.skippedCount.rawValue(),
+        buffered.skippedCount.rawValue()
+        );
+    QVERIFY(std::any_of(
+        streamed.events.cbegin(),
+        streamed.events.cend(),
+        [](const CalendarEvent& event)
+        {
+            return event.title == QStringLiteral("First Only");
+        }
+        ));
+    QVERIFY(std::none_of(
+        streamed.events.cbegin(),
+        streamed.events.cend(),
+        [](const CalendarEvent& event)
+        {
+            return event.title == QStringLiteral("Later Only");
+        }
+        ));
+
+    int expectedCellCount = 0;
+    int expectedMergedRangeCount = 0;
+    for (const CalendarImport::Worksheet& worksheet :
+         bufferedWorkbook.worksheets)
+    {
+        expectedCellCount += static_cast<int>(worksheet.cells.size());
+        expectedMergedRangeCount +=
+            static_cast<int>(worksheet.mergedRanges.size());
+    }
+    QCOMPARE(readCounts.worksheetCount, 2);
+    QCOMPARE(readCounts.cellCount, expectedCellCount);
+    QCOMPARE(readCounts.mergedRangeCount, expectedMergedRangeCount);
+    QCOMPARE(readCounts.sharedStringCount, bufferedWorkbook.sharedStrings.size());
+    QCOMPARE(readCounts.styleCount, bufferedWorkbook.styles.size());
+    QCOMPARE(readCounts.cellCount, 8);
+    QCOMPARE(readCounts.mergedRangeCount, 2);
+    QCOMPARE(readCounts.sharedStringCount, 1);
+    QCOMPARE(readCounts.styleCount, 2);
+}
+
+void CalendarImportTests::
+calendarByteParserDiscardsPartialResultOnLaterSheetFailure_data()
+{
+    QTest::addColumn<bool>("omitLastWorksheet");
+    QTest::addColumn<bool>("malformedLastWorksheet");
+    QTest::newRow("missing later worksheet") << true << false;
+    QTest::newRow("malformed later worksheet") << false << true;
+}
+
+void CalendarImportTests::
+calendarByteParserDiscardsPartialResultOnLaterSheetFailure()
+{
+    QFETCH(bool, omitLastWorksheet);
+    QFETCH(bool, malformedLastWorksheet);
+
+    QString error;
+    const CalendarImport::ParsedCalendarImport parsed =
+        CalendarImport::parseCalendarEventsFromWorkbookBytes(
+            calendarWorkbookArchive(
+                2,
+                true,
+                omitLastWorksheet,
+                malformedLastWorksheet
+                ),
+            {},
+            &error
+            );
+    QVERIFY(!error.trimmed().isEmpty());
+    QVERIFY(parsed.events.isEmpty());
+    QCOMPARE(parsed.skippedCount.rawValue(), 0);
+}
+
+void CalendarImportTests::
+calendarByteParserDiscardsSkippedCountOnLaterSheetFailure()
+{
+    const QByteArray skippedWorksheet =
+        calendarWorksheetXml(true, QByteArrayLiteral("Weekend"));
+    const QByteArray singleSheetData = calendarWorkbookArchive(
+        1,
+        true,
+        false,
+        false,
+        {skippedWorksheet}
+        );
+
+    QString singleSheetError;
+    const CalendarImport::Workbook singleSheetWorkbook =
+        CalendarImport::parseWorkbook(singleSheetData, &singleSheetError);
+    QVERIFY2(singleSheetError.isEmpty(), qPrintable(singleSheetError));
+    const CalendarImport::ParsedCalendarImport singleSheetParsed =
+        CalendarImport::parseCalendarEventsFromWorkbook(singleSheetWorkbook);
+    QVERIFY(singleSheetParsed.events.isEmpty());
+    QVERIFY(singleSheetParsed.skippedCount.rawValue() > 0);
+
+    QString singleStreamError;
+    const CalendarImport::ParsedCalendarImport singleSheetStreamed =
+        CalendarImport::parseCalendarEventsFromWorkbookBytes(
+            singleSheetData,
+            {},
+            &singleStreamError
+            );
+    QVERIFY2(singleStreamError.isEmpty(), qPrintable(singleStreamError));
+    QVERIFY(singleSheetStreamed.events.isEmpty());
+    QCOMPARE(singleSheetStreamed.skippedCount.rawValue(), 1);
+
+    const QByteArray multiSheetData = calendarWorkbookArchive(
+        2,
+        true,
+        true,
+        false,
+        {
+            skippedWorksheet,
+            calendarWorksheetXml(true, QByteArrayLiteral("Later Only"))
+        }
+        );
+    QString streamingError;
+    const CalendarImport::ParsedCalendarImport streamed =
+        CalendarImport::parseCalendarEventsFromWorkbookBytes(
+            multiSheetData,
+            {},
+            &streamingError
+            );
+    QVERIFY(!streamingError.trimmed().isEmpty());
+    QVERIFY(streamed.events.isEmpty());
+    QCOMPARE(streamed.skippedCount.rawValue(), 0);
 }
 
 void CalendarImportTests::readerRejectsMalformedLaterWorksheetAndAllEmptyWorkbook()

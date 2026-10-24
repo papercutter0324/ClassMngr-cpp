@@ -11,6 +11,7 @@
 
 #include <QDate>
 #include <QHash>
+#include <QMap>
 #include <QRegularExpression>
 #include <QSet>
 #include <QStringList>
@@ -1007,6 +1008,598 @@ ParsedCalendarImport parseCalendarEventsFromWorksheet(
         }
     }
 
+    return result;
+}
+
+ParsedCalendarImport parseCalendarEventsFromWorkbookBytes(
+    const QByteArray& data,
+    const QStringList& campusCodes,
+    QString* errorMessage,
+    CalendarWorkbookReadCounts* readCounts
+    )
+{
+    struct RetainedRow
+    {
+        QHash<CellPosition, Cell> cells;
+    };
+
+    struct GridBlockState
+    {
+        int startRow = 0;
+        int nextRow = 0;
+        bool resolved = false;
+    };
+
+    ParsedCalendarImport result;
+    CalendarWorkbookReadCounts counts;
+    const QStringList knownCampusCodes =
+        normalizedCampusCodes(campusCodes);
+    bool firstWorksheet = true;
+
+    const bool succeeded = forEachWorksheetRows(
+        data,
+        [&](
+            const WorkbookMetadata& metadata,
+            const Worksheet& worksheet,
+            const WorksheetRowPass& discoveryPass,
+            const WorksheetRowPass& extractionPass
+            )
+        {
+            ++counts.worksheetCount;
+            if (!firstWorksheet)
+            {
+                const bool discovered = discoveryPass(
+                    [&counts](const QVector<Cell>& row)
+                    {
+                        counts.cellCount += static_cast<int>(row.size());
+                        return true;
+                    }
+                    );
+                if (discovered)
+                {
+                    counts.mergedRangeCount += static_cast<int>(
+                        worksheet.mergedRanges.size()
+                        );
+                }
+                return discovered && extractionPass({});
+            }
+            firstWorksheet = false;
+            counts.sharedStringCount = static_cast<int>(
+                metadata.sharedStrings.size()
+                );
+            counts.styleCount = static_cast<int>(metadata.styles.size());
+
+            static const QRegularExpression yearPattern(
+                QStringLiteral("(20\\d{2})")
+                );
+            bool foundYear = false;
+            int year = QDate::currentDate().year();
+            QVector<MonthBlock> blocks;
+            QSet<CellPosition> noteSearchPositions;
+            QHash<CellPosition, Cell> noteCells;
+            QHash<QString, QString> labelsByFill;
+            QHash<QString, QString> labelsByFont;
+            Style weekendStyle;
+            bool foundWeekendStyle = false;
+
+            const bool discovered = discoveryPass(
+                [&](const QVector<Cell>& row)
+                {
+                    counts.cellCount += static_cast<int>(row.size());
+                    for (const Cell& cell : row)
+                    {
+                        if (!foundYear)
+                        {
+                            const QRegularExpressionMatch match =
+                                yearPattern.match(cell.value);
+                            if (match.hasMatch())
+                            {
+                                year = match.captured(1).toInt();
+                                foundYear = true;
+                            }
+                        }
+
+                        const int month = monthNumber(cell.value);
+                        if (month > 0)
+                        {
+                            const MonthBlock block{
+                                0,
+                                month,
+                                cell.position.row,
+                                cell.position.column
+                            };
+                            blocks.append(block);
+                            for (
+                                int noteRow = block.row + 8;
+                                noteRow <= block.row + 8 + NotesSearchRows;
+                                ++noteRow
+                                )
+                            {
+                                noteSearchPositions.insert(
+                                    CellPosition{noteRow, block.column}
+                                    );
+                            }
+                        }
+
+                        if (cell.position.column == LegendColumn)
+                        {
+                            const Style style = cellStyle(metadata, cell);
+                            if (isMeaningfulFill(style.fillColor))
+                            {
+                                labelsByFill.insert(
+                                    normalizedColor(style.fillColor),
+                                    cell.value.simplified()
+                                    );
+                            }
+                            if (isMeaningfulFontColor(style.fontColor))
+                            {
+                                labelsByFont.insert(
+                                    normalizedColor(style.fontColor),
+                                    cell.value.simplified()
+                                    );
+                            }
+                            if (
+                                !foundWeekendStyle
+                                && isWeekendLegend(cell.value)
+                                )
+                            {
+                                weekendStyle = style;
+                                foundWeekendStyle = true;
+                            }
+                        }
+
+                        if (noteSearchPositions.contains(cell.position))
+                        {
+                            noteCells.insert(cell.position, cell);
+                        }
+                    }
+                    return true;
+                }
+                );
+            if (!discovered)
+            {
+                return false;
+            }
+            counts.mergedRangeCount += static_cast<int>(
+                worksheet.mergedRanges.size()
+                );
+
+            for (MonthBlock& block : blocks)
+            {
+                block.year = year;
+            }
+            std::sort(
+                blocks.begin(),
+                blocks.end(),
+                [](const MonthBlock& lhs, const MonthBlock& rhs)
+                {
+                    return lhs.month < rhs.month;
+                }
+                );
+
+            QHash<CellPosition, const Cell*> noteCellPointers;
+            for (auto note = noteCells.cbegin();
+                 note != noteCells.cend();
+                 ++note)
+            {
+                noteCellPointers.insert(note.key(), &note.value());
+            }
+            QSet<QDate> cancelledDates;
+            const QHash<QDate, QStringList> titlesByDate =
+                noteTitlesByDate(
+                    blocks,
+                    noteCellPointers,
+                    &cancelledDates
+                    );
+
+            QVector<GridBlockState> blockStates(blocks.size());
+            QVector<QVector<CalendarEvent>> eventsByBlock(blocks.size());
+            QVector<int> skippedByBlock(blocks.size(), 0);
+            QMap<int, QVector<int>> blocksByActivationRow;
+            QHash<int, int> rowUseCounts;
+            QHash<int, QSet<int>> columnsNeededByRow;
+            for (int blockIndex = 0;
+                 blockIndex < blocks.size();
+                 ++blockIndex)
+            {
+                const MonthBlock& block = blocks[blockIndex];
+                blocksByActivationRow[block.row + 3].append(blockIndex);
+                for (int row = block.row + 2; row <= block.row + 8; ++row)
+                {
+                    ++rowUseCounts[row];
+                    QSet<int>& columns = columnsNeededByRow[row];
+                    for (int column = block.column;
+                         column < block.column + CalendarGridColumns;
+                         ++column)
+                    {
+                        columns.insert(column);
+                    }
+                }
+            }
+
+            QHash<int, RetainedRow> retainedRows;
+            QList<int> activeBlocks;
+            int lastSeenRow = 0;
+            const QString weekendFill =
+                normalizedColor(weekendStyle.fillColor);
+            const QString weekendFont =
+                comparableFontColor(weekendStyle.fontColor);
+
+            const auto releaseRowUse =
+                [&](int row)
+                {
+                    const int remaining = rowUseCounts.value(row) - 1;
+                    if (remaining <= 0)
+                    {
+                        rowUseCounts.remove(row);
+                        columnsNeededByRow.remove(row);
+                        retainedRows.remove(row);
+                    }
+                    else
+                    {
+                        rowUseCounts.insert(row, remaining);
+                    }
+                };
+
+            const auto rowCellsAt =
+                [&retainedRows](int row) -> const QHash<CellPosition, Cell>*
+                {
+                    const auto retained = retainedRows.constFind(row);
+                    return retained == retainedRows.cend()
+                        ? nullptr
+                        : &retained->cells;
+                };
+
+            const auto displayedDayInRow =
+                [&rowCellsAt](
+                    int row,
+                    const MonthBlock& block
+                    )
+                {
+                    const QHash<CellPosition, Cell>* cells = rowCellsAt(row);
+                    if (!cells)
+                    {
+                        return false;
+                    }
+                    for (int column = block.column;
+                         column < block.column + CalendarGridColumns;
+                         ++column)
+                    {
+                        const auto found = cells->constFind(
+                            CellPosition{row, column}
+                            );
+                        if (found == cells->cend())
+                        {
+                            continue;
+                        }
+                        const Cell* cell = &found.value();
+                        bool dayOk = false;
+                        const double displayedDay =
+                            cell->value.toDouble(&dayOk);
+                        if (dayOk && displayedDay > 0)
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+
+            const auto cellDisplaysDayAt =
+                [&rowCellsAt](int row, int column, int day)
+                {
+                    const QHash<CellPosition, Cell>* cells = rowCellsAt(row);
+                    if (!cells)
+                    {
+                        return false;
+                    }
+                    const auto cell = cells->constFind(
+                        CellPosition{row, column}
+                        );
+                    if (cell == cells->cend())
+                    {
+                        return false;
+                    }
+                    bool dayOk = false;
+                    const int displayedDay =
+                        cell->value.toDouble(&dayOk);
+                    return dayOk && displayedDay == day;
+                };
+
+            const auto processBlockRow =
+                [&](int blockIndex, int rowNumber)
+                {
+                    const MonthBlock& block = blocks[blockIndex];
+                    const QHash<CellPosition, Cell>* cells =
+                        rowCellsAt(rowNumber);
+                    if (!cells)
+                    {
+                        return;
+                    }
+
+                    for (int column = block.column;
+                         column < block.column + CalendarGridColumns;
+                         ++column)
+                    {
+                        const auto found = cells->constFind(
+                            CellPosition{rowNumber, column}
+                            );
+                        if (found == cells->cend())
+                        {
+                            continue;
+                        }
+                        const Cell& cell = found.value();
+                        if (cell.value.trimmed().isEmpty())
+                        {
+                            continue;
+                        }
+
+                        bool dayOk = false;
+                        const double displayedDay =
+                            cell.value.toDouble(&dayOk);
+                        if (!dayOk || displayedDay <= 0)
+                        {
+                            continue;
+                        }
+
+                        const QDate date = gridDate(
+                            block,
+                            blockStates[blockIndex].startRow,
+                            rowNumber,
+                            column
+                            );
+                        if (
+                            !date.isValid()
+                            || date.day() != displayedDay
+                            || cancelledDates.contains(date)
+                            )
+                        {
+                            continue;
+                        }
+
+                        const Style style = cellStyle(metadata, cell);
+                        QStringList labels;
+                        const QString fill =
+                            normalizedColor(style.fillColor);
+                        const bool isWeekendFill =
+                            isMeaningfulFill(weekendFill)
+                            && fill == weekendFill;
+                        if (labelsByFill.contains(fill))
+                        {
+                            labels.append(labelsByFill.value(fill));
+                        }
+
+                        const QString font =
+                            normalizedColor(style.fontColor);
+                        const bool matchesWeekendFont =
+                            comparableFontColor(font) == weekendFont;
+                        const bool shouldMatchFont =
+                            (
+                                isWeekendFill
+                                && !matchesWeekendFont
+                                )
+                            || (
+                                date.dayOfWeek() >= Qt::Monday
+                                && date.dayOfWeek() <= Qt::Friday
+                                && !isMeaningfulFill(fill)
+                                && isMeaningfulFontColor(font)
+                                );
+                        if (
+                            labelsByFont.contains(font)
+                            && shouldMatchFont
+                            )
+                        {
+                            labels.append(labelsByFont.value(font));
+                        }
+                        labels.removeDuplicates();
+
+                        for (const QString& label : labels)
+                        {
+                            if (shouldIgnoreLegend(label))
+                            {
+                                ++skippedByBlock[blockIndex];
+                                continue;
+                            }
+
+                            const QString eventType =
+                                eventTypeForLegend(label);
+                            QStringList titles = titlesByDate.value(date);
+                            if (titles.isEmpty())
+                            {
+                                titles.append(cleanedLegendLabel(label));
+                            }
+
+                            for (const QString& title : titles)
+                            {
+                                eventsByBlock[blockIndex].append(
+                                    calendarEvent(
+                                        date,
+                                        titleWithCampusCodes(
+                                            title,
+                                            cell.note,
+                                            knownCampusCodes
+                                            ),
+                                        eventType
+                                        )
+                                    );
+                            }
+                        }
+                    }
+                };
+
+            const auto processBlockThrough =
+                [&](int blockIndex, int latestRow)
+                {
+                    GridBlockState& state = blockStates[blockIndex];
+                    const int finalGridRow = state.startRow + CalendarGridRows - 1;
+                    while (state.nextRow <= finalGridRow && state.nextRow <= latestRow)
+                    {
+                        processBlockRow(blockIndex, state.nextRow);
+                        releaseRowUse(state.nextRow);
+                        ++state.nextRow;
+                    }
+                };
+
+            const auto resolveBlock =
+                [&](int blockIndex, int latestRow)
+                {
+                    const MonthBlock& block = blocks[blockIndex];
+                    const int assumedStartRow = block.row + 2;
+                    const QDate firstOfMonth(block.year, block.month, 1);
+                    int startRow = assumedStartRow;
+                    if (firstOfMonth.isValid())
+                    {
+                        const int firstDayColumn =
+                            block.column
+                            + firstOfMonth.dayOfWeek()
+                            - Qt::Monday;
+                        if (
+                            !displayedDayInRow(assumedStartRow, block)
+                            && cellDisplaysDayAt(
+                                block.row + 3,
+                                firstDayColumn,
+                                1
+                                )
+                            )
+                        {
+                            startRow = assumedStartRow + 1;
+                        }
+                    }
+
+                    GridBlockState& state = blockStates[blockIndex];
+                    state.startRow = startRow;
+                    state.nextRow = startRow;
+                    state.resolved = true;
+
+                    const int unusedRow = startRow == assumedStartRow
+                        ? block.row + 8
+                        : block.row + 2;
+                    releaseRowUse(unusedRow);
+                    processBlockThrough(blockIndex, latestRow);
+                };
+
+            const auto consumeRows = extractionPass(
+                [&](const QVector<Cell>& row)
+                {
+                    if (row.isEmpty())
+                    {
+                        return true;
+                    }
+                    const int rowNumber = row.first().position.row;
+                    lastSeenRow = rowNumber;
+                    if (rowUseCounts.value(rowNumber) > 0)
+                    {
+                        RetainedRow& retained = retainedRows[rowNumber];
+                        const QSet<int>& neededColumns =
+                            columnsNeededByRow.value(rowNumber);
+                        for (const Cell& cell : row)
+                        {
+                            if (neededColumns.contains(cell.position.column))
+                            {
+                                retained.cells.insert(cell.position, cell);
+                            }
+                        }
+                    }
+
+                    for (int blockIndex : activeBlocks)
+                    {
+                        processBlockThrough(blockIndex, rowNumber);
+                    }
+
+                    while (
+                        !blocksByActivationRow.isEmpty()
+                        && blocksByActivationRow.firstKey() <= rowNumber
+                        )
+                    {
+                        const QVector<int> dueBlocks =
+                            blocksByActivationRow.take(
+                                blocksByActivationRow.firstKey()
+                                );
+                        for (int blockIndex : dueBlocks)
+                        {
+                            resolveBlock(blockIndex, rowNumber);
+                            if (
+                                blockStates[blockIndex].nextRow
+                                <= blockStates[blockIndex].startRow
+                                    + CalendarGridRows - 1
+                                )
+                            {
+                                activeBlocks.append(blockIndex);
+                            }
+                        }
+                    }
+
+                    for (qsizetype index = activeBlocks.size() - 1;
+                         index >= 0;
+                         --index)
+                    {
+                        const GridBlockState& state =
+                            blockStates[activeBlocks[index]];
+                        if (
+                            state.nextRow
+                            > state.startRow + CalendarGridRows - 1
+                            )
+                        {
+                            activeBlocks.removeAt(index);
+                        }
+                    }
+                    return true;
+                }
+                );
+            if (!consumeRows)
+            {
+                return false;
+            }
+
+            while (!blocksByActivationRow.isEmpty())
+            {
+                const int activationRow = blocksByActivationRow.firstKey();
+                const QVector<int> dueBlocks =
+                    blocksByActivationRow.take(activationRow);
+                for (int blockIndex : dueBlocks)
+                {
+                    resolveBlock(blockIndex, lastSeenRow);
+                }
+            }
+
+            std::unordered_set<
+                ClassMngr::Next::Application::CalendarEventImportSignature,
+                CalendarEventImportSignatureHash
+                > emitted;
+            for (int blockIndex = 0;
+                 blockIndex < blocks.size();
+                 ++blockIndex)
+            {
+                for (int count = 0;
+                     count < skippedByBlock[blockIndex];
+                     ++count)
+                {
+                    ++result.skippedCount;
+                }
+                for (const CalendarEvent& event : eventsByBlock[blockIndex])
+                {
+                    const auto signature = calendarEventImportSignature(event);
+                    if (emitted.contains(signature))
+                    {
+                        continue;
+                    }
+                    emitted.insert(signature);
+                    result.events.append(event);
+                }
+            }
+
+            return true;
+        },
+        errorMessage
+        );
+
+    if (readCounts)
+    {
+        *readCounts = counts;
+    }
+    if (!succeeded)
+    {
+        return {};
+    }
     return result;
 }
 

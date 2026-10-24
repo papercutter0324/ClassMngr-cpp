@@ -3,12 +3,14 @@
 #include <cstdint>
 
 #include <QHash>
+#include <QIODevice>
 #include <QXmlStreamReader>
 
 #include <zlib.h>
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 
 namespace CalendarImport
 {
@@ -346,6 +348,219 @@ QByteArray zipFileData(
         entry.uncompressedSize
         );
 }
+
+class ZipEntryDevice final : public QIODevice
+{
+public:
+    ZipEntryDevice(
+        const QByteArray& zipData,
+        const ZipEntry& entry
+        )
+        : m_zipData(zipData)
+        , m_entry(entry)
+    {
+        const qsizetype localOffset =
+            static_cast<qsizetype>(entry.localHeaderOffset);
+        if (
+            localOffset + 30 > zipData.size()
+            || readLe32(zipData, localOffset) != ZipLocalFileSignature
+            )
+        {
+            setErrorString(QStringLiteral("Invalid ZIP local file header."));
+            return;
+        }
+
+        const quint16 fileNameLength =
+            readLe16(zipData, localOffset + 26);
+        const quint16 extraLength =
+            readLe16(zipData, localOffset + 28);
+        m_dataOffset =
+            localOffset + 30 + fileNameLength + extraLength;
+        if (
+            m_dataOffset < 0
+            || m_dataOffset + entry.compressedSize > zipData.size()
+            || (entry.method != 0 && entry.method != 8)
+            )
+        {
+            setErrorString(QStringLiteral("Invalid ZIP entry data."));
+            return;
+        }
+
+        m_compressedRemaining = entry.compressedSize;
+        if (entry.method == 8)
+        {
+            if (inflateInit2(&m_stream, -MAX_WBITS) != Z_OK)
+            {
+                setErrorString(QStringLiteral("Could not initialize ZIP decompression."));
+                return;
+            }
+            m_inflateInitialized = true;
+        }
+
+        m_valid = open(QIODevice::ReadOnly);
+    }
+
+    ~ZipEntryDevice() override
+    {
+        if (m_inflateInitialized)
+        {
+            inflateEnd(&m_stream);
+        }
+    }
+
+    [[nodiscard]] bool isValid() const noexcept
+    {
+        return m_valid;
+    }
+
+    [[nodiscard]] bool isSequential() const override
+    {
+        return true;
+    }
+
+protected:
+    qint64 readData(
+        char* destination,
+        qint64 maximumSize
+        ) override
+    {
+        if (!m_valid || m_failed || maximumSize <= 0)
+        {
+            return m_failed ? -1 : 0;
+        }
+
+        if (m_entry.method == 0)
+        {
+            const quint32 remaining =
+                m_entry.compressedSize - m_compressedRead;
+            if (remaining == 0)
+            {
+                return 0;
+            }
+
+            const qint64 count =
+                qMin<qint64>(
+                    qMin<qint64>(maximumSize, 32 * 1024),
+                    remaining
+                    );
+            std::memcpy(
+                destination,
+                m_zipData.constData() + m_dataOffset + m_compressedRead,
+                static_cast<size_t>(count)
+                );
+            m_compressedRead += static_cast<quint32>(count);
+            m_uncompressedRead += static_cast<quint32>(count);
+            return count;
+        }
+
+        if (m_streamEnded)
+        {
+            return 0;
+        }
+
+        qint64 written = 0;
+        while (written == 0 && !m_streamEnded)
+        {
+            if (m_stream.avail_in == 0 && m_compressedRemaining > 0)
+            {
+                const quint32 inputSize =
+                    qMin<quint32>(m_compressedRemaining, 32 * 1024);
+                m_stream.next_in = reinterpret_cast<Bytef*>(
+                    const_cast<char*>(
+                        m_zipData.constData() + m_dataOffset + m_compressedRead
+                        )
+                    );
+                m_stream.avail_in = static_cast<uInt>(inputSize);
+                m_compressedRead += inputSize;
+                m_compressedRemaining -= inputSize;
+            }
+
+            const quint32 outputRemaining =
+                m_entry.uncompressedSize - m_uncompressedRead;
+            if (outputRemaining == 0)
+            {
+                char overflowByte = 0;
+                m_stream.next_out = reinterpret_cast<Bytef*>(&overflowByte);
+                m_stream.avail_out = 1;
+                const int status = inflate(&m_stream, Z_NO_FLUSH);
+                if (status == Z_STREAM_END && m_stream.avail_out == 1)
+                {
+                    m_streamEnded = true;
+                    break;
+                }
+
+                fail(QStringLiteral("ZIP entry exceeds its declared size."));
+                return -1;
+            }
+
+            const quint32 outputSize = static_cast<quint32>(
+                qMin<qint64>(
+                    qMin<qint64>(maximumSize - written, 32 * 1024),
+                    outputRemaining
+                    )
+                );
+            m_stream.next_out = reinterpret_cast<Bytef*>(destination + written);
+            m_stream.avail_out = static_cast<uInt>(outputSize);
+            const int status = inflate(&m_stream, Z_NO_FLUSH);
+            const quint32 produced = outputSize - m_stream.avail_out;
+            written += produced;
+            m_uncompressedRead += produced;
+
+            if (status == Z_STREAM_END)
+            {
+                m_streamEnded = true;
+                if (m_uncompressedRead != m_entry.uncompressedSize)
+                {
+                    fail(QStringLiteral("ZIP entry ended before its declared size."));
+                    return -1;
+                }
+            }
+            else if (status != Z_OK)
+            {
+                fail(QStringLiteral("Could not decompress ZIP entry."));
+                return -1;
+            }
+            else if (
+                produced == 0
+                && m_stream.avail_in == 0
+                && m_compressedRemaining == 0
+                )
+            {
+                fail(QStringLiteral("Truncated ZIP entry."));
+                return -1;
+            }
+        }
+
+        return written;
+    }
+
+    qint64 writeData(
+        const char*,
+        qint64
+        ) override
+    {
+        return -1;
+    }
+
+private:
+    void fail(QString message)
+    {
+        m_failed = true;
+        setErrorString(std::move(message));
+    }
+
+    const QByteArray& m_zipData;
+    ZipEntry m_entry;
+    qsizetype m_dataOffset = 0;
+    quint32 m_compressedRead = 0;
+    quint32 m_compressedRemaining = 0;
+    quint32 m_uncompressedRead = 0;
+    z_stream m_stream{};
+    bool m_inflateInitialized = false;
+    bool m_streamEnded = false;
+    bool m_valid = false;
+    bool m_failed = false;
+};
 
 QStringList parseSharedStrings(
     const QByteArray& xmlData
@@ -981,6 +1196,162 @@ QVector<Cell> parseSheet(
     return cells;
 }
 
+bool parseWorksheetRows(
+    QIODevice& device,
+    const QStringList& sharedStrings,
+    const QHash<CellPosition, QString>& notesByPosition,
+    const WorksheetRowConsumer& consumer,
+    Worksheet* worksheet,
+    bool collectMergedRanges
+    )
+{
+    QXmlStreamReader xml(&device);
+    QVector<Cell> currentRow;
+    int currentRowNumber = 0;
+
+    const auto flushRow = [&]()
+    {
+        if (currentRow.isEmpty())
+        {
+            return true;
+        }
+
+        const bool consumed = !consumer || consumer(currentRow);
+        currentRow.clear();
+        currentRowNumber = 0;
+        return consumed;
+    };
+
+    while (!xml.atEnd())
+    {
+        xml.readNext();
+
+        if (!xml.isStartElement())
+        {
+            continue;
+        }
+
+        if (
+            collectMergedRanges
+            && xml.name() == QStringLiteral("mergeCell")
+            )
+        {
+            const QStringList endpoints =
+                xml.attributes()
+                    .value(QStringLiteral("ref"))
+                    .toString()
+                    .split(QLatin1Char(':'));
+            if (!endpoints.isEmpty() && endpoints.size() <= 2)
+            {
+                CellRange range;
+                range.first = {
+                    spreadsheetRow(endpoints.first()),
+                    spreadsheetColumn(endpoints.first())
+                };
+                const QString last = endpoints.size() == 2
+                    ? endpoints.last()
+                    : endpoints.first();
+                range.last = {
+                    spreadsheetRow(last),
+                    spreadsheetColumn(last)
+                };
+                if (range.isValid())
+                {
+                    worksheet->mergedRanges.append(range);
+                }
+            }
+            continue;
+        }
+
+        if (xml.name() != QStringLiteral("c"))
+        {
+            continue;
+        }
+
+        const QXmlStreamAttributes attributes = xml.attributes();
+        const QString reference =
+            attributes.value(QStringLiteral("r")).toString();
+        Cell cell;
+        cell.position = {
+            spreadsheetRow(reference),
+            spreadsheetColumn(reference)
+        };
+
+        if (!cell.position.isValid())
+        {
+            xml.skipCurrentElement();
+            continue;
+        }
+
+        cell.note = notesByPosition.value(cell.position).trimmed();
+        cell.style = attributes.value(QStringLiteral("s")).toInt();
+        const QString type =
+            attributes.value(QStringLiteral("t")).toString();
+
+        while (!(xml.isEndElement() && xml.name() == QStringLiteral("c")))
+        {
+            xml.readNext();
+            if (xml.isStartElement() && xml.name() == QStringLiteral("v"))
+            {
+                const QString rawValue = xml.readElementText();
+                if (type == QStringLiteral("s"))
+                {
+                    bool ok = false;
+                    const int stringIndex = rawValue.toInt(&ok);
+                    if (
+                        ok
+                        && stringIndex >= 0
+                        && stringIndex < sharedStrings.size()
+                        )
+                    {
+                        cell.value = sharedStrings[stringIndex];
+                    }
+                }
+                else
+                {
+                    cell.value = rawValue;
+                }
+            }
+            else if (
+                type == QStringLiteral("inlineStr")
+                && xml.isStartElement()
+                && xml.name() == QStringLiteral("t")
+                )
+            {
+                cell.value.append(xml.readElementText());
+            }
+
+            if (xml.atEnd())
+            {
+                break;
+            }
+        }
+
+        if (cell.value.trimmed().isEmpty())
+        {
+            continue;
+        }
+
+        if (
+            currentRowNumber != 0
+            && currentRowNumber != cell.position.row
+            && !flushRow()
+            )
+        {
+            return false;
+        }
+        currentRowNumber = cell.position.row;
+        currentRow.append(std::move(cell));
+    }
+
+    if (xml.hasError())
+    {
+        return false;
+    }
+
+    return flushRow();
+}
+
 struct WorksheetReference
 {
     QString name;
@@ -1500,6 +1871,200 @@ bool forEachWorksheet(
             anyWorksheetHasCells || !worksheet.cells.isEmpty();
 
         if (consumer && !consumer(metadata, worksheet))
+        {
+            if (errorMessage)
+            {
+                *errorMessage =
+                    QStringLiteral("The downloaded spreadsheet could not be read.");
+            }
+            return false;
+        }
+    }
+
+    if (worksheetReferences.isEmpty() || !anyWorksheetHasCells)
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                QStringLiteral("The downloaded spreadsheet could not be read.");
+        }
+        return false;
+    }
+
+    return true;
+}
+
+bool forEachWorksheetRows(
+    const QByteArray& data,
+    const WorksheetStreamConsumer& consumer,
+    QString* errorMessage
+    )
+{
+    const QHash<QString, ZipEntry> entries = zipEntries(data);
+    const QStringList requiredFiles{
+        QStringLiteral("xl/workbook.xml"),
+        QStringLiteral("xl/_rels/workbook.xml.rels")
+    };
+
+    for (const QString& file : requiredFiles)
+    {
+        if (!entries.contains(file))
+        {
+            if (errorMessage)
+            {
+                *errorMessage =
+                    QStringLiteral("The downloaded spreadsheet is missing %1.")
+                        .arg(file);
+            }
+            return false;
+        }
+    }
+
+    WorkbookMetadata metadata;
+    if (entries.contains(QStringLiteral("xl/sharedStrings.xml")))
+    {
+        metadata.sharedStrings = parseSharedStrings(
+            zipFileData(
+                data,
+                entries.value(QStringLiteral("xl/sharedStrings.xml"))
+                )
+            );
+    }
+    if (entries.contains(QStringLiteral("xl/styles.xml")))
+    {
+        QVector<QString> themeColors = parseThemeColors({});
+        if (entries.contains(QStringLiteral("xl/theme/theme1.xml")))
+        {
+            themeColors = parseThemeColors(
+                zipFileData(
+                    data,
+                    entries.value(QStringLiteral("xl/theme/theme1.xml"))
+                    )
+                );
+        }
+        metadata.styles = parseStyles(
+            zipFileData(
+                data,
+                entries.value(QStringLiteral("xl/styles.xml"))
+                ),
+            themeColors
+            );
+    }
+    if (metadata.styles.isEmpty())
+    {
+        metadata.styles.append(Style{});
+    }
+
+    const QVector<WorksheetReference> worksheetReferences =
+        parseWorksheetReferences(
+            zipFileData(data, entries.value(QStringLiteral("xl/workbook.xml")))
+            );
+    const QHash<QString, QString> relationshipTargets =
+        parseWorkbookRelationships(
+            zipFileData(
+                data,
+                entries.value(QStringLiteral("xl/_rels/workbook.xml.rels"))
+                )
+            );
+
+    bool anyWorksheetHasCells = false;
+    for (const WorksheetReference& reference : worksheetReferences)
+    {
+        const QString entryName =
+            relationshipTargets.value(reference.relationshipId);
+        if (entryName.isEmpty() || !entries.contains(entryName))
+        {
+            if (errorMessage)
+            {
+                *errorMessage =
+                    QStringLiteral("The spreadsheet is missing worksheet %1.")
+                        .arg(reference.name);
+            }
+            return false;
+        }
+
+        Worksheet worksheet;
+        worksheet.name = reference.name;
+        worksheet.visible = reference.visible;
+        const QHash<CellPosition, QString> notes =
+            workbookCellNotes(data, entries, entryName);
+
+        bool discoveryInvoked = false;
+        bool extractionInvoked = false;
+        bool discoverySucceeded = false;
+        bool extractionSucceeded = false;
+        const WorksheetRowPass discoveryPass =
+            [&](const WorksheetRowConsumer& rowConsumer)
+            {
+                if (discoveryInvoked || extractionInvoked)
+                {
+                    return false;
+                }
+                discoveryInvoked = true;
+                worksheet.mergedRanges.clear();
+
+                ZipEntryDevice device(data, entries.value(entryName));
+                if (!device.isValid())
+                {
+                    return false;
+                }
+
+                discoverySucceeded = parseWorksheetRows(
+                    device,
+                    metadata.sharedStrings,
+                    notes,
+                    [&](const QVector<Cell>& row)
+                    {
+                        anyWorksheetHasCells =
+                            anyWorksheetHasCells || !row.isEmpty();
+                        return !rowConsumer || rowConsumer(row);
+                    },
+                    &worksheet,
+                    true
+                    );
+                return discoverySucceeded;
+            };
+        const WorksheetRowPass extractionPass =
+            [&](const WorksheetRowConsumer& rowConsumer)
+            {
+                if (!discoveryInvoked || !discoverySucceeded || extractionInvoked)
+                {
+                    return false;
+                }
+                extractionInvoked = true;
+
+                ZipEntryDevice device(data, entries.value(entryName));
+                if (!device.isValid())
+                {
+                    return false;
+                }
+
+                extractionSucceeded = parseWorksheetRows(
+                    device,
+                    metadata.sharedStrings,
+                    notes,
+                    [&](const QVector<Cell>& row)
+                    {
+                        anyWorksheetHasCells =
+                            anyWorksheetHasCells || !row.isEmpty();
+                        return !rowConsumer || rowConsumer(row);
+                    },
+                    &worksheet,
+                    false
+                    );
+                return extractionSucceeded;
+            };
+
+        const bool consumerSucceeded = consumer
+            ? consumer(metadata, worksheet, discoveryPass, extractionPass)
+            : discoveryPass({}) && extractionPass({});
+        if (
+            !consumerSucceeded
+            || !discoveryInvoked
+            || !discoverySucceeded
+            || !extractionInvoked
+            || !extractionSucceeded
+            )
         {
             if (errorMessage)
             {
