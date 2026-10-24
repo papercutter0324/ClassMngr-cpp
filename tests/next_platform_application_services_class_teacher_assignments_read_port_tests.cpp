@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/teacher_repository.h"
@@ -59,16 +59,16 @@ preservesWideTeacherIdentitiesAndIntClassIds()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    auto* session = services.databaseSession();
+    WorkspaceStore* const store = services.workspaceStore();
     Platform::ApplicationServicesClassTeacherAssignmentsReadPort port(&services);
     int expectedClassId = 0;
     for (const qint64 id : {qint64{2147483648LL}, qint64{9223372036854775807LL}})
     {
-        QSqlQuery seed(session->database());
+        QSqlQuery seed(store->database());
         seed.prepare(QStringLiteral("INSERT INTO teachers (id, teacher_en) VALUES (?, 'Wide Teacher')"));
         seed.addBindValue(id);
         QVERIFY(seed.exec());
-        const auto createdClass = session->classRepository()->createClass(QString::number(id));
+        const auto createdClass = store->classRepository()->createClass(QString::number(id));
         QVERIFY(createdClass);
         expectedClassId = *createdClass;
         seed.prepare(QStringLiteral("INSERT INTO class_info (class_id, teacher_id) VALUES (?, ?)"));
@@ -76,7 +76,7 @@ preservesWideTeacherIdentitiesAndIntClassIds()
         seed.addBindValue(id);
         QVERIFY(seed.exec());
     }
-    const auto records = session->classInfoRepository()->loadClassTeacherAssignmentRecords();
+    const auto records = store->classInfoRepository()->loadClassTeacherAssignmentRecords();
     QVERIFY(records);
     QCOMPARE(records->size(), 2);
     QCOMPARE(records->at(0).teacherId, qint64{2147483648LL});
@@ -97,12 +97,12 @@ readsAssignedAndUnassignedRegularClassesInRepositoryOrder()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
 
-    TeacherRepository* const teachers = session->teacherRepository();
-    ClassRepository* const classes = session->classRepository();
-    ClassInfoRepository* const classInfo = session->classInfoRepository();
+    TeacherRepository* const teachers = store->teacherRepository();
+    ClassRepository* const classes = store->classRepository();
+    ClassInfoRepository* const classInfo = store->classInfoRepository();
     QVERIFY(teachers);
     QVERIFY(classes);
     QVERIFY(classInfo);
@@ -150,7 +150,7 @@ reportsRepositoryFailureAsTechnical()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlQuery dropClasses(services.databaseSession()->database());
+    QSqlQuery dropClasses(services.workspaceStore()->database());
     QVERIFY(dropClasses.exec(QStringLiteral("DROP TABLE classes")));
 
     Platform::ApplicationServicesClassTeacherAssignmentsReadPort port(

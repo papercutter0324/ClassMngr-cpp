@@ -46,10 +46,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   choices read), F1363 (Class Co-Teacher assignment save), F1364 (Class
   Notes page read), F1365 (Class Notes save), F1366 (Selected-class grade
   read), F1367 (Selected-class subtitle read), F1368 (Selected-class
-  subtitle batch read), and F1369 (Classes navigation read) are accepted;
-  F1370 (Class teacher assignments read) is current. F1358–F1369
-  implementation and verification evidence, plus the Batch 2 push receipt,
-  are in the
+  subtitle batch read), F1369 (Classes navigation read), and F1370 (Class
+  teacher assignments read) are accepted; F1371 (Regular Class creation and
+  post-create by-ID lookup) is current. F1358–F1370 implementation and
+  verification evidence, plus the Batch 2 push receipt, are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
@@ -68,18 +68,19 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1369 — 2026-10-24
+## Latest Progress Update — F1370 — 2026-10-24
 
-F1369 is accepted; F1370 is current. The Classes navigation port and direct
-fixture now use `WorkspaceStore`; a test-support-only repair supplies detailed
-class, teacher-name, and roster-count stubs. Application query, SQL, UI, and
-F1370 route are unchanged. Focused builds and CTests passed, along with five
-filtered ClassesPage slots. The broad ClassesPage target had 19 passed and a
-300-second timeout in `navigationReleaseCachesSnapshotAndEditorsAcrossReentry`;
-the blocked statement and attribution are unknown, so page-target acceptance
-remains unresolved. Earlier F1366/F1367 UI limitations and the F1368 transfer
-baseline failure remain recorded in the [progress log](04-Phase-3-Progress-Log.md).
-No full suite or cross-platform build ran.
+F1370 is accepted; F1371 is current. The class-teacher-assignment platform
+port and focused fixture now use `WorkspaceStore`; selected shared helpers and
+two failure-slot SQL fixtures in the large navigation test use it as well.
+Application query, repository batch API/SQL, sidebar production callers, and
+F1371 creation/by-ID routes are unchanged. Incremental builds and two serial
+CTests passed; five sidebar QtTest slots each passed 3/3. The focused tests do
+not directly assert testing-class exclusion. Other `databaseSession()` calls
+in the large navigation test belong to out-of-scope slots and remain. No full
+NavigationTeacherRead suite, project suite, or cross-platform build ran.
+Earlier UI limitations, attribution and coverage notes, and the baseline
+failure remain in the [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
 

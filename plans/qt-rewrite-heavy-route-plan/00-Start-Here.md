@@ -15,9 +15,11 @@
   F1363 (Class Co-Teacher assignment save), F1364 (Class Notes page read),
   F1365 (Class Notes save), F1366 (Selected-class grade read), F1367
   (Selected-class subtitle read), F1368 (Selected-class subtitle batch read),
-  and F1369 (Classes navigation read) are accepted; F1370 (Class teacher
-  assignments read) is current. Evidence for F1358–F1369 and the Batch 2 push
-  receipt are in the Phase 3 progress log.
+  F1369 (Classes navigation read), and F1370 (Class teacher assignments
+  read) are accepted; F1371 (Regular Class creation and post-create by-ID
+  lookup) is current. Evidence for F1358–F1370 and the Batch 2 push receipt
+  are in the Phase 3 progress log. Earlier UI limitations, baseline failures,
+  attribution notes, and coverage notes remain recorded there.
   See
   the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),

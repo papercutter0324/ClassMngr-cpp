@@ -1338,5 +1338,39 @@ contains DB-not-open and `propagateSizeHints` warnings but no per-assertion
 progress; the blocked statement is unknown. Read-only triage did not establish
 attribution, so broad page-target acceptance remains unresolved. Do not
 attribute the timeout to F1369 or call it unrelated. No full project suite or
-cross-platform build ran. `git diff --check` passed. F1369 is accepted;
-F1370 (Class teacher assignments read) is current.
+cross-platform build ran. `git diff --check` passed. F1369 is accepted.
+Commit: `bd6a56c3f53e2512bafe36edf2615c7d5d7dddc7`.
+
+## F1370 — Class teacher assignments read (Batch 3 candidate 13 of 20) — 2026-10-24
+
+The platform port in
+`src/next/platform/application_services_class_teacher_assignments_read_port.h`
+now includes `workspace_store.h`, checks `WorkspaceStore::isOpen()`, and gets
+`ClassInfoRepository` through `workspaceStore()`. Its focused fixture,
+`tests/next_platform_application_services_class_teacher_assignments_read_port_tests.cpp`,
+was fully migrated to `WorkspaceStore`; assertions, slots, and SQL are
+unchanged, with no remaining `DatabaseSession` API references in the port or
+fixture.
+
+In `tests/navigation_teacher_read_tests.cpp`, shared helpers `persistTeacher`
+and `createClassWithSubtitle`, plus SQL fixture access in two assignment-read
+failure slots, now use `workspaceStore()`. Remaining `databaseSession()` calls
+in that large test source belong to out-of-scope slots and were left
+untouched. The Application query, repository batch API/SQL, sidebar production
+callers, and F1371 create/by-ID routes are unchanged.
+
+Incremental builds passed for the Application query, Platform port, and
+`ClassMngrNavigationTeacherReadTests` targets. The two serial registered CTests
+`ClassMngrNextApplicationClassTeacherAssignmentsReadQueryTests` and
+`ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests`
+passed. Five sidebar QtTest slots passed individually under offscreen, each
+with 3 passed and 0 failed:
+`refreshTeacherSidebarShowsAssignedAndUnassignedTeachers`,
+`refreshTeacherSidebarFailureWarnsClearsNodesAndUpdatesActions`,
+`refreshTeacherSidebarKeepsUnassignedClassActionEnabled`,
+`refreshTeacherSidebarAssignmentFailureWarnsAndUpdatesActions`, and
+`refreshTeacherSidebarReturnsSilentlyWithoutAnActiveSession`.
+`git diff --check` passed. Focused tests do not directly assert testing-class
+exclusion. No full NavigationTeacherRead suite, full project suite, or
+cross-platform build ran. F1370 is accepted; F1371 (Regular Class creation
+and post-create by-ID lookup) is current.

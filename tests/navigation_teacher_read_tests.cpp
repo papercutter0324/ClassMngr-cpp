@@ -4,6 +4,7 @@
 #include "core/application_services.h"
 #include "core/resource_packs/resource_pack_manager.h"
 #include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/settings_repository.h"
 #include "data/repositories/teacher_import_repository.h"
@@ -268,7 +269,7 @@ Teacher teacherFixture(
 
 int persistTeacher(ApplicationServices& services, Teacher& teacher)
 {
-    const auto saved = services.databaseSession()->teacherRepository()
+    const auto saved = services.workspaceStore()->teacherRepository()
         ->createTeacher(teacher);
     if (!saved)
     {
@@ -411,7 +412,7 @@ void createClassWithSubtitle(
     info.classTimes = {
         {day, startTime, QStringLiteral("5:00 PM")}
     };
-    const auto saved = services.databaseSession()
+    const auto saved = services.workspaceStore()
         ->classInfoRepository()->saveClassInfo(info);
     if (!saved)
     {
@@ -1513,12 +1514,12 @@ refreshTeacherSidebarFailureWarnsClearsNodesAndUpdatesActions()
     QVERIFY(actions.deleteTeacher->isEnabled());
     QVERIFY(actions.deleteClass->isEnabled());
 
-    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QSqlQuery disableForeignKeys(services.workspaceStore()->database());
     QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
-    QSqlQuery dropClasses(services.databaseSession()->database());
+    QSqlQuery dropClasses(services.workspaceStore()->database());
     QVERIFY2(dropClasses.exec(QStringLiteral("DROP TABLE classes")),
              qPrintable(dropClasses.lastError().text()));
-    QSqlQuery dropTeachers(services.databaseSession()->database());
+    QSqlQuery dropTeachers(services.workspaceStore()->database());
     QVERIFY2(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")),
              qPrintable(dropTeachers.lastError().text()));
     const QString expectedTeacherChoicesRead =
@@ -1619,9 +1620,9 @@ refreshTeacherSidebarAssignmentFailureWarnsAndUpdatesActions()
     QVERIFY(actions.deleteTeacher->isEnabled());
     QVERIFY(actions.deleteClass->isEnabled());
 
-    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QSqlQuery disableForeignKeys(services.workspaceStore()->database());
     QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
-    QSqlQuery dropClasses(services.databaseSession()->database());
+    QSqlQuery dropClasses(services.workspaceStore()->database());
     QVERIFY2(dropClasses.exec(QStringLiteral("DROP TABLE classes")),
              qPrintable(dropClasses.lastError().text()));
     const QString expectedDetails =
