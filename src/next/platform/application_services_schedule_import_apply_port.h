@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/schedule_import_repository.h"
 #include "next/application/schedule_import_apply_use_case.h"
 
@@ -72,15 +72,15 @@ public:
         const Application::ScheduleImportApplyRequest& request
         ) const override
     {
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return unavailableFailure();
         }
 
         ScheduleImportRepository* const repository =
-            session->scheduleImportRepository();
+            store->scheduleImportRepository();
         if (!repository)
         {
             return unavailableFailure();

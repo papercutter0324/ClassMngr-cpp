@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "app/services/feature_services.h"
 #include "next/application/schedule_import_apply_use_case.h"
 #include "next/platform/application_services_schedule_import_apply_port.h"
@@ -139,7 +139,7 @@ appliesTypedRequestThroughActiveRepository()
     QCOMPARE(result->ignoredCells.rawValue(), 1);
     QVERIFY(result->profileNameUpdated);
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     requireQuery(query, QStringLiteral(
         "SELECT teacher_kr, room_number FROM teachers"));
     QVERIFY(query.next());
@@ -188,7 +188,7 @@ rejectsGeneratedClassIdOutsideIntRangeAndRollsBack()
     const QString openError = opened.has_value() ? QString() : opened.error();
     QVERIFY2(opened.has_value(), qPrintable(openError));
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     seedSentinelClass(query);
     setClassesSequence(query, qint64{4294967296LL});
 
@@ -260,7 +260,7 @@ void ScheduleImportApplyPortTests::acceptsGeneratedClassIdAtIntMax()
     const QString openError = opened.has_value() ? QString() : opened.error();
     QVERIFY2(opened.has_value(), qPrintable(openError));
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     seedSentinelClass(query);
     setClassesSequence(query, qint64{2147483646});
 
@@ -381,7 +381,7 @@ void ScheduleImportApplyPortTests::preservesLegacyScheduleServiceRoute()
     QCOMPARE(result->teachersCreated, 1);
     QCOMPARE(result->classesCreated, 1);
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     requireQuery(query, QStringLiteral(
         "SELECT teacher_kr FROM teachers"));
     QVERIFY(query.next());
@@ -529,7 +529,7 @@ void ScheduleImportApplyPortTests::preservesStructuredRepositoryFailures()
     QVERIFY(!overlapFailure.error().policyIssue.has_value());
     QVERIFY(!overlapFailure.error().teacherTargetIssue.has_value());
 
-    QSqlQuery countQuery(services.databaseSession()->database());
+    QSqlQuery countQuery(services.workspaceStore()->database());
     requireQuery(countQuery, QStringLiteral(
         "SELECT (SELECT COUNT(*) FROM teachers), "
         "(SELECT COUNT(*) FROM classes), "
