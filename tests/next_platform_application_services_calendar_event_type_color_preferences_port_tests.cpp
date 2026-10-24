@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "domain/models/calendar_event.h"
 #include "next/platform/application_services_calendar_event_type_color_preferences_port.h"
@@ -58,7 +58,7 @@ bool executeSql(
     const QString& statement
     )
 {
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     if (!session || !session->isOpen())
     {
         return false;
@@ -110,7 +110,7 @@ exactDynamicKeysCoverAllEventTypes()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -162,7 +162,7 @@ validHexRgbRoundTripsAndPreservesUnrelatedSettings()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -202,7 +202,7 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const openSession = services.databaseSession();
+    WorkspaceStore* const openSession = services.workspaceStore();
     QVERIFY(openSession);
     QVERIFY(openSession->isOpen());
     QVERIFY(openSession->settingsRepository());
@@ -212,8 +212,8 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
 
     ApplicationServices unavailableServices;
     QVERIFY(unavailableServices.dataService());
-    DatabaseSession* const unavailableSession =
-        unavailableServices.databaseSession();
+    WorkspaceStore* const unavailableSession =
+        unavailableServices.workspaceStore();
     QVERIFY(unavailableSession);
     QVERIFY(!unavailableSession->isOpen());
     ApplicationServicesCalendarEventTypeColorPreferencesPort unavailablePort(
@@ -237,7 +237,7 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
     const QString closedDatabasePath = databasePath(m_directory);
     QVERIFY(closedServices.openDatabase(closedDatabasePath));
     QVERIFY(closedServices.dataService());
-    DatabaseSession* const closedSession = closedServices.databaseSession();
+    WorkspaceStore* const closedSession = closedServices.workspaceStore();
     QVERIFY(closedSession);
     QVERIFY(closedSession->isOpen());
     SettingsRepository* const closedRepository =
@@ -286,7 +286,7 @@ readErrorsDefaultEmpty()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     QVERIFY(session->settingsRepository());
@@ -302,7 +302,7 @@ pointerAndNullServiceAccessPreserveFallbacks()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     QVERIFY(session->settingsRepository());
@@ -345,7 +345,7 @@ invalidStoredColorPassesThroughUnchanged()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -372,7 +372,7 @@ saveFailureReturnsTechnicalFailureAndPreservesStoredValues()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();

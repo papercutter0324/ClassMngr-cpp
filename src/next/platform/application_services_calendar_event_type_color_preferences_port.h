@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/calendar_event_type_color_preferences.h"
 
@@ -26,14 +26,14 @@ public:
     explicit ApplicationServicesCalendarEventTypeColorPreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_session(services.databaseSession())
+        : m_store(services.workspaceStore())
     {
     }
 
     explicit ApplicationServicesCalendarEventTypeColorPreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_session(services ? services->databaseSession() : nullptr)
+        : m_store(services ? services->workspaceStore() : nullptr)
     {
     }
 
@@ -54,12 +54,12 @@ public:
         const Domain::CalendarEventType eventType
         ) const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return {};
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return {};
@@ -82,14 +82,14 @@ public:
         const std::string& colorHexRgb
         ) const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return failure(
                 "Calendar event type color could not be saved because the database session is unavailable."
                 );
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return failure(
@@ -145,7 +145,7 @@ private:
                 );
     }
 
-    DatabaseSession* m_session = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

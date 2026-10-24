@@ -1,5 +1,6 @@
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "data/repositories/settings_repository.h"
 #include "domain/models/calendar_event.h"
@@ -5205,8 +5206,8 @@ eventTypeColorPickerFailureResyncsAndRetries()
         qPrintable(setupError)
         );
 
-    DatabaseSession* const session =
-        workspace.services.databaseSession();
+    WorkspaceStore* const session =
+        workspace.services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const settings = session->settingsRepository();
