@@ -784,3 +784,28 @@ passed. Transaction-start and commit-failure injection was not run; source
 review confirmed the existing checks and failure mappings. Repository query
 failure is covered by the focused tests. No full suite or cross-platform build
 ran.
+
+## F1349 — Teacher Import apply — 2026-10-23
+
+`TeacherImportRepository::applyUseCase()` now constructs the existing SQL
+persistence adapter, executes the existing use case, and logs rollback
+failures. The Platform port uses `WorkspaceStore` and the repository; it no
+longer owns SQL-adapter or database access. The legacy `importTeachers()`
+method delegates to the typed operation and retains its summary and error
+mapping. Direct fixture access in
+`tests/next_platform_application_services_teacher_import_apply_port_tests.cpp`
+now uses `WorkspaceStore`; assertions are unchanged.
+
+Executor and Tester incrementally built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests`,
+`ClassMngrNextApplicationTeacherImportUseCaseTests`, and
+`ClassMngrTeacherImportUiApplyParityTests` in the existing
+`build/macos-clang-debug` tree. Serial focused CTest passed the Platform,
+Application, and six individually registered Teacher Import UI parity tests
+(8 passed). The aggregate `TeacherImportUiApplyParity` CTest failed because
+`wizardSuccessTranscript` aborted at `wizard.show()`, before import, with an
+uncaught macOS `NSInvalidArgumentException` (`-[NSBundle initWithURL:]: nil
+URL argument`) in Qt's QWizard page/pixmap/restart path. Running that slot
+alone reproduced the failure. No baseline comparison was run, so attribution
+is unknown. `git diff --check` passed. No full suite or cross-platform build
+ran.

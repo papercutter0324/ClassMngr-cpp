@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "data/repositories/teacher_import_repository.h"
 #include "next/platform/application_services_teacher_import_apply_port.h"
@@ -101,17 +101,17 @@ appliesAllGroupsAndKeepsNewestDate()
     QCOMPARE(imported->gsTeamMembers.created.rawValue(), 1);
     QCOMPARE(imported->gsTeamMembers.updated.rawValue(), 0);
     QCOMPARE(imported->gsTeamMembers.unchanged.rawValue(), 0);
-    QCOMPARE(countRows(services.databaseSession()->database(), QStringLiteral("teachers")), 1);
-    QCOMPARE(countRows(services.databaseSession()->database(), QStringLiteral("native_english_teachers")), 1);
-    QCOMPARE(countRows(services.databaseSession()->database(), QStringLiteral("gs_team")), 1);
-    QSqlQuery storedTeacher(services.databaseSession()->database());
+    QCOMPARE(countRows(services.workspaceStore()->database(), QStringLiteral("teachers")), 1);
+    QCOMPARE(countRows(services.workspaceStore()->database(), QStringLiteral("native_english_teachers")), 1);
+    QCOMPARE(countRows(services.workspaceStore()->database(), QStringLiteral("gs_team")), 1);
+    QSqlQuery storedTeacher(services.workspaceStore()->database());
     QVERIFY(storedTeacher.exec(QStringLiteral(
         "SELECT teacher_kr, teacher_en, phone_number FROM teachers")));
     QVERIFY(storedTeacher.next());
     QCOMPARE(storedTeacher.value(0).toString(), QStringLiteral("김교사"));
     QCOMPARE(storedTeacher.value(1).toString(), QStringLiteral("Alex Kim"));
     QCOMPARE(storedTeacher.value(2).toString(), QStringLiteral("010-1234-5678"));
-    QCOMPARE(latestSourceDate(services.databaseSession()->database()),
+    QCOMPARE(latestSourceDate(services.workspaceStore()->database()),
         QStringLiteral("2026-10-01"));
 
     const auto unchanged = port.apply(planFor());
@@ -142,21 +142,21 @@ appliesAllGroupsAndKeepsNewestDate()
     QCOMPARE(updated->gsTeamMembers.created.rawValue(), 0);
     QCOMPARE(updated->gsTeamMembers.updated.rawValue(), 0);
     QCOMPARE(updated->gsTeamMembers.unchanged.rawValue(), 0);
-    QCOMPARE(countRows(services.databaseSession()->database(),
+    QCOMPARE(countRows(services.workspaceStore()->database(),
                  QStringLiteral("native_english_teachers")), 1);
-    QSqlQuery normalizedName(services.databaseSession()->database());
+    QSqlQuery normalizedName(services.workspaceStore()->database());
     QVERIFY(normalizedName.exec(QStringLiteral(
         "SELECT name FROM native_english_teachers")));
     QVERIFY(normalizedName.next());
     QCOMPARE(normalizedName.value(0).toString(), QStringLiteral("aLeX SmItH"));
-    QCOMPARE(latestSourceDate(services.databaseSession()->database()),
+    QCOMPARE(latestSourceDate(services.workspaceStore()->database()),
         QStringLiteral("2026-10-02"));
 
     TeacherImportPlan olderPlan;
     olderPlan.sourceDate = QDate(2025, 9, 1);
     const auto older = port.apply(olderPlan);
     QVERIFY2(older, qPrintable(older ? QString() : older.error()));
-    QCOMPARE(latestSourceDate(services.databaseSession()->database()),
+    QCOMPARE(latestSourceDate(services.workspaceStore()->database()),
         QStringLiteral("2026-10-02"));
 }
 
@@ -167,7 +167,7 @@ treatsMalformedSnapshotDateAsAbsentAndDoesNotRewriteEqualOrOlderDates()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
+    QVERIFY(services.workspaceStore()->settingsRepository()->saveSetting(
         QString::fromLatin1(TeacherImportRepository::LatestSourceDateSetting),
         QStringLiteral("not-a-date")));
     Platform::ApplicationServicesTeacherImportApplyPort port(&services);
@@ -176,10 +176,10 @@ treatsMalformedSnapshotDateAsAbsentAndDoesNotRewriteEqualOrOlderDates()
     initial.sourceDate = QDate(2026, 10, 1);
     const auto imported = port.apply(initial);
     QVERIFY2(imported, qPrintable(imported ? QString() : imported.error()));
-    QCOMPARE(latestSourceDate(services.databaseSession()->database()),
+    QCOMPARE(latestSourceDate(services.workspaceStore()->database()),
         QStringLiteral("2026-10-01"));
 
-    QSqlQuery rejectDateWrite(services.databaseSession()->database());
+    QSqlQuery rejectDateWrite(services.workspaceStore()->database());
     QVERIFY2(rejectDateWrite.exec(QStringLiteral(
         "CREATE TRIGGER reject_teacher_import_date_update "
         "BEFORE UPDATE ON app_settings "
@@ -196,7 +196,7 @@ treatsMalformedSnapshotDateAsAbsentAndDoesNotRewriteEqualOrOlderDates()
     olderDate.sourceDate = QDate(2026, 9, 30);
     const auto older = port.apply(olderDate);
     QVERIFY2(older, qPrintable(older ? QString() : older.error()));
-    QCOMPARE(latestSourceDate(services.databaseSession()->database()),
+    QCOMPARE(latestSourceDate(services.workspaceStore()->database()),
         QStringLiteral("2026-10-01"));
 }
 
@@ -228,7 +228,7 @@ rollsBackEarlierGroupWritesWhenLateWriteFails()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlQuery trigger(services.databaseSession()->database());
+    QSqlQuery trigger(services.workspaceStore()->database());
     QVERIFY2(trigger.exec(QStringLiteral(
         "CREATE TRIGGER reject_gs_import BEFORE INSERT ON gs_team "
         "BEGIN SELECT RAISE(ABORT, 'forced test failure'); END")),
@@ -238,10 +238,10 @@ rollsBackEarlierGroupWritesWhenLateWriteFails()
     const auto imported = port.apply(planFor());
 
     QVERIFY(!imported);
-    QCOMPARE(countRows(services.databaseSession()->database(), QStringLiteral("teachers")), 0);
-    QCOMPARE(countRows(services.databaseSession()->database(), QStringLiteral("native_english_teachers")), 0);
-    QCOMPARE(countRows(services.databaseSession()->database(), QStringLiteral("gs_team")), 0);
-    QVERIFY(latestSourceDate(services.databaseSession()->database()).isEmpty());
+    QCOMPARE(countRows(services.workspaceStore()->database(), QStringLiteral("teachers")), 0);
+    QCOMPARE(countRows(services.workspaceStore()->database(), QStringLiteral("native_english_teachers")), 0);
+    QCOMPARE(countRows(services.workspaceStore()->database(), QStringLiteral("gs_team")), 0);
+    QVERIFY(latestSourceDate(services.workspaceStore()->database()).isEmpty());
 }
 
 void NextPlatformApplicationServicesTeacherImportApplyPortTests::

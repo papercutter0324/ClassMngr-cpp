@@ -118,6 +118,22 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
 {
     const TeacherImportUseCaseRequest request =
         ClassMngr::Data::Legacy::teacherImportPlanToUseCaseRequest(plan);
+    const auto applied = applyUseCase(request);
+    if (!applied)
+    {
+        return std::unexpected(legacyErrorMessage(applied.error()));
+    }
+
+    return legacySummary(*applied);
+}
+
+std::expected<
+    ClassMngr::Next::Application::TeacherImportUseCaseResult,
+    ClassMngr::Next::Application::TeacherImportUseCaseError
+    > TeacherImportRepository::applyUseCase(
+        const TeacherImportUseCaseRequest& request
+        )
+{
     const auto persistence = makeTeacherImportSqlPersistenceAdapter(m_database);
     const auto applied = TeacherImportUseCase::execute(
         request,
@@ -126,10 +142,10 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
     if (!applied)
     {
         logRollbackFailure(applied.error());
-        return std::unexpected(legacyErrorMessage(applied.error()));
+        return std::unexpected(applied.error());
     }
 
-    return legacySummary(*applied);
+    return *applied;
 }
 
 QString TeacherImportRepository::legacyErrorMessage(

@@ -2,13 +2,10 @@
 
 #include "core/application_services.h"
 #include "core/result.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_import_legacy_plan_adapter.h"
 #include "data/repositories/teacher_import_repository.h"
-#include "data/repositories/teacher_import_sql_persistence_adapter.h"
 #include "domain/validation/teacher_import_plan_preparation.h"
-
-#include <QSqlDatabase>
 
 namespace ClassMngr::Next::Platform
 {
@@ -34,27 +31,28 @@ public:
             return std::unexpected(normalizedPlan.error());
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return std::unexpected(
                 QStringLiteral("No Teacher Profile service is available."));
         }
 
-        QSqlDatabase database = session->database();
-        const auto persistence = makeTeacherImportSqlPersistenceAdapter(database);
+        TeacherImportRepository* const repository =
+            store->teacherImportRepository();
+        if (!repository)
+        {
+            return std::unexpected(
+                QStringLiteral("No Teacher Profile service is available."));
+        }
+
         const Application::TeacherImportUseCaseRequest request =
             ClassMngr::Data::Legacy::teacherImportPlanToUseCaseRequest(
                 *normalizedPlan);
-        const auto imported =
-            Application::TeacherImportUseCase::execute(
-                request,
-                *persistence,
-                ClassMngr::Data::Legacy::Detail::nativeEnglishNameKey);
+        const auto imported = repository->applyUseCase(request);
         if (!imported)
         {
-            TeacherImportRepository::logRollbackFailure(imported.error());
             return std::unexpected(
                 TeacherImportRepository::legacyErrorMessage(imported.error()));
         }

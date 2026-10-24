@@ -7,6 +7,8 @@
 #include <QSqlDatabase>
 #include <QString>
 
+#include <expected>
+
 class TeacherImportRepository
 {
 public:
@@ -18,6 +20,13 @@ public:
     [[nodiscard]] Result<TeacherImportSummary> importTeachers(
         const TeacherImportPlan& plan
         );
+
+    [[nodiscard]] std::expected<
+        ClassMngr::Next::Application::TeacherImportUseCaseResult,
+        ClassMngr::Next::Application::TeacherImportUseCaseError
+        > applyUseCase(
+            const ClassMngr::Next::Application::TeacherImportUseCaseRequest& request
+            );
 
     [[nodiscard]] static QString legacyErrorMessage(
         const ClassMngr::Next::Application::TeacherImportUseCaseError& error

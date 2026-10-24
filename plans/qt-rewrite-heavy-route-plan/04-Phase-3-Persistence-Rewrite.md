@@ -38,8 +38,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-23
-- Current note: Batch 2 remains active and unpushed; F1348 (Roster availability
-  batch read) is complete, and F1349 is current: Teacher Import apply. The
+- Current note: Batch 2 remains active and unpushed; F1349 (Teacher Import
+  apply) is complete, and F1350 is current: Schedule slot-state read. The
   Batch 1 push receipt is in the progress log.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
@@ -58,11 +58,13 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1348 — 2026-10-23
+## Latest Progress Update — F1349 — 2026-10-23
 
-Moved the roster availability batch-read adapter to WorkspaceStore; its
-repository calls, transaction, and behavior remain unchanged. Three focused
-CTests passed. Details are in the [progress log](04-Phase-3-Progress-Log.md).
+Moved Teacher Import apply execution behind `TeacherImportRepository` and
+connected the Platform port through `WorkspaceStore`; legacy result and error
+mapping remain. The Platform and Application tests and six named UI parity
+CTests passed. The aggregate UI parity failure is documented in the
+[progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
 
