@@ -41,8 +41,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Current note: Batch 9 is active with complete discovery and nine ordered
   candidates. F1419 runtime schema-v6 DDL/index/constraint contract tests are
   accepted; F1420's documentation-only API inventory and F1421's populated-v6
-  SaveAs/export slice are accepted, and F1422 is current. Batch 10 discovery is
-  due when F1426 (candidate 8 of 9) starts. The [DataService migration
+  SaveAs/export slice are accepted; F1422's locked/truncated-file preservation
+  slice is accepted, and F1423 is current. Batch 10 discovery is due when F1426
+  (candidate 8 of 9) starts. The [DataService migration
   map](../../docs/qt-rewrite/data-service-migration-map.md) records F1420's
   deliverable. The ordered scope and full-exit audit evidence are in the
   current tracker and progress log.
@@ -64,16 +65,17 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1421 — 2026-10-24
+## Latest Progress Update — F1422 — 2026-10-24
 
-F1421's populated v6 `.tps` SaveAs/export slice is accepted. Focused macOS
-arm64 `ClassMngrDataServiceLifecycleTests` CTest passed 1/1; its verbose rerun
-passed 40 QtTest cases. Both destinations reopened existing-only and contained
-the expected fixture data; the source path, open state, and data remained
-preserved. This is focused macOS arm64 evidence: no Windows or interrupted-copy
-claim is made; interruption coverage remains F1423. F1422 is current in Batch
-9. The Phase 3 exit gate and backlog remain open; see the [progress
-log](04-Phase-3-Progress-Log.md).
+F1422's valid-v6 lock and truncated-file preservation slice is accepted.
+Focused macOS arm64/Qt 6.12 `ClassMngrDataServiceLifecycleTests` CTest passed
+1/1; its verbose rerun passed 42 QtTest cases. Holding same-process
+`BEGIN EXCLUSIVE` made existing-only open refuse a valid v6 profile; a
+100-byte truncated SQLite profile was rejected. Both cases preserved the
+active store/session/services/connection/path/sentinel and target bytes; the
+locked target reopened as v6 after release. No Windows claim is made. F1423 is
+current in Batch 9. The Phase 3 exit gate and backlog remain open; see the
+[progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
 

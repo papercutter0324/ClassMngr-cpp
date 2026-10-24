@@ -2788,5 +2788,20 @@ existing-only open and contained the expected fixture data. The source stayed
 open at its original path and retained its data. This does not claim Windows
 coverage or interrupted-copy behavior; deterministic interruption and atomic
 destination preservation remain F1423. F1422, valid-v6 locked and truncated-
-file preservation, is current in Batch 9. Batch 10 discovery remains due when
-F1426 (candidate 8 of 9) starts; Phase 3 remains In Progress.
+file preservation, was next in Batch 9; its acceptance is recorded below.
+Batch 10 discovery remains due when F1426 (candidate 8 of 9) starts; Phase 3
+remains In Progress.
+
+## F1422 — Valid-v6 locked and truncated-file preservation — 2026-10-24
+
+Accepted with focused macOS arm64/Qt 6.12 evidence: the
+`ClassMngrDataServiceLifecycleTests` CTest passed 1/1, and the verbose rerun
+passed 42 QtTest cases. With a same-process `BEGIN EXCLUSIVE` lock held,
+existing-only open refused a valid v6 profile. A 100-byte truncated SQLite
+profile was rejected. In both cases, the active store, session, services,
+connection, path, sentinel, and target bytes were preserved; after lock
+release, the locked target reopened as v6. This is focused macOS evidence; no
+Windows claim is made. F1423, deterministic post-write `QSaveFile` interruption
+and atomic destination preservation, is current in Batch 9. Batch 10 discovery
+remains due when F1426 (candidate 8 of 9, the second-to-last) starts. Phase 3
+remains In Progress.

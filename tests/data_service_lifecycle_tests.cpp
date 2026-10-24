@@ -229,6 +229,8 @@ private slots:
     void databaseSessionOwnsRepositoryLifetime();
     void borrowedDataServicePreservesOwnedSession();
     void failedReplacementOpenPreservesSessionAndReleasesCandidate();
+    void lockedV6ReplacementPreservesActiveWorkspace();
+    void truncatedV6ReplacementPreservesActiveWorkspace();
     void databaseFileCopyTreatsSameFileAliasesAsNoOp();
     void databaseFileCopyPreservesDestinationWhenSourceMissing();
     void databaseFileCopyReplacesDestinationAndCreatesParent();
@@ -2915,6 +2917,234 @@ failedReplacementOpenPreservesSessionAndReleasesCandidate()
         featureSettings.load(QStringLiteral("replacement/sentinel"))->toString(),
         QStringLiteral("profile B")
         );
+}
+
+void DataServiceLifecycleTests::lockedV6ReplacementPreservesActiveWorkspace()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString activePath =
+        directory.filePath(QStringLiteral("active-profile.tps"));
+    const QString lockedPath =
+        directory.filePath(QStringLiteral("locked-v6-profile.tps"));
+    const QString activeSettingKey =
+        QStringLiteral("f1422/active-workspace");
+    const QString targetSettingKey =
+        QStringLiteral("f1422/locked-target");
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(activePath));
+    QVERIFY(services.settingsService()->save(
+        activeSettingKey,
+        QStringLiteral("active workspace survives")
+        ));
+    WorkspaceStore* const activeStore = services.workspaceStore();
+    DatabaseSession* const activeSession = services.databaseSession();
+    SettingsService* const activeSettings = services.settingsService();
+    const QString activeConnection =
+        activeStore->database().connectionName();
+    const QString normalizedActivePath =
+        QFileInfo(activePath).absoluteFilePath();
+
+    {
+        ApplicationServices targetSeed;
+        QVERIFY(targetSeed.openDatabase(lockedPath));
+        QVERIFY(targetSeed.settingsService()->save(
+            targetSettingKey,
+            QStringLiteral("valid locked v6 profile")
+            ));
+        {
+            QSqlDatabase targetDatabase = targetSeed.workspaceStore()->database();
+            const Result<int> targetVersion =
+                DatabaseSchemaManager::schemaVersion(targetDatabase);
+            QVERIFY(targetVersion);
+            QCOMPARE(*targetVersion, DatabaseSchemaManager::LatestSchemaVersion);
+        }
+        targetSeed.closeDatabase();
+    }
+
+    QFile targetBeforeFile(lockedPath);
+    QVERIFY(targetBeforeFile.open(QIODevice::ReadOnly));
+    const QByteArray targetBytesBefore = targetBeforeFile.readAll();
+    targetBeforeFile.close();
+    QVERIFY(!targetBytesBefore.isEmpty());
+
+    const QString lockConnectionName =
+        QStringLiteral("f1422-locked-v6-target");
+    {
+        QSqlDatabase lockDatabase = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            lockConnectionName
+            );
+        lockDatabase.setDatabaseName(lockedPath);
+        QVERIFY2(
+            lockDatabase.open(),
+            qPrintable(lockDatabase.lastError().text())
+            );
+
+        {
+            QSqlQuery journalModeQuery(lockDatabase);
+            QVERIFY2(
+                journalModeQuery.exec(QStringLiteral("PRAGMA journal_mode=DELETE")),
+                qPrintable(journalModeQuery.lastError().text())
+                );
+            QVERIFY(journalModeQuery.next());
+            QCOMPARE(journalModeQuery.value(0).toString(), QStringLiteral("delete"));
+        }
+
+        {
+            QSqlQuery lockQuery(lockDatabase);
+            QVERIFY2(
+                lockQuery.exec(QStringLiteral("BEGIN EXCLUSIVE")),
+                qPrintable(lockQuery.lastError().text())
+                );
+
+            const QStringList connectionsBeforeFailure =
+                QSqlDatabase::connectionNames();
+            const Status lockedOpen = services.openExistingDatabase(lockedPath);
+            QVERIFY(!lockedOpen);
+            QCOMPARE(services.workspaceStore(), activeStore);
+            QCOMPARE(services.databaseSession(), activeSession);
+            QCOMPARE(services.settingsService(), activeSettings);
+            QVERIFY(services.hasOpenDatabase());
+            QCOMPARE(services.currentDatabasePath(), normalizedActivePath);
+            QCOMPARE(
+                services.workspaceStore()->database().connectionName(),
+                activeConnection
+                );
+            QCOMPARE(QSqlDatabase::connectionNames(), connectionsBeforeFailure);
+            const Result<QVariant> activeValue =
+                services.settingsService()->load(activeSettingKey);
+            QVERIFY(activeValue);
+            QCOMPARE(
+                activeValue->toString(),
+                QStringLiteral("active workspace survives")
+                );
+
+            QVERIFY2(
+                lockQuery.exec(QStringLiteral("ROLLBACK")),
+                qPrintable(lockQuery.lastError().text())
+                );
+        }
+        lockDatabase.close();
+    }
+    QSqlDatabase::removeDatabase(lockConnectionName);
+
+    QFile targetAfterFile(lockedPath);
+    QVERIFY(targetAfterFile.open(QIODevice::ReadOnly));
+    QCOMPARE(targetAfterFile.readAll(), targetBytesBefore);
+    targetAfterFile.close();
+
+    ApplicationServices targetVerification;
+    QVERIFY(targetVerification.openExistingDatabase(lockedPath));
+    {
+        QSqlDatabase targetDatabase = targetVerification.workspaceStore()->database();
+        const Result<int> targetVersion =
+            DatabaseSchemaManager::schemaVersion(targetDatabase);
+        QVERIFY(targetVersion);
+        QCOMPARE(*targetVersion, DatabaseSchemaManager::LatestSchemaVersion);
+    }
+    const Result<QVariant> targetValue =
+        targetVerification.settingsService()->load(targetSettingKey);
+    QVERIFY(targetValue);
+    QCOMPARE(targetValue->toString(), QStringLiteral("valid locked v6 profile"));
+}
+
+void DataServiceLifecycleTests::truncatedV6ReplacementPreservesActiveWorkspace()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString activePath =
+        directory.filePath(QStringLiteral("active-profile.tps"));
+    const QString truncatedPath =
+        directory.filePath(QStringLiteral("truncated-v6-profile.tps"));
+    const QString activeSettingKey =
+        QStringLiteral("f1422/active-truncated-workspace");
+    const QString targetSettingKey =
+        QStringLiteral("f1422/truncated-target");
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(activePath));
+    QVERIFY(services.settingsService()->save(
+        activeSettingKey,
+        QStringLiteral("active workspace survives truncation")
+        ));
+    WorkspaceStore* const activeStore = services.workspaceStore();
+    DatabaseSession* const activeSession = services.databaseSession();
+    SettingsService* const activeSettings = services.settingsService();
+    const QString activeConnection =
+        activeStore->database().connectionName();
+    const QString normalizedActivePath =
+        QFileInfo(activePath).absoluteFilePath();
+
+    {
+        ApplicationServices targetSeed;
+        QVERIFY(targetSeed.openDatabase(truncatedPath));
+        QVERIFY(targetSeed.settingsService()->save(
+            targetSettingKey,
+            QStringLiteral("valid v6 profile before truncation")
+            ));
+        {
+            QSqlDatabase targetDatabase = targetSeed.workspaceStore()->database();
+            const Result<int> targetVersion =
+                DatabaseSchemaManager::schemaVersion(targetDatabase);
+            QVERIFY(targetVersion);
+            QCOMPARE(*targetVersion, DatabaseSchemaManager::LatestSchemaVersion);
+        }
+        targetSeed.closeDatabase();
+    }
+
+    QFile targetFile(truncatedPath);
+    QVERIFY(targetFile.open(QIODevice::ReadWrite));
+    const QByteArray completeDatabaseBytes = targetFile.readAll();
+    QVERIFY(completeDatabaseBytes.startsWith(QByteArrayLiteral("SQLite format 3")));
+    QVERIFY(completeDatabaseBytes.size() > 100);
+    const quint32 encodedPageSize =
+        (static_cast<quint32>(static_cast<unsigned char>(completeDatabaseBytes.at(16))) << 8)
+        | static_cast<quint32>(static_cast<unsigned char>(completeDatabaseBytes.at(17)));
+    const quint32 pageSize = encodedPageSize == 1
+        ? 65536
+        : encodedPageSize;
+    QVERIFY(pageSize >= 512);
+    QVERIFY(qint64(100) < pageSize);
+    QVERIFY(targetFile.resize(100));
+    targetFile.close();
+
+    QFile truncatedBeforeFile(truncatedPath);
+    QVERIFY(truncatedBeforeFile.open(QIODevice::ReadOnly));
+    const QByteArray truncatedBytes = truncatedBeforeFile.readAll();
+    truncatedBeforeFile.close();
+    QCOMPARE(truncatedBytes.size(), 100);
+    QVERIFY(truncatedBytes.startsWith(QByteArrayLiteral("SQLite format 3")));
+
+    const QStringList connectionsBeforeFailure =
+        QSqlDatabase::connectionNames();
+    const Status truncatedOpen = services.openExistingDatabase(truncatedPath);
+    QVERIFY(!truncatedOpen);
+    QCOMPARE(services.workspaceStore(), activeStore);
+    QCOMPARE(services.databaseSession(), activeSession);
+    QCOMPARE(services.settingsService(), activeSettings);
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedActivePath);
+    QCOMPARE(
+        services.workspaceStore()->database().connectionName(),
+        activeConnection
+        );
+    QCOMPARE(QSqlDatabase::connectionNames(), connectionsBeforeFailure);
+    const Result<QVariant> activeValue =
+        services.settingsService()->load(activeSettingKey);
+    QVERIFY(activeValue);
+    QCOMPARE(
+        activeValue->toString(),
+        QStringLiteral("active workspace survives truncation")
+        );
+
+    QFile truncatedAfterFile(truncatedPath);
+    QVERIFY(truncatedAfterFile.open(QIODevice::ReadOnly));
+    QCOMPARE(truncatedAfterFile.readAll(), truncatedBytes);
+    truncatedAfterFile.close();
 }
 
 void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()
