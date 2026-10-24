@@ -385,7 +385,12 @@ Result<TeacherImportSummary> TeacherService::importTeachers(
 
     if (auto* repository = session() ? session()->teacherImportRepository() : nullptr)
     {
-        return repository->importTeachers(*normalizedPlan);
+        const auto imported = repository->importTeachers(*normalizedPlan);
+        if (!imported)
+        {
+            return std::unexpected(toLegacyDiagnostic(imported.error()));
+        }
+        return *imported;
     }
     return dataService()
         ? dataService()->importTeachers(*normalizedPlan)

@@ -296,6 +296,7 @@ private slots:
     void campusListValidatesPersistedIds();
     void campusListRejectsLateFetchFailure();
     void teacherListValidatesPersistedIds();
+    void teacherImportFailureReturnsLegacyDiagnostic();
     void repositoryWriteFailuresAreObservable();
     void coreLookupReadFailuresAreObservable();
     void teacherDirectoryRejectsLateFetchFailure();
@@ -1751,6 +1752,29 @@ void DataServiceLifecycleTests::teacherListValidatesPersistedIds()
     QVERIFY(!teachersWithZeroId);
     QVERIFY(!teachersWithZeroId.error().isEmpty());
     QCOMPARE(snapshotTeacherRows(), rowsBeforeZeroRead);
+}
+
+void DataServiceLifecycleTests::teacherImportFailureReturnsLegacyDiagnostic()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("teacher-import-failure.db"))
+        ).has_value());
+
+    TeacherImportPlan plan;
+    plan.sourceDate = QDate(2026, 10, 1);
+    Teacher koreanTeacher;
+    koreanTeacher.teacherKr = QStringLiteral("English only");
+    plan.koreanTeachers.append(koreanTeacher);
+
+    const auto imported = service.importTeachers(plan);
+    QVERIFY(!imported);
+    QCOMPARE(
+        imported.error(),
+        QStringLiteral("Every imported Korean teacher must have a name."));
 }
 
 void DataServiceLifecycleTests::repositoryWriteFailuresAreObservable()

@@ -9,6 +9,7 @@
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
+#include "features/teacher/ui/teacher_import_apply_error_display.h"
 #include "next/platform/application_services_teacher_import_apply_port.h"
 #include "next/application/initial_setup_class_details_requirements.h"
 #include "next/application/initial_setup_class_times_requirement.h"
@@ -297,13 +298,15 @@ public:
             const ClassMngr::Next::Platform::
                 ApplicationServicesTeacherImportApplyPort applyPort(
                     setup->services());
-            const Result<
-                ClassMngr::Next::Application::TeacherImportUseCaseResult>
+            const ClassMngr::Next::Platform::TeacherImportApplyPortResult
                 imported = applyPort.apply(dialog.importPlan());
             if (!imported)
             {
                 DialogServices::showWarning(
-                    this, tr("Import Teachers"), imported.error());
+                    this,
+                    tr("Import Teachers"),
+                    ClassMngr::Features::TeacherUi::
+                        teacherImportApplyErrorDisplayText(imported.error()));
                 return;
             }
 

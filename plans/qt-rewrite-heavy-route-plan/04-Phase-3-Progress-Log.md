@@ -3593,5 +3593,44 @@ ClassTransfer first aborted without a display; its offscreen retry reached the
 UI and failed the documented F1326 baseline teacher-fallback assertion. F1445
 made no ClassTransfer production change, so this is an evidence limitation,
 not a reported F1445 regression. Independent `git diff --check` passed. No full
-suite or other-platform build was run. F1445 is verified with its slice commit
-pending; F1446 is next.
+suite or other-platform build was run. F1445 is committed locally as
+`0f9b8bf6f9165d51f53e3f46af616368a46bdba0`
+(`Phase3 - Structure workspace persistence errors (F1445)`); it has not been
+pushed.
+
+## F1446 — Teacher Import structured errors — verified, commit pending — 2026-10-24
+
+`TeacherImportRepository::importTeachers()` now returns
+`RepositoryResult<TeacherImportSummary>` and maps typed
+`TeacherImportUseCaseErrorKind` without diagnostic parsing: InvalidRequest →
+InvalidInput (explicit but unreachable through the current public legacy plan
+adapter and fixed nonempty policy); InvalidReview/InvalidPlan → Validation;
+AmbiguousStoredMatch → Conflict; PersistenceFailure → Technical; and
+KoreanMatchPolicyRejected → conservative Technical. The existing formatter
+preserves legacy diagnostic text. `TeacherImportUseCaseError` remains intact
+through the Next apply port, alongside explicit PlanPreparation and
+WorkspaceUnavailable errors; the sidebar and setup wizard format at the UI
+boundary. DataService and TeacherService keep string result APIs and call
+`toLegacyDiagnostic()`. `applyUseCase()` remains a transitional orchestration
+bridge with one consumer, `ApplicationServicesTeacherImportApplyPort`; remove
+it when that port composes the Application use case over the persistence
+adapter/port.
+
+The executor built the focused targets; CTests for
+`ClassMngrTeacherImportTests`, `ClassMngrTeacherImportDialogTests`, and
+`ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests` passed
+3/3 with Qt app tests offscreen. The independent Tester built `ClassMngr` and
+those targets and passed the same three CTests. Six isolated
+`TeacherImportUiApplyParity` routes passed 6/6. Added
+`teacherImportFailureReturnsLegacyDiagnostic()` to
+`ClassMngrDataServiceLifecycleTests`; executor and Tester each passed its
+CTest 1/1, and Tester also ran the named slot. `git diff --check` passed.
+
+Two limits remain: aggregate `ClassMngrTeacherImportUiApplyParityTests`
+aborted in macOS `wizardSuccessTranscript()` with `NSInvalidArgumentException`
+from `NSBundle initWithURL:nil`. F1442's exact wizard-success slot passed
+with normal macOS service access, and F1446 changes only the wizard's
+apply-error display branch. No full suite or other-platform build was run.
+F1446 is verified with its slice commit pending; F1447 is next. The accepted
+Batch 22 order and F1462 Batch 23 discovery trigger remain in the
+[current batch tracker](Current-Slice-Batches.md).

@@ -367,7 +367,7 @@ void TeacherImportDialogTests::checkedInWorkbookProductionDialogPlanAppliesToRep
         TeacherImportRepository repository(database);
         const auto imported = repository.importTeachers(plan);
         QVERIFY2(imported.has_value(),
-                 imported.has_value() ? "" : qPrintable(imported.error()));
+                 imported.has_value() ? "" : qPrintable(imported.error().diagnostic));
         QCOMPARE(imported->koreanTeachers.created, 1);
         QCOMPARE(imported->koreanTeachers.updated, 1);
         QCOMPARE(imported->koreanTeachers.unchanged, 0);

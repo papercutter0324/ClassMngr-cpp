@@ -9,8 +9,12 @@ log](04-Phase-3-Progress-Log.md).
 
 F1444 implementation and independent focused verification are complete; its
 commit `fef61c849b4f845ba89a008dcee697bc380895ce` is local and not pushed.
-F1445 implementation and focused verification are complete; its slice commit
-is pending. F1446 is next. The accepted queue is:
+F1445 implementation and focused verification are complete; commit
+`0f9b8bf6f9165d51f53e3f46af616368a46bdba0` is local and not pushed. F1446
+focused verification is complete and its slice commit is pending; F1447 is
+next. Its accepted error mapping, port-boundary, bridge removal condition, and
+verification limits are recorded in the [progress
+log](04-Phase-3-Progress-Log.md). The accepted queue is:
 
 1. **F1444** — shared `RepositoryError`/`RepositoryResult`/status contract and SQL error mapping.
 2. **F1445** — Workspace/database transaction, schema, lifecycle, and file-operation errors.

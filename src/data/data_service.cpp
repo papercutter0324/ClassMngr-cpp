@@ -263,7 +263,12 @@ Result<TeacherImportSummary> DataService::importTeachers(
     {
         return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
-    return m_session->teacherImportRepository()->importTeachers(plan);
+    const auto imported = m_session->teacherImportRepository()->importTeachers(plan);
+    if (!imported)
+    {
+        return std::unexpected(toLegacyDiagnostic(imported.error()));
+    }
+    return *imported;
 }
 
 Result<int> DataService::createClass(

@@ -805,7 +805,7 @@ void TeacherImportTests::appliesGeneratedWorkbookWithExplicitReviewDecision()
         TeacherImportRepository repository(database);
         const auto imported = repository.importTeachers(plan);
         QVERIFY2(imported.has_value(),
-                 imported.has_value() ? "" : qPrintable(imported.error()));
+                 imported.has_value() ? "" : qPrintable(imported.error().diagnostic));
         QCOMPARE(imported->koreanTeachers.created, 0);
         QCOMPARE(imported->koreanTeachers.updated, 1);
         QCOMPARE(imported->koreanTeachers.unchanged, 0);
@@ -1154,7 +1154,7 @@ void TeacherImportTests::matchesStoredKoreanTeacherAfterRemovingSuffix()
         const auto imported = repository.importTeachers(plan);
         if (!imported)
         {
-            QFAIL(qPrintable(imported.error()));
+            QFAIL(qPrintable(imported.error().diagnostic));
         }
         QCOMPARE(imported->koreanTeachers.created, 0);
         QCOMPARE(imported->koreanTeachers.updated, 1);
@@ -1213,7 +1213,7 @@ void TeacherImportTests::updatesKoreanTeacherWithWideId()
         TeacherImportRepository repository(database);
         const auto imported = repository.importTeachers(plan);
         QVERIFY2(imported.has_value(),
-                 imported.has_value() ? "" : qPrintable(imported.error()));
+                 imported.has_value() ? "" : qPrintable(imported.error().diagnostic));
         QCOMPARE(imported->koreanTeachers.created, 0);
         QCOMPARE(imported->koreanTeachers.updated, 1);
         QCOMPARE(imported->koreanTeachers.unchanged, 0);
@@ -1283,7 +1283,7 @@ void TeacherImportTests::updatesNativeEnglishTeacherWithWideId()
         TeacherImportRepository repository(database);
         const auto imported = repository.importTeachers(plan);
         QVERIFY2(imported.has_value(),
-                 imported.has_value() ? "" : qPrintable(imported.error()));
+                 imported.has_value() ? "" : qPrintable(imported.error().diagnostic));
         QCOMPARE(imported->nativeEnglishTeachers.created, 0);
         QCOMPARE(imported->nativeEnglishTeachers.updated, 1);
         QCOMPARE(imported->nativeEnglishTeachers.unchanged, 0);
@@ -1360,7 +1360,7 @@ void TeacherImportTests::updatesNativeEnglishTeacherWithInt64MaxId()
         TeacherImportRepository repository(database);
         const auto imported = repository.importTeachers(plan);
         QVERIFY2(imported.has_value(),
-                 imported.has_value() ? "" : qPrintable(imported.error()));
+                 imported.has_value() ? "" : qPrintable(imported.error().diagnostic));
         QCOMPARE(imported->nativeEnglishTeachers.created, 0);
         QCOMPARE(imported->nativeEnglishTeachers.updated, 1);
         QCOMPARE(imported->nativeEnglishTeachers.unchanged, 0);
@@ -1435,7 +1435,7 @@ void TeacherImportTests::updatesGsTeamMemberWithWideId()
         TeacherImportRepository repository(database);
         const auto imported = repository.importTeachers(plan);
         QVERIFY2(imported.has_value(),
-                 imported.has_value() ? "" : qPrintable(imported.error()));
+                 imported.has_value() ? "" : qPrintable(imported.error().diagnostic));
         QCOMPARE(imported->gsTeamMembers.created, 0);
         QCOMPARE(imported->gsTeamMembers.updated, 1);
         QCOMPARE(imported->gsTeamMembers.unchanged, 0);
@@ -1508,7 +1508,7 @@ void TeacherImportTests::updatesGsTeamMemberWithInt64MaxId()
         TeacherImportRepository repository(database);
         const auto imported = repository.importTeachers(plan);
         QVERIFY2(imported.has_value(),
-                 imported.has_value() ? "" : qPrintable(imported.error()));
+                 imported.has_value() ? "" : qPrintable(imported.error().diagnostic));
         QCOMPARE(imported->gsTeamMembers.created, 0);
         QCOMPARE(imported->gsTeamMembers.updated, 1);
         QCOMPARE(imported->gsTeamMembers.unchanged, 0);
@@ -1590,9 +1590,10 @@ void TeacherImportTests::rejectsAmbiguousKoreanTeacherMatchWithoutWrites()
         const auto imported = repository.importTeachers(plan);
         QVERIFY(!imported.has_value());
         QCOMPARE(
-            imported.error(),
+            imported.error().diagnostic,
             QStringLiteral("More than one stored Korean teacher matches %1.")
                 .arg(ambiguousName));
+        QCOMPARE(imported.error().code, RepositoryErrorCode::Conflict);
 
         QSqlQuery persisted(database);
         QVERIFY(persisted.exec(QStringLiteral(
@@ -1676,9 +1677,10 @@ void TeacherImportTests::preservesRawNativeAndGsAmbiguityLabels()
         const auto nativeResult = repository.importTeachers(nativePlan);
         QVERIFY(!nativeResult.has_value());
         QCOMPARE(
-            nativeResult.error(),
+            nativeResult.error().diagnostic,
             QStringLiteral(
                 "More than one stored Native English Teacher matches   JAMIE  ."));
+        QCOMPARE(nativeResult.error().code, RepositoryErrorCode::Conflict);
 
         TeacherImportPlan gsPlan;
         gsPlan.templateId = QStringLiteral("raw-gs-ambiguity-label");
@@ -1692,9 +1694,10 @@ void TeacherImportTests::preservesRawNativeAndGsAmbiguityLabels()
         const auto gsResult = repository.importTeachers(gsPlan);
         QVERIFY(!gsResult.has_value());
         QCOMPARE(
-            gsResult.error(),
+            gsResult.error().diagnostic,
             QStringLiteral("More than one stored GS Team member matches   ")
                 + koreanName + QStringLiteral("  ."));
+        QCOMPARE(gsResult.error().code, RepositoryErrorCode::Conflict);
 
         database.close();
     }
@@ -1742,8 +1745,9 @@ void TeacherImportTests::rollsBackAllTeacherWritesWhenLatestDateSaveFails()
         TeacherImportRepository repository(database);
         const auto imported = repository.importTeachers(plan);
         QVERIFY(!imported.has_value());
-        QVERIFY(imported.error().startsWith(
+        QVERIFY(imported.error().diagnostic.startsWith(
             QStringLiteral("Saving the teacher import date failed")));
+        QCOMPARE(imported.error().code, RepositoryErrorCode::Technical);
 
         QSqlQuery persisted(database);
         QVERIFY(persisted.exec(QStringLiteral("SELECT COUNT(*) FROM teachers")));
@@ -1804,7 +1808,7 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         const auto imported = repository.importTeachers(plan);
         if (!imported)
         {
-            QFAIL(qPrintable(imported.error()));
+            QFAIL(qPrintable(imported.error().diagnostic));
         }
         QCOMPARE(imported->koreanTeachers.created, 1);
         QCOMPARE(imported->koreanTeachers.updated, 0);
@@ -1896,9 +1900,10 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         const auto duplicateImport = repository.importTeachers(duplicatePlan);
         QVERIFY(!duplicateImport.has_value());
         QCOMPARE(
-            duplicateImport.error(),
+            duplicateImport.error().diagnostic,
             QStringLiteral("The import contains a duplicate Korean teacher name.")
             );
+        QCOMPARE(duplicateImport.error().code, RepositoryErrorCode::Validation);
         QVERIFY(counts.exec(QStringLiteral(
             "SELECT COUNT(*) FROM teachers WHERE teacher_kr='롤백교사'")));
         QVERIFY(counts.next());
@@ -1916,7 +1921,8 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
                 QFAIL("Invalid teacher import plan was accepted.");
                 return;
             }
-            QCOMPARE(rejected.error(), expectedError);
+            QCOMPARE(rejected.error().diagnostic, expectedError);
+            QCOMPARE(rejected.error().code, RepositoryErrorCode::Validation);
         };
 
         TeacherImportPlan emptyKoreanPlan;
@@ -1929,9 +1935,10 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
             repository.importTeachers(emptyKoreanPlan);
         QVERIFY(!emptyKoreanImport.has_value());
         QCOMPARE(
-            emptyKoreanImport.error(),
+            emptyKoreanImport.error().diagnostic,
             QStringLiteral("Every imported Korean teacher must have a name.")
             );
+        QCOMPARE(emptyKoreanImport.error().code, RepositoryErrorCode::Validation);
         QVERIFY(counts.exec(QStringLiteral("SELECT COUNT(*) FROM teachers")));
         QVERIFY(counts.next());
         QCOMPARE(counts.value(0).toInt(), 1);
@@ -2027,9 +2034,10 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         const auto ambiguousImport = repository.importTeachers(ambiguousPlan);
         QVERIFY(!ambiguousImport.has_value());
         QCOMPARE(
-            ambiguousImport.error(),
+            ambiguousImport.error().diagnostic,
             QStringLiteral(
                 "More than one stored Native English Teacher matches JAMIE."));
+        QCOMPARE(ambiguousImport.error().code, RepositoryErrorCode::Conflict);
         QVERIFY(counts.exec(QStringLiteral(
             "SELECT COUNT(*) FROM teachers WHERE teacher_kr='원자성교사'")));
         QVERIFY(counts.next());
@@ -2122,7 +2130,7 @@ void TeacherImportTests::gsTeamImportMergesSparseMatchedRecordsAndSkipsNoOpUpdat
         TeacherImportRepository repository(database);
         const auto imported = repository.importTeachers(plan);
         QVERIFY2(imported.has_value(),
-                 imported.has_value() ? "" : qPrintable(imported.error()));
+                 imported.has_value() ? "" : qPrintable(imported.error().diagnostic));
         QCOMPARE(imported->gsTeamMembers.created, 1);
         QCOMPARE(imported->gsTeamMembers.updated, 1);
         QCOMPARE(imported->gsTeamMembers.unchanged, 1);
@@ -2186,9 +2194,10 @@ void TeacherImportTests::gsTeamImportMergesSparseMatchedRecordsAndSkipsNoOpUpdat
         const auto ambiguous = repository.importTeachers(ambiguousPlan);
         QVERIFY(!ambiguous.has_value());
         QCOMPARE(
-            ambiguous.error(),
+            ambiguous.error().diagnostic,
             QStringLiteral("More than one stored GS Team member matches %1.")
                 .arg(koreanName));
+        QCOMPARE(ambiguous.error().code, RepositoryErrorCode::Conflict);
         QVERIFY(persisted.exec(QStringLiteral(
             "SELECT updates FROM gs_team_import_update_probe")));
         QVERIFY(persisted.next());
@@ -2290,7 +2299,7 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
         TeacherImportRepository repository(database);
         const auto imported = repository.importTeachers(plan);
         QVERIFY2(imported.has_value(),
-                 imported.has_value() ? "" : qPrintable(imported.error()));
+                 imported.has_value() ? "" : qPrintable(imported.error().diagnostic));
         QCOMPARE(imported->koreanTeachers.created, 1);
         QCOMPARE(imported->koreanTeachers.updated, 1);
         QCOMPARE(imported->koreanTeachers.unchanged, 0);
@@ -2398,7 +2407,7 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
         unchangedPlan.koreanTeachers.append(sparseKorean);
         const auto unchanged = repository.importTeachers(unchangedPlan);
         QVERIFY2(unchanged.has_value(),
-                 unchanged.has_value() ? "" : qPrintable(unchanged.error()));
+                 unchanged.has_value() ? "" : qPrintable(unchanged.error().diagnostic));
         QCOMPARE(unchanged->koreanTeachers.created, 0);
         QCOMPARE(unchanged->koreanTeachers.updated, 0);
         QCOMPARE(unchanged->koreanTeachers.unchanged, 1);
@@ -2422,8 +2431,9 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
         const auto invalidReview = repository.importTeachers(rejected);
         QVERIFY(!invalidReview.has_value());
         QCOMPARE(
-            invalidReview.error(),
+            invalidReview.error().diagnostic,
             QStringLiteral("The teacher import review choices are invalid."));
+        QCOMPARE(invalidReview.error().code, RepositoryErrorCode::Validation);
 
         TeacherImportPlan mismatchedSelection = plan;
         mismatchedSelection.sourceDate = QDate();
@@ -2432,8 +2442,9 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
             repository.importTeachers(mismatchedSelection);
         QVERIFY(!mismatchedReview.has_value());
         QCOMPARE(
-            mismatchedReview.error(),
+            mismatchedReview.error().diagnostic,
             QStringLiteral("The reviewed Korean teachers do not match the import selection."));
+        QCOMPARE(mismatchedReview.error().code, RepositoryErrorCode::Validation);
 
         QVERIFY(persisted.exec(QStringLiteral("SELECT COUNT(*) FROM teachers")));
         QVERIFY(persisted.next());

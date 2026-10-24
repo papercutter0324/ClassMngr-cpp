@@ -39,18 +39,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Unassigned
 - Last updated: 2026-10-24
 - Current note: The §3.3 structured-error audit reopened Phase 3's exit gate.
-  F1444's shared repository error contract is committed locally but not pushed.
-  F1445 implementation and focused verification are complete; its slice
-  commit is pending and F1446 is next. The prior gate pass remains historical;
-  its audit and the accepted queue are in the
-  [progress log](04-Phase-3-Progress-Log.md) and [current batch
-  tracker](Current-Slice-Batches.md). The
-  [DataService migration
-  map](../../docs/qt-rewrite/data-service-migration-map.md) records F1420's
-  deliverable, including that `DataService::save()` has no ordinary production
-  caller. See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
-  [progress log](04-Phase-3-Progress-Log.md), and [current batch
-  tracker](Current-Slice-Batches.md).
+  F1444 and F1445 are committed locally and not pushed. F1446 focused
+  verification is complete; its slice commit is pending and F1447 is next.
+  Exact evidence and accepted scope are in the
+  [progress log](04-Phase-3-Progress-Log.md); the ordered queue is in the
+  [current batch tracker](Current-Slice-Batches.md).
 
 ### Slice batches
 
@@ -65,19 +58,13 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1445 workspace persistence errors — 2026-10-24
+## Latest Progress Update — F1446 Teacher Import structured errors — 2026-10-24
 
-F1445 types public WorkspaceStore, schema, and database-file operation results
-and forwards typed failures through ApplicationServices. DataService retains
-legacy Status/Result APIs and converts RepositoryError with
-`toLegacyDiagnostic()`; `ApplicationServices::saveDatabase()` remains void,
-`DatabaseTransaction` is unchanged, and `withReadTransaction` retains Stage
-and RepositoryError while callers keep their application operation code.
-Executor and independent focused macOS Debug verification passed. The slice
-commit is pending; F1446 is next. Exact evidence and limits are in the
-[progress log](04-Phase-3-Progress-Log.md) and [current batch
-tracker](Current-Slice-Batches.md). The prior gate review and its limitations
-remain recorded in the progress log.
+F1446's focused verification is complete and its slice commit is pending.
+F1447 is next. The accepted error mapping, apply-port boundary, bridge removal
+condition, and verification limits are in the
+[progress log](04-Phase-3-Progress-Log.md); the full ordered queue remains in
+the [current batch tracker](Current-Slice-Batches.md).
 
 ## Objective
 

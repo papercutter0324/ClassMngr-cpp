@@ -564,6 +564,7 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/teacher/import/teacher_import_template_registry.h"
     "src/features/teacher/ui/staff_directory_page.cpp"
     "src/features/teacher/ui/staff_directory_page.h"
+    "src/features/teacher/ui/teacher_import_apply_error_display.h"
     "src/features/teacher/ui/teacher_import_dialog.cpp"
     "src/features/teacher/ui/teacher_import_dialog.h"
     "src/features/teacher/ui/teacher_info_page.cpp"

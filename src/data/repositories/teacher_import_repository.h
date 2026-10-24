@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 #include "domain/models/teacher_import.h"
 #include "next/application/teacher_import_use_case.h"
 
@@ -17,10 +17,14 @@ public:
 
     explicit TeacherImportRepository(QSqlDatabase& database);
 
-    [[nodiscard]] Result<TeacherImportSummary> importTeachers(
+    [[nodiscard]] RepositoryResult<TeacherImportSummary> importTeachers(
         const TeacherImportPlan& plan
         );
 
+    // Transitional application orchestration bridge, separate from the CRUD
+    // RepositoryResult contract above. Remove it when
+    // ApplicationServicesTeacherImportApplyPort composes TeacherImportUseCase
+    // over the persistence adapter/port directly.
     [[nodiscard]] std::expected<
         ClassMngr::Next::Application::TeacherImportUseCaseResult,
         ClassMngr::Next::Application::TeacherImportUseCaseError

@@ -7,8 +7,42 @@
 #include "data/repositories/teacher_import_repository.h"
 #include "domain/validation/teacher_import_plan_preparation.h"
 
+#include <QString>
+
+#include <expected>
+#include <variant>
+
 namespace ClassMngr::Next::Platform
 {
+
+struct TeacherImportPlanPreparationFailure final
+{
+    QString diagnostic;
+
+    friend bool operator==(
+        const TeacherImportPlanPreparationFailure&,
+        const TeacherImportPlanPreparationFailure&
+        ) = default;
+};
+
+struct TeacherImportWorkspaceUnavailableFailure final
+{
+    friend bool operator==(
+        const TeacherImportWorkspaceUnavailableFailure&,
+        const TeacherImportWorkspaceUnavailableFailure&
+        ) = default;
+};
+
+using TeacherImportApplyPortError = std::variant<
+    TeacherImportPlanPreparationFailure,
+    TeacherImportWorkspaceUnavailableFailure,
+    Application::TeacherImportUseCaseError
+    >;
+
+using TeacherImportApplyPortResult = std::expected<
+    Application::TeacherImportUseCaseResult,
+    TeacherImportApplyPortError
+    >;
 
 class ApplicationServicesTeacherImportApplyPort final
 {
@@ -20,7 +54,7 @@ public:
     {
     }
 
-    [[nodiscard]] Result<Application::TeacherImportUseCaseResult> apply(
+    [[nodiscard]] TeacherImportApplyPortResult apply(
         const TeacherImportPlan& plan
         ) const
     {
@@ -28,7 +62,9 @@ public:
             ClassMngr::Domain::prepareTeacherImportPlan(plan);
         if (!normalizedPlan)
         {
-            return std::unexpected(normalizedPlan.error());
+            return std::unexpected(TeacherImportPlanPreparationFailure{
+                .diagnostic = normalizedPlan.error()
+            });
         }
 
         WorkspaceStore* const store =
@@ -36,7 +72,7 @@ public:
         if (!store || !store->isOpen())
         {
             return std::unexpected(
-                QStringLiteral("No Teacher Profile service is available."));
+                TeacherImportWorkspaceUnavailableFailure{});
         }
 
         TeacherImportRepository* const repository =
@@ -44,7 +80,7 @@ public:
         if (!repository)
         {
             return std::unexpected(
-                QStringLiteral("No Teacher Profile service is available."));
+                TeacherImportWorkspaceUnavailableFailure{});
         }
 
         const Application::TeacherImportUseCaseRequest request =
@@ -53,8 +89,7 @@ public:
         const auto imported = repository->applyUseCase(request);
         if (!imported)
         {
-            return std::unexpected(
-                TeacherImportRepository::legacyErrorMessage(imported.error()));
+            return std::unexpected(imported.error());
         }
 
         return *imported;

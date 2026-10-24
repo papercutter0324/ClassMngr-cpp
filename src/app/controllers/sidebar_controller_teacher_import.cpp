@@ -6,6 +6,7 @@
 using namespace SidebarControllerPrivate;
 
 #include "features/teacher/ui/staff_directory_page.h"
+#include "features/teacher/ui/teacher_import_apply_error_display.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "next/application/teacher_import_latest_source_date_read_query.h"
 #include "next/domain/gregorian_date.h"
@@ -91,14 +92,15 @@ void SidebarController::importTeachers()
 
     const ClassMngr::Next::Platform::
         ApplicationServicesTeacherImportApplyPort applyPort(m_services);
-    const Result<ClassMngr::Next::Application::TeacherImportUseCaseResult>
+    const ClassMngr::Next::Platform::TeacherImportApplyPortResult
         imported = applyPort.apply(plan);
     if (!imported)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Import Teachers"),
-            imported.error());
+            ClassMngr::Features::TeacherUi::teacherImportApplyErrorDisplayText(
+                imported.error()));
         return;
     }
 

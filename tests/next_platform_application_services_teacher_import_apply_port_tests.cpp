@@ -3,6 +3,7 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "data/repositories/teacher_import_repository.h"
+#include "features/teacher/ui/teacher_import_apply_error_display.h"
 #include "next/platform/application_services_teacher_import_apply_port.h"
 
 #include <QSqlError>
@@ -66,7 +67,7 @@ using namespace ClassMngr::Next;
 static_assert(std::is_same_v<
     decltype(std::declval<Platform::ApplicationServicesTeacherImportApplyPort>()
         .apply(std::declval<const TeacherImportPlan&>())),
-    Result<Application::TeacherImportUseCaseResult>>);
+    Platform::TeacherImportApplyPortResult>);
 
 class NextPlatformApplicationServicesTeacherImportApplyPortTests final
     : public QObject
@@ -91,7 +92,9 @@ appliesAllGroupsAndKeepsNewestDate()
     Platform::ApplicationServicesTeacherImportApplyPort port(&services);
 
     const auto imported = port.apply(planFor());
-    QVERIFY2(imported, qPrintable(imported ? QString() : imported.error()));
+    QVERIFY2(imported, qPrintable(imported ? QString()
+        : ClassMngr::Features::TeacherUi::teacherImportApplyErrorDisplayText(
+              imported.error())));
     QCOMPARE(imported->koreanTeachers.created.rawValue(), 1);
     QCOMPARE(imported->koreanTeachers.updated.rawValue(), 0);
     QCOMPARE(imported->koreanTeachers.unchanged.rawValue(), 0);
@@ -115,7 +118,9 @@ appliesAllGroupsAndKeepsNewestDate()
         QStringLiteral("2026-10-01"));
 
     const auto unchanged = port.apply(planFor());
-    QVERIFY2(unchanged, qPrintable(unchanged ? QString() : unchanged.error()));
+    QVERIFY2(unchanged, qPrintable(unchanged ? QString()
+        : ClassMngr::Features::TeacherUi::teacherImportApplyErrorDisplayText(
+              unchanged.error())));
     QCOMPARE(unchanged->koreanTeachers.created.rawValue(), 0);
     QCOMPARE(unchanged->koreanTeachers.updated.rawValue(), 0);
     QCOMPARE(unchanged->koreanTeachers.unchanged.rawValue(), 1);
@@ -132,7 +137,9 @@ appliesAllGroupsAndKeepsNewestDate()
         .name = QStringLiteral("  aLeX   SmItH\t")
     });
     const auto updated = port.apply(normalizedNameUpdate);
-    QVERIFY2(updated, qPrintable(updated ? QString() : updated.error()));
+    QVERIFY2(updated, qPrintable(updated ? QString()
+        : ClassMngr::Features::TeacherUi::teacherImportApplyErrorDisplayText(
+              updated.error())));
     QCOMPARE(updated->koreanTeachers.created.rawValue(), 0);
     QCOMPARE(updated->koreanTeachers.updated.rawValue(), 0);
     QCOMPARE(updated->koreanTeachers.unchanged.rawValue(), 0);
@@ -155,7 +162,9 @@ appliesAllGroupsAndKeepsNewestDate()
     TeacherImportPlan olderPlan;
     olderPlan.sourceDate = QDate(2025, 9, 1);
     const auto older = port.apply(olderPlan);
-    QVERIFY2(older, qPrintable(older ? QString() : older.error()));
+    QVERIFY2(older, qPrintable(older ? QString()
+        : ClassMngr::Features::TeacherUi::teacherImportApplyErrorDisplayText(
+              older.error())));
     QCOMPARE(latestSourceDate(services.workspaceStore()->database()),
         QStringLiteral("2026-10-02"));
 }
@@ -175,7 +184,9 @@ treatsMalformedSnapshotDateAsAbsentAndDoesNotRewriteEqualOrOlderDates()
     TeacherImportPlan initial;
     initial.sourceDate = QDate(2026, 10, 1);
     const auto imported = port.apply(initial);
-    QVERIFY2(imported, qPrintable(imported ? QString() : imported.error()));
+    QVERIFY2(imported, qPrintable(imported ? QString()
+        : ClassMngr::Features::TeacherUi::teacherImportApplyErrorDisplayText(
+              imported.error())));
     QCOMPARE(latestSourceDate(services.workspaceStore()->database()),
         QStringLiteral("2026-10-01"));
 
@@ -190,12 +201,16 @@ treatsMalformedSnapshotDateAsAbsentAndDoesNotRewriteEqualOrOlderDates()
     TeacherImportPlan equalDate;
     equalDate.sourceDate = QDate(2026, 10, 1);
     const auto equal = port.apply(equalDate);
-    QVERIFY2(equal, qPrintable(equal ? QString() : equal.error()));
+    QVERIFY2(equal, qPrintable(equal ? QString()
+        : ClassMngr::Features::TeacherUi::teacherImportApplyErrorDisplayText(
+              equal.error())));
 
     TeacherImportPlan olderDate;
     olderDate.sourceDate = QDate(2026, 9, 30);
     const auto older = port.apply(olderDate);
-    QVERIFY2(older, qPrintable(older ? QString() : older.error()));
+    QVERIFY2(older, qPrintable(older ? QString()
+        : ClassMngr::Features::TeacherUi::teacherImportApplyErrorDisplayText(
+              older.error())));
     QCOMPARE(latestSourceDate(services.workspaceStore()->database()),
         QStringLiteral("2026-10-01"));
 }
@@ -214,10 +229,14 @@ preservesTeacherServiceValidationText()
     invalidPlan.koreanTeachers.append(Teacher{});
     const auto applied = port.apply(invalidPlan);
     QVERIFY(!applied);
+    QVERIFY(std::holds_alternative<
+        Platform::TeacherImportPlanPreparationFailure>(applied.error()));
     const auto legacy = services.teacherService()->importTeachers(invalidPlan);
     QVERIFY(!legacy);
-    QCOMPARE(applied.error(), legacy.error());
-    QCOMPARE(applied.error(), QStringLiteral(
+    const QString displayedError = ClassMngr::Features::TeacherUi::
+        teacherImportApplyErrorDisplayText(applied.error());
+    QCOMPARE(displayedError, legacy.error());
+    QCOMPARE(displayedError, QStringLiteral(
         "Teacher import validation failed: koreanTeachers[0].teacherEn: teacher.name.required"));
 }
 
@@ -238,6 +257,19 @@ rollsBackEarlierGroupWritesWhenLateWriteFails()
     const auto imported = port.apply(planFor());
 
     QVERIFY(!imported);
+    QVERIFY(std::holds_alternative<Application::TeacherImportUseCaseError>(
+        imported.error()));
+    const Application::TeacherImportUseCaseError& useCaseError =
+        std::get<Application::TeacherImportUseCaseError>(imported.error());
+    QCOMPARE(useCaseError.kind,
+        Application::TeacherImportUseCaseErrorKind::PersistenceFailure);
+    const auto legacyImport = services.teacherService()->importTeachers(planFor());
+    QVERIFY(!legacyImport);
+    QCOMPARE(legacyImport.error(),
+        TeacherImportRepository::legacyErrorMessage(useCaseError));
+    QCOMPARE(ClassMngr::Features::TeacherUi::teacherImportApplyErrorDisplayText(
+                 imported.error()),
+        legacyImport.error());
     QCOMPARE(countRows(services.workspaceStore()->database(), QStringLiteral("teachers")), 0);
     QCOMPARE(countRows(services.workspaceStore()->database(), QStringLiteral("native_english_teachers")), 0);
     QCOMPARE(countRows(services.workspaceStore()->database(), QStringLiteral("gs_team")), 0);
@@ -250,13 +282,21 @@ rejectsUnavailableSession()
     Platform::ApplicationServicesTeacherImportApplyPort nullServicesPort(nullptr);
     auto missing = nullServicesPort.apply(planFor());
     QVERIFY(!missing);
-    QCOMPARE(missing.error(), QStringLiteral("No Teacher Profile service is available."));
+    QVERIFY(std::holds_alternative<
+        Platform::TeacherImportWorkspaceUnavailableFailure>(missing.error()));
+    QCOMPARE(ClassMngr::Features::TeacherUi::teacherImportApplyErrorDisplayText(
+                 missing.error()),
+        QStringLiteral("No Teacher Profile service is available."));
 
     ApplicationServices services;
     Platform::ApplicationServicesTeacherImportApplyPort closedPort(&services);
     missing = closedPort.apply(planFor());
     QVERIFY(!missing);
-    QCOMPARE(missing.error(), QStringLiteral("No Teacher Profile service is available."));
+    QVERIFY(std::holds_alternative<
+        Platform::TeacherImportWorkspaceUnavailableFailure>(missing.error()));
+    QCOMPARE(ClassMngr::Features::TeacherUi::teacherImportApplyErrorDisplayText(
+                 missing.error()),
+        QStringLiteral("No Teacher Profile service is available."));
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesTeacherImportApplyPortTests)

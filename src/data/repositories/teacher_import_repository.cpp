@@ -112,7 +112,7 @@ TeacherImportRepository::TeacherImportRepository(QSqlDatabase& database)
 {
 }
 
-Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
+RepositoryResult<TeacherImportSummary> TeacherImportRepository::importTeachers(
     const TeacherImportPlan& plan
     )
 {
@@ -121,7 +121,29 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
     const auto applied = applyUseCase(request);
     if (!applied)
     {
-        return std::unexpected(legacyErrorMessage(applied.error()));
+        const TeacherImportUseCaseError& error = applied.error();
+        RepositoryErrorCode code = RepositoryErrorCode::Technical;
+        switch (error.kind)
+        {
+        case TeacherImportUseCaseErrorKind::InvalidRequest:
+            code = RepositoryErrorCode::InvalidInput;
+            break;
+        case TeacherImportUseCaseErrorKind::InvalidReview:
+        case TeacherImportUseCaseErrorKind::InvalidPlan:
+            code = RepositoryErrorCode::Validation;
+            break;
+        case TeacherImportUseCaseErrorKind::AmbiguousStoredMatch:
+            code = RepositoryErrorCode::Conflict;
+            break;
+        case TeacherImportUseCaseErrorKind::KoreanMatchPolicyRejected:
+        case TeacherImportUseCaseErrorKind::PersistenceFailure:
+            code = RepositoryErrorCode::Technical;
+            break;
+        }
+        return std::unexpected(RepositoryError{
+            code,
+            legacyErrorMessage(error)
+        });
     }
 
     return legacySummary(*applied);
