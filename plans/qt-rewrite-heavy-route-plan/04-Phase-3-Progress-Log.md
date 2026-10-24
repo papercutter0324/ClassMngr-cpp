@@ -1220,4 +1220,41 @@ dialog. This is a source-supported explanation, not runtime-stack proof, and
 no baseline run was captured. Page-suite acceptance remains unresolved; no
 evidence supports attributing the timeout to F1366. `git diff --check` passed.
 No full suite or cross-platform build ran. F1366 is accepted; F1367
-(Selected-class subtitle read) is current.
+(Selected-class subtitle read) is current. F1366 is committed as
+`ad5f9cb736a6ffe4b79817bd9e1d3f5661684ef5`.
+
+## F1367 — Selected-class subtitle read (Batch 3 candidate 10 of 20) — 2026-10-24
+
+The port in
+`src/next/platform/application_services_selected_class_subtitle_read_port.h`
+now uses `WorkspaceStore` for availability, `ClassInfoRepository`, and the
+assigned-teacher `TeacherRepository`; it has no `DatabaseSession` API. Its
+fixture,
+`tests/next_platform_application_services_selected_class_subtitle_read_port_tests.cpp`,
+uses `WorkspaceStore` for all direct repository and database access. Assertions,
+SQL semantics, slots, and fixture behavior are unchanged. The Application
+query, repository detailed projection/API/SQL, ClassesPage and RosterEditor UI
+and stubs, and F1368 batch query/adapter are unchanged.
+
+Preserved contracts include canonical ID and identity, independent class and
+teacher results, class grade/level and ordered regular schedule, wide teacher
+ID, missing parent and unavailable-store handling, errors, fallback, and no
+fallback.
+
+The incremental build passed for
+`ClassMngrNextApplicationSelectedClassSubtitleReadQueryTests` and
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests`.
+Both serial CTests passed (2/2), as did `git diff --check`. The scoped adapter
+and fixture contain no `DatabaseSession`, `databaseSession()`, or
+`database_session.h` references.
+
+`ClassMngrClassesPageTests` was not rerun: F1366's run timed out at 300 seconds
+before selected-grade cases. Source review found subtitle test counters and
+failure controls in `ScheduleWidgetTestStubs` target legacy
+`loadClassSubtitleRecord()` and `loadTeacherDisplayNameFields()`, while the
+production adapter uses detailed class read and `lookupTeacherDisplayName()`.
+The UI assertions therefore appear disconnected from the detailed adapter
+path. This is source-level evidence, not a new runtime result; UI integration
+remains unverified, and the prior timeout is not attributed to F1367. No full
+suite or cross-platform validation ran. F1367 is accepted; F1368
+(Selected-class subtitle batch read) is current.

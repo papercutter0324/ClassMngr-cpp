@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/application/selected_class_subtitle_read_query.h"
@@ -102,14 +102,14 @@ readsOnlySubtitleProjectionFromActiveSessionRepositories()
     teacher.preferredName = QStringLiteral("Preferred Name");
     teacher.roomNumber = QStringLiteral("Not part of the projection");
     const auto teacherId =
-        services.databaseSession()->teacherRepository()->saveTeacher(teacher);
+        services.workspaceStore()->teacherRepository()->saveTeacher(teacher);
     QVERIFY(teacherId);
 
     const auto createdClass = services.classService()->create(
         QStringLiteral("Subtitle Test")
         );
     QVERIFY(createdClass);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         classInfo(*createdClass, *teacherId)
         ));
 
@@ -148,7 +148,7 @@ readsOnlySubtitleProjectionFromActiveSessionRepositories()
     QVERIFY(noTeacherClass);
     ClassInfo noTeacherInfo = classInfo(*noTeacherClass, -1);
     noTeacherInfo.intensiveTimes.clear();
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         noTeacherInfo
         ));
     const auto noTeacher = query.execute(classId(*noTeacherClass));
@@ -165,7 +165,7 @@ readsDisplayNamesForWideAssignedTeacherId()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
 
     constexpr qlonglong wideTeacherId = 2'147'483'648LL;
     QSqlQuery insertTeacher(database);
@@ -185,7 +185,7 @@ readsDisplayNamesForWideAssignedTeacherId()
         QStringLiteral("Wide Teacher Subtitle")
         );
     QVERIFY(createdClass);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         classInfo(*createdClass, -1)
         ));
 
@@ -242,11 +242,11 @@ assignedMissingTeacherIsRecoverableNotFound()
         QStringLiteral("Assigned Missing Subtitle Teacher")
         );
     QVERIFY(createdClass);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         classInfo(*createdClass, -1)
         ));
 
-    QSqlQuery assignMissingTeacher(services.databaseSession()->database());
+    QSqlQuery assignMissingTeacher(services.workspaceStore()->database());
     QVERIFY2(assignMissingTeacher.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
              qPrintable(assignMissingTeacher.lastError().text()));
     QVERIFY(assignMissingTeacher.prepare(QStringLiteral(
@@ -295,7 +295,7 @@ missingParentsHaveRecoverableComponentErrorsAndLegacyDefaults()
              Domain::ErrorCode::NotFound);
     QVERIFY(neverPresent.value().assignedTeacher.error().recoverable);
 
-    const auto legacyUnknown = services.databaseSession()->classInfoRepository()
+    const auto legacyUnknown = services.workspaceStore()->classInfoRepository()
         ->loadClassSubtitleRecord(neverPresentClassId);
     QVERIFY(legacyUnknown);
     QCOMPARE(legacyUnknown->classId, neverPresentClassId);
@@ -308,14 +308,14 @@ missingParentsHaveRecoverableComponentErrorsAndLegacyDefaults()
         QStringLiteral("Deleted Subtitle Parent")
         );
     QVERIFY(deletedClass);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         classInfo(*deletedClass, -1)
         ));
 
-    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QSqlQuery disableForeignKeys(services.workspaceStore()->database());
     QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
 
-    QSqlQuery deleteParent(services.databaseSession()->database());
+    QSqlQuery deleteParent(services.workspaceStore()->database());
     QVERIFY(deleteParent.prepare(QStringLiteral(
         "DELETE FROM classes WHERE id = ?")));
     deleteParent.addBindValue(*deletedClass);
@@ -334,7 +334,7 @@ missingParentsHaveRecoverableComponentErrorsAndLegacyDefaults()
              Domain::ErrorCode::NotFound);
     QVERIFY(deleted.value().assignedTeacher.error().recoverable);
 
-    const auto legacyDeleted = services.databaseSession()->classInfoRepository()
+    const auto legacyDeleted = services.workspaceStore()->classInfoRepository()
         ->loadClassSubtitleRecord(*deletedClass);
     QVERIFY(legacyDeleted);
     QCOMPARE(legacyDeleted->classId, *deletedClass);
@@ -363,7 +363,7 @@ existingParentWithoutMetadataReadsOrderedSchedule()
         );
     QVERIFY(createdClass);
 
-    QSqlQuery insertTimes(services.databaseSession()->database());
+    QSqlQuery insertTimes(services.workspaceStore()->database());
     QVERIFY(insertTimes.prepare(QStringLiteral(R"(
         INSERT INTO class_times (
             id, class_id, day, start_time, end_time
@@ -431,20 +431,20 @@ classAndTeacherFailuresRemainIndependent()
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("Available Teacher");
     const auto teacherId =
-        services.databaseSession()->teacherRepository()->saveTeacher(teacher);
+        services.workspaceStore()->teacherRepository()->saveTeacher(teacher);
     QVERIFY(teacherId);
     const auto createdClass = services.classService()->create(
         QStringLiteral("Failure Test")
         );
     QVERIFY(createdClass);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         classInfo(*createdClass, *teacherId)
         ));
 
     Platform::ApplicationServicesSelectedClassSubtitleReadPort port(&services);
     const Application::SelectedClassSubtitleReadQuery query(port);
 
-    QSqlQuery dropTimes(services.databaseSession()->database());
+    QSqlQuery dropTimes(services.workspaceStore()->database());
     QVERIFY(dropTimes.exec(QStringLiteral("DROP TABLE class_times")));
     const auto classFailure = query.execute(classId(*createdClass));
     QVERIFY(classFailure);
@@ -454,7 +454,7 @@ classAndTeacherFailuresRemainIndependent()
     QVERIFY(classFailure.value().assignedTeacher);
     QVERIFY(!classFailure.value().assignedTeacher.value().has_value());
 
-    QSqlQuery restoreTimes(services.databaseSession()->database());
+    QSqlQuery restoreTimes(services.workspaceStore()->database());
     QVERIFY(restoreTimes.exec(QStringLiteral(
         "CREATE TABLE class_times ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -462,9 +462,9 @@ classAndTeacherFailuresRemainIndependent()
         "start_time TEXT NOT NULL, end_time TEXT NOT NULL)"
         )));
 
-    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QSqlQuery disableForeignKeys(services.workspaceStore()->database());
     QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
-    QSqlQuery dropTeachers(services.databaseSession()->database());
+    QSqlQuery dropTeachers(services.workspaceStore()->database());
     QVERIFY(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")));
     const auto teacherFailure = query.execute(classId(*createdClass));
     QVERIFY(teacherFailure);
@@ -487,17 +487,17 @@ malformedPersistedTeacherIdIsValidationAndDoesNotLoadTeacher()
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("Must not be looked up");
     const auto teacherId =
-        services.databaseSession()->teacherRepository()->saveTeacher(teacher);
+        services.workspaceStore()->teacherRepository()->saveTeacher(teacher);
     QVERIFY(teacherId);
     const auto createdClass = services.classService()->create(
         QStringLiteral("Malformed Persisted Subtitle Teacher")
         );
     QVERIFY(createdClass);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         classInfo(*createdClass, *teacherId)
         ));
 
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
     QSqlQuery disableForeignKeys(database);
     QVERIFY2(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
              qPrintable(disableForeignKeys.lastError().text()));
@@ -547,11 +547,11 @@ metadataFailureRemainsTechnical()
         QStringLiteral("Metadata Failure")
         );
     QVERIFY(createdClass);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         classInfo(*createdClass, -1)
         ));
 
-    QSqlQuery dropMetadata(services.databaseSession()->database());
+    QSqlQuery dropMetadata(services.workspaceStore()->database());
     QVERIFY(dropMetadata.exec(QStringLiteral("DROP TABLE class_info")));
 
     Platform::ApplicationServicesSelectedClassSubtitleReadPort port(&services);

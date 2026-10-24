@@ -37,16 +37,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 1 and 2
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
-- Last updated: 2026-10-23
+- Last updated: 2026-10-24
 - Current note: Batch 2 (F1338–F1357) is complete and pushed to
   `origin/Qt-Rewrite` at `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`. Batch 3
   discovery is complete and Batch 3 is active. F1358 (Testing Class details
   read), F1359 (Testing Class details update), F1360 (Testing Class delete),
   F1361 (Class Co-Teacher page read), F1362 (Class Co-Teacher teacher
   choices read), F1363 (Class Co-Teacher assignment save), F1364 (Class
-  Notes page read), F1365 (Class Notes save), and F1366 (Selected-class grade
-  read) are accepted; F1367 (Selected-class subtitle read) is current.
-  F1358–F1366 implementation and
+  Notes page read), F1365 (Class Notes save), F1366 (Selected-class grade
+  read), and F1367 (Selected-class subtitle read) are accepted; F1368
+  (Selected-class subtitle batch read) is current. F1358–F1367 implementation and
   verification evidence, plus the Batch 2 push receipt, are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -66,15 +66,17 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1366 — 2026-10-23
+## Latest Progress Update — F1367 — 2026-10-24
 
-F1366 is accepted; F1367 is current. The selected-class grade read port and
-fixture use `WorkspaceStore`; query, repository, SQL, page, and subtitle paths
-are unchanged. Application and Platform CTests passed. The Classes page CTest
-timed out before the selected-grade cases, leaving page-suite acceptance
-unresolved; no evidence attributes the timeout to F1366. No full suite or
-cross-platform build ran. See the [progress log](04-Phase-3-Progress-Log.md)
-for exact results and limits.
+F1367 is accepted; F1368 is current. Its subtitle-read port and fixture use
+`WorkspaceStore`; Application query, repository projection/API/SQL, and UI are
+unchanged. The two focused CTests passed. UI integration remains unverified:
+the Classes page suite was not rerun after F1366 timed out before selected-grade
+cases, and source review suggests its stubs exercise legacy subtitle methods
+separate from the detailed adapter path. This is source-level evidence, not a
+runtime result. F1366's timeout remains unresolved, with no baseline or evidence
+attributing it to that slice. No full suite or cross-platform build ran. See
+the [progress log](04-Phase-3-Progress-Log.md) for exact results and limits.
 
 ## Objective
 
