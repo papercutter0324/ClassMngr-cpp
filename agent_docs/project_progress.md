@@ -10,11 +10,13 @@ Batch 12 (F1433/F1434) is pushed at
 `5ca42a876a40ec74f49055530a3d7714aa5368f7`. Batch 13 (F1435) is pushed and
 verified at `41743d8676beee99274f4aacbe606002b4e38c30`. Batch 14 (F1436) is
 pushed and verified at `071560c8774f5c16c2b2502a5f561507e1f5f86f`. F1437 is
-committed at `91355e2c0483c550eca93bb9b0b20bc0a7c55547`; Batch 15 closeout
-documentation and push are pending. Batch 16 discovery and bounded review completed under
-`PHASE3-BATCH16-DISCOVERY-20261024`; F1438 is its sole accepted documentation
-candidate and waits for the Batch 15 push. Begin Batch 17 discovery when F1438
-starts. Phase 3 remains In Progress and its exit gate is open.
+committed at `91355e2c0483c550eca93bb9b0b20bc0a7c55547`. Batch 15 is pushed
+and verified at `af1024d336241e0f2fe7db5e3af90785d604d50e`. F1438 is committed
+at `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`; Batch16 closeout docs and push
+are pending. Batch17 discovery and bounded review completed under
+`PHASE3-BATCH17-DISCOVERY-20261024`; F1439 and F1440 are accepted in order and
+wait for the Batch16 push. Begin Batch18 discovery when F1439 starts. Phase 3
+remains In Progress and its exit gate is open.
 
 ## Goal
 
@@ -63,7 +65,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (F1437 committed; Batch 15 closeout pending)
+### Current checkpoint - 2026-10-24 (F1438 committed; Batch 16 closeout pending)
 
 Phase 3 remains In Progress on the mandatory Heavy route, with its exit gate
 open. Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
@@ -184,14 +186,24 @@ fallbacks remain unchanged. The focused mapped-file parity selector passed
 passes and one failure in `importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`;
 it builds a package directly without the changed codec and was reproduced on
 pre-F880 commit `18202c79`. No full-target pass or memory measurement is
-claimed. Batch 15 closeout documentation and push are pending. Batch 16
-discovery and bounded review completed under
-`PHASE3-BATCH16-DISCOVERY-20261024`; its sole accepted candidate F1438
-corrects the active Phase 3 schema baseline's stale claim that F1419 did not
-directly test all four explicit indexes. F1438 waits for the Batch 15 push;
-begin Batch 17 discovery when it starts. The Phase 0 `.db` matrix wording
-update was deferred as a pinned historical artifact; Teacher Import remains
-Phase 7C-owned, and export remains Phase 8-owned. The
+claimed. Batch 15 is pushed and verified at
+`af1024d336241e0f2fe7db5e3af90785d604d50e`. Batch 16 discovery and bounded
+review completed under `PHASE3-BATCH16-DISCOVERY-20261024`; its sole candidate,
+F1438, is committed at `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`. It corrects
+the Phase3 schema baseline's stale statement about F1419's four explicit-index
+and runtime metadata assertions while retaining limits on normalized DDL and
+pre-v6 conversion coverage. No tests were run for this doc-only slice. Batch16
+closeout docs and push are pending. Batch17 discovery and bounded review
+completed under `PHASE3-BATCH17-DISCOVERY-20261024`; its two candidates are
+accepted in order and wait for the Batch16 push. F1439 moves the shared workbook
+reader and its live Schedule/Calendar input paths to seekable file-backed
+archives, preserving worksheet parsing and temporary-file cleanup. F1440 adds
+target-specific discovery and user-directed recovery of normal profile
+replacement backups after process interruption; it must preserve candidates
+and partial targets and must never restore, delete, or overwrite automatically.
+Begin Batch18 discovery when F1439 starts. The Phase 0 `.db` matrix wording update
+was deferred as a pinned historical artifact; Teacher Import remains Phase
+7C-owned, and export remains Phase 8-owned. The
 unsupported ZIP-method test remains deferred as a test-only slice; no separate
 Windows F1433 slice was accepted, and analytics evaluation
 collection work remains with Phase 7D/7H. Classes/Speaking Evaluation

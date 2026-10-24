@@ -38,12 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 14 is pushed to `origin/Qt-Rewrite` at verified tip
-  `071560c8774f5c16c2b2502a5f561507e1f5f86f`. F1437 is accepted and committed
-  at `91355e2c0483c550eca93bb9b0b20bc0a7c55547`; Batch 15 slice work is
-  complete with closeout docs/push pending. Batch 16 review accepted F1438 as
-  its sole doc-only candidate, waiting for the Batch 15 push; begin Batch 17
-  discovery when F1438 starts. The Phase 3 exit gate remains open. The
+- Current note: F1438 is accepted and committed at
+  `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`; Batch 16 slice work is complete
+  with closeout docs/push pending. Batch 17 review accepted F1439 and F1440,
+  waiting for the Batch 16 push; begin Batch 18 discovery when F1439 starts.
+  The Phase 3 exit gate remains open. The
   [DataService migration
   map](../../docs/qt-rewrite/data-service-migration-map.md) records F1420's
   deliverable, including that `DataService::save()` has no ordinary production
@@ -64,14 +63,14 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — Batch 15 / Batch 16 — 2026-10-24
+## Latest Progress Update — F1438 / Batch 17 — 2026-10-24
 
-F1437 is accepted and committed at
-`91355e2c0483c550eca93bb9b0b20bc0a7c55547`; Batch 15 slice work is complete
-with closeout docs/push pending. Batch 16 review accepted F1438 as its sole
-doc-only candidate, waiting for the Batch 15 push; begin Batch 17 discovery
-when F1438 starts. F1432's parity limitation remains recorded in the progress
-log. Phase 3 remains In Progress with its exit gate open. See the
+F1438 is accepted and committed at
+`6ad8c16e4cb0c1c473f047ab6e760e24f6895792`; Batch 16 slice work is complete
+with closeout docs/push pending. Batch 17 review accepted F1439 and F1440,
+waiting for the Batch 16 push; begin Batch 18 discovery when F1439 starts.
+F1432's parity limitation remains recorded in the progress log. Phase 3
+remains In Progress with its exit gate open. See the
 [progress log](04-Phase-3-Progress-Log.md) and [current batch
 tracker](Current-Slice-Batches.md).
 

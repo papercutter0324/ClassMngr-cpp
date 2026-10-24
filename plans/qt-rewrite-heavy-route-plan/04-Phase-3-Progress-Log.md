@@ -2979,10 +2979,13 @@ at `cb6f90126dc2321b304cb87c5d6bcad642b18b27`; Batch 14 slice work is
 complete and pushed to `origin/Qt-Rewrite` at verified local/remote tip
 `071560c8774f5c16c2b2502a5f561507e1f5f86f`. F1437 is accepted and committed
 at `91355e2c0483c550eca93bb9b0b20bc0a7c55547`; Batch 15 slice work is
-complete, with closeout docs/push pending. Batch 16 review accepted F1438 as
-its sole doc-only candidate, waiting for the Batch 15 push; begin Batch 17
-discovery when F1438 starts. Phase 3 remains In Progress and its exit gate
-remains open.
+complete and pushed to `origin/Qt-Rewrite` at verified tip
+`af1024d336241e0f2fe7db5e3af90785d604d50e`. F1438 is accepted and committed
+at `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`; Batch 16 slice work is
+complete, with closeout docs/push pending. Batch 17 scans are complete and
+bounded review accepted F1439 and F1440, waiting for the Batch 16 push. Begin
+Batch 18 discovery when F1439 starts. Phase 3 remains In Progress and its exit
+gate remains open.
 
 ## F1429 — Schedule Import row-count metrics — 2026-10-24
 
@@ -3299,7 +3302,58 @@ and no existing pre-v6 conversion test. Do not make the baseline edit before
 Batch 16 starts after the Batch 15 push. The Phase 0 `.db` matrix remains
 deferred as a pinned historical artifact.
 
-F1437 is accepted and committed; Batch 15 slice work is complete with closeout
-docs and push pending. F1438 waits for the Batch 15 push. Begin Batch 17
-discovery when F1438 starts. Phase 3 remains In Progress with its exit gate
-open.
+At the Batch 16 discovery checkpoint, F1437 was accepted and committed and
+Batch 15 closeout docs/push were pending. F1438 was waiting for that push;
+Batch 17 discovery was due to start when F1438 began. Phase 3 remained In
+Progress with its exit gate open.
+
+## F1438 — Phase 3 schema baseline F1419 coverage — 2026-10-24
+
+F1438 is accepted and committed at
+`6ad8c16e4cb0c1c473f047ab6e760e24f6895792`. This one-file documentation
+change replaces the stale claim about missing explicit-index tests and runtime
+metadata inspection with F1419's runtime schema-v6 coverage, linked to
+[`database_schema_manager_tests.cpp`](../../tests/database_schema_manager_tests.cpp#L249-L631).
+It records the 17-table column contract; all four explicit secondary indexes;
+foreign-key and unique-index coverage; autoincrement, schema version, and
+CHECK/FK behavior. Limits remain: no complete normalized `CREATE TABLE` SQL
+comparison and no pre-v6 profile conversion test; pre-v6 profiles remain
+unsupported. No tests were run for this doc-only slice. Batch 16 slice work is
+complete; closeout docs and push are pending.
+
+## Batch 17 discovery and candidate review — 2026-10-24
+
+Two independent scans completed. The data/API scan identified a possible
+restart-recovery gap if a process exits after an existing profile is renamed
+to `.workspace-create-<uuid>.recovery` but before replacement or rollback;
+startup does not currently scan these siblings. The lifetime scan identified
+whole-archive `QByteArray` input retained during parse-result construction in
+the shared workbook reader: Schedule uses `file.readAll()`, and Calendar uses
+`reply->readAll()`.
+
+Bounded review accepted **F1439 — file-backed/seekable input for the shared
+workbook reader** and **F1440 — discover and recover normal profile-replacement
+recovery siblings** as the ordered Batch 17 candidates. Both wait for the
+Batch 16 closeout push; begin Batch 18 discovery when F1439 starts.
+
+F1439's scope removes full-archive `QByteArray` retention on the live Schedule
+and Calendar row-streaming paths. Schedule passes its open `QFile`; Calendar
+chunks the sequential `QNetworkReply` into an operation-owned `QTemporaryFile`,
+parses after download completion, and cleans it on success, failure, abort,
+or destruction. Preserve stored/deflated parsing, row passes, output, error,
+and cancel behavior; add no UI cancellation. Byte APIs may remain adapters.
+The scope does not add ZIP64, shared strings/styles/notes, or a final-output
+bound. This is structural lifetime work with no RSS claim; Phase 7 owns
+semantic and review behavior.
+
+F1440 addresses process interruption after an existing profile is renamed to
+`.profile.workspace-create-<uuid>.recovery` and before replacement or rollback;
+Phase 2 covers synchronous rollback only. Add target-specific nonmutating
+discovery and user-directed recovery. Never auto-restore, clean, or overwrite;
+preserve the target and recovery candidates, require explicit choice for
+multiple or matching-looking candidates, and do not scan Initial Setup backup
+names. Expected coverage includes missing target/original, partial target
+with original, multiple candidates, stale/unrelated lookalikes, and repeat-start
+idempotence. No product behavior beyond safe user choice is in scope. No tests
+have been run for these unstarted candidates. Phase 3 remains In Progress with
+its exit gate open.
