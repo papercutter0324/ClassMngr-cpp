@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
 #include "domain/models/roster.h"
 #include "next/application/roster_read_query.h"
@@ -66,14 +66,14 @@ public:
                 );
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return unavailableFailure();
         }
 
-        RosterRepository* const repository = session->rosterRepository();
+        RosterRepository* const repository = store->rosterRepository();
         if (!repository)
         {
             return failure(

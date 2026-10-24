@@ -1618,3 +1618,22 @@ targets. Four selected serial CTests passed (4/4):
 `MyClassesPage`, and `MyClassesPageTeacherDisplayParity`.
 `git diff --check` passed. No full suite or cross-platform build ran. F1379 is
 accepted; F1380 (Roster snapshot read) is current.
+
+Commit: `5714a9f455a7070606d9338fcf7c7e4f34bafca0`.
+
+## F1380 — Roster snapshot read (Batch 4 candidate 3 of 20) — 2026-10-24
+
+The only production change moved
+`src/next/platform/application_services_roster_read_port.h` to
+`WorkspaceStore` for open-state and repository lookup. Only direct
+snapshot-read fixture accesses in
+`tests/next_platform_application_services_roster_read_port_tests.cpp` migrated;
+assertions are unchanged. Repository, query, and UI semantics are unchanged.
+
+Built the selected query, Platform-port, and roster-template-print-service
+targets. Three selected serial CTests passed (3/3):
+`NextApplicationRosterReadQuery`,
+`NextPlatformApplicationServicesRosterReadPort`, and
+`ClassMngrRosterTemplatePrintServiceTests`. `git diff --check` passed. No full
+suite or cross-platform build ran. F1380 is accepted; F1381 (Roster
+column-name batch read) is current.

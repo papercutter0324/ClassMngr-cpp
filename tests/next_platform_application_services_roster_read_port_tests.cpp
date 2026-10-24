@@ -317,7 +317,7 @@ readsCompleteRawSnapshotWithoutUiRowLimit()
         );
     QVERIFY(createdClass);
     QVERIFY(seedRawRoster(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         *createdClass
         ));
 
@@ -509,7 +509,7 @@ rejectsOutOfRangeIntegerRosterWidth()
         QStringLiteral("Out of range roster width")
         );
     QVERIFY(createdClass);
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
 
     QSqlQuery insertColumn(database);
     QVERIFY(insertColumn.prepare(QStringLiteral(
@@ -561,7 +561,7 @@ preservesNullAndBoundaryIntegerRosterWidths()
         QStringLiteral("Boundary roster widths")
         );
     QVERIFY(createdClass);
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
 
     QSqlQuery insertColumn(database);
     QVERIFY(insertColumn.prepare(QStringLiteral(
@@ -635,7 +635,7 @@ preservesNonIntegerTextWidthFallback()
         QStringLiteral("Text roster width fallback")
         );
     QVERIFY(createdClass);
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
 
     QSqlQuery insertColumn(database);
     QVERIFY(insertColumn.prepare(QStringLiteral(
@@ -686,7 +686,7 @@ rejectsMalformedColumnPosition()
         );
     QVERIFY(createdClass);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(seedSparseRoster(
         database,
         *createdClass,
@@ -747,7 +747,7 @@ acceptsSparsePositionBeyondIntRange()
         );
     QVERIFY(createdClass);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(seedSparseRoster(
         database,
         *createdClass,
@@ -828,7 +828,7 @@ rejectsMalformedColumnIndexWithoutOverwritingColumnZero()
         );
     QVERIFY(createdClass);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(seedSparseRoster(
         database,
         *createdClass,
@@ -882,7 +882,7 @@ rejectsFractionalColumnIndexBeforeOverwritingColumnZero()
         );
     QVERIFY(createdClass);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(seedSparseRoster(
         database,
         *createdClass,
@@ -1063,7 +1063,7 @@ rejectsRowIndexBeyondIntRangeWithoutDenseExpansion()
         );
     QVERIFY(createdClass);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(seedSparseRoster(
         database,
         *createdClass,
@@ -1456,7 +1456,7 @@ missingRosterIsSuccessfulEmptySnapshot()
         );
     QVERIFY(createdClass);
 
-    const auto detailed = services.databaseSession()->rosterRepository()
+    const auto detailed = services.workspaceStore()->rosterRepository()
         ->loadRosterDetailed(*createdClass);
     QVERIFY(detailed);
     QVERIFY(!detailed->parentMissing);
@@ -1506,7 +1506,7 @@ deletedParentWithOrphanRosterKeepsLegacyData()
         );
     QVERIFY(createdClass);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(seedSparseRoster(
         database,
         *createdClass,
@@ -1537,7 +1537,7 @@ deletedParentWithOrphanRosterKeepsLegacyData()
     QVERIFY(typed.error().recoverable);
 
     RosterRepository* const repository =
-        services.databaseSession()->rosterRepository();
+        services.workspaceStore()->rosterRepository();
     QVERIFY(repository);
     const auto detailed = repository->loadRosterDetailed(*createdClass);
     QVERIFY(detailed);
@@ -1569,7 +1569,7 @@ repositoryErrorIsStructured()
         );
     QVERIFY(createdClass);
 
-    QSqlQuery dropTable(services.databaseSession()->database());
+    QSqlQuery dropTable(services.workspaceStore()->database());
     QVERIFY2(dropTable.exec(QStringLiteral("DROP TABLE roster_columns")),
         qPrintable(dropTable.lastError().text()));
 
@@ -1597,7 +1597,7 @@ rosterDataQueryErrorIsTechnical()
         );
     QVERIFY(createdClass);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(seedSparseRoster(
         database,
         *createdClass,
