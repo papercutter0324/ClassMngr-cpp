@@ -14,10 +14,10 @@ record useful implementation and verification evidence in its progress log.
   was later pushed as
   `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before Batch 4
   began.
-- Batch 4 discovery is complete; Batch 4 is active with F1382 — Roster
-  template-print source read current.
+- Batch 4 discovery is complete; Batch 4 is active with F1383 — Roster print
+  class-info read current.
 
-## Phase 3 — Batch 4 (active; F1382 current)
+## Phase 3 — Batch 4 (active; F1383 current)
 
 Batch 4 discovery began when F1376 started (candidate 19 of 20 in Batch 3) and
 is complete. Two complementary scans found more than 20 possible active
@@ -30,8 +30,8 @@ priority-ordered shortlist, not an exhaustive inventory.
 2. F1379 — My Classes teacher-display-name batch read (accepted)
 3. F1380 — Roster snapshot read (accepted)
 4. F1381 — Roster column-name batch read (accepted)
-5. F1382 — Roster template-print source read
-6. F1383 — Roster print class-info read
+5. F1382 — Roster template-print source read (accepted)
+6. F1383 — Roster print class-info read (current)
 7. F1384 — Speaking-evaluation roster-name read
 8. F1385 — GS Team directory read
 9. F1386 — GS Team directory save

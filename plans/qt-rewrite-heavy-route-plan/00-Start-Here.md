@@ -13,10 +13,10 @@
   receipt documentation was later pushed as
   `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before Batch 4
   began. Batch 4 discovery is complete
-  and Batch 4 is active: F1378 (My Classes teacher-profile batch read) and
-  F1379 (My Classes teacher-display-name batch read), F1380 (Roster snapshot
-  read), and F1381 (Roster column-name batch read) are accepted; F1382 (Roster
-  template-print source read) is current.
+  and Batch 4 is active: F1378 (My Classes teacher-profile batch read), F1379
+  (My Classes teacher-display-name batch read), F1380 (Roster snapshot read),
+  F1381 (Roster column-name batch read), and F1382 (Roster template-print
+  source read) are accepted; F1383 (Roster print class-info read) is current.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI
   limitations, baseline failures, attribution, and coverage notes remain in
   the Phase 3 progress log. The [Phase 3

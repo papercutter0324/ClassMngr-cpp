@@ -45,9 +45,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   began. Batch 4
   discovery is complete and Batch 4 is active: F1378 (My Classes
   teacher-profile batch read), F1379 (My Classes teacher-display-name batch
-  read), F1380 (Roster snapshot read), and F1381 (Roster column-name batch
-  read) are accepted; F1382 (Roster template-print source read) is current.
-  F1376–F1381 implementation evidence,
+  read), F1380 (Roster snapshot read), F1381 (Roster column-name batch read),
+  and F1382 (Roster template-print source read) are accepted; F1383 (Roster
+  print class-info read) is current. F1376–F1382 implementation evidence,
   Batch 2 and Batch 3 push receipts, and earlier UI limitations and
   attribution notes are in the [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -67,15 +67,15 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1381 — 2026-10-24
+## Latest Progress Update — F1382 — 2026-10-24
 
-F1381 is accepted; F1382 is current in Batch 4. The Roster column-names batch
-read port now uses `WorkspaceStore` for open-state and repository access; only
-direct persistence accesses in its dedicated Platform fixture migrated.
-Assertions, application query, repository behavior, and UI flow are unchanged.
-Three selected serial CTests passed (3/3). No full suite or cross-platform
-build ran. The [progress log](04-Phase-3-Progress-Log.md) records F1381
-evidence and retains Batch 4 discovery and overflow notes.
+F1382 is accepted; F1383 is current in Batch 4. The Roster template-print
+source-read port now uses `WorkspaceStore` for open-state and both repository
+lookups, and direct persistence accesses in its Platform fixture also use
+`WorkspaceStore`. Assertions, batch read ordering, and service fallback are
+unchanged. Three selected serial CTests passed (3/3); no full suite or
+cross-platform build ran. The [progress log](04-Phase-3-Progress-Log.md)
+records F1382 evidence and retains Batch 4 discovery and overflow notes.
 
 ## Objective
 

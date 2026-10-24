@@ -1660,3 +1660,25 @@ and `ClassMngrRosterPrintDialogTests`. Three selected serial CTests passed
 `RosterPrintDialog`. `git diff --check` passed. No full suite or cross-platform
 build ran. F1381 is accepted; F1382 (Roster template-print source read) is
 current.
+
+Commit: `ab461a7fe0540d63eef0b1a0c7becabc83f2380d`.
+
+## F1382 — Roster template-print source read (Batch 4 candidate 5 of 20) — 2026-10-24
+
+The production port,
+`src/next/platform/application_services_roster_template_print_source_read_port.h`,
+uses `WorkspaceStore` for open-state and both repository lookups. Direct
+persistence accesses in the dedicated Platform fixture,
+`tests/next_platform_application_services_roster_template_print_source_read_port_tests.cpp`,
+also use `WorkspaceStore`. Assertions, batch-read ordering, and service
+fallback are unchanged.
+
+Built `ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests`,
+and `ClassMngrRosterTemplatePrintServiceTests`. `ctest -N` confirmed three
+registered checks, and three selected serial CTests passed (3/3):
+`ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests`,
+`NextPlatformApplicationServicesRosterTemplatePrintSourceReadPort`, and
+`ClassMngrRosterTemplatePrintServiceTests`. `git diff --check` passed. No full
+suite or cross-platform build ran. F1382 is accepted; F1383 (Roster print
+class-info read) is current.

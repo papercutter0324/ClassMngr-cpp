@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/roster_repository.h"
 #include "next/application/roster_template_print_source_read_port.h"
@@ -68,9 +68,9 @@ public:
             typedClassIds.push_back(typedId);
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return failure(
                 Domain::ErrorCode::NotFound,
@@ -79,9 +79,9 @@ public:
         }
 
         ClassInfoRepository* const classInfoRepository =
-            session->classInfoRepository();
+            store->classInfoRepository();
         RosterRepository* const rosterRepository =
-            session->rosterRepository();
+            store->rosterRepository();
         if (!classInfoRepository || !rosterRepository)
         {
             return failure(

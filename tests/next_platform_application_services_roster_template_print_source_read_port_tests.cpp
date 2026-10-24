@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/teacher_repository.h"
@@ -60,7 +60,7 @@ ClassInfo classInfo(
 
 bool executeSql(ApplicationServices& services, const QString& statement)
 {
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     return query.exec(statement);
 }
 
@@ -102,12 +102,12 @@ missingParentWithOrphanPrintDataReturnsNotFoundWithoutSnapshot()
     Roster retainedRoster;
     retainedRoster.columns = {QStringLiteral("Student")};
     retainedRoster.rows = {{QStringLiteral("Retained student")}};
-    QVERIFY(services.databaseSession()->rosterRepository()->saveRoster(
+    QVERIFY(services.workspaceStore()->rosterRepository()->saveRoster(
         retainedClass,
         retainedRoster
         ));
 
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         classInfo(
             deletedClass,
             -1,
@@ -119,7 +119,7 @@ missingParentWithOrphanPrintDataReturnsNotFoundWithoutSnapshot()
     Roster orphanRoster;
     orphanRoster.columns = {QStringLiteral("Student")};
     orphanRoster.rows = {{QStringLiteral("Orphan student")}};
-    QVERIFY(services.databaseSession()->rosterRepository()->saveRoster(
+    QVERIFY(services.workspaceStore()->rosterRepository()->saveRoster(
         deletedClass,
         orphanRoster
         ));
@@ -133,7 +133,7 @@ missingParentWithOrphanPrintDataReturnsNotFoundWithoutSnapshot()
         QStringLiteral("DELETE FROM classes WHERE id=%1").arg(deletedClass)
         ));
 
-    QSqlQuery orphanCounts(services.databaseSession()->database());
+    QSqlQuery orphanCounts(services.workspaceStore()->database());
     QVERIFY(orphanCounts.prepare(QStringLiteral(
         "SELECT "
         "(SELECT COUNT(*) FROM class_info WHERE class_id=?) AS class_info_count, "
@@ -153,7 +153,7 @@ missingParentWithOrphanPrintDataReturnsNotFoundWithoutSnapshot()
     QCOMPARE(orphanCounts.value("data_count").toInt(), 1);
 
     const QList<int> requestedClassIds{retainedClass, deletedClass};
-    const auto classInfoRecords = services.databaseSession()
+    const auto classInfoRecords = services.workspaceStore()
         ->classInfoRepository()->loadRosterPrintClassInfoRecords(
             requestedClassIds
             );
@@ -174,7 +174,7 @@ missingParentWithOrphanPrintDataReturnsNotFoundWithoutSnapshot()
     QVERIFY(classInfoRecords->at(1).zoomPassword.isEmpty());
     QVERIFY(classInfoRecords->at(1).regularTimes.isEmpty());
 
-    const auto rosterRecords = services.databaseSession()
+    const auto rosterRecords = services.workspaceStore()
         ->rosterRepository()->loadRostersForTemplatePrint(
             requestedClassIds
             );
@@ -223,7 +223,7 @@ loadsFullClassInfoAndSparseRosterSnapshotsInRequestedOrder()
     teacher.zoomId = QStringLiteral("Zoom ID");
     teacher.zoomPassword = QStringLiteral("Zoom secret");
     const auto savedTeacher =
-        services.databaseSession()->teacherRepository()->saveTeacher(teacher);
+        services.workspaceStore()->teacherRepository()->saveTeacher(teacher);
     QVERIFY(savedTeacher);
 
     const int firstClass = createClass(services, QStringLiteral("First"));
@@ -233,7 +233,7 @@ loadsFullClassInfoAndSparseRosterSnapshotsInRequestedOrder()
     QVERIFY(missingInfoClass > 0);
     QVERIFY(emptyRosterClass > 0);
 
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         classInfo(
             firstClass,
             *savedTeacher,
@@ -245,7 +245,7 @@ loadsFullClassInfoAndSparseRosterSnapshotsInRequestedOrder()
             }
             )
         ));
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         classInfo(
             missingInfoClass,
             *savedTeacher,
@@ -272,14 +272,14 @@ loadsFullClassInfoAndSparseRosterSnapshotsInRequestedOrder()
         {QString(), QString(), QString()},
         {QStringLiteral("Casey"), QString(), QStringLiteral("Third row")}
     };
-    QVERIFY(services.databaseSession()->rosterRepository()->saveRoster(
+    QVERIFY(services.workspaceStore()->rosterRepository()->saveRoster(
         firstClass,
         roster
         ));
 
-    const auto classInfoMetricsBefore = services.databaseSession()
+    const auto classInfoMetricsBefore = services.workspaceStore()
         ->classInfoRepository()->rosterPrintClassInfoBatchReadMetrics();
-    const auto rosterMetricsBefore = services.databaseSession()
+    const auto rosterMetricsBefore = services.workspaceStore()
         ->rosterRepository()->templatePrintBatchReadMetrics();
 
     Platform::ApplicationServicesRosterTemplatePrintSourceReadPort port(
@@ -340,19 +340,19 @@ loadsFullClassInfoAndSparseRosterSnapshotsInRequestedOrder()
     QVERIFY(result.value()[2].roster.columnWidths.empty());
     QVERIFY(result.value()[2].roster.rows.empty());
 
-    const auto classInfoMetricsAfter = services.databaseSession()
+    const auto classInfoMetricsAfter = services.workspaceStore()
         ->classInfoRepository()->rosterPrintClassInfoBatchReadMetrics();
     QCOMPARE(classInfoMetricsAfter.callCount - classInfoMetricsBefore.callCount, 1);
     QCOMPARE(classInfoMetricsAfter.requestedClassCount - classInfoMetricsBefore.requestedClassCount, 3);
     QCOMPARE(classInfoMetricsAfter.metadataStatementCount - classInfoMetricsBefore.metadataStatementCount, 1);
     QCOMPARE(classInfoMetricsAfter.regularScheduleStatementCount - classInfoMetricsBefore.regularScheduleStatementCount, 1);
     QCOMPARE(
-        services.databaseSession()->classInfoRepository()
+        services.workspaceStore()->classInfoRepository()
             ->scheduleClassInfoReadMetrics().singleClassInfoReadCount,
         0
         );
 
-    const auto rosterMetricsAfter = services.databaseSession()
+    const auto rosterMetricsAfter = services.workspaceStore()
         ->rosterRepository()->templatePrintBatchReadMetrics();
     QCOMPARE(rosterMetricsAfter.callCount - rosterMetricsBefore.callCount, 1);
     QCOMPARE(rosterMetricsAfter.requestedClassCount - rosterMetricsBefore.requestedClassCount, 3);
@@ -374,19 +374,19 @@ emptyInputAndAllEmptyRostersSkipUnneededStatements()
         &services
         );
     const Application::RosterTemplatePrintSourceReadQuery query(port);
-    const auto beforeClassInfo = services.databaseSession()
+    const auto beforeClassInfo = services.workspaceStore()
         ->classInfoRepository()->rosterPrintClassInfoBatchReadMetrics();
-    const auto beforeRoster = services.databaseSession()
+    const auto beforeRoster = services.workspaceStore()
         ->rosterRepository()->templatePrintBatchReadMetrics();
 
     const auto empty = query.execute({});
     QVERIFY(empty);
     QVERIFY(empty.value().empty());
-    QCOMPARE(services.databaseSession()
+    QCOMPARE(services.workspaceStore()
                  ->classInfoRepository()->rosterPrintClassInfoBatchReadMetrics()
                  .callCount,
         beforeClassInfo.callCount);
-    QCOMPARE(services.databaseSession()
+    QCOMPARE(services.workspaceStore()
                  ->rosterRepository()->templatePrintBatchReadMetrics()
                  .callCount,
         beforeRoster.callCount);
@@ -398,7 +398,7 @@ emptyInputAndAllEmptyRostersSkipUnneededStatements()
     QVERIFY(noColumns.value()[0].classInfo.classLevel.empty());
     QVERIFY(noColumns.value()[0].classInfo.regularSchedule.empty());
     QVERIFY(noColumns.value()[0].roster.columns.empty());
-    const auto afterRoster = services.databaseSession()
+    const auto afterRoster = services.workspaceStore()
         ->rosterRepository()->templatePrintBatchReadMetrics();
     QCOMPARE(afterRoster.columnStatementCount - beforeRoster.columnStatementCount, 1);
     QCOMPARE(afterRoster.cellStatementCount - beforeRoster.cellStatementCount, 0);
@@ -416,7 +416,7 @@ repositoryBatchFailureIsTechnical()
 
     Roster roster;
     roster.columns = {QStringLiteral("English")};
-    QVERIFY(services.databaseSession()->rosterRepository()->saveRoster(
+    QVERIFY(services.workspaceStore()->rosterRepository()->saveRoster(
         classIdValue,
         roster
         ));
@@ -445,7 +445,7 @@ rejectsOutOfRangeIntegerRosterWidthWithoutPartialSnapshot()
         );
     QVERIFY(classIdValue > 0);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QSqlQuery insertColumn(database);
     QVERIFY(insertColumn.prepare(QStringLiteral(
         "INSERT INTO roster_columns (class_id, name, position, width) "
@@ -497,7 +497,7 @@ fractionalColumnIndexIsRejectedByTemplatePrintRead()
     Roster roster;
     roster.columns = {QStringLiteral("English")};
     roster.rows = {{QStringLiteral("Integer column zero")}};
-    QVERIFY(services.databaseSession()->rosterRepository()->saveRoster(
+    QVERIFY(services.workspaceStore()->rosterRepository()->saveRoster(
         classIdValue,
         roster
         ));
@@ -517,7 +517,7 @@ fractionalColumnIndexIsRejectedByTemplatePrintRead()
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
 
-    QSqlQuery storedCells(services.databaseSession()->database());
+    QSqlQuery storedCells(services.workspaceStore()->database());
     QVERIFY(storedCells.prepare(QStringLiteral(
         "SELECT col_index, typeof(col_index) AS storage_type, value "
         "FROM roster_data WHERE class_id=? AND row_index=0 "
