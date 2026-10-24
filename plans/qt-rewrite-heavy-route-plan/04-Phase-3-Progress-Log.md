@@ -2082,3 +2082,37 @@ full suite, and cross-platform builds did not run. F1399 is accepted; F1400
 remaining slices are complete.
 
 Commit: `d6d20fa4fc804c094bbe304bfd2a90707f111014`.
+
+## F1400 — Class-day-filter reset policy (Batch 5 candidate 3 of 19) — 2026-10-24
+
+Only the class-day-filter reset-policy adapter and dedicated Platform fixture
+now use `WorkspaceStore`. The key is
+`classes_navigation_day_filter_reset_policy`. Missing values still materialize
+`on_application_close`; unsupported stored values fall back without rewrite;
+valid values are trimmed and lowercased. Invalid-enum saves are validated
+before store availability and return nonrecoverable `InvalidInput`; repository
+load errors remain recoverable `Technical`, and store/repository/write save
+failures remain nonrecoverable `Technical`. UI fallback/restoration and every
+assertion are unchanged.
+
+An incremental build in `build/macos-clang-debug` passed for
+`ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`,
+`ClassMngrClassesPageTests`, and
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests`. CTest #490,
+`ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`,
+passed 1/1. With `QT_QPA_PLATFORM=offscreen`, direct ClassesPage selections
+`dayFiltersResetOnPageLeaveAfterHideAndShow` and
+`resetPolicyReadFailuresPreserveStoredPreferencesAndPageState` passed 4/4
+including init/cleanup. MainWindow slot
+`dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce` passed
+3/3 including init/cleanup using registered CTest #113's environment with
+absolute `TMP`, `TEMP`, and `TMPDIR` under the test temp directory and
+`QT_QPA_PLATFORM=offscreen`. UI runs emitted database-not-open, offscreen
+font/size-hint, and missing QML/icon warnings; assertions passed.
+`git diff --check` passed. Full ClassesPage and MainWindow CTests, the full
+suite, and cross-platform builds did not run; the historical full ClassesPage
+timeout remains unassessed. F1400 is accepted; F1401 (Class-selection reset
+policy) is current. Batch 5 remains unpushed until its remaining slices are
+complete.
+
+Commit: `a97957249b2dce30c14aacfe7640503a493e209d`.
