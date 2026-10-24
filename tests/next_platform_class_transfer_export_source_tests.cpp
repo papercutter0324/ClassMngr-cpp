@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "features/classes/services/class_transfer_json_codec.h"
 #include "next/platform/application_services_class_transfer_export_source_read_port.h"
 #include <QDateTime>
@@ -46,8 +46,8 @@ void ClassTransferExportSourceTests::successfulSourceHasEveryRequiredStageAndSan
 {
     QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
     QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
-    auto* repository = services.databaseSession()->classTransferRepository();
-    QSqlQuery insert(services.databaseSession()->database());
+    auto* repository = services.workspaceStore()->classTransferRepository();
+    QSqlQuery insert(services.workspaceStore()->database());
     QVERIFY(insert.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Unassigned')")));
     const int value = insert.lastInsertId().toInt();
     Platform::ApplicationServicesClassTransferExportSourceReadPort port(services);
@@ -68,13 +68,13 @@ void ClassTransferExportSourceTests::successfulSourceHasEveryRequiredStageAndSan
     QVERIFY(package.value().classes[0].info.classColor == u"#FFFFFF");
     auto legacy = repository->buildPackage({value}); QVERIFY(legacy);
     QCOMPARE(legacy->classes[0].info.classId, -1); QCOMPARE(legacy->classes[0].info.teacherId, -1);
-    auto database = services.databaseSession()->database(); QVERIFY(database.transaction()); QVERIFY(database.rollback());
+    auto database = services.workspaceStore()->database(); QVERIFY(database.transaction()); QVERIFY(database.rollback());
 }
 void ClassTransferExportSourceTests::rosterWidthAdapterPreservesSignedIntsAndOrder()
 {
     QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
     QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
-    auto database = services.databaseSession()->database();
+    auto database = services.workspaceStore()->database();
     QSqlQuery insertClass(database);
     QVERIFY(insertClass.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Signed roster widths')")));
     const int classId = insertClass.lastInsertId().toInt();
@@ -108,7 +108,7 @@ void ClassTransferExportSourceTests::outOfRangeIntegerRosterWidthFailsTheRosterS
 {
     QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
     QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
-    auto database = services.databaseSession()->database();
+    auto database = services.workspaceStore()->database();
 
     QSqlQuery insertClass(database);
     QVERIFY(insertClass.exec(QStringLiteral(
@@ -157,7 +157,7 @@ void ClassTransferExportSourceTests::malformedRosterRowIndexReturnsEstablishedRe
 {
     QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
     QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
-    auto database = services.databaseSession()->database();
+    auto database = services.workspaceStore()->database();
     QSqlQuery insertClass(database);
     QVERIFY(insertClass.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Malformed roster row index')")));
     const int classId = insertClass.lastInsertId().toInt();
@@ -202,7 +202,7 @@ void ClassTransferExportSourceTests::fractionalRosterRowIndexReturnsEstablishedR
 {
     QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
     QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
-    auto database = services.databaseSession()->database();
+    auto database = services.workspaceStore()->database();
     QSqlQuery insertClass(database);
     QVERIFY(insertClass.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Fractional roster row index')")));
     const int classId = insertClass.lastInsertId().toInt();
@@ -253,7 +253,7 @@ void ClassTransferExportSourceTests::sparseIntegerRosterRowRemainsValid()
 {
     QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
     QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
-    auto database = services.databaseSession()->database();
+    auto database = services.workspaceStore()->database();
     QSqlQuery insertClass(database);
     QVERIFY(insertClass.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Sparse integer roster row')")));
     const int classId = insertClass.lastInsertId().toInt();
@@ -294,7 +294,7 @@ void ClassTransferExportSourceTests::outOfRangeRosterRowIndexReturnsEstablishedR
 {
     QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
     QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
-    auto database = services.databaseSession()->database();
+    auto database = services.workspaceStore()->database();
     QSqlQuery insertClass(database);
     QVERIFY(insertClass.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Out of range roster row index')")));
     const int classId = insertClass.lastInsertId().toInt();
@@ -339,7 +339,7 @@ void ClassTransferExportSourceTests::wideTeacherIdentityKeepsFullProfileAndShare
 {
     QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
     QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
-    auto database = services.databaseSession()->database();
+    auto database = services.workspaceStore()->database();
     constexpr qint64 teacherId = 2147483648LL;
     const auto typedTeacherId = *Domain::TeacherId::fromString("2147483648");
     const ClassExportTeacherProfile expected{
@@ -478,7 +478,7 @@ void ClassTransferExportSourceTests::wideTeacherIdentityKeepsFullProfileAndShare
     const auto bytes = QJsonDocument(json).toJson(QJsonDocument::Compact);
     QVERIFY(!bytes.contains("2147483648"));
     QVERIFY(!bytes.contains("-2147483648"));
-    auto legacy = services.databaseSession()->classTransferRepository()->buildPackage({classes[1], classes[0]});
+    auto legacy = services.workspaceStore()->classTransferRepository()->buildPackage({classes[1], classes[0]});
     QVERIFY(legacy);
     QCOMPARE(legacy->teachers.size(), 1);
     QCOMPARE(legacy->teachers[0].teacher.id, -1);
@@ -499,7 +499,7 @@ void ClassTransferExportSourceTests::wideEvaluationIdsKeepTheirOwnExportRows()
 {
     QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
     QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
-    auto database = services.databaseSession()->database();
+    auto database = services.workspaceStore()->database();
     QSqlQuery insertClass(database);
     QVERIFY(insertClass.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Wide Evaluation IDs')")));
     const int classId = insertClass.lastInsertId().toInt();
@@ -579,7 +579,7 @@ void ClassTransferExportSourceTests::partialEvaluationHeaderFetchErrorFailsEvalu
 {
     QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
     QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
-    auto database = services.databaseSession()->database();
+    auto database = services.workspaceStore()->database();
     QSqlQuery insertClass(database);
     QVERIFY(insertClass.exec(QStringLiteral(
         "INSERT INTO classes(name) VALUES('Partial evaluation header fetch')")));
@@ -655,7 +655,7 @@ void ClassTransferExportSourceTests::partialEvaluationMatrixFetchErrorFailsEvalu
 {
     QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
     QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
-    auto database = services.databaseSession()->database();
+    auto database = services.workspaceStore()->database();
     QSqlQuery insertClass(database);
     QVERIFY(insertClass.exec(QStringLiteral(
         "INSERT INTO classes(name) VALUES('Partial evaluation matrix fetch')")));
@@ -753,7 +753,7 @@ void ClassTransferExportSourceTests::stagedErrorRollsBackAndKeepsDownstreamNotAt
 {
     QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
     QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
-    auto database = services.databaseSession()->database(); QSqlQuery sql(database);
+    auto database = services.workspaceStore()->database(); QSqlQuery sql(database);
     QVERIFY(sql.exec(QStringLiteral("INSERT INTO classes(name) VALUES('First')"))); const int first = sql.lastInsertId().toInt();
     QVERIFY(sql.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Second')"))); const int second = sql.lastInsertId().toInt();
     QVERIFY(sql.exec(QStringLiteral("DROP TABLE class_times")));
@@ -781,7 +781,7 @@ void ClassTransferExportSourceTests::beginAndUnavailableErrorsStayAtSourceBounda
     QVERIFY(missing.error().message == "No Teacher Profile service is available.");
     QCOMPARE(QString::fromStdString(missing.error().message), legacy.error());
     QTemporaryDir directory; QVERIFY(directory.isValid()); QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
-    auto database = services.databaseSession()->database(); QVERIFY(database.transaction());
+    auto database = services.workspaceStore()->database(); QVERIFY(database.transaction());
     auto result = port.readSource({{id(1)}}); QVERIFY(!result);
     QVERIFY(result.error().message.starts_with("Unable to start the class export transaction: "));
     QVERIFY(database.rollback());

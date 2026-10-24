@@ -1,6 +1,6 @@
 #pragma once
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_transfer_repository.h"
 #include "next/application/class_transfer_export_query.h"
 #include <charconv>
@@ -15,8 +15,8 @@ public:
     Application::ClassTransferExportSourceResult readSource(const Application::ClassTransferExportRequest& request) override
     {
         using namespace Application;
-        DatabaseSession* session = m_services.databaseSession();
-        if (!session || !session->classTransferRepository())
+        WorkspaceStore* store = m_services.workspaceStore();
+        if (!store || !store->classTransferRepository())
             return ClassTransferExportSourceResult::failure(error(QStringLiteral("No Teacher Profile service is available.")));
         QList<int> ids;
         for (const auto& id : request.classIds)
@@ -28,7 +28,7 @@ public:
                 value = 0; // Repository defers this error behind earlier staged failures.
             ids.append(value);
         }
-        auto read = session->classTransferRepository()->readExportSource(ids);
+        auto read = store->classTransferRepository()->readExportSource(ids);
         if (!read)
             return ClassTransferExportSourceResult::failure(error(read.error()));
         ClassTransferExportSource output;

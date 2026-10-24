@@ -1455,3 +1455,20 @@ These tests exercise the production port through the controller/query path;
 no dedicated direct Platform port test was added. `git diff --check` passed.
 No full suite or cross-platform build ran. F1373 is accepted; F1374 (Class
 Transfer export source read) is current.
+
+Commit: `f7d368a52d9ac04fdbf6c18e586eb07f2fc7c16a`.
+
+## F1374 — Class Transfer export source read (Batch 3 candidate 17 of 20) — 2026-10-24
+
+`src/next/platform/application_services_class_transfer_export_source_read_port.h`
+now uses `WorkspaceStore`. Its 13-slot focused fixture in
+`tests/next_platform_class_transfer_export_source_tests.cpp` also uses
+`WorkspaceStore`. Request-ID deferral, call ordering, and error/result mapping
+are unchanged. Repository staged reads, transaction/rollback behavior,
+selection, and serialization are unchanged.
+
+Built `ClassMngrNextPlatformClassTransferExportSourceTests` and
+`ClassMngrClassTransferExportCodecParityTests`. The exact registered CTest
+selection was confirmed and passed serially (2/2). `git diff --check` passed.
+No full suite or cross-platform build ran. F1374 is accepted; F1375
+(Class Transfer apply) is current.

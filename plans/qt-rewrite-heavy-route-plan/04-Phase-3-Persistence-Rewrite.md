@@ -49,9 +49,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   subtitle batch read), F1369 (Classes navigation read), and F1370 (Class
   teacher assignments read) are accepted; F1371 (Regular Class creation and
   post-create by-ID lookup) and F1372 (Class delete) are accepted; F1373
-  (Class Transfer preview read) is accepted; F1374 (Class Transfer export
-  source read) is current. F1358–F1373 implementation and verification
-  evidence, plus the Batch 2 push receipt, are in the
+  (Class Transfer preview read) and F1374 (Class Transfer export source read)
+  are accepted; F1375 (Class Transfer apply) is current. F1358–F1374
+  implementation and verification evidence, plus the Batch 2 push receipt,
+  are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
@@ -70,17 +71,14 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1373 — 2026-10-24
+## Latest Progress Update — F1374 — 2026-10-24
 
-F1373 is accepted; F1374 is current. The Class Transfer preview-read platform
-port and shared sidebar apply-parity fixture now use `WorkspaceStore`;
-assertions and SQL semantics are unchanged. The repository snapshot, query
-normalization and matching, controller order, and export/apply production
-ports are unchanged. Focused preview checks and the full sidebar-parity CTest
-passed. Tests exercise the production port through controller/query paths; no
-dedicated direct Platform port test was added. No full suite or cross-platform
-build ran. The
-[progress log](04-Phase-3-Progress-Log.md) records F1373 evidence and retains
+F1374 is accepted; F1375 is current. The Class Transfer export-source port and
+its 13-slot fixture now use `WorkspaceStore`. Request-ID deferral, call order,
+error/result mapping, repository staged reads, transaction/rollback, selection,
+and serialization behavior are unchanged. Two selected CTests passed. No full
+suite or cross-platform build ran. The
+[progress log](04-Phase-3-Progress-Log.md) records F1373 and F1374 evidence,
 earlier UI limitations, attribution and coverage notes, baseline failure, and
 Batch 2 push receipt.
 
