@@ -42,8 +42,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `018b30b04ab713769f9e69b440ba7223310a2b87`; its push receipt documentation
   was later pushed as
   `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before Batch 4
-  began. Batch 4
-  discovery is complete and Batch 4 is active: F1378 (My Classes
+  began. Batch 4 discovery is complete and all slices are accepted; Batch 4 is
+  awaiting push: F1378 (My Classes
   teacher-profile batch read), F1379 (My Classes teacher-display-name batch
   read), F1380 (Roster snapshot read), F1381 (Roster column-name batch read),
   F1382 (Roster template-print source read), F1383 (Roster print class-info
@@ -54,13 +54,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   directory read), F1391 (Native English birthday directory read), F1392
   (Current-campus preferences), F1393 (Class-visibility preferences), F1394
   (Schedule-display preferences), F1395 (Schedule-display-mode preferences),
-  and F1396 (Calendar first-day-of-week preferences) are accepted; F1397
-  (Academic-calendar schedule preferences) is current. Batch 5 discovery is
-  complete with 19 prioritized slices queued to start after Batch 4 is pushed.
-  F1376–F1396
-  implementation evidence, Batch 2 and
-  Batch 3 push receipts, and earlier UI limitations and attribution notes are
-  in the [progress log](04-Phase-3-Progress-Log.md).
+  F1396 (Calendar first-day-of-week preferences), and F1397 (Academic-calendar
+  schedule preferences) are accepted. Batch 5 discovery is complete with 19
+  prioritized slices queued until the Batch 4 push receipt is recorded.
+  F1376–F1397 implementation evidence, Batch 2 and Batch 3 push receipts, and
+  earlier UI limitations and attribution notes are in the
+  [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -78,18 +77,17 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1396 — 2026-10-24
+## Latest Progress Update — F1397 — 2026-10-24
 
-F1396 is accepted; F1397 is current in Batch 4 (candidate 20 of 20). The
-calendar first-day-of-week port and dedicated Platform fixture use
-`WorkspaceStore`; seven-day integer/key, locale fallback, invalid-value
-behavior, and assertions are unchanged. Platform CTest #433 and Calendar
-preferences restore-defaults CTest #81 passed serially (2/2). Batch 5 discovery
-is complete and queued to start after Batch 4 is pushed. The F1383 orphan-data,
-NavigationTeacherRead warning-text, F1392 SubPrep timeout, and F1394 schedule
-parity fixture-setup findings remain separate in the
-[progress log](04-Phase-3-Progress-Log.md). No full suite or cross-platform
-build ran.
+F1397 is accepted and Batch 4 is complete, awaiting push. The academic-calendar
+schedule port and dedicated Platform fixture use `WorkspaceStore`; key, opaque
+UTF-8, missing/unavailable, read/write error, and assertion semantics are
+unchanged. Platform and Evaluation Default integration CTests passed serially
+(2/2). Batch 5 discovery is complete and queued until the Batch 4 push receipt
+is recorded. The F1383 orphan-data, F1389/F1390/F1391 NavigationTeacherRead
+warning-text, F1392 SubPrep timeout, and F1394 schedule parity fixture-setup
+findings remain separate in the [progress log](04-Phase-3-Progress-Log.md).
+No full suite or cross-platform build ran.
 
 ## Objective
 

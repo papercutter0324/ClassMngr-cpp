@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/academic_calendar_schedule_preferences.h"
 
@@ -26,14 +26,14 @@ public:
     explicit ApplicationServicesAcademicCalendarSchedulePreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_session(services.databaseSession())
+        : m_store(services.workspaceStore())
     {
     }
 
     explicit ApplicationServicesAcademicCalendarSchedulePreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_session(services ? services->databaseSession() : nullptr)
+        : m_store(services ? services->workspaceStore() : nullptr)
     {
     }
 
@@ -53,13 +53,13 @@ public:
     [[nodiscard]] Application::AcademicCalendarSchedulePreferencesReadResult
     read() const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return Application::AcademicCalendarSchedulePreferencesReadResult::
                 success({});
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return Application::AcademicCalendarSchedulePreferencesReadResult::
@@ -98,14 +98,14 @@ public:
         const Application::AcademicCalendarScheduleJsonText& payload
         ) const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return failure(
                 "Academic calendar schedule persistence is unavailable."
                 );
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return failure(
@@ -154,7 +154,7 @@ private:
         return QStringLiteral("calendar/academicSchedule/v1");
     }
 
-    DatabaseSession* m_session = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

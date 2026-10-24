@@ -12,8 +12,8 @@
   implementation tip `018b30b04ab713769f9e69b440ba7223310a2b87`; its push
   receipt documentation was later pushed as
   `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before Batch 4
-  began. Batch 4 discovery is complete
-  and Batch 4 is active: F1378 (My Classes teacher-profile batch read), F1379
+  began. Batch 4 discovery is complete and all slices are accepted; Batch 4 is
+  awaiting push: F1378 (My Classes teacher-profile batch read), F1379
   (My Classes teacher-display-name batch read), F1380 (Roster snapshot read),
   F1381 (Roster column-name batch read), F1382 (Roster template-print source
   read), F1383 (Roster print class-info read), F1384 (Speaking-evaluation
@@ -23,10 +23,10 @@
   F1390 (GS Team birthday directory read), F1391 (Native English birthday
   directory read), F1392 (Current-campus preferences), F1393
   (Class-visibility preferences), F1394 (Schedule-display preferences), F1395
-  (Schedule-display-mode preferences), and F1396 (Calendar first-day-of-week
-  preferences) are accepted; F1397 (Academic-calendar schedule preferences)
-  is current. Batch 5 discovery is complete; its 19-slice shortlist is queued
-  to start after Batch 4 is pushed.
+  (Schedule-display-mode preferences), F1396 (Calendar first-day-of-week
+  preferences), and F1397 (Academic-calendar schedule preferences) are
+  accepted. Batch 5 discovery is complete; its 19-slice shortlist is queued to
+  start after the Batch 4 push receipt is recorded.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI
   limitations, baseline failures, attribution, and coverage notes remain in
   the Phase 3 progress log. The [Phase 3

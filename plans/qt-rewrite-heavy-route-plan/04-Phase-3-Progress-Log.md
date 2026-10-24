@@ -1983,14 +1983,34 @@ Calendar preferences restore-defaults CTest #81 passed serially (2/2).
 `git diff --check` passed. No full suite or cross-platform build ran. F1396 is
 accepted; F1397 (Academic-calendar schedule preferences) is current.
 
+Commit: `555abdf714caf828679ba293e6d778fe689a0025`.
+
 ### Batch 5 discovery — triggered at F1396
 
 Two complementary scans completed. The source scan found exactly 19 distinct
-active Next Platform ports after excluding current F1396 and F1397. The
-feature-flow scan cross-checked consumers and separately surfaced display-name
-preference, latest-source-date read, and residual Calendar Event range
-projection. A focused guard audit found the Speaking Eval, Teacher Info, and
-Sidebar direct session checks are incidental behavior guards, not independent
-persistence ports; they remain in overflow. The 19 prioritized slices are
-listed in `Current-Slice-Batches.md` and queued until Batch 4 is pushed. Scan
-registrations are candidates, not test results.
+active Next Platform ports after excluding the two final Batch 4 slices,
+F1396 and F1397. The feature-flow scan cross-checked consumers and separately
+surfaced display-name preference, latest-source-date read, and residual
+Calendar Event range projection. A focused guard audit found the Speaking Eval,
+Teacher Info, and Sidebar direct session checks are incidental behavior guards,
+not independent persistence ports; they remain in overflow. The 19 prioritized
+slices are listed in `Current-Slice-Batches.md` and queued until the Batch 4
+push receipt is recorded. Scan registrations are candidates, not test results.
+
+## F1397 — Academic-calendar schedule preferences (Batch 4 candidate 20 of 20) — 2026-10-24
+
+The academic-calendar schedule preferences port,
+`src/next/platform/application_services_academic_calendar_schedule_preferences_port.h`,
+and its dedicated Platform fixture,
+`tests/next_platform_application_services_academic_calendar_schedule_preferences_port_tests.cpp`,
+now use `WorkspaceStore`. The exact key, opaque UTF-8, missing/unavailable,
+read/write error, and assertion semantics are unchanged.
+
+Built `ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests`
+and `ClassMngrEvaluationDefaultSelectionIntegrationTests`. Serial CTests #434
+and #168 passed (2/2). The older Phase 2 F193 summary conflicts with current
+source/test behavior. This slice preserves the existing behavior: unavailable
+or closed reads return empty success; writes and repository read errors map to
+Technical. No semantics changed. `git diff --check` passed. No full suite or
+cross-platform build ran. F1397 is accepted; Batch 4 is complete and awaiting
+push. Batch 5 remains queued until the Batch 4 push receipt is recorded.

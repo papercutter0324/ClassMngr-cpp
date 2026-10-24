@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/platform/application_services_academic_calendar_schedule_preferences_port.h"
 
@@ -55,7 +55,7 @@ bool executeSql(
     const QString& statement
     )
 {
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     if (!session || !session->isOpen())
     {
         return false;
@@ -105,7 +105,7 @@ missingAndUnavailableReadEmptyAndReportWriteFailure()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     QVERIFY(session->settingsRepository());
@@ -124,8 +124,8 @@ missingAndUnavailableReadEmptyAndReportWriteFailure()
 
     ApplicationServices unavailableServices;
     QVERIFY(unavailableServices.dataService());
-    DatabaseSession* const unavailableSession =
-        unavailableServices.databaseSession();
+    WorkspaceStore* const unavailableSession =
+        unavailableServices.workspaceStore();
     QVERIFY(unavailableSession);
     QVERIFY(!unavailableSession->isOpen());
     ApplicationServicesAcademicCalendarSchedulePreferencesPort unavailablePort(
@@ -148,7 +148,7 @@ missingAndUnavailableReadEmptyAndReportWriteFailure()
     const QString closedDatabasePath = databasePath(m_directory);
     QVERIFY(closedServices.openDatabase(closedDatabasePath));
     QVERIFY(closedServices.dataService());
-    DatabaseSession* const closedSession = closedServices.databaseSession();
+    WorkspaceStore* const closedSession = closedServices.workspaceStore();
     QVERIFY(closedSession);
     QVERIFY(closedSession->isOpen());
     SettingsRepository* const closedRepository =
@@ -217,7 +217,7 @@ readErrorsReturnTechnicalFailure()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     QVERIFY(session->settingsRepository());
@@ -239,7 +239,7 @@ roundTripsThroughTheExactKey()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -272,7 +272,7 @@ roundTripsNonAsciiUtf8JsonTextVerbatim()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -306,7 +306,7 @@ preservesStoredPayloadAndUnrelatedSettings()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -355,7 +355,7 @@ saveFailureReturnsTechnicalErrorAndPreservesStoredPayload()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     QVERIFY(session->settingsRepository());
