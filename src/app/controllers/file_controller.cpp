@@ -287,6 +287,13 @@ void FileController::connectActions(
         );
 
     connect(
+        actions.recoverInterruptedProfile,
+        &QAction::triggered,
+        this,
+        &FileController::recoverInterruptedProfile
+        );
+
+    connect(
         actions.saveFile,
         &QAction::triggered,
         this,
@@ -789,16 +796,216 @@ void FileController::openFile()
     loadDatabase(*selection);
 }
 
+void FileController::recoverInterruptedProfile()
+{
+    if (!m_workspaceCreationLifecycleAdapter)
+    {
+        DialogServices::showWarning(
+            m_window,
+            tr("Recover Interrupted Teacher Profile"),
+            tr("Teacher Profile recovery is not available right now.")
+            );
+        return;
+    }
+
+    const QString recoveryDirectory = databaseDialogDirectory();
+    const auto candidates =
+        m_workspaceCreationLifecycleAdapter
+            ->normalCreateRecoveryCandidatesIn(recoveryDirectory);
+    if (candidates.isEmpty())
+    {
+        DialogServices::showInformation(
+            m_window,
+            tr("Recover Interrupted Teacher Profile"),
+            tr("No interrupted normal profile replacements were found in:\n%1")
+                .arg(recoveryDirectory)
+            );
+        return;
+    }
+
+    ActionPromptRequest candidateRequest;
+    candidateRequest.prompt.parent = m_window;
+    candidateRequest.prompt.objectName =
+        QStringLiteral("recoverInterruptedProfileCandidatePrompt");
+    candidateRequest.prompt.automationId =
+        QStringLiteral("recoverInterruptedProfileCandidatePrompt");
+    candidateRequest.prompt.title =
+        tr("Recover Interrupted Teacher Profile");
+    candidateRequest.prompt.message = tr(
+        "Choose a recovery copy to copy into a Teacher Profile file. "
+        "The recovery copy will remain unchanged."
+        );
+    candidateRequest.informativeText = tr(
+        "Candidates were found in:\n%1\n\n"
+        "Target and recovery-copy paths:"
+        ).arg(recoveryDirectory);
+    candidateRequest.defaultActionId = QStringLiteral("cancel");
+    candidateRequest.escapeActionId = QStringLiteral("cancel");
+
+    for (qsizetype index = 0; index < candidates.size(); ++index)
+    {
+        const auto& candidate = candidates.at(index);
+        const QString targetName =
+            QFileInfo(candidate.targetPath).fileName();
+        const QString recoveryName =
+            QFileInfo(candidate.sourcePath).fileName();
+        candidateRequest.informativeText += QStringLiteral("\n\n%1\n%2\n%3")
+            .arg(targetName, candidate.targetPath, candidate.sourcePath);
+        candidateRequest.actions.append(
+            PromptAction{
+                .id = QStringLiteral("candidate-%1").arg(index),
+                .text = tr("%1 — %2").arg(targetName, recoveryName),
+                .role = PromptActionRole::Action,
+                .enabled = true
+            }
+            );
+    }
+    candidateRequest.actions.append(
+        PromptAction{
+            .id = QStringLiteral("cancel"),
+            .text = tr("Cancel"),
+            .role = PromptActionRole::Reject,
+            .enabled = true
+        }
+        );
+
+    const QString selectedAction =
+        DialogServices::prompts().chooseAction(candidateRequest);
+    bool selectedIndexValid = false;
+    const qsizetype selectedIndex =
+        selectedAction.startsWith(QStringLiteral("candidate-"))
+            ? selectedAction.mid(QStringLiteral("candidate-").size())
+                  .toLongLong(&selectedIndexValid)
+            : -1;
+    if (
+        !selectedIndexValid
+        || selectedIndex < 0
+        || selectedIndex >= candidates.size()
+    )
+    {
+        return;
+    }
+
+    const auto& candidate = candidates.at(selectedIndex);
+    const QFileInfo targetInfo(candidate.targetPath);
+    const QString suggestedName = targetInfo.exists()
+        ? tr("Recovered %1").arg(targetInfo.fileName())
+        : targetInfo.fileName();
+
+    QString destinationPath;
+    while (true)
+    {
+        const auto destinationSelection = DialogServices::fileDialogs().saveFile(
+            SaveFileRequest{
+                .parent = m_window,
+                .title = tr("Save Recovered Teacher Profile"),
+                .purpose = FileDialogPurpose::TeacherProfile,
+                .initialDirectory = QFileInfo(candidate.sourcePath)
+                    .absolutePath(),
+                .suggestedFileName = suggestedName,
+                .nameFilters = {
+                    tr("ClassMngr Teacher Profile (*.tps)")
+                },
+                .defaultSuffix = QStringLiteral("tps"),
+                .confirmOverwrite = false
+            }
+            );
+        if (!destinationSelection)
+        {
+            return;
+        }
+
+        // Do not create missing parent directories here. A canceled or
+        // rejected recovery choice must not change the filesystem.
+        destinationPath = QDir::cleanPath(
+            QFileInfo(
+                DatabaseFileFormat::nativeOutputPath(*destinationSelection)
+                ).absoluteFilePath()
+            );
+        if (destinationPath.trimmed().isEmpty())
+        {
+            DialogServices::showWarning(
+                m_window,
+                tr("Recover Interrupted Teacher Profile"),
+                tr("Choose a valid destination for the recovered profile.")
+                );
+            continue;
+        }
+
+        if (!QFileInfo::exists(destinationPath))
+        {
+            break;
+        }
+
+        DialogServices::showWarning(
+            m_window,
+            tr("Recover Interrupted Teacher Profile"),
+            tr(
+                "The destination already exists and was left unchanged. "
+                "Choose a different path:\n%1"
+                ).arg(destinationPath)
+            );
+    }
+
+    if (!confirmUnsavedChanges())
+    {
+        return;
+    }
+
+    if (
+        !m_workspaceCreationLifecycleAdapter
+             ->copyRecoveryCandidateNoReplace(
+                 candidate.sourcePath,
+                 destinationPath
+                 )
+    )
+    {
+        DialogServices::showError(
+            m_window,
+            tr("Recover Interrupted Teacher Profile"),
+            tr(
+                "The recovery copy could not be copied. The source remains "
+                "at:\n%1\n\nThe destination, if created, remains at:\n%2"
+                ).arg(candidate.sourcePath, destinationPath)
+            );
+        return;
+    }
+
+    QString openFailure;
+    if (!loadDatabase(destinationPath, false, &openFailure))
+    {
+        DialogServices::showError(
+            m_window,
+            tr("Recover Interrupted Teacher Profile"),
+            tr(
+                "The copied profile could not be opened. The recovery copy "
+                "remains at:\n%1\n\nThe original recovery file remains "
+                "at:\n%2\n\n%3"
+                ).arg(destinationPath, candidate.sourcePath, openFailure)
+            );
+    }
+}
+
 bool FileController::loadDatabase(
     const QString& filePath,
-    bool showErrorMessage
+    bool showErrorMessage,
+    QString* failureMessage
     )
 {
+    if (failureMessage)
+    {
+        failureMessage->clear();
+    }
+
     const QString normalizedPath =
         normalizeInputFilePath(filePath);
 
     if (!QFileInfo::exists(normalizedPath))
     {
+        if (failureMessage)
+        {
+            *failureMessage = tr("File not found:\n%1").arg(normalizedPath);
+        }
         pruneRecentFile(filePath);
         populateRecentMenu();
 
@@ -821,6 +1028,10 @@ bool FileController::loadDatabase(
 
     if (!m_services)
     {
+        if (failureMessage)
+        {
+            *failureMessage = tr("Teacher Profile services are unavailable.");
+        }
         enterNoDatabaseState();
         return false;
     }
@@ -836,6 +1047,10 @@ bool FileController::loadDatabase(
 
     if (!opened)
     {
+        if (failureMessage)
+        {
+            *failureMessage = domainErrorMessage(opened.error());
+        }
         if (showErrorMessage)
         {
             DialogServices::showWarning(

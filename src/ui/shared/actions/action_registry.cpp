@@ -208,6 +208,11 @@ void ActionRegistry::retranslate()
         tr("Open an existing file")
         );
     updateActionText(
+        recoverInterruptedProfile,
+        tr("Recover Interrupted Teacher Profile..."),
+        tr("Find and copy a profile retained after interrupted replacement")
+        );
+    updateActionText(
         saveFile,
         tr("Save"),
         tr("Save the current file")
@@ -540,6 +545,15 @@ void ActionRegistry::refreshThemedIcons()
             );
     }
 
+    if (recoverInterruptedProfile)
+    {
+        recoverInterruptedProfile->setIcon(
+            QApplication::style()->standardIcon(
+                QStyle::SP_DialogOpenButton
+                )
+            );
+    }
+
     if (saveFile)
     {
         saveFile->setIcon(
@@ -632,6 +646,14 @@ void ActionRegistry::createFileActions()
                 QStyle::SP_DialogOpenButton),
             tr("Open..."),
             tr("Open an existing file")
+            );
+
+    recoverInterruptedProfile =
+        createAction(
+            QApplication::style()->standardIcon(
+                QStyle::SP_DialogOpenButton),
+            tr("Recover Interrupted Teacher Profile..."),
+            tr("Find and copy a profile retained after interrupted replacement")
             );
 
     saveFile =

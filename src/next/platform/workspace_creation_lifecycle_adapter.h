@@ -9,7 +9,9 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QRegularExpression>
 #include <QString>
+#include <QVector>
 #include <QUuid>
 
 #include <cstddef>
@@ -17,6 +19,27 @@
 
 namespace ClassMngr::Next::Platform
 {
+
+namespace
+{
+inline const QRegularExpression& normalCreateRecoveryNamePattern()
+{
+    static const QRegularExpression pattern(
+        QStringLiteral(
+            "^\\.([\\s\\S]+)\\.workspace-create-"
+            "([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-"
+            "[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})\\.recovery$"
+            )
+        );
+    return pattern;
+}
+}
+
+struct NormalWorkspaceRecoveryCandidate final
+{
+    QString sourcePath;
+    QString targetPath;
+};
 
 // Qt and legacy adapter for the normal profile creation replacement policy.
 // It confines sibling file recovery operations to Platform and delegates
@@ -56,6 +79,119 @@ public:
                     )
             );
         return fromQString(recoveryPath);
+    }
+
+    [[nodiscard]] QVector<NormalWorkspaceRecoveryCandidate>
+    normalCreateRecoveryCandidatesIn(
+        const QString& directoryPath
+        ) const
+    {
+        QVector<NormalWorkspaceRecoveryCandidate> candidates;
+        const QDir directory(directoryPath);
+        const QFileInfoList entries = directory.entryInfoList(
+            QDir::Files | QDir::Hidden | QDir::NoDotAndDotDot,
+            QDir::Name
+            );
+        candidates.reserve(entries.size());
+
+        for (const QFileInfo& entry : entries)
+        {
+            if (!entry.isFile() || entry.isSymLink())
+            {
+                continue;
+            }
+
+            const QRegularExpressionMatch match =
+                normalCreateRecoveryNamePattern().match(entry.fileName());
+            if (!match.hasMatch())
+            {
+                continue;
+            }
+
+            candidates.append(
+                NormalWorkspaceRecoveryCandidate{
+                    .sourcePath = entry.absoluteFilePath(),
+                    .targetPath = directory.filePath(match.captured(1))
+                }
+                );
+        }
+
+        return candidates;
+    }
+
+    // NewOnly refuses an existing destination, so a collision cannot replace
+    // either a profile or another recovery copy.
+    [[nodiscard]] bool copyRecoveryCandidateNoReplace(
+        const QString& sourcePath,
+        const QString& destinationPath
+        ) const
+    {
+        const QFileInfo sourceInfo(sourcePath);
+        if (
+            sourcePath.trimmed().isEmpty()
+            || destinationPath.trimmed().isEmpty()
+            || !sourceInfo.isFile()
+            || sourceInfo.isSymLink()
+            || !normalCreateRecoveryNamePattern()
+                    .match(sourceInfo.fileName())
+                    .hasMatch()
+        )
+        {
+            return false;
+        }
+
+        QFile source(sourcePath);
+        if (!source.open(QIODevice::ReadOnly))
+        {
+            return false;
+        }
+
+        // NewOnly gives the destination an atomic no-replace create. Keep a
+        // partial destination on any later read, write, flush, or permission
+        // failure so recovery never hides an artifact it created.
+        QFile destination(destinationPath);
+        if (!destination.open(QIODevice::WriteOnly | QIODevice::NewOnly))
+        {
+            return false;
+        }
+
+        QByteArray buffer(64 * 1024, '\0');
+        while (true)
+        {
+            const qint64 bytesRead = source.read(
+                buffer.data(),
+                buffer.size()
+                );
+            if (bytesRead < 0)
+            {
+                return false;
+            }
+            if (bytesRead == 0)
+            {
+                if (source.error() != QFileDevice::NoError)
+                {
+                    return false;
+                }
+                break;
+            }
+
+            qint64 bytesWritten = 0;
+            while (bytesWritten < bytesRead)
+            {
+                const qint64 writeResult = destination.write(
+                    buffer.constData() + bytesWritten,
+                    bytesRead - bytesWritten
+                    );
+                if (writeResult <= 0)
+                {
+                    return false;
+                }
+                bytesWritten += writeResult;
+            }
+        }
+
+        return destination.flush()
+            && destination.setPermissions(source.permissions());
     }
 
     [[nodiscard]] bool moveProfile(

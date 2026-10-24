@@ -84,6 +84,7 @@ private:
 
     void newFile();
     void openFile();
+    void recoverInterruptedProfile();
 
     void openSpecificFile(
         const QString& filePath
@@ -91,7 +92,8 @@ private:
 
     bool loadDatabase(
         const QString& filePath,
-        bool showErrorMessage = true
+        bool showErrorMessage = true,
+        QString* failureMessage = nullptr
         );
 
     void saveFile();

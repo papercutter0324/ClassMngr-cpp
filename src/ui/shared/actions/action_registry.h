@@ -130,6 +130,7 @@ public:
 
     QAction* newFile = nullptr;
     QAction* openFile = nullptr;
+    QAction* recoverInterruptedProfile = nullptr;
     QAction* saveFile = nullptr;
     QAction* saveAsFile = nullptr;
     QAction* exportAsFile = nullptr;

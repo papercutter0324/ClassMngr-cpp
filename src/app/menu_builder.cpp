@@ -1599,6 +1599,7 @@ void MenuBuilder::buildFileMenu(MainWindow* window)
 
     fileMenu->addAction(actions.newFile);
     fileMenu->addAction(actions.openFile);
+    fileMenu->addAction(actions.recoverInterruptedProfile);
 
     actions.recentFilesMenu =
         fileMenu->addMenu(
