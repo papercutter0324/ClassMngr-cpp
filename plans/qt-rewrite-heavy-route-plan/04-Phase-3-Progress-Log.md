@@ -2415,3 +2415,42 @@ accepted; F1409 (Sub Prep personal Zoom preferences) is current. Batch 5
 remains unpushed until its remaining slices are complete.
 
 Commit: `d8cb586497ce64ca700f1f4deb500bdc1d8375e0`.
+
+## F1409 — Sub Prep personal Zoom preferences (Batch 5 candidate 12 of 19) — 2026-10-24
+
+Only the `ApplicationServicesSubPrepPersonalZoomPreferencesPort`
+header/implementation and dedicated Platform fixture moved to
+`WorkspaceStore`. Reads remain sequential by credential: primary
+`myInfo/zoomLoginId`, then fallback `subPrep/personalZoomEmail` only if the
+primary is missing or invalid; primary `myInfo/zoomPassword`, then fallback
+`subPrep/personalZoomPassword`; finally primary `myInfo/zoomNotAvailable`,
+then fallback `subPrep/personalZoomNotAvailable`. A valid primary value,
+including valid empty, wins. Credentials preserve UTF-8 bytes and embedded
+NULs without trimming; defaults remain `N/A`, `N/A`, and `true`.
+
+Read failures are logged and return nonrecoverable `Technical`. A primary
+technical read failure does not trigger fallback, and any read failure
+prevents migration. Legacy values migrate to primary keys only after all
+reads succeed; each migration write is best-effort and save failures are
+ignored so legacy values remain available. F1405 shares the primary keys but
+its aggregate writer was unchanged. F1408 content keys and F1392
+current-campus preferences are separate.
+
+Built `ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests`,
+`ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`, and
+`ClassMngrSubPrepPageTests` incrementally without compiler warnings or
+errors. CTest #449, the F1409 port, passed 11 QtTest cases; CTest #445, the
+F1405 save-port regression, passed 9 cases. Two selected offscreen Sub Prep
+UI slots passed, 4 cases including init/cleanup:
+`zoomUnavailableHidesStoredCredentials` and
+`zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic`. One Qt
+font-alias timing warning occurred; no setup retries were needed. Full Sub
+Prep page CTest #147 was not run for this slice because
+`unavailablePreferenceLoadsPreservePageValues` is separately attributed to
+the clean F1391 baseline in the F1392 record. The slot remains unverified;
+this was not a new F1409 test failure. No full suite or cross-platform build
+ran. `git diff --check` passed before commit. F1409 is accepted; F1410
+(Custom color palette preferences) is current. Batch 5 remains unpushed until
+its remaining slices are complete.
+
+Commit: `d2062fac0c3bfb5148d429e0a19bb4c4b258c3c9`.

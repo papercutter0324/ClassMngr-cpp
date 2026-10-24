@@ -45,14 +45,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   the verified implementation tip is
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1409 (Sub Prep personal Zoom preferences)
-  current. F1408 (Sub Prep preferences) is accepted at
-  `d8cb586497ce64ca700f1f4deb500bdc1d8375e0`; focused verification passed.
-  Its 8 prioritized candidates remain in the current batch tracker. Batch 5
+  and Batch 5 is active with F1410 (Custom color palette preferences) current.
+  F1409 (Sub Prep personal Zoom preferences) is accepted at
+  `d2062fac0c3bfb5148d429e0a19bb4c4b258c3c9`; focused verification passed.
+  Its 7 prioritized candidates remain in the current batch tracker. Batch 5
   remains unpushed until its remaining slices are complete. F1403 was
   limited to residual range projection and excluded F1341 availability/by-ID
   work and the existing WorkspaceStore-backed query/cache path.
-  F1376–F1408 implementation evidence, Batch 2 and Batch 3 push receipts, and
+  F1376–F1409 implementation evidence, Batch 2 and Batch 3 push receipts, and
   earlier UI limitations and attribution notes are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -72,41 +72,42 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1408 — 2026-10-24
+## Latest Progress Update — F1409 — 2026-10-24
 
-F1408 is accepted at `d8cb586497ce64ca700f1f4deb500bdc1d8375e0`. Only the
-`ApplicationServicesSubPrepPreferencesPort` header/implementation and its
-dedicated Platform fixture moved from `DatabaseSession` to `WorkspaceStore`.
-Reads remain sequential across `subPrep/classMaterials`,
-`subPrep/bookReportGrading`, `subPrep/bookReportSpecialInstructions`, then
-`subPrep/subComments`, preserving UTF-8 bytes. Missing required values become
-empty, missing optional values become `nullopt`, and present-empty optionals
-remain present. The first repository read failure is logged and returns
-nonrecoverable `Technical` without a partial bundle. An open store without a
-repository retains load-default/warn behavior; save without a repository
-returns `Technical`. Saving remains one atomic four-setting repository call.
-F1409's Zoom keys were not changed. F1392's current-campus port and page-owned
-missing-value defaults remain separate: the page supplies the grading default
-when grading is absent and the special-instructions default only when grading
-is also absent.
+F1409 is accepted at `d2062fac0c3bfb5148d429e0a19bb4c4b258c3c9`. Only the
+`ApplicationServicesSubPrepPersonalZoomPreferencesPort` header/implementation
+and its dedicated Platform fixture moved from `DatabaseSession` to
+`WorkspaceStore`. Reads remain sequential by credential: primary
+`myInfo/zoomLoginId`, then fallback `subPrep/personalZoomEmail` only if the
+primary is missing or invalid; next primary `myInfo/zoomPassword`, with
+fallback `subPrep/personalZoomPassword` under the same condition; then
+`myInfo/zoomNotAvailable`, falling back to
+`subPrep/personalZoomNotAvailable`. A valid primary value, including valid
+empty, takes precedence. Credentials preserve UTF-8 bytes and embedded NULs
+without trimming; defaults remain `N/A`, `N/A`, and `true`.
 
-The Platform port and Sub Prep page targets built incrementally without
-compiler warnings or errors. CTest #448, the dedicated port target, passed
-9/9. CTest #147 for the page was interrupted after 147.28 seconds: its first
-16 slots passed, then `unavailablePreferenceLoadsPreservePageValues` had run
-for 145.482 seconds. It was stopped as the known F1392 baseline timeout; this
-run is incomplete, not a natural timeout result, and that slot remains
-unverified. The four-slot focused UI invocation passed all slots, including
-`freshAndExistingGradingSettingsResolveWithoutDataLoss`,
-`unavailablePreferenceSaveHasNoSideEffects`,
-`failedPreferenceSaveReportsOnlyExplicitFailureAndPreservesDraft`, and
-`repositoryReadFailureBlocksWritesUntilSuccessfulReload`; the last three
-safe slots also passed when rerun after correction. Qt offscreen size/raise
-and font-alias warnings and the expected injected F1079 read-failure error
-were observed. Full suites and cross-platform builds did not run. F1408 is
-accepted; F1409 (Sub Prep personal Zoom preferences) is current with 8
-prioritized candidates remaining. Earlier baseline findings retain their
-separate attribution in the progress log.
+Read failures are logged and return nonrecoverable `Technical`; a primary
+technical read error does not trigger legacy fallback, and any read failure
+prevents migration. Legacy values migrate to primary keys only after all reads
+succeed; writes are best-effort and ignored on failure, leaving legacy values
+available. F1405 shares the primary keys but its aggregate writer was
+unchanged. F1408 content keys and F1392 current-campus preferences are
+separate.
+
+The F1409 port, F1405 personal-details save port, and Sub Prep page targets
+built incrementally without compiler warnings or errors. CTest #449 passed
+11 QtTest cases; CTest #445 passed 9 cases. Two selected offscreen Sub Prep UI
+slots passed, 4 cases including init/cleanup:
+`zoomUnavailableHidesStoredCredentials` and
+`zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic`. One Qt
+font-alias timing warning occurred; no setup retries were needed. The full
+Sub Prep page CTest #147 was not run for F1409 because the known long-running
+`unavailablePreferenceLoadsPreservePageValues` timeout is separately
+attributed to the clean F1391 baseline in the F1392 record; the slot remains
+unverified. No full suite or cross-platform build ran. `git diff --check`
+passed before commit. F1409 is accepted; F1410 (Custom color palette
+preferences) is current with 7 prioritized candidates remaining. Batch 5
+remains unpushed until its remaining slices are complete.
 
 ## Objective
 
