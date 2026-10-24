@@ -1,12 +1,14 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 3 — Persistence Rewrite.
-Current deployment: `phase3_resume_oct24_followup`. Route: Heavy; this
+Current deployment: `phase3_persistence_resume_20261024`. Route: Heavy; this
 continuation is active. Batch 9 (F1419–F1427) was pushed and verified at
-`7b4eaaf809ecdc17e4e14fae555b157c361c378d`. Batch 10's F1428 is committed
-and verified locally; its closeout documentation and push are pending. Batch
-11 discovery is complete with four ordered candidates and waits for Batch 10's
-push. Phase 3 remains In Progress and its exit gate is open.
+`7b4eaaf809ecdc17e4e14fae555b157c361c378d`. Batch 10 (F1428) is committed
+and pushed at `01670f53d7924a5e68ce9288effe3a4bf12b3403`. Batch 11 slices
+F1429–F1432 are complete; closeout documentation and push are pending.
+Batch 12 discovery is complete under
+`PHASE3-BATCH12-DISCOVERY-20261024` with F1433–F1434 accepted and queued after
+Batch 11. Phase 3 remains In Progress and its exit gate is open.
 
 ## Goal
 
@@ -55,7 +57,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (Batch 10 locally complete; push pending)
+### Current checkpoint - 2026-10-24 (Batch 11 complete; closeout push pending)
 
 Phase 3 remains In Progress on the mandatory Heavy route, with its exit gate
 open. Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
@@ -75,17 +77,66 @@ The [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-R
 and [progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md)
 contain exact evidence and limits.
 
-Batch 10 is locally complete. F1428 exposes `ClassRepository::getClasses()`
+Batch 10 is complete and pushed at `01670f53d7924a5e68ce9288effe3a4bf12b3403`.
+F1428 exposes `ClassRepository::getClasses()`
 call, statement-attempt, and successful returned-row metrics under Phase 3
 §3.7. Independent macOS arm64 Qt 6.12 verification passed the affected CTest
 (1/1), executable (8/8), large case (3/3), and `git diff --check`; no full
-suite or heap/RSS result is claimed. Batch 11 discovery is complete with four
-ordered candidates: Schedule Import result counts, uncapped Speaking
-Evaluation result lifetime, bounded workbook parsing, and class-transfer JSON
-DOM/package overlap. Calendar parsed-event consumer lifetime is deferred to
-Phase 7F. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
-records the candidate scopes and start rule; Batch 11 waits for Batch 10's
-closeout push. The Phase 3 backlog and exit gate remain open.
+suite or heap/RSS result is claimed. F1429 is complete at
+`9a1d4476ee973d5587b1ecd72f3a3a92789c1147`. Independent macOS arm64 Qt 6.12
+verification passed focused CTest 1/1 and the large selector 3/3; its 8 QtTest
+cases passed without failures or skips. The case asserts 24 teacher, 96 class
+metadata, 768 regular-time, and 24 intensive-time rows. A metadata read that
+consumes rows then fails validation records no completed rows. No full suite or
+heap/RSS result is claimed.
+
+F1430 is complete at `9f250bde305f2b4a764b3dfeebb0b149ed756ff5`. Its typed
+single and batch reads now consume query rows directly into their final
+Application results; existing detailed and legacy materializing APIs remain.
+Focused CTest passed 1/1 with 13 Qt cases and no failures or skips. Thirty-two
+row single and batch results preserve ordered cells and Unicode beyond row 24;
+empty/failure metrics remain zero and fractional-index partial failures remain
+technical. A legacy nullable-index fixture verifies single includes the row
+and batch skips it, with counts 3 and 2. No full suite or heap/RSS result is
+claimed.
+
+F1431 is complete at `abc4c2385bda0ef21de9b272e1ffbf4f9e3886ec`. The live
+Calendar service and Schedule Import now consume the bounded two-pass reader;
+stored and deflated ZIP entries feed incremental XML in fixed 32 KiB chunks.
+Independent macOS Debug CTests passed for Calendar Import, Schedule Import,
+and Calendar Event Import parity (3/3). A loopback HTTP fixture required a
+rerun with local listener access after the sandboxed attempt could not bind.
+Multi-sheet and failure tests verify first-sheet Calendar output, all-sheet
+counts, and discarding accumulated events/skips after a later-sheet failure.
+Teacher Import remains on buffered `parseWorkbook`. Full archive bytes,
+workbook metadata, relevant Calendar grid rows, and final outputs remain
+operation-scoped; no constant-memory or heap/RSS claim is made.
+
+F1432 is complete at `2ce5bbe59ae67872fd025133b4e1fd5eca359a5e`. On the mapped
+path, Qt validates the file and releases its complete document before
+package conversion; the scanner keeps source ranges/scalar metadata and
+decodes one record at a time. The public `fromJson()` is unchanged, the
+`readAll()` fallbacks remain, and no file-size cap was added. Independent
+focused parity verification passed 337/337 (335 data rows plus setup/cleanup),
+including 16 combined timestamp/array precedence cases. The full focused
+Class Transfer CTest passed 399 cases and failed one pre-existing teacher-label
+assertion (`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`);
+the same mismatch is recorded on pre-F880 commit `18202c79` and is outside
+F1432. `git diff --check` passed. This is structural lifetime evidence only;
+map-failure/unrepresentable-size fallbacks were inspected but not forced, and
+no heap/RSS or Windows result is claimed.
+
+Batch 11's F1429–F1432 slices are complete; closeout documentation and push
+remain pending. Batch 12 is discovered and waits for that push: F1433 covers
+populated v6 `.db` SaveAs/export through the v2 WorkspacePort; F1434 streams
+Schedule Builder repository rows into the Application result and counts
+completed classes and regular/intensive rows without capping F1330's complete
+board. Begin Batch 13 discovery when F1433 starts. Classes/Speaking Evaluation
+navigation detail lifetime is deferred to Phases 7D/7H because it requires
+page/model changes; Calendar parsed-event consumer lifetime remains deferred
+to Phase 7F. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
+records the live state and acceptance boundaries. The Phase 3 backlog and
+exit gate remain open.
 
 Phase 2 remains complete with its separate audit limitations and F629
 requalification recorded in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)

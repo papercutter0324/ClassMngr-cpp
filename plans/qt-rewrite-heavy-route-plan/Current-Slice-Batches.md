@@ -11,33 +11,34 @@ verification evidence in its progress log.
 
 - Phase 3 is In Progress on the mandatory Heavy route; its exit gate remains
   open.
-- Batch 10 is locally complete. F1428's code/test commit
-  `3279627ddf4dbb0725a546ed4cd0ed6759c5a9f7` is committed; its closeout docs
-  commit and push are pending.
-- Batch 11 discovery is complete and inactive until Batch 10 is pushed.
+- Batch 10 is closed and pushed to `origin/Qt-Rewrite` at verified tip
+  `01670f53d7924a5e68ce9288effe3a4bf12b3403` (`Phase3 - Close Batch 10 and
+  record Batch 11`).
 
-## Batch 10 — Locally complete; closeout push pending
+## Batch 11 — Closed; closeout push pending
 
-**F1428 — Expose all-class read diagnostics** is accepted and committed
-locally. Its code/test commit is
-`3279627ddf4dbb0725a546ed4cd0ed6759c5a9f7`; the closeout docs commit and push
-are pending. See the [progress log](04-Phase-3-Progress-Log.md) for metrics,
-verification, and limitations.
+Discovery under `PHASE3-BATCH11-DISCOVERY-20261024` produced four ordered
+candidates, and all four are accepted; Batch 11 is closed for slice work. The
+final slice, F1432, is committed at
+`2ce5bbe59ae67872fd025133b4e1fd5eca359a5e`; its mapped-file parity and bounded
+full-target exception are recorded in the [Phase 3 progress log](04-Phase-3-Progress-Log.md).
+The separate Batch 11 closeout commit/push remains pending.
 
-## Batch 11 — Discovery complete; waiting for Batch 10 push
+## Batch 12 — Ready; waiting for Batch 11 push
 
-Two independent scans under Exploration ID
-`PHASE3-BATCH11-DISCOVERY-20261024` found no further data/API migration
-candidate and identified five memory/query candidates. A bounded solution
-review recommends these four ordered candidates:
+Discovery and bounded review are complete under Exploration ID
+`PHASE3-BATCH12-DISCOVERY-20261024`. Two independent scans and review accepted
+these candidates in order; no other Batch 12 candidate was identified:
 
-1. **F1429 — Schedule Import row-count metrics** for teacher and
-   class-info/time rows.
-2. **F1430 — Speaking Evaluation result lifetime/streaming** without a row
-   cap.
-3. **F1431 — Bounded worksheet parsing** in the shared reader and consumers.
-4. **F1432 — Class-transfer JSON DOM/package overlap.**
+1. **F1433 — Populated schema-v6 `.db` SaveAs/export round-trip** through the
+   v2 `ApplicationServicesWorkspacePort`, required compatibility gate
+   evidence. No pre-v6 migration scope.
+2. **F1434 — Schedule Builder row streaming and diagnostics:** stream rows from
+   the repository to Application and report successful class/regular/intensive
+   completed rows, preserving F1330's full uncapped board.
 
-Calendar parsed-event consumer lifetime is intentionally deferred to Phase 7F,
-its owning phase. Batch 11 remains inactive until Batch 10 is pushed. Begin
-Batch 12 discovery when F1431 starts, the second-to-last candidate.
+Possible Classes/Speaking Evaluation navigation detail-query/lifetime work is
+deferred to Phase 7D/7H because eliminating consumer projections requires those
+page/model changes. Begin Batch 13 discovery when F1433 starts (candidate 1 of
+2), under the second-to-last-candidate rule. Batch 12 work remains inactive
+until the Batch 11 closeout is pushed.

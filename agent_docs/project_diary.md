@@ -8516,7 +8516,7 @@ ordinary production caller. Phase 3 remains In Progress, its exit gate remains
 open, and its backlog is not exhausted. The current tracker has no active
 batch or candidate.
 
-## 2026-10-24 — Phase 3 Batch 10 complete locally; Batch 11 discovered
+## 2026-10-24 — Phase 3 Batch 11 slices complete; closeout pending
 
 F1419–F1427 are accepted and pushed to `origin/Qt-Rewrite` at
 `7b4eaaf809ecdc17e4e14fae555b157c361c378d`; the remote tip matched and the
@@ -8537,10 +8537,43 @@ other representations still overlap at parse boundaries.
 The full Class Transfer target retains a previously documented teacher-name
 dialog failure that does not call the F1427 codec. Keep it distinct from the
 five passing focused codec cases. Two independent Batch 11 scans and a bounded
-solution review produced four ordered candidates: Schedule Import result
-counts, uncapped Speaking Evaluation result lifetime, bounded workbook
-parsing, and class-transfer JSON DOM/package overlap. Calendar parsed-event
-consumer lifetime is deferred to Phase 7F. Batch 10 is complete locally at
-F1428 commit `3279627d`; its documentation closeout and push remain pending.
-Batch 11 waits for that push. Phase 3 remains In Progress with its exit gate
-open.
+solution review produced four ordered candidates: F1429 Schedule Import result
+counts, F1430 uncapped Speaking Evaluation result lifetime, F1431 bounded
+workbook parsing, and F1432 class-transfer JSON DOM/package overlap. Calendar
+parsed-event consumer lifetime is deferred to Phase 7F. F1428 is complete and
+Batch 10 was pushed at `01670f53d7924a5e68ce9288effe3a4bf12b3403`. F1429 is
+committed at `9a1d4476ee973d5587b1ecd72f3a3a92789c1147`; its row-count metrics
+cover 24 teachers, 96 class metadata rows, 768 regular schedule rows, and 24
+intensive schedule rows. Focused CTest passed 1/1 and the large selector 3/3;
+no full-suite or heap/RSS result is claimed. F1430 is committed at
+`9f250bde305f2b4a764b3dfeebb0b149ed756ff5`. Typed single/batch reads stream
+rows into the final Application matrix; focused CTest passed 1/1 (13 cases).
+Thirty-two-row coverage checks order, Unicode, and values beyond row 24.
+Failure metrics remain zero, and the nullable legacy fixture preserves the
+single-include/batch-skip behavior. No heap/RSS reduction was measured.
+F1431 is committed at `abc4c2385bda0ef21de9b272e1ffbf4f9e3886ec`. Stored and
+deflated workbook entries stream through incremental XML in fixed chunks;
+Schedule Import retains a rolling 21-row window and Calendar retains relevant
+grid rows. The live Calendar import service uses the streamed parser. Focused
+Calendar Import, Schedule Import, and Calendar Event Import parity CTests
+passed 3/3 after loopback listener access was enabled for the HTTP fixture.
+Direct multi-sheet tests verify first-sheet output, all-sheet counts, and
+discard of accumulated skipped/events after a later-sheet failure. No
+constant-memory, full-suite, heap, or RSS result is claimed. F1432 is complete
+at `2ce5bbe59ae67872fd025133b4e1fd5eca359a5e`. The mapped JSON path releases
+Qt's full validation document before package construction and decodes records
+one at a time; public `fromJson()` remains unchanged and no size cap was added.
+Independent focused parity verification passed 337/337, including 16 combined
+timestamp/array error-precedence cases. The full Class Transfer CTest passed
+399 and failed one known teacher-label assertion, reproduced on pre-F880
+commit `18202c79` and outside this slice. `git diff --check` passed. No
+heap/RSS claim is made; map-failure and unrepresentable-size fallbacks were
+inspected but not forced. Batch 11's code slices are complete and its closeout
+documentation/push remain pending. Two independent Batch 12 scans and review
+accepted F1433 (populated v6 `.db` SaveAs/export through the v2 WorkspacePort)
+and F1434 (Schedule Builder repository row streaming and completed-row
+diagnostics, preserving the full uncapped board). Classes/Speaking Evaluation
+navigation detail lifetime remains deferred to Phases 7D/7H because it requires
+coordinated page/model changes; Calendar parsed-event consumer lifetime is
+deferred to Phase 7F. Batch 12 waits for Batch 11's push; Batch 13 discovery
+starts when F1433 begins. Phase 3 remains In Progress with its exit gate open.

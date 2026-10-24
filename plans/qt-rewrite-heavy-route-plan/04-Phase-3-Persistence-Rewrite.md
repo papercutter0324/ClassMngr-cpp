@@ -38,13 +38,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 9 is pushed at verified tip
-  `7b4eaaf809ecdc17e4e14fae555b157c361c378d`. Batch 10 is locally complete;
-  F1428's code/test commit `3279627ddf4dbb0725a546ed4cd0ed6759c5a9f7` is
-  committed, with its closeout docs commit and push pending. Batch 11
-  discovery is complete and inactive until Batch 10 is pushed. Begin Batch 12
-  discovery when Batch 11 candidate F1431 starts. The Phase 3 exit gate remains
-  open. The
+- Current note: Batch 11 slice work is complete. F1432 class-transfer JSON
+  DOM/package overlap is accepted and committed at
+  `2ce5bbe59ae67872fd025133b4e1fd5eca359a5e`; its closeout commit/push remains
+  pending. Batch 12 discovery is complete under
+  `PHASE3-BATCH12-DISCOVERY-20261024`; F1433 then F1434 are ready and wait for
+  the Batch 11 push. Begin Batch 13 discovery when F1433 starts (candidate 1
+  of 2). The Phase 3 exit gate remains open. The
   [DataService migration
   map](../../docs/qt-rewrite/data-service-migration-map.md) records F1420's
   deliverable, including that `DataService::save()` has no ordinary production
@@ -65,15 +65,17 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1428 — 2026-10-24
+## Latest Progress Update — F1432 — 2026-10-24
 
-F1428, `Phase3 - Expose all-class read diagnostics`, is committed locally at
-`3279627ddf4dbb0725a546ed4cd0ed6759c5a9f7` and independently verified on
-macOS arm64 with Qt 6.12.0. Batch 10 is locally complete; its closeout docs
-commit and push remain pending. Batch 11 discovery is complete and inactive
-until that push. The Phase 3 exit gate remains open. Verification and
-discovery details are in the [progress log](04-Phase-3-Progress-Log.md) and
-[current batch tracker](Current-Slice-Batches.md).
+F1432 is accepted and committed at
+`2ce5bbe59ae67872fd025133b4e1fd5eca359a5e`; focused mapped-file parity passed,
+with a bounded pre-existing full-target exception and structural lifetime
+limits recorded in the progress log. Batch 11 slice work is complete and its
+closeout commit/push is pending. Batch 12 discovery accepted F1433/F1434 in
+order and awaits that push. Begin Batch 13 discovery when F1433 starts.
+Phase 3 remains In Progress with its exit gate open. See the
+[progress log](04-Phase-3-Progress-Log.md) and [current batch
+tracker](Current-Slice-Batches.md).
 
 ## Objective
 

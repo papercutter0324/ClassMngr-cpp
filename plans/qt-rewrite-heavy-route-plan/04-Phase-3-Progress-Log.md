@@ -2937,7 +2937,7 @@ F1428 acceptance and the current batch state are recorded below.
 
 ## F1428 — Expose all-class read diagnostics — 2026-10-24
 
-Accepted and committed locally at `3279627ddf4dbb0725a546ed4cd0ed6759c5a9f7`
+Accepted at code/test commit `3279627ddf4dbb0725a546ed4cd0ed6759c5a9f7`
 (`Phase3 - Expose all-class read diagnostics`). Added cumulative
 `ClassRepository::getClasses()` call, statement-attempt, and successfully
 returned-row metrics. The 96-class parity case asserts deltas of +1 call, +1
@@ -2947,9 +2947,10 @@ call, +1 attempt, and +0 successfully returned rows.
 Independent macOS arm64 / Qt 6.12 verification passed the affected CTest
 (1/1), test executable (8/8), large case (3/3), and `git diff --check`.
 This is focused counter and parity verification; no full-suite or heap/RSS
-result is claimed. Batch 10 is locally complete; its closeout docs commit and
-push remain pending. Phase 3 remains In Progress and its exit gate remains
-open.
+result is claimed. Batch 10 closed and was pushed to `origin/Qt-Rewrite` at
+verified tip `01670f53d7924a5e68ce9288effe3a4bf12b3403` (`Phase3 - Close Batch
+10 and record Batch 11`). Phase 3 remains In Progress and its exit gate
+remains open.
 
 ## Batch 11 discovery — 2026-10-24
 
@@ -2966,7 +2967,106 @@ review recommends four ordered Batch 11 candidates:
 4. **F1432 — Class-transfer JSON DOM/package overlap.**
 
 Calendar parsed-event consumer lifetime is the fifth candidate and is
-intentionally deferred to its owning phase, Phase 7F. Batch 11 is inactive
-until Batch 10 is pushed. Start Batch 12 discovery when F1431 begins, the
-second-to-last candidate. Phase 3 remains In Progress and its
-exit gate remains open.
+intentionally deferred to its owning phase, Phase 7F. Batch 10 has since been
+closed and pushed. F1429–F1432 acceptance details are recorded below. Batch 11
+slice work is complete; its closeout commit/push remains pending. Batch 12
+discovery is complete under
+`PHASE3-BATCH12-DISCOVERY-20261024`; F1433 then F1434 are accepted and await
+the Batch 11 push. Begin Batch 13 discovery when F1433 starts (candidate 1 of
+2). Phase 3 remains In Progress and its exit gate remains open.
+
+## F1429 — Schedule Import row-count metrics — 2026-10-24
+
+Accepted and committed at `9a1d4476ee973d5587b1ecd72f3a3a92789c1147`
+(`Phase3 - Add Schedule Import result row metrics`). Independent macOS 27.0.1
+arm64 verification used the incremental Debug target
+`ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`;
+the build reported no work, with target artifacts newer than all changed
+source and test files. The focused CTest passed 1/1, its log had 8 QtTest
+passes with no failures or skips, and the large selector passed 3/3
+(setup/test/cleanup). The large case confirms 24 teacher, 96 metadata, 768
+regular, and 24 intensive completed rows with full ordered snapshot values.
+A malformed teacher ID on the last class makes the metadata read fail after
+valid rows were consumed; its successful-row metric delta remains zero.
+`git diff --check` passed. No full-suite, heap, or RSS result is claimed.
+
+## F1430 — Speaking Evaluation result lifetime/streaming — 2026-10-24
+
+Accepted and committed at `9f250bde305f2b4a764b3dfeebb0b149ed756ff5`.
+Typed single and batch ports now stream rows into final Application results;
+detailed and legacy materializing APIs remain. Ordering, empty/error behavior,
+and uncapped reads are preserved. Failure and empty results add zero
+completed-row metrics.
+
+Independent macOS 27.0.1 arm64 verification with Apple Clang 21 and Qt 6.12
+passed the focused CTest (1/1; 13 QTest cases, zero failed or skipped).
+32-row single/batch and partial-failure selectors passed 3/3 each; the nullable
+legacy row-index selector passed 3/3; `git diff --check` passed. No full-suite,
+heap, or RSS result is claimed.
+
+## F1431 — Bounded worksheet parsing — 2026-10-24
+
+Accepted and committed at `abc4c2385bda0ef21de9b272e1ffbf4f9e3886ec`. The
+shared workbook reader streams stored and deflated ZIP entries through
+incremental XML row callbacks; Calendar and Schedule use it, and live
+`CalendarEventImportService` calls the streamed parser. Teacher Import remains
+on buffered `parseWorkbook`. Archive bytes, shared strings/styles,
+notes/merge metadata, discovery facts, final output, and Calendar's relevant
+grid rows can still scale with input; no constant-memory, heap, or RSS result
+is claimed.
+
+Independent macOS arm64 verification used Qt 6.12, Apple Clang 21, Debug Ninja.
+The focused Calendar Import, Schedule Import, and Calendar Event Import parity
+CTests passed 3/3. Live Calendar Event Import parity passed after rerunning
+with loopback access when sandboxed `QTcpServer::listen` failed. The follow-up
+Calendar Import CTest passed 1/1; distinct-sheet and streamed
+Weekend/later-failure selectors passed. Coverage checks stored/deflated
+parity, positions,
+styles, notes and merged ranges, cancellation, later-sheet failures, Calendar
+golden output, first-sheet-only output with all-sheet read counts, and
+discarding partial events/skipped count on later-sheet failure. Schedule
+coverage checks row-21 lookahead and merged end-time behavior.
+`git diff --check` passed. Phase 7F retains semantic, review, and presentation
+ownership.
+
+## F1432 — Class-transfer JSON DOM/package overlap — 2026-10-24
+
+Accepted and committed at `2ce5bbe59ae67872fd025133b4e1fd5eca359a5e`
+(`Phase3 - F1432: bound mapped JSON import memory`). For mapped-file success,
+Qt validation completes before the complete `QJsonDocument` is released;
+package conversion then decodes bounded root fields and one record at a time.
+The public `fromJson()` contract is unchanged, there is no size cap, and the
+old `readAll()` fallback remains. Empty, unrepresentable, and map-failure
+fallback branches were inspected but not forced. Lifetime evidence is
+structural inspection only; no heap or RSS result is claimed.
+
+The independent focused mapped-file parity selector passed 337/337, including
+16 combined timestamp/array precedence rows. The full
+`ClassMngrClassTransferTests` CTest under `QT_QPA_PLATFORM=offscreen` had 399
+passes and one failure in
+`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure()` (actual
+`Keep local: New Teacher`, expected `Keep local: Romanized One`). A Tester
+reproduced the same failure on pre-F880 commit `18202c79`, confirming this as a
+bounded pre-existing full-target exception outside F1432; it is not a pass.
+
+Verification used macOS 27.0.1 arm64, Debug universal, Apple Clang 21, Qt
+6.12, CMake 4.3.3, and Ninja 1.13.2. `git diff --check` passed. No Windows or
+full-suite result is claimed. Batch 11 slice work is complete; its closeout
+commit/push remains pending. Phase 3 remains In Progress with its exit gate
+open.
+
+## Batch 12 discovery — 2026-10-24
+
+Two independent scans and bounded review completed under Exploration ID
+`PHASE3-BATCH12-DISCOVERY-20261024`. Review accepted two ordered candidates:
+F1433, a populated schema-v6 `.db` SaveAs/export round-trip through the v2
+`ApplicationServicesWorkspacePort` as required compatibility gate evidence
+(no pre-v6 migration scope); then F1434, Schedule Builder repository-to-
+Application row streaming with successful class/regular/intensive
+completed-row diagnostics, preserving F1330's full uncapped board. No other
+Batch 12 candidate was identified by the scans/review. Possible Classes/
+Speaking Evaluation navigation detail-query/lifetime work is deferred to
+Phase 7D/7H because eliminating consumer projections requires those page/model
+changes. Batch 12 waits for the Batch 11 closeout push; Batch 13 discovery
+starts when F1433 starts (candidate 1 of 2). Phase 3 remains In Progress with
+its exit gate open.
