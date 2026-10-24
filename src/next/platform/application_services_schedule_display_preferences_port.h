@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/schedule_display_preferences.h"
 
@@ -44,13 +44,13 @@ public:
     [[nodiscard]] Application::ScheduleDisplayPreferencesResult load()
         const override
     {
-        DatabaseSession* const session = m_services.databaseSession();
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store = m_services.workspaceStore();
+        if (!store || !store->isOpen())
         {
             return Application::ScheduleDisplayPreferencesResult::success({});
         }
 
-        SettingsRepository* const repository = session->settingsRepository();
+        SettingsRepository* const repository = store->settingsRepository();
         if (!repository)
         {
             return Application::ScheduleDisplayPreferencesResult::success({});
@@ -125,8 +125,8 @@ public:
         const Application::ScheduleDisplayPreferencesSaveRequest& request
         ) override
     {
-        DatabaseSession* const session = m_services.databaseSession();
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store = m_services.workspaceStore();
+        if (!store || !store->isOpen())
         {
             return Application::ScheduleDisplayPreferencesSaveResult::failure({
                 .code = Domain::ErrorCode::Technical,
@@ -136,7 +136,7 @@ public:
             });
         }
 
-        SettingsRepository* const repository = session->settingsRepository();
+        SettingsRepository* const repository = store->settingsRepository();
         if (!repository)
         {
             return Application::ScheduleDisplayPreferencesSaveResult::failure({

@@ -14,10 +14,10 @@ record useful implementation and verification evidence in its progress log.
   was later pushed as
   `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before Batch 4
   began.
-- Batch 4 discovery is complete; Batch 4 is active with F1394 — Schedule-display
+- Batch 4 discovery is complete; Batch 4 is active with F1395 — Schedule-display-mode
   preferences current.
 
-## Phase 3 — Batch 4 (active; F1394 current)
+## Phase 3 — Batch 4 (active; F1395 current)
 
 Batch 4 discovery began when F1376 started (candidate 19 of 20 in Batch 3) and
 is complete. Two complementary scans found more than 20 possible active
@@ -42,8 +42,8 @@ priority-ordered shortlist, not an exhaustive inventory.
 14. F1391 — Native English birthday directory read (accepted)
 15. F1392 — Current-campus preferences (accepted)
 16. F1393 — Class-visibility preferences (accepted)
-17. F1394 — Schedule-display preferences (current)
-18. F1395 — Schedule-display-mode preferences
+17. F1394 — Schedule-display preferences (accepted)
+18. F1395 — Schedule-display-mode preferences (current)
 19. F1396 — Calendar first-day-of-week preferences
 20. F1397 — Academic-calendar schedule preferences
 

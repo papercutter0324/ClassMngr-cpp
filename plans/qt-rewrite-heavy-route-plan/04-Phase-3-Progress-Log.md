@@ -1940,3 +1940,19 @@ and `ClassMngrMainWindowClassVisibilityPreferencesFailureTests`. Serial CTests
 `git diff --check` passed. The broad ClassesPage target, full suite, and
 cross-platform build were not run. F1393 is accepted; F1394 (Schedule-display
 preferences) is current.
+
+Commit: `69b0230414305d3f62dd4a59469bf9c03670bda5`.
+
+## F1394 — Schedule-display preferences (Batch 4 candidate 17 of 20) — 2026-10-24
+
+The Schedule-display preferences read/write adapter and dedicated Platform
+fixture now use `WorkspaceStore`. Five keys, defaults, parsing, atomic save,
+and assertions are unchanged.
+
+Built the Platform-port, ScheduleWidget, and ScheduleTestingLayoutClearParity
+targets. CTests #487 and #46 passed. Schedule parity CTest #98 completed 3/9;
+the same six `fixture.databaseReady == false` failures appeared as on clean
+F1393 baseline, at lines 747, 783, 832, 924, 1003, and 1208, including schedule
+preference recovery cases. No new failure occurred. `git diff --check` passed.
+No full suite or cross-platform build ran. F1394 is accepted; F1395
+(Schedule-display-mode preferences) is current.

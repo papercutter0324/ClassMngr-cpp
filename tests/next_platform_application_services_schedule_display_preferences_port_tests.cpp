@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/schedule_display_preferences.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
@@ -42,7 +42,7 @@ bool executeSql(
     const QString& statement
     )
 {
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     if (!session || !session->isOpen())
     {
         return false;
@@ -87,7 +87,7 @@ readsTrueSetting()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -112,7 +112,7 @@ readsFalseSetting()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -153,7 +153,7 @@ unavailableSettingsDefaultFalseAndSaveFails()
 {
     ApplicationServices services;
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(!session->isOpen());
 
@@ -188,7 +188,7 @@ closedSessionDefaultsAndSaveFailurePreservesValues()
     const QString path = databasePath(m_directory);
     QVERIFY(services.openDatabase(path));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -246,7 +246,7 @@ readErrorsReturnTypedTechnicalFailure()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     QVERIFY(session->settingsRepository());
@@ -273,7 +273,7 @@ savesAllValuesAndUsesLegacyKeys()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -341,7 +341,7 @@ preservesLegacyQVariantCoercion()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
