@@ -56,10 +56,12 @@ verification evidence in its progress log.
    metadata, regular, and intensive queries. The class-name query is not
    instrumented. No heap-byte or full-suite claim. Phase 7E retains review and
    presentation ownership.
-8. **F1426 — Staged/file-backed workbook representation lifetime at the
-   reader boundary (current).** This preserves the shared Phase 3/7F boundary.
+8. **F1426 — Reduce workbook entry copies (accepted).** Commit
+   `86eef5c9131e602ca915db94b4f9800cf6b7dd41`. Stored-entry views and direct
+   deflate input remove one entry-sized scratch copy; the full archive and inflated
+   worksheet XML remain allocated. No heap-byte, full-suite, or Windows claim.
 9. **F1427 — Class-transfer codec representation lifetime before dialog/UI
-   (remaining).**
+   (current).**
    Phase 3.4 retains the codec boundary; Phase 8 retains transfer/export
    operation ownership.
 
@@ -74,4 +76,5 @@ metrics for the all-classes query. F1428 depends on accepted F1425. See the
 [Batch 10 discovery record](04-Phase-3-Progress-Log.md)
 for source evidence, proposed acceptance scope, and scan exclusions. The
 ordered memory boundaries match the shared memory-hotspot plan; Phases 7 and
-8 retain their existing consumer ownership.
+8 retain their existing consumer ownership. Because Batch 10 has one candidate,
+begin Batch 11 discovery when F1428 starts.

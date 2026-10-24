@@ -2751,9 +2751,9 @@ convert existing pre-v6 profiles. A `.db` suffix denotes a v6 SQLite profile,
 not a pre-v6 conversion path.
 The reader and pre-dialog codec candidates remain at the Phase 3 persistence
 boundaries shared with Phase 7F and Phase 8; those phases retain their review,
-presentation, and transfer/export operation ownership. Begin Batch 10
-discovery when F1426 (candidate 8 of 9) starts. The Phase 3 exit gate remains
-open; this audit does not establish that the supported workflows have passed.
+presentation, and transfer/export operation ownership. The Phase 3 exit gate
+remains open; this audit does not establish that the supported workflows have
+passed.
 
 ## F1419 — Runtime v6 DDL/index/constraint contract tests — 2026-10-24
 
@@ -2774,8 +2774,7 @@ v2 owners, current legacy/test routes, removal prerequisites, and the open SQL
 `CampusRecord` typed-service gap. No source or test changes were part of this
 slice; no tests or builds were run. F1421, populated v6 `.tps` SaveAs/export
 round-trip and backup comparison, was next in Batch 9; its acceptance is
-recorded below. Batch 10 discovery remains due when F1426 (candidate 8 of 9)
-starts; Phase 3 remains In Progress.
+recorded below. Phase 3 remains In Progress.
 See the [DataService migration
 map](../../docs/qt-rewrite/data-service-migration-map.md).
 
@@ -2789,9 +2788,7 @@ open at its original path and retained its data. This does not claim Windows
 coverage or interrupted-copy behavior; deterministic interruption and atomic
 destination preservation were deferred to F1423, whose acceptance is recorded
 below. F1422, valid-v6 locked and truncated-file preservation, was next in
-Batch 9; its acceptance is recorded below.
-Batch 10 discovery remains due when F1426 (candidate 8 of 9) starts; Phase 3
-remains In Progress.
+Batch 9; its acceptance is recorded below. Phase 3 remains In Progress.
 
 ## F1422 — Valid-v6 locked and truncated-file preservation — 2026-10-24
 
@@ -2804,8 +2801,7 @@ connection, path, sentinel, and target bytes were preserved; after lock
 release, the locked target reopened as v6. This is focused macOS evidence; no
 Windows claim is made. F1423, deterministic post-write `QSaveFile` interruption
 and atomic destination preservation, was next in Batch 9; its acceptance is
-recorded below. Batch 10 discovery remains due when F1426 (candidate 8 of 9,
-the second-to-last) starts. Phase 3 remains In Progress.
+recorded below. Phase 3 remains In Progress.
 
 ## F1423 — Deterministic post-write QSaveFile interruption — 2026-10-24
 
@@ -2818,9 +2814,7 @@ destruction; that assertion was corrected to check afterward, and no
 production defect was found. The helper is registered in the source manifest;
 the application API is unchanged. No full-suite or Windows claim is made.
 F1424, Calendar Import transaction-start, commit, and error coverage, was next
-in Batch 9; its acceptance is recorded below. Batch 10 discovery remains due
-when F1426 (candidate 8 of 9, the second-to-last) starts. Phase 3 remains In
-Progress.
+in Batch 9; its acceptance is recorded below. Phase 3 remains In Progress.
 
 ## F1424 — Calendar Import transaction-start, commit, and error coverage — 2026-10-24
 
@@ -2852,10 +2846,7 @@ regular and 24 intensive schedule rows. Metrics asserted one teacher
 statement and one each for metadata, regular, and intensive queries. The
 ClassRepository class-name query is not instrumented: source executes it once,
 with no test metric claim for it. No heap-byte measurement, full-suite result,
-or platform-wide result is claimed. F1426 is current (candidate 8 of 9), F1427
-remains, Batch 10 discovery is complete with F1428 as its sole ordered
-candidate, waiting for Batch 9 to close and push. F1428 implementation has not
-started; the Phase 3 exit gate remains open and Phase 3 remains In Progress.
+or platform-wide result is claimed.
 
 ## Batch 10 — Memory and file-lifetime discovery — 2026-10-24
 
@@ -2889,7 +2880,32 @@ not a production behavior defect.
 F1428 depends on accepted F1425. Proposed scope is minimal `getClasses()`
 call, statement, and returned-row metrics. The test should assert one
 statement and 96 rows on success, and not overstate failure results. Discovery
-made no code or test changes and ran no tests. Batch 9 remains active with
-F1426 current and F1427 remaining; Batch 10 waits for Batch 9 to close and
-push. F1428 implementation has not started, and the Phase 3 exit gate remains
+made no code or test changes and ran no tests. At discovery completion, Batch
+9 was active with F1426 current and F1427 remaining; Batch 10 waited for Batch
+9 to close and push. F1428 had not started, and the Phase 3 exit gate remained
 open.
+
+## F1426 — Reduce workbook entry copies — 2026-10-24
+
+Accepted at commit `86eef5c9131e602ca915db94b4f9800cf6b7dd41` (`Phase3 -
+Reduce workbook entry copies`). The workbook reader returns a synchronous
+non-owning view over stored ZIP entry bytes and inflates deflated entries
+directly from the archive pointer, removing one entry-sized scratch copy.
+`forEachWorksheet` consumes each view synchronously and parsed workbook
+values own their data. The caller-owned full archive and allocated inflated
+worksheet XML remain; no heap bytes were measured. Calendar/schedule review
+UI and import behavior are unchanged.
+
+Independent macOS 27 arm64 universal Debug verification used
+`build/macos-clang-debug`, Apple Clang 21, and Qt 6.12.0. The incremental
+`ClassMngrRuntime` and Calendar, Schedule, and Teacher Import target set
+completed; Ninja reported no work because binaries were newer. Focused CTests
+passed 3/3. Added coverage checks stored-versus-deflated parity and temporary
+archive input lifetime for exact text, cells and positions, notes, and merged
+ranges. Existing malformed-input/error cases passed. The unsupported
+compression-method branch was source-inspected but not directly exercised.
+`git diff --check` passed. No full-suite, Windows, or heap-byte claim is made.
+Batch 9 remains active with F1427 current (candidate 9 of 9). Batch 10
+discovery is complete with F1428 as its sole ordered candidate, waiting for
+Batch 9 to close and push. Begin Batch 11 discovery when F1428 starts. The
+Phase 3 exit gate remains open and Phase 3 remains In Progress.
