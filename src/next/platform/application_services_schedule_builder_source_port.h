@@ -11,6 +11,7 @@
 #include <exception>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -56,45 +57,77 @@ public:
                 return unavailableFailure();
             }
 
-            const Result<QList<ClassInfo>> loaded =
-                repository->loadScheduleClassInfos();
+            Application::ScheduleBuilderSourceSnapshot snapshot;
+            std::unordered_map<int, std::size_t> indexesByClassId;
+            std::optional<std::string> validationFailure;
+            const Status loaded = repository->visitScheduleClassInfoRows(
+                [&](const ClassInfo& info) -> Status
+                {
+                    const std::optional<Domain::ClassId> classId =
+                        canonicalClassId(info.classId);
+                    if (!classId)
+                    {
+                        validationFailure = "The schedule class source returned "
+                            "an invalid class ID.";
+                        return std::unexpected(QString::fromStdString(
+                            *validationFailure
+                            ));
+                    }
+
+                    const std::size_t classIndex = snapshot.classes.size();
+                    indexesByClassId.emplace(info.classId, classIndex);
+                    snapshot.classes.push_back({
+                        .classId = *classId,
+                        .teacherKoreanName = info.teacherKr.toStdU16String(),
+                        .teacherEnglishName = info.teacherEn.toStdU16String(),
+                        .teacherPreferredName =
+                            info.teacherPreferredName.toStdU16String(),
+                        .roomNumber = info.roomNumber.toStdU16String(),
+                        .grade = info.classGrade.toStdU16String(),
+                        .level = info.classLevel.toStdU16String(),
+                        .classColor = info.classColor.toStdU16String(),
+                        .fontColor = info.fontColor.toStdU16String()
+                    });
+                    return {};
+                },
+                [&](
+                    const int classId,
+                    const ClassTime& time,
+                    const bool intensive
+                    ) -> Status
+                {
+                    const auto index = indexesByClassId.find(classId);
+                    if (index == indexesByClassId.end())
+                    {
+                        return {};
+                    }
+
+                    auto& schedule = intensive
+                        ? snapshot.classes[index->second].intensiveSchedule
+                        : snapshot.classes[index->second].regularSchedule;
+                    schedule.push_back({
+                        .day = Application::ScheduleBuilderSourceScheduleText(
+                            time.day.toStdU16String()
+                            ),
+                        .startTime =
+                            Application::ScheduleBuilderSourceScheduleText(
+                                time.startTime.toStdU16String()
+                                ),
+                        .endTime = Application::ScheduleBuilderSourceScheduleText(
+                            time.endTime.toStdU16String()
+                            )
+                    });
+                    return {};
+                }
+                );
             if (!loaded)
             {
                 return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(loaded.error())
+                    validationFailure
+                        ? Domain::ErrorCode::Validation
+                        : Domain::ErrorCode::Technical,
+                    validationFailure.value_or(toStdString(loaded.error()))
                     );
-            }
-
-            Application::ScheduleBuilderSourceSnapshot snapshot;
-            snapshot.classes.reserve(static_cast<std::size_t>(loaded->size()));
-            for (const ClassInfo& info : *loaded)
-            {
-                const std::optional<Domain::ClassId> classId =
-                    canonicalClassId(info.classId);
-                if (!classId)
-                {
-                    return failure(
-                        Domain::ErrorCode::Validation,
-                        "The schedule class source returned an invalid class ID."
-                        );
-                }
-
-                Application::ScheduleBuilderSourceClass entry{
-                    .classId = *classId,
-                    .teacherKoreanName = info.teacherKr.toStdU16String(),
-                    .teacherEnglishName = info.teacherEn.toStdU16String(),
-                    .teacherPreferredName =
-                        info.teacherPreferredName.toStdU16String(),
-                    .roomNumber = info.roomNumber.toStdU16String(),
-                    .grade = info.classGrade.toStdU16String(),
-                    .level = info.classLevel.toStdU16String(),
-                    .classColor = info.classColor.toStdU16String(),
-                    .fontColor = info.fontColor.toStdU16String(),
-                    .regularSchedule = scheduleRows(info.classTimes),
-                    .intensiveSchedule = scheduleRows(info.intensiveTimes)
-                };
-                snapshot.classes.push_back(std::move(entry));
             }
 
             return Application::ScheduleBuilderSourceResult::success(
@@ -129,29 +162,6 @@ private:
 
         const std::string text = std::to_string(value);
         return Domain::ClassId::fromString(text);
-    }
-
-    [[nodiscard]] static std::vector<
-        Application::ScheduleBuilderSourceScheduleRow
-        > scheduleRows(const QList<ClassTime>& times)
-    {
-        std::vector<Application::ScheduleBuilderSourceScheduleRow> result;
-        result.reserve(static_cast<std::size_t>(times.size()));
-        for (const ClassTime& time : times)
-        {
-            result.push_back({
-                .day = Application::ScheduleBuilderSourceScheduleText(
-                    time.day.toStdU16String()
-                    ),
-                .startTime = Application::ScheduleBuilderSourceScheduleText(
-                    time.startTime.toStdU16String()
-                    ),
-                .endTime = Application::ScheduleBuilderSourceScheduleText(
-                    time.endTime.toStdU16String()
-                    )
-            });
-        }
-        return result;
     }
 
     [[nodiscard]] static std::string toStdString(const QString& value)

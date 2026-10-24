@@ -15,6 +15,7 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <vector>
 
 using namespace ClassMngr::Next;
 
@@ -136,6 +137,8 @@ class NextPlatformApplicationServicesScheduleBuilderSourcePortTests final
 
 private slots:
     void readsActiveWorkspaceCompactSourceInRepositoryOrder();
+    void readsEveryClassAndScheduleRowBeyondTwentyFive();
+    void leavesResultMetricsUnchangedForEmptyAndFailedReads();
     void validatesStoredScheduleClassIdsBeforeNarrowing();
     void distinguishesClosedUnavailableAndFailedReadsWithoutLegacyFallback();
 };
@@ -324,6 +327,9 @@ readsActiveWorkspaceCompactSourceInRepositoryOrder()
     QCOMPARE(readMetrics.metadataStatementCount, 1);
     QCOMPARE(readMetrics.regularScheduleStatementCount, 1);
     QCOMPARE(readMetrics.intensiveScheduleStatementCount, 1);
+    QCOMPARE(readMetrics.completedClassCount, qint64(4));
+    QCOMPARE(readMetrics.regularScheduleRowCount, qint64(5));
+    QCOMPARE(readMetrics.intensiveScheduleRowCount, qint64(1));
 
     // Creation IDs are Omega, Beta, Delta, Gamma; the repository returns
     // classes by name, so the snapshot order must be Beta, Delta, Gamma, Omega.
@@ -378,6 +384,194 @@ readsActiveWorkspaceCompactSourceInRepositoryOrder()
     QCOMPARE(noTeacher.classColor, std::u16string(u"#FFFFFF"));
     QCOMPARE(noTeacher.fontColor, std::u16string(u"#000000"));
     QCOMPARE(noTeacher.regularSchedule.size(), std::size_t(1));
+}
+
+void NextPlatformApplicationServicesScheduleBuilderSourcePortTests::
+readsEveryClassAndScheduleRowBeyondTwentyFive()
+{
+    constexpr int classCount = 31;
+    constexpr int regularScheduleRowCount = classCount + 1;
+    constexpr int intensiveScheduleRowCount = 12;
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(
+        directory,
+        QStringLiteral("more-than-twenty-five-classes")
+        )));
+
+    const QSqlDatabase database = services.workspaceStore()->database();
+    std::vector<qint64> classIdsByName(static_cast<std::size_t>(classCount));
+    for (int index = classCount - 1; index >= 0; --index)
+    {
+        const qint64 id = 1000 + index;
+        const QString name = QStringLiteral("Class %1").arg(
+            index,
+            2,
+            10,
+            QChar('0')
+            );
+        QVERIFY2(
+            insertPersistedClass(database, id, name),
+            qPrintable(QStringLiteral("Could not insert %1.").arg(name))
+            );
+        classIdsByName[static_cast<std::size_t>(index)] = id;
+    }
+
+    for (int index = 0; index < classCount; ++index)
+    {
+        const qint64 id = classIdsByName[static_cast<std::size_t>(index)];
+        QVERIFY(insertSchedule(
+            database,
+            QStringLiteral("class_times"),
+            id,
+            QStringLiteral("Regular %1 first").arg(index),
+            QStringLiteral("start %1").arg(index),
+            QStringLiteral("end %1").arg(index)
+            ));
+        if (index == 0)
+        {
+            QVERIFY(insertSchedule(
+                database,
+                QStringLiteral("class_times"),
+                id,
+                QStringLiteral("Regular 0 second"),
+                QStringLiteral("second start"),
+                QStringLiteral("second end")
+                ));
+        }
+        if (index < intensiveScheduleRowCount)
+        {
+            QVERIFY(insertSchedule(
+                database,
+                QStringLiteral("class_intensive_times"),
+                id,
+                QStringLiteral("Intensive %1").arg(index),
+                QStringLiteral("intensive start %1").arg(index),
+                QStringLiteral("intensive end %1").arg(index)
+                ));
+        }
+    }
+
+    Platform::ApplicationServicesScheduleBuilderSourcePort port(services);
+    const auto result = port.readScheduleClasses({});
+    QVERIFY2(result,
+             result ? "" : qPrintable(QString::fromStdString(
+                 result.error().message)));
+    QCOMPARE(result.value().classes.size(), std::size_t(classCount));
+
+    std::size_t observedRegularRows = 0;
+    std::size_t observedIntensiveRows = 0;
+    for (int index = 0; index < classCount; ++index)
+    {
+        const auto& entry = result.value().classes[static_cast<std::size_t>(index)];
+        QCOMPARE(entry.classId.value(),
+                 std::to_string(classIdsByName[static_cast<std::size_t>(index)]));
+        QCOMPARE(entry.regularSchedule.size(), std::size_t(index == 0 ? 2 : 1));
+        QCOMPARE(entry.intensiveSchedule.size(),
+                 std::size_t(index < intensiveScheduleRowCount ? 1 : 0));
+        QCOMPARE(entry.regularSchedule[0].day.value(),
+                 QStringLiteral("Regular %1 first")
+                     .arg(index)
+                     .toStdU16String());
+        if (index == 0)
+        {
+            QCOMPARE(entry.regularSchedule[1].day.value(),
+                     std::u16string(u"Regular 0 second"));
+        }
+        if (index < intensiveScheduleRowCount)
+        {
+            QCOMPARE(entry.intensiveSchedule[0].day.value(),
+                     QStringLiteral("Intensive %1")
+                         .arg(index)
+                         .toStdU16String());
+        }
+        observedRegularRows += entry.regularSchedule.size();
+        observedIntensiveRows += entry.intensiveSchedule.size();
+    }
+    QCOMPARE(observedRegularRows, std::size_t(regularScheduleRowCount));
+    QCOMPARE(observedIntensiveRows, std::size_t(intensiveScheduleRowCount));
+
+    const ScheduleClassInfoReadMetrics& metrics = services
+        .workspaceStore()
+        ->classInfoRepository()
+        ->scheduleClassInfoReadMetrics();
+    QCOMPARE(metrics.completedClassCount, qint64(classCount));
+    QCOMPARE(metrics.regularScheduleRowCount, qint64(regularScheduleRowCount));
+    QCOMPARE(metrics.intensiveScheduleRowCount, qint64(intensiveScheduleRowCount));
+}
+
+void NextPlatformApplicationServicesScheduleBuilderSourcePortTests::
+leavesResultMetricsUnchangedForEmptyAndFailedReads()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(
+        directory,
+        QStringLiteral("empty-schedule-source")
+        )));
+    Platform::ApplicationServicesScheduleBuilderSourcePort port(services);
+
+    const auto emptyResult = port.readScheduleClasses({});
+    QVERIFY2(emptyResult,
+             emptyResult ? "" : qPrintable(QString::fromStdString(
+                 emptyResult.error().message)));
+    QVERIFY(emptyResult.value().classes.empty());
+
+    const auto metricsAfterEmpty = services
+        .workspaceStore()
+        ->classInfoRepository()
+        ->scheduleClassInfoReadMetrics();
+    QCOMPARE(metricsAfterEmpty.completedClassCount, qint64(0));
+    QCOMPARE(metricsAfterEmpty.regularScheduleRowCount, qint64(0));
+    QCOMPARE(metricsAfterEmpty.intensiveScheduleRowCount, qint64(0));
+
+    ApplicationServices failedServices;
+    QVERIFY(failedServices.openDatabase(databasePath(
+        directory,
+        QStringLiteral("failed-intensive-schedule-source")
+        )));
+    const QSqlDatabase failedDatabase =
+        failedServices.workspaceStore()->database();
+    constexpr qint64 seededClassId = 8765;
+    QVERIFY(insertPersistedClass(
+        failedDatabase,
+        seededClassId,
+        QStringLiteral("Seeded class")
+        ));
+    QVERIFY(insertSchedule(
+        failedDatabase,
+        QStringLiteral("class_times"),
+        seededClassId,
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:50 AM")
+        ));
+
+    QSqlQuery dropIntensiveScheduleTable(failedDatabase);
+    QVERIFY(dropIntensiveScheduleTable.exec(
+        QStringLiteral("DROP TABLE class_intensive_times")
+        ));
+
+    Platform::ApplicationServicesScheduleBuilderSourcePort failedPort(
+        failedServices
+        );
+    const auto failedResult = failedPort.readScheduleClasses({});
+    QVERIFY(!failedResult);
+    const auto metricsAfterFailure = failedServices
+        .workspaceStore()
+        ->classInfoRepository()
+        ->scheduleClassInfoReadMetrics();
+    QCOMPARE(metricsAfterFailure.metadataStatementCount, 1);
+    QCOMPARE(metricsAfterFailure.regularScheduleStatementCount, 1);
+    QCOMPARE(metricsAfterFailure.intensiveScheduleStatementCount, 1);
+    QCOMPARE(metricsAfterFailure.completedClassCount, qint64(0));
+    QCOMPARE(metricsAfterFailure.regularScheduleRowCount, qint64(0));
+    QCOMPARE(metricsAfterFailure.intensiveScheduleRowCount, qint64(0));
 }
 
 void NextPlatformApplicationServicesScheduleBuilderSourcePortTests::
@@ -480,11 +674,29 @@ validatesStoredScheduleClassIdsBeforeNarrowing()
     QCOMPARE(repository->scheduleClassInfoReadMetrics()
                  .intensiveScheduleStatementCount,
              metricsBeforeInvalidId.intensiveScheduleStatementCount);
+    QCOMPARE(repository->scheduleClassInfoReadMetrics().completedClassCount,
+             metricsBeforeInvalidId.completedClassCount);
+    QCOMPARE(repository->scheduleClassInfoReadMetrics().regularScheduleRowCount,
+             metricsBeforeInvalidId.regularScheduleRowCount);
+    QCOMPARE(repository->scheduleClassInfoReadMetrics().intensiveScheduleRowCount,
+             metricsBeforeInvalidId.intensiveScheduleRowCount);
 
     const auto invalidPortResult = port.readScheduleClasses(query);
     QVERIFY(!invalidPortResult);
     QCOMPARE(invalidPortResult.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!invalidPortResult.error().message.empty());
+    const auto metricsAfterInvalidPort =
+        repository->scheduleClassInfoReadMetrics();
+    QCOMPARE(metricsAfterInvalidPort.regularScheduleStatementCount,
+             metricsBeforeInvalidId.regularScheduleStatementCount);
+    QCOMPARE(metricsAfterInvalidPort.intensiveScheduleStatementCount,
+             metricsBeforeInvalidId.intensiveScheduleStatementCount);
+    QCOMPARE(metricsAfterInvalidPort.completedClassCount,
+             metricsBeforeInvalidId.completedClassCount);
+    QCOMPARE(metricsAfterInvalidPort.regularScheduleRowCount,
+             metricsBeforeInvalidId.regularScheduleRowCount);
+    QCOMPARE(metricsAfterInvalidPort.intensiveScheduleRowCount,
+             metricsBeforeInvalidId.intensiveScheduleRowCount);
 
     const auto invalidHandlerResult =
         Application::ScheduleBuilderSourceQueryHandler::execute(query, port);
@@ -598,6 +810,9 @@ validatesStoredScheduleClassIdsBeforeNarrowing()
              zeroIdMetricsBeforeRead.regularScheduleStatementCount);
     QCOMPARE(zeroIdMetricsAfterPort.intensiveScheduleStatementCount,
              zeroIdMetricsBeforeRead.intensiveScheduleStatementCount);
+    QCOMPARE(zeroIdMetricsAfterPort.completedClassCount, qint64(0));
+    QCOMPARE(zeroIdMetricsAfterPort.regularScheduleRowCount, qint64(0));
+    QCOMPARE(zeroIdMetricsAfterPort.intensiveScheduleRowCount, qint64(0));
 
     QSqlQuery verifyZeroIdClass(zeroIdDatabase);
     QVERIFY(verifyZeroIdClass.exec(QStringLiteral(

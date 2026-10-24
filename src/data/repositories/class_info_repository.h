@@ -15,6 +15,7 @@
 #include <QtGlobal>
 
 #include <expected>
+#include <functional>
 #include <optional>
 #include <vector>
 
@@ -408,6 +409,9 @@ struct ScheduleClassInfoReadMetrics final
     int metadataStatementCount = 0;
     int regularScheduleStatementCount = 0;
     int intensiveScheduleStatementCount = 0;
+    qint64 completedClassCount = 0;
+    qint64 regularScheduleRowCount = 0;
+    qint64 intensiveScheduleRowCount = 0;
 };
 
 struct ScheduleImportStateSnapshotClassInfoReadRecord final
@@ -770,6 +774,16 @@ public:
         loadClassTeacherAssignmentRecords();
 
     [[nodiscard]] Result<QList<ClassInfo>> loadScheduleClassInfos();
+    using ScheduleClassInfoVisitor = std::function<Status(const ClassInfo&)>;
+    using ScheduleClassTimeVisitor = std::function<Status(
+        int,
+        const ClassTime&,
+        bool
+        )>;
+    [[nodiscard]] Status visitScheduleClassInfoRows(
+        const ScheduleClassInfoVisitor& classInfoVisitor,
+        const ScheduleClassTimeVisitor& scheduleTimeVisitor
+        );
     [[nodiscard]] Result<
         QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
         loadScheduleImportStateSnapshotClassInfos();
