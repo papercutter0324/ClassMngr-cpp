@@ -9,7 +9,8 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 3 (F1358–F1377) is complete.
+- Batch 3 (F1358–F1377) is complete and pushed to `origin/Qt-Rewrite` at
+  `018b30b04ab713769f9e69b440ba7223310a2b87`.
 - Batch 4 discovery is complete; Batch 4 is active with F1378 — My Classes
   teacher-profile batch read current.
 

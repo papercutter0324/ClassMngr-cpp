@@ -9,10 +9,12 @@
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
   Batch 2 (F1338–F1357) remains complete and pushed to `origin/Qt-Rewrite` at
   `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`. Batch 3 (F1358–F1377) is
-  complete. Batch 4 discovery is complete and Batch 4 is active, with F1378
-  (My Classes teacher-profile batch read) current. Slice evidence, the Batch 2
-  push receipt, and earlier UI limitations, baseline failures, attribution,
-  and coverage notes remain in the Phase 3 progress log. The [Phase 3
+  complete and pushed to `origin/Qt-Rewrite` at
+  `018b30b04ab713769f9e69b440ba7223310a2b87`. Batch 4 discovery is complete
+  and Batch 4 is active, with F1378 (My Classes teacher-profile batch read)
+  current. Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier
+  UI limitations, baseline failures, attribution, and coverage notes remain in
+  the Phase 3 progress log. The [Phase 3
   plan](04-Phase-3-Persistence-Rewrite.md), [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md) contain the current detail.

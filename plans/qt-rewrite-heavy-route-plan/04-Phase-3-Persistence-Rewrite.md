@@ -38,11 +38,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 3 (F1358–F1377) is complete. Batch 4 discovery is
-  complete and Batch 4 is active, with F1378 (My Classes teacher-profile batch
-  read) current. F1376/F1377 implementation and verification evidence, the
-  Batch 2 push receipt, and earlier UI limitations and attribution notes are
-  in the [progress log](04-Phase-3-Progress-Log.md).
+- Current note: Batch 3 (F1358–F1377) is complete and pushed to
+  `origin/Qt-Rewrite` at `018b30b04ab713769f9e69b440ba7223310a2b87`. Batch 4
+  discovery is complete and Batch 4 is active, with F1378 (My Classes
+  teacher-profile batch read) current. F1376/F1377 implementation evidence,
+  Batch 2 and Batch 3 push receipts, and earlier UI limitations and attribution
+  notes are in the [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).

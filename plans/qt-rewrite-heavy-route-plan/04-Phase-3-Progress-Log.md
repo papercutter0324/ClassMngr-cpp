@@ -1536,6 +1536,16 @@ behavior.
 Built the summary-query, shared Platform-port, and My Classes page-summary
 parity targets. Three serial CTests passed (3/3). The shared Platform CTest
 also exercises the two F1377 summary slots. `git diff --check` passed. No full
-suite or cross-platform build ran. F1377 is accepted; Batch 3 is complete;
-F1378 (My Classes teacher-profile batch read) is current in Batch 4. Batch 3
-has not been pushed.
+suite or cross-platform build ran. F1377 is accepted; Batch 3 is complete and
+pushed; F1378 (My Classes teacher-profile batch read) is current in Batch 4.
+
+## Batch 3 push receipt — 2026-10-24
+
+The 20 slice commits F1358–F1377 were pushed from `Qt-Rewrite` to the
+configured `origin/Qt-Rewrite`. Before the push, local HEAD was
+`018b30b04ab713769f9e69b440ba7223310a2b87`, 20 commits ahead and 0 behind;
+the remote prior tip was `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`. A normal,
+non-force push advanced the remote from that prior tip to
+`018b30b04ab713769f9e69b440ba7223310a2b87`. Post-push verification confirmed
+the remote matched local HEAD; at that check, the worktree was clean and
+ahead/behind was 0/0.
