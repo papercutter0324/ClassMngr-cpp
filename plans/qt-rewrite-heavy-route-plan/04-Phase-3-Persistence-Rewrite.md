@@ -38,11 +38,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 5 is complete locally (19/19 slices accepted) at
-  implementation tip `61d1fc9f` and remains unpushed. Batch 6 discovery found
-  no prioritized candidates (`No other slices were found.`); broader unranked
-  `databaseSession()`/`DataService` paths remain for future discovery. F1416
-  evidence and prior durable slice findings are in the
+- Current note: Batch 5 is complete and pushed (19/19 accepted), with
+  implementation tip `61d1fc9f`; local `Qt-Rewrite` and remote
+  `origin/Qt-Rewrite` both point to `5725e7234867505c0f9c7e9227971af105ccb9dc`.
+  The broader Batch 6 discovery
+  found no eligible slice (`No other slices were found.`); no batch or
+  candidate is active. Revisit `FeatureServices`/`DataService` if production
+  callers are added or composition changes. F1416 evidence is in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
@@ -77,10 +79,17 @@ The incremental macOS Debug build passed for
 CTest #333 `ClassMngrNextApplicationScheduleImportApplyUseCaseTests` and
 CTest #486
 `ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`
-passed 2/2; the Platform QtTest had 9 passed. `git diff --check` passed. No
-broader suite or cross-platform build ran. Batch 5 is complete locally and
-remains unpushed; Batch 6 found no prioritized candidates. Full evidence is in
-the [progress log](04-Phase-3-Progress-Log.md).
+passed 2/2; the Platform QtTest had 9 passed. No broader suite or
+cross-platform build ran.
+
+Batch 5 (19/19 accepted) was pushed successfully. The implementation tip is
+`61d1fc9f`; local `Qt-Rewrite` and remote `origin/Qt-Rewrite` both point to
+`5725e7234867505c0f9c7e9227971af105ccb9dc`. A second read-only Batch 6 scan
+covering broader unranked service and fallback paths found no eligible slice:
+`No other slices were found.` There is no active batch or current candidate.
+Revisit the broad `FeatureServices`/`DataService` APIs if new production
+callers appear or service composition changes. Full evidence is in the
+[progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
 

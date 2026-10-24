@@ -2644,8 +2644,23 @@ The CTest log is
 `build/macos-clang-debug/Testing/Temporary/LastTest.log`;
 `git diff --check` passed. No broader suite or cross-platform build ran.
 
-Batch 5 is complete locally (19/19 accepted) at implementation tip
-`61d1fc9f`; it remains unpushed. Batch 6 discovery found no prioritized
-candidates: `No other slices were found.` Broader unranked
-`databaseSession()`/`DataService` paths remain for future discovery; this does
-not exhaust the Phase 3 backlog.
+Batch 5 is complete and pushed (19/19 accepted). Its implementation tip is
+`61d1fc9f`; the final local `Qt-Rewrite` and remote `origin/Qt-Rewrite` tips are
+`5725e7234867505c0f9c7e9227971af105ccb9dc`. The push succeeded, the remote
+tip matched local `HEAD`, and the worktree was clean.
+
+The second read-only Batch 6 discovery covered broader unranked
+`databaseSession()`/`DataService` and fallback paths and found no eligible
+slice: `No other slices were found.` `ApplicationServices` owns one
+`WorkspaceStore` and a `DataService` wrapping that same store. Normal
+`FeatureServices` factories receive `(WorkspaceStore*, nullptr)`, so
+`FeatureService::dataService()` is null when the store is available; no
+ordinary production caller of `ApplicationServices::dataService()` was found.
+Remaining feature/controller session references are previously excluded
+incidental guards. Startup performance persistence overlaps accepted slices;
+the direct roster transaction is F1348; class-transfer and speaking-evaluation
+routes belong to opt-in performance workflows and accepted boundaries. The
+`FeatureService(DataService*)` compatibility route has no active production
+composition. There is no active batch or current candidate; revisit these
+broad APIs if production callers are added or service composition changes.
+This discovery does not exhaust the Phase 3 backlog.
