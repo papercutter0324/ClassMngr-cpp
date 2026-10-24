@@ -67,6 +67,7 @@ set(CLASSMNGR_DATA_SOURCES
     "src/data/data_service.h"
     "src/data/database/database_file_operations.cpp"
     "src/data/database/database_file_operations.h"
+    "src/data/database/database_file_operations_internal.h"
     "src/data/database/database_schema_manager.cpp"
     "src/data/database/database_schema_manager.h"
     "src/data/database/database_session.h"

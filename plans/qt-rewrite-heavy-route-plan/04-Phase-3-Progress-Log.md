@@ -2787,8 +2787,9 @@ populated v6 `.tps` source, both SaveAs and export destinations reopened via
 existing-only open and contained the expected fixture data. The source stayed
 open at its original path and retained its data. This does not claim Windows
 coverage or interrupted-copy behavior; deterministic interruption and atomic
-destination preservation remain F1423. F1422, valid-v6 locked and truncated-
-file preservation, was next in Batch 9; its acceptance is recorded below.
+destination preservation were deferred to F1423, whose acceptance is recorded
+below. F1422, valid-v6 locked and truncated-file preservation, was next in
+Batch 9; its acceptance is recorded below.
 Batch 10 discovery remains due when F1426 (candidate 8 of 9) starts; Phase 3
 remains In Progress.
 
@@ -2802,6 +2803,20 @@ profile was rejected. In both cases, the active store, session, services,
 connection, path, sentinel, and target bytes were preserved; after lock
 release, the locked target reopened as v6. This is focused macOS evidence; no
 Windows claim is made. F1423, deterministic post-write `QSaveFile` interruption
-and atomic destination preservation, is current in Batch 9. Batch 10 discovery
-remains due when F1426 (candidate 8 of 9, the second-to-last) starts. Phase 3
-remains In Progress.
+and atomic destination preservation, was next in Batch 9; its acceptance is
+recorded below. Batch 10 discovery remains due when F1426 (candidate 8 of 9,
+the second-to-last) starts. Phase 3 remains In Progress.
+
+## F1423 — Deterministic post-write QSaveFile interruption — 2026-10-24
+
+Accepted with focused macOS evidence: `ClassMngrDataServiceLifecycleTests`
+CTest passed 1/1. The internal failure-injection helper fails after one 64 KiB
+chunk; the save returned failure, source and existing destination remained
+byte-identical, and no temporary artifact remained after `QSaveFile`
+destruction. The initial test checked for the temporary artifact before
+destruction; that assertion was corrected to check afterward, and no
+production defect was found. The helper is registered in the source manifest;
+the application API is unchanged. No full-suite or Windows claim is made.
+F1424, Calendar Import transaction-start, commit, and error coverage, is current
+in Batch 9. Batch 10 discovery remains due when F1426 (candidate 8 of 9, the
+second-to-last) starts. Phase 3 remains In Progress.

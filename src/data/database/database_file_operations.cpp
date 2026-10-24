@@ -1,4 +1,5 @@
 #include "database_file_operations.h"
+#include "database_file_operations_internal.h"
 
 #include <QDir>
 #include <QFile>
@@ -60,6 +61,80 @@ bool pathsReferToSameFile(
         error
         );
 }
+}
+
+Status DatabaseFileOperations::Internal::copyOpenSourceToSaveFile(
+    QFile& source,
+    QSaveFile& destination,
+    const QString& destinationPath,
+    const bool destinationExisted,
+    const QFileDevice::Permissions sourcePermissions
+    )
+{
+    const QString copyError =
+        QStringLiteral("Unable to copy Teacher Profile to:\n%1")
+            .arg(destinationPath);
+    const QString replacementError =
+        QStringLiteral("Unable to replace existing Teacher Profile file:\n%1")
+            .arg(destinationPath);
+
+    QByteArray buffer(64 * 1024, '\0');
+    while (true)
+    {
+        const qint64 bytesRead = source.read(buffer.data(), buffer.size());
+        if (bytesRead < 0)
+        {
+            destination.cancelWriting();
+            return std::unexpected(copyError);
+        }
+        if (bytesRead == 0)
+        {
+            if (source.error() != QFileDevice::NoError)
+            {
+                destination.cancelWriting();
+                return std::unexpected(copyError);
+            }
+            break;
+        }
+
+        qint64 bytesWritten = 0;
+        while (bytesWritten < bytesRead)
+        {
+            const qint64 writeResult = destination.write(
+                buffer.constData() + bytesWritten,
+                bytesRead - bytesWritten
+                );
+            if (writeResult <= 0)
+            {
+                destination.cancelWriting();
+                return std::unexpected(copyError);
+            }
+            bytesWritten += writeResult;
+        }
+    }
+
+    if (!destination.flush())
+    {
+        destination.cancelWriting();
+        return std::unexpected(copyError);
+    }
+
+    if (!destination.setPermissions(sourcePermissions))
+    {
+        destination.cancelWriting();
+        return std::unexpected(copyError);
+    }
+
+    if (!destination.commit())
+    {
+        if (destinationExisted)
+        {
+            return std::unexpected(replacementError);
+        }
+        return std::unexpected(copyError);
+    }
+
+    return {};
 }
 
 Status DatabaseFileOperations::copyDatabaseFile(
@@ -124,61 +199,11 @@ Status DatabaseFileOperations::copyDatabaseFile(
             );
     }
 
-    QByteArray buffer(64 * 1024, '\0');
-    while (true)
-    {
-        const qint64 bytesRead = source.read(buffer.data(), buffer.size());
-        if (bytesRead < 0)
-        {
-            destination.cancelWriting();
-            return std::unexpected(copyError);
-        }
-        if (bytesRead == 0)
-        {
-            if (source.error() != QFileDevice::NoError)
-            {
-                destination.cancelWriting();
-                return std::unexpected(copyError);
-            }
-            break;
-        }
-
-        qint64 bytesWritten = 0;
-        while (bytesWritten < bytesRead)
-        {
-            const qint64 writeResult = destination.write(
-                buffer.constData() + bytesWritten,
-                bytesRead - bytesWritten
-                );
-            if (writeResult <= 0)
-            {
-                destination.cancelWriting();
-                return std::unexpected(copyError);
-            }
-            bytesWritten += writeResult;
-        }
-    }
-
-    if (!destination.flush())
-    {
-        destination.cancelWriting();
-        return std::unexpected(copyError);
-    }
-
-    if (!destination.setPermissions(sourcePermissions))
-    {
-        destination.cancelWriting();
-        return std::unexpected(copyError);
-    }
-
-    if (!destination.commit())
-    {
-        if (targetExisted)
-        {
-            return std::unexpected(replacementError);
-        }
-        return std::unexpected(copyError);
-    }
-
-    return {};
+    return Internal::copyOpenSourceToSaveFile(
+        source,
+        destination,
+        targetPath,
+        targetExisted,
+        sourcePermissions
+        );
 }

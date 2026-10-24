@@ -25,7 +25,7 @@ verification evidence in its progress log.
    comparison (accepted).** Focused macOS arm64 CTest passed 1/1; verbose rerun
    passed 40 QtTest cases. Both destinations reopened existing-only with
    expected fixture data, while source path/open/data were preserved. No
-   Windows or interrupted-copy claim; interruption remains F1423.
+   Windows or interrupted-copy claim; see accepted F1423 below.
 4. **F1422 — Valid-v6 locked and truncated-file preservation (accepted).**
    Focused macOS arm64/Qt 6.12 CTest passed 1/1; verbose rerun passed 42 QtTest
    cases. Same-process `BEGIN EXCLUSIVE` prevented existing-only open of a
@@ -34,8 +34,14 @@ verification evidence in its progress log.
    target bytes were preserved; the locked target reopened as v6 after release.
    No Windows claim.
 5. **F1423 — Deterministic post-write `QSaveFile` interruption and atomic
-   destination preservation (current).**
-6. **F1424 — Calendar Import transaction-start, commit, and error coverage.**
+   destination preservation (accepted).** Focused macOS CTest passed 1/1. The
+   injected source-read failure on the second read, after one 64 KiB chunk had
+   been written to the `QSaveFile` temporary file, was returned; source and
+   existing destination were byte-identical, with no temporary artifact after
+   `QSaveFile` destruction. The assertion was corrected to check afterward;
+   no production defect was found. The internal helper is source-manifest
+   registered; application API is unchanged. No full-suite or Windows claim.
+6. **F1424 — Calendar Import transaction-start, commit, and error coverage (current).**
 7. **F1425 — Compact Schedule Import persistence snapshot plus large 96-class
    query/result/lifetime evidence.** Phase 3 owns the persistence/query side;
    Schedule Import review and presentation remain Phase 7E work.

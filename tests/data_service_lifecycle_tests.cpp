@@ -1,5 +1,6 @@
 #include "data/data_service.h"
 #include "data/database/database_file_operations.h"
+#include "data/database/database_file_operations_internal.h"
 #include "data/database/database_schema_manager.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
@@ -7,8 +8,10 @@
 #include "core/application_services.h"
 #include "teacher_choices_cursor_error_fixture.h"
 
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QSaveFile>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -219,6 +222,43 @@ void verifyDatabase(
     QVERIFY(campus);
     QCOMPARE(campus->name, prefix + QStringLiteral(" Campus"));
 }
+
+class InterruptAfterFirstChunkSourceFile final : public QFile
+{
+public:
+    using QFile::QFile;
+
+    int readCallCount() const
+    {
+        return m_readCallCount;
+    }
+
+    qint64 bytesDelivered() const
+    {
+        return m_bytesDelivered;
+    }
+
+protected:
+    qint64 readData(char* data, qint64 maxSize) override
+    {
+        ++m_readCallCount;
+        if (m_readCallCount > 1)
+        {
+            return -1;
+        }
+
+        const qint64 bytesRead = QFile::readData(data, maxSize);
+        if (bytesRead > 0)
+        {
+            m_bytesDelivered += bytesRead;
+        }
+        return bytesRead;
+    }
+
+private:
+    int m_readCallCount = 0;
+    qint64 m_bytesDelivered = 0;
+};
 }
 
 class DataServiceLifecycleTests : public QObject
@@ -235,6 +275,7 @@ private slots:
     void databaseFileCopyPreservesDestinationWhenSourceMissing();
     void databaseFileCopyReplacesDestinationAndCreatesParent();
     void databaseFileCopyPreservesDestinationWhenReplacementFails();
+    void databaseFileCopyPreservesDestinationAfterInterruptedWrite();
     void legacyDataServiceOwnsDatabaseFileOperations();
     void applicationServicesOwnDatabaseFileOperations();
     void applicationServicesShareCanonicalSessionAcrossLifecycle();
@@ -692,6 +733,78 @@ void DataServiceLifecycleTests::databaseFileCopyPreservesDestinationWhenReplacem
     QVERIFY(sentinel.open(QIODevice::ReadOnly));
     QCOMPARE(sentinel.readAll(), sentinelBytes);
     sentinel.close();
+}
+
+void DataServiceLifecycleTests::databaseFileCopyPreservesDestinationAfterInterruptedWrite()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    constexpr int chunkSize = 64 * 1024;
+    const QString sourcePath = directory.filePath(QStringLiteral("source.db"));
+    const QString destinationPath =
+        directory.filePath(QStringLiteral("existing-destination.db"));
+    const QByteArray sourceBytes(chunkSize * 2, 's');
+    const QByteArray sentinelBytes("previous destination contents");
+
+    QFile sourceSeed(sourcePath);
+    QVERIFY(sourceSeed.open(QIODevice::WriteOnly));
+    QCOMPARE(sourceSeed.write(sourceBytes), qint64(sourceBytes.size()));
+    sourceSeed.close();
+
+    QFile destinationSeed(destinationPath);
+    QVERIFY(destinationSeed.open(QIODevice::WriteOnly));
+    QCOMPARE(
+        destinationSeed.write(sentinelBytes),
+        qint64(sentinelBytes.size())
+        );
+    destinationSeed.close();
+
+    InterruptAfterFirstChunkSourceFile source(sourcePath);
+    QVERIFY2(source.open(QIODevice::ReadOnly), qPrintable(source.errorString()));
+    const QFileDevice::Permissions sourcePermissions = source.permissions();
+
+    {
+        QSaveFile destination(destinationPath);
+        destination.setDirectWriteFallback(false);
+        QVERIFY2(
+            destination.open(QIODevice::WriteOnly),
+            qPrintable(destination.errorString())
+            );
+
+        const Status copyResult =
+            DatabaseFileOperations::Internal::copyOpenSourceToSaveFile(
+                source,
+                destination,
+                QFileInfo(destinationPath).absoluteFilePath(),
+                true,
+                sourcePermissions
+                );
+        QVERIFY(!copyResult);
+        QCOMPARE(source.readCallCount(), 2);
+        QCOMPARE(source.bytesDelivered(), qint64(chunkSize));
+    }
+
+    QFile destinationAfter(destinationPath);
+    QVERIFY(destinationAfter.open(QIODevice::ReadOnly));
+    QCOMPARE(destinationAfter.readAll(), sentinelBytes);
+    destinationAfter.close();
+
+    source.close();
+    QFile sourceAfter(sourcePath);
+    QVERIFY(sourceAfter.open(QIODevice::ReadOnly));
+    QCOMPARE(sourceAfter.readAll(), sourceBytes);
+    sourceAfter.close();
+
+    QStringList remainingFiles = QDir(directory.path()).entryList(
+        QDir::Files | QDir::Hidden | QDir::System
+        );
+    remainingFiles.sort();
+    const QStringList expectedFiles = {
+        QStringLiteral("existing-destination.db"),
+        QStringLiteral("source.db")
+    };
+    QCOMPARE(remainingFiles, expectedFiles);
 }
 
 void DataServiceLifecycleTests::legacyDataServiceOwnsDatabaseFileOperations()
