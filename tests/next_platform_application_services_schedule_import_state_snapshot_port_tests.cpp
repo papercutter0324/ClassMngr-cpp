@@ -725,6 +725,11 @@ preservesLargeWorkspaceRecordsAndReadCounts()
         teacherMetricsAfter.statementCount - teacherMetricsBefore.statementCount,
         1
         );
+    QCOMPARE(
+        teacherMetricsAfter.returnedRowCount
+            - teacherMetricsBefore.returnedRowCount,
+        teacherCount
+        );
     const ClassRepository::ReadMetrics classMetricsAfter =
         classRepository->readMetrics();
     QCOMPARE(
@@ -762,6 +767,58 @@ preservesLargeWorkspaceRecordsAndReadCounts()
         classInfoMetricsAfter.intensiveScheduleStatementCount
             - classInfoMetricsBefore.intensiveScheduleStatementCount,
         1
+        );
+    QCOMPARE(
+        classInfoMetricsAfter.metadataReturnedRowCount
+            - classInfoMetricsBefore.metadataReturnedRowCount,
+        classCount
+        );
+    QCOMPARE(
+        classInfoMetricsAfter.regularScheduleReturnedRowCount
+            - classInfoMetricsBefore.regularScheduleReturnedRowCount,
+        expectedRegularTimeCount
+        );
+    QCOMPARE(
+        classInfoMetricsAfter.intensiveScheduleReturnedRowCount
+            - classInfoMetricsBefore.intensiveScheduleReturnedRowCount,
+        expectedIntensiveTimeCount
+        );
+
+    QSqlQuery disableForeignKeys(database);
+    QVERIFY2(
+        disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys = OFF")),
+        qPrintable(disableForeignKeys.lastError().text())
+        );
+    QSqlQuery invalidTeacherId(database);
+    invalidTeacherId.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id = ? WHERE class_id = ?"
+        ));
+    invalidTeacherId.addBindValue(QStringLiteral("invalid teacher id"));
+    invalidTeacherId.addBindValue(classIds.back());
+    QVERIFY2(
+        invalidTeacherId.exec(),
+        qPrintable(invalidTeacherId.lastError().text())
+        );
+    QSqlQuery enableForeignKeys(database);
+    QVERIFY2(
+        enableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys = ON")),
+        qPrintable(enableForeignKeys.lastError().text())
+        );
+
+    const ScheduleImportStateSnapshotClassInfoReadMetrics
+        failedClassInfoMetricsBefore = classInfoRepository
+            ->scheduleImportStateSnapshotClassInfoReadMetrics();
+    const Result<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
+        failedClassInfos =
+            classInfoRepository->loadScheduleImportStateSnapshotClassInfos();
+    QVERIFY(!failedClassInfos);
+    const ScheduleImportStateSnapshotClassInfoReadMetrics
+        failedClassInfoMetricsAfter = classInfoRepository
+            ->scheduleImportStateSnapshotClassInfoReadMetrics();
+    QCOMPARE(
+        failedClassInfoMetricsAfter.metadataReturnedRowCount
+            - failedClassInfoMetricsBefore.metadataReturnedRowCount,
+        0
         );
 
     QSqlQuery invalidClass(database);

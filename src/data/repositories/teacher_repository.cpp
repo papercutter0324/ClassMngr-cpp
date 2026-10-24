@@ -1936,6 +1936,7 @@ TeacherRepository::loadScheduleImportTeacherRecords()
             ).userMessage());
     }
 
+    m_scheduleImportTeacherReadMetrics.returnedRowCount += teachers.size();
     return teachers;
 }
 

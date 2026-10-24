@@ -6574,6 +6574,8 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
                 .arg(query.lastError().text())
             );
     }
+    m_scheduleImportStateSnapshotClassInfoReadMetrics.metadataReturnedRowCount
+        += infos.size();
 
     const auto loadTimes = [&]<typename Times>(
         const QString& tableName,
@@ -6616,8 +6618,10 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
             return std::unexpected(executed.error().userMessage());
         }
 
+        int returnedRowCount = 0;
         while (timesQuery.next())
         {
+            ++returnedRowCount;
             const auto index = indexesByClassId.constFind(
                 timesQuery.value(QStringLiteral("class_id")).toInt()
                 );
@@ -6638,6 +6642,16 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
                 QObject::tr("Loading schedule class times from %1 failed: %2")
                     .arg(tableName, timesQuery.lastError().text())
                 );
+        }
+        if (intensive)
+        {
+            m_scheduleImportStateSnapshotClassInfoReadMetrics
+                .intensiveScheduleReturnedRowCount += returnedRowCount;
+        }
+        else
+        {
+            m_scheduleImportStateSnapshotClassInfoReadMetrics
+                .regularScheduleReturnedRowCount += returnedRowCount;
         }
 
         return {};

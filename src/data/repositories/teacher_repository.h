@@ -42,6 +42,8 @@ struct ScheduleImportTeacherReadMetrics final
 {
     int callCount = 0;
     int statementCount = 0;
+    // Rows count only after the query completes and all row validation passes.
+    int returnedRowCount = 0;
 };
 
 struct ClassCoTeacherTeacherChoiceReadRecord final

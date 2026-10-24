@@ -428,6 +428,10 @@ struct ScheduleImportStateSnapshotClassInfoReadMetrics final
     int metadataStatementCount = 0;
     int regularScheduleStatementCount = 0;
     int intensiveScheduleStatementCount = 0;
+    // Each count advances only after its query completes and row validation passes.
+    int metadataReturnedRowCount = 0;
+    int regularScheduleReturnedRowCount = 0;
+    int intensiveScheduleReturnedRowCount = 0;
 };
 
 struct ClassPageDetailsReadMetrics final
