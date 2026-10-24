@@ -45,11 +45,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   the verified implementation tip is
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1401 (Class-selection reset policy) current.
-  F1400 (Class-day-filter reset policy) is accepted at
-  `a97957249b2dce30c14aacfe7640503a493e209d`; focused verification passed. Its
-  16 prioritized slices remain in the current batch tracker.
-  F1376–F1400 implementation evidence, Batch 2 and Batch 3 push receipts, and
+  and Batch 5 is active with F1402 (Evaluation default policy) current. F1401
+  (Class-selection reset policy) is accepted at
+  `d5b01e1eff11fa8c0f076db348e8c523a57a6d78`; focused verification passed. Its
+  15 prioritized candidates remain in the current batch tracker.
+  F1376–F1401 implementation evidence, Batch 2 and Batch 3 push receipts, and
   earlier UI limitations and attribution notes are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -69,20 +69,21 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1400 — 2026-10-24
+## Latest Progress Update — F1401 — 2026-10-24
 
-F1400 is accepted at `a97957249b2dce30c14aacfe7640503a493e209d`. Only the
-class-day-filter reset-policy adapter and dedicated Platform fixture moved to
+F1401 is accepted at `d5b01e1eff11fa8c0f076db348e8c523a57a6d78`. The
+class-selection reset-policy adapter and dedicated Platform fixture now use
 `WorkspaceStore`; key, missing-value materialization, unsupported-value
-no-rewrite, normalization, invalid-enum validation order, error codes and
-recoverability, UI fallback/restoration, and assertions are unchanged.
-Focused Platform, ClassesPage, and MainWindow verification passed. Batch 5 is
-active with F1401 current. The F1383 orphan-data, F1389/F1390/F1391
-NavigationTeacherRead warning-text, F1392 SubPrep timeout, and F1394 schedule
-parity fixture-setup findings remain separate in the
-[progress log](04-Phase-3-Progress-Log.md). The full ClassesPage and MainWindow
-CTests, full suite, and cross-platform builds did not run; the historical full
-ClassesPage timeout remains unassessed.
+no-rewrite, normalization, validation-before-availability order,
+Technical/InvalidInput codes and recoverability, and assertions are unchanged.
+The older Phase 2 summary does not state that valid-but-unsupported stored
+values are not rewritten. Focused Platform, ClassesPage, and MainWindow
+verification passed. Batch 5 is active with F1402 current. The F1383
+orphan-data, F1389/F1390/F1391 NavigationTeacherRead warning-text, F1392
+SubPrep timeout, and F1394 schedule parity fixture-setup findings remain
+separate in the [progress log](04-Phase-3-Progress-Log.md). The full
+ClassesPage and MainWindow CTests, full suite, and cross-platform builds did
+not run; the prior ClassesPage timeout remains unassessed.
 
 ## Objective
 

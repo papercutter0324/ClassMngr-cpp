@@ -2116,3 +2116,38 @@ policy) is current. Batch 5 remains unpushed until its remaining slices are
 complete.
 
 Commit: `a97957249b2dce30c14aacfe7640503a493e209d`.
+
+## F1401 — Class-selection reset policy (Batch 5 candidate 4 of 19) — 2026-10-24
+
+The class-selection reset-policy adapter and dedicated Platform fixture now
+use `WorkspaceStore`. The exact key is
+`classes_navigation_class_selection_reset_policy`. Missing values still
+materialize `on_application_close`; valid-but-unsupported values fall back
+without rewrite, and recognized values are trimmed and lowercased. Invalid
+enum saves are validated before store availability and return nonrecoverable
+`InvalidInput`; repository load errors remain recoverable `Technical`, while
+store/repository/write save failures remain nonrecoverable `Technical`. UI
+fallback/restoration and all assertions are unchanged. The older Phase 2
+summary says unsupported settings fall back but omits the useful detail that
+valid-but-unsupported stored values are not rewritten.
+
+An incremental build in `build/macos-clang-debug` passed for
+`ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`,
+`ClassMngrClassesPageTests`, and
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests`. CTest #491,
+`ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`,
+passed 1/1. With `QT_QPA_PLATFORM=offscreen`, selected ClassesPage slots
+`classSelectionResetOnPageLeaveClearsOnlyClassStateAfterHideAndShow`,
+`classSelectionResetOnApplicationCloseRetainsOnlyClassStateAfterHideAndShow`,
+and `resetPolicyReadFailuresPreserveStoredPreferencesAndPageState` passed 5/5
+including init/cleanup. MainWindow slot
+`classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce`
+passed 3/3 including init/cleanup using CTest #113's temp/offscreen
+environment. UI runs emitted database, offscreen, and missing QML/icon
+warnings; assertions passed. `git diff --check` passed. Full ClassesPage and
+MainWindow CTests, the full suite, and cross-platform builds did not run; the
+prior ClassesPage timeout remains unassessed. F1401 is accepted; F1402
+(Evaluation default policy) is current. Batch 5 remains unpushed until its
+remaining slices are complete.
+
+Commit: `d5b01e1eff11fa8c0f076db348e8c523a57a6d78`.

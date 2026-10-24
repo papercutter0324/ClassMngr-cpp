@@ -15,10 +15,11 @@
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   its receipt records implementation tip
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1401 (Class-selection reset policy) current.
-  F1400 (Class-day-filter reset policy) is accepted at
-  `a97957249b2dce30c14aacfe7640503a493e209d`; its focused verification passed.
-  The current batch tracker retains the ordered list, with 16 slices remaining.
+  and Batch 5 is active with F1402 (Evaluation default policy) current. F1401
+  (Class-selection reset policy) is accepted at
+  `d5b01e1eff11fa8c0f076db348e8c523a57a6d78`; focused verification passed.
+  The current batch tracker retains the ordered list, with 15 prioritized
+  candidates remaining.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI
   limitations, baseline failures, attribution, and coverage notes remain in
   the Phase 3 progress log. The [Phase 3
