@@ -875,3 +875,22 @@ Executor and Tester incrementally built `ClassMngr`,
 The three focused CTests passed **3/3** serially (Platform #481, Application
 #461, UI #46). `git diff --check` passed. No full suite or cross-platform
 build ran.
+
+## F1354 — Clear Schedule testing assignments — 2026-10-23
+
+The clear port now uses `WorkspaceStore` for availability and
+`TestingBlockRepository` access, including the availability recheck after a
+failed delete. The repository's single-statement delete, preservation of
+saved testing classes and rosters, and menu confirmation, warning, and refresh
+behavior remain unchanged. Both dedicated F1354 test files now use
+`WorkspaceStore` for direct fixture access; assertions remain.
+
+Executor and Tester incrementally built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingLayoutClearPortTests`,
+`ClassMngrNextApplicationScheduleTestingLayoutClearUseCaseTests`, and
+`ClassMngrScheduleTestingLayoutClearParityTests` in the existing
+`build/macos-clang-debug` tree. In the serial focused CTest run, the Platform
+and Application tests passed. Schedule parity failed: six database-backed
+cases stopped at `LayoutClearFixture::databaseReady`, before the clear action.
+No baseline run was performed, so attribution is unresolved. `git diff --check`
+passed. No full suite or cross-platform build ran.

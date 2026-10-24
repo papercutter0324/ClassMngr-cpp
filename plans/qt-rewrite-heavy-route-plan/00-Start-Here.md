@@ -7,8 +7,9 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-23
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 2 remains active and unpushed; F1353 (Schedule testing-assignment
-  save) is complete, and F1354 is current: Clear Schedule testing assignments.
+  Batch 2 remains active and unpushed; F1354 (Clear Schedule testing
+  assignments) is complete, and F1355 is current: Schedule Editor
+  selected-class information read.
   The Batch 1 push receipt is recorded in the Phase 3 progress log.
   See
   the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),

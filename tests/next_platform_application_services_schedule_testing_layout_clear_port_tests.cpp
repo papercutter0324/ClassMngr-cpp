@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/testing_block_repository.h"
@@ -189,7 +189,7 @@ clearsLayoutAndPreservesSavedRecords()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     TestingBlockRepository* const blocks = session->testingBlockRepository();
@@ -313,7 +313,7 @@ preservesEveryLayoutRowWhenDeleteFails()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     TestingBlockRepository* const repository =
         session->testingBlockRepository();

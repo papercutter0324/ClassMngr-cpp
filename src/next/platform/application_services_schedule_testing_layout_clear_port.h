@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/testing_block_repository.h"
 #include "next/application/schedule_testing_layout_clear_port.h"
 
@@ -50,11 +50,11 @@ public:
     {
         try
         {
-            DatabaseSession* const session =
-                m_services ? m_services->databaseSession() : nullptr;
-            return session
-                && session->isOpen()
-                && session->testingBlockRepository() != nullptr;
+            WorkspaceStore* const store =
+                m_services ? m_services->workspaceStore() : nullptr;
+            return store
+                && store->isOpen()
+                && store->testingBlockRepository() != nullptr;
         }
         catch (...)
         {
@@ -67,15 +67,15 @@ public:
     {
         try
         {
-            DatabaseSession* const session =
-                m_services ? m_services->databaseSession() : nullptr;
-            if (!session || !session->isOpen())
+            WorkspaceStore* const store =
+                m_services ? m_services->workspaceStore() : nullptr;
+            if (!store || !store->isOpen())
             {
                 return unavailableFailure();
             }
 
             TestingBlockRepository* const repository =
-                session->testingBlockRepository();
+                store->testingBlockRepository();
             if (!repository)
             {
                 return failure(
@@ -87,7 +87,7 @@ public:
             const Status cleared = repository->clearTestingAssignments();
             if (!cleared)
             {
-                if (!session->isOpen())
+                if (!store->isOpen())
                 {
                     return unavailableFailure();
                 }

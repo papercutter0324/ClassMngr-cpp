@@ -1,6 +1,6 @@
 #include "app/mainwindow.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/testing_block_repository.h"
 #include "data/repositories/testing_class_repository.h"
@@ -190,11 +190,11 @@ bool insertRoster(QSqlDatabase database, const int classId)
 
 bool seedLayout(ApplicationServices& services, SeedIds* ids)
 {
-    if (!ids || !services.databaseSession())
+    if (!ids || !services.workspaceStore())
     {
         return false;
     }
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     TestingClassRepository* const testingClasses =
         session->testingClassRepository();
     ClassRepository* const classes = session->classRepository();
@@ -285,13 +285,13 @@ bool seedRegularTestingPreferenceClassesInDatabase(
     SeedIds* ids
     )
 {
-    if (!ids || !services.databaseSession())
+    if (!ids || !services.workspaceStore())
     {
         return false;
     }
 
     ClassRepository* const classes =
-        services.databaseSession()->classRepository();
+        services.workspaceStore()->classRepository();
     if (!classes)
     {
         return false;
@@ -323,7 +323,7 @@ bool seedRegularTestingPreferenceClassesInDatabase(
         *classId = *created;
 
         const QSqlDatabase database =
-            services.databaseSession()->database();
+            services.workspaceStore()->database();
         return executeSql(
                    database,
                    QStringLiteral(
@@ -394,8 +394,8 @@ public:
         if (withDatabase)
         {
             databaseReady = window->services()
-                && window->services()->databaseSession()
-                && window->services()->databaseSession()->isOpen();
+                && window->services()->workspaceStore()
+                && window->services()->workspaceStore()->isOpen();
         }
     }
 
@@ -561,8 +561,8 @@ public:
 
     int scheduleReadCount() const
     {
-        DatabaseSession* const session = window && window->services()
-            ? window->services()->databaseSession()
+        WorkspaceStore* const session = window && window->services()
+            ? window->services()->workspaceStore()
             : nullptr;
         TestingBlockRepository* const repository = session
             ? session->testingBlockRepository()
@@ -750,8 +750,8 @@ confirmationCancelLeavesRowsAndViewsUntouched()
              qPrintable(fixture.scheduleViewError));
     QCOMPARE(fixture.scheduleReadCount() >= 2, true);
     const int readsBefore = fixture.scheduleReadCount();
-    DatabaseSession* const session =
-        fixture.window->services()->databaseSession();
+    WorkspaceStore* const session =
+        fixture.window->services()->workspaceStore();
     const QStringList expectedRows{
         QStringLiteral("Monday|16:00|Oral Room|-1"),
         QStringLiteral("Tuesday|16:00||%1").arg(fixture.ids.firstTestingClass),
@@ -784,8 +784,8 @@ writeFailureWarnsAndPreservesRowsWithoutRefresh()
     QVERIFY(fixture.seed());
     QVERIFY2(fixture.prepareScheduleViews(),
              qPrintable(fixture.scheduleViewError));
-    DatabaseSession* const session =
-        fixture.window->services()->databaseSession();
+    WorkspaceStore* const session =
+        fixture.window->services()->workspaceStore();
     const QStringList expectedRows{
         QStringLiteral("Monday|16:00|Oral Room|-1"),
         QStringLiteral("Tuesday|16:00||%1").arg(fixture.ids.firstTestingClass),
@@ -837,8 +837,8 @@ successClearsLayoutPreservesSavedDataAndRefreshesViews()
     QVERIFY(fixture.standaloneSchedule);
     QVERIFY(fixture.workspaceSchedule->runtimeMetrics().modelEntryCount > 0);
     QVERIFY(fixture.standaloneSchedule->runtimeMetrics().modelEntryCount > 0);
-    DatabaseSession* const session =
-        fixture.window->services()->databaseSession();
+    WorkspaceStore* const session =
+        fixture.window->services()->workspaceStore();
     QSqlDatabase database = session->database();
     QCOMPARE(scalar(database,
                     QStringLiteral("SELECT COUNT(*) FROM schedule_testing_blocks")),
@@ -1113,7 +1113,7 @@ schedulePreferenceSaveFailureRestoresControlsAndCanRetry()
         controlsInitiallyMatched = controlsMatch(expectedControlStates);
 
         QSqlDatabase database =
-            fixture.window->services()->databaseSession()->database();
+            fixture.window->services()->workspaceStore()->database();
         const bool failureInjected = executeSql(
             database,
             QStringLiteral(R"(
@@ -1209,7 +1209,7 @@ schedulePreferenceLoadFailureDisablesControlsAndBlocksWrites()
     QVERIFY(fixture.window->services());
 
     auto* const services = fixture.window->services();
-    auto* const session = services->databaseSession();
+    auto* const session = services->workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
