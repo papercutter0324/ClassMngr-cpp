@@ -15,10 +15,10 @@
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   its receipt records implementation tip
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1402 (Evaluation default policy) current. F1401
-  (Class-selection reset policy) is accepted at
-  `d5b01e1eff11fa8c0f076db348e8c523a57a6d78`; focused verification passed.
-  The current batch tracker retains the ordered list, with 15 prioritized
+  and Batch 5 is active with F1403 (Calendar event range projection; residual
+  projection only) current. F1402 (Evaluation default policy) is accepted at
+  `b2c1cf00190871f5913c7b10c685b09156f49cd9`; focused verification passed.
+  The current batch tracker retains the ordered list, with 14 prioritized
   candidates remaining.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI
   limitations, baseline failures, attribution, and coverage notes remain in

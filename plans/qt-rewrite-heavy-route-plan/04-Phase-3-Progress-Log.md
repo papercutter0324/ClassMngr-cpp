@@ -2151,3 +2151,44 @@ prior ClassesPage timeout remains unassessed. F1401 is accepted; F1402
 remaining slices are complete.
 
 Commit: `d5b01e1eff11fa8c0f076db348e8c523a57a6d78`.
+
+## F1402 — Evaluation default policy (Batch 5 candidate 5 of 19) — 2026-10-24
+
+The evaluation-default adapter and dedicated Platform fixture now use
+`WorkspaceStore`. The exact key is
+`classes_navigation_evaluation_default_policy`; stored values remain `all`
+and `current_or_previous_term`. A missing setting returns `All` and attempts
+to persist `all`; failure of that default write is ignored. Valid but
+unsupported stored values fall back to `all` without rewrite; recognized
+values are trimmed and lowercased. An unavailable store/repository returns
+successful `All`, while a repository read failure returns nonrecoverable
+`Technical`. Invalid-enum saves are validated before store availability and
+return nonrecoverable `InvalidInput`; store, repository, and write save
+failures remain nonrecoverable `Technical`. The Phase 2 mapping omitted these
+distinctions; current source and tests remain authoritative. Assertions are
+unchanged.
+
+An incremental build in `build/macos-clang-debug` passed for
+`ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`,
+`ClassMngrClassesPageTests`,
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests`, and
+`ClassMngrEvaluationDefaultSelectionIntegrationTests`. CTest #489,
+`ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`,
+and CTest #168,
+`ClassMngrEvaluationDefaultSelectionIntegrationTests`, passed 2/2. The direct
+ClassesPage slot `evaluationDefaultPolicyDefaultsToAllAndPersists` passed 3/3
+including init/cleanup. MainWindow slots
+`evaluationDefaultPolicyReadFailureShowsWarningAndDisablesControls`,
+`evaluationDefaultPolicyFailureRestoresSelectionAndSuccessfulRetryDoesNotRefresh`,
+and
+`evaluationDefaultPolicyReadFailureAfterSaveFailureRestoresLastKnownSelection`
+passed 5/5 including init/cleanup using CTest #113's temp/offscreen
+environment. UI runs emitted font, missing QML/icon, offscreen size-hint, and
+repeated `myInfo/campus` parameter-count warnings; assertions passed.
+`git diff --check` passed. Full ClassesPage and MainWindow CTests, the full
+suite, and cross-platform builds did not run; the prior ClassesPage timeout
+remains unassessed. F1402 is accepted; F1403 (Calendar event range projection,
+residual projection only) is current, with prior F1341 operations excluded.
+Batch 5 remains unpushed until its remaining slices are complete.
+
+Commit: `b2c1cf00190871f5913c7b10c685b09156f49cd9`.
