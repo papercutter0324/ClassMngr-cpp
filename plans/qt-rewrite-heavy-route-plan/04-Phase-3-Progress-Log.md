@@ -1682,3 +1682,29 @@ registered checks, and three selected serial CTests passed (3/3):
 `ClassMngrRosterTemplatePrintServiceTests`. `git diff --check` passed. No full
 suite or cross-platform build ran. F1382 is accepted; F1383 (Roster print
 class-info read) is current.
+
+Commit: `2557098a578ee255aa791d989046de3d482cf6b9`.
+
+## F1383 — Roster print class-info read (Batch 4 candidate 6 of 20) — 2026-10-24
+
+The production Roster print class-info port,
+`src/next/platform/application_services_roster_print_class_info_read_port.h`,
+now uses `WorkspaceStore` for open-state and repository lookup. Direct
+persistence accesses in its Platform fixture,
+`tests/next_platform_application_services_roster_print_class_info_read_port_tests.cpp`,
+migrated; all assertions are unchanged.
+
+Built `ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesRosterPrintClassInfoReadPortTests`,
+and `ClassMngrRosterTemplatePrintServiceTests`. The application-query CTest
+`ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests` and print-service
+CTest `ClassMngrRosterTemplatePrintServiceTests` passed. The Platform CTest
+`NextPlatformApplicationServicesRosterPrintClassInfoReadPort` reported 8
+passed and 1 failed, matching the clean F1382 baseline at commit
+`2557098a578ee255aa791d989046de3d482cf6b9`:
+`deletedParentSuppressesTypedResultButLegacyReadKeepsOrphanData()` still
+expects `E5`, but the detailed record is empty at line 270. Baseline and
+post-change outputs match; this pre-existing repository/test mismatch remains
+unresolved and was not altered or hidden. `git diff --check` passed. No full
+suite or cross-platform build ran. F1383 is accepted; F1384
+(Speaking-evaluation roster-name read) is current.

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/application/roster_print_class_info_read_port.h"
 
@@ -43,9 +43,9 @@ public:
                 ));
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return Application::RosterPrintClassInfoReadResult::failure(
                 error(
@@ -56,7 +56,7 @@ public:
         }
 
         ClassInfoRepository* const classRepository =
-            session->classInfoRepository();
+            store->classInfoRepository();
         if (!classRepository)
         {
             return Application::RosterPrintClassInfoReadResult::failure(error(

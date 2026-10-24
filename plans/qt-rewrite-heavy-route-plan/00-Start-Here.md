@@ -15,8 +15,9 @@
   began. Batch 4 discovery is complete
   and Batch 4 is active: F1378 (My Classes teacher-profile batch read), F1379
   (My Classes teacher-display-name batch read), F1380 (Roster snapshot read),
-  F1381 (Roster column-name batch read), and F1382 (Roster template-print
-  source read) are accepted; F1383 (Roster print class-info read) is current.
+  F1381 (Roster column-name batch read), F1382 (Roster template-print source
+  read), and F1383 (Roster print class-info read) are accepted; F1384
+  (Speaking-evaluation roster-name read) is current.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI
   limitations, baseline failures, attribution, and coverage notes remain in
   the Phase 3 progress log. The [Phase 3

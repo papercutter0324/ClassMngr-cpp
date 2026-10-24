@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/application/roster_print_class_info_read_query.h"
@@ -98,14 +98,14 @@ mapsOnlyPrintFieldsAndRegularScheduleFromActiveSession()
     teacher.zoomId = QStringLiteral("zoom-id");
     teacher.zoomPassword = QStringLiteral("zoom-secret");
     const auto teacherId =
-        services.databaseSession()->teacherRepository()->saveTeacher(teacher);
+        services.workspaceStore()->teacherRepository()->saveTeacher(teacher);
     QVERIFY(teacherId);
 
     const auto createdClass = services.classService()->create(
         QStringLiteral("Roster print")
         );
     QVERIFY(createdClass);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         classInfo(*createdClass, *teacherId)
         ));
 
@@ -133,7 +133,7 @@ mapsOnlyPrintFieldsAndRegularScheduleFromActiveSession()
     QCOMPARE(snapshot.regularSchedule[1].startTime, std::u16string(u"6:00 PM"));
     QCOMPARE(snapshot.regularSchedule[1].endTime, std::u16string(u"6:50 PM"));
 
-    QSqlQuery dropIntensiveTimes(services.databaseSession()->database());
+    QSqlQuery dropIntensiveTimes(services.workspaceStore()->database());
     QVERIFY(dropIntensiveTimes.exec(QStringLiteral(
         "DROP TABLE class_intensive_times"
         )));
@@ -176,11 +176,11 @@ absentClassInfoRowReturnsBlankMetadataAndRegularSchedule()
         QStringLiteral("No class-info row")
         );
     QVERIFY(createdClass);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         classInfo(*createdClass, -1)
         ));
 
-    QSqlQuery deleteClassInfo(services.databaseSession()->database());
+    QSqlQuery deleteClassInfo(services.workspaceStore()->database());
     deleteClassInfo.prepare(QStringLiteral(
         "DELETE FROM class_info WHERE class_id = ?"
         ));
@@ -233,25 +233,25 @@ deletedParentSuppressesTypedResultButLegacyReadKeepsOrphanData()
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("Orphan Teacher");
     const auto teacherId =
-        services.databaseSession()->teacherRepository()->saveTeacher(teacher);
+        services.workspaceStore()->teacherRepository()->saveTeacher(teacher);
     QVERIFY(teacherId);
 
     const auto createdClass = services.classService()->create(
         QStringLiteral("Deleted roster print class")
         );
     QVERIFY(createdClass);
-    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+    QVERIFY(services.workspaceStore()->classInfoRepository()->saveClassInfo(
         classInfo(*createdClass, *teacherId)
         ));
 
-    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QSqlQuery disableForeignKeys(services.workspaceStore()->database());
     QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
-    QSqlQuery deleteParent(services.databaseSession()->database());
+    QSqlQuery deleteParent(services.workspaceStore()->database());
     deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id = ?"));
     deleteParent.addBindValue(*createdClass);
     QVERIFY(deleteParent.exec());
     QCOMPARE(deleteParent.numRowsAffected(), 1);
-    QSqlQuery enableForeignKeys(services.databaseSession()->database());
+    QSqlQuery enableForeignKeys(services.workspaceStore()->database());
     QVERIFY(enableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=ON")));
 
     Platform::ApplicationServicesRosterPrintClassInfoReadPort port(&services);
@@ -262,7 +262,7 @@ deletedParentSuppressesTypedResultButLegacyReadKeepsOrphanData()
     QVERIFY(typedResult.error().recoverable);
 
     ClassInfoRepository* const repository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     const auto detailed =
         repository->loadRosterPrintClassInfoRecordDetailed(*createdClass);
     QVERIFY(detailed);
@@ -295,7 +295,7 @@ metadataReadFailureRemainsTechnical()
         QStringLiteral("Metadata read failure")
         );
     QVERIFY(createdClass);
-    QSqlQuery dropClassInfo(services.databaseSession()->database());
+    QSqlQuery dropClassInfo(services.workspaceStore()->database());
     QVERIFY(dropClassInfo.exec(QStringLiteral("DROP TABLE class_info")));
 
     Platform::ApplicationServicesRosterPrintClassInfoReadPort port(&services);
@@ -319,7 +319,7 @@ repositoryReadFailurePropagates()
         );
     QVERIFY(createdClass);
 
-    QSqlQuery dropTimes(services.databaseSession()->database());
+    QSqlQuery dropTimes(services.workspaceStore()->database());
     QVERIFY(dropTimes.exec(QStringLiteral("DROP TABLE class_times")));
 
     Platform::ApplicationServicesRosterPrintClassInfoReadPort port(&services);
