@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/native_english_teacher_repository.h"
 #include "domain/models/native_english_teacher.h"
 #include "next/domain/domain_types.h"
@@ -82,7 +82,7 @@ bool seedDirectory(ApplicationServices& services)
             QStringLiteral("010-9999-0002"), QStringLiteral("a@example.test"),
             QStringLiteral("02-03"), QStringLiteral("Australia"))
     };
-    const Status saved = services.databaseSession()
+    const Status saved = services.workspaceStore()
         ->nativeEnglishTeacherRepository()->saveDirectory(teachers, {});
     return static_cast<bool>(saved);
 }
@@ -111,7 +111,7 @@ readsAllFieldsInRepositoryOrderFromTheActiveSession()
     QVERIFY(services.openDatabase(databasePath(directory)));
     QVERIFY(seedDirectory(services));
 
-    const auto persisted = services.databaseSession()
+    const auto persisted = services.workspaceStore()
         ->nativeEnglishTeacherRepository()->getAll();
     QVERIFY(persisted);
     Application::NativeEnglishTeacherDirectorySnapshot expected;
@@ -154,7 +154,7 @@ distinguishesUnavailableSessionFromRepositoryFailureWithoutFallback()
     QVERIFY(services.openDatabase(databasePath(directory)));
     QVERIFY(seedDirectory(services));
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE native_english_teachers")),
         qPrintable(query.lastError().text()));
     const auto repositoryFailure = port.readNativeEnglishTeacherDirectory();
@@ -178,7 +178,7 @@ rejectsUnrepresentableIdAsTechnicalFailureWithoutChangingStoredRow()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
 
-    QSqlQuery insert(services.databaseSession()->database());
+    QSqlQuery insert(services.workspaceStore()->database());
     QVERIFY2(insert.exec(QStringLiteral(R"(
         INSERT INTO native_english_teachers
             (id, name, position, phone_number, birthday, nationality, email)
@@ -193,7 +193,7 @@ rejectsUnrepresentableIdAsTechnicalFailureWithoutChangingStoredRow()
         FROM native_english_teachers
         WHERE id=2147483648
     )");
-    QSqlQuery before(services.databaseSession()->database());
+    QSqlQuery before(services.workspaceStore()->database());
     QVERIFY2(before.exec(storedRowSql), qPrintable(before.lastError().text()));
     QVERIFY(before.next());
     QCOMPARE(before.value(0).toString(), QStringLiteral("integer"));
@@ -218,7 +218,7 @@ rejectsUnrepresentableIdAsTechnicalFailureWithoutChangingStoredRow()
     QVERIFY(!result.error().recoverable);
     QVERIFY(!result.error().message.empty());
 
-    QSqlQuery after(services.databaseSession()->database());
+    QSqlQuery after(services.workspaceStore()->database());
     QVERIFY2(after.exec(storedRowSql), qPrintable(after.lastError().text()));
     QVERIFY(after.next());
     const QVariantList storedRowAfter{
@@ -238,7 +238,7 @@ rejectsTerminalCursorErrorWithoutReturningPartialDirectory()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QSqlQuery setup(database);
     QVERIFY2(setup.exec(QStringLiteral("DROP TABLE native_english_teachers")),
         qPrintable(setup.lastError().text()));
@@ -337,7 +337,7 @@ rejectsTerminalCursorErrorWithoutReturningPartialDirectory()
     QVERIFY(!cursorError.isEmpty());
     QVERIFY(cursorError.contains(QStringLiteral("malformed"), Qt::CaseInsensitive));
 
-    const auto directResult = services.databaseSession()
+    const auto directResult = services.workspaceStore()
         ->nativeEnglishTeacherRepository()->getAll();
     QVERIFY(!directResult);
     QVERIFY(directResult.error().contains(

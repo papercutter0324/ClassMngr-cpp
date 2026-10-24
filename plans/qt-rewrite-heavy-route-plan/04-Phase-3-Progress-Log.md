@@ -1773,3 +1773,26 @@ passed (4/4): #352 `ClassMngrNextApplicationGsTeamDirectorySaveTests`, #420
 `ClassMngrStaffDirectoryGsTeamSaveParityTests`. `git diff --check` passed. No
 full suite or cross-platform build ran. F1386 is accepted; F1387 (Native
 English teacher directory read) is current.
+
+Commit: `24247bd4e0299ffe638affdb23abf214fdad453b`.
+
+## F1387 — Native English teacher directory read (Batch 4 candidate 10 of 20) — 2026-10-24
+
+The production Native English teacher directory read port,
+`src/next/platform/application_services_native_english_teacher_directory_read_port.h`,
+and its dedicated Platform fixture,
+`tests/next_platform_application_services_native_english_teacher_directory_read_port_tests.cpp`,
+now use `WorkspaceStore`. Assertions are unchanged, including intentional
+rejection of stored ID `2147483648`. The broad UI fixture was left unchanged.
+
+Built `ClassMngrNextApplicationNativeEnglishTeacherDirectoryReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests`,
+`ClassMngrStaffDirectoryNativeEnglishReadTests`, and
+`ClassMngrStaffDirectoryNativeEnglishReadParityTests`. Four selected serial
+CTests passed (4/4): #348
+`ClassMngrNextApplicationNativeEnglishTeacherDirectoryReadQueryTests`, #416
+`ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests`,
+#127 `ClassMngrStaffDirectoryNativeEnglishReadTests`, and #128
+`ClassMngrStaffDirectoryNativeEnglishReadParityTests`. `git diff --check`
+passed. No full suite or cross-platform build ran. F1387 is accepted; F1388
+(Native English teacher directory save) is current.
