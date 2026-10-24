@@ -99,6 +99,7 @@ set(CLASSMNGR_DATA_SOURCES
     "src/data/repositories/native_english_teacher_repository.h"
     "src/data/repositories/roster_repository.cpp"
     "src/data/repositories/roster_repository.h"
+    "src/data/repositories/repository_error.h"
     "src/data/repositories/schedule_import_repository.cpp"
     "src/data/repositories/schedule_import_repository.h"
     "src/data/repositories/settings_repository.cpp"

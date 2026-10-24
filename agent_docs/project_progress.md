@@ -1,8 +1,8 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 3 — Persistence Rewrite.
-Current deployment: `phase3_persistence_resume_20261024`. Route: Heavy; this
-continuation is complete. Batch 9 (F1419–F1427) was pushed and verified at
+Current deployment: `phase3_structured_errors_resume_20261024`. Route: Heavy;
+this continuation is active. Batch 9 (F1419–F1427) was pushed and verified at
 `7b4eaaf809ecdc17e4e14fae555b157c361c378d`. Batch 10 (F1428) is committed
 and pushed at `01670f53d7924a5e68ce9288effe3a4bf12b3403`. Batch 11
 (F1429–F1432) is pushed at `ee6efe495d25136cf70297183af1aeaf5ae8d51c`.
@@ -37,9 +37,17 @@ FileController Save has no transaction to commit. The earlier restricted
 F1349 run aborted in Qt before import; the normal-access pass resolves that test
 gap without a code workaround. Independent final-gate reviews recommend pass:
 no v2 callsite reaches DataService or SQL internals, and the supported v6 file
-paths have focused implementation/test evidence. Phase 3 is Complete. The
-recorded limits include no full suite or Windows/Linux build and source-level
-(not compile-time) boundary enforcement.
+paths have focused implementation/test evidence, but a fresh contract audit
+reopened Phase 3. Most repository APIs still return `std::expected<..., QString>`
+or bool without stable error categories, contrary to §3.3's structured-error
+deliverable. Batch 22 discovery accepted 20 ordered error-contract slices.
+F1444's implementation and independent verification passed; its slice commit
+is pending. F1445's WorkspaceStore and database error boundary is under
+read-only scope review. Batch 23 discovery is due when F1462 starts. Two more
+surfaces (DocumentCatalog and DataService compatibility conversion) are
+reserved for that discovery. The prior completion status was premature;
+Phase 3 remains In Progress until the structured-error deliverable and full
+exit gate are fulfilled.
 
 ## Goal
 
@@ -88,18 +96,22 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (Phase 3 complete)
+### Current checkpoint - 2026-10-24 (Phase 3 reopened; F1444 verified)
 
-Phase 3 is Complete on the mandatory Heavy route. Batch 20 closeout docs and
-F1443 are pushed and verified at `7ae16b9620cbd02d9f4a4187c45ce9f296760987`.
-F1442 passed verification-only with no code changes; F1443's independent
-lifecycle CTest passed 1/1 (71 Qt cases). Batch 21 discovery completed with
-`No other slices were found.` Independent final-gate reviews passed. Existing
-schema-v0–v5 profiles remain unsupported; Windows/Linux and the full suite
-were not run; and source-level persistence-boundary review found no violating
-v2 callsite while compile-time enforcement remains absent. See the
-[Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
-for the complete evidence and limits.
+Phase 3 is reopened on the mandatory Heavy route after a fresh audit found
+that §3.3's structured-error requirement is not fully met. `Status` and
+`Result<T>` expose `QString` errors, and many public repository APIs do not
+preserve stable categories. A data-owned error type with stable code and the
+existing diagnostic is accepted as the target contract. Batch 22 discovery
+and bounded review produced a 20-candidate ordered queue; F1444 (the shared
+error contract and SQL mapping) is implemented and independently verified,
+with the slice commit pending. F1445's WorkspaceStore and database error
+boundary is under read-only scope review. Batch 23 discovery is due at F1462,
+the second-to-last Batch 22 candidate. `DocumentCatalog` and `DataService`
+compatibility conversion are recorded for that discovery. The earlier file
+compatibility and v2 source-boundary reviews remain valid; see the [Phase 3
+plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
+and [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
 
 Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
 `origin/Qt-Rewrite` at `7b4eaaf809ecdc17e4e14fae555b157c361c378d`; the remote
@@ -285,8 +297,8 @@ collection work remains with Phase 7D/7H. Classes/Speaking Evaluation
 navigation detail lifetime is deferred to Phases 7D/7H because it requires
 page/model changes; Calendar parsed-event consumer lifetime remains deferred
 to Phase 7F. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
-records the live state and acceptance boundaries. Phase 3's exit-gate review
-passed and the completed batch is pushed; no active batch or candidate remains.
+records the live state and acceptance boundaries. The prior exit-gate audit
+reopened Phase 3 on the unmet structured-error deliverable; Batch 22 is active.
 
 Phase 2 remains complete with its separate audit limitations and F629
 requalification recorded in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)

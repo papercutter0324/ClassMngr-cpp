@@ -50,6 +50,11 @@ ExecutionError errorFor(
     };
 }
 
+RepositoryError repositoryErrorFor(const ExecutionError& error)
+{
+    return RepositoryError{error.userMessage()};
+}
+
 ExecutionResult execute(
     QSqlQuery& query,
     const QString& action

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "data/repositories/repository_error.h"
+
 #include <QSqlError>
 #include <QString>
 
@@ -30,6 +32,13 @@ using ExecutionResult = std::expected<void, ExecutionError>;
     const QString& action,
     const QString& queryText = {},
     const QString& recordIdentity = {}
+    );
+
+// SQL failures are technical unless repository evidence supports a more
+// specific category. Keep the existing diagnostic formatter as the source of
+// the repository error's diagnostic text.
+[[nodiscard]] RepositoryError repositoryErrorFor(
+    const ExecutionError& error
     );
 
 [[nodiscard]] ExecutionResult execute(

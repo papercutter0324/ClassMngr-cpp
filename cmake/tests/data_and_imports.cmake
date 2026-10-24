@@ -119,6 +119,33 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
         COMMAND ClassMngrIntensiveSlotStateRepositoryTests
     )
 
+    qt_add_executable(ClassMngrRepositoryErrorContractTests
+        tests/repository_error_contract_tests.cpp
+        src/data/database/sql_query_utils.cpp
+    )
+
+    target_compile_features(ClassMngrRepositoryErrorContractTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrRepositoryErrorContractTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrRepositoryErrorContractTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Sql
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrRepositoryErrorContractTests
+        COMMAND ClassMngrRepositoryErrorContractTests
+    )
+
     qt_add_executable(ClassMngrTestingBlockRepositoryTests
         tests/testing_block_repository_tests.cpp
         src/data/database/database_transaction.cpp

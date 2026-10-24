@@ -32,16 +32,18 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: Complete
+- Status: In progress
 - Default route: Heavy
 - Depends on: Phases 1 and 2
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Phase 3's exit gate passed independent review, and Batch 20's
-  push was verified at `7ae16b9620cbd02d9f4a4187c45ce9f296760987`. F1442's
-  verification-only `wizardSuccessTranscript` slot passed under normal macOS
-  service access; F1443 is accepted. Batch 21 found no other slices. The
+- Current note: The §3.3 structured-error audit reopened Phase 3's exit gate.
+  F1444's shared repository error contract is implemented and independently
+  verified; its slice commit is pending. F1445 scope review is underway, with
+  no implementation started. The prior gate pass remains historical; evidence
+  and the accepted queue are in the [progress log](04-Phase-3-Progress-Log.md)
+  and [current batch tracker](Current-Slice-Batches.md). The
   [DataService migration
   map](../../docs/qt-rewrite/data-service-migration-map.md) records F1420's
   deliverable, including that `DataService::save()` has no ordinary production
@@ -62,19 +64,16 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — Phase 3 closeout — 2026-10-24
+## Latest Progress Update — F1444 shared repository error contract — 2026-10-24
 
-F1442's verification-only F1349 `wizardSuccessTranscript` slot passed under
-normal macOS service access, and F1443 is accepted and committed at
-`4463eda2640018c2307b093ed0db97b99b47c43d`. Batch 20 was pushed and verified
-at `7ae16b9620cbd02d9f4a4187c45ce9f296760987`. Batch 21 discovery completed:
-No other slices were found. Independent exit-gate review passed, so Phase 3 is
-Complete. The audit was macOS-focused, did not include cross-platform builds,
-and simulated crash artifacts instead of producing them through process
-termination; `WorkspaceStore` also publicly exposes `QSqlDatabase`, making
-boundary enforcement source-reviewed rather than compile-time. See the
+F1444 implements the shared typed error contract and SQL diagnostic mapping;
+the executor and independent Tester passed focused macOS Debug verification.
+Its slice commit is pending. F1445 scope review is underway; the exit gate
+remains open until the accepted queue is complete and verified. Exact contract,
+verification limits, and sequencing are in the
 [progress log](04-Phase-3-Progress-Log.md) and [current batch
-tracker](Current-Slice-Batches.md); there is no active batch or next candidate.
+tracker](Current-Slice-Batches.md). The prior gate review and its limitations
+remain recorded in the progress log.
 
 ## Objective
 

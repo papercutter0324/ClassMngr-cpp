@@ -3491,7 +3491,7 @@ was accepted beyond F1441–F1443. No other slices were found. The F1418
 `void saveDatabase()` disposition is unchanged. Batch 20 implementation and
 closeout docs are complete; push is pending.
 
-## Final exit-gate review and Phase 3 completion — 2026-10-24
+## Historical final exit-gate review and Phase 3 completion — 2026-10-24
 
 Two independent final-gate Explorers recommended pass, and the main agent
 accepted the Phase 3 gate on those reports. File-compatibility review retained
@@ -3506,3 +3506,58 @@ candidate was identified. F1443 is committed at
 at `7ae16b9620cbd02d9f4a4187c45ce9f296760987`. Batch 21 found no other
 slices. With the accepted gate review and verified push, Phase 3 is Complete;
 there is no active batch or next candidate.
+
+## §3.3 structured-error audit — gate reopened — 2026-10-24
+
+A fresh completion audit against clean checkout
+`ae5e0a1ab18e2f9a402295c9df9da1fef3bcc38c` found that Phase 3 §3.3 explicitly
+requires repositories to “Report structured errors.” The exhaustive public
+API inventory found that most repository methods expose `QString` diagnostics
+without stable error categories or payloads; some selected methods are
+already typed. The prior exit-gate pass therefore did not satisfy this
+explicit deliverable, and Phase 3 has returned to In Progress with the gate
+open. Its earlier completion entry above records the historical gate review
+and verified Batch 20 push.
+
+The main accepted the data-owned contract as a stable error code plus the
+existing diagnostic, with DataService serving as the legacy conversion edge.
+`std::expected` plus a string alone does not satisfy this contract. At audit
+close, F1444 was next; its implementation and verification are recorded below.
+
+Two independent scans and bounded review completed under
+`PHASE3-BATCH22-DISCOVERY-20261024`: error-surface scan
+`PHASE3-BATCH22-DISCOVERY-ERROR-SURFACES-20261024-EXP-53`, consumer scan
+`PHASE3-BATCH22-DISCOVERY-CONSUMERS-20261024-EXP-54`, and review
+`PHASE3-BATCH22-ERROR-CANDIDATE-REVIEW-20261024-INV-56`. Review accepted 20
+ordered candidates for Batch 22. The full queue is in
+[Current-Slice-Batches.md](Current-Slice-Batches.md). The independent API scan
+also found likely eligible DocumentCatalog and DataService compatibility
+conversion surfaces beyond the 20-candidate limit; discover these and any
+others when Batch 23 discovery becomes due, at the start of F1462 (candidate
+19). No unrelated Phase 3 candidate was identified.
+
+The F1418 disposition remains unchanged: retain the void
+`ApplicationServices::saveDatabase()` wrapper because v2 repositories own
+and check their local transactions, no production caller retains a transaction
+for FileController Save, and Qt's no-active-transaction result would falsely
+fail normal Save. At F1445, type only `WorkspaceStore` commit; revisit the
+wrapper only if production transaction ownership changes.
+
+## F1444 — Shared repository error contract — 2026-10-24
+
+Added `RepositoryErrorCode` with distinct explicit values `InvalidInput=1`,
+`NotFound=2`, `Conflict=3`, `Validation=4`, and `Technical=5`, plus
+`RepositoryError`, `RepositoryResult<T>`, and `RepositoryStatus`. Explicit
+conversion uses `toLegacyDiagnostic`; diagnostic-only fallback maps to
+`Technical`, and SQL mapping preserves `ExecutionError::userMessage()`
+verbatim. Public repository API signatures and DataService are unchanged.
+
+Executor verification built `ClassMngrRepositoryErrorContractTests` and
+`ClassMngrData` in the existing macOS Debug tree; focused CTest passed 1/1 and
+direct QtTest passed 5 cases. Independent verification used
+`build/macos-clang-debug` (Ninja, Debug, Qt 6.12.0): the focused target rebuild
+had no work, focused CTest passed 1/1, and verbose QtTest passed 5 total cases
+(3 slots plus setup/cleanup; 0 failures or skips). `git diff --check` passed.
+No full suite or other-platform build was run. F1444 is ready for commit; the
+slice commit is pending. F1445 scope review is underway, with no implementation
+started.
