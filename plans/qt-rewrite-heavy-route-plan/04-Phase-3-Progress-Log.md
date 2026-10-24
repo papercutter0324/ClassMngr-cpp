@@ -1019,3 +1019,25 @@ passed. The failures were
 `outputAvailabilityFollowsRosterTabAndLoadedClass`. Attribution is unresolved;
 no baseline ran. `git diff --check` passed. No full suite or cross-platform
 build ran.
+
+## F1360 — Testing Class delete — 2026-10-23
+
+The delete Platform port and `TestingClassesPage::deleteCurrentClass()`
+clean-state `NotFound` guard now use `workspaceStore()`. Repository detailed
+delete transaction/API, Application use case, confirmation, dirty-draft
+handling, error mappings, `NotFound` reconciliation, selection behavior, and
+signal emission are unchanged. Dedicated Platform fixture access, the ten F147
+delete page cases, and two F147 cancel-failure parity slots migrated to
+`WorkspaceStore`; assertions remain. F145/F146 parity fixtures and unrelated
+session references were unchanged. Repository code and tests were unchanged.
+
+`ClassMngr` and six test targets built incrementally in
+`build/macos-clang-debug`. Six exact serial CTests passed:
+`ClassMngrNextApplicationTestingClassDeleteUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesTestingClassDeletePortTests`,
+`ClassMngrTestingClassesPageF147DeleteTests`,
+`ClassMngrTestingClassesPageDeleteParityTests`,
+`ClassMngrTestingClassesPageCancelFailureParityTests`, and
+`ClassMngrTestingClassRepositoryTests`. `git diff --check` passed. The broad
+page CTest and full suite were not run; no cross-platform build ran. F1360 is
+accepted.

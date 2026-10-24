@@ -189,7 +189,7 @@ deletesThroughActiveSessionRepositoryAndPreservesSibling()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     TestingClassRepository* const repository =
         session->testingClassRepository();
@@ -289,7 +289,7 @@ mapsTypedMissingAndRepositoryErrorOutcomes()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     auto* const repository = session->testingClassRepository();
     QVERIFY(repository);

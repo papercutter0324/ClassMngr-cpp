@@ -3910,7 +3910,7 @@ testingClassDeletionCancelKeepsDraftAndDoesNotCallPort()
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClass stored = testingClass(QStringLiteral("Delete Target"));
     stored.teacherId = -1;
-    const auto classId = services.databaseSession()
+    const auto classId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(stored);
     QVERIFY(classId);
 
@@ -3969,7 +3969,7 @@ testingClassDeletionCancelKeepsDraftAndDoesNotCallPort()
     QCOMPARE(nameEdit->text(), QStringLiteral("Uncommitted Draft"));
     QVERIFY(page.hasUnsavedChanges());
     QVERIFY(prompts.messages.isEmpty());
-    const auto stillStored = services.databaseSession()
+    const auto stillStored = services.workspaceStore()
         ->testingClassRepository()->loadTestingClass(*classId);
     QVERIFY(stillStored);
     QCOMPARE(stillStored->name, QStringLiteral("Delete Target"));
@@ -3984,7 +3984,7 @@ testingClassDeletionFailureRetainsDraftAndDoesNotSave()
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClass stored = testingClass(QStringLiteral("Delete Target"));
     stored.teacherId = -1;
-    const auto classId = services.databaseSession()
+    const auto classId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(stored);
     QVERIFY(classId);
 
@@ -4057,7 +4057,7 @@ testingClassDeletionFailureRetainsDraftAndDoesNotSave()
     QCOMPARE(nameEdit->text(), QStringLiteral("Draft Must Remain"));
     QVERIFY(page.hasUnsavedChanges());
     QCOMPARE(changedSpy.size(), 0);
-    const auto unchanged = services.databaseSession()
+    const auto unchanged = services.workspaceStore()
         ->testingClassRepository()->loadTestingClass(*classId);
     QVERIFY(unchanged);
     QCOMPARE(unchanged->name, QStringLiteral("Delete Target"));
@@ -4081,14 +4081,14 @@ testingClassDeletionSuccessFallbackReadFailureKeepsNewDraft()
             QStringLiteral("Alpha Delete Target")
             );
         target.teacherId = -1;
-        const auto targetId = services.databaseSession()
+        const auto targetId = services.workspaceStore()
             ->testingClassRepository()->createTestingClass(target);
         QVERIFY(targetId);
         TestingClass sibling = testingClass(
             QStringLiteral("Beta Sibling")
             );
         sibling.teacherId = -1;
-        const auto siblingId = services.databaseSession()
+        const auto siblingId = services.workspaceStore()
             ->testingClassRepository()->createTestingClass(sibling);
         QVERIFY(siblingId);
 
@@ -4213,11 +4213,11 @@ testingClassDeletionSuccessSelectsSiblingAndEmitsOnce()
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClass target = testingClass(QStringLiteral("Alpha Delete Target"));
     target.teacherId = -1;
-    const auto targetId = services.databaseSession()
+    const auto targetId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(target);
     QVERIFY(targetId);
     RosterRepository* const rosterRepository =
-        services.databaseSession()->rosterRepository();
+        services.workspaceStore()->rosterRepository();
     QVERIFY(rosterRepository);
     QVERIFY(rosterRepository->saveRoster(
         *targetId,
@@ -4225,7 +4225,7 @@ testingClassDeletionSuccessSelectsSiblingAndEmitsOnce()
         ).has_value());
     TestingClass sibling = testingClass(QStringLiteral("Beta Sibling"));
     sibling.teacherId = -1;
-    const auto siblingId = services.databaseSession()
+    const auto siblingId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(sibling);
     QVERIFY(siblingId);
 
@@ -4321,11 +4321,11 @@ testingClassDeletionSuccessSelectsSiblingAndEmitsOnce()
     QCOMPARE(nameEdit->text(), QStringLiteral("Beta Sibling"));
     QVERIFY(!page.hasUnsavedChanges());
     QVERIFY(!rosterEditor->hasUnsavedChanges());
-    const auto deleted = services.databaseSession()
+    const auto deleted = services.workspaceStore()
         ->testingClassRepository()->isTestingClass(*targetId);
     QVERIFY(deleted);
     QVERIFY(!*deleted);
-    const auto preserved = services.databaseSession()
+    const auto preserved = services.workspaceStore()
         ->testingClassRepository()->loadTestingClass(*siblingId);
     QVERIFY(preserved);
     QCOMPARE(preserved->name, QStringLiteral("Beta Sibling"));
@@ -4340,7 +4340,7 @@ testingClassDeletionSuccessWithNoSiblingStartsNewDraft()
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClass target = testingClass(QStringLiteral("Only Testing Class"));
     target.teacherId = -1;
-    const auto targetId = services.databaseSession()
+    const auto targetId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(target);
     QVERIFY(targetId);
 
@@ -4397,12 +4397,12 @@ testingClassDeletionNotFoundReconcilesToSiblingAndEmitsOnce()
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClass target = testingClass(QStringLiteral("Vanished Target"));
     target.teacherId = -1;
-    const auto targetId = services.databaseSession()
+    const auto targetId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(target);
     QVERIFY(targetId);
     TestingClass sibling = testingClass(QStringLiteral("Remaining Sibling"));
     sibling.teacherId = -1;
-    const auto siblingId = services.databaseSession()
+    const auto siblingId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(sibling);
     QVERIFY(siblingId);
 
@@ -4437,7 +4437,7 @@ testingClassDeletionNotFoundReconcilesToSiblingAndEmitsOnce()
     QVERIFY(nameEdit);
     QVERIFY(list);
     QVERIFY(deleteButton);
-    QVERIFY(services.databaseSession()->testingClassRepository()
+    QVERIFY(services.workspaceStore()->testingClassRepository()
         ->deleteTestingClass(*targetId));
     QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
     QVERIFY(changedSpy.isValid());
@@ -4465,7 +4465,7 @@ testingClassDeletionNotFoundWithNoClassesStartsNewDraft()
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClass target = testingClass(QStringLiteral("Vanished Only Class"));
     target.teacherId = -1;
-    const auto targetId = services.databaseSession()
+    const auto targetId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(target);
     QVERIFY(targetId);
 
@@ -4500,7 +4500,7 @@ testingClassDeletionNotFoundWithNoClassesStartsNewDraft()
     QVERIFY(nameEdit);
     QVERIFY(list);
     QVERIFY(deleteButton);
-    QVERIFY(services.databaseSession()->testingClassRepository()
+    QVERIFY(services.workspaceStore()->testingClassRepository()
         ->deleteTestingClass(*targetId));
     QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
     QVERIFY(changedSpy.isValid());
@@ -4525,12 +4525,12 @@ void TestingClassesPageTests::testingClassDeletionNotFoundRetainsDirtyDraft()
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClass target = testingClass(QStringLiteral("Vanished Dirty Target"));
     target.teacherId = -1;
-    const auto targetId = services.databaseSession()
+    const auto targetId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(target);
     QVERIFY(targetId);
     TestingClass sibling = testingClass(QStringLiteral("Dirty Test Sibling"));
     sibling.teacherId = -1;
-    const auto siblingId = services.databaseSession()
+    const auto siblingId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(sibling);
     QVERIFY(siblingId);
 
@@ -4567,7 +4567,7 @@ void TestingClassesPageTests::testingClassDeletionNotFoundRetainsDirtyDraft()
     QVERIFY(deleteButton);
     nameEdit->setText(QStringLiteral("Unsaved Dirty Draft"));
     QVERIFY(page.hasUnsavedChanges());
-    QVERIFY(services.databaseSession()->testingClassRepository()
+    QVERIFY(services.workspaceStore()->testingClassRepository()
         ->deleteTestingClass(*targetId));
     QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
     QVERIFY(changedSpy.isValid());
@@ -4636,9 +4636,9 @@ testingClassDeletionNotFoundWithUnavailableSessionRetainsSelection()
     QVERIFY(list);
     QVERIFY(deleteButton);
     QCOMPARE(list->count(), 1);
-    QVERIFY(services.databaseSession()->isOpen());
+    QVERIFY(services.workspaceStore()->isOpen());
     ScheduleWidgetTestStubs::setDatabaseOpen(false);
-    QVERIFY(!services.databaseSession()->isOpen());
+    QVERIFY(!services.workspaceStore()->isOpen());
     QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
     QVERIFY(changedSpy.isValid());
 

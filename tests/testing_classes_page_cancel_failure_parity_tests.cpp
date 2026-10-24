@@ -368,7 +368,7 @@ f147DeleteCancelDoesNotMutate()
         temporaryDatabasePath(directory, QStringLiteral("f147-delete-cancel"))
         ));
     auto* const repository =
-        services.databaseSession()->testingClassRepository();
+        services.workspaceStore()->testingClassRepository();
     QVERIFY(repository);
     const auto classId = repository->createTestingClass(
         storedClass(QStringLiteral("Delete Target"))
@@ -436,7 +436,7 @@ f147DeleteFailureRetainsDraftAndShowsWarning()
         temporaryDatabasePath(directory, QStringLiteral("f147-delete-failure"))
         ));
     auto* const repository =
-        services.databaseSession()->testingClassRepository();
+        services.workspaceStore()->testingClassRepository();
     QVERIFY(repository);
     const auto classId = repository->createTestingClass(
         storedClass(QStringLiteral("Delete Target"))

@@ -3,7 +3,7 @@
 
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "next/application/schedule_testing_class_choices_query.h"
 #include "next/application/testing_classes_ordering_policy.h"
@@ -1915,12 +1915,12 @@ void TestingClassesPage::deleteCurrentClass()
                 == ClassMngr::Next::Domain::ErrorCode::NotFound
             )
         {
-            DatabaseSession* const session =
-                m_services ? m_services->databaseSession() : nullptr;
+            WorkspaceStore* const store =
+                m_services ? m_services->workspaceStore() : nullptr;
             if (
                 !hasUnsavedChanges()
-                && session
-                && session->isOpen()
+                && store
+                && store->isOpen()
                 )
             {
                 selectClassAfterDelete();

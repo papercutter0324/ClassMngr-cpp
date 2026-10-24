@@ -41,10 +41,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Current note: Batch 2 (F1338–F1357) is complete and pushed to
   `origin/Qt-Rewrite` at `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`. Batch 3
   discovery is complete and Batch 3 is active. F1358 (Testing Class details
-  read) and F1359 (Testing Class details update) are accepted; F1360 (Testing
-  Class delete) is current. F1358/F1359 implementation and verification
-  evidence and the Batch 2 push receipt are in the
-  [progress log](04-Phase-3-Progress-Log.md).
+  read), F1359 (Testing Class details update), and F1360 (Testing Class delete)
+  are accepted; F1361 (Class Co-Teacher page read) is current. F1358–F1360
+  implementation and verification evidence, plus the Batch 2 push receipt,
+  are in the [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -62,14 +62,14 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1359 — 2026-10-23
+## Latest Progress Update — F1360 — 2026-10-23
 
-F1359 is accepted. The details-update port uses `WorkspaceStore` for
-availability and repository access; repository transaction/API and
-Application/UI paths are unchanged. Six focused serial CTests passed. The
-broad page CTest failed four cases out of 52; attribution is unresolved because
-no baseline ran. See the [progress log](04-Phase-3-Progress-Log.md) for exact
-results. No full suite or cross-platform build ran.
+F1360 is accepted. The delete Platform port and clean-state `NotFound` guard
+use `workspaceStore()`; repository transaction/API, Application use case,
+confirmation, dirty-draft handling, error mapping, reconciliation, selection,
+and signal behavior are unchanged. Six focused serial CTests passed. The broad
+page CTest and full suite were not run; no cross-platform build ran. See the
+[progress log](04-Phase-3-Progress-Log.md) for exact results.
 
 ## Objective
 
