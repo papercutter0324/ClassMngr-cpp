@@ -45,13 +45,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   the verified implementation tip is
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1404 (Personal display-name preferences)
-  current. F1403 (Calendar event range projection; residual projection only)
-  is accepted at `f2a57d20a116f89f737a866dbb1b21177a9820c1`; focused
-  verification passed. Its 13 prioritized candidates remain in the current
-  batch tracker. F1403 excludes F1341 availability/by-ID work and the existing
-  WorkspaceStore-backed query/cache path.
-  F1376–F1403 implementation evidence, Batch 2 and Batch 3 push receipts, and
+  and Batch 5 is active with F1405 (Personal details save) current. F1404
+  (Personal display-name preferences) is accepted at
+  `a47c6d6a6fd54581a7fb2fc7f0a989b85ae751b5`; focused verification passed. Its
+  12 prioritized candidates remain in the current batch tracker. F1403 was
+  limited to residual range projection and excluded F1341 availability/by-ID
+  work and the existing WorkspaceStore-backed query/cache path.
+  F1376–F1404 implementation evidence, Batch 2 and Batch 3 push receipts, and
   earlier UI limitations and attribution notes are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -71,22 +71,24 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1403 — 2026-10-24
+## Latest Progress Update — F1404 — 2026-10-24
 
-F1403 is accepted at `f2a57d20a116f89f737a866dbb1b21177a9820c1`. This slice
-migrates only the residual `ApplicationServicesCalendarEventPort::projection(QDate,QDate)`
-helper and five direct range-fixture SQL handles to `WorkspaceStore`. F1341
-availability/by-ID work and the already WorkspaceStore-backed
-`CalendarEventProjectionQuery`/cache path remain unchanged; no production
-caller to this helper was found. Date validation, unavailable/repository
-error mapping, exception handling, projection metadata validation, the
-4,096-event cap, and assertions are preserved. Focused Platform, cache, and
-CalendarPage verification passed. Batch 5 is active with F1404 current. The
-F1383 orphan-data, F1389/F1390/F1391 NavigationTeacherRead warning-text, F1392
+F1404 is accepted at `a47c6d6a6fd54581a7fb2fc7f0a989b85ae751b5`. The
+`PersonalDisplayNamePreferencesPort` adapter and dedicated Platform fixture
+now use `WorkspaceStore`. Raw UTF-8/whitespace conversion, no trimming,
+validation, bounds, or default, empty successful missing/unavailable reads,
+no-op writes for unavailable/closed stores, Technical repository failures,
+and the open-store/missing-repository read/write distinction are preserved.
+Repository read failures log a warning and return nonrecoverable `Technical`;
+repository write failures also return nonrecoverable `Technical`.
+Personal Details aggregate save, the legacy repository, and Schedule Import
+SQL remain separate writers and were untouched. Focused Platform and all ten
+consumer-slot checks passed. Batch 5 is active with F1405 current. The F1383
+orphan-data, F1389/F1390/F1391 NavigationTeacherRead warning-text, F1392
 SubPrep timeout, and F1394 schedule parity fixture-setup findings remain
-separate in the [progress log](04-Phase-3-Progress-Log.md). The full
-CalendarPage parity CTest, full suite, and cross-platform builds did not run;
-the prior ClassesPage timeout remains unassessed.
+separate in the [progress log](04-Phase-3-Progress-Log.md). Full consumer
+suites, the full suite, and cross-platform builds did not run; the prior
+ClassesPage timeout remains unassessed.
 
 ## Objective
 

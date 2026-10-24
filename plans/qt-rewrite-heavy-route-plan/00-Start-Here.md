@@ -15,11 +15,11 @@
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   its receipt records implementation tip
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1404 (Personal display-name preferences)
-  current. F1403 (Calendar event range projection; residual projection only)
-  is accepted at `f2a57d20a116f89f737a866dbb1b21177a9820c1`; focused
-  verification passed. The current batch tracker retains the ordered list,
-  with 13 prioritized candidates remaining.
+  and Batch 5 is active with F1405 (Personal details save) current. F1404
+  (Personal display-name preferences) is accepted at
+  `a47c6d6a6fd54581a7fb2fc7f0a989b85ae751b5`; focused verification passed.
+  The current batch tracker retains the ordered list, with 12 prioritized
+  candidates remaining.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI
   limitations, baseline failures, attribution, and coverage notes remain in
   the Phase 3 progress log. The [Phase 3

@@ -2222,3 +2222,40 @@ display-name preferences) is current. Batch 5 remains unpushed until its
 remaining slices are complete.
 
 Commit: `f2a57d20a116f89f737a866dbb1b21177a9820c1`.
+
+## F1404 — Personal display-name preferences (Batch 5 candidate 7 of 19) — 2026-10-24
+
+The `PersonalDisplayNamePreferencesPort` adapter and dedicated Platform
+fixture now use `WorkspaceStore`. The exact key is `myInfo/name`. Raw
+UTF-8/whitespace conversion remains unchanged, with no trimming, validation,
+bounds, or default. Missing settings and unavailable/closed-store reads return
+empty success; writes to unavailable/closed stores remain no-op successes.
+Open-store/missing-repository reads return empty success while writes fail
+with nonrecoverable `Technical`. Repository read failures log a warning and
+return nonrecoverable `Technical`; repository write failures also return
+nonrecoverable `Technical`.
+Personal Details aggregate save, the legacy repository, and Schedule Import
+SQL are separate writers and were left untouched.
+
+Incremental build passed for the Platform, MyWorkspace, InitialSetup,
+ScheduleWidget, ScheduleImportDialog, and SubPrepPage targets. CTest #444,
+`ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests`,
+passed 1/1. All ten requested consumer slots passed directly with offscreen
+and absolute `TMP`, `TEMP`, and `TMPDIR` paths: MyWorkspace's
+`storedDisplayNamePrefillsWithUtf8AndWhitespace`,
+`displayNameReadFailurePreservesDraftAndBlocksSaveUntilReload`, and
+`missingAndUnavailableDisplayNamePrefillEmpty`; InitialSetup's
+`storedDisplayNamePreservesUtf8AndWhitespace` and
+`missingAndUnavailableDisplayNameStayEmpty`; ScheduleWidget's
+`outputReadsDisplayNameAfterDialogAcceptanceWithoutTrimming` and
+`outputUsesEmptyNameWhenPreferencesAreUnavailableOrServicesAreNull`;
+ScheduleImport's `mismatchedProfileRequiresConfirmation`; and SubPrep's
+`printDialogRequiresAndSavesMissingUserName` and
+`printDialogAcceptsWhenRememberedNameSaveFails`. No setup reruns occurred.
+The runs emitted font-alias and `propagateSizeHints` warnings only.
+`git diff --check` passed. Full consumer suites, the full suite, and
+cross-platform builds did not run. F1404 is accepted; F1405 (Personal details
+save) is current. Batch 5 remains unpushed until its remaining slices are
+complete.
+
+Commit: `a47c6d6a6fd54581a7fb2fc7f0a989b85ae751b5`.
