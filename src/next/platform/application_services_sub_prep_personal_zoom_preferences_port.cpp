@@ -1,6 +1,6 @@
 #include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
 
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 
 #include <QDebug>
@@ -55,7 +55,7 @@ namespace ClassMngr::Next::Platform
 Application::SubPrepPersonalZoomPreferencesResult
 ApplicationServicesSubPrepPersonalZoomPreferencesPort::load() const
 {
-    if (!m_session || !m_session->isOpen())
+    if (!m_store || !m_store->isOpen())
     {
         return Application::
             SubPrepPersonalZoomPreferencesResult::failure(
@@ -63,7 +63,7 @@ ApplicationServicesSubPrepPersonalZoomPreferencesPort::load() const
                 );
     }
 
-    SettingsRepository* const repository = m_session->settingsRepository();
+    SettingsRepository* const repository = m_store->settingsRepository();
     if (!repository)
     {
         return Application::SubPrepPersonalZoomPreferencesResult::failure({

@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/sub_prep_personal_zoom_preferences.h"
 #include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
@@ -54,9 +54,9 @@ bool openDatabase(
 
 SettingsRepository* settingsRepository(ApplicationServices& services)
 {
-    DatabaseSession* const session = services.databaseSession();
-    return session && session->isOpen()
-        ? session->settingsRepository()
+    WorkspaceStore* const store = services.workspaceStore();
+    return store && store->isOpen()
+        ? store->settingsRepository()
         : nullptr;
 }
 
@@ -65,13 +65,13 @@ bool executeSql(
     const QString& statement
     )
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     return query.exec(statement);
 }
 
@@ -111,13 +111,13 @@ bool rawSettingExists(
     const QString& key
     )
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     query.prepare(QStringLiteral(
         "SELECT COUNT(*) FROM app_settings_preserved WHERE key = ?"
         ));
@@ -131,13 +131,13 @@ bool rawSettingEquals(
     const QVariant& expected
     )
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     query.prepare(QStringLiteral(
         "SELECT value FROM app_settings_preserved WHERE key = ?"
         ));
@@ -168,7 +168,7 @@ private slots:
     void legacyValuesFallbackAndMigrate();
     void missingValuesUseNADefaults();
     void unavailableSettingsFailWithoutChangingCallerState();
-    void closedSessionFailsWithoutDataServiceFallback();
+    void closedStoreFailsWithoutDataServiceFallback();
     void migrationSaveFailureStillReturnsLegacyValues();
     void repositoryReadFailureReturnsTechnicalError();
     void technicalReadFailuresDoNotFallBackOrStartMigration();
@@ -409,15 +409,15 @@ unavailableSettingsFailWithoutChangingCallerState()
 }
 
 void NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests::
-closedSessionFailsWithoutDataServiceFallback()
+closedStoreFailsWithoutDataServiceFallback()
 {
     ApplicationServices services;
     const QString path = databasePath(m_directory);
     QVERIFY(services.openDatabase(path));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    SettingsRepository* repository = session->settingsRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    SettingsRepository* repository = store->settingsRepository();
     QVERIFY(repository);
 
     const QString legacyLogin = QStringLiteral("legacy@example.com");
@@ -444,7 +444,7 @@ closedSessionFailsWithoutDataServiceFallback()
     ApplicationServicesSubPrepPersonalZoomPreferencesPort port(services);
     services.closeDatabase();
     QVERIFY(services.dataService());
-    QVERIFY(!session->isOpen());
+    QVERIFY(!store->isOpen());
 
     const auto loaded = port.load();
     QVERIFY(!loaded);
@@ -452,8 +452,8 @@ closedSessionFailsWithoutDataServiceFallback()
     QVERIFY(!loaded.error().recoverable);
 
     QVERIFY(services.openDatabase(path));
-    QVERIFY(session->isOpen());
-    repository = session->settingsRepository();
+    QVERIFY(store->isOpen());
+    repository = store->settingsRepository();
     QVERIFY(repository);
 
     for (const char* key : {
