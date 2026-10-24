@@ -44,8 +44,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   read), F1359 (Testing Class details update), F1360 (Testing Class delete),
   F1361 (Class Co-Teacher page read), F1362 (Class Co-Teacher teacher
   choices read), F1363 (Class Co-Teacher assignment save), F1364 (Class
-  Notes page read), and F1365 (Class Notes save) are accepted; F1366
-  (Selected-class grade read) is current. F1358–F1365 implementation and
+  Notes page read), F1365 (Class Notes save), and F1366 (Selected-class grade
+  read) are accepted; F1367 (Selected-class subtitle read) is current.
+  F1358–F1366 implementation and
   verification evidence, plus the Batch 2 push receipt, are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -65,13 +66,15 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1365 — 2026-10-23
+## Latest Progress Update — F1366 — 2026-10-23
 
-F1365 is accepted; F1366 is current. The Class Notes save port and focused
-fixtures use `WorkspaceStore`; save behavior and its application, repository,
-and page paths are unchanged. Four focused serial CTests passed. No full suite
-or cross-platform build ran. See the [progress log](04-Phase-3-Progress-Log.md)
-for exact results.
+F1366 is accepted; F1367 is current. The selected-class grade read port and
+fixture use `WorkspaceStore`; query, repository, SQL, page, and subtitle paths
+are unchanged. Application and Platform CTests passed. The Classes page CTest
+timed out before the selected-grade cases, leaving page-suite acceptance
+unresolved; no evidence attributes the timeout to F1366. No full suite or
+cross-platform build ran. See the [progress log](04-Phase-3-Progress-Log.md)
+for exact results and limits.
 
 ## Objective
 

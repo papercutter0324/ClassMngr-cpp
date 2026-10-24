@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/platform/application_services_selected_class_grade_read_port.h"
@@ -66,7 +66,7 @@ readsSelectedClassGradeFromActiveRepository()
     ClassInfo info;
     info.classId = id;
     info.classGrade = QStringLiteral(" \u3042 \U0001F30C M2 \t");
-    QVERIFY(services.databaseSession()->classInfoRepository()
+    QVERIFY(services.workspaceStore()->classInfoRepository()
         ->saveClassInfo(info));
 
     Platform::ApplicationServicesSelectedClassGradeReadPort port(services);
@@ -82,7 +82,7 @@ readsSelectedClassGradeFromActiveRepository()
             static_cast<std::size_t>(expectedGradeBytes.size())
             )
         );
-    const auto& metrics = services.databaseSession()
+    const auto& metrics = services.workspaceStore()
         ->classInfoRepository()->selectedClassGradeReadMetrics();
     QCOMPARE(metrics.callCount, 1);
     QCOMPARE(metrics.statementCount, 1);
@@ -108,10 +108,10 @@ preservesMissingOrEmptyGrade()
 
     ClassInfo emptyInfo;
     emptyInfo.classId = emptyId;
-    QVERIFY(services.databaseSession()->classInfoRepository()
+    QVERIFY(services.workspaceStore()->classInfoRepository()
         ->saveClassInfo(emptyInfo));
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     query.prepare(QStringLiteral(
         "DELETE FROM class_info WHERE class_id = ?"
         ));
@@ -128,7 +128,7 @@ preservesMissingOrEmptyGrade()
     QVERIFY(empty.value().classId == typedClassId(emptyId));
     QVERIFY(missing.value().classGrade.value().empty());
     QVERIFY(empty.value().classGrade.value().empty());
-    const auto& metrics = services.databaseSession()
+    const auto& metrics = services.workspaceStore()
         ->classInfoRepository()->selectedClassGradeReadMetrics();
     QCOMPARE(metrics.callCount, 2);
     QCOMPARE(metrics.statementCount, 2);
@@ -150,9 +150,9 @@ missingParentHasTypedProvenanceAndLegacyDefault()
     ClassInfo info;
     info.classId = deletedId;
     info.classGrade = QStringLiteral("M3");
-    QVERIFY(services.databaseSession()->classInfoRepository()
+    QVERIFY(services.workspaceStore()->classInfoRepository()
         ->saveClassInfo(info));
-    QVERIFY(services.databaseSession()->classRepository()
+    QVERIFY(services.workspaceStore()->classRepository()
         ->deleteClass(deletedId));
 
     constexpr int unknownId = 2000000000;
@@ -167,9 +167,9 @@ missingParentHasTypedProvenanceAndLegacyDefault()
     QCOMPARE(deleted.error().code, Domain::ErrorCode::NotFound);
     QVERIFY(deleted.error().recoverable);
 
-    const auto legacyUnknown = services.databaseSession()
+    const auto legacyUnknown = services.workspaceStore()
         ->classInfoRepository()->loadSelectedClassGradeRecord(unknownId);
-    const auto legacyDeleted = services.databaseSession()
+    const auto legacyDeleted = services.workspaceStore()
         ->classInfoRepository()->loadSelectedClassGradeRecord(deletedId);
     QVERIFY(legacyUnknown);
     QVERIFY(legacyDeleted);
@@ -178,7 +178,7 @@ missingParentHasTypedProvenanceAndLegacyDefault()
     QVERIFY(legacyUnknown->classGrade.isEmpty());
     QVERIFY(legacyDeleted->classGrade.isEmpty());
 
-    const auto& metrics = services.databaseSession()
+    const auto& metrics = services.workspaceStore()
         ->classInfoRepository()->selectedClassGradeReadMetrics();
     QCOMPARE(metrics.callCount, 4);
     QCOMPARE(metrics.statementCount, 4);
@@ -224,7 +224,7 @@ unavailableOrClosedSessionDoesNotFallBack()
     ClassInfo info;
     info.classId = id;
     info.classGrade = QStringLiteral("M1");
-    QVERIFY(services.databaseSession()->classInfoRepository()
+    QVERIFY(services.workspaceStore()->classInfoRepository()
         ->saveClassInfo(info));
     services.closeDatabase();
 
@@ -245,7 +245,7 @@ repositoryFailureIsReturned()
     const int id = createClass(services, QStringLiteral("Broken grade class"));
     QVERIFY(id > 0);
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE class_info")),
              qPrintable(query.lastError().text()));
 

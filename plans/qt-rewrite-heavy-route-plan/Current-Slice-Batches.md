@@ -9,10 +9,10 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 3 discovery is complete. F1358–F1365 are accepted; F1366 —
-  Selected-class grade read is current.
+- Batch 3 discovery is complete. F1358–F1366 are accepted; F1367 —
+  Selected-class subtitle read is current.
 
-## Phase 3 — Batch 3 (active; F1366 current)
+## Phase 3 — Batch 3 (active; F1367 current)
 
 Batch 3 discovery began when F1356 started (candidate 19 of 20 in Batch 2) and
 is complete.
@@ -26,9 +26,9 @@ priority-ordered shortlist for Batch 3, not an exhaustive inventory.
 5. F1362 — Class Co-Teacher teacher choices read (accepted)
 6. F1363 — Class Co-Teacher assignment save (accepted)
 7. F1364 — Class Notes page read (accepted)
-8. F1365 — Class Notes save (accepted)
-9. F1366 — Selected-class grade read (current)
-10. F1367 — Selected-class subtitle read
+8. F1365 — Class Notes save (accepted; commit `5833f388eaefdf38d1be9812a72267b8f2169d20`)
+9. F1366 — Selected-class grade read (accepted; candidate 9 of 20)
+10. F1367 — Selected-class subtitle read (current)
 11. F1368 — Selected-class subtitle batch read
 12. F1369 — Classes navigation read
 13. F1370 — Class teacher assignments read

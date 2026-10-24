@@ -1182,4 +1182,42 @@ scoped adapter and fixtures contain no `DatabaseSession`,
 `databaseSession()`, or `database_session.h`. Existing Platform tests do not
 separately cover transaction-start/commit failure, null services, missing
 repository, or injected exceptions. No full suite or cross-platform build
-ran. F1365 is accepted; F1366 (Selected-class grade read) is current.
+ran. F1365 is accepted and committed as
+`5833f388eaefdf38d1be9812a72267b8f2169d20`; F1366 is accepted and F1367
+(Selected-class subtitle read) is current.
+
+## F1366 — Selected-class grade read (Batch 3 candidate 9 of 20) — 2026-10-23
+
+The port in
+`src/next/platform/application_services_selected_class_grade_read_port.h`
+now includes `workspace_store.h`, obtains the store via `workspaceStore()`,
+checks `isOpen()`, and gets `ClassInfoRepository` through the store. Its
+fixture, `tests/next_platform_application_services_selected_class_grade_read_port_tests.cpp`,
+uses `WorkspaceStore` for repository, class-repository, metrics, and SQL
+access. Assertions, SQL semantics, slots, and legacy-wrapper checks are
+unchanged. The Application query, repository projection/API/SQL, Classes page
+UI/stubs, and F1367 subtitle adapter are unchanged. The scoped adapter and
+fixture contain no `DatabaseSession`, `databaseSession()`, or
+`database_session.h` references.
+
+Builds passed for all three targets:
+`ClassMngrNextApplicationSelectedClassGradeReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSelectedClassGradeReadPortTests`,
+and `ClassMngrClassesPageTests`. The first two serial CTests passed. The
+`ClassMngrClassesPageTests` CTest timed out at 300.010 s in
+`nestedEditorsAreDeferredUntilTheirSectionIsOpened`, before reaching the
+selected-grade tests. A separate focused run of
+`selectedClassGradeFailureFailsOpenWithoutDataServiceFallback` hung for 31.7 s
+and was interrupted after `QSqlQuery::prepare: database not open`.
+
+Read-only source review found production `databaseSession()` and
+`workspaceStore()` return the same `m_workspaceStore`, and the grade-page
+test's repository method is stubbed to return configured data or failure. The
+hang appears downstream when the test opens Details: its support stub
+overrides the legacy details read, while the page path calls the detailed read
+against a default unopened `QSqlDatabase`; failure can then trigger a modal
+dialog. This is a source-supported explanation, not runtime-stack proof, and
+no baseline run was captured. Page-suite acceptance remains unresolved; no
+evidence supports attributing the timeout to F1366. `git diff --check` passed.
+No full suite or cross-platform build ran. F1366 is accepted; F1367
+(Selected-class subtitle read) is current.
