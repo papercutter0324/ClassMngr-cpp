@@ -584,3 +584,28 @@ confirmed `SubPrepPage::generateSubPrep` still logs a read failure and opens
 the dialog with an empty calendar selection. No page suite, full suite, or
 cross-platform build ran. The separate F1339 package-service PDF reference
 failure remains documented above and is not an F1340 result.
+
+## F1341 — Calendar availability and event-by-ID reads — 2026-10-23
+
+Availability and by-ID paths in
+`src/next/platform/application_services_calendar_event_port.h` now use
+`workspaceStore()`/`WorkspaceStore`. The separate date-range
+`projection()` remains on `DatabaseSession`; F1341 did not migrate that path.
+By-ID fixtures in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp` and
+the stale-event fixture delete in
+`tests/calendar_page_event_mutation_parity_tests.cpp` now use
+`WorkspaceStore`; assertions remain. Coverage includes direct output,
+wide/canonical IDs, missing/failure/invalid projection, availability, and
+stale-event compatibility. Repository SQL, UI production code, and mutations
+were unchanged.
+
+Executor and Tester built `ClassMngr` in the existing macOS Debug tree. Tester
+also built `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrCalendarPageEventMutationParityTests`; the three focused CTests
+passed **3/3**. `git diff --check` passed. Source review confirmed the
+availability/by-ID WorkspaceStore boundary and the unchanged range projection.
+Stale-event page parity still checks the warning, closed editor, and unchanged
+persisted state. No full suite or cross-platform build ran. The F1339
+package-service PDF mismatch remains documented in the F1339 entry.

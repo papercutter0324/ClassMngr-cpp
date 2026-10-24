@@ -38,9 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-23
-- Current note: Batch 2 remains active and unpushed; F1340 Sub Prep
-  calendar-interval read is the most recently completed slice, and F1341 is
-  current: Calendar availability and event-by-ID reads. The Batch 1 push
+- Current note: Batch 2 remains active and unpushed; F1341 (Calendar
+  availability and event-by-ID reads) is the most recently completed slice,
+  and F1342 is current: Single Calendar Event delete. The Batch 1 push
   receipt is in the progress log.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
@@ -59,13 +59,12 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1340 — 2026-10-23
+## Latest Progress Update — F1341 — 2026-10-23
 
-Migrated the Sub Prep calendar-interval port and its direct fixtures to
-`WorkspaceStore`; query behavior and exact errors remain unchanged. Three
-focused CTests passed. `SubPrepPage::generateSubPrep` still logs read failures
-and opens the dialog with an empty calendar selection. Details are in the
-[progress log](04-Phase-3-Progress-Log.md).
+Migrated the Calendar Event availability and by-ID paths to `WorkspaceStore`;
+the separate date-range `projection()` remains on `DatabaseSession`. Three
+focused CTests passed, and stale-event page parity remains covered. Details
+are in the [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
 

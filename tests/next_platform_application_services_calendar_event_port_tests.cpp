@@ -1144,9 +1144,9 @@ projectsByIdAsOwnedTypedMetadata()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
 
-    QSqlQuery query(
-        services.dataService()->databaseSession()->database()
-        );
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlQuery query(store->database());
     query.prepare(QStringLiteral(
         "INSERT INTO calendar_events ("
         "title, event_type, time_status, repeat_series_id, all_day, "
@@ -1166,7 +1166,7 @@ projectsByIdAsOwnedTypedMetadata()
     QVERIFY(eventId > 0);
 
     CalendarEventRepository* const repository =
-        services.databaseSession()->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
     const CalendarEventByIdLookupResult lookup =
         repository->lookupCalendarEventById(eventId);
@@ -3980,8 +3980,10 @@ preservesAllDayAndUnknownTimePolicy()
     QVERIFY(allDayId > 0);
     QVERIFY(unknownTimeId > 0);
 
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     QSqlQuery legacyAllDayInsert(
-        services.dataService()->databaseSession()->database()
+        store->database()
         );
     QVERIFY2(
         legacyAllDayInsert.exec(QStringLiteral(
@@ -4118,8 +4120,10 @@ reportsUnavailableAndInvalidRangesStructurally()
         port.loadEventById(*CalendarEventId::fromString("not-a-number")),
         ErrorCode::InvalidInput
         );
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     CalendarEventRepository* const repository =
-        services.databaseSession()->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
     const int missingId = 999999;
     const CalendarEventByIdLookupResult missingLookup =
@@ -4183,14 +4187,16 @@ reportsCalendarEventRepositoryReadFailuresStructurally()
         );
     QVERIFY(eventId > 0);
 
-    QSqlQuery query(services.databaseSession()->database());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlQuery query(store->database());
     QVERIFY2(
         query.exec(QStringLiteral("DROP TABLE calendar_events")),
         qPrintable(query.lastError().text())
         );
 
     CalendarEventRepository* const repository =
-        services.databaseSession()->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
     const CalendarEventByIdLookupResult failedLookup =
         repository->lookupCalendarEventById(eventId);
@@ -4610,9 +4616,9 @@ rejectsMalformedRepeatSeriesMetadataStructurally()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
 
-    QSqlQuery query(
-        services.dataService()->databaseSession()->database()
-        );
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlQuery query(store->database());
     query.prepare(QStringLiteral(
         "INSERT INTO calendar_events ("
         "title, event_type, time_status, repeat_series_id, all_day, "

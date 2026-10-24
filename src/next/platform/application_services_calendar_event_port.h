@@ -2,6 +2,7 @@
 
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "next/application/calendar_event_by_id_query_port.h"
 #include "next/application/calendar_event_projection.h"
@@ -56,10 +57,10 @@ public:
     {
         try
         {
-            DatabaseSession* const session = m_services.databaseSession();
-            return session
-                && session->isOpen()
-                && session->calendarEventRepository();
+            WorkspaceStore* const store = m_services.workspaceStore();
+            return store
+                && store->isOpen()
+                && store->calendarEventRepository();
         }
         catch (...)
         {
@@ -107,8 +108,8 @@ public:
 
         try
         {
-            DatabaseSession* const session = m_services.databaseSession();
-            if (!session || !session->isOpen())
+            WorkspaceStore* const store = m_services.workspaceStore();
+            if (!store || !store->isOpen())
             {
                 return failureSummary(
                     Domain::ErrorCode::NotFound,
@@ -117,7 +118,7 @@ public:
             }
 
             CalendarEventRepository* const repository =
-                session->calendarEventRepository();
+                store->calendarEventRepository();
             if (!repository)
             {
                 return failureSummary(
@@ -130,7 +131,7 @@ public:
                 repository->lookupCalendarEventById(eventId);
             if (loaded.code != CalendarEventByIdLookupCode::Found)
             {
-                if (!session->isOpen())
+                if (!store->isOpen())
                 {
                     return failureSummary(
                         Domain::ErrorCode::NotFound,

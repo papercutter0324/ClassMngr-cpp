@@ -2138,7 +2138,7 @@ staleEventActivationShowsWarningWithoutMutation()
         );
 
     QSqlQuery removeStaleEvent(
-        workspace.services.databaseSession()->database()
+        workspace.services.workspaceStore()->database()
         );
     removeStaleEvent.prepare(QStringLiteral(
         "DELETE FROM calendar_events WHERE id=?"
