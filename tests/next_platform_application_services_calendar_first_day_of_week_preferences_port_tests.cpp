@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/calendar_first_day_of_week_preferences.h"
 #include "next/platform/application_services_calendar_first_day_of_week_preferences_port.h"
@@ -45,7 +45,7 @@ bool executeSql(
     const QString& statement
     )
 {
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     if (!session || !session->isOpen())
     {
         return false;
@@ -120,7 +120,7 @@ missingSettingUsesLocaleFallback()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     QVERIFY(session->settingsRepository());
@@ -143,7 +143,7 @@ invalidSettingUsesLocaleFallback()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -201,7 +201,7 @@ readErrorsReturnTechnicalFailureAndCanRetry()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     QVERIFY(session->settingsRepository());
@@ -242,7 +242,7 @@ roundTripsAllDaysUsingExactKey()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -293,7 +293,7 @@ unavailableSettingsUseLocaleFallbackAndReportSaveFailure()
     QLocale::setDefault(QLocale(QStringLiteral("en_GB")));
     ApplicationServices services;
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(!session->isOpen());
     ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(services);
@@ -323,7 +323,7 @@ unavailableSettingsUseLocaleFallbackAndReportSaveFailure()
     const QString closedDatabasePath = databasePath(m_directory);
     QVERIFY(closedServices.openDatabase(closedDatabasePath));
     QVERIFY(closedServices.dataService());
-    DatabaseSession* const closedSession = closedServices.databaseSession();
+    WorkspaceStore* const closedSession = closedServices.workspaceStore();
     QVERIFY(closedSession);
     QVERIFY(closedSession->isOpen());
     SettingsRepository* const repository = closedSession->settingsRepository();
@@ -368,7 +368,7 @@ invalidEnumSaveIsRejectedAndPreservesStoredValue()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -404,7 +404,7 @@ saveFailurePreservesStoredValueAndReportsDiagnostic()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     QVERIFY(session->settingsRepository());

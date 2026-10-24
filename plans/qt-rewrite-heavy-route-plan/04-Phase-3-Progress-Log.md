@@ -1971,3 +1971,26 @@ Built `ClassMngrNextPlatformApplicationServicesScheduleDisplayModePreferencesPor
 #488, #46, and #69 passed (3/3). `git diff --check` passed. No full suite or
 cross-platform build ran. F1395 is accepted; F1396 (Calendar first-day-of-week
 preferences) is current and is the Batch 5 discovery trigger.
+
+Commit: `ea14fb7bb75862358cc04cc6a650d936a9b5c8da`.
+
+## F1396 — Calendar first-day-of-week preferences (Batch 4 candidate 19 of 20) — 2026-10-24
+
+The calendar first-day-of-week port and dedicated Platform fixture now use
+`WorkspaceStore`. Seven-day integer/key behavior, locale fallback,
+invalid-value behavior, and assertions are unchanged. Platform CTest #433 and
+Calendar preferences restore-defaults CTest #81 passed serially (2/2).
+`git diff --check` passed. No full suite or cross-platform build ran. F1396 is
+accepted; F1397 (Academic-calendar schedule preferences) is current.
+
+### Batch 5 discovery — triggered at F1396
+
+Two complementary scans completed. The source scan found exactly 19 distinct
+active Next Platform ports after excluding current F1396 and F1397. The
+feature-flow scan cross-checked consumers and separately surfaced display-name
+preference, latest-source-date read, and residual Calendar Event range
+projection. A focused guard audit found the Speaking Eval, Teacher Info, and
+Sidebar direct session checks are incidental behavior guards, not independent
+persistence ports; they remain in overflow. The 19 prioritized slices are
+listed in `Current-Slice-Batches.md` and queued until Batch 4 is pushed. Scan
+registrations are candidates, not test results.

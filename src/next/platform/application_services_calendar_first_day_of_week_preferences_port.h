@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/calendar_first_day_of_week_preferences.h"
 
@@ -26,14 +26,14 @@ public:
     explicit ApplicationServicesCalendarFirstDayOfWeekPreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_session(services.databaseSession())
+        : m_store(services.workspaceStore())
     {
     }
 
     explicit ApplicationServicesCalendarFirstDayOfWeekPreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_session(services ? services->databaseSession() : nullptr)
+        : m_store(services ? services->workspaceStore() : nullptr)
     {
     }
 
@@ -56,13 +56,13 @@ public:
         const Application::CalendarFirstDayOfWeek fallback =
             localeFirstDayOfWeek();
 
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return Application::
                 CalendarFirstDayOfWeekPreferencesLoadResult::success(fallback);
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return Application::
@@ -120,14 +120,14 @@ public:
                 });
         }
 
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return failure(
                 "Calendar first-day preference cannot be saved because no database session is open."
                 );
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return failure(
@@ -209,7 +209,7 @@ private:
         return Application::CalendarFirstDayOfWeek::Sunday;
     }
 
-    DatabaseSession* m_session = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

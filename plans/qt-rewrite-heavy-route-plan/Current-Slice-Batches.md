@@ -1,10 +1,10 @@
 # Current Slice Batches
 
 This is the single live tracker for slice batches across the Qt rewrite. Keep
-only the active batch and the next batch after its discovery starts. Replace
-closed batches; do not maintain phase-specific batch files or an archive of
-completed batches. Keep slice requirements in the relevant phase plan, and
-record useful implementation and verification evidence in its progress log.
+the active batch and the next batch once its discovery starts. Replace closed
+batches; do not maintain phase-specific batch files or an archive of completed
+batches. Keep slice requirements in the relevant phase plan, and record useful
+implementation and verification evidence in its progress log.
 
 ## Current state
 
@@ -14,10 +14,12 @@ record useful implementation and verification evidence in its progress log.
   was later pushed as
   `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before Batch 4
   began.
-- Batch 4 discovery is complete; Batch 4 is active with F1396 — Calendar
-  first-day-of-week preferences current.
+- Batch 4 discovery is complete; Batch 4 remains active with F1397 —
+  Academic-calendar schedule preferences current.
+- Batch 5 discovery is complete; its 19 prioritized slices are queued to start
+  after Batch 4 is pushed.
 
-## Phase 3 — Batch 4 (active; F1396 current)
+## Phase 3 — Batch 4 (active; F1397 current)
 
 Batch 4 discovery began when F1376 started (candidate 19 of 20 in Batch 3) and
 is complete. Two complementary scans found more than 20 possible active
@@ -44,20 +46,43 @@ priority-ordered shortlist, not an exhaustive inventory.
 16. F1393 — Class-visibility preferences (accepted)
 17. F1394 — Schedule-display preferences (accepted)
 18. F1395 — Schedule-display-mode preferences (accepted)
-19. F1396 — Calendar first-day-of-week preferences (current)
-20. F1397 — Academic-calendar schedule preferences
+19. F1396 — Calendar first-day-of-week preferences (accepted)
+20. F1397 — Academic-calendar schedule preferences (current)
 
-For Batch 5 discovery, retain type-color preferences; custom palette;
-personal details and signature; middle-school analytics; Sub Prep
-preferences/Zoom; reset policies including class-day-filter reset; calendar
-events; schedule import; teacher create/delete/import; Initial Setup choices;
-and other active `databaseSession()`/DataService paths. `ClassService::rename`
-was searched but has no callers; future discovery can recheck if callers
-appear. Do not treat this shortlist as exhaustive.
+## Phase 3 — Batch 5 (discovered; queued after Batch 4 push)
 
-Direct active session-check follow-ups to verify against actual consumers
-before ranking: speaking-evaluation availability, the teacher-info save gate,
-and sidebar prompt/display guards.
+Two complementary scans found 19 prioritized, distinct persistence slices.
+The source scan found exactly 19 active Next Platform ports after excluding
+F1396 and F1397. The feature-flow scan cross-checked consumers and separately
+surfaced display-name preference, latest-source-date read, and residual
+Calendar Event range projection. Every scan-identified item is a candidate,
+not a test result.
 
-Begin Batch 5 discovery when work starts on F1396 (candidate 19 of 20 in Batch
-4).
+1. F1398 — Middle-school analytics preferences
+2. F1399 — Calendar event-type color preferences
+3. F1400 — Class-day-filter reset policy
+4. F1401 — Class-selection reset policy
+5. F1402 — Evaluation default policy
+6. F1403 — Calendar event range projection (residual projection only; prior
+   F1341 operations stay excluded)
+7. F1404 — Personal display-name preferences
+8. F1405 — Personal details save
+9. F1406 — Personal signature preferences
+10. F1407 — Personal signature image
+11. F1408 — Sub Prep preferences
+12. F1409 — Sub Prep personal Zoom preferences
+13. F1410 — Custom color palette preferences
+14. F1411 — Initial Setup teacher choices read
+15. F1412 — Teacher create
+16. F1413 — Teacher delete
+17. F1414 — Teacher Import latest-source-date read (F1349 apply already
+    done)
+18. F1415 — Schedule Import current-state snapshot
+19. F1416 — Schedule Import apply
+
+The F1396 discovery trigger has been fulfilled. Three direct session-check
+guards—Speaking Eval, Teacher Info, and Sidebar—were audited as incidental
+behavior guards, not independent persistence ports; leave them in overflow.
+`ClassService::rename` had no callers in the prior search; recheck only if
+callers appear. Other active `databaseSession()`/DataService paths remain
+unranked for future discovery. The shortlist is prioritized, not exhaustive.

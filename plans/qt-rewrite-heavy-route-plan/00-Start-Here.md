@@ -22,9 +22,11 @@
   teacher directory save), F1389 (Korean teacher birthday directory read),
   F1390 (GS Team birthday directory read), F1391 (Native English birthday
   directory read), F1392 (Current-campus preferences), F1393
-  (Class-visibility preferences), F1394 (Schedule-display preferences), and
-  F1395 (Schedule-display-mode preferences) are accepted; F1396 (Calendar
-  first-day-of-week preferences) is current.
+  (Class-visibility preferences), F1394 (Schedule-display preferences), F1395
+  (Schedule-display-mode preferences), and F1396 (Calendar first-day-of-week
+  preferences) are accepted; F1397 (Academic-calendar schedule preferences)
+  is current. Batch 5 discovery is complete; its 19-slice shortlist is queued
+  to start after Batch 4 is pushed.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI
   limitations, baseline failures, attribution, and coverage notes remain in
   the Phase 3 progress log. The [Phase 3
