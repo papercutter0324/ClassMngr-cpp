@@ -7,10 +7,12 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-23
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 2 is complete and unpushed, awaiting its authorized push. F1357
-  (Testing class creation) is accepted. Batch 3 discovery is complete and
-  Batch 3 starts after the Batch 2 push. The Batch 1 push receipt is recorded
-  in the Phase 3 progress log.
+  Batch 2 (F1338–F1357) is complete and pushed to `origin/Qt-Rewrite` at
+  `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`. Batch 3 discovery is complete
+  and Batch 3 is active: F1358 (Testing Class details read) is accepted, and
+  its commit advances the tracker to F1359 (Testing Class details update).
+  F1358 implementation and verification evidence and the Batch 2 push receipt
+  are in the Phase 3 progress log.
   See
   the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md), and

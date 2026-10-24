@@ -38,10 +38,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-23
-- Current note: Batch 2 is complete and unpushed, awaiting its authorized push;
-  F1357 (Testing class creation) is accepted. Batch 3 discovery is complete and
-  Batch 3 starts after the Batch 2 push. The Batch 1 push receipt is in the
-  progress log.
+- Current note: Batch 2 (F1338–F1357) is complete and pushed to
+  `origin/Qt-Rewrite` at `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`. Batch 3
+  discovery is complete and Batch 3 is active. F1358 (Testing Class details
+  read) is accepted; its commit advances the tracker to F1359 (Testing Class
+  details update). F1358 implementation and verification evidence and the
+  Batch 2 push receipt are in the
+  [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -59,13 +62,14 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1357 — 2026-10-23
+## Latest Progress Update — F1358 — 2026-10-23
 
-F1357 is accepted. The create port uses `WorkspaceStore` for availability and
-`TestingClassRepository`; repository transaction/API and create/UI semantics
-remain unchanged. Focused build and CTest evidence is in the
-[progress log](04-Phase-3-Progress-Log.md); no full suite or cross-platform
-build ran.
+F1358 is accepted. The details-read port uses `WorkspaceStore` for availability
+and `TestingClassRepository`; repository projection/API, Application handler,
+and page wiring are unchanged. Focused Application and Platform CTests passed;
+the broad page CTest failed four cases, with attribution unresolved because no
+baseline ran. See the [progress log](04-Phase-3-Progress-Log.md) for exact
+results. No full suite or cross-platform build ran.
 
 ## Objective
 

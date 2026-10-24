@@ -958,3 +958,34 @@ non-failing SQL warnings in unchanged neighboring F145/F147 slots. A direct
 QtTest invocation outside CTest crashed after macOS pasteboard setup errors;
 no direct-run result is claimed. `git diff --check` passed. No full suite or
 cross-platform build ran.
+
+## Batch 2 push receipt — 2026-10-23
+
+The 20 Batch 2 slice commits, F1338–F1357, were pushed from `Qt-Rewrite` to
+configured `origin/Qt-Rewrite`. Before the authorized non-force retry, local
+HEAD was `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`, 20 commits ahead. The push
+advanced the remote from the prior cached tracking SHA
+`9b7ad2b6a2190c0bf1f71c245ba4b6429e24b339` to that HEAD; the live remote tip
+now matches and the ahead count is zero. Destination-specific verification
+confirmed the configured public GitHub repository and push permission.
+
+## F1358 — Testing Class details read — 2026-10-23
+
+The production details-read port now uses `workspaceStore()` for availability
+and `TestingClassRepository`. Only its dedicated Platform fixtures migrated to
+`WorkspaceStore`; assertions remain. Repository projection/API, Application
+handler, and page wiring are unchanged.
+
+`ClassMngr` and the Application, Platform, and page test targets built
+incrementally in `build/macos-clang-debug`. Serial CTests passed for
+`ClassMngrNextApplicationTestingClassDetailsReadQueryTests` and
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`.
+`ClassMngrTestingClassesPageTests` failed 4/52; the relevant slot,
+`testingClassDetailsReadMapsEditorRosterAndCleanState`, passed. The four failed
+cases were `rosterEditorOmitsRemoveButtonAndKeepsContextAction` (menu action
+absent), `rosterKeyboardTriggerOpensInAppPalette` (keyboard not visible),
+`rosterKeyboardWritesToKoreanNameCell` (keyboard target absent), and
+`outputAvailabilityFollowsRosterTabAndLoadedClass` (print action disabled after
+tab selection). Read-only review found these cases do not invoke the changed
+F1358 port. No baseline ran, so attribution is unresolved. `git diff --check`
+passed. No full suite or cross-platform build ran.

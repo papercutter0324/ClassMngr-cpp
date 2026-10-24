@@ -9,40 +9,16 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 2 is complete and unpushed, awaiting its authorized push; F1357
-  (Testing class creation) is accepted. Batch 3 discovery is complete and Batch
-  3 starts after the Batch 2 push.
+- Batch 3 discovery is complete. F1358 is accepted; its commit advances the
+  active tracker to F1359 — Testing Class details update.
 
-## Phase 3 — Batch 2 (complete; pending push)
-
-1. F1338 — Sub Prep information-sheet print-source read
-2. F1339 — Sub Prep roster-output source read
-3. F1340 — Sub Prep calendar-interval read
-4. F1341 — Calendar availability and event-by-ID reads
-5. F1342 — Single Calendar Event delete
-6. F1343 — Delete all Calendar Events
-7. F1344 — Repeat-series creation
-8. F1345 — Repeat-series edit
-9. F1346 — Calendar Import signature lookup
-10. F1347 — Class Analytics dashboard persistence boundary (raw SQL behind repository)
-11. F1348 — Roster availability batch read (raw SQL behind repository)
-12. F1349 — Teacher Import apply (SQL transaction behind repository)
-13. F1350 — Schedule slot-state read
-14. F1351 — Schedule testing-assignment board read
-15. F1352 — Schedule testing-class choices read
-16. F1353 — Schedule testing-assignment save
-17. F1354 — Clear Schedule testing assignments
-18. F1355 — Schedule Editor selected-class information read
-19. F1356 — Testing class teacher choices
-20. F1357 — Testing class creation
-
-## Phase 3 — Batch 3 (discovered; starts after Batch 2 push)
+## Phase 3 — Batch 3 (active; F1359 current)
 
 Discovery was completed when F1356 started (candidate 19 of 20 in Batch 2).
 Two complementary scans found more than 20 possible items; this is the
 priority-ordered shortlist for Batch 3, not an exhaustive inventory.
 
-1. F1358 — Testing Class details read
+1. F1358 — Testing Class details read (accepted)
 2. F1359 — Testing Class details update
 3. F1360 — Testing Class delete
 4. F1361 — Class Co-Teacher page read
@@ -76,3 +52,6 @@ class-day-filter reset; and any other active `databaseSession()`/DataService
 persistence paths. `ClassService::rename` was searched but has no callers, so
 it is not listed as an active candidate; future discovery can recheck if
 callers appear. Do not treat the 20-item shortlist as all remaining candidates.
+
+Batch 4 discovery has not started. Begin it when work starts on F1376
+(candidate 19 of this original 20-item shortlist).
