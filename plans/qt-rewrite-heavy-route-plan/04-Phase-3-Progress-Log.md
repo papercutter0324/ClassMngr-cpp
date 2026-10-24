@@ -2599,3 +2599,26 @@ ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNext
 ```
 
 Commit: `0dd7f9ec`.
+
+## F1415 — Schedule Import current-state snapshot (Batch 5 candidate 18 of 19) — 2026-10-24
+
+Migrated the Schedule Import current-state snapshot adapter to dynamically
+resolve `ApplicationServices::workspaceStore()` on each read and use its
+`ClassRepository`, `TeacherRepository`, and `ClassInfoRepository`. Direct
+Platform fixture persistence now uses `WorkspaceStore`. Snapshot semantics
+remain unchanged: all teachers, all non-testing classes, regular and intensive
+schedules, existing ordering and defaults, canonical IDs including wide
+teacher IDs and the `-1` unassigned assignment, preserved text, and existing
+failures. No UI, repository, or application code changed.
+
+The incremental macOS Debug build in `build/macos-clang-debug` passed for
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`.
+CTest #329 `ClassMngrNextApplicationScheduleImportStateSnapshotTests` and
+CTest #485
+`ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`
+passed 2/2, with no warnings or retries. The CTest log is
+`/private/tmp/F1415-VERIFY-01-ctest.log`; `git diff --check` passed. No full
+suite, UI suite, or cross-platform build ran.
+
+Commit: `e78f2056`.

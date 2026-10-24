@@ -38,10 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 5 is active with F1415 (Schedule Import current-state
-  snapshot) current. F1414 (Teacher Import latest-source-date read) was
-  accepted at `0dd7f9ec`; two prioritized candidates remain. Batch 5 remains
-  unpushed until its remaining slices are complete. F1414 evidence and prior
+- Current note: Batch 5 is active with F1416 (Schedule Import apply) current.
+  F1415 (Schedule Import current-state snapshot) was accepted at `e78f2056`;
+  one prioritized candidate remains. Batch 5 remains unpushed until it is
+  complete. Batch 6 discovery is complete with no prioritized candidates and
+  waits for Batch 5 to close and push. F1415 evidence and prior
   durable slice findings are in the [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
@@ -60,25 +61,29 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1414 — 2026-10-24
+## Latest Progress Update — F1415 — 2026-10-24
 
-F1414 is accepted at `0dd7f9ec` (`Phase3 - Migrate F1414 teacher import date
-read`). The `teacher_import/latest_source_date` setting is a stored Gregorian
-calendar date in canonical `YYYY-MM-DD`, with no timezone conversion. The
-adapter dynamically resolves `ApplicationServices::workspaceStore()` and its
-`SettingsRepository`, replacing the `DatabaseSession` read. Missing, null,
-empty, malformed, noncanonical, or impossible values remain successful
-absence. A null, closed, or unavailable store remains recoverable `NotFound`;
-repository failures and exceptions remain nonrecoverable `Technical`. F1349
-apply/snapshot/transaction behavior and the UI caller are unchanged.
+F1415 is accepted at `e78f2056` (`Phase3 - Migrate F1415 schedule import
+snapshot`). The adapter dynamically resolves `ApplicationServices::workspaceStore()`
+on each read and uses its `ClassRepository`, `TeacherRepository`, and
+`ClassInfoRepository`; direct Platform fixture persistence uses
+`WorkspaceStore`.
+Snapshot behavior is unchanged: all teachers, all non-testing classes,
+regular and intensive schedules, existing ordering and defaults, canonical
+IDs including wide teacher IDs and the `-1` unassigned assignment, preserved
+text, and existing failures. No UI, repository, or application code changed.
 
-The incremental macOS Debug build of `ClassMngr` and
-`ClassMngrNextPlatformApplicationServicesTeacherImportLatestSourceDateReadPortTests`
-succeeded. The Platform port and Application query CTests passed 2/2 (1.02 s),
-with no warnings, failures, or retries; `git diff --check` was clean. No full
-suite or cross-platform build ran. F1415 (Schedule Import current-state
-snapshot) is current, with two prioritized Batch 5 candidates remaining.
-Batch 5 remains unpushed until its remaining slices are complete.
+The incremental macOS Debug build in `build/macos-clang-debug` passed for
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`.
+CTest #329 `ClassMngrNextApplicationScheduleImportStateSnapshotTests` and
+CTest #485
+`ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`
+passed 2/2 with no warnings or retries. The Tester log is
+`/private/tmp/F1415-VERIFY-01-ctest.log`; `git diff --check` passed. No full
+suite, UI suite, or cross-platform build ran. F1416 (Schedule Import apply)
+is current, with one prioritized Batch 5 candidate remaining. Batch 5 remains
+unpushed until its remaining slice is complete.
 
 ## Objective
 

@@ -7,10 +7,11 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 5 is active with F1415 (Schedule Import current-state snapshot)
-  current; F1414 (Teacher Import latest-source-date read) was accepted at
-  `0dd7f9ec`. Two prioritized candidates remain, and Batch 5 remains unpushed
-  until its remaining slices are complete. The [Phase 3
+  Batch 5 is active with F1416 (Schedule Import apply) current; F1415 (Schedule
+  Import current-state snapshot) was accepted at `e78f2056`. One prioritized
+  candidate remains, and Batch 5 remains unpushed until it is complete. Batch
+  6 discovery is complete with no prioritized candidates and waits for Batch 5
+  to close and push. The [Phase 3
   plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch

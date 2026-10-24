@@ -17,12 +17,15 @@ verification evidence in its progress log.
   began.
 - Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`; its
   implementation tip is `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`.
-- Batch 5 discovery is complete and Batch 5 is active with F1415 — Schedule
-  Import current-state snapshot current. F1414 — Teacher Import
-  latest-source-date read is accepted at `0dd7f9ec`; 2 prioritized candidates
-  remain. Batch 5 remains unpushed until its remaining slices are complete.
+- Batch 5 discovery is complete and Batch 5 is active with F1416 — Schedule
+  Import apply current. F1415 — Schedule Import current-state snapshot is
+  accepted at `e78f2056`; 1 prioritized candidate remains. Batch 5 remains
+  unpushed until its remaining slice is complete.
+- Batch 6 discovery is complete and waits for Batch 5 to close and push. No
+  prioritized candidates were identified. No other slices were found. Broader
+  `databaseSession()`/`DataService` paths remain unranked for future discovery.
 
-## Phase 3 — Batch 5 (active; F1415 current)
+## Phase 3 — Batch 5 (active; F1416 current)
 
 Two complementary scans found 19 prioritized, distinct persistence slices.
 The source scan found exactly 19 active Next Platform ports after excluding
@@ -50,12 +53,12 @@ scan-identified item is a candidate, not a test result.
 16. F1413 — Teacher delete (accepted)
 17. F1414 — Teacher Import latest-source-date read (accepted; F1349 apply
     already done)
-18. F1415 — Schedule Import current-state snapshot (current)
-19. F1416 — Schedule Import apply
+18. F1415 — Schedule Import current-state snapshot (accepted at `e78f2056`)
+19. F1416 — Schedule Import apply (current)
 
-The F1396 discovery trigger has been fulfilled. Three direct session-check
-guards—Speaking Eval, Teacher Info, and Sidebar—were audited as incidental
-behavior guards, not independent persistence ports; leave them in overflow.
-`ClassService::rename` had no callers in the prior search; recheck only if
-callers appear. Other active `databaseSession()`/DataService paths remain
-unranked for future discovery. The shortlist is prioritized, not exhaustive.
+Three direct session-check guards—Speaking Eval, Teacher Info, and Sidebar—
+were audited as incidental behavior guards, not independent persistence
+ports; leave them in overflow. `ClassService::rename` had no callers in the
+prior search; recheck only if callers appear. FeatureService repository calls
+were treated as the legacy facade, not a new v2 slice in this shortlist. The
+shortlist is prioritized, not exhaustive.
