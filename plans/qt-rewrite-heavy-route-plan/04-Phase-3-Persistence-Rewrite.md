@@ -39,8 +39,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Unassigned
 - Last updated: 2026-10-24
 - Current note: Batch 9 remains active with F1426 (candidate 8 of 9) current;
-  F1425 is accepted and F1427 remains. Begin Batch 10 discovery when F1426
-  starts. The Phase 3 exit gate remains open. The [DataService migration
+  F1425 is accepted and F1427 remains. Batch 10 discovery is complete with
+  F1428 as its sole ordered candidate, waiting for Batch 9 to close and push.
+  Implementation has not started; the Phase 3 exit gate remains open. The
+  [DataService migration
   map](../../docs/qt-rewrite/data-service-migration-map.md) records F1420's
   deliverable, including that `DataService::save()` has no ordinary production
   caller. See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -62,27 +64,21 @@ keep current status in this plan and live batches in the shared tracker.
 
 ## Latest Progress Update — F1425 — 2026-10-24
 
-F1425, `Phase3 - Compact Schedule Import snapshot assembly`, is accepted at
-`6c250b1083253566f8023b088f6942abf283f3b9`. The adapter replaced redundant
-class-name and teacher-pointer hash maps with short-lived ID membership sets,
-while preserving source read sequence, failure paths, duplicate and invalid
-ID checks, output, and repository order. It retains the class-info ID-to-record
-lookup needed to restore class repository order. No read consolidation, review
-UI, or feature behavior changed.
+F1425, `Phase3 - Compact Schedule Import snapshot assembly`, was accepted at
+`6c250b1083253566f8023b088f6942abf283f3b9`. It replaced redundant class-name
+and teacher-pointer maps with short-lived ID membership sets while preserving
+read order, failure paths, output, and repository order; no feature behavior
+changed.
 
-Independent macOS arm64 / Qt 6.12.0 verification in `build/macos-clang-debug`
-passed for the affected executable (8/8), the new large case (3/3 Qt setup,
-test, and cleanup), and its focused CTest (1/1); `git diff --check` passed.
-Assertions compared the full ordered output for 24 teachers and 96 classes,
-all projected fields and regular/intensive time tuples, and totals of 768
-regular plus 24 intensive schedule rows. Metrics asserted one teacher
-statement and one each for metadata, regular, and intensive queries. The
-ClassRepository class-name query has no instrumentation: source executes it
-once, with no test metric claim for it. No heap-byte measurement or full-suite
-or platform-wide claim is made. F1426 is current (candidate 8 of 9), F1427
-remains, and Batch 10 discovery starts when F1426 starts. Phase 3 and its exit
-gate remain open; Phase 3 remains In Progress. See the [progress
-log](04-Phase-3-Progress-Log.md).
+Focused macOS arm64 / Qt 6.12.0 verification passed: 8/8 executable cases,
+3/3 for the large case, and CTest 1/1. Assertions covered ordered output for
+24 teachers and 96 classes, projected fields and schedule tuples, and 768
+regular plus 24 intensive rows. Metrics cover teacher and class-info queries;
+the all-classes query executes once but has no metric. No heap-byte or
+full-suite claim is made. F1426 is current, F1427 remains, and Batch 10
+discovery is complete with F1428 as its sole ordered candidate, waiting for
+Batch 9 to close and push. F1428 implementation has not started. The Phase 3
+exit gate remains open. See the [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
 

@@ -8,8 +8,9 @@
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 remains In Progress on the mandatory Heavy route
   with its exit gate open. Batch 9 is active: F1425 is accepted, F1426
-  (candidate 8 of 9) is current, and F1427 remains. Begin Batch 10 discovery
-  when F1426 starts. Current details are in the
+  (candidate 8 of 9) is current, and F1427 remains. Batch 10 discovery is
+  complete; F1428 is its sole ordered candidate, waiting for Batch 9 to close
+  and push. Current details are in the
   [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [F1420 DataService migration map](../../docs/qt-rewrite/data-service-migration-map.md),

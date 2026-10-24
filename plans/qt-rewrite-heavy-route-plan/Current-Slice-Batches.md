@@ -63,6 +63,15 @@ verification evidence in its progress log.
    Phase 3.4 retains the codec boundary; Phase 8 retains transfer/export
    operation ownership.
 
-Begin Batch 10 discovery when F1426 (candidate 8 of 9, the second-to-last)
-starts. The ordered memory boundaries match the shared memory-hotspot plan;
-Phases 7 and 8 retain their existing consumer ownership.
+## Batch 10 — Discovery complete; waiting for Batch 9
+
+Batch 10 discovery is complete. It waits for Batch 9 to close and push; it is
+not active. **F1428 — Expose `ClassRepository::getClasses()` query/result
+metrics for large snapshot diagnostics** is the sole ordered candidate.
+Implementation has not started. It qualifies under Phase 3 §3.7, which
+requires query/result-size diagnostics; F1425's 96-class parity test has no
+metrics for the all-classes query. F1428 depends on accepted F1425. See the
+[Batch 10 discovery record](04-Phase-3-Progress-Log.md)
+for source evidence, proposed acceptance scope, and scan exclusions. The
+ordered memory boundaries match the shared memory-hotspot plan; Phases 7 and
+8 retain their existing consumer ownership.

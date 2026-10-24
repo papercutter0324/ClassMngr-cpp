@@ -2853,5 +2853,43 @@ statement and one each for metadata, regular, and intensive queries. The
 ClassRepository class-name query is not instrumented: source executes it once,
 with no test metric claim for it. No heap-byte measurement, full-suite result,
 or platform-wide result is claimed. F1426 is current (candidate 8 of 9), F1427
-remains, Batch 10 discovery begins when F1426 starts, and the Phase 3 exit
-gate remains open; Phase 3 remains In Progress.
+remains, Batch 10 discovery is complete with F1428 as its sole ordered
+candidate, waiting for Batch 9 to close and push. F1428 implementation has not
+started; the Phase 3 exit gate remains open and Phase 3 remains In Progress.
+
+## Batch 10 — Memory and file-lifetime discovery — 2026-10-24
+
+Two independent full scans under Exploration ID
+`PHASE3-BATCH10-DISCOVERY-20261024` found one eligible candidate and no
+further candidate. The data/API/lifecycle scan found no additional behavior
+or migration candidate.
+The `src/next` scan found no `DataService`, `DatabaseSession`, raw SQL/Qt SQL,
+or transaction-internal use; normal feature services bind
+`(WorkspaceStore*, nullptr)`. The existing dormant
+`FeatureService(DataService*)` fallback remains the prior Batch 6 exclusion.
+The four SQL `CampusRecord` methods still lack a typed service, but the F1420
+[migration map](../../docs/qt-rewrite/data-service-migration-map.md) records
+test-only direct-facade use and no ordinary feature-service caller. These
+findings do not establish additional v2 behavior or migration work.
+
+The memory/file-lifetime scan found **F1428 — Expose
+`ClassRepository::getClasses()` query/result metrics for large snapshot
+diagnostics**, accepted as Batch 10's sole ordered candidate. Phase 3
+[§3.7](04-Phase-3-Persistence-Rewrite.md#37-hotspot-specific-persistence-boundaries)
+requires exposing query/result sizes for memory diagnostics.
+[`ClassRepository::ReadMetrics`](../../src/data/repositories/class_repository.h#L36)
+tracks `getClassById` and `getClassesByIds`, but
+[`getClasses()`](../../src/data/repositories/class_repository.cpp#L94)
+executes the all-classes query without call, statement, or result-row metrics.
+The F1425 [96-class parity case](../../tests/next_platform_application_services_schedule_import_state_snapshot_port_tests.cpp#L488)
+checks 96 classes and exact values, while its existing metrics cover teacher
+and class-info reads, not this query. This is a diagnostics and coverage gap,
+not a production behavior defect.
+
+F1428 depends on accepted F1425. Proposed scope is minimal `getClasses()`
+call, statement, and returned-row metrics. The test should assert one
+statement and 96 rows on success, and not overstate failure results. Discovery
+made no code or test changes and ran no tests. Batch 9 remains active with
+F1426 current and F1427 remaining; Batch 10 waits for Batch 9 to close and
+push. F1428 implementation has not started, and the Phase 3 exit gate remains
+open.
