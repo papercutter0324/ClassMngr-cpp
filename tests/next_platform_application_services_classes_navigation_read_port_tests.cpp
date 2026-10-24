@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/application/classes_navigation_snapshot.h"
 #include "next/platform/application_services_classes_navigation_read_port.h"
@@ -142,7 +142,7 @@ readsBatchedCompactSnapshotAndPreservesMissingRowsAndOrder()
     QVERIFY(missingTeacherClass);
     QVERIFY(invalidTeacherClass);
 
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
     QSqlQuery insertTeacher(database);
     insertTeacher.prepare(QStringLiteral(
         "INSERT INTO teachers (teacher_en, teacher_kr) VALUES (?, ?)"
@@ -320,7 +320,7 @@ readsBatchedCompactSnapshotAndPreservesMissingRowsAndOrder()
     QVERIFY(invalidTeacher.details.value().teacherKoreanName.empty());
 
     const ClassesNavigationReadMetrics& metrics =
-        services.databaseSession()->classInfoRepository()
+        services.workspaceStore()->classInfoRepository()
             ->classesNavigationReadMetrics();
     QCOMPARE(metrics.metadataStatementCount, 1);
     QCOMPARE(metrics.regularScheduleStatementCount, 1);
@@ -348,7 +348,7 @@ deletedParentsWithOrphansReturnPerEntryNotFound()
     QVERIFY(populatedParent);
     QVERIFY(noInfoParent);
 
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY2(
         insertClassInfo(
             database,
@@ -499,7 +499,7 @@ deletedParentsWithOrphansReturnPerEntryNotFound()
     QVERIFY(noInfo.details.value().intensiveSchedule.empty());
 
     const ClassesNavigationReadMetrics& metrics =
-        services.databaseSession()->classInfoRepository()
+        services.workspaceStore()->classInfoRepository()
             ->classesNavigationReadMetrics();
     QCOMPARE(metrics.metadataStatementCount, 1);
     QCOMPARE(metrics.regularScheduleStatementCount, 1);

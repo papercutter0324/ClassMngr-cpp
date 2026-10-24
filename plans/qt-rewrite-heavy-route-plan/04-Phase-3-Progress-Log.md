@@ -1297,4 +1297,46 @@ before selected-grade cases. F1367 source review found its page stubs target
 legacy subtitle methods while the detailed adapter uses different methods, so
 UI integration remains unverified. This is source-level evidence, not a
 runtime result. No full suite or cross-platform build ran. F1368 is accepted;
-F1369 (Classes navigation read) is current.
+F1369 (Classes navigation read) is current. F1368 is committed as
+`87efa3ec7e935871767786b71acec856ecb410aa`.
+
+## F1369 — Classes navigation read (Batch 3 candidate 12 of 20) — 2026-10-24
+
+The port in
+`src/next/platform/application_services_classes_navigation_read_port.h`
+now includes `workspace_store.h`, checks `WorkspaceStore::isOpen()`, and
+obtains `ClassInfoRepository` through `workspaceStore()`. Its direct fixture,
+`tests/next_platform_application_services_classes_navigation_read_port_tests.cpp`,
+was migrated to `WorkspaceStore`; assertions, SQL, and metrics are unchanged.
+Neither adapter nor fixture uses `DatabaseSession` APIs. A test-support-only
+addition in `tests/classes_page_test_support.cpp` provides deterministic
+class-details, teacher display-name, and roster-count stubs using existing
+fixture data while preserving assertions and counters. The Application query,
+repository/navigation SQL, UI, and F1370 route are unchanged.
+
+Builds passed for the Application snapshot, Platform port, and ClassesPage
+targets. The serial CTests
+`ClassMngrNextApplicationClassesNavigationSnapshotTests` and
+`ClassMngrNextPlatformApplicationServicesClassesNavigationReadPortTests`
+passed. Five filtered ClassesPage slots also passed individually, each with
+3 passed and 0 failed:
+`classesNavigationReadFailureKeepsNamesAndBlankMetadata`,
+`classesNavigationEntryFailureKeepsIdentityAndValidSiblingDetails`,
+`classInfoSaveRefreshesNavigationSnapshot`,
+`selectedClassGradeFailureFailsOpenWithoutDataServiceFallback`, and
+`classesListQueryUsesActiveRepositoryOnOpenAndAfterInfoSave`. The focused page
+slots emitted a nonfatal `QSqlQuery::prepare: database not open` warning from
+a separate subtitle-read path; this does not establish that F1367 UI
+integration is fixed.
+
+The full registered `ClassMngrClassesPageTests` CTest had 19 passed and one
+failure: `navigationReleaseCachesSnapshotAndEditorsAcrossReentry` timed out at
+300.010 seconds; CTest completed at 300.54 seconds and aborted. This slot
+exercises F1369 navigation as well as Notes, Details, and editor reentry. The
+log at `/private/tmp/F1369-TEST-01-ClassMngrClassesPageTests-ctest.log`
+contains DB-not-open and `propagateSizeHints` warnings but no per-assertion
+progress; the blocked statement is unknown. Read-only triage did not establish
+attribution, so broad page-target acceptance remains unresolved. Do not
+attribute the timeout to F1369 or call it unrelated. No full project suite or
+cross-platform build ran. `git diff --check` passed. F1369 is accepted;
+F1370 (Class teacher assignments read) is current.

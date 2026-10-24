@@ -45,10 +45,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F1361 (Class Co-Teacher page read), F1362 (Class Co-Teacher teacher
   choices read), F1363 (Class Co-Teacher assignment save), F1364 (Class
   Notes page read), F1365 (Class Notes save), F1366 (Selected-class grade
-  read), F1367 (Selected-class subtitle read), and F1368 (Selected-class
-  subtitle batch read) are accepted; F1369 (Classes navigation read) is
-  current. F1358–F1368 implementation and
-  verification evidence, plus the Batch 2 push receipt, are in the
+  read), F1367 (Selected-class subtitle read), F1368 (Selected-class
+  subtitle batch read), and F1369 (Classes navigation read) are accepted;
+  F1370 (Class teacher assignments read) is current. F1358–F1369
+  implementation and verification evidence, plus the Batch 2 push receipt,
+  are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
@@ -67,17 +68,18 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1368 — 2026-10-24
+## Latest Progress Update — F1369 — 2026-10-24
 
-F1368 is accepted; F1369 is current. The batch-read port and fixture use
-`WorkspaceStore`; query, repositories, callers, and behavior are unchanged.
-All four focused CTests passed. `ClassMngrClassTransferTests` had 63 passed
-and one confirmed baseline failure in teacher-profile fallback. Classes-page
-UI integration remains unverified: F1366's page run timed out before the
-selected-grade cases, and F1367 source review found the page stubs do not
-exercise the detailed adapter path. No full suite or cross-platform build ran.
-See the [progress log](04-Phase-3-Progress-Log.md) for exact results and
-limits.
+F1369 is accepted; F1370 is current. The Classes navigation port and direct
+fixture now use `WorkspaceStore`; a test-support-only repair supplies detailed
+class, teacher-name, and roster-count stubs. Application query, SQL, UI, and
+F1370 route are unchanged. Focused builds and CTests passed, along with five
+filtered ClassesPage slots. The broad ClassesPage target had 19 passed and a
+300-second timeout in `navigationReleaseCachesSnapshotAndEditorsAcrossReentry`;
+the blocked statement and attribution are unknown, so page-target acceptance
+remains unresolved. Earlier F1366/F1367 UI limitations and the F1368 transfer
+baseline failure remain recorded in the [progress log](04-Phase-3-Progress-Log.md).
+No full suite or cross-platform build ran.
 
 ## Objective
 
