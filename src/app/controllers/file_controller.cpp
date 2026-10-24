@@ -809,15 +809,19 @@ void FileController::recoverInterruptedProfile()
     }
 
     const QString recoveryDirectory = databaseDialogDirectory();
-    const auto candidates =
+    auto candidates =
         m_workspaceCreationLifecycleAdapter
             ->normalCreateRecoveryCandidatesIn(recoveryDirectory);
+    candidates += m_workspaceCreationLifecycleAdapter
+                     ->initialSetupRecoveryCandidatesIn(recoveryDirectory);
     if (candidates.isEmpty())
     {
         DialogServices::showInformation(
             m_window,
             tr("Recover Interrupted Teacher Profile"),
-            tr("No interrupted normal profile replacements were found in:\n%1")
+            tr(
+                "No interrupted profile recovery copies were found in:\n%1"
+                )
                 .arg(recoveryDirectory)
             );
         return;

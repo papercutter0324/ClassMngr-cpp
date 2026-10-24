@@ -33,6 +33,18 @@ inline const QRegularExpression& normalCreateRecoveryNamePattern()
         );
     return pattern;
 }
+
+inline const QRegularExpression& initialSetupRecoveryNamePattern()
+{
+    static const QRegularExpression pattern(
+        QStringLiteral(
+            "^\\.([\\s\\S]+)\\.initial-setup-"
+            "([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-"
+            "[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})\\.backup$"
+            )
+        );
+    return pattern;
+}
 }
 
 struct NormalWorkspaceRecoveryCandidate final
@@ -41,8 +53,10 @@ struct NormalWorkspaceRecoveryCandidate final
     QString targetPath;
 };
 
-// Qt and legacy adapter for the normal profile creation replacement policy.
-// It confines sibling file recovery operations to Platform and delegates
+using WorkspaceRecoveryCandidate = NormalWorkspaceRecoveryCandidate;
+
+// Qt and legacy adapter for workspace creation and interrupted-profile file
+// operations. It confines those operations to Platform and delegates
 // workspace/session behavior to WorkspaceCoordinator.
 class WorkspaceCreationLifecycleAdapter final
     : public Application::WorkspaceCreationLifecyclePort
@@ -119,6 +133,44 @@ public:
         return candidates;
     }
 
+    [[nodiscard]] QVector<WorkspaceRecoveryCandidate>
+    initialSetupRecoveryCandidatesIn(
+        const QString& directoryPath
+        ) const
+    {
+        QVector<WorkspaceRecoveryCandidate> candidates;
+        const QDir directory(directoryPath);
+        const QFileInfoList entries = directory.entryInfoList(
+            QDir::Files | QDir::Hidden | QDir::NoDotAndDotDot,
+            QDir::Name
+            );
+        candidates.reserve(entries.size());
+
+        for (const QFileInfo& entry : entries)
+        {
+            if (!entry.isFile() || entry.isSymLink())
+            {
+                continue;
+            }
+
+            const QRegularExpressionMatch match =
+                initialSetupRecoveryNamePattern().match(entry.fileName());
+            if (!match.hasMatch())
+            {
+                continue;
+            }
+
+            candidates.append(
+                WorkspaceRecoveryCandidate{
+                    .sourcePath = entry.absoluteFilePath(),
+                    .targetPath = directory.filePath(match.captured(1))
+                }
+                );
+        }
+
+        return candidates;
+    }
+
     // NewOnly refuses an existing destination, so a collision cannot replace
     // either a profile or another recovery copy.
     [[nodiscard]] bool copyRecoveryCandidateNoReplace(
@@ -127,14 +179,20 @@ public:
         ) const
     {
         const QFileInfo sourceInfo(sourcePath);
+        const QString sourceName = sourceInfo.fileName();
         if (
             sourcePath.trimmed().isEmpty()
             || destinationPath.trimmed().isEmpty()
             || !sourceInfo.isFile()
             || sourceInfo.isSymLink()
-            || !normalCreateRecoveryNamePattern()
-                    .match(sourceInfo.fileName())
-                    .hasMatch()
+            || (
+                !normalCreateRecoveryNamePattern()
+                     .match(sourceName)
+                     .hasMatch()
+                && !initialSetupRecoveryNamePattern()
+                        .match(sourceName)
+                        .hasMatch()
+                )
         )
         {
             return false;

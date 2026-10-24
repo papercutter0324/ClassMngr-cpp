@@ -139,6 +139,20 @@ QString normalCreateRecoveryPath(
         );
 }
 
+QString initialSetupRecoveryPath(
+    const QString& directory,
+    const QString& targetName
+    )
+{
+    return QDir(directory).filePath(
+        QStringLiteral(".%1.initial-setup-%2.backup")
+            .arg(
+                targetName,
+                QUuid::createUuid().toString(QUuid::WithoutBraces)
+                )
+        );
+}
+
 ClassMngr::Next::Application::WorkspaceLocation workspaceLocation(
     const QString& path
     )
@@ -629,6 +643,9 @@ private slots:
     void recoverInterruptedProfileRequiresExplicitChoiceAndIgnoresLookalikes();
     void recoverInterruptedProfileCancellationAndCopyFailurePreserveFiles();
     void recoverInterruptedProfileReportsWhenNoCandidatesExist();
+    void recoverInterruptedInitialSetupBackupCopiesAndCanBeRediscovered();
+    void recoverInterruptedInitialSetupBackupPreservesPartialTarget();
+    void recoverInterruptedInitialSetupCandidatesRequireExplicitChoiceAndIgnoreLookalikes();
     void normalCreateUsesUnicodeSessionLocationForCurrentFile();
     void normalOpenUsesUnicodeSessionLocationAndPreservesHistory();
     void recentFilesDeduplicateRawAndNormalizedPaths();
@@ -1029,9 +1046,11 @@ recoverInterruptedProfileRequiresExplicitChoiceAndIgnoresLookalikes()
     const QString invalidUuidLookalike = QDir(workspaceRoot.path()).filePath(
         QStringLiteral(".ignored.tps.workspace-create-not-a-uuid.recovery")
         );
-    const QString initialSetupLookalike = QDir(workspaceRoot.path()).filePath(
-        QStringLiteral(".ignored.tps.initial-setup-%1.backup")
-            .arg(QUuid::createUuid().toString(QUuid::WithoutBraces))
+    const QString invalidInitialSetupUuidLookalike =
+        QDir(workspaceRoot.path()).filePath(
+            QStringLiteral(
+                ".ignored.tps.initial-setup-not-a-uuid.backup"
+                )
         );
     const QString ordinaryRecoveryLookalike = QDir(workspaceRoot.path()).filePath(
         QStringLiteral(".notes.recovery")
@@ -1041,7 +1060,10 @@ recoverInterruptedProfileRequiresExplicitChoiceAndIgnoresLookalikes()
             .arg(QUuid::createUuid().toString(QUuid::WithoutBraces))
         );
     QVERIFY(writeFile(invalidUuidLookalike, QByteArrayLiteral("ignore")));
-    QVERIFY(writeFile(initialSetupLookalike, QByteArrayLiteral("ignore")));
+    QVERIFY(writeFile(
+        invalidInitialSetupUuidLookalike,
+        QByteArrayLiteral("ignore")
+        ));
     QVERIFY(writeFile(ordinaryRecoveryLookalike, QByteArrayLiteral("ignore")));
     QVERIFY(writeFile(nonHiddenLookalike, QByteArrayLiteral("ignore")));
 
@@ -1271,10 +1293,303 @@ recoverInterruptedProfileReportsWhenNoCandidatesExist()
     QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Information);
     QVERIFY(
         prompts.messages.constFirst().message
-            .contains(QStringLiteral("No interrupted normal profile replacements"))
+            .contains(QStringLiteral("No interrupted profile recovery copies"))
         );
     QVERIFY(prompts.actionPrompts.isEmpty());
     QVERIFY(fileDialogs.saveFileRequests.isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::
+recoverInterruptedInitialSetupBackupCopiesAndCanBeRediscovered()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString seedDirectory = QDir(workspaceRoot.path()).filePath(
+        QStringLiteral("seed")
+        );
+    QVERIFY(QDir().mkpath(seedDirectory));
+    const QString seedPath = QDir(seedDirectory).filePath(
+        QStringLiteral("seed.tps")
+        );
+    QVERIFY(createSchemaProfile(seedPath));
+    QVERIFY(writeProfileMarker(seedPath, QStringLiteral("initial setup")));
+
+    const QString targetName = QStringLiteral("restart\nprofile.tps");
+    const QString targetPath = QFileInfo(
+        QDir(workspaceRoot.path()).filePath(targetName)
+        ).absoluteFilePath();
+    const QString recoveryPath = initialSetupRecoveryPath(
+        workspaceRoot.path(),
+        QFileInfo(targetPath).fileName()
+        );
+    QVERIFY(QFile::copy(seedPath, recoveryPath));
+    const QByteArray recoveryBytes = readFile(recoveryPath);
+    QVERIFY(!QFileInfo::exists(targetPath));
+
+    ClassMngr::Next::Platform::SettingsManagerLastDatabaseDirectoryPort
+        directoryPort;
+    QVERIFY(directoryPort.write(
+        ClassMngr::Next::Application::DirectoryPreferencePath(
+            workspaceRoot.path().toUtf8().toStdString()
+            )
+        ));
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(std::nullopt);
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(targetPath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    prompts.scriptedActionIds.enqueue(QStringLiteral("candidate-0"));
+    prompts.scriptedActionIds.enqueue(QStringLiteral("candidate-0"));
+    prompts.scriptedActionIds.enqueue(QStringLiteral("cancel"));
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(
+        &services,
+        nullptr,
+        nullptr,
+        &directoryPort
+        );
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+
+    // Canceling the destination picker leaves the discovered Initial Setup
+    // backup and its inferred target untouched.
+    actions.recoverInterruptedProfile->trigger();
+    QCOMPARE(prompts.actionPrompts.size(), 1);
+    QCOMPARE(prompts.actionPrompts.constFirst().actions.size(), 2);
+    QVERIFY(
+        prompts.actionPrompts.constFirst().informativeText
+            .contains(targetPath)
+        );
+    QVERIFY(
+        prompts.actionPrompts.constFirst().informativeText
+            .contains(recoveryPath)
+        );
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 1);
+    QVERIFY(!QFileInfo::exists(targetPath));
+    QCOMPARE(readFile(recoveryPath), recoveryBytes);
+    QVERIFY(!services.hasOpenDatabase());
+
+    // A later explicit choice copies the backup to the inferred .tps target.
+    actions.recoverInterruptedProfile->trigger();
+    QCOMPARE(prompts.actionPrompts.size(), 2);
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), targetPath);
+    QCOMPARE(readFile(targetPath), recoveryBytes);
+    QCOMPARE(readFile(recoveryPath), recoveryBytes);
+
+    // The source remains available for another deliberate recovery attempt.
+    actions.recoverInterruptedProfile->trigger();
+    QCOMPARE(prompts.actionPrompts.size(), 3);
+    QCOMPARE(prompts.actionPrompts.constLast().actions.size(), 2);
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 2);
+    QCOMPARE(readFile(targetPath), recoveryBytes);
+    QCOMPARE(readFile(recoveryPath), recoveryBytes);
+    QCOMPARE(services.currentDatabasePath(), targetPath);
+}
+
+void FileControllerWorkspaceLifecycleTests::
+recoverInterruptedInitialSetupBackupPreservesPartialTarget()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString seedDirectory = QDir(workspaceRoot.path()).filePath(
+        QStringLiteral("seed")
+        );
+    QVERIFY(QDir().mkpath(seedDirectory));
+    const QString seedPath = QDir(seedDirectory).filePath(
+        QStringLiteral("seed.tps")
+        );
+    QVERIFY(createSchemaProfile(seedPath));
+    QVERIFY(writeProfileMarker(seedPath, QStringLiteral("preserved backup")));
+
+    const QString targetPath = QFileInfo(
+        QDir(workspaceRoot.path()).filePath(QStringLiteral("partial.tps"))
+        ).absoluteFilePath();
+    const QByteArray partialTargetBytes = QByteArrayLiteral(
+        "partial Initial Setup target"
+        );
+    QVERIFY(writeFile(targetPath, partialTargetBytes));
+    const QString recoveryPath = initialSetupRecoveryPath(
+        workspaceRoot.path(),
+        QFileInfo(targetPath).fileName()
+        );
+    QVERIFY(QFile::copy(seedPath, recoveryPath));
+    const QByteArray recoveryBytes = readFile(recoveryPath);
+    const QString alternatePath = QDir(workspaceRoot.path()).filePath(
+        QStringLiteral("recovered-partial.tps")
+        );
+
+    ClassMngr::Next::Platform::SettingsManagerLastDatabaseDirectoryPort
+        directoryPort;
+    QVERIFY(directoryPort.write(
+        ClassMngr::Next::Application::DirectoryPreferencePath(
+            workspaceRoot.path().toUtf8().toStdString()
+            )
+        ));
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(targetPath)
+        );
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(alternatePath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    prompts.scriptedActionIds.enqueue(QStringLiteral("candidate-0"));
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(
+        &services,
+        nullptr,
+        nullptr,
+        &directoryPort
+        );
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+
+    actions.recoverInterruptedProfile->trigger();
+
+    QCOMPARE(prompts.actionPrompts.size(), 1);
+    QVERIFY(prompts.actionPrompts.constFirst().informativeText.contains(targetPath));
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 2);
+    QCOMPARE(
+        fileDialogs.saveFileRequests.constFirst().suggestedFileName,
+        QStringLiteral("Recovered partial.tps")
+        );
+    QVERIFY(!fileDialogs.saveFileRequests.constFirst().confirmOverwrite);
+    QVERIFY(
+        QFileInfo(alternatePath).isAbsolute()
+        && services.currentDatabasePath()
+               == QFileInfo(alternatePath).absoluteFilePath()
+        );
+    QCOMPARE(readFile(targetPath), partialTargetBytes);
+    QCOMPARE(readFile(alternatePath), recoveryBytes);
+    QCOMPARE(readFile(recoveryPath), recoveryBytes);
+    QVERIFY(prompts.messages.size() >= 1);
+    QVERIFY(
+        prompts.messages.constFirst().message.contains(
+            QStringLiteral("destination already exists"),
+            Qt::CaseInsensitive
+            )
+        );
+}
+
+void FileControllerWorkspaceLifecycleTests::
+recoverInterruptedInitialSetupCandidatesRequireExplicitChoiceAndIgnoreLookalikes()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString seedDirectory = QDir(workspaceRoot.path()).filePath(
+        QStringLiteral("seed")
+        );
+    QVERIFY(QDir().mkpath(seedDirectory));
+    const QString seedA = QDir(seedDirectory).filePath(
+        QStringLiteral("seed-a.tps")
+        );
+    const QString seedB = QDir(seedDirectory).filePath(
+        QStringLiteral("seed-b.tps")
+        );
+    QVERIFY(createSchemaProfile(seedA));
+    QVERIFY(createSchemaProfile(seedB));
+    QVERIFY(writeProfileMarker(seedA, QStringLiteral("candidate-a")));
+    QVERIFY(writeProfileMarker(seedB, QStringLiteral("candidate-b")));
+
+    const QString targetA = QFileInfo(
+        QDir(workspaceRoot.path()).filePath(QStringLiteral("a-profile.tps"))
+        ).absoluteFilePath();
+    const QString targetB = QFileInfo(
+        QDir(workspaceRoot.path()).filePath(QStringLiteral("b-profile.tps"))
+        ).absoluteFilePath();
+    const QString recoveryA = initialSetupRecoveryPath(
+        workspaceRoot.path(),
+        QFileInfo(targetA).fileName()
+        );
+    const QString recoveryB = initialSetupRecoveryPath(
+        workspaceRoot.path(),
+        QFileInfo(targetB).fileName()
+        );
+    QVERIFY(QFile::copy(seedA, recoveryA));
+    QVERIFY(QFile::copy(seedB, recoveryB));
+    const QByteArray recoveryBytesA = readFile(recoveryA);
+    const QByteArray recoveryBytesB = readFile(recoveryB);
+
+    const QString malformedUuid = QDir(workspaceRoot.path()).filePath(
+        QStringLiteral(".bad.tps.initial-setup-not-a-uuid.backup")
+        );
+    const QString uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    const QString extraSuffix = QDir(workspaceRoot.path()).filePath(
+        QStringLiteral(".extra.tps.initial-setup-%1.backup.extra")
+            .arg(uuid)
+        );
+    const QString visibleLookalike = QDir(workspaceRoot.path()).filePath(
+        QStringLiteral("visible.tps.initial-setup-%1.backup").arg(uuid)
+        );
+    QVERIFY(writeFile(malformedUuid, QByteArrayLiteral("ignore")));
+    QVERIFY(writeFile(extraSuffix, QByteArrayLiteral("ignore")));
+    QVERIFY(writeFile(visibleLookalike, QByteArrayLiteral("ignore")));
+
+    ClassMngr::Next::Platform::SettingsManagerLastDatabaseDirectoryPort
+        directoryPort;
+    QVERIFY(directoryPort.write(
+        ClassMngr::Next::Application::DirectoryPreferencePath(
+            workspaceRoot.path().toUtf8().toStdString()
+            )
+        ));
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(targetB)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    prompts.scriptedActionIds.enqueue(QStringLiteral("candidate-1"));
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(
+        &services,
+        nullptr,
+        nullptr,
+        &directoryPort
+        );
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+
+    actions.recoverInterruptedProfile->trigger();
+
+    QCOMPARE(prompts.actionPrompts.size(), 1);
+    const ActionPromptRequest& request = prompts.actionPrompts.constFirst();
+    QCOMPARE(request.actions.size(), 3);
+    QCOMPARE(request.actions.at(0).id, QStringLiteral("candidate-0"));
+    QCOMPARE(request.actions.at(1).id, QStringLiteral("candidate-1"));
+    QVERIFY(request.informativeText.contains(targetA));
+    QVERIFY(request.informativeText.contains(targetB));
+    QVERIFY(request.informativeText.contains(recoveryA));
+    QVERIFY(request.informativeText.contains(recoveryB));
+    QVERIFY(!request.informativeText.contains(QStringLiteral("not-a-uuid")));
+    QVERIFY(!request.informativeText.contains(QStringLiteral("backup.extra")));
+    QVERIFY(!request.informativeText.contains(QStringLiteral("visible.tps")));
+
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 1);
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), targetB);
+    QCOMPARE(readFile(targetB), recoveryBytesB);
+    QCOMPARE(readFile(recoveryA), recoveryBytesA);
+    QCOMPARE(readFile(recoveryB), recoveryBytesB);
+    QVERIFY(!QFileInfo::exists(targetA));
 }
 
 void FileControllerWorkspaceLifecycleTests::
