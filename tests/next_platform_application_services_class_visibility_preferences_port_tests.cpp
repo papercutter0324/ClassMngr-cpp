@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/class_visibility_preferences.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
@@ -39,7 +39,7 @@ bool openDatabase(
 
 SettingsRepository* settingsRepository(ApplicationServices& services)
 {
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     return session && session->isOpen()
         ? session->settingsRepository()
         : nullptr;
@@ -50,7 +50,7 @@ bool executeSql(
     const QString& statement
     )
 {
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     if (!session || !session->isOpen())
     {
         return false;
@@ -159,8 +159,8 @@ unavailableSettingsDefaultToActiveScheduleAndReportSaveFailure()
     ApplicationServices services;
     ApplicationServicesClassVisibilityPreferencesPort port(services);
     QVERIFY(services.dataService());
-    QVERIFY(!services.databaseSession()->isOpen());
-    QVERIFY(!services.databaseSession()->settingsRepository());
+    QVERIFY(!services.workspaceStore()->isOpen());
+    QVERIFY(!services.workspaceStore()->settingsRepository());
 
     const auto loaded = port.load();
     QVERIFY(loaded);
@@ -285,7 +285,7 @@ closedSessionDefaultsAndReportsSaveFailureWithoutChangingSettings()
     const QString path = databasePath(m_directory);
     QVERIFY(services.openDatabase(path));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     SettingsRepository* repository = session->settingsRepository();
     QVERIFY(repository);

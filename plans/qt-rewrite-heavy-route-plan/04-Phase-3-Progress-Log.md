@@ -1922,3 +1922,21 @@ confirmed pre-existing timeout. It is separate from the F1383 orphan-data and
 NavigationTeacherRead warning-text baseline failures. `git diff --check` passed.
 No full suite or cross-platform build ran. F1392 is accepted; F1393
 (Class-visibility preferences) is current.
+
+Commit: `c620607653939cfdcbf1dfcece46d4c44187d7b6`.
+
+## F1393 — Class-visibility preferences (Batch 4 candidate 16 of 20) — 2026-10-24
+
+The class-visibility preferences port,
+`src/next/platform/application_services_class_visibility_preferences_port.h`,
+and its dedicated Platform fixture,
+`tests/next_platform_application_services_class_visibility_preferences_port_tests.cpp`,
+now use `WorkspaceStore`. Defaults, missing-value materialization, parsing,
+enum-validation order, error handling, and assertions are unchanged.
+
+Built `ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests`
+and `ClassMngrMainWindowClassVisibilityPreferencesFailureTests`. Serial CTests
+#492 and #113 passed (2/2), including failed-save UI rollback and retry.
+`git diff --check` passed. The broad ClassesPage target, full suite, and
+cross-platform build were not run. F1393 is accepted; F1394 (Schedule-display
+preferences) is current.
