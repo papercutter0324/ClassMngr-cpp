@@ -1567,4 +1567,33 @@ Built `ClassMngrNextApplicationMyClassesTeacherProfileBatchReadQueryTests`,
 `ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests`,
 and `ClassMngrMyClassesPageTests`. Three serial CTests passed (3/3).
 `git diff --check` passed. No full suite or cross-platform build ran. F1378 is
-accepted; F1379 (My Classes student-count batch read) is current.
+accepted; F1379 (My Classes teacher-display-name batch read) is current.
+
+Commit: `78693d62fbcfc8219d21221c86919268d3b36f17`.
+
+## Batch 4 shortlist audit — 2026-10-24
+
+The history/source audit removed three duplicate candidates. The previous
+F1379 student-count candidate duplicates completed F1323 (commit
+`79004e09d78e0f22c8eb8c1d3c5abcab3bb52d44`); its progress entry records the
+My Classes port and fixture already using `WorkspaceStore`. Previous F1386
+read and F1387 save candidates duplicate completed F1328 and F1329 (commits
+`fee2d6db9610d6556e076908a5954f5ccb11cfb6` and
+`e696bbf00b2f9e7eaeb04bae6b5d32b92c3cac38`); both progress entries record
+their migrations to `WorkspaceStore`. The previous F1380 teacher-display-name
+read moved to F1379 current; the remaining shortlist was renumbered in order.
+
+Schedule-display-mode, calendar first-day-of-week, and academic-calendar
+schedule preferences were promoted from Batch 5 overflow to F1395–F1397.
+The newly promoted preferences are backed by these source and registration
+references: F1395 schedule-display-mode uses
+`src/next/platform/application_services_schedule_display_mode_preferences_port.h`
+(`cmake/tests/next.cmake:4407`); F1396 calendar first-day-of-week uses
+`src/next/platform/application_services_calendar_first_day_of_week_preferences_port.h`
+(`cmake/tests/next.cmake:3879`); F1397 academic-calendar schedule uses
+`src/next/platform/application_services_academic_calendar_schedule_preferences_port.h`
+(`cmake/tests/next.cmake:3889`). Read-only inspection found these ports still
+use `DatabaseSession`; registrations are not test results, and no tests were
+run for these candidates. The remaining Batch 5 candidate families and
+direct-session-check follow-ups remain in the tracker. No product code changed
+in this audit.

@@ -11,10 +11,10 @@ record useful implementation and verification evidence in its progress log.
 - Phase 3 is In Progress on the mandatory Heavy route.
 - Batch 3 (F1358–F1377) is complete and pushed to `origin/Qt-Rewrite` at
   `018b30b04ab713769f9e69b440ba7223310a2b87`.
-- Batch 4 discovery is complete; Batch 4 is active with F1378 — My Classes
-  teacher-profile batch read current.
+- Batch 4 discovery is complete; Batch 4 is active with F1379 — My Classes
+  teacher-display-name batch read current.
 
-## Phase 3 — Batch 4 (active; F1378 current)
+## Phase 3 — Batch 4 (active; F1379 current)
 
 Batch 4 discovery began when F1376 started (candidate 19 of 20 in Batch 3) and
 is complete. Two complementary scans found more than 20 possible active
@@ -24,28 +24,27 @@ feature-flow scan cross-checked user-facing workflows. This is the
 priority-ordered shortlist, not an exhaustive inventory.
 
 1. F1378 — My Classes teacher-profile batch read (accepted)
-2. F1379 — My Classes student-count batch read (current)
-3. F1380 — My Classes teacher-display-name batch read
-4. F1381 — Roster snapshot read
-5. F1382 — Roster column-name batch read
-6. F1383 — Roster template-print source read
-7. F1384 — Roster print class-info read
-8. F1385 — Speaking-evaluation roster-name read
-9. F1386 — Speaking-evaluation read
-10. F1387 — Speaking-evaluation save
-11. F1388 — GS Team directory read
-12. F1389 — GS Team directory save
-13. F1390 — Native English teacher directory read
-14. F1391 — Native English teacher directory save
-15. F1392 — Korean teacher birthday directory read
-16. F1393 — GS Team birthday directory read
-17. F1394 — Native English birthday directory read
-18. F1395 — Current-campus preferences
-19. F1396 — Class-visibility preferences
-20. F1397 — Schedule-display preferences
+2. F1379 — My Classes teacher-display-name batch read (current)
+3. F1380 — Roster snapshot read
+4. F1381 — Roster column-name batch read
+5. F1382 — Roster template-print source read
+6. F1383 — Roster print class-info read
+7. F1384 — Speaking-evaluation roster-name read
+8. F1385 — GS Team directory read
+9. F1386 — GS Team directory save
+10. F1387 — Native English teacher directory read
+11. F1388 — Native English teacher directory save
+12. F1389 — Korean teacher birthday directory read
+13. F1390 — GS Team birthday directory read
+14. F1391 — Native English birthday directory read
+15. F1392 — Current-campus preferences
+16. F1393 — Class-visibility preferences
+17. F1394 — Schedule-display preferences
+18. F1395 — Schedule-display-mode preferences
+19. F1396 — Calendar first-day-of-week preferences
+20. F1397 — Academic-calendar schedule preferences
 
-For Batch 5 discovery, retain schedule-display-mode, academic-calendar and
-academic-schedule, first-day and type-color preferences; custom palette;
+For Batch 5 discovery, retain type-color preferences; custom palette;
 personal details and signature; middle-school analytics; Sub Prep
 preferences/Zoom; reset policies including class-day-filter reset; calendar
 events; schedule import; teacher create/delete/import; Initial Setup choices;
