@@ -7,14 +7,12 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 remains In Progress on the mandatory Heavy route
-  with its exit gate open. Batch 17 is pushed to `origin/Qt-Rewrite` at
-  verified local/remote tip `11db3892c3533f7dd7d270be30905bd3d730fdd2`.
-  F1441 is accepted and committed at
-  `01a398599af2004305932f02c99671cc5fb0400f`; Batch 18 implementation is
-  complete, with closeout docs updated and push pending. Batch 19 review found
-  no candidate beyond F1441. The exact `wizardSuccessTranscript` rerun still
-  aborts before import; attribution is unresolved and the exit gate remains
-  open. No F1442 is accepted or active. Phase 3 details are in the
+  with its exit-gate review passed; Phase 3 remains In Progress pending
+  verification of the Batch 20 closeout push.
+  F1442's verification-only slot passed and F1443 is accepted and committed;
+  Batch 20 implementation and closeout docs are complete, with push pending.
+  Batch 21 discovery completed: No other slices were found. Phase 3 details
+  are in the
   [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [F1420 DataService migration map](../../docs/qt-rewrite/data-service-migration-map.md),

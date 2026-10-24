@@ -49,7 +49,10 @@ Use light or dark themes and switch the interface between English and Korean. Wh
 
 Launch ClassMngr and create or open a database. The in-app Getting Started panel guides new users through adding or importing Korean teachers, creating classes, and then adding schedules and rosters.
 
-New databases, saved copies, and exports use the `.tps` ClassMngr Database format. Existing legacy `.db` databases can still be opened.
+New databases, saved copies, and exports use the `.tps` ClassMngr Database
+format. Existing SQLite profiles are accepted under the `.db` suffix only
+when their schema is v6; conversion of existing schema-v0–v5 profiles remains
+unsupported.
 
 ## Project Documentation
 

@@ -115,8 +115,22 @@ through the workspace use case and gateway to
 `ApplicationServicesWorkspacePort`, which delegates lifecycle calls through
 `ApplicationServices` to `WorkspaceStore`. The `DatabaseSession` accessor
 remains for callers not yet migrated. Create/replacement and Initial Setup
-recovery are separate lifecycle policies. Save-as/export copies use `QSaveFile`
-and a 64 KiB buffer.
+recovery are separate lifecycle policies. F1443 extends the existing explicit
+File-menu recovery action to Initial Setup restart backups. When requested, it
+scans only the active/last-profile directory for hidden Initial Setup siblings
+named
+`.<profile>.initial-setup-<uuid>.backup`. The user chooses both candidate and
+destination. Recovery copies with no-replace semantics, retains the source,
+and opens the destination only after a successful copy; cancellation or
+failure preserves existing/partial targets and recovery artifacts. It does not
+auto-restore, delete, or overwrite. See the [File menu action](../../src/app/menu_builder.cpp#L1600-L1603),
+[recovery handler](../../src/app/controllers/file_controller.cpp#L799),
+[candidate matcher](../../src/next/platform/workspace_creation_lifecycle_adapter.h#L37),
+[candidate scan and copy](../../src/next/platform/workspace_creation_lifecycle_adapter.h#L137),
+and [restart-recovery tests](../../tests/file_controller_workspace_lifecycle_tests.cpp#L1303).
+Save-as/export use the vendored private SQLite Online Backup API to create a
+consistent snapshot, then stream that snapshot into `QSaveFile` for atomic
+destination replacement using a 64 KiB buffer.
 
 Sources: [`DatabaseFileFormat`](../../src/core/database_file_format.cpp#L7-L88),
 [`WorkspaceStore`](../../src/data/database/workspace_store.cpp#L76-L207)

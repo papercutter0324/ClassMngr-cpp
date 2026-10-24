@@ -20,21 +20,26 @@ independent WorkspacePort and DataService lifecycle CTests passed 2/2 and
 `git diff --check` passed. It uses vendored SQLite 3.54.1 Online Backup API
 handles to preserve committed WAL data and rowids before atomic QSaveFile
 replacement; macOS has no new SQLite runtime dependency. Windows and Linux were
-not built. Batch18 closeout docs are in progress. Batch 19 discovery and
-bounded review completed under
-`PHASE3-BATCH19-DISCOVERY-20261024` with no accepted candidate beyond F1441.
-The review retained F1418's void Save compatibility because v2 writes commit
-in checked local transactions and the ordinary FileController Save path has no
-pending transaction; propagating Qt's no-transaction result would falsely fail
-Save. Phase 3 remains In Progress and its exit gate is open. Final gate audit
-reran F1349 `wizardSuccessTranscript`; it still exits 134 at `wizard.show()`
-with `NSInvalidArgumentException` from Qt's QWizard pixmap path before import.
-The stack and build are recorded in `/private/tmp/PH3-F1349-UI-ABORT-VERIFY-21.log`.
-No import application or persistence code runs first. The Platform/Application
-Teacher Import CTests pass 2/2; the six individually registered UI parity tests
-do not include this wizard-success slot. No pre-F1349 same-config baseline
-exists, so attribution remains unresolved and the supported-file gate stays
-open.
+not built. Batch 18 is pushed and verified at
+`5c1bf51bb468d647227e3e0aa072a0bb9a666a2f`. F1442 was verification-only: the
+exact F1349 `wizardSuccessTranscript` slot passed with normal macOS service
+access (QtTest 3/3); its aggregate UI CTest passed 1/1 and Teacher Import
+Platform/Application CTests passed 2/2. No source or assertion changes were
+needed. F1443 is committed at
+`4463eda2640018c2307b093ed0db97b99b47c43d`; independent lifecycle CTest passed
+1/1 (71 Qt cases), with `git diff --check` clean. Batch 20 implementation and
+closeout docs are complete; its push is pending. Batch 21 discovery started at
+the second-to-last Batch 20 slice, completed with two independent scans and
+bounded review, and found no further candidate. The F1418 void Save API remains
+appropriate because checked v2 writes own their transactions and ordinary
+FileController Save has no transaction to commit. The earlier restricted
+F1349 run aborted in Qt before import; the normal-access pass resolves that test
+gap without a code workaround. Independent final-gate reviews recommend pass:
+no v2 callsite reaches DataService or SQL internals, and the supported v6 file
+paths have focused implementation/test evidence. Phase 3 remains In Progress
+until the closeout push is verified; documented limitations include no full
+suite or Windows/Linux build, and source-level (not compile-time) boundary
+enforcement.
 
 ## Goal
 
@@ -83,10 +88,19 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (F1441 committed; final gate audit pending)
+### Current checkpoint - 2026-10-24 (F1443 committed; final gate passed)
 
-Phase 3 remains In Progress on the mandatory Heavy route, with its exit gate
-open. Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
+Phase 3 remains In Progress on the mandatory Heavy route while Batch 20's
+closeout push is pending. Independent final-gate reviews recommend pass, and
+the main accepted the evidence. F1442 passed as verification-only with no code
+changes. F1443 is committed at `4463eda2640018c2307b093ed0db97b99b47c43d`;
+its independent lifecycle CTest passed 1/1 (71 Qt cases), and the diff check
+passed. Batch 21 discovery completed with `No other slices were found.` The
+current batch tracker records only Batch 20 closeout and Batch 21's empty
+discovery result. See the [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
+for gate evidence and limits.
+
+Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
 `origin/Qt-Rewrite` at `7b4eaaf809ecdc17e4e14fae555b157c361c378d`; the remote
 tip matched and the worktree was clean. F1425 verified the full ordered 96-class
 Schedule Import snapshot (24 teachers, 768 regular and 24 intensive schedule
@@ -233,17 +247,20 @@ objects/rowids before QSaveFile replacement. Independent WorkspacePort and
 DataService lifecycle CTests passed 2/2; `git diff --check` passed. macOS
 verified no SQLite dynamic dependency and private SQLite symbols. Windows and
 Linux builds remain unrun; no full-suite or memory claim is made. Batch18
-closeout docs are pending. Batch19 discovery began at F1441 start under
-`PHASE3-BATCH19-DISCOVERY-20261024`; two independent scans and bounded review
-completed with no accepted candidate beyond F1441. Review confirmed F1418's
-void Save compatibility: v2 repositories own and check local transactions, no
-production v2 caller retains a transaction for the FileController Save action,
-and surfacing Qt's no-active-transaction result would falsely fail ordinary
-Save. Revisit only if a production caller begins retaining a transaction. The
-F1349 wizard-success slot still aborts at `wizard.show()` before importing with
-the macOS NSBundle exception; application import code is not reached, the
-baseline is unavailable, and attribution remains unresolved. The supported-file
-gate stays open pending disposition.
+closeout docs were pushed at verified tip
+`5c1bf51bb468d647227e3e0aa072a0bb9a666a2f`. F1442 passed verification-only
+under normal macOS service access; no source or assertion changes were needed.
+Batch20 discovery began when F1442 started under
+`PHASE3-BATCH20-DISCOVERY-20261024`; its two scans and bounded review accepted
+F1443 as the second candidate. F1443 adds explicit user-directed recovery for
+Initial Setup restart backups and is committed at
+`4463eda2640018c2307b093ed0db97b99b47c43d`; independent lifecycle CTest passed
+1/1 (71 Qt cases). Batch21 discovery completed with two independent scans and
+bounded review and found no further candidate. Final-gate review recommends
+pass: the file paths have focused evidence, and no v2 callsite reaches
+DataService or SQL internals. The public WorkspaceStore database handle remains
+a source-level boundary limitation. Phase3 docs and push are in closeout; no
+full-suite or Windows/Linux build claim is made.
 Batch18 discovery and review
 completed under `PHASE3-BATCH18-DISCOVERY-20261024`; its sole candidate, F1441,
 is a consistent SQLite snapshot for Save As/export that includes committed WAL
@@ -267,8 +284,8 @@ collection work remains with Phase 7D/7H. Classes/Speaking Evaluation
 navigation detail lifetime is deferred to Phases 7D/7H because it requires
 page/model changes; Calendar parsed-event consumer lifetime remains deferred
 to Phase 7F. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
-records the live state and acceptance boundaries. The Phase 3 backlog and
-exit gate remain open.
+records the live state and acceptance boundaries. The exit-gate review passed;
+Batch20 closeout push verification remains pending.
 
 Phase 2 remains complete with its separate audit limitations and F629
 requalification recorded in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)

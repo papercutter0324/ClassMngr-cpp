@@ -2988,9 +2988,11 @@ complete and pushed to `origin/Qt-Rewrite` at verified tip
 `11db3892c3533f7dd7d270be30905bd3d730fdd2`. F1441 is accepted and committed
 at `01a398599af2004305932f02c99671cc5fb0400f`; Batch 18 implementation is
 complete, with closeout docs updated and push pending. Batch 19 review found
-no candidate beyond F1441. The exact `wizardSuccessTranscript` rerun still
-aborts before import, with attribution unresolved. No F1442 is accepted or
-active. Phase 3 remains In Progress and its exit gate remains open.
+no candidate beyond F1441. F1442's verification-only F1349 wizard slot passed;
+F1443 is accepted and committed. Batch 20 implementation and closeout docs are
+complete; push is pending. Batch 21 discovery completed: No other slices
+were found. Independent exit-gate review passed; Phase 3 remains In Progress
+until the closeout push is verified.
 
 ## F1429 — Schedule Import row-count metrics — 2026-10-24
 
@@ -3445,17 +3447,61 @@ macOS build has no SQLite dynamic dependency. No Windows or Linux build, full
 suite, or memory claim is made. Batch 18 implementation is complete; closeout
 docs are updated and push is pending.
 
-## Final-gate verification unresolved — F1349 wizard slot — 2026-10-24
+## F1442 — F1349 wizard-success verification — 2026-10-24
 
-The exact F1349 `wizardSuccessTranscript` rerun still aborts on macOS with exit
-134 before import at `wizard.show()`: `NSInvalidArgumentException:
--[NSBundle initWithURL:]: nil URL argument`. The stack proceeds through
-`QWizard::page` → pixmap → `QWizardPage::isCommitPage` → `currentIdChanged` →
-restart → `setVisible` → slot. No app import, apply, or persistence code runs
-before the abort. Teacher Import Platform/Application CTests passed 2/2; six
-separately registered F1349 UI parity CTests passed but did not include this
-wizard-success slot. There is no pre-F1349 same-configuration baseline, so do
-not call this pre-existing or environmental; attribution remains unresolved.
-The focused log is
-`/private/tmp/PH3-F1349-UI-ABORT-VERIFY-21.log`. Phase 3 remains In Progress
-with its exit gate open; do not claim closure.
+F1442 was a verification-only slice: no source changes or commit, and no app
+code or test assertions changed. Under normal macOS service access, the exact
+F1349 `wizardSuccessTranscript` slot passed in QtTest (3 passed, 0 failed).
+`ClassMngrTeacherImportUiApplyParityTests` passed CTest 1/1, and Teacher Import
+Platform/Application CTests passed 2/2. No workaround was added. The earlier
+restricted attempt aborted in Qt `NSBundle initWithURL:nil` before import; the
+normal-access pass means this is no longer an unresolved Phase 3 gate issue.
+The six individual F1349 UI registrations did not include the wizard-success
+slot.
+
+## F1443 — Initial Setup restart recovery — 2026-10-24
+
+F1443 was accepted and committed at
+`4463eda2640018c2307b093ed0db97b99b47c43d` (`Phase3 - Add Initial Setup
+restart recovery`). The three code/test paths are the
+[FileController](../../src/app/controllers/file_controller.cpp),
+[Platform lifecycle adapter](../../src/next/platform/workspace_creation_lifecycle_adapter.h),
+and [lifecycle tests](../../tests/file_controller_workspace_lifecycle_tests.cpp).
+It extends the existing explicit File-menu recovery entry to discover hidden
+Initial Setup restart backups named
+`.<profile>.initial-setup-<uuid>.backup`.
+The user chooses a candidate and destination; the implementation copies with
+no-replace semantics, retains the source, and preserves any partial target.
+It never automatically restores, deletes, or overwrites. Normal finish,
+cancel, and rollback tests remain.
+
+Independent macOS arm64 Debug CTest
+`ClassMngrFileControllerWorkspaceLifecycleTests` passed 1/1 (QtTest 71 passed,
+0 failed); `git diff --check` passed. The Tester verified exact UUID matching
+for both recovery types, direct scan of the active/last-profile directory,
+explicit choices, no-replace copy, source/partial-target preservation, and no
+automatic restore/delete. There is no Initial Setup-specific injected I/O
+failure test; shared F1440 recovery failure handling is covered. Windows,
+Linux, and the full suite were not run.
+
+## Batch 21 discovery outcome — 2026-10-24
+
+Two independent scans and bounded review completed. No additional candidate
+was accepted beyond F1441–F1443. No other slices were found. The F1418
+`void saveDatabase()` disposition is unchanged. Batch 20 implementation and
+closeout docs are complete; push is pending.
+
+## Final exit-gate review — passed; closeout push pending — 2026-10-24
+
+Two independent final-gate Explorers recommended pass, and the main agent
+accepted the Phase 3 gate on those reports. File-compatibility review retained
+the explicit v0–v5 unsupported policy and noted that evidence is
+macOS-focused, cross-platform builds were not run, and crash artifacts were
+simulated rather than produced through actual process termination.
+Source-boundary review found no v2 call sites into DataService or SQL internals;
+`WorkspaceStore` still publicly exposes `QSqlDatabase`, so enforcement is
+source-reviewed rather than compile-time. No additional implementation
+candidate was identified. F1443 is committed at
+`4463eda2640018c2307b093ed0db97b99b47c43d`; Batch 20 closeout docs are
+complete and push is pending. Phase 3 remains In Progress until the push is
+verified; do not claim phase completion yet.
