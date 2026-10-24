@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "next/application/calendar_event_by_id_query_port.h"
@@ -205,8 +204,8 @@ public:
 
         try
         {
-            DatabaseSession* const session = m_services.databaseSession();
-            if (!session || !session->isOpen())
+            WorkspaceStore* const store = m_services.workspaceStore();
+            if (!store || !store->isOpen())
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
@@ -215,7 +214,7 @@ public:
             }
 
             CalendarEventRepository* const repository =
-                session->calendarEventRepository();
+                store->calendarEventRepository();
             if (!repository)
             {
                 return failure(
@@ -245,7 +244,7 @@ public:
             if (!visited)
             {
                 const QString repositoryError = visited.error();
-                if (!session->isOpen())
+                if (!store->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,

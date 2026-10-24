@@ -3952,7 +3952,7 @@ preservesLegacyTitleSurroundingSpaces()
     QVERIFY(openDatabase(services, m_directory));
 
     QSqlQuery query(
-        services.dataService()->databaseSession()->database()
+        services.workspaceStore()->database()
         );
     query.prepare(QStringLiteral(
         "INSERT INTO calendar_events ("
@@ -4557,7 +4557,7 @@ rejectsPartialSourceTimesAndProjectionOverflow()
     int partialId = -1;
     {
         QSqlQuery query(
-            services.dataService()->databaseSession()->database()
+            services.workspaceStore()->database()
             );
         query.prepare(QStringLiteral(
             "INSERT INTO calendar_events ("
@@ -4618,7 +4618,7 @@ rejectsPartialSourceTimesAndProjectionOverflow()
     // Make the final ordered source row invalid for projection. The raw-row
     // capacity boundary must win before the adapter converts that row.
     QSqlQuery malformedOverflowRow(
-        services.dataService()->databaseSession()->database()
+        services.workspaceStore()->database()
         );
     malformedOverflowRow.prepare(QStringLiteral(
         "UPDATE calendar_events SET title=? WHERE id=?"
@@ -4644,7 +4644,7 @@ rejectsPartialSourceTimesAndProjectionOverflow()
         );
 
     QSqlQuery restoreOverflowRow(
-        services.dataService()->databaseSession()->database()
+        services.workspaceStore()->database()
         );
     restoreOverflowRow.prepare(QStringLiteral(
         "UPDATE calendar_events SET title=? WHERE id=?"
@@ -4676,7 +4676,7 @@ rejectsPartialSourceTimesAndProjectionOverflow()
         );
 
     QSqlQuery moveLastEventOutsideRange(
-        services.dataService()->databaseSession()->database()
+        services.workspaceStore()->database()
         );
     moveLastEventOutsideRange.prepare(QStringLiteral(
         "UPDATE calendar_events SET start_date=?, end_date=? WHERE id=?"
