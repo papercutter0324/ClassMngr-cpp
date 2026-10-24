@@ -9,10 +9,10 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 2 is active and unpushed; F1350 (Schedule slot-state read) is
-  complete, and F1351 is current: Schedule testing-assignment board read.
+- Batch 2 is active and unpushed; F1351 (Schedule testing-assignment board
+  read) is complete, and F1352 is current: Schedule testing-class choices.
 
-## Phase 3 — Batch 2 (active; current: F1351)
+## Phase 3 — Batch 2 (active; current: F1352)
 
 1. F1338 — Sub Prep information-sheet print-source read
 2. F1339 — Sub Prep roster-output source read

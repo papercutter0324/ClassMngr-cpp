@@ -826,3 +826,19 @@ Executor and Tester incrementally built `ClassMngr`,
 `ClassMngrScheduleWidgetTests` in the existing `build/macos-clang-debug` tree.
 The three focused CTests passed **3/3** serially. `git diff --check` passed.
 No full suite or cross-platform build ran.
+
+## F1351 — Schedule testing-assignment board read — 2026-10-23
+
+The Schedule testing-assignment Platform port now uses `WorkspaceStore` for
+availability and `TestingBlockRepository` access. Its dedicated test fixtures
+and repository metrics access also use `WorkspaceStore`; assertions remain.
+The repository API/query and result mapping are unchanged, preserving ordered
+rows, raw day/time/room values, joined metadata and defaults, malformed class
+ID behavior, uncapped results, and existing errors.
+
+Executor and Tester incrementally built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`,
+`ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`, and
+`ClassMngrScheduleWidgetTests` in the existing `build/macos-clang-debug` tree.
+The three focused CTests passed **3/3** serially. `git diff --check` passed.
+No full suite or cross-platform build ran.

@@ -2,7 +2,7 @@
 
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/testing_block_repository.h"
 #include "next/application/schedule_testing_assignment_read_query.h"
 
@@ -38,15 +38,15 @@ public:
         const Application::ScheduleTestingAssignmentReadQuery&
         ) const override
     {
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return unavailableFailure();
         }
 
         TestingBlockRepository* const repository =
-            session->testingBlockRepository();
+            store->testingBlockRepository();
         if (!repository)
         {
             return unavailableFailure();

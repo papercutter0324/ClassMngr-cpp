@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/testing_block_repository.h"
 #include "next/application/schedule_testing_assignment_read_query.h"
 #include "next/platform/application_services_schedule_testing_assignment_read_port.h"
@@ -140,7 +140,7 @@ readsOrderedRawAssignmentsAndJoinedSpecialMetadata()
         directory,
         QStringLiteral("active")
         )));
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
 
     QSqlQuery teacher(database);
     QVERIFY(teacher.exec(QStringLiteral(R"(
@@ -311,7 +311,7 @@ readsOrderedRawAssignmentsAndJoinedSpecialMetadata()
     QVERIFY(!result.value().rows[3].specialClass);
 
     const TestingAssignmentDisplayReadMetrics& metrics = services
-        .databaseSession()
+        .workspaceStore()
         ->testingBlockRepository()
         ->testingAssignmentDisplayReadMetrics();
     QCOMPARE(metrics.callCount, 1);
@@ -329,7 +329,7 @@ usesOneStatementAsAssignmentCountGrows()
         directory,
         QStringLiteral("query-count")
         )));
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(insertAssignment(
         database,
         QStringLiteral("Monday"),
@@ -346,7 +346,7 @@ usesOneStatementAsAssignmentCountGrows()
     QVERIFY(result);
     QCOMPARE(result.value().rows.size(), std::size_t(1));
     QCOMPARE(
-        services.databaseSession()->testingBlockRepository()
+        services.workspaceStore()->testingBlockRepository()
             ->testingAssignmentDisplayReadMetrics().statementCount,
         1
         );
@@ -367,7 +367,7 @@ usesOneStatementAsAssignmentCountGrows()
     QVERIFY(result);
     QCOMPARE(result.value().rows.size(), std::size_t(41));
     const TestingAssignmentDisplayReadMetrics& metrics = services
-        .databaseSession()
+        .workspaceStore()
         ->testingBlockRepository()
         ->testingAssignmentDisplayReadMetrics();
     QCOMPARE(metrics.callCount, 2);
@@ -385,7 +385,7 @@ reportsMalformedClassIdAsTechnicalFailure()
         directory,
         QStringLiteral("malformed-class-id")
         )));
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
     QSqlQuery disableForeignKeys(database);
     QVERIFY(disableForeignKeys.exec(QStringLiteral(
         "PRAGMA foreign_keys=OFF"
@@ -467,7 +467,7 @@ distinguishesUnavailableSessionFromRepositoryFailure()
         QStringLiteral("failed-read")
         )));
     QSqlQuery dropAssignments(
-        failedReadServices.databaseSession()->database()
+        failedReadServices.workspaceStore()->database()
         );
     QVERIFY(dropAssignments.exec(QStringLiteral(
         "DROP TABLE schedule_testing_blocks"

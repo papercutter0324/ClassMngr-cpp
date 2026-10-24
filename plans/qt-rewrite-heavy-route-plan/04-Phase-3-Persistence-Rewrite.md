@@ -38,10 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-23
-- Current note: Batch 2 remains active and unpushed; F1350 (Schedule slot-state
-  read) is complete, and F1351 is current: Schedule testing-assignment board
-  read. The
-  Batch 1 push receipt is in the progress log.
+- Current note: Batch 2 remains active and unpushed; F1351 (Schedule
+  testing-assignment board read) is complete, and F1352 is current: Schedule
+  testing-class choices. The Batch 1 push receipt is in the progress log.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -59,11 +58,11 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1350 — 2026-10-23
+## Latest Progress Update — F1351 — 2026-10-23
 
-Moved the Schedule slot-state read port and its fixture database access to
-`WorkspaceStore`; repository query behavior and UI behavior remain unchanged.
-Three focused CTests passed. Details are in the
+Moved the Schedule testing-assignment board read port and its direct fixture
+access to `WorkspaceStore`; repository query and result mapping remain
+unchanged. Three focused CTests passed. Details are in the
 [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
