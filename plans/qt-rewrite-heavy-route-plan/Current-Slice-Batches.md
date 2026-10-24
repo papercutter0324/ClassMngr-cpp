@@ -14,10 +14,10 @@ record useful implementation and verification evidence in its progress log.
   was later pushed as
   `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before Batch 4
   began.
-- Batch 4 discovery is complete; Batch 4 is active with F1395 — Schedule-display-mode
-  preferences current.
+- Batch 4 discovery is complete; Batch 4 is active with F1396 — Calendar
+  first-day-of-week preferences current.
 
-## Phase 3 — Batch 4 (active; F1395 current)
+## Phase 3 — Batch 4 (active; F1396 current)
 
 Batch 4 discovery began when F1376 started (candidate 19 of 20 in Batch 3) and
 is complete. Two complementary scans found more than 20 possible active
@@ -43,8 +43,8 @@ priority-ordered shortlist, not an exhaustive inventory.
 15. F1392 — Current-campus preferences (accepted)
 16. F1393 — Class-visibility preferences (accepted)
 17. F1394 — Schedule-display preferences (accepted)
-18. F1395 — Schedule-display-mode preferences (current)
-19. F1396 — Calendar first-day-of-week preferences
+18. F1395 — Schedule-display-mode preferences (accepted)
+19. F1396 — Calendar first-day-of-week preferences (current)
 20. F1397 — Academic-calendar schedule preferences
 
 For Batch 5 discovery, retain type-color preferences; custom palette;

@@ -52,9 +52,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   teacher directory read), F1388 (Native English teacher directory save),
   F1389 (Korean teacher birthday directory read), F1390 (GS Team birthday
   directory read), F1391 (Native English birthday directory read), F1392
-  (Current-campus preferences), F1393 (Class-visibility preferences), and
-  F1394 (Schedule-display preferences) are accepted; F1395 (Schedule-display-mode
-  preferences) is current. F1376–F1394
+  (Current-campus preferences), F1393 (Class-visibility preferences), F1394
+  (Schedule-display preferences), and F1395 (Schedule-display-mode preferences)
+  are accepted; F1396 (Calendar first-day-of-week preferences) is current.
+  F1376–F1395
   implementation evidence, Batch 2 and
   Batch 3 push receipts, and earlier UI limitations and attribution notes are
   in the [progress log](04-Phase-3-Progress-Log.md).
@@ -75,16 +76,15 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1394 — 2026-10-24
+## Latest Progress Update — F1395 — 2026-10-24
 
-F1394 is accepted; F1395 is current in Batch 4. The Schedule-display
-preferences read/write adapter and dedicated Platform fixture now use
-`WorkspaceStore`; five keys, defaults, parsing, atomic save, and assertions are
-unchanged. The Platform-port and ScheduleWidget CTests passed. The schedule
-parity CTest repeated six `fixture.databaseReady == false` failures from the
-clean F1393 baseline, with no new failure. The separate F1383 orphan-data,
-NavigationTeacherRead warning-text, F1392 SubPrep timeout, and schedule parity
-fixture-setup baseline findings remain recorded in the
+F1395 is accepted; F1396 is current in Batch 4. The Schedule-display-mode
+adapter and dedicated Platform fixture now use `WorkspaceStore`;
+canonical/legacy key parsing, migration/fallback, unknown-value preservation,
+save validation/error behavior, and assertions are unchanged. CTests #488,
+#46, and #69 passed serially (3/3). The F1383 orphan-data, NavigationTeacherRead
+warning-text, F1392 SubPrep timeout, and schedule parity fixture-setup
+baseline findings remain separately recorded in the
 [progress log](04-Phase-3-Progress-Log.md). No full suite or cross-platform
 build ran.
 

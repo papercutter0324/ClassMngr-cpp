@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/schedule_display_mode_preferences.h"
 
@@ -46,8 +46,8 @@ public:
     [[nodiscard]] Application::ScheduleDisplayModePreferencesLoadResult load()
         const override
     {
-        DatabaseSession* const session = m_services.databaseSession();
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store = m_services.workspaceStore();
+        if (!store || !store->isOpen())
         {
             return Application::
                 ScheduleDisplayModePreferencesLoadResult::success(
@@ -55,7 +55,7 @@ public:
                     );
         }
 
-        SettingsRepository* const repository = session->settingsRepository();
+        SettingsRepository* const repository = store->settingsRepository();
         if (!repository)
         {
             return Application::
@@ -128,15 +128,15 @@ public:
                 });
         }
 
-        DatabaseSession* const session = m_services.databaseSession();
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store = m_services.workspaceStore();
+        if (!store || !store->isOpen())
         {
             return failure(
                 "Schedule display mode cannot be saved because no database session is open."
                 );
         }
 
-        SettingsRepository* const repository = session->settingsRepository();
+        SettingsRepository* const repository = store->settingsRepository();
         if (!repository)
         {
             return failure(

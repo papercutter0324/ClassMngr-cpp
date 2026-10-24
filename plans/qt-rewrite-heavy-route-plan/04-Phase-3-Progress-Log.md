@@ -1956,3 +1956,18 @@ F1393 baseline, at lines 747, 783, 832, 924, 1003, and 1208, including schedule
 preference recovery cases. No new failure occurred. `git diff --check` passed.
 No full suite or cross-platform build ran. F1394 is accepted; F1395
 (Schedule-display-mode preferences) is current.
+
+Commit: `8a37be83ef79cd6097dd127e541986973ce43511`.
+
+## F1395 — Schedule-display-mode preferences (Batch 4 candidate 18 of 20) — 2026-10-24
+
+The Schedule-display-mode adapter and dedicated Platform fixture now use
+`WorkspaceStore`. Canonical and legacy key parsing, migration and fallback,
+unknown-value preservation, save validation and error behavior, and assertions
+are unchanged.
+
+Built `ClassMngrNextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests`,
+`ClassMngrScheduleWidgetTests`, and `ClassMngrMyWorkspacePageTests`. Serial CTests
+#488, #46, and #69 passed (3/3). `git diff --check` passed. No full suite or
+cross-platform build ran. F1395 is accepted; F1396 (Calendar first-day-of-week
+preferences) is current and is the Batch 5 discovery trigger.

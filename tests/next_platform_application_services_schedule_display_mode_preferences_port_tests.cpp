@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/schedule_display_mode_preferences.h"
 #include "next/platform/application_services_schedule_display_mode_preferences_port.h"
@@ -94,7 +94,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -122,7 +122,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -152,7 +152,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -204,7 +204,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -243,7 +243,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -268,7 +268,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -299,7 +299,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
 {
     ApplicationServices services;
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(!session->isOpen());
     ApplicationServicesScheduleDisplayModePreferencesPort port(services);
@@ -321,7 +321,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     const QString path = databasePath(m_directory);
     QVERIFY(services.openDatabase(path));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -370,7 +370,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     SettingsRepository* const repository = session->settingsRepository();
     QVERIFY(repository);
@@ -421,7 +421,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     QVERIFY(session->settingsRepository());
