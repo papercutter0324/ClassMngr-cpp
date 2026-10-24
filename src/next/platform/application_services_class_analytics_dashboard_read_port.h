@@ -71,14 +71,12 @@ public:
                     };
                     roster.hasEnglishColumn = metadata.hasEnglishColumn;
                     roster.hasKoreanColumn = metadata.hasKoreanColumn;
-                    roster.englishNames.resize(metadata.rowCount);
-                    roster.koreanNames.resize(metadata.rowCount);
                 },
                 [&](const RosterRepository::ClassAnalyticsRosterNameCell& cell)
                 {
                     auto& names = cell.isEnglishName
                         ? roster.englishNames : roster.koreanNames;
-                    names[cell.rowIndex] = cell.value.toStdU16String();
+                    names.push_back(cell.value.toStdU16String());
                 });
             if (!loaded)
             {

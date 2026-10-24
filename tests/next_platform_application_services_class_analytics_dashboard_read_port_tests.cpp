@@ -51,6 +51,7 @@ private slots:
     void rejectsInvalidRosterColumnPositionStorage();
     void rejectsRosterRowsOutsideClassAnalyticsIntegerRange();
     void missingEvaluationIsSuccessfulEmptyInput();
+    void emptySelectedRosterColumnsHaveNoNameEntries();
     void unknownClassIsSuccessfulEmptyInput();
     void rosterAndEvaluationRowsAreUncapped();
     void activeSessionQueryFailureIsStructured();
@@ -272,10 +273,10 @@ sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders()
     QVERIFY(roster.value().hasKoreanColumn);
     QCOMPARE(roster.value().rowCount.rawValue(), std::size_t{5});
     QVERIFY((roster.value().englishNames == std::vector<std::u16string>{
-        u"Chosen English", u"", u"", u"", u""
+        u"Chosen English"
     }));
     QVERIFY((roster.value().koreanNames == std::vector<std::u16string>{
-        u"", u"", u"Chosen Korean", u"", u""
+        u"Chosen Korean"
     }));
 
     const auto dashboard =
@@ -292,10 +293,8 @@ sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders()
     QVERIFY(!absentHeaders.value().hasEnglishColumn);
     QVERIFY(!absentHeaders.value().hasKoreanColumn);
     QCOMPARE(absentHeaders.value().rowCount.rawValue(), std::size_t{4});
-    QVERIFY(absentHeaders.value().englishNames
-            == std::vector<std::u16string>(4));
-    QVERIFY(absentHeaders.value().koreanNames
-            == std::vector<std::u16string>(4));
+    QVERIFY(absentHeaders.value().englishNames.empty());
+    QVERIFY(absentHeaders.value().koreanNames.empty());
 }
 
 void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::
@@ -580,6 +579,45 @@ missingEvaluationIsSuccessfulEmptyInput()
 }
 
 void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::
+emptySelectedRosterColumnsHaveNoNameEntries()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("class-analytics-empty-roster.db"))));
+    const auto classId = services.classService()->create(
+        QStringLiteral("Empty roster"));
+    QVERIFY(classId);
+
+    QSqlQuery insertColumn(services.workspaceStore()->database());
+    insertColumn.prepare(R"(
+        INSERT INTO roster_columns (class_id, name, position, width)
+        VALUES (?, ?, ?, 100)
+    )");
+    insertColumn.addBindValue(*classId);
+    insertColumn.addBindValue(QStringLiteral("English"));
+    insertColumn.addBindValue(0);
+    QVERIFY(insertColumn.exec());
+    insertColumn.bindValue(0, *classId);
+    insertColumn.bindValue(1, QStringLiteral("Korean"));
+    insertColumn.bindValue(2, 1);
+    QVERIFY(insertColumn.exec());
+
+    const auto typedClassId = Domain::ClassId::fromString(
+        std::to_string(*classId));
+    QVERIFY(typedClassId);
+    Platform::ApplicationServicesClassAnalyticsDashboardReadPort port(services);
+    const auto roster = port.readRosterNames(*typedClassId);
+    QVERIFY(roster);
+    QVERIFY(roster.value().hasEnglishColumn);
+    QVERIFY(roster.value().hasKoreanColumn);
+    QCOMPARE(roster.value().rowCount.rawValue(), std::size_t{0});
+    QVERIFY(roster.value().englishNames.empty());
+    QVERIFY(roster.value().koreanNames.empty());
+}
+
+void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::
 unknownClassIsSuccessfulEmptyInput()
 {
     QTemporaryDir directory;
@@ -704,12 +742,10 @@ rosterAndEvaluationRowsAreUncapped()
     const auto roster = port.readRosterNames(*typedClassId);
     QVERIFY(roster);
     QCOMPARE(roster.value().rowCount.rawValue(), std::size_t{rowCount});
-    QCOMPARE(roster.value().englishNames.size(), std::size_t{rowCount});
-    QCOMPARE(roster.value().koreanNames.size(), std::size_t{rowCount});
+    QCOMPARE(roster.value().englishNames.size(), std::size_t{2});
+    QVERIFY(roster.value().koreanNames.empty());
     QVERIFY(roster.value().englishNames.front() == u"First student");
-    QVERIFY(roster.value().englishNames[1].empty());
     QVERIFY(roster.value().englishNames.back() == u"Last student");
-    QVERIFY(roster.value().koreanNames.back().empty());
 
     const auto evaluations = port.readEvaluationBatch(*typedClassId);
     QVERIFY(evaluations);

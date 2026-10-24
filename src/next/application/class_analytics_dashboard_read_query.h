@@ -370,6 +370,9 @@ namespace ClassAnalyticsDashboardReadDetail
     std::vector<std::u16string> englishNames;
     if (roster.hasEnglishColumn)
     {
+        // The read port supplies a compact row-ordered list of stored values;
+        // these offsets are not roster row indexes.
+        englishNames.reserve(roster.englishNames.size());
         for (const std::u16string& rawName : roster.englishNames)
         {
             const std::u16string name = names.trimmed(rawName);
@@ -381,6 +384,7 @@ namespace ClassAnalyticsDashboardReadDetail
     std::vector<std::u16string> koreanNames;
     if (roster.hasKoreanColumn)
     {
+        koreanNames.reserve(roster.koreanNames.size());
         for (const std::u16string& rawName : roster.koreanNames)
         {
             if (!names.trimmed(rawName).empty())

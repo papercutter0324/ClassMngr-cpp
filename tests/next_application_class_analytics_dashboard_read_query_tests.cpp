@@ -516,8 +516,9 @@ void currentRosterUsesNormalizedEnglishAndKoreanIdentities()
     port.roster.rowCount = ClassAnalyticsRosterRowCount{std::size_t{2}};
     port.roster.hasEnglishColumn = true;
     port.roster.hasKoreanColumn = true;
-    port.roster.englishNames = { u"Mary - Jane", u"" };
-    port.roster.koreanNames = { u"", u"김민수(B)" };
+    // Compact name values do not retain their original roster row offsets.
+    port.roster.englishNames = { u"Mary - Jane" };
+    port.roster.koreanNames = { u"김민수(B)" };
     port.evaluations[0] = {
         row(u"Mary-Jane", u"", u"B"),
         row(u"", u"김민수(A)", u"A"),
@@ -589,9 +590,7 @@ void queryCountWrappersPreserveDistinctRosterAndScoredStudentMeanings()
     FakeReadPort port;
     port.roster.rowCount = ClassAnalyticsRosterRowCount{std::size_t{5}};
     port.roster.hasEnglishColumn = true;
-    port.roster.englishNames = {
-        u"Alex", u"", u"Blair", u"", u""
-    };
+    port.roster.englishNames = { u"Alex", u"Blair" };
     port.evaluations[0] = {
         row(u"Alex", u"", u"A"),
         row(u"Alex", u"", u"B", false),

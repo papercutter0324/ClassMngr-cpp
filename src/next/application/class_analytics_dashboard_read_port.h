@@ -62,8 +62,9 @@ private:
 
 struct ClassAnalyticsRosterNames final
 {
-    // Matches Roster::rows.size(), including blank and sparse rows, without
-    // copying unrelated roster columns or their cell values.
+    // Matches Roster::rows.size(), including blank and sparse rows. The name
+    // vectors contain only stored cells from the first exact English/Korean
+    // columns, in row order; their positions do not identify roster rows.
     ClassAnalyticsRosterRowCount rowCount;
     bool hasEnglishColumn = false;
     bool hasKoreanColumn = false;
