@@ -1152,4 +1152,34 @@ Apple Clang and Qt 6.12. Four registered serial CTests passed:
 adapter and fixtures contain no `DatabaseSession`, `databaseSession()`, or
 `database_session.h`. Feature tests emitted non-failing font-fallback and
 offscreen `propagateSizeHints` warnings. No full CTest suite or cross-platform
-build ran. F1364 is accepted; F1365 is current.
+build ran. F1364 is accepted and committed as
+`b9921f7da1a0949f76e4d14b49e3b10aedec8862`.
+
+## F1365 — Class Notes save — 2026-10-23
+
+The production save port in
+`src/next/platform/application_services_class_notes_save_port.h` now includes
+`workspace_store.h` and uses `WorkspaceStore` for availability,
+`ClassInfoRepository`, and post-write open-state checks; no `DatabaseSession`
+API remains. Its focused fixtures,
+`tests/next_platform_application_services_class_notes_save_port_tests.cpp` and
+`tests/class_notes_page_save_parity_tests.cpp`, now use `WorkspaceStore`.
+Assertions, SQL semantics, test slots, and parity behavior are unchanged. The
+page/UI/autosave, Application use case/port, detailed repository
+transaction/API/SQL, F1364 read adapter, and F1366 adapter are unchanged.
+
+Existing contracts include request and ID validation, text trimming and
+validation, transactional write, parent-missing classification,
+unavailable-store recovery, technical failures, diagnostics, and failed-write
+preservation.
+
+Four targets built incrementally in `build/macos-clang-debug`. Four serial
+CTests passed: `ClassMngrNextApplicationClassNotesSavePortTests`,
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests`,
+`ClassMngrNextFeatureClassNotesPageTests`, and
+`ClassMngrClassNotesPageSaveParityTests`. `git diff --check` passed. The
+scoped adapter and fixtures contain no `DatabaseSession`,
+`databaseSession()`, or `database_session.h`. Existing Platform tests do not
+separately cover transaction-start/commit failure, null services, missing
+repository, or injected exceptions. No full suite or cross-platform build
+ran. F1365 is accepted; F1366 (Selected-class grade read) is current.

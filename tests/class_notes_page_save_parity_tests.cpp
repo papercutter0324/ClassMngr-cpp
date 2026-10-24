@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
@@ -123,7 +123,7 @@ bool initializeWorkspace(ClassNotesWorkspace& workspace, QString* error)
     }
     workspace.teacherId = *createdTeacher;
 
-    const Status saved = workspace.services.databaseSession()
+    const Status saved = workspace.services.workspaceStore()
         ->classInfoRepository()
         ->saveClassInfo(commonSeed(workspace.classId, workspace.teacherId));
     if (!saved)
@@ -339,7 +339,7 @@ failedSaveWarnsAndRetainsUnchangedPersistence()
     editors.at(1)->setPlainText(QStringLiteral("  Rejected activities  "));
     QVERIFY(page.hasUnsavedChanges());
 
-    QSqlQuery installFailure(workspace.services.databaseSession()->database());
+    QSqlQuery installFailure(workspace.services.workspaceStore()->database());
     QVERIFY2(
         installFailure.exec(QStringLiteral(
             "CREATE TRIGGER fail_f373_class_notes_save "

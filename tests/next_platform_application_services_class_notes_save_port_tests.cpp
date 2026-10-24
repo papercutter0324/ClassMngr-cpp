@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/application/class_notes_save_use_case.h"
 #include "next/platform/application_services_class_notes_save_port.h"
@@ -59,9 +59,9 @@ int createClass(ApplicationServices& services)
 
 ClassInfoRepository* classInfoRepository(ApplicationServices& services)
 {
-    DatabaseSession* const session = services.databaseSession();
-    return session && session->isOpen()
-        ? session->classInfoRepository()
+    WorkspaceStore* const store = services.workspaceStore();
+    return store && store->isOpen()
+        ? store->classInfoRepository()
         : nullptr;
 }
 
@@ -154,7 +154,7 @@ rejectsInvalidAndOverLimitInputBeforeAnyWrite()
         QStringLiteral("Original activities")
         ));
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_class_notes_update "
         "BEFORE UPDATE ON class_info "
@@ -236,7 +236,7 @@ mapsUnavailableAndClosedSession()
     QVERIFY(closedServices.openDatabase(databasePath(directory)));
     QVERIFY(createClass(closedServices) > 0);
     closedServices.closeDatabase();
-    QVERIFY(!closedServices.databaseSession()->isOpen());
+    QVERIFY(!closedServices.workspaceStore()->isOpen());
 
     Platform::ApplicationServicesClassNotesSavePort closedPort(closedServices);
     const Application::ClassNotesSaveResult closed =
@@ -269,7 +269,7 @@ mapsRepositoryWriteFailureAndPreservesStoredNotes()
         QStringLiteral("Original activities")
         ));
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_class_notes_update "
         "BEFORE UPDATE OF notes ON class_info "
@@ -316,7 +316,7 @@ unknownPositiveClassIdReturnsNotFoundAndPreservesLegacyDiagnostic()
     ClassInfoRepository* const repository = classInfoRepository(services);
     QVERIFY(repository);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QSqlQuery classBeforeQuery(database);
     classBeforeQuery.prepare(QStringLiteral(
         "SELECT COUNT(*) FROM classes WHERE id=?"

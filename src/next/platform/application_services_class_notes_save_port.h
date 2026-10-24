@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "domain/validation/class_info_validator.h"
 #include "next/application/class_notes_save_port.h"
@@ -74,15 +74,15 @@ public:
                 );
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return unavailableFailure();
         }
 
         ClassInfoRepository* const repository =
-            session->classInfoRepository();
+            store->classInfoRepository();
         if (!repository)
         {
             return failure(
@@ -120,7 +120,7 @@ public:
                 );
             if (!saved)
             {
-                if (!session->isOpen())
+                if (!store->isOpen())
                 {
                     return unavailableFailure();
                 }
