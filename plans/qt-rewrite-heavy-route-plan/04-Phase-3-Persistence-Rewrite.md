@@ -38,17 +38,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 5 is complete (19/19 accepted) and pushed: source/
-  acceptance tip `5725e723`, follow-up receipts `8d74cf7a` and `ea91cb64`, and
-  handoff tip `b29a0c9b`. Batch 6 is complete and pushed with F1417 at
-  `1a42b6ad`. Batch 7's one candidate, F1418, is accepted and its
-  source/acceptance commit and push are pending. It moves the live
-  `ApplicationServices` save commit into `WorkspaceStore::commit()` while
-  preserving the existing void signature and failure behavior.
-  `DataService::save()` has no ordinary production caller and is out of scope.
+- Current note: Batch 7 is complete and pushed with F1418 at `7e9760f3`.
   Batch 8 discovery found no other slices; its two read-only scans and excluded
-  coverage-only gap are recorded in the progress log. F1418, F1417, and F1416
-  evidence is in the
+  DDL-test coverage gap are recorded in the progress log. No batch or candidate
+  is active, but Phase 3 remains In Progress and its backlog is not exhausted.
+  `DataService::save()` has no ordinary production caller. F1418, F1417, and
+  F1416 evidence is in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
@@ -73,8 +68,11 @@ F1418 — Workspace save commit ownership — is accepted. The live
 `ApplicationServices::saveDatabase()` path calls `WorkspaceStore::commit()`;
 the void signature, closed-store no-op, and ignored commit-failure behavior
 remain unchanged. `DataService::save()` has no ordinary production caller and
-is out of scope. Its source/acceptance commit and Batch 7 push are pending;
-Batch 8 remains queued until that push. Full evidence is in the
+is out of scope. Source/acceptance commit
+`7e9760f354a6be5c02936ff728fa0bc93ea8e6bc` was pushed to `origin/Qt-Rewrite`;
+local and remote tips matched and the worktree was clean. Batch 8 discovery
+found no other slices. No batch or candidate is active, and the backlog remains
+open. Full evidence is in the
 [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective

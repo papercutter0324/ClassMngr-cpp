@@ -2627,12 +2627,13 @@ Commit: `e78f2056`.
 
 Moved the live `ApplicationServices::saveDatabase()` commit into
 `WorkspaceStore::commit()`. The void signature, closed-store no-op, and
-ignored commit-failure behavior remain unchanged. Dormant `DataService::save()`
-is out of scope because it has no ordinary production caller. Existing
+ignored commit-failure behavior remain unchanged. `DataService::save()` has no
+ordinary production caller and is out of scope. Existing
 Workspace port integration verifies transaction persistence through a second
-SQLite connection; no test files changed. F1418 is accepted, with its
-source/acceptance commit and Batch 7 push pending. Batch 8 discovery found no
-other slices and remains queued until that push.
+SQLite connection; no test files changed. F1418 is accepted at commit
+`7e9760f354a6be5c02936ff728fa0bc93ea8e6bc`, pushed successfully to
+`origin/Qt-Rewrite`. Local and remote tips matched and the worktree was clean.
+Batch 7 is complete and pushed.
 
 The incremental macOS Debug build compiled and linked all three targets, then
 reported no work to do on rerun:
@@ -2657,8 +2658,9 @@ boundary and broader Phase 3 deliverables, including schema/migration and
 file/backup/recovery work. They converged on `No other slices were found.` The
 schema baseline lacks full DDL-shape and all-index tests; this was excluded as
 a coverage-only gap because no production behavior slice was identified.
-`DataService::save()` has no ordinary production caller. Batch 7/F1418 was
-active; Batch 8 waits for Batch 7 to close and push.
+Batch 7/F1418 was active when discovery ran. No batch or candidate is
+currently active; Phase 3 remains In Progress and the discovery does not
+exhaust its backlog.
 
 ## F1417 — WorkspaceStore-owned roster availability read transaction (Batch 6 candidate 1 of 1) — 2026-10-24
 

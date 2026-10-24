@@ -7,12 +7,9 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 5 is complete (19/19 slices accepted) and pushed: source/acceptance
-  tip `5725e723`, follow-up receipts `8d74cf7a` and `ea91cb64`, and handoff
-  tip `b29a0c9b` are pushed. Batch 6 is complete and pushed with F1417 at
-  `1a42b6ad`. Batch 7's F1418 is accepted and ready for its source/acceptance
-  commit and push. Batch 8 discovery found no other slices and is waiting for
-  Batch 7 to close and push.
+  Batch 7 is complete and pushed with F1418 at `7e9760f3`. Batch 8 discovery
+  found no other slices; no batch or candidate is active. Phase 3 remains in
+  progress, and the discovery does not exhaust its backlog.
   The current details are in the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
