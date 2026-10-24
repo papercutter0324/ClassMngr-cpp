@@ -93,10 +93,13 @@ Result<int> ClassRepository::createClass(
 
 Result<QList<Classroom>> ClassRepository::getClasses()
 {
+    ++m_readMetrics.getClassesCallCount;
+
     QList<Classroom> classes;
 
     QSqlQuery query(m_database);
 
+    ++m_readMetrics.getClassesStatementAttemptCount;
     const auto executed = SqlQueryUtils::execute(
         query,
         QStringLiteral(R"(
@@ -146,6 +149,7 @@ Result<QList<Classroom>> ClassRepository::getClasses()
         return std::unexpected(query.lastError().text());
     }
 
+    m_readMetrics.getClassesReturnedRowCount += classes.size();
     return classes;
 }
 

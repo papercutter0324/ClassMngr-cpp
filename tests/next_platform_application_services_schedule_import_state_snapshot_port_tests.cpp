@@ -625,6 +625,8 @@ preservesLargeWorkspaceRecordsAndReadCounts()
 
     const ScheduleImportTeacherReadMetrics teacherMetricsBefore =
         teacherRepository->scheduleImportTeacherReadMetrics();
+    const ClassRepository::ReadMetrics classMetricsBefore =
+        classRepository->readMetrics();
     const ScheduleImportStateSnapshotClassInfoReadMetrics classInfoMetricsBefore =
         classInfoRepository->scheduleImportStateSnapshotClassInfoReadMetrics();
 
@@ -723,6 +725,23 @@ preservesLargeWorkspaceRecordsAndReadCounts()
         teacherMetricsAfter.statementCount - teacherMetricsBefore.statementCount,
         1
         );
+    const ClassRepository::ReadMetrics classMetricsAfter =
+        classRepository->readMetrics();
+    QCOMPARE(
+        classMetricsAfter.getClassesCallCount
+            - classMetricsBefore.getClassesCallCount,
+        1
+        );
+    QCOMPARE(
+        classMetricsAfter.getClassesStatementAttemptCount
+            - classMetricsBefore.getClassesStatementAttemptCount,
+        1
+        );
+    QCOMPARE(
+        classMetricsAfter.getClassesReturnedRowCount
+            - classMetricsBefore.getClassesReturnedRowCount,
+        classCount
+        );
     const ScheduleImportStateSnapshotClassInfoReadMetrics classInfoMetricsAfter =
         classInfoRepository->scheduleImportStateSnapshotClassInfoReadMetrics();
     QCOMPARE(
@@ -743,6 +762,36 @@ preservesLargeWorkspaceRecordsAndReadCounts()
         classInfoMetricsAfter.intensiveScheduleStatementCount
             - classInfoMetricsBefore.intensiveScheduleStatementCount,
         1
+        );
+
+    QSqlQuery invalidClass(database);
+    QVERIFY2(
+        invalidClass.exec(QStringLiteral(
+            "INSERT INTO classes (id, name) "
+            "VALUES (2147483648, 'zz invalid class id')"
+            )),
+        qPrintable(invalidClass.lastError().text())
+        );
+    const ClassRepository::ReadMetrics failedReadMetricsBefore =
+        classRepository->readMetrics();
+    const Result<QList<Classroom>> failedClasses = classRepository->getClasses();
+    QVERIFY(!failedClasses);
+    const ClassRepository::ReadMetrics failedReadMetricsAfter =
+        classRepository->readMetrics();
+    QCOMPARE(
+        failedReadMetricsAfter.getClassesCallCount
+            - failedReadMetricsBefore.getClassesCallCount,
+        1
+        );
+    QCOMPARE(
+        failedReadMetricsAfter.getClassesStatementAttemptCount
+            - failedReadMetricsBefore.getClassesStatementAttemptCount,
+        1
+        );
+    QCOMPARE(
+        failedReadMetricsAfter.getClassesReturnedRowCount
+            - failedReadMetricsBefore.getClassesReturnedRowCount,
+        0
         );
 }
 

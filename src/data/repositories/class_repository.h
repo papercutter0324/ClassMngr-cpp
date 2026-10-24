@@ -30,6 +30,11 @@ public:
         int getClassesByIdsCallCount = 0;
         int requestedClassCount = 0;
         int batchStatementCount = 0;
+        int getClassesCallCount = 0;
+        int getClassesStatementAttemptCount = 0;
+        // Calls and statement attempts include failures; rows count only for
+        // reads that complete and validate successfully.
+        int getClassesReturnedRowCount = 0;
     };
 
     explicit ClassRepository(
