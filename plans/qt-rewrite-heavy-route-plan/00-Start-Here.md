@@ -17,8 +17,9 @@
   (My Classes teacher-display-name batch read), F1380 (Roster snapshot read),
   F1381 (Roster column-name batch read), F1382 (Roster template-print source
   read), F1383 (Roster print class-info read), and F1384
-  (Speaking-evaluation roster-name read) are accepted; F1385 (GS Team
-  directory read) is accepted; F1386 (GS Team directory save) is current.
+  (Speaking-evaluation roster-name read), F1385 (GS Team directory read),
+  and F1386 (GS Team directory save) are accepted; F1387 (Native English
+  teacher directory read) is current.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI
   limitations, baseline failures, attribution, and coverage notes remain in
   the Phase 3 progress log. The [Phase 3

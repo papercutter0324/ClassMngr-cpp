@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/gs_team_repository.h"
 #include "domain/models/gs_team_member.h"
 #include "next/application/gs_team_directory_save_port.h"
@@ -29,23 +29,23 @@ public:
 
     [[nodiscard]] bool hasActiveSession() const noexcept
     {
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        return session && session->isOpen() && session->gsTeamRepository();
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        return store && store->isOpen() && store->gsTeamRepository();
     }
 
     [[nodiscard]] Domain::Result<void> saveGsTeamDirectory(
         const Application::GsTeamDirectorySaveRequest& request
         ) const override
     {
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return unavailableFailure();
         }
 
-        GsTeamRepository* const repository = session->gsTeamRepository();
+        GsTeamRepository* const repository = store->gsTeamRepository();
         if (!repository)
         {
             return unavailableFailure();

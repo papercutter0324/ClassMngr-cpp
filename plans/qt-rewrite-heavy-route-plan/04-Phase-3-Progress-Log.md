@@ -1750,3 +1750,26 @@ passed (4/4): #353 `ClassMngrNextApplicationGsTeamDirectoryReadQueryTests`,
 `ClassMngrStaffDirectoryGsTeamReadParityTests`. `git diff --check` passed. No
 full suite or cross-platform build ran. F1385 is accepted; F1386 (GS Team
 directory save) is current.
+
+Commit: `f2c150cac390903f3558272dad5d368dd4dd92e7`.
+
+## F1386 — GS Team directory save (Batch 4 candidate 9 of 20) — 2026-10-24
+
+The GS Team save port,
+`src/next/platform/application_services_gs_team_directory_save_port.h`, now
+uses `WorkspaceStore` for `hasActiveSession()` and `saveGsTeamDirectory()`.
+Direct persistence accesses in the dedicated Platform fixture,
+`tests/next_platform_application_services_gs_team_directory_save_port_tests.cpp`,
+migrated; assertions are unchanged. Qt Unicode name-key behavior and
+transaction-rollback assertions are unchanged.
+
+Built `ClassMngrNextApplicationGsTeamDirectorySaveTests`,
+`ClassMngrNextPlatformApplicationServicesGsTeamDirectorySavePortTests`,
+`ClassMngrStaffDirectoryGsTeamSaveTests`, and
+`ClassMngrStaffDirectoryGsTeamSaveParityTests`. Four selected serial CTests
+passed (4/4): #352 `ClassMngrNextApplicationGsTeamDirectorySaveTests`, #420
+`ClassMngrNextPlatformApplicationServicesGsTeamDirectorySavePortTests`, #132
+`ClassMngrStaffDirectoryGsTeamSaveTests`, and #133
+`ClassMngrStaffDirectoryGsTeamSaveParityTests`. `git diff --check` passed. No
+full suite or cross-platform build ran. F1386 is accepted; F1387 (Native
+English teacher directory read) is current.

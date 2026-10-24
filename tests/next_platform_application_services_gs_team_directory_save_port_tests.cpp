@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/gs_team_repository.h"
 #include "domain/models/gs_team_member.h"
 #include "next/application/gs_team_directory_save.h"
@@ -41,7 +41,7 @@ GsTeamMember member(const QString& name, const QString& koreanName)
 
 bool seedDirectory(ApplicationServices& services)
 {
-    return static_cast<bool>(services.databaseSession()
+    return static_cast<bool>(services.workspaceStore()
         ->gsTeamRepository()->saveDirectory(
             {
                 member(QStringLiteral("Update Target"),
@@ -111,7 +111,7 @@ mapsFiveFieldsTypedIdsAndDeletedIdsThroughTheActiveRepository()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
     QVERIFY(seedDirectory(services));
-    const auto original = services.databaseSession()
+    const auto original = services.workspaceStore()
         ->gsTeamRepository()->getAll();
     QVERIFY(original);
     QCOMPARE(original->size(), 2);
@@ -146,7 +146,7 @@ mapsFiveFieldsTypedIdsAndDeletedIdsThroughTheActiveRepository()
     const Domain::Result<void> saved = port.saveGsTeamDirectory(request);
     QVERIFY(saved);
 
-    const auto persisted = services.databaseSession()
+    const auto persisted = services.workspaceStore()
         ->gsTeamRepository()->getAll();
     QVERIFY(persisted);
     QCOMPARE(persisted->size(), 2);
@@ -218,7 +218,7 @@ reportsRepositoryFailureAndTransactionRollsBackAllChanges()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
     QVERIFY(seedDirectory(services));
-    const auto original = services.databaseSession()
+    const auto original = services.workspaceStore()
         ->gsTeamRepository()->getAll();
     QVERIFY(original);
 
@@ -238,7 +238,7 @@ reportsRepositoryFailureAndTransactionRollsBackAllChanges()
     QVERIFY(updateId > 0);
     QVERIFY(deleteId > 0);
 
-    QSqlQuery createTrigger(services.databaseSession()->database());
+    QSqlQuery createTrigger(services.workspaceStore()->database());
     QVERIFY2(createTrigger.exec(QStringLiteral(
         "CREATE TRIGGER reject_gs_team_insert BEFORE INSERT ON gs_team "
         "BEGIN SELECT RAISE(ABORT, 'reject insert'); END")),
@@ -260,7 +260,7 @@ reportsRepositoryFailureAndTransactionRollsBackAllChanges()
     QVERIFY(saved.error().message.find("reject insert") != std::string::npos);
     QVERIFY(!saved.error().recoverable);
 
-    const auto after = services.databaseSession()
+    const auto after = services.workspaceStore()
         ->gsTeamRepository()->getAll();
     QVERIFY(after);
     QCOMPARE(after->size(), original->size());
@@ -291,7 +291,7 @@ rollsBackCompanionWritesWhenUpdateFails()
     QVERIFY(services.openDatabase(databasePath(directory)));
     QVERIFY(seedDirectory(services));
     GsTeamRepository* const repository =
-        services.databaseSession()->gsTeamRepository();
+        services.workspaceStore()->gsTeamRepository();
     const auto original = repository->getAll();
     QVERIFY(original);
 
@@ -311,7 +311,7 @@ rollsBackCompanionWritesWhenUpdateFails()
     QVERIFY(updateId > 0);
     QVERIFY(deleteId > 0);
 
-    QSqlQuery setup(services.databaseSession()->database());
+    QSqlQuery setup(services.workspaceStore()->database());
     if (staleUpdate)
     {
         setup.prepare(QStringLiteral("DELETE FROM gs_team WHERE id=?"));
