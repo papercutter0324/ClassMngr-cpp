@@ -2192,3 +2192,33 @@ residual projection only) is current, with prior F1341 operations excluded.
 Batch 5 remains unpushed until its remaining slices are complete.
 
 Commit: `b2c1cf00190871f5913c7b10c685b09156f49cd9`.
+
+## F1403 — Calendar event range projection (Batch 5 candidate 6 of 19) — 2026-10-24
+
+Only the residual
+`ApplicationServicesCalendarEventPort::projection(QDate,QDate)` helper in
+`src/next/platform/application_services_calendar_event_port.h` and five
+direct range-fixture SQL handles in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`
+moved to `WorkspaceStore`. F1341 availability/by-ID work and the already
+WorkspaceStore-backed `CalendarEventProjectionQuery`/cache path were unchanged;
+no production caller to this helper was found. Date validation,
+unavailable/repository error mapping, exception handling, projection metadata
+validation, the 4,096-event cap, and all assertions are preserved.
+
+An incremental build in `build/macos-clang-debug` passed for
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrCalendarEventCacheTests`, and
+`ClassMngrCalendarPageEventMutationParityTests`. CTest #431,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and CTest
+#23, `ClassMngrCalendarEventCacheTests`, passed 2/2. With
+`QT_QPA_PLATFORM=offscreen`, direct CalendarPage slots
+`currentMonthUpcomingRowsMatchVisibleCalendarRange` and
+`upcomingRangeFailuresOfferRetryAndRecover` passed 4/4 including init/cleanup;
+the run emitted a non-failing font warning and a diagnostic transcript.
+`git diff --check` passed. The full CalendarPage parity CTest, full suite, and
+cross-platform builds did not run. F1403 is accepted; F1404 (Personal
+display-name preferences) is current. Batch 5 remains unpushed until its
+remaining slices are complete.
+
+Commit: `f2a57d20a116f89f737a866dbb1b21177a9820c1`.

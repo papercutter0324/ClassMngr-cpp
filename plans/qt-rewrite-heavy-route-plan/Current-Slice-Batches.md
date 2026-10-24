@@ -17,13 +17,14 @@ verification evidence in its progress log.
   began.
 - Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`; its
   implementation tip is `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`.
-- Batch 5 discovery is complete and Batch 5 is active with F1403 — Calendar
-  event range projection current (residual projection only; prior F1341
-  operations remain excluded). F1402 — Evaluation default policy is accepted
-  at `b2c1cf00190871f5913c7b10c685b09156f49cd9`; 14 prioritized candidates
-  remain.
+- Batch 5 discovery is complete and Batch 5 is active with F1404 — Personal
+  display-name preferences current. F1403 — Calendar event range projection
+  (residual projection only) is accepted at
+  `f2a57d20a116f89f737a866dbb1b21177a9820c1`; 13 prioritized candidates
+  remain. Its scope excludes F1341 availability/by-ID work and the
+  WorkspaceStore-backed query/cache path.
 
-## Phase 3 — Batch 5 (active; F1403 current)
+## Phase 3 — Batch 5 (active; F1404 current)
 
 Two complementary scans found 19 prioritized, distinct persistence slices.
 The source scan found exactly 19 active Next Platform ports after excluding
@@ -37,9 +38,9 @@ scan-identified item is a candidate, not a test result.
 3. F1400 — Class-day-filter reset policy (accepted)
 4. F1401 — Class-selection reset policy (accepted)
 5. F1402 — Evaluation default policy (accepted)
-6. F1403 — Calendar event range projection (current; residual projection only;
+6. F1403 — Calendar event range projection (accepted; residual projection only;
    prior F1341 operations stay excluded)
-7. F1404 — Personal display-name preferences
+7. F1404 — Personal display-name preferences (current)
 8. F1405 — Personal details save
 9. F1406 — Personal signature preferences
 10. F1407 — Personal signature image
