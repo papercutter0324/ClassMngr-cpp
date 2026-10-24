@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/teacher_repository.h"
@@ -49,9 +49,9 @@ public:
         using FailureSource =
             Application::ScheduleImportStateSnapshotFailureSource;
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return Failure{
                 FailureKind::ActiveSessionUnavailable,
@@ -60,11 +60,11 @@ public:
             };
         }
 
-        ClassRepository* const classRepository = session->classRepository();
+        ClassRepository* const classRepository = store->classRepository();
         TeacherRepository* const teacherRepository =
-            session->teacherRepository();
+            store->teacherRepository();
         ClassInfoRepository* const classInfoRepository =
-            session->classInfoRepository();
+            store->classInfoRepository();
         if (!classRepository)
         {
             return repositoryUnavailable(FailureSource::Classes);

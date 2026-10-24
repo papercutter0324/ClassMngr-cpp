@@ -175,7 +175,7 @@ mapsActiveSessionRecordsInRepositoryOrder()
     QVERIFY(testingOnly > 0);
     QVERIFY(missingInfo > 0);
 
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
     int teacherIdValue = -1;
     QVERIFY2(
         insertTeacher(
@@ -264,18 +264,18 @@ mapsActiveSessionRecordsInRepositoryOrder()
         ));
 
     const Result<QList<Classroom>> legacyOrder =
-        services.databaseSession()->classRepository()->getClasses();
+        services.workspaceStore()->classRepository()->getClasses();
     const Result<QList<Teacher>> teacherOrder =
-        services.databaseSession()->teacherRepository()->getAllTeachers();
+        services.workspaceStore()->teacherRepository()->getAllTeachers();
     QVERIFY(legacyOrder);
     QVERIFY(teacherOrder);
 
     TeacherRepository* const teacherRepository =
-        services.databaseSession()->teacherRepository();
+        services.workspaceStore()->teacherRepository();
     const ScheduleImportTeacherReadMetrics teacherMetricsBefore =
         teacherRepository->scheduleImportTeacherReadMetrics();
     ClassInfoRepository* const classInfoRepository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     const ScheduleImportStateSnapshotClassInfoReadMetrics
         snapshotClassInfoMetricsBefore = classInfoRepository
             ->scheduleImportStateSnapshotClassInfoReadMetrics();
@@ -503,7 +503,7 @@ preservesWideTeacherIdsAndLowIdAssociations()
     QVERIFY(wideClass > 0);
 
     constexpr qint64 wideTeacherIdValue = 2147483648LL;
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
     int lowTeacherId = -1;
     QVERIFY(insertTeacher(
         database,
@@ -545,7 +545,7 @@ preservesWideTeacherIdsAndLowIdAssociations()
         QStringLiteral("#654321")
         ));
 
-    const auto teacherReadRecords = services.databaseSession()
+    const auto teacherReadRecords = services.workspaceStore()
         ->teacherRepository()->loadScheduleImportTeacherRecords();
     QVERIFY(teacherReadRecords.has_value());
     QCOMPARE(teacherReadRecords->size(), 2);
@@ -614,7 +614,7 @@ rejectsPartialTeacherCursorRead()
     QVERIFY(services.openDatabase(
         databasePath(directory, QStringLiteral("partial-teacher-read"))
         ));
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
 
     QSqlQuery foreignKeysOff(database);
     QVERIFY2(
@@ -735,7 +735,7 @@ rejectsPartialTeacherCursorRead()
         Qt::CaseInsensitive
         ));
 
-    const auto teacherRecords = services.databaseSession()
+    const auto teacherRecords = services.workspaceStore()
         ->teacherRepository()->loadScheduleImportTeacherRecords();
     QVERIFY(!teacherRecords.has_value());
 
@@ -831,7 +831,7 @@ reportsEachRepositoryReadFailureWithoutLegacyFallback()
                 );
         }
         QSqlQuery foreignKeysOff(
-            services.databaseSession()->database()
+            services.workspaceStore()->database()
             );
         if (!foreignKeysOff.exec(QStringLiteral("PRAGMA foreign_keys = OFF")))
         {
@@ -844,7 +844,7 @@ reportsEachRepositoryReadFailureWithoutLegacyFallback()
                 }
                 );
         }
-        if (!dropTable(services.databaseSession()->database(), table))
+        if (!dropTable(services.workspaceStore()->database(), table))
         {
             return Application::ScheduleImportStateSnapshotOutcome(
                 Application::ScheduleImportStateSnapshotFailure{
