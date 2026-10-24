@@ -54,6 +54,28 @@ bool createAndCloseWorkspace(
     return static_cast<bool>(port.closeDatabase(created.value()));
 }
 
+void verifyPopulatedWorkspace(
+    ApplicationServices& services,
+    const int teacherId,
+    const QString& expectedEnglishName,
+    const QString& expectedRoomNumber,
+    const QString& expectedNotes,
+    const QString& expectedSetting
+    )
+{
+    const auto teacher = services.teacherService()->teacher(teacherId);
+    QVERIFY(teacher);
+    QCOMPARE(teacher->teacherEn, expectedEnglishName);
+    QCOMPARE(teacher->roomNumber, expectedRoomNumber);
+    QCOMPARE(teacher->notes, expectedNotes);
+
+    const auto setting = services.settingsService()->load(
+        QStringLiteral("workspace/file-compatibility")
+        );
+    QVERIFY(setting);
+    QCOMPARE(setting->toString(), expectedSetting);
+}
+
 class CurrentDirectoryRestore final
 {
 public:
@@ -96,6 +118,7 @@ private slots:
     void voidSaveSucceedsOpenAndFailsClosed();
     void saveAsPreservesIdentityAndReopensNormalizedDestination();
     void exportReturnsNormalizedDestinationWithoutChangingCurrentPath();
+    void populatedDbSaveAsAndExportRoundTripThroughExistingOpen();
     void openPreservesLegacyErrorMessage();
     void portsUseIndependentServicesWithoutSessionSnapshots();
 
@@ -633,6 +656,152 @@ void NextPlatformApplicationServicesWorkspacePortTests::exportReturnsNormalizedD
     QVERIFY(exportedValue);
     QCOMPARE(exportedValue->toString(), QStringLiteral("exported"));
     QCOMPARE(port.currentDatabasePath(), currentPath);
+}
+
+void NextPlatformApplicationServicesWorkspacePortTests::
+populatedDbSaveAsAndExportRoundTripThroughExistingOpen()
+{
+    ApplicationServices services;
+    ApplicationServicesWorkspacePort port(services);
+    const QString sourcePath = m_directory.filePath(
+        QStringLiteral("populated-db/source-schema-v6.db")
+        );
+    const QString saveAsPath = m_directory.filePath(
+        QStringLiteral("populated-db/save-as/保存先.db")
+        );
+    const QString exportPath = m_directory.filePath(
+        QStringLiteral("populated-db/export/書き出し.db")
+        );
+    const std::string expectedSource = normalizedPath(sourcePath);
+    const std::string expectedSaveAs = normalizedPath(saveAsPath);
+    const std::string expectedExport = normalizedPath(exportPath);
+    const QString expectedEnglishName =
+        QStringLiteral("Fixture Teacher");
+    const QString expectedRoomNumber = QStringLiteral("B-12");
+    const QString expectedNotes = QStringLiteral("file compatibility fixture");
+    const QString expectedSetting = QStringLiteral("schema-v6-db");
+
+    const auto created = port.createOrOpenDatabase(utf8(sourcePath));
+    QVERIFY(created);
+    QCOMPARE(created.value().location(), expectedSource);
+    QCOMPARE(created.value().workspaceId(), expectedSource);
+
+    Teacher teacher;
+    teacher.teacherEn = expectedEnglishName;
+    teacher.roomNumber = expectedRoomNumber;
+    teacher.notes = expectedNotes;
+    const auto createdTeacher = services.teacherService()->create(teacher);
+    QVERIFY(createdTeacher);
+    QVERIFY(services.settingsService()->save(
+        QStringLiteral("workspace/file-compatibility"),
+        expectedSetting
+        ));
+
+    const auto savedAs = port.saveDatabaseAs(
+        created.value(),
+        utf8(saveAsPath)
+        );
+
+    QVERIFY(savedAs);
+    QCOMPARE(savedAs.value().workspaceId(), created.value().workspaceId());
+    QCOMPARE(savedAs.value().location(), expectedSaveAs);
+    QCOMPARE(port.currentDatabasePath(), expectedSaveAs);
+    QCOMPARE(utf8(services.currentDatabasePath()), expectedSaveAs);
+    QVERIFY(services.hasOpenDatabase());
+    QVERIFY(QFile::exists(saveAsPath));
+    verifyPopulatedWorkspace(
+        services,
+        createdTeacher.value(),
+        expectedEnglishName,
+        expectedRoomNumber,
+        expectedNotes,
+        expectedSetting
+        );
+
+    QVERIFY(port.closeDatabase(savedAs.value()));
+    const auto reopenedSaveAs = port.openDatabase(utf8(saveAsPath));
+    QVERIFY(reopenedSaveAs);
+    QCOMPARE(reopenedSaveAs.value().location(), expectedSaveAs);
+    QCOMPARE(port.currentDatabasePath(), expectedSaveAs);
+    verifyPopulatedWorkspace(
+        services,
+        createdTeacher.value(),
+        expectedEnglishName,
+        expectedRoomNumber,
+        expectedNotes,
+        expectedSetting
+        );
+
+    QVERIFY(port.closeDatabase(reopenedSaveAs.value()));
+    const auto reopenedSource = port.openDatabase(utf8(sourcePath));
+    QVERIFY(reopenedSource);
+    QCOMPARE(reopenedSource.value().location(), expectedSource);
+    QCOMPARE(port.currentDatabasePath(), expectedSource);
+    verifyPopulatedWorkspace(
+        services,
+        createdTeacher.value(),
+        expectedEnglishName,
+        expectedRoomNumber,
+        expectedNotes,
+        expectedSetting
+        );
+
+    DatabaseSession* const sourceSession = services.databaseSession();
+    const QString sourceConnection =
+        sourceSession->database().connectionName();
+    const auto exported = port.exportDatabaseAs(
+        reopenedSource.value(),
+        utf8(exportPath)
+        );
+
+    QVERIFY(exported);
+    QCOMPARE(exported.value(), expectedExport);
+    QCOMPARE(port.currentDatabasePath(), expectedSource);
+    QCOMPARE(utf8(services.currentDatabasePath()), expectedSource);
+    QCOMPARE(services.databaseSession(), sourceSession);
+    QCOMPARE(
+        services.databaseSession()->database().connectionName(),
+        sourceConnection
+        );
+    QVERIFY(services.hasOpenDatabase());
+    QVERIFY(QFile::exists(exportPath));
+    verifyPopulatedWorkspace(
+        services,
+        createdTeacher.value(),
+        expectedEnglishName,
+        expectedRoomNumber,
+        expectedNotes,
+        expectedSetting
+        );
+
+    QVERIFY(port.closeDatabase(reopenedSource.value()));
+    const auto reopenedExport = port.openDatabase(utf8(exportPath));
+    QVERIFY(reopenedExport);
+    QCOMPARE(reopenedExport.value().location(), expectedExport);
+    QCOMPARE(port.currentDatabasePath(), expectedExport);
+    verifyPopulatedWorkspace(
+        services,
+        createdTeacher.value(),
+        expectedEnglishName,
+        expectedRoomNumber,
+        expectedNotes,
+        expectedSetting
+        );
+
+    QVERIFY(port.closeDatabase(reopenedExport.value()));
+    const auto sourceAfterExport = port.openDatabase(utf8(sourcePath));
+    QVERIFY(sourceAfterExport);
+    QCOMPARE(sourceAfterExport.value().location(), expectedSource);
+    QCOMPARE(port.currentDatabasePath(), expectedSource);
+    verifyPopulatedWorkspace(
+        services,
+        createdTeacher.value(),
+        expectedEnglishName,
+        expectedRoomNumber,
+        expectedNotes,
+        expectedSetting
+        );
+    QVERIFY(port.closeDatabase(sourceAfterExport.value()));
 }
 
 void NextPlatformApplicationServicesWorkspacePortTests::openPreservesLegacyErrorMessage()
