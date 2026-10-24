@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "features/setup/ui/initial_setup_wizard.h"
 #include "fakes/fake_user_prompt_service.h"
@@ -35,9 +35,9 @@ QString databasePath(QTemporaryDir& directory)
         );
 }
 
-int scalarCount(DatabaseSession& session, const QString& table)
+int scalarCount(WorkspaceStore& store, const QString& table)
 {
-    QSqlQuery query(session.database());
+    QSqlQuery query(store.database());
     if (!query.exec(QStringLiteral("SELECT COUNT(*) FROM %1").arg(table))
         || !query.next())
     {
@@ -47,24 +47,24 @@ int scalarCount(DatabaseSession& session, const QString& table)
 }
 
 int scalarValue(
-    DatabaseSession& session,
+    WorkspaceStore& store,
     const QString& statement,
     const int classId
     )
 {
-    QSqlQuery query(session.database());
+    QSqlQuery query(store.database());
     query.prepare(statement);
     query.addBindValue(classId);
     return query.exec() && query.next() ? query.value(0).toInt() : -1;
 }
 
 QString scalarText(
-    DatabaseSession& session,
+    WorkspaceStore& store,
     const QString& statement,
     const int classId
     )
 {
-    QSqlQuery query(session.database());
+    QSqlQuery query(store.database());
     query.prepare(statement);
     query.addBindValue(classId);
     return query.exec() && query.next() ? query.value(0).toString() : QString{};
@@ -72,12 +72,12 @@ QString scalarText(
 
 bool executeSql(ApplicationServices& services, const QString& statement)
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     return query.exec(statement);
 }
 
@@ -109,7 +109,7 @@ public:
         teacher.teacherKr = QStringLiteral("Setup Teacher");
         teacher.preferredName = teacher.teacherEn;
         TeacherRepository* const teachers =
-            services.databaseSession()->teacherRepository();
+            services.workspaceStore()->teacherRepository();
         if (!teachers)
         {
             return false;
@@ -168,20 +168,20 @@ public:
 
     int count(const QString& table) const
     {
-        DatabaseSession* const session = services.databaseSession();
-        return session ? scalarCount(*session, table) : -1;
+        WorkspaceStore* const store = services.workspaceStore();
+        return store ? scalarCount(*store, table) : -1;
     }
 
     int value(const QString& statement, const int classId) const
     {
-        DatabaseSession* const session = services.databaseSession();
-        return session ? scalarValue(*session, statement, classId) : -1;
+        WorkspaceStore* const store = services.workspaceStore();
+        return store ? scalarValue(*store, statement, classId) : -1;
     }
 
     QString text(const QString& statement, const int classId) const
     {
-        DatabaseSession* const session = services.databaseSession();
-        return session ? scalarText(*session, statement, classId) : QString{};
+        WorkspaceStore* const store = services.workspaceStore();
+        return store ? scalarText(*store, statement, classId) : QString{};
     }
 
     ApplicationServices services;
@@ -228,7 +228,7 @@ wideTeacherSelectionReachesTypedSave()
     QFETCH(QString, teacherId);
     WizardFixture fixture;
     QVERIFY(fixture.open());
-    QSqlQuery sql(fixture.services.databaseSession()->database());
+    QSqlQuery sql(fixture.services.workspaceStore()->database());
     sql.prepare(QStringLiteral(
         "INSERT INTO teachers (id, teacher_kr, teacher_en) VALUES (?, 'Wide Teacher', 'Wide Teacher')"));
     sql.addBindValue(teacherId.toLongLong());

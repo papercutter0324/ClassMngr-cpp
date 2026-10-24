@@ -1374,3 +1374,40 @@ with 3 passed and 0 failed:
 exclusion. No full NavigationTeacherRead suite, full project suite, or
 cross-platform build ran. F1370 is accepted; F1371 (Regular Class creation
 and post-create by-ID lookup) is current.
+Commit: `88d978f91f145b09a93a9bfc08616b416a65c92e`.
+
+## F1371 — Regular Class creation and post-create by-ID lookup (Batch 3 candidate 14 of 20) — 2026-10-24
+
+The Regular Class create and by-ID read platform ports in
+`src/next/platform/application_services_class_create_port.h` and
+`src/next/platform/application_services_class_by_id_read_port.h` now include
+`workspace_store.h` and use `WorkspaceStore` via `workspaceStore()` for store
+availability and `ClassRepository` access. The blank create request,
+create-error mapping and ID handling, canonical by-ID validation,
+missing/repository/technical error mapping, identity check, and class-name
+mapping are unchanged.
+
+Focused fixtures now use `WorkspaceStore` in
+`tests/next_platform_application_services_class_create_port_tests.cpp`,
+`tests/next_platform_application_services_class_by_id_read_port_tests.cpp`,
+`tests/initial_setup_wizard_class_create_save_parity_tests.cpp`, and the
+F1371 success/readback-failure sections of
+`tests/mainwindow_classes_sidebar_root_navigation_tests.cpp`. Assertions,
+test slots, and SQL semantics are unchanged. Unrelated session-lifecycle slots
+in the large MainWindow test remain out of scope. Application contracts,
+repository API/SQL, controller order, post-create Classes/Details and sidebar
+behavior, the Initial Setup consumer, and F1372 delete are unchanged. This
+remains one create flow using both ports; no create/read transaction was added.
+
+Six targets built successfully in `build/macos-clang-debug`. Six serial
+registered CTests passed (6/6):
+`ClassMngrNextApplicationClassCreateUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesClassCreatePortTests`,
+`ClassMngrNextApplicationClassByIdReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassByIdReadPortTests`,
+`ClassMngrMainWindowClassesSidebarRootNavigationTests`, and
+`ClassMngrInitialSetupWizardClassCreateSaveParityTests`. Focused coverage
+includes overflow behavior; there is no dedicated create/read transaction-
+state assertion because the pair remains nontransactional. `git diff --check`
+passed. No full suite or cross-platform build ran. F1371 is accepted; F1372
+(Class delete) is current.

@@ -48,9 +48,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   read), F1367 (Selected-class subtitle read), F1368 (Selected-class
   subtitle batch read), F1369 (Classes navigation read), and F1370 (Class
   teacher assignments read) are accepted; F1371 (Regular Class creation and
-  post-create by-ID lookup) is current. F1358–F1370 implementation and
-  verification evidence, plus the Batch 2 push receipt, are in the
-  [progress log](04-Phase-3-Progress-Log.md).
+  post-create by-ID lookup) is accepted; F1372 (Class delete) is current.
+  F1358–F1371 implementation and verification evidence, plus the Batch 2 push
+  receipt, are in the [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -68,19 +68,17 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1370 — 2026-10-24
+## Latest Progress Update — F1371 — 2026-10-24
 
-F1370 is accepted; F1371 is current. The class-teacher-assignment platform
-port and focused fixture now use `WorkspaceStore`; selected shared helpers and
-two failure-slot SQL fixtures in the large navigation test use it as well.
-Application query, repository batch API/SQL, sidebar production callers, and
-F1371 creation/by-ID routes are unchanged. Incremental builds and two serial
-CTests passed; five sidebar QtTest slots each passed 3/3. The focused tests do
-not directly assert testing-class exclusion. Other `databaseSession()` calls
-in the large navigation test belong to out-of-scope slots and remain. No full
-NavigationTeacherRead suite, project suite, or cross-platform build ran.
-Earlier UI limitations, attribution and coverage notes, and the baseline
-failure remain in the [progress log](04-Phase-3-Progress-Log.md).
+F1371 is accepted; F1372 is current. The Regular Class create and post-create
+by-ID platform ports and focused fixtures use `WorkspaceStore`. Request
+validation, result mappings, controller order, consumers, and repository APIs
+are unchanged; no create/read transaction was added. Six selected CTests
+passed, including overflow coverage. No dedicated transaction-state assertion,
+full suite, or cross-platform build ran. The
+[progress log](04-Phase-3-Progress-Log.md) records F1371 evidence and retains
+earlier UI limitations, attribution and coverage notes, the baseline failure,
+and Batch 2 push receipt.
 
 ## Objective
 

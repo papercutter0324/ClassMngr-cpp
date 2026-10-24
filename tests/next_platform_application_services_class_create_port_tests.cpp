@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_repository.h"
 #include "next/application/class_create_use_case.h"
 #include "next/platform/application_services_class_create_port.h"
@@ -25,23 +25,23 @@ QString databasePath(QTemporaryDir& directory)
 
 bool executeSql(ApplicationServices& services, const QString& statement)
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     return query.exec(statement);
 }
 
 int classCount(ApplicationServices& services)
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return -1;
     }
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     return query.exec(QStringLiteral("SELECT COUNT(*) FROM classes"))
         && query.next()
         ? query.value(0).toInt()
@@ -78,7 +78,7 @@ createsBlankClassFromOpenSession()
     QVERIFY(idOk);
     QVERIFY(classId > 0);
     QCOMPARE(classCount(services), 1);
-    const auto classroom = services.databaseSession()->classRepository()
+    const auto classroom = services.workspaceStore()->classRepository()
         ->getClassById(classId);
     QVERIFY(classroom);
     QVERIFY(classroom->name.isEmpty());
@@ -111,7 +111,7 @@ rejectsClassIdBeyondIntRangeWithoutRemovingInsertedClass()
         .contains(QStringLiteral("4294967297")));
     QCOMPARE(classCount(services), 2);
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY(query.exec(QStringLiteral(R"(
         SELECT typeof(id), id
         FROM classes

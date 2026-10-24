@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_repository.h"
 #include "next/application/class_by_id_read_port.h"
 
@@ -62,15 +62,15 @@ public:
             });
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return Application::ClassByIdReadResult::failure(
                 unavailableError());
         }
 
-        ClassRepository* const repository = session->classRepository();
+        ClassRepository* const repository = store->classRepository();
         if (!repository)
         {
             return Application::ClassByIdReadResult::failure(

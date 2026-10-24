@@ -4,6 +4,7 @@
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
 #include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_info.h"
@@ -1295,8 +1296,8 @@ classesRootContextMenuAddClassCreatesAndOpensClass()
     QVERIFY(services);
     QVERIFY(services->hasOpenDatabase());
     QCOMPARE(services->currentDatabasePath(), workspacePath);
-    auto* const activeSession = services->databaseSession();
-    QVERIFY(activeSession);
+    auto* const activeStore = services->workspaceStore();
+    QVERIFY(activeStore);
     ClassService* const classService = services->classService();
     QVERIFY(classService);
 
@@ -1445,7 +1446,7 @@ classesRootContextMenuAddClassCreatesAndOpensClass()
         QStringList{QStringLiteral("classes")}
         );
     QVERIFY(services->hasOpenDatabase());
-    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->workspaceStore(), activeStore);
     QCOMPARE(services->currentDatabasePath(), workspacePath);
 
     QVERIFY(prompts.messages.isEmpty());
@@ -1494,8 +1495,8 @@ void MainWindowClassesSidebarRootNavigationTests::newClassActionCreatesAndOpensC
     QVERIFY(services->hasOpenDatabase());
     const QString activeDatabasePath = services->currentDatabasePath();
     QCOMPARE(activeDatabasePath, workspacePath);
-    auto* const activeSession = services->databaseSession();
-    QVERIFY(activeSession);
+    auto* const activeStore = services->workspaceStore();
+    QVERIFY(activeStore);
     ClassService* const classService = services->classService();
     QVERIFY(classService);
 
@@ -1541,7 +1542,7 @@ void MainWindowClassesSidebarRootNavigationTests::newClassActionCreatesAndOpensC
         );
 
     QVERIFY(services->hasOpenDatabase());
-    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->workspaceStore(), activeStore);
     QCOMPARE(services->currentDatabasePath(), activeDatabasePath);
 
     QVERIFY(prompts.messages.isEmpty());
@@ -1591,8 +1592,8 @@ classReadFailurePreservesAddClassRoute()
     QVERIFY(services);
     QVERIFY(services->hasOpenDatabase());
     QCOMPARE(services->currentDatabasePath(), workspacePath);
-    DatabaseSession* const activeSession = services->databaseSession();
-    QVERIFY(activeSession);
+    WorkspaceStore* const activeStore = services->workspaceStore();
+    QVERIFY(activeStore);
 
     ClassService* const classService = services->classService();
     QVERIFY(classService);
@@ -1600,7 +1601,7 @@ classReadFailurePreservesAddClassRoute()
     QVERIFY(classesBefore);
     QCOMPARE(classesBefore->size(), 0);
 
-    QSqlQuery deleteInsertedClass(activeSession->database());
+    QSqlQuery deleteInsertedClass(activeStore->database());
     QVERIFY2(
         deleteInsertedClass.exec(QStringLiteral(
             "CREATE TRIGGER delete_created_class_after_insert "
@@ -1645,7 +1646,7 @@ classReadFailurePreservesAddClassRoute()
     const auto classesAfter = classService->classes();
     QVERIFY(classesAfter);
     QCOMPARE(classesAfter->size(), 0);
-    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->workspaceStore(), activeStore);
     QCOMPARE(services->currentDatabasePath(), workspacePath);
     QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
     QCOMPARE(pages->currentWidget(), currentPageWidget);

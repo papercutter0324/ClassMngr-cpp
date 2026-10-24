@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_repository.h"
 #include "next/application/class_by_id_read_query.h"
 #include "next/platform/application_services_class_by_id_read_port.h"
@@ -33,7 +33,7 @@ Domain::ClassId classId(const int value)
 
 int createClass(ApplicationServices& services, const QString& name)
 {
-    return services.databaseSession()->classRepository()
+    return services.workspaceStore()->classRepository()
         ->createClass(name).value_or(-1);
 }
 
@@ -61,7 +61,7 @@ readsClassIdAndNameFromActiveSession()
     QVERIFY(id > 0);
 
     ClassRepository* const repository =
-        services.databaseSession()->classRepository();
+        services.workspaceStore()->classRepository();
     const auto lookup = repository->lookupClassById(id);
     QCOMPARE(
         lookup.code,
@@ -112,7 +112,7 @@ reportsMissingUnavailableAndRepositoryFailures()
     QVERIFY(id > 0);
 
     ClassRepository* const repository =
-        services.databaseSession()->classRepository();
+        services.workspaceStore()->classRepository();
     const int missingId = id + 1000;
     const QString missingDiagnostic = QObject::tr(
         "Loading class failed for %1: no matching record exists."
@@ -135,7 +135,7 @@ reportsMissingUnavailableAndRepositoryFailures()
     QCOMPARE(missing.error().message, missingDiagnostic.toStdString());
     QVERIFY(missing.error().recoverable);
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE classes")),
         qPrintable(query.lastError().text()));
     const auto failedLookup = repository->lookupClassById(id);

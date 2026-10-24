@@ -9,10 +9,10 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 3 discovery is complete. F1358–F1370 are accepted; F1371 —
-  Regular Class creation and post-create by-ID lookup is current.
+- Batch 3 discovery is complete. F1358–F1371 are accepted; F1372 — Class
+  delete is current.
 
-## Phase 3 — Batch 3 (active; F1371 current)
+## Phase 3 — Batch 3 (active; F1372 current)
 
 Batch 3 discovery began when F1356 started (candidate 19 of 20 in Batch 2) and
 is complete.
@@ -32,8 +32,9 @@ priority-ordered shortlist for Batch 3, not an exhaustive inventory.
 11. F1368 — Selected-class subtitle batch read (accepted; candidate 11 of 20)
 12. F1369 — Classes navigation read (accepted; candidate 12 of 20)
 13. F1370 — Class teacher assignments read (accepted; candidate 13 of 20)
-14. F1371 — Regular Class creation and post-create by-ID lookup (current; one create flow; both ports)
-15. F1372 — Class delete
+14. F1371 — Regular Class creation and post-create by-ID lookup (accepted;
+    one create flow; both ports)
+15. F1372 — Class delete (current)
 16. F1373 — Class Transfer preview read
 17. F1374 — Class Transfer export source read
 18. F1375 — Class Transfer apply
