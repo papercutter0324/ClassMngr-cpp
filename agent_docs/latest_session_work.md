@@ -1,6 +1,38 @@
 # Latest Session Work
 
-## Current Deployment Handoff — phase2_qt_rewrite_20261022 (complete)
+## Current Deployment Handoff — phase3_resume_oct24 (complete)
+
+- Heavy route; branch `Qt-Rewrite`. This continuation accepted F1414–F1416,
+  completed Batch 5 (19/19 slices), and pushed it. Phase 3 remains In Progress;
+  its exit gate is not closed. The implementation tip is `61d1fc9f`; the
+  source/acceptance push reached `5725e723`; follow-up push-receipt commits
+  `8d74cf7a` and `ea91cb64` were also pushed.
+- F1414 migrated the Teacher Import latest-source-date read to WorkspaceStore;
+  missing/malformed dates remain absent and existing errors remain unchanged.
+  F1415 migrated Schedule Import snapshot reads; F1416 migrated Schedule
+  Import apply. Existing application, repository, and UI behavior remains.
+  Detailed facts and commits are in the [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
+  and [progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md).
+- Focused CTests passed for each slice: F1414 2/2, F1415 2/2, and F1416 2/2.
+  Incremental macOS Debug builds passed for each affected Platform target;
+  no full suite, UI suite, or cross-platform build ran.
+- Two complementary scans at F1415 found no new active Next persistence
+  candidate; another pair focused on broader `FeatureServices`/`DataService`
+  paths also found none. There is no active batch. Reopen discovery if
+  production callers are added or service composition changes. The Phase 3
+  tracker records this continuation point.
+- The final read-only remote check before this handoff found `Qt-Rewrite`
+  clean and synchronized at `ea91cb64`; no source or test changes remain.
+
+## Next Entry Point
+
+Phase 3 remains In Progress, with no active batch or eligible next candidate
+from current-source discovery. Resume discovery if a production caller reaches
+the compatibility fallback or `FeatureServices` composition changes; otherwise
+continue from the [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
+and [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
+
+## Historical Deployment Handoff — phase2_qt_rewrite_20261022 (complete)
 
 - Heavy route; branch `Qt-Rewrite`. Phase 2 is complete. Gate 1 and Gate 2
   satisfy their exit criteria. Batch543 was pushed without force from remote

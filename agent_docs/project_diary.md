@@ -2,6 +2,14 @@
 
 ## Decisions and Lessons
 
+- During persistence discovery, distinguish an active v2 caller from a legacy
+  compatibility facade or incidental session guard. A `DataService` fallback
+  in source is not a new slice when normal composition binds `WorkspaceStore`
+  and no production caller reaches that fallback.
+- When independent scans find no eligible next slice, record that result
+  without inventing a batch or closing the phase. Reopen discovery when
+  production callers or service composition change.
+
 - The persisted current-campus preference is an opaque legacy string: existing
   readers accept campus IDs, display labels, and arbitrary stored text. Type
   the exact value without normalization or display-name assumptions, and type

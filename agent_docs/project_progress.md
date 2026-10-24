@@ -1,16 +1,14 @@
 # Project Progress
 
-Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: `phase2_qt_rewrite_20261022`. Route: Heavy; complete.
-Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
-continued Phase 2 domain and application-contract work on top of that verified
-baseline.
+Active deployment plan: Qt Rewrite Phase 3 — Persistence Rewrite.
+Current deployment: `phase3_resume_oct24`. Route: Heavy; this continuation is
+complete. Phase 3 remains In Progress with no active batch or candidate.
 
 ## Goal
 
-Define explicit, Qt-free ClassMngrNext application contracts with structured
-results, bounded projections, and deterministic tests while keeping the legacy
-application available as a compatibility oracle until its later cutover.
+Replace the broad compatibility-heavy data path with one explicit workspace
+persistence boundary while preserving supported files and data behavior. Keep
+the legacy application as a compatibility oracle until its later cutover.
 
 ## Overall Progress
 
@@ -53,36 +51,28 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-22 (Phase 2 complete; completion audit passed)
+### Current checkpoint - 2026-10-24 (Batch 5 pushed; no active candidate)
 
-Phase 2 Gate 1 and Gate 2 satisfy their exit criteria. Batch543, containing
-F1316 (`11ee8d80`), F1317 (`28f77666`), and closeout documentation
-(`4f965da5`), was pushed without force to `origin/Qt-Rewrite` from
-`2d324b08` through `4f965da5`. Follow-up documentation pushes recorded the
-deployment handoff (`4f965da5..45ac83c6`), corrected the stale F1314 status in
-the legacy mapping (`45ac83c6..be770863`), and added final focused verification
-(`be770863..646ad678`).
+Phase 3 remains In Progress on the mandatory Heavy route. Batch 5 (F1398–F1416)
+is complete and pushed. The F1416 implementation tip is `61d1fc9f`; its
+source/acceptance push reached `5725e723`. Follow-up push-receipt documentation
+commits `8d74cf7a` and `ea91cb64` were also pushed. F1414, F1415, and F1416
+focused Application/Platform CTests each passed 2/2. Exact slice evidence and
+bounded macOS Debug build scope are in the [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
+and [progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md).
 
-A current-source requirements audit confirmed the named Domain/Application
-deliverables and literal workspace/app-less exit criteria. Fresh independent
-macOS verification passed the three app-less gate CTests, F1316 validation and
-required weekday-scope selectors, and F1317's 27-case use-case suite. Current
-status and exact evidence are in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md),
-[progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md),
-and [legacy mapping](../plans/qt-rewrite-heavy-route-plan/phase2-legacy-application-mapping.md).
+Two complementary scans found no additional active Next persistence port at
+F1415. A second pair reviewed broader service and fallback paths and also
+found no eligible candidate: `No other slices were found.` There is no active
+batch. Normal `ApplicationServices` composition uses `WorkspaceStore` and
+leaves the `DataService` fallback inactive; remaining compatibility APIs have
+no active production composition. Revisit them if production callers are
+added or service composition changes. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
+records that continuation point. This does not close Phase 3 or its exit gate.
 
-The cumulative incremental audit built 168/169 targets; 167/170 selected
-registrations passed. One Schedule Import target failed to compile against a
-typed-key API because its test uses stale raw-string initialization; three
-tests retain stale expectations that teacher ID `2147483648` is invalid. The
-full suite was not run, and the F1316 macOS golden-text mismatch remains
-unrerun after its controlled comparison found it unrelated to the slice. These
-limits are recorded without weakening tests or claiming exhaustive parity.
-F629's source-bound Windows x64 requalification remains separate from Phase 2.
-The next milestone is Phase 3. The 2026-10-22 deferred-candidate closeout
-removed F614, F618, F626, F707, and F709 from the active list; remaining
-policy-dependent and Administrator-blocked follow-ups are recorded in the
-Phase 2 plan and progress log.
+Phase 2 remains complete with its separate audit limitations and F629
+requalification recorded in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
+and [progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 
