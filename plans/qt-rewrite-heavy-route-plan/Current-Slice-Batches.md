@@ -10,7 +10,8 @@ verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 9 is active and discovery is complete with nine ordered candidates.
+- Batch 9 is complete: all nine ordered slices are accepted and committed
+  locally; the push is pending.
 
 1. **F1419 — Runtime v6 DDL/index/constraint contract tests (accepted).** The
    focused `ClassMngrDatabaseSchemaManagerTests` CTest passed 1/1; its verbose
@@ -60,15 +61,18 @@ verification evidence in its progress log.
    `86eef5c9131e602ca915db94b4f9800cf6b7dd41`. Stored-entry views and direct
    deflate input remove one entry-sized scratch copy; the full archive and inflated
    worksheet XML remain allocated. No heap-byte, full-suite, or Windows claim.
-9. **F1427 — Class-transfer codec representation lifetime before dialog/UI
-   (current).**
-   Phase 3.4 retains the codec boundary; Phase 8 retains transfer/export
-   operation ownership.
+9. **F1427 — Map class transfer input during parsing (accepted).** Commit
+   `3bdcb245f7465bfad0c03a6e2137fea09d0fc793`. Mapped input is parsed before
+   schema conversion, with `readAll()` fallback for zero, unrepresentable, or
+   map-failure cases. Focused codec selectors passed 5/5; the full focused
+   CTest selection had 64 passed and one unrelated baseline dialog failure.
+   No heap/RSS or Windows claim. Phase 3.4 retains the codec boundary; Phase 8
+   retains transfer/export operation ownership.
 
-## Batch 10 — Discovery complete; waiting for Batch 9
+## Batch 10 — Discovery complete; waiting for Batch 9 push
 
-Batch 10 discovery is complete. It waits for Batch 9 to close and push; it is
-not active. **F1428 — Expose `ClassRepository::getClasses()` query/result
+Batch 10 discovery is complete. It waits for the Batch 9 push; it is not
+active. **F1428 — Expose `ClassRepository::getClasses()` query/result
 metrics for large snapshot diagnostics** is the sole ordered candidate.
 Implementation has not started. It qualifies under Phase 3 §3.7, which
 requires query/result-size diagnostics; F1425's 96-class parity test has no

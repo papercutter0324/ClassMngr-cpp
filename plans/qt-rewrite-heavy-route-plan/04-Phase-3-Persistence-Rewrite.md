@@ -38,10 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 9 remains active with F1426 accepted and F1427 (candidate
-  9 of 9) current. Batch 10 discovery is complete with F1428 as its sole
-  ordered candidate, waiting for Batch 9 to close and push. Begin Batch 11
-  discovery when F1428 starts. The Phase 3 exit gate remains open. The
+- Current note: Batch 9's nine slices are accepted; final slice F1427 is
+  committed locally and its push is pending. Batch 10 discovery is complete
+  with F1428 as its sole candidate, waiting for the Batch 9 push. Begin Batch
+  11 discovery when F1428 starts. The Phase 3 exit gate remains open. The
   [DataService migration
   map](../../docs/qt-rewrite/data-service-migration-map.md) records F1420's
   deliverable, including that `DataService::save()` has no ordinary production
@@ -62,20 +62,15 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1426 — 2026-10-24
+## Latest Progress Update — F1427 — 2026-10-24
 
-F1426, `Phase3 - Reduce workbook entry copies`, was accepted at
-`86eef5c9131e602ca915db94b4f9800cf6b7dd41`. Stored ZIP entries now use a
-synchronous non-owning byte view and deflated entries inflate directly from
-the archive pointer, removing one entry-sized scratch copy. The caller-owned
-archive and inflated worksheet XML remain; heap bytes were not measured.
-Calendar/schedule review UI and import behavior are unchanged. Independent
-macOS 27 arm64 verification passed focused CTests 3/3; `git diff --check`
-passed. Detailed coverage and limits are in the
-[progress log](04-Phase-3-Progress-Log.md). F1427 is current (candidate 9 of
-9); Batch 10 discovery is complete with F1428 as its sole ordered candidate,
-waiting for Batch 9 to close and push. Begin Batch 11 discovery when F1428
-starts. The Phase 3 exit gate remains open.
+F1427, `Phase3 - Map class transfer input during parsing`, was accepted and
+committed locally as `3bdcb245f7465bfad0c03a6e2137fea09d0fc793`. Nonempty,
+representable inputs are mapped and parsed before schema conversion; zero,
+unrepresentable, and map-failure cases retain the `readAll()` fallback. Batch
+9 is complete with push pending. Batch 10's sole candidate F1428 waits for
+that push and has not started. The Phase 3 exit gate remains open. Exact
+verification and limitations are in the [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
 

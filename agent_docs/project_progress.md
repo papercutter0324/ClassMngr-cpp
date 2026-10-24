@@ -2,8 +2,10 @@
 
 Active deployment plan: Qt Rewrite Phase 3 — Persistence Rewrite.
 Current deployment: `phase3_resume_oct24_followup`. Route: Heavy; this
-continuation is complete. Phase 3 remains In Progress, with no active batch
-or candidate after current-source discovery; its backlog is not exhausted.
+continuation is active. Batch 9 (F1419–F1427) is complete and committed
+locally; its push is pending. Batch 10 discovery is complete with F1428 as its
+sole candidate, waiting for that push. Begin Batch 11 discovery when F1428
+starts. Phase 3 remains In Progress and its exit gate is open.
 
 ## Goal
 
@@ -52,30 +54,30 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (Batches 6 and 7 pushed; no active candidate)
+### Current checkpoint - 2026-10-24 (Batch 9 complete locally; push pending)
 
-Phase 3 remains In Progress on the mandatory Heavy route; its exit gate is
-open. This continuation accepted F1417 and F1418, completed and pushed
-one-slice Batches 6 and 7, and found no eligible next candidate in the
-complementary Batch 8 scans. F1417 moved roster-availability read transaction
-ownership into `WorkspaceStore` at `1a42b6ad`; F1418 moved the live workspace
-save commit into `WorkspaceStore::commit()` at `7e9760f3`.
+Phase 3 remains In Progress on the mandatory Heavy route, with its exit gate
+open. Batch 9's nine ordered slices, F1419–F1427, are accepted and committed
+locally; the batch push is pending. F1425 verified the full ordered 96-class
+Schedule Import snapshot (24 teachers, 768 regular and 24 intensive schedule
+rows). F1426 removed an entry-sized workbook scratch copy while keeping the
+archive and inflated worksheet lifetimes explicit. F1427 maps class-transfer
+JSON input and releases the mapping before schema conversion. These changes
+have structural lifetime evidence only; no heap or RSS savings were measured.
 
-F1417's incremental macOS Debug build covered `ClassMngr` and the roster
-Platform test target; its focused Application query and Platform port CTests
-passed 2/2. F1418 built `ClassMngr`, the Workspace port test target, and the
-DataService lifecycle test target; the focused Workspace port and lifecycle
-CTests passed 2/2. No full, UI, or cross-platform suite ran, and commit-failure
-injection was not run. Exact evidence is in the [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
-and [progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md).
+Focused verification passed for each slice. F1427's focused codec selectors
+passed 5/5. Its full Class Transfer CTest had 64 passes and one previously
+documented teacher-display dialog failure; the failing test does not call the
+changed codec path. No full suite, Windows, or platform-wide result is claimed.
+The [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
+and [progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md)
+contain exact evidence and limits.
 
-Two complementary read-only scans found no other Batch 8 slice. The missing
-full DDL-shape/all-index tests were excluded as a coverage-only gap without a
-production behavior change. `DataService::save()` has no ordinary production
-caller. No batch or candidate is active; the current discovery does not
-exhaust Phase 3. Revisit on a new ordinary caller or source-backed persistence
-boundary gap. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
-records this state.
+Batch 10 discovery found one remaining diagnostics deliverable, F1428, to
+expose `ClassRepository::getClasses()` query/result metrics under Phase 3
+§3.7. It waits for Batch 9 to close and push. Begin Batch 11 discovery when
+F1428 starts. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
+records this state; the Phase 3 backlog and exit gate remain open.
 
 Phase 2 remains complete with its separate audit limitations and F629
 requalification recorded in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)

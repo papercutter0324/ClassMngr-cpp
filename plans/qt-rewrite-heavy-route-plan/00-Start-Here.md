@@ -7,9 +7,9 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 remains In Progress on the mandatory Heavy route
-  with its exit gate open. Batch 9 is active: F1426 is accepted, and F1427
-  (candidate 9 of 9) is current. Batch 10 discovery is complete; F1428 is its
-  sole ordered candidate, waiting for Batch 9 to close and push. Begin Batch
+  with its exit gate open. Batch 9's nine slices are accepted; final slice
+  F1427 is committed locally and its push is pending. Batch 10 discovery is
+  complete; its sole candidate F1428 waits for the Batch 9 push. Begin Batch
   11 discovery when F1428 starts. Current details are in the
   [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),

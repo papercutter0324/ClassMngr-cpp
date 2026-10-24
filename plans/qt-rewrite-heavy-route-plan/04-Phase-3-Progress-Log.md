@@ -2905,7 +2905,37 @@ archive input lifetime for exact text, cells and positions, notes, and merged
 ranges. Existing malformed-input/error cases passed. The unsupported
 compression-method branch was source-inspected but not directly exercised.
 `git diff --check` passed. No full-suite, Windows, or heap-byte claim is made.
-Batch 9 remains active with F1427 current (candidate 9 of 9). Batch 10
-discovery is complete with F1428 as its sole ordered candidate, waiting for
-Batch 9 to close and push. Begin Batch 11 discovery when F1428 starts. The
-Phase 3 exit gate remains open and Phase 3 remains In Progress.
+F1427 was next in Batch 9; its acceptance is recorded below. The Phase 3 exit
+gate remains open and Phase 3 remains In Progress.
+
+## F1427 — Map class transfer input during parsing — 2026-10-24
+
+Accepted and committed locally as `3bdcb245f7465bfad0c03a6e2137fea09d0fc793`
+(`Phase3 - Map class transfer input during parsing`). For nonempty input
+representable as a `qint64`, `ClassTransferJsonCodec::loadFile()` maps the
+file, parses it through the existing `QJsonDocument` path, then destroys the
+non-owning wrapper and unmaps before schema-to-package conversion. Zero,
+unrepresentable, and mapping-failure cases retain the existing `readAll()`
+fallback. No size cap, API, open policy, or error policy changed. The DOM
+still overlaps package conversion, and mapped pages may be resident; no heap
+or RSS reduction is claimed. The map-failure branch was source-reviewed, not
+fault-injected.
+
+Independent macOS 27.0.1 arm64 verification used universal Debug
+`build/macos-clang-debug`, Qt 6.12.0, and Apple LLVM 17. Building
+`ClassMngrClassTransferTests` and `ClassMngr` succeeded; the independent Ninja
+build reported no work. Focused codec selectors passed 5/5, covering LF/CRLF
+schema and package-error parity, unknown and optional fields, malformed JSON,
+and missing, empty, and non-object files. The full focused CTest selection
+was 64 passed and 1 failed. Its sole failure,
+`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`, expected
+“Keep local: Romanized One” but got “Keep local: New Teacher”; it does not call
+`loadFile()`. The same failure is recorded on pre-F880 commit `18202c79` and
+an earlier baseline, so it is classified as an unrelated existing failure.
+`git diff --check` passed. No full-suite, Windows, heap-byte, or RSS result
+is claimed.
+
+Batch 9's nine slices are accepted and committed locally; its push is pending.
+Batch 10 discovery is complete with F1428 as its sole candidate, waiting for
+the Batch 9 push; F1428 has not started. Begin Batch 11 discovery when F1428
+starts. Phase 3 remains In Progress and its exit gate remains open.

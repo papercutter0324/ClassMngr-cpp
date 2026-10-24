@@ -8515,3 +8515,20 @@ production behavior change was identified; `DataService::save()` has no
 ordinary production caller. Phase 3 remains In Progress, its exit gate remains
 open, and its backlog is not exhausted. The current tracker has no active
 batch or candidate.
+
+## 2026-10-24 — Phase 3 Batch 9 complete locally
+
+F1419–F1427 are accepted and committed locally; Batch 9's push is pending.
+F1425's large Schedule Import test compares all 24 teachers, 96 classes, and
+792 schedule rows, while metrics cover teacher and class-info queries. The
+class-list query still lacks runtime metrics, so F1428 is queued under Phase
+3 §3.7. F1426 removes an entry-sized ZIP scratch copy; F1427 uses a mapped
+class-transfer input and releases it before package conversion. Neither
+establishes a measured RSS reduction: mapped pages can remain resident, and
+other representations still overlap at parse boundaries.
+
+The full Class Transfer target retains a previously documented teacher-name
+dialog failure that does not call the F1427 codec. Keep it distinct from the
+five passing focused codec cases. Batch 10 has only F1428 and waits for Batch
+9's push; begin Batch 11 discovery when F1428 starts. Phase 3 remains In
+Progress with its exit gate open.
