@@ -38,10 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-23
-- Current note: Batch 2 remains active and unpushed; F1355 (Schedule Editor
-  selected-class information read) is complete, and F1356 (Testing class
-  teacher choices) is current. The Batch 1 push receipt is in the
-  progress log.
+- Current note: Batch 2 remains active and unpushed; F1356 (Testing class
+  teacher choices) is complete, and F1357 (Testing class creation) is current.
+  Batch 3 discovery is complete and follows after the Batch 2 push. The Batch 1
+  push receipt is in the progress log.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -59,14 +59,15 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1355 — 2026-10-23
+## Latest Progress Update — F1356 — 2026-10-23
 
-Moved the Schedule Editor selected-class information read port and its
-dedicated fixture to `WorkspaceStore`. Canonical ID validation ordering,
-detailed repository projection, fields, and missing-class, absent-metadata,
-dangling-teacher, and error behavior remain unchanged. Three focused CTests
-passed in the existing macOS Debug tree; no full suite or cross-platform build
-ran. See the [progress log](04-Phase-3-Progress-Log.md).
+Moved the Testing class teacher-choice read port and its direct fixture
+accesses to `WorkspaceStore`. Query ordering, raw ID/Korean name/room mapping,
+valid-empty results, ID validation, errors, and UI behavior remain unchanged.
+Three focused CTests and the assigned direct UI case passed in the existing
+macOS Debug tree; the direct run emitted `QSqlQuery::prepare: database not
+open` warnings without failed assertions. No full suite or cross-platform
+build ran. See the [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
 

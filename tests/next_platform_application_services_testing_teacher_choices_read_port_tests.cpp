@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/application/testing_teacher_choices_read_query.h"
 #include "next/platform/application_services_testing_teacher_choices_read_port.h"
@@ -76,10 +76,10 @@ readsProjectedChoiceFieldsInRepositoryOrderFromTheActiveSession()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
-    TeacherRepository* const repository = session->teacherRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    TeacherRepository* const repository = store->teacherRepository();
     QVERIFY(repository);
 
     // Insert in the reverse of the repository's teacher_en order so the
@@ -135,10 +135,10 @@ preservesWideTeacherIdentityInChoiceProjection()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     constexpr qint64 wideTeacherId = 2'147'483'648LL;
-    QSqlQuery insertTeacher(session->database());
+    QSqlQuery insertTeacher(store->database());
     QVERIFY(insertTeacher.prepare(QStringLiteral(
         "INSERT INTO teachers (id, teacher_en, teacher_kr, room_number) "
         "VALUES (?, 'Wide Teacher', 'Wide Korean Teacher', 'Room Wide')"
@@ -146,7 +146,7 @@ preservesWideTeacherIdentityInChoiceProjection()
     insertTeacher.addBindValue(wideTeacherId);
     QVERIFY(insertTeacher.exec());
 
-    const auto records = session->teacherRepository()
+    const auto records = store->teacherRepository()
         ->loadTestingTeacherChoiceRecords();
     QVERIFY(records);
     QCOMPARE(records->size(), 1);
@@ -235,7 +235,7 @@ forwardsTeacherRepositoryFailuresWithoutFallback()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlQuery dropTeachers(services.databaseSession()->database());
+    QSqlQuery dropTeachers(services.workspaceStore()->database());
     QVERIFY(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")));
 
     Platform::ApplicationServicesTestingTeacherChoicesReadPort port(
@@ -260,9 +260,9 @@ rejectsPartialTeacherChoicesAfterCursorError()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QSqlDatabase database = session->database();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlDatabase database = store->database();
 
     const QString setupError =
         TeacherChoicesCursorErrorFixture::install(database);
@@ -302,7 +302,7 @@ rejectsPartialTeacherChoicesAfterCursorError()
         QStringLiteral("malformed"), Qt::CaseInsensitive
         ));
 
-    TeacherRepository* const repository = session->teacherRepository();
+    TeacherRepository* const repository = store->teacherRepository();
     QVERIFY(repository);
     const auto records = repository->loadTestingTeacherChoiceRecords();
     QVERIFY(!records);

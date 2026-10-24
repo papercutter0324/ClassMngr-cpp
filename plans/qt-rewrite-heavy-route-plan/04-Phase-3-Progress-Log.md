@@ -913,3 +913,25 @@ The executor incrementally built `ClassMngr`,
 `ClassMngrNextScheduleEditorDialogSaveTests` in the existing
 `build/macos-clang-debug` tree. The three focused CTests passed serially, and
 `git diff --check` passed. No full suite or cross-platform build ran.
+
+## F1356 — Testing class teacher choices — 2026-10-23
+
+The Testing class teacher-choice read port in
+`src/next/platform/application_services_testing_teacher_choices_read_port.h`
+and direct fixture accesses in
+`tests/next_platform_application_services_testing_teacher_choices_read_port_tests.cpp`
+now use `WorkspaceStore`. Query ordering, raw ID/Korean name/room mapping,
+valid-empty results, ID validation, errors and exceptions, and UI behavior
+remain unchanged.
+
+The executor incrementally built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesTestingTeacherChoicesReadPortTests`,
+`ClassMngrNextApplicationTestingTeacherChoicesReadQueryTests`, and
+`ClassMngrTestingClassesPageTests` in the existing `build/macos-clang-debug`
+tree. The Platform, Application, and
+`ClassMngrTestingClassesPageTeacherChoiceTests` CTests passed serially. The
+direct case
+`testingTeacherChoicesTechnicalFailurePreservesAssignedTeacherUntilNoneSelected`
+also passed with `QT_QPA_PLATFORM=offscreen`; it emitted
+`QSqlQuery::prepare: database not open` warnings but no failed assertions.
+`git diff --check` passed. No full suite or cross-platform build ran.
