@@ -1897,3 +1897,28 @@ This repeats the F1389/F1390 warning-text baseline mismatch and remains
 separate from the F1383 orphan-data failure. `git diff --check` passed. No full
 suite or cross-platform build ran. F1391 is accepted; F1392 (Current-campus
 preferences) is current.
+
+Commit: `33f7fb2ea2e0827609b596a7e688dc4c5a9bedc9`.
+
+## F1392 — Current-campus preferences (Batch 4 candidate 15 of 20) — 2026-10-24
+
+The current-campus preferences port,
+`src/next/platform/application_services_current_campus_preferences_port.h`,
+and its dedicated Platform fixture,
+`tests/next_platform_application_services_current_campus_preferences_port_tests.cpp`,
+now use `WorkspaceStore`. Key `myInfo/campus`, byte/QVariant semantics, and
+assertions are unchanged. The aggregate `PersonalDetails` writer was untouched.
+
+Built the dedicated Platform, MyWorkspacePage, InitialSetupWizard, SubPrepPage,
+and CalendarPageEventMutationParity targets. Four selected serial CTests
+passed (4/4): #438, #69, #6, and #80. CTest #147
+`ClassMngrSubPrepPageTests` timed out in
+`unavailablePreferenceLoadsPreservePageValues()` without an assertion failure.
+The same timeout reproduced against isolated clean F1391 source at commit
+`33f7fb2ea2e0827609b596a7e688dc4c5a9bedc9`: baseline ran 60.02 seconds before
+timing out; the modified run exceeded 3 minutes, and a focused 60-second rerun
+also timed out. No causal attribution or regression is claimed; this is a
+confirmed pre-existing timeout. It is separate from the F1383 orphan-data and
+NavigationTeacherRead warning-text baseline failures. `git diff --check` passed.
+No full suite or cross-platform build ran. F1392 is accepted; F1393
+(Class-visibility preferences) is current.

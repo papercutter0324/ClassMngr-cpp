@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
 
@@ -65,7 +65,7 @@ bool executeSql(
     const QString& statement
     )
 {
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     if (!session || !session->isOpen())
     {
         return false;
@@ -120,7 +120,7 @@ exactKeyAndVerbatimStringRoundTrip()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -173,7 +173,7 @@ writePersistsExactKeyAndPreservesUnrelatedSettings()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -218,8 +218,8 @@ missingAndUnavailableReadEmpty()
 
     ApplicationServices unavailableServices;
     QVERIFY(unavailableServices.dataService());
-    DatabaseSession* const unavailableSession =
-        unavailableServices.databaseSession();
+    WorkspaceStore* const unavailableSession =
+        unavailableServices.workspaceStore();
     QVERIFY(unavailableSession);
     QVERIFY(!unavailableSession->isOpen());
     ApplicationServicesCurrentCampusPreferencesPort unavailablePort(
@@ -245,8 +245,8 @@ reportsSettingsAvailability()
     ApplicationServices availableServices;
     QVERIFY(openDatabase(availableServices, m_directory));
     QVERIFY(availableServices.dataService());
-    QVERIFY(availableServices.databaseSession());
-    QVERIFY(availableServices.databaseSession()->isOpen());
+    QVERIFY(availableServices.workspaceStore());
+    QVERIFY(availableServices.workspaceStore()->isOpen());
     ApplicationServicesCurrentCampusPreferencesPort availablePort(
         &availableServices
         );
@@ -254,8 +254,8 @@ reportsSettingsAvailability()
 
     ApplicationServices unavailableServices;
     QVERIFY(unavailableServices.dataService());
-    QVERIFY(unavailableServices.databaseSession());
-    QVERIFY(!unavailableServices.databaseSession()->isOpen());
+    QVERIFY(unavailableServices.workspaceStore());
+    QVERIFY(!unavailableServices.workspaceStore()->isOpen());
     ApplicationServicesCurrentCampusPreferencesPort unavailablePort(
         &unavailableServices
         );
@@ -274,7 +274,7 @@ closedSessionDefaultsAndIgnoresWrite()
     const QString path = databasePath(m_directory);
     QVERIFY(services.openDatabase(path));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -313,7 +313,7 @@ repositoryReadErrorsReturnTechnicalFailure()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     QVERIFY(session->settingsRepository());
@@ -347,7 +347,7 @@ preservesQVariantToStringConversion()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -381,7 +381,7 @@ preservesUnrelatedSettings()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();
@@ -417,7 +417,7 @@ writeFailureMapsToTechnicalError()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     SettingsRepository* const repository = session->settingsRepository();

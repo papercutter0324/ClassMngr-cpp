@@ -50,12 +50,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   read), F1384 (Speaking-evaluation roster-name read), F1385 (GS Team
   directory read), F1386 (GS Team directory save), F1387 (Native English
   teacher directory read), F1388 (Native English teacher directory save),
-  F1389 (Korean teacher birthday directory read), and F1390 (GS Team birthday
-  directory read), and F1391 (Native English birthday directory read) are
-  accepted; F1392 (Current-campus preferences) is current. F1376–F1391
-  implementation evidence, Batch 2 and Batch 3 push receipts, and earlier UI
-  limitations and attribution notes are in the [progress
-  log](04-Phase-3-Progress-Log.md).
+  F1389 (Korean teacher birthday directory read), F1390 (GS Team birthday
+  directory read), F1391 (Native English birthday directory read), and F1392
+  (Current-campus preferences) are accepted; F1393 (Class-visibility
+  preferences) is current. F1376–F1392 implementation evidence, Batch 2 and
+  Batch 3 push receipts, and earlier UI limitations and attribution notes are
+  in the [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -73,16 +73,17 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1391 — 2026-10-24
+## Latest Progress Update — F1392 — 2026-10-24
 
-F1391 is accepted; F1392 is current in Batch 4. The Native English birthday
-read port and dedicated Platform fixture now use `WorkspaceStore`; three raw
-fields, ordering, and assertions are unchanged, with no ID projection. The
-application-query, Platform-port, and UpcomingBirthdays CTests passed.
-NavigationTeacherRead retains the same confirmed F1388-baseline warning-text
-failure, with no additional failures. The separate F1383 mismatch remains in
-the [progress log](04-Phase-3-Progress-Log.md). No full suite or
-cross-platform build ran.
+F1392 is accepted; F1393 is current in Batch 4. The current-campus preferences
+port and dedicated fixture now use `WorkspaceStore`; key `myInfo/campus`,
+byte/QVariant semantics, and assertions are unchanged. The aggregate
+`PersonalDetails` writer is untouched. Four selected serial CTests passed
+(4/4). The SubPrep page CTest timed out on a confirmed clean F1391 baseline
+without an assertion failure, so no causal attribution is made. The F1383
+orphan-data and NavigationTeacherRead warning-text baseline failures remain
+separately recorded in the [progress log](04-Phase-3-Progress-Log.md). No full
+suite or cross-platform build ran.
 
 ## Objective
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/current_campus_preferences.h"
 
@@ -26,14 +26,14 @@ public:
     explicit ApplicationServicesCurrentCampusPreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_session(services.databaseSession())
+        : m_store(services.workspaceStore())
     {
     }
 
     explicit ApplicationServicesCurrentCampusPreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_session(services ? services->databaseSession() : nullptr)
+        : m_store(services ? services->workspaceStore() : nullptr)
     {
     }
 
@@ -52,7 +52,7 @@ public:
 
     [[nodiscard]] bool isAvailable() const override
     {
-        return m_session && m_session->isOpen();
+        return m_store && m_store->isOpen();
     }
 
     [[nodiscard]] Domain::Result<Application::CurrentCampusPreferenceValue>
@@ -65,7 +65,7 @@ public:
             return Domain::Result<Value>::success(Value{});
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return Domain::Result<Value>::failure({
@@ -119,7 +119,7 @@ public:
             return Domain::Result<void>::success();
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return Domain::Result<void>::failure({
@@ -157,7 +157,7 @@ private:
         return QStringLiteral("myInfo/campus");
     }
 
-    DatabaseSession* m_session = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform
