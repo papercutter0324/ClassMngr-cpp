@@ -7,23 +7,10 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
-  Batch 2 (F1338–F1357) remains complete and pushed to `origin/Qt-Rewrite` at
-  `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`. Batch 3 (F1358–F1377) is
-  implementation tip `018b30b04ab713769f9e69b440ba7223310a2b87`; its push
-  receipt documentation was later pushed as
-  `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before Batch 4
-  began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
-  its receipt records implementation tip
-  `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1414 (Teacher Import latest-source-date read)
-  current. F1413 (Teacher delete) is accepted at
-  `6f0fa59fae98b51f59b4cd27a99452f3830c94f1`; focused verification passed.
-  The current batch tracker retains the ordered list, with 3 prioritized
-  candidates remaining. Batch 5 remains unpushed until its remaining slices
-  are complete.
-  Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI
-  limitations, baseline failures, attribution, and coverage notes remain in
-  the Phase 3 progress log. The [Phase 3
+  Batch 5 is active with F1415 (Schedule Import current-state snapshot)
+  current; F1414 (Teacher Import latest-source-date read) was accepted at
+  `0dd7f9ec`. Two prioritized candidates remain, and Batch 5 remains unpushed
+  until its remaining slices are complete. The [Phase 3
   plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch

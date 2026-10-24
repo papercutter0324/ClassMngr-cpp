@@ -38,23 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: Batch 3 (F1358–F1377) implementation tip was
-  `018b30b04ab713769f9e69b440ba7223310a2b87`; its push receipt documentation
-  was later pushed as
-  `6597875f6036224767fa8db7331eac7eac856869`, the remote tip before Batch 4
-  began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
-  the verified implementation tip is
-  `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1414 (Teacher Import latest-source-date read)
-  current. F1413 (Teacher delete) is accepted at
-  `6f0fa59fae98b51f59b4cd27a99452f3830c94f1`; focused verification passed.
-  Its 3 prioritized candidates remain in the current batch tracker. Batch 5
-  remains unpushed until its remaining slices are complete. F1403 was
-  limited to residual range projection and excluded F1341 availability/by-ID
-  work and the existing WorkspaceStore-backed query/cache path.
-  F1376–F1413 implementation evidence, Batch 2 and Batch 3 push receipts, and
-  earlier UI limitations and attribution notes are in the
-  [progress log](04-Phase-3-Progress-Log.md).
+- Current note: Batch 5 is active with F1415 (Schedule Import current-state
+  snapshot) current. F1414 (Teacher Import latest-source-date read) was
+  accepted at `0dd7f9ec`; two prioritized candidates remain. Batch 5 remains
+  unpushed until its remaining slices are complete. F1414 evidence and prior
+  durable slice findings are in the [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -72,28 +60,25 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1413 — 2026-10-24
+## Latest Progress Update — F1414 — 2026-10-24
 
-F1413 is accepted at `6f0fa59fae98b51f59b4cd27a99452f3830c94f1`. Only the
-`ApplicationServicesTeacherDeletePort` header, its direct Platform fixture,
-and the Sidebar delete parity fixture moved from `DatabaseSession` to
-`WorkspaceStore`. Canonical positive `qint64` IDs, dynamic store lookup,
-request/error handling, and `TeacherRepository::deleteTeacher(qint64)` remain
-unchanged. The repository transaction clears assignments for the target
-teacher, then deletes that teacher; failures roll back, preserving classes,
-schedules, and sibling teachers. A nonexistent canonical positive ID remains
-a no-op success. F1411 teacher read and F1412 teacher create are unchanged.
+F1414 is accepted at `0dd7f9ec` (`Phase3 - Migrate F1414 teacher import date
+read`). The `teacher_import/latest_source_date` setting is a stored Gregorian
+calendar date in canonical `YYYY-MM-DD`, with no timezone conversion. The
+adapter dynamically resolves `ApplicationServices::workspaceStore()` and its
+`SettingsRepository`, replacing the `DatabaseSession` read. Missing, null,
+empty, malformed, noncanonical, or impossible values remain successful
+absence. A null, closed, or unavailable store remains recoverable `NotFound`;
+repository failures and exceptions remain nonrecoverable `Technical`. F1349
+apply/snapshot/transaction behavior and the UI caller are unchanged.
 
-The Platform port, Application use case, and Sidebar parity targets built
-incrementally without compiler warnings or errors. CTest #479, the Platform
-port, passed 6 QtTest cases; #459, the Application use case, passed 6; and
-#97, Sidebar parity, passed 5. Sidebar emitted a font-alias timing warning and
-three missing `:/assets/icons/keyboard_light.svg` resource warnings; all were
-non-fatal and no retries were needed. Broader suites and cross-platform builds
-did not run. `git diff --check` passed before commit. F1413 is accepted; F1414
-(Teacher Import latest-source-date read) is current with 3 prioritized
-candidates remaining. Batch 5 remains unpushed until its remaining slices are
-complete.
+The incremental macOS Debug build of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesTeacherImportLatestSourceDateReadPortTests`
+succeeded. The Platform port and Application query CTests passed 2/2 (1.02 s),
+with no warnings, failures, or retries; `git diff --check` was clean. No full
+suite or cross-platform build ran. F1415 (Schedule Import current-state
+snapshot) is current, with two prioritized Batch 5 candidates remaining.
+Batch 5 remains unpushed until its remaining slices are complete.
 
 ## Objective
 

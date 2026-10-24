@@ -2575,3 +2575,27 @@ Import latest-source-date read) is current. Batch 5 remains unpushed until
 its remaining slices are complete.
 
 Commit: `6f0fa59fae98b51f59b4cd27a99452f3830c94f1`.
+
+## F1414 — Teacher Import latest-source-date read (Batch 5 candidate 17 of 19) — 2026-10-24
+
+Migrated the latest-source-date Platform adapter and direct fixture from
+`DatabaseSession` to the dynamic `ApplicationServices::workspaceStore()` and
+its `SettingsRepository`. `teacher_import/latest_source_date` is a stored
+Gregorian calendar date in canonical `YYYY-MM-DD`, with no timezone
+conversion. Missing, null, empty, malformed, noncanonical, and impossible
+values remain successful absence. A null, closed, or unavailable store maps
+to recoverable `NotFound`; repository failures and exceptions map to
+nonrecoverable `Technical`. F1349 apply/snapshot/transaction behavior and the
+UI caller are untouched.
+
+The incremental macOS Debug build of `ClassMngr` and the focused Platform
+test target succeeded. The Platform port and Application query CTests passed
+**2/2** (1.02 s), with no warnings, failures, or retries. `git diff --check`
+was clean. The full suite and cross-platform builds were not run.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextPlatformApplicationServicesTeacherImportLatestSourceDateReadPortTests
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextPlatformApplicationServicesTeacherImportLatestSourceDateReadPortTests|ClassMngrNextApplicationTeacherImportLatestSourceDateReadQueryTests)$'
+```
+
+Commit: `0dd7f9ec`.
