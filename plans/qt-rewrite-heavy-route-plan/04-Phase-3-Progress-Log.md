@@ -1088,5 +1088,36 @@ including separately registered `NextFeatureClassCoTeacherWideTeacherIdentity`.
 `git diff --check` passed. No `DatabaseSession`, `databaseSession()`, or
 `database_session.h` references remain in the scoped adapter and fixture.
 The fixture does not directly exercise missing-repository or thrown-exception
-branches. No full suite or cross-platform build ran. F1362 is accepted; F1363
-is current.
+branches. No full suite or cross-platform build ran. F1362 is accepted and
+committed as `0074eb71efb3fbe6f14b6cf8c277eda8efec60c3`; F1363 is current.
+
+## F1363 — Class Co-Teacher assignment save — 2026-10-23
+
+The save port in
+`src/next/platform/application_services_class_co_teacher_assignment_port.h`
+now includes `workspace_store.h`, checks `WorkspaceStore::isOpen()`, obtains
+`ClassInfoRepository` from the store, and uses store state for error
+reclassification and `repositoryFailure`. No `DatabaseSession` or
+`databaseSession()` references remain in the adapter. Direct fixture accessors
+and includes in
+`tests/next_platform_application_services_class_co_teacher_assignment_port_tests.cpp`
+and `tests/class_co_teacher_assignment_persistence_parity_tests.cpp` now use
+`WorkspaceStore`; assertions, SQL semantics, and test slots are unchanged.
+The Application use case, repository API/SQL/transaction, page/UI, F1361
+post-save readback, and F1361/F1362 adapters are unchanged. Existing contracts
+remain: input/sentinel conversion and qint64 teacher IDs, validation snapshot
+and model projection, regular-then-intensive conflict order, transactional
+repository call, unavailable-store and missing class/teacher mappings, error
+recoverability and technical failures, and metadata preservation.
+
+Four targets built incrementally in `build/macos-clang-debug`:
+`ClassMngrNextApplicationClassCoTeacherAssignmentTests`,
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`,
+`ClassMngrClassCoTeacherAssignmentPersistenceParityTests`, and
+`ClassMngrNextFeatureClassCoTeacherPageTests`. Five serial CTests passed,
+including separately registered `NextFeatureClassCoTeacherWideTeacherIdentity`.
+`git diff --check` passed. The scoped adapter and fixtures contain no
+`DatabaseSession`, `databaseSession()`, or `database_session.h` references.
+Existing Platform tests still have no explicit null-services,
+missing-repository, injected-exception, or transaction-commit-failure slot.
+No full suite or cross-platform build ran. F1363 is accepted; F1364 is current.

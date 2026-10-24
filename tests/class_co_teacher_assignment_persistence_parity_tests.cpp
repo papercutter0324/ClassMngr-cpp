@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/application/class_co_teacher_assignment_use_case.h"
 #include "next/platform/application_services_class_co_teacher_assignment_port.h"
@@ -233,7 +233,7 @@ emitsBaselineCompatiblePersistenceTranscripts()
             port
             );
         QVERIFY(result);
-        QSqlQuery query(services.databaseSession()->database());
+        QSqlQuery query(services.workspaceStore()->database());
         query.prepare(QStringLiteral(
             "SELECT teacher_id FROM class_info WHERE class_id=?"
             ));
@@ -267,7 +267,7 @@ emitsBaselineCompatiblePersistenceTranscripts()
         QVERIFY(classId > 0);
         QVERIFY(teacherId > 0);
         QVERIFY(services.classService()->saveClassInfo(basicInfo(classId)));
-        QSqlQuery corrupt(services.databaseSession()->database());
+        QSqlQuery corrupt(services.workspaceStore()->database());
         corrupt.prepare(QStringLiteral(
             "UPDATE class_info SET notes=? WHERE class_id=?"
             ));
@@ -333,7 +333,7 @@ emitsBaselineCompatiblePersistenceTranscripts()
             QStringLiteral("10:10 AM"),
             QStringLiteral("10:40 AM")
         }};
-        const Status selectedSaved = services.databaseSession()
+        const Status selectedSaved = services.workspaceStore()
             ->classInfoRepository()
             ->saveClassInfo(selected);
         QVERIFY(selectedSaved);
@@ -378,7 +378,7 @@ emitsBaselineCompatiblePersistenceTranscripts()
             port
             );
         QVERIFY(result);
-        QSqlQuery query(services.databaseSession()->database());
+        QSqlQuery query(services.workspaceStore()->database());
         query.prepare(QStringLiteral(
             "SELECT teacher_id, class_grade, class_level, reading_book, "
             "essay_book, class_color, font_color, notes, "

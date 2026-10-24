@@ -2,7 +2,7 @@
 
 #include "core/application_services.h"
 #include "core/enums/schedule_type.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
@@ -72,15 +72,15 @@ public:
                 );
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return unavailableFailure();
         }
 
         ClassInfoRepository* const repository =
-            session->classInfoRepository();
+            store->classInfoRepository();
         if (!repository)
         {
             return failure(
@@ -103,7 +103,7 @@ public:
                     error.kind
                         == ClassCoTeacherAssignmentValidationSnapshotFailureKind::
                             ClassNotFound
-                    && session->isOpen()
+                    && store->isOpen()
                     )
                 {
                     return failure(
@@ -112,7 +112,7 @@ public:
                         );
                 }
 
-                return repositoryFailure(session, error.message);
+                return repositoryFailure(store, error.message);
             }
 
             ClassInfo info;
@@ -139,7 +139,7 @@ public:
             if (validation.hasErrors())
             {
                 return repositoryFailure(
-                    session,
+                    store,
                     validationError(validation)
                     );
             }
@@ -152,7 +152,7 @@ public:
                 );
             if (!regularConflicts)
             {
-                return repositoryFailure(session, regularConflicts.error());
+                return repositoryFailure(store, regularConflicts.error());
             }
 
             const Status intensiveConflicts = validateScheduleConflicts(
@@ -163,7 +163,7 @@ public:
                 );
             if (!intensiveConflicts)
             {
-                return repositoryFailure(session, intensiveConflicts.error());
+                return repositoryFailure(store, intensiveConflicts.error());
             }
 
             const auto saved =
@@ -181,7 +181,7 @@ public:
                         == ClassInfoRepository::
                             ClassCoTeacherAssignmentSaveFailure::Kind::
                                 TeacherNotFound
-                    && session->isOpen()
+                    && store->isOpen()
                     )
                 {
                     return Domain::Result<void>::failure({
@@ -191,7 +191,7 @@ public:
                     });
                 }
 
-                return repositoryFailure(session, error.diagnostic);
+                return repositoryFailure(store, error.diagnostic);
             }
 
             return Domain::Result<void>::success();
@@ -322,11 +322,11 @@ private:
     }
 
     [[nodiscard]] static Domain::Result<void> repositoryFailure(
-        DatabaseSession* session,
+        WorkspaceStore* store,
         const QString& message
         )
     {
-        if (!session || !session->isOpen())
+        if (!store || !store->isOpen())
         {
             return unavailableFailure();
         }

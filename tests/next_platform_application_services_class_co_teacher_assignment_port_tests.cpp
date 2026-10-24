@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/database/sql_query_utils.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/application/class_co_teacher_assignment_use_case.h"
@@ -65,7 +65,7 @@ ClassInfo newClassInfo(
     )
 {
     ClassInfoRepository* const repository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     if (!repository)
     {
         qFatal("Class info repository must be available in test setup.");
@@ -97,7 +97,7 @@ bool saveClassInfo(
     )
 {
     ClassInfoRepository* const repository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     if (!repository)
     {
         if (failureMessage)
@@ -435,12 +435,12 @@ assignmentUpdatesOnlyTeacherAndSupportsUnassignedState()
     const Status initialSave = services.classService()->saveClassInfo(original);
     QVERIFY(initialSave);
 
-    const auto persistedOriginal = services.databaseSession()
+    const auto persistedOriginal = services.workspaceStore()
         ->classInfoRepository()
         ->loadClassInfo(*createdClass);
     QVERIFY(persistedOriginal);
 
-    ClassInfoRepository* const repository = services.databaseSession()
+    ClassInfoRepository* const repository = services.workspaceStore()
         ->classInfoRepository();
     QVERIFY(repository);
     const int readsBeforeAssignment = repository
@@ -482,7 +482,7 @@ assignmentUpdatesOnlyTeacherAndSupportsUnassignedState()
         readsBeforeUnassignment
         );
     QVERIFY(readRawTeacherId(
-        services.databaseSession()->database(),
+        services.workspaceStore()->database(),
         *createdClass
         ).isNull());
 
@@ -533,7 +533,7 @@ malformedClassIdIsRejectedWithoutChangingPersistedFields()
     QVERIFY(saveClassInfo(services, original));
 
     ClassInfoRepository* const repository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     QVERIFY(repository);
     const auto savedBefore = repository->loadClassInfo(classId);
     QVERIFY(savedBefore);
@@ -666,7 +666,7 @@ invalidLoadedClassInfoIsRejectedWithoutWriting()
     QVERIFY(saveClassInfo(services, original));
 
     const QString invalidNotes(10001, QChar(u'x'));
-    QSqlQuery corruptStoredNotes(services.databaseSession()->database());
+    QSqlQuery corruptStoredNotes(services.workspaceStore()->database());
     corruptStoredNotes.prepare(QStringLiteral(
         "UPDATE class_info SET notes=? WHERE class_id=?"
         ));
@@ -679,7 +679,7 @@ invalidLoadedClassInfoIsRejectedWithoutWriting()
     QCOMPARE(corruptStoredNotes.numRowsAffected(), 1);
 
     ClassInfoRepository* const repository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     QVERIFY(repository);
     const auto savedBefore = repository->loadClassInfo(classId);
     QVERIFY(savedBefore);
@@ -741,7 +741,7 @@ regularScheduleConflictUsesLegacyMessageAndPreservesState()
     QVERIFY(saveClassInfo(services, selected));
 
     ClassInfoRepository* const repository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     QVERIFY(repository);
     const auto savedBefore = repository->loadClassInfo(selectedClassId);
     QVERIFY(savedBefore);
@@ -812,7 +812,7 @@ intensiveScheduleConflictUsesLegacyMessageAndPreservesState()
         );
 
     ClassInfoRepository* const repository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     QVERIFY(repository);
     const auto savedBefore = repository->loadClassInfo(selectedClassId);
     QVERIFY(savedBefore);
@@ -885,7 +885,7 @@ regularConflictPrecedesIntensiveConflict()
     QVERIFY(saveClassInfo(services, selected));
 
     ClassInfoRepository* const repository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     QVERIFY(repository);
     const auto savedBefore = repository->loadClassInfo(selectedClassId);
     QVERIFY(savedBefore);
@@ -934,7 +934,7 @@ assignmentPreservesRawMetadataAndScheduleRows()
     QVERIFY(originalTeacherId > 0);
     QVERIFY(assignedTeacherId > 0);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QSqlQuery insertInfo(database);
     insertInfo.prepare(QStringLiteral(
         "INSERT INTO class_info (class_id, teacher_id, class_grade, "
@@ -1033,7 +1033,7 @@ assignmentPreservesRawMetadataAndScheduleRows()
     QVERIFY(!rawIntensiveBefore.isEmpty());
 
     ClassInfoRepository* const repository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     QVERIFY(repository);
     const int readsBefore = repository
         ->scheduleClassInfoReadMetrics().singleClassInfoReadCount;
@@ -1119,7 +1119,7 @@ assignmentCreatesMissingClassInfoRowWithDefaults()
     QVERIFY(classId > 0);
     QVERIFY(assignedTeacherId > 0);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QSqlQuery beforeCount(database);
     QVERIFY(beforeCount.exec(QStringLiteral(
         "SELECT COUNT(*) FROM class_info WHERE class_id=%1"
@@ -1128,7 +1128,7 @@ assignmentCreatesMissingClassInfoRowWithDefaults()
     QCOMPARE(beforeCount.value(0).toInt(), 0);
 
     ClassInfoRepository* const repository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     QVERIFY(repository);
     const int readsBefore = repository
         ->scheduleClassInfoReadMetrics().singleClassInfoReadCount;
@@ -1208,11 +1208,11 @@ missingTeacherReturnsRecoverableNotFoundWithoutMutation()
     QVERIFY(saveClassInfo(services, original));
 
     ClassInfoRepository* const repository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     QVERIFY(repository);
     const auto savedBefore = repository->loadClassInfo(selectedClassId);
     QVERIFY(savedBefore);
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     const QVariantList rawInfoBefore = rawClassInfoFields(
         database,
         selectedClassId
@@ -1353,12 +1353,12 @@ teacherIdStatementFailurePreservesClassInfoAndSchedules()
     QVERIFY(saveClassInfo(services, original));
 
     ClassInfoRepository* const repository =
-        services.databaseSession()->classInfoRepository();
+        services.workspaceStore()->classInfoRepository();
     QVERIFY(repository);
     const auto savedBefore = repository->loadClassInfo(selectedClassId);
     QVERIFY(savedBefore);
 
-    QSqlQuery installFailure(services.databaseSession()->database());
+    QSqlQuery installFailure(services.workspaceStore()->database());
     QVERIFY2(
         installFailure.exec(QStringLiteral(
             "CREATE TRIGGER fail_co_teacher_teacher_id_update "
@@ -1422,7 +1422,7 @@ validationSnapshotScheduleQueryFailureReturnsTechnicalWithoutMutation()
     }};
     QVERIFY(saveClassInfo(services, original));
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     const QVariantList persistedFieldsBefore = rawClassInfoFields(
         database,
         selectedClassId
@@ -1495,7 +1495,7 @@ regularScheduleLateFetchFailureReturnsTechnicalWithoutMutation()
     }};
     QVERIFY(saveClassInfo(services, original));
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     const QVariantList persistedFieldsBefore = rawClassInfoFields(
         database,
         selectedClassId
@@ -1606,7 +1606,7 @@ intensiveScheduleLateFetchFailureReturnsTechnicalWithoutMutation()
     }};
     QVERIFY(saveClassInfo(services, original));
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     const QVariantList persistedFieldsBefore = rawClassInfoFields(
         database,
         selectedClassId
