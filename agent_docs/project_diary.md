@@ -8516,7 +8516,7 @@ ordinary production caller. Phase 3 remains In Progress, its exit gate remains
 open, and its backlog is not exhausted. The current tracker has no active
 batch or candidate.
 
-## 2026-10-24 — Phase 3 Batch 11 slices complete; closeout pending
+## 2026-10-24 — Phase 3 Batch 12 slices complete; closeout pending
 
 F1419–F1427 are accepted and pushed to `origin/Qt-Rewrite` at
 `7b4eaaf809ecdc17e4e14fae555b157c361c378d`; the remote tip matched and the
@@ -8568,12 +8568,34 @@ timestamp/array error-precedence cases. The full Class Transfer CTest passed
 399 and failed one known teacher-label assertion, reproduced on pre-F880
 commit `18202c79` and outside this slice. `git diff --check` passed. No
 heap/RSS claim is made; map-failure and unrepresentable-size fallbacks were
-inspected but not forced. Batch 11's code slices are complete and its closeout
-documentation/push remain pending. Two independent Batch 12 scans and review
-accepted F1433 (populated v6 `.db` SaveAs/export through the v2 WorkspacePort)
-and F1434 (Schedule Builder repository row streaming and completed-row
-diagnostics, preserving the full uncapped board). Classes/Speaking Evaluation
+inspected but not forced. Batch 11 is closed and pushed at
+`ee6efe495d25136cf70297183af1aeaf5ae8d51c`. F1433 is complete at
+`cf3235a67a79e9820c85a6fb2320d64db8bbdaf9`. Its populated schema-v6 `.db`
+test seeds a teacher and setting through v2 services, then verifies SaveAs and
+export destinations, exact reopened values, normalized paths, SaveAs identity,
+and export source session/connection preservation. Independent verification
+passed CTest 1/1 and executable 32/32 on macOS arm64 / Qt 6.12 / AppleClang 21;
+no full suite or pre-v6 migration result is claimed. F1434 is complete at
+`6d10509b1b51cd687d975247209f1a2a86a1db7b`. A forward-only repository visitor
+streams metadata and schedule rows into the final Application snapshot; the
+materializing API remains for other callers. Completed class/regular/intensive
+metrics publish only after the whole read succeeds. Coverage includes 31
+classes, 32 regular rows, 12 intensive rows, invalid-ID-before-schedule
+failure, and a late intensive-query failure after metadata and a regular row
+with zero result-metric deltas. Independent CTests passed 2/2 for the Schedule
+Builder port and Schedule Import targets; `git diff --check` passed. No full
+suite, heap, or RSS result is claimed. Batch 12's code slices are complete;
+closeout documentation and push remain pending.
+
+Batch 13 discovery completed under `PHASE3-BATCH13-DISCOVERY-20261024` after
+two independent scans and bounded review. The data/API scan found no additional
+candidate; the lifetime scan produced two. F1435, bounded Class Details
+student-count roster reading with existing validation and profiler parity at
+the repository/existing-port boundary, is accepted as the sole candidate and
+waits for Batch 12's push. Class Transfer export snapshot/package overlap is
+deferred to Phase 8 because query assembly belongs there. Neither candidate
+has measured memory results. Begin Batch 14 discovery when F1435 starts.
+Classes/Speaking Evaluation
 navigation detail lifetime remains deferred to Phases 7D/7H because it requires
 coordinated page/model changes; Calendar parsed-event consumer lifetime is
-deferred to Phase 7F. Batch 12 waits for Batch 11's push; Batch 13 discovery
-starts when F1433 begins. Phase 3 remains In Progress with its exit gate open.
+deferred to Phase 7F. Phase 3 remains In Progress with its exit gate open.

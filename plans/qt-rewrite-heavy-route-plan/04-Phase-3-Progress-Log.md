@@ -2969,11 +2969,13 @@ review recommends four ordered Batch 11 candidates:
 Calendar parsed-event consumer lifetime is the fifth candidate and is
 intentionally deferred to its owning phase, Phase 7F. Batch 10 has since been
 closed and pushed. F1429–F1432 acceptance details are recorded below. Batch 11
-slice work is complete; its closeout commit/push remains pending. Batch 12
-discovery is complete under
-`PHASE3-BATCH12-DISCOVERY-20261024`; F1433 then F1434 are accepted and await
-the Batch 11 push. Begin Batch 13 discovery when F1433 starts (candidate 1 of
-2). Phase 3 remains In Progress and its exit gate remains open.
+is closed and pushed to `origin/Qt-Rewrite` at verified tip
+`ee6efe495d25136cf70297183af1aeaf5ae8d51c`. F1433 is accepted and committed;
+F1434 is accepted and committed, completing Batch 12 slice work. Its closeout
+push is pending. Batch 13 discovery completed under
+`PHASE3-BATCH13-DISCOVERY-20261024`; F1435 is its sole accepted candidate and
+waits for the Batch 12 closeout push. Phase 3 remains In Progress and its exit
+gate remains open.
 
 ## F1429 — Schedule Import row-count metrics — 2026-10-24
 
@@ -3051,14 +3053,57 @@ bounded pre-existing full-target exception outside F1432; it is not a pass.
 
 Verification used macOS 27.0.1 arm64, Debug universal, Apple Clang 21, Qt
 6.12, CMake 4.3.3, and Ninja 1.13.2. `git diff --check` passed. No Windows or
-full-suite result is claimed. Batch 11 slice work is complete; its closeout
-commit/push remains pending. Phase 3 remains In Progress with its exit gate
-open.
+full-suite result is claimed. Batch 11 is closed and pushed to
+`origin/Qt-Rewrite` at verified tip
+`ee6efe495d25136cf70297183af1aeaf5ae8d51c`. Phase 3 remains In Progress with
+its exit gate open.
+
+## F1433 — Populated v6 `.db` WorkspacePort round-trip — 2026-10-24
+
+Accepted and committed at `cf3235a67a79e9820c85a6fb2320d64db8bbdaf9`
+(`Phase3 - F1433: populated v6 .db WorkspacePort round-trip`). The test creates
+and populates a schema-v6 `.db` through the v2 port and Teacher/Settings
+services. SaveAs and export outputs use `.db`; existing-only reopen verifies
+exact values, normalized paths, SaveAs identity, and export path, active-session,
+connection, and source invariants. Pre-v6 migration is not covered.
+
+Independent macOS arm64 verification with Qt 6.12 and Apple Clang 21 passed
+the focused workspace-port CTest 1/1 and its executable 32/32.
+`git diff --check` passed. No full-suite result is claimed.
+
+## F1434 — Schedule Builder row streaming and diagnostics — 2026-10-24
+
+Accepted and committed at `6d10509b1b51cd687d975247209f1a2a86a1db7b`.
+`ClassInfoRepository::visitScheduleClassInfoRows` uses forward-only queries
+and feeds metadata/time rows into the final Application snapshot.
+`ApplicationServicesScheduleBuilderSourcePort` does not retain a complete
+`QList<ClassInfo>` alongside that result. The existing
+`loadScheduleClassInfos()` API and caller remain. The Schedule Builder board
+remains full and uncapped; no 25-class cap was added. This is structural
+ownership evidence, not a heap or RSS measurement.
+
+Cumulative completed-class, regular-row, and intensive-row metrics update
+only after full success; existing call and statement counters continue to
+count attempts. Coverage includes exact repository order, non-testing class
+inclusion, 31 classes, 32 regular rows, 12 intensive rows, invalid ID before
+schedule statements, empty success, and late intensive-query failure after
+metadata and a regular row. On failure, completed metrics stay zero while
+each statement-attempt counter is one.
+
+Independent macOS arm64 / universal Debug verification with Apple Clang 21
+and Qt 6.12 rebuilt the focused targets. Both CTests passed (2/2):
+
+- `ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`
+- `ClassMngrScheduleImportTests`
+
+`git diff --check` passed. No full-suite, heap, or RSS result is claimed.
+Batch 12 slice work is complete; its closeout push remains pending.
 
 ## Batch 12 discovery — 2026-10-24
 
 Two independent scans and bounded review completed under Exploration ID
-`PHASE3-BATCH12-DISCOVERY-20261024`. Review accepted two ordered candidates:
+`PHASE3-BATCH12-DISCOVERY-20261024`. Discovery selected two ordered slice
+candidates:
 F1433, a populated schema-v6 `.db` SaveAs/export round-trip through the v2
 `ApplicationServicesWorkspacePort` as required compatibility gate evidence
 (no pre-v6 migration scope); then F1434, Schedule Builder repository-to-
@@ -3067,6 +3112,19 @@ completed-row diagnostics, preserving F1330's full uncapped board. No other
 Batch 12 candidate was identified by the scans/review. Possible Classes/
 Speaking Evaluation navigation detail-query/lifetime work is deferred to
 Phase 7D/7H because eliminating consumer projections requires those page/model
-changes. Batch 12 waits for the Batch 11 closeout push; Batch 13 discovery
-starts when F1433 starts (candidate 1 of 2). Phase 3 remains In Progress with
-its exit gate open.
+changes. F1433 and F1434 are accepted and committed; Batch 12 slice work is
+complete and its closeout push is pending. Batch 13 discovery completed under
+`PHASE3-BATCH13-DISCOVERY-20261024`. The data/API scan found no candidate:
+CampusRecord is test-only with no ordinary caller, and saveDatabase
+commit-result visibility overlaps F1418. The lifetime scan identified a
+repository Class Details student-count materialization and Class Transfer
+export snapshot/package overlap. Bounded review accepted F1435 as the sole
+candidate: a bounded Class Details student-count roster read with current
+validation and profiler parity, at the repository/existing-port boundary
+without UI changes. Preserve exact English/Korean first matching columns, the
+trimmed nonblank count, malformed/out-of-range error behavior, and profiler
+dimensions. This is source-derived; no memory measurement is claimed. Defer
+the export projection to Phase 8 because it owns query/operation assembly.
+Batch 13 waits for Batch 12 closeout/push; do not start F1435 before then.
+Since Batch 13 has one candidate, begin Batch 14 discovery when F1435 starts.
+Phase 3 remains In Progress with its exit gate open.

@@ -4,11 +4,13 @@ Active deployment plan: Qt Rewrite Phase 3 — Persistence Rewrite.
 Current deployment: `phase3_persistence_resume_20261024`. Route: Heavy; this
 continuation is active. Batch 9 (F1419–F1427) was pushed and verified at
 `7b4eaaf809ecdc17e4e14fae555b157c361c378d`. Batch 10 (F1428) is committed
-and pushed at `01670f53d7924a5e68ce9288effe3a4bf12b3403`. Batch 11 slices
-F1429–F1432 are complete; closeout documentation and push are pending.
-Batch 12 discovery is complete under
-`PHASE3-BATCH12-DISCOVERY-20261024` with F1433–F1434 accepted and queued after
-Batch 11. Phase 3 remains In Progress and its exit gate is open.
+and pushed at `01670f53d7924a5e68ce9288effe3a4bf12b3403`. Batch 11
+(F1429–F1432) is pushed at `ee6efe495d25136cf70297183af1aeaf5ae8d51c`.
+Batch 12 F1433/F1434 slices are complete; closeout documentation and push are
+pending. Batch 13 discovery is complete under
+`PHASE3-BATCH13-DISCOVERY-20261024`; sole candidate F1435 waits for Batch 12's
+push. Begin Batch 14 discovery when F1435 starts. Phase 3 remains In Progress
+and its exit gate is open.
 
 ## Goal
 
@@ -57,7 +59,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (Batch 11 complete; closeout push pending)
+### Current checkpoint - 2026-10-24 (Batch 12 complete; closeout push pending)
 
 Phase 3 remains In Progress on the mandatory Heavy route, with its exit gate
 open. Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
@@ -126,12 +128,35 @@ F1432. `git diff --check` passed. This is structural lifetime evidence only;
 map-failure/unrepresentable-size fallbacks were inspected but not forced, and
 no heap/RSS or Windows result is claimed.
 
-Batch 11's F1429–F1432 slices are complete; closeout documentation and push
-remain pending. Batch 12 is discovered and waits for that push: F1433 covers
-populated v6 `.db` SaveAs/export through the v2 WorkspacePort; F1434 streams
-Schedule Builder repository rows into the Application result and counts
-completed classes and regular/intensive rows without capping F1330's complete
-board. Begin Batch 13 discovery when F1433 starts. Classes/Speaking Evaluation
+F1433 is complete at `cf3235a67a79e9820c85a6fb2320d64db8bbdaf9`. The test
+creates and populates a schema-v6 `.db` through the v2 WorkspacePort and
+Teacher/Settings services, then verifies SaveAs/export destinations, exact
+data after existing-only reopen, normalized paths, SaveAs identity, and
+export's unchanged active session/connection/source. Independent verification
+passed the workspace-port CTest 1/1 and executable 32/32; `git diff --check`
+passed. This is focused macOS arm64 / Qt 6.12 / AppleClang 21 evidence; no full
+suite or pre-v6 migration result is claimed.
+
+F1434 is complete at `6d10509b1b51cd687d975247209f1a2a86a1db7b`. A forward-only
+repository visitor streams class metadata and schedule rows into the
+Application snapshot, while the existing materializing repository API remains
+available. Cumulative class/regular/intensive result metrics publish only
+after success; call and statement counters remain attempts. The new large
+case covers 31 classes, 32 regular rows, and 12 intensive rows. Empty,
+invalid-ID, and a late intensive-query failure after one regular row preserve
+zero result-metric deltas. Independent macOS arm64 / universal Debug, Apple
+Clang 21, Qt 6.12 verification passed the Schedule Builder and Schedule Import
+CTests 2/2; `git diff --check` passed. No full-suite or heap/RSS result is
+claimed.
+
+Batch 12 F1433/F1434 slices are complete; closeout documentation and push are
+pending. Batch 13 discovery completed after two scans and bounded review under
+`PHASE3-BATCH13-DISCOVERY-20261024`. Its sole accepted candidate is F1435,
+bounded Class Details student-count roster reading with current validation and
+profiler parity, at the repository/existing-port boundary. The Class Transfer
+export projection overlap is deferred to Phase 8; no memory savings are
+measured. Batch 13 waits for Batch 12's push. Begin Batch 14 discovery when
+F1435 starts. Classes/Speaking Evaluation
 navigation detail lifetime is deferred to Phases 7D/7H because it requires
 page/model changes; Calendar parsed-event consumer lifetime remains deferred
 to Phase 7F. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
