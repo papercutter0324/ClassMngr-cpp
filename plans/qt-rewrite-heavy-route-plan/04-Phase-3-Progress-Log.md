@@ -2982,10 +2982,11 @@ at `91355e2c0483c550eca93bb9b0b20bc0a7c55547`; Batch 15 slice work is
 complete and pushed to `origin/Qt-Rewrite` at verified tip
 `af1024d336241e0f2fe7db5e3af90785d604d50e`. F1438 is accepted and committed
 at `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`; Batch 16 slice work is
-complete, with closeout docs/push pending. Batch 17 scans are complete and
-bounded review accepted F1439 and F1440, waiting for the Batch 16 push. Begin
-Batch 18 discovery when F1439 starts. Phase 3 remains In Progress and its exit
-gate remains open.
+complete and pushed to `origin/Qt-Rewrite` at verified tip
+`49ec21e783441fef616fae67cc633e9c7c6de578`. F1439 and F1440 are committed;
+Batch 17 implementation and docs are complete with push pending. Batch 18
+review accepted F1441, waiting for the Batch 17 push; begin Batch 19 discovery
+when F1441 starts. Phase 3 remains In Progress and its exit gate remains open.
 
 ## F1429 — Schedule Import row-count metrics — 2026-10-24
 
@@ -3333,18 +3334,24 @@ the shared workbook reader: Schedule uses `file.readAll()`, and Calendar uses
 
 Bounded review accepted **F1439 — file-backed/seekable input for the shared
 workbook reader** and **F1440 — discover and recover normal profile-replacement
-recovery siblings** as the ordered Batch 17 candidates. Both wait for the
-Batch 16 closeout push; begin Batch 18 discovery when F1439 starts.
+recovery siblings** as the ordered Batch 17 candidates. At review completion,
+both awaited the Batch 16 closeout push; begin Batch 18 discovery when F1439
+starts. Batch 16 is now pushed at `49ec21e783441fef616fae67cc633e9c7c6de578`.
 
-F1439's scope removes full-archive `QByteArray` retention on the live Schedule
-and Calendar row-streaming paths. Schedule passes its open `QFile`; Calendar
-chunks the sequential `QNetworkReply` into an operation-owned `QTemporaryFile`,
-parses after download completion, and cleans it on success, failure, abort,
-or destruction. Preserve stored/deflated parsing, row passes, output, error,
-and cancel behavior; add no UI cancellation. Byte APIs may remain adapters.
-The scope does not add ZIP64, shared strings/styles/notes, or a final-output
-bound. This is structural lifetime work with no RSS claim; Phase 7 owns
-semantic and review behavior.
+F1439 was accepted and committed at
+`070593edffd3293e6f3bbd2fc3cc241c2e468564`. It uses seekable `QIODevice`
+overloads, passes Schedule's open `QFile`, and stages Calendar's sequential
+`QNetworkReply` in an operation-owned `QTemporaryFile` with 64 KiB response
+chunks. The temporary file is parsed after download completion and cleaned up
+on success, failure, abort, or destruction; existing `QByteArray` adapters
+remain. Stored/deflated parsing, row passes, output/error/cancel behavior, and
+no-new-UI-cancellation constraints remain. XML metadata entries may still
+buffer. No ZIP64, full-suite, heap/RSS, or memory-savings claim is made; Phase 7
+owns semantic and review behavior.
+
+Independent focused CTests passed 4/4: `ClassMngrCalendarImportTests`,
+`ClassMngrScheduleImportTests`, `ClassMngrTeacherImportTests`, and
+`ClassMngrCalendarEventImportParityTests`. `git diff --check` passed.
 
 F1440 addresses process interruption after an existing profile is renamed to
 `.profile.workspace-create-<uuid>.recovery` and before replacement or rollback;
@@ -3354,6 +3361,47 @@ preserve the target and recovery candidates, require explicit choice for
 multiple or matching-looking candidates, and do not scan Initial Setup backup
 names. Expected coverage includes missing target/original, partial target
 with original, multiple candidates, stale/unrelated lookalikes, and repeat-start
-idempotence. No product behavior beyond safe user choice is in scope. No tests
-have been run for these unstarted candidates. Phase 3 remains In Progress with
-its exit gate open.
+idempotence. No product behavior beyond safe user choice is in scope. At
+discovery close, implementation verification had not started; acceptance
+evidence follows.
+
+F1440 was accepted and committed at
+`2d06dc1954ba5dcd5fae69532bc569696662bc76`. It adds an explicit File-menu
+recovery entry, exact normal-create UUID matching (including newline target
+filenames), and scans only the current/recent profile directory. Recovery
+requires explicit candidate and destination choice, uses a no-replace copy
+that retains the source, opens the destination only after copy success, and
+preserves existing targets and artifacts on failure or cancellation. It does
+not perform automatic recovery or change DataService, schema, or Initial Setup.
+Independent focused `ClassMngrFileControllerWorkspaceLifecycleTests` CTest
+passed 1/1, and `git diff --check` passed. No full suite was run. Batch 17
+implementation and docs are complete; push is pending. F1441 waits for this
+push; begin Batch 19 discovery when F1441 starts. Phase 3 remains In Progress
+with its exit gate open.
+
+## Batch 18 discovery outcome — 2026-10-24
+
+Discovery and bounded review completed under
+`PHASE3-BATCH18-DISCOVERY-20261024`. Review accepted **F1441 — consistent
+SQLite snapshots for SaveAs/export from WAL-mode profiles** as the sole
+candidate. A valid schema-v6 WAL-mode profile can have committed changes in
+`-wal`; current SaveAs/export copy only the main database file and do not
+reject WAL mode, so outputs may omit committed data. A safe candidate design
+is to create a consistent SQLite snapshot (the reviewer recommends
+`VACUUM INTO` a staging file) and stream it into the existing atomic
+`QSaveFile` destination. Verify the supported QSQLITE SQLite version. Preserve
+same-file no-op, source permissions, SaveAs identity, export session/path/
+connection invariants, and failure preservation. Exercise WAL with
+auto-checkpoint disabled and a committed marker still in `-wal`; reopen both
+outputs and the source. No tests were run for this discovery. The reviewer
+found no in-repository WAL setup, which lowers likelihood but does not
+invalidate WAL-mode profiles.
+
+Lifetime dispositions: signature-image memory limits/decode caps remain in
+Phase 7A/7B because numeric caps change supported inputs and feature behavior.
+Teacher Import remains in Phase 7C and is not folded into F1439. No ZIP
+expansion cap is added without an owning requirement in the memory plan. The
+updater response cap belongs to Core Updater, outside Phase 3. F1439 remains
+limited to the shared workbook-reader paths described above. F1441 waits for
+the Batch 17 push; begin Batch 19 discovery when F1441 starts. Phase 3 remains
+In Progress with its exit gate open.

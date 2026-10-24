@@ -12,10 +12,11 @@ verified at `41743d8676beee99274f4aacbe606002b4e38c30`. Batch 14 (F1436) is
 pushed and verified at `071560c8774f5c16c2b2502a5f561507e1f5f86f`. F1437 is
 committed at `91355e2c0483c550eca93bb9b0b20bc0a7c55547`. Batch 15 is pushed
 and verified at `af1024d336241e0f2fe7db5e3af90785d604d50e`. F1438 is committed
-at `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`; Batch16 closeout docs and push
-are pending. Batch17 discovery and bounded review completed under
-`PHASE3-BATCH17-DISCOVERY-20261024`; F1439 and F1440 are accepted in order and
-wait for the Batch16 push. Begin Batch18 discovery when F1439 starts. Phase 3
+at `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`. Batch 16 is pushed and verified
+at `49ec21e783441fef616fae67cc633e9c7c6de578`. Batch 17 is active at F1439,
+with F1440 next. Batch18 discovery and bounded review completed under
+`PHASE3-BATCH18-DISCOVERY-20261024`; F1441 is the sole accepted candidate and
+waits for the Batch17 push. Begin Batch19 discovery when F1441 starts. Phase 3
 remains In Progress and its exit gate is open.
 
 ## Goal
@@ -65,7 +66,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (F1438 committed; Batch 16 closeout pending)
+### Current checkpoint - 2026-10-24 (F1440 active; Batch 18 discovery complete)
 
 Phase 3 remains In Progress on the mandatory Heavy route, with its exit gate
 open. Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
@@ -192,16 +193,26 @@ review completed under `PHASE3-BATCH16-DISCOVERY-20261024`; its sole candidate,
 F1438, is committed at `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`. It corrects
 the Phase3 schema baseline's stale statement about F1419's four explicit-index
 and runtime metadata assertions while retaining limits on normalized DDL and
-pre-v6 conversion coverage. No tests were run for this doc-only slice. Batch16
-closeout docs and push are pending. Batch17 discovery and bounded review
-completed under `PHASE3-BATCH17-DISCOVERY-20261024`; its two candidates are
-accepted in order and wait for the Batch16 push. F1439 moves the shared workbook
-reader and its live Schedule/Calendar input paths to seekable file-backed
-archives, preserving worksheet parsing and temporary-file cleanup. F1440 adds
-target-specific discovery and user-directed recovery of normal profile
-replacement backups after process interruption; it must preserve candidates
-and partial targets and must never restore, delete, or overwrite automatically.
-Begin Batch18 discovery when F1439 starts. The Phase 0 `.db` matrix wording update
+pre-v6 conversion coverage. No tests were run for this doc-only slice. Batch 16
+is pushed and verified at `49ec21e783441fef616fae67cc633e9c7c6de578`. Batch17
+discovery and bounded review completed under
+`PHASE3-BATCH17-DISCOVERY-20261024`; F1439 and F1440 are accepted in order.
+F1439 is committed as `070593edffd3293e6f3bbd2fc3cc241c2e468564`. It moves
+the shared workbook reader and live Schedule/Calendar inputs to seekable
+file-backed archives while preserving worksheet parsing and temporary-file
+cleanup. Independent focused verification passed all four affected CTests and
+`git diff --check`; no full suite or heap/RSS measurement was performed. F1440
+is active for target-specific discovery and user-directed recovery of normal
+profile-replacement backups after process interruption; candidates and partial
+targets must remain preserved, with no automatic restore, delete, or overwrite.
+Batch18 discovery and review
+completed under `PHASE3-BATCH18-DISCOVERY-20261024`; its sole candidate, F1441,
+is a consistent SQLite snapshot for Save As/export that includes committed WAL
+data while preserving destination atomicity and session/path invariants. F1441
+waits for the Batch17 push; begin Batch19 discovery when it starts. Signature
+image memory work remains with Phase7A/7B, Teacher Import with Phase7C; no ZIP
+expansion cap will be added without an owning requirement. The Phase 0 `.db`
+matrix wording update
 was deferred as a pinned historical artifact; Teacher Import remains Phase
 7C-owned, and export remains Phase 8-owned. The
 unsupported ZIP-method test remains deferred as a test-only slice; no separate

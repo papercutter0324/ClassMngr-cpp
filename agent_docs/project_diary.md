@@ -8516,7 +8516,7 @@ ordinary production caller. Phase 3 remains In Progress, its exit gate remains
 open, and its backlog is not exhausted. The current tracker has no active
 batch or candidate.
 
-## 2026-10-24 — Phase 3 F1438 committed; Batch 16 closeout pending
+## 2026-10-24 — Phase 3 F1439 active; Batch 18 discovery started
 
 F1419–F1427 are accepted and pushed to `origin/Qt-Rewrite` at
 `7b4eaaf809ecdc17e4e14fae555b157c361c378d`; the remote tip matched and the
@@ -8622,11 +8622,22 @@ candidate, correcting the active schema baseline's stale statement about
 F1419's four explicit-index assertions. F1438 is committed at
 `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`; the doc now describes runtime
 contract coverage and its remaining limits. Batch16 closeout docs and push are
-pending. Batch17 discovery and bounded review completed under
-`PHASE3-BATCH17-DISCOVERY-20261024`; F1439 (file-backed workbook archive input)
-and F1440 (user-directed restart recovery after interrupted profile
-replacement) are accepted in order and wait for the Batch16 push. Begin
-Batch18 discovery when F1439 starts. Review
+pending. Batch 16 is pushed at verified tip
+`49ec21e783441fef616fae67cc633e9c7c6de578`. Batch17 discovery and bounded
+review completed under `PHASE3-BATCH17-DISCOVERY-20261024`; F1439 (file-backed
+workbook archive input) and F1440 (user-directed restart recovery after
+interrupted profile replacement) are accepted in order. F1439 is committed as
+`070593edffd3293e6f3bbd2fc3cc241c2e468564`. Independent focused verification
+passed all four affected CTests and `git diff --check`; the tests cover stored
+and deflated seekable inputs, Schedule/Calendar parity, cancellation, failed
+seeks, and Calendar staging cleanup. No full suite or heap/RSS measurement was
+performed. F1440 is active. Batch18 discovery and bounded review completed under
+`PHASE3-BATCH18-DISCOVERY-20261024`; F1441 is the sole accepted candidate, a
+consistent SQLite snapshot for Save As/export that includes committed WAL data
+while preserving destination atomicity and session invariants. F1441 waits for
+the Batch17 push; begin Batch19 discovery when it starts. Signature-image
+memory work remains with Phase7A/7B, Teacher Import with Phase7C, and no ZIP
+expansion cap will be set without an owning requirement. Review
 deferred unsupported ZIP-method coverage as a
 test-only slice, rejected a separate Windows F1433 slice, and deferred
 evaluation collection lifetime to Phase 7D/7H. F1435 is committed at
