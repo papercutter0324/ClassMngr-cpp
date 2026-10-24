@@ -6,11 +6,14 @@ continuation is active. Batch 9 (F1419–F1427) was pushed and verified at
 `7b4eaaf809ecdc17e4e14fae555b157c361c378d`. Batch 10 (F1428) is committed
 and pushed at `01670f53d7924a5e68ce9288effe3a4bf12b3403`. Batch 11
 (F1429–F1432) is pushed at `ee6efe495d25136cf70297183af1aeaf5ae8d51c`.
-Batch 12 F1433/F1434 slices are complete; closeout documentation and push are
-pending. Batch 13 discovery is complete under
-`PHASE3-BATCH13-DISCOVERY-20261024`; sole candidate F1435 waits for Batch 12's
-push. Begin Batch 14 discovery when F1435 starts. Phase 3 remains In Progress
-and its exit gate is open.
+Batch 12 (F1433/F1434) is pushed at
+`5ca42a876a40ec74f49055530a3d7714aa5368f7`. F1435 is committed at
+`b7dfd84cd025d83689d63aebc497f7795188810e`; Batch 13 closeout documentation
+and push are pending.
+Batch 14 discovery completed under `PHASE3-BATCH14-DISCOVERY-20261024`; its
+sole accepted candidate is F1436, waiting for the Batch 13 closeout push. Begin
+Batch 15 discovery when F1436 starts. Phase 3 remains In Progress and its exit
+gate is open.
 
 ## Goal
 
@@ -59,7 +62,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (Batch 12 complete; closeout push pending)
+### Current checkpoint - 2026-10-24 (F1435 committed; Batch 13 closeout pending)
 
 Phase 3 remains In Progress on the mandatory Heavy route, with its exit gate
 open. Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
@@ -149,14 +152,22 @@ Clang 21, Qt 6.12 verification passed the Schedule Builder and Schedule Import
 CTests 2/2; `git diff --check` passed. No full-suite or heap/RSS result is
 claimed.
 
-Batch 12 F1433/F1434 slices are complete; closeout documentation and push are
-pending. Batch 13 discovery completed after two scans and bounded review under
-`PHASE3-BATCH13-DISCOVERY-20261024`. Its sole accepted candidate is F1435,
-bounded Class Details student-count roster reading with current validation and
-profiler parity, at the repository/existing-port boundary. The Class Transfer
-export projection overlap is deferred to Phase 8; no memory savings are
-measured. Batch 13 waits for Batch 12's push. Begin Batch 14 discovery when
-F1435 starts. Classes/Speaking Evaluation
+Batch 12 (F1433/F1434) is closed and pushed at
+`5ca42a876a40ec74f49055530a3d7714aa5368f7`. F1435 is accepted and committed at
+`b7dfd84cd025d83689d63aebc497f7795188810e`. Its forward-only single-class
+student-count read avoids dense Roster construction while preserving validation,
+exact errors, and profiler behavior. Dimensions saturate at `INT_MAX`, matching
+the existing batch helper. The focused Class Details and Roster Read Port
+CTests passed 2/2; the independent Tester rebuilt (no work), reran 2/2, and
+`git diff --check` passed. Coverage includes sparse dimensions, malformed index
+parity and precedence, overflow saturation, and failed-read profiler silence.
+No full suite, Windows run, heap/RSS measurement, or memory-savings claim is
+made. Batch 13 closeout docs and push are pending. Batch 14 discovery completed
+under `PHASE3-BATCH14-DISCOVERY-20261024`; F1436 is its sole accepted candidate,
+waiting for the Batch 13 closeout push. Begin Batch 15 discovery when F1436
+starts. The unsupported ZIP-method test remains deferred as a test-only slice;
+no separate Windows F1433 slice was accepted, and analytics evaluation
+collection work remains with Phase 7D/7H. Classes/Speaking Evaluation
 navigation detail lifetime is deferred to Phases 7D/7H because it requires
 page/model changes; Calendar parsed-event consumer lifetime remains deferred
 to Phase 7F. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)

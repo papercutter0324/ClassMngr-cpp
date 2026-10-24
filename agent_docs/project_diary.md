@@ -8516,7 +8516,7 @@ ordinary production caller. Phase 3 remains In Progress, its exit gate remains
 open, and its backlog is not exhausted. The current tracker has no active
 batch or candidate.
 
-## 2026-10-24 — Phase 3 Batch 12 slices complete; closeout pending
+## 2026-10-24 — Phase 3 F1435 committed; Batch 13 closeout pending
 
 F1419–F1427 are accepted and pushed to `origin/Qt-Rewrite` at
 `7b4eaaf809ecdc17e4e14fae555b157c361c378d`; the remote tip matched and the
@@ -8584,18 +8584,29 @@ classes, 32 regular rows, 12 intensive rows, invalid-ID-before-schedule
 failure, and a late intensive-query failure after metadata and a regular row
 with zero result-metric deltas. Independent CTests passed 2/2 for the Schedule
 Builder port and Schedule Import targets; `git diff --check` passed. No full
-suite, heap, or RSS result is claimed. Batch 12's code slices are complete;
-closeout documentation and push remain pending.
+suite, heap, or RSS result is claimed. Batch 12 is closed and pushed at
+`5ca42a876a40ec74f49055530a3d7714aa5368f7`.
 
 Batch 13 discovery completed under `PHASE3-BATCH13-DISCOVERY-20261024` after
 two independent scans and bounded review. The data/API scan found no additional
 candidate; the lifetime scan produced two. F1435, bounded Class Details
 student-count roster reading with existing validation and profiler parity at
-the repository/existing-port boundary, is accepted as the sole candidate and
-waits for Batch 12's push. Class Transfer export snapshot/package overlap is
-deferred to Phase 8 because query assembly belongs there. Neither candidate
-has measured memory results. Begin Batch 14 discovery when F1435 starts.
-Classes/Speaking Evaluation
+the repository/existing-port boundary, is active as the sole Batch 13
+candidate. Class Transfer export snapshot/package overlap is deferred to Phase
+8 because query assembly belongs there. Neither candidate has measured memory
+results. Batch 14 discovery completed under
+`PHASE3-BATCH14-DISCOVERY-20261024`; its sole accepted candidate is F1436,
+sparse Class Analytics roster-name representation preserving uncapped logical
+row count, waiting for the Batch 13 closeout push. Begin Batch 15 discovery
+when F1436 starts. Review deferred unsupported ZIP-method coverage as a
+test-only slice, rejected a separate Windows F1433 slice, and deferred
+evaluation collection lifetime to Phase 7D/7H. F1435 is committed at
+`b7dfd84cd025d83689d63aebc497f7795188810e`. Its forward-only Class Details
+student-count path preserves roster validation and profiler behavior, with
+`INT_MAX` saturation for unrepresentable diagnostic dimensions. Focused and
+independent focused checks passed 2/2 with `git diff --check`; no full suite,
+Windows, heap/RSS, or measured memory savings are claimed. Batch 13 closeout
+documentation and push remain pending. Classes/Speaking Evaluation
 navigation detail lifetime remains deferred to Phases 7D/7H because it requires
 coordinated page/model changes; Calendar parsed-event consumer lifetime is
 deferred to Phase 7F. Phase 3 remains In Progress with its exit gate open.

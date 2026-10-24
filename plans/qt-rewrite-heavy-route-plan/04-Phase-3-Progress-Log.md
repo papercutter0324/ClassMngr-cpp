@@ -2970,11 +2970,13 @@ Calendar parsed-event consumer lifetime is the fifth candidate and is
 intentionally deferred to its owning phase, Phase 7F. Batch 10 has since been
 closed and pushed. F1429–F1432 acceptance details are recorded below. Batch 11
 is closed and pushed to `origin/Qt-Rewrite` at verified tip
-`ee6efe495d25136cf70297183af1aeaf5ae8d51c`. F1433 is accepted and committed;
-F1434 is accepted and committed, completing Batch 12 slice work. Its closeout
-push is pending. Batch 13 discovery completed under
-`PHASE3-BATCH13-DISCOVERY-20261024`; F1435 is its sole accepted candidate and
-waits for the Batch 12 closeout push. Phase 3 remains In Progress and its exit
+`ee6efe495d25136cf70297183af1aeaf5ae8d51c`. F1433 and F1434 are accepted and
+committed; Batch 12 is pushed to `origin/Qt-Rewrite` at verified tip
+`5ca42a876a40ec74f49055530a3d7714aa5368f7`. F1435 is accepted and committed;
+Batch 13 slice work is complete, with closeout docs/push pending. Batch 14
+discovery is complete under
+`PHASE3-BATCH14-DISCOVERY-20261024`; F1436 is its sole accepted candidate and
+waits for the Batch 13 closeout push. Phase 3 remains In Progress and its exit
 gate remains open.
 
 ## F1429 — Schedule Import row-count metrics — 2026-10-24
@@ -3097,34 +3099,82 @@ and Qt 6.12 rebuilt the focused targets. Both CTests passed (2/2):
 - `ClassMngrScheduleImportTests`
 
 `git diff --check` passed. No full-suite, heap, or RSS result is claimed.
-Batch 12 slice work is complete; its closeout push remains pending.
+Batch 12 is pushed to `origin/Qt-Rewrite` at verified tip
+`5ca42a876a40ec74f49055530a3d7714aa5368f7`.
+
+## F1435 — Class Details student-count roster read — 2026-10-24
+
+Accepted and committed at `b7dfd84cd025d83689d63aebc497f7795188810e`
+(`Phase3 - F1435: stream Class Details student count`). The single-class
+repository read is forward-only, avoids dense `Roster` construction, and
+preserves existing schema, row, and column validation and errors. Profiler
+row/cell dimensions saturate at `INT_MAX`, matching the batch helper.
+
+Coverage includes duplicate English/Korean headers, trimming, sparse rows,
+ignored integer out-of-range columns, profiler dimensions, and malformed
+column/row and column-metadata parity. This includes a fractional malformed
+column index with an out-of-range value to verify error precedence. Index
+715827882 with three columns exercises cell saturation; a row at `INT_MAX`
+exercises row saturation. Failed reads emit no profiler event.
+
+The executor's incremental Debug build of
+`ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests` and
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests` succeeded; the
+focused CTest selector passed 2/2. An independent Tester reran the build
+(Ninja reported no work), reran the exact selector 2/2, and passed
+`git diff --check`. Verification used macOS arm64 and Qt 6.12. No full suite,
+Windows run, heap/RSS measurement, or memory-savings claim is made. Batch 13
+slice work is complete; its closeout docs and push are pending.
 
 ## Batch 12 discovery — 2026-10-24
 
 Two independent scans and bounded review completed under Exploration ID
 `PHASE3-BATCH12-DISCOVERY-20261024`. Discovery selected two ordered slice
-candidates:
-F1433, a populated schema-v6 `.db` SaveAs/export round-trip through the v2
-`ApplicationServicesWorkspacePort` as required compatibility gate evidence
-(no pre-v6 migration scope); then F1434, Schedule Builder repository-to-
-Application row streaming with successful class/regular/intensive
-completed-row diagnostics, preserving F1330's full uncapped board. No other
-Batch 12 candidate was identified by the scans/review. Possible Classes/
-Speaking Evaluation navigation detail-query/lifetime work is deferred to
-Phase 7D/7H because eliminating consumer projections requires those page/model
-changes. F1433 and F1434 are accepted and committed; Batch 12 slice work is
-complete and its closeout push is pending. Batch 13 discovery completed under
-`PHASE3-BATCH13-DISCOVERY-20261024`. The data/API scan found no candidate:
+candidates: F1433, populated schema-v6 `.db` SaveAs/export through the v2
+`ApplicationServicesWorkspacePort` (no pre-v6 conversion), and F1434,
+Schedule Builder repository-to-Application row streaming with completed-row
+diagnostics while preserving the uncapped board. No other Batch 12 candidate
+was identified. Classes/Speaking Evaluation navigation detail-query/lifetime
+work remains deferred to Phase 7D/7H because it requires page/model ownership.
+F1433 and F1434 are accepted and committed. Batch 12 is pushed to
+`origin/Qt-Rewrite` at verified tip
+`5ca42a876a40ec74f49055530a3d7714aa5368f7`.
+
+## Batch 13 discovery — 2026-10-24
+
+Two independent scans and bounded review completed under
+`PHASE3-BATCH13-DISCOVERY-20261024`. The data/API scan found no candidate;
 CampusRecord is test-only with no ordinary caller, and saveDatabase
-commit-result visibility overlaps F1418. The lifetime scan identified a
+commit-result visibility overlaps F1418. The lifetime scan identified the
 repository Class Details student-count materialization and Class Transfer
-export snapshot/package overlap. Bounded review accepted F1435 as the sole
-candidate: a bounded Class Details student-count roster read with current
-validation and profiler parity, at the repository/existing-port boundary
-without UI changes. Preserve exact English/Korean first matching columns, the
-trimmed nonblank count, malformed/out-of-range error behavior, and profiler
-dimensions. This is source-derived; no memory measurement is claimed. Defer
-the export projection to Phase 8 because it owns query/operation assembly.
-Batch 13 waits for Batch 12 closeout/push; do not start F1435 before then.
-Since Batch 13 has one candidate, begin Batch 14 discovery when F1435 starts.
-Phase 3 remains In Progress with its exit gate open.
+export snapshot/package overlap. Review accepted F1435 as the sole candidate:
+a bounded Class Details student-count roster read with current validation and
+profiler parity, at the repository/existing-port boundary without UI changes.
+Preserve exact English/Korean first matching columns, trimmed nonblank count,
+malformed/out-of-range errors, and profiler dimensions. This is source-derived
+with no memory measurement. The export projection remains deferred to Phase 8
+because it owns query/operation assembly. F1435 is accepted and committed at
+`b7dfd84cd025d83689d63aebc497f7795188810e`; Batch 13 slice work is complete,
+with closeout docs and push pending.
+
+## Batch 14 discovery — 2026-10-24
+
+Two independent scans and bounded review completed under
+`PHASE3-BATCH14-DISCOVERY-20261024`. The data/API scan found no new migration
+candidate. The sole accepted candidate is F1436: represent sparse Class
+Analytics roster names without losing uncapped logical row count. Keep the
+change at the Platform/Application read-result/filter boundary without
+page/model migration; preserve sparse row extent, first exact English/Korean
+headers, exact name matching, malformed-index errors, and uncapped behavior.
+The allocation concern is source-derived only; no memory measurement is
+claimed.
+
+Review dispositions: defer an unsupported ZIP-compression rejection test as
+a test-only slice under the Start Here test-only rule; no parser defect was
+found. Reject a separate Windows F1433 slice; use the existing Windows
+baseline workflow as release evidence if available. Defer Class Analytics
+evaluation collection overlap to Phase 7D/7H due feature query/model ownership.
+The Batch 13 Class Transfer export projection remains deferred to Phase 8.
+Batch 14 waits for the Batch 13 closeout push. Since F1436 is its sole
+candidate, begin Batch 15 discovery when F1436 starts. Phase 3 remains In
+Progress with its exit gate open.
