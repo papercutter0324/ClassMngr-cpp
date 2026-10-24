@@ -9,6 +9,7 @@
 
 #include <QByteArray>
 #include <QHash>
+#include <QSet>
 #include <QString>
 
 #include <exception>
@@ -133,49 +134,54 @@ public:
                 classInfoById.insert(info.classId, &info);
             }
 
-            QHash<int, QString> classNameById;
-            classNameById.reserve(loadedClasses->size());
-            for (const Classroom& classroom : *loadedClasses)
             {
-                if (classroom.id <= 0
-                    || classNameById.contains(classroom.id)
-                    || !classInfoById.contains(classroom.id))
+                QSet<int> classIds;
+                classIds.reserve(loadedClasses->size());
+                for (const Classroom& classroom : *loadedClasses)
+                {
+                    if (classroom.id <= 0
+                        || classIds.contains(classroom.id)
+                        || !classInfoById.contains(classroom.id))
+                    {
+                        return invalidSnapshot(
+                            "The class list and schedule source returned inconsistent class IDs."
+                            );
+                    }
+                    classIds.insert(classroom.id);
+                }
+                if (classInfoById.size() != classIds.size())
                 {
                     return invalidSnapshot(
                         "The class list and schedule source returned inconsistent class IDs."
                         );
                 }
-                classNameById.insert(classroom.id, classroom.name);
-            }
-            if (classInfoById.size() != classNameById.size())
-            {
-                return invalidSnapshot(
-                    "The class list and schedule source returned inconsistent class IDs."
-                    );
             }
 
             Application::ScheduleImportStateSnapshot snapshot;
             snapshot.teachers.reserve(
                 static_cast<std::size_t>(loadedTeachers->size())
                 );
-            QHash<qint64, const ScheduleImportTeacherReadRecord*> teacherById;
-            teacherById.reserve(loadedTeachers->size());
-            for (const ScheduleImportTeacherReadRecord& teacher : *loadedTeachers)
             {
-                const std::optional<Domain::TeacherId> id =
-                    canonicalTeacherId(teacher.teacherId);
-                if (!id || teacherById.contains(teacher.teacherId))
+                QSet<qint64> teacherIds;
+                teacherIds.reserve(loadedTeachers->size());
+                for (const ScheduleImportTeacherReadRecord& teacher :
+                     *loadedTeachers)
                 {
-                    return invalidSnapshot(
-                        "The teacher source returned an invalid or duplicate teacher ID."
-                        );
+                    const std::optional<Domain::TeacherId> id =
+                        canonicalTeacherId(teacher.teacherId);
+                    if (!id || teacherIds.contains(teacher.teacherId))
+                    {
+                        return invalidSnapshot(
+                            "The teacher source returned an invalid or duplicate teacher ID."
+                            );
+                    }
+                    teacherIds.insert(teacher.teacherId);
+                    snapshot.teachers.push_back({
+                        *id,
+                        teacher.teacherKr.toStdU16String(),
+                        teacher.roomNumber.toStdU16String()
+                    });
                 }
-                teacherById.insert(teacher.teacherId, &teacher);
-                snapshot.teachers.push_back({
-                    *id,
-                    teacher.teacherKr.toStdU16String(),
-                    teacher.roomNumber.toStdU16String()
-                });
             }
 
             snapshot.classes.reserve(

@@ -138,6 +138,7 @@ class NextPlatformApplicationServicesScheduleImportStateSnapshotPortTests
 
 private slots:
     void mapsActiveSessionRecordsInRepositoryOrder();
+    void preservesLargeWorkspaceRecordsAndReadCounts();
     void preservesWideTeacherIdsAndLowIdAssociations();
     void rejectsPartialTeacherCursorRead();
     void reportsUnavailableAndClosedSessions();
@@ -480,6 +481,268 @@ mapsActiveSessionRecordsInRepositoryOrder()
         genericClassInfoMetricsAfter.intensiveScheduleStatementCount
             - genericClassInfoMetricsBefore.intensiveScheduleStatementCount,
         0
+        );
+}
+
+void NextPlatformApplicationServicesScheduleImportStateSnapshotPortTests::
+preservesLargeWorkspaceRecordsAndReadCounts()
+{
+    constexpr int teacherCount = 24;
+    constexpr int classCount = 96;
+    constexpr int regularTimesPerClass = 8;
+    constexpr int expectedRegularTimeCount = 768;
+    constexpr int expectedIntensiveTimeCount = 24;
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        databasePath(directory, QStringLiteral("large-workspace"))
+        ));
+    const QSqlDatabase database = services.workspaceStore()->database();
+
+    std::vector<int> teacherIds(static_cast<std::size_t>(teacherCount), -1);
+    for (int index = teacherCount - 1; index >= 0; --index)
+    {
+        const QString englishName = QStringLiteral("Teacher %1")
+            .arg(index, 3, 10, QLatin1Char('0'));
+        const QString koreanName = QStringLiteral("Korean teacher %1")
+            .arg(index, 3, 10, QLatin1Char('0'));
+        const QString room = QStringLiteral("Room %1")
+            .arg(index, 3, 10, QLatin1Char('0'));
+        QVERIFY2(
+            insertTeacher(
+                database,
+                koreanName,
+                englishName,
+                room,
+                &teacherIds[static_cast<std::size_t>(index)]
+                ),
+            "Could not insert a large-workspace teacher."
+            );
+    }
+
+    std::vector<int> classIds(static_cast<std::size_t>(classCount), -1);
+    for (int classIndex = classCount - 1; classIndex >= 0; --classIndex)
+    {
+        const QString className = QStringLiteral("Class %1")
+            .arg(classIndex, 3, 10, QLatin1Char('0'));
+        const int classIdValue = services.classService()->create(className)
+            .value_or(-1);
+        QVERIFY(classIdValue > 0);
+        classIds[static_cast<std::size_t>(classIndex)] = classIdValue;
+
+        const int assignedTeacherIndex = (classIndex * 7 + 3) % teacherCount;
+        const int assignedTeacherId =
+            teacherIds[static_cast<std::size_t>(assignedTeacherIndex)];
+        const QString grade = QStringLiteral("Grade %1")
+            .arg(classIndex % 12, 2, 10, QLatin1Char('0'));
+        const QString level = QStringLiteral("Level %1")
+            .arg(classIndex % 9, 2, 10, QLatin1Char('0'));
+        const QString color = QStringLiteral("Class color %1")
+            .arg(classIndex, 3, 10, QLatin1Char('0'));
+        QVERIFY(insertClassInfo(
+            database,
+            classIdValue,
+            assignedTeacherId,
+            grade,
+            level,
+            color
+            ));
+
+        for (int timeIndex = 0; timeIndex < regularTimesPerClass; ++timeIndex)
+        {
+            QVERIFY(insertSchedule(
+                database,
+                QStringLiteral("class_times"),
+                classIdValue,
+                QStringLiteral("Day %1").arg(timeIndex % 7),
+                QStringLiteral("Start %1-%2")
+                    .arg(classIndex, 3, 10, QLatin1Char('0'))
+                    .arg(timeIndex),
+                QStringLiteral("End %1-%2")
+                    .arg(classIndex, 3, 10, QLatin1Char('0'))
+                    .arg(timeIndex)
+                ));
+        }
+
+        if (classIndex % 4 == 0)
+        {
+            QVERIFY(insertSchedule(
+                database,
+                QStringLiteral("class_intensive_times"),
+                classIdValue,
+                QStringLiteral("Intensive day %1").arg(classIndex),
+                QStringLiteral("Intensive start %1").arg(classIndex),
+                QStringLiteral("Intensive end %1").arg(classIndex)
+                ));
+        }
+    }
+
+    ClassRepository* const classRepository =
+        services.workspaceStore()->classRepository();
+    TeacherRepository* const teacherRepository =
+        services.workspaceStore()->teacherRepository();
+    ClassInfoRepository* const classInfoRepository =
+        services.workspaceStore()->classInfoRepository();
+    const Result<QList<Classroom>> expectedClasses =
+        classRepository->getClasses();
+    const Result<QList<ScheduleImportTeacherReadRecord>> expectedTeachers =
+        teacherRepository->loadScheduleImportTeacherRecords();
+    const Result<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
+        expectedClassInfos =
+            classInfoRepository->loadScheduleImportStateSnapshotClassInfos();
+    QVERIFY(expectedClasses);
+    QVERIFY(expectedTeachers);
+    QVERIFY(expectedClassInfos);
+    QCOMPARE(expectedTeachers->size(), teacherCount);
+    QCOMPARE(expectedClasses->size(), classCount);
+    QCOMPARE(expectedClassInfos->size(), classCount);
+    for (int index = 0; index < teacherCount; ++index)
+    {
+        QCOMPARE(
+            expectedTeachers->at(index).teacherId,
+            teacherIds[static_cast<std::size_t>(index)]
+            );
+    }
+
+    int sourceRegularTimeCount = 0;
+    int sourceIntensiveTimeCount = 0;
+    for (int index = 0; index < classCount; ++index)
+    {
+        const ScheduleImportStateSnapshotClassInfoReadRecord& info =
+            expectedClassInfos->at(index);
+        QCOMPARE(
+            info.classId,
+            classIds[static_cast<std::size_t>(index)]
+            );
+        sourceRegularTimeCount += info.regularTimes.size();
+        sourceIntensiveTimeCount += info.intensiveTimes.size();
+    }
+    QCOMPARE(sourceRegularTimeCount, expectedRegularTimeCount);
+    QCOMPARE(sourceIntensiveTimeCount, expectedIntensiveTimeCount);
+
+    const ScheduleImportTeacherReadMetrics teacherMetricsBefore =
+        teacherRepository->scheduleImportTeacherReadMetrics();
+    const ScheduleImportStateSnapshotClassInfoReadMetrics classInfoMetricsBefore =
+        classInfoRepository->scheduleImportStateSnapshotClassInfoReadMetrics();
+
+    Platform::ApplicationServicesScheduleImportStateSnapshotPort port(services);
+    const auto result = Application::ScheduleImportStateSnapshotQueryHandler::
+        execute({}, port);
+    const auto* snapshot =
+        std::get_if<Application::ScheduleImportStateSnapshot>(&result);
+    QVERIFY2(snapshot, failure(result)
+        ? qPrintable(QString::fromStdString(failure(result)->message))
+        : "Expected a complete large-workspace snapshot.");
+
+    QCOMPARE(snapshot->teachers.size(), static_cast<std::size_t>(teacherCount));
+    for (int index = 0; index < teacherCount; ++index)
+    {
+        const ScheduleImportTeacherReadRecord& expected =
+            expectedTeachers->at(index);
+        const auto& actual = snapshot->teachers[static_cast<std::size_t>(index)];
+        QCOMPARE(actual.id.value(), std::to_string(expected.teacherId));
+        QCOMPARE(actual.koreanName, expected.teacherKr.toStdU16String());
+        QCOMPARE(actual.roomNumber, expected.roomNumber.toStdU16String());
+    }
+
+    QCOMPARE(snapshot->classes.size(), static_cast<std::size_t>(classCount));
+    int snapshotRegularTimeCount = 0;
+    int snapshotIntensiveTimeCount = 0;
+    for (int index = 0; index < classCount; ++index)
+    {
+        const Classroom& expectedClass = expectedClasses->at(index);
+        const ScheduleImportStateSnapshotClassInfoReadRecord& expectedInfo =
+            expectedClassInfos->at(index);
+        const auto& actual = snapshot->classes[static_cast<std::size_t>(index)];
+        QCOMPARE(actual.id.value(), std::to_string(expectedClass.id));
+        QCOMPARE(actual.teacherId.value(), std::to_string(expectedInfo.teacherId));
+        QCOMPARE(actual.className, expectedClass.name.toStdU16String());
+        QCOMPARE(actual.grade, expectedInfo.classGrade.toStdU16String());
+        QCOMPARE(actual.level, expectedInfo.classLevel.toStdU16String());
+        QCOMPARE(actual.classColor, expectedInfo.classColor.toStdU16String());
+        QCOMPARE(actual.roomNumber, expectedInfo.roomNumber.toStdU16String());
+        QCOMPARE(
+            actual.normalTimes.size(),
+            static_cast<std::size_t>(expectedInfo.regularTimes.size())
+            );
+        for (int timeIndex = 0;
+             timeIndex < expectedInfo.regularTimes.size();
+             ++timeIndex)
+        {
+            const ClassTime& expectedTime =
+                expectedInfo.regularTimes.at(timeIndex);
+            const auto& actualTime =
+                actual.normalTimes[static_cast<std::size_t>(timeIndex)];
+            QCOMPARE(actualTime.day, expectedTime.day.toStdU16String());
+            QCOMPARE(
+                actualTime.startTime,
+                expectedTime.startTime.toStdU16String()
+                );
+            QCOMPARE(actualTime.endTime, expectedTime.endTime.toStdU16String());
+        }
+        QCOMPARE(
+            actual.intensiveTimes.size(),
+            static_cast<std::size_t>(expectedInfo.intensiveTimes.size())
+            );
+        for (int timeIndex = 0;
+             timeIndex < expectedInfo.intensiveTimes.size();
+             ++timeIndex)
+        {
+            const ClassTime& expectedTime =
+                expectedInfo.intensiveTimes.at(timeIndex);
+            const auto& actualTime =
+                actual.intensiveTimes[static_cast<std::size_t>(timeIndex)];
+            QCOMPARE(actualTime.day, expectedTime.day.toStdU16String());
+            QCOMPARE(
+                actualTime.startTime,
+                expectedTime.startTime.toStdU16String()
+                );
+            QCOMPARE(actualTime.endTime, expectedTime.endTime.toStdU16String());
+        }
+        snapshotRegularTimeCount += static_cast<int>(actual.normalTimes.size());
+        snapshotIntensiveTimeCount +=
+            static_cast<int>(actual.intensiveTimes.size());
+    }
+    QCOMPARE(snapshotRegularTimeCount, expectedRegularTimeCount);
+    QCOMPARE(snapshotIntensiveTimeCount, expectedIntensiveTimeCount);
+    QCOMPARE(
+        snapshotRegularTimeCount + snapshotIntensiveTimeCount,
+        792
+        );
+
+    const ScheduleImportTeacherReadMetrics teacherMetricsAfter =
+        teacherRepository->scheduleImportTeacherReadMetrics();
+    QCOMPARE(
+        teacherMetricsAfter.callCount - teacherMetricsBefore.callCount,
+        1
+        );
+    QCOMPARE(
+        teacherMetricsAfter.statementCount - teacherMetricsBefore.statementCount,
+        1
+        );
+    const ScheduleImportStateSnapshotClassInfoReadMetrics classInfoMetricsAfter =
+        classInfoRepository->scheduleImportStateSnapshotClassInfoReadMetrics();
+    QCOMPARE(
+        classInfoMetricsAfter.callCount - classInfoMetricsBefore.callCount,
+        1
+        );
+    QCOMPARE(
+        classInfoMetricsAfter.metadataStatementCount
+            - classInfoMetricsBefore.metadataStatementCount,
+        1
+        );
+    QCOMPARE(
+        classInfoMetricsAfter.regularScheduleStatementCount
+            - classInfoMetricsBefore.regularScheduleStatementCount,
+        1
+        );
+    QCOMPARE(
+        classInfoMetricsAfter.intensiveScheduleStatementCount
+            - classInfoMetricsBefore.intensiveScheduleStatementCount,
+        1
         );
 }
 
