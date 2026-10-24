@@ -2985,9 +2985,12 @@ at `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`; Batch 16 slice work is
 complete and pushed to `origin/Qt-Rewrite` at verified tip
 `49ec21e783441fef616fae67cc633e9c7c6de578`. Batch 17 is pushed to
 `origin/Qt-Rewrite` at verified local/remote tip
-`11db3892c3533f7dd7d270be30905bd3d730fdd2`. Batch 18 is active at F1441.
-Batch 19 discovery and bounded review found no accepted candidate beyond
-F1441. Phase 3 remains In Progress and its exit gate remains open.
+`11db3892c3533f7dd7d270be30905bd3d730fdd2`. F1441 is accepted and committed
+at `01a398599af2004305932f02c99671cc5fb0400f`; Batch 18 implementation is
+complete, with closeout docs updated and push pending. Batch 19 review found
+no candidate beyond F1441. The exact `wizardSuccessTranscript` rerun still
+aborts before import, with attribution unresolved. No F1442 is accepted or
+active. Phase 3 remains In Progress and its exit gate remains open.
 
 ## F1429 — Schedule Import row-count metrics — 2026-10-24
 
@@ -3418,7 +3421,41 @@ production caller retains a transaction for FileController Save, and treating
 Qt's “no active transaction” result as a failure would reject normal Save
 behavior. Revisit this API only if production transaction ownership changes.
 
-F1441 remains active. Its mechanism review is checking a standalone,
-consistent SQLite Online Backup API dependency; no review outcome or
-implementation result is recorded yet. Phase 3 remains In Progress with its
-exit gate open.
+F1441 remains the sole Batch 18 slice. Its accepted implementation is
+recorded below. Phase 3 remains In Progress with its exit gate open.
+
+## F1441 — WAL-safe SaveAs/export snapshots — 2026-10-24
+
+F1441 was accepted and committed at
+`01a398599af2004305932f02c99671cc5fb0400f`. It snapshots SaveAs/export through
+the SQLite Online Backup API using both handles from the vendored private
+static SQLite 3.54.1 library. It preserves WAL-committed rows, implicit rowids,
+opaque tables, source usability, atomic `QSaveFile` destination replacement,
+same-file behavior, permissions, and SaveAs/export state. The vendored archive
+SHA3-256 is
+`92281c86e2957f9b9305890f9ac04204caa7b677cc868dc326d942689df28e30`; source
+hashes, provenance, and public-domain status are recorded in
+[`third_party/README.md`](../../third_party/README.md). On macOS, SQLite has no
+dynamic dependency and helper symbols remain private.
+
+The final independent Tester confirmed `ClassMngrNextPlatformApplicationServicesWorkspacePortTests`
+and `ClassMngrDataServiceLifecycleTests` passed 2/2, `git diff --check` passed,
+and source/hash/provenance plus private static linkage were verified. The
+macOS build has no SQLite dynamic dependency. No Windows or Linux build, full
+suite, or memory claim is made. Batch 18 implementation is complete; closeout
+docs are updated and push is pending.
+
+## Final-gate verification unresolved — F1349 wizard slot — 2026-10-24
+
+The exact F1349 `wizardSuccessTranscript` rerun still aborts on macOS with exit
+134 before import at `wizard.show()`: `NSInvalidArgumentException:
+-[NSBundle initWithURL:]: nil URL argument`. The stack proceeds through
+`QWizard::page` → pixmap → `QWizardPage::isCommitPage` → `currentIdChanged` →
+restart → `setVisible` → slot. No app import, apply, or persistence code runs
+before the abort. Teacher Import Platform/Application CTests passed 2/2; six
+separately registered F1349 UI parity CTests passed but did not include this
+wizard-success slot. There is no pre-F1349 same-configuration baseline, so do
+not call this pre-existing or environmental; attribution remains unresolved.
+The focused log is
+`/private/tmp/PH3-F1349-UI-ABORT-VERIFY-21.log`. Phase 3 remains In Progress
+with its exit gate open; do not claim closure.

@@ -8636,7 +8636,14 @@ performed. F1440 is committed as
 passed `ClassMngrFileControllerWorkspaceLifecycleTests` 1/1 and
 `git diff --check`, including exact UUID matching with a newline target name.
 Batch17 closeout docs are committed and pushed at verified tip
-`11db3892c3533f7dd7d270be30905bd3d730fdd2`. F1441 is active. Batch18 discovery
+`11db3892c3533f7dd7d270be30905bd3d730fdd2`. F1441 is committed as
+`01a398599af2004305932f02c99671cc5fb0400f`. Its vendored SQLite 3.54.1
+Online Backup API snapshots committed WAL data and preserves implicit rowids
+and opaque tables before atomic QSaveFile replacement. Independent WorkspacePort
+and DataService lifecycle CTests passed 2/2; `git diff --check` passed. macOS
+verified no SQLite dynamic dependency and private SQLite symbols. Windows/Linux
+were not built; no full-suite or memory claim is made. Batch18 closeout docs are
+pending. Batch18 discovery
 and bounded review completed under
 `PHASE3-BATCH18-DISCOVERY-20261024`; F1441 is the sole accepted candidate, a
 consistent SQLite snapshot for Save As/export that includes committed WAL data
@@ -8648,7 +8655,15 @@ void Save compatibility: v2 repositories own and check their local write
 transactions, no production caller retains one for FileController Save, and
 propagating Qt's no-active-transaction result would falsely report ordinary
 Save as failed. Revisit only if a production v2 path begins retaining a
-transaction. Signature-image
+transaction. The final gate audit reran the historical F1349
+`wizardSuccessTranscript`; it still exits 134 at `wizard.show()` before import
+with `NSInvalidArgumentException` in Qt's QWizard pixmap path. The stack is
+recorded in `/private/tmp/PH3-F1349-UI-ABORT-VERIFY-21.log`. No import
+application or persistence code executes first. Teacher Import Platform and
+Application CTests passed 2/2; the six separately registered UI tests do not
+include this wizard-success slot. No same-config pre-F1349 baseline exists, so
+attribution is unresolved and the supported-file gate remains open.
+Signature-image
 memory work remains with Phase7A/7B, Teacher Import with Phase7C, and no ZIP
 expansion cap will be set without an owning requirement. Review
 deferred unsupported ZIP-method coverage as a

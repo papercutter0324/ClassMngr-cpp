@@ -15,13 +15,26 @@ and verified at `af1024d336241e0f2fe7db5e3af90785d604d50e`. F1438 is committed
 at `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`. Batch 16 is pushed and verified
 at `49ec21e783441fef616fae67cc633e9c7c6de578`. Batch 17 (F1439/F1440 and its
 closeout docs) is pushed and verified at `11db3892c3533f7dd7d270be30905bd3d730fdd2`.
-Batch 18 is active with F1441, the consistent SaveAs/export snapshot for
-committed WAL data. Batch 19 discovery and bounded review completed under
+Batch 18 F1441 is committed at `01a398599af2004305932f02c99671cc5fb0400f`;
+independent WorkspacePort and DataService lifecycle CTests passed 2/2 and
+`git diff --check` passed. It uses vendored SQLite 3.54.1 Online Backup API
+handles to preserve committed WAL data and rowids before atomic QSaveFile
+replacement; macOS has no new SQLite runtime dependency. Windows and Linux were
+not built. Batch18 closeout docs are in progress. Batch 19 discovery and
+bounded review completed under
 `PHASE3-BATCH19-DISCOVERY-20261024` with no accepted candidate beyond F1441.
 The review retained F1418's void Save compatibility because v2 writes commit
 in checked local transactions and the ordinary FileController Save path has no
 pending transaction; propagating Qt's no-transaction result would falsely fail
-Save. Phase 3 remains In Progress and its exit gate is open.
+Save. Phase 3 remains In Progress and its exit gate is open. Final gate audit
+reran F1349 `wizardSuccessTranscript`; it still exits 134 at `wizard.show()`
+with `NSInvalidArgumentException` from Qt's QWizard pixmap path before import.
+The stack and build are recorded in `/private/tmp/PH3-F1349-UI-ABORT-VERIFY-21.log`.
+No import application or persistence code runs first. The Platform/Application
+Teacher Import CTests pass 2/2; the six individually registered UI parity tests
+do not include this wizard-success slot. No pre-F1349 same-config baseline
+exists, so attribution remains unresolved and the supported-file gate stays
+open.
 
 ## Goal
 
@@ -70,7 +83,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (F1441 active; Batch 19 discovery complete)
+### Current checkpoint - 2026-10-24 (F1441 committed; final gate audit pending)
 
 Phase 3 remains In Progress on the mandatory Heavy route, with its exit gate
 open. Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
@@ -213,14 +226,24 @@ the explicit copy flow preserves candidates and targets and never auto-restores,
 deletes, or overwrites. Independent focused verification passed
 `ClassMngrFileControllerWorkspaceLifecycleTests` 1/1 and `git diff --check`.
 Batch 17 closeout docs are committed at `11db3892c3533f7dd7d270be30905bd3d730fdd2`
-and the push to `origin/Qt-Rewrite` was verified at that tip. F1441 is active
-as Batch 18's sole candidate. Batch19 discovery began at F1441 start under
+and the push to `origin/Qt-Rewrite` was verified at that tip. F1441 is committed
+as `01a398599af2004305932f02c99671cc5fb0400f`. Its vendored SQLite 3.54.1
+Online Backup API snapshots committed WAL data and preserves arbitrary schema
+objects/rowids before QSaveFile replacement. Independent WorkspacePort and
+DataService lifecycle CTests passed 2/2; `git diff --check` passed. macOS
+verified no SQLite dynamic dependency and private SQLite symbols. Windows and
+Linux builds remain unrun; no full-suite or memory claim is made. Batch18
+closeout docs are pending. Batch19 discovery began at F1441 start under
 `PHASE3-BATCH19-DISCOVERY-20261024`; two independent scans and bounded review
 completed with no accepted candidate beyond F1441. Review confirmed F1418's
 void Save compatibility: v2 repositories own and check local transactions, no
 production v2 caller retains a transaction for the FileController Save action,
 and surfacing Qt's no-active-transaction result would falsely fail ordinary
-Save. Revisit only if a production caller begins retaining a transaction.
+Save. Revisit only if a production caller begins retaining a transaction. The
+F1349 wizard-success slot still aborts at `wizard.show()` before importing with
+the macOS NSBundle exception; application import code is not reached, the
+baseline is unavailable, and attribution remains unresolved. The supported-file
+gate stays open pending disposition.
 Batch18 discovery and review
 completed under `PHASE3-BATCH18-DISCOVERY-20261024`; its sole candidate, F1441,
 is a consistent SQLite snapshot for Save As/export that includes committed WAL
