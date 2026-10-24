@@ -675,3 +675,24 @@ Executor built `ClassMngr`; Tester built `ClassMngr`,
 `ClassMngrCalendarEventRepositoryTests`. The three focused CTests passed
 **3/3** serially. `git diff --check` passed. No broader suite or
 cross-platform build ran.
+
+## F1345 — Repeat-series edit — 2026-10-23
+
+`src/next/platform/application_services_calendar_event_series_edit_port.h`
+now uses `workspaceStore()` for store state and repository access. The
+selected-date boundary, trimmed series ID, order, IDs/offsets/edited fields,
+empty-suffix no-op, request validation, single batch save/transaction, error
+mappings, and exception behavior remain unchanged. Edit-specific fixtures in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp` and
+the two UI parity suffix-edit fixtures in
+`tests/calendar_page_event_mutation_parity_tests.cpp` now use
+`WorkspaceStore`; assertions remain. The neighboring occurrence-edit fixture
+and all create/delete paths were unchanged.
+
+Executor built `ClassMngr`; Tester built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrCalendarPageEventMutationParityTests`. Three focused CTests passed
+**3/3** serially. Coverage includes ordered IDs and suffix boundaries, empty
+suffix, failure/rollback, and retry/cancel/refresh UI parity.
+`git diff --check` passed. No full suite or cross-platform build ran.

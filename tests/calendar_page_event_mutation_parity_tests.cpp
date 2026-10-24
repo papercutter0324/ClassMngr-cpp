@@ -3239,7 +3239,7 @@ repeatSeriesSuffixEditKeepsDialogOpenAfterSaveFailure()
             event.endDate = date;
             event.endTime = QTime(10, 0);
 
-            const auto saved = workspace.services.databaseSession()
+            const auto saved = workspace.services.workspaceStore()
                 ->calendarEventRepository()
                 ->saveCalendarEvent(event);
             if (!saved)
@@ -3523,7 +3523,7 @@ repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection()
             event.endDate = date;
             event.endTime = QTime(10, 0);
 
-            const auto saved = workspace.services.databaseSession()
+            const auto saved = workspace.services.workspaceStore()
                 ->calendarEventRepository()
                 ->saveCalendarEvent(event);
             if (!saved)

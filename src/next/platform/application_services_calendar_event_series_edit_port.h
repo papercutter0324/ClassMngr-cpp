@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/calendar_event_validator.h"
@@ -69,10 +69,10 @@ public:
 
         try
         {
-            DatabaseSession* const session = m_services.databaseSession();
-            if (!session || !session->isOpen())
+            WorkspaceStore* const store = m_services.workspaceStore();
+            if (!store || !store->isOpen())
             {
-                return unavailableSessionFailure();
+                return unavailableStoreFailure();
             }
 
             const QDate startDate = legacyDate(request.startDate);
@@ -88,7 +88,7 @@ public:
                 request.repeatSeriesId->value()
                 ).trimmed();
             CalendarEventRepository* const repository =
-                session->calendarEventRepository();
+                store->calendarEventRepository();
             if (!repository)
             {
                 return failure(
@@ -104,9 +104,9 @@ public:
                     );
             if (!seriesEvents)
             {
-                if (!session->isOpen())
+                if (!store->isOpen())
                 {
-                    return unavailableSessionFailure();
+                    return unavailableStoreFailure();
                 }
 
                 const QByteArray errorBytes = seriesEvents.error().toUtf8();
@@ -246,9 +246,9 @@ public:
                 repository->saveCalendarEvents(updatedEvents);
             if (!saved)
             {
-                if (!session->isOpen())
+                if (!store->isOpen())
                 {
-                    return unavailableSessionFailure();
+                    return unavailableStoreFailure();
                 }
 
                 const QByteArray errorBytes = saved.error().toUtf8();
@@ -361,7 +361,7 @@ private:
     }
 
     [[nodiscard]] static Application::CalendarEventSeriesEditResult
-    unavailableSessionFailure()
+    unavailableStoreFailure()
     {
         return Application::CalendarEventSeriesEditResult::failure({
             .code = Domain::ErrorCode::NotFound,
