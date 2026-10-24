@@ -74,10 +74,10 @@ WorkspaceStore::~WorkspaceStore()
     close();
 }
 
-Status WorkspaceStore::open(const QString& databasePath)
+RepositoryStatus WorkspaceStore::open(const QString& databasePath)
 {
     WorkspaceStore candidate;
-    const Status status = candidate.openCandidate(
+    const RepositoryStatus status = candidate.openCandidate(
         databasePath,
         OpenBehavior::CreateIfMissing
         );
@@ -90,10 +90,10 @@ Status WorkspaceStore::open(const QString& databasePath)
     return {};
 }
 
-Status WorkspaceStore::openExisting(const QString& databasePath)
+RepositoryStatus WorkspaceStore::openExisting(const QString& databasePath)
 {
     WorkspaceStore candidate;
-    const Status status = candidate.openCandidate(
+    const RepositoryStatus status = candidate.openCandidate(
         databasePath,
         OpenBehavior::ExistingOnly
         );
@@ -106,16 +106,17 @@ Status WorkspaceStore::openExisting(const QString& databasePath)
     return {};
 }
 
-Status WorkspaceStore::openCandidate(
+RepositoryStatus WorkspaceStore::openCandidate(
     const QString& databasePath,
     const OpenBehavior behavior
     )
 {
     if (databasePath.trimmed().isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
             QStringLiteral("No Teacher Profile path was provided.")
-            );
+        });
     }
 
     const QFileInfo databaseInfo(databasePath);
@@ -124,9 +125,10 @@ Status WorkspaceStore::openCandidate(
 
     if (normalizedPath.trimmed().isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
             QStringLiteral("Teacher Profile path could not be resolved.")
-            );
+        });
     }
 
     if (
@@ -135,10 +137,11 @@ Status WorkspaceStore::openCandidate(
         && !QDir().mkpath(databaseInfo.absolutePath())
         )
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("Unable to create Teacher Profile directory:\n%1")
                 .arg(databaseInfo.absolutePath())
-            );
+        });
     }
 
     m_database = std::make_unique<QSqlDatabase>(
@@ -162,13 +165,16 @@ Status WorkspaceStore::openCandidate(
         const QString openError = m_database->lastError().text();
         m_database.reset();
         QSqlDatabase::removeDatabase(m_connectionName);
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            behavior == OpenBehavior::ExistingOnly && !existingDatabase
+                ? RepositoryErrorCode::NotFound
+                : RepositoryErrorCode::Technical,
             QStringLiteral("Unable to open Teacher Profile:\n%1\n\n%2")
                 .arg(normalizedPath, openError)
-            );
+        });
     }
 
-    const Status schemaStatus = DatabaseSchemaManager::ensureSchema(
+    const RepositoryStatus schemaStatus = DatabaseSchemaManager::ensureSchema(
         *m_database,
         normalizedPath,
         behavior == OpenBehavior::ExistingOnly || existingDatabase
@@ -177,12 +183,13 @@ Status WorkspaceStore::openCandidate(
         );
     if (!schemaStatus)
     {
-        const QString schemaError = schemaStatus.error();
+        const QString schemaError = toLegacyDiagnostic(schemaStatus.error());
         close();
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            schemaStatus.error().code,
             QStringLiteral("Unable to initialize Teacher Profile:\n%1\n\n%2")
                 .arg(normalizedPath, schemaError)
-            );
+        });
     }
 
     m_databasePath = normalizedPath;
@@ -279,23 +286,47 @@ QSqlDatabase WorkspaceStore::database() const
     return m_database ? *m_database : QSqlDatabase();
 }
 
-bool WorkspaceStore::commit()
+RepositoryStatus WorkspaceStore::commit()
 {
-    return m_database
-        && m_database->isOpen()
-        && m_database->commit();
+    if (!m_database || !m_database->isOpen())
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QStringLiteral("No Teacher Profile is open.")
+        });
+    }
+
+    if (!m_database->commit())
+    {
+        QString diagnostic = m_database->lastError().text();
+        if (diagnostic.isEmpty())
+        {
+            diagnostic = QStringLiteral(
+                "Unable to commit Teacher Profile changes."
+                );
+        }
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            std::move(diagnostic)
+        });
+    }
+
+    return {};
 }
 
 std::optional<WorkspaceStore::ReadTransactionFailure>
 WorkspaceStore::withReadTransaction(
-    const std::function<Status()>& operation
+    const std::function<RepositoryStatus()>& operation
     ) const
 {
     if (!m_database || !m_database->isOpen())
     {
         return ReadTransactionFailure{
             .stage = ReadTransactionFailure::Stage::Start,
-            .diagnostic = {}
+            .error = RepositoryError{
+                RepositoryErrorCode::Technical,
+                {}
+            }
         };
     }
 
@@ -304,16 +335,19 @@ WorkspaceStore::withReadTransaction(
     {
         return ReadTransactionFailure{
             .stage = ReadTransactionFailure::Stage::Start,
-            .diagnostic = transaction.startError()
+            .error = RepositoryError{
+                RepositoryErrorCode::Technical,
+                transaction.startError()
+            }
         };
     }
 
-    const Status operationStatus = operation();
+    const RepositoryStatus operationStatus = operation();
     if (!operationStatus)
     {
         return ReadTransactionFailure{
             .stage = ReadTransactionFailure::Stage::Operation,
-            .diagnostic = operationStatus.error()
+            .error = operationStatus.error()
         };
     }
 
@@ -321,7 +355,10 @@ WorkspaceStore::withReadTransaction(
     {
         return ReadTransactionFailure{
             .stage = ReadTransactionFailure::Stage::Commit,
-            .diagnostic = m_database->lastError().text()
+            .error = RepositoryError{
+                RepositoryErrorCode::Technical,
+                m_database->lastError().text()
+            }
         };
     }
 

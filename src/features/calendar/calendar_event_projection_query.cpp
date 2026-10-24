@@ -75,6 +75,36 @@ ClassMngr::Next::Domain::Result<Value> technicalFailure(
         );
 }
 
+template <typename Value>
+ClassMngr::Next::Domain::Result<Value> repositoryFailure(
+    const RepositoryError& error
+    )
+{
+    ErrorCode code = ErrorCode::Technical;
+    switch (error.code)
+    {
+    case RepositoryErrorCode::InvalidInput:
+        code = ErrorCode::InvalidInput;
+        break;
+    case RepositoryErrorCode::NotFound:
+        code = ErrorCode::NotFound;
+        break;
+    case RepositoryErrorCode::Conflict:
+        code = ErrorCode::Conflict;
+        break;
+    case RepositoryErrorCode::Validation:
+        code = ErrorCode::Validation;
+        break;
+    case RepositoryErrorCode::Technical:
+        break;
+    }
+    return failure<Value>(
+        code,
+        error.diagnostic,
+        "Calendar event workspace could not be opened."
+        );
+}
+
 std::optional<std::string> boundedUtf8(
     const QString& value,
     const std::size_t maximumBytes
@@ -360,10 +390,10 @@ ClassMngr::Next::Domain::Result<Value> runWithWorkspaceStore(
     try
     {
         WorkspaceStore store;
-        const Status opened = store.openExisting(databasePath);
+        const RepositoryStatus opened = store.openExisting(databasePath);
         if (!opened)
         {
-            const auto failed = technicalFailure<Value>(opened.error());
+            const auto failed = repositoryFailure<Value>(opened.error());
             store.close();
             return failed;
         }

@@ -216,7 +216,7 @@ public:
                 );
         }
 
-        const Status saved = m_services.saveDatabaseAs(destination.value());
+        const RepositoryStatus saved = m_services.saveDatabaseAs(destination.value());
         if (!saved)
         {
             return LegacyWorkspaceResult<LegacyWorkspaceHandle>::failure(
@@ -227,7 +227,7 @@ public:
         // FileController follows save-as by reopening the destination. Keep
         // that behavior at this outer boundary so the returned handle and
         // ApplicationServices observation agree.
-        const Status reopened = m_services.openDatabase(destination.value());
+        const RepositoryStatus reopened = m_services.openDatabase(destination.value());
         if (!reopened)
         {
             return LegacyWorkspaceResult<LegacyWorkspaceHandle>::failure(
@@ -303,7 +303,7 @@ public:
                 );
         }
 
-        const Status exported = m_services.exportDatabaseAs(destination.value());
+        const RepositoryStatus exported = m_services.exportDatabaseAs(destination.value());
         if (!exported)
         {
             return LegacyWorkspaceResult<std::string>::failure(
@@ -345,7 +345,7 @@ private:
         const bool existingOnly
         )
     {
-        const Status opened = existingOnly
+        const RepositoryStatus opened = existingOnly
             ? m_services.openExistingDatabase(path)
             : m_services.openDatabase(path);
         if (!opened)
@@ -369,10 +369,32 @@ private:
     }
 
     [[nodiscard]] static LegacyWorkspaceError legacyError(
-        const QString& message
+        const RepositoryError& error
         )
     {
-        return LegacyWorkspaceError{utf8(message)};
+        LegacyWorkspaceError::Code code =
+            LegacyWorkspaceError::Code::Technical;
+        switch (error.code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            code = LegacyWorkspaceError::Code::InvalidInput;
+            break;
+        case RepositoryErrorCode::NotFound:
+            code = LegacyWorkspaceError::Code::NotFound;
+            break;
+        case RepositoryErrorCode::Conflict:
+            code = LegacyWorkspaceError::Code::Conflict;
+            break;
+        case RepositoryErrorCode::Validation:
+            code = LegacyWorkspaceError::Code::Validation;
+            break;
+        case RepositoryErrorCode::Technical:
+            break;
+        }
+        return LegacyWorkspaceError{
+            utf8(toLegacyDiagnostic(error)),
+            code
+        };
     }
 
     [[nodiscard]] static std::string utf8(

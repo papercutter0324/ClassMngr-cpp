@@ -713,7 +713,7 @@ void DatabaseSchemaManagerTests::createsLatestVersionedSchemaWithForeignKeys()
         QVERIFY(database.open());
 
         QVERIFY(DatabaseSchemaManager::createSchema(database));
-        const Result<int> version = DatabaseSchemaManager::schemaVersion(database);
+        const RepositoryResult<int> version = DatabaseSchemaManager::schemaVersion(database);
         QVERIFY(version);
         QCOMPARE(*version, DatabaseSchemaManager::LatestSchemaVersion);
         verifyRuntimeSchemaV6Contract(database);
@@ -769,13 +769,14 @@ void DatabaseSchemaManagerTests::emptyFileRequiresExplicitCreationIntent()
         database.setDatabaseName(path);
         QVERIFY(database.open());
 
-        const Status convenience = DatabaseSchemaManager::ensureSchema(database);
-        const Status defaultPath = DatabaseSchemaManager::ensureSchema(database, path);
+        const RepositoryStatus convenience = DatabaseSchemaManager::ensureSchema(database);
+        const RepositoryStatus defaultPath = DatabaseSchemaManager::ensureSchema(database, path);
 
         QVERIFY(!convenience);
         QVERIFY(!defaultPath);
-        QVERIFY(convenience.error().contains(QStringLiteral("unsupported schema version 0")));
-        QCOMPARE(defaultPath.error(), convenience.error());
+        QVERIFY(convenience.error().diagnostic.contains(QStringLiteral("unsupported schema version 0")));
+        QCOMPARE(defaultPath.error().diagnostic, convenience.error().diagnostic);
+        QCOMPARE(convenience.error().code, RepositoryErrorCode::Validation);
         QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA user_version")), 0);
         QVERIFY(!tableExists(database, QStringLiteral("classes")));
         QVERIFY(file.open(QIODevice::ReadOnly));
@@ -838,14 +839,15 @@ void DatabaseSchemaManagerTests::rejectsEveryOlderSchemaWithoutWritesOrBackup()
         const QStringList filesBefore = QDir(directory.path()).entryList(QDir::Files);
 
         // Both public validation forms must reject old databases by default.
-        const Status status = explicitPath
+        const RepositoryStatus status = explicitPath
             ? DatabaseSchemaManager::ensureSchema(database, path)
             : DatabaseSchemaManager::ensureSchema(database);
 
         QVERIFY(!status);
-        QVERIFY(status.error().contains(QStringLiteral("unsupported schema version %1").arg(version)));
-        QVERIFY(status.error().contains(QStringLiteral("schema version 6 or later")));
-        QVERIFY(status.error().contains(QStringLiteral("Migration from older Teacher Profiles is not available")));
+        QCOMPARE(status.error().code, RepositoryErrorCode::Validation);
+        QVERIFY(status.error().diagnostic.contains(QStringLiteral("unsupported schema version %1").arg(version)));
+        QVERIFY(status.error().diagnostic.contains(QStringLiteral("schema version 6 or later")));
+        QVERIFY(status.error().diagnostic.contains(QStringLiteral("Migration from older Teacher Profiles is not available")));
         QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA user_version")), version);
         QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA schema_version")), schemaBefore);
         QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA foreign_keys")), foreignKeysBefore);
@@ -951,9 +953,10 @@ void DatabaseSchemaManagerTests::reportsForeignKeyIntegrityFailure()
             "VALUES (999, 'Monday', '09:00', '10:00')"
             )));
 
-        const Status status = DatabaseSchemaManager::ensureSchema(database);
+        const RepositoryStatus status = DatabaseSchemaManager::ensureSchema(database);
         QVERIFY(!status);
-        QVERIFY(status.error().contains(
+        QCOMPARE(status.error().code, RepositoryErrorCode::Validation);
+        QVERIFY(status.error().diagnostic.contains(
             QStringLiteral("Foreign-key integrity check failed")
             ));
     }
@@ -977,10 +980,11 @@ void DatabaseSchemaManagerTests::rejectsProfilesFromNewerSchemaVersions()
             unsupportedVersion
             )));
 
-        const Status status = DatabaseSchemaManager::ensureSchema(database);
+        const RepositoryStatus status = DatabaseSchemaManager::ensureSchema(database);
         QVERIFY(!status);
-        QVERIFY(status.error().contains(QString::number(unsupportedVersion)));
-        QVERIFY(status.error().contains(QString::number(
+        QCOMPARE(status.error().code, RepositoryErrorCode::Validation);
+        QVERIFY(status.error().diagnostic.contains(QString::number(unsupportedVersion)));
+        QVERIFY(status.error().diagnostic.contains(QString::number(
             DatabaseSchemaManager::LatestSchemaVersion
             )));
         QCOMPARE(pragmaValue(database, QStringLiteral("PRAGMA user_version")), unsupportedVersion);

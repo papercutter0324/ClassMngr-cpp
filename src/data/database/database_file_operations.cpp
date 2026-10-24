@@ -17,6 +17,14 @@
 
 namespace
 {
+RepositoryError fileOperationError(
+    const RepositoryErrorCode code,
+    QString diagnostic
+    )
+{
+    return RepositoryError{code, std::move(diagnostic)};
+}
+
 std::filesystem::path fileSystemPath(const QString& path)
 {
 #if defined(Q_OS_WIN)
@@ -141,16 +149,17 @@ Status DatabaseFileOperations::Internal::copyOpenSourceToSaveFile(
     return {};
 }
 
-Status DatabaseFileOperations::copyDatabaseFile(
+RepositoryStatus DatabaseFileOperations::copyDatabaseFile(
     const QString& sourcePath,
     const QString& destinationPath
     )
 {
     if (destinationPath.trimmed().isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(fileOperationError(
+            RepositoryErrorCode::InvalidInput,
             QStringLiteral("No destination path was provided.")
-            );
+            ));
     }
 
     const QString absoluteSourcePath = QDir::cleanPath(
@@ -168,10 +177,11 @@ Status DatabaseFileOperations::copyDatabaseFile(
         && !QDir().mkpath(targetInfo.absolutePath())
         )
     {
-        return std::unexpected(
+        return std::unexpected(fileOperationError(
+            RepositoryErrorCode::Technical,
             QStringLiteral("Unable to create destination directory:\n%1")
                 .arg(targetInfo.absolutePath())
-            );
+            ));
     }
 
     QFile source(absoluteSourcePath);
@@ -180,9 +190,10 @@ Status DatabaseFileOperations::copyDatabaseFile(
             .arg(targetPath);
     if (!source.open(QIODevice::ReadOnly))
     {
-        return std::unexpected(
+        return std::unexpected(fileOperationError(
+            RepositoryErrorCode::Technical,
             copyError
-            );
+            ));
     }
 
     const QFileDevice::Permissions sourcePermissions = source.permissions();
@@ -208,7 +219,10 @@ Status DatabaseFileOperations::copyDatabaseFile(
             );
         if (!stagingDirectory->isValid())
         {
-            return std::unexpected(copyError);
+            return std::unexpected(fileOperationError(
+                RepositoryErrorCode::Technical,
+                copyError
+                ));
         }
 
         const QString snapshotPath = QDir(stagingDirectory->path())
@@ -220,13 +234,19 @@ Status DatabaseFileOperations::copyDatabaseFile(
                 );
         if (!snapshotResult)
         {
-            return std::unexpected(copyError);
+            return std::unexpected(fileOperationError(
+                RepositoryErrorCode::Technical,
+                copyError
+                ));
         }
 
         stagedSnapshot = std::make_unique<QFile>(snapshotPath);
         if (!stagedSnapshot->open(QIODevice::ReadOnly))
         {
-            return std::unexpected(copyError);
+            return std::unexpected(fileOperationError(
+                RepositoryErrorCode::Technical,
+                copyError
+                ));
         }
         sourceForSaveFile = stagedSnapshot.get();
     }
@@ -237,18 +257,31 @@ Status DatabaseFileOperations::copyDatabaseFile(
     {
         if (targetExisted)
         {
-            return std::unexpected(replacementError);
+            return std::unexpected(fileOperationError(
+                RepositoryErrorCode::Technical,
+                replacementError
+                ));
         }
-        return std::unexpected(
+        return std::unexpected(fileOperationError(
+            RepositoryErrorCode::Technical,
             copyError
-            );
+            ));
     }
 
-    return Internal::copyOpenSourceToSaveFile(
+    const Status copied = Internal::copyOpenSourceToSaveFile(
         *sourceForSaveFile,
         destination,
         targetPath,
         targetExisted,
         sourcePermissions
         );
+    if (!copied)
+    {
+        return std::unexpected(fileOperationError(
+            RepositoryErrorCode::Technical,
+            copied.error()
+            ));
+    }
+
+    return {};
 }

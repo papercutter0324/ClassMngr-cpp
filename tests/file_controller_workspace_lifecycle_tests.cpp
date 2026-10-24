@@ -548,11 +548,11 @@ bool inspectLegacyDatabase(
         }
         else
         {
-            const Result<int> schemaVersion =
+            const RepositoryResult<int> schemaVersion =
                 DatabaseSchemaManager::schemaVersion(database);
             if (!schemaVersion)
             {
-                *errorMessage = schemaVersion.error();
+                *errorMessage = schemaVersion.error().diagnostic;
             }
             else
             {

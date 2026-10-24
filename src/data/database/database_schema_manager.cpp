@@ -10,8 +10,18 @@
 #include <QSqlError>
 #include <QSqlQuery>
 
+#include <utility>
+
 namespace
 {
+RepositoryError schemaFailure(
+    const RepositoryErrorCode code,
+    QString diagnostic
+    )
+{
+    return RepositoryError{code, std::move(diagnostic)};
+}
+
 struct SchemaStatement
 {
     const char* sql;
@@ -30,7 +40,7 @@ struct SchemaMigration
 {
     int version;
     const char* name;
-    Status (*apply)(QSqlDatabase& database);
+    RepositoryStatus (*apply)(QSqlDatabase& database);
 };
 
 struct ConstrainedSchemaTable
@@ -40,7 +50,7 @@ struct ConstrainedSchemaTable
     const char* columnNames;
 };
 
-Status executeSchemaStatement(
+RepositoryStatus executeSchemaStatement(
     QSqlDatabase& database,
     const SchemaStatement& statement
     )
@@ -61,7 +71,7 @@ Status executeSchemaStatement(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
 
     QSqlQuery verificationQuery(database);
@@ -76,30 +86,32 @@ Status executeSchemaStatement(
         );
     if (!verified)
     {
-        return std::unexpected(verified.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(verified.error()));
     }
     if (!verificationQuery.next())
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            RepositoryErrorCode::Validation,
             QObject::tr("Creating database %1 '%2' did not create the expected object.")
                 .arg(objectType, objectName)
-            );
+            ));
     }
 
     const QString actualType = verificationQuery.value(0).toString();
     if (actualType != objectType)
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            RepositoryErrorCode::Validation,
             QObject::tr(
                 "Expected database %1 '%2', but an existing %3 has that name."
                 ).arg(objectType, objectName, actualType)
-            );
+            ));
     }
 
     return {};
 }
 
-Result<bool> tableHasColumn(
+RepositoryResult<bool> tableHasColumn(
     QSqlDatabase& database,
     const QString& tableName,
     const QString& columnName
@@ -116,7 +128,7 @@ Result<bool> tableHasColumn(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
 
     while (query.next())
@@ -130,14 +142,14 @@ Result<bool> tableHasColumn(
     return false;
 }
 
-Status ensureTableColumn(
+RepositoryStatus ensureTableColumn(
     QSqlDatabase& database,
     const SchemaColumn& column
     )
 {
     const QString tableName = QString::fromLatin1(column.tableName);
     const QString columnName = QString::fromLatin1(column.columnName);
-    const Result<bool> hasColumn = tableHasColumn(
+    const RepositoryResult<bool> hasColumn = tableHasColumn(
         database,
         tableName,
         columnName
@@ -167,7 +179,7 @@ Status ensureTableColumn(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
 
     return {};
@@ -615,7 +627,7 @@ const ConstrainedSchemaTable ConstrainedSchemaTables[] = {
     }
 };
 
-Status setForeignKeyEnforcement(
+RepositoryStatus setForeignKeyEnforcement(
     QSqlDatabase& database,
     bool enabled
     )
@@ -631,7 +643,7 @@ Status setForeignKeyEnforcement(
         );
     if (!configured)
     {
-        return std::unexpected(configured.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(configured.error()));
     }
 
     QSqlQuery verificationQuery(database);
@@ -642,24 +654,25 @@ Status setForeignKeyEnforcement(
         );
     if (!verified)
     {
-        return std::unexpected(verified.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(verified.error()));
     }
     if (!verificationQuery.next()
         || verificationQuery.value(0).toInt() != (enabled ? 1 : 0))
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            RepositoryErrorCode::Technical,
             QObject::tr(
                 "SQLite did not %1 foreign-key enforcement for this connection."
                 ).arg(enabled
                     ? QObject::tr("enable")
                     : QObject::tr("disable"))
-            );
+            ));
     }
 
     return {};
 }
 
-Status verifyForeignKeyIntegrity(QSqlDatabase& database)
+RepositoryStatus verifyForeignKeyIntegrity(QSqlDatabase& database)
 {
     QSqlQuery query(database);
     const auto executed = SqlQueryUtils::execute(
@@ -669,14 +682,15 @@ Status verifyForeignKeyIntegrity(QSqlDatabase& database)
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
     if (!query.next())
     {
         return {};
     }
 
-    return std::unexpected(
+    return std::unexpected(schemaFailure(
+        RepositoryErrorCode::Validation,
         QObject::tr(
             "Foreign-key integrity check failed for table '%1', row %2, "
             "referencing parent table '%3'."
@@ -685,10 +699,10 @@ Status verifyForeignKeyIntegrity(QSqlDatabase& database)
                 query.value(1).toString(),
                 query.value(2).toString()
                 )
-        );
+        ));
 }
 
-Result<int> readSchemaVersion(QSqlDatabase& database)
+RepositoryResult<int> readSchemaVersion(QSqlDatabase& database)
 {
     QSqlQuery query(database);
     const auto executed = SqlQueryUtils::execute(
@@ -698,28 +712,30 @@ Result<int> readSchemaVersion(QSqlDatabase& database)
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
     if (!query.next())
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            RepositoryErrorCode::Validation,
             QObject::tr("SQLite did not return a database schema version.")
-            );
+            ));
     }
 
     bool isNumber = false;
     const int version = query.value(0).toInt(&isNumber);
     if (!isNumber || version < 0)
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            RepositoryErrorCode::Validation,
             QObject::tr("SQLite returned an invalid database schema version.")
-            );
+            ));
     }
 
     return version;
 }
 
-Result<bool> databaseHasUserObjects(QSqlDatabase& database)
+RepositoryResult<bool> databaseHasUserObjects(QSqlDatabase& database)
 {
     QSqlQuery query(database);
     const auto executed = SqlQueryUtils::execute(
@@ -734,19 +750,20 @@ Result<bool> databaseHasUserObjects(QSqlDatabase& database)
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
     if (!query.next())
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            RepositoryErrorCode::Technical,
             QObject::tr("SQLite did not report whether the database has schema objects.")
-            );
+            ));
     }
 
     return query.value(0).toBool();
 }
 
-Status writeSchemaVersion(QSqlDatabase& database, int version)
+RepositoryStatus writeSchemaVersion(QSqlDatabase& database, int version)
 {
     QSqlQuery query(database);
     const auto executed = SqlQueryUtils::execute(
@@ -756,13 +773,13 @@ Status writeSchemaVersion(QSqlDatabase& database, int version)
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
 
     return {};
 }
 
-Status executeMigrationStatement(
+RepositoryStatus executeMigrationStatement(
     QSqlDatabase& database,
     const QString& sql,
     const QString& action,
@@ -778,17 +795,17 @@ Status executeMigrationStatement(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
 
     return {};
 }
 
-Status createInitialSchema(QSqlDatabase& database)
+RepositoryStatus createInitialSchema(QSqlDatabase& database)
 {
     for (const SchemaStatement& statement : SchemaStatements)
     {
-        const Status status = executeSchemaStatement(database, statement);
+        const RepositoryStatus status = executeSchemaStatement(database, statement);
         if (!status)
         {
             return status;
@@ -798,11 +815,11 @@ Status createInitialSchema(QSqlDatabase& database)
     return {};
 }
 
-Status addLegacyColumns(QSqlDatabase& database)
+RepositoryStatus addLegacyColumns(QSqlDatabase& database)
 {
     for (const SchemaColumn& column : SchemaColumns)
     {
-        const Status status = ensureTableColumn(database, column);
+        const RepositoryStatus status = ensureTableColumn(database, column);
         if (!status)
         {
             return status;
@@ -818,9 +835,9 @@ struct LegacyPreflightCheck
     const char* countQuery;
 };
 
-Status preflightLegacyData(QSqlDatabase& database)
+RepositoryStatus preflightLegacyData(QSqlDatabase& database)
 {
-    const Status repairedUnassignedTeachers = executeMigrationStatement(
+    const RepositoryStatus repairedUnassignedTeachers = executeMigrationStatement(
         database,
         QStringLiteral(
             "UPDATE class_info SET teacher_id=NULL WHERE teacher_id <= 0"
@@ -952,31 +969,33 @@ Status preflightLegacyData(QSqlDatabase& database)
             );
         if (!executed)
         {
-            return std::unexpected(executed.error().userMessage());
+            return std::unexpected(SqlQueryUtils::repositoryErrorFor(executed.error()));
         }
         if (!query.next())
         {
-            return std::unexpected(
+            return std::unexpected(schemaFailure(
+                RepositoryErrorCode::Technical,
                 QObject::tr("Legacy database preflight did not return a row count.")
-                );
+                ));
         }
 
         const int invalidRows = query.value(0).toInt();
         if (invalidRows > 0)
         {
-            return std::unexpected(
+            return std::unexpected(schemaFailure(
+                RepositoryErrorCode::Validation,
                 QObject::tr(
                     "Legacy database preflight found %1 invalid record(s): %2. "
                     "Correct the affected data before opening this profile."
                     ).arg(invalidRows).arg(QString::fromLatin1(check.description))
-                );
+                ));
         }
     }
 
     return {};
 }
 
-Status rebuildConstrainedTable(
+RepositoryStatus rebuildConstrainedTable(
     QSqlDatabase& database,
     const ConstrainedSchemaTable& table
     )
@@ -986,7 +1005,7 @@ Status rebuildConstrainedTable(
         QStringLiteral("classmngr_legacy_") + tableName;
     const QString identity = QObject::tr("table '%1'").arg(tableName);
 
-    const Status renamed = executeMigrationStatement(
+    const RepositoryStatus renamed = executeMigrationStatement(
         database,
         QStringLiteral("ALTER TABLE %1 RENAME TO %2").arg(
             tableName,
@@ -1005,14 +1024,14 @@ Status rebuildConstrainedTable(
         "table",
         table.tableName
     };
-    const Status created = executeSchemaStatement(database, statement);
+    const RepositoryStatus created = executeSchemaStatement(database, statement);
     if (!created)
     {
         return created;
     }
 
     const QString columns = QString::fromLatin1(table.columnNames);
-    const Status copied = executeMigrationStatement(
+    const RepositoryStatus copied = executeMigrationStatement(
         database,
         QStringLiteral("INSERT INTO %1 (%2) SELECT %2 FROM %3").arg(
             tableName,
@@ -1035,11 +1054,11 @@ Status rebuildConstrainedTable(
         );
 }
 
-Status rebuildConstrainedTables(QSqlDatabase& database)
+RepositoryStatus rebuildConstrainedTables(QSqlDatabase& database)
 {
     for (const ConstrainedSchemaTable& table : ConstrainedSchemaTables)
     {
-        const Status rebuilt = rebuildConstrainedTable(database, table);
+        const RepositoryStatus rebuilt = rebuildConstrainedTable(database, table);
         if (!rebuilt)
         {
             return rebuilt;
@@ -1057,7 +1076,7 @@ bool hasRowIndexConstraints(const ConstrainedSchemaTable& table)
         || tableName == QStringLiteral("speaking_eval_data");
 }
 
-Status rebuildRowIndexConstraintTables(QSqlDatabase& database)
+RepositoryStatus rebuildRowIndexConstraintTables(QSqlDatabase& database)
 {
     for (const ConstrainedSchemaTable& table : ConstrainedSchemaTables)
     {
@@ -1066,7 +1085,7 @@ Status rebuildRowIndexConstraintTables(QSqlDatabase& database)
             continue;
         }
 
-        const Status rebuilt = rebuildConstrainedTable(database, table);
+        const RepositoryStatus rebuilt = rebuildConstrainedTable(database, table);
         if (!rebuilt)
         {
             return rebuilt;
@@ -1076,11 +1095,11 @@ Status rebuildRowIndexConstraintTables(QSqlDatabase& database)
     return {};
 }
 
-Status createSchemaIndexes(QSqlDatabase& database)
+RepositoryStatus createSchemaIndexes(QSqlDatabase& database)
 {
     for (const SchemaStatement& statement : SchemaIndexStatements)
     {
-        const Status status = executeSchemaStatement(database, statement);
+        const RepositoryStatus status = executeSchemaStatement(database, statement);
         if (!status)
         {
             return status;
@@ -1090,7 +1109,7 @@ Status createSchemaIndexes(QSqlDatabase& database)
     return {};
 }
 
-Status createPreConstraintMigrationBackup(
+RepositoryStatus createPreConstraintMigrationBackup(
     QSqlDatabase& database,
     const QString& databaseFilePath,
     int migrationVersion
@@ -1129,7 +1148,7 @@ Status createPreConstraintMigrationBackup(
         );
 }
 
-Status runMigration(
+RepositoryStatus runMigration(
     QSqlDatabase& database,
     const SchemaMigration& migration
     )
@@ -1137,44 +1156,48 @@ Status runMigration(
     DatabaseTransaction transaction(database);
     if (!transaction.started())
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            RepositoryErrorCode::Technical,
             QObject::tr("Starting database migration %1 (%2) failed: %3")
                 .arg(migration.version)
                 .arg(QString::fromLatin1(migration.name))
                 .arg(database.lastError().text())
-            );
+            ));
     }
 
-    const Status migrated = migration.apply(database);
+    const RepositoryStatus migrated = migration.apply(database);
     if (!migrated)
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            migrated.error().code,
             QObject::tr("Database migration %1 (%2) failed: %3")
                 .arg(migration.version)
                 .arg(QString::fromLatin1(migration.name))
-                .arg(migrated.error())
-            );
+                .arg(migrated.error().diagnostic)
+            ));
     }
 
-    const Status versionWritten = writeSchemaVersion(database, migration.version);
+    const RepositoryStatus versionWritten = writeSchemaVersion(database, migration.version);
     if (!versionWritten)
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            versionWritten.error().code,
             QObject::tr("Database migration %1 (%2) failed: %3")
                 .arg(migration.version)
                 .arg(QString::fromLatin1(migration.name))
-                .arg(versionWritten.error())
-            );
+                .arg(versionWritten.error().diagnostic)
+            ));
     }
 
     if (!transaction.commit())
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            RepositoryErrorCode::Technical,
             QObject::tr("Committing database migration %1 (%2) failed: %3")
                 .arg(migration.version)
                 .arg(QString::fromLatin1(migration.name))
                 .arg(database.lastError().text())
-            );
+            ));
     }
 
     return {};
@@ -1190,7 +1213,7 @@ const SchemaMigration SchemaMigrations[] = {
 };
 } // namespace
 
-Status DatabaseSchemaManager::createSchema(QSqlDatabase& database)
+RepositoryStatus DatabaseSchemaManager::createSchema(QSqlDatabase& database)
 {
     return ensureSchema(
         database,
@@ -1199,7 +1222,7 @@ Status DatabaseSchemaManager::createSchema(QSqlDatabase& database)
         );
 }
 
-Status DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
+RepositoryStatus DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
 {
     return ensureSchema(
         database,
@@ -1208,7 +1231,7 @@ Status DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
         );
 }
 
-Status DatabaseSchemaManager::ensureSchema(
+RepositoryStatus DatabaseSchemaManager::ensureSchema(
     QSqlDatabase& database,
     const QString& databaseFilePath,
     const Initialization initialization
@@ -1216,29 +1239,31 @@ Status DatabaseSchemaManager::ensureSchema(
 {
     if (!database.isValid() || !database.isOpen())
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            RepositoryErrorCode::InvalidInput,
             QObject::tr("Database schema setup requires an open database.")
-            );
+            ));
     }
 
-    const Result<int> version = schemaVersion(database);
+    const RepositoryResult<int> version = schemaVersion(database);
     if (!version)
     {
         return std::unexpected(version.error());
     }
-    const Result<bool> existingProfile = databaseHasUserObjects(database);
+    const RepositoryResult<bool> existingProfile = databaseHasUserObjects(database);
     if (!existingProfile)
     {
         return std::unexpected(existingProfile.error());
     }
     if (*version > LatestSchemaVersion)
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            RepositoryErrorCode::Validation,
             QObject::tr(
                 "This Teacher Profile uses schema version %1, but this version "
                 "of ClassMngr supports schema version %2."
                 ).arg(*version).arg(LatestSchemaVersion)
-            );
+            ));
     }
 
     // Only a newly created, unversioned and empty database may be initialized.
@@ -1247,16 +1272,17 @@ Status DatabaseSchemaManager::ensureSchema(
         && *version == 0 && !*existingProfile;
     if (*version < MinimumSupportedSchemaVersion && !mayInitialize)
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            RepositoryErrorCode::Validation,
             QObject::tr(
                 "This Teacher Profile uses unsupported schema version %1. "
                 "ClassMngr requires schema version %2 or later. "
                 "Migration from older Teacher Profiles is not available."
                 ).arg(*version).arg(MinimumSupportedSchemaVersion)
-            );
+            ));
     }
 
-    const Status foreignKeysEnabled = enableForeignKeyEnforcement(database);
+    const RepositoryStatus foreignKeysEnabled = enableForeignKeyEnforcement(database);
     if (!foreignKeysEnabled)
     {
         return foreignKeysEnabled;
@@ -1276,7 +1302,7 @@ Status DatabaseSchemaManager::ensureSchema(
                 && (migration.version == 4 || *version >= 5);
             if (requiresBackup)
             {
-                const Status backupCreated = createPreConstraintMigrationBackup(
+                const RepositoryStatus backupCreated = createPreConstraintMigrationBackup(
                     database,
                     databaseFilePath,
                     migration.version
@@ -1287,7 +1313,7 @@ Status DatabaseSchemaManager::ensureSchema(
                 }
             }
 
-            const Status foreignKeysDisabled = setForeignKeyEnforcement(
+            const RepositoryStatus foreignKeysDisabled = setForeignKeyEnforcement(
                 database,
                 false
                 );
@@ -1296,8 +1322,8 @@ Status DatabaseSchemaManager::ensureSchema(
                 return foreignKeysDisabled;
             }
 
-            const Status migrated = runMigration(database, migration);
-            const Status reenabled = setForeignKeyEnforcement(database, true);
+            const RepositoryStatus migrated = runMigration(database, migration);
+            const RepositoryStatus reenabled = setForeignKeyEnforcement(database, true);
             if (!migrated)
             {
                 return migrated;
@@ -1309,7 +1335,7 @@ Status DatabaseSchemaManager::ensureSchema(
         }
         else
         {
-            const Status migrated = runMigration(database, migration);
+            const RepositoryStatus migrated = runMigration(database, migration);
             if (!migrated)
             {
                 return migrated;
@@ -1322,25 +1348,27 @@ Status DatabaseSchemaManager::ensureSchema(
     return verifyForeignKeyIntegrity(database);
 }
 
-Status DatabaseSchemaManager::enableForeignKeyEnforcement(QSqlDatabase& database)
+RepositoryStatus DatabaseSchemaManager::enableForeignKeyEnforcement(QSqlDatabase& database)
 {
     if (!database.isValid() || !database.isOpen())
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            RepositoryErrorCode::InvalidInput,
             QObject::tr("Enabling database foreign-key enforcement requires an open database.")
-            );
+            ));
     }
 
     return setForeignKeyEnforcement(database, true);
 }
 
-Result<int> DatabaseSchemaManager::schemaVersion(QSqlDatabase& database)
+RepositoryResult<int> DatabaseSchemaManager::schemaVersion(QSqlDatabase& database)
 {
     if (!database.isValid() || !database.isOpen())
     {
-        return std::unexpected(
+        return std::unexpected(schemaFailure(
+            RepositoryErrorCode::InvalidInput,
             QObject::tr("Reading the database schema version requires an open database.")
-            );
+            ));
     }
 
     return readSchemaVersion(database);

@@ -80,13 +80,13 @@ std::unique_ptr<ApplicationServices> openApplicationServicesForCurrentDatabase(
     )
 {
     auto applicationServices = std::make_unique<ApplicationServices>();
-    const Status opened = applicationServices->openDatabase(
+    const RepositoryStatus opened= applicationServices->openDatabase(
         dataService.currentDatabasePath());
     if (!opened)
     {
         if (error)
         {
-            *error = opened.error();
+            *error = toLegacyDiagnostic(opened.error());
         }
         return {};
     }

@@ -1776,17 +1776,21 @@ workspaceStoreReadTransactionReportsOperationFailure()
 
     WorkspaceStore* const store = services.workspaceStore();
     QVERIFY(store);
-    const auto failure = store->withReadTransaction([]() -> Status
+    const auto failure = store->withReadTransaction([]() -> RepositoryStatus
         {
-            return std::unexpected(QStringLiteral("operation probe failure"));
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QStringLiteral("operation probe failure")
+            });
         });
 
     QVERIFY(failure);
     QVERIFY(failure->stage
         == WorkspaceStore::ReadTransactionFailure::Stage::Operation);
-    QCOMPARE(failure->diagnostic, QStringLiteral("operation probe failure"));
+    QCOMPARE(failure->error.code, RepositoryErrorCode::Validation);
+    QCOMPARE(failure->error.diagnostic, QStringLiteral("operation probe failure"));
 
-    const auto nextTransaction = store->withReadTransaction([]() -> Status
+    const auto nextTransaction = store->withReadTransaction([]() -> RepositoryStatus
         {
             return {};
         });

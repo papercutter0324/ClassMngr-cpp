@@ -895,8 +895,16 @@ void CalendarEventCacheTests::projectionQueryUsesExistingWorkspaceAndMapsOpenErr
     QVERIFY(!missingRange);
     QCOMPARE(
         missingRange.error().code,
-        ClassMngr::Next::Domain::ErrorCode::Technical
+        ClassMngr::Next::Domain::ErrorCode::NotFound
         );
+    QVERIFY(!missingRange.error().recoverable);
+    const QString missingDiagnostic = QString::fromStdString(
+        missingRange.error().message
+        );
+    QVERIFY(missingDiagnostic.contains(
+        QStringLiteral("Unable to open Teacher Profile:")
+        ));
+    QVERIFY(missingDiagnostic.contains(missingPath));
     QVERIFY(!QFile::exists(missingPath));
 
     const auto missingNextDate =
@@ -907,8 +915,9 @@ void CalendarEventCacheTests::projectionQueryUsesExistingWorkspaceAndMapsOpenErr
     QVERIFY(!missingNextDate);
     QCOMPARE(
         missingNextDate.error().code,
-        ClassMngr::Next::Domain::ErrorCode::Technical
+        ClassMngr::Next::Domain::ErrorCode::NotFound
         );
+    QVERIFY(!missingNextDate.error().recoverable);
     QVERIFY(!QFile::exists(missingPath));
 
     const QString unversionedPath = temporaryDirectory.filePath(
@@ -926,8 +935,16 @@ void CalendarEventCacheTests::projectionQueryUsesExistingWorkspaceAndMapsOpenErr
     QVERIFY(!invalidSchema);
     QCOMPARE(
         invalidSchema.error().code,
-        ClassMngr::Next::Domain::ErrorCode::Technical
+        ClassMngr::Next::Domain::ErrorCode::Validation
         );
+    QVERIFY(!invalidSchema.error().recoverable);
+    const QString schemaDiagnostic = QString::fromStdString(
+        invalidSchema.error().message
+        );
+    QVERIFY(schemaDiagnostic.contains(unversionedPath));
+    QVERIFY(schemaDiagnostic.contains(
+        QStringLiteral("unsupported schema version 0")
+        ));
 
     const auto invalidRange = CalendarEventProjectionQuery::loadRange(
         missingPath,

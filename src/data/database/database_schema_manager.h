@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 
 #include <QString>
 
@@ -20,15 +20,15 @@ public:
 
     // Creation must be requested explicitly; ordinary validation never
     // initializes an existing unversioned database, even when it is empty.
-    [[nodiscard]] static Status createSchema(QSqlDatabase& database);
-    [[nodiscard]] static Status ensureSchema(QSqlDatabase& database);
-    [[nodiscard]] static Status ensureSchema(
+    [[nodiscard]] static RepositoryStatus createSchema(QSqlDatabase& database);
+    [[nodiscard]] static RepositoryStatus ensureSchema(QSqlDatabase& database);
+    [[nodiscard]] static RepositoryStatus ensureSchema(
         QSqlDatabase& database,
         const QString& databaseFilePath,
         Initialization initialization = Initialization::ExistingDatabase
         );
-    [[nodiscard]] static Status enableForeignKeyEnforcement(
+    [[nodiscard]] static RepositoryStatus enableForeignKeyEnforcement(
         QSqlDatabase& database
         );
-    [[nodiscard]] static Result<int> schemaVersion(QSqlDatabase& database);
+    [[nodiscard]] static RepositoryResult<int> schemaVersion(QSqlDatabase& database);
 };

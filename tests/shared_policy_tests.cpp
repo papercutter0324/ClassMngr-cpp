@@ -335,9 +335,9 @@ void SharedPolicyTests::unsupportedSchemaIsNotInitialized()
             "CREATE VIEW campuses AS SELECT 1 AS id"
             )));
 
-        const Status status = DatabaseSchemaManager::ensureSchema(database);
+        const RepositoryStatus status = DatabaseSchemaManager::ensureSchema(database);
         QVERIFY(!status);
-        QVERIFY(status.error().contains(QStringLiteral("unsupported schema version 0")));
+        QVERIFY(status.error().diagnostic.contains(QStringLiteral("unsupported schema version 0")));
         QVERIFY(query.exec(QStringLiteral("SELECT id FROM campuses")));
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toInt(), 1);

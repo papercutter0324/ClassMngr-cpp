@@ -8,9 +8,10 @@
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 is In Progress again on the mandatory Heavy route
   because the §3.3 structured-error audit reopened its exit gate. F1444's
-  shared repository error contract is implemented and independently verified;
-  its slice commit is pending. F1445 scope review is underway, with no
-  implementation started. See the
+  shared repository error contract is committed locally as
+  `fef61c849b4f845ba89a008dcee697bc380895ce` and independently verified; it
+  is not pushed. F1445 implementation and focused verification are complete;
+  its slice commit is pending, with F1446 next. See the
   [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [F1420 DataService migration map](../../docs/qt-rewrite/data-service-migration-map.md),

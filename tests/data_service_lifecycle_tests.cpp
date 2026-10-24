@@ -267,6 +267,7 @@ class DataServiceLifecycleTests : public QObject
 
 private slots:
     void databaseSessionOwnsRepositoryLifetime();
+    void workspaceStoreCommitReportsTypedOutcomes();
     void borrowedDataServicePreservesOwnedSession();
     void failedReplacementOpenPreservesSessionAndReleasesCandidate();
     void lockedV6ReplacementPreservesActiveWorkspace();
@@ -397,7 +398,7 @@ void DataServiceLifecycleTests::applicationServicesShareCanonicalSessionAcrossLi
     QCOMPARE(addedConnections.first(), store->database().connectionName());
     QCOMPARE(store->settingsRepository(), session->settingsRepository());
     QSqlDatabase storeDatabase = store->database();
-    const Result<int> schemaVersion =
+    const RepositoryResult<int> schemaVersion =
         DatabaseSchemaManager::schemaVersion(storeDatabase);
     QVERIFY(schemaVersion);
     QCOMPARE(*schemaVersion, DatabaseSchemaManager::LatestSchemaVersion);
@@ -417,7 +418,16 @@ void DataServiceLifecycleTests::applicationServicesShareCanonicalSessionAcrossLi
     const QString connection = session->database().connectionName();
     const QStringList connections = QSqlDatabase::connectionNames();
     const QString missingPath = directory.filePath(QStringLiteral("missing.db"));
-    QVERIFY(!services.openExistingDatabase(missingPath));
+    const RepositoryStatus missingOpen = services.openExistingDatabase(missingPath);
+    QVERIFY(!missingOpen);
+    QCOMPARE(missingOpen.error().code, RepositoryErrorCode::NotFound);
+    const RepositoryStatus invalidOpen = services.openDatabase(QStringLiteral("  "));
+    QVERIFY(!invalidOpen);
+    QCOMPARE(invalidOpen.error().code, RepositoryErrorCode::InvalidInput);
+    QCOMPARE(
+        invalidOpen.error().diagnostic,
+        QStringLiteral("No Teacher Profile path was provided.")
+        );
     QVERIFY(!QFileInfo::exists(missingPath));
     QCOMPARE(services.workspaceStore(), store);
     QCOMPARE(services.databaseSession(), session);
@@ -501,9 +511,21 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
     QCOMPARE(activeSourcePath, QFileInfo(sourcePath).absoluteFilePath());
     services.saveDatabase();
 
+    const RepositoryStatus invalidDestination =
+        services.saveDatabaseAs(QStringLiteral("  "));
+    QVERIFY(!invalidDestination);
+    QCOMPARE(
+        invalidDestination.error().code,
+        RepositoryErrorCode::InvalidInput
+        );
+    QCOMPARE(
+        invalidDestination.error().diagnostic,
+        QStringLiteral("No destination path was provided.")
+        );
+
     {
         QSqlDatabase sourceDatabase = services.workspaceStore()->database();
-        const Result<int> sourceVersion =
+        const RepositoryResult<int> sourceVersion =
             DatabaseSchemaManager::schemaVersion(sourceDatabase);
         QVERIFY(sourceVersion);
         QCOMPARE(*sourceVersion, 6);
@@ -521,7 +543,7 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
     QVERIFY(savedServices.dataService());
     {
         QSqlDatabase savedDatabase = savedServices.workspaceStore()->database();
-        const Result<int> savedVersion =
+        const RepositoryResult<int> savedVersion =
             DatabaseSchemaManager::schemaVersion(savedDatabase);
         QVERIFY(savedVersion);
         QCOMPARE(*savedVersion, 6);
@@ -533,7 +555,7 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
     QVERIFY(exportedServices.dataService());
     {
         QSqlDatabase exportedDatabase = exportedServices.workspaceStore()->database();
-        const Result<int> exportedVersion =
+        const RepositoryResult<int> exportedVersion =
             DatabaseSchemaManager::schemaVersion(exportedDatabase);
         QVERIFY(exportedVersion);
         QCOMPARE(*exportedVersion, 6);
@@ -569,10 +591,10 @@ void DataServiceLifecycleTests::databaseFileCopyTreatsSameFileAliasesAsNoOp()
     QVERIFY(QFileInfo::exists(caseAliasPath));
 #endif
 
-    const Status directCopy =
+    const RepositoryStatus directCopy =
         DatabaseFileOperations::copyDatabaseFile(sourcePath, caseAliasPath);
     QVERIFY2(directCopy.has_value(),
-             directCopy ? "" : qPrintable(directCopy.error()));
+             directCopy ? "" : qPrintable(directCopy.error().diagnostic));
     QVERIFY(QFileInfo::exists(sourcePath));
 
     DataService verification;
@@ -614,11 +636,27 @@ void DataServiceLifecycleTests::databaseFileCopyPreservesDestinationWhenSourceMi
     QCOMPARE(destination.write(sentinelBytes), qint64(sentinelBytes.size()));
     destination.close();
 
-    const Status copyResult =
+    const RepositoryStatus invalidDestination =
+        DatabaseFileOperations::copyDatabaseFile(
+            sourcePath,
+            QStringLiteral("  ")
+            );
+    QVERIFY(!invalidDestination);
+    QCOMPARE(
+        invalidDestination.error().code,
+        RepositoryErrorCode::InvalidInput
+        );
+    QCOMPARE(
+        invalidDestination.error().diagnostic,
+        QStringLiteral("No destination path was provided.")
+        );
+
+    const RepositoryStatus copyResult =
         DatabaseFileOperations::copyDatabaseFile(sourcePath, destinationPath);
     QVERIFY(!copyResult.has_value());
+    QCOMPARE(copyResult.error().code, RepositoryErrorCode::Technical);
     QCOMPARE(
-        copyResult.error(),
+        copyResult.error().diagnostic,
         QStringLiteral("Unable to copy Teacher Profile to:\n%1")
             .arg(QFileInfo(destinationPath).absoluteFilePath())
         );
@@ -660,10 +698,10 @@ void DataServiceLifecycleTests::databaseFileCopyReplacesDestinationAndCreatesPar
     const QFileDevice::Permissions sourcePermissions = source.permissions();
     QVERIFY(!QFileInfo::exists(QFileInfo(destinationPath).absolutePath()));
 
-    const Status firstCopy =
+    const RepositoryStatus firstCopy =
         DatabaseFileOperations::copyDatabaseFile(sourcePath, destinationPath);
     QVERIFY2(firstCopy.has_value(),
-             firstCopy ? "" : qPrintable(firstCopy.error()));
+             firstCopy ? "" : qPrintable(firstCopy.error().diagnostic));
 
     QFile destination(destinationPath);
     QVERIFY(destination.open(QIODevice::ReadOnly));
@@ -680,10 +718,10 @@ void DataServiceLifecycleTests::databaseFileCopyReplacesDestinationAndCreatesPar
     QCOMPARE(destination.write(previousBytes), qint64(previousBytes.size()));
     destination.close();
 
-    const Status replacingCopy =
+    const RepositoryStatus replacingCopy =
         DatabaseFileOperations::copyDatabaseFile(sourcePath, destinationPath);
     QVERIFY2(replacingCopy.has_value(),
-             replacingCopy ? "" : qPrintable(replacingCopy.error()));
+             replacingCopy ? "" : qPrintable(replacingCopy.error().diagnostic));
     QVERIFY(destination.open(QIODevice::ReadOnly));
     QCOMPARE(destination.readAll(), sourceBytes);
     QCOMPARE(destination.permissions(), sourcePermissions);
@@ -720,11 +758,11 @@ void DataServiceLifecycleTests::databaseFileCopyPreservesDestinationWhenReplacem
     QCOMPARE(sentinel.write(sentinelBytes), qint64(sentinelBytes.size()));
     sentinel.close();
 
-    const Status copyResult =
+    const RepositoryStatus copyResult =
         DatabaseFileOperations::copyDatabaseFile(sourcePath, destinationPath);
     QVERIFY(!copyResult.has_value());
     QCOMPARE(
-        copyResult.error(),
+        copyResult.error().diagnostic,
         QStringLiteral("Unable to replace existing Teacher Profile file:\n%1")
             .arg(QFileInfo(destinationPath).absoluteFilePath())
         );
@@ -824,6 +862,20 @@ void DataServiceLifecycleTests::legacyDataServiceOwnsDatabaseFileOperations()
     QVERIFY(legacyService.openDatabase(sourcePath));
     QVERIFY(legacyService.saveSetting(key, QStringLiteral("legacy value")));
     legacyService.save();
+
+    const Status failedSaveAs = legacyService.saveAs(QStringLiteral("  "));
+    QVERIFY(!failedSaveAs);
+    QCOMPARE(
+        failedSaveAs.error(),
+        QStringLiteral("No destination path was provided.")
+        );
+    const Status failedExportAs = legacyService.exportAs(QStringLiteral("  "));
+    QVERIFY(!failedExportAs);
+    QCOMPARE(
+        failedExportAs.error(),
+        QStringLiteral("No destination path was provided.")
+        );
+
     QVERIFY(legacyService.saveAs(savedPath));
     QVERIFY(legacyService.exportAs(exportedPath));
     QCOMPARE(
@@ -1081,9 +1133,10 @@ void DataServiceLifecycleTests::unsupportedSchemaClosesDatabaseSession()
     QSqlDatabase::removeDatabase(connectionName);
 
     DatabaseSession session;
-    const Status status = session.open(path);
+    const RepositoryStatus status = session.open(path);
     QVERIFY(!status);
-    QVERIFY(status.error().contains(QStringLiteral("unsupported schema version 0")));
+    QCOMPARE(status.error().code, RepositoryErrorCode::Validation);
+    QVERIFY(status.error().diagnostic.contains(QStringLiteral("unsupported schema version 0")));
     QVERIFY(!session.isOpen());
     QVERIFY(session.databasePath().isEmpty());
     QCOMPARE(session.settingsRepository(), nullptr);
@@ -2919,6 +2972,108 @@ void DataServiceLifecycleTests::databaseSessionOwnsRepositoryLifetime()
     QVERIFY(session.speakingEvalRepository() == nullptr);
 }
 
+void DataServiceLifecycleTests::workspaceStoreCommitReportsTypedOutcomes()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    WorkspaceStore store;
+    const RepositoryStatus closedCommit = store.commit();
+    QVERIFY(!closedCommit);
+    QCOMPARE(closedCommit.error().code, RepositoryErrorCode::Technical);
+    QCOMPARE(
+        closedCommit.error().diagnostic,
+        QStringLiteral("No Teacher Profile is open.")
+        );
+
+    const QString path = directory.filePath(QStringLiteral("commit.db"));
+    QVERIFY(store.open(path));
+    QSqlDatabase database = store.database();
+
+    QVERIFY2(database.transaction(), qPrintable(database.lastError().text()));
+    QSqlQuery committedInsert(database);
+    QVERIFY2(
+        committedInsert.exec(QStringLiteral(
+            "INSERT INTO app_settings (key, value) "
+            "VALUES ('workspace-commit/value', 'committed')"
+            )),
+        qPrintable(committedInsert.lastError().text())
+        );
+    QVERIFY2(store.commit(), qPrintable(database.lastError().text()));
+
+    QVERIFY2(database.transaction(), qPrintable(database.lastError().text()));
+    QSqlQuery deferredConstraints(database);
+    QVERIFY2(
+        deferredConstraints.exec(QStringLiteral(
+            "PRAGMA defer_foreign_keys=ON"
+            )),
+        qPrintable(deferredConstraints.lastError().text())
+        );
+    QSqlQuery invalidForeignKeyInsert(database);
+    QVERIFY2(
+        invalidForeignKeyInsert.exec(QStringLiteral(
+            "INSERT INTO class_times "
+            "(class_id, day, start_time, end_time) "
+            "VALUES (2147483647, 'Monday', '09:00', '10:00')"
+            )),
+        qPrintable(invalidForeignKeyInsert.lastError().text())
+        );
+
+    const RepositoryStatus failedCommit = store.commit();
+    QVERIFY(!failedCommit);
+    QCOMPARE(failedCommit.error().code, RepositoryErrorCode::Technical);
+    QVERIFY(!failedCommit.error().diagnostic.isEmpty());
+    QVERIFY2(database.rollback(), qPrintable(database.lastError().text()));
+
+    const auto transactionFailure = store.withReadTransaction(
+        [&database]() -> RepositoryStatus
+        {
+            QSqlQuery deferredConstraints(database);
+            if (!deferredConstraints.exec(QStringLiteral(
+                    "PRAGMA defer_foreign_keys=ON"
+                    )))
+            {
+                return std::unexpected(RepositoryError{
+                    RepositoryErrorCode::Technical,
+                    deferredConstraints.lastError().text()
+                });
+            }
+
+            QSqlQuery invalidForeignKeyInsert(database);
+            if (!invalidForeignKeyInsert.exec(QStringLiteral(
+                    "INSERT INTO class_times "
+                    "(class_id, day, start_time, end_time) "
+                    "VALUES (2147483647, 'Tuesday', '10:00', '11:00')"
+                    )))
+            {
+                return std::unexpected(RepositoryError{
+                    RepositoryErrorCode::Technical,
+                    invalidForeignKeyInsert.lastError().text()
+                });
+            }
+
+            return {};
+        }
+        );
+    QVERIFY(transactionFailure);
+    QCOMPARE(
+        transactionFailure->stage,
+        WorkspaceStore::ReadTransactionFailure::Stage::Commit
+        );
+    QCOMPARE(transactionFailure->error.code, RepositoryErrorCode::Technical);
+    QVERIFY(!transactionFailure->error.diagnostic.isEmpty());
+
+    QSqlQuery rolledBackInsertCount(database);
+    QVERIFY2(
+        rolledBackInsertCount.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM class_times WHERE class_id=2147483647"
+            )),
+        qPrintable(rolledBackInsertCount.lastError().text())
+        );
+    QVERIFY(rolledBackInsertCount.next());
+    QCOMPARE(rolledBackInsertCount.value(0).toInt(), 0);
+}
+
 void DataServiceLifecycleTests::
 failedReplacementOpenPreservesSessionAndReleasesCandidate()
 {
@@ -3069,7 +3224,7 @@ void DataServiceLifecycleTests::lockedV6ReplacementPreservesActiveWorkspace()
             ));
         {
             QSqlDatabase targetDatabase = targetSeed.workspaceStore()->database();
-            const Result<int> targetVersion =
+            const RepositoryResult<int> targetVersion =
                 DatabaseSchemaManager::schemaVersion(targetDatabase);
             QVERIFY(targetVersion);
             QCOMPARE(*targetVersion, DatabaseSchemaManager::LatestSchemaVersion);
@@ -3115,7 +3270,7 @@ void DataServiceLifecycleTests::lockedV6ReplacementPreservesActiveWorkspace()
 
             const QStringList connectionsBeforeFailure =
                 QSqlDatabase::connectionNames();
-            const Status lockedOpen = services.openExistingDatabase(lockedPath);
+            const RepositoryStatus lockedOpen = services.openExistingDatabase(lockedPath);
             QVERIFY(!lockedOpen);
             QCOMPARE(services.workspaceStore(), activeStore);
             QCOMPARE(services.databaseSession(), activeSession);
@@ -3153,7 +3308,7 @@ void DataServiceLifecycleTests::lockedV6ReplacementPreservesActiveWorkspace()
     QVERIFY(targetVerification.openExistingDatabase(lockedPath));
     {
         QSqlDatabase targetDatabase = targetVerification.workspaceStore()->database();
-        const Result<int> targetVersion =
+        const RepositoryResult<int> targetVersion =
             DatabaseSchemaManager::schemaVersion(targetDatabase);
         QVERIFY(targetVersion);
         QCOMPARE(*targetVersion, DatabaseSchemaManager::LatestSchemaVersion);
@@ -3201,7 +3356,7 @@ void DataServiceLifecycleTests::truncatedV6ReplacementPreservesActiveWorkspace()
             ));
         {
             QSqlDatabase targetDatabase = targetSeed.workspaceStore()->database();
-            const Result<int> targetVersion =
+            const RepositoryResult<int> targetVersion =
                 DatabaseSchemaManager::schemaVersion(targetDatabase);
             QVERIFY(targetVersion);
             QCOMPARE(*targetVersion, DatabaseSchemaManager::LatestSchemaVersion);
@@ -3234,7 +3389,7 @@ void DataServiceLifecycleTests::truncatedV6ReplacementPreservesActiveWorkspace()
 
     const QStringList connectionsBeforeFailure =
         QSqlDatabase::connectionNames();
-    const Status truncatedOpen = services.openExistingDatabase(truncatedPath);
+    const RepositoryStatus truncatedOpen = services.openExistingDatabase(truncatedPath);
     QVERIFY(!truncatedOpen);
     QCOMPARE(services.workspaceStore(), activeStore);
     QCOMPARE(services.databaseSession(), activeSession);

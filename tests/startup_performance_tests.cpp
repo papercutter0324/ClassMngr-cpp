@@ -1236,11 +1236,11 @@ bool createStartupFixture(
         }
         else
         {
-            const Status schemaStatus =
+            const RepositoryStatus schemaStatus =
                 DatabaseSchemaManager::createSchema(database);
             if (!schemaStatus)
             {
-                *errorMessage = schemaStatus.error();
+                *errorMessage = schemaStatus.error().diagnostic;
             }
             else
             {
@@ -2357,9 +2357,9 @@ void StartupPerformanceTests::legacyStartupFixtureIsRejectedWithoutChanges()
     beforeFile.close();
     const QStringList filesBefore = QDir(QFileInfo(fixturePath).absolutePath()).entryList(QDir::Files);
 
-    const Status status = DatabaseSchemaManager::ensureSchema(database);
+    const RepositoryStatus status = DatabaseSchemaManager::ensureSchema(database);
     QVERIFY(!status);
-    QVERIFY(status.error().contains(QStringLiteral("unsupported schema version 0")));
+    QVERIFY(status.error().diagnostic.contains(QStringLiteral("unsupported schema version 0")));
     QSqlQuery query(database);
     QVERIFY(query.exec(QStringLiteral("PRAGMA user_version")));
     QVERIFY(query.next());
@@ -2405,7 +2405,7 @@ void StartupPerformanceTests::rejectsCorruptWorkspaceFile()
 
         if (database.open())
         {
-            const Status status =
+            const RepositoryStatus status =
                 DatabaseSchemaManager::ensureSchema(database);
             QVERIFY2(
                 !status,
@@ -2467,7 +2467,7 @@ void StartupPerformanceTests::rejectsLockedLegacyWorkspaceWithoutMigration()
 
         if (migrationDatabase.open())
         {
-            const Status status =
+            const RepositoryStatus status =
                 DatabaseSchemaManager::ensureSchema(migrationDatabase);
             QVERIFY2(
                 !status,
@@ -2501,9 +2501,9 @@ void StartupPerformanceTests::rejectsLockedLegacyWorkspaceWithoutMigration()
             recoveryDatabase.open(),
             qPrintable(recoveryDatabase.lastError().text())
             );
-        const Status status = DatabaseSchemaManager::ensureSchema(recoveryDatabase);
+        const RepositoryStatus status = DatabaseSchemaManager::ensureSchema(recoveryDatabase);
         QVERIFY(!status);
-        QVERIFY(status.error().contains(QStringLiteral("unsupported schema version 0")));
+        QVERIFY(status.error().diagnostic.contains(QStringLiteral("unsupported schema version 0")));
 
         QSqlQuery versionQuery(recoveryDatabase);
         QVERIFY(versionQuery.exec(QStringLiteral("PRAGMA user_version")));

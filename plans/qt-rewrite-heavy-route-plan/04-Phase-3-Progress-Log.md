@@ -3558,6 +3558,40 @@ direct QtTest passed 5 cases. Independent verification used
 `build/macos-clang-debug` (Ninja, Debug, Qt 6.12.0): the focused target rebuild
 had no work, focused CTest passed 1/1, and verbose QtTest passed 5 total cases
 (3 slots plus setup/cleanup; 0 failures or skips). `git diff --check` passed.
-No full suite or other-platform build was run. F1444 is ready for commit; the
-slice commit is pending. F1445 scope review is underway, with no implementation
-started.
+No full suite or other-platform build was run. F1444 is committed locally as
+`fef61c849b4f845ba89a008dcee697bc380895ce`
+(`Phase3 - Add structured repository error contract (F1444)`); it has not been
+pushed.
+
+## F1445 — Workspace persistence errors — 2026-10-24
+
+F1445 typed `WorkspaceStore::open/openExisting/commit`, public
+`DatabaseSchemaManager` schema/version results, and
+`DatabaseFileOperations::copyDatabaseFile`; `ApplicationServices` forwards
+these typed failures. `DataService` retains legacy Status/Result APIs and
+converts `RepositoryError` with `toLegacyDiagnostic()`. The void
+`ApplicationServices::saveDatabase()` wrapper and low-level
+`DatabaseTransaction` remain unchanged. `withReadTransaction` retains Stage
+and RepositoryError, and callers preserve their application operation code.
+Error classification follows source branches: SQL and uncertain failures are
+Technical; missing existing workspaces are NotFound; invalid schemas are
+Validation; invalid blank input is InvalidInput. `CalendarEventProjectionQuery`
+propagates these codes. Tests assert missing-path NotFound and unversioned-DB
+Validation while preserving non-recoverable failures and diagnostics. Added
+coverage verifies exact legacy conversion for DataService `saveAs`/`exportAs`
+and Commit-stage deferred-FK failure with rollback in `withReadTransaction`.
+
+Executor verification passed five focused CTests (schema manager, lifecycle,
+workspace port, roster read port, file-controller lifecycle), built
+`ClassMngr`, and passed `git diff --check`. Independent Tester built all changed
+production and test targets in `build/macos-clang-debug` (Ninja, Debug, Qt
+6.12.0); the six requested suites plus Schedule Import consumer passed 6/6.
+An earlier 22-target focused run was 20/22 before final repairs. The stale
+CalendarEventCache category expectations were repaired; independent reruns of
+CalendarEventCache, DataService lifecycle, and roster-read suites passed 3/3.
+ClassTransfer first aborted without a display; its offscreen retry reached the
+UI and failed the documented F1326 baseline teacher-fallback assertion. F1445
+made no ClassTransfer production change, so this is an evidence limitation,
+not a reported F1445 regression. Independent `git diff --check` passed. No full
+suite or other-platform build was run. F1445 is verified with its slice commit
+pending; F1446 is next.

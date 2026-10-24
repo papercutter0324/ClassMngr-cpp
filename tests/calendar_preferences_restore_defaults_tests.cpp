@@ -376,14 +376,14 @@ bool initializeCalendarResetWorkspace(
         QStringLiteral("f387-calendar-preferences-reset-%1.tps")
             .arg(QUuid::createUuid().toString(QUuid::WithoutBraces))
         );
-    const Status opened = workspace.services.openDatabase(
+    const RepositoryStatus opened= workspace.services.openDatabase(
         workspace.databasePath
         );
     if (!opened)
     {
         if (error)
         {
-            *error = opened.error();
+            *error = toLegacyDiagnostic(opened.error());
         }
         return false;
     }
@@ -2265,13 +2265,13 @@ resetEventsMatchesConfirmationDeleteFailureAndRefreshParity()
     QVERIFY(unavailableStatus->text().isEmpty());
     QCOMPARE(unavailableChanged.count(), 0);
 
-    const Status unavailableReopened =
+    const RepositoryStatus unavailableReopened=
         unavailableWorkspace.services.openDatabase(
             unavailableWorkspace.databasePath
             );
     if (!unavailableReopened)
     {
-        QFAIL(qPrintable(unavailableReopened.error()));
+        QFAIL(qPrintable(toLegacyDiagnostic(unavailableReopened.error())));
     }
     bool unavailableEventPersisted = false;
     QVERIFY2(
@@ -2403,11 +2403,11 @@ resetEventsMatchesConfirmationDeleteFailureAndRefreshParity()
     QVERIFY(failureStatus->text().isEmpty());
     QCOMPARE(failureChanged.count(), 0);
 
-    const Status failureReopened =
+    const RepositoryStatus failureReopened=
         failureWorkspace.services.openDatabase(failureWorkspace.databasePath);
     if (!failureReopened)
     {
-        QFAIL(qPrintable(failureReopened.error()));
+        QFAIL(qPrintable(toLegacyDiagnostic(failureReopened.error())));
     }
     bool failureEventPersisted = false;
     QVERIFY2(

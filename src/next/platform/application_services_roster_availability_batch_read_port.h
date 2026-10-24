@@ -104,19 +104,42 @@ public:
                 snapshots;
             Domain::ErrorCode operationFailureCode =
                 Domain::ErrorCode::Technical;
+            const auto repositoryCodeFor = [](const Domain::ErrorCode code)
+                -> RepositoryErrorCode
+            {
+                switch (code)
+                {
+                case Domain::ErrorCode::InvalidInput:
+                    return RepositoryErrorCode::InvalidInput;
+                case Domain::ErrorCode::NotFound:
+                    return RepositoryErrorCode::NotFound;
+                case Domain::ErrorCode::Conflict:
+                    return RepositoryErrorCode::Conflict;
+                case Domain::ErrorCode::Validation:
+                    return RepositoryErrorCode::Validation;
+                case Domain::ErrorCode::Canceled:
+                case Domain::ErrorCode::Technical:
+                    return RepositoryErrorCode::Technical;
+                }
+                return RepositoryErrorCode::Technical;
+            };
             const auto operationFailure = [
-                &operationFailureCode
+                &operationFailureCode,
+                &repositoryCodeFor
                 ](
                     const Domain::ErrorCode code,
                     QString diagnostic
-                    ) -> Status
+                    ) -> RepositoryStatus
             {
                 operationFailureCode = code;
-                return std::unexpected(std::move(diagnostic));
+                return std::unexpected(RepositoryError{
+                    repositoryCodeFor(code),
+                    std::move(diagnostic)
+                });
             };
 
             const auto transactionFailure = store->withReadTransaction(
-                [&]() -> Status
+                [&]() -> RepositoryStatus
                 {
                     const Result<
                         QList<RosterRepository::ParentAwareColumnNamesForClass>
@@ -269,18 +292,18 @@ public:
                         Domain::ErrorCode::Technical,
                         toStdString(QStringLiteral(
                             "Starting the roster availability read transaction failed: %1"
-                            ).arg(transactionFailure->diagnostic))
+                            ).arg(transactionFailure->error.diagnostic))
                         );
                 }
                 if (transactionFailure->stage == Stage::Operation)
                 {
                     return failure(
                         operationFailureCode,
-                        toStdString(transactionFailure->diagnostic)
+                        toStdString(transactionFailure->error.diagnostic)
                         );
                 }
 
-                QString error = transactionFailure->diagnostic;
+                QString error = transactionFailure->error.diagnostic;
                 if (error.isEmpty())
                 {
                     error = QStringLiteral("unknown database error");

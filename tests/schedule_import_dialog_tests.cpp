@@ -5550,12 +5550,12 @@ void ScheduleImportDialogTests::applyUsesConfirmationAndReportsRepositoryOutcome
     QVERIFY(directory.isValid());
 
     ApplicationServices services;
-    const Status opened = services.openDatabase(
+    const RepositoryStatus opened= services.openDatabase(
         directory.filePath(QStringLiteral("schedule-import-dialog.sqlite"))
         );
     QVERIFY2(
         opened.has_value(),
-        qPrintable(opened.has_value() ? QString() : opened.error())
+        qPrintable(opened.has_value() ? QString() : opened.error().diagnostic)
         );
     const QSqlDatabase database = services.databaseSession()->database();
     QVERIFY(database.isValid());
@@ -5804,7 +5804,7 @@ void ScheduleImportDialogTests::applyUsesConfirmationAndReportsRepositoryOutcome
     QCOMPARE(persistedProfileNames(), importedProfileName);
 
     ApplicationServices unchangedProfileServices;
-    const Status unchangedProfileOpened =
+    const RepositoryStatus unchangedProfileOpened=
         unchangedProfileServices.openDatabase(
             directory.filePath(
                 QStringLiteral("schedule-import-profile-unchanged.sqlite")
@@ -5815,7 +5815,7 @@ void ScheduleImportDialogTests::applyUsesConfirmationAndReportsRepositoryOutcome
         qPrintable(
             unchangedProfileOpened.has_value()
                 ? QString()
-                : unchangedProfileOpened.error()
+                : unchangedProfileOpened.error().diagnostic
             )
         );
     const QSqlDatabase unchangedProfileDatabase =
@@ -5960,12 +5960,12 @@ void ScheduleImportDialogTests::applyDisplaysFreshStateValidationFailure()
     QVERIFY(directory.isValid());
 
     ApplicationServices services;
-    const Status opened = services.openDatabase(
+    const RepositoryStatus opened= services.openDatabase(
         directory.filePath(QStringLiteral("schedule-import-state-error.sqlite"))
         );
     QVERIFY2(
         opened.has_value(),
-        qPrintable(opened.has_value() ? QString() : opened.error())
+        qPrintable(opened.has_value() ? QString() : opened.error().diagnostic)
         );
 
     const Result<Teacher> teacher = services.teacherService()->teacher(7);

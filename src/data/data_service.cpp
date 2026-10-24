@@ -59,8 +59,13 @@ Status DataService::openDatabase(
     const QString& dbPath
     )
 {
-    const Status status = m_session->open(dbPath);
-    return status;
+    const RepositoryStatus status = m_session->open(dbPath);
+    if (!status)
+    {
+        return std::unexpected(toLegacyDiagnostic(status.error()));
+    }
+
+    return {};
 }
 
 void DataService::closeDatabase()
@@ -1137,17 +1142,16 @@ Status DataService::saveAs(
             );
     }
 
-    if (destinationPath.trimmed().isEmpty())
-    {
-        return std::unexpected(
-            QStringLiteral("No destination path was provided.")
-            );
-    }
-
-    return DatabaseFileOperations::copyDatabaseFile(
+    const RepositoryStatus copied = DatabaseFileOperations::copyDatabaseFile(
         m_session->databasePath(),
         destinationPath
         );
+    if (!copied)
+    {
+        return std::unexpected(toLegacyDiagnostic(copied.error()));
+    }
+
+    return {};
 }
 
 Status DataService::exportAs(
@@ -1161,15 +1165,14 @@ Status DataService::exportAs(
             );
     }
 
-    if (destinationPath.trimmed().isEmpty())
-    {
-        return std::unexpected(
-            QStringLiteral("No destination path was provided.")
-            );
-    }
-
-    return DatabaseFileOperations::copyDatabaseFile(
+    const RepositoryStatus copied = DatabaseFileOperations::copyDatabaseFile(
         m_session->databasePath(),
         destinationPath
         );
+    if (!copied)
+    {
+        return std::unexpected(toLegacyDiagnostic(copied.error()));
+    }
+
+    return {};
 }

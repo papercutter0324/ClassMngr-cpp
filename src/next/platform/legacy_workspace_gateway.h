@@ -20,8 +20,11 @@ struct LegacyWorkspaceError final
     std::string message;
     enum class Code
     {
+        InvalidInput,
         Technical,
-        NotFound
+        NotFound,
+        Conflict,
+        Validation
     } code = Code::Technical;
 
     friend bool operator==(
@@ -658,10 +661,27 @@ private:
             message = std::string(operation) + " failed at the legacy boundary.";
         }
 
+        Domain::ErrorCode code = Domain::ErrorCode::Technical;
+        switch (error.code)
+        {
+        case LegacyWorkspaceError::Code::InvalidInput:
+            code = Domain::ErrorCode::InvalidInput;
+            break;
+        case LegacyWorkspaceError::Code::NotFound:
+            code = Domain::ErrorCode::NotFound;
+            break;
+        case LegacyWorkspaceError::Code::Conflict:
+            code = Domain::ErrorCode::Conflict;
+            break;
+        case LegacyWorkspaceError::Code::Validation:
+            code = Domain::ErrorCode::Validation;
+            break;
+        case LegacyWorkspaceError::Code::Technical:
+            break;
+        }
+
         return Domain::OperationError{
-            .code = error.code == LegacyWorkspaceError::Code::NotFound
-                ? Domain::ErrorCode::NotFound
-                : Domain::ErrorCode::Technical,
+            .code = code,
             .message = std::move(message),
             .recoverable = error.code == LegacyWorkspaceError::Code::NotFound
         };

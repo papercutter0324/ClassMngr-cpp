@@ -396,12 +396,12 @@ public:
             return false;
         }
 
-        const Status opened = m_services.openDatabase(
+        const RepositoryStatus opened = m_services.openDatabase(
             m_directory.filePath(QStringLiteral("roster-score-import.db"))
         );
         if (!opened)
         {
-            *error = opened.error();
+            *error = toLegacyDiagnostic(opened.error());
             return false;
         }
 
@@ -962,8 +962,11 @@ void RosterEditorWidgetImportTests::readFailureLeavesRosterUnchanged()
         );
     QVERIFY(!editor.hasUnsavedChanges());
 
-    const Status reopened = fixture.m_services.openDatabase(fixture.databasePath());
-    QVERIFY2(reopened, reopened ? "" : qPrintable(reopened.error()));
+    const RepositoryStatus reopened = fixture.m_services.openDatabase(fixture.databasePath());
+    QVERIFY2(
+        reopened,
+        reopened ? "" : qPrintable(toLegacyDiagnostic(reopened.error()))
+        );
     const Result<Roster> persisted = fixture.m_services.rosterService()->roster(
         fixture.classId
         );

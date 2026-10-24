@@ -141,10 +141,10 @@ struct RosterEditorFixture final
                 QUuid::createUuid().toString(QUuid::WithoutBraces)
                 )
             );
-        const Status opened = services.openDatabase(databasePath);
+        const RepositoryStatus opened= services.openDatabase(databasePath);
         if (!opened)
         {
-            *error = opened.error();
+            *error = toLegacyDiagnostic(opened.error());
             return false;
         }
 

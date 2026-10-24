@@ -1,13 +1,13 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 
 #include <QString>
 
 namespace DatabaseFileOperations
 {
 
-[[nodiscard]] Status copyDatabaseFile(
+[[nodiscard]] RepositoryStatus copyDatabaseFile(
     const QString& sourcePath,
     const QString& destinationPath
     );

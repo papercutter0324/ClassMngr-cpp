@@ -1455,7 +1455,7 @@ bool FileController::saveDatabaseAs(
         return true;
     }
 
-    const Status saved =
+    const RepositoryStatus saved =
         m_services
         ->saveDatabaseAs(normalized);
 
@@ -1464,7 +1464,7 @@ bool FileController::saveDatabaseAs(
         DialogServices::showWarning(
             m_window,
             tr("Save Teacher Profile"),
-            saved.error()
+            toLegacyDiagnostic(saved.error())
             );
 
         return false;
@@ -1525,7 +1525,7 @@ bool FileController::exportDatabaseAs(
         return true;
     }
 
-    const Status exported =
+    const RepositoryStatus exported =
         m_services
         ->exportDatabaseAs(normalized);
 
@@ -1534,7 +1534,7 @@ bool FileController::exportDatabaseAs(
         DialogServices::showWarning(
             m_window,
             tr("Export Teacher Profile"),
-            exported.error()
+            toLegacyDiagnostic(exported.error())
             );
 
         return false;

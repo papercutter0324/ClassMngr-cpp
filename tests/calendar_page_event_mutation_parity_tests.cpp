@@ -162,14 +162,14 @@ bool initializeWorkspace(CalendarWorkspace& workspace, QString* error)
         return false;
     }
 
-    const Status opened = workspace.services.openDatabase(
+    const RepositoryStatus opened= workspace.services.openDatabase(
         databasePath(workspace.directory)
         );
     if (!opened)
     {
         if (error)
         {
-            *error = opened.error();
+            *error = toLegacyDiagnostic(opened.error());
         }
         return false;
     }

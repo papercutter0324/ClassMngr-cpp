@@ -315,7 +315,7 @@ existingOnlyServiceOpenDoesNotCreateMissingTargetOrParent()
     QVERIFY(!QFileInfo::exists(missingParent));
     QVERIFY(!QFileInfo::exists(missingPath));
 
-    const Status opened = services.openExistingDatabase(missingPath);
+    const RepositoryStatus opened = services.openExistingDatabase(missingPath);
 
     QVERIFY(!opened);
     QVERIFY(services.hasOpenDatabase());
@@ -419,7 +419,7 @@ existingOnlyUriTreatsQuestionMarkAsPathData()
     // the existing prefix file instead.
     const QString questionMarkPath =
         existingPath + QStringLiteral("?cache=shared");
-    const Status opened = services.openExistingDatabase(questionMarkPath);
+    const RepositoryStatus opened = services.openExistingDatabase(questionMarkPath);
 
     QVERIFY(!opened);
     QVERIFY(services.hasOpenDatabase());
@@ -479,6 +479,7 @@ olderSchemasAreRejectedWithoutChangingFilesOrActiveSession()
         : port.openDatabase(utf8(databasePath));
 
     QVERIFY(!opened);
+    QCOMPARE(opened.error().code, LegacyWorkspaceError::Code::Validation);
     const QString message = QString::fromStdString(opened.error().message);
     QVERIFY(message.contains(QStringLiteral("unsupported schema version %1").arg(version)));
     QVERIFY(message.contains(QStringLiteral("Migration from older Teacher Profiles is not available")));
@@ -508,6 +509,7 @@ void NextPlatformApplicationServicesWorkspacePortTests::existingEmptyFilesAreNot
             : port.openDatabase(utf8(path));
 
         QVERIFY(!opened);
+        QCOMPARE(opened.error().code, LegacyWorkspaceError::Code::Validation);
         QVERIFY(opened.error().message.find("unsupported schema version 0") != std::string::npos);
         QVERIFY(!services.hasOpenDatabase());
         QCOMPARE(QFileInfo(path).size(), qint64(0));
@@ -1178,7 +1180,7 @@ snapshotFailurePreservesExistingDestinationSentinel()
     writeInvalidWorkspace(sourcePath, invalidSqlite);
     writeInvalidWorkspace(destinationPath, sentinel);
 
-    const Status result = DatabaseFileOperations::copyDatabaseFile(
+    const RepositoryStatus result = DatabaseFileOperations::copyDatabaseFile(
         sourcePath,
         destinationPath
         );
@@ -1198,7 +1200,7 @@ void NextPlatformApplicationServicesWorkspacePortTests::openPreservesLegacyError
     writeInvalidWorkspace(path, QByteArray("not a database"));
 
     ApplicationServices legacyServices;
-    const Status legacyStatus = legacyServices.openDatabase(path);
+    const RepositoryStatus legacyStatus = legacyServices.openDatabase(path);
     QVERIFY(!legacyStatus);
 
     ApplicationServices services;
@@ -1206,7 +1208,10 @@ void NextPlatformApplicationServicesWorkspacePortTests::openPreservesLegacyError
     const auto result = port.openDatabase(utf8(path));
 
     QVERIFY(!result);
-    QCOMPARE(result.error().message, utf8(legacyStatus.error()));
+    QCOMPARE(
+        result.error().message,
+        utf8(toLegacyDiagnostic(legacyStatus.error()))
+        );
 }
 
 void NextPlatformApplicationServicesWorkspacePortTests::portsUseIndependentServicesWithoutSessionSnapshots()

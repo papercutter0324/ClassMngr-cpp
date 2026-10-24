@@ -448,7 +448,7 @@ preferenceWriteAndReadFailureRestoresSelectionAndRetryRefreshesOnce()
     const QString databasePath = m_databaseDirectory->filePath(
         QStringLiteral("class-visibility-preferences.tps")
         );
-    const Status opened = window.services()->openDatabase(databasePath);
+    const RepositoryStatus opened= window.services()->openDatabase(databasePath);
     QVERIFY2(opened.has_value(), "Could not open the test database.");
     window.applyDatabaseLoadedState();
 
@@ -751,7 +751,7 @@ middleSchoolPreferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce()
     const QString databasePath = m_databaseDirectory->filePath(
         QStringLiteral("middle-school-analytics-preferences.tps")
         );
-    const Status opened = window.services()->openDatabase(databasePath);
+    const RepositoryStatus opened= window.services()->openDatabase(databasePath);
     QVERIFY2(opened.has_value(), "Could not open the test database.");
     window.applyDatabaseLoadedState();
 
@@ -1024,7 +1024,7 @@ middleSchoolPreferenceReadFailurePreservesKnownVisibleState()
     const QString databasePath = m_databaseDirectory->filePath(
         QStringLiteral("middle-school-analytics-read-failure.tps")
         );
-    const Status opened = window.services()->openDatabase(databasePath);
+    const RepositoryStatus opened= window.services()->openDatabase(databasePath);
     QVERIFY2(opened.has_value(), "Could not open the test database.");
     window.applyDatabaseLoadedState();
 
@@ -1293,7 +1293,7 @@ evaluationDefaultPolicyFailureRestoresSelectionAndSuccessfulRetryDoesNotRefresh(
     const QString databasePath = m_databaseDirectory->filePath(
         QStringLiteral("evaluation-default-policy-preferences.tps")
         );
-    const Status opened = window.services()->openDatabase(databasePath);
+    const RepositoryStatus opened= window.services()->openDatabase(databasePath);
     QVERIFY2(opened.has_value(), "Could not open the test database.");
     window.applyDatabaseLoadedState();
 
@@ -1746,7 +1746,7 @@ dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
     const QString databasePath = m_databaseDirectory->filePath(
         QStringLiteral("day-filter-reset-policy-preferences.tps")
         );
-    const Status opened = window.services()->openDatabase(databasePath);
+    const RepositoryStatus opened= window.services()->openDatabase(databasePath);
     QVERIFY2(opened.has_value(), "Could not open the test database.");
     window.applyDatabaseLoadedState();
 
@@ -2127,7 +2127,7 @@ classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
     const QString databasePath = m_databaseDirectory->filePath(
         QStringLiteral("class-selection-reset-policy-preferences.tps")
         );
-    const Status opened = window.services()->openDatabase(databasePath);
+    const RepositoryStatus opened= window.services()->openDatabase(databasePath);
     QVERIFY2(opened.has_value(), "Could not open the test database.");
     window.applyDatabaseLoadedState();
 

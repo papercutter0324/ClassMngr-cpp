@@ -50,10 +50,10 @@ public:
                 QUuid::createUuid().toString(QUuid::WithoutBraces)
                 )
             );
-        const Status opened = services.openDatabase(path);
+        const RepositoryStatus opened= services.openDatabase(path);
         if (!opened)
         {
-            *error = opened.error();
+            *error = toLegacyDiagnostic(opened.error());
             return false;
         }
 

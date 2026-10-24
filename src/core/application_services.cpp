@@ -40,29 +40,31 @@ ApplicationServices::ApplicationServices(
 
 ApplicationServices::~ApplicationServices() = default;
 
-Status ApplicationServices::openDatabase(
+RepositoryStatus ApplicationServices::openDatabase(
     const QString& databasePath
     )
 {
     if (!m_workspaceStore)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("Data service is unavailable.")
-            );
+        });
     }
 
     return m_workspaceStore->open(databasePath);
 }
 
-Status ApplicationServices::openExistingDatabase(
+RepositoryStatus ApplicationServices::openExistingDatabase(
     const QString& databasePath
     )
 {
     if (!m_workspaceStore)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("Data service is unavailable.")
-            );
+        });
     }
 
     return m_workspaceStore->openExisting(databasePath);
@@ -97,21 +99,23 @@ void ApplicationServices::saveDatabase()
     }
 }
 
-Status ApplicationServices::saveDatabaseAs(
+RepositoryStatus ApplicationServices::saveDatabaseAs(
     const QString& destinationPath
     )
 {
     if (!m_workspaceStore)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("Data service is unavailable.")
-            );
+        });
     }
     if (!m_workspaceStore->isOpen())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("No Teacher Profile is open.")
-            );
+        });
     }
 
     return DatabaseFileOperations::copyDatabaseFile(
@@ -120,21 +124,23 @@ Status ApplicationServices::saveDatabaseAs(
         );
 }
 
-Status ApplicationServices::exportDatabaseAs(
+RepositoryStatus ApplicationServices::exportDatabaseAs(
     const QString& destinationPath
     )
 {
     if (!m_workspaceStore)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("Data service is unavailable.")
-            );
+        });
     }
     if (!m_workspaceStore->isOpen())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("No Teacher Profile is open.")
-            );
+        });
     }
 
     return DatabaseFileOperations::copyDatabaseFile(

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 #include "data/database/workspace_store_fwd.h"
 
 #include <QSqlDatabase>
@@ -40,7 +40,7 @@ public:
         };
 
         Stage stage;
-        QString diagnostic;
+        RepositoryError error;
     };
 
     WorkspaceStore();
@@ -49,19 +49,20 @@ public:
     WorkspaceStore(const WorkspaceStore&) = delete;
     WorkspaceStore& operator=(const WorkspaceStore&) = delete;
 
-    [[nodiscard]] Status open(const QString& databasePath);
-    [[nodiscard]] Status openExisting(const QString& databasePath);
+    [[nodiscard]] RepositoryStatus open(const QString& databasePath);
+    [[nodiscard]] RepositoryStatus openExisting(const QString& databasePath);
     void close();
 
     [[nodiscard]] bool isOpen() const;
     [[nodiscard]] QString databasePath() const;
     [[nodiscard]] QSqlDatabase database() const;
-    [[nodiscard]] bool commit();
+    [[nodiscard]] RepositoryStatus commit();
 
     // Runs the callback synchronously in a transaction owned by this store.
-    // A failed Status rolls back; callback exceptions propagate after rollback.
+    // A failed RepositoryStatus rolls back; callback exceptions propagate
+    // after rollback.
     [[nodiscard]] std::optional<ReadTransactionFailure> withReadTransaction(
-        const std::function<Status()>& operation
+        const std::function<RepositoryStatus()>& operation
         ) const;
 
     SettingsRepository* settingsRepository() const;
@@ -88,7 +89,7 @@ private:
         ExistingOnly
     };
 
-    [[nodiscard]] Status openCandidate(
+    [[nodiscard]] RepositoryStatus openCandidate(
         const QString& databasePath,
         OpenBehavior behavior
         );

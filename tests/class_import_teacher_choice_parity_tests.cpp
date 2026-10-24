@@ -116,7 +116,7 @@ Result<ClassTransferPackage> buildPackage(QTemporaryDir& directory, const Teache
     ApplicationServices source;
     const auto opened = source.openDatabase(directory.filePath(QStringLiteral("source.tps")));
     if (!opened)
-        return std::unexpected(opened.error());
+        return std::unexpected(toLegacyDiagnostic(opened.error()));
     const auto teacherId = teachers(source)->createTeacher(teacher);
     if (!teacherId)
         return std::unexpected(teacherId.error());

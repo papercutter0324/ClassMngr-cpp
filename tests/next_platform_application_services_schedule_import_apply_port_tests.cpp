@@ -115,10 +115,12 @@ appliesTypedRequestThroughActiveRepository()
     QVERIFY(directory.isValid());
 
     ApplicationServices services;
-    const Status opened = services.openDatabase(
+    const RepositoryStatus opened= services.openDatabase(
         directory.filePath(QStringLiteral("typed-apply.sqlite"))
         );
-    const QString openError = opened.has_value() ? QString() : opened.error();
+    const QString openError = opened.has_value()
+        ? QString()
+        : opened.error().diagnostic;
     QVERIFY2(opened.has_value(), qPrintable(openError));
 
     Platform::ApplicationServicesScheduleImportApplyPort port(&services);
@@ -182,10 +184,12 @@ rejectsGeneratedClassIdOutsideIntRangeAndRollsBack()
     QVERIFY(directory.isValid());
 
     ApplicationServices services;
-    const Status opened = services.openDatabase(
+    const RepositoryStatus opened= services.openDatabase(
         directory.filePath(QStringLiteral("narrowed-class-id.sqlite"))
         );
-    const QString openError = opened.has_value() ? QString() : opened.error();
+    const QString openError = opened.has_value()
+        ? QString()
+        : opened.error().diagnostic;
     QVERIFY2(opened.has_value(), qPrintable(openError));
 
     QSqlQuery query(services.workspaceStore()->database());
@@ -254,10 +258,12 @@ void ScheduleImportApplyPortTests::acceptsGeneratedClassIdAtIntMax()
     QVERIFY(directory.isValid());
 
     ApplicationServices services;
-    const Status opened = services.openDatabase(
+    const RepositoryStatus opened= services.openDatabase(
         directory.filePath(QStringLiteral("int-max-class-id.sqlite"))
         );
-    const QString openError = opened.has_value() ? QString() : opened.error();
+    const QString openError = opened.has_value()
+        ? QString()
+        : opened.error().diagnostic;
     QVERIFY2(opened.has_value(), qPrintable(openError));
 
     QSqlQuery query(services.workspaceStore()->database());
@@ -331,10 +337,12 @@ void ScheduleImportApplyPortTests::preservesLegacyScheduleServiceRoute()
     QVERIFY(directory.isValid());
 
     ApplicationServices services;
-    const Status opened = services.openDatabase(
+    const RepositoryStatus opened= services.openDatabase(
         directory.filePath(QStringLiteral("legacy-apply.sqlite"))
         );
-    const QString openError = opened.has_value() ? QString() : opened.error();
+    const QString openError = opened.has_value()
+        ? QString()
+        : opened.error().diagnostic;
     QVERIFY2(opened.has_value(), qPrintable(openError));
 
     ScheduleImportClassCandidate candidate;
@@ -436,10 +444,12 @@ void ScheduleImportApplyPortTests::preservesStructuredRepositoryFailures()
     QVERIFY(directory.isValid());
 
     ApplicationServices services;
-    const Status opened = services.openDatabase(
+    const RepositoryStatus opened= services.openDatabase(
         directory.filePath(QStringLiteral("structured-apply.sqlite"))
         );
-    const QString openError = opened.has_value() ? QString() : opened.error();
+    const QString openError = opened.has_value()
+        ? QString()
+        : opened.error().diagnostic;
     QVERIFY2(opened.has_value(), qPrintable(openError));
 
     Platform::ApplicationServicesScheduleImportApplyPort port(&services);

@@ -3,6 +3,7 @@
 
 #include "core/result.h"
 #include "features/documents/document_catalog.h"
+#include "data/repositories/repository_error.h"
 #include "data/database/workspace_store_fwd.h"
 
 #include <QString>
@@ -29,13 +30,13 @@ public:
 
     ~ApplicationServices();
 
-    [[nodiscard]] Status openDatabase(
+    [[nodiscard]] RepositoryStatus openDatabase(
         const QString& databasePath
         );
 
     // Opens a workspace that already exists. Unlike openDatabase(), this path
     // never creates a database file or its parent directories.
-    [[nodiscard]] Status openExistingDatabase(
+    [[nodiscard]] RepositoryStatus openExistingDatabase(
         const QString& databasePath
         );
 
@@ -47,11 +48,11 @@ public:
 
     void saveDatabase();
 
-    [[nodiscard]] Status saveDatabaseAs(
+    [[nodiscard]] RepositoryStatus saveDatabaseAs(
         const QString& destinationPath
         );
 
-    [[nodiscard]] Status exportDatabaseAs(
+    [[nodiscard]] RepositoryStatus exportDatabaseAs(
         const QString& destinationPath
         );
 

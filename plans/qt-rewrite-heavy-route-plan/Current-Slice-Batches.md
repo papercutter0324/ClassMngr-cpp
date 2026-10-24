@@ -8,8 +8,9 @@ log](04-Phase-3-Progress-Log.md).
 ## Batch 22 — Active
 
 F1444 implementation and independent focused verification are complete; its
-slice commit is pending. F1445 scope review is underway, with no implementation
-started. The accepted queue is:
+commit `fef61c849b4f845ba89a008dcee697bc380895ce` is local and not pushed.
+F1445 implementation and focused verification are complete; its slice commit
+is pending. F1446 is next. The accepted queue is:
 
 1. **F1444** — shared `RepositoryError`/`RepositoryResult`/status contract and SQL error mapping.
 2. **F1445** — Workspace/database transaction, schema, lifecycle, and file-operation errors.
@@ -32,8 +33,8 @@ started. The accepted queue is:
 19. **F1462** — CampusRecordRepository.
 20. **F1463** — CampusJsonRepository.
 
-Keep the F1418 `ApplicationServices::saveDatabase()` wrapper void; only type
-`WorkspaceStore` commit at F1445.
+Keep the F1418 `ApplicationServices::saveDatabase()` wrapper void; F1445 typed
+`WorkspaceStore` commit without changing that wrapper.
 
 ## Batch 23 discovery reminder
 

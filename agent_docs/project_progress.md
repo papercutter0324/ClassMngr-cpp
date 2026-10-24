@@ -41,13 +41,15 @@ paths have focused implementation/test evidence, but a fresh contract audit
 reopened Phase 3. Most repository APIs still return `std::expected<..., QString>`
 or bool without stable error categories, contrary to §3.3's structured-error
 deliverable. Batch 22 discovery accepted 20 ordered error-contract slices.
-F1444's implementation and independent verification passed; its slice commit
-is pending. F1445's WorkspaceStore and database error boundary is under
-read-only scope review. Batch 23 discovery is due when F1462 starts. Two more
-surfaces (DocumentCatalog and DataService compatibility conversion) are
-reserved for that discovery. The prior completion status was premature;
-Phase 3 remains In Progress until the structured-error deliverable and full
-exit gate are fulfilled.
+F1444 is committed locally at
+`fef61c849b4f845ba89a008dcee697bc380895ce`, with independent focused
+verification passed; it will be pushed when Batch 22 closes. F1445's public
+workspace/schema/file-operation error flow is implemented and independently
+verified, with its slice commit pending. F1446 is next. Batch 23 discovery is
+due when F1462 starts. Two more surfaces (DocumentCatalog and DataService
+compatibility conversion) are reserved for that discovery. The prior
+completion status was premature; Phase 3 remains In Progress until the
+structured-error deliverable and full exit gate are fulfilled.
 
 ## Goal
 
@@ -96,7 +98,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (Phase 3 reopened; F1444 verified)
+### Current checkpoint - 2026-10-24 (Phase 3 reopened; F1445 verified)
 
 Phase 3 is reopened on the mandatory Heavy route after a fresh audit found
 that §3.3's structured-error requirement is not fully met. `Status` and
@@ -104,10 +106,14 @@ that §3.3's structured-error requirement is not fully met. `Status` and
 preserve stable categories. A data-owned error type with stable code and the
 existing diagnostic is accepted as the target contract. Batch 22 discovery
 and bounded review produced a 20-candidate ordered queue; F1444 (the shared
-error contract and SQL mapping) is implemented and independently verified,
-with the slice commit pending. F1445's WorkspaceStore and database error
-boundary is under read-only scope review. Batch 23 discovery is due at F1462,
-the second-to-last Batch 22 candidate. `DocumentCatalog` and `DataService`
+error contract and SQL mapping) is committed locally at
+`fef61c849b4f845ba89a008dcee697bc380895ce` after independent focused
+verification. F1445's public workspace, schema, and file-operation errors now
+preserve stable codes through ApplicationServices, with DataService converting
+to the existing legacy diagnostics; its implementation and independent
+focused verification passed, and the slice commit is pending. F1446 is next.
+Batch 23 discovery is due at F1462, the second-to-last Batch 22 candidate.
+`DocumentCatalog` and `DataService`
 compatibility conversion are recorded for that discovery. The earlier file
 compatibility and v2 source-boundary reviews remain valid; see the [Phase 3
 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
