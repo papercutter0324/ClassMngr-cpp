@@ -32,18 +32,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: In progress
+- Status: Complete
 - Default route: Heavy
 - Depends on: Phases 1 and 2
 - Blocks: Workspace, feature migration, and cutover
 - Owner: Unassigned
 - Last updated: 2026-10-24
-- Current note: F1442's verification-only `wizardSuccessTranscript` slot
-  passed under normal macOS service access; F1443 is accepted and committed.
-  Batch 20 implementation and closeout docs are complete, with push pending.
-  Batch 21 discovery completed: No other slices were found. Independent
-  exit-gate review passed; Phase 3 remains In Progress until the closeout push
-  is verified. The
+- Current note: Phase 3's exit gate passed independent review, and Batch 20's
+  push was verified at `7ae16b9620cbd02d9f4a4187c45ce9f296760987`. F1442's
+  verification-only `wizardSuccessTranscript` slot passed under normal macOS
+  service access; F1443 is accepted. Batch 21 found no other slices. The
   [DataService migration
   map](../../docs/qt-rewrite/data-service-migration-map.md) records F1420's
   deliverable, including that `DataService::save()` has no ordinary production
@@ -64,16 +62,19 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — Batch 20 / Batch 21 — 2026-10-24
+## Latest Progress Update — Phase 3 closeout — 2026-10-24
 
 F1442's verification-only F1349 `wizardSuccessTranscript` slot passed under
 normal macOS service access, and F1443 is accepted and committed at
-`4463eda2640018c2307b093ed0db97b99b47c43d`. Batch 20 implementation is
-complete, with closeout docs updated and push pending. Batch 21 discovery
-completed: No other slices were found. Independent exit-gate review passed;
-Phase 3 remains In Progress until the closeout push is verified. See the
+`4463eda2640018c2307b093ed0db97b99b47c43d`. Batch 20 was pushed and verified
+at `7ae16b9620cbd02d9f4a4187c45ce9f296760987`. Batch 21 discovery completed:
+No other slices were found. Independent exit-gate review passed, so Phase 3 is
+Complete. The audit was macOS-focused, did not include cross-platform builds,
+and simulated crash artifacts instead of producing them through process
+termination; `WorkspaceStore` also publicly exposes `QSqlDatabase`, making
+boundary enforcement source-reviewed rather than compile-time. See the
 [progress log](04-Phase-3-Progress-Log.md) and [current batch
-tracker](Current-Slice-Batches.md).
+tracker](Current-Slice-Batches.md); there is no active batch or next candidate.
 
 ## Objective
 

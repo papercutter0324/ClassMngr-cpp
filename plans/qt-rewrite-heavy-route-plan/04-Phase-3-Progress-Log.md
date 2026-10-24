@@ -2987,12 +2987,12 @@ complete and pushed to `origin/Qt-Rewrite` at verified tip
 `origin/Qt-Rewrite` at verified local/remote tip
 `11db3892c3533f7dd7d270be30905bd3d730fdd2`. F1441 is accepted and committed
 at `01a398599af2004305932f02c99671cc5fb0400f`; Batch 18 implementation is
-complete, with closeout docs updated and push pending. Batch 19 review found
-no candidate beyond F1441. F1442's verification-only F1349 wizard slot passed;
-F1443 is accepted and committed. Batch 20 implementation and closeout docs are
-complete; push is pending. Batch 21 discovery completed: No other slices
-were found. Independent exit-gate review passed; Phase 3 remains In Progress
-until the closeout push is verified.
+complete and pushed to `origin/Qt-Rewrite`. Batch 19 review found no candidate
+beyond F1441. F1442's verification-only F1349 wizard slot passed; F1443 is
+accepted and committed. Batch 20 was pushed to `origin/Qt-Rewrite` at verified
+tip `7ae16b9620cbd02d9f4a4187c45ce9f296760987`. Batch 21 discovery completed:
+No other slices were found. Independent exit-gate review passed, and Phase 3
+is Complete.
 
 ## F1429 — Schedule Import row-count metrics — 2026-10-24
 
@@ -3491,7 +3491,7 @@ was accepted beyond F1441–F1443. No other slices were found. The F1418
 `void saveDatabase()` disposition is unchanged. Batch 20 implementation and
 closeout docs are complete; push is pending.
 
-## Final exit-gate review — passed; closeout push pending — 2026-10-24
+## Final exit-gate review and Phase 3 completion — 2026-10-24
 
 Two independent final-gate Explorers recommended pass, and the main agent
 accepted the Phase 3 gate on those reports. File-compatibility review retained
@@ -3502,6 +3502,7 @@ Source-boundary review found no v2 call sites into DataService or SQL internals;
 `WorkspaceStore` still publicly exposes `QSqlDatabase`, so enforcement is
 source-reviewed rather than compile-time. No additional implementation
 candidate was identified. F1443 is committed at
-`4463eda2640018c2307b093ed0db97b99b47c43d`; Batch 20 closeout docs are
-complete and push is pending. Phase 3 remains In Progress until the push is
-verified; do not claim phase completion yet.
+`4463eda2640018c2307b093ed0db97b99b47c43d`; Batch 20 was pushed and verified
+at `7ae16b9620cbd02d9f4a4187c45ce9f296760987`. Batch 21 found no other
+slices. With the accepted gate review and verified push, Phase 3 is Complete;
+there is no active batch or next candidate.

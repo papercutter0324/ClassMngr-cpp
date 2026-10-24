@@ -6,12 +6,10 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-24
-- Current milestone: Phase 3 remains In Progress on the mandatory Heavy route
-  with its exit-gate review passed; Phase 3 remains In Progress pending
-  verification of the Batch 20 closeout push.
-  F1442's verification-only slot passed and F1443 is accepted and committed;
-  Batch 20 implementation and closeout docs are complete, with push pending.
-  Batch 21 discovery completed: No other slices were found. Phase 3 details
+- Current milestone: Phase 3 is Complete on the mandatory Heavy route after
+  the exit-gate review passed and Batch 20's push was verified at
+  `7ae16b9620cbd02d9f4a4187c45ce9f296760987`. F1442's verification-only slot
+  passed, F1443 is accepted, and Batch 21 found no other slices. Phase 3 details
   are in the
   [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -38,7 +36,7 @@
 | 0 | 01-Phase-0-Product-Contract-and-Baseline.md | Complete | Heavy | None |
 | 1 | 02-Phase-1-Build-System-and-Repository-Structure.md | Complete | Heavy | 0 |
 | 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | Complete | Heavy | 1 |
-| 3 | 04-Phase-3-Persistence-Rewrite.md | In progress | Heavy | 1, 2 |
+| 3 | 04-Phase-3-Persistence-Rewrite.md | Complete | Heavy | 1, 2 |
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Not started | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Not started | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Not started | Heavy | 5 |

@@ -2,7 +2,7 @@
 
 Active deployment plan: Qt Rewrite Phase 3 — Persistence Rewrite.
 Current deployment: `phase3_persistence_resume_20261024`. Route: Heavy; this
-continuation is active. Batch 9 (F1419–F1427) was pushed and verified at
+continuation is complete. Batch 9 (F1419–F1427) was pushed and verified at
 `7b4eaaf809ecdc17e4e14fae555b157c361c378d`. Batch 10 (F1428) is committed
 and pushed at `01670f53d7924a5e68ce9288effe3a4bf12b3403`. Batch 11
 (F1429–F1432) is pushed at `ee6efe495d25136cf70297183af1aeaf5ae8d51c`.
@@ -28,7 +28,8 @@ Platform/Application CTests passed 2/2. No source or assertion changes were
 needed. F1443 is committed at
 `4463eda2640018c2307b093ed0db97b99b47c43d`; independent lifecycle CTest passed
 1/1 (71 Qt cases), with `git diff --check` clean. Batch 20 implementation and
-closeout docs are complete; its push is pending. Batch 21 discovery started at
+closeout docs are pushed and verified at
+`7ae16b9620cbd02d9f4a4187c45ce9f296760987`. Batch 21 discovery started at
 the second-to-last Batch 20 slice, completed with two independent scans and
 bounded review, and found no further candidate. The F1418 void Save API remains
 appropriate because checked v2 writes own their transactions and ordinary
@@ -36,10 +37,9 @@ FileController Save has no transaction to commit. The earlier restricted
 F1349 run aborted in Qt before import; the normal-access pass resolves that test
 gap without a code workaround. Independent final-gate reviews recommend pass:
 no v2 callsite reaches DataService or SQL internals, and the supported v6 file
-paths have focused implementation/test evidence. Phase 3 remains In Progress
-until the closeout push is verified; documented limitations include no full
-suite or Windows/Linux build, and source-level (not compile-time) boundary
-enforcement.
+paths have focused implementation/test evidence. Phase 3 is Complete. The
+recorded limits include no full suite or Windows/Linux build and source-level
+(not compile-time) boundary enforcement.
 
 ## Goal
 
@@ -88,17 +88,18 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (F1443 committed; final gate passed)
+### Current checkpoint - 2026-10-24 (Phase 3 complete)
 
-Phase 3 remains In Progress on the mandatory Heavy route while Batch 20's
-closeout push is pending. Independent final-gate reviews recommend pass, and
-the main accepted the evidence. F1442 passed as verification-only with no code
-changes. F1443 is committed at `4463eda2640018c2307b093ed0db97b99b47c43d`;
-its independent lifecycle CTest passed 1/1 (71 Qt cases), and the diff check
-passed. Batch 21 discovery completed with `No other slices were found.` The
-current batch tracker records only Batch 20 closeout and Batch 21's empty
-discovery result. See the [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
-for gate evidence and limits.
+Phase 3 is Complete on the mandatory Heavy route. Batch 20 closeout docs and
+F1443 are pushed and verified at `7ae16b9620cbd02d9f4a4187c45ce9f296760987`.
+F1442 passed verification-only with no code changes; F1443's independent
+lifecycle CTest passed 1/1 (71 Qt cases). Batch 21 discovery completed with
+`No other slices were found.` Independent final-gate reviews passed. Existing
+schema-v0–v5 profiles remain unsupported; Windows/Linux and the full suite
+were not run; and source-level persistence-boundary review found no violating
+v2 callsite while compile-time enforcement remains absent. See the
+[Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
+for the complete evidence and limits.
 
 Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
 `origin/Qt-Rewrite` at `7b4eaaf809ecdc17e4e14fae555b157c361c378d`; the remote
@@ -284,8 +285,8 @@ collection work remains with Phase 7D/7H. Classes/Speaking Evaluation
 navigation detail lifetime is deferred to Phases 7D/7H because it requires
 page/model changes; Calendar parsed-event consumer lifetime remains deferred
 to Phase 7F. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
-records the live state and acceptance boundaries. The exit-gate review passed;
-Batch20 closeout push verification remains pending.
+records the live state and acceptance boundaries. Phase 3's exit-gate review
+passed and the completed batch is pushed; no active batch or candidate remains.
 
 Phase 2 remains complete with its separate audit limitations and F629
 requalification recorded in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
