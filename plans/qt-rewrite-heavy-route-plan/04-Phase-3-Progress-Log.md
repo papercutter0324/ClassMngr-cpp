@@ -632,3 +632,24 @@ also built `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
 `ClassMngrCalendarPageEventMutationParityTests`. These three focused CTests
 passed **3/3** serially. `git diff --check` passed. No full suite or
 cross-platform build ran.
+
+## F1343 — Delete all Calendar Events — 2026-10-23
+
+`src/next/platform/application_services_calendar_event_delete_all_port.h`
+now uses `workspaceStore()` for availability and repository access. The
+repository delete-all call, empty-calendar success/no-op, errors/messages, and
+UI behavior remain unchanged. F1343 fixtures in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp` and
+reset-specific helpers in
+`tests/calendar_preferences_restore_defaults_tests.cpp` now use
+`WorkspaceStore`. Added `deletesAllCalendarEventsFromEmptyCalendarSuccessfully`;
+existing multi-row delete, availability/SQL failure, confirmation, cancel,
+failure, no-success-signal, and success-refresh assertions remain. UI
+production behavior and repository SQL were unchanged.
+
+Executor built `ClassMngr`; Tester built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrCalendarPreferencesRestoreDefaultsTests` in the existing macOS Debug
+tree. The three focused CTests passed **3/3** serially. `git diff --check`
+passed. No full suite or cross-platform build ran.

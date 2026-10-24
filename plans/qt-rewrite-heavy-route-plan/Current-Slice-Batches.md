@@ -9,10 +9,10 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 2 is active and unpushed; F1342 (Single Calendar Event delete) is
-  complete, and F1343 is current: Delete all Calendar Events.
+- Batch 2 is active and unpushed; F1343 (Delete all Calendar Events) is
+  complete, and F1344 is current: Repeat-series creation.
 
-## Phase 3 — Batch 2 (active; current: F1343)
+## Phase 3 — Batch 2 (active; current: F1344)
 
 1. F1338 — Sub Prep information-sheet print-source read
 2. F1339 — Sub Prep roster-output source read

@@ -1,5 +1,6 @@
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "data/repositories/settings_repository.h"
 #include "domain/models/calendar_event.h"
@@ -396,7 +397,7 @@ bool initializeCalendarResetWorkspace(
     event.endDate = eventDate;
     event.endTime = QTime(10, 0);
 
-    const auto saved = workspace.services.databaseSession()
+    const auto saved = workspace.services.workspaceStore()
         ->calendarEventRepository()
         ->saveCalendarEvent(event);
     if (!saved)
@@ -419,16 +420,17 @@ bool calendarEventExists(
     QString* error
     )
 {
-    if (!services.databaseSession())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store)
     {
         if (error)
         {
-            *error = QStringLiteral("Database session is not open.");
+            *error = QStringLiteral("Workspace store is unavailable.");
         }
         return false;
     }
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(store->database());
     query.prepare(QStringLiteral(
         "SELECT COUNT(*) FROM calendar_events WHERE id=?"
         ));

@@ -351,6 +351,7 @@ private slots:
     void reportsUnavailableDeleteSessionStructurally();
     void reportsDeleteServiceFailureStructurally();
     void deletesAllCalendarEventsThroughTypedPort();
+    void deletesAllCalendarEventsFromEmptyCalendarSuccessfully();
     void reportsUnavailableDeleteAllSessionStructurally();
     void reportsDeleteAllServiceFailureStructurally();
     void savesOrderedCalendarImportBatchWithTypedIdsAndParity();
@@ -1420,11 +1421,11 @@ deletesAllCalendarEventsThroughTypedPort()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
     CalendarEvent firstEvent = makeEvent(
@@ -1465,13 +1466,45 @@ deletesAllCalendarEventsThroughTypedPort()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
+deletesAllCalendarEventsFromEmptyCalendarSuccessfully()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+    CalendarEventRepository* const repository =
+        store->calendarEventRepository();
+    QVERIFY(repository);
+
+    const auto initiallyRemaining = repository->loadCalendarEventsInRange(
+        QDate(2026, 12, 1),
+        QDate(2026, 12, 31)
+        );
+    QVERIFY(initiallyRemaining);
+    QVERIFY(initiallyRemaining->isEmpty());
+
+    ApplicationServicesCalendarEventDeleteAllPort port(services);
+    QVERIFY(port.isAvailable());
+    const auto deleted = port.deleteAllEvents();
+    QVERIFY(deleted);
+
+    const auto remaining = repository->loadCalendarEventsInRange(
+        QDate(2026, 12, 1),
+        QDate(2026, 12, 31)
+        );
+    QVERIFY(remaining);
+    QVERIFY(remaining->isEmpty());
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
 reportsUnavailableDeleteAllSessionStructurally()
 {
     ApplicationServices services;
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(!session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(!store->isOpen());
     ApplicationServicesCalendarEventDeleteAllPort port(services);
 
     QVERIFY(!port.isAvailable());
@@ -1482,13 +1515,13 @@ reportsUnavailableDeleteAllSessionStructurally()
         );
 
     QVERIFY(openDatabase(services, m_directory));
-    QVERIFY(session->isOpen());
-    QVERIFY(session->calendarEventRepository());
+    QVERIFY(store->isOpen());
+    QVERIFY(store->calendarEventRepository());
     QVERIFY(port.isAvailable());
 
     services.closeDatabase();
     QVERIFY(services.dataService());
-    QVERIFY(!session->isOpen());
+    QVERIFY(!store->isOpen());
     QVERIFY(!port.isAvailable());
     verifyRecoverableFailure(
         port.deleteAllEvents(),
@@ -1503,11 +1536,11 @@ reportsDeleteAllServiceFailureStructurally()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QVERIFY(session->isOpen());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
     CalendarEventRepository* const repository =
-        session->calendarEventRepository();
+        store->calendarEventRepository();
     QVERIFY(repository);
 
     CalendarEvent event = makeEvent(
@@ -1522,7 +1555,7 @@ reportsDeleteAllServiceFailureStructurally()
     const int eventId = *saved;
     QVERIFY(eventId > 0);
 
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_delete_all "
         "BEFORE DELETE ON calendar_events "
