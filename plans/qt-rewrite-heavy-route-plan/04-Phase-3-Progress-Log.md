@@ -809,3 +809,20 @@ URL argument`) in Qt's QWizard page/pixmap/restart path. Running that slot
 alone reproduced the failure. No baseline comparison was run, so attribution
 is unknown. `git diff --check` passed. No full suite or cross-platform build
 ran.
+
+## F1350 — Schedule slot-state read — 2026-10-23
+
+The Schedule slot-state Platform port and its two direct fixture database
+accesses in
+`tests/next_platform_application_services_schedule_slot_state_read_port_tests.cpp`
+now use `WorkspaceStore`. The repository API and query are unchanged. Ordering,
+raw stored values, UTF-16 projection, unavailable-owner message, error codes,
+and exception mappings remain unchanged. The separate `DataService` fallback
+assertion remains intact.
+
+Executor and Tester incrementally built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesScheduleSlotStateReadPortTests`,
+`ClassMngrNextApplicationScheduleSlotStateReadQueryTests`, and
+`ClassMngrScheduleWidgetTests` in the existing `build/macos-clang-debug` tree.
+The three focused CTests passed **3/3** serially. `git diff --check` passed.
+No full suite or cross-platform build ran.

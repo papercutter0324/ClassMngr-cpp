@@ -1,7 +1,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "next/application/schedule_slot_state_read_query.h"
 #include "next/platform/application_services_schedule_slot_state_read_port.h"
 
@@ -70,7 +70,7 @@ readsOrderedRawRowsFromTheActiveSession()
         directory,
         QStringLiteral("active")
         )));
-    const QSqlDatabase database = services.databaseSession()->database();
+    const QSqlDatabase database = services.workspaceStore()->database();
     QVERIFY(insertSlotState(
         database,
         QStringLiteral("Tuesday "),
@@ -188,7 +188,7 @@ distinguishesUnavailableSessionFromRepositoryFailure()
         QStringLiteral("failed-read")
         )));
     QSqlQuery dropSlotStateTable(
-        failedReadServices.databaseSession()->database()
+        failedReadServices.workspaceStore()->database()
         );
     QVERIFY(dropSlotStateTable.exec(QStringLiteral(
         "DROP TABLE intensive_slot_states"

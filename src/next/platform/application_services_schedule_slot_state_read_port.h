@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/intensive_slot_state_repository.h"
 #include "next/application/schedule_slot_state_read_query.h"
 
@@ -37,15 +37,15 @@ public:
         const Application::ScheduleSlotStateReadQuery&
         ) const override
     {
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return unavailableFailure();
         }
 
         IntensiveSlotStateRepository* const repository =
-            session->intensiveSlotStateRepository();
+            store->intensiveSlotStateRepository();
         if (!repository)
         {
             return unavailableFailure();
