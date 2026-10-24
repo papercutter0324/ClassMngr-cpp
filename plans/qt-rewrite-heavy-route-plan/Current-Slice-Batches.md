@@ -41,10 +41,18 @@ verification evidence in its progress log.
    `QSaveFile` destruction. The assertion was corrected to check afterward;
    no production defect was found. The internal helper is source-manifest
    registered; application API is unchanged. No full-suite or Windows claim.
-6. **F1424 — Calendar Import transaction-start, commit, and error coverage (current).**
+6. **F1424 — Calendar Import transaction-start, commit, and error coverage
+   (accepted).** Focused macOS arm64/Qt 6.12.0 CTest passed 1/1; verbose run
+   passed 81 Qt cases with zero failed or skipped. Nested-transaction start
+   failure left zero calendar rows and the expected sequence before and after
+   outer rollback. Deferred-FK commit failure returned `Technical` and rolled
+   back calendar/child rows and sequence; existing mid-write small and
+   4097-event cases passed. No production changes; no full-suite or Windows
+   claim.
 7. **F1425 — Compact Schedule Import persistence snapshot plus large 96-class
-   query/result/lifetime evidence.** Phase 3 owns the persistence/query side;
-   Schedule Import review and presentation remain Phase 7E work.
+   query/result/lifetime evidence (current).** Phase 3 owns the
+   persistence/query side; Schedule Import review and presentation remain
+   Phase 7E work.
 8. **F1426 — Staged/file-backed workbook representation lifetime at the
    reader boundary.** This preserves the shared Phase 3/7F boundary.
 9. **F1427 — Class-transfer codec representation lifetime before dialog/UI.**

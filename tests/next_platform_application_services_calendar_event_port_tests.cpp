@@ -360,6 +360,8 @@ private slots:
     void rejectsInvalidImportBatchBeforeCreatingAnyRows();
     void reportsImportBatchFailureWithoutPartialRows_data();
     void reportsImportBatchFailureWithoutPartialRows();
+    void reportsImportTransactionStartFailureWithoutRows();
+    void reportsImportTransactionCommitFailureWithoutRows();
     void reportsUnavailableImportSaveStoreStructurally();
     void titleAdaptersUseUtf16UnitBoundariesForSqlReadAndWrite();
     void createsAndUpdatesValidEventWithTypedIdMapping();
@@ -1819,6 +1821,113 @@ reportsImportBatchFailureWithoutPartialRows()
     QVERIFY(loaded->isEmpty());
     QVERIFY(query.exec(QStringLiteral(
         "SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name='calendar_events'), 0)")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toLongLong(), qint64(0));
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsImportTransactionStartFailureWithoutRows()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+
+    QSqlDatabase database = store->database();
+    QVERIFY(database.transaction());
+
+    ApplicationServicesCalendarEventImportSavePort port(services);
+    const auto saved = port.saveImportedEvents(validImportSaveRequest());
+
+    verifyFailure(saved, ErrorCode::Technical);
+    QVERIFY(
+        saved.error().message.find(
+            "Starting calendar event save transaction failed"
+            ) != std::string::npos
+        );
+
+    {
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM calendar_events"
+            )));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toLongLong(), qint64(0));
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT COALESCE((SELECT seq FROM sqlite_sequence "
+            "WHERE name='calendar_events'), 0)"
+            )));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toLongLong(), qint64(0));
+    }
+
+    QVERIFY(database.rollback());
+
+    QSqlQuery query(database);
+    QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM calendar_events")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toLongLong(), qint64(0));
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT COALESCE((SELECT seq FROM sqlite_sequence "
+        "WHERE name='calendar_events'), 0)"
+        )));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toLongLong(), qint64(0));
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsImportTransactionCommitFailureWithoutRows()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QVERIFY(store->isOpen());
+
+    QSqlDatabase database = store->database();
+    QSqlQuery query(database);
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TABLE f1424_commit_parent (id INTEGER PRIMARY KEY)"
+        )));
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TABLE f1424_deferred_child ("
+        "event_id INTEGER NOT NULL, "
+        "FOREIGN KEY(event_id) REFERENCES f1424_commit_parent(id) "
+        "DEFERRABLE INITIALLY DEFERRED)"
+        )));
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER fail_calendar_import_at_commit "
+        "AFTER INSERT ON calendar_events "
+        "BEGIN "
+        "INSERT INTO f1424_deferred_child(event_id) VALUES (NEW.id); "
+        "END"
+        )));
+
+    ApplicationServicesCalendarEventImportSavePort port(services);
+    const auto saved = port.saveImportedEvents(validImportSaveRequest());
+
+    verifyFailure(saved, ErrorCode::Technical);
+    QVERIFY(
+        saved.error().message.find(
+            "Committing calendar event saves failed"
+            ) != std::string::npos
+        );
+
+    QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM calendar_events")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toLongLong(), qint64(0));
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM f1424_deferred_child"
+        )));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toLongLong(), qint64(0));
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT COALESCE((SELECT seq FROM sqlite_sequence "
+        "WHERE name='calendar_events'), 0)"
+        )));
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toLongLong(), qint64(0));
 }

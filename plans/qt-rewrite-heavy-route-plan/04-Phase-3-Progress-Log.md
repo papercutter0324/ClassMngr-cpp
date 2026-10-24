@@ -2817,6 +2817,21 @@ destruction. The initial test checked for the temporary artifact before
 destruction; that assertion was corrected to check afterward, and no
 production defect was found. The helper is registered in the source manifest;
 the application API is unchanged. No full-suite or Windows claim is made.
-F1424, Calendar Import transaction-start, commit, and error coverage, is current
-in Batch 9. Batch 10 discovery remains due when F1426 (candidate 8 of 9, the
-second-to-last) starts. Phase 3 remains In Progress.
+F1424, Calendar Import transaction-start, commit, and error coverage, was next
+in Batch 9; its acceptance is recorded below. Batch 10 discovery remains due
+when F1426 (candidate 8 of 9, the second-to-last) starts. Phase 3 remains In
+Progress.
+
+## F1424 — Calendar Import transaction-start, commit, and error coverage — 2026-10-24
+
+Accepted with focused macOS arm64/Qt 6.12.0 evidence:
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` CTest passed
+1/1; the verbose run passed 81 Qt cases with zero failed or skipped. A
+nested-transaction start failure was checked for zero calendar rows and the
+expected sequence both before and after outer rollback. A deferred-FK commit
+failure returned `Technical` and rolled back calendar/child rows and sequence.
+Existing mid-write small and 4097-event cases still passed. No production
+changes were made; no full-suite or Windows claim is made. F1425, the compact
+Schedule Import persistence snapshot and large 96-class query/result/lifetime
+evidence, is current in Batch 9. Batch 10 discovery remains due when F1426
+(candidate 8 of 9, the second-to-last) starts. Phase 3 remains In Progress.

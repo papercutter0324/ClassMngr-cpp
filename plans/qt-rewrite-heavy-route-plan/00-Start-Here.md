@@ -11,9 +11,9 @@
   index, and constraint contract tests are accepted; F1420's docs-only API
   inventory and F1421's populated-v6 SaveAs/export slice are
   accepted; F1422's locked/truncated-file preservation slice is accepted, and
-  F1423's interrupted-copy preservation slice is accepted, and F1424 is
-  current with three later candidates. Begin Batch 10 discovery when F1426
-  (candidate 8 of 9) starts.
+  F1423's interrupted-copy preservation slice and F1424's Calendar Import
+  transaction coverage are accepted; F1425 is current with two later
+  candidates. Begin Batch 10 discovery when F1426 (candidate 8 of 9) starts.
   The current details are in the
   [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
