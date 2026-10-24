@@ -217,6 +217,264 @@ RosterRepository::RosterRepository(
 {
 }
 
+Status RosterRepository::forEachClassAnalyticsRosterNameCell(
+    const int classId,
+    const std::function<void(const ClassAnalyticsRosterNamesMetadata&)>&
+        metadataConsumer,
+    const std::function<void(const ClassAnalyticsRosterNameCell&)>& cellConsumer
+    )
+{
+    ClassAnalyticsRosterNamesMetadata metadata;
+    QSqlQuery columnCountQuery(m_database);
+    columnCountQuery.setForwardOnly(true);
+    columnCountQuery.prepare(R"(
+        SELECT COUNT(*) AS column_count,
+               COUNT(CASE WHEN typeof(position)!='integer'
+                          THEN 1 END) AS invalid_position_count
+        FROM roster_columns
+        WHERE class_id=?
+    )");
+    columnCountQuery.addBindValue(classId);
+    auto executed = SqlQueryUtils::executePrepared(
+        columnCountQuery, QStringLiteral("Loading roster column count"),
+        QStringLiteral("class id %1").arg(classId));
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+    if (!columnCountQuery.next())
+    {
+        return std::unexpected(QStringLiteral(
+            "Roster column count could not be read."
+            ));
+    }
+    bool invalidPositionCountIsValid = false;
+    const qlonglong invalidPositionCount = columnCountQuery.value(
+        "invalid_position_count").toLongLong(
+            &invalidPositionCountIsValid);
+    if (!invalidPositionCountIsValid || invalidPositionCount != 0)
+    {
+        return std::unexpected(QStringLiteral(
+            "Roster columns contain an invalid position representation."
+            ));
+    }
+    if (columnCountQuery.value("column_count").toInt() <= 0)
+    {
+        metadataConsumer(metadata);
+        return {};
+    }
+
+    QSqlQuery rosterQuery(m_database);
+    rosterQuery.setForwardOnly(true);
+    rosterQuery.prepare(R"(
+        WITH requested(class_id) AS (VALUES (?)),
+        ranked_columns AS (
+            SELECT selected.name,
+                   (
+                       SELECT COUNT(*) - 1
+                       FROM roster_columns preceding
+                       WHERE preceding.class_id=selected.class_id
+                         AND (
+                             preceding.position < selected.position
+                             OR (preceding.position = selected.position
+                                 AND preceding.id <= selected.id)
+                         )
+                   ) AS column_index
+            FROM roster_columns selected
+            JOIN requested
+              ON requested.class_id=selected.class_id
+        ),
+        metadata AS (
+            SELECT COUNT(*) AS column_count,
+                   MIN(CASE WHEN name='English'
+                            THEN column_index END) AS english_column,
+                   MIN(CASE WHEN name='Korean'
+                            THEN column_index END) AS korean_column
+            FROM ranked_columns
+        ),
+        sizing AS (
+            SELECT MAX(data.row_index) AS maximum_row,
+                   COUNT(CASE
+                       WHEN (data.col_index=metadata.english_column
+                             OR data.col_index=metadata.korean_column)
+                        AND (data.row_index IS NULL
+                             OR data.row_index<0
+                             OR typeof(data.row_index)!='integer')
+                       THEN 1
+                   END) AS invalid_name_row_indexes,
+                   COUNT(CASE
+                       WHEN typeof(data.col_index)!='integer'
+                        AND data.col_index>=0
+                        AND data.col_index<metadata.column_count
+                       THEN 1
+                   END) AS invalid_name_column_indexes
+            FROM roster_data data
+            JOIN requested
+              ON requested.class_id=data.class_id
+            CROSS JOIN metadata
+            WHERE data.col_index>=0
+              AND data.col_index<metadata.column_count
+        )
+        SELECT metadata.english_column,
+               metadata.korean_column,
+               sizing.maximum_row,
+               sizing.invalid_name_row_indexes,
+               sizing.invalid_name_column_indexes,
+               names.row_index,
+               names.col_index,
+               names.value
+        FROM metadata
+        CROSS JOIN sizing
+        LEFT JOIN roster_data names
+          ON names.class_id=(SELECT class_id FROM requested)
+         AND names.row_index<=sizing.maximum_row
+         AND (names.col_index=metadata.english_column
+              OR names.col_index=metadata.korean_column)
+        ORDER BY names.row_index, names.col_index
+    )");
+    rosterQuery.addBindValue(classId);
+    executed = SqlQueryUtils::executePrepared(
+        rosterQuery, QStringLiteral("Loading roster names"),
+        QStringLiteral("class id %1").arg(classId));
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+    if (!rosterQuery.next())
+    {
+        return std::unexpected(QStringLiteral(
+            "Roster names could not be read."
+            ));
+    }
+
+    bool invalidNameRowIndexesIsValid = false;
+    const qlonglong invalidNameRowIndexes = rosterQuery.value(
+        "invalid_name_row_indexes").toLongLong(
+            &invalidNameRowIndexesIsValid);
+    if (!invalidNameRowIndexesIsValid || invalidNameRowIndexes != 0)
+    {
+        return std::unexpected(QStringLiteral(
+            "Roster data contains a row index outside the Class Analytics range."
+            ));
+    }
+
+    bool invalidNameColumnIndexesIsValid = false;
+    const qlonglong invalidNameColumnIndexes = rosterQuery.value(
+        "invalid_name_column_indexes").toLongLong(
+            &invalidNameColumnIndexesIsValid);
+    if (!invalidNameColumnIndexesIsValid
+        || invalidNameColumnIndexes != 0)
+    {
+        return std::unexpected(QStringLiteral(
+            "Roster data contains a non-integer column index."
+            ));
+    }
+
+    const QVariant englishColumnValue =
+        rosterQuery.value("english_column");
+    const QVariant koreanColumnValue =
+        rosterQuery.value("korean_column");
+    const int englishColumn = englishColumnValue.isNull()
+        ? -1
+        : englishColumnValue.toInt();
+    const int koreanColumn = koreanColumnValue.isNull()
+        ? -1
+        : koreanColumnValue.toInt();
+    metadata.hasEnglishColumn = englishColumn >= 0;
+    metadata.hasKoreanColumn = koreanColumn >= 0;
+
+    const auto checkedRowIndex = [](const QVariant& value)
+        -> std::optional<qlonglong>
+    {
+        bool rowIndexIsValid = false;
+        const qlonglong rowIndex = value.toLongLong(
+            &rowIndexIsValid);
+        if (!rowIndexIsValid) return std::nullopt;
+
+        // QVariant can truncate floating point values when converting
+        // them to integers. Require the numeric value to be integral.
+        bool numericValueIsValid = false;
+        const double numericValue = value.toDouble(
+            &numericValueIsValid);
+        if (!numericValueIsValid
+            || numericValue != static_cast<double>(rowIndex))
+        {
+            return std::nullopt;
+        }
+        return rowIndex;
+    };
+
+    const QVariant maximumRow = rosterQuery.value("maximum_row");
+    if (!maximumRow.isNull())
+    {
+        const std::optional<qlonglong> maximumRowIndex =
+            checkedRowIndex(maximumRow);
+        if (!maximumRowIndex
+            || *maximumRowIndex < 0
+            || *maximumRowIndex
+                >= std::numeric_limits<int>::max()
+            || static_cast<unsigned long long>(*maximumRowIndex)
+                >= static_cast<unsigned long long>(
+                    std::numeric_limits<std::size_t>::max()))
+        {
+            return std::unexpected(QStringLiteral(
+                "Roster data contains a row index outside the Class Analytics range."
+                ));
+        }
+        metadata.rowCount =
+            static_cast<std::size_t>(*maximumRowIndex) + 1;
+    }
+    const std::size_t rosterRowCount = metadata.rowCount;
+    metadataConsumer(metadata);
+    if (rosterRowCount == 0
+        || (!metadata.hasEnglishColumn && !metadata.hasKoreanColumn))
+    {
+        return {};
+    }
+
+    do
+    {
+        const QVariant rowIndexValue =
+            rosterQuery.value("row_index");
+        if (!rowIndexValue.isNull())
+        {
+            const std::optional<qlonglong> rowIndex =
+                checkedRowIndex(rowIndexValue);
+            if (!rowIndex
+                || *rowIndex < 0
+                || static_cast<unsigned long long>(*rowIndex)
+                    >= static_cast<unsigned long long>(
+                        rosterRowCount))
+            {
+                return std::unexpected(QStringLiteral(
+                    "Roster data contains a row index outside the Class Analytics range."
+                    ));
+            }
+
+            const int column = rosterQuery.value("col_index").toInt();
+            const std::size_t row =
+                static_cast<std::size_t>(*rowIndex);
+            const QString value = rosterQuery.value("value").toString();
+            if (column == englishColumn)
+            {
+                cellConsumer({.rowIndex = row, .isEnglishName = true,
+                              .value = value});
+            }
+            if (column == koreanColumn)
+            {
+                cellConsumer({.rowIndex = row, .isEnglishName = false,
+                              .value = value});
+            }
+        }
+    }
+    while (rosterQuery.next());
+    if (rosterQuery.lastError().isValid())
+    {
+        return std::unexpected(rosterQuery.lastError().text());
+    }
+    return {};
+}
+
 Status RosterRepository::saveRoster(
     int classId,
     const Roster& roster

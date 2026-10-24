@@ -8,7 +8,10 @@
 #include <QString>
 #include <QStringList>
 
+#include <array>
+#include <cstddef>
 #include <expected>
+#include <functional>
 
 struct SpeakingEvalNamedRows
 {
@@ -48,6 +51,14 @@ public:
     using ReadResult = std::expected<SpeakingEvalRows, ReadFailure>;
     using BatchReadResult =
         std::expected<QList<SpeakingEvalNamedRows>, ReadFailure>;
+
+    struct ClassAnalyticsEvaluationRow final
+    {
+        std::size_t evaluationIndex = 0;
+        QString englishName;
+        QString koreanName;
+        std::array<QString, 6> scores;
+    };
 
     explicit SpeakingEvalRepository(
         QSqlDatabase& database
@@ -91,6 +102,15 @@ public:
     [[nodiscard]] BatchReadResult loadSpeakingEvalBatchDetailed(
         int classId,
         const QStringList& evaluationNames
+        );
+
+    // Streams the eight dashboard cells in request order, then persisted row
+    // order, without materializing sparse gaps or requiring a parent class.
+    // Consumer exceptions propagate to the caller.
+    [[nodiscard]] Status forEachClassAnalyticsEvaluationRow(
+        int classId,
+        const std::array<QString, 4>& evaluationNames,
+        const std::function<void(const ClassAnalyticsEvaluationRow&)>& consumer
         );
 
     [[nodiscard]] Result<QList<SpeakingEvalScore>> buildRosterScoreImport(

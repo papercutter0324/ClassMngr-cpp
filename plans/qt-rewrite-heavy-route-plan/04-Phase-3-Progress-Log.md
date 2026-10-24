@@ -727,3 +727,40 @@ not injected; source review confirmed the adapter returns failure instead of
 exposing locally accumulated keys. An initial sandboxed import-parity run
 could not bind the loopback fixture; the complete five-test serial run passed
 with local socket access. No full suite or cross-platform build ran.
+
+## F1347 — Class Analytics dashboard persistence boundary — 2026-10-23
+
+Both raw SQL reads moved from the Platform port into repository-owned
+visitors: `RosterRepository::forEachClassAnalyticsRosterNameCell()` and
+`SpeakingEvalRepository::forEachClassAnalyticsEvaluationRow()`. Their source-
+record types are data/repository-owned and do not depend on Next::Application.
+The Platform adapter uses `WorkspaceStore`, maps visitor rows into existing
+Application outputs, and contains no SQL, `QSqlQuery`, or `databaseSession()`.
+
+The roster projection preserves exact case-sensitive headers and first-match
+order, row count from all in-range columns, sparse rows, strict invalid-index
+checks including `>= INT_MAX`, exact diagnostics, and uncapped results. The
+evaluation projection selects columns 1–8 only, preserves Winter/Speech
+Contest/Summer/Fall bucket and row order, returns empty success for missing
+classes/evaluations, and adds no cap or row-index validation. Analytics
+behavior and UI remain unchanged.
+
+Tester migrated F1347 fixture DB access in
+`tests/next_platform_application_services_class_analytics_dashboard_read_port_tests.cpp`;
+existing assertions remain. Added unknown-positive-class empty-success
+checks for both reads, contiguous 4,097-row uncapped roster/evaluation checks,
+and exact malformed-position error coverage.
+
+Executor built `ClassMngr`; Tester built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`,
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`,
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests`,
+and `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`.
+The five focused CTests passed **5/5** serially. `git diff --check` passed.
+
+On 64-bit SQLite, tests cannot construct an index at or above `size_t` max;
+coverage checks `INT_MAX`, values above it, and fractional positions, with the
+explicit size_t guard source-reviewed. Valid sparse indices below `INT_MAX`
+can still cause large allocations, preserving existing behavior. No full
+suite or cross-platform build ran.

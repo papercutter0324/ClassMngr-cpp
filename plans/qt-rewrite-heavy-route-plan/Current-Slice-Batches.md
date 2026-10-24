@@ -9,11 +9,11 @@ record useful implementation and verification evidence in its progress log.
 ## Current state
 
 - Phase 3 is In Progress on the mandatory Heavy route.
-- Batch 2 is active and unpushed; F1346 (Calendar Import signature lookup)
-  is complete, and F1347 is current: Class Analytics dashboard persistence
-  boundary.
+- Batch 2 is active and unpushed; F1347 (Class Analytics dashboard
+  persistence boundary) is complete, and F1348 is current: Roster availability
+  batch read.
 
-## Phase 3 — Batch 2 (active; current: F1347)
+## Phase 3 — Batch 2 (active; current: F1348)
 
 1. F1338 — Sub Prep information-sheet print-source read
 2. F1339 — Sub Prep roster-output source read

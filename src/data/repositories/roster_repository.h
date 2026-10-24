@@ -138,6 +138,20 @@ public:
         bool parentMissing = false;
     };
 
+    struct ClassAnalyticsRosterNamesMetadata final
+    {
+        std::size_t rowCount = 0;
+        bool hasEnglishColumn = false;
+        bool hasKoreanColumn = false;
+    };
+
+    struct ClassAnalyticsRosterNameCell final
+    {
+        std::size_t rowIndex = 0;
+        bool isEnglishName = false;
+        QString value;
+    };
+
     struct SubPrepStudentCountBatchReadMetrics final
     {
         int callCount = 0;
@@ -190,6 +204,17 @@ public:
     // projection API and its requested-ID child-row behavior intact.
     [[nodiscard]] Result<SpeakingEvaluationRosterNamesReadOutcome>
     loadSpeakingEvaluationRosterNamesDetailed(int classId);
+
+    // Reports sparse row sizing once, then streams only the first exact
+    // English/Korean columns. Unrelated in-range columns still affect sizing.
+    // Consumer exceptions propagate to the caller.
+    [[nodiscard]] Status forEachClassAnalyticsRosterNameCell(
+        int classId,
+        const std::function<void(const ClassAnalyticsRosterNamesMetadata&)>&
+            metadataConsumer,
+        const std::function<void(const ClassAnalyticsRosterNameCell&)>&
+            cellConsumer
+        );
 
     [[nodiscard]] Result<QList<TemplatePrintReadRecord>>
     loadRostersForTemplatePrint(const QList<int>& classIds);

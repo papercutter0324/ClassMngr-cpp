@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "domain/models/roster.h"
 #include "next/application/class_analytics_dashboard_read_query.h"
 #include "next/platform/application_services_class_analytics_dashboard_read_port.h"
@@ -51,6 +51,8 @@ private slots:
     void rejectsInvalidRosterColumnPositionStorage();
     void rejectsRosterRowsOutsideClassAnalyticsIntegerRange();
     void missingEvaluationIsSuccessfulEmptyInput();
+    void unknownClassIsSuccessfulEmptyInput();
+    void rosterAndEvaluationRowsAreUncapped();
     void activeSessionQueryFailureIsStructured();
 };
 
@@ -114,7 +116,7 @@ readsOnlyRosterNamesAndExactEvaluationScoreProjection()
                 QStringLiteral("other-class-note"))
         }));
 
-    QSqlQuery setSecondWinterRow(services.databaseSession()->database());
+    QSqlQuery setSecondWinterRow(services.workspaceStore()->database());
     setSecondWinterRow.prepare(R"(
         UPDATE speaking_eval_data
         SET col_1=?, col_2=?, col_3=?, col_4=?, col_5=?, col_6=?, col_7=?, col_8=?
@@ -213,7 +215,7 @@ sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders()
         QStringLiteral("Absent analytics names"));
     QVERIFY(absentNamesClassId);
 
-    QSqlQuery insertColumn(services.databaseSession()->database());
+    QSqlQuery insertColumn(services.workspaceStore()->database());
     insertColumn.prepare(R"(
         INSERT INTO roster_columns (class_id, name, position, width)
         VALUES (?, ?, ?, 100)
@@ -234,7 +236,7 @@ sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders()
     QVERIFY(addColumn(*classId, QStringLiteral("english"), 4));
     QVERIFY(addColumn(*absentNamesClassId, QStringLiteral("Notes"), 0));
 
-    QSqlQuery insertCell(services.databaseSession()->database());
+    QSqlQuery insertCell(services.workspaceStore()->database());
     insertCell.prepare(R"(
         INSERT INTO roster_data (class_id, row_index, col_index, value)
         VALUES (?, ?, ?, ?)
@@ -308,7 +310,7 @@ rejectsFractionalRosterColumnWithoutInflatingAnalyticsRowCount()
         QStringLiteral("Fractional analytics column"));
     QVERIFY(classId);
 
-    QSqlQuery insertColumn(services.databaseSession()->database());
+    QSqlQuery insertColumn(services.workspaceStore()->database());
     insertColumn.prepare(R"(
         INSERT INTO roster_columns (class_id, name, position, width)
         VALUES (?, ?, ?, 100)
@@ -323,7 +325,7 @@ rejectsFractionalRosterColumnWithoutInflatingAnalyticsRowCount()
     QVERIFY(addColumn(QStringLiteral("Korean"), 1));
     QVERIFY(addColumn(QStringLiteral("Notes"), 2));
 
-    QSqlQuery insertCell(services.databaseSession()->database());
+    QSqlQuery insertCell(services.workspaceStore()->database());
     insertCell.prepare(R"(
         INSERT INTO roster_data (class_id, row_index, col_index, value)
         VALUES (?, ?, ?, ?)
@@ -346,7 +348,7 @@ rejectsFractionalRosterColumnWithoutInflatingAnalyticsRowCount()
                     QVariant::fromValue(0.25),
                     QStringLiteral("Fractional column cell")));
 
-    QSqlQuery fractionalStorage(services.databaseSession()->database());
+    QSqlQuery fractionalStorage(services.workspaceStore()->database());
     fractionalStorage.prepare(R"(
         SELECT typeof(col_index)
         FROM roster_data
@@ -369,7 +371,7 @@ rejectsFractionalRosterColumnWithoutInflatingAnalyticsRowCount()
             == "Roster data contains a non-integer column index.");
 
     QSqlQuery fractionalStorageAfterRead(
-        services.databaseSession()->database());
+        services.workspaceStore()->database());
     fractionalStorageAfterRead.prepare(R"(
         SELECT typeof(col_index)
         FROM roster_data
@@ -394,7 +396,7 @@ rejectsInvalidRosterColumnPositionStorage()
         QStringLiteral("Malformed analytics position"));
     QVERIFY(classId);
 
-    QSqlQuery insertColumn(services.databaseSession()->database());
+    QSqlQuery insertColumn(services.workspaceStore()->database());
     insertColumn.prepare(R"(
         INSERT INTO roster_columns (class_id, name, position, width)
         VALUES (?, ?, ?, 100)
@@ -409,7 +411,7 @@ rejectsInvalidRosterColumnPositionStorage()
     QVERIFY(addColumn(QStringLiteral("Korean"), 1));
     QVERIFY(addColumn(QStringLiteral("Notes"), 2));
 
-    QSqlQuery insertCell(services.databaseSession()->database());
+    QSqlQuery insertCell(services.workspaceStore()->database());
     insertCell.prepare(R"(
         INSERT INTO roster_data (class_id, row_index, col_index, value)
         VALUES (?, 0, ?, ?)
@@ -423,7 +425,7 @@ rejectsInvalidRosterColumnPositionStorage()
     QVERIFY(addCell(0, QStringLiteral("Distinct English name")));
     QVERIFY(addCell(1, QStringLiteral("Distinct Korean name")));
 
-    QSqlQuery makePositionMalformed(services.databaseSession()->database());
+    QSqlQuery makePositionMalformed(services.workspaceStore()->database());
     makePositionMalformed.prepare(R"(
         UPDATE roster_columns
         SET position=?
@@ -433,7 +435,7 @@ rejectsInvalidRosterColumnPositionStorage()
     makePositionMalformed.addBindValue(*classId);
     QVERIFY(makePositionMalformed.exec());
 
-    QSqlQuery positionType(services.databaseSession()->database());
+    QSqlQuery positionType(services.workspaceStore()->database());
     positionType.prepare(R"(
         SELECT typeof(position)
         FROM roster_columns
@@ -452,7 +454,8 @@ rejectsInvalidRosterColumnPositionStorage()
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
     QVERIFY(result.error().recoverable);
-    QVERIFY(!result.error().message.empty());
+    QVERIFY(result.error().message
+            == "Roster columns contain an invalid position representation.");
 }
 
 void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::
@@ -474,7 +477,7 @@ rejectsRosterRowsOutsideClassAnalyticsIntegerRange()
     QVERIFY(aboveIntMaxClassId);
     QVERIFY(fractionalClassId);
 
-    QSqlQuery insertColumn(services.databaseSession()->database());
+    QSqlQuery insertColumn(services.workspaceStore()->database());
     insertColumn.prepare(R"(
         INSERT INTO roster_columns (class_id, name, position, width)
         VALUES (?, 'English', 0, 100)
@@ -487,7 +490,7 @@ rejectsRosterRowsOutsideClassAnalyticsIntegerRange()
     QVERIFY(addEnglishColumn(*aboveIntMaxClassId));
     QVERIFY(addEnglishColumn(*fractionalClassId));
 
-    QSqlQuery insertName(services.databaseSession()->database());
+    QSqlQuery insertName(services.workspaceStore()->database());
     insertName.prepare(R"(
         INSERT INTO roster_data (class_id, row_index, col_index, value)
         VALUES (?, ?, 0, ?)
@@ -558,7 +561,7 @@ missingEvaluationIsSuccessfulEmptyInput()
         std::to_string(*classId));
     QVERIFY(typedClassId);
 
-    QSqlQuery insertEmptyEvaluation(services.databaseSession()->database());
+    QSqlQuery insertEmptyEvaluation(services.workspaceStore()->database());
     insertEmptyEvaluation.prepare(R"(
         INSERT INTO speaking_evaluations (class_id, evaluation_name)
         VALUES (?, ?)
@@ -574,6 +577,155 @@ missingEvaluationIsSuccessfulEmptyInput()
     QVERIFY(batch.value()[1].empty()); // Present Speech Contest, no data rows.
     QVERIFY(batch.value()[2].empty());
     QVERIFY(batch.value()[3].empty());
+}
+
+void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::
+unknownClassIsSuccessfulEmptyInput()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("class-analytics-unknown-class.db"))));
+
+    const auto unknownClassId = Domain::ClassId::fromString("2147483647");
+    QVERIFY(unknownClassId);
+    Platform::ApplicationServicesClassAnalyticsDashboardReadPort port(services);
+
+    const auto roster = port.readRosterNames(*unknownClassId);
+    QVERIFY(roster);
+    QVERIFY(!roster.value().hasEnglishColumn);
+    QVERIFY(!roster.value().hasKoreanColumn);
+    QCOMPARE(roster.value().rowCount.rawValue(), std::size_t{0});
+    QVERIFY(roster.value().englishNames.empty());
+    QVERIFY(roster.value().koreanNames.empty());
+
+    const auto evaluations = port.readEvaluationBatch(*unknownClassId);
+    QVERIFY(evaluations);
+    QCOMPARE(evaluations.value().size(), std::size_t{4});
+    for (const auto& bucket : evaluations.value())
+    {
+        QVERIFY(bucket.empty());
+    }
+}
+
+void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::
+rosterAndEvaluationRowsAreUncapped()
+{
+    constexpr int rowCount = 4'097;
+    constexpr int lastRow = rowCount - 1;
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("class-analytics-uncapped.db"))));
+    const auto classId = services.classService()->create(
+        QStringLiteral("Uncapped analytics"));
+    QVERIFY(classId);
+
+    QSqlQuery insertRosterColumn(services.workspaceStore()->database());
+    insertRosterColumn.prepare(R"(
+        INSERT INTO roster_columns (class_id, name, position, width)
+        VALUES (?, ?, ?, 100)
+    )");
+    const auto addRosterColumn = [&](const QString& name, const int position) {
+        insertRosterColumn.bindValue(0, *classId);
+        insertRosterColumn.bindValue(1, name);
+        insertRosterColumn.bindValue(2, position);
+        return insertRosterColumn.exec();
+    };
+    QVERIFY(addRosterColumn(QStringLiteral("English"), 0));
+    QVERIFY(addRosterColumn(QStringLiteral("Korean"), 1));
+    QVERIFY(addRosterColumn(QStringLiteral("Notes"), 2));
+
+    QSqlQuery insertUnrelatedRosterCells(services.workspaceStore()->database());
+    insertUnrelatedRosterCells.prepare(QStringLiteral(R"(
+        WITH RECURSIVE row_numbers(row_index) AS (
+            VALUES (0)
+            UNION ALL
+            SELECT row_index + 1 FROM row_numbers WHERE row_index < 4096
+        )
+        INSERT INTO roster_data (class_id, row_index, col_index, value)
+        SELECT ?, row_index, 2, 'note' FROM row_numbers
+    )"));
+    insertUnrelatedRosterCells.addBindValue(*classId);
+    QVERIFY(insertUnrelatedRosterCells.exec());
+    QSqlQuery insertRosterNames(services.workspaceStore()->database());
+    insertRosterNames.prepare(R"(
+        INSERT INTO roster_data (class_id, row_index, col_index, value)
+        VALUES (?, ?, 0, ?)
+    )");
+    insertRosterNames.addBindValue(*classId);
+    insertRosterNames.addBindValue(0);
+    insertRosterNames.addBindValue(QStringLiteral("First student"));
+    QVERIFY(insertRosterNames.exec());
+    insertRosterNames.bindValue(0, *classId);
+    insertRosterNames.bindValue(1, lastRow);
+    insertRosterNames.bindValue(2, QStringLiteral("Last student"));
+    QVERIFY(insertRosterNames.exec());
+
+    QSqlQuery insertEvaluation(services.workspaceStore()->database());
+    insertEvaluation.prepare(R"(
+        INSERT INTO speaking_evaluations (class_id, evaluation_name)
+        VALUES (?, 'Winter')
+    )");
+    insertEvaluation.addBindValue(*classId);
+    QVERIFY(insertEvaluation.exec());
+    bool evaluationIdIsValid = false;
+    const qlonglong evaluationId = insertEvaluation.lastInsertId().toLongLong(
+        &evaluationIdIsValid);
+    QVERIFY(evaluationIdIsValid);
+    QVERIFY(evaluationId > 0);
+
+    QSqlQuery insertEvaluationRows(services.workspaceStore()->database());
+    insertEvaluationRows.prepare(QStringLiteral(R"(
+        WITH RECURSIVE row_numbers(row_index) AS (
+            VALUES (0)
+            UNION ALL
+            SELECT row_index + 1 FROM row_numbers WHERE row_index < 4096
+        )
+        INSERT INTO speaking_eval_data (
+            evaluation_id, row_index, col_1, col_2,
+            col_3, col_4, col_5, col_6, col_7, col_8
+        )
+        SELECT ?, row_index, 'Student ' || printf('%04d', row_index),
+               'Korean', 'A', 'B', 'C', 'A+', 'B+', 'C+'
+        FROM row_numbers
+    )"));
+    insertEvaluationRows.addBindValue(evaluationId);
+    QVERIFY(insertEvaluationRows.exec());
+
+    const auto typedClassId = Domain::ClassId::fromString(
+        std::to_string(*classId));
+    QVERIFY(typedClassId);
+    Platform::ApplicationServicesClassAnalyticsDashboardReadPort port(services);
+
+    const auto roster = port.readRosterNames(*typedClassId);
+    QVERIFY(roster);
+    QCOMPARE(roster.value().rowCount.rawValue(), std::size_t{rowCount});
+    QCOMPARE(roster.value().englishNames.size(), std::size_t{rowCount});
+    QCOMPARE(roster.value().koreanNames.size(), std::size_t{rowCount});
+    QVERIFY(roster.value().englishNames.front() == u"First student");
+    QVERIFY(roster.value().englishNames[1].empty());
+    QVERIFY(roster.value().englishNames.back() == u"Last student");
+    QVERIFY(roster.value().koreanNames.back().empty());
+
+    const auto evaluations = port.readEvaluationBatch(*typedClassId);
+    QVERIFY(evaluations);
+    QCOMPARE(evaluations.value()[0].size(), std::size_t{rowCount});
+    QVERIFY(evaluations.value()[0].front().englishName == u"Student 0000");
+    QVERIFY(evaluations.value()[0].front().koreanName == u"Korean");
+    QVERIFY((evaluations.value()[0].front().scores
+             == std::array<std::u16string, 6>{
+                 u"A", u"B", u"C", u"A+", u"B+", u"C+"
+             }));
+    QVERIFY(evaluations.value()[0].back().englishName == u"Student 4096");
+    QVERIFY(evaluations.value()[0].back().scores[5] == u"C+");
+    for (std::size_t index = 1; index < evaluations.value().size(); ++index)
+    {
+        QVERIFY(evaluations.value()[index].empty());
+    }
 }
 
 void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::
@@ -598,11 +750,11 @@ activeSessionQueryFailureIsStructured()
         std::to_string(*classId));
     QVERIFY(typedClassId);
 
-    QSqlQuery dropRosterData(services.databaseSession()->database());
+    QSqlQuery dropRosterData(services.workspaceStore()->database());
     QVERIFY(dropRosterData.exec(QStringLiteral("DROP TABLE roster_data")));
     Platform::ApplicationServicesClassAnalyticsDashboardReadPort port(services);
 
-    QSqlQuery removeRosterColumns(services.databaseSession()->database());
+    QSqlQuery removeRosterColumns(services.workspaceStore()->database());
     removeRosterColumns.prepare(
         QStringLiteral("DELETE FROM roster_columns WHERE class_id=?"));
     removeRosterColumns.addBindValue(*classId);
@@ -611,7 +763,7 @@ activeSessionQueryFailureIsStructured()
     QVERIFY(emptyRoster);
     QCOMPARE(emptyRoster.value().rowCount.rawValue(), std::size_t{0});
 
-    QSqlQuery insertRosterColumn(services.databaseSession()->database());
+    QSqlQuery insertRosterColumn(services.workspaceStore()->database());
     insertRosterColumn.prepare(R"(
         INSERT INTO roster_columns (class_id, name, position, width)
         VALUES (?, 'English', 0, 100)
@@ -623,7 +775,7 @@ activeSessionQueryFailureIsStructured()
     QCOMPARE(rosterFailure.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!rosterFailure.error().message.empty());
 
-    QSqlQuery drop(services.databaseSession()->database());
+    QSqlQuery drop(services.workspaceStore()->database());
     QVERIFY(drop.exec(QStringLiteral("DROP TABLE speaking_eval_data")));
     const auto failed = port.readEvaluationBatch(*typedClassId);
     QVERIFY(!failed);

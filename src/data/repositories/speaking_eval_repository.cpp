@@ -25,6 +25,103 @@ SpeakingEvalRepository::SpeakingEvalRepository(
 {
 }
 
+Status SpeakingEvalRepository::forEachClassAnalyticsEvaluationRow(
+    const int classId,
+    const std::array<QString, 4>& evaluationNames,
+    const std::function<void(const ClassAnalyticsEvaluationRow&)>& consumer
+    )
+{
+    QSqlQuery rowsQuery(m_database);
+    rowsQuery.setForwardOnly(true);
+    rowsQuery.prepare(R"(
+        WITH requested(evaluation_name, request_order) AS (
+            VALUES (?, 0), (?, 1), (?, 2), (?, 3)
+        )
+        SELECT requested.request_order AS request_order,
+               data.evaluation_id AS data_evaluation_id,
+               data.col_1 AS col_1,
+               data.col_2 AS col_2,
+               data.col_3 AS col_3,
+               data.col_4 AS col_4,
+               data.col_5 AS col_5,
+               data.col_6 AS col_6,
+               data.col_7 AS col_7,
+               data.col_8 AS col_8
+        FROM requested
+        LEFT JOIN speaking_evaluations evaluation
+            ON evaluation.class_id=?
+           AND evaluation.evaluation_name=requested.evaluation_name
+        LEFT JOIN speaking_eval_data data
+            ON data.evaluation_id=evaluation.id
+        ORDER BY requested.request_order, data.row_index
+    )");
+    for (const QString& name : evaluationNames)
+    {
+        rowsQuery.addBindValue(name);
+    }
+    rowsQuery.addBindValue(classId);
+    const auto executed = SqlQueryUtils::executePrepared(
+        rowsQuery,
+        QStringLiteral("Loading Class Analytics evaluations"),
+        QStringLiteral("class id %1").arg(classId));
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    std::array<bool, 4> seenRequests{};
+    while (rowsQuery.next())
+    {
+        bool requestOrderIsValid = false;
+        const int requestOrder = rowsQuery.value("request_order")
+            .toInt(&requestOrderIsValid);
+        if (!requestOrderIsValid
+            || requestOrder < 0
+            || requestOrder >= static_cast<int>(evaluationNames.size()))
+        {
+            return std::unexpected(QStringLiteral(
+                "Class Analytics returned an invalid evaluation order."
+                ));
+        }
+        seenRequests[static_cast<std::size_t>(requestOrder)] = true;
+
+        // LEFT JOIN contributes one placeholder row for a missing
+        // evaluation or an evaluation with no stored score rows.
+        if (rowsQuery.value("data_evaluation_id").isNull())
+        {
+            continue;
+        }
+
+        ClassAnalyticsEvaluationRow row;
+        row.evaluationIndex = static_cast<std::size_t>(requestOrder);
+        row.englishName = rowsQuery.value("col_1")
+            .toString();
+        row.koreanName = rowsQuery.value("col_2")
+            .toString();
+        for (std::size_t score = 0; score < row.scores.size(); ++score)
+        {
+            row.scores[score] = rowsQuery.value(
+                QStringLiteral("col_%1").arg(score + 3))
+                .toString();
+        }
+        consumer(row);
+    }
+    if (rowsQuery.lastError().isValid())
+    {
+        return std::unexpected(rowsQuery.lastError().text());
+    }
+    for (const bool seen : seenRequests)
+    {
+        if (!seen)
+        {
+            return std::unexpected(QStringLiteral(
+                "Class Analytics returned an incomplete evaluation batch."
+                ));
+        }
+    }
+    return {};
+}
+
 Status SpeakingEvalRepository::saveSpeakingEval(
     int classId,
     const QString& evaluationName,
