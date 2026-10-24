@@ -894,3 +894,22 @@ and Application tests passed. Schedule parity failed: six database-backed
 cases stopped at `LayoutClearFixture::databaseReady`, before the clear action.
 No baseline run was performed, so attribution is unresolved. `git diff --check`
 passed. No full suite or cross-platform build ran.
+
+## F1355 — Schedule Editor selected-class information read — 2026-10-23
+
+The selected-class information port in
+`src/next/platform/application_services_schedule_editor_class_info_read_port.h`
+and its dedicated fixture in
+`tests/next_platform_application_services_schedule_editor_class_info_read_port_tests.cpp`
+now use `WorkspaceStore` for availability and repository access. Canonical ID
+validation still precedes owner access; the detailed repository projection,
+all projected fields, and error behavior remain unchanged. A missing class
+still returns `NotFound`, while absent metadata and a dangling teacher retain
+successful defaults.
+
+The executor incrementally built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests`,
+`ClassMngrNextApplicationScheduleEditorClassInfoQueryTests`, and
+`ClassMngrNextScheduleEditorDialogSaveTests` in the existing
+`build/macos-clang-debug` tree. The three focused CTests passed serially, and
+`git diff --check` passed. No full suite or cross-platform build ran.

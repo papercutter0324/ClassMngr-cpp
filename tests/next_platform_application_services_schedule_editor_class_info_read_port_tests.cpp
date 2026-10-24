@@ -1,7 +1,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
 #include "data/repositories/class_info_repository.h"
+#include "data/database/workspace_store.h"
 #include "next/application/schedule_editor_class_info_query.h"
 #include "next/platform/application_services_schedule_editor_class_info_read_port.h"
 
@@ -125,12 +125,12 @@ mapsOnlyMissingClassParentsToNotFoundAndPreservesLegacyDefaults()
     QVERIFY(!unknown);
     QCOMPARE(unknown.error().code, Domain::ErrorCode::NotFound);
     QVERIFY(unknown.error().recoverable);
-    const auto& afterUnknown = services.databaseSession()
+    const auto& afterUnknown = services.workspaceStore()
         ->classInfoRepository()->scheduleEditorClassInfoReadMetrics();
     QCOMPARE(afterUnknown.callCount, 1);
     QCOMPARE(afterUnknown.statementCount, 1);
 
-    const auto legacyUnknown = services.databaseSession()
+    const auto legacyUnknown = services.workspaceStore()
         ->classInfoRepository()->loadScheduleEditorClassInfoRecord(
             unknownClassId
             );
@@ -151,7 +151,7 @@ mapsOnlyMissingClassParentsToNotFoundAndPreservesLegacyDefaults()
     QVERIFY(createdClass);
     QVERIFY(services.classService()->remove(*createdClass));
 
-    QSqlQuery verifyDeleted(services.databaseSession()->database());
+    QSqlQuery verifyDeleted(services.workspaceStore()->database());
     verifyDeleted.prepare(QStringLiteral(
         "SELECT 1 FROM classes WHERE id = ?"
         ));
@@ -163,7 +163,7 @@ mapsOnlyMissingClassParentsToNotFoundAndPreservesLegacyDefaults()
     QVERIFY(!deleted);
     QCOMPARE(deleted.error().code, Domain::ErrorCode::NotFound);
     QVERIFY(deleted.error().recoverable);
-    const auto& afterDeleted = services.databaseSession()
+    const auto& afterDeleted = services.workspaceStore()
         ->classInfoRepository()->scheduleEditorClassInfoReadMetrics();
     QCOMPARE(afterDeleted.callCount, 3);
     QCOMPARE(afterDeleted.statementCount, 3);
@@ -186,7 +186,7 @@ rejectsNonCanonicalClassIdsBeforeRepositoryRead()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
-    const auto& metrics = services.databaseSession()->classInfoRepository()
+    const auto& metrics = services.workspaceStore()->classInfoRepository()
         ->scheduleEditorClassInfoReadMetrics();
     QCOMPARE(metrics.callCount, 0);
     QCOMPARE(metrics.statementCount, 0);
@@ -203,7 +203,7 @@ readsEveryFieldFromTheActiveSessionRepository()
     const int id = createClassWithCompleteDetails(services, failureStep);
     QVERIFY2(id > 0, qPrintable(failureStep));
 
-    DatabaseSession* const session = services.databaseSession();
+    WorkspaceStore* const session = services.workspaceStore();
     QVERIFY(session);
     QVERIFY(session->isOpen());
     Platform::ApplicationServicesScheduleEditorClassInfoReadPort port(
@@ -242,7 +242,7 @@ readsDefaultsWithoutMetadataAndBlanksForDanglingTeacher()
         );
     QVERIFY(createdClass);
 
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QSqlQuery query(database);
     query.prepare(QStringLiteral(
         "DELETE FROM class_info WHERE class_id = ?"
@@ -306,7 +306,7 @@ readsDefaultsWithoutMetadataAndBlanksForDanglingTeacher()
     };
     QVERIFY(danglingTeacher.value() == expectedDangling);
 
-    const auto& metrics = services.databaseSession()->classInfoRepository()
+    const auto& metrics = services.workspaceStore()->classInfoRepository()
         ->scheduleEditorClassInfoReadMetrics();
     QCOMPARE(metrics.callCount, 2);
     QCOMPARE(metrics.statementCount, 2);
@@ -324,8 +324,8 @@ nullMissingAndClosedSessionsDoNotUseServiceFallback()
 
     ApplicationServices unopenedServices;
     QVERIFY(unopenedServices.dataService());
-    DatabaseSession* const unopenedSession =
-        unopenedServices.databaseSession();
+    WorkspaceStore* const unopenedSession =
+        unopenedServices.workspaceStore();
     QVERIFY(!unopenedSession || !unopenedSession->isOpen());
     Platform::ApplicationServicesScheduleEditorClassInfoReadPort unopenedPort(
         &unopenedServices
@@ -336,7 +336,7 @@ nullMissingAndClosedSessionsDoNotUseServiceFallback()
     QVERIFY(directory.isValid());
     ApplicationServices closedServices;
     QVERIFY(closedServices.openDatabase(databasePath(directory)));
-    DatabaseSession* const closedSession = closedServices.databaseSession();
+    WorkspaceStore* const closedSession = closedServices.workspaceStore();
     QVERIFY(closedSession);
     QVERIFY(closedSession->isOpen());
     closedServices.closeDatabase();
@@ -359,7 +359,7 @@ forwardsRepositoryReadFailure()
     const int id = createClassWithCompleteDetails(services, failureStep);
     QVERIFY2(id > 0, qPrintable(failureStep));
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE class_info")),
         qPrintable(query.lastError().text()));
 
