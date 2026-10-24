@@ -11,8 +11,9 @@
   `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`. Batch 3 (F1358–F1377) is
   complete and pushed to `origin/Qt-Rewrite` at
   `018b30b04ab713769f9e69b440ba7223310a2b87`. Batch 4 discovery is complete
-  and Batch 4 is active: F1378 (My Classes teacher-profile batch read) is
-  accepted; F1379 (My Classes teacher-display-name batch read) is current.
+  and Batch 4 is active: F1378 (My Classes teacher-profile batch read) and
+  F1379 (My Classes teacher-display-name batch read) are accepted; F1380
+  (Roster snapshot read) is current.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI
   limitations, baseline failures, attribution, and coverage notes remain in
   the Phase 3 progress log. The [Phase 3

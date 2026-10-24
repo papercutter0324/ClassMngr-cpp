@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/teacher.h"
 #include "next/platform/application_services_teacher_display_name_batch_read_port.h"
@@ -44,7 +44,7 @@ Domain::TeacherId teacherId(const int value)
 
 int createTeacher(ApplicationServices& services, const QString& displayName)
 {
-    const auto result = services.databaseSession()
+    const auto result = services.workspaceStore()
         ->teacherRepository()->createTeacher(teacherFixture(displayName));
     return result.value_or(-1);
 }
@@ -99,7 +99,7 @@ mapsPartialRowsByIdentityAndUsesOneStatement()
     QVERIFY(secondId > firstId);
 
     TeacherRepository* const repository =
-        services.databaseSession()->teacherRepository();
+        services.workspaceStore()->teacherRepository();
     QVERIFY(repository);
     const TeacherDisplayNameBatchReadMetrics before =
         repository->teacherDisplayNameBatchReadMetrics();
@@ -155,7 +155,7 @@ reportsRepositoryFailure()
     Platform::ApplicationServicesTeacherDisplayNameBatchReadPort port(
         &services
         );
-    QSqlQuery dropTeachers(services.databaseSession()->database());
+    QSqlQuery dropTeachers(services.workspaceStore()->database());
     QVERIFY2(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")),
         qPrintable(dropTeachers.lastError().text()));
 

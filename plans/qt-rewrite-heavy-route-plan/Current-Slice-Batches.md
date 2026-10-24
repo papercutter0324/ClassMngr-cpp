@@ -11,10 +11,10 @@ record useful implementation and verification evidence in its progress log.
 - Phase 3 is In Progress on the mandatory Heavy route.
 - Batch 3 (F1358–F1377) is complete and pushed to `origin/Qt-Rewrite` at
   `018b30b04ab713769f9e69b440ba7223310a2b87`.
-- Batch 4 discovery is complete; Batch 4 is active with F1379 — My Classes
-  teacher-display-name batch read current.
+- Batch 4 discovery is complete; Batch 4 is active with F1380 — Roster
+  snapshot read current.
 
-## Phase 3 — Batch 4 (active; F1379 current)
+## Phase 3 — Batch 4 (active; F1380 current)
 
 Batch 4 discovery began when F1376 started (candidate 19 of 20 in Batch 3) and
 is complete. Two complementary scans found more than 20 possible active
@@ -24,7 +24,7 @@ feature-flow scan cross-checked user-facing workflows. This is the
 priority-ordered shortlist, not an exhaustive inventory.
 
 1. F1378 — My Classes teacher-profile batch read (accepted)
-2. F1379 — My Classes teacher-display-name batch read (current)
+2. F1379 — My Classes teacher-display-name batch read (accepted)
 3. F1380 — Roster snapshot read
 4. F1381 — Roster column-name batch read
 5. F1382 — Roster template-print source read

@@ -70,10 +70,10 @@ returnsPartialRowsInRequestedOrder()
 {
     RecordingReadPort port;
     const std::vector<Domain::TeacherId> requested{
-        teacherId("4"), teacherId("2"), teacherId("3")
+        teacherId("4"), teacherId("2"), teacherId("2147483648")
     };
     const std::vector<TeacherDisplayNameBatchReadSnapshot> expected{
-        snapshot("4", u"Fourth"), snapshot("3", u"Third")
+        snapshot("4", u"Fourth"), snapshot("2147483648", u"Third")
     };
     port.result = TeacherDisplayNameBatchReadResult::success(expected);
     const TeacherDisplayNameBatchReadQuery query(port);
@@ -98,7 +98,7 @@ rejectsInvalidAndDuplicateInputBeforeCallingPort()
 
     for (const std::string& invalid : {
              std::string("0"), std::string("01"), std::string("-1"),
-             std::string("42x"), std::string("2147483648")})
+             std::string("42x"), std::string("9223372036854775808")})
     {
         const auto result = query.execute({teacherId(invalid)});
         QVERIFY(!result);

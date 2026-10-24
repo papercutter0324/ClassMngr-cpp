@@ -1597,3 +1597,24 @@ use `DatabaseSession`; registrations are not test results, and no tests were
 run for these candidates. The remaining Batch 5 candidate families and
 direct-session-check follow-ups remain in the tracker. No product code changed
 in this audit.
+
+## F1379 — My Classes teacher-display-name batch read (Batch 4 candidate 2 of 20) — 2026-10-24
+
+The only production change moved
+`src/next/platform/application_services_teacher_display_name_batch_read_port.h`
+to `WorkspaceStore`; the direct three-slot fixture in
+`tests/next_platform_application_services_teacher_display_name_batch_read_port_tests.cpp`
+migrated as well. In
+`tests/next_application_teacher_display_name_batch_read_query_tests.cpp`, the
+wide success request changes from `3` to `2147483648` and the invalid boundary
+from `2147483648` to `9223372036854775808`, preserving the signed 64-bit
+contract. Repository query/order, partial rows, error mappings, and page call
+order are unchanged.
+
+Built the query, Platform port, My Classes page, and teacher-display parity
+targets. Four selected serial CTests passed (4/4):
+`NextApplicationTeacherDisplayNameBatchReadQuery`,
+`NextPlatformApplicationServicesTeacherDisplayNameBatchReadPort`,
+`MyClassesPage`, and `MyClassesPageTeacherDisplayParity`.
+`git diff --check` passed. No full suite or cross-platform build ran. F1379 is
+accepted; F1380 (Roster snapshot read) is current.
