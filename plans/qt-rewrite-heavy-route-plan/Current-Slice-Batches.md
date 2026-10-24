@@ -17,12 +17,12 @@ verification evidence in its progress log.
   began.
 - Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`; its
   implementation tip is `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`.
-- Batch 5 discovery is complete and Batch 5 is active with F1413 — Teacher
-  delete current. F1412 — Teacher create is accepted at
-  `318affc4a7f651e29ae7b7b909588739891476cd`; 4 prioritized candidates
+- Batch 5 discovery is complete and Batch 5 is active with F1414 — Teacher
+  Import latest-source-date read current. F1413 — Teacher delete is accepted
+  at `6f0fa59fae98b51f59b4cd27a99452f3830c94f1`; 3 prioritized candidates
   remain. Batch 5 remains unpushed until its remaining slices are complete.
 
-## Phase 3 — Batch 5 (active; F1413 current)
+## Phase 3 — Batch 5 (active; F1414 current)
 
 Two complementary scans found 19 prioritized, distinct persistence slices.
 The source scan found exactly 19 active Next Platform ports after excluding
@@ -47,9 +47,9 @@ scan-identified item is a candidate, not a test result.
 13. F1410 — Custom color palette preferences (accepted)
 14. F1411 — Initial Setup teacher choices read (accepted)
 15. F1412 — Teacher create (accepted; Initial Setup parity test aborted)
-16. F1413 — Teacher delete (current)
-17. F1414 — Teacher Import latest-source-date read (F1349 apply already
-    done)
+16. F1413 — Teacher delete (accepted)
+17. F1414 — Teacher Import latest-source-date read (F1349 apply already done;
+    current)
 18. F1415 — Schedule Import current-state snapshot
 19. F1416 — Schedule Import apply
 

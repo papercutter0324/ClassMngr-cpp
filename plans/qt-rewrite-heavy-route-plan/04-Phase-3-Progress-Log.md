@@ -2550,3 +2550,28 @@ test limitation; F1413 (Teacher delete) is current. Batch 5 remains unpushed
 until its remaining slices are complete.
 
 Commit: `318affc4a7f651e29ae7b7b909588739891476cd`.
+
+## F1413 — Teacher delete (Batch 5 candidate 16 of 19) — 2026-10-24
+
+Only the `ApplicationServicesTeacherDeletePort` header, its direct Platform
+fixture, and the Sidebar delete parity fixture moved to `WorkspaceStore`.
+Canonical positive `qint64` IDs, dynamic store lookup, request/error
+handling, and `TeacherRepository::deleteTeacher(qint64)` remain unchanged.
+The repository transaction clears assignments for the target teacher, then
+deletes that teacher; failures roll back, preserving classes, schedules, and
+sibling teachers. Deleting a nonexistent canonical positive ID remains a
+no-op success. F1411 teacher read and F1412 teacher create remain separate.
+
+Built `ClassMngrNextPlatformApplicationServicesTeacherDeletePortTests`,
+`ClassMngrNextApplicationTeacherDeleteUseCaseTests`, and
+`ClassMngrSidebarTeacherDeleteParityTests` incrementally without compiler
+warnings or errors. CTest #479, the Platform port, passed 6 QtTest cases;
+#459, the Application use case, passed 6; and #97, Sidebar parity, passed 5.
+Sidebar emitted one font-alias timing warning and three missing
+`:/assets/icons/keyboard_light.svg` resource warnings; they were non-fatal and
+no retries occurred. Broader suites and cross-platform builds did not run.
+`git diff --check` passed before commit. F1413 is accepted; F1414 (Teacher
+Import latest-source-date read) is current. Batch 5 remains unpushed until
+its remaining slices are complete.
+
+Commit: `6f0fa59fae98b51f59b4cd27a99452f3830c94f1`.
