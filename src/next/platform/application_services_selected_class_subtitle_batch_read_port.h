@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/application/selected_class_subtitle_batch_read_port.h"
@@ -60,9 +60,9 @@ public:
             legacyClassIds.append(*legacyClassId);
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return Application::SelectedClassSubtitleBatchReadResult::failure(
                 unavailableError()
@@ -70,7 +70,7 @@ public:
         }
 
         ClassInfoRepository* const classRepository =
-            session->classInfoRepository();
+            store->classInfoRepository();
         if (!classRepository)
         {
             return Application::SelectedClassSubtitleBatchReadResult::failure(
@@ -215,7 +215,7 @@ public:
         }
 
         TeacherRepository* const teacherRepository =
-            session->teacherRepository();
+            store->teacherRepository();
         if (!teacherRepository)
         {
             const Domain::OperationError teacherError = error(

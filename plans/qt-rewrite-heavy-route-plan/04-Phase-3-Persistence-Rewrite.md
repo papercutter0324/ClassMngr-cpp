@@ -45,8 +45,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F1361 (Class Co-Teacher page read), F1362 (Class Co-Teacher teacher
   choices read), F1363 (Class Co-Teacher assignment save), F1364 (Class
   Notes page read), F1365 (Class Notes save), F1366 (Selected-class grade
-  read), and F1367 (Selected-class subtitle read) are accepted; F1368
-  (Selected-class subtitle batch read) is current. F1358–F1367 implementation and
+  read), F1367 (Selected-class subtitle read), and F1368 (Selected-class
+  subtitle batch read) are accepted; F1369 (Classes navigation read) is
+  current. F1358–F1368 implementation and
   verification evidence, plus the Batch 2 push receipt, are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -66,17 +67,17 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1367 — 2026-10-24
+## Latest Progress Update — F1368 — 2026-10-24
 
-F1367 is accepted; F1368 is current. Its subtitle-read port and fixture use
-`WorkspaceStore`; Application query, repository projection/API/SQL, and UI are
-unchanged. The two focused CTests passed. UI integration remains unverified:
-the Classes page suite was not rerun after F1366 timed out before selected-grade
-cases, and source review suggests its stubs exercise legacy subtitle methods
-separate from the detailed adapter path. This is source-level evidence, not a
-runtime result. F1366's timeout remains unresolved, with no baseline or evidence
-attributing it to that slice. No full suite or cross-platform build ran. See
-the [progress log](04-Phase-3-Progress-Log.md) for exact results and limits.
+F1368 is accepted; F1369 is current. The batch-read port and fixture use
+`WorkspaceStore`; query, repositories, callers, and behavior are unchanged.
+All four focused CTests passed. `ClassMngrClassTransferTests` had 63 passed
+and one confirmed baseline failure in teacher-profile fallback. Classes-page
+UI integration remains unverified: F1366's page run timed out before the
+selected-grade cases, and F1367 source review found the page stubs do not
+exercise the detailed adapter path. No full suite or cross-platform build ran.
+See the [progress log](04-Phase-3-Progress-Log.md) for exact results and
+limits.
 
 ## Objective
 

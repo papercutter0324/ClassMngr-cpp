@@ -1257,4 +1257,44 @@ The UI assertions therefore appear disconnected from the detailed adapter
 path. This is source-level evidence, not a new runtime result; UI integration
 remains unverified, and the prior timeout is not attributed to F1367. No full
 suite or cross-platform validation ran. F1367 is accepted; F1368
-(Selected-class subtitle batch read) is current.
+(Selected-class subtitle batch read) is current. F1367 is committed as
+`b1da9e3545ce5d7f0816b3d3880e801f264d0702`.
+
+## F1368 — Selected-class subtitle batch read (Batch 3 candidate 11 of 20) — 2026-10-24
+
+The port in
+`src/next/platform/application_services_selected_class_subtitle_batch_read_port.h`
+now includes `workspace_store.h`, checks `WorkspaceStore::isOpen()`, and gets
+`ClassInfoRepository` and `TeacherRepository` from `workspaceStore()`. Its
+fixture, `tests/next_platform_application_services_selected_class_subtitle_batch_read_port_tests.cpp`,
+uses `WorkspaceStore` for repository and SQL access. Assertions, slots, SQL,
+metrics, and outcomes are unchanged. The Application query, repository batch
+APIs/SQL, roster-transfer and print callers, import/export and sidebar-prompt
+callers, F1367 single-read port, and F1369 navigation are unchanged.
+
+Preserved behavior includes empty input, canonical unique IDs, matching count
+and order, independent class and teacher batch outcomes, schedule order,
+missing parents, teacher-ID validation and wide IDs, and error handling.
+
+All requested targets built. Four serial CTests passed: the selected-class
+subtitle batch-read Application query and Platform port, roster-transfer menu,
+and roster-print dialog tests (4/4). The F1368 import slot
+`importDialogBatchesDistinctDestinationSubtitleReads` also passed in
+`ClassMngrClassTransferTests`. That target had 63 passed and one failed:
+`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure` observed
+`Keep local: New Teacher` instead of `Keep local: Romanized One`.
+
+The failure is a confirmed baseline issue, not attributable to F1368: the test
+has no class IDs, so the subtitle batch query returns before the F1368 adapter;
+the failure follows teacher-display-name batch and teacher-profile fallback
+queries after the test renames `preferred_name`, breaking both. The F1326
+progress log records a clean F1326 archive reproducing the same isolated
+assertion with the same actual and expected names. `git diff --check` passed.
+No scoped `DatabaseSession` APIs remain in the adapter or fixture.
+
+`ClassMngrClassesPageTests` remains unrun following F1366's 300-second timeout
+before selected-grade cases. F1367 source review found its page stubs target
+legacy subtitle methods while the detailed adapter uses different methods, so
+UI integration remains unverified. This is source-level evidence, not a
+runtime result. No full suite or cross-platform build ran. F1368 is accepted;
+F1369 (Classes navigation read) is current.

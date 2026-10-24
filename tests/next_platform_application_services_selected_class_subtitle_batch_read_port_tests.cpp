@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/application/selected_class_subtitle_batch_read_query.h"
@@ -159,11 +159,11 @@ readsSubtitleProjectionWithFixedStatementCounts()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
 
-    TeacherRepository* const teacherRepository = session->teacherRepository();
-    ClassInfoRepository* const classRepository = session->classInfoRepository();
+    TeacherRepository* const teacherRepository = store->teacherRepository();
+    ClassInfoRepository* const classRepository = store->classInfoRepository();
     QVERIFY(teacherRepository);
     QVERIFY(classRepository);
 
@@ -183,7 +183,7 @@ readsSubtitleProjectionWithFixedStatementCounts()
     QVERIFY(classB);
     QVERIFY(classC);
     QString seedError;
-    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+    QVERIFY2(seedClassSubtitle(store->database(), classInfo(
         *classA,
         *teacherA,
         QStringLiteral(" E4 "),
@@ -193,14 +193,14 @@ readsSubtitleProjectionWithFixedStatementCounts()
             {QStringLiteral("Monday"), QStringLiteral("10:00 AM"), QStringLiteral("10:55 AM")}
         }
         ), &seedError), qPrintable(seedError));
-    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+    QVERIFY2(seedClassSubtitle(store->database(), classInfo(
         *classB,
         *teacherB,
         QStringLiteral("M2"),
         QStringLiteral("Hydra"),
         {{QStringLiteral("Wednesday"), QStringLiteral("2:00 PM"), QStringLiteral("2:55 PM")}}
         ), &seedError), qPrintable(seedError));
-    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+    QVERIFY2(seedClassSubtitle(store->database(), classInfo(
         *classC,
         *teacherA,
         QStringLiteral("E5"),
@@ -292,10 +292,10 @@ missingParentsDoNotExposeOrphanSubtitleData()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    TeacherRepository* const teacherRepository = session->teacherRepository();
-    ClassInfoRepository* const classRepository = session->classInfoRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    TeacherRepository* const teacherRepository = store->teacherRepository();
+    ClassInfoRepository* const classRepository = store->classInfoRepository();
     QVERIFY(teacherRepository);
     QVERIFY(classRepository);
 
@@ -325,14 +325,14 @@ missingParentsDoNotExposeOrphanSubtitleData()
     QCOMPARE(*noInfoClass, 3);
 
     QString seedError;
-    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+    QVERIFY2(seedClassSubtitle(store->database(), classInfo(
         *populatedClass,
         *populatedTeacher,
         QStringLiteral("Sibling grade"),
         QStringLiteral("Sibling level"),
         {{QStringLiteral("Monday"), QStringLiteral("8:00 AM"), QStringLiteral("8:55 AM")}}
         ), &seedError), qPrintable(seedError));
-    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+    QVERIFY2(seedClassSubtitle(store->database(), classInfo(
         *deletedClass,
         *orphanTeacher,
         QStringLiteral("Orphan grade"),
@@ -340,7 +340,7 @@ missingParentsDoNotExposeOrphanSubtitleData()
         {{QStringLiteral("Thursday"), QStringLiteral("6:00 PM"), QStringLiteral("6:55 PM")}}
         ), &seedError), qPrintable(seedError));
     QVERIFY2(seedClassSchedule(
-        session->database(),
+        store->database(),
         *noInfoClass,
         {
             {QStringLiteral("Friday"), QStringLiteral("9:00 AM"), QStringLiteral("9:55 AM")},
@@ -349,17 +349,17 @@ missingParentsDoNotExposeOrphanSubtitleData()
         &seedError
         ), qPrintable(seedError));
 
-    QSqlQuery disableForeignKeys(session->database());
+    QSqlQuery disableForeignKeys(store->database());
     QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
-    QSqlQuery deleteParent(session->database());
+    QSqlQuery deleteParent(store->database());
     QVERIFY(deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id=?")));
     deleteParent.addBindValue(*deletedClass);
     QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
     QCOMPARE(deleteParent.numRowsAffected(), 1);
-    QSqlQuery enableForeignKeys(session->database());
+    QSqlQuery enableForeignKeys(store->database());
     QVERIFY(enableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=ON")));
 
-    QSqlQuery verifyOrphanRows(session->database());
+    QSqlQuery verifyOrphanRows(store->database());
     QVERIFY(verifyOrphanRows.prepare(QStringLiteral(R"(
         SELECT
             (SELECT COUNT(*) FROM classes WHERE id=?),
@@ -452,11 +452,11 @@ readsDisplayNamesForWideAssignedTeacherId()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
 
     constexpr qlonglong wideTeacherId = 2'147'483'648LL;
-    QSqlQuery insertTeacher(session->database());
+    QSqlQuery insertTeacher(store->database());
     QVERIFY(insertTeacher.prepare(QStringLiteral(R"(
         INSERT INTO teachers (
             id, teacher_kr, teacher_en, preferred_romanization, preferred_name
@@ -474,7 +474,7 @@ readsDisplayNamesForWideAssignedTeacherId()
         );
     QVERIFY(createdClass);
     QString seedError;
-    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+    QVERIFY2(seedClassSubtitle(store->database(), classInfo(
         *createdClass,
         -1,
         QStringLiteral("E4"),
@@ -482,7 +482,7 @@ readsDisplayNamesForWideAssignedTeacherId()
         {{QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:55 AM")}}
         ), &seedError), qPrintable(seedError));
 
-    QSqlQuery assignTeacher(session->database());
+    QSqlQuery assignTeacher(store->database());
     QVERIFY(assignTeacher.prepare(QStringLiteral(
         "UPDATE class_info SET teacher_id = ? WHERE class_id = ?")));
     assignTeacher.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
@@ -490,7 +490,7 @@ readsDisplayNamesForWideAssignedTeacherId()
     QVERIFY2(assignTeacher.exec(), qPrintable(assignTeacher.lastError().text()));
     QCOMPARE(assignTeacher.numRowsAffected(), 1);
 
-    QSqlQuery verifyStoredId(session->database());
+    QSqlQuery verifyStoredId(store->database());
     QVERIFY(verifyStoredId.prepare(QStringLiteral(R"(
         SELECT typeof(teachers.id), teachers.id,
                typeof(class_info.teacher_id), class_info.teacher_id
@@ -534,10 +534,10 @@ missingAssignmentsAndReadFailuresRemainIndependent()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    TeacherRepository* const teacherRepository = session->teacherRepository();
-    ClassInfoRepository* const classRepository = session->classInfoRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    TeacherRepository* const teacherRepository = store->teacherRepository();
+    ClassInfoRepository* const classRepository = store->classInfoRepository();
     QVERIFY(teacherRepository);
     QVERIFY(classRepository);
 
@@ -554,14 +554,14 @@ missingAssignmentsAndReadFailuresRemainIndependent()
     QVERIFY(assignedClass);
     QVERIFY(unassignedClass);
     QString seedError;
-    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+    QVERIFY2(seedClassSubtitle(store->database(), classInfo(
         *assignedClass,
         *teacherId,
         QStringLiteral("E4"),
         QStringLiteral("Orion"),
         {{QStringLiteral("Monday"), QStringLiteral("4:00 PM"), QStringLiteral("4:50 PM")}}
         ), &seedError), qPrintable(seedError));
-    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+    QVERIFY2(seedClassSubtitle(store->database(), classInfo(
         *unassignedClass,
         -1,
         QStringLiteral("E5"),
@@ -574,9 +574,9 @@ missingAssignmentsAndReadFailuresRemainIndependent()
         );
     const Application::SelectedClassSubtitleBatchReadQuery query(port);
 
-    QSqlQuery disableForeignKeys(session->database());
+    QSqlQuery disableForeignKeys(store->database());
     QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
-    QSqlQuery deleteTeacher(session->database());
+    QSqlQuery deleteTeacher(store->database());
     deleteTeacher.prepare(QStringLiteral("DELETE FROM teachers WHERE id=?"));
     deleteTeacher.addBindValue(*teacherId);
     QVERIFY(deleteTeacher.exec());
@@ -593,7 +593,7 @@ missingAssignmentsAndReadFailuresRemainIndependent()
     QVERIFY(missingTeacher.value()[1].assignedTeacher);
     QVERIFY(!missingTeacher.value()[1].assignedTeacher.value().has_value());
 
-    QSqlQuery dropTeachers(session->database());
+    QSqlQuery dropTeachers(store->database());
     QVERIFY(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")));
     const auto teacherReadFailure = query.execute(ids({*assignedClass}));
     QVERIFY(teacherReadFailure);
@@ -610,7 +610,7 @@ missingAssignmentsAndReadFailuresRemainIndependent()
     QCOMPARE(teacherReadFailure.value().front().assignedTeacher.error().code,
              Domain::ErrorCode::Technical);
 
-    QSqlQuery dropTimes(session->database());
+    QSqlQuery dropTimes(store->database());
     QVERIFY(dropTimes.exec(QStringLiteral("DROP TABLE class_times")));
     const auto classReadFailure = query.execute(ids({*assignedClass}));
     QVERIFY(classReadFailure);
@@ -628,10 +628,10 @@ malformedPersistedTeacherIdIsValidationForOrderedBatch()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
 
-    const auto assignedTeacher = session->teacherRepository()->saveTeacher(
+    const auto assignedTeacher = store->teacherRepository()->saveTeacher(
         teacher(QStringLiteral("Must not be looked up"))
         );
     QVERIFY(assignedTeacher);
@@ -652,21 +652,21 @@ malformedPersistedTeacherIdIsValidationForOrderedBatch()
     const QList<ClassTime> times{
         {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:55 AM")}
     };
-    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+    QVERIFY2(seedClassSubtitle(store->database(), classInfo(
         *assignedClass,
         *assignedTeacher,
         QStringLiteral("E4"),
         QStringLiteral("Orion"),
         times
         ), &seedError), qPrintable(seedError));
-    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+    QVERIFY2(seedClassSubtitle(store->database(), classInfo(
         *malformedClass,
         -1,
         QStringLiteral("E5"),
         QStringLiteral("Hydra"),
         times
         ), &seedError), qPrintable(seedError));
-    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+    QVERIFY2(seedClassSubtitle(store->database(), classInfo(
         *unassignedClass,
         -1,
         QStringLiteral("M1"),
@@ -674,10 +674,10 @@ malformedPersistedTeacherIdIsValidationForOrderedBatch()
         times
         ), &seedError), qPrintable(seedError));
 
-    QSqlQuery disableForeignKeys(session->database());
+    QSqlQuery disableForeignKeys(store->database());
     QVERIFY2(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
              qPrintable(disableForeignKeys.lastError().text()));
-    QSqlQuery corruptTeacherId(session->database());
+    QSqlQuery corruptTeacherId(store->database());
     QVERIFY(corruptTeacherId.prepare(QStringLiteral(
         "UPDATE class_info SET teacher_id = ? WHERE class_id = ?")));
     corruptTeacherId.addBindValue(QStringLiteral("not-a-number"));
@@ -686,7 +686,7 @@ malformedPersistedTeacherIdIsValidationForOrderedBatch()
              qPrintable(corruptTeacherId.lastError().text()));
     QCOMPARE(corruptTeacherId.numRowsAffected(), 1);
 
-    QSqlQuery verifyStoredId(session->database());
+    QSqlQuery verifyStoredId(store->database());
     QVERIFY(verifyStoredId.prepare(QStringLiteral(
         "SELECT typeof(teacher_id), teacher_id FROM class_info WHERE class_id = ?")));
     verifyStoredId.addBindValue(*malformedClass);
@@ -730,13 +730,13 @@ malformedPersistedTeacherIdIsValidationForOrderedBatch()
     }
 
     const auto classMetrics =
-        session->classInfoRepository()->classSubtitleBatchReadMetrics();
+        store->classInfoRepository()->classSubtitleBatchReadMetrics();
     QCOMPARE(classMetrics.callCount, 1);
     QCOMPARE(classMetrics.requestedClassCount, 3);
     QCOMPARE(classMetrics.metadataStatementCount, 1);
     QCOMPARE(classMetrics.regularScheduleStatementCount, 0);
     const auto teacherMetrics =
-        session->teacherRepository()->teacherDisplayNameBatchReadMetrics();
+        store->teacherRepository()->teacherDisplayNameBatchReadMetrics();
     QCOMPARE(teacherMetrics.callCount, 0);
 }
 

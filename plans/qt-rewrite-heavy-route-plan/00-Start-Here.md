@@ -13,10 +13,10 @@
   Class details update), F1360 (Testing Class delete), F1361 (Class
   Co-Teacher page read), F1362 (Class Co-Teacher teacher choices read),
   F1363 (Class Co-Teacher assignment save), F1364 (Class Notes page read),
-  F1365 (Class Notes save), F1366 (Selected-class grade read), and F1367
-  (Selected-class subtitle read) are accepted; F1368 (Selected-class subtitle
-  batch read) is current. Evidence for F1358–F1367 and the Batch 2 push receipt
-  are in the Phase 3 progress log.
+  F1365 (Class Notes save), F1366 (Selected-class grade read), F1367
+  (Selected-class subtitle read), and F1368 (Selected-class subtitle batch
+  read) are accepted; F1369 (Classes navigation read) is current. Evidence
+  for F1358–F1368 and the Batch 2 push receipt are in the Phase 3 progress log.
   See
   the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
