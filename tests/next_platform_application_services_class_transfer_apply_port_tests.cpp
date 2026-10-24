@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/class_transfer_repository.h"
 #include "data/repositories/teacher_repository.h"
@@ -106,7 +106,7 @@ bool insertLocalClass(
     int* classIdOut
     )
 {
-    ClassRepository* const classes = services.databaseSession()->classRepository();
+    ClassRepository* const classes = services.workspaceStore()->classRepository();
     if (!classes)
     {
         return false;
@@ -117,7 +117,7 @@ bool insertLocalClass(
         return false;
     }
     *classIdOut = *created;
-    QSqlQuery info(services.databaseSession()->database());
+    QSqlQuery info(services.workspaceStore()->database());
     info.prepare(QStringLiteral(
         "INSERT INTO class_info (class_id, teacher_id, class_grade, class_level) "
         "VALUES (?, ?, 'E4', 'Theseus')"));
@@ -184,8 +184,8 @@ rejectsInvalidPayloadWithoutWrites()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("teachers")), 0);
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("classes")), 0);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("teachers")), 0);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("classes")), 0);
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::
@@ -203,8 +203,8 @@ rejectsStaleChoiceWithoutWrites()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("teachers")), 0);
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("classes")), 0);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("teachers")), 0);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("classes")), 0);
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::
@@ -217,13 +217,13 @@ rejectsOnceValidChoiceAfterDestinationChanges()
     Teacher local;
     local.teacherEn = QStringLiteral("Alex Kim");
     local.preferredName = QStringLiteral("Alex Kim");
-    const auto localTeacher = services.databaseSession()->teacherRepository()
+    const auto localTeacher = services.workspaceStore()->teacherRepository()
         ->createTeacher(local);
     QVERIFY(localTeacher);
     int localClass = -1;
     QVERIFY(insertLocalClass(services, QStringLiteral("Imported Class"),
         *localTeacher, &localClass));
-    const auto preview = services.databaseSession()->classTransferRepository()
+    const auto preview = services.workspaceStore()->classTransferRepository()
         ->previewImport(validPackage());
     QVERIFY(preview);
     QCOMPARE(preview->classes.first().matchingClassIds, QList<int>{localClass});
@@ -236,7 +236,7 @@ rejectsOnceValidChoiceAfterDestinationChanges()
     command.choices.teachers.front().action =
         Application::ClassTransferReviewTeacherAction::KeepExisting;
     command.choices.teachers.front().targetTeacherId = teacherId(*localTeacher);
-    QVERIFY(services.databaseSession()->classRepository()->deleteClass(localClass));
+    QVERIFY(services.workspaceStore()->classRepository()->deleteClass(localClass));
     Platform::ApplicationServicesClassTransferApplyPort port(services);
 
     const auto result = port.apply(command);
@@ -245,8 +245,8 @@ rejectsOnceValidChoiceAfterDestinationChanges()
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
     QVERIFY(result.error().message.find("replacement") != std::string::npos
         || result.error().message.find("class") != std::string::npos);
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("teachers")), 1);
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("classes")), 0);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("teachers")), 1);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("classes")), 0);
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::
@@ -259,7 +259,7 @@ preflightsScheduleConflictBeforeWrites()
     int localClass = -1;
     QVERIFY(insertLocalClass(services, QStringLiteral("Scheduled Class"), -1,
         &localClass));
-    QSqlQuery schedule(services.databaseSession()->database());
+    QSqlQuery schedule(services.workspaceStore()->database());
     schedule.prepare(QStringLiteral(
         "INSERT INTO class_times (class_id, day, start_time, end_time) "
         "VALUES (?, 'Monday', '9:00 AM', '10:00 AM')"));
@@ -271,7 +271,7 @@ preflightsScheduleConflictBeforeWrites()
         QStringLiteral("10:00 AM")
     });
     const qint64 changesBefore =
-        totalChanges(services.databaseSession()->database());
+        totalChanges(services.workspaceStore()->database());
     QVERIFY(changesBefore >= 0);
     Platform::ApplicationServicesClassTransferApplyPort port(services);
 
@@ -286,10 +286,10 @@ preflightsScheduleConflictBeforeWrites()
             "Schedule conflicts prevent this import:\n\n"
             "Regular schedule: E4 Theseus \u2014 Monday 9:00 AM\u201310:00 AM "
             "conflicts with E4 Theseus \u2014 Monday 9:00 AM\u201310:00 AM"));
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("teachers")), 0);
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("classes")), 1);
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("class_info")), 1);
-    QCOMPARE(totalChanges(services.databaseSession()->database()), changesBefore);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("teachers")), 0);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("classes")), 1);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("class_info")), 1);
+    QCOMPARE(totalChanges(services.workspaceStore()->database()), changesBefore);
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::
@@ -302,7 +302,7 @@ keepsMalformedPersistedScheduleTechnicalBeforeWrites()
     int localClass = -1;
     QVERIFY(insertLocalClass(services, QStringLiteral("Malformed Schedule Class"),
         -1, &localClass));
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QSqlQuery malformedSchedule(database);
     malformedSchedule.prepare(QStringLiteral(
         "INSERT INTO class_times (class_id, day, start_time, end_time) "
@@ -342,9 +342,9 @@ createsWithNormalizedPayloadAndTypedSummary()
     const auto parsed = Application::classTransferApplyDestinationId(
         result.value().createdClassIds.front());
     QVERIFY(parsed.has_value());
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("teachers")), 1);
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("classes")), 1);
-    const auto stored = services.databaseSession()->teacherRepository()->getTeacher(1);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("teachers")), 1);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("classes")), 1);
+    const auto stored = services.workspaceStore()->teacherRepository()->getTeacher(1);
     QVERIFY(stored);
     QCOMPARE(stored->teacherEn, QStringLiteral("Alex Kim"));
     QCOMPARE(stored->roomNumber, QStringLiteral("405"));
@@ -373,8 +373,8 @@ skipsClassAndPreservesPositiveCount()
     QVERIFY(result.value().createdClassIds.empty());
     QVERIFY(result.value().replacedClassIds.empty());
     QCOMPARE(result.value().skippedClassCount.rawValue(), 1);
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("teachers")), 0);
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("classes")), 0);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("teachers")), 0);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("classes")), 0);
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::
@@ -384,7 +384,7 @@ createNewRejectsGeneratedClassIdOutsideIntAndRollsBack()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
 
     QSqlQuery existingClass(database);
     QVERIFY(existingClass.exec(QStringLiteral(
@@ -443,7 +443,7 @@ createNewAcceptsIntMaxGeneratedClassId()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
 
     QSqlQuery seedClass(database);
     QVERIFY(seedClass.exec(QStringLiteral(
@@ -532,13 +532,13 @@ replacesClassAndTeacherThroughRepository()
     local.teacherEn = QStringLiteral("Alex Kim");
     local.preferredName = QStringLiteral("Alex Kim");
     local.roomNumber = QStringLiteral("Local Room");
-    const auto localTeacher = services.databaseSession()->teacherRepository()
+    const auto localTeacher = services.workspaceStore()->teacherRepository()
         ->createTeacher(local);
     QVERIFY(localTeacher);
     int localClass = -1;
     QVERIFY(insertLocalClass(services, QStringLiteral("Imported Class"),
         *localTeacher, &localClass));
-    const auto preview = services.databaseSession()->classTransferRepository()
+    const auto preview = services.workspaceStore()->classTransferRepository()
         ->previewImport(validPackage());
     QVERIFY(preview);
     QCOMPARE(preview->classes.first().matchingClassIds, QList<int>{localClass});
@@ -560,9 +560,9 @@ replacesClassAndTeacherThroughRepository()
     QCOMPARE(result.value().replacedClassIds.size(), std::size_t(1));
     QCOMPARE(result.value().replacedClassIds.front().value(),
         std::to_string(localClass));
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("teachers")), 1);
-    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("classes")), 1);
-    const auto replaced = services.databaseSession()->teacherRepository()
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("teachers")), 1);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("classes")), 1);
+    const auto replaced = services.workspaceStore()->teacherRepository()
         ->getTeacher(*localTeacher);
     QVERIFY(replaced);
     QCOMPARE(replaced->roomNumber, QStringLiteral("405"));
@@ -575,7 +575,7 @@ importsSpeakingEvaluationWithWideGeneratedId()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
 
     QSqlQuery seedClass(database);
     QVERIFY(seedClass.exec(QStringLiteral(
@@ -648,7 +648,7 @@ importsSpeakingEvaluationWithWideGeneratedId()
     QCOMPARE(storedRows.value(3).toString(), QStringLiteral("integer"));
     QCOMPARE(storedRows.value(4).toString(), QStringLiteral("integer"));
 
-    const auto readback = services.databaseSession()->classTransferRepository()
+    const auto readback = services.workspaceStore()->classTransferRepository()
         ->readExportSource({*importedClassId});
     QVERIFY(readback);
     QCOMPARE(readback->classes.size(), 1);
@@ -668,7 +668,7 @@ lateWriteFailureRollsBackTransferRows()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlDatabase database = services.databaseSession()->database();
+    QSqlDatabase database = services.workspaceStore()->database();
     QSqlQuery trigger(database);
     QVERIFY(trigger.exec(QStringLiteral(
         "CREATE TRIGGER fail_transfer_roster BEFORE INSERT ON roster_data "

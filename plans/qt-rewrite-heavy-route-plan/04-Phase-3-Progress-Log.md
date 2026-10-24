@@ -1472,3 +1472,23 @@ Built `ClassMngrNextPlatformClassTransferExportSourceTests` and
 selection was confirmed and passed serially (2/2). `git diff --check` passed.
 No full suite or cross-platform build ran. F1374 is accepted; F1375
 (Class Transfer apply) is current.
+
+Commit: `127036ba3720e0121c59a2ebc66fb06e8d87c3e3`.
+
+## F1375 — Class Transfer apply (Batch 3 candidate 18 of 20) — 2026-10-24
+
+The only production change moved
+`src/next/platform/application_services_class_transfer_apply_port.h` to
+`WorkspaceStore`. Its 14-slot direct fixture,
+`tests/next_platform_application_services_class_transfer_apply_port_tests.cpp`,
+also migrated to `WorkspaceStore`; assertions and SQL are unchanged.
+Repository schedule preflight, write transaction/rollback,
+validation/error mapping, and controller order are unchanged.
+
+Four requested targets built, and four serial CTests passed (4/4):
+`ClassMngrNextApplicationClassTransferApplyUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`,
+`ClassTransferApplyStaleChoiceRegressionTests`, and
+`ClassMngrSidebarClassTransferApplyParityTests`. `git diff --check` passed.
+No full suite or cross-platform build ran. F1375 is accepted; F1376 (My
+Classes class-information batch read) is current.
