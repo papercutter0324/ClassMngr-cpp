@@ -40,14 +40,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-24
 - Current note: Batch 5 is complete (19/19 accepted) and pushed: source/
   acceptance tip `5725e723`, follow-up receipts `8d74cf7a` and `ea91cb64`, and
-  handoff tip `b29a0c9b`. Batch 6's one candidate, F1417, is accepted; its
-  source/acceptance commit and batch push are pending. It encapsulates
-  F1348's roster-availability read transaction in `WorkspaceStore`, preserving
-  snapshot behavior. Batch 7 is discovered and waiting for that push; F1418 is
-  its first/current candidate to move the
-  Workspace Save/autosave commit behind `WorkspaceStore`. `DataService::save()`
-  is unused in ordinary production composition, and no other Batch 7 candidates
-  were found. F1417 and F1416 evidence is in the
+  handoff tip `b29a0c9b`. Batch 6 is complete and pushed with F1417 at
+  `1a42b6ad`. Batch 7 is active; F1418 is its first/current candidate to move
+  the Workspace Save/autosave commit behind `WorkspaceStore`.
+  `DataService::save()` has no ordinary production caller, and no other Batch 7
+  candidates were found. Batch 8 discovery found no other slices; its two
+  read-only scans and excluded coverage-only gap are recorded in the progress
+  log. F1417 and F1416 evidence is in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
@@ -73,9 +72,10 @@ accepted. The Platform adapter delegates transaction management to
 `WorkspaceStore`; the parent-aware column read, sparse cell stream, and
 snapshot assembly remain within the same transaction. Start, operation, and
 commit failure mapping, result ordering, sparse streaming, and exception
-behavior remain intact. Its source/acceptance commit and Batch 6 push are
-pending. Batch 7/F1418 remains queued until that push succeeds. Full evidence
-is in the [progress log](04-Phase-3-Progress-Log.md).
+behavior remain intact. Source/acceptance commit
+`1a42b6ad1d94c1af28702ec3342d623c5d4d368b` was pushed to `origin/Qt-Rewrite`;
+local and remote matched and the worktree was clean. Batch 7/F1418 is active.
+Full evidence is in the [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
 

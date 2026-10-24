@@ -2632,8 +2632,10 @@ snapshot assembly remain in one transaction. Start, operation, and commit
 failures retain their existing mapping, while result shapes, order, sparse
 streaming, and exception behavior remain unchanged. Added WorkspaceStore
 operation-failure rollback coverage and adapter transaction-start failure
-mapping coverage. F1417 is accepted; its source/acceptance commit and Batch 6
-push are pending. Batch 7/F1418 waits for that push.
+mapping coverage. F1417 is accepted at commit
+`1a42b6ad1d94c1af28702ec3342d623c5d4d368b`. Batch 6 was pushed successfully
+to `origin/Qt-Rewrite`; local and remote matched and the worktree was clean.
+Batch 7/F1418 is now active.
 
 The incremental macOS Debug build passed for `ClassMngr` and
 `ClassMngrNextPlatformApplicationServicesRosterReadPortTests`:
@@ -2644,9 +2646,19 @@ ctest --test-dir build/macos-clang-debug --output-on-failure -R 'ClassMngrNextAp
 ```
 
 The focused Application query and Platform port CTests passed 2/2. No
-commit-failure injection or full, UI, or cross-platform suite ran. The final
-documentation diff passed `git diff --check`. No commit or push hash is
-recorded yet.
+commit-failure injection or full, UI, or cross-platform suite ran. After the
+push receipt update, `git diff --check` passed; the focused CTests were not
+rerun.
+
+## Batch 8 discovery — 2026-10-24
+
+Two complementary read-only scans covered the WorkspaceStore/service/database
+boundary and broader Phase 3 deliverables, including schema/migration and
+file/backup/recovery work. They converged on `No other slices were found.` The
+schema baseline lacks full DDL-shape and all-index tests; this was excluded as
+a coverage-only gap because no production behavior slice was identified.
+`DataService::save()` has no ordinary production caller. Batch 7/F1418 remains
+active; Batch 8 waits for Batch 7 to close.
 
 ## F1416 — Schedule Import apply (Batch 5 candidate 19 of 19) — 2026-10-24
 
