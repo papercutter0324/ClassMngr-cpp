@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/application/teacher_create_use_case.h"
 #include "next/platform/application_services_teacher_create_port.h"
@@ -25,23 +25,23 @@ QString databasePath(QTemporaryDir& directory)
 
 bool executeSql(ApplicationServices& services, const QString& statement)
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     return query.exec(statement);
 }
 
 int teacherCount(ApplicationServices& services)
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return -1;
     }
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     return query.exec(QStringLiteral("SELECT COUNT(*) FROM teachers"))
         && query.next()
         ? query.value(0).toInt()
@@ -79,7 +79,7 @@ private slots:
     void createsTeacherWithWideIdAndPreservesProfile();
     void legacyCreateRejectsUnrepresentableIdWithoutWrapping();
     void invalidTeacherIsRejectedBeforeInsert();
-    void unavailableAndClosedSessionsReturnStructuredFailures();
+    void unavailableAndClosedStoresReturnStructuredFailures();
     void repositoryFailureDoesNotCreateTeacher();
 };
 
@@ -107,7 +107,7 @@ createsNormalizedTeacherAndMapsId()
     QVERIFY(idOk);
     QVERIFY(teacherId > 0);
     QCOMPARE(teacherCount(services), 1);
-    const auto saved = services.databaseSession()->teacherRepository()
+    const auto saved = services.workspaceStore()->teacherRepository()
         ->getTeacher(teacherId);
     QVERIFY(saved);
     QCOMPARE(saved->teacherKr, QString::fromUtf16(u"\uAE40\uC120\uC0DD"));
@@ -163,7 +163,7 @@ createsTeacherWithWideIdAndPreservesProfile()
         );
     QCOMPARE(teacherCount(services), 2);
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY(query.exec(QStringLiteral(R"(
         SELECT
             typeof(id), id, teacher_kr, teacher_en,
@@ -213,14 +213,14 @@ legacyCreateRejectsUnrepresentableIdWithoutWrapping()
 
     Teacher legacyTeacher;
     legacyTeacher.teacherEn = QStringLiteral("Legacy Teacher");
-    const auto created = services.databaseSession()->teacherRepository()
+    const auto created = services.workspaceStore()->teacherRepository()
         ->createTeacher(legacyTeacher);
 
     QVERIFY(!created);
     QVERIFY(created.error().contains(QStringLiteral("2147483648")));
     QCOMPARE(teacherCount(services), 2);
 
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY(query.exec(QStringLiteral(R"(
         SELECT typeof(id), id
         FROM teachers
@@ -256,7 +256,7 @@ invalidTeacherIsRejectedBeforeInsert()
 }
 
 void NextPlatformApplicationServicesTeacherCreatePortTests::
-unavailableAndClosedSessionsReturnStructuredFailures()
+unavailableAndClosedStoresReturnStructuredFailures()
 {
     const Application::TeacherCreateRequest invalidRequest;
     Platform::TeacherValidatorTeacherCreateValidationPolicy validation;

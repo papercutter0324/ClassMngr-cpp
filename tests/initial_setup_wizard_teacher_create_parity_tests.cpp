@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "features/setup/ui/initial_setup_wizard.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -29,9 +29,9 @@ QString databasePath(QTemporaryDir& directory)
         );
 }
 
-int teacherCount(DatabaseSession& session)
+int teacherCount(WorkspaceStore& store)
 {
-    QSqlQuery query(session.database());
+    QSqlQuery query(store.database());
     return query.exec(QStringLiteral("SELECT COUNT(*) FROM teachers"))
         && query.next()
         ? query.value(0).toInt()
@@ -40,12 +40,12 @@ int teacherCount(DatabaseSession& session)
 
 bool executeSql(ApplicationServices& services, const QString& statement)
 {
-    DatabaseSession* const session = services.databaseSession();
-    if (!session || !session->isOpen())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     return query.exec(statement);
 }
 
@@ -133,8 +133,8 @@ public:
 
     int rows() const
     {
-        DatabaseSession* const session = services.databaseSession();
-        return session && session->isOpen() ? teacherCount(*session) : -1;
+        WorkspaceStore* const store = services.workspaceStore();
+        return store && store->isOpen() ? teacherCount(*store) : -1;
     }
 
     int currentId() const

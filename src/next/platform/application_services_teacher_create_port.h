@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/validation/teacher_validator.h"
 #include "next/application/teacher_create.h"
@@ -204,8 +204,8 @@ public:
     {
         try
         {
-            // Recheck availability after validation in case the database
-            // session changed between preflight and persistence.
+            // Recheck availability after validation in case the workspace
+            // store changed between preflight and persistence.
             const Domain::Result<TeacherRepository*> available =
                 activeRepository();
             if (!available)
@@ -263,15 +263,15 @@ public:
 private:
     [[nodiscard]] Domain::Result<TeacherRepository*> activeRepository() const
     {
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return Domain::Result<TeacherRepository*>::failure(
                 unavailableError());
         }
 
-        TeacherRepository* const repository = session->teacherRepository();
+        TeacherRepository* const repository = store->teacherRepository();
         if (!repository)
         {
             return Domain::Result<TeacherRepository*>::failure({
