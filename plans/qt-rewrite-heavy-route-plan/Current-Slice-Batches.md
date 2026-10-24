@@ -17,13 +17,13 @@ verification evidence in its progress log.
   began.
 - Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`; its
   implementation tip is `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`.
-- Batch 5 discovery is complete and Batch 5 is active with F1410 — Custom
-  color palette preferences current. F1409 — Sub Prep personal Zoom
+- Batch 5 discovery is complete and Batch 5 is active with F1411 — Initial
+  Setup teacher choices read current. F1410 — Custom color palette
   preferences is accepted at
-  `d2062fac0c3bfb5148d429e0a19bb4c4b258c3c9`; 7 prioritized candidates
+  `5030fdbfa6618e0a42afd578a3f704566cd360fa`; 6 prioritized candidates
   remain. Batch 5 remains unpushed until its remaining slices are complete.
 
-## Phase 3 — Batch 5 (active; F1410 current)
+## Phase 3 — Batch 5 (active; F1411 current)
 
 Two complementary scans found 19 prioritized, distinct persistence slices.
 The source scan found exactly 19 active Next Platform ports after excluding
@@ -45,8 +45,8 @@ scan-identified item is a candidate, not a test result.
 10. F1407 — Personal signature image (accepted)
 11. F1408 — Sub Prep preferences (accepted)
 12. F1409 — Sub Prep personal Zoom preferences (accepted)
-13. F1410 — Custom color palette preferences (current)
-14. F1411 — Initial Setup teacher choices read
+13. F1410 — Custom color palette preferences (accepted)
+14. F1411 — Initial Setup teacher choices read (current)
 15. F1412 — Teacher create
 16. F1413 — Teacher delete
 17. F1414 — Teacher Import latest-source-date read (F1349 apply already

@@ -15,10 +15,10 @@
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   its receipt records implementation tip
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1410 (Custom color palette preferences) current.
-  F1409 (Sub Prep personal Zoom preferences) is accepted at
-  `d2062fac0c3bfb5148d429e0a19bb4c4b258c3c9`; focused verification passed.
-  The current batch tracker retains the ordered list, with 7 prioritized
+  and Batch 5 is active with F1411 (Initial Setup teacher choices read)
+  current. F1410 (Custom color palette preferences) is accepted at
+  `5030fdbfa6618e0a42afd578a3f704566cd360fa`; focused verification passed.
+  The current batch tracker retains the ordered list, with 6 prioritized
   candidates remaining. Batch 5 remains unpushed until its remaining slices
   are complete.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI

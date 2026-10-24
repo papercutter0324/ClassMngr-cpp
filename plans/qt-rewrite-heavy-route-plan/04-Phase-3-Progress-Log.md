@@ -2454,3 +2454,35 @@ ran. `git diff --check` passed before commit. F1409 is accepted; F1410
 its remaining slices are complete.
 
 Commit: `d2062fac0c3bfb5148d429e0a19bb4c4b258c3c9`.
+
+## F1410 — Custom color palette preferences (Batch 5 candidate 13 of 19) — 2026-10-24
+
+Only the `ApplicationServicesCustomColorPalettePreferencesPort`
+header/implementation and direct Platform fixture moved to `WorkspaceStore`.
+The `custom_colors` key and 16 default palette entries/order remain unchanged:
+`#F94144`, `#F3722C`, `#F8961E`, `#F9C74F`, `#90BE6D`, `#43AA8B`, `#577590`,
+`#277DA1`, `#9B5DE5`, `#F15BB5`, `#00BBF9`, `#00F5D4`, `#FFFFFF`, `#D9D9D9`,
+`#808080`, and `#000000`.
+
+Null/closed-store reads and missing/invalid stored values return defaults;
+null/closed-store writes succeed without saving. For open stores, missing
+repositories and read/write failures are logged nonrecoverable `Technical`
+results. Writes save all 16 supplied strings exactly as compact JSON. Reads
+accept `QStringList`, JSON arrays, and legacy newline, semicolon, or comma
+formats. Each of the first 16 entries is trimmed, parsed through `QColor`,
+and canonicalized to `HexRgb`; missing/invalid entries default by index and
+extras are ignored. ColorUtils, callers, F1399 event-color preferences,
+F1408/F1409, and other code were unchanged.
+
+Built `ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests`,
+`ClassMngrColorUtilsCustomColorPaletteTests`, and
+`ClassMngrInitialSetupWizardClassCreateSaveParityTests` incrementally without
+compiler warnings or errors. Offscreen CTest #436, the palette adapter, passed
+12 QtTest cases; #437, ColorUtils, passed 11; and #76, Initial Setup parity,
+passed 9 including class-color dialog integration. Qt font-alias timing and
+`propagateSizeHints` warnings were non-fatal; no setup reruns occurred. Full
+suite and cross-platform builds did not run. `git diff --check` passed before
+commit. F1410 is accepted; F1411 (Initial Setup teacher choices read) is
+current. Batch 5 remains unpushed until its remaining slices are complete.
+
+Commit: `5030fdbfa6618e0a42afd578a3f704566cd360fa`.

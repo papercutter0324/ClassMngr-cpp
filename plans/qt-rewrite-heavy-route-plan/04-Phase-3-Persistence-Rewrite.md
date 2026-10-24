@@ -45,14 +45,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   began. Batch 4 (F1378–F1397) is complete and pushed to `origin/Qt-Rewrite`;
   the verified implementation tip is
   `544b94cf97ab9fce8bb1e174ba1d9e0c9774d1c3`. Batch 5 discovery is complete
-  and Batch 5 is active with F1410 (Custom color palette preferences) current.
-  F1409 (Sub Prep personal Zoom preferences) is accepted at
-  `d2062fac0c3bfb5148d429e0a19bb4c4b258c3c9`; focused verification passed.
-  Its 7 prioritized candidates remain in the current batch tracker. Batch 5
+  and Batch 5 is active with F1411 (Initial Setup teacher choices read)
+  current. F1410 (Custom color palette preferences) is accepted at
+  `5030fdbfa6618e0a42afd578a3f704566cd360fa`; focused verification passed.
+  Its 6 prioritized candidates remain in the current batch tracker. Batch 5
   remains unpushed until its remaining slices are complete. F1403 was
   limited to residual range projection and excluded F1341 availability/by-ID
   work and the existing WorkspaceStore-backed query/cache path.
-  F1376–F1409 implementation evidence, Batch 2 and Batch 3 push receipts, and
+  F1376–F1410 implementation evidence, Batch 2 and Batch 3 push receipts, and
   earlier UI limitations and attribution notes are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
@@ -72,42 +72,35 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1409 — 2026-10-24
+## Latest Progress Update — F1410 — 2026-10-24
 
-F1409 is accepted at `d2062fac0c3bfb5148d429e0a19bb4c4b258c3c9`. Only the
-`ApplicationServicesSubPrepPersonalZoomPreferencesPort` header/implementation
-and its dedicated Platform fixture moved from `DatabaseSession` to
-`WorkspaceStore`. Reads remain sequential by credential: primary
-`myInfo/zoomLoginId`, then fallback `subPrep/personalZoomEmail` only if the
-primary is missing or invalid; next primary `myInfo/zoomPassword`, with
-fallback `subPrep/personalZoomPassword` under the same condition; then
-`myInfo/zoomNotAvailable`, falling back to
-`subPrep/personalZoomNotAvailable`. A valid primary value, including valid
-empty, takes precedence. Credentials preserve UTF-8 bytes and embedded NULs
-without trimming; defaults remain `N/A`, `N/A`, and `true`.
+F1410 is accepted at `5030fdbfa6618e0a42afd578a3f704566cd360fa`. Only the
+`ApplicationServicesCustomColorPalettePreferencesPort` header/implementation
+and its direct Platform fixture moved from `DatabaseSession` to
+`WorkspaceStore`. The `custom_colors` key and 16-entry default palette/order
+remain unchanged: `#F94144`, `#F3722C`, `#F8961E`, `#F9C74F`, `#90BE6D`,
+`#43AA8B`, `#577590`, `#277DA1`, `#9B5DE5`, `#F15BB5`, `#00BBF9`, `#00F5D4`,
+`#FFFFFF`, `#D9D9D9`, `#808080`, `#000000`.
 
-Read failures are logged and return nonrecoverable `Technical`; a primary
-technical read error does not trigger legacy fallback, and any read failure
-prevents migration. Legacy values migrate to primary keys only after all reads
-succeed; writes are best-effort and ignored on failure, leaving legacy values
-available. F1405 shares the primary keys but its aggregate writer was
-unchanged. F1408 content keys and F1392 current-campus preferences are
-separate.
+Null/closed-store reads and missing/invalid stored values return defaults;
+null/closed-store writes succeed without saving. For open stores, missing
+repositories and read/write failures are logged nonrecoverable `Technical`
+results. Writes store all 16 supplied strings unchanged as compact JSON.
+Reads continue to accept `QStringList`, JSON arrays, and legacy newline,
+semicolon, or comma-separated text. Each of the first 16 entries is trimmed,
+parsed by `QColor`, and canonicalized as `HexRgb`; missing or invalid entries
+use that index's default, while extras are ignored. ColorUtils, callers,
+F1399 event-color preferences, F1408/F1409, and other code were unchanged.
 
-The F1409 port, F1405 personal-details save port, and Sub Prep page targets
-built incrementally without compiler warnings or errors. CTest #449 passed
-11 QtTest cases; CTest #445 passed 9 cases. Two selected offscreen Sub Prep UI
-slots passed, 4 cases including init/cleanup:
-`zoomUnavailableHidesStoredCredentials` and
-`zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic`. One Qt
-font-alias timing warning occurred; no setup retries were needed. The full
-Sub Prep page CTest #147 was not run for F1409 because the known long-running
-`unavailablePreferenceLoadsPreservePageValues` timeout is separately
-attributed to the clean F1391 baseline in the F1392 record; the slot remains
-unverified. No full suite or cross-platform build ran. `git diff --check`
-passed before commit. F1409 is accepted; F1410 (Custom color palette
-preferences) is current with 7 prioritized candidates remaining. Batch 5
-remains unpushed until its remaining slices are complete.
+The F1410 port, ColorUtils palette, and Initial Setup class-create save parity
+targets built incrementally without compiler warnings or errors. All three
+offscreen CTests passed: #436, 12 QtTest cases; #437, 11 cases; and #76, 9
+cases including class-color dialog integration. Qt font-alias timing and
+`propagateSizeHints` warnings were non-fatal; no setup reruns were needed.
+Full suite and cross-platform builds did not run. `git diff --check` passed
+before commit. F1410 is accepted; F1411 (Initial Setup teacher choices read)
+is current with 6 prioritized candidates remaining. Batch 5 remains unpushed
+until its remaining slices are complete.
 
 ## Objective
 
