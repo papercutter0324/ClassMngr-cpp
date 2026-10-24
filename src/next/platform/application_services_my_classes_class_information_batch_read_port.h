@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/application/my_classes_class_information_batch_read_port.h"
 
@@ -81,9 +81,9 @@ public:
             legacyClassIds.append(*legacyClassId);
         }
 
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return Application::MyClassesClassInformationBatchReadResult::failure(
                 error(
@@ -95,7 +95,7 @@ public:
         }
 
         ClassInfoRepository* const repository =
-            session->classInfoRepository();
+            store->classInfoRepository();
         if (!repository)
         {
             return Application::MyClassesClassInformationBatchReadResult::failure(

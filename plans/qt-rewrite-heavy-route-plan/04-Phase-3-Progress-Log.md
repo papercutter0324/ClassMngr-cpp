@@ -1492,3 +1492,25 @@ Four requested targets built, and four serial CTests passed (4/4):
 `ClassMngrSidebarClassTransferApplyParityTests`. `git diff --check` passed.
 No full suite or cross-platform build ran. F1375 is accepted; F1376 (My
 Classes class-information batch read) is current.
+
+Commit: `e6ef17cddd6c1489de7d73f73de99bdc7f0be5c4`.
+
+## F1376 — My Classes class-information batch read (Batch 3 candidate 19 of 20) — 2026-10-24
+
+The only production change moved
+`src/next/platform/application_services_my_classes_class_information_batch_read_port.h`
+to `WorkspaceStore`. In the shared test file
+`tests/next_platform_application_services_my_classes_class_information_batch_read_port_tests.cpp`,
+only the six F1376 class-information slots migrated their fixtures and
+accessors. `database_session.h` and both F1377 summary slots remain unchanged.
+IDs, ordering, repository batch reads/fallbacks/errors, UI call order, and the
+repository method are unchanged; no transaction was added.
+
+Four selected targets built, and four serial CTests passed (4/4):
+`ClassMngrNextApplicationMyClassesClassInformationBatchReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests`,
+`ClassMngrMyClassesPageTests`, and
+`ClassMngrMyClassesPageSummaryParityTests`. The shared Platform CTest also
+executes the two unchanged F1377 summary slots. `git diff --check` passed.
+No full suite or cross-platform build ran. F1376 is accepted; F1377 (My
+Classes class-summary batch read) is current.

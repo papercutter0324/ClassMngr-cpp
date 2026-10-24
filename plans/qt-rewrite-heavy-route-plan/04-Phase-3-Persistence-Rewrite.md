@@ -51,8 +51,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   post-create by-ID lookup) and F1372 (Class delete) are accepted; F1373
   (Class Transfer preview read) and F1374 (Class Transfer export source read)
   are accepted; F1375 (Class Transfer apply) is accepted; F1376 (My Classes
-  class-information batch read) is current. F1358–F1375 implementation and
-  verification evidence, plus the Batch 2 push receipt, are in the
+  class-information batch read) is accepted; F1377 (My Classes class-summary
+  batch read) is current. Batch 4 discovery is complete and queued next.
+  F1358–F1376 implementation and verification evidence, plus the Batch 2 push
+  receipt, are in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
@@ -71,16 +73,16 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1375 — 2026-10-24
+## Latest Progress Update — F1376 — 2026-10-24
 
-F1375 is accepted; F1376 is current. The Class Transfer apply port and its
-14-slot direct fixture now use `WorkspaceStore`; assertions and SQL are
-unchanged. Schedule preflight, write transaction/rollback, validation/error
-mapping, and controller order are unchanged. Four selected CTests passed. No
-full suite or cross-platform build ran. The
-[progress log](04-Phase-3-Progress-Log.md) records F1375 evidence and retains
-earlier UI limitations, attribution and coverage notes, baseline failure, and
-Batch 2 push receipt.
+F1376 is accepted; F1377 is current. The My Classes class-information read
+port and six scoped slots in its shared Platform test file use `WorkspaceStore`;
+the unchanged F1377 summary slots remain. IDs, ordering, repository batch
+reads/fallbacks/errors, UI call order, and repository method are unchanged; no
+transaction was added. Four selected CTests passed. No full suite or
+cross-platform build ran. The [progress log](04-Phase-3-Progress-Log.md)
+records F1376 evidence and retains earlier UI limitations, attribution and
+coverage notes, baseline failure, and Batch 2 push receipt.
 
 ## Objective
 

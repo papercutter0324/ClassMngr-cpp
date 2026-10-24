@@ -1,6 +1,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_info.h"
@@ -84,7 +85,7 @@ readsCompactFieldsInOneOrderedBatchAndKeepsMissingRowDefault()
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("Batch Teacher");
     teacher.roomNumber = QStringLiteral("Full profile remains separate");
-    const auto createdTeacher = services.databaseSession()
+    const auto createdTeacher = services.workspaceStore()
         ->teacherRepository()->createTeacher(teacher);
     QVERIFY(createdTeacher);
 
@@ -119,7 +120,7 @@ readsCompactFieldsInOneOrderedBatchAndKeepsMissingRowDefault()
     };
     firstInfo.notes = QStringLiteral("Class notes \U0001F9ED");
     firstInfo.timeFillerActivities = QStringLiteral("Filler \U0001F4DA");
-    QVERIFY(services.databaseSession()->classInfoRepository()
+    QVERIFY(services.workspaceStore()->classInfoRepository()
         ->saveClassInfo(firstInfo));
 
     ClassInfo secondInfo;
@@ -133,20 +134,20 @@ readsCompactFieldsInOneOrderedBatchAndKeepsMissingRowDefault()
             .endTime = QStringLiteral("10:50 AM")
         }
     };
-    QVERIFY(services.databaseSession()->classInfoRepository()
+    QVERIFY(services.workspaceStore()->classInfoRepository()
         ->saveClassInfo(secondInfo));
 
     QSqlQuery deleteMissingInformation(
-        services.databaseSession()->database());
+        services.workspaceStore()->database());
     deleteMissingInformation.prepare(QStringLiteral(
         "DELETE FROM class_info WHERE class_id=?"));
     deleteMissingInformation.addBindValue(missingInfoId);
     QVERIFY2(deleteMissingInformation.exec(),
              qPrintable(deleteMissingInformation.lastError().text()));
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    ClassInfoRepository* const repository = session->classInfoRepository();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    ClassInfoRepository* const repository = store->classInfoRepository();
     QVERIFY(repository);
     const MyClassesClassInformationBatchReadMetrics before =
         repository->myClassesClassInformationBatchReadMetrics();
@@ -236,7 +237,7 @@ distinguishesMissingParentsAndSuppressesOrphanChildren()
     QVERIFY(populatedId > 0);
     QVERIFY(noInformationId > 0);
 
-    ClassInfoRepository* const repository = services.databaseSession()
+    ClassInfoRepository* const repository = services.workspaceStore()
         ->classInfoRepository();
     QVERIFY(repository);
 
@@ -302,7 +303,7 @@ distinguishesMissingParentsAndSuppressesOrphanChildren()
     };
     QVERIFY(repository->saveClassInfo(noInformationSchedule));
 
-    QSqlQuery deleteOptionalMetadata(services.databaseSession()->database());
+    QSqlQuery deleteOptionalMetadata(services.workspaceStore()->database());
     deleteOptionalMetadata.prepare(QStringLiteral(
         "DELETE FROM class_info WHERE class_id=?"));
     deleteOptionalMetadata.addBindValue(noInformationId);
@@ -311,19 +312,19 @@ distinguishesMissingParentsAndSuppressesOrphanChildren()
     QCOMPARE(deleteOptionalMetadata.numRowsAffected(), 1);
     deleteOptionalMetadata.finish();
 
-    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QSqlQuery disableForeignKeys(services.workspaceStore()->database());
     QVERIFY2(disableForeignKeys.exec(QStringLiteral(
                  "PRAGMA foreign_keys = OFF")),
              qPrintable(disableForeignKeys.lastError().text()));
     disableForeignKeys.finish();
-    QSqlQuery deleteParent(services.databaseSession()->database());
+    QSqlQuery deleteParent(services.workspaceStore()->database());
     deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id=?"));
     deleteParent.addBindValue(deletedId);
     QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
     QCOMPARE(deleteParent.numRowsAffected(), 1);
     deleteParent.finish();
 
-    QSqlQuery verifyOrphanChildren(services.databaseSession()->database());
+    QSqlQuery verifyOrphanChildren(services.workspaceStore()->database());
     verifyOrphanChildren.prepare(QStringLiteral(
         "SELECT "
         "(SELECT COUNT(*) FROM class_info WHERE class_id=?), "
@@ -341,7 +342,7 @@ distinguishesMissingParentsAndSuppressesOrphanChildren()
     QVERIFY(!verifyOrphanChildren.next());
     verifyOrphanChildren.finish();
 
-    QSqlQuery enableForeignKeys(services.databaseSession()->database());
+    QSqlQuery enableForeignKeys(services.workspaceStore()->database());
     QVERIFY2(enableForeignKeys.exec(QStringLiteral(
                  "PRAGMA foreign_keys = ON")),
              qPrintable(enableForeignKeys.lastError().text()));
@@ -464,11 +465,11 @@ readsWideTeacherIdsAndKeepsSiblingsInBatch()
 
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("Ordinary sibling teacher");
-    const auto createdTeacher = services.databaseSession()
+    const auto createdTeacher = services.workspaceStore()
         ->teacherRepository()->createTeacher(teacher);
     QVERIFY(createdTeacher);
 
-    auto* const repository = services.databaseSession()->classInfoRepository();
+    auto* const repository = services.workspaceStore()->classInfoRepository();
     QVERIFY(repository);
     for (const auto [classIdValue, grade] : {
              std::pair{wideId, QStringLiteral("Wide")},
@@ -483,20 +484,20 @@ readsWideTeacherIdsAndKeepsSiblingsInBatch()
         QVERIFY(repository->saveClassInfo(info));
     }
 
-    QSqlQuery insertWideTeacher(services.databaseSession()->database());
+    QSqlQuery insertWideTeacher(services.workspaceStore()->database());
     QVERIFY2(insertWideTeacher.exec(QStringLiteral(
                  "INSERT INTO teachers (id) VALUES (2147483648)"
                  )),
              qPrintable(insertWideTeacher.lastError().text()));
 
-    QSqlQuery storeWideTeacherId(services.databaseSession()->database());
+    QSqlQuery storeWideTeacherId(services.workspaceStore()->database());
     QVERIFY2(storeWideTeacherId.exec(QStringLiteral(
                  "UPDATE class_info SET teacher_id=2147483648 WHERE class_id=%1"
                  ).arg(wideId)),
              qPrintable(storeWideTeacherId.lastError().text()));
     QCOMPARE(storeWideTeacherId.numRowsAffected(), 1);
 
-    QSqlQuery storeHealthyTeacherId(services.databaseSession()->database());
+    QSqlQuery storeHealthyTeacherId(services.workspaceStore()->database());
     storeHealthyTeacherId.prepare(QStringLiteral(
         "UPDATE class_info SET teacher_id=? WHERE class_id=?"));
     storeHealthyTeacherId.addBindValue(*createdTeacher);
@@ -505,14 +506,14 @@ readsWideTeacherIdsAndKeepsSiblingsInBatch()
              qPrintable(storeHealthyTeacherId.lastError().text()));
     QCOMPARE(storeHealthyTeacherId.numRowsAffected(), 1);
 
-    QSqlQuery storeUnassignedTeacherId(services.databaseSession()->database());
+    QSqlQuery storeUnassignedTeacherId(services.workspaceStore()->database());
     QVERIFY2(storeUnassignedTeacherId.exec(QStringLiteral(
                  "UPDATE class_info SET teacher_id=NULL WHERE class_id=%1"
                  ).arg(unassignedId)),
              qPrintable(storeUnassignedTeacherId.lastError().text()));
     QCOMPARE(storeUnassignedTeacherId.numRowsAffected(), 1);
 
-    QSqlQuery verifyWideTeacher(services.databaseSession()->database());
+    QSqlQuery verifyWideTeacher(services.workspaceStore()->database());
     QVERIFY2(verifyWideTeacher.exec(QStringLiteral(
                  "SELECT typeof(id), id FROM teachers WHERE id=2147483648"
                  )),
@@ -523,7 +524,7 @@ readsWideTeacherIdsAndKeepsSiblingsInBatch()
     QCOMPARE(verifyWideTeacher.value(1).toString(), QStringLiteral("2147483648"));
     QVERIFY(!verifyWideTeacher.next());
 
-    QSqlQuery verifyStoredTeacherId(services.databaseSession()->database());
+    QSqlQuery verifyStoredTeacherId(services.workspaceStore()->database());
     verifyStoredTeacherId.prepare(QStringLiteral(
         "SELECT typeof(teacher_id), teacher_id FROM class_info WHERE class_id=?"));
     verifyStoredTeacherId.addBindValue(wideId);
@@ -535,7 +536,7 @@ readsWideTeacherIdsAndKeepsSiblingsInBatch()
     QCOMPARE(verifyStoredTeacherId.value(1).toString(), QStringLiteral("2147483648"));
     QVERIFY(!verifyStoredTeacherId.next());
 
-    QSqlQuery verifyUnassignedId(services.databaseSession()->database());
+    QSqlQuery verifyUnassignedId(services.workspaceStore()->database());
     verifyUnassignedId.prepare(QStringLiteral(
         "SELECT typeof(teacher_id) FROM class_info WHERE class_id=?"));
     verifyUnassignedId.addBindValue(unassignedId);
@@ -545,8 +546,8 @@ readsWideTeacherIdsAndKeepsSiblingsInBatch()
     QCOMPARE(verifyUnassignedId.value(0).toString(), QStringLiteral("null"));
     QVERIFY(!verifyUnassignedId.next());
 
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     const auto before = repository->myClassesClassInformationBatchReadMetrics();
     const int singleReadsBefore = repository->scheduleClassInfoReadMetrics()
         .singleClassInfoReadCount;
@@ -609,10 +610,10 @@ keepsPerClassRepositoryFailuresAlongsideSuccessfulSiblings()
     info.classId = classIdValue;
     info.classGrade = QStringLiteral("E4");
     info.classLevel = QStringLiteral("Theseus");
-    QVERIFY(services.databaseSession()->classInfoRepository()
+    QVERIFY(services.workspaceStore()->classInfoRepository()
         ->saveClassInfo(info));
 
-    ClassInfoRepository* const repository = services.databaseSession()
+    ClassInfoRepository* const repository = services.workspaceStore()
         ->classInfoRepository();
     QVERIFY(repository);
     const auto loaded = repository->loadMyClassesClassInformationRecords({
@@ -648,7 +649,7 @@ batchSqlFailureReturnsIndependentEntriesForEveryClass()
     QVERIFY(secondId > 0);
     QVERIFY(deletedId > 0);
 
-    ClassInfoRepository* const repository = services.databaseSession()
+    ClassInfoRepository* const repository = services.workspaceStore()
         ->classInfoRepository();
     QVERIFY(repository);
 
@@ -674,19 +675,19 @@ batchSqlFailureReturnsIndependentEntriesForEveryClass()
     };
     QVERIFY(repository->saveClassInfo(deletedInfo));
 
-    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QSqlQuery disableForeignKeys(services.workspaceStore()->database());
     QVERIFY2(disableForeignKeys.exec(QStringLiteral(
                  "PRAGMA foreign_keys = OFF")),
              qPrintable(disableForeignKeys.lastError().text()));
     disableForeignKeys.finish();
-    QSqlQuery deleteParent(services.databaseSession()->database());
+    QSqlQuery deleteParent(services.workspaceStore()->database());
     deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id=?"));
     deleteParent.addBindValue(deletedId);
     QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
     QCOMPARE(deleteParent.numRowsAffected(), 1);
     deleteParent.finish();
 
-    QSqlQuery verifyOrphanChildren(services.databaseSession()->database());
+    QSqlQuery verifyOrphanChildren(services.workspaceStore()->database());
     verifyOrphanChildren.prepare(QStringLiteral(
         "SELECT "
         "(SELECT COUNT(*) FROM class_info WHERE class_id=?), "
@@ -704,14 +705,14 @@ batchSqlFailureReturnsIndependentEntriesForEveryClass()
     QVERIFY(!verifyOrphanChildren.next());
     verifyOrphanChildren.finish();
 
-    QSqlQuery enableForeignKeys(services.databaseSession()->database());
+    QSqlQuery enableForeignKeys(services.workspaceStore()->database());
     QVERIFY2(enableForeignKeys.exec(QStringLiteral(
                  "PRAGMA foreign_keys = ON")),
              qPrintable(enableForeignKeys.lastError().text()));
     enableForeignKeys.finish();
 
     QSqlQuery dropSchedule(
-        services.databaseSession()->database());
+        services.workspaceStore()->database());
     QVERIFY2(dropSchedule.exec(QStringLiteral("DROP TABLE class_intensive_times")),
              qPrintable(dropSchedule.lastError().text()));
     dropSchedule.finish();
@@ -1113,7 +1114,7 @@ emptyInputAvoidsRepositoryWork()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    ClassInfoRepository* const repository = services.databaseSession()
+    ClassInfoRepository* const repository = services.workspaceStore()
         ->classInfoRepository();
     QVERIFY(repository);
     const MyClassesClassInformationBatchReadMetrics before =

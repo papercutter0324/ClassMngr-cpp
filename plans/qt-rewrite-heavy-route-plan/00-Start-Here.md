@@ -20,8 +20,10 @@
   accepted; F1372 (Class delete) is accepted; F1373 (Class Transfer preview
   read) and F1374 (Class Transfer export source read) are accepted; F1375
   (Class Transfer apply) is accepted; F1376 (My Classes class-information
-  batch read) is current. Evidence for F1358–F1375 and the
-  Batch 2 push receipt are in the Phase 3 progress log. Earlier UI limitations,
+  batch read) is accepted; F1377 (My Classes class-summary batch read) is
+  current. Batch 4 discovery is complete and queued next. Evidence for
+  F1358–F1376 and the Batch 2 push receipt are in the Phase 3 progress log.
+  Earlier UI limitations,
   baseline failures, attribution notes, and coverage notes remain recorded
   there.
   See
