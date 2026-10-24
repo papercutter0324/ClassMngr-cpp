@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "next/application/middle_school_analytics_preferences.h"
 
@@ -15,7 +15,7 @@ namespace ClassMngr::Next::Platform
 {
 
 // Qt-boundary adapter for the middle-school analytics visibility preference.
-// The active-session settings access and QVariant conversion stay here;
+// The workspace settings access and QVariant conversion stay here;
 // callers consume only the typed application boolean.
 class ApplicationServicesMiddleSchoolAnalyticsPreferencesPort final
     : public Application::MiddleSchoolAnalyticsPreferencesPort
@@ -24,7 +24,7 @@ public:
     explicit ApplicationServicesMiddleSchoolAnalyticsPreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_session(services.databaseSession())
+        : m_store(services.workspaceStore())
     {
     }
 
@@ -44,13 +44,13 @@ public:
     [[nodiscard]] Application::MiddleSchoolAnalyticsPreferencesReadResult
     load() const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return Application::MiddleSchoolAnalyticsPreferencesReadResult::
                 success(false);
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return Application::MiddleSchoolAnalyticsPreferencesReadResult::
@@ -89,14 +89,14 @@ public:
         const bool show
         ) const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return failure(
                 "Middle-school analytics preference cannot be saved because no database session is open."
                 );
         }
 
-        SettingsRepository* const repository = m_session->settingsRepository();
+        SettingsRepository* const repository = m_store->settingsRepository();
         if (!repository)
         {
             return failure(
@@ -136,7 +136,7 @@ private:
             );
     }
 
-    DatabaseSession* m_session = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform
