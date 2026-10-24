@@ -11,9 +11,9 @@
   `c3e9cc5c639c6e1157448ab3da6b98fd7f96c990`. Batch 3 discovery is complete
   and Batch 3 is active: F1358 (Testing Class details read), F1359 (Testing
   Class details update), F1360 (Testing Class delete), and F1361 (Class
-  Co-Teacher page read) are accepted; F1362 (Class Co-Teacher teacher choices
-  read) is current. F1358–F1361 implementation and verification evidence and
-  the Batch 2 push receipt are in the Phase 3 progress log.
+  Co-Teacher page read), and F1362 (Class Co-Teacher teacher choices read) are
+  accepted; F1363 (Class Co-Teacher assignment save) is current. Evidence for
+  F1358–F1362 and the Batch 2 push receipt are in the Phase 3 progress log.
   See
   the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md), and

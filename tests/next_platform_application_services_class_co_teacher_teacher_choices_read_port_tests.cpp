@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/platform/application_services_class_co_teacher_teacher_choices_read_port.h"
 #include "teacher_choices_cursor_error_fixture.h"
@@ -44,7 +44,7 @@ int createTeacher(
     teacher.zoomId = QStringLiteral("  meeting-id  ");
     teacher.zoomPassword = QStringLiteral("  meeting password  ");
     const auto result =
-        services.databaseSession()->teacherRepository()->createTeacher(
+        services.workspaceStore()->teacherRepository()->createTeacher(
             teacher
             );
     return result.value_or(-1);
@@ -88,7 +88,7 @@ mapsTeacherChoicesFromActiveSessionInRepositoryOrder()
     QVERIFY(zuluId > 0);
     QVERIFY(alphaId > 0);
 
-    QSqlQuery rawValues(services.databaseSession()->database());
+    QSqlQuery rawValues(services.workspaceStore()->database());
     QVERIFY(rawValues.exec(QStringLiteral(
         "PRAGMA ignore_check_constraints=ON"
         )));
@@ -170,7 +170,7 @@ repositoryFailureReturnsStructuredTechnicalError()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlQuery query(services.databaseSession()->database());
+    QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE teachers")),
              qPrintable(query.lastError().text()));
 
@@ -192,7 +192,7 @@ rejectsNonpositiveTeacherIdsAsNonrecoverableValidation()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    QSqlQuery insert(services.databaseSession()->database());
+    QSqlQuery insert(services.workspaceStore()->database());
     QVERIFY2(insert.exec(QStringLiteral(
         "INSERT INTO teachers (id, teacher_kr, teacher_en) "
         "VALUES (0, 'Invalid', 'Invalid')"
@@ -215,9 +215,9 @@ rejectsPartialTeacherChoicesAfterCursorError()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
-    QSqlDatabase database = session->database();
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlDatabase database = store->database();
 
     const QString setupError =
         TeacherChoicesCursorErrorFixture::install(database);
@@ -264,7 +264,7 @@ rejectsPartialTeacherChoicesAfterCursorError()
         QStringLiteral("malformed"), Qt::CaseInsensitive
         ));
 
-    TeacherRepository* const repository = session->teacherRepository();
+    TeacherRepository* const repository = store->teacherRepository();
     QVERIFY(repository);
     const auto records = repository->loadClassCoTeacherTeacherChoiceRecords();
     QVERIFY(!records);

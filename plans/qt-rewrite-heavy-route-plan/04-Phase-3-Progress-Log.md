@@ -1064,4 +1064,29 @@ was not run because its slot is covered by the feature target.
 `git diff --check` passed. No full suite or cross-platform build ran.
 Application query slots do not directly exercise the malformed returned
 teacher-ID guard; Platform tests cover malformed persisted IDs. F1361 is
-accepted.
+accepted and committed as `1cb73e0705d8d8b9ef62ef578a81b7521bfb99d`.
+
+## F1362 — Class Co-Teacher teacher choices read — 2026-10-23
+
+The production read port in
+`src/next/platform/application_services_class_co_teacher_teacher_choices_read_port.h`
+now includes `workspace_store.h`, checks `WorkspaceStore::isOpen()`, and obtains
+`TeacherRepository` through `WorkspaceStore`. Its dedicated fixture,
+`tests/next_platform_application_services_class_co_teacher_teacher_choices_read_port_tests.cpp`,
+uses `WorkspaceStore` for repository and database access. All six existing
+test slots and assertions are unchanged. The Application query,
+repository/API/SQL, page UI, F1361 page-details adapter, and F1363 assignment
+save are unchanged. Relevant existing contracts include no-fallback and
+unavailable-store classification, error mapping, ID validation/conversion,
+full field projection, empty result, exception mapping, and repository order.
+
+Three targets built incrementally in `build/macos-clang-debug`:
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherTeacherChoicesReadPortTests`,
+`ClassMngrNextApplicationClassCoTeacherTeacherChoicesReadQueryTests`, and
+`ClassMngrNextFeatureClassCoTeacherPageTests`. Four serial CTests passed,
+including separately registered `NextFeatureClassCoTeacherWideTeacherIdentity`.
+`git diff --check` passed. No `DatabaseSession`, `databaseSession()`, or
+`database_session.h` references remain in the scoped adapter and fixture.
+The fixture does not directly exercise missing-repository or thrown-exception
+branches. No full suite or cross-platform build ran. F1362 is accepted; F1363
+is current.
