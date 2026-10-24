@@ -1,5 +1,6 @@
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/testing_class_repository.h"
 #include "domain/models/testing_class.h"
 #include "features/classes/ui/testing_classes_page.h"
@@ -9,6 +10,7 @@
 #include "next/application/testing_class_details_update.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include <QComboBox>
 #include <QCoreApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -261,7 +263,7 @@ f146CreateFailureRetainsDraftAndPendingSlot()
         temporaryDatabasePath(directory, QStringLiteral("f146-create"))
         ));
     auto* const repository =
-        services.databaseSession()->testingClassRepository();
+        services.workspaceStore()->testingClassRepository();
     QVERIFY(repository);
 
     FailingTestingClassCreatePort createPort;
@@ -285,8 +287,23 @@ f146CreateFailureRetainsDraftAndPendingSlot()
     page.refresh();
 
     QLineEdit* const name = classNameEdit(page);
+    QComboBox* const grade = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassGradeCombo")
+        );
+    QComboBox* const level = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassLevelCombo")
+        );
+    QLineEdit* const room = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassRoomEdit")
+        );
     QVERIFY(name);
+    QVERIFY(grade);
+    QVERIFY(level);
+    QVERIFY(room);
     name->setText(QStringLiteral("Draft After Create Failure"));
+    grade->setCurrentText(QStringLiteral("M1"));
+    level->setCurrentText(QStringLiteral("Major"));
+    room->setText(QStringLiteral("401"));
     QVERIFY(page.hasUnsavedChanges());
     QVERIFY(!page.saveChanges());
     QCOMPARE(createPort.callCount, 1);

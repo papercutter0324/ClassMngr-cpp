@@ -935,3 +935,26 @@ direct case
 also passed with `QT_QPA_PLATFORM=offscreen`; it emitted
 `QSqlQuery::prepare: database not open` warnings but no failed assertions.
 `git diff --check` passed. No full suite or cross-platform build ran.
+
+## F1357 — Testing class creation — 2026-10-23
+
+The production port in
+`src/next/platform/application_services_testing_class_create_port.h` now uses
+`workspaceStore()` for availability and `TestingClassRepository`; the
+repository transaction/API and create/UI semantics remain unchanged. The
+dedicated Platform fixture and F1357-related mixed UI fixture accesses now use
+`WorkspaceStore`. Only the F146 create-failure slot in cancel-failure parity
+was migrated; F145/F147 compatibility accesses remain. F146 setup now supplies
+the required grade, level, and room fields so the injected create failure is
+reached. No assertions were removed or weakened.
+
+`ClassMngr` and four test targets built incrementally in the existing
+`build/macos-clang-debug` tree. Serial focused CTests passed 4/4:
+`ClassMngrNextApplicationTestingClassCreateUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesTestingClassCreatePortTests`,
+`ClassMngrTestingClassesPageF146CreateTests`, and
+`ClassMngrTestingClassesPageCancelFailureParityTests`. The parity run emitted
+non-failing SQL warnings in unchanged neighboring F145/F147 slots. A direct
+QtTest invocation outside CTest crashed after macOS pasteboard setup errors;
+no direct-run result is claimed. `git diff --check` passed. No full suite or
+cross-platform build ran.

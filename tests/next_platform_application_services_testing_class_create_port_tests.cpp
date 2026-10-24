@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "data/repositories/testing_class_repository.h"
 #include "next/application/testing_class_create.h"
@@ -143,11 +143,11 @@ persistsEveryFieldAndReturnsTypedId()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     TestingClassRepository* const repository =
-        session->testingClassRepository();
-    TeacherRepository* const teachers = session->teacherRepository();
+        store->testingClassRepository();
+    TeacherRepository* const teachers = store->teacherRepository();
     QVERIFY(repository);
     QVERIFY(teachers);
 
@@ -175,7 +175,7 @@ persistsEveryFieldAndReturnsTypedId()
     QCOMPARE(stored->classColor, QStringLiteral("#123456"));
     QCOMPARE(stored->fontColor, QStringLiteral("#FEDCBA"));
     QCOMPARE(stored->notes, QStringLiteral("Persist every creation field"));
-    QCOMPARE(assignmentCount(session->database(), numericClassId), 0);
+    QCOMPARE(assignmentCount(store->database(), numericClassId), 0);
 }
 
 void NextPlatformApplicationServicesTestingClassCreatePortTests::
@@ -185,10 +185,10 @@ createsWithWideTeacherIdentityAsSqliteInteger()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     constexpr qint64 wideTeacherId = 2'147'483'648LL;
-    QSqlQuery insertTeacher(session->database());
+    QSqlQuery insertTeacher(store->database());
     QVERIFY(insertTeacher.prepare(QStringLiteral(
         "INSERT INTO teachers (id, teacher_en, teacher_kr, room_number) "
         "VALUES (?, 'Wide Teacher', 'Wide Korean Teacher', 'Room Wide')"
@@ -206,19 +206,19 @@ createsWithWideTeacherIdentityAsSqliteInteger()
     const auto created = port.createTestingClass(wideRequest);
     QVERIFY2(created, created ? "" : created.error().message.c_str());
     const int createdId = std::stoi(created.value().value());
-    const auto stored = session->testingClassRepository()->loadTestingClass(createdId);
+    const auto stored = store->testingClassRepository()->loadTestingClass(createdId);
     QVERIFY(stored);
     QCOMPARE(stored->teacherId, wideTeacherId);
-    const auto listed = session->testingClassRepository()->loadTestingClasses();
+    const auto listed = store->testingClassRepository()->loadTestingClasses();
     QVERIFY(listed);
     QCOMPARE(listed->size(), 1);
     QCOMPARE(listed->first().teacherId, wideTeacherId);
-    const auto details = session->testingClassRepository()
+    const auto details = store->testingClassRepository()
         ->loadTestingClassDetailsReadRecord(createdId);
     QVERIFY(details);
     QCOMPARE(details->teacherId, wideTeacherId);
 
-    QSqlQuery storedIdentity(session->database());
+    QSqlQuery storedIdentity(store->database());
     storedIdentity.prepare(QStringLiteral(
         "SELECT typeof(teacher_id), teacher_id FROM class_info WHERE class_id=?"
         ));
@@ -236,8 +236,8 @@ persistsPendingAssignmentAndNormalizesWeekday()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     Platform::ApplicationServicesTestingClassCreatePort port(services);
 
     const auto created = port.createTestingClass(request(
@@ -248,7 +248,7 @@ persistsPendingAssignmentAndNormalizesWeekday()
 
     QVERIFY(created);
     const int numericClassId = std::stoi(created.value().value());
-    QSqlQuery query(session->database());
+    QSqlQuery query(store->database());
     query.prepare(QStringLiteral(
         "SELECT day, start_time, class_id FROM schedule_testing_blocks "
         "WHERE class_id=?"
@@ -269,8 +269,8 @@ createsWithoutAssignment()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     Platform::ApplicationServicesTestingClassCreatePort port(services);
 
     const auto created = port.createTestingClass(
@@ -279,7 +279,7 @@ createsWithoutAssignment()
 
     QVERIFY(created);
     const int numericClassId = std::stoi(created.value().value());
-    QCOMPARE(assignmentCount(session->database(), numericClassId), 0);
+    QCOMPARE(assignmentCount(store->database(), numericClassId), 0);
 }
 
 void NextPlatformApplicationServicesTestingClassCreatePortTests::
@@ -316,10 +316,10 @@ rejectsInvalidRequestsWithoutPersistence()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     Platform::ApplicationServicesTestingClassCreatePort port(services);
-    const auto baseline = testingClassTableCounts(session->database());
+    const auto baseline = testingClassTableCounts(store->database());
     QVERIFY(std::all_of(baseline.begin(), baseline.end(), [](int value) {
         return value == 0;
     }));
@@ -342,7 +342,7 @@ rejectsInvalidRequestsWithoutPersistence()
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
     }
 
-    QCOMPARE(testingClassTableCounts(session->database()), baseline);
+    QCOMPARE(testingClassTableCounts(store->database()), baseline);
 }
 
 void NextPlatformApplicationServicesTestingClassCreatePortTests::
@@ -352,10 +352,10 @@ reportsSlotConflictAndRollsBackEveryTable()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
     TestingClassRepository* const repository =
-        session->testingClassRepository();
+        store->testingClassRepository();
     QVERIFY(repository);
 
     TestingClass existing;
@@ -370,7 +370,7 @@ reportsSlotConflictAndRollsBackEveryTable()
         );
     QVERIFY(existingId);
 
-    const auto before = testingClassTableCounts(session->database());
+    const auto before = testingClassTableCounts(store->database());
     QVERIFY(std::all_of(before.begin(), before.end(), [](int value) {
         return value >= 0;
     }));
@@ -386,8 +386,8 @@ reportsSlotConflictAndRollsBackEveryTable()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Conflict);
-    QCOMPARE(testingClassTableCounts(session->database()), before);
-    QCOMPARE(classNameCount(session->database(), QStringLiteral("Must Roll Back")), 0);
+    QCOMPARE(testingClassTableCounts(store->database()), before);
+    QCOMPARE(classNameCount(store->database(), QStringLiteral("Must Roll Back")), 0);
 }
 
 QTEST_GUILESS_MAIN(NextPlatformApplicationServicesTestingClassCreatePortTests)

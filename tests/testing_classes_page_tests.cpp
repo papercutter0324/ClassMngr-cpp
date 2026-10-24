@@ -2,6 +2,7 @@
 #include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/testing_class_repository.h"
 #include "domain/models/roster.h"
@@ -3549,7 +3550,7 @@ newTestingClassCreationDoesNotUseDetailsUpdatePort()
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClass existing = testingClass(QStringLiteral("Existing Class"));
     existing.teacherId = -1;
-    const auto existingClassId = services.databaseSession()
+    const auto existingClassId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(existing);
     QVERIFY(existingClassId);
     QCOMPARE(ScheduleWidgetTestStubs::testingClassCount(), 0);
@@ -3640,15 +3641,15 @@ newTestingClassCreationDoesNotUseDetailsUpdatePort()
     QVERIFY(list->currentItem()->text().contains(
         QStringLiteral("Created Through Existing Path")
         ));
-    const auto saved = services.databaseSession()
+    const auto saved = services.workspaceStore()
         ->testingClassRepository()->loadTestingClass(createdClassId);
     QVERIFY(saved);
     QCOMPARE(saved->name, QStringLiteral("Created Through Existing Path"));
-    QCOMPARE(services.databaseSession()->database().tables().contains(
+    QCOMPARE(services.workspaceStore()->database().tables().contains(
         QStringLiteral("schedule_testing_blocks")
         ), true);
 
-    QSqlQuery assignmentCount(services.databaseSession()->database());
+    QSqlQuery assignmentCount(services.workspaceStore()->database());
     assignmentCount.prepare(QStringLiteral(
         "SELECT COUNT(*) FROM schedule_testing_blocks WHERE class_id=?"
         ));
@@ -3668,7 +3669,7 @@ newTestingClassCreateForwardsPendingSlotAndSelectsCreatedClass()
     QVERIFY(services.openDatabase(databasePath(directory)));
     TestingClass existing = testingClass(QStringLiteral("Existing Class"));
     existing.teacherId = -1;
-    const auto existingClassId = services.databaseSession()
+    const auto existingClassId = services.workspaceStore()
         ->testingClassRepository()->createTestingClass(existing);
     QVERIFY(existingClassId);
 
@@ -3751,11 +3752,11 @@ newTestingClassCreateForwardsPendingSlotAndSelectsCreatedClass()
     QVERIFY(!page.hasUnsavedChanges());
     QVERIFY(!saveButton->isEnabled());
 
-    const auto saved = services.databaseSession()
+    const auto saved = services.workspaceStore()
         ->testingClassRepository()->loadTestingClass(createdClassId);
     QVERIFY(saved);
     QCOMPARE(saved->name, QStringLiteral("Created With Pending Slot"));
-    QSqlQuery assignment(services.databaseSession()->database());
+    QSqlQuery assignment(services.workspaceStore()->database());
     assignment.prepare(QStringLiteral(
         "SELECT day, start_time FROM schedule_testing_blocks WHERE class_id=?"
         ));
