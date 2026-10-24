@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/native_english_teacher_repository.h"
 #include "next/application/native_english_teacher_birthday_directory_read_port.h"
 
@@ -30,9 +30,9 @@ public:
     [[nodiscard]] Application::NativeEnglishTeacherBirthdayDirectoryReadResult
     readNativeEnglishTeacherBirthdayDirectory() const override
     {
-        DatabaseSession* const session =
-            m_services ? m_services->databaseSession() : nullptr;
-        if (!session || !session->isOpen())
+        WorkspaceStore* const store =
+            m_services ? m_services->workspaceStore() : nullptr;
+        if (!store || !store->isOpen())
         {
             return Application::
                 NativeEnglishTeacherBirthdayDirectoryReadResult::failure(
@@ -40,7 +40,7 @@ public:
         }
 
         NativeEnglishTeacherRepository* const repository =
-            session->nativeEnglishTeacherRepository();
+            store->nativeEnglishTeacherRepository();
         if (!repository)
         {
             return Application::

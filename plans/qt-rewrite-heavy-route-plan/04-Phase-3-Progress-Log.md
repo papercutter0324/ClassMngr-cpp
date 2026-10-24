@@ -1869,3 +1869,31 @@ This repeats the F1389 warning-text baseline failure and is distinct from the
 F1383 orphan-data mismatch recorded above. `git diff --check` passed. No full
 suite or cross-platform build ran. F1390 is accepted; F1391 (Native English
 birthday directory read) is current.
+
+Commit: `b86d6e01cbc5fc3bca9671a7dea39bbb85c24507`.
+
+## F1391 — Native English birthday directory read (Batch 4 candidate 14 of 20) — 2026-10-24
+
+The Native English birthday directory read port,
+`src/next/platform/application_services_native_english_teacher_birthday_directory_read_port.h`,
+and its dedicated Platform fixture,
+`tests/next_platform_application_services_native_english_teacher_birthday_directory_read_port_tests.cpp`,
+now use `WorkspaceStore`. The three raw fields, ordering, and assertions are
+unchanged; no ID projection was added.
+
+Built `ClassMngrNextApplicationNativeEnglishTeacherBirthdayDirectoryReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherBirthdayDirectoryReadPortTests`,
+`ClassMngrNavigationTeacherReadTests`, and `ClassMngrUpcomingBirthdaysTests`.
+Serial CTests #349
+`ClassMngrNextApplicationNativeEnglishTeacherBirthdayDirectoryReadQueryTests`
+and #417
+`ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherBirthdayDirectoryReadPortTests`
+passed; #57 `ClassMngrUpcomingBirthdaysTests` passed. CTest #86
+`NavigationTeacherRead` reported 38 passed and 1 failed at
+`selectedTeacherProfileReadFailureWarnsWithoutConfirmation()`, matching the
+confirmed clean F1388 baseline at commit
+`ddc645c1aedf2571c6cfb4fdf6927085dd7d2209`. No additional failures occurred.
+This repeats the F1389/F1390 warning-text baseline mismatch and remains
+separate from the F1383 orphan-data failure. `git diff --check` passed. No full
+suite or cross-platform build ran. F1391 is accepted; F1392 (Current-campus
+preferences) is current.

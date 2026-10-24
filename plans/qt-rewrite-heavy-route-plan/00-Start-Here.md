@@ -20,8 +20,8 @@
   roster-name read), F1385 (GS Team directory read), F1386 (GS Team directory
   save), F1387 (Native English teacher directory read), F1388 (Native English
   teacher directory save), F1389 (Korean teacher birthday directory read),
-  and F1390 (GS Team birthday directory read) are accepted; F1391 (Native
-  English birthday directory read) is current.
+  F1390 (GS Team birthday directory read), and F1391 (Native English birthday
+  directory read) are accepted; F1392 (Current-campus preferences) is current.
   Slice evidence, the Batch 2 and Batch 3 push receipts, and earlier UI
   limitations, baseline failures, attribution, and coverage notes remain in
   the Phase 3 progress log. The [Phase 3
