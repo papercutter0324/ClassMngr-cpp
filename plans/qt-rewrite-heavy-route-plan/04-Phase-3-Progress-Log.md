@@ -2761,5 +2761,19 @@ Accepted runtime schema-v6 DDL, explicit-index, and constraint contract
 coverage. The focused `ClassMngrDatabaseSchemaManagerTests` CTest passed 1/1;
 the verbose QtTest rerun passed 31 cases, with no acceptance gap reported by
 the independent Tester. This is focused verification; no broader suite result
-is claimed. F1420, the API-by-API `DataService` migration map, is current in
-Batch 9. No production behavior change was part of F1419.
+is claimed. F1420, the API-by-API `DataService` migration map, was the next
+Batch 9 deliverable; its documentation-only acceptance is recorded below. No
+production behavior change was part of F1419.
+
+## F1420 — API-by-API DataService migration map — 2026-10-24
+
+Accepted as a documentation-only inventory. Independent review confirmed all
+77/77 public operational declarations, both `importClasses` overloads,
+constructor/destructor ownership notes, and 101 source links. The map records
+v2 owners, current legacy/test routes, removal prerequisites, and the open SQL
+`CampusRecord` typed-service gap. No source or test changes were part of this
+slice; no tests or builds were run. F1421, populated v6 `.tps` SaveAs/export
+round-trip and backup comparison, is current in Batch 9. Batch 10 discovery
+remains due when F1426 (candidate 8 of 9) starts; Phase 3 remains In Progress.
+See the [DataService migration
+map](../../docs/qt-rewrite/data-service-migration-map.md).

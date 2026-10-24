@@ -40,11 +40,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-24
 - Current note: Batch 9 is active with complete discovery and nine ordered
   candidates. F1419 runtime schema-v6 DDL/index/constraint contract tests are
-  accepted; F1420 is current. Batch 10 discovery is due when F1426 (candidate
-  8 of 9) starts. The ordered scope and full-exit audit evidence are in the
-  current tracker and progress log.
-  `DataService::save()` has no ordinary production caller; F1420's scope is
-  the migration map.
+  accepted; F1420's documentation-only API inventory is accepted, and F1421 is
+  current. Batch 10 discovery is due when F1426 (candidate 8 of 9) starts. The
+  [DataService migration map](../../docs/qt-rewrite/data-service-migration-map.md)
+  records F1420's deliverable. The ordered scope and full-exit audit evidence
+  are in the current tracker and progress log.
+  The map records that `DataService::save()` has no ordinary production caller.
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -62,12 +63,14 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1419 — 2026-10-24
+## Latest Progress Update — F1420 — 2026-10-24
 
-F1419 — Runtime v6 DDL/index/constraint contract tests — is accepted with its
-focused `ClassMngrDatabaseSchemaManagerTests` CTest passed 1/1; the verbose
-QtTest rerun passed 31 cases with no acceptance gap reported. F1420 is current
-in Batch 9. The Phase 3 exit gate and backlog remain open. Full evidence is in the
+F1420's documentation-only `DataService` API inventory is accepted: the
+independent map review confirmed 77/77 public operational declarations,
+including both overloads, constructor/destructor ownership, and 101 source
+links. No tests or builds were run for this documentation slice. F1421 is
+current in Batch 9; the Phase 3 exit gate and backlog remain open. See the
+[migration map](../../docs/qt-rewrite/data-service-migration-map.md) and
 [progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
@@ -277,7 +280,7 @@ plan](memory-hotspot-remediation-plan.md).
 - Repository implementations.
 - File compatibility tests.
 - Backup and recovery behavior.
-- DataService migration map.
+- [DataService migration map](../../docs/qt-rewrite/data-service-migration-map.md).
 - Large-data query and memory tests.
 
 ## Exit gate

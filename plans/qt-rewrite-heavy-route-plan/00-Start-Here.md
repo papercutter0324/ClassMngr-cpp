@@ -8,11 +8,13 @@
 - Last updated: 2026-10-24
 - Current milestone: Phase 3 is In Progress on the mandatory Heavy route.
   Batch 9 is active with discovery complete. F1419's runtime schema-v6 DDL,
-  index, and constraint contract tests are accepted; F1420 is current, with
-  seven later candidates. Begin Batch 10 discovery when F1426 (candidate 8 of
-  9) starts. The current details are in the
+  index, and constraint contract tests are accepted; F1420's documentation-
+  only API inventory is accepted, and F1421 is current with six later
+  candidates. Begin Batch 10 discovery when F1426 (candidate 8 of 9) starts.
+  The current details are in the
   [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
+  [F1420 DataService migration map](../../docs/qt-rewrite/data-service-migration-map.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
   Phase 2 closure evidence

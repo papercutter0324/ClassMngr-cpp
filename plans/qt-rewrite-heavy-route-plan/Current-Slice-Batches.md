@@ -16,8 +16,12 @@ verification evidence in its progress log.
    focused `ClassMngrDatabaseSchemaManagerTests` CTest passed 1/1; its verbose
    QtTest rerun passed 31 cases. No production behavior change was part of this
    contract-test slice.
-2. **F1420 — API-by-API `DataService` migration map (current).**
-3. **F1421 — Populated v6 `.tps` SaveAs/export round-trip and backup comparison.**
+2. **F1420 — API-by-API `DataService` migration map (accepted, docs-only).**
+   Independent review confirmed 77/77 declarations, both overloads,
+   constructor/destructor ownership, and 101 source links. No tests or builds
+   were run. See the [DataService migration
+   map](../../docs/qt-rewrite/data-service-migration-map.md).
+3. **F1421 — Populated v6 `.tps` SaveAs/export round-trip and backup comparison (current).**
 4. **F1422 — Valid-v6 locked and truncated-file preservation.**
 5. **F1423 — Deterministic post-write `QSaveFile` interruption and atomic
    destination preservation.**
