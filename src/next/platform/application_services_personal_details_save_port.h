@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "next/application/personal_details_save.h"
@@ -26,14 +26,14 @@ public:
     explicit ApplicationServicesPersonalDetailsSavePort(
         ApplicationServices& services
         ) noexcept
-        : m_session(services.databaseSession())
+        : m_store(services.workspaceStore())
     {
     }
 
     explicit ApplicationServicesPersonalDetailsSavePort(
         ApplicationServices* services
         ) noexcept
-        : m_session(services ? services->databaseSession() : nullptr)
+        : m_store(services ? services->workspaceStore() : nullptr)
     {
     }
 
@@ -54,7 +54,7 @@ public:
         const Application::PersonalDetailsSaveRequest& request
         ) const override
     {
-        if (!m_session || !m_session->isOpen())
+        if (!m_store || !m_store->isOpen())
         {
             return Application::PersonalDetailsSaveResult::failure(
                 unavailableError()
@@ -62,7 +62,7 @@ public:
         }
 
         SettingsRepository* const repository =
-            m_session->settingsRepository();
+            m_store->settingsRepository();
         if (!repository)
         {
             return Application::PersonalDetailsSaveResult::failure(
@@ -237,7 +237,7 @@ private:
         }
     }
 
-    DatabaseSession* m_session = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

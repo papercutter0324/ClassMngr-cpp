@@ -1,6 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "next/application/personal_details_save.h"
 #include "next/platform/application_services_personal_details_save_port.h"
@@ -127,13 +127,13 @@ bool executeSql(
     const QString& statement
     )
 {
-    DataService* dataService = services.dataService();
-    if (!dataService || !dataService->databaseSession())
+    WorkspaceStore* const store = services.workspaceStore();
+    if (!store || !store->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(dataService->databaseSession()->database());
+    QSqlQuery query(store->database());
     return query.exec(statement);
 }
 
@@ -458,6 +458,8 @@ closedSessionRefusesSaveAndPreservesAllSettingsOnReopen()
     const QString path = databasePath(m_directory);
     QVERIFY(services.openDatabase(path));
     QVERIFY(services.dataService());
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
 
     const QMap<QString, QVariant> initialValues = {
         {QString::fromUtf8(NameKey), QStringLiteral("old name")},
@@ -476,7 +478,7 @@ closedSessionRefusesSaveAndPreservesAllSettingsOnReopen()
     ApplicationServicesPersonalDetailsSavePort port(services);
     services.closeDatabase();
     QVERIFY(services.dataService());
-    QVERIFY(!services.databaseSession()->isOpen());
+    QVERIFY(!store->isOpen());
 
     const auto saved = port.save(replacementRequest(sourcePng()));
     QVERIFY(!saved);
