@@ -10,8 +10,9 @@
   Batch 5 is complete (19/19 slices accepted) and pushed: source/acceptance
   tip `5725e723`, follow-up receipts `8d74cf7a` and `ea91cb64`, and handoff
   tip `b29a0c9b` are pushed. Batch 6 is complete and pushed with F1417 at
-  `1a42b6ad`. Batch 7 is active with F1418 as its first/current candidate.
-  Batch 8 discovery found no other slices and is waiting for Batch 7 to close.
+  `1a42b6ad`. Batch 7's F1418 is accepted and ready for its source/acceptance
+  commit and push. Batch 8 discovery found no other slices and is waiting for
+  Batch 7 to close and push.
   The current details are in the [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch

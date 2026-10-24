@@ -279,6 +279,13 @@ QSqlDatabase WorkspaceStore::database() const
     return m_database ? *m_database : QSqlDatabase();
 }
 
+bool WorkspaceStore::commit()
+{
+    return m_database
+        && m_database->isOpen()
+        && m_database->commit();
+}
+
 std::optional<WorkspaceStore::ReadTransactionFailure>
 WorkspaceStore::withReadTransaction(
     const std::function<Status()>& operation

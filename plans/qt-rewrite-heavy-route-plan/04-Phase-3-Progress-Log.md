@@ -2623,6 +2623,43 @@ suite, UI suite, or cross-platform build ran.
 
 Commit: `e78f2056`.
 
+## F1418 — Workspace save commit ownership (Batch 7 candidate 1) — 2026-10-24
+
+Moved the live `ApplicationServices::saveDatabase()` commit into
+`WorkspaceStore::commit()`. The void signature, closed-store no-op, and
+ignored commit-failure behavior remain unchanged. Dormant `DataService::save()`
+is out of scope because it has no ordinary production caller. Existing
+Workspace port integration verifies transaction persistence through a second
+SQLite connection; no test files changed. F1418 is accepted, with its
+source/acceptance commit and Batch 7 push pending. Batch 8 discovery found no
+other slices and remains queued until that push.
+
+The incremental macOS Debug build compiled and linked all three targets, then
+reported no work to do on rerun:
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextPlatformApplicationServicesWorkspacePortTests ClassMngrDataServiceLifecycleTests --parallel 4
+```
+
+An independent Tester verified the two CTest registrations and ran:
+
+```sh
+ctest --test-dir build/macos-clang-debug --output-on-failure -R 'ClassMngrNextPlatformApplicationServicesWorkspacePortTests|ClassMngrDataServiceLifecycleTests'
+```
+
+Both focused CTests passed (2/2). Main reviewed the source and confirmed
+`git diff --check` passed. No commit-failure injection or broader suite ran.
+
+## Batch 8 discovery — 2026-10-24
+
+Two complementary read-only scans covered the WorkspaceStore/service/database
+boundary and broader Phase 3 deliverables, including schema/migration and
+file/backup/recovery work. They converged on `No other slices were found.` The
+schema baseline lacks full DDL-shape and all-index tests; this was excluded as
+a coverage-only gap because no production behavior slice was identified.
+`DataService::save()` has no ordinary production caller. Batch 7/F1418 was
+active; Batch 8 waits for Batch 7 to close and push.
+
 ## F1417 — WorkspaceStore-owned roster availability read transaction (Batch 6 candidate 1 of 1) — 2026-10-24
 
 Moved F1348's roster-availability read transaction behind `WorkspaceStore`.
@@ -2649,16 +2686,6 @@ The focused Application query and Platform port CTests passed 2/2. No
 commit-failure injection or full, UI, or cross-platform suite ran. After the
 push receipt update, `git diff --check` passed; the focused CTests were not
 rerun.
-
-## Batch 8 discovery — 2026-10-24
-
-Two complementary read-only scans covered the WorkspaceStore/service/database
-boundary and broader Phase 3 deliverables, including schema/migration and
-file/backup/recovery work. They converged on `No other slices were found.` The
-schema baseline lacks full DDL-shape and all-index tests; this was excluded as
-a coverage-only gap because no production behavior slice was identified.
-`DataService::save()` has no ordinary production caller. Batch 7/F1418 remains
-active; Batch 8 waits for Batch 7 to close.
 
 ## F1416 — Schedule Import apply (Batch 5 candidate 19 of 19) — 2026-10-24
 

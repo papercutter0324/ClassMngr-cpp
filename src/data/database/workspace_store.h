@@ -56,6 +56,7 @@ public:
     [[nodiscard]] bool isOpen() const;
     [[nodiscard]] QString databasePath() const;
     [[nodiscard]] QSqlDatabase database() const;
+    [[nodiscard]] bool commit();
 
     // Runs the callback synchronously in a transaction owned by this store.
     // A failed Status rolls back; callback exceptions propagate after rollback.

@@ -93,7 +93,7 @@ void ApplicationServices::saveDatabase()
 {
     if (hasOpenDatabase())
     {
-        m_workspaceStore->database().commit();
+        (void)m_workspaceStore->commit();
     }
 }
 

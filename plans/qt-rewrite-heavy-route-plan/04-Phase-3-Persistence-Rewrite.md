@@ -41,12 +41,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Current note: Batch 5 is complete (19/19 accepted) and pushed: source/
   acceptance tip `5725e723`, follow-up receipts `8d74cf7a` and `ea91cb64`, and
   handoff tip `b29a0c9b`. Batch 6 is complete and pushed with F1417 at
-  `1a42b6ad`. Batch 7 is active; F1418 is its first/current candidate to move
-  the Workspace Save/autosave commit behind `WorkspaceStore`.
-  `DataService::save()` has no ordinary production caller, and no other Batch 7
-  candidates were found. Batch 8 discovery found no other slices; its two
-  read-only scans and excluded coverage-only gap are recorded in the progress
-  log. F1417 and F1416 evidence is in the
+  `1a42b6ad`. Batch 7's one candidate, F1418, is accepted and its
+  source/acceptance commit and push are pending. It moves the live
+  `ApplicationServices` save commit into `WorkspaceStore::commit()` while
+  preserving the existing void signature and failure behavior.
+  `DataService::save()` has no ordinary production caller and is out of scope.
+  Batch 8 discovery found no other slices; its two read-only scans and excluded
+  coverage-only gap are recorded in the progress log. F1418, F1417, and F1416
+  evidence is in the
   [progress log](04-Phase-3-Progress-Log.md).
   See the [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [progress log](04-Phase-3-Progress-Log.md), and [current batch
@@ -65,17 +67,15 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1417 — 2026-10-24
+## Latest Progress Update — F1418 — 2026-10-24
 
-F1417 — WorkspaceStore-owned roster availability read transaction — is
-accepted. The Platform adapter delegates transaction management to
-`WorkspaceStore`; the parent-aware column read, sparse cell stream, and
-snapshot assembly remain within the same transaction. Start, operation, and
-commit failure mapping, result ordering, sparse streaming, and exception
-behavior remain intact. Source/acceptance commit
-`1a42b6ad1d94c1af28702ec3342d623c5d4d368b` was pushed to `origin/Qt-Rewrite`;
-local and remote matched and the worktree was clean. Batch 7/F1418 is active.
-Full evidence is in the [progress log](04-Phase-3-Progress-Log.md).
+F1418 — Workspace save commit ownership — is accepted. The live
+`ApplicationServices::saveDatabase()` path calls `WorkspaceStore::commit()`;
+the void signature, closed-store no-op, and ignored commit-failure behavior
+remain unchanged. `DataService::save()` has no ordinary production caller and
+is out of scope. Its source/acceptance commit and Batch 7 push are pending;
+Batch 8 remains queued until that push. Full evidence is in the
+[progress log](04-Phase-3-Progress-Log.md).
 
 ## Objective
 
