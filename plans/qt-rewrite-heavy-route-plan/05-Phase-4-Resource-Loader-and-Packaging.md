@@ -57,33 +57,29 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `LegacyDocumentContentResourcePort` to obtain the legacy `documents` pack.
   Keep legacy RCC implementation and pack inputs as the compatibility oracle
   through Phase 12. Calendar QML remains compiled via `qt_add_resources`, not
-  an external pack. Batch 4 was pushed in two commits from
-  `1605bac36d4192bf027440a2b83dce8a5e2d99d1` to
-  `ea46415a93e8285e4cb1f81e9aec5b79f7533286`: F1487
-  `f86c79fc81a2b2fd34c6993509b4cd314aacaec1`, then F1488
-  `ea46415a93e8285e4cb1f81e9aec5b79f7533286`. Current `Qt-Rewrite`, local
-  `HEAD`, and `origin/Qt-Rewrite` are at
-  `fd9ee27a955bce7f4a5b13df33245a25a4e1101b`. F1490's push created Actions
-  run `40220179197` for `.github/workflows/phase4-resource-layout.yml` (event
-  push), which ended `startup_failure` at 18:13:01 UTC with zero jobs, checks,
-  or artifacts; logs returned 404. The connected API exposes neither the exact
-  cause nor full-run rerun; zero jobs makes failed-job rerun inapplicable.
-  Static Ruby YAML/structure review found no evident defect; a GitHub-specific
-  linter is unavailable. CMake confirms `-G Visual Studio 17 2022` is a
-  supported override, not a generator conflict. The issue was reported solved;
-  F1492 is the documentation receipt commit/push planned to generate a fresh
-  push event. Workflow remains `on.push` filtered to `Qt-Rewrite`, absent from
-  default `main`, with no dispatch. The cause remains unknown; user direction
-  on extending scope to `main` is pending. F1483/F1486 native results remain
-  unverified. A standard macOS Debug run of six targeted F1486
-  CTests initially passed 5/6 because `ClassMngrNextResourceLoaderTests` had
-  stale counts. Explorer confirmed F1482's four `excluded_v2` records explain
-  198→194 catalog records. F1488 corrected assertions to 194 total (192
-  `PackageFile`, 2 `QtResource`) while preserving coverage; Executor's focused
-  macOS CTest passed 1/1. The independent six-test rerun on `macos-clang-debug`
-  passed 6/6, accepting F1488. F1487 is committed as `f86c79fc`. Required
-  Windows/Linux runs remain open. See the tracker for the exact test list.
-  Phase 4 remains In progress pending native gates and that direction.
+  an external pack. Batch 4 (F1487/F1488) remains documented in the progress
+  log. F1492's push at `cc776f1564e54cdc2492f9594d0580dd4c21e7d3` created
+  workflow run `40220727653`, which failed overall. macOS passed install/probe,
+  the 193-file audit (187 SHA, five QMs, two QML keys), and CTest 3/3. Windows
+  resource bake failed on a byte mismatch for `bundang.json`, so install/audit/
+  tests were skipped. Linux failed compiling `class_details_page.cpp:302` due to
+  ambiguous long-to-QVariant conversion.
+
+  F1493 (`64fcedcd`) adds byte-preserving `.gitattributes` rules for
+  `resources/**` and Calendar QML; Tester confirmed coverage of all 232
+  inventoried paths. Explorer found the local `bundang.json` blob/hash matches
+  inventory and no prior repository `.gitattributes`; Windows autocrlf was not
+  observed, so EOL conversion remains likely but unconfirmed. F1494
+  (`b7878846`) adds an explicit `qlonglong` QVariant conversion. Executor's
+  standard macOS `ClassMngrFeatures` target build succeeded, and Tester
+  confirmed the semantics and current object. CMake confirms `-G Visual Studio
+  17 2022` is a supported preset override, and Windows configure had succeeded.
+  Both fixes are accepted locally; Windows/Linux reruns remain open. F1495 is
+  the docs receipt for the retry batch. Workflow remains `on.push` filtered to
+  `Qt-Rewrite`, absent from default `main`, with no dispatch. The run failures'
+  exact cause is unknown; user direction on extending scope remains pending.
+  F1483/F1486 native results are still required; Phase 4 remains In progress.
+  See the tracker and progress log for the run evidence.
   Phase 7/10 rendering parity remains deferred; legacy pack removal remains
   Phase 12. Batch 1 (F1464–F1468) is pushed to `origin`; see
   the [Phase 4 progress log](05-Phase-4-Progress-Log.md) for its receipt. See

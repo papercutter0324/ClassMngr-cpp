@@ -109,8 +109,26 @@ the user requests a retry. Workflow remains `on.push` filtered to `Qt-Rewrite`,
 absent from default `main`, with no dispatch. The cause of startup failure is
 unknown.
 
-## F1492 — Fresh push retry receipt — planned
+## F1492 — Retry resource-layout workflow — failed overall
 
-F1492 is the small documentation receipt commit/push intended to create a fresh
-push event. The user reports the issue solved and requests the retry. F1483 and
-F1486 native Windows/Linux results remain open; Phase 4 remains In progress.
+Push head `cc776f1564e54cdc2492f9594d0580dd4c21e7d3` created Actions run
+`40220727653`, which failed overall. macOS passed install/probe, audit
+(193 files, 187 SHA, five QMs, two QML keys), and CTest 3/3. Windows resource
+bake failed on `bundang.json` bytes differing from inventory; later install,
+audit, and tests were skipped. Explorer confirmed the local blob/hash matches
+inventory and there was no repository `.gitattributes`; Windows `autocrlf` was
+not observed, so EOL conversion is likely but unconfirmed. Linux failed
+compiling `class_details_page.cpp:302` on ambiguous long-to-QVariant conversion.
+
+## Retry batch — locally prepared; push pending
+
+F1493 (`64fcedcd`) adds `resources/** -text` and Calendar QML `-text` rules;
+Tester confirmed all 232 inventory paths are covered. F1494 (`b7878846`) makes
+the QVariant conversion explicitly `qlonglong`. Executor's standard macOS
+`ClassMngrFeatures` target build succeeded, and Tester confirmed the semantics
+and current object. CMake confirms the VS 17 generator override is supported;
+Windows configure had succeeded. F1495 is the docs receipt before pushing the
+retry batch. These fixes are accepted locally, but Windows/Linux reruns remain
+required. The local head is `b7878846`; `origin/Qt-Rewrite` remains at
+`cc776f1564e54cdc2492f9594d0580dd4c21e7d3`. F1483/F1486 native gates remain
+open; Phase 4 remains In progress.

@@ -21,22 +21,20 @@
   `LegacyDocumentContentResourcePort` and the legacy `documents` pack. Keep
   legacy RCC code and inputs as the compatibility oracle through Phase 12;
   Calendar QML remains compiled with `qt_add_resources`, not an external pack.
-  Batch 4 was pushed to `origin/Qt-Rewrite` in two commits, from `1605bac3` to
-  `ea46415a`: F1487 `f86c79fc` and F1488 `ea46415a`. Current `Qt-Rewrite`,
-  local `HEAD`, and `origin/Qt-Rewrite` are at
-  `fd9ee27a955bce7f4a5b13df33245a25a4e1101b`. F1490's push created run
-  `40220179197` for `.github/workflows/phase4-resource-layout.yml` (push); it
-  ended `startup_failure` at 18:13:01 UTC with zero jobs, checks, or artifacts,
-  and log requests returned 404. The connected API exposes no exact cause or
-  full-run rerun; zero jobs makes failed-job rerun inapplicable. Static Ruby
-  YAML/structure review found no evident defect; a GitHub-specific linter is
-  unavailable. CMake research confirms `-G Visual Studio 17 2022` is a
-  supported override, not a generator conflict. The issue was reported solved;
-  F1492 is the documentation receipt commit/push planned to create a fresh push
-  event. Workflow remains `on.push` filtered to `Qt-Rewrite`, absent from
-  default `main`, with no dispatch. Cause remains unknown; user direction on
-  extending scope to `main` is pending. F1483/F1486 native Windows/Linux jobs
-  remain open. Batch 3's F1486 workflow expansion is `094cda87`. A
+  F1490's retry event failed at startup; the subsequent F1492 push at
+  `cc776f1564e54cdc2492f9594d0580dd4c21e7d3` created run `40220727653`, which
+  failed overall. macOS passed the install/probe audit (193 files, 187 SHA, 5
+  QMs, 2 QML keys) and CTest 3/3. Windows resource bake found a `bundang.json`
+  byte mismatch and skipped install/audit/tests; Linux failed compiling
+  `class_details_page.cpp:302` due to ambiguous long-to-QVariant conversion.
+  F1493 adds byte-preserving `.gitattributes` rules; F1494 corrects the
+  QVariant conversion. Both fixes are accepted locally. Local `HEAD` is
+  `b7878846`; `origin/Qt-Rewrite` remains at `cc776f15`. F1495 records the
+  retry batch before its push. The workflow remains `on.push` filtered to
+  `Qt-Rewrite`, absent from default `main`, with no dispatch; the cause of
+  missing/failed runs is unknown and user direction on extending scope remains
+  pending. Windows/Linux reruns and F1483/F1486 native gates remain open. Batch
+  3's F1486 workflow expansion is `094cda87`. A
   standard macOS Debug run of the six targeted
   F1486 CTests initially passed 5/6 because `ClassMngrNextResourceLoaderTests`
   had stale catalog-count assertions. Explorer confirmed F1482's four

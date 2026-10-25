@@ -376,8 +376,39 @@ Static review at the F1490 SHA passed Ruby YAML parsing and workflow-structure
 checks, with no evident YAML defect; a GitHub-specific linter was unavailable.
 CMake research confirms `-G Visual Studio 17 2022` is a supported override for
 the Visual Studio 18 preset, not a generator conflict. The user reports the
-issue solved and requests a retry. Workflow remains `on.push` filtered to
-`Qt-Rewrite`, absent from default `main`, with no dispatch. F1492 is planned as
-a small documentation receipt commit/push to create a fresh push event. The
-cause of the startup failure remains unknown. F1483/F1486 native Windows/Linux
-results remain required and open; Phase 4 remains In progress.
+issue solved and requests a retry; F1492's resulting run is recorded next.
+Workflow remains `on.push` filtered to `Qt-Rewrite`, absent from default `main`,
+with no dispatch. The cause of the startup failure remains unknown.
+
+## F1492 — Retry resource-layout workflow — failed overall — 2026-10-25
+
+Push head `cc776f1564e54cdc2492f9594d0580dd4c21e7d3` created Actions run
+`40220727653`; the overall run failed. macOS passed the install/probe path,
+staged audit (193 files, 187 SHA checks, five QMs, two QML keys), and CTest
+3/3. Windows resource bake rejected `bundang.json` because its bytes differed
+from inventory; installation, audit, and tests were skipped. Explorer confirmed
+the local blob/hash matches inventory and that no repository `.gitattributes`
+existed; Windows `autocrlf` was not observed, so line-ending conversion is a
+likely but unconfirmed explanation. Linux failed compiling
+`class_details_page.cpp:302` because long-to-QVariant conversion was ambiguous.
+
+## F1493 — Preserve byte-exact resource inputs — accepted locally — 2026-10-25
+
+Commit `64fcedcd` adds `resources/** -text` and Calendar QML `-text` rules to
+`.gitattributes`. Tester confirmed the attributes cover all 232 inventoried
+paths. Windows/Linux reruns remain required.
+
+## F1494 — Make QVariant integer conversion explicit — accepted locally — 2026-10-25
+
+Commit `b7878846` uses explicit `qlonglong` QVariant conversion at the failing
+feature path. Executor's standard macOS `ClassMngrFeatures` target build
+succeeded; Tester confirmed conversion semantics and the current object. CMake
+research confirms `-G Visual Studio 17 2022` is supported as an override for
+the preset, and Windows configure had succeeded. Windows/Linux reruns remain
+required; these local checks do not close the native gates.
+
+## F1495 — Retry-batch documentation receipt — planned — 2026-10-25
+
+F1495 records the run and the two accepted local fixes before the retry batch
+push. Phase 4 remains In progress until F1483/F1486 native Windows/Linux gates
+pass.
