@@ -55,11 +55,15 @@ legacy oracle paths in Phase 4.
    pack fallback or startup preload and is not wired to legacy report/workspace
    UI; the Speaking Evaluation workspace remains unchanged. Unreferenced PPTX
    and roster XLSX remain for F1482.
-9. **F1477 — Define resource failure behavior (active).** Cover missing,
-   corrupt, and type-mismatched files/catalog entries with no pack fallback.
-10. **F1478 — Verify type-specific lazy loads.** Exercise text, JSON, image,
-    font, stylesheet, translation, and stream paths without migrating legacy
-    feature UI consumers.
+9. **F1477 — Define resource failure behavior.** Accepted and committed as
+   `535dc382`. Unknown IDs report NotFound; corrupt selected PDF/PPTX streams
+   fail without a handle or fallback and produce one CorruptResource diagnostic
+   for the selected body. This test-only slice changes no production/legacy
+   code; existing missing, type-mismatch, invalid-catalog, and no-fallback
+   coverage remains.
+10. **F1478 — Verify type-specific lazy loads (active).** Exercise text, JSON,
+    image, font, stylesheet, translation, and stream paths without migrating
+    legacy feature UI consumers.
 11. **F1479 — Verify no-pack startup side effects.** Ensure the Next runtime
     makes no resource request, creates no pack storage/settings, mounts no RCC,
     and has no splash path.

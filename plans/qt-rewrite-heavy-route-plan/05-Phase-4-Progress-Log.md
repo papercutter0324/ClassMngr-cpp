@@ -95,4 +95,23 @@ unselected Office bodies are absent, selected PPTX and DOCX each emit one
 Operation diagnostic, explicit close and owner destruction release handles,
 and malformed, non-Office, or missing inputs fail without fallback.
 `git diff --check` passed. Windows/Linux and the full suite were not run. F1476
-is committed as `2bbbd23d`; F1477 is active.
+is committed as `2bbbd23d`.
+
+## F1477 — Define resource failure behavior — accepted — 2026-10-25
+
+Direct lookup of an unknown catalog ID returns `ResourceError::NotFound` with
+one failed diagnostic. Same-size SHA-256 corruption of the selected PDF or
+PPTX, exercised through the document-content and document-export `openStream`
+ports while an alternate body is available, returns no handle, maps to
+nonrecoverable `Domain::Validation`, and emits exactly one failed
+`CorruptResource` diagnostic for the selected body. Existing missing-file,
+missing-record, type-mismatch, invalid-catalog, and no-pack-fallback coverage
+remains. This is a test-only slice; no production or legacy code changed.
+
+The incremental macOS Debug build of `ClassMngrNextResourceLoaderTests`,
+`ClassMngrNextPlatformDocumentContentResourcePortTests`, and
+`ClassMngrNextPlatformDocumentExportResourcePortTests` succeeded with all
+targets up to date; the resource catalog regenerated. Independent focused
+CTest passed 3/3, and `git diff --check` passed. This verifies macOS Debug only;
+the full suite and Windows/Linux were not run. F1477 is committed as
+`535dc382`; F1478 is active.

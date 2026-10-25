@@ -45,7 +45,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   loader-owned document content handles, is accepted and committed as
   `34926f4b`; F1475, isolated QtPdf session-release verification, is accepted
   and committed as `8a2163d2`; F1476, operation-scoped Office export inputs,
-  is accepted and committed as `2bbbd23d`; F1477 is active. F1469 is committed
+  is accepted and committed as `2bbbd23d`; F1477, resource failure behavior,
+  is accepted and committed as `535dc382`; F1478 is active. F1469 is committed
   as `d282e7f1`.
   Batch 1
   (F1464–F1468) was pushed to `origin`; see the [Phase 4 progress log](05-Phase-4-Progress-Log.md)

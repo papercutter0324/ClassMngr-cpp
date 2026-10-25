@@ -33,7 +33,8 @@
   content handles, is accepted and committed as `34926f4b`; F1475, isolated
   QtPdf session-release verification, is accepted and committed as
   `8a2163d2`; F1476, operation-scoped Office export inputs, is accepted and
-  committed as `2bbbd23d`; F1477 is active.
+  committed as `2bbbd23d`; F1477, resource failure behavior, is accepted and
+  committed as `535dc382`; F1478 is active.
   F1468 provides
   explicit root/catalog injection, catalog
   validation, root-confined file reads, and RAII stream/font/translation
