@@ -47,8 +47,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   and committed as `8a2163d2`; F1476, operation-scoped Office export inputs,
   is accepted and committed as `2bbbd23d`; F1477, resource failure behavior,
   is accepted and committed as `535dc382`; F1478, type-specific lazy-load
-  verification, is accepted with no separate source-code delta; F1479 is
-  active. F1469 is committed as `d282e7f1`.
+  verification, is accepted with no separate source-code delta; F1479,
+  no-pack startup side effects, is accepted and committed as `295d238d`; F1480,
+  relocated package lookup, is active. F1479 excludes external or legacy
+  runtime RCC-pack mounts; F1467's two Calendar QML resources remain compiled
+  into `ClassMngrNext` with `qt_add_resources`. F1469 is committed as
+  `d282e7f1`.
   Batch 1
   (F1464–F1468) was pushed to `origin`; see the [Phase 4 progress log](05-Phase-4-Progress-Log.md)
   for the receipt. F1469 resolves
@@ -322,7 +326,8 @@ Resources are delivered as part of the normal application package. A normal appl
 
 There will be:
 
-- No independently mounted RCC packs.
+- No external or legacy runtime RCC-pack mounts; retain F1467's two Calendar
+  QML resources compiled into `ClassMngrNext` with `qt_add_resources`.
 - No runtime resource-pack directory.
 - No resource-pack manifest download.
 - No resource-pack signature download.
@@ -519,7 +524,10 @@ If an installer migration later removes them, it must:
 
 ## Exit gate
 
-The application starts without mounting a resource pack, performs no resource update request, and displays the same resource-backed content as the baseline.
+The application starts without mounting or downloading an external/legacy
+resource pack, performs no resource update request, and displays the same
+resource-backed content as the baseline. F1467's two compiled-in Calendar QML
+resources remain.
 
 Large resources are not loaded or decoded until their owning feature or operation requests them.
 

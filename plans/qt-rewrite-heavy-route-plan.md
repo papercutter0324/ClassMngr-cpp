@@ -97,7 +97,8 @@ The rewrite is complete only when:
 - Light and dark themes match.
 - Menus, shortcuts, navigation, permissions, and dialogs match.
 - The splash screen is gone from every startup path.
-- No resource packs are mounted or downloaded.
+- The v2 app mounts no external or legacy resource pack at runtime and
+  downloads none; F1467's two Calendar QML resources remain compiled in.
 - No separate resource update request exists.
 - Application updates still work and include canonical resources.
 - Large resources load on demand.

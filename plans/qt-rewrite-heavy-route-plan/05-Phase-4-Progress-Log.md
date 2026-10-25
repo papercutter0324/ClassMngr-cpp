@@ -135,5 +135,32 @@ remain on pack paths.
 The independent macOS Debug build of `ClassMngrNextResourceLoaderTests`
 succeeded; the target was up to date and the resource catalog regenerated.
 Focused CTest passed 1/1, and `git diff --check` passed. The full suite and
-Windows/Linux were not run. F1478 is accepted as verification-only; F1479 is
-active.
+Windows/Linux were not run. F1478 is accepted as verification-only.
+
+## F1479 — Verify no-pack startup side effects — accepted — 2026-10-25
+
+`ClassMngrNextLaunchFilesystemSideEffectsTests` launches the actual executable
+from a fresh working directory with isolated HOME and XDG config/data/cache/state
+roots; the test setup defines Windows profile equivalents. It verifies normal
+exit, the exact version line, no created storage roots, and a recursive scan
+of the working directory with `AllEntries|Hidden|System|NoDotAndDotDot` finding
+no files or directories.
+The existing `ClassMngrNextLaunch` gate remains in place.
+
+Source and CMake review confirms `src/next/main.cpp` only constructs
+`QCoreApplication`, sets app name/version, prints the version, and exits;
+`ClassMngrNext` keeps its QtCore-only direct link. Startup has no resource-port
+request, `ResourcePackManager`, settings/storage creation, explicit external or
+legacy runtime RCC-pack mount, or splash path. This review retains F1467's two
+Calendar QML resources embedded with `qt_add_resources`: they are compiled-in
+resources, not runtime registration of an external pack. The subprocess test
+proves filesystem behavior; the source/dependency review supports the other
+claims because there is no global loader-call counter.
+
+Standard macOS Debug CMake regeneration completed in about 99 seconds with
+developer-policy warnings and no configure failure; the incremental focused
+build succeeded. An independent rebuild after the hidden/system scan change
+found the target up to date. Focused CTest passed 2/2 (`ClassMngrNextLaunch` and
+`ClassMngrNextLaunchFilesystemSideEffectsTests`), and `git diff --check` passed.
+The full suite and Windows/Linux were not run. No production startup code
+changed. F1479 is committed as `295d238d`.

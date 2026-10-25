@@ -65,11 +65,21 @@ legacy oracle paths in Phase 4.
     using F1468's existing loader tests; no separate source-code delta was
     needed. The selected examples exercise all seven loader APIs at request
     time; legacy feature consumers remain on pack paths.
-11. **F1479 — Verify no-pack startup side effects (active).** Ensure the Next runtime
-    makes no resource request, creates no pack storage/settings, mounts no RCC,
-    and has no splash path.
-12. **F1480 — Verify relocated package lookup.** Resolve only the selected
-    installed root when launched from another working directory.
+11. **F1479 — Verify no-pack startup side effects.** Accepted and committed as
+    `295d238d`. The actual `ClassMngrNext` subprocess exits normally with its
+    exact version line, leaves isolated HOME/XDG roots uncreated, and leaves
+    its fresh working directory without files or directories. The recursive
+    scan includes hidden/system entries; Windows profile equivalents are
+    defined in the test setup. Source and dependency review confirms no
+    resource-port request, `ResourcePackManager`, settings/storage creation,
+    external/legacy runtime
+    RCC-pack mount, or splash path. F1467's two Calendar QML resources remain
+    compiled into the executable with `qt_add_resources`; compiled-in
+    resources are not external pack mounts.
+    Filesystem behavior is process-tested; architecture claims are source/
+    dependency-reviewed because there is no global loader-call counter.
+12. **F1480 — Verify relocated package lookup (active).** Resolve only the
+    selected installed root when launched from another working directory.
 13. **F1481 — Audit staged resource completeness.** Compare package files and
     generated outputs with the catalog; validate Calendar Qt-resource keys.
 14. **F1482 — Resolve unowned/absent inventory entries.** Decide the v2

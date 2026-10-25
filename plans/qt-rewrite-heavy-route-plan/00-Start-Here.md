@@ -35,7 +35,10 @@
   `8a2163d2`; F1476, operation-scoped Office export inputs, is accepted and
   committed as `2bbbd23d`; F1477, resource failure behavior, is accepted and
   committed as `535dc382`; F1478, type-specific lazy-load verification, is
-  accepted with no separate source-code delta; F1479 is active.
+  accepted with no separate source-code delta; F1479, no-pack startup side
+  effects, is accepted and committed as `295d238d`; F1480, relocated package
+  lookup, is active. F1467's two Calendar QML resources stay compiled into
+  `ClassMngrNext`; F1479 excludes external/legacy runtime RCC-pack mounting.
   F1468 provides
   explicit root/catalog injection, catalog
   validation, root-confined file reads, and RAII stream/font/translation
@@ -68,7 +71,9 @@
   Windows ARM64 also passed as informational jobs; they were not required for
   closure. See the [Phase 1 plan](02-Phase-1-Build-System-and-Repository-Structure.md)
   for the run evidence.
-- Release target: ClassMngr v2 with feature parity, no splash screen, no resource packs, and Windows startup memory below 250 MiB
+- Release target: ClassMngr v2 with feature parity, no splash screen, no
+  external/legacy packs mounted or downloaded (with F1467 Calendar QML
+  resources compiled in), and Windows startup memory below 250 MiB
 
 ### Phase status
 
