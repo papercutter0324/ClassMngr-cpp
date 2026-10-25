@@ -58,11 +58,18 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Keep legacy RCC implementation and pack inputs as the compatibility oracle
   through Phase 12. Calendar QML remains compiled via `qt_add_resources`, not
   an external pack. Batch 3 was pushed in two commits, from `1475a46d` to
-  `a2e506a7`; F1486's workflow expansion is commit `094cda87`. Authenticated
-  Actions API queries found no workflow runs for either head, and combined
-  status/check-runs are empty or pending. F1483 and F1486 native results remain
-  unverified; see the tracker for F1486's exact target list.
-  Phase 4 remains In progress until F1483 and F1486 pass.
+  `a2e506a7`; F1486's workflow expansion is commit `094cda87`. Local `HEAD`
+  and `origin/Qt-Rewrite` now both resolve to
+  `1605bac36d4192bf027440a2b83dce8a5e2d99d1` (parent
+  `a2e506a74c316bf902d6a4b5cd956970286471b3`, tree
+  `12f431a05225f30aecb076fd88886403a2e0e8fc`). Actions API has no runs/checks
+  for `1605bac3` and combined
+  status is pending. The push trigger targets `Qt-Rewrite` and supports
+  non-default branches; manual dispatch is unavailable because the workflow
+  file is absent from default `main`. The reason no run surfaced is unknown;
+  user direction is needed on extending scope to `main`. F1483 and F1486 native
+  results remain unverified; see the tracker for F1486's exact target list.
+  Phase 4 remains In progress pending both native gates and that direction.
   Phase 7/10 rendering parity remains deferred; legacy pack removal remains
   Phase 12. Batch 1 (F1464–F1468) is pushed to `origin`; see
   the [Phase 4 progress log](05-Phase-4-Progress-Log.md) for its receipt. See

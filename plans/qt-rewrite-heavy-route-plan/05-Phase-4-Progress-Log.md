@@ -310,8 +310,24 @@ successfully from `Qt-Rewrite` to `origin` in two commits, advancing
 `1475a46dae77d8970852681dae7a2032ff907edf` to
 `a2e506a74c316bf902d6a4b5cd956970286471b3`; the commits are F1486 workflow
 `094cda87` and documentation `a2e506a7`. Local `HEAD` and `origin/Qt-Rewrite`
-match at the new tip. Authenticated Actions API queries after Batch 2 head
-`1475a46d` and Batch 3 head `a2e506a7` found no workflow runs; combined commit
-status/check-runs are empty or pending. No run or pass is claimed. F1483 and
-F1486 native results remain pending; Phase 4 remains In progress until both
-gates pass.
+matched at the new tip at the time of that receipt. Current local `HEAD` and
+`origin/Qt-Rewrite` both resolve to
+`1605bac36d4192bf027440a2b83dce8a5e2d99d1`, parent
+`a2e506a74c316bf902d6a4b5cd956970286471b3`, tree
+`12f431a05225f30aecb076fd88886403a2e0e8fc`. This is the same tree and parent
+as the former local receipt commit `9fe1f26fe3ace50996d58b87cf045f9afab31afb`,
+which has been superseded by the published commit. Actions API queries found
+no runs/checks for Batch 2 head `1475a46d`, Batch 3 head `a2e506a7`, or current
+head `1605bac3`; combined status for `1605bac3` is pending. No run or pass is
+claimed. F1483 and F1486 native results remain pending.
+
+## F1487 — Reconcile missing native workflow runs — awaiting user direction — 2026-10-25
+
+The F1483 push filter targets `Qt-Rewrite`, and push workflows can run on
+non-default branches. The repository default is `main`, where this workflow
+file is absent; `workflow_dispatch` requires the workflow file on the default
+branch. No dispatch tool is exposed. These facts do not explain why no push run
+or checks surfaced, and credential suppression or Actions settings remain
+hypotheses only. Do not infer a cause. F1483/F1486 native results remain open;
+user direction is needed on whether to extend workflow scope to `main`. Phase 4
+remains In progress pending native jobs and that direction.

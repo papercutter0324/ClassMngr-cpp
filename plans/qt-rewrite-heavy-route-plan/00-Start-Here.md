@@ -23,11 +23,18 @@
   Calendar QML remains compiled with `qt_add_resources`, not an external pack.
   Batch 3 was pushed from `Qt-Rewrite` to `origin` in two commits, from
   `1475a46d` to `a2e506a7`; F1486 workflow expansion is commit `094cda87`.
-  Actions queries found no runs or checks for either batch head, so F1483/F1486
-  native results remain pending. F1486's existing loader, document
-  content/export, QtPdf session, and no-pack launch tests are not yet verified.
-  Phase 4 remains open until F1483 and F1486 pass; Phase 7/10
-  rendering parity remains deferred, and legacy pack removal remains Phase 12.
+  Local `HEAD` and `origin/Qt-Rewrite` now both resolve to
+  `1605bac36d4192bf027440a2b83dce8a5e2d99d1` (parent
+  `a2e506a74c316bf902d6a4b5cd956970286471b3`, tree
+  `12f431a05225f30aecb076fd88886403a2e0e8fc`). Actions has no runs/checks for
+  `1605bac3` and its combined status is pending; F1483/F1486 native results
+  remain unverified. Push filters
+  target `Qt-Rewrite` and can run on non-default branches, but the workflow is
+  absent from default `main`, so manual dispatch is unavailable. The cause of
+  missing runs is unknown; user direction is needed on extending scope to
+  `main`. Phase 4 remains open pending native jobs and that direction; Phase
+  7/10 rendering parity remains deferred, and legacy pack removal remains
+  Phase 12.
   See the [Phase 4 progress log](05-Phase-4-Progress-Log.md),
   [resource inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md),
   and [current batch tracker](Current-Slice-Batches.md). Batch 1's push receipt
