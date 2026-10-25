@@ -28,7 +28,14 @@
   `a2e506a74c316bf902d6a4b5cd956970286471b3`, tree
   `12f431a05225f30aecb076fd88886403a2e0e8fc`). Actions has no runs/checks for
   `1605bac3` and its combined status is pending; F1483/F1486 native results
-  remain unverified. Push filters
+  remain unverified. A separate standard macOS Debug run of the six targeted
+  F1486 CTests initially passed 5/6 because `ClassMngrNextResourceLoaderTests`
+  had stale catalog-count assertions. Explorer confirmed F1482's four
+  exclusions explain 198→194 records; F1488 corrected expected counts to 194
+  total (192 `PackageFile`, 2 `QtResource`) while preserving coverage.
+  Executor's focused macOS CTest passed 1/1; the independent six-test rerun on
+  `macos-clang-debug` passed 6/6, accepting F1488. Windows/Linux runs remain
+  open. F1487 is committed as `f86c79fc`. Push filters
   target `Qt-Rewrite` and can run on non-default branches, but the workflow is
   absent from default `main`, so manual dispatch is unavailable. The cause of
   missing runs is unknown; user direction is needed on extending scope to

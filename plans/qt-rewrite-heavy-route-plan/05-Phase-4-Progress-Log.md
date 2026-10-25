@@ -321,13 +321,31 @@ no runs/checks for Batch 2 head `1475a46d`, Batch 3 head `a2e506a7`, or current
 head `1605bac3`; combined status for `1605bac3` is pending. No run or pass is
 claimed. F1483 and F1486 native results remain pending.
 
-## F1487 — Reconcile missing native workflow runs — awaiting user direction — 2026-10-25
+## F1487 — Reconcile missing native workflow runs — committed — 2026-10-25
 
-The F1483 push filter targets `Qt-Rewrite`, and push workflows can run on
-non-default branches. The repository default is `main`, where this workflow
-file is absent; `workflow_dispatch` requires the workflow file on the default
-branch. No dispatch tool is exposed. These facts do not explain why no push run
-or checks surfaced, and credential suppression or Actions settings remain
-hypotheses only. Do not infer a cause. F1483/F1486 native results remain open;
-user direction is needed on whether to extend workflow scope to `main`. Phase 4
-remains In progress pending native jobs and that direction.
+F1487 is committed as `f86c79fc`. The F1483 push filter targets `Qt-Rewrite`,
+and push workflows can run on non-default branches. The repository default is
+`main`, where this workflow file is absent; `workflow_dispatch` requires the
+workflow file on the default branch. No dispatch tool is exposed. These facts
+do not explain why no push run or checks surfaced, and credential suppression
+or Actions settings remain hypotheses only. Do not infer a cause. F1483/F1486
+native results remain open; user direction is needed on whether to extend
+workflow scope to `main`. Phase 4 remains In progress pending native jobs and
+that direction.
+
+## F1488 — Correct stale loader catalog assertions — accepted — 2026-10-25
+
+The initial standard `macos-clang-debug` run of six targeted F1486 CTests
+passed 5/6; only `ClassMngrNextResourceLoaderTests` failed. The generator
+classifies the 194 catalog records as 187 runtime-packaged plus 7 generated.
+C++ `directCount` counts `PackageFile` records: the correct counts are 194
+total (192 `PackageFile`, 2 `QtResource`). Five generated QM files are included
+among the 192 package files; the other two generated records are Qt QML. The
+pre-correction assertions at `cmake/tests/next_resource_loader.cpp:333`
+expected 198 total and 196 `PackageFile`. Explorer confirmed these counts were
+stale: F1482's four `excluded_v2` records account for the 198-to-194 change.
+Executor corrected the counts while preserving coverage; its standard macOS
+Debug build and focused CTest passed 1/1. Independent Tester verified the
+standard `macos-clang-debug` build and reran all six targeted F1486 CTests;
+6/6 passed. F1488 is accepted. Windows/Linux Actions results remain required
+and open; macOS acceptance does not replace them.

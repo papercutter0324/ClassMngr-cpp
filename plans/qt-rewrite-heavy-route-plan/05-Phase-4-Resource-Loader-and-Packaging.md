@@ -68,8 +68,15 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   non-default branches; manual dispatch is unavailable because the workflow
   file is absent from default `main`. The reason no run surfaced is unknown;
   user direction is needed on extending scope to `main`. F1483 and F1486 native
-  results remain unverified; see the tracker for F1486's exact target list.
-  Phase 4 remains In progress pending both native gates and that direction.
+  results remain unverified. A standard macOS Debug run of six targeted F1486
+  CTests initially passed 5/6 because `ClassMngrNextResourceLoaderTests` had
+  stale counts. Explorer confirmed F1482's four `excluded_v2` records explain
+  198→194 catalog records. F1488 corrected assertions to 194 total (192
+  `PackageFile`, 2 `QtResource`) while preserving coverage; Executor's focused
+  macOS CTest passed 1/1. The independent six-test rerun on `macos-clang-debug`
+  passed 6/6, accepting F1488. F1487 is committed as `f86c79fc`. Required
+  Windows/Linux runs remain open. See the tracker for the exact test list.
+  Phase 4 remains In progress pending native gates and that direction.
   Phase 7/10 rendering parity remains deferred; legacy pack removal remains
   Phase 12. Batch 1 (F1464–F1468) is pushed to `origin`; see
   the [Phase 4 progress log](05-Phase-4-Progress-Log.md) for its receipt. See

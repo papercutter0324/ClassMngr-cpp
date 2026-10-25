@@ -41,6 +41,22 @@ content/export ports, QtPdf session release, and no-pack startup:
 - `ClassMngrNextLaunchFilesystemSideEffectsTests`
 - `ClassMngrNextLaunch`
 
+Supplementary standard macOS Debug verification ran six targeted F1486 CTests:
+5/6 passed. Only `ClassMngrNextResourceLoaderTests` failed: the generated
+catalog has 194 records, classified by the generator as 187 runtime-packaged
+plus 7 generated. C++ `directCount` counts `PackageFile`: current totals are
+194 records (192 `PackageFile`, 2 `QtResource`). The five generated QM files
+are among the 192 package files; the other two generated records are Qt QML.
+Correct expectations are 192 `PackageFile` plus 2 `QtResource`, 194 total.
+The assertion at `cmake/tests/next_resource_loader.cpp:333` expects 198 total
+and 196 `PackageFile`. Explorer confirmed these expectations are stale; F1482's
+four `excluded_v2` records account for the 198-to-194 change. Executor
+corrected counts while preserving coverage; its standard macOS Debug build
+and focused CTest passed 1/1. Independent Tester reran all six targeted F1486
+CTests on the standard macOS Debug preset; 6/6 passed. F1488 is accepted, and
+F1487 is committed as `f86c79fc`. Required Windows/Linux Actions results
+remain open; the macOS pass does not replace them.
+
 Linux QtPdf is mandatory and fails clearly if unavailable. Independent workflow
 review passed. Authenticated Actions API queries found no workflow runs/checks
 for these heads: Batch 2 `1475a46d`, Batch 3 `a2e506a7`, and current remote

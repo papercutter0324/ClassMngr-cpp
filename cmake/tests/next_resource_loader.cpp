@@ -330,19 +330,19 @@ bool testLoader(QCoreApplication& application)
             ));
     }
 
-    if (loadedCatalog->records().size() != 198)
+    if (loadedCatalog->records().size() != 194)
     {
-        return fail(QStringLiteral("generated catalog did not contain 198 runtime records"));
+        return fail(QStringLiteral("generated catalog did not contain 194 runtime records"));
     }
 
-    int directCount = 0;
+    int packageFileCount = 0;
     int generatedTranslationCount = 0;
     int qtResourceCount = 0;
     for (const auto& record : loadedCatalog->records())
     {
         if (record.location() == ResourceLocation::PackageFile)
         {
-            ++directCount;
+            ++packageFileCount;
             if (record.expectedType() == ResourceType::Qm)
             {
                 ++generatedTranslationCount;
@@ -353,9 +353,12 @@ bool testLoader(QCoreApplication& application)
             ++qtResourceCount;
         }
     }
-    if (directCount != 196 || generatedTranslationCount != 5 || qtResourceCount != 2)
+    if (packageFileCount != 192 || generatedTranslationCount != 5 || qtResourceCount != 2)
     {
-        return fail(QStringLiteral("catalog generated resource-kind counts are incorrect"));
+        return fail(QStringLiteral(
+            "catalog must contain 192 package-file records including 5 generated translations, "
+            "and 2 Qt-resource records"
+            ));
     }
 
     ResourceLoader loader(std::move(*loadedCatalog));
