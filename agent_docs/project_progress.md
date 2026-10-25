@@ -1,190 +1,30 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 3 — Persistence Rewrite.
-Current deployment: `phase3_structured_errors_resume_20261024`. Route: Heavy;
-this continuation is active. Batch 9 (F1419–F1427) was pushed and verified at
-`7b4eaaf809ecdc17e4e14fae555b157c361c378d`. Batch 10 (F1428) is committed
-and pushed at `01670f53d7924a5e68ce9288effe3a4bf12b3403`. Batch 11
-(F1429–F1432) is pushed at `ee6efe495d25136cf70297183af1aeaf5ae8d51c`.
-Batch 12 (F1433/F1434) is pushed at
-`5ca42a876a40ec74f49055530a3d7714aa5368f7`. Batch 13 (F1435) is pushed and
-verified at `41743d8676beee99274f4aacbe606002b4e38c30`. Batch 14 (F1436) is
-pushed and verified at `071560c8774f5c16c2b2502a5f561507e1f5f86f`. F1437 is
-committed at `91355e2c0483c550eca93bb9b0b20bc0a7c55547`. Batch 15 is pushed
-and verified at `af1024d336241e0f2fe7db5e3af90785d604d50e`. F1438 is committed
-at `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`. Batch 16 is pushed and verified
-at `49ec21e783441fef616fae67cc633e9c7c6de578`. Batch 17 (F1439/F1440 and its
-closeout docs) is pushed and verified at `11db3892c3533f7dd7d270be30905bd3d730fdd2`.
-Batch 18 F1441 is committed at `01a398599af2004305932f02c99671cc5fb0400f`;
-independent WorkspacePort and DataService lifecycle CTests passed 2/2 and
-`git diff --check` passed. It uses vendored SQLite 3.54.1 Online Backup API
-handles to preserve committed WAL data and rowids before atomic QSaveFile
-replacement; macOS has no new SQLite runtime dependency. Windows and Linux were
-not built. Batch 18 is pushed and verified at
-`5c1bf51bb468d647227e3e0aa072a0bb9a666a2f`. F1442 was verification-only: the
-exact F1349 `wizardSuccessTranscript` slot passed with normal macOS service
-access (QtTest 3/3); its aggregate UI CTest passed 1/1 and Teacher Import
-Platform/Application CTests passed 2/2. No source or assertion changes were
-needed. F1443 is committed at
-`4463eda2640018c2307b093ed0db97b99b47c43d`; independent lifecycle CTest passed
-1/1 (71 Qt cases), with `git diff --check` clean. Batch 20 implementation and
-closeout docs are pushed and verified at
-`7ae16b9620cbd02d9f4a4187c45ce9f296760987`. Batch 21 discovery started at
-the second-to-last Batch 20 slice, completed with two independent scans and
-bounded review, and found no further candidate. The F1418 void Save API remains
-appropriate because checked v2 writes own their transactions and ordinary
-FileController Save has no transaction to commit. The earlier restricted
-F1349 run aborted in Qt before import; the normal-access pass resolves that test
-gap without a code workaround. Independent final-gate reviews recommend pass:
-no v2 callsite reaches DataService or SQL internals, and the supported v6 file
-paths have focused implementation/test evidence, but a fresh contract audit
-reopened Phase 3. Most repository APIs still return `std::expected<..., QString>`
-or bool without stable error categories, contrary to §3.3's structured-error
-deliverable. Batch 22 discovery accepted 20 ordered error-contract slices.
-F1444 is committed locally at
-`fef61c849b4f845ba89a008dcee697bc380895ce`, with independent focused
-verification passed; it will be pushed when Batch 22 closes. F1445's public
-workspace/schema/file-operation error flow is implemented, independently
-verified, and committed locally at
-`0f9b8bf6f9165d51f53e3f46af616368a46bdba0`; it will be pushed when Batch 22
-closes. F1446 Teacher Import structured-error implementation and focused
-independent verification passed; it is committed locally at
-`fe3edd1e4ff890eea1f1b57c9dc3b5afcd2cfae6` and will be pushed when Batch 22
-closes. F1447 TestingBlock assignment implementation and independent focused
-verification passed; commit `ba685fbbc69d6b8564d2896671cd82ee3a0810ed` is local
-and will be pushed when Batch 22 closes. F1448 ClassRepository implementation
-and independent focused verification passed; commit
-`28cd7f39def7cc701e02cd8b488a7f21505fc745` is local and will be pushed when
-Batch 22 closes. F1449 TestingClassRepository is independently verified and
-committed locally at `71424f7334399ec3735c23172e4627b3cefb0641`; it is not
-pushed. Eight focused CTests passed, along with three TestingClassesPage
-parity CTests and ScheduleImport (96 Qt cases; one external-workbook case
-skipped because `CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was unset). The broad
-ScheduleWidget and TestingClassesPage runs had unresolved current-run failures
-(SQLite driver/database-open errors and four roster UI assertions); no
-same-revision baseline was established. No full suite or other-platform build
-ran. F1450 ClassInfoRepository implementation and independent source review
-are complete; commit `bd03110d7de6a034db9f631099164d9562c2435b` is local and
-not pushed. F1451 TeacherRepository implementation and independent focused
-verification are complete; commit `f8261f96cb57f2c7baf41941be2636f1014fd9a4`
-is local and not pushed. F1452 GsTeamRepository implementation and independent
-focused verification are complete; commit `4ccb5c8ceda848e4f09afcd41a958437939aca14`
-is local and not pushed. F1453 NativeEnglishTeacherRepository implementation
-and independent focused verification are complete; commit
-`78189be6fe288a1ac6e8fef8760c151edf687f20` is local and not pushed. F1454
-IntensiveSlotStateRepository implementation and independent focused
-verification are complete; commit `b362325f8a3d2f162a14e30c59ee171a52024e77`
-is local and not pushed. F1454 independent macOS verification passed five
-focused CTests (5/5), covering SQL/cursor classification, diagnostic
-conversion, port recovery policy, and lifecycle behavior. Upsert collision,
-ordering, and raw unknown values were source-compared as unchanged. No full
-suite or other-platform build ran. F1455 RosterRepository implementation and
-independent verification are complete; commit
-`5cf27a6a7589eb19c0d859684b5e44f53b197c4e` is local and not pushed. A fresh
-macOS incremental Debug build succeeded and 22 focused CTests passed 22/22.
-A broader ClassTransfer teacher-profile fallback assertion failed outside the
-changed roster/export path, and `ClassMngrClassesPageTests` timed out in
-offscreen mode without a specific hanging case; neither has a pre-change
-baseline. F1456 CalendarEventRepository implementation and independent
-verification are complete; commit `86667de56547273c8897198470e9c271a583035c`
-is local and not pushed. F1457 SpeakingEvalRepository discovery is complete;
-scope is accepted and implementation is active. A fresh macOS build
-succeeded and four focused CTests passed 4/4, including 24 repository and 81
-calendar-port cases. Missing-delete no-op, malformed stored dates, negative-ID
-save, and single-save transaction start/commit cases remain source-reviewed
-only; no full suite or other-platform build ran. F1457 SpeakingEvalRepository
-implementation and independent verification are complete; commit
-`2ccba709122ae44a246302bdf8dab8d6a179e3cb` is local and not pushed. F1458
-ScheduleImportRepository implementation and independent verification are
-complete; commit `b968a9d2f93016ac03c1df9af8704ed5854ef2c2` is local and not
-pushed. F1459 ClassTransferRepository implementation and independent
-verification are complete; commit `12feaf380f2bc5368f3a709821a73a81b34d50fd`
-is local and not pushed. F1460 SettingsRepository implementation and
-independent verification are complete and accepted; commit
-`46ffe1a8711ee5ec8cb997b5921868aab553ebce` is local and not pushed.
-The three fallible repository APIs now return typed results, repository
-failures remain Technical with existing diagnostics, DataService and
-SettingsService retain their QString-based legacy signatures, and direct
-preference ports preserve fallback and best-effort behavior. Missing settings
-and empty batch saves remain successful. A fresh forced build of ClassMngr and
-23 focused test targets succeeded; 23 CTest suites passed. A late cursor-fetch
-failure was source-reviewed but not injected; no full-suite or other-platform
-build ran. F1461 PersonalDetailsRepository implementation and independent
-verification are complete and accepted; commit
-`630260d30ec2c4df935c6dffd758d2cba2c7f071` is local and not pushed. Its public
-read/save operations expose typed repository outcomes, mapping service/query
-failures to Technical while keeping missing-key defaults, the atomic nine-key
-save, field conversion, and best-effort Zoom migration. Actual read failures
-previously hidden as defaults now remain visible; active page ports are
-unchanged. A fresh five-target build and 5/5 focused CTest suites passed; the
-added malformed-signature case rebuilt and passed separately (10 Qt cases).
-`git diff --check` passed. No full-suite or other-platform build ran. F1462
-CampusRecordRepository implementation and independent verification are
-complete and accepted; commit `9228864cbb40393bd84515ab06d02ca8c2d758ac` is
-local and not pushed. Its SQL and transaction failures
-remain Technical, invalid IDs are InvalidInput, missing lookups/updates are
-NotFound, malformed stored or generated IDs are Validation, and deleting a
-missing positive ID remains a successful no-op. A fresh lifecycle-target
-rebuild passed; CTest passed 1/1 and direct QtTest passed 51 cases, including
-the new non-convertible persisted-ID test. `git diff --check` passed. Malformed
-stored IDs through `getCampus()` and nonpositive generated IDs remain
-source-reviewed only; no full-suite or other-platform build ran.
-Batch23 discovery completed at the scheduled trigger; no new eligible
-repository candidate was accepted. DataService compatibility remains part of
-the queued campus slices, while DocumentCatalog and other resource services
-are outside §3.3's repository scope. F1463 CampusJsonRepository implementation
-and independent verification are complete and accepted; commit is pending.
-Point reads distinguish successful absence from Technical I/O and Validation
-JSON errors; writes use shared typed errors and preserve create Conflict. Bulk
-directory loads remain best-effort because their vector-only consumers
-intentionally skip bad records; the selected-record port propagates typed read
-failures. The repaired 4-target build passed 6/6 CTest cases and 68 Qt cases;
-the earlier 8-target run passed 10/10 CTest cases and 93 Qt cases, covering
-list adapters. `git diff --check` passed. Short-write/commit failures remain
-source-reviewed because QSaveFile has no deterministic injection seam. No full
-suite or other-platform build ran. F1457's fresh production/test targets
-built. DataService lifecycle, Speaking
-Evaluation service, analytics, read-port, roster-score import, and save-port
-targets passed; the save-port binary reported 16/16 cases. The changed
-ClassesPage selector passed 3/3, but its aggregate target hung without output
-and was interrupted. Rollback-failure primary-diagnostic and direct streaming
-callback cases remain source-reviewed only. F1458's six requested build
-targets succeeded, and five focused CTests passed 5/5; four QtTest executables
-reported 216 passing cases, with one optional workbook test skipped because
-`CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was unset. Commit-failure rollback and
-rollback-failure injection remain unverified. F1459's full affected-target
-build succeeded; five of six focused CTests passed. The ClassTransfer
-integration target had 420 passing cases and one teacher-profile fallback UI
-failure with no same-revision baseline; it is not attributed as pre-existing.
-The other five targets, including the 20-case apply port, passed. Successful
-scalar fallback, malformed batch count/order recovery, export commit/rollback
-injection, and every legacy conversion remain source-reviewed only. No full
-suite or other-platform build ran.
-F1453
-was independently verified with 12 focused CTests. In the same existing
-incremental macOS Debug tree, affected application,
-DataService, Native English, StaffDirectory, and Teacher Import targets built;
-12 focused CTest targets passed 12/12. Exact legacy error strings, validation
-categories, stale-update recovery, SQL/cursor failures, ordering, and
-projections were covered. Malformed persisted IDs, raw birthday cursor text,
-no-op cases, and rollback-failure handling remain source-reviewed without
-direct runtime assertions. No full suite or other-platform build ran. F1452's
-affected targets built and six focused CTests passed 6/6, including
-rollback-failure injection. Its exact legacy and birthday cursor strings were
-source-reviewed without dedicated runtime assertions. F1451's focused CTest
-selection passed 24/24;
-after repair, the schedule-import nonpositive-ID selector passed 8 data cases
-and the changed TeacherProfileReadPort CTest passed 1/1. The broad ClassTransfer run had an
-unresolved fallback failure in the Executor run and aborted with a no-screens
-Qt error in the independent run. TeacherImport UI parity aborted during macOS
-bundle setup; its isolated modified refresh selector passed. No same-revision
-baseline was established, and rollback failure could not be injected. No full
-suite or other-platform build ran. Exact evidence and limits are recorded in
-the Phase 3 progress log. Batch 23
-discovery remains due when F1462 starts; search then for `DocumentCatalog`,
-DataService compatibility conversion, and other candidates beyond Batch 22's
-20-slice cap. Phase 3 remains In Progress until the structured-error
-deliverable and full exit gate are fulfilled.
+Current deployment: `phase3_structured_errors_resume_20261024`. Route: Heavy.
+Phase 3 is Complete. Batch 22 (F1444–F1463) was committed slice by slice and
+pushed to `origin/Qt-Rewrite`; the implementation tip is
+`ec66ccd9e398868b006cc7def8d68398cc400a26`. The scheduled Batch 23 discovery
+completed and accepted no new eligible repository queue. No Phase 3 batch or
+slice remains active.
+
+The independent final gate review accepted completion. The focused v6
+compatibility audit passed 123 QtTest entries with zero failures and zero
+skips, including v6 profile lifecycle, import/export/copy/recovery, and 48
+v0–v5 rejection rows across three paths. The source scan found no DataService,
+QSqlDatabase, QSqlQuery, SQL statement, or `database()` use in `src/next`; the
+public `WorkspaceStore::database()` exposure means the boundary is source-
+reviewed rather than compile-time enforced. Detailed evidence is in the
+[Phase 3 progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md)
+and the [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md).
+
+Limits remain recorded: no full suite or Windows/Linux build was run; import
+checks used representative synthetic plans; old v2 installations were not
+simulated end to end; recovery artifacts were simulated rather than produced
+by terminating a process; and some failure-injection cases remain source-
+reviewed only. One ClassTransfer UI fallback assertion had 420/421 passing
+cases and no same-revision baseline; it is neither classified as pre-existing
+nor attributed to F1459. These limits do not reopen the accepted gate.
 
 ## Goal
 
@@ -233,291 +73,20 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-24 (Phase 3 reopened; F1449 verified)
+### Current checkpoint — 2026-10-25 (Phase 3 Complete)
 
-Phase 3 is reopened on the mandatory Heavy route after a fresh audit found
-that §3.3's structured-error requirement is not fully met. `Status` and
-`Result<T>` expose `QString` errors, and many public repository APIs do not
-preserve stable categories. A data-owned error type with stable code and the
-existing diagnostic is accepted as the target contract. Batch 22 discovery
-and bounded review produced a 20-candidate ordered queue; F1444 (the shared
-error contract and SQL mapping) is committed locally at
-`fef61c849b4f845ba89a008dcee697bc380895ce` after independent focused
-verification. F1445's public workspace, schema, and file-operation errors now
-preserve stable codes through ApplicationServices, with DataService converting
-to the existing legacy diagnostics; its implementation and independent
-focused verification passed, and it is committed locally at
-`0f9b8bf6f9165d51f53e3f46af616368a46bdba0` pending the Batch 22 push. F1446
-Teacher Import structured-error implementation and independent verification
-passed with the `InvalidRequest` branch and macOS aggregate wizard abort noted
-as limits; it is committed locally at
-`fe3edd1e4ff890eea1f1b57c9dc3b5afcd2cfae6` pending the Batch 22 push. F1447
-TestingBlock assignment implementation is independently verified. The
-occupied-slot branch is Conflict based on its explicit existing-assignment
-check; missing parent, malformed/incomplete data, input, and technical paths
-retain separate codes. Its five focused CTests passed; the full suite and
-other-platform builds were not run. F1447 is committed locally at
-`ba685fbbc69d6b8564d2896671cd82ee3a0810ed`, pending the Batch 22 push. F1448
-typed all fallible ClassRepository operations, removed the custom lookup
-result, and preserves legacy diagnostic conversion, lookup categories,
-metrics, ordering, and successful no-op update/delete behavior. Nine focused
-CTests and four isolated ClassTransfer selectors passed; the new Validation
-propagation selector also passed. The broad ClassTransfer CTest reproduced the
-confirmed F1326 baseline failure (419 passed, one failed). No full suite or
-other-platform build ran. F1448 is committed locally at
-`28cd7f39def7cc701e02cd8b488a7f21505fc745`, pending the Batch 22 push. F1449
-typed all fallible TestingClassRepository APIs, removed its custom detailed
-failure types, preserves legacy diagnostics, and maps duplicate-slot Conflict
-only from SQLite native code 2067. Its create port keeps ordinary Validation
-and slot Conflict recoverable while marking generated-ID range Validation
-nonrecoverable through explicit metadata. Independent verification passed
-eight focused CTests, three page parity CTests, and ScheduleImport (96 cases,
-one external-workbook case skipped because `CLASSMNGR_SCHEDULE_IMPORT_SAMPLE`
-was unset). The broad ScheduleWidget and TestingClassesPage runs had unresolved
-current-run failures; no same-revision baseline was established. No full suite
-or other-platform build ran. F1449 is committed locally at
-`71424f7334399ec3735c23172e4627b3cefb0641` and will be pushed when Batch 22
-closes. F1450 ClassInfoRepository implementation is independently accepted
-and verified with its exact focused evidence and broader current-run limits in
-the [Phase 3 progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md).
-It is committed locally at `bd03110d7de6a034db9f631099164d9562c2435b` and
-will be pushed when Batch 22 closes. F1451 TeacherRepository discovery is
-complete and implementation is active. The accepted scope covers all
-fallible repository APIs and nested batch-item errors, required legacy
-diagnostic conversions, and affected platform adapters while preserving
-caller-specific missing-row, fallback, ordering, ID-width, and recoverability
-behavior. F1451 is independently accepted and committed locally at
-`f8261f96cb57f2c7baf41941be2636f1014fd9a4`; it will be pushed when Batch 22
-closes. F1452 GsTeamRepository is independently accepted and verified; commit
-`4ccb5c8ceda848e4f09afcd41a958437939aca14` is local and will be pushed when
-Batch 22 closes. Six focused CTests passed, including a seeded
-rollback-failure case. Legacy conversion strings and the birthday cursor's
-raw error diagnostic were confirmed by source inspection but lack dedicated
-runtime assertions. The accepted scope types every fallible repository API
-and maps direct port errors while preserving existing recoverability and exact
-diagnostics. Duplicate-name and malformed persisted-ID paths are Validation;
-stale positive updates are recoverable NotFound; SQL, cursor, transaction,
-and rollback failures are Technical. Duplicate names are not Conflict because
-current uniqueness is explicit validation, and no repository-level duplicate
-row-ID rule is added. F1453 NativeEnglishTeacherRepository is independently
-accepted and committed locally at
-`78189be6fe288a1ac6e8fef8760c151edf687f20`; it will be pushed when Batch 22
-closes. Its twelve focused CTests passed;
-rollback-failure, malformed-ID, raw birthday-cursor,
-and some no-op cases remain source-reviewed only. Its accepted scope types all
-public fallible methods and nested outcomes; blank/duplicate names and invalid
-int persisted IDs are Validation, positive stale updates are recoverable
-NotFound, and SQL, cursor, transaction, and rollback failures are Technical.
-Preserve no-op behavior, sort order, ID bounds, raw birthday cursor
-diagnostics, and legacy diagnostic conversion; add no Conflict path where the
-schema has no name-uniqueness constraint. F1454 IntensiveSlotStateRepository
-is independently accepted and verified; commit
-`b362325f8a3d2f162a14e30c59ee171a52024e77` is local and will be pushed when
-Batch 22 closes. Its five focused CTests passed 5/5. Upsert collision, ordering, and
-raw unknown values were verified by source comparison. Its only repository
-error category is Technical for SQL and cursor failures; invalid requests
-remain validated in the typed save port. Keep successful empty loads,
-absent-row deletes, upsert collisions, raw unknown values, and ordering. The
-repository has no IDs or transactions; `DataService`/`ScheduleService` convert
-typed errors to legacy diagnostics, and existing direct-port recoverability
-remains unchanged. F1455 is independently accepted and locally uncommitted;
-its 22 focused CTests passed after a fresh build. Batch 23 discovery is due at F1462, the second-to-last
-Batch 22 candidate; search then for `DocumentCatalog`, DataService
-compatibility conversion, and other candidates beyond the accepted cap. The
-earlier file-compatibility and v2 source-boundary reviews remain valid; see
-the [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
-and [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
+All Phase 3 deliverables and its exit gate are accepted complete. Batch 22
+structured repository errors across F1444–F1463 while preserving legacy
+DataService diagnostic conversions and existing caller policies. Batch 23
+discovery ran at its scheduled second-to-last-slice trigger; independent scans
+found no additional eligible repository candidate. The final v6 compatibility
+and source-boundary reviews passed as described above. Phase 4 has not started.
 
-Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to
-`origin/Qt-Rewrite` at `7b4eaaf809ecdc17e4e14fae555b157c361c378d`; the remote
-tip matched and the worktree was clean. F1425 verified the full ordered 96-class
-Schedule Import snapshot (24 teachers, 768 regular and 24 intensive schedule
-rows). F1426 removed an entry-sized workbook scratch copy while keeping the
-archive and inflated worksheet lifetimes explicit. F1427 maps class-transfer
-JSON input and releases the mapping before schema conversion. These changes
-have structural lifetime evidence only; no heap or RSS savings were measured.
-
-Focused verification passed for each slice. F1427's focused codec selectors
-passed 5/5. Its full Class Transfer CTest had 64 passes and one previously
-documented teacher-display dialog failure; the failing test does not call the
-changed codec path. No full suite, Windows, or platform-wide result is claimed.
-The [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
-and [progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md)
-contain exact evidence and limits.
-
-Batch 10 is complete and pushed at `01670f53d7924a5e68ce9288effe3a4bf12b3403`.
-F1428 exposes `ClassRepository::getClasses()`
-call, statement-attempt, and successful returned-row metrics under Phase 3
-§3.7. Independent macOS arm64 Qt 6.12 verification passed the affected CTest
-(1/1), executable (8/8), large case (3/3), and `git diff --check`; no full
-suite or heap/RSS result is claimed. F1429 is complete at
-`9a1d4476ee973d5587b1ecd72f3a3a92789c1147`. Independent macOS arm64 Qt 6.12
-verification passed focused CTest 1/1 and the large selector 3/3; its 8 QtTest
-cases passed without failures or skips. The case asserts 24 teacher, 96 class
-metadata, 768 regular-time, and 24 intensive-time rows. A metadata read that
-consumes rows then fails validation records no completed rows. No full suite or
-heap/RSS result is claimed.
-
-F1430 is complete at `9f250bde305f2b4a764b3dfeebb0b149ed756ff5`. Its typed
-single and batch reads now consume query rows directly into their final
-Application results; existing detailed and legacy materializing APIs remain.
-Focused CTest passed 1/1 with 13 Qt cases and no failures or skips. Thirty-two
-row single and batch results preserve ordered cells and Unicode beyond row 24;
-empty/failure metrics remain zero and fractional-index partial failures remain
-technical. A legacy nullable-index fixture verifies single includes the row
-and batch skips it, with counts 3 and 2. No full suite or heap/RSS result is
-claimed.
-
-F1431 is complete at `abc4c2385bda0ef21de9b272e1ffbf4f9e3886ec`. The live
-Calendar service and Schedule Import now consume the bounded two-pass reader;
-stored and deflated ZIP entries feed incremental XML in fixed 32 KiB chunks.
-Independent macOS Debug CTests passed for Calendar Import, Schedule Import,
-and Calendar Event Import parity (3/3). A loopback HTTP fixture required a
-rerun with local listener access after the sandboxed attempt could not bind.
-Multi-sheet and failure tests verify first-sheet Calendar output, all-sheet
-counts, and discarding accumulated events/skips after a later-sheet failure.
-Teacher Import remains on buffered `parseWorkbook`. Full archive bytes,
-workbook metadata, relevant Calendar grid rows, and final outputs remain
-operation-scoped; no constant-memory or heap/RSS claim is made.
-
-F1432 is complete at `2ce5bbe59ae67872fd025133b4e1fd5eca359a5e`. On the mapped
-path, Qt validates the file and releases its complete document before
-package conversion; the scanner keeps source ranges/scalar metadata and
-decodes one record at a time. The public `fromJson()` is unchanged, the
-`readAll()` fallbacks remain, and no file-size cap was added. Independent
-focused parity verification passed 337/337 (335 data rows plus setup/cleanup),
-including 16 combined timestamp/array precedence cases. The full focused
-Class Transfer CTest passed 399 cases and failed one pre-existing teacher-label
-assertion (`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`);
-the same mismatch is recorded on pre-F880 commit `18202c79` and is outside
-F1432. `git diff --check` passed. This is structural lifetime evidence only;
-map-failure/unrepresentable-size fallbacks were inspected but not forced, and
-no heap/RSS or Windows result is claimed.
-
-F1433 is complete at `cf3235a67a79e9820c85a6fb2320d64db8bbdaf9`. The test
-creates and populates a schema-v6 `.db` through the v2 WorkspacePort and
-Teacher/Settings services, then verifies SaveAs/export destinations, exact
-data after existing-only reopen, normalized paths, SaveAs identity, and
-export's unchanged active session/connection/source. Independent verification
-passed the workspace-port CTest 1/1 and executable 32/32; `git diff --check`
-passed. This is focused macOS arm64 / Qt 6.12 / AppleClang 21 evidence; no full
-suite or pre-v6 migration result is claimed.
-
-F1434 is complete at `6d10509b1b51cd687d975247209f1a2a86a1db7b`. A forward-only
-repository visitor streams class metadata and schedule rows into the
-Application snapshot, while the existing materializing repository API remains
-available. Cumulative class/regular/intensive result metrics publish only
-after success; call and statement counters remain attempts. The new large
-case covers 31 classes, 32 regular rows, and 12 intensive rows. Empty,
-invalid-ID, and a late intensive-query failure after one regular row preserve
-zero result-metric deltas. Independent macOS arm64 / universal Debug, Apple
-Clang 21, Qt 6.12 verification passed the Schedule Builder and Schedule Import
-CTests 2/2; `git diff --check` passed. No full-suite or heap/RSS result is
-claimed.
-
-Batch 12 (F1433/F1434) is closed and pushed at
-`5ca42a876a40ec74f49055530a3d7714aa5368f7`. F1435 is accepted and committed at
-`b7dfd84cd025d83689d63aebc497f7795188810e`. Its forward-only single-class
-student-count read avoids dense Roster construction while preserving validation,
-exact errors, and profiler behavior. Dimensions saturate at `INT_MAX`, matching
-the existing batch helper. The focused Class Details and Roster Read Port
-CTests passed 2/2; the independent Tester rebuilt (no work), reran 2/2, and
-`git diff --check` passed. Coverage includes sparse dimensions, malformed index
-parity and precedence, overflow saturation, and failed-read profiler silence.
-No full suite, Windows run, heap/RSS measurement, or memory-savings claim is
-made. Batch 13 (F1435) is pushed and verified at
-`41743d8676beee99274f4aacbe606002b4e38c30`. F1436 is accepted and committed at
-`cb6f90126dc2321b304cb87c5d6bcad642b18b27`. It keeps the uncapped logical
-Class Analytics roster row count while storing only selected name cells in
-compact vectors; the repository query and matching semantics remain unchanged.
-The focused Platform and Application query CTests passed 2/2; the independent
-Tester rebuilt (no work), reran 2/2, and `git diff --check` passed. The 4,097-row
-case now carries two English names and no Korean entries. No full suite,
-heap/RSS measurement, or memory-savings claim is made. Batch 14 (F1436) is
-pushed and verified at `071560c8774f5c16c2b2502a5f561507e1f5f86f`. Batch 15
-discovery and bounded review completed under
-`PHASE3-BATCH15-DISCOVERY-20261024`; F1437 is accepted and committed at
-`91355e2c0483c550eca93bb9b0b20bc0a7c55547`. A conservative syntax gate
-validates the full mapped JSON object before schema conversion, avoiding the
-full-file Qt validation document when safe; uncertain, unsupported, malformed,
-or non-object input retains the Qt fallback. Public `fromJson()` and `readAll()`
-fallbacks remain unchanged. The focused mapped-file parity selector passed
-357/357, and `git diff --check` passed. The full Class Transfer target had 419
-passes and one failure in `importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`;
-it builds a package directly without the changed codec and was reproduced on
-pre-F880 commit `18202c79`. No full-target pass or memory measurement is
-claimed. Batch 15 is pushed and verified at
-`af1024d336241e0f2fe7db5e3af90785d604d50e`. Batch 16 discovery and bounded
-review completed under `PHASE3-BATCH16-DISCOVERY-20261024`; its sole candidate,
-F1438, is committed at `6ad8c16e4cb0c1c473f047ab6e760e24f6895792`. It corrects
-the Phase3 schema baseline's stale statement about F1419's four explicit-index
-and runtime metadata assertions while retaining limits on normalized DDL and
-pre-v6 conversion coverage. No tests were run for this doc-only slice. Batch 16
-is pushed and verified at `49ec21e783441fef616fae67cc633e9c7c6de578`. Batch17
-discovery and bounded review completed under
-`PHASE3-BATCH17-DISCOVERY-20261024`; F1439 and F1440 are accepted in order.
-F1439 is committed as `070593edffd3293e6f3bbd2fc3cc241c2e468564`. It moves
-the shared workbook reader and live Schedule/Calendar inputs to seekable
-file-backed archives while preserving worksheet parsing and temporary-file
-cleanup. Independent focused verification passed all four affected CTests and
-`git diff --check`; no full suite or heap/RSS measurement was performed. F1440
-is committed as `2d06dc1954ba5dcd5fae69532bc569696662bc76` for target-specific
-discovery and user-directed recovery of normal profile-replacement backups
-after process interruption. Its exact UUID matcher handles newline filenames;
-the explicit copy flow preserves candidates and targets and never auto-restores,
-deletes, or overwrites. Independent focused verification passed
-`ClassMngrFileControllerWorkspaceLifecycleTests` 1/1 and `git diff --check`.
-Batch 17 closeout docs are committed at `11db3892c3533f7dd7d270be30905bd3d730fdd2`
-and the push to `origin/Qt-Rewrite` was verified at that tip. F1441 is committed
-as `01a398599af2004305932f02c99671cc5fb0400f`. Its vendored SQLite 3.54.1
-Online Backup API snapshots committed WAL data and preserves arbitrary schema
-objects/rowids before QSaveFile replacement. Independent WorkspacePort and
-DataService lifecycle CTests passed 2/2; `git diff --check` passed. macOS
-verified no SQLite dynamic dependency and private SQLite symbols. Windows and
-Linux builds remain unrun; no full-suite or memory claim is made. Batch18
-closeout docs were pushed at verified tip
-`5c1bf51bb468d647227e3e0aa072a0bb9a666a2f`. F1442 passed verification-only
-under normal macOS service access; no source or assertion changes were needed.
-Batch20 discovery began when F1442 started under
-`PHASE3-BATCH20-DISCOVERY-20261024`; its two scans and bounded review accepted
-F1443 as the second candidate. F1443 adds explicit user-directed recovery for
-Initial Setup restart backups and is committed at
-`4463eda2640018c2307b093ed0db97b99b47c43d`; independent lifecycle CTest passed
-1/1 (71 Qt cases). Batch21 discovery completed with two independent scans and
-bounded review and found no further candidate. Final-gate review recommends
-pass: the file paths have focused evidence, and no v2 callsite reaches
-DataService or SQL internals. The public WorkspaceStore database handle remains
-a source-level boundary limitation. Phase3 docs and push are in closeout; no
-full-suite or Windows/Linux build claim is made.
-Batch18 discovery and review
-completed under `PHASE3-BATCH18-DISCOVERY-20261024`; its sole candidate, F1441,
-is a consistent SQLite snapshot for Save As/export that includes committed WAL
-data while preserving destination atomicity and session/path invariants. Batch19
-discovery began when F1441 started under
-`PHASE3-BATCH19-DISCOVERY-20261024`; two independent scans and bounded review
-completed with no accepted candidate beyond F1441. Review confirmed F1418's
-void Save compatibility: v2 repositories own and check local transactions,
-and the ordinary FileController Save action has no retained transaction to
-commit; propagating Qt's no-active-transaction result would falsely report
-failure. Revisit only if a production v2 caller begins retaining a transaction.
-Signature
-image memory work remains with Phase7A/7B, Teacher Import with Phase7C; no ZIP
-expansion cap will be added without an owning requirement. The Phase 0 `.db`
-matrix wording update
-was deferred as a pinned historical artifact; Teacher Import remains Phase
-7C-owned, and export remains Phase 8-owned. The
-unsupported ZIP-method test remains deferred as a test-only slice; no separate
-Windows F1433 slice was accepted, and analytics evaluation
-collection work remains with Phase 7D/7H. Classes/Speaking Evaluation
-navigation detail lifetime is deferred to Phases 7D/7H because it requires
-page/model changes; Calendar parsed-event consumer lifetime remains deferred
-to Phase 7F. The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
-records the live state and acceptance boundaries. The prior exit-gate audit
-reopened Phase 3 on the unmet structured-error deliverable; Batch 22 is active.
-
-Phase 2 remains complete with its separate audit limitations and F629
-requalification recorded in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
-and [progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
+The known F1459 ClassTransfer fallback UI assertion remains unclassified: the
+focused integration run had 420 passes and one failure, with no same-revision
+baseline. No full suite or Windows/Linux build was run. The remaining focused
+verification and source-review limits are documented in the
+[Phase 3 progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md).
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 
@@ -905,13 +474,10 @@ user's response to the exact-payload approval request.
 
 ## Next Milestone
 
-Accept and complete F1148, then continue Batch487 in its recorded order.
-Batch486's push to `origin/Qt-Rewrite` is pending the user's response to the
-exact-payload approval request. F629 remains active and awaits source-bound
-Windows x64 layout evidence for commit `667ff54e`; the user cannot run Windows
-now. The Phase 0 and Phase 2 exit gates remain open.
-Detailed historical slice evidence remains in
-plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
+Phase 3 is complete. Phase 4 remains Not started; resume it only when directed.
+The Phase 3 closure evidence and its documented limits are in the
+[Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
+and [progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md).
 
 ## Current Phase 2 position - 2026-09-26
 

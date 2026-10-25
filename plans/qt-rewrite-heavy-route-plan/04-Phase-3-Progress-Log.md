@@ -3529,8 +3529,9 @@ Two independent scans and bounded review completed under
 `PHASE3-BATCH22-DISCOVERY-ERROR-SURFACES-20261024-EXP-53`, consumer scan
 `PHASE3-BATCH22-DISCOVERY-CONSUMERS-20261024-EXP-54`, and review
 `PHASE3-BATCH22-ERROR-CANDIDATE-REVIEW-20261024-INV-56`. Review accepted 20
-ordered candidates for Batch 22. The full queue is in
-[Current-Slice-Batches.md](Current-Slice-Batches.md). The independent API scan
+ordered candidates for Batch 22. Their scopes and acceptance evidence are
+recorded in the F1444–F1463 entries below; the current batch tracker now
+reflects that no batch remains active. The independent API scan
 also found likely eligible DocumentCatalog and DataService compatibility
 conversion surfaces beyond the 20-candidate limit; discover these and any
 others when Batch 23 discovery becomes due, at the start of F1462 (candidate
@@ -4301,23 +4302,24 @@ non-convertible persisted-ID `Validation` path has direct runtime coverage.
 The scheduled F1462 trigger (candidate 19 of 20) started the independent scans:
 Explorer `PHASE3-BATCH23-CANDIDATE-SCAN-A-20261025-EXP-01` and Investigator
 `PHASE3-BATCH23-CANDIDATE-SCAN-B-20261025-INV-01`. No new eligible repository
-candidate was accepted. DataService category conversion is a legacy boundary;
-CampusRecord and CampusJson adaptations belong to F1462/F1463, not separate
-candidates. DocumentCatalog is a filesystem resource catalog outside Phase
-3 §3.3; ResourcePackManager and FeatureService are also outside scope. No other
-eligible repository candidate was found, so no queue is added pending the
-post-F1463 exit audit; revisit only if that audit supplies new evidence.
+candidate was accepted. DataService conversion is legacy compatibility within
+the F1462/F1463 campus slices, not a separate candidate. DocumentCatalog is a
+filesystem resource catalog outside Phase 3 §3.3; ResourcePackManager and
+FeatureService are also outside repository scope. The final audit found no
+additional eligible repository candidate; no Batch 23 queue was added. No
+other slices were found. Reopen discovery only if later evidence identifies
+an eligible repository surface.
 
-## F1463 — CampusJsonRepository structured errors — independently verified, commit pending — 2026-10-25
+## F1463 — CampusJsonRepository structured errors — independently verified — 2026-10-25
 
-F1463 is independently verified and accepted; its local commit is pending.
+F1463 is independently verified and accepted; it is included in the pushed
+Batch 22 implementation tip. Batch 22 is complete and pushed.
 Tester `PHASE3-F1463-CAMPUS-JSON-VERIFY-20261025-TST-01` reported a fresh
 four-target build, 6/6 CTest cases, and 68 Qt cases passing after the success-
 contract repair. A prior eight-target run passed 10/10 CTest cases and 93 Qt
 cases, including all four bulk-list adapters. `git diff --check` passed.
 Short-write and commit-failure injection were unavailable and remain
-source-reviewed only. No full suite or other-platform build was run. Batch 22
-is ready for closeout after the F1463 commit.
+source-reviewed only. No full suite or other-platform build was run.
 
 `createCampus` remains `RepositoryStatus` (void success) with typed errors; it
 does not return an ID. `saveCampus` returns typed status and point `loadCampus`
@@ -4330,3 +4332,31 @@ Keep vector-only `loadCampuses` best-effort, skipping default, malformed,
 unreadable, and unavailable entries. Preserve codec ID fallback,
 active/embedded resource-root fallback, ID normalization, serialization, and
 update/create semantics; no delete surface exists.
+
+## Phase 3 whole-phase gate — accepted complete — 2026-10-25
+
+The main agent accepted Phase 3 as Complete after the final compatibility and
+source-boundary reviews. Batch 22's 20 accepted slices, F1444–F1463, are
+committed and pushed to `origin/Qt-Rewrite` at implementation tip
+`ec66ccd9e398868b006cc7def8d68398cc400a26`. The push worker verified that local
+and remote matched and the branch was clean/up-to-date at inspection. Batch 23
+discovery and its no-new-candidate disposition are recorded above.
+
+Tester `PHASE3-FINAL-V6-COMPAT-VERIFY-20261025-TST-01` reported **123 QtTest
+entries, 0 failures, 0 skips**. Coverage includes v6 schema creation/open/save,
+import/export, copy/recovery/backups, and v0–v5 rejection matrices totaling 48
+rows. Schedule and Teacher imports used representative synthetic plans and
+initialized databases. No full suite or cross-platform build was run. Restart
+artifacts were simulated; Initial Setup I/O failure was not separately
+injected; v2 Save As/export routing was inspected but not exercised end-to-end
+with an old-install simulation.
+
+Explorer `PHASE3-FINAL-SOURCE-BOUNDARY-20261025-EXP-02` found no DataService,
+`QSqlDatabase`, `QSqlQuery`, raw SQL, or `database()` use in `src/next`
+production C++. `WorkspaceStore` still publicly exposes `QSqlDatabase`, so
+this boundary is source-reviewed, not type-enforced. F1459's ClassTransfer
+fallback UI failure (420/421) remains unbaselined and unclassified; it is
+neither established as pre-existing nor attributed to F1459. F1463's
+short-write and commit-failure injection limits remain source-reviewed only;
+other slice limits remain in their entries. These bounds do not change the
+accepted Phase 3 gate result.

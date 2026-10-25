@@ -8806,3 +8806,30 @@ five targets, including apply-port coverage, passed. Scalar fallback success,
 malformed batch ordering recovery, export commit/rollback injection, and all
 legacy conversion strings remain source-reviewed only; no full suite or
 other-platform build ran.
+
+
+## 2026-10-25 — Phase 3 complete after final gate audit
+
+Batch 22 (F1444–F1463) is complete and pushed to `origin/Qt-Rewrite` at
+implementation tip `ec66ccd9e398868b006cc7def8d68398cc400a26`. The branch and
+remote tip matched with a clean worktree after the push. Batch 23 discovery
+ran at the scheduled F1462 trigger; independent scans found no additional
+eligible repository candidate.
+
+The independent final v6 compatibility audit passed 123 QtTest entries with
+zero failures or skips. It covered v6 creation/open/save, representative
+schedule and teacher imports, save-as/export/copy/recovery/backups, and 48
+v0–v5 rejection rows through schema, workspace, and startup routes. The
+independent source-boundary scan found no DataService or SQL access in
+`src/next`. `WorkspaceStore` publicly exposes `QSqlDatabase`, so that boundary
+remains reviewed rather than compile-time enforced. Based on the documented
+Phase 3 exit gate and this evidence, Phase 3 is accepted Complete.
+
+Limits remain explicit: the full suite and Windows/Linux builds were not run;
+imports used synthetic plans; v2 old-install save-as/export was not simulated
+end to end; recovery artifacts were simulated; and selected QSaveFile,
+cursor, and rollback-failure branches remain source-reviewed. F1459's broad
+ClassTransfer UI target had 420 passing cases and one teacher-profile fallback
+failure with no same-revision baseline. That failure is not labeled
+pre-existing or attributed to F1459. See the Phase 3 progress log for the
+slice-level evidence. Phase 4 is not started.

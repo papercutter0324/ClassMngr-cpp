@@ -178,7 +178,14 @@ score import through `SpeakingEvalRepository`; fallback dispatch is in
 | `Result<SpeakingEvalRows> loadSpeakingEval(int classId, const QString& evaluationName)` ([L409](../../src/data/data_service.h#L409)) | `SpeakingEvaluationService::evaluation()` → `SpeakingEvalRepository` | Legacy fallback; migrate readers and parity tests. |
 | `Result<QList<SpeakingEvalScore>> buildRosterScoreImport(int classId, const QString& evaluationName)` ([L414](../../src/data/data_service.h#L414)) | `SpeakingEvaluationService::buildRosterScoreImport()` → evaluation/roster query path | Legacy fallback; preserve score matching and bounded-read behavior before removal. |
 
-### SQL campus records: unresolved typed-service gap
+### SQL campus records: typed error boundary complete; service ownership remains
+
+F1462 completed the §3.3 structured-error migration for
+`CampusRecordRepository`: public fallible repository operations use
+`RepositoryResult`/`RepositoryStatus`. `DataService` remains the legacy
+diagnostic-string conversion boundary. F1462 did not create an aggregate typed
+`CampusService` or retire the facade; the owner and caller prerequisites below
+are future facade-migration questions, not an open Phase 3 §3.3 deliverable.
 
 | Public declaration | v2 owner | DataService route and prerequisite |
 |---|---|---|
@@ -218,10 +225,10 @@ and its [JSON-backed adapter](../../src/next/platform/campus_dashboard_campus_re
   the distinction between creating a new database and opening an existing one.
   `DataService`'s owning and borrowed constructor semantics must not leak into
   v2 composition.
-- Resolve the SQL `CampusRecord` owner. `CampusRecordRepository` exists on
-  `WorkspaceStore`, but no aggregate typed service currently exposes these
-  operations; the JSON-backed campus dashboard adapter is a separate model and
-  persistence path.
+- For future `DataService` facade retirement, resolve the SQL `CampusRecord`
+  owner. `CampusRecordRepository` exists on `WorkspaceStore`, but no aggregate
+  typed service currently exposes these operations; the JSON-backed campus
+  dashboard adapter is a separate model and persistence path.
 - Do not infer whole-facade removability from this inventory. It records the
   public API and current source paths; later slices must verify callers,
   fixtures, file/schema contracts, and owner boundaries when each operation is

@@ -6,18 +6,12 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-25
-- Current milestone: Phase 3 remains In Progress on the mandatory Heavy route
-  because the §3.3 structured-error audit reopened its exit gate. F1460
-  SettingsRepository is committed locally as
-  `46ffe1a8711ee5ec8cb997b5921868aab553ebce` and is not pushed. F1461
-  PersonalDetailsRepository is committed locally as
-  `630260d30ec2c4df935c6dffd758d2cba2c7f071` and is not pushed. F1462
-  CampusRecordRepository is committed locally as
-  `9228864cbb40393bd84515ab06d02ca8c2d758ac` and is not pushed. F1463
-  CampusJsonRepository is independently verified and accepted; its local
-  commit is pending. Batch 22 closeout follows the F1463 commit.
-  Batch 23 discovery is complete; no new candidate queue is accepted pending
-  the post-F1463 exit audit.
+- Current milestone: Phase 3 is Complete on the mandatory Heavy route. Batch 22
+  (F1444–F1463, 20 accepted slices) is complete and pushed to
+  `origin/Qt-Rewrite` at `ec66ccd9e398868b006cc7def8d68398cc400a26`; local and
+  remote matched and the branch was clean/up-to-date at inspection. The final
+  compatibility gate passed. Batch 23 discovery at F1462 found no eligible
+  repository candidate, so no follow-on queue was accepted.
   Evidence and limits are in the
   [progress log](04-Phase-3-Progress-Log.md); see also the [Phase 3
   plan](04-Phase-3-Persistence-Rewrite.md),
@@ -44,7 +38,7 @@
 | 0 | 01-Phase-0-Product-Contract-and-Baseline.md | Complete | Heavy | None |
 | 1 | 02-Phase-1-Build-System-and-Repository-Structure.md | Complete | Heavy | 0 |
 | 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | Complete | Heavy | 1 |
-| 3 | 04-Phase-3-Persistence-Rewrite.md | In progress | Heavy | 1, 2 |
+| 3 | 04-Phase-3-Persistence-Rewrite.md | Complete | Heavy | 1, 2 |
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Not started | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Not started | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Not started | Heavy | 5 |
