@@ -75,7 +75,8 @@ public:
             return Application::
                 CalendarFirstDayOfWeekPreferencesLoadResult::failure({
                     .code = Domain::ErrorCode::Technical,
-                    .message = loadFailure(stored.error()),
+                    .message = loadFailure(
+                        toLegacyDiagnostic(stored.error())),
                     .recoverable = false
                 });
         }
@@ -135,12 +136,12 @@ public:
                 );
         }
 
-        if (const Status saved = repository->saveSetting(
+        if (const RepositoryStatus saved = repository->saveSetting(
                 key(),
                 static_cast<int>(firstDayOfWeek)
                 ); !saved)
         {
-            const QByteArray errorBytes = saved.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(saved.error()).toUtf8();
             return failure(
                 errorBytes.isEmpty()
                     ? "Calendar first-day preference could not be saved."

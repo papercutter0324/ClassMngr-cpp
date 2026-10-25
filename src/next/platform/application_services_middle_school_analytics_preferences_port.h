@@ -60,7 +60,7 @@ public:
         const auto storedValue = repository->loadSetting(key());
         if (!storedValue)
         {
-            const QByteArray errorBytes = storedValue.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(storedValue.error()).toUtf8();
             return Application::MiddleSchoolAnalyticsPreferencesReadResult::
                 failure({
                     .code = Domain::ErrorCode::Technical,
@@ -104,10 +104,10 @@ public:
                 );
         }
 
-        const Status saved = repository->saveSetting(key(), show);
+        const RepositoryStatus saved = repository->saveSetting(key(), show);
         if (!saved)
         {
-            const QByteArray errorBytes = saved.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(saved.error()).toUtf8();
             return failure(
                 errorBytes.isEmpty()
                     ? "Middle-school analytics preference could not be saved."

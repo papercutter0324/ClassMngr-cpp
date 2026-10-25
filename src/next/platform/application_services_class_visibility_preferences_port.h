@@ -62,7 +62,7 @@ public:
         const auto storedScope = repository->loadSetting(key());
         if (!storedScope)
         {
-            const QByteArray errorBytes = storedScope.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(storedScope.error()).toUtf8();
             return Application::ClassVisibilityPreferencesLoadResult::failure({
                 .code = Domain::ErrorCode::Technical,
                 .message = errorBytes.isEmpty()
@@ -125,13 +125,13 @@ public:
                 );
         }
 
-        const Status saved = repository->saveSetting(
+        const RepositoryStatus saved = repository->saveSetting(
             key(),
             storedScopeValue(scope)
             );
         if (!saved)
         {
-            const QByteArray errorBytes = saved.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(saved.error()).toUtf8();
             return failure(
                 errorBytes.isEmpty()
                     ? "Class visibility preference could not be saved."

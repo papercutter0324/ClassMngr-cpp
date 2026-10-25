@@ -45,12 +45,12 @@ ApplicationServicesSubPrepPreferencesPort::load() const
                 << "Failed to load setting"
                 << key
                 << ':'
-                << stored.error();
+                << toLegacyDiagnostic(stored.error());
             return {
                 defaultValue,
                 Domain::OperationError{
                     .code = Domain::ErrorCode::Technical,
-                    .message = toUtf8(stored.error()),
+                    .message = toUtf8(toLegacyDiagnostic(stored.error())),
                     .recoverable = false
                 }
             };
@@ -144,7 +144,7 @@ ApplicationServicesSubPrepPreferencesPort::save(
         });
     }
 
-    const Status saved = repository->saveSettings({
+    const RepositoryStatus saved = repository->saveSettings({
         {
             classMaterialsKey(),
             fromUtf8(preferences.classMaterials)
@@ -168,7 +168,7 @@ ApplicationServicesSubPrepPreferencesPort::save(
     });
     if (!saved)
     {
-        const QByteArray errorBytes = saved.error().toUtf8();
+        const QByteArray errorBytes = toLegacyDiagnostic(saved.error()).toUtf8();
         return Application::SubPrepPreferencesSaveResult::failure({
             .code = Domain::ErrorCode::Technical,
             .message = errorBytes.isEmpty()

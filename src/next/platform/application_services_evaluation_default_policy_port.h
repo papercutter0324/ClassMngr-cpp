@@ -64,7 +64,7 @@ public:
         const auto storedPolicy = repository->loadSetting(key());
         if (!storedPolicy)
         {
-            const QByteArray errorBytes = storedPolicy.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(storedPolicy.error()).toUtf8();
             return Application::
                 EvaluationDefaultPolicyPreferencesLoadResult::failure({
                     .code = Domain::ErrorCode::Technical,
@@ -132,13 +132,13 @@ public:
                 );
         }
 
-        const Status saved = repository->saveSetting(
+        const RepositoryStatus saved = repository->saveSetting(
             key(),
             storedPolicyValue(policy)
             );
         if (!saved)
         {
-            const QByteArray errorBytes = saved.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(saved.error()).toUtf8();
             return failure(
                 errorBytes.isEmpty()
                     ? "Evaluation default policy could not be saved."

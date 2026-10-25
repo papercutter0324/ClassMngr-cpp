@@ -172,7 +172,7 @@ Status SettingsService::save(
     {
         if (auto* repository = session()->settingsRepository())
         {
-            return repository->saveSetting(key, value);
+            return toLegacyStatus(repository->saveSetting(key, value));
         }
         return std::unexpected(unavailableError());
     }
@@ -192,7 +192,7 @@ Status SettingsService::saveAll(
     {
         if (auto* repository = session()->settingsRepository())
         {
-            return repository->saveSettings(values);
+            return toLegacyStatus(repository->saveSettings(values));
         }
         return std::unexpected(unavailableError());
     }
@@ -212,7 +212,7 @@ Result<QVariant> SettingsService::load(
     {
         if (auto* repository = session()->settingsRepository())
         {
-            return repository->loadSetting(key);
+            return toLegacyResult(repository->loadSetting(key));
         }
         return std::unexpected(unavailableError());
     }

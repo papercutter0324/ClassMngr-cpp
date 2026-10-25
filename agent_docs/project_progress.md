@@ -98,7 +98,17 @@ implementation and independent verification are complete; commit
 ScheduleImportRepository implementation and independent verification are
 complete; commit `b968a9d2f93016ac03c1df9af8704ed5854ef2c2` is local and not
 pushed. F1459 ClassTransferRepository implementation and independent
-verification are complete; its local commit is pending. F1457's fresh production/test targets
+verification are complete; commit `12feaf380f2bc5368f3a709821a73a81b34d50fd`
+is local and not pushed. F1460 SettingsRepository implementation and
+independent verification are complete and accepted; its commit is pending.
+The three fallible repository APIs now return typed results, repository
+failures remain Technical with existing diagnostics, DataService and
+SettingsService retain their QString-based legacy signatures, and direct
+preference ports preserve fallback and best-effort behavior. Missing settings
+and empty batch saves remain successful. A fresh forced build of ClassMngr and
+23 focused test targets succeeded; 23 CTest suites passed. A late cursor-fetch
+failure was source-reviewed but not injected; no full-suite or other-platform
+build ran. F1461 follows after the F1460 commit. F1457's fresh production/test targets
 built. DataService lifecycle, Speaking
 Evaluation service, analytics, read-port, roster-score import, and save-port
 targets passed; the save-port binary reported 16/16 cases. The changed

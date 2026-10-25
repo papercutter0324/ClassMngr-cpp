@@ -75,10 +75,11 @@ ApplicationServicesCustomColorPalettePreferencesPort::read() const
             << "Failed to load setting"
             << key()
             << ':'
-            << stored.error();
+            << toLegacyDiagnostic(stored.error());
         return Domain::Result<Application::CustomColorPalette>::failure(
             technicalError(
-                "Failed to load custom colors: " + utf8(stored.error())
+                "Failed to load custom colors: "
+                    + utf8(toLegacyDiagnostic(stored.error()))
                 )
             );
     }
@@ -120,14 +121,16 @@ ApplicationServicesCustomColorPalettePreferencesPort::write(
     }
 
     const QStringList colors = toQStringList(palette);
-    if (const Status saved = repository->saveSetting(
+    if (const RepositoryStatus saved = repository->saveSetting(
             key(),
             serializeCustomColors(colors)
             ); !saved)
     {
-        qWarning() << "Failed to save custom colors:" << saved.error();
+        qWarning() << "Failed to save custom colors:"
+                   << toLegacyDiagnostic(saved.error());
         return technicalFailure(
-            "Failed to save custom colors: " + utf8(saved.error())
+            "Failed to save custom colors: "
+                + utf8(toLegacyDiagnostic(saved.error()))
             );
     }
 

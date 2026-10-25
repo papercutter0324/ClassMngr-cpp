@@ -4179,14 +4179,15 @@ Source-review-only gaps: schedule-import commit-failure rollback and the
 checked rollback-failure branch were not induced. The optional workbook case
 was skipped, and no full suite or other-platform build was run.
 
-## F1459 — ClassTransferRepository structured errors — independently verified — 2026-10-25
+## F1459 — ClassTransferRepository structured errors — independently verified, committed locally — 2026-10-25
 
 Discovery is complete: Explorer `PHASE3-F1459-CLASS-TRANSFER-SCOPE-20261025-EXP-01`,
 test map `PHASE3-F1459-CLASS-TRANSFER-TEST-MAP-20261025-EXP-02`, and
 Investigator `PHASE3-F1459-CLASS-TRANSFER-ERROR-RESEARCH-20261025-INV-01`
 support the accepted boundary. Tester
 `PHASE3-F1459-CLASS-TRANSFER-VERIFY-20261025-TST-01` independently verified
-and accepted F1459; its local commit is pending, and F1460 is next. F1458 is
+and accepted F1459. It is committed locally as
+`12feaf380f2bc5368f3a709821a73a81b34d50fd` and is not pushed. F1458 is
 committed locally as
 `b968a9d2f93016ac03c1df9af8704ed5854ef2c2` and is not pushed.
 
@@ -4233,3 +4234,27 @@ pre-existing or to F1459.
 Source-review-only gaps: successful scalar fallback, malformed batch-count /
 order recovery, export commit/rollback injection, and assertions for every
 legacy conversion. No full suite or cross-platform verification was run.
+F1460 SettingsRepository discovery is complete and scope is accepted;
+implementation is active and independent verification is pending.
+
+## F1460 — SettingsRepository structured errors — independently verified — 2026-10-25
+
+Discovery is complete and the bounded scope is accepted. Tester
+`PHASE3-F1460-SETTINGS-VERIFY-20261025-TST-01` independently verified and
+accepted F1460; its local commit is pending, and F1461 is next. F1459 is
+committed locally as
+`12feaf380f2bc5368f3a709821a73a81b34d50fd` and is not pushed.
+
+Type `saveSetting`, `saveSettings`, and `loadSetting`. Operational repository
+errors map to `Technical` with exact diagnostics. Preserve missing-key and
+empty-batch success. Keep `DataService`/`SettingsService` legacy `QString`
+compatibility and adapt direct repository consumers without changing current
+fallback or best-effort behavior. Exclude the two direct SQL `app_settings`
+paths from this slice.
+
+A forced fresh build of `ClassMngr` and 23 selected test targets passed. The
+selected CTest run passed **23/23 suites**, including the repository contract,
+DataService lifecycle, ScheduleWidget, and all 20 settings preference ports;
+`git diff --check` passed. No fixture exercised the late `query.next()` fetch
+error; it was source-reviewed as `Technical`. No full suite or other-platform
+run was performed.

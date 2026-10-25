@@ -70,7 +70,7 @@ public:
                 .code = Domain::ErrorCode::Technical,
                 .message = settingLoadFailure(
                     showEventsAtAllCampusesKey(),
-                    showAllCampuses.error()
+                    toLegacyDiagnostic(showAllCampuses.error())
                     ),
                 .recoverable = false
             });
@@ -85,7 +85,7 @@ public:
                 .code = Domain::ErrorCode::Technical,
                 .message = settingLoadFailure(
                     hideStartOfTermEventsKey(),
-                    hideStartOfTerm.error()
+                    toLegacyDiagnostic(hideStartOfTerm.error())
                     ),
                 .recoverable = false
             });
@@ -131,7 +131,7 @@ public:
                 });
         }
 
-        const Status saved = repository->saveSettings({
+        const RepositoryStatus saved = repository->saveSettings({
             {
                 showEventsAtAllCampusesKey(),
                 request.showEventsAtAllCampuses
@@ -143,7 +143,7 @@ public:
         });
         if (!saved)
         {
-            const QByteArray errorBytes = saved.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(saved.error()).toUtf8();
             return Application::
                 CalendarEventDisplayPreferencesSaveResult::failure({
                     .code = Domain::ErrorCode::Technical,

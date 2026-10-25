@@ -77,7 +77,9 @@ public:
         if (!stored)
         {
             return Application::PersonalSignatureImageResult::failure(
-                settingLoadError(key(), stored.error())
+                settingLoadError(
+                    key(),
+                    toLegacyDiagnostic(stored.error()))
                 );
         }
         else if (stored->isValid())

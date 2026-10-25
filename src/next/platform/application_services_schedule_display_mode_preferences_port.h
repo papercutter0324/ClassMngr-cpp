@@ -69,7 +69,7 @@ public:
         {
             return loadFailure(
                 canonicalKey(),
-                storedModeResult.error()
+                toLegacyDiagnostic(storedModeResult.error())
                 );
         }
 
@@ -86,7 +86,7 @@ public:
         {
             return loadFailure(
                 legacyKey(),
-                legacyModeResult.error()
+                toLegacyDiagnostic(legacyModeResult.error())
                 );
         }
 
@@ -282,13 +282,13 @@ private:
         const Application::ScheduleDisplayMode mode
         )
     {
-        const Status saved = repository.saveSetting(
+        const RepositoryStatus saved = repository.saveSetting(
             canonicalKey(),
             storedModeValue(mode)
             );
         if (!saved)
         {
-            const QByteArray errorBytes = saved.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(saved.error()).toUtf8();
             return failure(
                 errorBytes.isEmpty()
                     ? "Schedule display mode could not be saved."

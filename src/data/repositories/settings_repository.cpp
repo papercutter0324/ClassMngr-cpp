@@ -14,7 +14,7 @@ SettingsRepository::SettingsRepository(
 {
 }
 
-Status SettingsRepository::saveSetting(
+RepositoryStatus SettingsRepository::saveSetting(
     const QString& key,
     const QVariant& value
     )
@@ -43,13 +43,14 @@ Status SettingsRepository::saveSetting(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
 
     return {};
 }
 
-Status SettingsRepository::saveSettings(
+RepositoryStatus SettingsRepository::saveSettings(
     const QVariantMap& values
     )
 {
@@ -61,15 +62,17 @@ Status SettingsRepository::saveSettings(
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
             QObject::tr("Starting application settings transaction failed: %1")
                 .arg(m_database.lastError().text())
-            );
+            });
     }
 
     for (auto setting = values.cbegin(); setting != values.cend(); ++setting)
     {
-        const Status saved = saveSetting(setting.key(), setting.value());
+        const RepositoryStatus saved = saveSetting(
+            setting.key(),
+            setting.value());
         if (!saved)
         {
             return saved;
@@ -78,16 +81,16 @@ Status SettingsRepository::saveSettings(
 
     if (!transaction.commit())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
             QObject::tr("Committing application settings failed: %1")
                 .arg(m_database.lastError().text())
-            );
+            });
     }
 
     return {};
 }
 
-Result<QVariant> SettingsRepository::loadSetting(
+RepositoryResult<QVariant> SettingsRepository::loadSetting(
     const QString& key
     )
 {
@@ -108,11 +111,21 @@ Result<QVariant> SettingsRepository::loadSetting(
         );
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(loaded.error()));
     }
 
     if (!query.next())
     {
+        if (query.lastError().isValid())
+        {
+            return std::unexpected(SqlQueryUtils::repositoryErrorFor(
+                SqlQueryUtils::errorFor(
+                    query,
+                    QObject::tr("Loading application setting"),
+                    {},
+                    QObject::tr("setting key '%1'").arg(key))));
+        }
         return QVariant();
     }
 

@@ -121,7 +121,9 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     qt_add_executable(ClassMngrRepositoryErrorContractTests
         tests/repository_error_contract_tests.cpp
+        src/data/database/database_transaction.cpp
         src/data/database/sql_query_utils.cpp
+        src/data/repositories/settings_repository.cpp
     )
 
     target_compile_features(ClassMngrRepositoryErrorContractTests

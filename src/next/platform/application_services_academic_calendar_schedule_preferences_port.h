@@ -69,7 +69,7 @@ public:
         const auto stored = repository->loadSetting(key());
         if (!stored)
         {
-            const QByteArray errorBytes = stored.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(stored.error()).toUtf8();
             return Application::AcademicCalendarSchedulePreferencesReadResult::
                 failure({
                     .code = Domain::ErrorCode::Technical,
@@ -118,12 +118,12 @@ public:
             payloadText.data(),
             static_cast<qsizetype>(payloadText.size())
             );
-        if (const Status saved = repository->saveSetting(
+        if (const RepositoryStatus saved = repository->saveSetting(
                 key(),
                 storedPayload
                 ); !saved)
         {
-            const QByteArray errorBytes = saved.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(saved.error()).toUtf8();
             return failure(
                 errorBytes.isEmpty()
                     ? "Academic calendar schedule could not be saved."

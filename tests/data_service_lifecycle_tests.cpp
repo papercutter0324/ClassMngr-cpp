@@ -5,6 +5,7 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/intensive_slot_state_repository.h"
 #include "data/repositories/roster_repository.h"
+#include "data/repositories/settings_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/native_english_teacher.h"
 #include "app/services/feature_services.h"
@@ -287,6 +288,7 @@ private slots:
     void boundedRosterOutputLoadsOnlyRequestedColumnsAndEnforcesLimits();
     void featureServicesExposeNarrowOperations();
     void settingsServiceDoesNotFallBackFromClosedSession();
+    void settingsCompatibilityFacadesPreserveRepositoryDiagnostics();
     void teacherServiceDoesNotFallBackFromClosedSession();
     void calendarServiceDoesNotFallBackFromClosedSession();
     void classNotesServiceDoesNotFallBackFromClosedSession();
@@ -3720,6 +3722,131 @@ settingsServiceDoesNotFallBackFromClosedSession()
         legacyOnly.load(batchWriteKey)->toString(),
         QStringLiteral("legacy batch")
     );
+}
+
+void DataServiceLifecycleTests::
+settingsCompatibilityFacadesPreserveRepositoryDiagnostics()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService dataService;
+    QVERIFY(dataService.openDatabase(
+        directory.filePath(QStringLiteral("settings-diagnostics.db"))
+        ));
+
+    QSqlQuery query(dataService.databaseSession()->database());
+    QVERIFY(query.exec(QStringLiteral("DROP TABLE app_settings")));
+
+    SettingsRepository* const repository =
+        dataService.databaseSession()->settingsRepository();
+    QVERIFY(repository);
+
+    const QString key = QStringLiteral("settings/diagnostic");
+    const QString value = QStringLiteral("value");
+    const QVariantMap values{{key, value}};
+
+    const RepositoryStatus repositorySave = repository->saveSetting(key, value);
+    QVERIFY(!repositorySave);
+    QCOMPARE(repositorySave.error().code, RepositoryErrorCode::Technical);
+    const Status dataServiceSave = dataService.saveSetting(key, value);
+    QVERIFY(!dataServiceSave);
+    QCOMPARE(
+        dataServiceSave.error(),
+        toLegacyDiagnostic(repositorySave.error())
+        );
+
+    const RepositoryStatus repositoryBatch = repository->saveSettings(values);
+    QVERIFY(!repositoryBatch);
+    QCOMPARE(repositoryBatch.error().code, RepositoryErrorCode::Technical);
+    const Status dataServiceBatch = dataService.saveSettings(values);
+    QVERIFY(!dataServiceBatch);
+    QCOMPARE(
+        dataServiceBatch.error(),
+        toLegacyDiagnostic(repositoryBatch.error())
+        );
+
+    const RepositoryResult<QVariant> repositoryLoad =
+        repository->loadSetting(key);
+    QVERIFY(!repositoryLoad);
+    QCOMPARE(repositoryLoad.error().code, RepositoryErrorCode::Technical);
+    const Result<QVariant> dataServiceLoad = dataService.loadSetting(key);
+    QVERIFY(!dataServiceLoad);
+    QCOMPARE(
+        dataServiceLoad.error(),
+        toLegacyDiagnostic(repositoryLoad.error())
+        );
+
+    SettingsService settingsService(
+        dataService.databaseSession(),
+        &dataService
+        );
+    const Status settingsServiceSave = settingsService.save(key, value);
+    QVERIFY(!settingsServiceSave);
+    QCOMPARE(
+        settingsServiceSave.error(),
+        toLegacyDiagnostic(repositorySave.error())
+        );
+    const Status settingsServiceBatch = settingsService.saveAll(values);
+    QVERIFY(!settingsServiceBatch);
+    QCOMPARE(
+        settingsServiceBatch.error(),
+        toLegacyDiagnostic(repositoryBatch.error())
+        );
+    const Result<QVariant> settingsServiceLoad = settingsService.load(key);
+    QVERIFY(!settingsServiceLoad);
+    QCOMPARE(
+        settingsServiceLoad.error(),
+        toLegacyDiagnostic(repositoryLoad.error())
+        );
+
+    DataService unavailableDataService;
+    const Status unavailableSave = unavailableDataService.saveSetting(key, value);
+    QVERIFY(!unavailableSave);
+    QCOMPARE(
+        unavailableSave.error(),
+        QStringLiteral("No Teacher Profile is open.")
+        );
+    const Result<QVariant> unavailableLoad =
+        unavailableDataService.loadSetting(key);
+    QVERIFY(!unavailableLoad);
+    QCOMPARE(
+        unavailableLoad.error(),
+        QStringLiteral("No Teacher Profile is open.")
+        );
+    const Status unavailableBatch =
+        unavailableDataService.saveSettings(values);
+    QVERIFY(!unavailableBatch);
+    QCOMPARE(
+        unavailableBatch.error(),
+        QStringLiteral("No Teacher Profile is open.")
+        );
+
+    SettingsService unavailableSettingsService(
+        unavailableDataService.databaseSession(),
+        &unavailableDataService
+        );
+    const Result<QVariant> unavailableServiceLoad =
+        unavailableSettingsService.load(key);
+    QVERIFY(!unavailableServiceLoad);
+    QCOMPARE(
+        unavailableServiceLoad.error(),
+        QStringLiteral("No Teacher Profile service is available.")
+        );
+    const Status unavailableServiceSave =
+        unavailableSettingsService.save(key, value);
+    QVERIFY(!unavailableServiceSave);
+    QCOMPARE(
+        unavailableServiceSave.error(),
+        QStringLiteral("No Teacher Profile service is available.")
+        );
+    const Status unavailableServiceBatch =
+        unavailableSettingsService.saveAll(values);
+    QVERIFY(!unavailableServiceBatch);
+    QCOMPARE(
+        unavailableServiceBatch.error(),
+        QStringLiteral("No Teacher Profile service is available.")
+        );
 }
 
 void DataServiceLifecycleTests::

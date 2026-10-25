@@ -78,7 +78,9 @@ public:
         if (!storedMode)
         {
             return Application::PersonalSignaturePreferencesResult::failure(
-                settingLoadError(modeKey, storedMode.error())
+                settingLoadError(
+                    modeKey,
+                    toLegacyDiagnostic(storedMode.error()))
                 );
         }
 
@@ -87,7 +89,9 @@ public:
         if (!storedFont)
         {
             return Application::PersonalSignaturePreferencesResult::failure(
-                settingLoadError(fontKey, storedFont.error())
+                settingLoadError(
+                    fontKey,
+                    toLegacyDiagnostic(storedFont.error()))
                 );
         }
 
@@ -96,7 +100,9 @@ public:
         if (!storedText)
         {
             return Application::PersonalSignaturePreferencesResult::failure(
-                settingLoadError(textKey, storedText.error())
+                settingLoadError(
+                    textKey,
+                    toLegacyDiagnostic(storedText.error()))
                 );
         }
 

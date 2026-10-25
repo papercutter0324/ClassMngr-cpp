@@ -668,7 +668,7 @@ SettingsRepository::SettingsRepository(QSqlDatabase& database)
 {
 }
 
-Status SettingsRepository::saveSetting(
+RepositoryStatus SettingsRepository::saveSetting(
     const QString& key,
     const QVariant& value
     )
@@ -678,9 +678,9 @@ Status SettingsRepository::saveSetting(
         ++ScheduleWidgetTestStubs::scheduleDisplayModeSaveAttemptCount;
         if (!ScheduleWidgetTestStubs::scheduleDisplayModeSaveFailure.isEmpty())
         {
-            return std::unexpected(
+            return std::unexpected(RepositoryError{
                 ScheduleWidgetTestStubs::scheduleDisplayModeSaveFailure
-                );
+            });
         }
         ++ScheduleWidgetTestStubs::scheduleDisplayModeSuccessfulSaveCount;
     }
@@ -689,11 +689,13 @@ Status SettingsRepository::saveSetting(
     return {};
 }
 
-Status SettingsRepository::saveSettings(const QVariantMap& values)
+RepositoryStatus SettingsRepository::saveSettings(const QVariantMap& values)
 {
     if (!ScheduleWidgetTestStubs::settingsSaveFailure.isEmpty())
     {
-        return std::unexpected(ScheduleWidgetTestStubs::settingsSaveFailure);
+        return std::unexpected(RepositoryError{
+            ScheduleWidgetTestStubs::settingsSaveFailure
+        });
     }
 
     for (auto setting = values.cbegin(); setting != values.cend(); ++setting)
@@ -706,7 +708,7 @@ Status SettingsRepository::saveSettings(const QVariantMap& values)
     return {};
 }
 
-Result<QVariant> SettingsRepository::loadSetting(const QString& key)
+RepositoryResult<QVariant> SettingsRepository::loadSetting(const QString& key)
 {
     if (
         !ScheduleWidgetTestStubs::settingsLoadFailure.isEmpty()
@@ -716,9 +718,9 @@ Result<QVariant> SettingsRepository::loadSetting(const QString& key)
             )
         )
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
             ScheduleWidgetTestStubs::settingsLoadFailure
-            );
+        });
     }
 
     return ScheduleWidgetTestStubs::settings.value(key);

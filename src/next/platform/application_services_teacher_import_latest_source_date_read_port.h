@@ -50,13 +50,13 @@ public:
 
         try
         {
-            const Result<QVariant> setting = repository->loadSetting(
+            const RepositoryResult<QVariant> setting = repository->loadSetting(
                 QString::fromLatin1(
                     TeacherImportRepository::LatestSourceDateSetting));
             if (!setting)
             {
                 return Application::TeacherImportLatestSourceDateReadPortResult::failure(
-                    repositoryError(setting.error()));
+                    repositoryError(toLegacyDiagnostic(setting.error())));
             }
 
             if (!setting->isValid() || setting->isNull())

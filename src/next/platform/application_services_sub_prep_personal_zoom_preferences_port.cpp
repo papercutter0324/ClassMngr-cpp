@@ -84,7 +84,9 @@ ApplicationServicesSubPrepPersonalZoomPreferencesPort::load() const
             if (!primary)
             {
                 return Domain::Result<ResolvedZoomSetting>::failure(
-                    settingReadError(primaryKey, primary.error())
+                    settingReadError(
+                        primaryKey,
+                        toLegacyDiagnostic(primary.error()))
                     );
             }
 
@@ -100,7 +102,9 @@ ApplicationServicesSubPrepPersonalZoomPreferencesPort::load() const
             if (!legacy)
             {
                 return Domain::Result<ResolvedZoomSetting>::failure(
-                    settingReadError(legacyKey, legacy.error())
+                    settingReadError(
+                        legacyKey,
+                        toLegacyDiagnostic(legacy.error()))
                     );
             }
 

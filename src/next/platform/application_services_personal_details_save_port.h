@@ -109,10 +109,10 @@ public:
             }
         };
 
-        const Status saved = repository->saveSettings(values);
+        const RepositoryStatus saved = repository->saveSettings(values);
         if (!saved)
         {
-            const QByteArray errorBytes = saved.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(saved.error()).toUtf8();
             return Application::PersonalDetailsSaveResult::failure({
                 .code = Domain::ErrorCode::Technical,
                 .message = errorBytes.isEmpty()

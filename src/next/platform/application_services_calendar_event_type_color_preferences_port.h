@@ -101,12 +101,12 @@ public:
             colorHexRgb.data(),
             static_cast<qsizetype>(colorHexRgb.size())
             );
-        if (const Status saved = repository->saveSetting(
+        if (const RepositoryStatus saved = repository->saveSetting(
                 key(eventType),
                 storedColor
                 ); !saved)
         {
-            const QByteArray errorBytes = saved.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(saved.error()).toUtf8();
             return failure(
                 errorBytes.isEmpty()
                     ? "Calendar event type color could not be saved."

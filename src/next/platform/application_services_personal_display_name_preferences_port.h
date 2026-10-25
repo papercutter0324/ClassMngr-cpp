@@ -73,9 +73,9 @@ public:
                 << "Failed to load setting"
                 << key()
                 << ':'
-                << stored.error();
+                << toLegacyDiagnostic(stored.error());
 
-            const QByteArray errorBytes = stored.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(stored.error()).toUtf8();
             return Application::PersonalDisplayNamePreferencesReadResult::
                 failure({
                     .code = Domain::ErrorCode::Technical,
@@ -119,13 +119,13 @@ public:
             return failure("Personal display name could not be saved.");
         }
 
-        const Status saved = repository->saveSetting(
+        const RepositoryStatus saved = repository->saveSetting(
             key(),
             fromUtf8(name)
             );
         if (!saved)
         {
-            const QByteArray errorBytes = saved.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(saved.error()).toUtf8();
             return failure(
                 errorBytes.isEmpty()
                     ? "Personal display name could not be saved."

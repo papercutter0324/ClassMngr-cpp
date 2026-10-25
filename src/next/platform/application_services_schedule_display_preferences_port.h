@@ -63,7 +63,7 @@ public:
             {
                 return Result<bool>(std::unexpected(
                     QStringLiteral("Loading schedule display preference '%1' failed: %2")
-                        .arg(key, stored.error())
+                        .arg(key, toLegacyDiagnostic(stored.error()))
                     ));
             }
 
@@ -147,7 +147,7 @@ public:
             });
         }
 
-        const Status saved = repository->saveSettings({
+        const RepositoryStatus saved = repository->saveSettings({
             {
                 QStringLiteral("schedule_use_24h"),
                 storedBool(request.use24HourTime)
@@ -173,7 +173,7 @@ public:
         });
         if (!saved)
         {
-            const QByteArray errorBytes = saved.error().toUtf8();
+            const QByteArray errorBytes = toLegacyDiagnostic(saved.error()).toUtf8();
             return Application::ScheduleDisplayPreferencesSaveResult::failure({
                 .code = Domain::ErrorCode::Technical,
                 .message = errorBytes.isEmpty()

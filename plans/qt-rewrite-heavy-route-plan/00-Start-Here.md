@@ -24,8 +24,10 @@
   `2ccba709122ae44a246302bdf8dab8d6a179e3cb` and is not pushed. F1458
   ScheduleImportRepository is committed locally as
   `b968a9d2f93016ac03c1df9af8704ed5854ef2c2` and is not pushed. F1459
-  ClassTransferRepository is independently verified and accepted; its local
-  commit is pending, and F1460 is next. Evidence and limits are in the
+  ClassTransferRepository is committed locally as
+  `12feaf380f2bc5368f3a709821a73a81b34d50fd` and is not pushed. F1460
+  SettingsRepository is independently verified and accepted; its local commit
+  is pending, and F1461 is next. Evidence and limits are in the
   [progress log](04-Phase-3-Progress-Log.md); see also the [Phase 3
   plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),

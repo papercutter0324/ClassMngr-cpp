@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 
 #include <QSqlDatabase>
 #include <QString>
@@ -14,16 +14,16 @@ public:
         QSqlDatabase& database
         );
 
-    [[nodiscard]] Status saveSetting(
+    [[nodiscard]] RepositoryStatus saveSetting(
         const QString& key,
         const QVariant& value
         );
 
-    [[nodiscard]] Status saveSettings(
+    [[nodiscard]] RepositoryStatus saveSettings(
         const QVariantMap& values
         );
 
-    [[nodiscard]] Result<QVariant> loadSetting(
+    [[nodiscard]] RepositoryResult<QVariant> loadSetting(
         const QString& key
         );
 

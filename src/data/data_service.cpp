@@ -123,7 +123,8 @@ Status DataService::saveSetting(
             );
     }
 
-    return m_session->settingsRepository()->saveSetting(key, value);
+    return toLegacyStatus(
+        m_session->settingsRepository()->saveSetting(key, value));
 }
 
 Status DataService::saveSettings(
@@ -137,7 +138,8 @@ Status DataService::saveSettings(
             );
     }
 
-    return m_session->settingsRepository()->saveSettings(values);
+    return toLegacyStatus(
+        m_session->settingsRepository()->saveSettings(values));
 }
 
 Result<QVariant> DataService::loadSetting(
@@ -151,7 +153,8 @@ Result<QVariant> DataService::loadSetting(
             );
     }
 
-    return m_session->settingsRepository()->loadSetting(key);
+    return toLegacyResult(
+        m_session->settingsRepository()->loadSetting(key));
 }
 
 Result<int> DataService::createTeacher(
