@@ -16,14 +16,21 @@
   and committed as `b10e60e854f21e67ed3b3653b8c8b608c7588345`. Its 198 runtime
   records include 191 direct resources and seven generated outputs; the
   catalog matches the inventory and baked files. F1467, deterministic
-  installed-tree packaging, passed independent macOS verification and is ready
-  to commit. Its staged component contains 191 hash-verified files, five
+  installed-tree packaging, is accepted and committed as
+  `153b85fb7b6314baf145ddd3f9584926111049d2`. Its staged component contains
+  191 hash-verified files, five
   translations, and two Calendar QML resource keys; the default install still
   stages only the legacy application. Windows and Linux destinations are
-  source-reviewed but not host-staged. F1468 follows this commit. Batch 2
-  discovery accepted 17 candidates, F1469–F1485, focused on the v2 resource
-  runtime and document lifecycle. Legacy theme/font/icon/campus/report UI
-  consumers stay with their Phase 5–7 migrations.
+  source-reviewed but not host-staged. F1468, the typed resource loader, is
+  accepted and committed after independent macOS verification; Batch 1 push
+  is pending. It provides explicit root/catalog injection, catalog
+  validation, root-confined file reads, and RAII stream/font/translation
+  ownership while keeping `ClassMngrNext` QtCore-only. The pack-backed
+  document adapter used by legacy navigation remains queued for replacement
+  at F1474. Batch 2 discovery accepted 17 candidates, F1469–F1485, focused on
+  the v2 resource runtime and document lifecycle. Legacy
+  theme/font/icon/campus/report UI consumers stay with their Phase 5–7
+  migrations.
   The inventory records 229 tracked
   paths under `resources/` plus two Calendar QML inputs, with 226 asset files
   totaling 65,707,627 exact source bytes. No installed overrides were present

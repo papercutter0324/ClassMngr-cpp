@@ -23,6 +23,51 @@ add_test(
     COMMAND ClassMngrNextCalendarResourceKeysTests
 )
 
+# Load the generated catalog from an explicit root and stage only requested
+# fixtures, proving document bodies are not opened during catalog initialization.
+add_executable(ClassMngrNextResourceLoaderTests
+    cmake/tests/next_resource_loader.cpp
+)
+target_compile_features(ClassMngrNextResourceLoaderTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(ClassMngrNextResourceLoaderTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextResourceLoaderTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_include_directories(ClassMngrNextResourceLoaderTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextResourceLoaderTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+classmngr_next_add_calendar_qml_resources(ClassMngrNextResourceLoaderTests)
+target_link_libraries(ClassMngrNextResourceLoaderTests
+    PRIVATE
+        ClassMngrNext::Resources
+)
+add_dependencies(ClassMngrNextResourceLoaderTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextResourceLoaderTests
+    COMMAND ClassMngrNextResourceLoaderTests
+)
+set_tests_properties(ClassMngrNextResourceLoaderTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
 # Keep PowerPoint batch template compatibility independent of Qt and the
 # feature layer.
 add_executable(

@@ -584,6 +584,18 @@ target_sources(ClassMngrNextDomain
     INTERFACE
         ${CLASSMNGR_NEXT_DOMAIN_SOURCES}
 )
+target_sources(ClassMngrNextResources
+    INTERFACE
+        ${CLASSMNGR_NEXT_RESOURCES_SOURCES}
+)
+target_compile_features(ClassMngrNextResources
+    INTERFACE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextResources
+    INTERFACE
+        "${PROJECT_SOURCE_DIR}/src"
+)
 target_include_directories(ClassMngrNextDomain
     INTERFACE
         "${PROJECT_SOURCE_DIR}/src"
@@ -603,6 +615,11 @@ target_link_libraries(ClassMngrNextApplication
     INTERFACE
         ClassMngrNext::Domain
         ClassMngrNext::Persistence
+)
+target_link_libraries(ClassMngrNextResources
+    INTERFACE
+        Qt6::Core
+        Qt6::Gui
 )
 
 target_link_libraries(ClassMngrNextPersistence
@@ -661,7 +678,10 @@ classmngr_next_assert_dependencies(ClassMngrNextApplication
 classmngr_next_assert_dependencies(ClassMngrNextPersistence
     ClassMngrNext::Domain
 )
-classmngr_next_assert_dependencies(ClassMngrNextResources)
+classmngr_next_assert_dependencies(ClassMngrNextResources
+    Qt6::Core
+    Qt6::Gui
+)
 classmngr_next_assert_dependencies(ClassMngrNextPlatform
     ClassMngrNext::Application
     Qt6::Core

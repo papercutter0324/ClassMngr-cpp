@@ -2,7 +2,7 @@
 
 Phase 4 is In progress on the mandatory Heavy route.
 
-## Batch 1 — active
+## Batch 1 — accepted, awaiting push
 
 1. **F1464 — Effective-resource inventory.** Refresh the checked-in baseline
    inventory with logical identities, packaged/source distinction, exact
@@ -21,16 +21,21 @@ Phase 4 is In progress on the mandatory Heavy route.
    size, and content hash.
 4. **F1467 — Deterministic installed-tree packaging.** Install the canonical
    tree at the agreed Windows, macOS, and Linux package-relative locations and
-   validate staged layouts. F1467 is accepted; macOS staging passed and
+   validate staged layouts. F1467 is committed as
+   `153b85fb7b6314baf145ddd3f9584926111049d2`; macOS staging passed and
    Windows/Linux host staging remains for the cross-platform gate.
-5. **F1468 — Typed resource loader.** Add known-ID package-relative reads and
-   stream handles with focused unit coverage; packaged builds must not search
-   the source tree or current working directory.
+5. **F1468 — Typed resource loader.** Accepted after independent macOS review.
+   The loader uses explicit catalog/root injection, validates catalog records,
+   confines package-file access to the canonical root, and returns owning
+   text, JSON, image, font, stylesheet, translation, and stream results. Its
+   tests verify document-body laziness, hash integrity, and RAII release.
+   The source-ownership gate and QtCore-only `ClassMngrNext` check pass.
 
 F1464 is committed as `473e8325b9f98069c8396291d057a398a9683ebe`; F1465 is
 committed as `3423e1de05f129d407004192565a79f06e572579`; F1466 is committed as
-`b10e60e854f21e67ed3b3653b8c8b608c7588345`; F1467 is accepted and awaits its
-slice commit. Batch 2 discovery is complete and its queue is below. Completed batch history
+`b10e60e854f21e67ed3b3653b8c8b608c7588345`; F1467 is committed as
+`153b85fb7b6314baf145ddd3f9584926111049d2`. Batch 2 discovery is complete and
+its queue is below. Completed batch history
 and push receipts belong in the Phase 4 progress log, not this tracker.
 
 ## Batch 2 — discovered, inactive
@@ -51,10 +56,11 @@ legacy oracle paths in Phase 4.
    residency, and owner without adding a process-wide mutable singleton.
 5. **F1473 — Load document catalog metadata through the new catalog.** Keep
    metadata startup-safe and document bodies unopened.
-6. **F1474 — Add loader-owned document content handles.** Preserve
-   selected-document request, file/device ownership, and explicit close in the
-   new resource boundary; keep the legacy viewer path unchanged until feature
-   migration.
+6. **F1474 — Add loader-owned document content handles.** Replace the
+   pack-backed Next document resource adapter used by legacy navigation with a
+   loader-owned handle. Preserve selected-document request, file/device
+   ownership, and explicit close in the new resource boundary; keep the legacy
+   viewer path unchanged until feature migration.
 7. **F1475 — Verify PDF session release at the new boundary.** Cover open,
    close, replacement/reopen, and owner release of a QtPdf document and handle
    in an isolated integration test.

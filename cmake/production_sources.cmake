@@ -639,6 +639,16 @@ list(APPEND CLASSMNGR_FEATURES_SOURCES ${CLASSMNGR_FEATURE_SOURCE_FRAGMENTS})
 set(CLASSMNGR_MAIN_SOURCE "src/main.cpp")
 set(CLASSMNGR_NEXT_MAIN_SOURCE "src/next/main.cpp")
 
+set(CLASSMNGR_NEXT_RESOURCES_SOURCES
+    "src/next/resources/resource_catalog.cpp"
+    "src/next/resources/resource_catalog.h"
+    "src/next/resources/resource_descriptor.h"
+    "src/next/resources/resource_error.h"
+    "src/next/resources/resource_id.h"
+    "src/next/resources/resource_loader.cpp"
+    "src/next/resources/resource_loader.h"
+)
+
 set(CLASSMNGR_CALENDAR_QML_EVENT_FILE
     "src/features/calendar/ui/qml/EventCalendar.qml"
 )

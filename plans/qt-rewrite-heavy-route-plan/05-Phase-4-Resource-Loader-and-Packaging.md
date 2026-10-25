@@ -38,25 +38,21 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Bootstrap, feature migration, packaging, and memory gates
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-25
-- Current note: F1464, the effective-resource inventory, is accepted and
-  committed as `473e8325b9f98069c8396291d057a398a9683ebe`. F1465, the offline
-  baseline baker, is accepted and committed as
-  `3423e1de05f129d407004192565a79f06e572579`. F1466, the generated resource
-  catalog, is accepted and committed as
-  `b10e60e854f21e67ed3b3653b8c8b608c7588345`. F1467, deterministic
-  installed-tree packaging, passed independent macOS verification and is ready
-  to commit; F1468 follows. Batch 2 has 17 discovered candidates, F1469–F1485,
-  focused on the v2 resource runtime and document lifecycle. Legacy
-  theme/font/icon/campus/report UI consumers stay with their Phase 5–7
-  migrations. Windows and Linux install destinations are source-reviewed but
-  not host-staged; the cross-platform gate remains open. The inventory covers
-  229 tracked paths under `resources/` and two Calendar QML inputs. Its 226
-  asset files total 65,707,627 exact source bytes; installed/resident sizes
-  remain unmeasured and have measurement methods. No installed overrides were
-  present in the application-owned pack directory. `dyb.png` has no identified
-  production feature caller; its owner or exclusion remains a migration
-  decision. F1465–F1468 cover baseline baking, generated catalog,
-  installed-tree packaging, and the typed loader. See the [inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md)
+- Current note: F1468, the typed resource loader, is accepted and committed;
+  the Batch 1 push is pending. F1469 will resolve the platform-specific
+  installed resource root after that push. The loader uses explicit catalog
+  and resource-root injection, validates generated catalog records, confines
+  package-file access to the canonical root, and returns owning stream, font,
+  and translation handles. Independent macOS verification passed the loader,
+  Calendar-resource, and launch CTests 3/3; after strengthening durable
+  hash/lifecycle assertions, the loader CTest passed 1/1. The configure-time
+  ownership check validated all 1,618 handwritten sources, and the
+  `ClassMngrNext` executable remains QtCore-only. Its platform test's Windows
+  handle branch is source-reviewed but not host-compiled. Windows/Linux
+  package staging remains for F1483. The existing pack-backed document adapter
+  used by legacy navigation remains out of F1468 and is scheduled for
+  replacement at F1474; theme/font/icon/campus/report UI consumers stay with
+  their Phase 5–7 migrations. See the [inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md)
   and [current batch tracker](Current-Slice-Batches.md).
 
 ### Slice batches
@@ -158,8 +154,34 @@ Windows and Linux paths were source-reviewed only and remain for the
 cross-platform gate. Optional Qt deployment warnings about local database
 drivers did not prevent the default install.
 
-F1467 is accepted and ready to commit; F1468 follows. Batch 1 will be pushed
-after F1468.
+F1467 was committed as `153b85fb7b6314baf145ddd3f9584926111049d2`.
+
+### F1468 — Typed resource loader — independently verified — 2026-10-25
+
+The new `src/next/resources/` boundary loads known catalog IDs from an
+explicitly injected catalog and resource root. It validates record types,
+locations, relative paths and file extensions; package files are confined to
+the canonical root and checked against catalog byte counts and SHA-256 values.
+Calendar components remain `qrc:` resources. Catalog initialization reads no
+document bodies. Text, JSON, images, fonts, stylesheets, translations, and
+file-backed streams return owning values or RAII handles. The source-ownership
+manifest and `ClassMngrNextResources` owner record preserve the exact-one-owner
+check.
+
+The independent macOS review configured the Debug preset and confirmed
+ownership for 1,618 handwritten files. The focused loader build succeeded and
+`ClassMngrNextResourceLoaderTests`, `ClassMngrNextCalendarResourceKeysTests`,
+and `ClassMngrNextLaunch` passed 3/3. After the test was strengthened to verify
+same-size SHA-256 corruption, translation removal, and stream closure, the
+loader target rebuilt and its CTest passed 1/1. Temporary probes also verified
+same-size PDF corruption and translation move/release. Windows and Linux builds
+were not run; the Windows descriptor-to-native-handle assertion is
+source-reviewed and awaits host execution. `clang-format` was unavailable.
+
+The pack-backed `DocumentContentResourcePort` remains for the legacy navigation
+consumer until F1474 introduces loader-owned document content handles; it is
+not part of `src/next/resources/`. F1468 is accepted and committed; Batch 1
+awaits its push.
 
 ## Objective
 
