@@ -40,8 +40,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-25
 - Current note: F1464, the effective-resource inventory, is accepted and
   committed as `473e8325b9f98069c8396291d057a398a9683ebe`. F1465, the offline
-  baseline baker, passed independent verification and is ready to commit;
-  F1466 follows. The inventory covers
+  baseline baker, is accepted and committed as
+  `3423e1de05f129d407004192565a79f06e572579`. F1466, the generated resource
+  catalog, passed independent verification and is ready to commit; F1467
+  follows. The inventory covers
   229 tracked paths under `resources/` and two Calendar QML inputs. Its 226
   asset files total 65,707,627 exact source bytes; installed/resident sizes
   remain unmeasured and have measurement methods. No installed overrides were
@@ -104,7 +106,29 @@ committed inventory twice to temporary directories; manifests and output trees
 were byte-identical, and every direct output matched its inventoried source.
 Temporary mutation checks confirmed refusal without replacement. This slice
 does not yet install the tree or change CMake, release packaging, or runtime
-loading. F1465 is accepted; F1466 follows.
+loading. F1465 was committed as
+`3423e1de05f129d407004192565a79f06e572579`.
+
+### F1466 — Generated resource catalog — independently verified — 2026-10-25
+
+The deterministic catalog generator projects the F1464 inventory and F1465
+bake manifest into 198 runtime records: 191 direct files and seven generated
+outputs (five translations and two Calendar QML components). Direct records
+retain inventory IDs, types/categories, loading fields, and verified source
+and baked hashes. Generated records carry explicit output names and locations
+without fabricated output sizes or hashes. Catalog metadata remains separate
+from the 51 on-demand document bodies; build-only inputs and v2 exclusions are
+omitted.
+
+The independent Tester ran the focused nine-test suite and twice generated a
+fresh bake/catalog pair. Both 198-record catalogs were byte-identical, all
+191 direct files matched their inventory source, and all generated output
+records remained size/hash unknown. CMake source review confirmed the Calendar
+QML module's URI and `/qt/qml` resource prefix. No CMake build or installed
+package was exercised. F1467 must install file resources and preserve the
+separate Qt-resource location for Calendar components; catalog generation
+alone does not establish package presence. F1466 is accepted and ready to
+commit.
 
 ## Objective
 

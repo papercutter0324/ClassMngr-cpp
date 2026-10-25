@@ -9,9 +9,13 @@
 - Current milestone: Phase 3 is Complete and Phase 4 is In progress on the
   mandatory Heavy route. F1464, the effective-resource inventory, is accepted
   and committed as `473e8325b9f98069c8396291d057a398a9683ebe`. F1465, the
-  offline baseline baker, passed independent verification and is ready to
-  commit. Its 14 focused tests pass; two fresh temporary bakes are
-  byte-identical, and all 191 copied resources match their inventory sources.
+  offline baseline baker, is accepted and committed as
+  `3423e1de05f129d407004192565a79f06e572579`. Its 14 focused tests pass; two
+  fresh temporary bakes are byte-identical, and all 191 copied resources match
+  their inventory sources. F1466, the generated resource catalog, passed
+  independent verification and is ready to commit. Its 198 runtime records
+  include 191 direct resources and seven generated outputs; the catalog matches
+  the inventory and baked files. F1467 follows this commit.
   The inventory records 229 tracked
   paths under `resources/` plus two Calendar QML inputs, with 226 asset files
   totaling 65,707,627 exact source bytes. No installed overrides were present
@@ -20,8 +24,7 @@
   exclusion must be resolved during migration.
   See the [Phase 4 inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md),
   [Phase 4 plan](05-Phase-4-Resource-Loader-and-Packaging.md), and
-  [current batch tracker](Current-Slice-Batches.md). F1466 is next after the
-  F1465 commit. Batch 1 will be pushed
+  [current batch tracker](Current-Slice-Batches.md). Batch 1 will be pushed
   after F1468. Phase 3's accepted
   evidence and limits remain in the [progress log](04-Phase-3-Progress-Log.md)
   and [plan](04-Phase-3-Persistence-Rewrite.md).

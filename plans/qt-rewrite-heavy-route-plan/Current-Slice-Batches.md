@@ -27,6 +27,7 @@ Phase 4 is In progress on the mandatory Heavy route.
    the source tree or current working directory.
 
 F1464 is committed as `473e8325b9f98069c8396291d057a398a9683ebe`; F1465 is
-accepted and awaits its slice commit. Start Batch 2 discovery when work on F1467
+committed as `3423e1de05f129d407004192565a79f06e572579`; F1466 is accepted and
+awaits its slice commit. Start Batch 2 discovery when work on F1467
 begins, the second-to-last candidate in this batch. Completed batch history
 and push receipts belong in the Phase 4 progress log, not this tracker.
