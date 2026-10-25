@@ -61,14 +61,17 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `1605bac36d4192bf027440a2b83dce8a5e2d99d1` to
   `ea46415a93e8285e4cb1f81e9aec5b79f7533286`: F1487
   `f86c79fc81a2b2fd34c6993509b4cd314aacaec1`, then F1488
-  `ea46415a93e8285e4cb1f81e9aec5b79f7533286`. Local `HEAD` and
-  `origin/Qt-Rewrite` match at the new tip. Actions API has zero runs and
-  check-runs for `ea46415a`; combined status is pending. The push trigger
-  targets `Qt-Rewrite` and supports non-default branches; manual dispatch is
-  unavailable because the workflow file is absent from default `main`. The
-  reason no run surfaced is unknown;
-  user direction is needed on extending scope to `main`. F1483 and F1486 native
-  results remain unverified. A standard macOS Debug run of six targeted F1486
+  `ea46415a93e8285e4cb1f81e9aec5b79f7533286`. Current `Qt-Rewrite`, local
+  `HEAD`, and `origin/Qt-Rewrite` are at
+  `1579fa7d9ba6e012969219d733d9cacc613ccce2`. Actions API returned zero runs
+  and zero check-runs for this head; combined status is pending. The last
+  branch Actions run was 2026-10-18; re-enabling Actions did not create a run
+  for this already-pushed head. Workflow remains `on.push` filtered to
+  `Qt-Rewrite`; no dispatch is available, and the workflow is absent from
+  default `main`, so a fresh push is required. F1490 is the small status/trigger
+  receipt commit intended to generate that event. The cause of missing runs is
+  unknown; user direction on extending scope to `main` remains pending. F1483
+  and F1486 native results remain unverified. A standard macOS Debug run of six targeted F1486
   CTests initially passed 5/6 because `ClassMngrNextResourceLoaderTests` had
   stale counts. Explorer confirmed F1482's four `excluded_v2` records explain
   198→194 catalog records. F1488 corrected assertions to 194 total (192

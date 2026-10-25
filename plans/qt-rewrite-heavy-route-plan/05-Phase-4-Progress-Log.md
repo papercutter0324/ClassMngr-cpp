@@ -360,3 +360,17 @@ Batch 4 was pushed successfully to `origin/Qt-Rewrite` in two commits, from
 zero runs and zero check-runs; combined status is pending. No workflow result is
 claimed. F1483/F1486 Windows/Linux native results remain required and open; the
 user's direction on extending workflow scope to `main` is still pending.
+
+## F1490 — Prepare fresh push trigger receipt — planned — 2026-10-25
+
+Explorer's read-only check at 2026-10-25 18:11:18 UTC confirmed remote
+`Qt-Rewrite` head `1579fa7d9ba6e012969219d733d9cacc613ccce2`; local `HEAD` and
+`origin/Qt-Rewrite` match. Actions API returned zero runs and zero check-runs
+for this exact head, with combined status pending. The last branch Actions run
+was 2026-10-18; re-enabling Actions did not create a run for the already-pushed
+head. The workflow remains `on.push` filtered to `Qt-Rewrite`, with no dispatch,
+and is absent from default `main`. A fresh push is required. F1490 is the small
+status/trigger receipt commit intended to create that push event; no cause for
+the absent run is established. User direction on extending workflow scope to
+`main` remains pending. F1483/F1486 native Windows/Linux results remain open;
+Phase 4 remains In progress.

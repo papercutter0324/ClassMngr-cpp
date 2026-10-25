@@ -91,3 +91,17 @@ open. The push filter targets `Qt-Rewrite` and supports non-default branches;
 the workflow file is absent from default `main`, and no dispatch tool is
 available. The cause of missing runs is unknown. User direction on extending
 workflow scope to `main` remains pending; Phase 4 remains In progress.
+
+## F1490 — Fresh push trigger receipt — planned
+
+Explorer's read-only check at 2026-10-25 18:11:18 UTC confirmed current remote
+`Qt-Rewrite` head `1579fa7d9ba6e012969219d733d9cacc613ccce2`; local `HEAD` and
+`origin/Qt-Rewrite` match. Actions API returned zero runs and zero check-runs
+for this exact head; combined status is pending. The last branch Actions run
+was 2026-10-18, and re-enabling Actions did not create a run for the already-
+pushed head. The workflow remains `on.push` filtered to `Qt-Rewrite`, with no
+dispatch and no copy on default `main`; a fresh push is required. F1490 is the
+small status/trigger receipt commit intended to generate that event. The cause
+of missing runs is unknown, and user direction on extending scope to `main`
+remains pending. F1483/F1486 native Windows/Linux results are still open; Phase
+4 remains In progress.

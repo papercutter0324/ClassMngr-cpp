@@ -22,10 +22,17 @@
   legacy RCC code and inputs as the compatibility oracle through Phase 12;
   Calendar QML remains compiled with `qt_add_resources`, not an external pack.
   Batch 4 was pushed to `origin/Qt-Rewrite` in two commits, from
-  `1605bac3` to `ea46415a`: F1487 `f86c79fc` and F1488 `ea46415a`. Local
-  `HEAD` and `origin/Qt-Rewrite` match at `ea46415a`. Actions API has zero
-  runs/checks for that head and combined status is pending; F1483/F1486 native
-  results remain open. Batch 3's F1486 workflow expansion is `094cda87`. A
+  `1605bac3` to `ea46415a`: F1487 `f86c79fc` and F1488 `ea46415a`. Current
+  `Qt-Rewrite`, local `HEAD`, and `origin/Qt-Rewrite` are at
+  `1579fa7d9ba6e012969219d733d9cacc613ccce2`. Actions API returned zero runs
+  and zero check-runs for this head; combined status is pending. The last branch
+  Actions run was 2026-10-18; re-enabling Actions did not create a run for this
+  already-pushed head. F1483/F1486 native results remain open. The workflow is
+  still `on.push` filtered to `Qt-Rewrite`, with no dispatch, and is absent
+  from default `main`; a fresh push is required. F1490 is the small
+  status/trigger receipt commit intended to generate that event. The cause of
+  missing runs is unknown; user direction on extending scope to `main` remains
+  pending. Batch 3's F1486 workflow expansion is `094cda87`. A
   standard macOS Debug run of the six targeted
   F1486 CTests initially passed 5/6 because `ClassMngrNextResourceLoaderTests`
   had stale catalog-count assertions. Explorer confirmed F1482's four
