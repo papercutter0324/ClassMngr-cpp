@@ -4638,12 +4638,13 @@ classmngr_add_qt_test(
     SOURCES
         tests/next_platform_document_content_resource_port_tests.cpp
     COMPILE_DEFINITIONS
-        CLASSMNGR_RESOURCE_PACK_DIR="${CLASSMNGR_RESOURCE_PACK_OUTPUT_DIR}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test
     DEPENDENCIES
-        ClassMngrdocumentsResourcePack
+        ClassMngrNextResourcePackage
 )
 
 classmngr_add_qt_test(

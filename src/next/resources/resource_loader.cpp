@@ -91,7 +91,8 @@ ResourceResult<ResourceScope> ResourceScope::create(
     const bool knownKind = kind == ResourceScopeKind::Startup
         || kind == ResourceScopeKind::Page
         || kind == ResourceScopeKind::Feature
-        || kind == ResourceScopeKind::Operation;
+        || kind == ResourceScopeKind::Operation
+        || kind == ResourceScopeKind::ViewerSession;
     if (!knownKind)
     {
         return std::unexpected(error(
@@ -115,7 +116,8 @@ bool ResourceScope::isValid() const noexcept
     return (m_kind == ResourceScopeKind::Startup
             || m_kind == ResourceScopeKind::Page
             || m_kind == ResourceScopeKind::Feature
-            || m_kind == ResourceScopeKind::Operation)
+            || m_kind == ResourceScopeKind::Operation
+            || m_kind == ResourceScopeKind::ViewerSession)
         && !m_ownerLabel.isEmpty();
 }
 
@@ -166,6 +168,14 @@ const QIODevice& ResourceFileStream::device() const noexcept
 bool ResourceFileStream::isOpen() const noexcept
 {
     return m_file && m_file->isOpen();
+}
+
+void ResourceFileStream::close() noexcept
+{
+    if (m_file && m_file->isOpen())
+    {
+        m_file->close();
+    }
 }
 
 RegisteredFont::RegisteredFont(int registrationId, QStringList familyNames) noexcept

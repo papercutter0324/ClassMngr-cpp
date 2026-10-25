@@ -3,7 +3,7 @@
 #include <QObject>
 
 #include "core/application_services.h"
-#include "next/platform/document_content_resource_port.h"
+#include "next/platform/legacy_document_content_resource_port.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
 #include "ui/shared/widgets/sidebar/sidebar_types.h"
 
@@ -18,7 +18,7 @@ public:
         ApplicationServices* services,
         Sidebar* sidebar,
         PageManager* pages,
-        ResourcePackManager& resourcePacks,
+        ResourcePackManager&,
         QObject* parent = nullptr
         );
 
@@ -63,8 +63,8 @@ private:
 private:
     ApplicationServices* m_services = nullptr;
 
-    ClassMngr::Next::Platform::DocumentContentResourcePort
-        m_documentContentResourcePort;
+    ClassMngr::Next::Platform::LegacyDocumentContentResourcePort
+        m_legacyDocumentContentResourcePort;
 
     Sidebar* m_sidebar = nullptr;
 

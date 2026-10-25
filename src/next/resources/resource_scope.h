@@ -16,7 +16,8 @@ enum class ResourceScopeKind
     Startup,
     Page,
     Feature,
-    Operation
+    Operation,
+    ViewerSession
 };
 
 class ResourceScope final

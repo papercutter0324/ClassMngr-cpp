@@ -464,6 +464,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_custom_color_palette_preferences_port.h
     src/next/platform/application_services_calendar_first_day_of_week_preferences_port.h
     src/next/platform/document_content_resource_port.h
+    src/next/platform/legacy_document_content_resource_port.h
     src/next/platform/application_services_workspace_port.h
     src/next/platform/qt_job_worker_lifetime.h
     src/next/platform/qt_job_worker_adapters.h

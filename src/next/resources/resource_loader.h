@@ -35,6 +35,7 @@ public:
     [[nodiscard]] QIODevice& device() noexcept;
     [[nodiscard]] const QIODevice& device() const noexcept;
     [[nodiscard]] bool isOpen() const noexcept;
+    void close() noexcept;
 
 private:
     friend class ResourceLoader;

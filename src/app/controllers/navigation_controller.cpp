@@ -95,7 +95,7 @@ NavigationController::NavigationController(
     )
     : QObject(parent)
     , m_services(services)
-    , m_documentContentResourcePort(resourcePacks)
+    , m_legacyDocumentContentResourcePort(resourcePacks)
     , m_sidebar(sidebar)
     , m_pages(pages)
 {
@@ -485,7 +485,7 @@ void NavigationController::handleDocument(
         return;
     }
 
-    auto resources = m_documentContentResourcePort.resolve(
+    auto resources = m_legacyDocumentContentResourcePort.resolve(
         document.value().contentReference,
         document.value().exportReference
         );
@@ -499,8 +499,8 @@ void NavigationController::handleDocument(
     }
 
     // Keep the preflight lease alive while the leave prompt is shown. If the
-    // user cancels, the result's move-only resource value releases its lease
-    // as this function returns, before any viewer is created.
+    // user cancels, the result releases its pack lease as this function
+    // returns, before any viewer is created.
     if (!m_pages->confirmCurrentPageCanLeave())
     {
         if (m_sidebar)
