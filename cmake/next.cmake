@@ -760,4 +760,41 @@ if(BUILD_TESTING)
                     "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
         )
     endif()
+
+    add_executable(ClassMngrNextLaunchFilesystemSideEffectsTests
+        cmake/tests/next_launch_filesystem_side_effects.cpp
+    )
+    target_compile_features(ClassMngrNextLaunchFilesystemSideEffectsTests
+        PRIVATE
+            cxx_std_23
+    )
+    set_target_properties(ClassMngrNextLaunchFilesystemSideEffectsTests
+        PROPERTIES
+            AUTOMOC OFF
+            AUTOUIC OFF
+            AUTORCC OFF
+    )
+    set_property(TARGET ClassMngrNextLaunchFilesystemSideEffectsTests
+        PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+    )
+    target_link_libraries(ClassMngrNextLaunchFilesystemSideEffectsTests
+        PRIVATE
+            Qt6::Core
+    )
+    add_dependencies(ClassMngrNextLaunchFilesystemSideEffectsTests
+        ClassMngrNext
+    )
+    add_test(
+        NAME ClassMngrNextLaunchFilesystemSideEffectsTests
+        COMMAND ClassMngrNextLaunchFilesystemSideEffectsTests
+            "$<TARGET_FILE:ClassMngrNext>"
+            "${PROJECT_VERSION}"
+    )
+    if(WIN32)
+        set_tests_properties(ClassMngrNextLaunchFilesystemSideEffectsTests
+            PROPERTIES
+                ENVIRONMENT_MODIFICATION
+                    "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+        )
+    endif()
 endif()
