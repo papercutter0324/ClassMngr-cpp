@@ -1,0 +1,282 @@
+name: Phase 4 Resource Install Layout
+
+on:
+  push:
+    branches:
+      - Qt-Rewrite
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.sha }}
+  cancel-in-progress: true
+
+env:
+  QT_VERSION: "6.12.0"
+
+jobs:
+  macos:
+    name: macOS resource install layout
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    env:
+      QT_ROOT: ${{ github.workspace }}/Qt
+      QT_MACOS_PREFIX: ${{ github.workspace }}/Qt/6.12.0/macos
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Qt
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check aqtinstall==3.3.0
+          python -m aqt install-qt mac desktop "${QT_VERSION}" clang_64 \
+            --outputdir "${QT_ROOT}" \
+            --timeout 30 \
+            --modules qtpdf
+
+      - name: Configure Debug preset
+        shell: bash
+        run: cmake --fresh --preset macos-clang-debug
+
+      - name: Build resource package and layout probe
+        shell: bash
+        run: |
+          cmake --build --preset macos-clang-debug \
+            --target ClassMngrNextResourcePackage \
+              ClassMngrNextResourceRootLayoutProbe \
+              ClassMngrNextResourceRootResolverTests \
+              ClassMngrNextRelocatedResourceRootTests --parallel 2
+
+      - name: Install resource and probe components
+        shell: bash
+        env:
+          DYLD_FRAMEWORK_PATH: ${{ github.workspace }}/Qt/6.12.0/macos/lib
+        run: |
+          stage="build/macos-clang-debug/installer-stage/f1483"
+          resource_root="${stage}/ClassMngr.app/Contents/Resources"
+          probe="${stage}/ClassMngr.app/Contents/MacOS/ClassMngrNextResourceRootLayoutProbe"
+          rm -rf -- "${stage}"
+          cmake --install build/macos-clang-debug \
+            --component ClassMngrNextResources --prefix "${stage}"
+          cmake --install build/macos-clang-debug \
+            --component ClassMngrNextResourceRootProbe --prefix "${stage}"
+          test -x "${probe}"
+          "${probe}" "${resource_root}"
+          echo "Installed resource root: ${resource_root}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Audit installed resource component
+        shell: bash
+        run: |
+          python scripts/phase4/audit_resource_stage.py \
+            --root build/macos-clang-debug/installer-stage/f1483/ClassMngr.app/Contents/Resources
+
+      - name: Run resource root and install-prefix tests
+        shell: bash
+        env:
+          DYLD_FRAMEWORK_PATH: ${{ github.workspace }}/Qt/6.12.0/macos/lib
+        run: |
+          ctest --test-dir build/macos-clang-debug \
+            --output-on-failure \
+            -R 'ResourceRootResolver|RelocatedResourceRoot|ResourceInstallPrefixGuard'
+
+  windows:
+    name: Windows x64 resource install layout
+    runs-on: windows-2022
+    timeout-minutes: 120
+    env:
+      QT_ROOT: C:\Qt
+      QT_MSVC_X64_PREFIX: C:\Qt\6.12.0\msvc2022_64
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Qt
+        shell: pwsh
+        run: |
+          $aqtRevision = '8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b'
+          $aqtPackage = "aqtinstall @ git+https://github.com/miurahr/aqtinstall.git@$aqtRevision"
+          python -m pip install --disable-pip-version-check `
+            $aqtPackage
+          python -m aqt install-qt windows desktop $env:QT_VERSION win64_msvc2022_64 `
+            --outputdir $env:QT_ROOT `
+            --base https://download.qt.io `
+            --timeout 30 `
+            --modules qtpdf
+
+      - name: Configure Debug preset
+        shell: pwsh
+        run: |
+          cmake --fresh --preset windows-x64-debug `
+            -G "Visual Studio 17 2022" `
+            "-DCMAKE_PREFIX_PATH=$env:QT_MSVC_X64_PREFIX"
+
+      - name: Build resource package and layout probe
+        shell: pwsh
+        run: |
+          cmake --build build/windows-x64-debug --config Debug `
+            --target ClassMngrNextResourcePackage `
+              ClassMngrNextResourceRootLayoutProbe `
+              ClassMngrNextResourceRootResolverTests --parallel 2
+
+      - name: Install resource and probe components
+        shell: pwsh
+        run: |
+          $stage = Join-Path $Env:GITHUB_WORKSPACE 'build\windows-x64-debug\installer-stage\f1483'
+          $resourceRoot = Join-Path $stage 'resources'
+          $probe = Join-Path $stage 'ClassMngrNextResourceRootLayoutProbe.exe'
+          if (Test-Path -LiteralPath $stage) {
+            Remove-Item -LiteralPath $stage -Recurse -Force
+          }
+          cmake --install build/windows-x64-debug --config Debug `
+            --component ClassMngrNextResources --prefix $stage
+          if ($LASTEXITCODE -ne 0) {
+            throw "Resource component install failed with exit code $LASTEXITCODE"
+          }
+          cmake --install build/windows-x64-debug --config Debug `
+            --component ClassMngrNextResourceRootProbe --prefix $stage
+          if ($LASTEXITCODE -ne 0) {
+            throw "Resource-root probe install failed with exit code $LASTEXITCODE"
+          }
+          if (-not (Test-Path -LiteralPath $probe)) {
+            throw "Installed resource-root probe was not found: $probe"
+          }
+          $Env:PATH = "$Env:QT_MSVC_X64_PREFIX\bin;$Env:PATH"
+          & $probe $resourceRoot
+          if ($LASTEXITCODE -ne 0) {
+            throw "Resource-root probe failed with exit code $LASTEXITCODE"
+          }
+          $summaryLine = "Installed resource root: $resourceRoot"
+          $summaryLine | Out-File -FilePath $Env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Audit installed resource component
+        shell: pwsh
+        run: |
+          python scripts/phase4/audit_resource_stage.py `
+            --root build\windows-x64-debug\installer-stage\f1483\resources
+
+      - name: Run resource root and install-prefix tests
+        shell: pwsh
+        run: |
+          $Env:PATH = "$Env:QT_MSVC_X64_PREFIX\bin;$Env:PATH"
+          ctest --test-dir build/windows-x64-debug --build-config Debug `
+            --output-on-failure `
+            -R 'ResourceRootResolver|ResourceInstallPrefixGuard'
+
+  linux:
+    name: Linux x64 resource install layout
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      QT_ROOT: ${{ github.workspace }}/Qt
+      QT_LINUX_PREFIX: ${{ github.workspace }}/Qt/6.12.0/gcc_64
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install system dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            build-essential \
+            libcups2-dev \
+            libgl1-mesa-dev \
+            libxkbcommon-dev \
+            libxkbcommon-x11-dev \
+            libxcb1-dev \
+            libxcb-cursor-dev \
+            libxcb-icccm4-dev \
+            libxcb-image0-dev \
+            libxcb-keysyms1-dev \
+            libxcb-randr0-dev \
+            libxcb-render-util0-dev \
+            libxcb-shape0-dev \
+            libxcb-sync-dev \
+            libxcb-xfixes0-dev \
+            libxcb-xinerama0-dev \
+            libxcb-xkb-dev \
+            ninja-build \
+            patchelf \
+            zlib1g-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Qt
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check aqtinstall==3.3.0
+          available="$(python -m aqt list-qt linux desktop --modules \
+            "${QT_VERSION}" linux_gcc_64 2>/dev/null || true)"
+          modules=""
+          echo "${available}" | grep -q qtdeclarative && modules="${modules} qtdeclarative"
+          echo "${available}" | grep -q qtpdf && modules="${modules} qtpdf"
+          echo "${available}" | grep -q qttools && modules="${modules} qttools"
+          modules="$(echo ${modules})"
+          if [ -n "${modules}" ]; then
+            python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
+              --outputdir "${QT_ROOT}" --modules ${modules}
+          else
+            python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
+              --outputdir "${QT_ROOT}"
+          fi
+
+      - name: Configure Debug preset
+        shell: bash
+        run: cmake --fresh --preset linux-gcc-debug
+
+      - name: Build resource package and layout probe
+        shell: bash
+        run: |
+          cmake --build --preset linux-gcc-debug \
+            --target ClassMngrNextResourcePackage \
+              ClassMngrNextResourceRootLayoutProbe \
+              ClassMngrNextResourceRootResolverTests --parallel 2
+
+      - name: Install resource and probe components
+        shell: bash
+        run: |
+          stage="build/linux-gcc-debug/installer-stage/f1483"
+          resource_root="${stage}/share/ClassMngr"
+          probe="${stage}/bin/ClassMngrNextResourceRootLayoutProbe"
+          rm -rf -- "${stage}"
+          cmake --install build/linux-gcc-debug \
+            --component ClassMngrNextResources --prefix "${stage}"
+          cmake --install build/linux-gcc-debug \
+            --component ClassMngrNextResourceRootProbe --prefix "${stage}"
+          test -x "${probe}"
+          LD_LIBRARY_PATH="${QT_LINUX_PREFIX}/lib:${LD_LIBRARY_PATH:-}" \
+            "${probe}" "${resource_root}"
+          echo "Installed resource root: ${resource_root}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Audit installed resource component
+        shell: bash
+        run: |
+          python scripts/phase4/audit_resource_stage.py \
+            --root build/linux-gcc-debug/installer-stage/f1483/share/ClassMngr
+
+      - name: Run resource root and install-prefix tests
+        shell: bash
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/Qt/6.12.0/gcc_64/lib
+        run: |
+          ctest --test-dir build/linux-gcc-debug \
+            --output-on-failure \
+            -R 'ResourceRootResolver|ResourceInstallPrefixGuard'

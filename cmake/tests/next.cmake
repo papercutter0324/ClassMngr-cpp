@@ -139,6 +139,54 @@ add_test(
     COMMAND ClassMngrNextResourceRootResolverTests
 )
 
+add_executable(ClassMngrNextResourceRootLayoutProbe
+    cmake/tests/next_resource_root_layout_probe.cpp
+)
+target_compile_features(ClassMngrNextResourceRootLayoutProbe
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(ClassMngrNextResourceRootLayoutProbe
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextResourceRootLayoutProbe
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_include_directories(ClassMngrNextResourceRootLayoutProbe
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextResourceRootLayoutProbe
+    PRIVATE
+        ClassMngrNext::Resources
+)
+add_dependencies(ClassMngrNextResourceRootLayoutProbe
+    ClassMngrNextResourcePackage
+)
+
+if(APPLE)
+    set(_classmngr_next_probe_install_directory "ClassMngr.app/Contents/MacOS")
+else()
+    set(_classmngr_next_probe_install_directory "${CMAKE_INSTALL_BINDIR}")
+endif()
+install(TARGETS ClassMngrNextResourceRootLayoutProbe
+    RUNTIME DESTINATION "${_classmngr_next_probe_install_directory}"
+    COMPONENT ClassMngrNextResourceRootProbe
+    EXCLUDE_FROM_ALL
+)
+
+add_test(
+    NAME ClassMngrNextResourceInstallPrefixGuardTests
+    COMMAND
+        "${Python3_EXECUTABLE}"
+        "${PROJECT_SOURCE_DIR}/cmake/tests/test_next_resource_install_prefix_guard.py"
+        "${CMAKE_COMMAND}"
+        "${PROJECT_SOURCE_DIR}/cmake/next_resource_install_prefix_guard.cmake"
+)
+
 if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_executable(ClassMngrNextRelocatedResourceRootTests
         cmake/tests/next_relocated_resource_root.cpp

@@ -165,6 +165,15 @@ else()
     cmake_path(NORMAL_PATH CLASSMNGR_NEXT_RESOURCE_INSTALL_ROOT)
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    include("${CMAKE_CURRENT_LIST_DIR}/next_resource_install_prefix_guard.cmake")
+    classmngr_next_add_install_prefix_guard(
+        ClassMngrNextResources
+        "${CMAKE_INSTALL_BINDIR}"
+        "${_classmngr_next_install_data_dir}"
+    )
+endif()
+
 if(APPLE)
     # The executable lives in ClassMngr.app/Contents/MacOS while the resource
     # component is installed in ClassMngr.app/Contents/Resources.
