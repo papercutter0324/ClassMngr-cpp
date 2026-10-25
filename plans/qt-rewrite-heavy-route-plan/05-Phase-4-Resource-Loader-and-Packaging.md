@@ -38,45 +38,32 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Bootstrap, feature migration, packaging, and memory gates
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-25
-- Current note: F1470, explicit resource scopes, is committed as
-  `f7b2cb22`; F1471, the byte-budgeted resource cache, is committed as
-  `8ca1ddc5`; F1472, resource diagnostics, is committed as `9ce7e35c`; F1473,
-  document catalog metadata, is accepted and committed as `2084cb4f`; F1474,
-  loader-owned document content handles, is accepted and committed as
-  `34926f4b`; F1475, isolated QtPdf session-release verification, is accepted
-  and committed as `8a2163d2`; F1476, operation-scoped Office export inputs,
-  is accepted and committed as `2bbbd23d`; F1477, resource failure behavior,
-  is accepted and committed as `535dc382`; F1478, type-specific lazy-load
-  verification, is accepted with no separate source-code delta; F1479,
-  no-pack startup side effects, is accepted and committed as `295d238d`; F1480,
-  relocated package lookup, is accepted and committed as `cc60849d`; F1481,
-  staged resource completeness, is accepted as verification-only with no
-  separate source-code delta; F1482, inventory disposition for four
-  callerless assets, is accepted; F1483, platform install-root verification,
-  is active. F1479 excludes external or
-  legacy runtime RCC-pack mounts; F1467's two Calendar QML resources remain
-  compiled into `ClassMngrNext` with `qt_add_resources`. F1480's probe is
-  test-only; the production Next startup remains unwired to the resolver/loader.
-  F1469 is committed as `d282e7f1`.
-  Batch 1
-  (F1464–F1468) was pushed to `origin`; see the [Phase 4 progress log](05-Phase-4-Progress-Log.md)
-  for the receipt. F1469 resolves
-  only the CMake-selected root relative to the executable directory, and its
-  macOS tests cover missing roots, unrelated working-directory contents, and
-  package relocation. Windows/Linux layouts and mixed absolute/relative Linux
-  install directories with an install-time prefix override remain unverified
-  for F1483. The resolver API is not yet called by the resource-free Next
-  shell; F1480's test-only probe verifies launched relocation. The
-  `DocumentContentResourcePort` is not wired to legacy UI; `NavigationController`
-  continues to use `LegacyDocumentContentResourcePort` because the v2 Resources
-  component is excluded from the default legacy install. Preserve the legacy
-  viewer path until consumer migration. F1475 verifies QtPdf stream release
-  in an isolated test; it does not wire the port into the production viewer.
-  F1476 adds operation-scoped Office export loading without legacy report or
-  workspace UI wiring.
-  Theme/font/icon/campus/report UI consumers stay with their Phase 5–7
-  migrations. See the [inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md)
-  and [current batch tracker](Current-Slice-Batches.md).
+- Current note: Batch 2 remains open. F1483 is committed as `6428b2ca`. Local
+  macOS verification installed the resource and probe components together,
+  resolved `../Resources`
+  to `Contents/Resources`, audited 193 staged files (187 SHA checks, five QMs,
+  two QML keys), passed focused CTest 3/3, and passed Linux guard fixtures 5/5.
+  The Windows/Linux Actions legs are triggered by push to `Qt-Rewrite` and
+  remain pending the Batch 2 push. The Linux guard rejects a changed
+  `--prefix` only for mixed absolute/relative bindir/datadir; both-relative,
+  both-absolute, same-prefix mixed, and `DESTDIR` cases remain allowed.
+  F1484 is accepted as verification-only: the `ClassMngrNext` launch shell is
+  a QtCore-only version printer with no tested storage or working-directory
+  side effects. This finding applies to the shell/package, not every `src/next`
+  adapter; legacy `NavigationController` still uses
+  `LegacyDocumentContentResourcePort` to obtain the legacy `documents` pack.
+  Keep legacy RCC implementation and pack inputs as the compatibility oracle
+  through Phase 12. Calendar QML remains compiled via `qt_add_resources`, not
+  an external pack. F1485 is next to assemble evidence and close the Batch 2
+  commit set; the subsequent Batch 2 push triggers F1483's native Windows/Linux
+  Actions legs. Batch 3 discovery identified unrun Windows native
+  resource-handle assertions and fresh Windows/Linux loader and document
+  stream/session verification; F1486 is planned after Batch 2 closes. Phase 4
+  remains In progress until F1483's native jobs and F1486 pass. Batch 1
+  (F1464–F1468) is pushed to `origin`; see
+  the [Phase 4 progress log](05-Phase-4-Progress-Log.md) for its receipt. See
+  the [inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md) and
+  [current batch tracker](Current-Slice-Batches.md).
 
 ### Slice batches
 

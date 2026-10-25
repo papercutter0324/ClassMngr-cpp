@@ -2,7 +2,7 @@
 
 Phase 4 is In progress on the mandatory Heavy route.
 
-## Batch 2 — active
+## Batch 2 — open
 
 The accepted queue stays focused on the new resource runtime and document
 resource lifecycle. Theme/font/icon/campus/report UI consumers remain with
@@ -84,14 +84,14 @@ legacy oracle paths in Phase 4.
     working directory resolves the executable-relative root and loads an
     integrity-checked JSON resource. CWD and alternate-root decoys do not
     provide fallback when the selected root is absent. Production startup
-    remains unwired to the resolver/loader; Windows/Linux layout coverage is
-    still F1483.
+    remains unwired to the resolver/loader; native layout coverage was later
+    added to F1483.
 13. **F1481 — Audit staged resource completeness.** Accepted as verification-only
     with no separate source-code delta. Fresh macOS staging contains 197
     physical files for 196 `resource_file` records plus the catalog; all 191
     direct SHA checks, five nonempty generated QMs, and two compiled Calendar
     QML keys passed audit. The QML keys are not staged files. Calendar key CTest
-    passed 1/1; Windows/Linux remain F1483.
+    passed 1/1; native Windows/Linux verification remains pending under F1483.
 14. **F1482 — Classify callerless resource assets.** Accepted; four tracked
     assets (`dyb.png`, `Class Register.odt`, and the ODS/XLSX roster templates)
     retain exact source provenance as `excluded_v2` and remain in the legacy
@@ -99,15 +99,35 @@ legacy oracle paths in Phase 4.
     Independent macOS Debug verification passed 32 utility tests, inventory
     `--check`, staged audit, and Calendar key CTest 1/1. The 226 asset files
     total 65,707,627 bytes; all tracked resources total 65,708,813 bytes.
-15. **F1483 — Verify platform install roots (active).** Run the resource
-    component layout gate on Windows, macOS, and Linux presets/stages; F1482
-    verified macOS only.
-16. **F1484 — Record Phase 4 removal boundaries.** Check no-pack behavior in
-    Next and record legacy pack removal as Phase 12 cutover work.
-17. **F1485 — Assemble the Phase 4 exit evidence.** Close only after the
-    resource/package/lifetime gates pass; retain Phase 7/10 rendered-parity
-    evidence for the migrated UI.
+15. **F1483 — Verify platform install roots.** Committed as `6428b2ca`. Local
+    macOS verification installed the resource and probe components together;
+    the probe resolved `../Resources` to `Contents/Resources`. Stage audit
+    passed 193 files, 187 SHA checks, five generated QMs, and two QML keys;
+    focused CTest passed 3/3 and Linux guard fixtures passed 5/5. The workflow
+    runs on push to `Qt-Rewrite`; Windows/Linux Actions legs await the Batch 2
+    push. The Linux guard rejects changed `--prefix` only for mixed
+    absolute/relative bindir/datadir; both-relative, both-absolute,
+    same-prefix mixed, and `DESTDIR` cases remain allowed.
+16. **F1484 — Record Phase 4 removal boundaries.** Accepted as
+    verification-only with no implementation delta. macOS Debug launch tests
+    passed 2/2: `ClassMngrNext` prints its exact version and exits normally
+    without storage or working-directory side effects. This is the shell/
+    package boundary; legacy `NavigationController` still uses
+    `LegacyDocumentContentResourcePort` with the legacy `documents` pack.
+    Preserve RCC implementation and pack inputs as the compatibility oracle
+    through Phase 12. Calendar QML remains compiled with `qt_add_resources`,
+    not an external pack.
+17. **F1485 — Assemble Phase 4 evidence (next).** Assemble exit evidence and
+    close the Batch 2 commit set; the subsequent Batch 2 push triggers F1483's
+    native Windows/Linux Actions legs. Phase 4 remains In progress until those
+    jobs and planned Batch 3 verification F1486 pass; retain Phase 7/10
+    rendered-parity evidence for migrated UI.
 
-Start Batch 3 discovery when F1484 starts, the second-to-last Batch 2
-candidate. If discovery finds possible candidates beyond the 20-slice limit,
-record a reminder to search for them with Batch 3.
+## Batch 3 — discovered; queued after Batch 2 closes
+
+Discovery found a documented native-platform gap: Windows resource-handle
+assertions and fresh Windows/Linux runs of the existing F1468 loader and F1475
+document stream/session lifetime tests remain unverified. **F1486 — Verify
+loader and document lifetimes on Windows/Linux** is planned as a bounded,
+verification-only slice using those tests; it is not a feature migration.
+F1483's native package/layout matrix remains a separate requirement.

@@ -7,69 +7,27 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-25
 - Current milestone: Phase 3 is Complete and Phase 4 is In progress on the
-  mandatory Heavy route. F1464, the effective-resource inventory, is accepted
-  and committed as `473e8325b9f98069c8396291d057a398a9683ebe`. F1465, the
-  offline baseline baker, is accepted and committed as
-  `3423e1de05f129d407004192565a79f06e572579`. Its 14 focused tests pass; two
-  fresh temporary bakes are byte-identical, and all 191 copied resources match
-  their inventory sources. F1466, the generated resource catalog, is accepted
-  and committed as `b10e60e854f21e67ed3b3653b8c8b608c7588345`. Its 198 runtime
-  records include 191 direct resources and seven generated outputs; the
-  catalog matches the inventory and baked files. F1467, deterministic
-  installed-tree packaging, is accepted and committed as
-  `153b85fb7b6314baf145ddd3f9584926111049d2`. Its staged component contains
-  191 hash-verified files, five
-  translations, and two Calendar QML resource keys; the default install still
-  stages only the legacy application. Windows and Linux destinations are
-  source-reviewed but not host-staged. F1468, the typed resource loader, is
-  accepted and committed as `eb473fab89410e6dc5f5527d872b56f150f7f6fd` after
-  independent macOS verification. Batch 1 (F1464–F1468) is pushed to `origin`;
-  the receipt is in the [Phase 4 progress log](05-Phase-4-Progress-Log.md).
-  F1469, installed resource-root resolution, is committed as `d282e7f1`.
-  F1470, explicit resource scopes, is committed as `f7b2cb22`. F1471, the
-  byte-budgeted resource cache, is committed as `8ca1ddc5`. F1472, resource
-  diagnostics, is committed as `9ce7e35c`. F1473, document catalog metadata,
-  is accepted and committed as `2084cb4f`; F1474, loader-owned document
-  content handles, is accepted and committed as `34926f4b`; F1475, isolated
-  QtPdf session-release verification, is accepted and committed as
-  `8a2163d2`; F1476, operation-scoped Office export inputs, is accepted and
-  committed as `2bbbd23d`; F1477, resource failure behavior, is accepted and
-  committed as `535dc382`; F1478, type-specific lazy-load verification, is
-  accepted with no separate source-code delta; F1479, no-pack startup side
-  effects, is accepted and committed as `295d238d`; F1480, relocated package
-  lookup, is accepted and committed as `cc60849d`; F1481, staged resource
-  completeness, is accepted as verification-only with no separate source-code
-  delta; F1482, inventory disposition for four callerless assets, is accepted;
-  F1483, platform install-root verification, is active. F1467's two Calendar
-  QML resources stay compiled into `ClassMngrNext`; F1479 excludes external or
-  legacy runtime RCC-pack mounting. F1480 is a test-only probe and leaves
-  production startup unwired.
-  F1468 provides
-  explicit root/catalog injection, catalog
-  validation, root-confined file reads, and RAII stream/font/translation
-  ownership while keeping `ClassMngrNext` QtCore-only. F1474 adds an independent
-  loader-owned document port; `NavigationController` keeps using
-  `LegacyDocumentContentResourcePort` because the v2 Resources component is
-  excluded from the default legacy install. Preserve that viewer path until
-  consumer migration. F1475 verifies QtPdf release using this port in an
-  isolated test; it does not wire the production viewer. Batch 2 discovery
-  accepted 17 candidates, F1469–F1485, focused on
-  the v2 resource runtime and document lifecycle. Legacy
-  theme/font/icon/campus/report UI consumers stay with their Phase 5–7
-  migrations.
-  The inventory has 231 source records: 229 paths under `resources/` and two
-  Calendar QML inputs. The 226 asset files total 65,707,627 exact bytes; all
-  tracked resources total 65,708,813 bytes including three Windows templates,
-  while the separate QML inputs total 35,154 bytes. F1482 retains exact source
-  records for four callerless assets as `excluded_v2`; they remain in the
-  legacy pack oracle and are absent from the v2 package. `roster-designs` stays
-  a zero-source absence observation. No installed overrides were present in
-  the application-owned pack directory.
-  See the [Phase 4 inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md),
-  [Phase 4 plan](05-Phase-4-Resource-Loader-and-Packaging.md), and
-  [current batch tracker](Current-Slice-Batches.md). Phase 3's accepted
-  evidence and limits remain in the [progress log](04-Phase-3-Progress-Log.md)
-  and [plan](04-Phase-3-Persistence-Rewrite.md).
+  mandatory Heavy route. Batch 2 remains open. F1483 is committed as
+  `6428b2ca`; local macOS installation, relocated-root probing, the 193-file
+  staged audit, focused CTest (3/3), and Linux guard fixtures (5/5) passed.
+  Windows and Linux Actions legs await the Batch 2 push. F1484 is accepted as
+  verification-only: the `ClassMngrNext` shell prints its version with
+  `QCoreApplication`, links only Qt Core, and has no tested launch-time storage
+  or working-directory side effects. This claim covers the shell/package, not
+  all `src/next` adapters: legacy `NavigationController` still uses
+  `LegacyDocumentContentResourcePort` and the legacy `documents` pack. Keep
+  legacy RCC code and inputs as the compatibility oracle through Phase 12;
+  Calendar QML remains compiled with `qt_add_resources`, not an external pack.
+  F1485 is next to assemble evidence and close the Batch 2 commit set; the
+  subsequent Batch 2 push triggers F1483's native Windows/Linux Actions legs.
+  Batch 3 discovery found that Windows native resource-handle assertions and
+  fresh Windows/Linux loader and document stream/session tests remain unrun;
+  F1486 is planned after Batch 2 closes. Phase 4 remains open until F1483's
+  native jobs and F1486 pass.
+  See the [Phase 4 progress log](05-Phase-4-Progress-Log.md),
+  [resource inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md),
+  and [current batch tracker](Current-Slice-Batches.md). Batch 1's push receipt
+  remains in the Phase 4 progress log.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted

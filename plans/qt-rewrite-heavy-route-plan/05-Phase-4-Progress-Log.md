@@ -227,3 +227,46 @@ checks, five generated QMs, and two Calendar QML keys), and Calendar key CTest
 1/1. QML keys are compiled resources, not staged files. Windows/Linux and the
 full suite were not run; F1483 owns the platform matrix. F1482 is accepted and
 Batch 2 remains open.
+
+## F1483 — Verify platform install roots — committed — 2026-10-25
+
+F1483 is committed as `6428b2ca`. The native install-root workflow is
+triggered by pushes to `Qt-Rewrite`. Independent macOS verification installed
+the resource and probe components together; the installed probe resolved
+`../Resources` to the app's actual `Contents/Resources`. The stage audit passed
+193 files, 187 SHA checks, five generated QMs, and two Calendar QML keys.
+Focused CTest passed 3/3, and the Linux install-prefix guard fixtures passed
+5/5. The guard rejects a changed `--prefix` only when bindir and datadir are
+mixed absolute/relative paths; both-relative, both-absolute, same-prefix mixed,
+and `DESTDIR` cases remain permitted.
+
+Windows and Linux Actions legs have not run; they await the Batch 2 push. No
+native results are claimed from the local macOS verification.
+
+## F1484 — Verify Next launch removal boundary — accepted — 2026-10-25
+
+F1484 is verification-only; no implementation delta was needed. Independent
+macOS Debug CTest passed 2/2 (`ClassMngrNextLaunchFilesystemSideEffectsTests`
+and `ClassMngrNextLaunch`). Source review confirms `src/next/main.cpp` is a
+`QCoreApplication` version-print shell and `cmake/next.cmake` links it only to
+Qt Core. The test confirms normal exit, exact version output, and no storage-root
+or working-directory side effects. This evidence applies to the
+`ClassMngrNext` shell/package, not every `src/next` adapter: legacy
+`NavigationController` still uses `LegacyDocumentContentResourcePort`, which
+obtains content from the legacy `documents` pack.
+
+Keep the RCC implementation and pack inputs as the legacy compatibility oracle
+through Phase 12. Calendar QML is compiled with `qt_add_resources`, not an
+external pack. Windows/Linux are not verified by this slice; F1483's native
+package/layout legs and the planned F1486 checks remain open.
+
+## Batch 3 discovery — F1486 planned
+
+Read-only discovery found that Windows native resource-handle assertions and
+fresh Windows/Linux verification of the existing F1468 loader and F1475
+document stream/session lifetime tests remain unrun. F1486 is planned as a
+bounded verification-only slice using those existing tests, not as a feature
+migration. This platform/lifetime work is separate from the F1483 package and
+install-layout matrix. F1485 is next to assemble evidence and close the Batch 2
+commit set; the subsequent Batch 2 push triggers F1483's native Windows/Linux
+Actions legs. Phase 4 remains In progress until those jobs and F1486 pass.
