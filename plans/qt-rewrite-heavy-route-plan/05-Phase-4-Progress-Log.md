@@ -276,14 +276,14 @@ was pushed successfully from `Qt-Rewrite` to `origin`; the push advanced
 `Qt-Rewrite` from `eb473fab89410e6dc5f5527d872b56f150f7f6fd` to
 `1475a46dae77d8970852681dae7a2032ff907edf`. The batch contains 25 commits,
 from F1469 `d282e7f1` through F1485 `1475a46d`. At that push, `HEAD` and
-`origin/Qt-Rewrite` both resolved to the new full SHA; F1486 later advanced
-local `HEAD` to `094cda87` while its Batch 3 push remains pending.
+`origin/Qt-Rewrite` both resolved to the new full SHA. F1486 later added its
+workflow commit `094cda87`; the Batch 3 receipt follows below.
 
 The push was intended to trigger F1483's Windows/Linux Actions legs. First and
 subsequent authenticated GitHub Actions API queries found no workflow run or
 checks for head `1475a46d`; no run or pass is claimed, and native results remain
 pending. F1486 was queued for Batch 3 at this point; its committed workflow
-expansion is recorded below.
+expansion and subsequent push are recorded below.
 
 Batch 2 closure is separate from the Phase 4 exit: Phase 4 remains In progress
 until F1483's native jobs and F1486 pass. Phase 7/10 rendering parity remains
@@ -305,6 +305,13 @@ GCC Debug jobs will run:
 
 Linux QtPdf is mandatory; the job fails clearly if QtPdf is unavailable. F1483's
 root-resolver and install-prefix guard tests remain in its separate package and
-layout workflow. Independent workflow review passed. No native F1486 results
-are available; the Batch 3 push is pending. Phase 4 remains In progress until
-F1483's native jobs and F1486 pass.
+layout workflow. Independent workflow review passed. Batch 3 was pushed
+successfully from `Qt-Rewrite` to `origin` in two commits, advancing
+`1475a46dae77d8970852681dae7a2032ff907edf` to
+`a2e506a74c316bf902d6a4b5cd956970286471b3`; the commits are F1486 workflow
+`094cda87` and documentation `a2e506a7`. Local `HEAD` and `origin/Qt-Rewrite`
+match at the new tip. Authenticated Actions API queries after Batch 2 head
+`1475a46d` and Batch 3 head `a2e506a7` found no workflow runs; combined commit
+status/check-runs are empty or pending. No run or pass is claimed. F1483 and
+F1486 native results remain pending; Phase 4 remains In progress until both
+gates pass.

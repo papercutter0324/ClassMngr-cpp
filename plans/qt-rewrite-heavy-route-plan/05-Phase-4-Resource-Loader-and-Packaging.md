@@ -57,10 +57,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `LegacyDocumentContentResourcePort` to obtain the legacy `documents` pack.
   Keep legacy RCC implementation and pack inputs as the compatibility oracle
   through Phase 12. Calendar QML remains compiled via `qt_add_resources`, not
-  an external pack. F1486 workflow expansion is committed as `094cda87`; its
-  existing loader, content/export, QtPdf-session, and no-pack launch targets
-  are queued for native Windows x64 Debug and Linux GCC Debug after the Batch 3
-  push. No results are available; see the tracker for the exact target list.
+  an external pack. Batch 3 was pushed in two commits, from `1475a46d` to
+  `a2e506a7`; F1486's workflow expansion is commit `094cda87`. Authenticated
+  Actions API queries found no workflow runs for either head, and combined
+  status/check-runs are empty or pending. F1483 and F1486 native results remain
+  unverified; see the tracker for F1486's exact target list.
   Phase 4 remains In progress until F1483 and F1486 pass.
   Phase 7/10 rendering parity remains deferred; legacy pack removal remains
   Phase 12. Batch 1 (F1464–F1468) is pushed to `origin`; see

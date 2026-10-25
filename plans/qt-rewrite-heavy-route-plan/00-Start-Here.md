@@ -21,9 +21,11 @@
   `LegacyDocumentContentResourcePort` and the legacy `documents` pack. Keep
   legacy RCC code and inputs as the compatibility oracle through Phase 12;
   Calendar QML remains compiled with `qt_add_resources`, not an external pack.
-  F1486 workflow expansion is committed as `094cda87`; Batch 3's push will
-  trigger its existing loader, document content/export, QtPdf session, and
-  no-pack launch tests on Windows and Linux. No F1486 results are available.
+  Batch 3 was pushed from `Qt-Rewrite` to `origin` in two commits, from
+  `1475a46d` to `a2e506a7`; F1486 workflow expansion is commit `094cda87`.
+  Actions queries found no runs or checks for either batch head, so F1483/F1486
+  native results remain pending. F1486's existing loader, document
+  content/export, QtPdf session, and no-pack launch tests are not yet verified.
   Phase 4 remains open until F1483 and F1486 pass; Phase 7/10
   rendering parity remains deferred, and legacy pack removal remains Phase 12.
   See the [Phase 4 progress log](05-Phase-4-Progress-Log.md),
