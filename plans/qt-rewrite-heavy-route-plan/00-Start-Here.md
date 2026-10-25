@@ -30,13 +30,16 @@
   byte-budgeted resource cache, is committed as `8ca1ddc5`. F1472, resource
   diagnostics, is committed as `9ce7e35c`. F1473, document catalog metadata,
   is accepted and committed as `2084cb4f`; F1474, loader-owned document
-  content handles, is active.
+  content handles, is accepted and committed as `34926f4b`; F1475 is active.
   F1468 provides
   explicit root/catalog injection, catalog
   validation, root-confined file reads, and RAII stream/font/translation
-  ownership while keeping `ClassMngrNext` QtCore-only. The pack-backed
-  document adapter used by legacy navigation remains queued for replacement
-  at F1474. Batch 2 discovery accepted 17 candidates, F1469–F1485, focused on
+  ownership while keeping `ClassMngrNext` QtCore-only. F1474 adds an independent
+  loader-owned document port; `NavigationController` keeps using
+  `LegacyDocumentContentResourcePort` because the v2 Resources component is
+  excluded from the default legacy install. Preserve that viewer path until
+  consumer migration; F1475 owns QtPdf integration. Batch 2 discovery accepted
+  17 candidates, F1469–F1485, focused on
   the v2 resource runtime and document lifecycle. Legacy
   theme/font/icon/campus/report UI consumers stay with their Phase 5–7
   migrations.

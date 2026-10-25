@@ -34,14 +34,16 @@ legacy oracle paths in Phase 4.
 5. **F1473 — Load document catalog metadata through the new catalog.** Accepted
    and committed as `2084cb4f`; it remains unwired to Next startup and loads no
    document bodies.
-6. **F1474 — Add loader-owned document content handles (active).** Replace the
-   pack-backed Next document resource adapter used by legacy navigation with a
-   loader-owned handle. Preserve selected-document request, file/device
-   ownership, and explicit close in the new resource boundary; keep the legacy
-   viewer path unchanged until feature migration.
-7. **F1475 — Verify PDF session release at the new boundary.** Cover open,
-   close, replacement/reopen, and owner release of a QtPdf document and handle
-   in an isolated integration test.
+6. **F1474 — Add loader-owned document content handles.** Accepted and
+   committed as `34926f4b`. The independent Next port opens only the selected
+   PDF body under ViewerSession scope and returns a move-only stream with
+   explicit close and no pack fallback; it does not open the optional export
+   reference. Legacy `NavigationController` remains on its existing adapter
+   until consumer migration because the v2 Resources component is excluded
+   from the default install.
+7. **F1475 — Verify PDF session release at the new boundary (active).** Cover
+   open, close, replacement/reopen, and owner release of a QtPdf document and
+   handle in an isolated integration test.
 8. **F1476 — Scope Office/report inputs to operations.** Preserve temporary
    workspace cleanup and do not preload PowerPoint bodies.
 9. **F1477 — Define resource failure behavior.** Cover missing, corrupt, and

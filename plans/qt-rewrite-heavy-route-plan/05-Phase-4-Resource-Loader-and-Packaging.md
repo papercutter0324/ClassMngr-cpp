@@ -42,8 +42,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `f7b2cb22`; F1471, the byte-budgeted resource cache, is committed as
   `8ca1ddc5`; F1472, resource diagnostics, is committed as `9ce7e35c`; F1473,
   document catalog metadata, is accepted and committed as `2084cb4f`; F1474,
-  loader-owned document content handles, is active. F1469 is committed as
-  `d282e7f1`.
+  loader-owned document content handles, is accepted and committed as
+  `34926f4b`; F1475 is active. F1469 is committed as `d282e7f1`.
   Batch 1
   (F1464–F1468) was pushed to `origin`; see the [Phase 4 progress log](05-Phase-4-Progress-Log.md)
   for the receipt. F1469 resolves
@@ -52,9 +52,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   package relocation. Windows/Linux layouts and mixed absolute/relative Linux
   install directories with an install-time prefix override remain unverified
   for F1483. The resolver API is not yet called by the resource-free Next
-  shell; F1480 covers launched relocation. The pack-backed document adapter
-  used by legacy navigation remains scheduled for replacement at F1474;
-  theme/font/icon/campus/report UI consumers stay with their Phase 5–7
+  shell; F1480 covers launched relocation. F1474's independent
+  `DocumentContentResourcePort` is not wired to legacy UI: `NavigationController`
+  continues to use `LegacyDocumentContentResourcePort` because the v2 Resources
+  component is excluded from the default legacy install. Preserve the legacy
+  viewer path until consumer migration; F1475 owns QtPdf integration.
+  Theme/font/icon/campus/report UI consumers stay with their Phase 5–7
   migrations. See the [inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md)
   and [current batch tracker](Current-Slice-Batches.md).
 
@@ -181,10 +184,12 @@ same-size PDF corruption and translation move/release. Windows and Linux builds
 were not run; the Windows descriptor-to-native-handle assertion is
 source-reviewed and awaits host execution. `clang-format` was unavailable.
 
-The pack-backed `DocumentContentResourcePort` remains for the legacy navigation
-consumer until F1474 introduces loader-owned document content handles; it is
-not part of `src/next/resources/`. F1468 is accepted and committed; Batch 1
-is pushed, with the receipt in the [Phase 4 progress log](05-Phase-4-Progress-Log.md).
+F1474 adds `DocumentContentResourcePort` as an independent loader-owned
+boundary in `src/next/platform/`, using `ResourceLoader` from
+`src/next/resources/`; the legacy `NavigationController` remains on
+`LegacyDocumentContentResourcePort` until consumer migration because the v2
+Resources component is excluded from the default legacy install. Batch 1 is
+pushed, with the receipt in the [Phase 4 progress log](05-Phase-4-Progress-Log.md).
 
 ### F1469 — Resolve installed resource root — independently verified — 2026-10-25
 

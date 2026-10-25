@@ -22,3 +22,33 @@ Commits in the pushed batch:
 Per-slice implementation and verification evidence is recorded in the
 [Phase 4 plan](05-Phase-4-Resource-Loader-and-Packaging.md). Windows and Linux
 resource staging remain for F1483; Batch 1 packaging was host-staged on macOS.
+
+## F1474 — Loader-owned document content handles — accepted — 2026-10-25
+
+`DocumentContentResourcePort` is an independent Next loader boundary. It opens
+only the selected PDF body through `ResourceLoader` under `ViewerSession`
+scope and returns a move-only stream with explicit close and no pack fallback.
+The optional export reference is not opened at primary selection. The port is
+not wired to legacy UI: `NavigationController` continues to use
+`LegacyDocumentContentResourcePort` because the Phase 4 v2 Resources component
+from F1467 is excluded from the default legacy install. Preserve that legacy
+viewer path until consumer migration; QtPdf integration belongs to F1475.
+
+The initial attempt to connect the new port to legacy navigation failed three
+parity cases because the default install has no v2 resources. Keeping the port
+independent resolved that boundary mismatch. Independent macOS Debug review
+built the port, ResourceLoader, catalog, document-catalog, navigation-parity,
+and PageManager targets incrementally; the port, loader, catalog, parity, and
+PageManager targets were up to date, while the document-catalog target rebuilt
+and linked. Focused CTest passed 4/4; four affected PageManager PDF lifecycle
+slots passed individually, and the final port-test delta passed 1/1. Coverage
+includes unsafe-reference rejection before load, selected PDF ID and
+ViewerSession scope, one body request, explicit close, no pack fallback,
+non-PDF/wrong-category/wrong-kind references, wrong catalog package path,
+missing body, and parser rejection of `expected_type` inconsistent with the
+`.pdf` extension. The adapter expected-type check was source-reviewed because
+`ResourceCatalog` prevents loading a mismatched type/path record.
+
+The full PageManager suite stalled in `registeredPagesAreCreatedOnFirstUse`;
+the affected PDF cases passed individually. Windows/Linux were not run, and
+`git diff --check` passed. F1474 is committed as `34926f4b`.
