@@ -184,4 +184,23 @@ The standard `build/macos-clang-debug` incremental build of
 built and catalog generation was the only build action. Independent focused
 CTest passed 2/2, and `git diff --check` passed. This verifies macOS Debug only;
 the Windows/Linux install-layout matrix remains for F1483. The full suite was
-not run. F1480 is committed as `cc60849d`; F1481 is active.
+not run. F1480 is committed as `cc60849d`.
+
+## F1481 — Audit staged resource completeness — accepted — 2026-10-25
+
+The standard macOS universal Debug incremental build of
+`ClassMngrNextResourcePackage` succeeded. It freshly installed the
+`ClassMngrNextResources` component under
+`build/macos-clang-debug/installer-stage/f1481`, and audited
+`ClassMngr.app/Contents/Resources`. The catalog has 198 records: 196
+`resource_file` entries (191 direct files and five generated QMs) plus two
+`qt_resource` entries. The staged tree has 197 physical files—the catalog and
+196 resource files—with no symlinks or manifest. The audit passed all 191 SHA
+checks and confirmed five nonempty QMs and the two exact Calendar QML keys.
+Those QML keys are compiled resources, not staged files. Independent Tester
+confirmed the counts and audit.
+
+F1481 is verification-only; no code or implementation-document delta was
+needed. Focused Calendar key CTest passed 1/1, and `git diff --check` passed.
+The full suite and Windows/Linux were not run; F1483 owns the platform layout
+matrix. This acceptance record is the F1481 slice commit; Batch 2 remains open.

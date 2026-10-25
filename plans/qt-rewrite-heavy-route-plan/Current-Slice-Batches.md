@@ -85,9 +85,13 @@ legacy oracle paths in Phase 4.
     provide fallback when the selected root is absent. Production startup
     remains unwired to the resolver/loader; Windows/Linux layout coverage is
     still F1483.
-13. **F1481 — Audit staged resource completeness (active).** Compare package
-    files and generated outputs with the catalog; validate Calendar Qt-resource keys.
-14. **F1482 — Resolve unowned/absent inventory entries.** Decide the v2
+13. **F1481 — Audit staged resource completeness.** Accepted as verification-only
+    with no separate source-code delta. Fresh macOS staging contains 197
+    physical files for 196 `resource_file` records plus the catalog; all 191
+    direct SHA checks, five nonempty generated QMs, and two compiled Calendar
+    QML keys passed audit. The QML keys are not staged files. Calendar key CTest
+    passed 1/1; Windows/Linux remain F1483.
+14. **F1482 — Resolve unowned/absent inventory entries (active).** Decide the v2
     disposition of `dyb.png`, unused roster workflow files, and absent
     `roster-designs` without inventing feature owners.
 15. **F1483 — Verify platform install roots.** Run the resource component

@@ -38,7 +38,8 @@
   accepted with no separate source-code delta; F1479, no-pack startup side
   effects, is accepted and committed as `295d238d`; F1480, relocated package
   lookup, is accepted and committed as `cc60849d`; F1481, staged resource
-  completeness, is active. F1467's two Calendar QML resources stay compiled
+  completeness, is accepted as verification-only with no separate source-code
+  delta; F1482 is active. F1467's two Calendar QML resources stay compiled
   into `ClassMngrNext`; F1479 excludes external/legacy runtime RCC-pack
   mounting. F1480 is a test-only probe and leaves production startup unwired.
   F1468 provides
