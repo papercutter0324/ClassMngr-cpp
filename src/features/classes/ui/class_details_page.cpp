@@ -299,7 +299,12 @@ ValidationResult legacyValidationResult(
         QVariantMap arguments;
         if (issue.integerValue)
         {
-            arguments.insert(QStringLiteral("value"), *issue.integerValue);
+            arguments.insert(
+                QStringLiteral("value"),
+                QVariant::fromValue<qlonglong>(
+                    static_cast<qlonglong>(*issue.integerValue)
+                    )
+                );
         }
         if (issue.value)
         {
