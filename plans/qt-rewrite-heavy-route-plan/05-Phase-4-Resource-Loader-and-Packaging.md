@@ -57,16 +57,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `LegacyDocumentContentResourcePort` to obtain the legacy `documents` pack.
   Keep legacy RCC implementation and pack inputs as the compatibility oracle
   through Phase 12. Calendar QML remains compiled via `qt_add_resources`, not
-  an external pack. Batch 3 was pushed in two commits, from `1475a46d` to
-  `a2e506a7`; F1486's workflow expansion is commit `094cda87`. Local `HEAD`
-  and `origin/Qt-Rewrite` now both resolve to
-  `1605bac36d4192bf027440a2b83dce8a5e2d99d1` (parent
-  `a2e506a74c316bf902d6a4b5cd956970286471b3`, tree
-  `12f431a05225f30aecb076fd88886403a2e0e8fc`). Actions API has no runs/checks
-  for `1605bac3` and combined
-  status is pending. The push trigger targets `Qt-Rewrite` and supports
-  non-default branches; manual dispatch is unavailable because the workflow
-  file is absent from default `main`. The reason no run surfaced is unknown;
+  an external pack. Batch 4 was pushed in two commits from
+  `1605bac36d4192bf027440a2b83dce8a5e2d99d1` to
+  `ea46415a93e8285e4cb1f81e9aec5b79f7533286`: F1487
+  `f86c79fc81a2b2fd34c6993509b4cd314aacaec1`, then F1488
+  `ea46415a93e8285e4cb1f81e9aec5b79f7533286`. Local `HEAD` and
+  `origin/Qt-Rewrite` match at the new tip. Actions API has zero runs and
+  check-runs for `ea46415a`; combined status is pending. The push trigger
+  targets `Qt-Rewrite` and supports non-default branches; manual dispatch is
+  unavailable because the workflow file is absent from default `main`. The
+  reason no run surfaced is unknown;
   user direction is needed on extending scope to `main`. F1483 and F1486 native
   results remain unverified. A standard macOS Debug run of six targeted F1486
   CTests initially passed 5/6 because `ClassMngrNextResourceLoaderTests` had

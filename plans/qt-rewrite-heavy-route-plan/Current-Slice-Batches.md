@@ -72,3 +72,22 @@ matrix. Phase 4 remains In progress pending both native gates and that
 direction.
 Phase 7/10 rendering parity remains deferred; legacy RCC implementation and
 pack inputs remain the compatibility oracle through Phase 12.
+
+## Batch 4 — pushed
+
+Batch 4 advanced `origin/Qt-Rewrite` from
+`1605bac36d4192bf027440a2b83dce8a5e2d99d1` to
+`ea46415a93e8285e4cb1f81e9aec5b79f7533286` in two commits: F1487
+`f86c79fc81a2b2fd34c6993509b4cd314aacaec1`, then F1488
+`ea46415a93e8285e4cb1f81e9aec5b79f7533286`. Local `HEAD` and
+`origin/Qt-Rewrite` match at `ea46415a93e8285e4cb1f81e9aec5b79f7533286`.
+Actions API returned zero runs and zero check-runs for this exact head; combined
+status is pending. No run is claimed.
+
+F1488 is accepted. The corrected resource-loader counts are 194 total: 192
+`PackageFile` and 2 `QtResource`; all six focused F1486 CTests passed on the
+standard macOS Debug preset. F1483/F1486 native Windows/Linux results remain
+open. The push filter targets `Qt-Rewrite` and supports non-default branches;
+the workflow file is absent from default `main`, and no dispatch tool is
+available. The cause of missing runs is unknown. User direction on extending
+workflow scope to `main` remains pending; Phase 4 remains In progress.

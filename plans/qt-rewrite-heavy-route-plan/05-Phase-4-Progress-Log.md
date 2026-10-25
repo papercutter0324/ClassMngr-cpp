@@ -323,8 +323,9 @@ claimed. F1483 and F1486 native results remain pending.
 
 ## F1487 — Reconcile missing native workflow runs — committed — 2026-10-25
 
-F1487 is committed as `f86c79fc`. The F1483 push filter targets `Qt-Rewrite`,
-and push workflows can run on non-default branches. The repository default is
+F1487 is committed as `f86c79fc81a2b2fd34c6993509b4cd314aacaec1`. The F1483
+push filter targets `Qt-Rewrite`, and push workflows can run on non-default
+branches. The repository default is
 `main`, where this workflow file is absent; `workflow_dispatch` requires the
 workflow file on the default branch. No dispatch tool is exposed. These facts
 do not explain why no push run or checks surfaced, and credential suppression
@@ -349,3 +350,13 @@ Debug build and focused CTest passed 1/1. Independent Tester verified the
 standard `macos-clang-debug` build and reran all six targeted F1486 CTests;
 6/6 passed. F1488 is accepted. Windows/Linux Actions results remain required
 and open; macOS acceptance does not replace them.
+
+Batch 4 was pushed successfully to `origin/Qt-Rewrite` in two commits, from
+`1605bac36d4192bf027440a2b83dce8a5e2d99d1` to
+`ea46415a93e8285e4cb1f81e9aec5b79f7533286`: F1487
+`f86c79fc81a2b2fd34c6993509b4cd314aacaec1` and F1488
+`ea46415a93e8285e4cb1f81e9aec5b79f7533286`. Local `HEAD` and
+`origin/Qt-Rewrite` match at the new tip. Actions API for this exact head found
+zero runs and zero check-runs; combined status is pending. No workflow result is
+claimed. F1483/F1486 Windows/Linux native results remain required and open; the
+user's direction on extending workflow scope to `main` is still pending.

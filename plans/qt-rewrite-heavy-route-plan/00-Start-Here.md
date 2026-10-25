@@ -21,14 +21,12 @@
   `LegacyDocumentContentResourcePort` and the legacy `documents` pack. Keep
   legacy RCC code and inputs as the compatibility oracle through Phase 12;
   Calendar QML remains compiled with `qt_add_resources`, not an external pack.
-  Batch 3 was pushed from `Qt-Rewrite` to `origin` in two commits, from
-  `1475a46d` to `a2e506a7`; F1486 workflow expansion is commit `094cda87`.
-  Local `HEAD` and `origin/Qt-Rewrite` now both resolve to
-  `1605bac36d4192bf027440a2b83dce8a5e2d99d1` (parent
-  `a2e506a74c316bf902d6a4b5cd956970286471b3`, tree
-  `12f431a05225f30aecb076fd88886403a2e0e8fc`). Actions has no runs/checks for
-  `1605bac3` and its combined status is pending; F1483/F1486 native results
-  remain unverified. A separate standard macOS Debug run of the six targeted
+  Batch 4 was pushed to `origin/Qt-Rewrite` in two commits, from
+  `1605bac3` to `ea46415a`: F1487 `f86c79fc` and F1488 `ea46415a`. Local
+  `HEAD` and `origin/Qt-Rewrite` match at `ea46415a`. Actions API has zero
+  runs/checks for that head and combined status is pending; F1483/F1486 native
+  results remain open. Batch 3's F1486 workflow expansion is `094cda87`. A
+  standard macOS Debug run of the six targeted
   F1486 CTests initially passed 5/6 because `ClassMngrNextResourceLoaderTests`
   had stale catalog-count assertions. Explorer confirmed F1482's four
   exclusions explain 198→194 records; F1488 corrected expected counts to 194
