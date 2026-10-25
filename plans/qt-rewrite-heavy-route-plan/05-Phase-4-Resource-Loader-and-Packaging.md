@@ -38,8 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Bootstrap, feature migration, packaging, and memory gates
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-25
-- Current note: F1464, the effective-resource inventory, passed independent
-  verification and is ready to commit; F1465 is next. The inventory covers
+- Current note: F1464, the effective-resource inventory, is accepted and
+  committed as `473e8325b9f98069c8396291d057a398a9683ebe`. F1465, the offline
+  baseline baker, passed independent verification and is ready to commit;
+  F1466 follows. The inventory covers
   229 tracked paths under `resources/` and two Calendar QML inputs. Its 226
   asset files total 65,707,627 exact source bytes; installed/resident sizes
   remain unmeasured and have measurement methods. No installed overrides were
@@ -83,7 +85,26 @@ sizes remain unknown pending the v2 package/runtime. `dyb.png` has no identified
 production feature caller; it is recorded as optional legacy content without
 inventing a v2 feature owner. Resolve its claim or exclusion during consumer
 migration. No installed pack overrides were found in the application-owned
-data directory. F1464 is accepted; F1465 is next.
+data directory. F1464 was committed as
+`473e8325b9f98069c8396291d057a398a9683ebe`.
+
+### F1465 — Offline baseline resource baker — independently verified — 2026-10-25
+
+The offline baker consumes the pinned F1464 inventory, verifies every source
+path, type, length, and SHA-256, copies the 191 direct runtime resources, and
+records the seven generated runtime inputs separately. It also records 31
+build-only inputs and two v2 exclusions without copying them. The deterministic
+manifest includes the inventory hash and resource/QML tree identities. Existing
+output is checked against expected provenance derived from the inventory and
+verified sources; a tampered output and edited self-asserting manifest are
+refused and preserved. Unknown `resource_kind` values are rejected.
+
+The 14 focused utility tests passed. Independent verification baked the
+committed inventory twice to temporary directories; manifests and output trees
+were byte-identical, and every direct output matched its inventoried source.
+Temporary mutation checks confirmed refusal without replacement. This slice
+does not yet install the tree or change CMake, release packaging, or runtime
+loading. F1465 is accepted; F1466 follows.
 
 ## Objective
 

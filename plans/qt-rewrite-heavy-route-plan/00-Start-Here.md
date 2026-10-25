@@ -7,16 +7,22 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-25
 - Current milestone: Phase 3 is Complete and Phase 4 is In progress on the
-  mandatory Heavy route. F1464, the effective-resource inventory, passed
-  independent verification and is ready to commit. The inventory records 229
-  tracked paths under `resources/` plus two Calendar QML inputs, with 226 asset
-  files totaling 65,707,627 exact source bytes. No installed overrides were
-  present in the application-owned pack directory. `dyb.png` remains recorded
-  as an optional legacy asset without a production feature caller; its owner
-  or exclusion must be resolved during migration. F1465 is next in Batch 1.
+  mandatory Heavy route. F1464, the effective-resource inventory, is accepted
+  and committed as `473e8325b9f98069c8396291d057a398a9683ebe`. F1465, the
+  offline baseline baker, passed independent verification and is ready to
+  commit. Its 14 focused tests pass; two fresh temporary bakes are
+  byte-identical, and all 191 copied resources match their inventory sources.
+  The inventory records 229 tracked
+  paths under `resources/` plus two Calendar QML inputs, with 226 asset files
+  totaling 65,707,627 exact source bytes. No installed overrides were present
+  in the application-owned pack directory. `dyb.png` remains recorded as an
+  optional legacy asset without a production feature caller; its owner or
+  exclusion must be resolved during migration.
   See the [Phase 4 inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md),
   [Phase 4 plan](05-Phase-4-Resource-Loader-and-Packaging.md), and
-  [current batch tracker](Current-Slice-Batches.md). Phase 3's accepted
+  [current batch tracker](Current-Slice-Batches.md). F1466 is next after the
+  F1465 commit. Batch 1 will be pushed
+  after F1468. Phase 3's accepted
   evidence and limits remain in the [progress log](04-Phase-3-Progress-Log.md)
   and [plan](04-Phase-3-Persistence-Rewrite.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
