@@ -1,0 +1,2 @@
+resources/** -text
+src/features/calendar/ui/qml/** -text
