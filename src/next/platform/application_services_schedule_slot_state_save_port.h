@@ -84,7 +84,7 @@ public:
                 return unavailableFailure();
             }
 
-            const Status saved = repository->saveIntensiveSlotState(
+            const RepositoryStatus saved = repository->saveIntensiveSlotState(
                 legacyWeekday(request.weekday),
                 legacyStartTime(request.startMinute),
                 legacyState(request.selectedState),
@@ -97,7 +97,8 @@ public:
                     return unavailableFailure();
                 }
 
-                const QByteArray errorBytes = saved.error().toUtf8();
+                const QByteArray errorBytes =
+                    toLegacyDiagnostic(saved.error()).toUtf8();
                 return failure(
                     Domain::ErrorCode::Technical,
                     errorBytes.isEmpty()

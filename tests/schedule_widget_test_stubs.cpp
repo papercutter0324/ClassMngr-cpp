@@ -744,21 +744,21 @@ IntensiveSlotStateRepository::IntensiveSlotStateRepository(
 {
 }
 
-Result<QList<IntensiveSlotState>>
+RepositoryResult<QList<IntensiveSlotState>>
 IntensiveSlotStateRepository::loadIntensiveSlotStates()
 {
     ++ScheduleWidgetTestStubs::slotStateReadCount;
     if (!ScheduleWidgetTestStubs::intensiveSlotStateReadFailure.isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
             ScheduleWidgetTestStubs::intensiveSlotStateReadFailure
-            );
+        });
     }
 
     return ScheduleWidgetTestStubs::intensiveSlotStates;
 }
 
-Status IntensiveSlotStateRepository::saveIntensiveSlotState(
+RepositoryStatus IntensiveSlotStateRepository::saveIntensiveSlotState(
     const QString& day,
     const QString& startTime,
     const QString& state,
@@ -773,7 +773,9 @@ Status IntensiveSlotStateRepository::saveIntensiveSlotState(
 
     if (!ScheduleWidgetTestStubs::slotSaveResult)
     {
-        return ScheduleWidgetTestStubs::slotSaveResult;
+        return std::unexpected(RepositoryError{
+            ScheduleWidgetTestStubs::slotSaveResult.error()
+        });
     }
 
     QList<IntensiveSlotState>& states =

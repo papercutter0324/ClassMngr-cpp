@@ -25,7 +25,7 @@ QString databasePath(QTemporaryDir& directory)
         );
 }
 
-Result<QList<IntensiveSlotState>> loadSlotStates(
+RepositoryResult<QList<IntensiveSlotState>> loadSlotStates(
     ApplicationServices& services
     )
 {
@@ -205,6 +205,15 @@ repositoryWriteFailureIsTechnicalAndLeavesNoOverride()
         "BEGIN SELECT RAISE(ABORT, 'injected slot-state failure'); END"
         )));
 
+    const RepositoryStatus repositoryFailure = services.workspaceStore()
+        ->intensiveSlotStateRepository()->saveIntensiveSlotState(
+            QStringLiteral("Thursday"),
+            QStringLiteral("09:05"),
+            QStringLiteral("lunch")
+            );
+    QVERIFY(!repositoryFailure);
+    QCOMPARE(repositoryFailure.error().code, RepositoryErrorCode::Technical);
+
     Platform::ApplicationServicesScheduleSlotStateSavePort port(services);
     const auto result = port.saveSlotState(
         request(Application::ScheduleSlotState::Lunch)
@@ -213,6 +222,13 @@ repositoryWriteFailureIsTechnicalAndLeavesNoOverride()
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!result.error().recoverable);
     QVERIFY(!result.error().message.empty());
+    const QByteArray expectedMessage =
+        toLegacyDiagnostic(repositoryFailure.error()).toUtf8();
+    QCOMPARE(
+        result.error().message,
+        std::string(expectedMessage.constData(),
+                    static_cast<std::size_t>(expectedMessage.size()))
+        );
 
     const auto loaded = loadSlotStates(services);
     QVERIFY(loaded);
@@ -231,6 +247,7 @@ unavailableAndClosedSessionsDoNotWriteThroughFallback()
         );
     QVERIFY(!unavailable);
     QCOMPARE(unavailable.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(!unavailable.error().recoverable);
 
     QVERIFY(services.openDatabase(path));
     QVERIFY(port.isAvailable());

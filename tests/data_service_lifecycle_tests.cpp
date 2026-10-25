@@ -3,6 +3,7 @@
 #include "data/database/database_file_operations_internal.h"
 #include "data/database/database_schema_manager.h"
 #include "data/database/workspace_store.h"
+#include "data/repositories/intensive_slot_state_repository.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/native_english_teacher.h"
@@ -301,6 +302,7 @@ private slots:
     void teacherListValidatesPersistedIds();
     void nativeEnglishTeacherErrorsKeepLegacyDiagnostics();
     void teacherImportFailureReturnsLegacyDiagnostic();
+    void intensiveSlotStateErrorsKeepLegacyDiagnostics();
     void repositoryWriteFailuresAreObservable();
     void coreLookupReadFailuresAreObservable();
     void teacherDirectoryRejectsLateFetchFailure();
@@ -2016,6 +2018,82 @@ void DataServiceLifecycleTests::repositoryWriteFailuresAreObservable()
     QVERIFY(failedCampusList.error().contains(
         QStringLiteral("Loading campuses")
         ));
+}
+
+void DataServiceLifecycleTests::intensiveSlotStateErrorsKeepLegacyDiagnostics()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DatabaseSession session;
+    QVERIFY(session.open(
+        directory.filePath(QStringLiteral("intensive-slot-errors.db"))
+        ));
+    DataService dataService(session);
+    ScheduleService scheduleService(&session, &dataService);
+    IntensiveSlotStateRepository* const repository =
+        session.intensiveSlotStateRepository();
+    QVERIFY(repository);
+
+    QSqlQuery query(session.database());
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_intensive_slot_write "
+        "BEFORE INSERT ON intensive_slot_states "
+        "BEGIN SELECT RAISE(ABORT, 'injected slot-state failure'); END"
+        )));
+
+    const RepositoryStatus typedSaveFailure =
+        repository->saveIntensiveSlotState(
+            QStringLiteral("Thursday"),
+            QStringLiteral("09:05"),
+            QStringLiteral("lunch")
+            );
+    QVERIFY(!typedSaveFailure);
+    QCOMPARE(typedSaveFailure.error().code, RepositoryErrorCode::Technical);
+
+    const Status legacyDataSave = dataService.saveIntensiveSlotState(
+        QStringLiteral("Thursday"),
+        QStringLiteral("09:05"),
+        QStringLiteral("lunch")
+        );
+    QVERIFY(!legacyDataSave);
+    QCOMPARE(
+        legacyDataSave.error(),
+        toLegacyDiagnostic(typedSaveFailure.error())
+        );
+
+    const Status legacyScheduleSave = scheduleService.saveIntensiveSlotState(
+        QStringLiteral("Thursday"),
+        QStringLiteral("09:05"),
+        QStringLiteral("lunch")
+        );
+    QVERIFY(!legacyScheduleSave);
+    QCOMPARE(
+        legacyScheduleSave.error(),
+        toLegacyDiagnostic(typedSaveFailure.error())
+        );
+
+    QVERIFY(query.exec(QStringLiteral(
+        "DROP TABLE intensive_slot_states"
+        )));
+    const RepositoryResult<QList<IntensiveSlotState>> typedLoadFailure =
+        repository->loadIntensiveSlotStates();
+    QVERIFY(!typedLoadFailure);
+    QCOMPARE(typedLoadFailure.error().code, RepositoryErrorCode::Technical);
+
+    const auto legacyDataLoad = dataService.loadIntensiveSlotStates();
+    QVERIFY(!legacyDataLoad);
+    QCOMPARE(
+        legacyDataLoad.error(),
+        toLegacyDiagnostic(typedLoadFailure.error())
+        );
+
+    const auto legacyScheduleLoad = scheduleService.intensiveSlotStates();
+    QVERIFY(!legacyScheduleLoad);
+    QCOMPARE(
+        legacyScheduleLoad.error(),
+        toLegacyDiagnostic(typedLoadFailure.error())
+        );
 }
 
 void DataServiceLifecycleTests::coreLookupReadFailuresAreObservable()

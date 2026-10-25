@@ -44,8 +44,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   is committed locally as `f8261f96cb57f2c7baf41941be2636f1014fd9a4` and is
   not pushed. F1452 is committed locally as
   `4ccb5c8ceda848e4f09afcd41a958437939aca14` and is not pushed. F1453
-  NativeEnglishTeacherRepository is independently verified and accepted; its
-  local commit is pending, and F1454 is next. Evidence and limits are in
+  is committed locally as
+  `78189be6fe288a1ac6e8fef8760c151edf687f20` and is not pushed. F1454
+  IntensiveSlotStateRepository is independently verified and accepted; its
+  local commit is pending, and F1455 is next. Evidence and limits are in
   [progress log](04-Phase-3-Progress-Log.md); the queue is in the
   [current batch tracker](Current-Slice-Batches.md).
 
@@ -62,13 +64,14 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1453 NativeEnglishTeacherRepository structured errors — 2026-10-25
+## Latest Progress Update — F1454 IntensiveSlotStateRepository structured errors — 2026-10-25
 
 F1451 is committed locally as `f8261f96cb57f2c7baf41941be2636f1014fd9a4`
 and is not pushed. F1452 is committed locally as
 `4ccb5c8ceda848e4f09afcd41a958437939aca14` and is not pushed. F1453 is
-independently verified and accepted; its local commit is pending, and F1454 is
-next. Evidence and limits are recorded in the
+committed locally as `78189be6fe288a1ac6e8fef8760c151edf687f20` and is not
+pushed. F1454 is independently verified and accepted; its local commit is
+pending, and F1455 is next. Evidence and limits are recorded in the
 [progress log](04-Phase-3-Progress-Log.md); the ordered queue is in the
 [current batch tracker](Current-Slice-Batches.md).
 

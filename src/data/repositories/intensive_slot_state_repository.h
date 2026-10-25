@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 #include "domain/models/intensive_slot_state.h"
 
 #include <QList>
@@ -14,9 +14,10 @@ public:
         QSqlDatabase& database
         );
 
-    [[nodiscard]] Result<QList<IntensiveSlotState>> loadIntensiveSlotStates();
+    [[nodiscard]] RepositoryResult<QList<IntensiveSlotState>>
+        loadIntensiveSlotStates();
 
-    [[nodiscard]] Status saveIntensiveSlotState(
+    [[nodiscard]] RepositoryStatus saveIntensiveSlotState(
         const QString& day,
         const QString& startTime,
         const QString& state,

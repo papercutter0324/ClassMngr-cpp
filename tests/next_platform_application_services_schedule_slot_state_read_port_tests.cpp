@@ -181,6 +181,7 @@ distinguishesUnavailableSessionFromRepositoryFailure()
         );
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(!result.error().recoverable);
 
     ApplicationServices failedReadServices;
     QVERIFY(failedReadServices.openDatabase(databasePath(
@@ -193,6 +194,11 @@ distinguishesUnavailableSessionFromRepositoryFailure()
     QVERIFY(dropSlotStateTable.exec(QStringLiteral(
         "DROP TABLE intensive_slot_states"
         )));
+    const RepositoryResult<QList<IntensiveSlotState>> repositoryFailure =
+        failedReadServices.workspaceStore()->intensiveSlotStateRepository()
+            ->loadIntensiveSlotStates();
+    QVERIFY(!repositoryFailure);
+    QCOMPARE(repositoryFailure.error().code, RepositoryErrorCode::Technical);
 
     Platform::ApplicationServicesScheduleSlotStateReadPort failedReadPort(
         failedReadServices
@@ -203,7 +209,14 @@ distinguishesUnavailableSessionFromRepositoryFailure()
         );
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
-    QVERIFY(!result.error().message.empty());
+    const QByteArray expectedMessage =
+        toLegacyDiagnostic(repositoryFailure.error()).toUtf8();
+    QCOMPARE(
+        result.error().message,
+        std::string(expectedMessage.constData(),
+                    static_cast<std::size_t>(expectedMessage.size()))
+        );
+    QVERIFY(result.error().recoverable);
     QVERIFY(result.error().message.find(
         "Loading intensive slot states"
         ) != std::string::npos);

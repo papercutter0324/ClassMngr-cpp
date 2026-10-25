@@ -70,8 +70,16 @@ verification are complete; commit `f8261f96cb57f2c7baf41941be2636f1014fd9a4`
 is local and not pushed. F1452 GsTeamRepository implementation and independent
 focused verification are complete; commit `4ccb5c8ceda848e4f09afcd41a958437939aca14`
 is local and not pushed. F1453 NativeEnglishTeacherRepository implementation
-and independent focused verification are complete; its local commit is
-pending. In the existing incremental macOS Debug tree, affected application,
+and independent focused verification are complete; commit
+`78189be6fe288a1ac6e8fef8760c151edf687f20` is local and not pushed. F1454
+IntensiveSlotStateRepository implementation and independent focused
+verification are complete; its local commit is pending. Five focused CTests
+passed 5/5 in the existing incremental macOS Debug tree; SQL failure/cursor
+classification, diagnostic conversion, port recovery policy, and lifecycle
+coverage passed. Upsert collision, ordering, and raw unknown values were
+source-compared as unchanged. No full suite or other-platform build ran. F1453
+was independently verified with 12 focused CTests. In the same existing
+incremental macOS Debug tree, affected application,
 DataService, Native English, StaffDirectory, and Teacher Import targets built;
 12 focused CTest targets passed 12/12. Exact legacy error strings, validation
 categories, stale-update recovery, SQL/cursor failures, ordering, and
@@ -209,15 +217,26 @@ stale positive updates are recoverable NotFound; SQL, cursor, transaction,
 and rollback failures are Technical. Duplicate names are not Conflict because
 current uniqueness is explicit validation, and no repository-level duplicate
 row-ID rule is added. F1453 NativeEnglishTeacherRepository is independently
-accepted and verified; its local commit is pending and F1454 is next. Twelve
-focused CTests passed; rollback-failure, malformed-ID, raw birthday-cursor,
+accepted and committed locally at
+`78189be6fe288a1ac6e8fef8760c151edf687f20`; it will be pushed when Batch 22
+closes. F1454 discovery is active. Twelve focused CTests passed;
+rollback-failure, malformed-ID, raw birthday-cursor,
 and some no-op cases remain source-reviewed only. Its accepted scope types all
 public fallible methods and nested outcomes; blank/duplicate names and invalid
 int persisted IDs are Validation, positive stale updates are recoverable
 NotFound, and SQL, cursor, transaction, and rollback failures are Technical.
 Preserve no-op behavior, sort order, ID bounds, raw birthday cursor
 diagnostics, and legacy diagnostic conversion; add no Conflict path where the
-schema has no name-uniqueness constraint. Batch 23 discovery is due at F1462, the second-to-last
+schema has no name-uniqueness constraint. F1454 IntensiveSlotStateRepository
+is independently accepted and verified; its local commit is pending and
+F1455 is next. Five focused CTests passed 5/5. Upsert collision, ordering, and
+raw unknown values were verified by source comparison. Its only repository
+error category is Technical for SQL and cursor failures; invalid requests
+remain validated in the typed save port. Keep successful empty loads,
+absent-row deletes, upsert collisions, raw unknown values, and ordering. The
+repository has no IDs or transactions; `DataService`/`ScheduleService` convert
+typed errors to legacy diagnostics, and existing direct-port recoverability
+remains unchanged. Batch 23 discovery is due at F1462, the second-to-last
 Batch 22 candidate; search then for `DocumentCatalog`, DataService
 compatibility conversion, and other candidates beyond the accepted cap. The
 earlier file-compatibility and v2 source-boundary reviews remain valid; see

@@ -3917,13 +3917,15 @@ Source review confirmed exact `DataService`/`TeacherService` conversion strings
 and the raw birthday cursor diagnostic; those specific strings lack dedicated
 runtime assertions. No full suite or other-platform run was performed.
 
-## F1453 — NativeEnglishTeacherRepository structured errors — independently verified, local commit pending — 2026-10-25
+## F1453 — NativeEnglishTeacherRepository structured errors — independently verified, committed locally — 2026-10-25
 
 Discovery is complete under `PHASE3-F1453-NATIVEENGLISHREPOSITORY-20261024`;
 Explorer `PHASE3-F1453-NATIVEENGLISH-SCOPE-DISCOVERY-20261024-EXP-01` and
 Investigator `PHASE3-F1453-NATIVEENGLISH-ERROR-RESEARCH-20261024-INV-01`
 support the accepted scope. Implementation and independent verification are
-complete; the slice is accepted, its local commit is pending, and F1454 is next.
+complete; the slice is accepted. F1453 is committed locally as
+`78189be6fe288a1ac6e8fef8760c151edf687f20` (`Phase3 - Add structured
+NativeEnglishTeacherRepository errors (F1453)`) and is not pushed.
 
 The boundary covers all four public fallible APIs, with typed reads, a status
 result for save, and removal of the custom save outcome. Validation covers
@@ -3952,3 +3954,38 @@ rollback was exercised. Source review confirmed `DataService`/`TeacherService`
 conversion strings, but those specific strings and the raw birthday cursor
 text lacked dedicated runtime assertions. No full suite or other-platform run
 was performed.
+
+## F1454 — IntensiveSlotStateRepository structured errors — independently verified, local commit pending — 2026-10-25
+
+Discovery is complete under `PHASE3-F1454-INTENSIVESLOTSTATEREPOSITORY-2025`;
+Explorer `PHASE3-F1454-INTENSIVESLOT-SCOPE-DISCOVERY-2025-EXP-01` and
+Investigator `PHASE3-F1454-INTENSIVESLOT-ERROR-RESEARCH-2025-INV-01` support
+the accepted scope. Implementation and independent verification are complete;
+the slice is accepted, its local commit is pending, and F1455 is next.
+
+The two public fallible APIs, `loadIntensiveSlotStates` and
+`saveIntensiveSlotState`, become `RepositoryResult`/`RepositoryStatus`. All
+current repository errors map to `Technical`, preserving exact `userMessage`
+and raw cursor diagnostics. Repository paths do not produce `InvalidInput`,
+`NotFound`, `Conflict`, or `Validation`; validation remains in the typed Next
+save port. Loads return empty success and discard partial rows on cursor error.
+Upsert collisions and deletes of absent default rows remain successful.
+Preserve row order and raw unknown values; this repository has no IDs or
+transactions.
+
+`DataService` and `ScheduleService` retain exact legacy `QString` conversions.
+Direct Next read/save repository errors stay `Technical`, with each port's
+existing, differing recoverability behavior; unavailable-session codes remain
+unchanged. The separate `ScheduleImport` writer is out of scope.
+
+The executor built four affected targets and passed five CTests. The
+independent build command exited 0 with Ninja reporting no work; its focused
+CTest selection passed **5/5** across Repository, DataService lifecycle,
+read/save ports, and ScheduleWidget. `git diff --check` passed. Runtime
+coverage includes exact SQL `userMessage`/legacy conversions, `Technical`
+classification, cursor partial-result rejection, empty loads, default-delete
+behavior, invalid input, unavailable-session behavior, and differing read/save
+recoverability. Upsert collision, day/start ordering, and raw unfamiliar or
+whitespace values were source-compared unchanged.
+
+No full suite or other-platform build was run.

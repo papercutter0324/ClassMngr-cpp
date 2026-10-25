@@ -53,13 +53,13 @@ public:
 
         try
         {
-            const Result<QList<IntensiveSlotState>> loaded =
+            const RepositoryResult<QList<IntensiveSlotState>> loaded =
                 repository->loadIntensiveSlotStates();
             if (!loaded)
             {
                 return failure(
                     Domain::ErrorCode::Technical,
-                    toStdString(loaded.error())
+                    toStdString(toLegacyDiagnostic(loaded.error()))
                     );
             }
 

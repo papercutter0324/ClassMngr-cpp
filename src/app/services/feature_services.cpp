@@ -776,7 +776,7 @@ Result<QList<IntensiveSlotState>> ScheduleService::intensiveSlotStates() const
     if (auto* repository = session()
             ? session()->intensiveSlotStateRepository() : nullptr)
     {
-        return repository->loadIntensiveSlotStates();
+        return toLegacyResult(repository->loadIntensiveSlotStates());
     }
     return dataService()
         ? dataService()->loadIntensiveSlotStates()
@@ -793,8 +793,8 @@ Status ScheduleService::saveIntensiveSlotState(
     if (auto* repository = session()
             ? session()->intensiveSlotStateRepository() : nullptr)
     {
-        return repository->saveIntensiveSlotState(
-            day, startTime, state, defaultState);
+        return toLegacyStatus(repository->saveIntensiveSlotState(
+            day, startTime, state, defaultState));
     }
     if (dataService())
     {

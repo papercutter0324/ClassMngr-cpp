@@ -14,7 +14,7 @@ IntensiveSlotStateRepository::IntensiveSlotStateRepository(
 {
 }
 
-Result<QList<IntensiveSlotState>>
+RepositoryResult<QList<IntensiveSlotState>>
 IntensiveSlotStateRepository::loadIntensiveSlotStates()
 {
     QList<IntensiveSlotState> states;
@@ -37,7 +37,8 @@ IntensiveSlotStateRepository::loadIntensiveSlotStates()
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
 
     while (query.next())
@@ -59,14 +60,14 @@ IntensiveSlotStateRepository::loadIntensiveSlotStates()
     if (query.lastError().isValid())
     {
         return std::unexpected(
-            SqlQueryUtils::errorFor(query, action).userMessage()
-            );
+            SqlQueryUtils::repositoryErrorFor(
+                SqlQueryUtils::errorFor(query, action)));
     }
 
     return states;
 }
 
-Status IntensiveSlotStateRepository::saveIntensiveSlotState(
+RepositoryStatus IntensiveSlotStateRepository::saveIntensiveSlotState(
     const QString& day,
     const QString& startTime,
     const QString& state,
@@ -95,7 +96,8 @@ Status IntensiveSlotStateRepository::saveIntensiveSlotState(
             );
         if (!executed)
         {
-            return std::unexpected(executed.error().userMessage());
+            return std::unexpected(
+                SqlQueryUtils::repositoryErrorFor(executed.error()));
         }
 
         return {};
@@ -125,7 +127,8 @@ Status IntensiveSlotStateRepository::saveIntensiveSlotState(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
 
     return {};

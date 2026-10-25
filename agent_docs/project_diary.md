@@ -8639,7 +8639,11 @@ birthday cursor diagnostic were source-reviewed without dedicated runtime
 assertions; no full suite or other-platform build ran.
 
 
-## 2026-10-25 — F1453 verified; local commit pending
+## 2026-10-25 — F1453 verified and committed; F1454 started
+
+F1453 is committed locally as `78189be6fe288a1ac6e8fef8760c151edf687f20`;
+it remains unpushed until Batch 22 closes. F1454 IntensiveSlotStateRepository
+discovery has started under the Heavy route.
 
 F1453 follows the same schema-evidence rule: duplicate names are Validation,
 not Conflict because the table has no name uniqueness constraint. Keep empty
@@ -8653,3 +8657,22 @@ application queries, and Teacher Import. Exact legacy errors, validation
 codes, stale-update recovery, SQL/cursor failures, and field/order behavior
 were exercised. Malformed-ID, raw birthday cursor message, no-op, and rollback
 failure branches remain source-reviewed without direct runtime assertions.
+
+
+## 2026-10-25 — F1454 verified; local commit pending
+
+F1454 converts the two IntensiveSlotStateRepository fallible APIs and keeps
+all current repository errors Technical. Input validation stays in the typed
+Next save port. Preserve empty successful loads, absent-row default deletes,
+upsert collisions as success, raw unfamiliar values, and ordered results.
+The repository has no IDs or transactions; DataService and ScheduleService
+remain legacy string boundaries, and read/save ports keep their distinct
+recoverability policies. Schedule Import writes the table through a separate
+transactional path and remains outside this slice.
+
+Independent macOS verification passed five focused CTests: repository,
+DataService lifecycle, read/save ports, and ScheduleWidget. SQL and terminal
+cursor errors remain Technical, exact diagnostic conversions pass, and the
+direct ports retain their differing recoverability. Upsert collision,
+ordering, and raw unfamiliar values were source-compared as unchanged. No full
+suite or other-platform build ran; F1455 is next.

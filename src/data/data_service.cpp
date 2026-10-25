@@ -508,7 +508,8 @@ Result<QList<IntensiveSlotState>> DataService::loadIntensiveSlotStates()
         return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
 
-    return m_session->intensiveSlotStateRepository()->loadIntensiveSlotStates();
+    return toLegacyResult(
+        m_session->intensiveSlotStateRepository()->loadIntensiveSlotStates());
 }
 
 Status DataService::saveIntensiveSlotState(
@@ -525,12 +526,13 @@ Status DataService::saveIntensiveSlotState(
             );
     }
 
-    return m_session->intensiveSlotStateRepository()->saveIntensiveSlotState(
-        day,
-        startTime,
-        state,
-        defaultState
-        );
+    return toLegacyStatus(
+        m_session->intensiveSlotStateRepository()->saveIntensiveSlotState(
+            day,
+            startTime,
+            state,
+            defaultState
+            ));
 }
 
 Result<QList<TestingBlock>> DataService::loadTestingBlocks()

@@ -55,7 +55,7 @@ void IntensiveSlotStateRepositoryTests::defaultStateControlsStoredRows()
             QStringLiteral("essay")
             ).has_value());
 
-        const Result<QList<IntensiveSlotState>> noStoredStates =
+        const RepositoryResult<QList<IntensiveSlotState>> noStoredStates =
             repository.loadIntensiveSlotStates();
         QVERIFY(noStoredStates);
         QVERIFY(noStoredStates->isEmpty());
@@ -66,7 +66,7 @@ void IntensiveSlotStateRepositoryTests::defaultStateControlsStoredRows()
             QStringLiteral("lunch")
             ).has_value());
 
-        Result<QList<IntensiveSlotState>> loadedStates =
+        RepositoryResult<QList<IntensiveSlotState>> loadedStates =
             repository.loadIntensiveSlotStates();
         QVERIFY(loadedStates);
         QList<IntensiveSlotState> states = *loadedStates;
@@ -129,10 +129,11 @@ void IntensiveSlotStateRepositoryTests::readFailuresAreReturned()
         QVERIFY(database.open());
 
         IntensiveSlotStateRepository repository(database);
-        const Result<QList<IntensiveSlotState>> states =
+        const RepositoryResult<QList<IntensiveSlotState>> states =
             repository.loadIntensiveSlotStates();
         QVERIFY(!states);
-        QVERIFY(states.error().contains(
+        QCOMPARE(states.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(states.error().diagnostic.contains(
             QStringLiteral("Loading intensive slot states")
             ));
     }
@@ -220,15 +221,16 @@ void IntensiveSlotStateRepositoryTests
         }
 
         IntensiveSlotStateRepository repository(database);
-        const Result<QList<IntensiveSlotState>> states =
+        const RepositoryResult<QList<IntensiveSlotState>> states =
             repository.loadIntensiveSlotStates();
         QVERIFY(!states);
-        QVERIFY(states.error().contains(
+        QCOMPARE(states.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(states.error().diagnostic.contains(
             QStringLiteral("Loading intensive slot states")
             ));
         QVERIFY2(
-            states.error().contains(cursorDetail),
-            qPrintable(states.error())
+            states.error().diagnostic.contains(cursorDetail),
+            qPrintable(states.error().diagnostic)
             );
     }
 
@@ -267,16 +269,17 @@ void IntensiveSlotStateRepositoryTests::writeFailuresAreReturned()
             )));
 
         IntensiveSlotStateRepository repository(database);
-        const Status inserted = repository.saveIntensiveSlotState(
+        const RepositoryStatus inserted = repository.saveIntensiveSlotState(
             QStringLiteral("Monday"),
             QStringLiteral("09:00"),
             QStringLiteral("lunch")
             );
         QVERIFY(!inserted);
-        QVERIFY(inserted.error().contains(
+        QCOMPARE(inserted.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(inserted.error().diagnostic.contains(
             QStringLiteral("Saving intensive slot state")
             ));
-        QVERIFY(inserted.error().contains(
+        QVERIFY(inserted.error().diagnostic.contains(
             QStringLiteral("Monday at 09:00")
             ));
 
@@ -293,16 +296,17 @@ void IntensiveSlotStateRepositoryTests::writeFailuresAreReturned()
             "END"
             )));
 
-        const Status deleted = repository.saveIntensiveSlotState(
+        const RepositoryStatus deleted = repository.saveIntensiveSlotState(
             QStringLiteral("Monday"),
             QStringLiteral("09:00"),
             QStringLiteral("essay")
             );
         QVERIFY(!deleted);
-        QVERIFY(deleted.error().contains(
+        QCOMPARE(deleted.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(deleted.error().diagnostic.contains(
             QStringLiteral("Deleting intensive slot state")
             ));
-        const Result<QList<IntensiveSlotState>> states =
+        const RepositoryResult<QList<IntensiveSlotState>> states =
             repository.loadIntensiveSlotStates();
         QVERIFY(states);
         QCOMPARE(states->size(), 1);
