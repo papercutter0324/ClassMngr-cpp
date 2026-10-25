@@ -8833,3 +8833,20 @@ ClassTransfer UI target had 420 passing cases and one teacher-profile fallback
 failure with no same-revision baseline. That failure is not labeled
 pre-existing or attributed to F1459. See the Phase 3 progress log for the
 slice-level evidence. Phase 4 is not started.
+
+## 2026-10-25 — Phase 4 native resource matrix passed
+
+After the user re-enabled Actions, the F1500 retry push started run 40224983452
+on `Qt-Rewrite` at `277de9057168e67dc0b9ebc2e39719acc204a60f`. The independent
+review accepted the complete macOS, Windows x64, and Linux x64 matrix. Each
+platform passed the 193-file resource audit (187 SHA-256 checks, five QM files,
+two QML keys); macOS CTest passed 3/3, and Windows/Linux passed 8/8. Windows
+confirmed the real symlink containment fixture with no skip path.
+
+Reusable lessons: exact-hash package sources need Git attributes that prevent
+line-ending conversion; on Windows, `QFile::link` for a JSON fixture creates a
+`.lnk` shortcut rather than a file symlink, so containment tests must create
+and inspect a native symlink; and `std::int64_t` should be explicitly boxed as
+`qlonglong` at the `QVariant` boundary for portable Qt builds. These fixes are
+recorded in the Phase 4 plan and progress log. Phase 4 is Complete; Phase 5 is
+the next planned phase.

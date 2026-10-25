@@ -32,68 +32,24 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: In progress
+- Status: Complete
 - Default route: Heavy
 - Depends on: Phase 1
 - Blocks: Bootstrap, feature migration, packaging, and memory gates
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-25
-- Current note: F1485 closed and pushed the Batch 2 commit set from
-  `Qt-Rewrite` to `origin` as `1475a46d` (25 commits, F1469–F1485). F1483 is
-  committed as `6428b2ca`; local macOS verification installed the resource and
-  probe components together and resolved `../Resources` to `Contents/Resources`.
-  The staged audit passed with 193 files (187 SHA checks, five QMs, two QML
-  keys). Focused CTest passed 3/3, and Linux guard fixtures passed 5/5.
-  The F1483 workflow is intended to trigger on pushes to `Qt-Rewrite`, but
-  first and subsequent authenticated Actions API queries found no run or checks
-  for `1475a46d`; native results remain pending. Its root-resolver and prefix
-  guard tests remain separate from F1486. The Linux guard rejects a changed
-  `--prefix` only for mixed absolute/relative bindir/datadir; both-relative,
-  both-absolute, same-prefix mixed, and `DESTDIR` cases remain allowed.
-  F1484 is accepted as verification-only: the `ClassMngrNext` launch shell is
-  a QtCore-only version printer with no tested storage or working-directory
-  side effects. This finding applies to the shell/package, not every `src/next`
-  adapter; legacy `NavigationController` still uses
-  `LegacyDocumentContentResourcePort` to obtain the legacy `documents` pack.
-  Keep legacy RCC implementation and pack inputs as the compatibility oracle
-  through Phase 12. Calendar QML remains compiled via `qt_add_resources`, not
-  an external pack. Batch 4 (F1487/F1488) remains documented in the progress
-  log. F1492's push at `cc776f1564e54cdc2492f9594d0580dd4c21e7d3` created
-  workflow run `40220727653`, which failed overall. macOS passed install/probe,
-  the 193-file audit (187 SHA, five QMs, two QML keys), and CTest 3/3. Windows
-  resource bake failed on a byte mismatch for `bundang.json`, so install/audit/
-  tests were skipped. Linux failed compiling `class_details_page.cpp:302` due to
-  ambiguous long-to-QVariant conversion.
-
-  F1493 (`64fcedcd`) adds byte-preserving `.gitattributes` rules for
-  `resources/**` and Calendar QML; Tester confirmed coverage of all 232
-  inventoried paths. Explorer found the local `bundang.json` blob/hash matches
-  inventory and no prior repository `.gitattributes`; Windows autocrlf was not
-  observed, so EOL conversion remains likely but unconfirmed. F1494
-  (`b7878846`) adds an explicit `qlonglong` QVariant conversion. Executor's
-  standard macOS `ClassMngrFeatures` target build succeeded, and Tester
-  confirmed the semantics and current object. CMake confirms `-G Visual Studio
-  17 2022` is a supported preset override, and Windows configure had succeeded.
-  F1496 run `40221771224` at `59a8e5da` passed macOS install/probe, audit (193
-  files, 187 SHA checks, five QMs, two QML keys), and CTest 3/3; Linux passed
-  the same audit and focused tests 8/8. Windows build, install/probe, and audit
-  passed, but CTest was 7/8: the symlink-escape test used `QFile::link` on a
-  `.json` path, creating a `.lnk` shortcut instead of a real symlink. F1497
-  changes only the test fixture to use native `CreateSymbolicLinkW` with the
-  unprivileged flag on Windows and `symlink()` on POSIX, explicitly verifies a
-  real symlink and an outside canonical target, retains the `UnsafePath`
-  assertion, and fails clearly instead of skipping if setup fails. Executor
-  and independent Tester macOS loader CTest passed 1/1. Windows confirmation
-  remains pending. F1498 is the receipt for the fresh native rerun. F1483/F1486
-  native results are still required; Phase 4 remains In progress. Workflow
-  stays `on.push` filtered to `Qt-Rewrite`, absent from default `main`, with no
-  dispatch; previous run failures' exact cause is unknown and user direction
-  on extending scope remains pending.
-  See the tracker and progress log for the run evidence.
-  Phase 7/10 rendering parity remains deferred; legacy pack removal remains
-  Phase 12. Batch 1 (F1464–F1468) is pushed to `origin`; see
-  the [Phase 4 progress log](05-Phase-4-Progress-Log.md) for its receipt. See
-  the [inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md) and
+- Current note: F1500 commit
+  `277de9057168e67dc0b9ebc2e39719acc204a60f` passed
+  [Actions run 40224983452](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40224983452)
+  on exact `Qt-Rewrite` head `277de9057168e67dc0b9ebc2e39719acc204a60f`.
+  macOS, Windows x64, and Linux x64 passed resource install/probe and the
+  193-file audit (187 SHA-256 checks, five QM files, two QML keys); macOS CTest
+  passed 3/3 and Windows/Linux each passed 8/8. The Windows real-symlink
+  containment fixture passed using `CreateSymbolicLinkW` without a skip path.
+  Phase 4 is complete. Phase 5 Startup and Bootstrap Rewrite is next and remains
+  Not started. Rendering parity remains a Phase 7/10 gate; legacy-pack removal
+  remains a Phase 12 gate. See the [progress log](05-Phase-4-Progress-Log.md),
+  [inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md), and
   [current batch tracker](Current-Slice-Batches.md).
 
 ### Slice batches

@@ -1,38 +1,39 @@
 # Project Progress
 
-Active deployment plan: Qt Rewrite Phase 3 — Persistence Rewrite.
-Current deployment: `phase3_structured_errors_resume_20261024`. Route: Heavy.
-Phase 3 is Complete. Batch 22 (F1444–F1463) was committed slice by slice and
-pushed to `origin/Qt-Rewrite`; the implementation tip is
-`ec66ccd9e398868b006cc7def8d68398cc400a26`. The scheduled Batch 23 discovery
-completed and accepted no new eligible repository queue. No Phase 3 batch or
-slice remains active.
+Active deployment plan: Qt Rewrite Phase 4 — Resource Loader and Packaging.
+Current deployment: `classmngr-phase4-respack-20261025`. Route: Heavy.
+Phase 4 is Complete. The F1500 retry push is
+`277de9057168e67dc0b9ebc2e39719acc204a60f`; Actions run
+[40224983452](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40224983452)
+passed on macOS, Windows x64, and Linux x64 at that exact head. Each staged
+resource audit passed (193 files, 187 SHA-256 checks, 5 QM files, 2 QML keys);
+macOS CTest passed 3/3 and Windows/Linux each passed 8/8. The Windows
+resource-loader test confirmed the real symlink escape fixture and `UnsafePath`
+behavior.
 
-The independent final gate review accepted completion. The focused v6
-compatibility audit passed 123 QtTest entries with zero failures and zero
-skips, including v6 profile lifecycle, import/export/copy/recovery, and 48
-v0–v5 rejection rows across three paths. The source scan found no DataService,
-QSqlDatabase, QSqlQuery, SQL statement, or `database()` use in `src/next`; the
-public `WorkspaceStore::database()` exposure means the boundary is source-
-reviewed rather than compile-time enforced. Detailed evidence is in the
-[Phase 3 progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md)
-and the [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md).
-
-Limits remain recorded: no full suite or Windows/Linux build was run; import
-checks used representative synthetic plans; old v2 installations were not
-simulated end to end; recovery artifacts were simulated rather than produced
-by terminating a process; and some failure-injection cases remain source-
-reviewed only. One ClassTransfer UI fallback assertion had 420/421 passing
-cases and no same-revision baseline; it is neither classified as pre-existing
-nor attributed to F1459. These limits do not reopen the accepted gate.
+The portability fixes are retained: `.gitattributes` preserves exact bytes for
+packaged resources and Calendar QML, the feature-layer 64-bit issue value is
+explicitly stored as `qlonglong`, and the Windows path test creates a genuine
+file symlink. Legacy RCC inputs remain the compatibility oracle through
+Phase 12; user-visible rendering parity remains a Phase 7/10 gate. Evidence is
+in the [Phase 4 plan](../plans/qt-rewrite-heavy-route-plan/05-Phase-4-Resource-Loader-and-Packaging.md),
+[progress log](../plans/qt-rewrite-heavy-route-plan/05-Phase-4-Progress-Log.md),
+and [batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
 
 ## Goal
 
-Replace the broad compatibility-heavy data path with one explicit workspace
-persistence boundary while preserving supported files and data behavior. Keep
-the legacy application as a compatibility oracle until its later cutover.
+Complete the Phase 4 resource-loader and package boundary: preserve the
+baseline resource catalog and bytes, install the `ClassMngrNext` resource
+component at a relocatable platform root, avoid pack/network startup work, and
+load/release document bodies only for an active viewer session. Keep legacy
+resource paths intact as the compatibility oracle for later feature migration.
 
 ## Overall Progress
+
+Phase 4 is Complete. The native F1483/F1486 install-layout matrix passed on
+macOS, Windows x64, and Linux x64 at the F1500 retry head. The phase exit gate
+is recorded in the Phase 4 progress log; Phase 5 remains the next planned
+phase.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained
@@ -73,20 +74,19 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-25 (Phase 3 Complete)
+### Current checkpoint — 2026-10-25 (Phase 4 Complete)
 
-All Phase 3 deliverables and its exit gate are accepted complete. Batch 22
-structured repository errors across F1444–F1463 while preserving legacy
-DataService diagnostic conversions and existing caller policies. Batch 23
-discovery ran at its scheduled second-to-last-slice trigger; independent scans
-found no additional eligible repository candidate. The final v6 compatibility
-and source-boundary reviews passed as described above. Phase 4 has not started.
+The required native resource-install gates passed on the F1500 retry head.
+macOS, Windows x64, and Linux x64 all passed their staged-root probe and
+193-file resource audit. The macOS layout tests passed 3/3; Windows and Linux
+each passed all 8 CTests, including the Windows real-symlink containment
+check. Actions run 40224983452 completed successfully at
+`277de9057168e67dc0b9ebc2e39719acc204a60f` on `Qt-Rewrite`.
 
-The known F1459 ClassTransfer fallback UI assertion remains unclassified: the
-focused integration run had 420 passes and one failure, with no same-revision
-baseline. No full suite or Windows/Linux build was run. The remaining focused
-verification and source-review limits are documented in the
-[Phase 3 progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md).
+Phase 4 is accepted Complete under its documented gate. Phase 5 is next.
+Rendering parity remains scheduled for Phases 7/10, and removal of legacy RCC
+inputs remains scheduled for Phase 12; Phase 4 does not claim those future
+gates.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

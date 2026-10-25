@@ -6,18 +6,18 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-25
-- Current milestone: Phase 3 is Complete. Phase 4 remains In progress on the
-  mandatory Heavy route. Native resource-layout matrix run
-  [40223401741](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40223401741)
-  passed macOS, Windows x64, and Linux x64 on head
-  `2470d756300254522b823a86fe3977382e868055`, closing the F1483/F1486 native
-  gates. The user confirmed Actions are reenabled and requested another run.
-  Documentation-only slice F1500 records that retry; its fresh `Qt-Rewrite`
-  push and resulting workflow run are pending. See the [Phase 4 progress
-  log](05-Phase-4-Progress-Log.md), [resource
+- Current milestone: Phase 4 is Complete on the mandatory Heavy route.
+  F1500 commit `277de9057168e67dc0b9ebc2e39719acc204a60f` passed
+  [Actions run 40224983452](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40224983452)
+  on the exact `Qt-Rewrite` head. macOS, Windows x64, and Linux x64 passed
+  install/probe and the 193-file audit (187 SHA-256 checks, five QM files, two
+  QML keys); macOS CTest passed 3/3 and Windows/Linux each passed 8/8. Phase 5
+  Startup and Bootstrap Rewrite is next and remains Not started. Rendering
+  parity remains a Phase 7/10 gate, and legacy-pack removal remains a Phase 12
+  gate. See the [Phase 4 plan](05-Phase-4-Resource-Loader-and-Packaging.md),
+  [progress log](05-Phase-4-Progress-Log.md), [resource
   inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md), and
-  [current batch tracker](Current-Slice-Batches.md). Phase 7/10 rendering
-  parity remains deferred, and legacy pack removal remains Phase 12.
+  [current batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -38,7 +38,7 @@
 | 1 | 02-Phase-1-Build-System-and-Repository-Structure.md | Complete | Heavy | 0 |
 | 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | Complete | Heavy | 1 |
 | 3 | 04-Phase-3-Persistence-Rewrite.md | Complete | Heavy | 1, 2 |
-| 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | In progress | Heavy | 1 |
+| 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Not started | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Not started | Heavy | 5 |
 | 7 | 08-Phase-7-Feature-Migration.md | Not started | Heavy | 2–6 |

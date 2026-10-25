@@ -1,33 +1,27 @@
 # Latest Session Work
 
-## Current Deployment Handoff — phase3_structured_errors_resume_20261024 (complete)
+## Current Deployment Handoff — classmngr-phase4-respack-20261025 (complete)
 
-- Heavy route; branch `Qt-Rewrite`. Phase 3 is Complete. Batch 22 (F1444–F1463)
-  was committed slice by slice and pushed; the implementation tip is
-  `ec66ccd9e398868b006cc7def8d68398cc400a26`. A follow-up closeout-doc commit
-  records the final gate result. Batch 23 discovery completed at its required
-  trigger and accepted no new eligible repository candidate. No Phase 3 slice
-  remains.
-- Independent final-gate review accepted completion. The focused v6
-  compatibility audit passed 123 QtTest entries, with 0 failures and 0 skips.
-  It covered v6 open/save/import/export/copy/recovery/backups and 48 v0–v5
-  rejection rows across three routes. The source scan found no DataService or
-  SQL access in `src/next`; `WorkspaceStore` still publicly exposes
-  `QSqlDatabase`, so the boundary is source-reviewed rather than enforced by
-  types.
-- Verification limits: no full suite or Windows/Linux build; imports used
-  representative synthetic plans; the old v2 save-as/export path was not
-  exercised as an end-to-end old installation; recovery artifacts were
-  simulated; and some failure-injection branches remain source-reviewed.
-  The F1459 ClassTransfer integration run had 420 passes and one teacher-profile
-  fallback UI failure, with no same-revision baseline. It is not classified as
-  pre-existing or attributed to F1459. The accepted gate does not claim those
-  broader checks passed.
-- Durable evidence is in the [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md),
-  [progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md),
-  [schema baseline](../docs/qt-rewrite/phase-3-schema-baseline.md), and
+- Heavy route; branch `Qt-Rewrite`. Phase 4 is Complete. The F1500 retry
+  documentation slice was pushed at
+  `277de9057168e67dc0b9ebc2e39719acc204a60f`. Actions run
+  [40224983452](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40224983452)
+  passed on macOS, Windows x64, and Linux x64 at that exact head.
+- Each platform passed the 193-file staged resource audit (187 SHA-256 checks,
+  five QM files, two QML keys) and resolved its expected install root. macOS
+  CTest passed 3/3; Windows and Linux each passed 8/8. The Windows loader test
+  created a real symlink, verified its canonical target escapes the package
+  root, and confirmed `UnsafePath` with no skip path.
+- Portability fixes: packaged source files and Calendar QML are protected from
+  text conversion; the feature-layer 64-bit QVariant value is explicitly
+  `qlonglong`; and the Windows containment fixture uses
+  `CreateSymbolicLinkW`. Legacy RCC paths remain the compatibility oracle
+  through Phase 12. User-visible rendering parity remains a Phase 7/10 gate.
+- Durable evidence is in the [Phase 4 plan](../plans/qt-rewrite-heavy-route-plan/05-Phase-4-Resource-Loader-and-Packaging.md),
+  [progress log](../plans/qt-rewrite-heavy-route-plan/05-Phase-4-Progress-Log.md),
+  [resource inventory](../docs/qt-rewrite/phase-4-resource-inventory.md), and
   [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
-  Phase 4 is not started.
+  Phase 5 startup/bootstrap is the next planned phase.
 
 
 ## Historical Deployment Handoff — phase3_resume_oct24_followup (complete)

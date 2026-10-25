@@ -435,9 +435,16 @@ catalog keys on each platform. The focused macOS layout tests passed 3/3, and
 all eight loader/layout CTests passed on Windows and Linux. This closes the
 F1483/F1486 native gates.
 
-## F1500 — Retry after Actions reenabled — pending — 2026-10-25
+## F1500 — Retry after Actions reenabled — passed — 2026-10-25
 
-The user confirmed Actions are reenabled and requested another run. This
-documentation-only slice records the retry and will be pushed on
-`Qt-Rewrite` to trigger the existing `on.push` workflow. The new commit SHA and
-run result are pending; Phase 4 remains In progress until that retry completes.
+The user confirmed Actions were reenabled and requested this retry.
+Commit `277de9057168e67dc0b9ebc2e39719acc204a60f` on `Qt-Rewrite` created
+[Actions run 40224983452](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40224983452),
+which completed successfully for that exact SHA. macOS, Windows x64, and Linux
+x64 passed resource install/probe and the 193-file audit (187 SHA-256 checks,
+five QM files, two QML keys). macOS CTest passed 3/3; Windows and Linux each
+passed 8/8, including the Windows real-symlink containment fixture using
+`CreateSymbolicLinkW` with no skip path. The Phase 4 exit gate is satisfied.
+Phase 4 is Complete; Phase 5 Startup and Bootstrap Rewrite is next. Rendering
+parity remains a Phase 7/10 gate, and legacy-pack removal remains a Phase 12
+gate.

@@ -1,6 +1,7 @@
 # Current Slice Batches
 
-Phase 4 is In progress on the mandatory Heavy route.
+Phase 4 is Complete on the mandatory Heavy route. F1500 passed the native
+matrix; Phase 5 is next.
 
 ## Batch 2 — pushed
 
@@ -144,9 +145,15 @@ resource install/probe audits passed; macOS focused layout tests passed 3/3,
 and Windows/Linux each passed all eight CTests. The F1483/F1486 native gates
 are closed.
 
-## F1500 — Retry after Actions reenabled — pending
+## F1500 — Retry after Actions reenabled — passed
 
-The user confirmed Actions are reenabled and requested another run. This
-documentation-only batch records the retry; a fresh push to `Qt-Rewrite` is
-intended to trigger the existing `on.push` workflow. Its commit SHA and run
-result are pending. Phase 4 remains In progress until that run passes.
+The user confirmed Actions were reenabled and requested this retry.
+Commit `277de9057168e67dc0b9ebc2e39719acc204a60f` on `Qt-Rewrite` created
+[Actions run 40224983452](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40224983452),
+which completed successfully at that exact head. macOS, Windows x64, and Linux
+x64 passed install/probe and the 193-file audit (187 SHA-256 checks, five QM
+files, two QML keys); macOS CTest passed 3/3 and Windows/Linux each passed 8/8.
+The Windows real-symlink containment fixture passed with `CreateSymbolicLinkW`
+and no skip. Phase 4 is Complete. Phase 5 is next and remains Not started.
+Rendering parity remains a Phase 7/10 gate; legacy-pack removal remains a
+Phase 12 gate.
