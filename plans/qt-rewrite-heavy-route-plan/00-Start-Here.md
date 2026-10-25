@@ -6,60 +6,18 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-25
-- Current milestone: Phase 3 is Complete and Phase 4 is In progress on the
-  mandatory Heavy route. F1485 closed and pushed Batch 2 from `Qt-Rewrite` to
-  `origin` as `1475a46d` (25 commits, F1469–F1485). F1483 is committed as
-  `6428b2ca`; local macOS installation, relocated-root probing, the 193-file
-  staged audit, focused CTest (3/3), and Linux guard fixtures (5/5) passed.
-  First and subsequent authenticated Actions API queries found no run or checks
-  for Batch 2 head `1475a46d`; F1483 native Windows/Linux results remain
-  pending. F1484 is accepted as
-  verification-only: the `ClassMngrNext` shell prints its version with
-  `QCoreApplication`, links only Qt Core, and has no tested launch-time storage
-  or working-directory side effects. This claim covers the shell/package, not
-  all `src/next` adapters: legacy `NavigationController` still uses
-  `LegacyDocumentContentResourcePort` and the legacy `documents` pack. Keep
-  legacy RCC code and inputs as the compatibility oracle through Phase 12;
-  Calendar QML remains compiled with `qt_add_resources`, not an external pack.
-  F1490's retry event failed at startup; the subsequent F1492 push at
-  `cc776f1564e54cdc2492f9594d0580dd4c21e7d3` created run `40220727653`, which
-  failed overall. macOS passed the install/probe audit (193 files, 187 SHA, 5
-  QMs, 2 QML keys) and CTest 3/3. Windows resource bake found a `bundang.json`
-  byte mismatch and skipped install/audit/tests; Linux failed compiling
-  `class_details_page.cpp:302` due to ambiguous long-to-QVariant conversion.
-  F1493 adds byte-preserving `.gitattributes` rules; F1494 corrects the
-  QVariant conversion. F1496 run `40221771224` at `59a8e5da` passed macOS
-  audit/CTest (3/3) and Linux audit/focused tests (8/8); Windows build,
-  install/probe, and audit passed, but CTest was 7/8 because its resource
-  symlink-escape fixture did not create a real Windows symlink. Explorer found
-  `QFile::link` creates a `.lnk` shortcut for the `.json` fixture on Windows.
-  F1497 now uses native `CreateSymbolicLinkW` (unprivileged flag) or POSIX
-  `symlink()`, verifies a real link and outside canonical target, retains
-  `UnsafePath`, and fails clearly rather than skipping; Executor and Tester
-  each passed macOS loader CTest 1/1. Windows confirmation remains open.
-  F1498 records the fresh rerun receipt. F1483/F1486 native gates remain open.
-  The workflow remains `on.push` filtered to `Qt-Rewrite`, absent from default
-  `main`, with no dispatch; the cause of earlier missing/failed runs is
-  unknown and user direction on extending scope remains pending. Batch
-  3's F1486 workflow expansion is `094cda87`. A
-  standard macOS Debug run of the six targeted
-  F1486 CTests initially passed 5/6 because `ClassMngrNextResourceLoaderTests`
-  had stale catalog-count assertions. Explorer confirmed F1482's four
-  exclusions explain 198→194 records; F1488 corrected expected counts to 194
-  total (192 `PackageFile`, 2 `QtResource`) while preserving coverage.
-  Executor's focused macOS CTest passed 1/1; the independent six-test rerun on
-  `macos-clang-debug` passed 6/6, accepting F1488. Windows/Linux runs remain
-  open. F1487 is committed as `f86c79fc`. Push filters
-  target `Qt-Rewrite` and can run on non-default branches, but the workflow is
-  absent from default `main`, so manual dispatch is unavailable. The cause of
-  missing runs is unknown; user direction is needed on extending scope to
-  `main`. Phase 4 remains open pending native jobs and that direction; Phase
-  7/10 rendering parity remains deferred, and legacy pack removal remains
-  Phase 12.
-  See the [Phase 4 progress log](05-Phase-4-Progress-Log.md),
-  [resource inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md),
-  and [current batch tracker](Current-Slice-Batches.md). Batch 1's push receipt
-  remains in the Phase 4 progress log.
+- Current milestone: Phase 3 is Complete. Phase 4 remains In progress on the
+  mandatory Heavy route. Native resource-layout matrix run
+  [40223401741](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40223401741)
+  passed macOS, Windows x64, and Linux x64 on head
+  `2470d756300254522b823a86fe3977382e868055`, closing the F1483/F1486 native
+  gates. The user confirmed Actions are reenabled and requested another run.
+  Documentation-only slice F1500 records that retry; its fresh `Qt-Rewrite`
+  push and resulting workflow run are pending. See the [Phase 4 progress
+  log](05-Phase-4-Progress-Log.md), [resource
+  inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md), and
+  [current batch tracker](Current-Slice-Batches.md). Phase 7/10 rendering
+  parity remains deferred, and legacy pack removal remains Phase 12.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted

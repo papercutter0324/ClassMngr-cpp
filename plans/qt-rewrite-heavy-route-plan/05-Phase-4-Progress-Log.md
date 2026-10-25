@@ -425,8 +425,19 @@ the `UnsafePath` assertion, and fails clearly rather than skipping if setup
 fails. Executor and independent Tester each passed the macOS loader CTest 1/1.
 Native Windows confirmation remains pending.
 
-## F1498 — Fresh native rerun receipt — planned — 2026-10-25
+## F1498 — Fresh native rerun receipt — passed — 2026-10-25
 
-F1498 records the corrected fixture and requests a fresh native rerun. The
-Windows result is still required; F1483/F1486 Windows/Linux gates remain open,
-and Phase 4 remains In progress.
+Actions run `40223401741` completed successfully for a push to `Qt-Rewrite` at
+`2470d756300254522b823a86fe3977382e868055`; the branch head matched the tested
+SHA. macOS, Windows x64, and Linux x64 install/probe audits passed. The staged
+resource audit found 193 files, 187 SHA-256 checks, five QM files, and two QML
+catalog keys on each platform. The focused macOS layout tests passed 3/3, and
+all eight loader/layout CTests passed on Windows and Linux. This closes the
+F1483/F1486 native gates.
+
+## F1500 — Retry after Actions reenabled — pending — 2026-10-25
+
+The user confirmed Actions are reenabled and requested another run. This
+documentation-only slice records the retry and will be pushed on
+`Qt-Rewrite` to trigger the existing `on.push` workflow. The new commit SHA and
+run result are pending; Phase 4 remains In progress until that retry completes.

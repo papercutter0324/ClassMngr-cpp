@@ -120,7 +120,7 @@ inventory and there was no repository `.gitattributes`; Windows `autocrlf` was
 not observed, so EOL conversion is likely but unconfirmed. Linux failed
 compiling `class_details_page.cpp:302` on ambiguous long-to-QVariant conversion.
 
-## Retry batch — F1496 results; F1498 rerun receipt planned
+## Retry batch — F1496 results; F1498 native rerun passed
 
 F1493 (`64fcedcd`) adds `resources/** -text` and Calendar QML `-text` rules;
 Tester confirmed all 232 inventory paths are covered. F1494 (`b7878846`) makes
@@ -136,6 +136,17 @@ shortcut for a `.json` path on Windows. F1497 changes only the fixture to use
 Windows `CreateSymbolicLinkW` with the unprivileged flag or POSIX `symlink()`,
 verifies a real link with an outside canonical target, keeps the `UnsafePath`
 assertion, and fails clearly instead of skipping if setup fails. Executor and
-independent Tester macOS loader CTests each passed 1/1; Windows confirmation
-remains open. F1498 is the receipt for a fresh native rerun. F1483/F1486 native
-gates remain open; Phase 4 remains In progress.
+independent Tester macOS loader CTests each passed 1/1.
+
+Windows confirmation was completed by Actions run `40223401741` at head
+`2470d756300254522b823a86fe3977382e868055`. macOS, Windows x64, and Linux x64
+resource install/probe audits passed; macOS focused layout tests passed 3/3,
+and Windows/Linux each passed all eight CTests. The F1483/F1486 native gates
+are closed.
+
+## F1500 — Retry after Actions reenabled — pending
+
+The user confirmed Actions are reenabled and requested another run. This
+documentation-only batch records the retry; a fresh push to `Qt-Rewrite` is
+intended to trigger the existing `on.push` workflow. Its commit SHA and run
+result are pending. Phase 4 remains In progress until that run passes.
