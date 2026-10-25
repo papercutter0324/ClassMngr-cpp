@@ -39,8 +39,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-25
 - Current note: F1470, explicit resource scopes, is committed as
-  `f7b2cb22`; F1471, the byte-budgeted resource cache, is accepted; F1472,
-  resource diagnostics, is active. F1469 is committed as `d282e7f1`.
+  `f7b2cb22`; F1471, the byte-budgeted resource cache, is committed as
+  `bbbe5232`; F1472, resource diagnostics, is accepted; F1473, document
+  catalog metadata, is active. F1469 is committed as `d282e7f1`.
   Batch 1
   (F1464–F1468) was pushed to `origin`; see the [Phase 4 progress log](05-Phase-4-Progress-Log.md)
   for the receipt. F1469 resolves
@@ -250,7 +251,34 @@ oversize skipping without unrelated eviction, per-cache isolation, image and
 JSON cache hits with the current request scope, insertion-owner metadata,
 cache-hit SHA-256 failure after a same-size source mutation, and font,
 translation, stream, and document-body bypass. Windows and Linux were not run.
-F1471 is accepted; F1472 is active.
+F1471 is accepted and committed as `bbbe5232`.
+
+### F1472 — Per-loader resource diagnostics — accepted — 2026-10-25
+
+Each `ResourceLoader` can receive an explicit `ResourceDiagnosticsSink`.
+Every logical loader operation emits one `ResourceDiagnostic`, including
+failures; stylesheet delegation does not emit a duplicate. Events carry the
+resource ID and current scope, monotonic elapsed time across the full call,
+catalog source bytes, optional decoded payload bytes, outcome/error, cache-hit
+state, and cache-entry, aggregate, and capacity accounted bytes when a cache
+is available. Text, JSON, and image byte weights follow F1471. Fonts,
+translations, and streams have no decoded-size measurement, and streams are
+not read just to calculate one.
+
+The sink is per loader and called synchronously after cache metrics are
+snapshotted and outside the cache lock. Concurrent calls on one loader may
+invoke it concurrently, so sink implementations must be thread-safe. Sink
+exceptions are swallowed and cannot replace loader results. This adds no
+process-wide singleton or startup/legacy wiring.
+
+The macOS loader and root-resolver targets built with ownership validation for
+1,625 handwritten sources; both focused CTests passed 2/2, and
+`git diff --check` passed. Tests cover cache miss/hit and current-owner
+reporting, source/decoded sizes and cache metrics, SHA-256 failure events, type
+mismatch, stream reporting without body sizing, UTF-16 text and image weights,
+font/translation events, sink isolation and exception handling, and stylesheet
+event cardinality. Windows, Linux, and the full suite were not run. F1472 is
+accepted; F1473 is active.
 
 ## Objective
 

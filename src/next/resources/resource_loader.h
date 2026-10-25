@@ -2,6 +2,7 @@
 
 #include "resource_catalog.h"
 #include "resource_cache.h"
+#include "resource_diagnostics.h"
 #include "resource_error.h"
 #include "resource_scope.h"
 
@@ -16,6 +17,7 @@
 #include <QTranslator>
 
 #include <memory>
+#include <optional>
 
 namespace ClassMngr::Next::Resources
 {
@@ -103,6 +105,12 @@ public:
     explicit ResourceLoader(ResourceCatalog catalog);
     // The injected cache is borrowed and must outlive this loader.
     ResourceLoader(ResourceCatalog catalog, ResourceCache& cache);
+    ResourceLoader(ResourceCatalog catalog, ResourceDiagnosticsSink diagnostics);
+    ResourceLoader(
+        ResourceCatalog catalog,
+        ResourceCache& cache,
+        ResourceDiagnosticsSink diagnostics
+        );
 
     [[nodiscard]] const ResourceCatalog& catalog() const noexcept
     {
@@ -133,6 +141,10 @@ public:
         ) const;
 
 private:
+    [[nodiscard]] ResourceResult<ScopedResource<QString>> loadTextResource(
+        const ResourceRequest& request,
+        std::optional<ResourceType> requiredType
+        ) const;
     [[nodiscard]] ResourceResult<const ResourceDescriptor*> descriptor(
         const ResourceId& id
         ) const;
@@ -150,6 +162,7 @@ private:
 
     ResourceCatalog m_catalog;
     ResourceCache* m_cache = nullptr;
+    ResourceDiagnosticsSink m_diagnostics;
 };
 
 }

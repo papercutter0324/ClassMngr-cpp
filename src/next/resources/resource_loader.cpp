@@ -60,6 +60,27 @@ bool isCacheableDecodedResource(const ResourceDescriptor& descriptor)
         && !descriptor.id().value().startsWith(QStringLiteral("document.body:"));
 }
 
+template <typename Value, typename Operation>
+ResourceResult<Value> withDiagnostics(
+    const ResourceDiagnosticsSink& sink,
+    const ResourceRequest& request,
+    const ResourceCache* cache,
+    Operation&& operation
+    )
+{
+    ResourceDiagnosticRecorder diagnostic(sink, request, cache);
+    auto result = std::forward<Operation>(operation)(diagnostic);
+    if (result)
+    {
+        diagnostic.setSuccess();
+    }
+    else
+    {
+        diagnostic.setError(result.error().code);
+    }
+    return result;
+}
+
 }
 
 ResourceResult<ResourceScope> ResourceScope::create(
@@ -247,6 +268,23 @@ ResourceLoader::ResourceLoader(ResourceCatalog catalog)
 ResourceLoader::ResourceLoader(ResourceCatalog catalog, ResourceCache& cache)
     : m_catalog(std::move(catalog))
     , m_cache(&cache)
+{
+}
+
+ResourceLoader::ResourceLoader(ResourceCatalog catalog, ResourceDiagnosticsSink diagnostics)
+    : m_catalog(std::move(catalog))
+    , m_diagnostics(std::move(diagnostics))
+{
+}
+
+ResourceLoader::ResourceLoader(
+    ResourceCatalog catalog,
+    ResourceCache& cache,
+    ResourceDiagnosticsSink diagnostics
+    )
+    : m_catalog(std::move(catalog))
+    , m_cache(&cache)
+    , m_diagnostics(std::move(diagnostics))
 {
 }
 
@@ -484,191 +522,272 @@ ResourceResult<ScopedResource<QString>> ResourceLoader::loadText(
     const ResourceRequest& request
     ) const
 {
-    auto found = descriptor(request.id());
-    if (!found)
-    {
-        return std::unexpected(found.error());
-    }
-    if (!isTextType((*found)->expectedType()))
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::TypeMismatch,
-            QStringLiteral("resource is not cataloged as text")
-            ));
-    }
+    return loadTextResource(request, std::nullopt);
+}
 
-    auto bytes = readBytes(**found, MaximumTextBytes);
-    if (!bytes)
-    {
-        return std::unexpected(bytes.error());
-    }
-    if (m_cache != nullptr && isCacheableDecodedResource(**found))
-    {
-        if (auto cached = m_cache->findText(request.id()))
-        {
-            return ScopedResource<QString>(std::move(*cached), request.scope());
+ResourceResult<ScopedResource<QString>> ResourceLoader::loadTextResource(
+    const ResourceRequest& request,
+    std::optional<ResourceType> requiredType
+    ) const
+{
+    return withDiagnostics<ScopedResource<QString>>(
+        m_diagnostics,
+        request,
+        m_cache,
+        [&](ResourceDiagnosticRecorder& diagnostic)
+            -> ResourceResult<ScopedResource<QString>> {
+            auto found = descriptor(request.id());
+            if (!found)
+            {
+                return std::unexpected(found.error());
+            }
+            diagnostic.setSourceBytes((*found)->sourceBytes());
+
+            if (requiredType.has_value())
+            {
+                if ((*found)->expectedType() != *requiredType)
+                {
+                    return std::unexpected(error(
+                        ResourceErrorCode::TypeMismatch,
+                        QStringLiteral("resource is not cataloged as a stylesheet")
+                        ));
+                }
+            }
+            else if (!isTextType((*found)->expectedType()))
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::TypeMismatch,
+                    QStringLiteral("resource is not cataloged as text")
+                    ));
+            }
+
+            auto bytes = readBytes(**found, MaximumTextBytes);
+            if (!bytes)
+            {
+                return std::unexpected(bytes.error());
+            }
+            if (m_cache != nullptr && isCacheableDecodedResource(**found))
+            {
+                if (auto cached = m_cache->findText(request.id()))
+                {
+                    diagnostic.markCacheHit();
+                    if (const auto size = resourceDecodedPayloadBytes(*cached))
+                    {
+                        diagnostic.setDecodedBytes(*size);
+                    }
+                    return ScopedResource<QString>(std::move(*cached), request.scope());
+                }
+            }
+
+            QStringDecoder decoder(QStringDecoder::Utf8);
+            const QString text = decoder(*bytes);
+            if (decoder.hasError())
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::CorruptResource,
+                    QStringLiteral("text resource is not valid UTF-8")
+                    ));
+            }
+            if (m_cache != nullptr && isCacheableDecodedResource(**found))
+            {
+                m_cache->insertText(request.id(), text, request.scope());
+            }
+            if (const auto size = resourceDecodedPayloadBytes(text))
+            {
+                diagnostic.setDecodedBytes(*size);
+            }
+            return ScopedResource<QString>(text, request.scope());
         }
-    }
-
-    QStringDecoder decoder(QStringDecoder::Utf8);
-    const QString text = decoder(*bytes);
-    if (decoder.hasError())
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::CorruptResource,
-            QStringLiteral("text resource is not valid UTF-8")
-            ));
-    }
-    if (m_cache != nullptr && isCacheableDecodedResource(**found))
-    {
-        m_cache->insertText(request.id(), text, request.scope());
-    }
-    return ScopedResource<QString>(text, request.scope());
+        );
 }
 
 ResourceResult<ScopedResource<QJsonDocument>> ResourceLoader::loadJson(
     const ResourceRequest& request
     ) const
 {
-    auto found = descriptor(request.id());
-    if (!found)
-    {
-        return std::unexpected(found.error());
-    }
-    if ((*found)->expectedType() != ResourceType::Json)
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::TypeMismatch,
-            QStringLiteral("resource is not cataloged as JSON")
-            ));
-    }
+    return withDiagnostics<ScopedResource<QJsonDocument>>(
+        m_diagnostics,
+        request,
+        m_cache,
+        [&](ResourceDiagnosticRecorder& diagnostic)
+            -> ResourceResult<ScopedResource<QJsonDocument>> {
+            auto found = descriptor(request.id());
+            if (!found)
+            {
+                return std::unexpected(found.error());
+            }
+            diagnostic.setSourceBytes((*found)->sourceBytes());
+            if ((*found)->expectedType() != ResourceType::Json)
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::TypeMismatch,
+                    QStringLiteral("resource is not cataloged as JSON")
+                    ));
+            }
 
-    auto bytes = readBytes(**found, MaximumTextBytes);
-    if (!bytes)
-    {
-        return std::unexpected(bytes.error());
-    }
-    if (m_cache != nullptr && isCacheableDecodedResource(**found))
-    {
-        if (auto cached = m_cache->findJson(request.id()))
-        {
-            return ScopedResource<QJsonDocument>(std::move(*cached), request.scope());
+            auto bytes = readBytes(**found, MaximumTextBytes);
+            if (!bytes)
+            {
+                return std::unexpected(bytes.error());
+            }
+            if (m_cache != nullptr && isCacheableDecodedResource(**found))
+            {
+                if (auto cached = m_cache->findJson(request.id()))
+                {
+                    diagnostic.markCacheHit();
+                    if (const auto size = resourceDecodedPayloadBytes(*cached))
+                    {
+                        diagnostic.setDecodedBytes(*size);
+                    }
+                    return ScopedResource<QJsonDocument>(std::move(*cached), request.scope());
+                }
+            }
+
+            QJsonParseError parseError;
+            const QJsonDocument document = QJsonDocument::fromJson(*bytes, &parseError);
+            if (parseError.error != QJsonParseError::NoError || document.isNull())
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::CorruptResource,
+                    QStringLiteral("JSON resource cannot be parsed: ") + parseError.errorString()
+                    ));
+            }
+            if (m_cache != nullptr && isCacheableDecodedResource(**found))
+            {
+                m_cache->insertJson(request.id(), document, request.scope());
+            }
+            if (const auto size = resourceDecodedPayloadBytes(document))
+            {
+                diagnostic.setDecodedBytes(*size);
+            }
+            return ScopedResource<QJsonDocument>(document, request.scope());
         }
-    }
-
-    QJsonParseError parseError;
-    const QJsonDocument document = QJsonDocument::fromJson(*bytes, &parseError);
-    if (parseError.error != QJsonParseError::NoError || document.isNull())
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::CorruptResource,
-            QStringLiteral("JSON resource cannot be parsed: ") + parseError.errorString()
-            ));
-    }
-    if (m_cache != nullptr && isCacheableDecodedResource(**found))
-    {
-        m_cache->insertJson(request.id(), document, request.scope());
-    }
-    return ScopedResource<QJsonDocument>(document, request.scope());
+        );
 }
 
 ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImage(
     const ResourceRequest& request
     ) const
 {
-    auto found = descriptor(request.id());
-    if (!found)
-    {
-        return std::unexpected(found.error());
-    }
-    if (!isImageType((*found)->expectedType()))
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::TypeMismatch,
-            QStringLiteral("resource is not cataloged as an image")
-            ));
-    }
+    return withDiagnostics<ScopedResource<QImage>>(
+        m_diagnostics,
+        request,
+        m_cache,
+        [&](ResourceDiagnosticRecorder& diagnostic) -> ResourceResult<ScopedResource<QImage>> {
+            auto found = descriptor(request.id());
+            if (!found)
+            {
+                return std::unexpected(found.error());
+            }
+            diagnostic.setSourceBytes((*found)->sourceBytes());
+            if (!isImageType((*found)->expectedType()))
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::TypeMismatch,
+                    QStringLiteral("resource is not cataloged as an image")
+                    ));
+            }
 
-    auto bytes = readBytes(**found, MaximumImageBytes);
-    if (!bytes)
-    {
-        return std::unexpected(bytes.error());
-    }
-    if (m_cache != nullptr && isCacheableDecodedResource(**found))
-    {
-        if (auto cached = m_cache->findImage(request.id()))
-        {
-            return ScopedResource<QImage>(std::move(*cached), request.scope());
+            auto bytes = readBytes(**found, MaximumImageBytes);
+            if (!bytes)
+            {
+                return std::unexpected(bytes.error());
+            }
+            if (m_cache != nullptr && isCacheableDecodedResource(**found))
+            {
+                if (auto cached = m_cache->findImage(request.id()))
+                {
+                    diagnostic.markCacheHit();
+                    if (const auto size = resourceDecodedPayloadBytes(*cached))
+                    {
+                        diagnostic.setDecodedBytes(*size);
+                    }
+                    return ScopedResource<QImage>(std::move(*cached), request.scope());
+                }
+            }
+
+            QBuffer buffer(&*bytes);
+            if (!buffer.open(QIODevice::ReadOnly))
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::DecodeError,
+                    QStringLiteral("cannot open image resource data")
+                    ));
+            }
+            QImageReader reader(&buffer);
+            reader.setDecideFormatFromContent(true);
+            const QImage image = reader.read();
+            if (image.isNull())
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::DecodeError,
+                    QStringLiteral("image resource cannot be decoded: ") + reader.errorString()
+                    ));
+            }
+            if (m_cache != nullptr && isCacheableDecodedResource(**found))
+            {
+                m_cache->insertImage(request.id(), image, request.scope());
+            }
+            if (const auto size = resourceDecodedPayloadBytes(image))
+            {
+                diagnostic.setDecodedBytes(*size);
+            }
+            return ScopedResource<QImage>(image, request.scope());
         }
-    }
-
-    QBuffer buffer(&*bytes);
-    if (!buffer.open(QIODevice::ReadOnly))
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::DecodeError,
-            QStringLiteral("cannot open image resource data")
-            ));
-    }
-    QImageReader reader(&buffer);
-    reader.setDecideFormatFromContent(true);
-    const QImage image = reader.read();
-    if (image.isNull())
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::DecodeError,
-            QStringLiteral("image resource cannot be decoded: ") + reader.errorString()
-            ));
-    }
-    if (m_cache != nullptr && isCacheableDecodedResource(**found))
-    {
-        m_cache->insertImage(request.id(), image, request.scope());
-    }
-    return ScopedResource<QImage>(image, request.scope());
+        );
 }
 
 ResourceResult<ScopedResource<RegisteredFont>> ResourceLoader::loadFont(
     const ResourceRequest& request
     ) const
 {
-    auto found = descriptor(request.id());
-    if (!found)
-    {
-        return std::unexpected(found.error());
-    }
-    if (!isFontType((*found)->expectedType()))
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::TypeMismatch,
-            QStringLiteral("resource is not cataloged as a font")
-            ));
-    }
+    return withDiagnostics<ScopedResource<RegisteredFont>>(
+        m_diagnostics,
+        request,
+        m_cache,
+        [&](ResourceDiagnosticRecorder& diagnostic)
+            -> ResourceResult<ScopedResource<RegisteredFont>> {
+            auto found = descriptor(request.id());
+            if (!found)
+            {
+                return std::unexpected(found.error());
+            }
+            diagnostic.setSourceBytes((*found)->sourceBytes());
+            if (!isFontType((*found)->expectedType()))
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::TypeMismatch,
+                    QStringLiteral("resource is not cataloged as a font")
+                    ));
+            }
 
-    auto bytes = readBytes(**found, MaximumFontBytes);
-    if (!bytes)
-    {
-        return std::unexpected(bytes.error());
-    }
-    const int registrationId = QFontDatabase::addApplicationFontFromData(*bytes);
-    if (registrationId < 0)
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::RegistrationFailed,
-            QStringLiteral("Qt could not register the font resource")
-            ));
-    }
-    const QStringList families = QFontDatabase::applicationFontFamilies(registrationId);
-    if (families.isEmpty())
-    {
-        QFontDatabase::removeApplicationFont(registrationId);
-        return std::unexpected(error(
-            ResourceErrorCode::RegistrationFailed,
-            QStringLiteral("registered font resource has no family names")
-            ));
-    }
-    return ScopedResource<RegisteredFont>(
-        RegisteredFont(registrationId, families),
-        request.scope()
+            auto bytes = readBytes(**found, MaximumFontBytes);
+            if (!bytes)
+            {
+                return std::unexpected(bytes.error());
+            }
+            const int registrationId = QFontDatabase::addApplicationFontFromData(*bytes);
+            if (registrationId < 0)
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::RegistrationFailed,
+                    QStringLiteral("Qt could not register the font resource")
+                    ));
+            }
+            const QStringList families = QFontDatabase::applicationFontFamilies(registrationId);
+            if (families.isEmpty())
+            {
+                QFontDatabase::removeApplicationFont(registrationId);
+                return std::unexpected(error(
+                    ResourceErrorCode::RegistrationFailed,
+                    QStringLiteral("registered font resource has no family names")
+                    ));
+            }
+            return ScopedResource<RegisteredFont>(
+                RegisteredFont(registrationId, families),
+                request.scope()
+                );
+        }
         );
 }
 
@@ -676,23 +795,7 @@ ResourceResult<ScopedResource<QString>> ResourceLoader::loadStylesheet(
     const ResourceRequest& request
     ) const
 {
-    const ResourceDescriptor* found = m_catalog.find(request.id());
-    if (found == nullptr)
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::NotFound,
-            QStringLiteral("resource ID is not present in the loaded catalog: ")
-                + request.id().value()
-            ));
-    }
-    if (found->expectedType() != ResourceType::Stylesheet)
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::TypeMismatch,
-            QStringLiteral("resource is not cataloged as a stylesheet")
-            ));
-    }
-    return loadText(request);
+    return loadTextResource(request, ResourceType::Stylesheet);
 }
 
 ResourceResult<ScopedResource<ResourceTranslation>> ResourceLoader::loadTranslation(
@@ -700,118 +803,136 @@ ResourceResult<ScopedResource<ResourceTranslation>> ResourceLoader::loadTranslat
     QCoreApplication& application
     ) const
 {
-    auto found = descriptor(request.id());
-    if (!found)
-    {
-        return std::unexpected(found.error());
-    }
-    if ((*found)->expectedType() != ResourceType::Qm
-        || (*found)->location() != ResourceLocation::PackageFile)
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::TypeMismatch,
-            QStringLiteral("resource is not a file-backed Qt translation")
-            ));
-    }
-    if (QCoreApplication::instance() != &application)
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::InvalidArgument,
-            QStringLiteral("translation installation requires the current QCoreApplication")
-            ));
-    }
+    return withDiagnostics<ScopedResource<ResourceTranslation>>(
+        m_diagnostics,
+        request,
+        m_cache,
+        [&](ResourceDiagnosticRecorder& diagnostic)
+            -> ResourceResult<ScopedResource<ResourceTranslation>> {
+            auto found = descriptor(request.id());
+            if (!found)
+            {
+                return std::unexpected(found.error());
+            }
+            diagnostic.setSourceBytes((*found)->sourceBytes());
+            if ((*found)->expectedType() != ResourceType::Qm
+                || (*found)->location() != ResourceLocation::PackageFile)
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::TypeMismatch,
+                    QStringLiteral("resource is not a file-backed Qt translation")
+                    ));
+            }
+            if (QCoreApplication::instance() != &application)
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::InvalidArgument,
+                    QStringLiteral("translation installation requires the current QCoreApplication")
+                    ));
+            }
 
-    auto bytes = readBytes(**found, MaximumTranslationBytes);
-    if (!bytes)
-    {
-        return std::unexpected(bytes.error());
-    }
-    if (bytes->size() > std::numeric_limits<int>::max())
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::UnsupportedOperation,
-            QStringLiteral("translation resource is too large for QTranslator")
-            ));
-    }
+            auto bytes = readBytes(**found, MaximumTranslationBytes);
+            if (!bytes)
+            {
+                return std::unexpected(bytes.error());
+            }
+            if (bytes->size() > std::numeric_limits<int>::max())
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::UnsupportedOperation,
+                    QStringLiteral("translation resource is too large for QTranslator")
+                    ));
+            }
 
-    auto translator = std::make_unique<QTranslator>();
-    if (!translator->load(
-            reinterpret_cast<const uchar*>(bytes->constData()),
-            static_cast<int>(bytes->size())
-            ))
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::CorruptResource,
-            QStringLiteral("Qt cannot load the compiled translation resource")
-            ));
-    }
+            auto translator = std::make_unique<QTranslator>();
+            if (!translator->load(
+                    reinterpret_cast<const uchar*>(bytes->constData()),
+                    static_cast<int>(bytes->size())
+                    ))
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::CorruptResource,
+                    QStringLiteral("Qt cannot load the compiled translation resource")
+                    ));
+            }
 
-    ResourceTranslation result(std::move(*bytes), std::move(translator), &application);
-    if (!QCoreApplication::installTranslator(result.m_translator.get()))
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::RegistrationFailed,
-            QStringLiteral("Qt refused to install the translation resource")
-            ));
-    }
-    result.m_installed = true;
-    return ScopedResource<ResourceTranslation>(std::move(result), request.scope());
+            ResourceTranslation result(std::move(*bytes), std::move(translator), &application);
+            if (!QCoreApplication::installTranslator(result.m_translator.get()))
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::RegistrationFailed,
+                    QStringLiteral("Qt refused to install the translation resource")
+                    ));
+            }
+            result.m_installed = true;
+            return ScopedResource<ResourceTranslation>(std::move(result), request.scope());
+        }
+        );
 }
 
 ResourceResult<ScopedResource<ResourceFileStream>> ResourceLoader::openStream(
     const ResourceRequest& request
     ) const
 {
-    auto found = descriptor(request.id());
-    if (!found)
-    {
-        return std::unexpected(found.error());
-    }
-    const ResourceDescriptor& resource = **found;
-    if (resource.location() != ResourceLocation::PackageFile)
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::UnsupportedOperation,
-            QStringLiteral("Qt resource URLs do not have package file streams")
-            ));
-    }
-    if (resource.streamabilityStatus() == QStringLiteral("no"))
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::UnsupportedOperation,
-            QStringLiteral("catalog marks this resource as non-streamable")
-            ));
-    }
+    return withDiagnostics<ScopedResource<ResourceFileStream>>(
+        m_diagnostics,
+        request,
+        m_cache,
+        [&](ResourceDiagnosticRecorder& diagnostic)
+            -> ResourceResult<ScopedResource<ResourceFileStream>> {
+            auto found = descriptor(request.id());
+            if (!found)
+            {
+                return std::unexpected(found.error());
+            }
+            const ResourceDescriptor& resource = **found;
+            diagnostic.setSourceBytes(resource.sourceBytes());
+            if (resource.location() != ResourceLocation::PackageFile)
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::UnsupportedOperation,
+                    QStringLiteral("Qt resource URLs do not have package file streams")
+                    ));
+            }
+            if (resource.streamabilityStatus() == QStringLiteral("no"))
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::UnsupportedOperation,
+                    QStringLiteral("catalog marks this resource as non-streamable")
+                    ));
+            }
 
-    auto path = packageFilePath(resource);
-    if (!path)
-    {
-        return std::unexpected(path.error());
-    }
-    auto verified = verifyFile(resource, *path);
-    if (!verified)
-    {
-        return std::unexpected(verified.error());
-    }
+            auto path = packageFilePath(resource);
+            if (!path)
+            {
+                return std::unexpected(path.error());
+            }
+            auto verified = verifyFile(resource, *path);
+            if (!verified)
+            {
+                return std::unexpected(verified.error());
+            }
 
-    // Re-resolve after verification so a changed symlink is checked before the
-    // owning QFile handle is opened.
-    path = packageFilePath(resource);
-    if (!path)
-    {
-        return std::unexpected(path.error());
-    }
-    auto file = std::make_unique<QFile>(*path);
-    if (!file->open(QIODevice::ReadOnly))
-    {
-        return std::unexpected(error(
-            ResourceErrorCode::IoError,
-            QStringLiteral("cannot open file-backed resource stream: ") + file->errorString()
-            ));
-    }
-    return ScopedResource<ResourceFileStream>(
-        ResourceFileStream(std::move(file)),
-        request.scope()
+            // Re-resolve after verification so a changed symlink is checked before the
+            // owning QFile handle is opened.
+            path = packageFilePath(resource);
+            if (!path)
+            {
+                return std::unexpected(path.error());
+            }
+            auto file = std::make_unique<QFile>(*path);
+            if (!file->open(QIODevice::ReadOnly))
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::IoError,
+                    QStringLiteral("cannot open file-backed resource stream: ") + file->errorString()
+                    ));
+            }
+            return ScopedResource<ResourceFileStream>(
+                ResourceFileStream(std::move(file)),
+                request.scope()
+                );
+        }
         );
 }
 

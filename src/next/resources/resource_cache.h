@@ -32,6 +32,13 @@ public:
         ResourceScope scope;
     };
 
+    struct Snapshot final
+    {
+        qint64 capacityBytes;
+        qint64 accountedBytes;
+        std::optional<EntryInfo> entry;
+    };
+
     explicit ResourceCache(qint64 capacityBytes);
 
     ResourceCache(const ResourceCache&) = delete;
@@ -49,6 +56,8 @@ public:
     [[nodiscard]] std::optional<QString> findText(const ResourceId& id);
     [[nodiscard]] std::optional<QJsonDocument> findJson(const ResourceId& id);
     [[nodiscard]] std::optional<QImage> findImage(const ResourceId& id);
+
+    [[nodiscard]] Snapshot snapshot(const ResourceId& id) const;
 
     void insertText(
         const ResourceId& id,

@@ -97,6 +97,22 @@ std::optional<QImage> ResourceCache::findImage(const ResourceId& id)
     return std::get<QImage>(found->value);
 }
 
+ResourceCache::Snapshot ResourceCache::snapshot(const ResourceId& id) const
+{
+    const std::lock_guard lock(m_mutex);
+    const auto found = m_entries.find(id.value());
+    std::optional<EntryInfo> entry;
+    if (found != m_entries.end())
+    {
+        entry = EntryInfo{
+            found->second.kind,
+            found->second.accountedBytes,
+            found->second.scope
+        };
+    }
+    return Snapshot{m_capacityBytes, m_accountedBytes, std::move(entry)};
+}
+
 void ResourceCache::insertText(
     const ResourceId& id,
     const QString& value,

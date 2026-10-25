@@ -644,6 +644,8 @@ set(CLASSMNGR_NEXT_RESOURCES_SOURCES
     "src/next/resources/resource_catalog.h"
     "src/next/resources/resource_cache.cpp"
     "src/next/resources/resource_cache.h"
+    "src/next/resources/resource_diagnostics.cpp"
+    "src/next/resources/resource_diagnostics.h"
     "src/next/resources/resource_descriptor.h"
     "src/next/resources/resource_error.h"
     "src/next/resources/resource_id.h"

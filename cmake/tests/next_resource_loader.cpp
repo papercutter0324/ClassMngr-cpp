@@ -17,6 +17,7 @@
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #if defined(Q_OS_UNIX)
 #include <fcntl.h>
@@ -65,6 +66,17 @@ bool scopeMatches(
     )
 {
     return scope.kind() == kind && scope.ownerLabel() == ownerLabel;
+}
+
+bool diagnosticMatches(
+    const ResourceDiagnostic& diagnostic,
+    const ResourceId& id,
+    ResourceScopeKind kind,
+    const QString& ownerLabel
+    )
+{
+    return diagnostic.resourceId == id
+        && scopeMatches(diagnostic.scope, kind, ownerLabel);
 }
 
 bool stageFile(
@@ -146,6 +158,13 @@ bool testResourceCacheCore()
     if (cache.accountedBytes() != 16 || cache.entryCount() != 2)
     {
         return fail(QStringLiteral("resource cache byte accounting was incorrect"));
+    }
+    const auto firstSnapshot = cache.snapshot(*firstId);
+    if (firstSnapshot.capacityBytes != 16 || firstSnapshot.accountedBytes != 16
+        || !firstSnapshot.entry || firstSnapshot.entry->kind != ResourceCacheValueKind::Text
+        || firstSnapshot.entry->accountedBytes != 8)
+    {
+        return fail(QStringLiteral("resource cache snapshot was not a coherent value view"));
     }
 
     const auto firstHit = cache.findText(*firstId);
@@ -425,7 +444,14 @@ bool testLoader(QCoreApplication& application)
             + cachedCatalog.error().message);
     }
     ResourceCache loaderCache(64 * 1024 * 1024);
-    ResourceLoader cachedLoader(std::move(*cachedCatalog), loaderCache);
+    std::vector<ResourceDiagnostic> cacheDiagnostics;
+    ResourceLoader cachedLoader(
+        std::move(*cachedCatalog),
+        loaderCache,
+        [&cacheDiagnostics](const ResourceDiagnostic& diagnostic) {
+            cacheDiagnostics.push_back(diagnostic);
+        }
+        );
 
     auto cachedJson = cachedLoader.loadJson(*jsonRequest);
     if (!cachedJson || !cachedJson->get().isObject())
@@ -437,6 +463,30 @@ bool testLoader(QCoreApplication& application)
     const qint64 jsonWeight = static_cast<qint64>(
         cachedJson->get().toJson(QJsonDocument::Compact).size()
         );
+    const ResourceDescriptor* cachedJsonDescriptor = cachedLoader.catalog().find(*jsonId);
+    const auto jsonCacheSnapshot = loaderCache.snapshot(*jsonId);
+    if (cacheDiagnostics.size() != 1 || cachedJsonDescriptor == nullptr
+        || !jsonCacheSnapshot.entry
+        || !diagnosticMatches(
+            cacheDiagnostics.back(),
+            *jsonId,
+            ResourceScopeKind::Startup,
+            QStringLiteral("CampusCatalog")
+            )
+        || !cacheDiagnostics.back().succeeded
+        || cacheDiagnostics.back().errorCode.has_value()
+        || cacheDiagnostics.back().cacheHit
+        || cacheDiagnostics.back().elapsed.count() < 0
+        || cacheDiagnostics.back().sourceBytes != cachedJsonDescriptor->sourceBytes()
+        || cacheDiagnostics.back().decodedBytes != jsonWeight
+        || jsonCacheSnapshot.entry->accountedBytes != jsonWeight
+        || cacheDiagnostics.back().cacheEntryAccountedBytes
+            != jsonCacheSnapshot.entry->accountedBytes
+        || cacheDiagnostics.back().cacheAccountedBytes != jsonCacheSnapshot.accountedBytes
+        || cacheDiagnostics.back().cacheCapacityBytes != jsonCacheSnapshot.capacityBytes)
+    {
+        return fail(QStringLiteral("JSON cache-miss diagnostic fields were incorrect"));
+    }
     const auto jsonMetadata = loaderCache.entryInfo(*jsonId);
     auto jsonHitRequest = resourceRequest(
         *jsonId,
@@ -463,6 +513,20 @@ bool testLoader(QCoreApplication& application)
             ))
     {
         return fail(QStringLiteral("JSON cache hit did not return a newly scoped owning handle"));
+    }
+    if (cacheDiagnostics.size() != 2
+        || !diagnosticMatches(
+            cacheDiagnostics.back(),
+            *jsonId,
+            ResourceScopeKind::Operation,
+            QStringLiteral("JsonCacheProbe")
+            )
+        || !cacheDiagnostics.back().succeeded
+        || !cacheDiagnostics.back().cacheHit
+        || cacheDiagnostics.back().decodedBytes != jsonWeight
+        || cacheDiagnostics.back().cacheEntryAccountedBytes != jsonWeight)
+    {
+        return fail(QStringLiteral("JSON cache-hit diagnostic did not use the current owner"));
     }
 
     const QString cachedJsonPath = QDir(packageRoot).filePath(
@@ -498,12 +562,33 @@ bool testLoader(QCoreApplication& application)
     {
         return fail(QStringLiteral("JSON cache hit bypassed catalog integrity validation"));
     }
+    if (cacheDiagnostics.size() != 3
+        || !diagnosticMatches(
+            cacheDiagnostics.back(),
+            *jsonId,
+            ResourceScopeKind::Operation,
+            QStringLiteral("JsonCacheProbe")
+            )
+        || cacheDiagnostics.back().succeeded
+        || cacheDiagnostics.back().errorCode != ResourceErrorCode::CorruptResource
+        || cacheDiagnostics.back().cacheHit
+        || cacheDiagnostics.back().decodedBytes.has_value())
+    {
+        return fail(QStringLiteral("corrupt cached JSON diagnostic did not report its error"));
+    }
 
     auto cachedImage = cachedLoader.loadImage(*imageRequest);
     if (!cachedImage || cachedImage->get().isNull())
     {
         return fail(QStringLiteral("cached loader image load failed: ")
             + (cachedImage ? QStringLiteral("image was null") : cachedImage.error().message));
+    }
+    if (cacheDiagnostics.size() != 4
+        || cacheDiagnostics.back().decodedBytes != cachedImage->get().sizeInBytes()
+        || cacheDiagnostics.back().cacheHit
+        || !cacheDiagnostics.back().succeeded)
+    {
+        return fail(QStringLiteral("image cache-miss diagnostic size or outcome was incorrect"));
     }
     const auto imageMetadata = loaderCache.entryInfo(*imageId);
     if (!imageMetadata || imageMetadata->kind != ResourceCacheValueKind::Image
@@ -531,12 +616,54 @@ bool testLoader(QCoreApplication& application)
     {
         return fail(QStringLiteral("image cache hit did not return a newly scoped owning handle"));
     }
-
-    auto cachedStylesheet = cachedLoader.loadStylesheet(*stylesheetRequest);
-    auto cachedQmlText = cachedLoader.loadText(*qmlRequest);
-    if (!cachedStylesheet || !cachedQmlText)
+    if (cacheDiagnostics.size() != 5
+        || !diagnosticMatches(
+            cacheDiagnostics.back(),
+            *imageId,
+            ResourceScopeKind::Operation,
+            QStringLiteral("ImageCacheProbe")
+            )
+        || !cacheDiagnostics.back().cacheHit
+        || cacheDiagnostics.back().decodedBytes != cachedImageHit->get().sizeInBytes())
     {
-        return fail(QStringLiteral("cached loader failed to decode text resources"));
+        return fail(QStringLiteral("image cache-hit diagnostic did not report its current scope"));
+    }
+
+    const qsizetype beforeStylesheetEvents = static_cast<qsizetype>(cacheDiagnostics.size());
+    auto cachedStylesheet = cachedLoader.loadStylesheet(*stylesheetRequest);
+    if (!cachedStylesheet
+        || static_cast<qsizetype>(cacheDiagnostics.size()) != beforeStylesheetEvents + 1)
+    {
+        return fail(QStringLiteral("stylesheet loading failed or emitted duplicate diagnostics"));
+    }
+    if (!diagnosticMatches(
+            cacheDiagnostics.back(),
+            *stylesheetId,
+            ResourceScopeKind::Feature,
+            QStringLiteral("Theme")
+            )
+        || !cacheDiagnostics.back().succeeded)
+    {
+        return fail(QStringLiteral("stylesheet diagnostic did not report its logical request"));
+    }
+    auto cachedQmlText = cachedLoader.loadText(*qmlRequest);
+    if (!cachedQmlText)
+    {
+        return fail(QStringLiteral("cached loader failed to decode QML text"));
+    }
+    if (static_cast<qsizetype>(cacheDiagnostics.size()) != beforeStylesheetEvents + 2
+        || !diagnosticMatches(
+            cacheDiagnostics.back(),
+            *qmlId,
+            ResourceScopeKind::Page,
+            QStringLiteral("EventCalendar")
+            )
+        || cacheDiagnostics.back().decodedBytes
+            != std::optional<qint64>(
+                static_cast<qint64>(cachedQmlText->get().size()) * qint64(sizeof(QChar))
+                ))
+    {
+        return fail(QStringLiteral("QML text diagnostic was missing or mis-scoped"));
     }
     const auto stylesheetMetadata = loaderCache.entryInfo(*stylesheetId);
     const auto qmlMetadata = loaderCache.entryInfo(*qmlId);
@@ -549,6 +676,7 @@ bool testLoader(QCoreApplication& application)
 
     const qsizetype cachedEntryCount = loaderCache.entryCount();
     const qint64 cachedAccountedBytes = loaderCache.accountedBytes();
+    const qsizetype beforeFontEvents = static_cast<qsizetype>(cacheDiagnostics.size());
     {
         auto uncachedFont = cachedLoader.loadFont(*fontRequest);
         if (!uncachedFont || uncachedFont->get().familyNames().isEmpty())
@@ -558,6 +686,19 @@ bool testLoader(QCoreApplication& application)
                                 : uncachedFont.error().message));
         }
     }
+    if (static_cast<qsizetype>(cacheDiagnostics.size()) != beforeFontEvents + 1
+        || !diagnosticMatches(
+            cacheDiagnostics.back(),
+            *fontId,
+            ResourceScopeKind::Feature,
+            QStringLiteral("Typography")
+            )
+        || !cacheDiagnostics.back().succeeded
+        || cacheDiagnostics.back().decodedBytes.has_value())
+    {
+        return fail(QStringLiteral("font diagnostic decoded size should remain unavailable"));
+    }
+    const qsizetype beforeTranslationEvents = static_cast<qsizetype>(cacheDiagnostics.size());
     {
         auto uncachedTranslation = cachedLoader.loadTranslation(*translationRequest, application);
         if (!uncachedTranslation || !uncachedTranslation->get().isInstalled())
@@ -567,6 +708,19 @@ bool testLoader(QCoreApplication& application)
                                        : uncachedTranslation.error().message));
         }
     }
+    if (static_cast<qsizetype>(cacheDiagnostics.size()) != beforeTranslationEvents + 1
+        || !diagnosticMatches(
+            cacheDiagnostics.back(),
+            *translationId,
+            ResourceScopeKind::Feature,
+            QStringLiteral("KoreanTranslation")
+            )
+        || !cacheDiagnostics.back().succeeded
+        || cacheDiagnostics.back().decodedBytes.has_value())
+    {
+        return fail(QStringLiteral("translation diagnostic decoded size should remain unavailable"));
+    }
+    const qsizetype beforeStreamEvents = static_cast<qsizetype>(cacheDiagnostics.size());
     {
         auto uncachedPdfStream = cachedLoader.openStream(*pdfRequest);
         if (!uncachedPdfStream || !uncachedPdfStream->get().isOpen()
@@ -578,6 +732,70 @@ bool testLoader(QCoreApplication& application)
                 "font, translation, or PDF stream paths changed cache contents"
                 ));
         }
+    }
+    const ResourceDescriptor* pdfDescriptor = cachedLoader.catalog().find(*pdfId);
+    if (static_cast<qsizetype>(cacheDiagnostics.size()) != beforeStreamEvents + 1
+        || pdfDescriptor == nullptr
+        || !diagnosticMatches(
+            cacheDiagnostics.back(),
+            *pdfId,
+            ResourceScopeKind::Operation,
+            QStringLiteral("RubricPreview")
+            )
+        || !cacheDiagnostics.back().succeeded
+        || cacheDiagnostics.back().decodedBytes.has_value()
+        || cacheDiagnostics.back().sourceBytes != pdfDescriptor->sourceBytes())
+    {
+        return fail(QStringLiteral("PDF stream diagnostic read a decoded size or lost source size"));
+    }
+
+    const qsizetype beforeTypeMismatchEvents = static_cast<qsizetype>(cacheDiagnostics.size());
+    auto diagnosticTypeMismatch = cachedLoader.loadImage(*jsonRequest);
+    if (diagnosticTypeMismatch
+        || diagnosticTypeMismatch.error().code != ResourceErrorCode::TypeMismatch
+        || static_cast<qsizetype>(cacheDiagnostics.size()) != beforeTypeMismatchEvents + 1
+        || cacheDiagnostics.back().succeeded
+        || cacheDiagnostics.back().errorCode != ResourceErrorCode::TypeMismatch
+        || cacheDiagnostics.back().decodedBytes.has_value())
+    {
+        return fail(QStringLiteral("type-mismatch diagnostic did not report the error outcome"));
+    }
+
+    std::vector<ResourceDiagnostic> isolatedDiagnostics;
+    ResourceLoader isolatedDiagnosticsLoader(
+        cachedLoader.catalog(),
+        [&isolatedDiagnostics](const ResourceDiagnostic& diagnostic) {
+            isolatedDiagnostics.push_back(diagnostic);
+        }
+        );
+    const qsizetype cachedEventCountBeforeIsolatedLoad =
+        static_cast<qsizetype>(cacheDiagnostics.size());
+    auto isolatedText = isolatedDiagnosticsLoader.loadText(*qmlRequest);
+    if (!isolatedText || isolatedDiagnostics.size() != 1
+        || static_cast<qsizetype>(cacheDiagnostics.size()) != cachedEventCountBeforeIsolatedLoad
+        || !diagnosticMatches(
+            isolatedDiagnostics.back(),
+            *qmlId,
+            ResourceScopeKind::Page,
+            QStringLiteral("EventCalendar")
+            )
+        || !isolatedDiagnostics.back().succeeded
+        || isolatedDiagnostics.back().cacheAccountedBytes.has_value()
+        || isolatedDiagnostics.back().cacheCapacityBytes.has_value())
+    {
+        return fail(QStringLiteral("resource diagnostic sinks were shared across loader instances"));
+    }
+
+    ResourceLoader throwingDiagnosticsLoader(
+        cachedLoader.catalog(),
+        [](const ResourceDiagnostic&) {
+            throw std::runtime_error("diagnostic sink failure");
+        }
+        );
+    auto loadWithThrowingDiagnostics = throwingDiagnosticsLoader.loadText(*qmlRequest);
+    if (!loadWithThrowingDiagnostics)
+    {
+        return fail(QStringLiteral("throwing diagnostics sink changed the resource load result"));
     }
 
     auto json = loader.loadJson(*jsonRequest);
