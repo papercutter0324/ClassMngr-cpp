@@ -74,3 +74,25 @@ and QtPdf 6.140.0; configure, build, link, and test succeeded without an
 observed compatibility failure. The metadata mismatch remains unresolved, and
 fresh cross-platform compatibility is not established. F1475 is committed as
 `8a2163d2`.
+
+## F1476 — Scope Office exports to operations — accepted — 2026-10-25
+
+`DocumentExportResourcePort` validates production document-export references,
+maps them to `document.body:<path>`, and requires a cataloged
+`documents`/`document_body` PPTX or DOCX descriptor with a matching package
+path. It requests only that body under explicit Operation scope and returns a
+move-only loader-owned stream with explicit close and RAII release. It has no
+`ResourcePackManager` fallback or startup preload and is not wired to legacy
+report/workspace UI. Primary document selection still does not open export
+bodies. The legacy Speaking Evaluation workspace and cleanup tests were
+untouched; unreferenced PPTX and roster XLSX remain for F1482.
+
+`cmake --build --preset macos-clang-debug` passed incrementally on the standard
+macOS universal Debug configuration. Focused export/PDF port build and CTest
+passed 2/2; after the RAII pointer assertion delta, independent export-port
+CTest passed 1/1. Tests confirm metadata/catalog setup requests no bodies,
+unselected Office bodies are absent, selected PPTX and DOCX each emit one
+Operation diagnostic, explicit close and owner destruction release handles,
+and malformed, non-Office, or missing inputs fail without fallback.
+`git diff --check` passed. Windows/Linux and the full suite were not run. F1476
+is committed as `2bbbd23d`; F1477 is active.

@@ -48,10 +48,15 @@ legacy oracle paths in Phase 4.
    viewer. Qt Core/QtPdf cache versions differ; configuration, build, link,
    and focused test succeeded, but cross-platform compatibility remains
    unverified.
-8. **F1476 — Scope Office/report inputs to operations (active).** Preserve
-   temporary workspace cleanup and do not preload PowerPoint bodies.
-9. **F1477 — Define resource failure behavior.** Cover missing, corrupt, and
-   type-mismatched files/catalog entries with no pack fallback.
+8. **F1476 — Scope Office/report inputs to operations.** Accepted and
+   committed as `2bbbd23d`. The independent export port validates cataloged
+   PPTX/DOCX references and opens only the selected body under Operation scope,
+   returning a move-only stream with explicit close and RAII release. It has no
+   pack fallback or startup preload and is not wired to legacy report/workspace
+   UI; the Speaking Evaluation workspace remains unchanged. Unreferenced PPTX
+   and roster XLSX remain for F1482.
+9. **F1477 — Define resource failure behavior (active).** Cover missing,
+   corrupt, and type-mismatched files/catalog entries with no pack fallback.
 10. **F1478 — Verify type-specific lazy loads.** Exercise text, JSON, image,
     font, stylesheet, translation, and stream paths without migrating legacy
     feature UI consumers.

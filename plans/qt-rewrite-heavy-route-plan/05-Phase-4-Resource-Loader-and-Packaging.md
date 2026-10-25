@@ -44,8 +44,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   document catalog metadata, is accepted and committed as `2084cb4f`; F1474,
   loader-owned document content handles, is accepted and committed as
   `34926f4b`; F1475, isolated QtPdf session-release verification, is accepted
-  and committed as `8a2163d2`; F1476 is active. F1469 is committed as
-  `d282e7f1`.
+  and committed as `8a2163d2`; F1476, operation-scoped Office export inputs,
+  is accepted and committed as `2bbbd23d`; F1477 is active. F1469 is committed
+  as `d282e7f1`.
   Batch 1
   (F1464–F1468) was pushed to `origin`; see the [Phase 4 progress log](05-Phase-4-Progress-Log.md)
   for the receipt. F1469 resolves
@@ -60,6 +61,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   component is excluded from the default legacy install. Preserve the legacy
   viewer path until consumer migration. F1475 verifies QtPdf stream release
   in an isolated test; it does not wire the port into the production viewer.
+  F1476 adds operation-scoped Office export loading without legacy report or
+  workspace UI wiring.
   Theme/font/icon/campus/report UI consumers stay with their Phase 5–7
   migrations. See the [inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md)
   and [current batch tracker](Current-Slice-Batches.md).
