@@ -4,6 +4,8 @@
 #include "next/resources/resource_diagnostics.h"
 #include "next/resources/resource_loader.h"
 
+#include <QCryptographicHash>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -35,6 +37,16 @@ QString resourceRoot()
 QString catalogPath()
 {
     return QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG);
+}
+
+bool copyFile(const QString& source, const QString& destination)
+{
+    if (!QDir().mkpath(QFileInfo(destination).absolutePath()))
+    {
+        return false;
+    }
+    QFile::remove(destination);
+    return QFile::copy(source, destination);
 }
 
 DocumentContentReference reference(const char* value)
@@ -122,6 +134,7 @@ private slots:
     void opensOnlyTheSelectedPdfWithViewerSessionScope();
     void rejectsNonPdfAndMalformedCatalogDescriptors();
     void missingSelectedBodyFailsWithoutFallback();
+    void sameSizeCorruptSelectedBodyFailsWithoutFallback();
     void boundaryIsMoveOnlyAndUsesLoaderOwnedStream();
 };
 
@@ -427,6 +440,102 @@ missingSelectedBodyFailsWithoutFallback()
     QVERIFY(!QFileInfo::exists(
         package.filePath(QStringLiteral("assets/documents/Guides/DYB Lesson Planning Guide.pdf"))
         ));
+}
+
+void NextPlatformDocumentContentResourcePortTests::
+sameSizeCorruptSelectedBodyFailsWithoutFallback()
+{
+    QTemporaryDir package;
+    QVERIFY(package.isValid());
+
+    const QString fixtureCatalog = package.filePath(QStringLiteral("resource-catalog.json"));
+    QVERIFY(QFile::copy(catalogPath(), fixtureCatalog));
+
+    const QString selectedRelative =
+        QStringLiteral("Guides/DYB Lesson Planning Guide.pdf");
+    const QString alternateRelative =
+        QStringLiteral("Guides/PowerPoint Keyboard Shortcuts.pdf");
+    const QString selectedPackagePath =
+        package.filePath(QStringLiteral("assets/documents/") + selectedRelative);
+    const QString alternatePackagePath =
+        package.filePath(QStringLiteral("assets/documents/") + alternateRelative);
+    QVERIFY(copyFile(
+        QDir(resourceRoot()).filePath(QStringLiteral("assets/documents/") + selectedRelative),
+        selectedPackagePath
+        ));
+    QVERIFY(copyFile(
+        QDir(resourceRoot()).filePath(QStringLiteral("assets/documents/") + alternateRelative),
+        alternatePackagePath
+        ));
+
+    QFile selectedFile(selectedPackagePath);
+    QVERIFY(selectedFile.open(QIODevice::ReadOnly));
+    const QByteArray originalBytes = selectedFile.readAll();
+    QVERIFY(!originalBytes.isEmpty());
+    selectedFile.close();
+
+    QByteArray corruptedBytes = originalBytes;
+    corruptedBytes[0] = corruptedBytes.at(0) == 'X' ? 'Y' : 'X';
+    QCOMPARE(corruptedBytes.size(), originalBytes.size());
+    QVERIFY(corruptedBytes != originalBytes);
+    QVERIFY(selectedFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QCOMPARE(selectedFile.write(corruptedBytes), qint64(corruptedBytes.size()));
+    selectedFile.close();
+    QCOMPARE(QFileInfo(selectedPackagePath).size(), qint64(originalBytes.size()));
+    QVERIFY(QFileInfo::exists(alternatePackagePath));
+
+    auto catalog = Resources::ResourceCatalog::load(fixtureCatalog, package.path());
+    QVERIFY(catalog);
+    const auto selectedId = Resources::ResourceId::fromString(
+        QStringLiteral("document.body:Guides/DYB Lesson Planning Guide.pdf")
+        );
+    const auto alternateId = Resources::ResourceId::fromString(
+        QStringLiteral("document.body:Guides/PowerPoint Keyboard Shortcuts.pdf")
+        );
+    QVERIFY(selectedId);
+    QVERIFY(alternateId);
+    const Resources::ResourceDescriptor* const selectedDescriptor =
+        catalog->find(*selectedId);
+    QVERIFY(selectedDescriptor);
+    QVERIFY(selectedDescriptor->expectedBytes().has_value());
+    QCOMPARE(*selectedDescriptor->expectedBytes(), qint64(originalBytes.size()));
+    QVERIFY(selectedDescriptor->expectedSha256().has_value());
+    QVERIFY(QCryptographicHash::hash(corruptedBytes, QCryptographicHash::Sha256)
+        != *selectedDescriptor->expectedSha256());
+    QVERIFY(catalog->find(*alternateId));
+
+    std::vector<Resources::ResourceDiagnostic> diagnostics;
+    Resources::ResourceLoader loader(
+        std::move(*catalog),
+        [&diagnostics](const Resources::ResourceDiagnostic& diagnostic) {
+            diagnostics.push_back(diagnostic);
+        }
+        );
+    DocumentContentResourcePort port(loader);
+
+    const auto corrupted = port.openPrimaryPdf(
+        reference("resource://documents/Guides/DYB Lesson Planning Guide.pdf"),
+        QStringLiteral("DocumentViewer:same-size-corruption")
+        );
+    QVERIFY(!corrupted);
+    QCOMPARE(corrupted.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!corrupted.error().recoverable);
+    QCOMPARE(diagnostics.size(), std::size_t(1));
+    QCOMPARE(
+        diagnostics.front().resourceId.value(),
+        QStringLiteral("document.body:Guides/DYB Lesson Planning Guide.pdf")
+        );
+    QCOMPARE(
+        diagnostics.front().scope.kind(),
+        Resources::ResourceScopeKind::ViewerSession
+        );
+    QVERIFY(!diagnostics.front().succeeded);
+    QCOMPARE(
+        diagnostics.front().errorCode,
+        std::optional<Resources::ResourceErrorCode>(
+            Resources::ResourceErrorCode::CorruptResource
+            )
+        );
 }
 
 void NextPlatformDocumentContentResourcePortTests::

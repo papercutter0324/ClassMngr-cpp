@@ -288,6 +288,48 @@ bool testLoader(QCoreApplication& application)
     {
         return fail(QStringLiteral("catalog load failed: ") + loadedCatalog.error().message);
     }
+
+    const auto absentCatalogId = resourceId(
+        "resource:assets/not-in-catalog/resource-loader-probe.json"
+        );
+    auto absentCatalogRequest = absentCatalogId
+        ? resourceRequest(
+            *absentCatalogId,
+            ResourceScopeKind::Operation,
+            QStringLiteral("ResourceLoaderMissingCatalogId")
+            )
+        : std::nullopt;
+    if (!absentCatalogId || loadedCatalog->find(*absentCatalogId) != nullptr
+        || !absentCatalogRequest)
+    {
+        return fail(QStringLiteral("missing-catalog resource fixture was invalid"));
+    }
+    std::vector<ResourceDiagnostic> absentCatalogDiagnostics;
+    ResourceLoader absentCatalogLoader(
+        *loadedCatalog,
+        [&absentCatalogDiagnostics](const ResourceDiagnostic& diagnostic) {
+            absentCatalogDiagnostics.push_back(diagnostic);
+        }
+        );
+    const auto absentCatalogResult = absentCatalogLoader.loadText(*absentCatalogRequest);
+    if (absentCatalogResult
+        || absentCatalogResult.error().code != ResourceErrorCode::NotFound
+        || absentCatalogDiagnostics.size() != 1
+        || absentCatalogDiagnostics.front().resourceId != *absentCatalogId
+        || !scopeMatches(
+            absentCatalogDiagnostics.front().scope,
+            ResourceScopeKind::Operation,
+            QStringLiteral("ResourceLoaderMissingCatalogId")
+            )
+        || absentCatalogDiagnostics.front().succeeded
+        || absentCatalogDiagnostics.front().errorCode != ResourceErrorCode::NotFound
+        || absentCatalogDiagnostics.front().sourceBytes.has_value())
+    {
+        return fail(QStringLiteral(
+            "missing catalog resource did not return NotFound with one failed diagnostic"
+            ));
+    }
+
     if (loadedCatalog->records().size() != 198)
     {
         return fail(QStringLiteral("generated catalog did not contain 198 runtime records"));

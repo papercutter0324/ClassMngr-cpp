@@ -4,6 +4,7 @@
 #include "next/resources/resource_diagnostics.h"
 #include "next/resources/resource_loader.h"
 
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -123,6 +124,7 @@ private slots:
     void rejectsInvalidNonOfficeAndMissingInputsWithoutFallback();
     void rejectsMismatchedDocumentBodyDescriptorsBeforeLoading();
     void missingSelectedBodyFailsWithoutFallback();
+    void sameSizeCorruptSelectedBodyFailsWithoutFallback();
     void boundaryIsMoveOnlyAndUsesLoaderOwnedStream();
 };
 
@@ -434,6 +436,106 @@ void NextPlatformDocumentExportResourcePortTests::missingSelectedBodyFailsWithou
         diagnostics.front().errorCode,
         std::optional<Resources::ResourceErrorCode>(
             Resources::ResourceErrorCode::MissingFile
+            )
+        );
+}
+
+void NextPlatformDocumentExportResourcePortTests::
+sameSizeCorruptSelectedBodyFailsWithoutFallback()
+{
+    QTemporaryDir package;
+    QVERIFY(package.isValid());
+    QVERIFY(copyFile(
+        catalogPath(),
+        package.filePath(QStringLiteral("resource-catalog.json"))
+        ));
+
+    const QString selectedRelative =
+        QStringLiteral("Lesson Templates/SP+WR Template.pptx");
+    const QString alternateRelative =
+        QStringLiteral("Lesson Templates/Skill Lesson Template.pptx");
+    const QString selectedPackagePath =
+        package.filePath(QStringLiteral("assets/documents/") + selectedRelative);
+    const QString alternatePackagePath =
+        package.filePath(QStringLiteral("assets/documents/") + alternateRelative);
+    QVERIFY(copyFile(
+        QDir(resourceRoot()).filePath(QStringLiteral("assets/documents/") + selectedRelative),
+        selectedPackagePath
+        ));
+    QVERIFY(copyFile(
+        QDir(resourceRoot()).filePath(QStringLiteral("assets/documents/") + alternateRelative),
+        alternatePackagePath
+        ));
+
+    QFile selectedFile(selectedPackagePath);
+    QVERIFY(selectedFile.open(QIODevice::ReadOnly));
+    const QByteArray originalBytes = selectedFile.readAll();
+    QVERIFY(!originalBytes.isEmpty());
+    selectedFile.close();
+
+    QByteArray corruptedBytes = originalBytes;
+    corruptedBytes[0] = corruptedBytes.at(0) == 'X' ? 'Y' : 'X';
+    QCOMPARE(corruptedBytes.size(), originalBytes.size());
+    QVERIFY(corruptedBytes != originalBytes);
+    QVERIFY(selectedFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QCOMPARE(selectedFile.write(corruptedBytes), qint64(corruptedBytes.size()));
+    selectedFile.close();
+    QCOMPARE(QFileInfo(selectedPackagePath).size(), qint64(originalBytes.size()));
+    QVERIFY(QFileInfo::exists(alternatePackagePath));
+
+    auto catalog = Resources::ResourceCatalog::load(
+        package.filePath(QStringLiteral("resource-catalog.json")),
+        package.path()
+        );
+    QVERIFY(catalog);
+    const auto selectedId = Resources::ResourceId::fromString(
+        QStringLiteral("document.body:Lesson Templates/SP+WR Template.pptx")
+        );
+    const auto alternateId = Resources::ResourceId::fromString(
+        QStringLiteral("document.body:Lesson Templates/Skill Lesson Template.pptx")
+        );
+    QVERIFY(selectedId);
+    QVERIFY(alternateId);
+    const Resources::ResourceDescriptor* const selectedDescriptor =
+        catalog->find(*selectedId);
+    QVERIFY(selectedDescriptor);
+    QVERIFY(selectedDescriptor->expectedBytes().has_value());
+    QCOMPARE(*selectedDescriptor->expectedBytes(), qint64(originalBytes.size()));
+    QVERIFY(selectedDescriptor->expectedSha256().has_value());
+    QVERIFY(QCryptographicHash::hash(corruptedBytes, QCryptographicHash::Sha256)
+        != *selectedDescriptor->expectedSha256());
+    QVERIFY(catalog->find(*alternateId));
+
+    std::vector<Resources::ResourceDiagnostic> diagnostics;
+    Resources::ResourceLoader loader(
+        std::move(*catalog),
+        [&diagnostics](const Resources::ResourceDiagnostic& diagnostic) {
+            diagnostics.push_back(diagnostic);
+        }
+        );
+    DocumentExportResourcePort port(loader);
+
+    const auto corrupted = port.openExport(
+        reference("resource://documents/Lesson Templates/SP+WR Template.pptx"),
+        QStringLiteral("DocumentExport:same-size-corruption")
+        );
+    QVERIFY(!corrupted);
+    QCOMPARE(corrupted.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!corrupted.error().recoverable);
+    QCOMPARE(diagnostics.size(), std::size_t(1));
+    QCOMPARE(
+        diagnostics.front().resourceId.value(),
+        QStringLiteral("document.body:Lesson Templates/SP+WR Template.pptx")
+        );
+    QCOMPARE(
+        diagnostics.front().scope.kind(),
+        Resources::ResourceScopeKind::Operation
+        );
+    QVERIFY(!diagnostics.front().succeeded);
+    QCOMPARE(
+        diagnostics.front().errorCode,
+        std::optional<Resources::ResourceErrorCode>(
+            Resources::ResourceErrorCode::CorruptResource
             )
         );
 }
