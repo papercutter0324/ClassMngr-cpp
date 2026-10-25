@@ -119,7 +119,7 @@ Result<ClassTransferPackage> buildPackage(QTemporaryDir& directory, const Teache
         return std::unexpected(toLegacyDiagnostic(opened.error()));
     const auto teacherId = teachers(source)->createTeacher(teacher);
     if (!teacherId)
-        return std::unexpected(teacherId.error());
+        return std::unexpected(toLegacyDiagnostic(teacherId.error()));
     const auto classId = source.classService()->create(QStringLiteral("Imported Class"));
     if (!classId)
         return std::unexpected(classId.error());

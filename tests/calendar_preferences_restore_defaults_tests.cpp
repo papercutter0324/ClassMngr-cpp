@@ -404,7 +404,7 @@ bool initializeCalendarResetWorkspace(
     {
         if (error)
         {
-            *error = saved.error();
+            *error = toLegacyDiagnostic(saved.error());
         }
         return false;
     }

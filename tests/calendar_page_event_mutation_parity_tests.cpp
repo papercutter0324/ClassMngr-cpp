@@ -190,7 +190,7 @@ bool initializeWorkspace(CalendarWorkspace& workspace, QString* error)
     {
         if (error)
         {
-            *error = saved.error();
+            *error = toLegacyDiagnostic(saved.error());
         }
         return false;
     }
@@ -1015,7 +1015,7 @@ int saveFixtureEvent(
     {
         if (error)
         {
-            *error = saved.error();
+            *error = toLegacyDiagnostic(saved.error());
         }
         return -1;
     }
@@ -2926,7 +2926,7 @@ repeatSeriesOccurrenceEditKeepsDialogOpenAfterSaveFailure()
                 ->saveCalendarEvent(event);
             if (!saved)
             {
-                setupError = saved.error();
+                setupError = toLegacyDiagnostic(saved.error());
                 return -1;
             }
 
@@ -3245,7 +3245,7 @@ repeatSeriesSuffixEditKeepsDialogOpenAfterSaveFailure()
                 ->saveCalendarEvent(event);
             if (!saved)
             {
-                setupError = saved.error();
+                setupError = toLegacyDiagnostic(saved.error());
                 return -1;
             }
 
@@ -3529,7 +3529,7 @@ repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection()
                 ->saveCalendarEvent(event);
             if (!saved)
             {
-                setupError = saved.error();
+                setupError = toLegacyDiagnostic(saved.error());
                 return -1;
             }
 
@@ -3864,7 +3864,7 @@ monthGridCellsMatchCalendarEventModelDateProjection()
         ->saveCalendarEvent(multiDayEvent);
     if (!multiDaySaved.has_value())
     {
-        setupError = multiDaySaved.error();
+        setupError = toLegacyDiagnostic(multiDaySaved.error());
     }
     QVERIFY2(multiDaySaved.has_value(), qPrintable(setupError));
     const int multiDayId = *multiDaySaved;
@@ -3882,7 +3882,7 @@ monthGridCellsMatchCalendarEventModelDateProjection()
         ->saveCalendarEvent(holidayEvent);
     if (!holidaySaved.has_value())
     {
-        setupError = holidaySaved.error();
+        setupError = toLegacyDiagnostic(holidaySaved.error());
     }
     QVERIFY2(holidaySaved.has_value(), qPrintable(setupError));
     const int holidayId = *holidaySaved;

@@ -109,7 +109,7 @@ public:
         const auto created = repository->createTeacher(teacher);
         if (!created)
         {
-            *error = created.error();
+            *error = toLegacyDiagnostic(created.error());
             return false;
         }
 
