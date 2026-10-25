@@ -41,8 +41,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Current note: The §3.3 structured-error audit reopened Phase 3's exit gate.
   F1450 is committed locally as
   `bd03110d7de6a034db9f631099164d9562c2435b` and is not pushed. F1451
-  TeacherRepository is independently verified; its local commit is pending,
-  and F1452 is next. Evidence and limits are in
+  is committed locally as `f8261f96cb57f2c7baf41941be2636f1014fd9a4` and is
+  not pushed. F1452 GsTeamRepository is independently verified and accepted;
+  its local commit is pending, and F1453 is next. Evidence and limits are in
   [progress log](04-Phase-3-Progress-Log.md); the queue is in the
   [current batch tracker](Current-Slice-Batches.md).
 
@@ -59,11 +60,12 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1451 TeacherRepository structured errors — 2026-10-24
+## Latest Progress Update — F1452 GsTeamRepository structured errors — 2026-10-24
 
-F1451 is independently verified; its local slice commit is pending and F1452
-is next. Evidence and limits are recorded in the
-[progress log](04-Phase-3-Progress-Log.md); the ordered queue remains in the
+F1451 is committed locally as `f8261f96cb57f2c7baf41941be2636f1014fd9a4`
+and is not pushed. F1452 is independently verified and accepted; its local
+commit is pending, and F1453 is next. Evidence and limits are recorded in the
+[progress log](04-Phase-3-Progress-Log.md); the ordered queue is in the
 [current batch tracker](Current-Slice-Batches.md).
 
 ## Objective

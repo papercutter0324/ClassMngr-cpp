@@ -9,8 +9,10 @@
 - Current milestone: Phase 3 remains In Progress on the mandatory Heavy route
   because the §3.3 structured-error audit reopened its exit gate. F1450 is
   committed locally as `bd03110d7de6a034db9f631099164d9562c2435b` and is not
-  pushed. F1451 TeacherRepository is independently verified; its local commit
-  is pending, and F1452 is next. Evidence and limits are in the
+  pushed. F1451 is committed locally as
+  `f8261f96cb57f2c7baf41941be2636f1014fd9a4` and is not pushed. F1452
+  GsTeamRepository is independently verified and accepted; its local commit is
+  pending, and F1453 is next. Evidence and limits are in the
   [progress log](04-Phase-3-Progress-Log.md); see also the [Phase 3
   plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),

@@ -9,6 +9,7 @@
 #include <QSqlQuery>
 
 #include <limits>
+#include <utility>
 
 namespace
 {
@@ -17,15 +18,32 @@ QString normalizedName(const QString& value)
     return value.simplified().toCaseFolded();
 }
 
-GsTeamDirectorySaveOutcome queryError(
+RepositoryError queryError(
     const QSqlQuery& query,
     const QString& action
     )
 {
-    return {
-        .code = GsTeamDirectorySaveOutcomeCode::Failure,
-        .diagnostic = SqlQueryUtils::errorFor(query, action).userMessage()
-    };
+    return SqlQueryUtils::repositoryErrorFor(
+        SqlQueryUtils::errorFor(query, action));
+}
+
+RepositoryStatus failedWrite(
+    DatabaseTransaction& transaction,
+    QSqlDatabase& database,
+    RepositoryError error
+    )
+{
+    if (!transaction.rollbackChecked())
+    {
+        error.code = RepositoryErrorCode::Technical;
+        error.recoverableOverride.reset();
+        const QString rollbackDetail = database.lastError().text().trimmed();
+        error.diagnostic += rollbackDetail.isEmpty()
+            ? QObject::tr(" (rollback failed)")
+            : QObject::tr(" (rollback failed: %1)").arg(rollbackDetail);
+    }
+
+    return std::unexpected(std::move(error));
 }
 }
 
@@ -34,7 +52,7 @@ GsTeamRepository::GsTeamRepository(QSqlDatabase& database)
 {
 }
 
-Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
+RepositoryResult<QList<GsTeamMember>> GsTeamRepository::getAll() const
 {
     QList<GsTeamMember> result;
     QSqlQuery query(m_database);
@@ -61,7 +79,8 @@ Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
 
     while (query.next())
@@ -73,9 +92,12 @@ Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
             || rawId <= 0
             || rawId > std::numeric_limits<int>::max())
         {
-            return std::unexpected(QObject::tr(
-                "Loading GS Team directory failed: member id %1 is outside "
-                "the supported range.").arg(query.value(0).toString()));
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "Loading GS Team directory failed: member id %1 is outside "
+                    "the supported range.").arg(query.value(0).toString())
+            });
         }
 
         GsTeamMember member;
@@ -90,16 +112,15 @@ Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return std::unexpected(queryError(
             query,
-            QObject::tr("Loading GS Team directory")
-            ).userMessage());
+            QObject::tr("Loading GS Team directory")));
     }
 
     return result;
 }
 
-Result<QList<GsTeamBirthdayReadRecord>>
+RepositoryResult<QList<GsTeamBirthdayReadRecord>>
 GsTeamRepository::loadBirthdayDirectoryReadRecords() const
 {
     QList<GsTeamBirthdayReadRecord> result;
@@ -127,7 +148,8 @@ GsTeamRepository::loadBirthdayDirectoryReadRecords() const
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
 
     while (query.next())
@@ -142,28 +164,16 @@ GsTeamRepository::loadBirthdayDirectoryReadRecords() const
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(query.lastError().text());
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            query.lastError().text()
+        });
     }
 
     return result;
 }
 
-Status GsTeamRepository::saveDirectory(
-    const QList<GsTeamMember>& members,
-    const QList<int>& deletedIds
-    )
-{
-    const GsTeamDirectorySaveOutcome outcome =
-        saveDirectoryWithOutcome(members, deletedIds);
-    if (outcome.code != GsTeamDirectorySaveOutcomeCode::Saved)
-    {
-        return std::unexpected(outcome.diagnostic);
-    }
-
-    return {};
-}
-
-GsTeamDirectorySaveOutcome GsTeamRepository::saveDirectoryWithOutcome(
+RepositoryStatus GsTeamRepository::saveDirectory(
     const QList<GsTeamMember>& members,
     const QList<int>& deletedIds
     )
@@ -177,19 +187,19 @@ GsTeamDirectorySaveOutcome GsTeamRepository::saveDirectoryWithOutcome(
         const QString korean = normalizedName(member.koreanName);
         if (english.isEmpty() && korean.isEmpty())
         {
-            return {
-                .code = GsTeamDirectorySaveOutcomeCode::Failure,
-                .diagnostic = QObject::tr(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
                     "Every GS Team member must have a name or Korean name.")
-            };
+            });
         }
         if ((!english.isEmpty() && englishNames.contains(english))
             || (!korean.isEmpty() && koreanNames.contains(korean)))
         {
-            return {
-                .code = GsTeamDirectorySaveOutcomeCode::Failure,
-                .diagnostic = QObject::tr("GS Team names must be unique.")
-            };
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr("GS Team names must be unique.")
+            });
         }
         if (!english.isEmpty()) englishNames.insert(english);
         if (!korean.isEmpty()) koreanNames.insert(korean);
@@ -198,22 +208,27 @@ GsTeamDirectorySaveOutcome GsTeamRepository::saveDirectoryWithOutcome(
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
     {
-        return {
-            .code = GsTeamDirectorySaveOutcomeCode::Failure,
-            .diagnostic = QObject::tr(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr(
                 "Unable to start the directory save transaction.")
-        };
+        });
     }
 
     for (int id : deletedIds)
     {
         if (id <= 0) continue;
         QSqlQuery query(m_database);
-        query.prepare(QStringLiteral("DELETE FROM gs_team WHERE id=?"));
+        if (!query.prepare(QStringLiteral("DELETE FROM gs_team WHERE id=?")))
+        {
+            return failedWrite(transaction, m_database, queryError(
+                query, QObject::tr("Deleting a GS Team member")));
+        }
         query.addBindValue(id);
         if (!query.exec())
         {
-            return queryError(query, QObject::tr("Deleting a GS Team member"));
+            return failedWrite(transaction, m_database, queryError(
+                query, QObject::tr("Deleting a GS Team member")));
         }
     }
 
@@ -229,11 +244,15 @@ GsTeamDirectorySaveOutcome GsTeamRepository::saveDirectoryWithOutcome(
         QSqlQuery query(m_database);
         if (member.id > 0)
         {
-            query.prepare(R"(
+            if (!query.prepare(R"(
                 UPDATE gs_team
                 SET name=?, korean_name=?, position=?, phone_number=?, birthday=?
                 WHERE id=?
-            )");
+            )"))
+            {
+                return failedWrite(transaction, m_database, queryError(
+                    query, QObject::tr("Saving a GS Team member")));
+            }
             query.addBindValue(member.name);
             query.addBindValue(member.koreanName);
             query.addBindValue(member.position);
@@ -243,11 +262,15 @@ GsTeamDirectorySaveOutcome GsTeamRepository::saveDirectoryWithOutcome(
         }
         else
         {
-            query.prepare(R"(
+            if (!query.prepare(R"(
                 INSERT INTO gs_team
                     (name, korean_name, position, phone_number, birthday)
                 VALUES (?, ?, ?, ?, ?)
-            )");
+            )"))
+            {
+                return failedWrite(transaction, m_database, queryError(
+                    query, QObject::tr("Saving a GS Team member")));
+            }
             query.addBindValue(member.name);
             query.addBindValue(member.koreanName);
             query.addBindValue(member.position);
@@ -257,26 +280,34 @@ GsTeamDirectorySaveOutcome GsTeamRepository::saveDirectoryWithOutcome(
 
         if (!query.exec())
         {
-            return queryError(query, QObject::tr("Saving a GS Team member"));
+            return failedWrite(transaction, m_database, queryError(
+                query, QObject::tr("Saving a GS Team member")));
         }
         if (member.id > 0 && query.numRowsAffected() == 0)
         {
-            return {
-                .code = GsTeamDirectorySaveOutcomeCode::Missing,
-                .diagnostic = QObject::tr(
-                    "Saving GS Team member id %1 failed: no matching record exists."
-                    ).arg(member.id)
-            };
+            return failedWrite(
+                transaction,
+                m_database,
+                RepositoryError{
+                    RepositoryErrorCode::NotFound,
+                    QObject::tr(
+                        "Saving GS Team member id %1 failed: no matching record exists."
+                        ).arg(member.id),
+                    true
+                });
         }
     }
 
     if (!transaction.commit())
     {
-        return {
-            .code = GsTeamDirectorySaveOutcomeCode::Failure,
-            .diagnostic = QObject::tr("Unable to commit the GS Team directory.")
-        };
+        return failedWrite(
+            transaction,
+            m_database,
+            RepositoryError{
+                RepositoryErrorCode::Technical,
+                QObject::tr("Unable to commit the GS Team directory.")
+            });
     }
 
-    return {.code = GsTeamDirectorySaveOutcomeCode::Saved};
+    return {};
 }

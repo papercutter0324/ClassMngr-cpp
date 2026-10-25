@@ -262,7 +262,7 @@ Result<QList<GsTeamMember>> DataService::getGsTeamMembers()
         return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
 
-    return m_session->gsTeamRepository()->getAll();
+    return toLegacyResult(m_session->gsTeamRepository()->getAll());
 }
 
 Status DataService::saveGsTeamDirectory(
@@ -274,7 +274,8 @@ Status DataService::saveGsTeamDirectory(
     {
         return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
-    return m_session->gsTeamRepository()->saveDirectory(members, deletedIds);
+    return toLegacyStatus(
+        m_session->gsTeamRepository()->saveDirectory(members, deletedIds));
 }
 
 Result<TeacherImportSummary> DataService::importTeachers(

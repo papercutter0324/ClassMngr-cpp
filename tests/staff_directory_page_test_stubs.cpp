@@ -39,12 +39,12 @@ Status NativeEnglishTeacherRepository::saveDirectory(
     return {};
 }
 
-Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
+RepositoryResult<QList<GsTeamMember>> GsTeamRepository::getAll() const
 {
     return QList<GsTeamMember>{};
 }
 
-Status GsTeamRepository::saveDirectory(
+RepositoryStatus GsTeamRepository::saveDirectory(
     const QList<GsTeamMember>&,
     const QList<int>&
     )

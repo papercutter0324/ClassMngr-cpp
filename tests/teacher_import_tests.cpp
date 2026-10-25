@@ -2502,7 +2502,7 @@ void TeacherImportTests::sortsGsTeamPositions()
         }
 
         GsTeamRepository repository(database);
-        const Result<QList<GsTeamMember>> members = repository.getAll();
+        const RepositoryResult<QList<GsTeamMember>> members = repository.getAll();
         QVERIFY(members);
         QCOMPARE(members->size(), positions.size());
         const QStringList expectedPositions{

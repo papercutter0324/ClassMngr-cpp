@@ -97,7 +97,9 @@ class NextPlatformApplicationServicesGsTeamDirectorySavePortTests final
 private slots:
     void mapsFiveFieldsTypedIdsAndDeletedIdsThroughTheActiveRepository();
     void reportsMissingAndClosedSessionsAsUnavailableWithoutLegacyFallback();
+    void mapsRepositoryValidationAndNotFoundCategories();
     void reportsRepositoryFailureAndTransactionRollsBackAllChanges();
+    void preservesSqlDiagnosticWhenRollbackAlsoFails();
     void rollsBackCompanionWritesWhenUpdateFails_data();
     void rollsBackCompanionWritesWhenUpdateFails();
 };
@@ -210,6 +212,69 @@ reportsMissingAndClosedSessionsAsUnavailableWithoutLegacyFallback()
 }
 
 void NextPlatformApplicationServicesGsTeamDirectorySavePortTests::
+mapsRepositoryValidationAndNotFoundCategories()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    GsTeamRepository* const repository =
+        services.workspaceStore()->gsTeamRepository();
+    QVERIFY(repository);
+
+    const auto emptyNames = repository->saveDirectory(
+        {member(QString(), QString())}, {});
+    QVERIFY(!emptyNames);
+    QCOMPARE(emptyNames.error().code, RepositoryErrorCode::Validation);
+    QCOMPARE(emptyNames.error().diagnostic, QStringLiteral(
+        "Every GS Team member must have a name or Korean name."));
+
+    const auto duplicateEnglish = repository->saveDirectory(
+        {
+            member(QStringLiteral("Same Name"), QStringLiteral("\uAC00")),
+            member(QStringLiteral(" same name "), QStringLiteral("\uB098"))
+        },
+        {});
+    QVERIFY(!duplicateEnglish);
+    QCOMPARE(duplicateEnglish.error().code, RepositoryErrorCode::Validation);
+    QCOMPARE(duplicateEnglish.error().diagnostic,
+        QStringLiteral("GS Team names must be unique."));
+
+    Platform::ApplicationServicesGsTeamDirectorySavePort port(&services);
+    Application::GsTeamDirectorySaveRequest validationRequest;
+    validationRequest.rows = {
+        saveRow(QString(), QString())
+    };
+    const auto validationFailure = port.saveGsTeamDirectory(validationRequest);
+    QVERIFY(!validationFailure);
+    QCOMPARE(validationFailure.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!validationFailure.error().recoverable);
+    QCOMPARE(QString::fromStdString(validationFailure.error().message),
+        QStringLiteral("Every GS Team member must have a name or Korean name."));
+
+    GsTeamMember missing = member(
+        QStringLiteral("Missing"), QStringLiteral("\uC5C6\uB294"));
+    missing.id = 9999;
+    const auto missingUpdate = repository->saveDirectory({missing}, {});
+    QVERIFY(!missingUpdate);
+    QCOMPARE(missingUpdate.error().code, RepositoryErrorCode::NotFound);
+    QVERIFY(missingUpdate.error().recoverableOverride.has_value());
+    QVERIFY(*missingUpdate.error().recoverableOverride);
+
+    Application::GsTeamDirectorySaveRequest missingRequest;
+    missingRequest.rows = {
+        saveRow(QStringLiteral("Missing"), QStringLiteral("\uC5C6\uB294"), 9999)
+    };
+    const auto missingFailure = port.saveGsTeamDirectory(missingRequest);
+    QVERIFY(!missingFailure);
+    QCOMPARE(missingFailure.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(missingFailure.error().recoverable);
+    QCOMPARE(QString::fromStdString(missingFailure.error().message),
+        QStringLiteral(
+            "Saving GS Team member id 9999 failed: no matching record exists."));
+}
+
+void NextPlatformApplicationServicesGsTeamDirectorySavePortTests::
 reportsRepositoryFailureAndTransactionRollsBackAllChanges()
 {
     QTemporaryDir directory;
@@ -271,6 +336,41 @@ reportsRepositoryFailureAndTransactionRollsBackAllChanges()
         QStringLiteral("\uC218\uC815 \uB300\uC0C1"));
     QCOMPARE(restoredDelete.name, QStringLiteral("Delete Target"));
     QVERIFY(findById(*after, deleteId).id > 0);
+}
+
+void NextPlatformApplicationServicesGsTeamDirectorySavePortTests::
+preservesSqlDiagnosticWhenRollbackAlsoFails()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlQuery trigger(services.workspaceStore()->database());
+    QVERIFY2(trigger.exec(QStringLiteral(
+        "CREATE TRIGGER reject_and_rollback_gs_team_insert "
+        "BEFORE INSERT ON gs_team BEGIN "
+        "SELECT RAISE(ROLLBACK, 'primary insert diagnostic'); END")),
+        qPrintable(trigger.lastError().text()));
+
+    Application::GsTeamDirectorySaveRequest request;
+    request.rows = {
+        saveRow(QStringLiteral("Rollback Trigger"), QStringLiteral("\uC5C6\uB294"))
+    };
+    Platform::ApplicationServicesGsTeamDirectorySavePort port(&services);
+    const auto saved = port.saveGsTeamDirectory(request);
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(saved.error().message.find("primary insert diagnostic")
+        != std::string::npos);
+    QVERIFY(saved.error().message.find("rollback failed")
+        != std::string::npos);
+    QVERIFY(!saved.error().recoverable);
+
+    const auto after = services.workspaceStore()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(after);
+    QVERIFY(after->isEmpty());
 }
 
 void NextPlatformApplicationServicesGsTeamDirectorySavePortTests::

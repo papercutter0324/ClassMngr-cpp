@@ -3835,13 +3835,15 @@ remain In Progress. F1450 is committed locally as
 `bd03110d7de6a034db9f631099164d9562c2435b` (`Phase3 - Add structured
 ClassInfoRepository errors (F1450)`) and is not pushed.
 
-## F1451 — TeacherRepository structured errors — independently verified, local commit pending — 2026-10-24
+## F1451 — TeacherRepository structured errors — independently verified, committed locally — 2026-10-24
 
 Discovery is complete under `PHASE3-F1451-DISCOVERY-20261024`; Explorer
 `PHASE3-F1451-SCOPE-DISCOVERY-20261024-EXP-01` and Investigator
 `PHASE3-F1451-ERROR-OPTIONS-20261024-INV-01` support the accepted scope.
 Implementation and repair are complete; independent verification accepted the
-slice. Its local commit is pending; F1452 is next.
+slice. F1451 is committed locally as
+`f8261f96cb57f2c7baf41941be2636f1014fd9a4` (`Phase3 - Add structured
+TeacherRepository errors (F1451)`) and is not pushed.
 
 All public fallible `TeacherRepository` APIs now return `RepositoryResult` or
 `RepositoryStatus`, including typed per-record errors in batch records and
@@ -3876,3 +3878,39 @@ bundle setup (`NSBundle initWithURL: nil URL argument`); its isolated modified
 refresh selector passed. Rollback-failure injection was unavailable; that
 branch was source-reviewed, and successful rollback was exercised. No full
 suite or other-platform build ran.
+
+## F1452 — GsTeamRepository structured errors — independently verified, local commit pending — 2026-10-24
+
+Discovery is complete under `PHASE3-F1452-GSTEAMREPOSITORY-20261024`; Explorer
+`PHASE3-F1452-GSTEAM-SCOPE-DISCOVERY-20261024-EXP-01` and Investigator
+`PHASE3-F1452-GSTEAM-ERROR-RESEARCH-20261024-INV-01` support the accepted
+scope. Implementation and independent verification are complete. The slice is
+accepted, its local commit is pending, and F1453 is next.
+
+The scope converts all fallible `GsTeamRepository` APIs to
+`RepositoryResult`/`RepositoryStatus`, removes the custom save outcome, and
+keeps legacy conversions at `DataService`/`TeacherService`. Direct read,
+birthday, and save ports map errors by code while retaining existing
+recoverability. Missing/duplicate names and invalid integer persisted IDs map
+to `Validation`; a positive stale update maps to `NotFound` with a recoverable
+override; SQL, cursor, transaction, and rollback failures map to `Technical`.
+The current schema and policy provide no `Conflict` case.
+Preserve exact diagnostics, including the raw birthday cursor message; do not
+add a repository-level duplicate row-ID check.
+
+Preserve independent name namespaces, sorting, ID widths, empty/no-op
+behavior, transaction boundaries, and use-case policies.
+
+The macOS incremental build succeeded for `ClassMngr`, DataService lifecycle,
+TeacherImport, StaffDirectory page, and the three GS Team read/save port
+targets. The independent CTest selection passed **6/6**; `git diff --check`
+passed. Focused assertions cover empty/duplicate English-name `Validation`,
+wide persisted-ID `Validation` with exact diagnostic, positive stale-update
+recoverable `NotFound`, malformed-cursor `Technical` with no partial snapshot,
+raw birthday fields/order/empty result, SQL rollback, and injected rollback
+failure. On injected rollback failure, the primary diagnostic and rollback
+detail are retained and the error is nonrecoverable `Technical`.
+
+Source review confirmed exact `DataService`/`TeacherService` conversion strings
+and the raw birthday cursor diagnostic; those specific strings lack dedicated
+runtime assertions. No full suite or other-platform run was performed.

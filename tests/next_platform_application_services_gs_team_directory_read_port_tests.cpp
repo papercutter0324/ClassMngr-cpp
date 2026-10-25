@@ -84,7 +84,7 @@ bool seedDirectory(ApplicationServices& services)
             QStringLiteral("M1"), QStringLiteral("010-2000-0002"),
             QStringLiteral("02-03"))
     };
-    const Status saved = services.workspaceStore()
+    const RepositoryStatus saved = services.workspaceStore()
         ->gsTeamRepository()->saveDirectory(members, {});
     return static_cast<bool>(saved);
 }
@@ -353,9 +353,10 @@ rejectsTerminalCursorFailureWithoutPartialSnapshot()
     const auto repositoryResult = services.workspaceStore()
         ->gsTeamRepository()->getAll();
     QVERIFY(!repositoryResult);
-    QVERIFY(repositoryResult.error().contains(
+    QCOMPARE(repositoryResult.error().code, RepositoryErrorCode::Technical);
+    QVERIFY(repositoryResult.error().diagnostic.contains(
         QStringLiteral("Loading GS Team directory failed")));
-    QVERIFY(repositoryResult.error().contains(
+    QVERIFY(repositoryResult.error().diagnostic.contains(
         QStringLiteral("malformed JSON"), Qt::CaseInsensitive));
 
     Platform::ApplicationServicesGsTeamDirectoryReadPort port(&services);
@@ -397,12 +398,20 @@ rejectsWidePersistedIdsWithoutChangingStoredRows()
     const QString beforeReadMismatch = persistedWideIdRowsMismatch(services);
     QVERIFY2(beforeReadMismatch.isEmpty(), qPrintable(beforeReadMismatch));
 
+    const auto repositoryResult = services.workspaceStore()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(!repositoryResult);
+    QCOMPARE(repositoryResult.error().code, RepositoryErrorCode::Validation);
+    QCOMPARE(repositoryResult.error().diagnostic, QStringLiteral(
+        "Loading GS Team directory failed: member id 4294967297 is outside "
+        "the supported range."));
+
     Platform::ApplicationServicesGsTeamDirectoryReadPort port(&services);
     const Application::GsTeamDirectoryReadResult result =
         port.readGsTeamDirectory();
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     QVERIFY(!result.error().message.empty());
     QVERIFY(!result.error().recoverable);
 

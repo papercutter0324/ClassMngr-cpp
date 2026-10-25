@@ -47,7 +47,8 @@ public:
 
         try
         {
-            const Result<QList<GsTeamMember>> loaded = repository->getAll();
+            const RepositoryResult<QList<GsTeamMember>> loaded =
+                repository->getAll();
             if (!loaded)
             {
                 return Application::GsTeamDirectoryReadResult::failure(
@@ -100,17 +101,37 @@ private:
     }
 
     [[nodiscard]] static Domain::OperationError repositoryError(
-        const QString& message
+        const RepositoryError& error
         )
     {
-        const std::string detail = utf8(message);
+        const std::string detail = utf8(toLegacyDiagnostic(error));
         return {
-            .code = Domain::ErrorCode::Technical,
+            .code = domainErrorCode(error.code),
             .message = detail.empty()
                 ? "The GS Team directory could not be loaded."
                 : detail,
             .recoverable = false
         };
+    }
+
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        ) noexcept
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
     }
 
     [[nodiscard]] static Domain::OperationError technicalError(

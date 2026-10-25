@@ -66,11 +66,17 @@ same-revision baseline was established. No full suite or other-platform build
 ran. F1450 ClassInfoRepository implementation and independent source review
 are complete; commit `bd03110d7de6a034db9f631099164d9562c2435b` is local and
 not pushed. F1451 TeacherRepository implementation and independent focused
-verification are complete; its commit is pending. On the existing incremental
-macOS Debug tree, `ClassMngrData`, `ClassMngrAppServices`, and 19 affected Next
-targets built. The focused CTest selection passed 24/24; after repair, the
-schedule-import nonpositive-ID selector passed 8 data cases and the changed
-TeacherProfileReadPort CTest passed 1/1. The broad ClassTransfer run had an
+verification are complete; commit `f8261f96cb57f2c7baf41941be2636f1014fd9a4`
+is local and not pushed. F1452 GsTeamRepository implementation and independent
+focused verification are complete; its local commit is pending. In the
+existing incremental macOS Debug tree, the six affected build targets
+compiled and six focused CTests passed 6/6, including rollback-failure
+injection. Source inspection confirms the exact legacy DataService and
+TeacherService diagnostic conversions and birthday cursor message; those exact
+boundary strings did not receive a dedicated runtime assertion. No full suite
+or other-platform build ran. F1451's focused CTest selection passed 24/24;
+after repair, the schedule-import nonpositive-ID selector passed 8 data cases
+and the changed TeacherProfileReadPort CTest passed 1/1. The broad ClassTransfer run had an
 unresolved fallback failure in the Executor run and aborted with a no-screens
 Qt error in the independent run. TeacherImport UI parity aborted during macOS
 bundle setup; its isolated modified refresh selector passed. No same-revision
@@ -182,8 +188,19 @@ complete and implementation is active. The accepted scope covers all
 fallible repository APIs and nested batch-item errors, required legacy
 diagnostic conversions, and affected platform adapters while preserving
 caller-specific missing-row, fallback, ordering, ID-width, and recoverability
-behavior. F1451 is independently accepted and verified; its local commit is
-pending. Batch 23 discovery is due at F1462, the second-to-last
+behavior. F1451 is independently accepted and committed locally at
+`f8261f96cb57f2c7baf41941be2636f1014fd9a4`; it will be pushed when Batch 22
+closes. F1452 GsTeamRepository is independently accepted and verified; its
+local commit is pending. Six focused CTests passed, including a seeded
+rollback-failure case. Legacy conversion strings and the birthday cursor's
+raw error diagnostic were confirmed by source inspection but lack dedicated
+runtime assertions. The accepted scope types every fallible repository API
+and maps direct port errors while preserving existing recoverability and exact
+diagnostics. Duplicate-name and malformed persisted-ID paths are Validation;
+stale positive updates are recoverable NotFound; SQL, cursor, transaction,
+and rollback failures are Technical. Duplicate names are not Conflict because
+current uniqueness is explicit validation, and no repository-level duplicate
+row-ID rule is added. Batch 23 discovery is due at F1462, the second-to-last
 Batch 22 candidate; search then for `DocumentCatalog`, DataService
 compatibility conversion, and other candidates beyond the accepted cap. The
 earlier file-compatibility and v2 source-boundary reviews remain valid; see

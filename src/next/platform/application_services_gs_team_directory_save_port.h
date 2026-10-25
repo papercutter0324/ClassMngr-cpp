@@ -74,21 +74,20 @@ public:
 
         try
         {
-            const GsTeamDirectorySaveOutcome saved =
-                repository->saveDirectoryWithOutcome(members, deletedIds);
-            if (saved.code == GsTeamDirectorySaveOutcomeCode::Missing)
+            const RepositoryStatus saved =
+                repository->saveDirectory(members, deletedIds);
+            if (!saved)
             {
-                return failure(
-                    Domain::ErrorCode::NotFound, utf8(saved.diagnostic), true);
-            }
-            if (saved.code != GsTeamDirectorySaveOutcomeCode::Saved)
-            {
-                std::string message = utf8(saved.diagnostic);
+                std::string message =
+                    utf8(toLegacyDiagnostic(saved.error()));
                 if (message.empty())
                 {
                     message = "The GS Team directory could not be saved.";
                 }
-                return failure(Domain::ErrorCode::Technical, std::move(message));
+                return failure(
+                    domainErrorCode(saved.error().code),
+                    std::move(message),
+                    saved.error().recoverableOverride.value_or(false));
             }
 
             return Domain::Result<void>::success();
@@ -126,6 +125,26 @@ private:
         )
     {
         return failure(Domain::ErrorCode::Technical, std::move(message));
+    }
+
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        ) noexcept
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
     }
 
     [[nodiscard]] static Domain::Result<void> failure(

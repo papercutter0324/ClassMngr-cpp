@@ -8616,3 +8616,21 @@ failure was obtained.
 Durable lesson: ID validity is caller-specific. Preserve documented sentinel
 IDs such as `-1` and `0` where the existing schedule-import path accepts them;
 do not apply a general positive-ID rule across repository projections.
+
+F1451 is committed locally as `f8261f96cb57f2c7baf41941be2636f1014fd9a4`;
+it remains unpushed until Batch 22 closes. F1452 GsTeamRepository discovery
+is complete; implementation and independent verification are accepted, with
+the local commit pending. Batch 23 discovery remains due at F1462.
+
+F1452's accepted classification keeps missing/duplicate names as Validation,
+not Conflict: those are explicit save rules, and the schema has no matching
+unique constraint. Positive stale updates are NotFound with the save port's
+existing recoverability; SQL, cursor, transaction, and rollback failures are
+Technical. Preserve the birthday cursor's raw diagnostic and do not add a
+repository-level duplicate-row-ID rule that the application use case already
+enforces.
+
+Independent focused verification passed six CTests, including injected
+rollback failure. Exact DataService/TeacherService conversion strings and the
+birthday cursor diagnostic were source-reviewed without dedicated runtime
+assertions; no full suite or other-platform build ran.

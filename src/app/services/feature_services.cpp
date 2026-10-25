@@ -370,7 +370,7 @@ Result<QList<GsTeamMember>> TeacherService::gsTeamMembers() const
 {
     if (auto* repository = session() ? session()->gsTeamRepository() : nullptr)
     {
-        return repository->getAll();
+        return toLegacyResult(repository->getAll());
     }
     return dataService()
         ? dataService()->getGsTeamMembers()
@@ -384,7 +384,7 @@ Status TeacherService::saveGsTeamDirectory(
 {
     if (auto* repository = session() ? session()->gsTeamRepository() : nullptr)
     {
-        return repository->saveDirectory(members, deletedIds);
+        return toLegacyStatus(repository->saveDirectory(members, deletedIds));
     }
     return dataService()
         ? dataService()->saveGsTeamDirectory(members, deletedIds)

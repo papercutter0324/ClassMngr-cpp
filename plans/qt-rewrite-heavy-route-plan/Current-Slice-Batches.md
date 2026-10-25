@@ -24,7 +24,11 @@ ClassInfoRepository implementation and focused verification are complete;
 it is committed locally as `bd03110d7de6a034db9f631099164d9562c2435b` and not
 pushed. Evidence and limits are in the [progress
 log](04-Phase-3-Progress-Log.md). F1451 TeacherRepository is independently
-verified; its local slice commit is pending, and F1452 is next. The accepted
+verified; it is committed locally as
+`f8261f96cb57f2c7baf41941be2636f1014fd9a4` and is not pushed. F1452
+GsTeamRepository implementation and independent verification are complete;
+the slice is accepted, its local commit is pending, and F1453 is next. Evidence
+and limits are in the [progress log](04-Phase-3-Progress-Log.md). The accepted
 queue is:
 
 1. **F1444** — shared `RepositoryError`/`RepositoryResult`/status contract and SQL error mapping.
