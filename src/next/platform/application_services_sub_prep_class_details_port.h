@@ -89,7 +89,7 @@ public:
                     );
             }
 
-            const SubPrepClassDetailsDetailedResult source =
+            const RepositoryResult<SubPrepClassDetailsReadOutcome> source =
                 repository->loadSubPrepClassDetailsDetailed(*legacyClassId);
             if (!source)
             {
@@ -300,21 +300,32 @@ private:
 
     [[nodiscard]] static Application::SubPrepClassDetailsReadResult
     repositoryFailure(
-        const SubPrepClassDetailsReadFailure& repositoryError
+        const RepositoryError& repositoryError
         )
     {
-        if (repositoryError.kind == SubPrepClassDetailsReadFailure::Kind::InvalidInput)
+        Domain::ErrorCode code = Domain::ErrorCode::Technical;
+        switch (repositoryError.code)
         {
-            return failure(
-                Domain::ErrorCode::InvalidInput,
-                errorText(repositoryError.diagnostic,
-                    "The selected Sub Prep class identifier is invalid.")
-                );
+        case RepositoryErrorCode::InvalidInput:
+            code = Domain::ErrorCode::InvalidInput;
+            break;
+        case RepositoryErrorCode::NotFound:
+            code = Domain::ErrorCode::NotFound;
+            break;
+        case RepositoryErrorCode::Conflict:
+            code = Domain::ErrorCode::Conflict;
+            break;
+        case RepositoryErrorCode::Validation:
+            code = Domain::ErrorCode::Validation;
+            break;
+        case RepositoryErrorCode::Technical:
+            code = Domain::ErrorCode::Technical;
+            break;
         }
 
         return failure(
-            Domain::ErrorCode::Technical,
-            errorText(repositoryError.diagnostic,
+            code,
+            errorText(toLegacyDiagnostic(repositoryError),
                 "Selected Sub Prep class details could not be loaded.")
             );
     }

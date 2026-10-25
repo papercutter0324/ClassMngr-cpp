@@ -590,7 +590,7 @@ preservesLargeWorkspaceRecordsAndReadCounts()
         classRepository->getClasses();
     const Result<QList<ScheduleImportTeacherReadRecord>> expectedTeachers =
         teacherRepository->loadScheduleImportTeacherRecords();
-    const Result<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
+    const RepositoryResult<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
         expectedClassInfos =
             classInfoRepository->loadScheduleImportStateSnapshotClassInfos();
     QVERIFY(expectedClasses);
@@ -808,7 +808,7 @@ preservesLargeWorkspaceRecordsAndReadCounts()
     const ScheduleImportStateSnapshotClassInfoReadMetrics
         failedClassInfoMetricsBefore = classInfoRepository
             ->scheduleImportStateSnapshotClassInfoReadMetrics();
-    const Result<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
+    const RepositoryResult<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
         failedClassInfos =
             classInfoRepository->loadScheduleImportStateSnapshotClassInfos();
     QVERIFY(!failedClassInfos);

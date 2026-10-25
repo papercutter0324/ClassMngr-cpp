@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/enums/schedule_type.h"
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
 #include "domain/models/class_teacher_assignment.h"
@@ -14,7 +14,6 @@
 #include <QStringList>
 #include <QtGlobal>
 
-#include <expected>
 #include <functional>
 #include <optional>
 #include <vector>
@@ -197,25 +196,6 @@ struct ClassCoTeacherAssignmentValidationSnapshotReadRecord final
     QList<ClassTime> intensiveTimes;
 };
 
-enum class ClassCoTeacherAssignmentValidationSnapshotFailureKind
-{
-    Technical,
-    ClassNotFound
-};
-
-struct ClassCoTeacherAssignmentValidationSnapshotReadFailure final
-{
-    ClassCoTeacherAssignmentValidationSnapshotFailureKind kind =
-        ClassCoTeacherAssignmentValidationSnapshotFailureKind::Technical;
-    QString message;
-};
-
-using ClassCoTeacherAssignmentValidationSnapshotDetailedResult =
-    std::expected<
-        ClassCoTeacherAssignmentValidationSnapshotReadRecord,
-        ClassCoTeacherAssignmentValidationSnapshotReadFailure
-        >;
-
 struct ScheduleEditorClassInfoReadRecord final
 {
     int classId = -1;
@@ -282,14 +262,14 @@ struct MyClassesClassSummaryReadRecord final
 struct MyClassesClassSummaryBatchReadEntry final
 {
     int classId = -1;
-    Result<MyClassesClassSummaryReadRecord> summary;
+    RepositoryResult<MyClassesClassSummaryReadRecord> summary;
     bool parentMissing = false;
 };
 
 struct MyClassesClassInformationBatchReadEntry final
 {
     int classId = -1;
-    Result<MyClassesClassInformationReadRecord> information;
+    RepositoryResult<MyClassesClassInformationReadRecord> information;
     bool parentMissing = false;
 };
 
@@ -370,23 +350,6 @@ struct SubPrepClassDetailsReadOutcome final
     SubPrepClassDetailsRecord record;
     bool parentMissing = false;
 };
-
-struct SubPrepClassDetailsReadFailure final
-{
-    enum class Kind
-    {
-        InvalidInput,
-        Technical
-    };
-
-    Kind kind = Kind::Technical;
-    QString diagnostic;
-};
-
-using SubPrepClassDetailsDetailedResult = std::expected<
-    SubPrepClassDetailsReadOutcome,
-    SubPrepClassDetailsReadFailure
-    >;
 
 struct SubPrepRosterOutputScheduleBatchReadMetrics final
 {
@@ -517,175 +480,129 @@ struct SubPrepClassSummaryNavigationReadRecord final
 class ClassInfoRepository
 {
 public:
-    struct ClassNotesSaveFailure final
-    {
-        enum class Kind
-        {
-            ParentClassMissing,
-            Technical
-        };
-
-        Kind kind = Kind::Technical;
-        QString diagnostic;
-    };
-
-    using ClassNotesSaveDetailedResult =
-        std::expected<void, ClassNotesSaveFailure>;
-
-    struct ClassDetailsSaveFailure final
-    {
-        enum class Kind
-        {
-            ParentClassMissing,
-            Technical
-        };
-
-        Kind kind = Kind::Technical;
-        QString diagnostic;
-    };
-
-    using ClassDetailsSaveDetailedResult =
-        std::expected<void, ClassDetailsSaveFailure>;
-
-    using ClassDetailsParentCheckDetailedResult =
-        std::expected<void, ClassDetailsSaveFailure>;
-
-    struct ClassCoTeacherAssignmentSaveFailure final
-    {
-        enum class Kind
-        {
-            TeacherNotFound,
-            Technical
-        };
-
-        Kind kind = Kind::Technical;
-        QString diagnostic;
-    };
-
-    using ClassCoTeacherAssignmentSaveDetailedResult =
-        std::expected<void, ClassCoTeacherAssignmentSaveFailure>;
-
     explicit ClassInfoRepository(
         QSqlDatabase& database
         );
 
-    [[nodiscard]] Status saveClassInfo(
+    [[nodiscard]] RepositoryStatus saveClassInfo(
         const ClassInfo& info
         );
     // The typed class-details path retains exact teacher identity separately
     // from the legacy int field, including an existing assignment.
-    [[nodiscard]] Status saveClassDetails(
+    [[nodiscard]] RepositoryStatus saveClassDetails(
         const ClassInfo& info,
         qint64 teacherId
         );
     // Typed callers can identify a missing parent before loading or checking
     // editable details, and retain that provenance if the parent disappears
     // before the write transaction begins.
-    [[nodiscard]] ClassDetailsParentCheckDetailedResult
+    [[nodiscard]] RepositoryStatus
         checkClassDetailsParentDetailed(int classId);
-    [[nodiscard]] ClassDetailsSaveDetailedResult saveClassDetailsDetailed(
+    [[nodiscard]] RepositoryStatus saveClassDetailsDetailed(
         const ClassInfo& info,
         qint64 teacherId
         );
-    [[nodiscard]] Result<ClassDetailsSaveReadRecord> loadClassDetailsSaveInfo(
+    [[nodiscard]] RepositoryResult<ClassDetailsSaveReadRecord>
+        loadClassDetailsSaveInfo(
         int classId
         );
 
-    [[nodiscard]] Status saveClassNotes(
+    [[nodiscard]] RepositoryStatus saveClassNotes(
         int classId,
         const QString& notes,
         const QString& timeFillerActivities
         );
     // Typed callers can distinguish a missing parent class from other save
-    // failures without changing the legacy Status/QString API above.
-    [[nodiscard]] ClassNotesSaveDetailedResult saveClassNotesDetailed(
+    // failures while preserving the legacy diagnostic above.
+    [[nodiscard]] RepositoryStatus saveClassNotesDetailed(
         int classId,
         const QString& notes,
         const QString& timeFillerActivities
         );
-    [[nodiscard]] Status saveClassCoTeacherAssignment(
+    [[nodiscard]] RepositoryStatus saveClassCoTeacherAssignment(
         int classId,
         std::optional<qint64> teacherId
         );
-    [[nodiscard]] ClassCoTeacherAssignmentSaveDetailedResult
+    [[nodiscard]] RepositoryStatus
         saveClassCoTeacherAssignmentDetailed(
             int classId,
             std::optional<qint64> teacherId
             );
 
-    [[nodiscard]] Result<ClassInfo> loadClassInfo(
+    [[nodiscard]] RepositoryResult<ClassInfo> loadClassInfo(
         int classId
         );
-    [[nodiscard]] Result<ClassCoTeacherAssignmentValidationSnapshotReadRecord>
+    [[nodiscard]] RepositoryResult<ClassCoTeacherAssignmentValidationSnapshotReadRecord>
         loadClassCoTeacherAssignmentValidationSnapshot(int classId);
-    [[nodiscard]] ClassCoTeacherAssignmentValidationSnapshotDetailedResult
+    [[nodiscard]] RepositoryResult<ClassCoTeacherAssignmentValidationSnapshotReadRecord>
         loadClassCoTeacherAssignmentValidationSnapshotDetailed(int classId);
-    [[nodiscard]] Result<ClassPageDetailsReadRecord> loadClassPageDetails(
+    [[nodiscard]] RepositoryResult<ClassPageDetailsReadRecord>
+        loadClassPageDetails(
         int classId
         );
     // Typed callers can distinguish an absent parent while the legacy page
     // reader keeps its successful default/orphan behavior for unknown IDs.
-    [[nodiscard]] Result<ClassPageDetailsReadOutcome>
+    [[nodiscard]] RepositoryResult<ClassPageDetailsReadOutcome>
         loadClassPageDetailsDetailed(int classId);
-    [[nodiscard]] Result<ClassCoTeacherPageDetailsReadRecord>
+    [[nodiscard]] RepositoryResult<ClassCoTeacherPageDetailsReadRecord>
         loadClassCoTeacherPageDetails(int classId);
     // Typed callers can distinguish a missing parent class while the legacy
     // record-returning API keeps its successful defaults for unknown IDs.
-    [[nodiscard]] Result<ClassCoTeacherPageDetailsReadOutcome>
+    [[nodiscard]] RepositoryResult<ClassCoTeacherPageDetailsReadOutcome>
         loadClassCoTeacherPageDetailsDetailed(int classId);
-    [[nodiscard]] Result<ClassNotesPageReadRecord> loadClassNotesPageRecord(
+    [[nodiscard]] RepositoryResult<ClassNotesPageReadRecord> loadClassNotesPageRecord(
         int classId
         );
     // Typed callers can distinguish an absent parent without changing the
     // legacy record's default-success behavior.
-    [[nodiscard]] Result<ClassNotesPageReadOutcome>
+    [[nodiscard]] RepositoryResult<ClassNotesPageReadOutcome>
         loadClassNotesPageRecordDetailed(int classId);
-    [[nodiscard]] Result<ClassDetailsPageReadRecord>
+    [[nodiscard]] RepositoryResult<ClassDetailsPageReadRecord>
         loadClassDetailsPageRecord(int classId);
-    [[nodiscard]] Result<ClassDetailsPageReadOutcome>
+    [[nodiscard]] RepositoryResult<ClassDetailsPageReadOutcome>
         loadClassDetailsPageRecordDetailed(int classId);
-    [[nodiscard]] Result<ScheduleEditorClassInfoReadRecord>
+    [[nodiscard]] RepositoryResult<ScheduleEditorClassInfoReadRecord>
         loadScheduleEditorClassInfoRecord(int classId);
     // Typed callers can distinguish an absent class parent while the legacy
     // wrapper above retains its successful default record for unknown IDs.
-    [[nodiscard]] Result<ScheduleEditorClassInfoReadOutcome>
+    [[nodiscard]] RepositoryResult<ScheduleEditorClassInfoReadOutcome>
         loadScheduleEditorClassInfoRecordDetailed(int classId);
-    [[nodiscard]] Result<SelectedClassGradeReadRecord>
+    [[nodiscard]] RepositoryResult<SelectedClassGradeReadRecord>
         loadSelectedClassGradeRecord(int classId);
     // Typed callers can distinguish an absent parent class from a class that
     // exists without grade metadata while the legacy wrapper keeps its empty
     // successful result for either case.
-    [[nodiscard]] Result<SelectedClassGradeReadOutcome>
+    [[nodiscard]] RepositoryResult<SelectedClassGradeReadOutcome>
         loadSelectedClassGradeRecordDetailed(int classId);
-    [[nodiscard]] Result<ClassTransferExportClassInfoReadRecord>
+    [[nodiscard]] RepositoryResult<ClassTransferExportClassInfoReadRecord>
         loadClassTransferExportClassInfoRecord(int classId);
-    [[nodiscard]] Result<QList<ClassTransferExportClassInfoReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<ClassTransferExportClassInfoReadRecord>>
         loadClassTransferExportClassInfoRecords(const QList<int>& classIds);
-    [[nodiscard]] Result<QList<ClassInfo>> loadClassInfoRecords(
+    [[nodiscard]] RepositoryResult<QList<ClassInfo>> loadClassInfoRecords(
         const QList<int>& classIds
         );
-    [[nodiscard]] Result<ClassSubtitleReadRecord> loadClassSubtitleRecord(
+    [[nodiscard]] RepositoryResult<ClassSubtitleReadRecord> loadClassSubtitleRecord(
         int classId
         );
     // Typed callers can distinguish an absent parent while the legacy
     // record-returning wrapper keeps its successful defaults for unknown IDs.
-    [[nodiscard]] Result<ClassSubtitleReadOutcome>
+    [[nodiscard]] RepositoryResult<ClassSubtitleReadOutcome>
         loadClassSubtitleRecordDetailed(int classId);
-    [[nodiscard]] Result<QList<ClassSubtitleBatchReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<ClassSubtitleBatchReadRecord>>
         loadClassSubtitleRecords(const QList<int>& classIds);
-    [[nodiscard]] Result<std::vector<MyClassesClassInformationBatchReadEntry>>
+    [[nodiscard]] RepositoryResult<std::vector<MyClassesClassInformationBatchReadEntry>>
         loadMyClassesClassInformationRecords(const QList<int>& classIds);
-    [[nodiscard]] Result<std::vector<MyClassesClassSummaryBatchReadEntry>>
+    [[nodiscard]] RepositoryResult<std::vector<MyClassesClassSummaryBatchReadEntry>>
         loadMyClassesClassSummaryRecords(const QList<int>& classIds);
-    [[nodiscard]] Result<RosterPrintClassInfoReadRecord>
+    [[nodiscard]] RepositoryResult<RosterPrintClassInfoReadRecord>
         loadRosterPrintClassInfoRecord(int classId);
-    [[nodiscard]] Result<RosterPrintClassInfoReadOutcome>
+    [[nodiscard]] RepositoryResult<RosterPrintClassInfoReadOutcome>
         loadRosterPrintClassInfoRecordDetailed(int classId);
-    [[nodiscard]] Result<QList<RosterPrintClassInfoReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<RosterPrintClassInfoReadRecord>>
         loadRosterPrintClassInfoRecords(const QList<int>& classIds);
-    [[nodiscard]] Result<QList<SubPrepRosterOutputClassInfoReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<SubPrepRosterOutputClassInfoReadRecord>>
         loadSubPrepRosterOutputClassInfoRecords(const QList<int>& classIds);
-    [[nodiscard]] Result<QList<SubPrepRosterOutputScheduleReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<SubPrepRosterOutputScheduleReadRecord>>
         loadSubPrepRosterOutputScheduleRecords(
             const QList<int>& classIds,
             const QStringList& selectedDays,
@@ -694,11 +611,11 @@ public:
             int maxTotalMeetings
             );
 
-    [[nodiscard]] Result<QList<ClassNavigationReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<ClassNavigationReadRecord>>
         loadClassesNavigationRecords(const QList<int>& classIds);
     // Parent-aware typed route for Next navigation. The legacy reader above
     // intentionally retains its orphan/default behavior for Class Transfer.
-    [[nodiscard]] Result<QList<ClassNavigationParentAwareReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<ClassNavigationParentAwareReadRecord>>
         loadClassesNavigationRecordsWithParentProvenance(
             const QList<int>& classIds
             );
@@ -729,12 +646,12 @@ public:
     [[nodiscard]] const RosterPrintClassInfoBatchReadMetrics&
         rosterPrintClassInfoBatchReadMetrics() const noexcept;
 
-    [[nodiscard]] Result<SubPrepClassDetailsRecord>
+    [[nodiscard]] RepositoryResult<SubPrepClassDetailsRecord>
         loadSubPrepClassDetails(int classId);
-    [[nodiscard]] SubPrepClassDetailsDetailedResult
+    [[nodiscard]] RepositoryResult<SubPrepClassDetailsReadOutcome>
         loadSubPrepClassDetailsDetailed(int classId);
 
-    [[nodiscard]] Result<QList<SubPrepClassSummaryRecord>>
+    [[nodiscard]] RepositoryResult<QList<SubPrepClassSummaryRecord>>
         loadSubPrepClassSummaries(
             const QList<int>& classIds,
             const QStringList& selectedDays,
@@ -742,7 +659,7 @@ public:
             int maxMeetingsPerClass,
             int maxTotalMeetings
             );
-    [[nodiscard]] Result<QList<SubPrepClassSummaryNavigationReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<SubPrepClassSummaryNavigationReadRecord>>
         loadSubPrepClassNavigationSummaries(
             const QList<int>& classIds,
             const QStringList& selectedDays,
@@ -751,7 +668,7 @@ public:
             int maxTotalMeetings
             );
 
-    [[nodiscard]] Result<QList<ClassInfo>> loadClassInfosForScheduleScope(
+    [[nodiscard]] RepositoryResult<QList<ClassInfo>> loadClassInfosForScheduleScope(
         const QList<int>& classIds,
         const QStringList& selectedDays,
         ScheduleType type,
@@ -759,7 +676,7 @@ public:
         int maxTotalMeetings,
         bool includeUnassignedTeachers = false
         );
-    [[nodiscard]] Result<QList<SubPrepPrintSourceClassInfoReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<SubPrepPrintSourceClassInfoReadRecord>>
         loadSubPrepPrintSourceClassInfosForScheduleScope(
             const QList<int>& classIds,
             const QStringList& selectedDays,
@@ -768,29 +685,30 @@ public:
             int maxTotalMeetings
             );
 
-    [[nodiscard]] Result<QList<ClassTeacherAssignment>>
+    [[nodiscard]] RepositoryResult<QList<ClassTeacherAssignment>>
         loadClassTeacherAssignments();
-    [[nodiscard]] Result<QList<ClassTeacherAssignmentReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<ClassTeacherAssignmentReadRecord>>
         loadClassTeacherAssignmentRecords();
 
-    [[nodiscard]] Result<QList<ClassInfo>> loadScheduleClassInfos();
-    using ScheduleClassInfoVisitor = std::function<Status(const ClassInfo&)>;
-    using ScheduleClassTimeVisitor = std::function<Status(
+    [[nodiscard]] RepositoryResult<QList<ClassInfo>> loadScheduleClassInfos();
+    using ScheduleClassInfoVisitor =
+        std::function<RepositoryStatus(const ClassInfo&)>;
+    using ScheduleClassTimeVisitor = std::function<RepositoryStatus(
         int,
         const ClassTime&,
         bool
         )>;
-    [[nodiscard]] Status visitScheduleClassInfoRows(
+    [[nodiscard]] RepositoryStatus visitScheduleClassInfoRows(
         const ScheduleClassInfoVisitor& classInfoVisitor,
         const ScheduleClassTimeVisitor& scheduleTimeVisitor
         );
-    [[nodiscard]] Result<
+    [[nodiscard]] RepositoryResult<
         QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
         loadScheduleImportStateSnapshotClassInfos();
     [[nodiscard]] const ScheduleImportStateSnapshotClassInfoReadMetrics&
         scheduleImportStateSnapshotClassInfoReadMetrics() const noexcept;
 
-    [[nodiscard]] Result<QList<ClassConflict>> getClassTimeConflicts(
+    [[nodiscard]] RepositoryResult<QList<ClassConflict>> getClassTimeConflicts(
         int classId,
         const QList<ClassTime>& times,
         ScheduleType type
@@ -803,7 +721,7 @@ private:
         Typed
     };
 
-    [[nodiscard]] Result<QList<SubPrepClassSummaryRecord>>
+    [[nodiscard]] RepositoryResult<QList<SubPrepClassSummaryRecord>>
         loadSubPrepClassSummariesImpl(
             const QList<int>& classIds,
             const QStringList& selectedDays,
@@ -813,18 +731,18 @@ private:
             bool includeStudentCounts
             );
 
-    [[nodiscard]] Status writeClassNotes(
+    [[nodiscard]] RepositoryStatus writeClassNotes(
         int classId,
         const QString& notes,
         const QString& timeFillerActivities
         );
-    [[nodiscard]] Status saveClassInfoWithTeacherId(
+    [[nodiscard]] RepositoryStatus saveClassInfoWithTeacherId(
         const ClassInfo& info,
         qint64 teacherId
         );
-    [[nodiscard]] std::expected<bool, ClassDetailsSaveFailure>
+    [[nodiscard]] RepositoryResult<bool>
         classDetailsParentExists(int classId);
-    [[nodiscard]] ClassDetailsSaveDetailedResult
+    [[nodiscard]] RepositoryStatus
         saveClassInfoWithTeacherIdDetailed(
         const ClassInfo& info,
         qint64 teacherId,
@@ -835,14 +753,14 @@ private:
         MyClassesClassSummaryReadRecord record;
         bool parentMissing = false;
     };
-    [[nodiscard]] Result<MyClassesClassSummaryReadOutcome>
+    [[nodiscard]] RepositoryResult<MyClassesClassSummaryReadOutcome>
         loadMyClassesClassSummaryRecord(int classId);
     struct MyClassesClassInformationReadOutcome final
     {
         MyClassesClassInformationReadRecord record;
         bool parentMissing = false;
     };
-    [[nodiscard]] Result<MyClassesClassInformationReadOutcome>
+    [[nodiscard]] RepositoryResult<MyClassesClassInformationReadOutcome>
         loadMyClassesClassInformationRecord(int classId);
 
     QSqlDatabase& m_database;

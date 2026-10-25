@@ -128,7 +128,7 @@ private slots:
     void repositoryOwnsSelfOverlapAndBoundaryBehavior();
     void unavailableSessionsAreNotFoundAndDoNotUseFallback();
     void terminalConflictCursorFailureDiscardsPartialConflicts();
-    void missingClassAndRepositoryFailureAreTechnical();
+    void missingClassIsNotFoundAndRepositoryFailureIsTechnical();
 };
 
 void NextPlatformApplicationServicesClassDetailsScheduleConflictPortTests::
@@ -710,10 +710,10 @@ terminalConflictCursorFailureDiscardsPartialConflicts()
         ScheduleType::Regular
         );
     QVERIFY(!repositoryResult);
-    QVERIFY(repositoryResult.error().contains(
+    QVERIFY(toLegacyDiagnostic(repositoryResult.error()).contains(
         QStringLiteral("Loading class time conflicts")
         ));
-    QVERIFY(repositoryResult.error().contains(
+    QVERIFY(toLegacyDiagnostic(repositoryResult.error()).contains(
         QStringLiteral("class id %1").arg(target)
         ));
 
@@ -735,7 +735,7 @@ terminalConflictCursorFailureDiscardsPartialConflicts()
 }
 
 void NextPlatformApplicationServicesClassDetailsScheduleConflictPortTests::
-missingClassAndRepositoryFailureAreTechnical()
+missingClassIsNotFoundAndRepositoryFailureIsTechnical()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -759,7 +759,8 @@ missingClassAndRepositoryFailureAreTechnical()
         port
         );
     QVERIFY(!missing);
-    QCOMPARE(missing.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(missing.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(missing.error().recoverable);
     QVERIFY(!missing.error().message.empty());
 
     QSqlQuery query(services.workspaceStore()->database());

@@ -112,7 +112,7 @@ public:
                     );
             }
 
-            const ClassInfoRepository::ClassNotesSaveDetailedResult saved =
+            const RepositoryStatus saved =
                 repository->saveClassNotesDetailed(
                 *classId,
                 notes,
@@ -125,14 +125,10 @@ public:
                     return unavailableFailure();
                 }
 
-                const auto& saveFailure = saved.error();
                 const Domain::ErrorCode code =
-                    saveFailure.kind
-                        == ClassInfoRepository::ClassNotesSaveFailure::Kind::
-                            ParentClassMissing
-                    ? Domain::ErrorCode::NotFound
-                    : Domain::ErrorCode::Technical;
-                const QByteArray errorBytes = saveFailure.diagnostic.toUtf8();
+                    domainErrorCode(saved.error().code);
+                const QByteArray errorBytes =
+                    toLegacyDiagnostic(saved.error()).toUtf8();
                 return failure(
                     code,
                     errorBytes.isEmpty()
@@ -160,6 +156,26 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        ) noexcept
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] static QString legacyText(
         const std::u16string& value
         )

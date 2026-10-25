@@ -333,7 +333,7 @@ emitsBaselineCompatiblePersistenceTranscripts()
             QStringLiteral("10:10 AM"),
             QStringLiteral("10:40 AM")
         }};
-        const Status selectedSaved = services.workspaceStore()
+        const RepositoryStatus selectedSaved = services.workspaceStore()
             ->classInfoRepository()
             ->saveClassInfo(selected);
         QVERIFY(selectedSaved);

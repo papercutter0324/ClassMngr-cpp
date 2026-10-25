@@ -9,14 +9,14 @@
 - Current milestone: Phase 3 is In Progress again on the mandatory Heavy route
   because the §3.3 structured-error audit reopened its exit gate. F1448 is
   committed locally as `28cd7f39def7cc701e02cd8b488a7f21505fc745` and is not
-  pushed. F1449 is implemented and independently verified; its exact-path
-  commit is pending and not pushed. F1450 ClassInfoRepository is next but not
-  active. See the
-  [Phase 3 plan](04-Phase-3-Persistence-Rewrite.md),
+  pushed. F1449 implementation and verification are complete. F1450
+  ClassInfoRepository implementation and focused acceptance are complete;
+  its local commit is pending. Evidence and limits are in the
+  [progress log](04-Phase-3-Progress-Log.md); see also the [Phase 3
+  plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
   [F1420 DataService migration map](../../docs/qt-rewrite/data-service-migration-map.md),
-  [progress log](04-Phase-3-Progress-Log.md), and [current batch
-  tracker](Current-Slice-Batches.md).
+  and [current batch tracker](Current-Slice-Batches.md).
   Phase 2 closure evidence
   and limitations remain in its [plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
   and [progress log](03-Phase-2-Progress-Log.md).

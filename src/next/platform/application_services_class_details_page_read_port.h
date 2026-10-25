@@ -115,7 +115,7 @@ public:
         {
             try
             {
-                const ::Result<ClassDetailsPageReadOutcome> source =
+                const RepositoryResult<ClassDetailsPageReadOutcome> source =
                     classInfoRepository->loadClassDetailsPageRecordDetailed(
                         *legacyClassId);
                 if (!source)
@@ -263,7 +263,7 @@ public:
                 if (!source)
                 {
                     snapshot.studentCount = studentCountFailure(
-                        fromRepositoryError(
+                        fromLegacyRosterError(
                             source.error(),
                             "The class student count could not be loaded."
                             )
@@ -367,6 +367,39 @@ private:
     }
 
     [[nodiscard]] static Domain::OperationError fromRepositoryError(
+        const RepositoryError& repositoryError,
+        const char* fallback
+        )
+    {
+        Domain::ErrorCode code = Domain::ErrorCode::Technical;
+        switch (repositoryError.code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            code = Domain::ErrorCode::InvalidInput;
+            break;
+        case RepositoryErrorCode::NotFound:
+            code = Domain::ErrorCode::NotFound;
+            break;
+        case RepositoryErrorCode::Conflict:
+            code = Domain::ErrorCode::Conflict;
+            break;
+        case RepositoryErrorCode::Validation:
+            code = Domain::ErrorCode::Validation;
+            break;
+        case RepositoryErrorCode::Technical:
+            code = Domain::ErrorCode::Technical;
+            break;
+        }
+
+        const QByteArray bytes = toLegacyDiagnostic(repositoryError).toUtf8();
+        return {
+            .code = code,
+            .message = bytes.isEmpty() ? fallback : bytes.toStdString(),
+            .recoverable = false
+        };
+    }
+
+    [[nodiscard]] static Domain::OperationError fromLegacyRosterError(
         const QString& message,
         const char* fallback
         )
@@ -387,7 +420,6 @@ private:
         {
             code = Domain::ErrorCode::Validation;
         }
-
         const QByteArray bytes = message.toUtf8();
         return {
             .code = code,

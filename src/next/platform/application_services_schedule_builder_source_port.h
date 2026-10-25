@@ -59,18 +59,16 @@ public:
 
             Application::ScheduleBuilderSourceSnapshot snapshot;
             std::unordered_map<int, std::size_t> indexesByClassId;
-            std::optional<std::string> validationFailure;
-            const Status loaded = repository->visitScheduleClassInfoRows(
-                [&](const ClassInfo& info) -> Status
+            const RepositoryStatus loaded = repository->visitScheduleClassInfoRows(
+                [&](const ClassInfo& info) -> RepositoryStatus
                 {
                     const std::optional<Domain::ClassId> classId =
                         canonicalClassId(info.classId);
                     if (!classId)
                     {
-                        validationFailure = "The schedule class source returned "
-                            "an invalid class ID.";
-                        return std::unexpected(QString::fromStdString(
-                            *validationFailure
+                        return std::unexpected(RepositoryError(
+                            RepositoryErrorCode::Validation,
+                            QStringLiteral("The schedule class source returned an invalid class ID.")
                             ));
                     }
 
@@ -94,7 +92,7 @@ public:
                     const int classId,
                     const ClassTime& time,
                     const bool intensive
-                    ) -> Status
+                    ) -> RepositoryStatus
                 {
                     const auto index = indexesByClassId.find(classId);
                     if (index == indexesByClassId.end())
@@ -123,10 +121,8 @@ public:
             if (!loaded)
             {
                 return failure(
-                    validationFailure
-                        ? Domain::ErrorCode::Validation
-                        : Domain::ErrorCode::Technical,
-                    validationFailure.value_or(toStdString(loaded.error()))
+                    domainErrorCode(loaded.error().code),
+                    toStdString(toLegacyDiagnostic(loaded.error()))
                     );
             }
 
@@ -151,6 +147,26 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        ) noexcept
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] static std::optional<Domain::ClassId> canonicalClassId(
         const int value
         )

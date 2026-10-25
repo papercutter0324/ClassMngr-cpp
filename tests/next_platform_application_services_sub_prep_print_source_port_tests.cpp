@@ -1573,8 +1573,8 @@ selectedClassDetailsSqlRepositoryFailureIsTechnical()
         repository->loadSubPrepClassDetailsDetailed(selectedClass);
     QVERIFY(!repositoryFailure);
     QCOMPARE(
-        repositoryFailure.error().kind,
-        SubPrepClassDetailsReadFailure::Kind::Technical
+        repositoryFailure.error().code,
+        RepositoryErrorCode::Technical
         );
 
     ApplicationServicesSubPrepClassDetailsPort port(services);

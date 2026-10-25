@@ -81,8 +81,8 @@ public:
                 );
         }
 
-        Result<QList<ClassSubtitleBatchReadRecord>> loadedClasses = [&]()
-            -> Result<QList<ClassSubtitleBatchReadRecord>>
+        RepositoryResult<QList<ClassSubtitleBatchReadRecord>> loadedClasses = [&]()
+            -> RepositoryResult<QList<ClassSubtitleBatchReadRecord>>
         {
             try
             {
@@ -92,15 +92,17 @@ public:
             }
             catch (const std::exception&)
             {
-                return std::unexpected(
+                return std::unexpected(RepositoryError(
+                    RepositoryErrorCode::Technical,
                     QStringLiteral("The selected class details could not be loaded.")
-                    );
+                    ));
             }
             catch (...)
             {
-                return std::unexpected(
+                return std::unexpected(RepositoryError(
+                    RepositoryErrorCode::Technical,
                     QStringLiteral("The selected class details could not be loaded.")
-                    );
+                    ));
             }
         }();
 
@@ -422,17 +424,31 @@ private:
     }
 
     [[nodiscard]] static Domain::OperationError classFieldsRepositoryError(
-        const QString& message
+        const RepositoryError& repositoryError
         )
     {
-        const bool invalidPersistedTeacherId = message.toLower().contains(
-            QStringLiteral("database returned an invalid teacher identifier")
-            );
-        const QByteArray bytes = message.toUtf8();
+        Domain::ErrorCode code = Domain::ErrorCode::Technical;
+        switch (repositoryError.code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            code = Domain::ErrorCode::InvalidInput;
+            break;
+        case RepositoryErrorCode::NotFound:
+            code = Domain::ErrorCode::NotFound;
+            break;
+        case RepositoryErrorCode::Conflict:
+            code = Domain::ErrorCode::Conflict;
+            break;
+        case RepositoryErrorCode::Validation:
+            code = Domain::ErrorCode::Validation;
+            break;
+        case RepositoryErrorCode::Technical:
+            code = Domain::ErrorCode::Technical;
+            break;
+        }
+        const QByteArray bytes = toLegacyDiagnostic(repositoryError).toUtf8();
         return error(
-            invalidPersistedTeacherId
-                ? Domain::ErrorCode::Validation
-                : Domain::ErrorCode::Technical,
+            code,
             bytes.isEmpty()
                 ? "The selected class subtitle source failed."
                 : bytes.toStdString()

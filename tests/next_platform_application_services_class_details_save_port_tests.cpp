@@ -248,8 +248,8 @@ void verifyStaleScheduleConflictRejected(const ScheduleType type)
         );
     QVERIFY(!losingSaved);
     QCOMPARE(
-        losingSaved.error().kind,
-        ClassInfoRepository::ClassDetailsSaveFailure::Kind::Technical
+        losingSaved.error().code,
+        RepositoryErrorCode::Technical
         );
     const QString expectedDiagnostic = QStringLiteral(
         "Class schedule conflict: %1 %2\u2013%3 conflicts with %4."
@@ -259,7 +259,7 @@ void verifyStaleScheduleConflictRejected(const ScheduleType type)
             conflictSlot.endTime,
             QStringLiteral("F958 %1 Winner").arg(scenario)
             );
-    QCOMPARE(losingSaved.error().diagnostic, expectedDiagnostic);
+    QCOMPARE(toLegacyDiagnostic(losingSaved.error()), expectedDiagnostic);
 
     const auto losingAfter =
         secondRepository->loadClassDetailsSaveInfo(*losingId);
@@ -315,6 +315,9 @@ savesWideTeacherIdAtomicallyWithClassDetails()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
+    ClassInfoRepository* const repository =
+        services.workspaceStore()->classInfoRepository();
+    QVERIFY(repository);
     QSqlQuery sql(services.workspaceStore()->database());
     QVERIFY(sql.exec(QStringLiteral(
         "INSERT INTO teachers (id, teacher_kr, teacher_en) "
@@ -348,10 +351,11 @@ savesWideTeacherIdAtomicallyWithClassDetails()
     QCOMPARE(sql.value(1).toString(), QStringLiteral("integer"));
     QCOMPARE(sql.value(2).toString(), original->notes);
     QCOMPARE(sql.value(3).toString(), original->timeFillerActivities);
-    const auto saved = services.classService()->classInfo(*classId);
+    const auto saved = repository->loadClassDetailsSaveInfo(*classId);
     QVERIFY(saved);
-    QCOMPARE(saved->classTimes.size(), 1);
-    QCOMPARE(saved->intensiveTimes.size(), 1);
+    QCOMPARE(saved->teacherId, qint64(2147483648LL));
+    QCOMPARE(saved->info.classTimes.size(), 1);
+    QCOMPARE(saved->info.intensiveTimes.size(), 1);
 
     // A later edit without a teacher override preserves the wide assignment.
     request.teacherId.reset();
@@ -392,13 +396,14 @@ savesWideTeacherIdAtomicallyWithClassDetails()
     QCOMPARE(sql.value(2).toString(), QStringLiteral("#778899"));
     QCOMPARE(sql.value(3).toString(), original->notes);
     sql.finish();
-    const auto afterFailure = services.classService()->classInfo(*classId);
+    const auto afterFailure = repository->loadClassDetailsSaveInfo(*classId);
     QVERIFY(afterFailure);
-    QCOMPARE(afterFailure->classTimes.size(), 1);
-    QVERIFY(sameTime(afterFailure->classTimes.front(), QStringLiteral("Monday"),
+    QCOMPARE(afterFailure->teacherId, qint64(2147483648LL));
+    QCOMPARE(afterFailure->info.classTimes.size(), 1);
+    QVERIFY(sameTime(afterFailure->info.classTimes.front(), QStringLiteral("Monday"),
         QStringLiteral("9:00 AM"), QStringLiteral("9:50 AM")));
-    QCOMPARE(afterFailure->intensiveTimes.size(), 1);
-    QVERIFY(sameTime(afterFailure->intensiveTimes.front(), QStringLiteral("Friday"),
+    QCOMPARE(afterFailure->info.intensiveTimes.size(), 1);
+    QVERIFY(sameTime(afterFailure->info.intensiveTimes.front(), QStringLiteral("Friday"),
         QStringLiteral("10:00 AM"), QStringLiteral("10:50 AM")));
 
     QVERIFY(sql.exec(QStringLiteral("DROP TRIGGER reject_wide_teacher_schedule")));
@@ -409,6 +414,12 @@ savesWideTeacherIdAtomicallyWithClassDetails()
     QVERIFY(sql.next());
     QCOMPARE(sql.value(0).toLongLong(), std::numeric_limits<qint64>::max());
     QCOMPARE(sql.value(1).toString(), QStringLiteral("integer"));
+    const auto afterWideTeacherUpdate =
+        repository->loadClassDetailsSaveInfo(*classId);
+    QVERIFY(afterWideTeacherUpdate);
+    QCOMPARE(afterWideTeacherUpdate->teacherId, std::numeric_limits<qint64>::max());
+    QCOMPARE(afterWideTeacherUpdate->info.classTimes.size(), 1);
+    QCOMPARE(afterWideTeacherUpdate->info.intensiveTimes.size(), 1);
 }
 
 void NextPlatformApplicationServicesClassDetailsSavePortTests::
@@ -776,11 +787,11 @@ legacyMissingParentSavePreservesForeignKeyDiagnostic()
 
     ClassInfo missingParent;
     missingParent.classId = 100001;
-    const Status saved = repository->saveClassDetails(missingParent, -1);
+    const RepositoryStatus saved = repository->saveClassDetails(missingParent, -1);
 
     QVERIFY(!saved);
     QCOMPARE(
-        saved.error(),
+        toLegacyDiagnostic(saved.error()),
         QStringLiteral(
             "Saving class information failed for class id 100001: "
             "FOREIGN KEY constraint failed Unable to fetch row "

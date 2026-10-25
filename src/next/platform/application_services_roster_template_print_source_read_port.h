@@ -92,15 +92,15 @@ public:
 
         try
         {
-            const Result<QList<RosterPrintClassInfoReadRecord>> classInfoRecords =
+            const RepositoryResult<QList<RosterPrintClassInfoReadRecord>> classInfoRecords =
                 classInfoRepository->loadRosterPrintClassInfoRecords(
                     legacyClassIds
                     );
             if (!classInfoRecords)
             {
                 return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(classInfoRecords.error())
+                    domainErrorCode(classInfoRecords.error().code),
+                    toStdString(toLegacyDiagnostic(classInfoRecords.error()))
                     );
             }
             if (classInfoRecords->size() != legacyClassIds.size())
@@ -303,6 +303,26 @@ private:
     {
         const QByteArray bytes = value.toUtf8();
         return bytes.toStdString();
+    }
+
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        ) noexcept
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
     }
 
     [[nodiscard]] static Application::RosterTemplatePrintSourceReadResult

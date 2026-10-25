@@ -51,16 +51,21 @@ public:
 
         try
         {
-            const Result<QList<ClassTeacherAssignmentReadRecord>> loaded =
+            const RepositoryResult<QList<ClassTeacherAssignmentReadRecord>> loaded =
                 repository->loadClassTeacherAssignmentRecords();
             if (!loaded)
             {
-                // Repository errors are technical failures, regardless of their
-                // display text, and must not look like an unavailable session.
-                return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(loaded.error())
-                    );
+                const QByteArray bytes =
+                    toLegacyDiagnostic(loaded.error()).toUtf8();
+                return Application::ClassTeacherAssignmentsReadResult::failure({
+                    .code = domainErrorCode(loaded.error().code),
+                    .message = bytes.isEmpty()
+                        ? "Class teacher assignments could not be loaded."
+                        : bytes.toStdString(),
+                    // Repository reads were always treated as nonrecoverable
+                    // failures by this port, regardless of diagnostic text.
+                    .recoverable = false
+                });
             }
 
             Application::ClassTeacherAssignmentsReadSnapshot snapshot;
@@ -103,6 +108,26 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        ) noexcept
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] static std::string toStdString(const QString& value)
     {
         const QByteArray bytes = value.toUtf8();

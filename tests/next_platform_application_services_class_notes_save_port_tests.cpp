@@ -129,7 +129,7 @@ savesTrimmedFieldsAtExactUtf16Limit()
         );
     QVERIFY(saved);
 
-    const Result<ClassInfo> loaded = repository->loadClassInfo(classId);
+    const RepositoryResult<ClassInfo> loaded = repository->loadClassInfo(classId);
     QVERIFY(loaded);
     QCOMPARE(loaded->notes.size(), 9'996);
     QCOMPARE(loaded->notes.toUtf8().size(), 19'992);
@@ -202,7 +202,7 @@ rejectsInvalidAndOverLimitInputBeforeAnyWrite()
     QVERIFY(!oversizedActivities);
     QCOMPARE(oversizedActivities.error().code, Domain::ErrorCode::Validation);
 
-    const Result<ClassInfo> loaded = repository->loadClassInfo(classId);
+    const RepositoryResult<ClassInfo> loaded = repository->loadClassInfo(classId);
     QVERIFY(loaded);
     QCOMPARE(loaded->notes, QStringLiteral("Original notes"));
     QCOMPARE(
@@ -293,7 +293,7 @@ mapsRepositoryWriteFailureAndPreservesStoredNotes()
         QStringLiteral("Saving class notes")
         ));
 
-    const Result<ClassInfo> loaded = repository->loadClassInfo(classId);
+    const RepositoryResult<ClassInfo> loaded = repository->loadClassInfo(classId);
     QVERIFY(loaded);
     QCOMPARE(loaded->notes, QStringLiteral("Original notes"));
     QCOMPARE(
@@ -335,14 +335,14 @@ unknownPositiveClassIdReturnsNotFoundAndPreservesLegacyDiagnostic()
     QVERIFY(classInfoBeforeQuery.next());
     QCOMPARE(classInfoBeforeQuery.value(0).toInt(), 0);
 
-    const Status legacySave = repository->saveClassNotes(
+    const RepositoryStatus legacySave = repository->saveClassNotes(
         unknownClassId,
         QStringLiteral("Legacy notes"),
         QStringLiteral("Legacy activities")
         );
     QVERIFY(!legacySave);
     QCOMPARE(
-        legacySave.error(),
+        toLegacyDiagnostic(legacySave.error()),
         QStringLiteral(
             "Saving class notes failed for class id %1: FOREIGN KEY constraint "
             "failed Unable to fetch row (database error 787)"

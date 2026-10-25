@@ -694,12 +694,13 @@ std::expected<void, ClassTransferImportError> preflightSchedules(
 
     if (!eligibleDestinationClassIds.isEmpty())
     {
-        const Result<QList<ClassNavigationReadRecord>> destinationRecords =
+        const RepositoryResult<QList<ClassNavigationReadRecord>> destinationRecords =
             classInfoRepository.loadClassesNavigationRecords(
                 eligibleDestinationClassIds);
         if (!destinationRecords)
         {
-            return std::unexpected(destinationRecords.error());
+            return std::unexpected(
+                toLegacyDiagnostic(destinationRecords.error()));
         }
 
         for (qsizetype index = 0; index < destinationRecords->size(); ++index)
@@ -1116,6 +1117,14 @@ ClassTransferRepository::readSnapshot(
             .recoverable = recoverable
         });
     };
+    const auto repositoryFailure = [&failure](const RepositoryError& error)
+    {
+        return failure(
+            domainErrorCode(error.code),
+            toLegacyDiagnostic(error),
+            error.recoverableOverride.value_or(true)
+            );
+    };
 
     if (!m_database.isOpen())
     {
@@ -1233,10 +1242,7 @@ ClassTransferRepository::readSnapshot(
         classRepository.getClasses();
     if (!destinationClasses)
     {
-        return failure(
-            domainErrorCode(destinationClasses.error().code),
-            toLegacyDiagnostic(destinationClasses.error())
-            );
+        return repositoryFailure(destinationClasses.error());
     }
 
     if (destinationClasses->isEmpty())
@@ -1258,12 +1264,11 @@ ClassTransferRepository::readSnapshot(
         destinationClassIds.append(destination.id);
     }
 
-    const Result<QList<ClassNavigationReadRecord>> destinationInfoRecords =
+    const RepositoryResult<QList<ClassNavigationReadRecord>> destinationInfoRecords =
         classInfoRepository.loadClassesNavigationRecords(destinationClassIds);
     if (!destinationInfoRecords)
     {
-        return failure(Domain::ErrorCode::Technical,
-            destinationInfoRecords.error());
+        return repositoryFailure(destinationInfoRecords.error());
     }
     if (destinationInfoRecords->size() != destinationClasses->size())
     {
@@ -1475,7 +1480,7 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
     {
         for (ClassTransferExportSourceClass& pending : source.classes)
         {
-            Result<ClassTransferExportClassInfoReadRecord> info =
+            RepositoryResult<ClassTransferExportClassInfoReadRecord> info =
                 classInfoRepository.loadClassTransferExportClassInfoRecord(pending.classId);
             if (info)
             {
@@ -1483,7 +1488,7 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
             }
             else
             {
-                pending.infoError = info.error();
+                pending.infoError = toLegacyDiagnostic(info.error());
             }
         }
     }

@@ -107,10 +107,10 @@ bool saveClassInfo(
         return false;
     }
 
-    const Status saved = repository->saveClassInfo(info);
+    const RepositoryStatus saved = repository->saveClassInfo(info);
     if (!saved && failureMessage)
     {
-        *failureMessage = saved.error();
+        *failureMessage = toLegacyDiagnostic(saved.error());
     }
     return saved.has_value();
 }
@@ -577,7 +577,10 @@ malformedClassIdIsRejectedWithoutChangingPersistedFields()
             unknownClassId
             );
     QVERIFY(!legacyUnknownClass);
-    QCOMPARE(legacyUnknownClass.error(), unknownClassDiagnostic);
+    QCOMPARE(
+        toLegacyDiagnostic(legacyUnknownClass.error()),
+        unknownClassDiagnostic
+        );
 
     const auto detailedUnknownClass =
         repository->loadClassCoTeacherAssignmentValidationSnapshotDetailed(
@@ -585,10 +588,31 @@ malformedClassIdIsRejectedWithoutChangingPersistedFields()
             );
     QVERIFY(!detailedUnknownClass);
     QCOMPARE(
-        detailedUnknownClass.error().kind,
-        ClassCoTeacherAssignmentValidationSnapshotFailureKind::ClassNotFound
+        detailedUnknownClass.error().code,
+        RepositoryErrorCode::NotFound
         );
-    QCOMPARE(detailedUnknownClass.error().message, unknownClassDiagnostic);
+    QCOMPARE(
+        toLegacyDiagnostic(detailedUnknownClass.error()),
+        unknownClassDiagnostic
+        );
+
+    const auto missingParentSave =
+        repository->saveClassCoTeacherAssignmentDetailed(
+            unknownClassId,
+            static_cast<qint64>(assignedTeacherId)
+            );
+    QVERIFY(!missingParentSave);
+    QCOMPARE(missingParentSave.error().code, RepositoryErrorCode::NotFound);
+    QVERIFY(missingParentSave.error().recoverableOverride.has_value());
+    QVERIFY(!*missingParentSave.error().recoverableOverride);
+    QCOMPARE(
+        toLegacyDiagnostic(missingParentSave.error()),
+        QStringLiteral(
+            "Saving class information failed for class id %1: "
+            "FOREIGN KEY constraint failed Unable to fetch row "
+            "(database error 787)"
+            ).arg(unknownClassId)
+        );
 
     const auto unknownClass =
         Application::ClassCoTeacherAssignmentUseCase::execute(
@@ -599,9 +623,10 @@ malformedClassIdIsRejectedWithoutChangingPersistedFields()
     QVERIFY(!unknownClass);
     QCOMPARE(unknownClass.error().code, Domain::ErrorCode::NotFound);
     QVERIFY(!unknownClass.error().recoverable);
-    QVERIFY(QString::fromStdString(unknownClass.error().message).contains(
-        QStringLiteral("class not found")
-        ));
+    QCOMPARE(
+        QString::fromStdString(unknownClass.error().message),
+        unknownClassDiagnostic
+        );
 
     const auto savedAfter = repository->loadClassInfo(classId);
     QVERIFY(savedAfter);
@@ -1242,10 +1267,14 @@ missingTeacherReturnsRecoverableNotFoundWithoutMutation()
         missingTeacherId
         );
     QVERIFY(!typedSave);
-    QVERIFY(
-        typedSave.error().kind
-            == ClassInfoRepository::ClassCoTeacherAssignmentSaveFailure::
-                Kind::TeacherNotFound
+    QCOMPARE(typedSave.error().code, RepositoryErrorCode::NotFound);
+    QVERIFY(typedSave.error().recoverableOverride.has_value());
+    QVERIFY(*typedSave.error().recoverableOverride);
+    QCOMPARE(
+        toLegacyDiagnostic(typedSave.error()),
+        QStringLiteral(
+            "Saving class information failed: teacher id %1 was not found."
+            ).arg(missingTeacherId)
         );
 
     QSqlQuery legacyDiagnosticQuery(database);
@@ -1269,13 +1298,13 @@ missingTeacherReturnsRecoverableNotFoundWithoutMutation()
         );
     QVERIFY(!legacyExpectedDiagnostic);
 
-    const Status legacySave = repository->saveClassCoTeacherAssignment(
+    const RepositoryStatus legacySave = repository->saveClassCoTeacherAssignment(
         selectedClassId,
         missingTeacherId
         );
     QVERIFY(!legacySave);
     QCOMPARE(
-        legacySave.error(),
+        toLegacyDiagnostic(legacySave.error()),
         legacyExpectedDiagnostic.error().userMessage()
         );
 
@@ -1288,6 +1317,10 @@ missingTeacherReturnsRecoverableNotFoundWithoutMutation()
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
     QVERIFY(result.error().recoverable);
+    QCOMPARE(
+        QString::fromStdString(result.error().message),
+        toLegacyDiagnostic(typedSave.error())
+        );
 
     const auto savedAfter = repository->loadClassInfo(selectedClassId);
     QVERIFY(savedAfter);

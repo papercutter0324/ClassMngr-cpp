@@ -3392,6 +3392,26 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesSubPrepClassDetailsPort
+    SOURCES
+        tests/next_platform_application_services_sub_prep_class_details_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesSubPrepScheduleSummaryPort
+    SOURCES
+        tests/next_platform_application_services_sub_prep_schedule_summary_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationSubPrepCalendarEventIntervalsQuery
     SOURCES
         tests/next_application_sub_prep_calendar_event_intervals_query_tests.cpp
@@ -3554,6 +3574,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesMyClassesClassInformationBatchReadPort
     SOURCES
         tests/next_platform_application_services_my_classes_class_information_batch_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesMyClassesClassSummaryBatchReadPort
+    SOURCES
+        tests/next_platform_application_services_my_classes_class_summary_batch_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

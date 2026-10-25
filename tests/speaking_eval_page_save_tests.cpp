@@ -1531,11 +1531,11 @@ groupedNavigationUsesBoundedPagesAndRestoresSelection()
                         .endTime = QStringLiteral("4:50 PM")
                     }
                 };
-                const Status saved = fixture.services.databaseSession()
+                const RepositoryStatus saved = fixture.services.databaseSession()
                     ->classInfoRepository()->saveClassInfo(classInfo);
                 if (!saved)
                 {
-                    *failure = saved.error();
+                    *failure = saved.error().diagnostic;
                     return false;
                 }
             }
@@ -1770,12 +1770,12 @@ scheduleModesAndVisibilityScopeFilterNavigationTabs()
             classInfo.classTimes = {regularMeetings.at(1)};
             classInfo.intensiveTimes = {intensiveMeetings.at(1)};
         }
-        const Status saved =
+        const RepositoryStatus saved =
             fixture.services.databaseSession()->classInfoRepository()
                 ->saveClassInfo(classInfo);
         if (!saved)
         {
-            const QString saveError = saved.error();
+            const QString saveError = saved.error().diagnostic;
             QFAIL(qPrintable(saveError));
         }
     }

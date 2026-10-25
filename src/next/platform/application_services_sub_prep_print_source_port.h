@@ -140,7 +140,7 @@ public:
                     );
             }
 
-            const ::Result<
+            const RepositoryResult<
                 QList<SubPrepPrintSourceClassInfoReadRecord>
                 > loadedInfos =
                 classRepository->loadSubPrepPrintSourceClassInfosForScheduleScope(
@@ -758,13 +758,45 @@ private:
     }
 
     [[nodiscard]] static bool isNotFound(
-        const QString& legacyError
+        const RepositoryError& repositoryError
         )
     {
-        const QString normalized = legacyError.toLower();
-        return normalized.contains(QStringLiteral("no matching record"))
-            || normalized.contains(QStringLiteral("not found"))
-            || normalized.contains(QStringLiteral("does not exist"));
+        return repositoryError.code == RepositoryErrorCode::NotFound;
+    }
+
+    [[nodiscard]] static Application::SubPrepPrintSourceReadResult
+    repositoryFailure(
+        const RepositoryError& repositoryError,
+        const char* fallback
+        )
+    {
+        Domain::ErrorCode code = Domain::ErrorCode::Technical;
+        switch (repositoryError.code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            code = Domain::ErrorCode::InvalidInput;
+            break;
+        case RepositoryErrorCode::NotFound:
+            code = Domain::ErrorCode::NotFound;
+            break;
+        case RepositoryErrorCode::Conflict:
+            code = Domain::ErrorCode::Conflict;
+            break;
+        case RepositoryErrorCode::Validation:
+            code = Domain::ErrorCode::Validation;
+            break;
+        case RepositoryErrorCode::Technical:
+            code = Domain::ErrorCode::Technical;
+            break;
+        }
+        const QByteArray errorBytes =
+            toLegacyDiagnostic(repositoryError).toUtf8();
+        return failure(
+            code,
+            errorBytes.isEmpty()
+                ? fallback
+                : errorBytes.toStdString()
+            );
     }
 
     [[nodiscard]] static Application::SubPrepPrintSourceReadResult
@@ -782,6 +814,14 @@ private:
                 ? fallback
                 : errorBytes.toStdString()
             );
+    }
+
+    [[nodiscard]] static bool isNotFound(const QString& legacyError)
+    {
+        const QString normalized = legacyError.toLower();
+        return normalized.contains(QStringLiteral("no matching record"))
+            || normalized.contains(QStringLiteral("not found"))
+            || normalized.contains(QStringLiteral("does not exist"));
     }
 
     [[nodiscard]] static Application::SubPrepPrintSourceReadResult failure(

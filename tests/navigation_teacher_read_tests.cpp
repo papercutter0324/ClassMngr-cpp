@@ -1868,10 +1868,10 @@ classDeleteChooserUsesSubtitleLabelsAndConfirmsSelectedClass()
              QStringLiteral("6:00 PM"),
              QStringLiteral("6:55 PM")}
         };
-        const Status updated = classRepository->saveClassInfo(updatedInfo);
+        const RepositoryStatus updated = classRepository->saveClassInfo(updatedInfo);
         if (!updated)
         {
-            mutationError = updated.error();
+            mutationError = updated.error().diagnostic;
         }
     };
     QVERIFY(invokeDeleteClassSelecting(

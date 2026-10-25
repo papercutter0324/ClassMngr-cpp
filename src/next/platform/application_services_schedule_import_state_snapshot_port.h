@@ -104,7 +104,7 @@ public:
                     );
             }
 
-            const Result<QList<
+            const RepositoryResult<QList<
                 ScheduleImportStateSnapshotClassInfoReadRecord>>
                 loadedClassInfos =
                 classInfoRepository->loadScheduleImportStateSnapshotClassInfos();
@@ -298,6 +298,17 @@ private:
             source,
             {}
         };
+    }
+
+    [[nodiscard]] static Application::ScheduleImportStateSnapshotOutcome
+    readFailure(
+        const Application::ScheduleImportStateSnapshotFailureSource source,
+        const RepositoryError& error
+        )
+    {
+        // This port exposes a single repository-read failure kind. Keep its
+        // existing result shape and copy the repository diagnostic unchanged.
+        return readFailure(source, toLegacyDiagnostic(error));
     }
 
     [[nodiscard]] static Application::ScheduleImportStateSnapshotOutcome

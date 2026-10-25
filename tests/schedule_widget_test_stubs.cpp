@@ -952,7 +952,7 @@ ClassInfoRepository::ClassInfoRepository(QSqlDatabase& database)
 {
 }
 
-Result<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
+RepositoryResult<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
 ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
 {
     ++m_scheduleImportStateSnapshotClassInfoReadMetrics.callCount;
@@ -960,9 +960,10 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
     ++ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
     if (ScheduleWidgetTestStubs::scheduleClassInfoReadFailure)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("injected schedule read failure")
-            );
+        });
     }
 
     QList<ScheduleImportStateSnapshotClassInfoReadRecord> records;
@@ -1036,13 +1037,14 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
     return records;
 }
 
-Result<ClassInfo> ClassInfoRepository::loadClassInfo(const int classId)
+RepositoryResult<ClassInfo> ClassInfoRepository::loadClassInfo(const int classId)
 {
     if (ScheduleWidgetTestStubs::selectedClassGradeReadFailure)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("Injected selected class grade read failure.")
-            );
+        });
     }
 
     ClassInfo info;
@@ -1056,16 +1058,18 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(const int classId)
     return info;
 }
 
-Result<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitleRecord(
+RepositoryResult<ClassSubtitleReadRecord>
+ClassInfoRepository::loadClassSubtitleRecord(
     const int classId
     )
 {
     ++ScheduleWidgetTestStubs::selectedClassSubtitleReadCount;
     if (ScheduleWidgetTestStubs::selectedClassSubtitleReadFailure)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("Injected selected class subtitle read failure.")
-            );
+        });
     }
 
     ClassSubtitleReadRecord record;
@@ -1202,16 +1206,17 @@ TeacherRepository::loadScheduleImportTeacherRecords()
     return records;
 }
 
-Result<QList<ClassNavigationReadRecord>>
+RepositoryResult<QList<ClassNavigationReadRecord>>
 ClassInfoRepository::loadClassesNavigationRecords(
     const QList<int>& classIds
     )
 {
     if (ScheduleWidgetTestStubs::classesNavigationReadFailure)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("Classes navigation read failed.")
-            );
+        });
     }
 
     QList<ClassNavigationReadRecord> records;
@@ -1303,12 +1308,12 @@ ClassInfoRepository::loadClassesNavigationRecords(
     return records;
 }
 
-Result<QList<ClassNavigationParentAwareReadRecord>>
+RepositoryResult<QList<ClassNavigationParentAwareReadRecord>>
 ClassInfoRepository::loadClassesNavigationRecordsWithParentProvenance(
     const QList<int>& classIds
     )
 {
-    Result<QList<ClassNavigationReadRecord>> records =
+    RepositoryResult<QList<ClassNavigationReadRecord>> records =
         loadClassesNavigationRecords(classIds);
     if (!records)
     {
@@ -1342,14 +1347,15 @@ ClassInfoRepository::loadClassesNavigationRecordsWithParentProvenance(
     return parentAwareRecords;
 }
 
-Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
+RepositoryResult<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
 {
     ++ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
     if (ScheduleWidgetTestStubs::scheduleClassInfoReadFailure)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("injected schedule read failure")
-            );
+        });
     }
 
     QList<ClassInfo> infos;
@@ -1429,6 +1435,56 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
     }
 
     return infos;
+}
+
+RepositoryStatus ClassInfoRepository::visitScheduleClassInfoRows(
+    const ScheduleClassInfoVisitor& classInfoVisitor,
+    const ScheduleClassTimeVisitor& scheduleTimeVisitor
+    )
+{
+    if (!classInfoVisitor || !scheduleTimeVisitor)
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
+            QStringLiteral("Loading schedule class information failed: both visitors are required.")
+        });
+    }
+
+    const auto infos = loadScheduleClassInfos();
+    if (!infos)
+    {
+        return std::unexpected(infos.error());
+    }
+
+    for (const ClassInfo& info : *infos)
+    {
+        const RepositoryStatus visited = classInfoVisitor(info);
+        if (!visited)
+        {
+            return visited;
+        }
+    }
+
+    // Match the repository's metadata, regular-row, intensive-row phases while
+    // retaining the fixture loader's class and meeting order.
+    for (const bool intensive : {false, true})
+    {
+        for (const ClassInfo& info : *infos)
+        {
+            const QList<ClassTime>& times = intensive
+                ? info.intensiveTimes : info.classTimes;
+            for (const ClassTime& time : times)
+            {
+                const RepositoryStatus visited = scheduleTimeVisitor(
+                    info.classId, time, intensive);
+                if (!visited)
+                {
+                    return visited;
+                }
+            }
+        }
+    }
+    return {};
 }
 
 DatabaseSession* ApplicationServices::databaseSession() const

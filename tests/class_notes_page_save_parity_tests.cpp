@@ -123,14 +123,14 @@ bool initializeWorkspace(ClassNotesWorkspace& workspace, QString* error)
     }
     workspace.teacherId = *createdTeacher;
 
-    const Status saved = workspace.services.workspaceStore()
+    const RepositoryStatus saved = workspace.services.workspaceStore()
         ->classInfoRepository()
         ->saveClassInfo(commonSeed(workspace.classId, workspace.teacherId));
     if (!saved)
     {
         if (error)
         {
-            *error = saved.error();
+            *error = saved.error().diagnostic;
         }
         return false;
     }

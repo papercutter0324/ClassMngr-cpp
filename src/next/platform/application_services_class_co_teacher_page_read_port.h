@@ -61,8 +61,8 @@ public:
                 ));
         }
 
-        Result<ClassCoTeacherPageDetailsReadOutcome> loadedInfo =
-            [&]() -> Result<ClassCoTeacherPageDetailsReadOutcome>
+        RepositoryResult<ClassCoTeacherPageDetailsReadOutcome> loadedInfo =
+            [&]() -> RepositoryResult<ClassCoTeacherPageDetailsReadOutcome>
         {
             try
             {
@@ -72,15 +72,17 @@ public:
             }
             catch (const std::exception&)
             {
-                return std::unexpected(
+                return std::unexpected(RepositoryError(
+                    RepositoryErrorCode::Technical,
                     QStringLiteral("Co-teacher class details could not be loaded.")
-                    );
+                    ));
             }
             catch (...)
             {
-                return std::unexpected(
+                return std::unexpected(RepositoryError(
+                    RepositoryErrorCode::Technical,
                     QStringLiteral("Co-teacher class details could not be loaded.")
-                    );
+                    ));
             }
         }();
 
@@ -89,7 +91,7 @@ public:
             Application::ClassCoTeacherPageReadSnapshot snapshot{
                 classId,
                 failure<Application::ClassCoTeacherPageFields>(
-                    fromLegacyError(loadedInfo.error())
+                    fromRepositoryError(loadedInfo.error())
                     ),
                 failure<std::u16string>(error(
                     Domain::ErrorCode::NotFound,
@@ -211,24 +213,31 @@ private:
             );
     }
 
-    [[nodiscard]] static Domain::OperationError fromLegacyError(
-        const QString& message
+    [[nodiscard]] static Domain::OperationError fromRepositoryError(
+        const RepositoryError& repositoryError
         )
     {
-        const QString normalized = message.toLower();
         Domain::ErrorCode code = Domain::ErrorCode::Technical;
-        if (normalized.contains(QStringLiteral("not found"))
-            || normalized.contains(QStringLiteral("no matching record"))
-            || normalized.contains(QStringLiteral("unavailable")))
+        switch (repositoryError.code)
         {
+        case RepositoryErrorCode::InvalidInput:
+            code = Domain::ErrorCode::InvalidInput;
+            break;
+        case RepositoryErrorCode::NotFound:
             code = Domain::ErrorCode::NotFound;
-        }
-        else if (normalized.contains(QStringLiteral("invalid")))
-        {
+            break;
+        case RepositoryErrorCode::Conflict:
+            code = Domain::ErrorCode::Conflict;
+            break;
+        case RepositoryErrorCode::Validation:
             code = Domain::ErrorCode::Validation;
+            break;
+        case RepositoryErrorCode::Technical:
+            code = Domain::ErrorCode::Technical;
+            break;
         }
 
-        const QByteArray bytes = message.toUtf8();
+        const QByteArray bytes = toLegacyDiagnostic(repositoryError).toUtf8();
         return error(
             code,
             bytes.isEmpty()

@@ -62,8 +62,8 @@ public:
                 );
         }
 
-        Result<SelectedClassGradeReadOutcome> source = [&]()
-            -> Result<SelectedClassGradeReadOutcome>
+        RepositoryResult<SelectedClassGradeReadOutcome> source = [&]()
+            -> RepositoryResult<SelectedClassGradeReadOutcome>
         {
             try
             {
@@ -73,22 +73,24 @@ public:
             }
             catch (const std::exception&)
             {
-                return std::unexpected(
+                return std::unexpected(RepositoryError(
+                    RepositoryErrorCode::Technical,
                     QStringLiteral("The selected class grade could not be loaded.")
-                    );
+                    ));
             }
             catch (...)
             {
-                return std::unexpected(
+                return std::unexpected(RepositoryError(
+                    RepositoryErrorCode::Technical,
                     QStringLiteral("The selected class grade could not be loaded.")
-                    );
+                    ));
             }
         }();
 
         if (!source)
         {
             return failure(
-                legacyErrorCode(source.error()),
+                legacyErrorCode(source.error().code),
                 legacyErrorMessage(source.error())
                 );
         }
@@ -153,32 +155,30 @@ private:
     }
 
     [[nodiscard]] static Domain::ErrorCode legacyErrorCode(
-        const QString& message
+        const RepositoryErrorCode code
         )
     {
-        const QString normalized = message.toLower();
-        if (normalized.contains(QStringLiteral("not found"))
-            || normalized.contains(QStringLiteral("no matching record"))
-            || normalized.contains(QStringLiteral("unavailable")))
+        switch (code)
         {
-            return Domain::ErrorCode::NotFound;
-        }
-        if (normalized.contains(QStringLiteral("invalid")))
-        {
+        case RepositoryErrorCode::InvalidInput:
             return Domain::ErrorCode::InvalidInput;
-        }
-        if (normalized.contains(QStringLiteral("validation")))
-        {
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
             return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
         }
         return Domain::ErrorCode::Technical;
     }
 
     [[nodiscard]] static std::string legacyErrorMessage(
-        const QString& message
+        const RepositoryError& error
         )
     {
-        const QByteArray bytes = message.toUtf8();
+        const QByteArray bytes = toLegacyDiagnostic(error).toUtf8();
         return bytes.isEmpty()
             ? "The selected class grade could not be loaded."
             : bytes.toStdString();

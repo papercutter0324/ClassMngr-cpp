@@ -185,7 +185,7 @@ public:
                 request.mode == Application::ScheduleViewMode::Regular
                 ? ScheduleType::Regular
                 : ScheduleType::Intensive;
-            const ::Result<QList<SubPrepClassSummaryRecord>> records =
+            const RepositoryResult<QList<SubPrepClassSummaryRecord>> records =
                 repository->loadSubPrepClassSummaries(
                     legacyClassIds,
                     legacyDays,
@@ -263,7 +263,7 @@ public:
 
             std::unordered_map<int, NavigationMetadata>
                 regularNavigationByClassId;
-            const ::Result<
+            const RepositoryResult<
                 QList<SubPrepClassSummaryNavigationReadRecord>> regularRecords =
                 repository->loadSubPrepClassNavigationSummaries(
                     legacyClassIds,
@@ -318,7 +318,7 @@ public:
                 intensiveNavigationByClassId;
             if (needsIntensiveNavigation)
             {
-                const ::Result<
+                const RepositoryResult<
                     QList<SubPrepClassSummaryNavigationReadRecord>>
                     intensiveRecords =
                     repository->loadSubPrepClassNavigationSummaries(
@@ -1101,31 +1101,30 @@ private:
     }
 
     [[nodiscard]] static Application::SubPrepScheduleSummaryReadResult
-    repositoryFailure(const QString& repositoryError)
+    repositoryFailure(const RepositoryError& repositoryError)
     {
-        const QString normalized = repositoryError.toLower();
-        if (normalized.contains(QStringLiteral("invalid"))
-            || normalized.contains(QStringLiteral("unique")))
+        Domain::ErrorCode code = Domain::ErrorCode::Technical;
+        switch (repositoryError.code)
         {
-            return failure(
-                Domain::ErrorCode::InvalidInput,
-                errorText(repositoryError,
-                    "The Sub Prep schedule summary request is invalid.")
-                );
-        }
-        if (normalized.contains(QStringLiteral("exceeds"))
-            || normalized.contains(QStringLiteral("limit"))
-            || normalized.contains(QStringLiteral("validation")))
-        {
-            return failure(
-                Domain::ErrorCode::Validation,
-                errorText(repositoryError,
-                    "The Sub Prep schedule summary data failed validation.")
-                );
+        case RepositoryErrorCode::InvalidInput:
+            code = Domain::ErrorCode::InvalidInput;
+            break;
+        case RepositoryErrorCode::NotFound:
+            code = Domain::ErrorCode::NotFound;
+            break;
+        case RepositoryErrorCode::Conflict:
+            code = Domain::ErrorCode::Conflict;
+            break;
+        case RepositoryErrorCode::Validation:
+            code = Domain::ErrorCode::Validation;
+            break;
+        case RepositoryErrorCode::Technical:
+            code = Domain::ErrorCode::Technical;
+            break;
         }
         return failure(
-            Domain::ErrorCode::Technical,
-            errorText(repositoryError,
+            code,
+            errorText(toLegacyDiagnostic(repositoryError),
                 "Sub Prep schedule summaries could not be loaded.")
             );
     }

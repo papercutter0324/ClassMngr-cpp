@@ -443,7 +443,7 @@ ClassService::classTeacherAssignments() const
 {
     if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
     {
-        return repository->loadClassTeacherAssignments();
+        return toLegacyResult(repository->loadClassTeacherAssignments());
     }
     return std::unexpected(unavailableError());
 }
@@ -452,7 +452,7 @@ Result<QList<ClassInfo>> ClassService::scheduleClassInfos() const
 {
     if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
     {
-        return repository->loadScheduleClassInfos();
+        return toLegacyResult(repository->loadScheduleClassInfos());
     }
     return std::unexpected(unavailableError());
 }
@@ -506,7 +506,7 @@ Result<ClassInfo> ClassService::classInfo(int classId) const
     {
         if (auto* repository = session()->classInfoRepository())
         {
-            return repository->loadClassInfo(classId);
+            return toLegacyResult(repository->loadClassInfo(classId));
         }
         return std::unexpected(unavailableError());
     }
@@ -530,7 +530,7 @@ Result<SubPrepClassDetailsRecord> ClassService::subPrepClassDetails(
 
     if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
     {
-        return repository->loadSubPrepClassDetails(classId);
+        return toLegacyResult(repository->loadSubPrepClassDetails(classId));
     }
 
     // Keep this selected-detail read bound to the active session. Falling
@@ -548,13 +548,13 @@ Result<QList<SubPrepClassSummaryRecord>> ClassService::subPrepClassSummaries(
 {
     if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
     {
-        return repository->loadSubPrepClassSummaries(
+        return toLegacyResult(repository->loadSubPrepClassSummaries(
             classIds,
             selectedDays,
             type,
             maxMeetingsPerClass,
             maxTotalMeetings
-            );
+            ));
     }
 
     // Summary reads stay within the active v2 database session. The legacy
@@ -573,14 +573,14 @@ Result<QList<ClassInfo>> ClassService::classInfosForScheduleScope(
 {
     if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
     {
-        return repository->loadClassInfosForScheduleScope(
+        return toLegacyResult(repository->loadClassInfosForScheduleScope(
             classIds,
             selectedDays,
             type,
             maxMeetingsPerClass,
             maxTotalMeetings,
             includeUnassignedTeachers
-            );
+            ));
     }
 
     // This bounded v2 read must execute against the active database session;
@@ -623,7 +623,7 @@ Status ClassService::saveClassInfo(const ClassInfo& info) const
 
     if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
     {
-        return repository->saveClassInfo(normalized);
+        return toLegacyStatus(repository->saveClassInfo(normalized));
     }
     return dataService()
         ? dataService()->saveClassInfo(normalized)
@@ -654,8 +654,8 @@ Status ClassService::saveClassNotes(
     {
         if (auto* repository = session()->classInfoRepository())
         {
-            return repository->saveClassNotes(
-                classId, normalizedNotes, normalizedActivities);
+            return toLegacyStatus(repository->saveClassNotes(
+                classId, normalizedNotes, normalizedActivities));
         }
         return std::unexpected(unavailableError());
     }
@@ -673,7 +673,8 @@ Result<QList<ClassConflict>> ClassService::conflicts(
 {
     if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
     {
-        return repository->getClassTimeConflicts(classId, times, type);
+        return toLegacyResult(
+            repository->getClassTimeConflicts(classId, times, type));
     }
     return dataService()
         ? dataService()->getClassTimeConflicts(classId, times, type)

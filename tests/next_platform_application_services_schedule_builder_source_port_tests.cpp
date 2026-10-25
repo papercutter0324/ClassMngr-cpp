@@ -665,7 +665,7 @@ validatesStoredScheduleClassIdsBeforeNarrowing()
         repository->scheduleClassInfoReadMetrics();
     const auto invalidRepositoryResult = repository->loadScheduleClassInfos();
     QVERIFY(!invalidRepositoryResult);
-    QVERIFY(invalidRepositoryResult.error().contains(
+    QVERIFY(toLegacyDiagnostic(invalidRepositoryResult.error()).contains(
         QString::number(wideClassId)
         ));
     QCOMPARE(repository->scheduleClassInfoReadMetrics()
@@ -683,7 +683,7 @@ validatesStoredScheduleClassIdsBeforeNarrowing()
 
     const auto invalidPortResult = port.readScheduleClasses(query);
     QVERIFY(!invalidPortResult);
-    QCOMPARE(invalidPortResult.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(invalidPortResult.error().code, Domain::ErrorCode::Validation);
     QVERIFY(!invalidPortResult.error().message.empty());
     const auto metricsAfterInvalidPort =
         repository->scheduleClassInfoReadMetrics();
@@ -701,7 +701,7 @@ validatesStoredScheduleClassIdsBeforeNarrowing()
     const auto invalidHandlerResult =
         Application::ScheduleBuilderSourceQueryHandler::execute(query, port);
     QVERIFY(!invalidHandlerResult);
-    QCOMPARE(invalidHandlerResult.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(invalidHandlerResult.error().code, Domain::ErrorCode::Validation);
     QCOMPARE(invalidHandlerResult.error().message,
              invalidPortResult.error().message);
 
@@ -789,21 +789,22 @@ validatesStoredScheduleClassIdsBeforeNarrowing()
     const auto zeroIdRepositoryResult =
         zeroIdRepository->loadScheduleClassInfos();
     QVERIFY(!zeroIdRepositoryResult);
-    QVERIFY(zeroIdRepositoryResult.error().contains(QStringLiteral("0")));
+    QVERIFY(toLegacyDiagnostic(zeroIdRepositoryResult.error())
+        .contains(QStringLiteral("0")));
 
     Platform::ApplicationServicesScheduleBuilderSourcePort zeroIdPort(
         zeroIdServices
         );
     const auto zeroIdPortResult = zeroIdPort.readScheduleClasses(query);
     QVERIFY(!zeroIdPortResult);
-    QCOMPARE(zeroIdPortResult.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(zeroIdPortResult.error().code, Domain::ErrorCode::Validation);
     const auto zeroIdHandlerResult =
         Application::ScheduleBuilderSourceQueryHandler::execute(
             query,
             zeroIdPort
             );
     QVERIFY(!zeroIdHandlerResult);
-    QCOMPARE(zeroIdHandlerResult.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(zeroIdHandlerResult.error().code, Domain::ErrorCode::Validation);
     const auto zeroIdMetricsAfterPort =
         zeroIdRepository->scheduleClassInfoReadMetrics();
     QCOMPARE(zeroIdMetricsAfterPort.regularScheduleStatementCount,

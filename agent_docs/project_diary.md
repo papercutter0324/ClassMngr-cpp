@@ -8557,3 +8557,32 @@ the F1449 commit. Batch 23 discovery remains due when F1462 starts, with
 `DocumentCatalog` and DataService compatibility conversion reserved for that
 discovery. Phase 3 remains In Progress; its structured-error deliverable and
 full exit gate are not yet complete.
+
+
+## 2026-10-24 — F1449 committed; F1450 discovery started
+
+F1449 is committed locally as `71424f7334399ec3735c23172e4627b3cefb0641`
+and remains unpushed until Batch 22 closes. The worktree was clean at commit;
+the branch is six commits ahead. F1450 ClassInfoRepository scope discovery is
+now active under the Heavy route. Independent Explorer and Investigator
+reviews are mapping its repository API, consumers, error categories, and
+focused verification; implementation has not started. Batch 23 discovery
+remains due when F1462 starts.
+
+
+## 2026-10-24 — F1450 verified; local commit pending
+
+F1450’s 51 fallible ClassInfoRepository APIs, visitor callbacks, and embedded
+My Classes batch errors now use the shared structured contract; custom detailed
+failures are removed and metrics accessors remain unchanged. Independent source
+reviews found no remaining category, ID-width, transaction, or direct-port
+mapping defect. Focused repository and direct-port checks passed; broader
+consumer failures and timeouts remain documented in the Phase 3 progress log.
+
+Durable decisions: error category and recoverability are separate, so callers
+may annotate the same NotFound category with different recovery policy. Typed
+qint64 identity paths must retain wide IDs; legacy int records must report an
+unrepresentable stored ID instead of silently truncating it. Preserve the
+singular RosterPrint orphan-data behavior separately from the batch reader’s
+intentional suppression, and make test doubles implement the repository path
+used by their adapter.

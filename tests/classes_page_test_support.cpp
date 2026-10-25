@@ -11,7 +11,7 @@ bool selectedClassGradeReadWillFail();
 extern int selectedClassGradeReadCount;
 }
 
-Result<ClassDetailsPageReadRecord>
+RepositoryResult<ClassDetailsPageReadRecord>
 ClassInfoRepository::loadClassDetailsPageRecord(const int classId)
 {
     ClassDetailsPageReadRecord record;
@@ -22,10 +22,10 @@ ClassInfoRepository::loadClassDetailsPageRecord(const int classId)
     return record;
 }
 
-Result<ClassDetailsPageReadOutcome>
+RepositoryResult<ClassDetailsPageReadOutcome>
 ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
 {
-    const Result<ClassDetailsPageReadRecord> loaded =
+    const RepositoryResult<ClassDetailsPageReadRecord> loaded =
         loadClassDetailsPageRecord(classId);
     if (!loaded)
     {
@@ -80,7 +80,7 @@ Result<int> RosterRepository::getRosterStudentCount(const int classId)
     return DataService().getRosterStudentCount(classId);
 }
 
-Result<SelectedClassGradeReadRecord>
+RepositoryResult<SelectedClassGradeReadRecord>
 ClassInfoRepository::loadSelectedClassGradeRecord(const int classId)
 {
     const auto loaded = loadSelectedClassGradeRecordDetailed(classId);
@@ -91,15 +91,16 @@ ClassInfoRepository::loadSelectedClassGradeRecord(const int classId)
     return loaded->record;
 }
 
-Result<SelectedClassGradeReadOutcome>
+RepositoryResult<SelectedClassGradeReadOutcome>
 ClassInfoRepository::loadSelectedClassGradeRecordDetailed(const int classId)
 {
     ++ScheduleWidgetTestStubs::selectedClassGradeReadCount;
     if (ScheduleWidgetTestStubs::selectedClassGradeReadWillFail())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("Injected selected class grade read failure.")
-            );
+        });
     }
 
     SelectedClassGradeReadOutcome outcome;

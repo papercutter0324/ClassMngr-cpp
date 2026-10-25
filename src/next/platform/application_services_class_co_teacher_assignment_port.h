@@ -91,28 +91,14 @@ public:
 
         try
         {
-            const ClassCoTeacherAssignmentValidationSnapshotDetailedResult
+            const RepositoryResult<ClassCoTeacherAssignmentValidationSnapshotReadRecord>
                 loaded = repository
                     ->loadClassCoTeacherAssignmentValidationSnapshotDetailed(
                         *classId
                         );
             if (!loaded)
             {
-                const auto& error = loaded.error();
-                if (
-                    error.kind
-                        == ClassCoTeacherAssignmentValidationSnapshotFailureKind::
-                            ClassNotFound
-                    && store->isOpen()
-                    )
-                {
-                    return failure(
-                        Domain::ErrorCode::NotFound,
-                        toStdString(error.message)
-                        );
-                }
-
-                return repositoryFailure(store, error.message);
+                return repositoryFailure(store, loaded.error());
             }
 
             ClassInfo info;
@@ -144,7 +130,7 @@ public:
                     );
             }
 
-            const Status regularConflicts = validateScheduleConflicts(
+            const RepositoryStatus regularConflicts = validateScheduleConflicts(
                 *repository,
                 normalized,
                 normalized.classTimes,
@@ -155,7 +141,7 @@ public:
                 return repositoryFailure(store, regularConflicts.error());
             }
 
-            const Status intensiveConflicts = validateScheduleConflicts(
+            const RepositoryStatus intensiveConflicts = validateScheduleConflicts(
                 *repository,
                 normalized,
                 normalized.intensiveTimes,
@@ -175,23 +161,20 @@ public:
                 );
             if (!saved)
             {
-                const auto& error = saved.error();
-                if (
-                    error.kind
-                        == ClassInfoRepository::
-                            ClassCoTeacherAssignmentSaveFailure::Kind::
-                                TeacherNotFound
-                    && store->isOpen()
-                    )
+                if (store->isOpen()
+                    && saved.error().code == RepositoryErrorCode::NotFound)
                 {
                     return Domain::Result<void>::failure({
-                        .code = Domain::ErrorCode::NotFound,
-                        .message = toStdString(error.diagnostic),
-                        .recoverable = true
+                        .code = domainErrorCode(saved.error().code),
+                        .message = toStdString(
+                            toLegacyDiagnostic(saved.error())
+                            ),
+                        .recoverable = saved.error().recoverableOverride
+                            .value_or(false)
                     });
                 }
 
-                return repositoryFailure(store, error.diagnostic);
+                return repositoryFailure(store, saved.error());
             }
 
             return Domain::Result<void>::success();
@@ -285,7 +268,7 @@ private:
             .arg(details.join(QStringLiteral("; ")));
     }
 
-    [[nodiscard]] static Status validateScheduleConflicts(
+    [[nodiscard]] static RepositoryStatus validateScheduleConflicts(
         ClassInfoRepository& repository,
         const ClassInfo& info,
         const QList<ClassTime>& times,
@@ -297,7 +280,7 @@ private:
             return {};
         }
 
-        const Result<QList<ClassConflict>> conflicts =
+        const RepositoryResult<QList<ClassConflict>> conflicts =
             repository.getClassTimeConflicts(info.classId, times, type);
         if (!conflicts)
         {
@@ -309,7 +292,8 @@ private:
         }
 
         const ClassConflict& first = conflicts->first();
-        return std::unexpected(
+        return std::unexpected(RepositoryError(
+            RepositoryErrorCode::Technical,
             QStringLiteral(
                 "Class schedule conflict: %1 %2\u2013%3 conflicts with %4."
                 ).arg(
@@ -317,8 +301,8 @@ private:
                     first.startTime,
                     first.endTime,
                     first.conflictingClassName
-                    )
-            );
+                )
+            ));
     }
 
     [[nodiscard]] static Domain::Result<void> repositoryFailure(
@@ -331,6 +315,41 @@ private:
             return unavailableFailure();
         }
         return failure(Domain::ErrorCode::Technical, toStdString(message));
+    }
+
+    [[nodiscard]] static Domain::Result<void> repositoryFailure(
+        WorkspaceStore* store,
+        const RepositoryError& error
+        )
+    {
+        if (!store || !store->isOpen())
+        {
+            return unavailableFailure();
+        }
+        return failure(
+            domainErrorCode(error.code),
+            toStdString(toLegacyDiagnostic(error))
+            );
+    }
+
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        ) noexcept
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
     }
 
     [[nodiscard]] static Domain::Result<void> failure(

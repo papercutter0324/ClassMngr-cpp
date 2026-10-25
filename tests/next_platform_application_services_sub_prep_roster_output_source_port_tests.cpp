@@ -1836,7 +1836,8 @@ classInfoBatchRejectsMissingMetadataRecord()
             {*createdClass}
             );
     QVERIFY(!loaded);
-    QVERIFY(loaded.error().contains(QStringLiteral("no matching record")));
+    QVERIFY(toLegacyDiagnostic(loaded.error())
+        .contains(QStringLiteral("no matching record")));
 
     const auto after =
         classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics();

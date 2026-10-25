@@ -456,9 +456,9 @@ Status DataService::saveClassInfo(
             );
     }
 
-    return m_session->classInfoRepository()->saveClassInfo(
+    return toLegacyStatus(m_session->classInfoRepository()->saveClassInfo(
         info
-        );
+        ));
 }
 
 Status DataService::saveClassNotes(
@@ -474,11 +474,11 @@ Status DataService::saveClassNotes(
             );
     }
 
-    return m_session->classInfoRepository()->saveClassNotes(
+    return toLegacyStatus(m_session->classInfoRepository()->saveClassNotes(
         classId,
         notes,
         timeFillerActivities
-        );
+        ));
 }
 
 Result<ClassInfo> DataService::loadClassInfo(
@@ -492,9 +492,9 @@ Result<ClassInfo> DataService::loadClassInfo(
             );
     }
 
-    return m_session->classInfoRepository()->loadClassInfo(
+    return toLegacyResult(m_session->classInfoRepository()->loadClassInfo(
         classId
-        );
+        ));
 }
 
 Result<QList<IntensiveSlotState>> DataService::loadIntensiveSlotStates()
@@ -967,11 +967,11 @@ Result<QList<ClassConflict>> DataService::getClassTimeConflicts(
             );
     }
 
-    return m_session->classInfoRepository()->getClassTimeConflicts(
+    return toLegacyResult(m_session->classInfoRepository()->getClassTimeConflicts(
         classId,
         times,
         type
-        );
+        ));
 }
 
 Status DataService::saveRoster(

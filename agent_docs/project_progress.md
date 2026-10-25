@@ -56,18 +56,25 @@ and will be pushed when Batch 22 closes. F1448 ClassRepository implementation
 and independent focused verification passed; commit
 `28cd7f39def7cc701e02cd8b488a7f21505fc745` is local and will be pushed when
 Batch 22 closes. F1449 TestingClassRepository is independently verified and
-ready to commit; its commit will remain local until Batch 22 closes. Eight
-focused CTests passed, along with three TestingClassesPage parity CTests and
-ScheduleImport (96 Qt cases; one external-workbook case skipped because
-`CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was unset). The broad ScheduleWidget and
-TestingClassesPage runs had unresolved current-run failures (SQLite driver/
-database-open errors and four roster UI assertions); no same-revision baseline
-was established. No full suite or other-platform build ran. F1450
-ClassInfoRepository is next after the F1449 commit. Batch 23 discovery is due
-when F1462 starts. `DocumentCatalog` and DataService compatibility conversion
-are reserved for that discovery. The prior completion status was premature;
-Phase 3 remains In Progress until the structured-error deliverable and full
-exit gate are fulfilled.
+committed locally at `71424f7334399ec3735c23172e4627b3cefb0641`; it is not
+pushed. Eight focused CTests passed, along with three TestingClassesPage
+parity CTests and ScheduleImport (96 Qt cases; one external-workbook case
+skipped because `CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was unset). The broad
+ScheduleWidget and TestingClassesPage runs had unresolved current-run failures
+(SQLite driver/database-open errors and four roster UI assertions); no
+same-revision baseline was established. No full suite or other-platform build
+ran. F1450 ClassInfoRepository implementation and independent source review
+are complete; its local commit is pending. On the existing incremental macOS
+Debug tree, `ClassMngr` and affected targets built, repository/error CTests
+passed 2/2, all 24 direct-port CTests passed, and the DataService lifecycle,
+ScheduleImport, focused ClassTransfer parity, ScheduleWidget, and focused
+SubPrep schedule checks passed. Broader UI results include unresolved
+current-run failures and timeouts; exact outcomes and limits are recorded in
+the Phase 3 progress log. No full suite or other-platform build ran. Batch 23
+discovery remains due when F1462 starts; search then for `DocumentCatalog`,
+DataService compatibility conversion, and other candidates beyond Batch 22's
+20-slice cap. Phase 3 remains In Progress until the structured-error
+deliverable and full exit gate are fulfilled.
 
 ## Goal
 
@@ -158,13 +165,17 @@ eight focused CTests, three page parity CTests, and ScheduleImport (96 cases,
 one external-workbook case skipped because `CLASSMNGR_SCHEDULE_IMPORT_SAMPLE`
 was unset). The broad ScheduleWidget and TestingClassesPage runs had unresolved
 current-run failures; no same-revision baseline was established. No full suite
-or other-platform build ran. F1449's commit is pending and will be pushed when
-Batch 22 closes. F1450 ClassInfoRepository is next after the F1449 commit.
-Batch 23 discovery is due at F1462, the second-to-last Batch 22 candidate.
-`DocumentCatalog` and `DataService` compatibility conversion are recorded for
-that discovery. The earlier file
-compatibility and v2 source-boundary reviews remain valid; see the [Phase 3
-plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
+or other-platform build ran. F1449 is committed locally at
+`71424f7334399ec3735c23172e4627b3cefb0641` and will be pushed when Batch 22
+closes. F1450 ClassInfoRepository implementation is active under the Heavy
+route. F1450 is independently accepted and verified with its exact focused
+evidence and broader current-run limits in the [Phase 3 progress
+log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md); its local
+commit is pending. Batch 23 discovery is due at F1462, the second-to-last
+Batch 22 candidate; search then for `DocumentCatalog`, DataService
+compatibility conversion, and other candidates beyond the accepted cap. The
+earlier file-compatibility and v2 source-boundary reviews remain valid; see
+the [Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
 and [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
 
 Batch 9's nine ordered slices, F1419–F1427, are accepted and pushed to

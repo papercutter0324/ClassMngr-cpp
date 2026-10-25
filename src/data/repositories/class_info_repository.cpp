@@ -18,6 +18,82 @@
 
 namespace
 {
+// Preserve existing typed failures; diagnostic-only database failures default
+// to Technical. Input and persisted-data checks classify their own branches.
+[[nodiscard]] std::unexpected<RepositoryError> repositoryFailure(
+    RepositoryError error
+    )
+{
+    return std::unexpected(std::move(error));
+}
+
+[[nodiscard]] std::unexpected<RepositoryError> repositoryFailure(
+    QString diagnostic,
+    const RepositoryErrorCode code = RepositoryErrorCode::Technical
+    )
+{
+    return repositoryFailure(RepositoryError{code, std::move(diagnostic)});
+}
+
+RepositoryStatus rollbackSaveFailure(
+    DatabaseTransaction& transaction,
+    QSqlDatabase& database,
+    RepositoryError failure,
+    const QString& rollbackDiagnostic
+    )
+{
+    if (!transaction.rollbackChecked())
+    {
+        return repositoryFailure(
+            failure.diagnostic + QLatin1Char('\n')
+                + rollbackDiagnostic.arg(database.lastError().text()),
+            RepositoryErrorCode::Technical
+            );
+    }
+    return repositoryFailure(std::move(failure));
+}
+
+// NULL means unassigned; an empty persisted value historically means zero.
+// Parse at full width first: QVariant::toInt() can narrow numeric variants.
+template<typename Id>
+RepositoryResult<Id> persistedTeacherId(
+    const QVariant& value,
+    const QString& diagnostic
+    )
+{
+    if (value.isNull())
+    {
+        return Id{-1};
+    }
+    if (value.toString().isEmpty())
+    {
+        return Id{0};
+    }
+    bool valid = false;
+    const qint64 parsed = value.toString().toLongLong(&valid);
+    if (!valid || parsed < std::numeric_limits<Id>::min()
+        || parsed > std::numeric_limits<Id>::max())
+    {
+        return repositoryFailure(diagnostic, RepositoryErrorCode::Validation);
+    }
+    return static_cast<Id>(parsed);
+}
+
+template<typename Id = int>
+RepositoryResult<Id> persistedClassId(
+    const QVariant& value,
+    const QString& diagnostic
+    )
+{
+    bool valid = false;
+    const qint64 parsed = value.toString().toLongLong(&valid);
+    if (!valid || parsed <= 0 || parsed > std::numeric_limits<Id>::max())
+    {
+        return repositoryFailure(diagnostic, RepositoryErrorCode::Validation);
+    }
+    return static_cast<Id>(parsed);
+}
+
 struct TimeInterval
 {
     int start{-1};
@@ -236,7 +312,7 @@ QString normalizedProjectionType(
         );
 }
 
-Result<Classroom> loadClassById(
+RepositoryResult<Classroom> loadClassById(
     QSqlDatabase& database,
     int classId
     )
@@ -258,22 +334,39 @@ Result<Classroom> loadClassById(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryFailure(executed.error().userMessage());
     }
 
     if (!query.next())
     {
-        return std::unexpected(
+        if (query.lastError().isValid())
+        {
+            return repositoryFailure(SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading class for conflict detection"),
+                {},
+                QObject::tr("class id %1").arg(classId)
+                ).userMessage());
+        }
+
+        return repositoryFailure(
             QObject::tr(
                 "Loading class for conflict detection failed for class id "
                 "%1: no matching record exists."
-                ).arg(classId)
+                ).arg(classId),
+            RepositoryErrorCode::NotFound
             );
     }
 
     Classroom classroom;
-    classroom.id =
-        query.value("id").toInt();
+    const auto parsedClassId = persistedClassId(
+        query.value("id"), QObject::tr(
+            "Loading class information failed: the database returned an invalid class identifier."));
+    if (!parsedClassId)
+    {
+        return repositoryFailure(parsedClassId.error());
+    }
+    classroom.id = *parsedClassId;
 
     classroom.name =
         query.value("name").toString();
@@ -289,14 +382,14 @@ ClassInfoRepository::ClassInfoRepository(
 {
 }
 
-Status ClassInfoRepository::saveClassInfo(
+RepositoryStatus ClassInfoRepository::saveClassInfo(
     const ClassInfo& info
     )
 {
     return saveClassInfoWithTeacherId(info, info.teacherId);
 }
 
-Status ClassInfoRepository::saveClassDetails(
+RepositoryStatus ClassInfoRepository::saveClassDetails(
     const ClassInfo& info,
     const qint64 teacherId
     )
@@ -304,38 +397,38 @@ Status ClassInfoRepository::saveClassDetails(
     return saveClassInfoWithTeacherId(info, teacherId);
 }
 
-ClassInfoRepository::ClassDetailsParentCheckDetailedResult
+RepositoryStatus
 ClassInfoRepository::checkClassDetailsParentDetailed(const int classId)
 {
     if (classId <= 0)
     {
-        return std::unexpected(ClassDetailsSaveFailure{
-            .kind = ClassDetailsSaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return repositoryFailure(
+            QObject::tr(
                 "Loading class details failed: invalid class id %1."
-                ).arg(classId)
-        });
+                ).arg(classId),
+            RepositoryErrorCode::InvalidInput
+            );
     }
 
     const auto parentExists = classDetailsParentExists(classId);
     if (!parentExists)
     {
-        return std::unexpected(parentExists.error());
+        return repositoryFailure(parentExists.error());
     }
     if (!*parentExists)
     {
-        return std::unexpected(ClassDetailsSaveFailure{
-            .kind = ClassDetailsSaveFailure::Kind::ParentClassMissing,
-            .diagnostic = QObject::tr(
+        return repositoryFailure(
+            QObject::tr(
                 "Saving class information failed: parent class id %1 was not found."
-                ).arg(classId)
-        });
+                ).arg(classId),
+            RepositoryErrorCode::NotFound
+            );
     }
 
     return {};
 }
 
-ClassInfoRepository::ClassDetailsSaveDetailedResult
+RepositoryStatus
 ClassInfoRepository::saveClassDetailsDetailed(
     const ClassInfo& info,
     const qint64 teacherId
@@ -348,12 +441,12 @@ ClassInfoRepository::saveClassDetailsDetailed(
         );
 }
 
-Status ClassInfoRepository::saveClassInfoWithTeacherId(
+RepositoryStatus ClassInfoRepository::saveClassInfoWithTeacherId(
     const ClassInfo& info,
     const qint64 teacherId
     )
 {
-    const ClassDetailsSaveDetailedResult saved =
+    const RepositoryStatus saved =
         saveClassInfoWithTeacherIdDetailed(
             info,
             teacherId,
@@ -361,13 +454,13 @@ Status ClassInfoRepository::saveClassInfoWithTeacherId(
             );
     if (!saved)
     {
-        return std::unexpected(saved.error().diagnostic);
+        return repositoryFailure(saved.error());
     }
 
     return {};
 }
 
-std::expected<bool, ClassInfoRepository::ClassDetailsSaveFailure>
+RepositoryResult<bool>
 ClassInfoRepository::classDetailsParentExists(const int classId)
 {
     const QString identity = QObject::tr("class id %1").arg(classId);
@@ -384,10 +477,10 @@ ClassInfoRepository::classDetailsParentExists(const int classId)
         );
     if (!loaded)
     {
-        return std::unexpected(ClassDetailsSaveFailure{
-            .kind = ClassDetailsSaveFailure::Kind::Technical,
-            .diagnostic = loaded.error().userMessage()
-        });
+        return repositoryFailure(
+            loaded.error().userMessage(),
+            RepositoryErrorCode::Technical
+            );
     }
 
     const bool exists = query.next();
@@ -395,18 +488,18 @@ ClassInfoRepository::classDetailsParentExists(const int classId)
     query.finish();
     if (fetchError.isValid())
     {
-        return std::unexpected(ClassDetailsSaveFailure{
-            .kind = ClassDetailsSaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return repositoryFailure(
+            QObject::tr(
                 "Checking class details parent class failed for %1: %2"
-                ).arg(identity, fetchError.text())
-        });
+                ).arg(identity, fetchError.text()),
+            RepositoryErrorCode::Technical
+            );
     }
 
     return exists;
 }
 
-ClassInfoRepository::ClassDetailsSaveDetailedResult
+RepositoryStatus
 ClassInfoRepository::saveClassInfoWithTeacherIdDetailed(
     const ClassInfo& info,
     const qint64 teacherId,
@@ -415,12 +508,12 @@ ClassInfoRepository::saveClassInfoWithTeacherIdDetailed(
 {
     if (info.classId <= 0)
     {
-        return std::unexpected(ClassDetailsSaveFailure{
-            .kind = ClassDetailsSaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return repositoryFailure(
+            QObject::tr(
                 "Saving class information failed: invalid class id %1."
-                ).arg(info.classId)
-        });
+                ).arg(info.classId),
+            RepositoryErrorCode::InvalidInput
+            );
     }
 
     const QString identity = QObject::tr("class id %1").arg(info.classId);
@@ -436,61 +529,56 @@ ClassInfoRepository::saveClassInfoWithTeacherIdDetailed(
         const QString startError = typedSave
             ? transaction.startError()
             : m_database.lastError().text();
-        return std::unexpected(ClassDetailsSaveFailure{
-            .kind = ClassDetailsSaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return repositoryFailure(
+            QObject::tr(
                 "Starting class information save transaction failed for "
                 "class id %1: %2"
                 ).arg(info.classId)
-                 .arg(startError)
-        });
+                 .arg(startError),
+            RepositoryErrorCode::Technical
+            );
     }
+
+    const auto failAndRollback = [&](RepositoryError failure) -> RepositoryStatus
+    {
+        return rollbackSaveFailure(
+            transaction, m_database, std::move(failure),
+            QObject::tr("Rolling back class information save failed for %1: %2")
+                .arg(identity));
+    };
 
     if (typedSave)
     {
         const auto parentExists = classDetailsParentExists(info.classId);
         if (!parentExists)
         {
-            return std::unexpected(parentExists.error());
+            return failAndRollback(parentExists.error());
         }
         if (!*parentExists)
         {
-            if (!transaction.rollbackChecked())
-            {
-                return std::unexpected(ClassDetailsSaveFailure{
-                    .kind = ClassDetailsSaveFailure::Kind::Technical,
-                    .diagnostic = QObject::tr(
-                        "Rolling back class information save failed for %1: %2"
-                        ).arg(identity, m_database.lastError().text())
-                });
-            }
-
-            return std::unexpected(ClassDetailsSaveFailure{
-                .kind = ClassDetailsSaveFailure::Kind::ParentClassMissing,
-                .diagnostic = QObject::tr(
+            return failAndRollback(RepositoryError{
+                RepositoryErrorCode::NotFound,
+                QObject::tr(
                     "Saving class information failed: parent class id %1 was not found."
                     ).arg(info.classId)
-            });
+                });
         }
 
         const auto checkScheduleConflicts = [this, &info](
             const QList<ClassTime>& times,
             const ScheduleType type
-            ) -> ClassDetailsSaveDetailedResult
+            ) -> RepositoryStatus
         {
             if (times.isEmpty())
             {
                 return {};
             }
 
-            const Result<QList<ClassConflict>> conflicts =
+            const RepositoryResult<QList<ClassConflict>> conflicts =
                 getClassTimeConflicts(info.classId, times, type);
             if (!conflicts)
             {
-                return std::unexpected(ClassDetailsSaveFailure{
-                    .kind = ClassDetailsSaveFailure::Kind::Technical,
-                    .diagnostic = conflicts.error()
-                });
+                return repositoryFailure(conflicts.error());
             }
             if (conflicts->isEmpty())
             {
@@ -498,35 +586,19 @@ ClassInfoRepository::saveClassInfoWithTeacherIdDetailed(
             }
 
             const ClassConflict& first = conflicts->first();
-            return std::unexpected(ClassDetailsSaveFailure{
-                .kind = ClassDetailsSaveFailure::Kind::Technical,
-                .diagnostic = QStringLiteral(
+            // The class-details save contract reports overlap rejection as
+            // Technical while the separate conflict query returns its data.
+            return repositoryFailure(
+                QStringLiteral(
                     "Class schedule conflict: %1 %2\u2013%3 conflicts with %4."
                     ).arg(
                         first.day,
                         first.startTime,
                         first.endTime,
                         first.conflictingClassName
-                        )
-            });
-        };
-
-        const auto rollbackScheduleCheckFailure =
-            [this, &transaction, &identity](
-                const ClassDetailsSaveFailure& failure
-                ) -> ClassDetailsSaveDetailedResult
-        {
-            if (!transaction.rollbackChecked())
-            {
-                return std::unexpected(ClassDetailsSaveFailure{
-                    .kind = ClassDetailsSaveFailure::Kind::Technical,
-                    .diagnostic = QObject::tr(
-                        "Rolling back class information save failed for %1: %2"
-                        ).arg(identity, m_database.lastError().text())
-                });
-            }
-
-            return std::unexpected(failure);
+                        ),
+                RepositoryErrorCode::Technical
+                );
         };
 
         const auto regularConflicts = checkScheduleConflicts(
@@ -535,7 +607,7 @@ ClassInfoRepository::saveClassInfoWithTeacherIdDetailed(
             );
         if (!regularConflicts)
         {
-            return rollbackScheduleCheckFailure(regularConflicts.error());
+            return failAndRollback(regularConflicts.error());
         }
 
         const auto intensiveConflicts = checkScheduleConflicts(
@@ -544,18 +616,18 @@ ClassInfoRepository::saveClassInfoWithTeacherIdDetailed(
             );
         if (!intensiveConflicts)
         {
-            return rollbackScheduleCheckFailure(intensiveConflicts.error());
+            return failAndRollback(intensiveConflicts.error());
         }
     }
 
     QSqlQuery query(m_database);
-    auto execute = [&](const QString& action) -> Status
+    auto execute = [&](const QString& action) -> RepositoryStatus
     {
         const auto result = SqlQueryUtils::executePrepared(
             query, action, identity);
         return result
-            ? Status{}
-            : Status(std::unexpected(result.error().userMessage()));
+            ? RepositoryStatus{}
+            : RepositoryStatus(repositoryFailure(result.error().userMessage()));
     };
 
     query.prepare(R"(
@@ -601,13 +673,10 @@ ClassInfoRepository::saveClassInfoWithTeacherIdDetailed(
     query.addBindValue(info.notes);
     query.addBindValue(info.timeFillerActivities);
 
-    Status statement = execute(QObject::tr("Saving class information"));
+    RepositoryStatus statement = execute(QObject::tr("Saving class information"));
     if (!statement)
     {
-        return std::unexpected(ClassDetailsSaveFailure{
-            .kind = ClassDetailsSaveFailure::Kind::Technical,
-            .diagnostic = statement.error()
-        });
+        return failAndRollback(statement.error());
     }
 
     query.prepare(
@@ -618,10 +687,7 @@ ClassInfoRepository::saveClassInfoWithTeacherIdDetailed(
     statement = execute(QObject::tr("Deleting regular class times"));
     if (!statement)
     {
-        return std::unexpected(ClassDetailsSaveFailure{
-            .kind = ClassDetailsSaveFailure::Kind::Technical,
-            .diagnostic = statement.error()
-        });
+        return failAndRollback(statement.error());
     }
 
     for (const ClassTime& time : info.classTimes)
@@ -644,10 +710,7 @@ ClassInfoRepository::saveClassInfoWithTeacherIdDetailed(
         statement = execute(QObject::tr("Inserting regular class time"));
         if (!statement)
         {
-            return std::unexpected(ClassDetailsSaveFailure{
-                .kind = ClassDetailsSaveFailure::Kind::Technical,
-                .diagnostic = statement.error()
-            });
+            return failAndRollback(statement.error());
         }
     }
 
@@ -659,10 +722,7 @@ ClassInfoRepository::saveClassInfoWithTeacherIdDetailed(
     statement = execute(QObject::tr("Deleting intensive class times"));
     if (!statement)
     {
-        return std::unexpected(ClassDetailsSaveFailure{
-            .kind = ClassDetailsSaveFailure::Kind::Technical,
-            .diagnostic = statement.error()
-        });
+        return failAndRollback(statement.error());
     }
 
     for (const ClassTime& time : info.intensiveTimes)
@@ -685,27 +745,24 @@ ClassInfoRepository::saveClassInfoWithTeacherIdDetailed(
         statement = execute(QObject::tr("Inserting intensive class time"));
         if (!statement)
         {
-            return std::unexpected(ClassDetailsSaveFailure{
-                .kind = ClassDetailsSaveFailure::Kind::Technical,
-                .diagnostic = statement.error()
-            });
+            return failAndRollback(statement.error());
         }
     }
 
     if (!transaction.commit())
     {
-        return std::unexpected(ClassDetailsSaveFailure{
-            .kind = ClassDetailsSaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return failAndRollback(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr(
                 "Committing class information failed for %1: %2"
                 ).arg(identity, m_database.lastError().text())
-        });
+            });
     }
 
     return {};
 }
 
-Status ClassInfoRepository::saveClassNotes(
+RepositoryStatus ClassInfoRepository::saveClassNotes(
     int classId,
     const QString& notes,
     const QString& timeFillerActivities
@@ -713,16 +770,17 @@ Status ClassInfoRepository::saveClassNotes(
 {
     if (classId <= 0)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Saving class notes failed: invalid class id %1.")
-                .arg(classId)
+                .arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
     return writeClassNotes(classId, notes, timeFillerActivities);
 }
 
-ClassInfoRepository::ClassNotesSaveDetailedResult
+RepositoryStatus
 ClassInfoRepository::saveClassNotesDetailed(
     const int classId,
     const QString& notes,
@@ -731,12 +789,12 @@ ClassInfoRepository::saveClassNotesDetailed(
 {
     if (classId <= 0)
     {
-        return std::unexpected(ClassNotesSaveFailure{
-            .kind = ClassNotesSaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return repositoryFailure(
+            QObject::tr(
                 "Saving class notes failed: invalid class id %1."
-                ).arg(classId)
-        });
+                ).arg(classId),
+            RepositoryErrorCode::InvalidInput
+            );
     }
 
     const QString identity = QObject::tr("class id %1").arg(classId);
@@ -746,13 +804,21 @@ ClassInfoRepository::saveClassNotesDetailed(
         );
     if (!transaction.started())
     {
-        return std::unexpected(ClassNotesSaveFailure{
-            .kind = ClassNotesSaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return repositoryFailure(
+            QObject::tr(
                 "Starting class notes save transaction failed for %1: %2"
-                ).arg(identity, transaction.startError())
-        });
+                ).arg(identity, transaction.startError()),
+            RepositoryErrorCode::Technical
+            );
     }
+
+    const auto failAndRollback = [&](RepositoryError failure) -> RepositoryStatus
+    {
+        return rollbackSaveFailure(
+            transaction, m_database, std::move(failure),
+            QObject::tr("Rolling back class notes save failed for %1: %2")
+                .arg(identity));
+    };
 
     bool parentClassExists = false;
     {
@@ -769,10 +835,8 @@ ClassInfoRepository::saveClassNotesDetailed(
             );
         if (!loaded)
         {
-            return std::unexpected(ClassNotesSaveFailure{
-                .kind = ClassNotesSaveFailure::Kind::Technical,
-                .diagnostic = loaded.error().userMessage()
-            });
+            return failAndRollback(RepositoryError{
+                RepositoryErrorCode::Technical, loaded.error().userMessage()});
         }
 
         parentClassExists = query.next();
@@ -780,62 +844,49 @@ ClassInfoRepository::saveClassNotesDetailed(
         query.finish();
         if (!parentClassExists && fetchError.isValid())
         {
-            return std::unexpected(ClassNotesSaveFailure{
-                .kind = ClassNotesSaveFailure::Kind::Technical,
-                .diagnostic = QObject::tr(
+            return failAndRollback(RepositoryError{
+                RepositoryErrorCode::Technical,
+                QObject::tr(
                     "Checking class notes parent class failed for %1: %2"
                     ).arg(identity, fetchError.text())
-            });
+                });
         }
     }
 
     if (!parentClassExists)
     {
-        if (!transaction.rollbackChecked())
-        {
-            return std::unexpected(ClassNotesSaveFailure{
-                .kind = ClassNotesSaveFailure::Kind::Technical,
-                .diagnostic = QObject::tr(
-                    "Rolling back class notes save failed for %1: %2"
-                    ).arg(identity, m_database.lastError().text())
-            });
-        }
-
-        return std::unexpected(ClassNotesSaveFailure{
-            .kind = ClassNotesSaveFailure::Kind::ParentClassMissing,
-            .diagnostic = QObject::tr(
+        return failAndRollback(RepositoryError{
+            RepositoryErrorCode::NotFound,
+            QObject::tr(
                 "Saving class notes failed: parent class id %1 was not found."
                 ).arg(classId)
-        });
+            });
     }
 
-    const Status saved = writeClassNotes(
+    const RepositoryStatus saved = writeClassNotes(
         classId,
         notes,
         timeFillerActivities
         );
     if (!saved)
     {
-        return std::unexpected(ClassNotesSaveFailure{
-            .kind = ClassNotesSaveFailure::Kind::Technical,
-            .diagnostic = saved.error()
-        });
+        return failAndRollback(saved.error());
     }
 
     if (!transaction.commit())
     {
-        return std::unexpected(ClassNotesSaveFailure{
-            .kind = ClassNotesSaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return failAndRollback(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr(
                 "Committing class notes save failed for %1: %2"
                 ).arg(identity, m_database.lastError().text())
-        });
+            });
     }
 
     return {};
 }
 
-Status ClassInfoRepository::writeClassNotes(
+RepositoryStatus ClassInfoRepository::writeClassNotes(
     const int classId,
     const QString& notes,
     const QString& timeFillerActivities
@@ -868,30 +919,31 @@ Status ClassInfoRepository::writeClassNotes(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryFailure(executed.error().userMessage());
     }
 
     return {};
 }
 
-Status ClassInfoRepository::saveClassCoTeacherAssignment(
+RepositoryStatus ClassInfoRepository::saveClassCoTeacherAssignment(
     const int classId,
     const std::optional<qint64> teacherId
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr(
                 "Saving class information failed: invalid class id %1."
-                ).arg(classId)
+                ).arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr(
                 "Starting class information save transaction failed for "
                 "class id %1: %2"
@@ -900,6 +952,48 @@ Status ClassInfoRepository::saveClassCoTeacherAssignment(
             );
     }
 
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    const auto failAndRollback = [&](RepositoryError failure) -> RepositoryStatus
+    {
+        return rollbackSaveFailure(
+            transaction, m_database, std::move(failure),
+            QObject::tr("Rolling back class information save failed for %1: %2")
+                .arg(identity));
+    };
+    const auto parentExists = classDetailsParentExists(classId);
+    if (!parentExists)
+    {
+        return failAndRollback(parentExists.error());
+    }
+
+    bool teacherMissing = false;
+    if (*parentExists && teacherId.has_value())
+    {
+        QSqlQuery teacherQuery(m_database);
+        teacherQuery.prepare(QStringLiteral("SELECT 1 FROM teachers WHERE id=?"));
+        teacherQuery.addBindValue(*teacherId);
+        const auto checked = SqlQueryUtils::executePrepared(
+            teacherQuery, QObject::tr("Checking class co-teacher assignment teacher"),
+            identity);
+        if (!checked)
+        {
+            return failAndRollback(RepositoryError{
+                RepositoryErrorCode::Technical, checked.error().userMessage()});
+        }
+        teacherMissing = !teacherQuery.next();
+        const QSqlError fetchError = teacherQuery.lastError();
+        teacherQuery.finish();
+        if (fetchError.isValid())
+        {
+            return failAndRollback(RepositoryError{
+                RepositoryErrorCode::Technical,
+                QObject::tr("Checking class co-teacher assignment teacher failed for %1: %2")
+                    .arg(identity, fetchError.text())});
+        }
+    }
+
+    // Execute the original write to preserve its FK diagnostic. With foreign
+    // keys disabled, missing class/teacher writes are explicitly rolled back.
     QSqlQuery query(m_database);
     query.prepare(R"(
         INSERT INTO class_info (
@@ -917,7 +1011,6 @@ Status ClassInfoRepository::saveClassCoTeacherAssignment(
         teacherId ? QVariant(*teacherId) : QVariant()
         );
 
-    const QString identity = QObject::tr("class id %1").arg(classId);
     const auto executed = SqlQueryUtils::executePrepared(
         query,
         QObject::tr("Saving class information"),
@@ -925,22 +1018,54 @@ Status ClassInfoRepository::saveClassCoTeacherAssignment(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        query.finish();
+        return failAndRollback(RepositoryError{
+            !*parentExists || teacherMissing ? RepositoryErrorCode::NotFound
+                                            : RepositoryErrorCode::Technical,
+            executed.error().userMessage(),
+            !*parentExists ? std::optional<bool>{false}
+                : teacherMissing ? std::optional<bool>{true} : std::optional<bool>{}
+            });
+    }
+
+    if (!*parentExists)
+    {
+        query.finish();
+        return failAndRollback(RepositoryError{
+            RepositoryErrorCode::NotFound,
+            QObject::tr(
+                "Saving class information failed: parent class id %1 was not found."
+                ).arg(classId),
+            false
+            });
+    }
+
+    if (teacherMissing)
+    {
+        query.finish();
+        return failAndRollback(RepositoryError{
+            RepositoryErrorCode::NotFound,
+            QObject::tr(
+                "Saving class information failed: teacher id %1 was not found."
+                ).arg(*teacherId),
+            true
+            });
     }
 
     if (!transaction.commit())
     {
-        return std::unexpected(
+        return failAndRollback(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr(
                 "Committing class information failed for %1: %2"
                 ).arg(identity, m_database.lastError().text())
-            );
+            });
     }
 
     return {};
 }
 
-ClassInfoRepository::ClassCoTeacherAssignmentSaveDetailedResult
+RepositoryStatus
 ClassInfoRepository::saveClassCoTeacherAssignmentDetailed(
     const int classId,
     const std::optional<qint64> teacherId
@@ -948,27 +1073,43 @@ ClassInfoRepository::saveClassCoTeacherAssignmentDetailed(
 {
     if (classId <= 0)
     {
-        return std::unexpected(ClassCoTeacherAssignmentSaveFailure{
-            .kind = ClassCoTeacherAssignmentSaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return repositoryFailure(
+            QObject::tr(
                 "Saving class information failed: invalid class id %1."
-                ).arg(classId)
-        });
+                ).arg(classId),
+            RepositoryErrorCode::InvalidInput
+            );
     }
 
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
     {
-        return std::unexpected(ClassCoTeacherAssignmentSaveFailure{
-            .kind = ClassCoTeacherAssignmentSaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return repositoryFailure(
+            QObject::tr(
                 "Starting class information save transaction failed for "
                 "class id %1: %2"
                 ).arg(classId)
-                 .arg(m_database.lastError().text())
-        });
+                 .arg(m_database.lastError().text()),
+            RepositoryErrorCode::Technical
+            );
     }
 
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    const auto failAndRollback = [&](RepositoryError failure) -> RepositoryStatus
+    {
+        return rollbackSaveFailure(
+            transaction, m_database, std::move(failure),
+            QObject::tr("Rolling back class information save failed for %1: %2")
+                .arg(identity));
+    };
+    const auto parentExists = classDetailsParentExists(classId);
+    if (!parentExists)
+    {
+        return failAndRollback(parentExists.error());
+    }
+
+    // Keep the original FK diagnostic and detailed missing-teacher precedence.
+    // A statement for a missing class is always rolled back before returning.
     QSqlQuery query(m_database);
     query.prepare(R"(
         INSERT INTO class_info (
@@ -995,7 +1136,6 @@ ClassInfoRepository::saveClassCoTeacherAssignmentDetailed(
         teacherId ? QVariant(*teacherId) : QVariant()
         );
 
-    const QString identity = QObject::tr("class id %1").arg(classId);
     const auto executed = SqlQueryUtils::executePrepared(
         query,
         QObject::tr("Saving class information"),
@@ -1003,42 +1143,48 @@ ClassInfoRepository::saveClassCoTeacherAssignmentDetailed(
         );
     if (!executed)
     {
-        return std::unexpected(ClassCoTeacherAssignmentSaveFailure{
-            .kind = ClassCoTeacherAssignmentSaveFailure::Kind::Technical,
-            .diagnostic = executed.error().userMessage()
-        });
+        query.finish();
+        return failAndRollback(RepositoryError{
+            *parentExists ? RepositoryErrorCode::Technical
+                          : RepositoryErrorCode::NotFound,
+            executed.error().userMessage(),
+            *parentExists ? std::optional<bool>{} : std::optional<bool>{false}
+            });
     }
 
     if (query.numRowsAffected() == 0 && teacherId.has_value())
     {
         query.finish();
-        if (!transaction.rollbackChecked())
-        {
-            return std::unexpected(ClassCoTeacherAssignmentSaveFailure{
-                .kind = ClassCoTeacherAssignmentSaveFailure::Kind::Technical,
-                .diagnostic = QObject::tr(
-                    "Rolling back class information save failed for %1: %2"
-                    ).arg(identity, m_database.lastError().text())
-            });
-        }
-
-        return std::unexpected(ClassCoTeacherAssignmentSaveFailure{
-            .kind = ClassCoTeacherAssignmentSaveFailure::Kind::TeacherNotFound,
-            .diagnostic = QObject::tr(
+        return failAndRollback(RepositoryError{
+            RepositoryErrorCode::NotFound,
+            QObject::tr(
                 "Saving class information failed: teacher id %1 was not "
                 "found."
-                ).arg(teacherId.value_or(-1))
-        });
+                ).arg(teacherId.value_or(-1)),
+            true
+            });
+    }
+
+    if (!*parentExists)
+    {
+        query.finish();
+        return failAndRollback(RepositoryError{
+            RepositoryErrorCode::NotFound,
+            QObject::tr(
+                "Saving class information failed: parent class id %1 was not found."
+                ).arg(classId),
+            false
+            });
     }
 
     if (!transaction.commit())
     {
-        return std::unexpected(ClassCoTeacherAssignmentSaveFailure{
-            .kind = ClassCoTeacherAssignmentSaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
+        return failAndRollback(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr(
                 "Committing class information failed for %1: %2"
                 ).arg(identity, m_database.lastError().text())
-        });
+            });
     }
 
     return {};
@@ -1046,13 +1192,19 @@ ClassInfoRepository::saveClassCoTeacherAssignmentDetailed(
 
 namespace
 {
-Status assignExportTeacherId(ClassInfo& info, const QVariant& value)
+RepositoryStatus assignExportTeacherId(ClassInfo& info, const QVariant& value)
 {
-    info.teacherId = value.isNull() ? -1 : value.toInt();
+    const auto teacherId = persistedTeacherId<int>(value, QObject::tr(
+        "Loading class information failed: invalid assigned teacher identifier."));
+    if (!teacherId)
+    {
+        return repositoryFailure(teacherId.error());
+    }
+    info.teacherId = *teacherId;
     return {};
 }
 
-Status assignExportTeacherId(
+RepositoryStatus assignExportTeacherId(
     ClassTransferExportClassInfoReadRecord& info, const QVariant& value)
 {
     if (value.isNull())
@@ -1061,15 +1213,18 @@ Status assignExportTeacherId(
         return {};
     }
     bool valid = false;
-    info.teacherId = value.toLongLong(&valid);
+    info.teacherId = value.toString().toLongLong(&valid);
     if (!valid)
-        return std::unexpected(QObject::tr(
-            "Loading class information failed: invalid assigned teacher identifier."));
+        return repositoryFailure(
+            QObject::tr(
+                "Loading class information failed: invalid assigned teacher identifier."),
+            RepositoryErrorCode::Validation
+            );
     return {};
 }
 
 template<class Record>
-Result<Record> loadClassInfoRecord(
+RepositoryResult<Record> loadClassInfoRecord(
     QSqlDatabase& database,
     int classId,
     qint64* exactTeacherId = nullptr
@@ -1077,9 +1232,10 @@ Result<Record> loadClassInfoRecord(
 {
     if (classId <= 0)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading class information failed: invalid class id %1.")
-                .arg(classId)
+                .arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -1123,24 +1279,22 @@ Result<Record> loadClassInfoRecord(
         );
     if (!loadedInfo)
     {
-        return std::unexpected(loadedInfo.error().userMessage());
+        return repositoryFailure(loadedInfo.error().userMessage());
     }
 
     if (query.next())
     {
         const QVariant teacherId = query.value("teacher_id");
-        if (const Status assigned = assignExportTeacherId(info, teacherId); !assigned)
-            return std::unexpected(assigned.error());
         if (exactTeacherId)
         {
-            bool valid = false;
-            *exactTeacherId = teacherId.isNull()
-                ? -1 : teacherId.toLongLong(&valid);
-            if (!teacherId.isNull() && !valid)
-            {
-                return std::unexpected(QObject::tr(
+            const auto parsedTeacherId = persistedTeacherId<qint64>(
+                teacherId, QObject::tr(
                     "Loading class information failed: invalid assigned teacher identifier."));
+            if (!parsedTeacherId)
+            {
+                return repositoryFailure(parsedTeacherId.error());
             }
+            *exactTeacherId = *parsedTeacherId;
             // Only validation uses the int surrogate; persistence binds the
             // separate exact teacher ID.
             if (*exactTeacherId > std::numeric_limits<int>::max())
@@ -1151,6 +1305,14 @@ Result<Record> loadClassInfoRecord(
             {
                 info.teacherId = -2; // Preserve invalid negative-ID validation.
             }
+            else
+            {
+                info.teacherId = static_cast<int>(*exactTeacherId);
+            }
+        }
+        else if (const RepositoryStatus assigned = assignExportTeacherId(info, teacherId); !assigned)
+        {
+            return repositoryFailure(assigned.error());
         }
         info.teacherKr =    query.value("teacher_kr").toString();
         info.teacherEn =    query.value("teacher_en").toString();
@@ -1198,7 +1360,7 @@ Result<Record> loadClassInfoRecord(
     }
     else if (query.lastError().isValid())
     {
-        return std::unexpected(
+        return repositoryFailure(
             SqlQueryUtils::errorFor(
                 query,
                 QObject::tr("Loading class information"),
@@ -1224,7 +1386,7 @@ Result<Record> loadClassInfoRecord(
         );
     if (!loadedRegularTimes)
     {
-        return std::unexpected(loadedRegularTimes.error().userMessage());
+        return repositoryFailure(loadedRegularTimes.error().userMessage());
     }
 
     while (query.next())
@@ -1239,7 +1401,7 @@ Result<Record> loadClassInfoRecord(
     }
     if (query.lastError().isValid())
     {
-        return std::unexpected(
+        return repositoryFailure(
             SqlQueryUtils::errorFor(
                 query,
                 QObject::tr("Loading regular class times"),
@@ -1265,7 +1427,7 @@ Result<Record> loadClassInfoRecord(
         );
     if (!loadedIntensiveTimes)
     {
-        return std::unexpected(loadedIntensiveTimes.error().userMessage());
+        return repositoryFailure(loadedIntensiveTimes.error().userMessage());
     }
 
     while (query.next())
@@ -1280,7 +1442,7 @@ Result<Record> loadClassInfoRecord(
     }
     if (query.lastError().isValid())
     {
-        return std::unexpected(
+        return repositoryFailure(
             SqlQueryUtils::errorFor(
                 query,
                 QObject::tr("Loading intensive class times"),
@@ -1295,13 +1457,13 @@ Result<Record> loadClassInfoRecord(
 
 }
 
-Result<ClassInfo> ClassInfoRepository::loadClassInfo(int classId)
+RepositoryResult<ClassInfo> ClassInfoRepository::loadClassInfo(int classId)
 {
     ++m_scheduleClassInfoReadMetrics.singleClassInfoReadCount;
     return loadClassInfoRecord<ClassInfo>(m_database, classId);
 }
 
-Result<ClassDetailsSaveReadRecord> ClassInfoRepository::loadClassDetailsSaveInfo(
+RepositoryResult<ClassDetailsSaveReadRecord> ClassInfoRepository::loadClassDetailsSaveInfo(
     const int classId
     )
 {
@@ -1310,20 +1472,20 @@ Result<ClassDetailsSaveReadRecord> ClassInfoRepository::loadClassDetailsSaveInfo
         m_database, classId, &record.teacherId);
     if (!loaded)
     {
-        return std::unexpected(loaded.error());
+        return repositoryFailure(loaded.error());
     }
     record.info = *loaded;
     return record;
 }
 
-Result<ClassTransferExportClassInfoReadRecord>
+RepositoryResult<ClassTransferExportClassInfoReadRecord>
 ClassInfoRepository::loadClassTransferExportClassInfoRecord(int classId)
 {
     return loadClassInfoRecord<ClassTransferExportClassInfoReadRecord>(
         m_database, classId);
 }
 
-Result<ClassCoTeacherAssignmentValidationSnapshotReadRecord>
+RepositoryResult<ClassCoTeacherAssignmentValidationSnapshotReadRecord>
 ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshot(
     const int classId
     )
@@ -1332,28 +1494,24 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshot(
         loadClassCoTeacherAssignmentValidationSnapshotDetailed(classId);
     if (!loaded)
     {
-        return std::unexpected(loaded.error().message);
+        return repositoryFailure(loaded.error());
     }
 
     return *loaded;
 }
 
-ClassCoTeacherAssignmentValidationSnapshotDetailedResult
+RepositoryResult<ClassCoTeacherAssignmentValidationSnapshotReadRecord>
 ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed(
     const int classId
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(
-            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
-                .kind =
-                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
-                        Technical,
-                .message = QObject::tr(
-                    "Loading class information failed: invalid class id %1."
-                    ).arg(classId)
-            }
+        return repositoryFailure(
+            QObject::tr(
+                "Loading class information failed: invalid class id %1."
+                ).arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -1387,13 +1545,9 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed(
         );
     if (!loadedInfo)
     {
-        return std::unexpected(
-            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
-                .kind =
-                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
-                        Technical,
-                .message = loadedInfo.error().userMessage()
-            }
+        return repositoryFailure(
+            loadedInfo.error().userMessage(),
+            RepositoryErrorCode::Technical
             );
     }
     if (!query.next())
@@ -1406,25 +1560,17 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed(
                 {},
                 identity
                 );
-            return std::unexpected(
-                ClassCoTeacherAssignmentValidationSnapshotReadFailure{
-                    .kind =
-                        ClassCoTeacherAssignmentValidationSnapshotFailureKind::
-                            Technical,
-                    .message = readError.userMessage()
-                }
+            return repositoryFailure(
+                readError.userMessage(),
+                RepositoryErrorCode::Technical
                 );
         }
 
-        return std::unexpected(
-            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
-                .kind =
-                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
-                        ClassNotFound,
-                .message = QObject::tr(
-                    "Loading class information failed for %1: class not found."
-                    ).arg(identity)
-            }
+        return repositoryFailure(
+            QObject::tr(
+                "Loading class information failed for %1: class not found."
+                ).arg(identity),
+            RepositoryErrorCode::NotFound
             );
     }
 
@@ -1461,13 +1607,9 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed(
         );
     if (!loadedRegularTimes)
     {
-        return std::unexpected(
-            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
-                .kind =
-                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
-                        Technical,
-                .message = loadedRegularTimes.error().userMessage()
-            }
+        return repositoryFailure(
+            loadedRegularTimes.error().userMessage(),
+            RepositoryErrorCode::Technical
             );
     }
     while (query.next())
@@ -1480,18 +1622,14 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed(
     }
     if (query.lastError().isValid())
     {
-        return std::unexpected(
-            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
-                .kind =
-                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
-                        Technical,
-                .message = SqlQueryUtils::errorFor(
-                    query,
-                    QObject::tr("Loading regular class times"),
-                    {},
-                    identity
-                    ).userMessage()
-            }
+        return repositoryFailure(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading regular class times"),
+                {},
+                identity
+                ).userMessage(),
+            RepositoryErrorCode::Technical
             );
     }
 
@@ -1510,13 +1648,9 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed(
         );
     if (!loadedIntensiveTimes)
     {
-        return std::unexpected(
-            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
-                .kind =
-                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
-                        Technical,
-                .message = loadedIntensiveTimes.error().userMessage()
-            }
+        return repositoryFailure(
+            loadedIntensiveTimes.error().userMessage(),
+            RepositoryErrorCode::Technical
             );
     }
     while (query.next())
@@ -1529,37 +1663,33 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed(
     }
     if (query.lastError().isValid())
     {
-        return std::unexpected(
-            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
-                .kind =
-                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
-                        Technical,
-                .message = SqlQueryUtils::errorFor(
-                    query,
-                    QObject::tr("Loading intensive class times"),
-                    {},
-                    identity
-                    ).userMessage()
-            }
+        return repositoryFailure(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading intensive class times"),
+                {},
+                identity
+                ).userMessage(),
+            RepositoryErrorCode::Technical
             );
     }
 
     return snapshot;
 }
 
-Result<ScheduleEditorClassInfoReadRecord>
+RepositoryResult<ScheduleEditorClassInfoReadRecord>
 ClassInfoRepository::loadScheduleEditorClassInfoRecord(const int classId)
 {
     const auto loaded = loadScheduleEditorClassInfoRecordDetailed(classId);
     if (!loaded)
     {
-        return std::unexpected(loaded.error());
+        return repositoryFailure(loaded.error());
     }
 
     return std::move(loaded->record);
 }
 
-Result<ScheduleEditorClassInfoReadOutcome>
+RepositoryResult<ScheduleEditorClassInfoReadOutcome>
 ClassInfoRepository::loadScheduleEditorClassInfoRecordDetailed(
     const int classId
     )
@@ -1567,9 +1697,10 @@ ClassInfoRepository::loadScheduleEditorClassInfoRecordDetailed(
     ++m_scheduleEditorClassInfoReadMetrics.callCount;
     if (classId <= 0)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading class information failed: invalid class id %1.")
-                .arg(classId)
+                .arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -1605,7 +1736,7 @@ ClassInfoRepository::loadScheduleEditorClassInfoRecordDetailed(
         );
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return repositoryFailure(loaded.error().userMessage());
     }
 
     const bool rowFound = query.next();
@@ -1613,7 +1744,7 @@ ClassInfoRepository::loadScheduleEditorClassInfoRecordDetailed(
     {
         if (query.lastError().isValid())
         {
-            return std::unexpected(SqlQueryUtils::errorFor(
+            return repositoryFailure(SqlQueryUtils::errorFor(
                 query,
                 QObject::tr("Loading class information"),
                 {},
@@ -1621,7 +1752,7 @@ ClassInfoRepository::loadScheduleEditorClassInfoRecordDetailed(
                 ).userMessage());
         }
 
-        return std::unexpected(QObject::tr(
+        return repositoryFailure(QObject::tr(
             "Loading class information failed: no result was returned for class id %1."
             ).arg(classId));
     }
@@ -1654,7 +1785,7 @@ ClassInfoRepository::loadScheduleEditorClassInfoRecordDetailed(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading class information"),
             {},
@@ -1665,27 +1796,28 @@ ClassInfoRepository::loadScheduleEditorClassInfoRecordDetailed(
     return outcome;
 }
 
-Result<SelectedClassGradeReadRecord>
+RepositoryResult<SelectedClassGradeReadRecord>
 ClassInfoRepository::loadSelectedClassGradeRecord(const int classId)
 {
     const auto loaded = loadSelectedClassGradeRecordDetailed(classId);
     if (!loaded)
     {
-        return std::unexpected(loaded.error());
+        return repositoryFailure(loaded.error());
     }
 
     return std::move(loaded->record);
 }
 
-Result<SelectedClassGradeReadOutcome>
+RepositoryResult<SelectedClassGradeReadOutcome>
 ClassInfoRepository::loadSelectedClassGradeRecordDetailed(const int classId)
 {
     ++m_selectedClassGradeReadMetrics.callCount;
     if (classId <= 0)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading class information failed: invalid class id %1.")
-                .arg(classId)
+                .arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -1709,13 +1841,13 @@ ClassInfoRepository::loadSelectedClassGradeRecordDetailed(const int classId)
         );
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return repositoryFailure(loaded.error().userMessage());
     }
 
     const bool parentRowFound = query.next();
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading class information"),
             {},
@@ -1734,16 +1866,17 @@ ClassInfoRepository::loadSelectedClassGradeRecordDetailed(const int classId)
     return outcome;
 }
 
-Result<ClassPageDetailsReadRecord> ClassInfoRepository::loadClassPageDetails(
+RepositoryResult<ClassPageDetailsReadRecord> ClassInfoRepository::loadClassPageDetails(
     const int classId
     )
 {
     ++m_classPageDetailsReadMetrics.callCount;
     if (classId <= 0)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading class information failed: invalid class id %1.")
-                .arg(classId)
+                .arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -1767,19 +1900,35 @@ Result<ClassPageDetailsReadRecord> ClassInfoRepository::loadClassPageDetails(
         );
     if (!loadedMetadata)
     {
-        return std::unexpected(loadedMetadata.error().userMessage());
+        return repositoryFailure(loadedMetadata.error().userMessage());
     }
 
     if (metadataQuery.next())
     {
         const QVariant teacherId = metadataQuery.value("teacher_id");
-        record.teacherId = teacherId.isNull() ? -1 : teacherId.toLongLong();
+        const auto parsedTeacherId = persistedTeacherId<qint64>(
+            teacherId, QObject::tr(
+                "Loading class information failed: invalid assigned teacher identifier."));
+        if (!parsedTeacherId)
+        {
+            return repositoryFailure(parsedTeacherId.error());
+        }
+        record.teacherId = *parsedTeacherId;
         record.classGrade = metadataQuery.value("class_grade").toString();
         record.classLevel = metadataQuery.value("class_level").toString();
         record.notes = metadataQuery.value("notes").toString();
         record.timeFillerActivities = metadataQuery.value(
             "time_filler_activities"
             ).toString();
+    }
+    if (metadataQuery.lastError().isValid())
+    {
+        return repositoryFailure(SqlQueryUtils::errorFor(
+            metadataQuery,
+            QObject::tr("Loading class information"),
+            {},
+            identity
+            ).userMessage());
     }
 
     QSqlQuery regularScheduleQuery(m_database);
@@ -1798,7 +1947,7 @@ Result<ClassPageDetailsReadRecord> ClassInfoRepository::loadClassPageDetails(
         );
     if (!loadedRegularSchedule)
     {
-        return std::unexpected(loadedRegularSchedule.error().userMessage());
+        return repositoryFailure(loadedRegularSchedule.error().userMessage());
     }
 
     while (regularScheduleQuery.next())
@@ -1808,19 +1957,29 @@ Result<ClassPageDetailsReadRecord> ClassInfoRepository::loadClassPageDetails(
             regularScheduleQuery.value("start_time").toString()
         });
     }
+    if (regularScheduleQuery.lastError().isValid())
+    {
+        return repositoryFailure(SqlQueryUtils::errorFor(
+            regularScheduleQuery,
+            QObject::tr("Loading regular class times"),
+            {},
+            identity
+            ).userMessage());
+    }
 
     return record;
 }
 
-Result<ClassPageDetailsReadOutcome>
+RepositoryResult<ClassPageDetailsReadOutcome>
 ClassInfoRepository::loadClassPageDetailsDetailed(const int classId)
 {
     ++m_classPageDetailsReadMetrics.callCount;
     if (classId <= 0)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading class information failed: invalid class id %1.")
-                .arg(classId)
+                .arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -1846,13 +2005,13 @@ ClassInfoRepository::loadClassPageDetailsDetailed(const int classId)
         );
     if (!loadedMetadata)
     {
-        return std::unexpected(loadedMetadata.error().userMessage());
+        return repositoryFailure(loadedMetadata.error().userMessage());
     }
 
     const bool parentRowFound = metadataQuery.next();
     if (metadataQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             metadataQuery,
             QObject::tr("Loading class information"),
             {},
@@ -1869,7 +2028,14 @@ ClassInfoRepository::loadClassPageDetailsDetailed(const int classId)
     }
 
     const QVariant teacherId = metadataQuery.value("teacher_id");
-    record.teacherId = teacherId.isNull() ? -1 : teacherId.toLongLong();
+    const auto parsedTeacherId = persistedTeacherId<qint64>(
+        teacherId, QObject::tr(
+            "Loading class information failed: invalid assigned teacher identifier."));
+    if (!parsedTeacherId)
+    {
+        return repositoryFailure(parsedTeacherId.error());
+    }
+    record.teacherId = *parsedTeacherId;
     record.classGrade = metadataQuery.value("class_grade").toString();
     record.classLevel = metadataQuery.value("class_level").toString();
     record.notes = metadataQuery.value("notes").toString();
@@ -1894,7 +2060,7 @@ ClassInfoRepository::loadClassPageDetailsDetailed(const int classId)
         );
     if (!loadedRegularSchedule)
     {
-        return std::unexpected(loadedRegularSchedule.error().userMessage());
+        return repositoryFailure(loadedRegularSchedule.error().userMessage());
     }
 
     while (regularScheduleQuery.next())
@@ -1907,7 +2073,7 @@ ClassInfoRepository::loadClassPageDetailsDetailed(const int classId)
 
     if (regularScheduleQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             regularScheduleQuery,
             QObject::tr("Loading regular class times"),
             {},
@@ -1921,27 +2087,28 @@ ClassInfoRepository::loadClassPageDetailsDetailed(const int classId)
     };
 }
 
-Result<ClassCoTeacherPageDetailsReadRecord>
+RepositoryResult<ClassCoTeacherPageDetailsReadRecord>
 ClassInfoRepository::loadClassCoTeacherPageDetails(const int classId)
 {
     const auto loaded = loadClassCoTeacherPageDetailsDetailed(classId);
     if (!loaded)
     {
-        return std::unexpected(loaded.error());
+        return repositoryFailure(loaded.error());
     }
 
     return std::move(loaded->record);
 }
 
-Result<ClassCoTeacherPageDetailsReadOutcome>
+RepositoryResult<ClassCoTeacherPageDetailsReadOutcome>
 ClassInfoRepository::loadClassCoTeacherPageDetailsDetailed(const int classId)
 {
     ++m_classPageDetailsReadMetrics.callCount;
     if (classId <= 0)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading class information failed: invalid class id %1.")
-                .arg(classId)
+                .arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -1967,13 +2134,13 @@ ClassInfoRepository::loadClassCoTeacherPageDetailsDetailed(const int classId)
         );
     if (!loadedMetadata)
     {
-        return std::unexpected(loadedMetadata.error().userMessage());
+        return repositoryFailure(loadedMetadata.error().userMessage());
     }
 
     const bool parentRowFound = metadataQuery.next();
     if (metadataQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             metadataQuery,
             QObject::tr("Loading class information"),
             {},
@@ -1992,12 +2159,15 @@ ClassInfoRepository::loadClassCoTeacherPageDetailsDetailed(const int classId)
         else
         {
             bool teacherIdOk = false;
-            record.teacherId = teacherId.toLongLong(&teacherIdOk);
+            record.teacherId = teacherId.toString().toLongLong(&teacherIdOk);
             if (!teacherIdOk)
             {
-                return std::unexpected(QObject::tr(
-                    "Loading class information failed: invalid co-teacher id for %1."
-                    ).arg(identity));
+                return repositoryFailure(
+                    QObject::tr(
+                        "Loading class information failed: invalid co-teacher id for %1."
+                        ).arg(identity),
+                    RepositoryErrorCode::Validation
+                    );
             }
         }
         record.classGrade = metadataQuery.value("class_grade").toString();
@@ -2024,7 +2194,7 @@ ClassInfoRepository::loadClassCoTeacherPageDetailsDetailed(const int classId)
         );
     if (!loadedRegularSchedule)
     {
-        return std::unexpected(loadedRegularSchedule.error().userMessage());
+        return repositoryFailure(loadedRegularSchedule.error().userMessage());
     }
 
     while (regularScheduleQuery.next())
@@ -2037,7 +2207,7 @@ ClassInfoRepository::loadClassCoTeacherPageDetailsDetailed(const int classId)
 
     if (regularScheduleQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             regularScheduleQuery,
             QObject::tr("Loading regular class times"),
             {},
@@ -2051,27 +2221,28 @@ ClassInfoRepository::loadClassCoTeacherPageDetailsDetailed(const int classId)
     };
 }
 
-Result<ClassNotesPageReadRecord>
+RepositoryResult<ClassNotesPageReadRecord>
 ClassInfoRepository::loadClassNotesPageRecord(const int classId)
 {
     const auto loaded = loadClassNotesPageRecordDetailed(classId);
     if (!loaded)
     {
-        return std::unexpected(loaded.error());
+        return repositoryFailure(loaded.error());
     }
 
     return std::move(loaded->record);
 }
 
-Result<ClassNotesPageReadOutcome>
+RepositoryResult<ClassNotesPageReadOutcome>
 ClassInfoRepository::loadClassNotesPageRecordDetailed(const int classId)
 {
     ++m_classNotesPageReadMetrics.callCount;
     if (classId <= 0)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading class information failed: invalid class id %1.")
-                .arg(classId)
+                .arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -2097,13 +2268,13 @@ ClassInfoRepository::loadClassNotesPageRecordDetailed(const int classId)
         );
     if (!loadedMetadata)
     {
-        return std::unexpected(loadedMetadata.error().userMessage());
+        return repositoryFailure(loadedMetadata.error().userMessage());
     }
 
     const bool parentRowFound = metadataQuery.next();
     if (!parentRowFound && metadataQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             metadataQuery,
             QObject::tr("Loading class information"),
             {},
@@ -2122,12 +2293,15 @@ ClassInfoRepository::loadClassNotesPageRecordDetailed(const int classId)
         else
         {
             bool teacherIdOk = false;
-            const qint64 parsedTeacherId = teacherId.toLongLong(&teacherIdOk);
+            const qint64 parsedTeacherId = teacherId.toString().toLongLong(&teacherIdOk);
             if (!teacherIdOk)
             {
-                return std::unexpected(QObject::tr(
-                    "Loading class information failed: teacher id for class id %1 is not representable as a 64-bit integer."
-                    ).arg(classId));
+                return repositoryFailure(
+                    QObject::tr(
+                        "Loading class information failed: teacher id for class id %1 is not representable as a 64-bit integer."
+                        ).arg(classId),
+                    RepositoryErrorCode::Validation
+                    );
             }
             record.teacherId = parsedTeacherId;
         }
@@ -2140,7 +2314,7 @@ ClassInfoRepository::loadClassNotesPageRecordDetailed(const int classId)
     }
     if (metadataQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             metadataQuery,
             QObject::tr("Loading class information"),
             {},
@@ -2164,7 +2338,7 @@ ClassInfoRepository::loadClassNotesPageRecordDetailed(const int classId)
         );
     if (!loadedRegularSchedule)
     {
-        return std::unexpected(loadedRegularSchedule.error().userMessage());
+        return repositoryFailure(loadedRegularSchedule.error().userMessage());
     }
 
     while (regularScheduleQuery.next())
@@ -2177,7 +2351,7 @@ ClassInfoRepository::loadClassNotesPageRecordDetailed(const int classId)
 
     if (regularScheduleQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             regularScheduleQuery,
             QObject::tr("Loading regular class times"),
             {},
@@ -2191,27 +2365,28 @@ ClassInfoRepository::loadClassNotesPageRecordDetailed(const int classId)
     };
 }
 
-Result<ClassDetailsPageReadRecord>
+RepositoryResult<ClassDetailsPageReadRecord>
 ClassInfoRepository::loadClassDetailsPageRecord(const int classId)
 {
     const auto loaded = loadClassDetailsPageRecordDetailed(classId);
     if (!loaded)
     {
-        return std::unexpected(loaded.error());
+        return repositoryFailure(loaded.error());
     }
 
     return std::move(loaded->record);
 }
 
-Result<ClassDetailsPageReadOutcome>
+RepositoryResult<ClassDetailsPageReadOutcome>
 ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
 {
     ++m_classDetailsPageReadMetrics.callCount;
     if (classId <= 0)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading class information failed: invalid class id %1.")
-                .arg(classId)
+                .arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -2238,13 +2413,13 @@ ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
         );
     if (!loadedMetadata)
     {
-        return std::unexpected(loadedMetadata.error().userMessage());
+        return repositoryFailure(loadedMetadata.error().userMessage());
     }
 
     const bool parentRowFound = metadataQuery.next();
     if (!parentRowFound && metadataQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             metadataQuery,
             QObject::tr("Loading class information"),
             {},
@@ -2264,12 +2439,15 @@ ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
         {
             bool teacherIdOk = false;
             const qint64 parsedTeacherId =
-                teacherId.toLongLong(&teacherIdOk);
+                teacherId.toString().toLongLong(&teacherIdOk);
             if (!teacherIdOk)
             {
-                return std::unexpected(QObject::tr(
-                    "Loading class information failed: teacher id for class id %1 is not representable as a 64-bit integer."
-                    ).arg(classId));
+                return repositoryFailure(
+                    QObject::tr(
+                        "Loading class information failed: teacher id for class id %1 is not representable as a 64-bit integer."
+                        ).arg(classId),
+                    RepositoryErrorCode::Validation
+                    );
             }
             record.teacherId = parsedTeacherId;
         }
@@ -2333,7 +2511,7 @@ ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
             scheduleStatement,
             identity
             );
-        return std::unexpected(scheduleErrorMessage(error));
+        return repositoryFailure(scheduleErrorMessage(error));
     }
     scheduleQuery.addBindValue(classId);
     scheduleQuery.addBindValue(classId);
@@ -2344,7 +2522,7 @@ ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
         );
     if (!loadedSchedules)
     {
-        return std::unexpected(scheduleErrorMessage(loadedSchedules.error()));
+        return repositoryFailure(scheduleErrorMessage(loadedSchedules.error()));
     }
 
     while (scheduleQuery.next())
@@ -2371,7 +2549,7 @@ ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
             scheduleStatement,
             identity
             );
-        return std::unexpected(scheduleErrorMessage(error));
+        return repositoryFailure(scheduleErrorMessage(error));
     }
 
     return ClassDetailsPageReadOutcome{
@@ -2383,7 +2561,7 @@ ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
 namespace
 {
 template<class Record>
-Result<QList<Record>> loadClassInfoRecords(
+RepositoryResult<QList<Record>> loadClassInfoRecords(
     QSqlDatabase& database,
     const QList<int>& classIds
     )
@@ -2401,9 +2579,12 @@ Result<QList<Record>> loadClassInfoRecords(
         const int classId = classIds[index];
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(QObject::tr(
-                "Loading class information records failed: class identifiers must be positive and unique."
-                ));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading class information records failed: class identifiers must be positive and unique."
+                    ),
+                RepositoryErrorCode::InvalidInput
+                );
         }
 
         seenClassIds.insert(classId);
@@ -2462,7 +2643,7 @@ Result<QList<Record>> loadClassInfoRecords(
         );
     if (!loadedMetadata)
     {
-        return std::unexpected(loadedMetadata.error().userMessage());
+        return repositoryFailure(loadedMetadata.error().userMessage());
     }
 
     qsizetype metadataCount = 0;
@@ -2478,9 +2659,12 @@ Result<QList<Record>> loadClassInfoRecords(
             || requestOrder >= classIds.size()
             || classIds[requestOrder] != classId)
         {
-            return std::unexpected(QObject::tr(
-                "Loading class information records failed: returned class order did not match the request."
-                ));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading class information records failed: returned class order did not match the request."
+                    ),
+                RepositoryErrorCode::Validation
+                );
         }
 
         ++metadataCount;
@@ -2495,8 +2679,8 @@ Result<QList<Record>> loadClassInfoRecords(
         const QVariant teacherId = metadataQuery.value(
             QStringLiteral("teacher_id")
             );
-        if (const Status assigned = assignExportTeacherId(info, teacherId); !assigned)
-            return std::unexpected(assigned.error());
+        if (const RepositoryStatus assigned = assignExportTeacherId(info, teacherId); !assigned)
+            return repositoryFailure(assigned.error());
         info.teacherKr = metadataQuery.value(
             QStringLiteral("teacher_kr")
             ).toString();
@@ -2565,20 +2749,23 @@ Result<QList<Record>> loadClassInfoRecords(
     }
     if (metadataQuery.lastError().isValid())
     {
-        return std::unexpected(metadataQuery.lastError().text());
+        return repositoryFailure(metadataQuery.lastError().text());
     }
     if (metadataCount != classIds.size())
     {
-        return std::unexpected(QObject::tr(
-            "Loading class information records failed: metadata returned an incomplete class list."
-            ));
+        return repositoryFailure(
+            QObject::tr(
+                "Loading class information records failed: metadata returned an incomplete class list."
+                ),
+            RepositoryErrorCode::Validation
+            );
     }
 
     const auto loadTimes = [&database, &classIds, &records, &requestedTable](
         const QString& table,
         const QString& action,
         const bool intensive
-        ) -> Status
+        ) -> RepositoryStatus
     {
         QSqlQuery scheduleQuery(database);
         scheduleQuery.setForwardOnly(true);
@@ -2601,7 +2788,7 @@ Result<QList<Record>> loadClassInfoRecords(
             );
         if (!loaded)
         {
-            return std::unexpected(loaded.error().userMessage());
+            return repositoryFailure(loaded.error().userMessage());
         }
 
         while (scheduleQuery.next())
@@ -2616,9 +2803,12 @@ Result<QList<Record>> loadClassInfoRecords(
                 || requestOrder >= classIds.size()
                 || classIds[requestOrder] != classId)
             {
-                return std::unexpected(QObject::tr(
-                    "Loading class information records failed: returned schedule order did not match the request."
-                    ));
+                return repositoryFailure(
+                    QObject::tr(
+                        "Loading class information records failed: returned schedule order did not match the request."
+                        ),
+                    RepositoryErrorCode::Validation
+                    );
             }
 
             ClassTime time;
@@ -2641,27 +2831,27 @@ Result<QList<Record>> loadClassInfoRecords(
 
         if (scheduleQuery.lastError().isValid())
         {
-            return std::unexpected(scheduleQuery.lastError().text());
+            return repositoryFailure(scheduleQuery.lastError().text());
         }
         return {};
     };
 
-    if (const Status loadedRegular = loadTimes(
+    if (const RepositoryStatus loadedRegular = loadTimes(
             QStringLiteral("class_times"),
             QObject::tr("Loading regular class information schedules"),
             false
             ); !loadedRegular)
     {
-        return std::unexpected(loadedRegular.error());
+        return repositoryFailure(loadedRegular.error());
     }
 
-    if (const Status loadedIntensive = loadTimes(
+    if (const RepositoryStatus loadedIntensive = loadTimes(
             QStringLiteral("class_intensive_times"),
             QObject::tr("Loading intensive class information schedules"),
             true
             ); !loadedIntensive)
     {
-        return std::unexpected(loadedIntensive.error());
+        return repositoryFailure(loadedIntensive.error());
     }
 
     return records;
@@ -2669,13 +2859,13 @@ Result<QList<Record>> loadClassInfoRecords(
 
 }
 
-Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfoRecords(
+RepositoryResult<QList<ClassInfo>> ClassInfoRepository::loadClassInfoRecords(
     const QList<int>& classIds)
 {
     return ::loadClassInfoRecords<ClassInfo>(m_database, classIds);
 }
 
-Result<QList<ClassTransferExportClassInfoReadRecord>>
+RepositoryResult<QList<ClassTransferExportClassInfoReadRecord>>
 ClassInfoRepository::loadClassTransferExportClassInfoRecords(
     const QList<int>& classIds)
 {
@@ -2683,27 +2873,28 @@ ClassInfoRepository::loadClassTransferExportClassInfoRecords(
         m_database, classIds);
 }
 
-Result<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitleRecord(
+RepositoryResult<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitleRecord(
     int classId
     )
 {
     const auto loaded = loadClassSubtitleRecordDetailed(classId);
     if (!loaded)
     {
-        return std::unexpected(loaded.error());
+        return repositoryFailure(loaded.error());
     }
 
     return std::move(loaded->record);
 }
 
-Result<ClassSubtitleReadOutcome>
+RepositoryResult<ClassSubtitleReadOutcome>
 ClassInfoRepository::loadClassSubtitleRecordDetailed(const int classId)
 {
     if (classId <= 0)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading class subtitle failed: invalid class id %1.")
-                .arg(classId)
+                .arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -2732,13 +2923,13 @@ ClassInfoRepository::loadClassSubtitleRecordDetailed(const int classId)
         );
     if (!loadedFields)
     {
-        return std::unexpected(loadedFields.error().userMessage());
+        return repositoryFailure(loadedFields.error().userMessage());
     }
 
     const bool parentRowFound = query.next();
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading class subtitle details"),
             {},
@@ -2748,7 +2939,7 @@ ClassInfoRepository::loadClassSubtitleRecordDetailed(const int classId)
 
     if (!parentRowFound)
     {
-        return std::unexpected(QObject::tr(
+        return repositoryFailure(QObject::tr(
             "Loading class subtitle failed: no result was returned for class id %1."
             ).arg(classId));
     }
@@ -2760,12 +2951,15 @@ ClassInfoRepository::loadClassSubtitleRecordDetailed(const int classId)
     if (!teacherId.isNull())
     {
         bool teacherIdOk = false;
-        outcome.record.teacherId = teacherId.toLongLong(&teacherIdOk);
+        outcome.record.teacherId = teacherId.toString().toLongLong(&teacherIdOk);
         if (!teacherIdOk)
         {
-            return std::unexpected(QObject::tr(
-                "Loading class subtitle failed: the database returned an invalid teacher identifier."
-                ));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading class subtitle failed: the database returned an invalid teacher identifier."
+                    ),
+                RepositoryErrorCode::Validation
+                );
         }
     }
     outcome.record.grade = query.value("class_grade").toString();
@@ -2786,7 +2980,7 @@ ClassInfoRepository::loadClassSubtitleRecordDetailed(const int classId)
         );
     if (!loadedTimes)
     {
-        return std::unexpected(loadedTimes.error().userMessage());
+        return repositoryFailure(loadedTimes.error().userMessage());
     }
 
     while (query.next())
@@ -2800,7 +2994,7 @@ ClassInfoRepository::loadClassSubtitleRecordDetailed(const int classId)
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading class subtitle schedule"),
             {},
@@ -2811,7 +3005,7 @@ ClassInfoRepository::loadClassSubtitleRecordDetailed(const int classId)
     return outcome;
 }
 
-Result<QList<ClassSubtitleBatchReadRecord>>
+RepositoryResult<QList<ClassSubtitleBatchReadRecord>>
 ClassInfoRepository::loadClassSubtitleRecords(
     const QList<int>& classIds
     )
@@ -2830,10 +3024,11 @@ ClassInfoRepository::loadClassSubtitleRecords(
         const int classId = classIds[index];
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr(
                     "Loading class subtitles failed: class identifiers must be positive and unique."
-                    )
+                    ),
+                RepositoryErrorCode::InvalidInput
                 );
         }
 
@@ -2873,13 +3068,20 @@ ClassInfoRepository::loadClassSubtitleRecords(
         );
     if (!loadedMetadata)
     {
-        return std::unexpected(loadedMetadata.error().userMessage());
+        return repositoryFailure(loadedMetadata.error().userMessage());
     }
 
     while (metadataQuery.next())
     {
         ClassSubtitleBatchReadRecord record;
-        record.classId = metadataQuery.value("class_id").toInt();
+        const auto parsedClassId = persistedClassId(
+            metadataQuery.value("class_id"), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        record.classId = *parsedClassId;
         record.parentMissing = metadataQuery.value("parent_class_id").isNull();
         if (!record.parentMissing
             && !metadataQuery.value("class_info_class_id").isNull())
@@ -2888,12 +3090,15 @@ ClassInfoRepository::loadClassSubtitleRecords(
             if (!teacherId.isNull())
             {
                 bool teacherIdOk = false;
-                record.teacherId = teacherId.toLongLong(&teacherIdOk);
+                record.teacherId = teacherId.toString().toLongLong(&teacherIdOk);
                 if (!teacherIdOk)
                 {
-                    return std::unexpected(QObject::tr(
-                        "Loading class subtitles failed: the database returned an invalid teacher identifier."
-                        ));
+                    return repositoryFailure(
+                        QObject::tr(
+                            "Loading class subtitles failed: the database returned an invalid teacher identifier."
+                            ),
+                        RepositoryErrorCode::Validation
+                        );
                 }
             }
             record.grade = metadataQuery.value("class_grade").toString();
@@ -2906,7 +3111,7 @@ ClassInfoRepository::loadClassSubtitleRecords(
 
     if (metadataQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             metadataQuery,
             QObject::tr("Loading class subtitle metadata")
             ).userMessage());
@@ -2914,9 +3119,12 @@ ClassInfoRepository::loadClassSubtitleRecords(
 
     if (records.size() != classIds.size())
     {
-        return std::unexpected(QObject::tr(
-            "Loading class subtitles failed: the metadata query returned an incomplete class list."
-            ));
+        return repositoryFailure(
+            QObject::tr(
+                "Loading class subtitles failed: the metadata query returned an incomplete class list."
+                ),
+            RepositoryErrorCode::Validation
+            );
     }
 
     QSqlQuery scheduleQuery(m_database);
@@ -2934,12 +3142,19 @@ ClassInfoRepository::loadClassSubtitleRecords(
         );
     if (!loadedSchedule)
     {
-        return std::unexpected(loadedSchedule.error().userMessage());
+        return repositoryFailure(loadedSchedule.error().userMessage());
     }
 
     while (scheduleQuery.next())
     {
-        const int classId = scheduleQuery.value("class_id").toInt();
+        const auto parsedClassId = persistedClassId(
+            scheduleQuery.value("class_id"), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        const int classId = *parsedClassId;
         const auto recordIndex = indexByClassId.constFind(classId);
         if (recordIndex == indexByClassId.cend())
         {
@@ -2955,7 +3170,7 @@ ClassInfoRepository::loadClassSubtitleRecords(
 
     if (scheduleQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             scheduleQuery,
             QObject::tr("Loading class subtitle regular schedules")
             ).userMessage());
@@ -2964,7 +3179,7 @@ ClassInfoRepository::loadClassSubtitleRecords(
     return records;
 }
 
-Result<std::vector<MyClassesClassInformationBatchReadEntry>>
+RepositoryResult<std::vector<MyClassesClassInformationBatchReadEntry>>
 ClassInfoRepository::loadMyClassesClassInformationRecords(
     const QList<int>& classIds
     )
@@ -2994,10 +3209,11 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
         {
             entries.push_back({
                 .classId = classId,
-                .information = std::unexpected(
+                .information = repositoryFailure(
                     QObject::tr(
                         "Loading My Classes class information failed: invalid class id %1."
-                        ).arg(classId)
+                        ).arg(classId),
+                    RepositoryErrorCode::InvalidInput
                     )
             });
             continue;
@@ -3005,9 +3221,12 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
 
         if (entryIndexByClassId.contains(classId))
         {
-            return std::unexpected(QObject::tr(
-                "Loading My Classes class information failed: class identifiers must be unique."
-                ));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading My Classes class information failed: class identifiers must be unique."
+                    ),
+                RepositoryErrorCode::InvalidInput
+                );
         }
 
         const std::size_t entryIndex = entries.size();
@@ -3015,7 +3234,7 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
         validEntryIndexes.push_back(entryIndex);
         entries.push_back({
             .classId = classId,
-            .information = std::unexpected(QString{})
+            .information = repositoryFailure(QString{})
         });
         requestedValues.append(QStringLiteral("(%1, %2)")
             .arg(classId)
@@ -3043,7 +3262,7 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
                 );
             if (!loaded)
             {
-                entries[index].information = std::unexpected(loaded.error());
+                entries[index].information = repositoryFailure(loaded.error());
                 continue;
             }
 
@@ -3082,7 +3301,14 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
     std::size_t loadedMetadataCount = 0;
     while (metadataQuery.next())
     {
-        const int classId = metadataQuery.value("class_id").toInt();
+        const auto parsedClassId = persistedClassId(
+            metadataQuery.value("class_id"), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        const int classId = *parsedClassId;
         const auto entryIndex = entryIndexByClassId.constFind(classId);
         if (entryIndex == entryIndexByClassId.cend())
         {
@@ -3105,15 +3331,16 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
             bool teacherIdOk = true;
             if (!teacherId.isNull())
             {
-                record.teacherId = teacherId.toLongLong(&teacherIdOk);
+                record.teacherId = teacherId.toString().toLongLong(&teacherIdOk);
             }
 
             if (!teacherIdOk)
             {
-                entries[*entryIndex].information = std::unexpected(
+                entries[*entryIndex].information = repositoryFailure(
                     QObject::tr(
                         "Loading My Classes class information failed: teacher id for class id %1 cannot be represented as a signed 64-bit value."
-                        ).arg(classId)
+                        ).arg(classId),
+                    RepositoryErrorCode::Validation
                     );
             }
             else
@@ -3169,7 +3396,14 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
     invalidReturnedClassId = false;
     while (regularScheduleQuery.next())
     {
-        const int classId = regularScheduleQuery.value("class_id").toInt();
+        const auto parsedClassId = persistedClassId(
+            regularScheduleQuery.value("class_id"), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        const int classId = *parsedClassId;
         const auto entryIndex = entryIndexByClassId.constFind(classId);
         if (entryIndex == entryIndexByClassId.cend())
         {
@@ -3220,7 +3454,14 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
 
     while (intensiveScheduleQuery.next())
     {
-        const int classId = intensiveScheduleQuery.value("class_id").toInt();
+        const auto parsedClassId = persistedClassId(
+            intensiveScheduleQuery.value("class_id"), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        const int classId = *parsedClassId;
         const auto entryIndex = entryIndexByClassId.constFind(classId);
         if (entryIndex == entryIndexByClassId.cend())
         {
@@ -3250,7 +3491,7 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
     return entries;
 }
 
-Result<std::vector<MyClassesClassSummaryBatchReadEntry>>
+RepositoryResult<std::vector<MyClassesClassSummaryBatchReadEntry>>
 ClassInfoRepository::loadMyClassesClassSummaryRecords(
     const QList<int>& classIds
     )
@@ -3280,18 +3521,24 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
         {
             entries.push_back({
                 .classId = classId,
-                .summary = std::unexpected(QObject::tr(
-                    "Loading My Classes class summaries failed: invalid class id %1."
-                    ).arg(classId))
+                .summary = repositoryFailure(
+                    QObject::tr(
+                        "Loading My Classes class summaries failed: invalid class id %1."
+                        ).arg(classId),
+                    RepositoryErrorCode::InvalidInput
+                    )
             });
             continue;
         }
 
         if (entryIndexByClassId.contains(classId))
         {
-            return std::unexpected(QObject::tr(
-                "Loading My Classes class summaries failed: class identifiers must be unique."
-                ));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading My Classes class summaries failed: class identifiers must be unique."
+                    ),
+                RepositoryErrorCode::InvalidInput
+                );
         }
 
         const std::size_t entryIndex = entries.size();
@@ -3299,7 +3546,7 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
         validEntryIndexes.push_back(entryIndex);
         entries.push_back({
             .classId = classId,
-            .summary = std::unexpected(QString{})
+            .summary = repositoryFailure(QString{})
         });
         requestedValues.append(QStringLiteral("(%1, %2)")
             .arg(classId)
@@ -3326,7 +3573,7 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
                 );
             if (!loaded)
             {
-                entries[index].summary = std::unexpected(loaded.error());
+                entries[index].summary = repositoryFailure(loaded.error());
                 continue;
             }
 
@@ -3363,7 +3610,14 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
     std::size_t loadedMetadataCount = 0;
     while (metadataQuery.next())
     {
-        const int classId = metadataQuery.value("class_id").toInt();
+        const auto parsedClassId = persistedClassId(
+            metadataQuery.value("class_id"), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        const int classId = *parsedClassId;
         const auto entryIndex = entryIndexByClassId.constFind(classId);
         if (entryIndex == entryIndexByClassId.cend())
         {
@@ -3386,15 +3640,16 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
             bool teacherIdOk = true;
             if (!teacherId.isNull())
             {
-                record.teacherId = teacherId.toLongLong(&teacherIdOk);
+                record.teacherId = teacherId.toString().toLongLong(&teacherIdOk);
             }
 
             if (!teacherIdOk)
             {
-                entries[*entryIndex].summary = std::unexpected(
+                entries[*entryIndex].summary = repositoryFailure(
                     QObject::tr(
                         "Loading My Classes class summary failed: teacher id for class id %1 cannot be represented as a signed 64-bit value."
-                        ).arg(classId)
+                        ).arg(classId),
+                    RepositoryErrorCode::Validation
                     );
             }
             else
@@ -3467,7 +3722,14 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
 
     while (scheduleQuery.next())
     {
-        const int classId = scheduleQuery.value("class_id").toInt();
+        const auto parsedClassId = persistedClassId(
+            scheduleQuery.value("class_id"), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        const int classId = *parsedClassId;
         const auto entryIndex = entryIndexByClassId.constFind(classId);
         if (entryIndex == entryIndexByClassId.cend())
         {
@@ -3504,16 +3766,19 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
     return entries;
 }
 
-Result<ClassInfoRepository::MyClassesClassSummaryReadOutcome>
+RepositoryResult<ClassInfoRepository::MyClassesClassSummaryReadOutcome>
 ClassInfoRepository::loadMyClassesClassSummaryRecord(
     const int classId
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(QObject::tr(
-            "Loading My Classes class summary failed: invalid class id %1."
-            ).arg(classId));
+        return repositoryFailure(
+            QObject::tr(
+                "Loading My Classes class summary failed: invalid class id %1."
+                ).arg(classId),
+            RepositoryErrorCode::InvalidInput
+            );
     }
 
     MyClassesClassSummaryReadOutcome outcome;
@@ -3539,13 +3804,13 @@ ClassInfoRepository::loadMyClassesClassSummaryRecord(
         );
     if (!loadedMetadata)
     {
-        return std::unexpected(loadedMetadata.error().userMessage());
+        return repositoryFailure(loadedMetadata.error().userMessage());
     }
 
     const bool parentFound = metadataQuery.next();
     if (metadataQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             metadataQuery,
             QObject::tr("Loading My Classes class-summary metadata"),
             QObject::tr("class id %1").arg(classId)
@@ -3565,13 +3830,14 @@ ClassInfoRepository::loadMyClassesClassSummaryRecord(
         {
             bool teacherIdOk = false;
             const qint64 convertedTeacherId =
-                teacherId.toLongLong(&teacherIdOk);
+                teacherId.toString().toLongLong(&teacherIdOk);
             if (!teacherIdOk)
             {
-                return std::unexpected(
+                return repositoryFailure(
                     QObject::tr(
                         "Loading My Classes class summary failed: teacher id for class id %1 cannot be represented as a signed 64-bit value."
-                        ).arg(classId)
+                        ).arg(classId),
+                    RepositoryErrorCode::Validation
                     );
             }
             record.teacherId = convertedTeacherId;
@@ -3611,7 +3877,7 @@ ClassInfoRepository::loadMyClassesClassSummaryRecord(
         );
     if (!loadedSchedule)
     {
-        return std::unexpected(loadedSchedule.error().userMessage());
+        return repositoryFailure(loadedSchedule.error().userMessage());
     }
 
     while (scheduleQuery.next())
@@ -3632,7 +3898,7 @@ ClassInfoRepository::loadMyClassesClassSummaryRecord(
 
     if (scheduleQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             scheduleQuery,
             QObject::tr("Loading My Classes class-summary schedules"),
             QObject::tr("class id %1").arg(classId)
@@ -3642,17 +3908,18 @@ ClassInfoRepository::loadMyClassesClassSummaryRecord(
     return outcome;
 }
 
-Result<ClassInfoRepository::MyClassesClassInformationReadOutcome>
+RepositoryResult<ClassInfoRepository::MyClassesClassInformationReadOutcome>
 ClassInfoRepository::loadMyClassesClassInformationRecord(
     const int classId
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr(
                 "Loading My Classes class information failed: invalid class id %1."
-                ).arg(classId)
+                ).arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -3682,13 +3949,13 @@ ClassInfoRepository::loadMyClassesClassInformationRecord(
         );
     if (!loadedMetadata)
     {
-        return std::unexpected(loadedMetadata.error().userMessage());
+        return repositoryFailure(loadedMetadata.error().userMessage());
     }
 
     const bool parentFound = metadataQuery.next();
     if (metadataQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             metadataQuery,
             QObject::tr("Loading My Classes class information metadata"),
             identity
@@ -3708,13 +3975,14 @@ ClassInfoRepository::loadMyClassesClassInformationRecord(
         {
             bool teacherIdOk = false;
             const qint64 convertedTeacherId =
-                teacherId.toLongLong(&teacherIdOk);
+                teacherId.toString().toLongLong(&teacherIdOk);
             if (!teacherIdOk)
             {
-                return std::unexpected(
+                return repositoryFailure(
                     QObject::tr(
                         "Loading My Classes class information failed: teacher id for class id %1 cannot be represented as a signed 64-bit value."
-                        ).arg(classId)
+                        ).arg(classId),
+                    RepositoryErrorCode::Validation
                     );
             }
             record.teacherId = convertedTeacherId;
@@ -3743,7 +4011,7 @@ ClassInfoRepository::loadMyClassesClassInformationRecord(
         );
     if (!loadedRegularSchedule)
     {
-        return std::unexpected(loadedRegularSchedule.error().userMessage());
+        return repositoryFailure(loadedRegularSchedule.error().userMessage());
     }
     while (regularScheduleQuery.next())
     {
@@ -3755,7 +4023,7 @@ ClassInfoRepository::loadMyClassesClassInformationRecord(
     }
     if (regularScheduleQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             regularScheduleQuery,
             QObject::tr("Loading My Classes regular schedules"),
             identity
@@ -3779,7 +4047,7 @@ ClassInfoRepository::loadMyClassesClassInformationRecord(
         );
     if (!loadedIntensiveSchedule)
     {
-        return std::unexpected(loadedIntensiveSchedule.error().userMessage());
+        return repositoryFailure(loadedIntensiveSchedule.error().userMessage());
     }
     while (intensiveScheduleQuery.next())
     {
@@ -3791,7 +4059,7 @@ ClassInfoRepository::loadMyClassesClassInformationRecord(
     }
     if (intensiveScheduleQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             intensiveScheduleQuery,
             QObject::tr("Loading My Classes intensive schedules"),
             identity
@@ -3801,7 +4069,7 @@ ClassInfoRepository::loadMyClassesClassInformationRecord(
     return outcome;
 }
 
-Result<RosterPrintClassInfoReadRecord>
+RepositoryResult<RosterPrintClassInfoReadRecord>
 ClassInfoRepository::loadRosterPrintClassInfoRecord(
     int classId
     )
@@ -3809,22 +4077,23 @@ ClassInfoRepository::loadRosterPrintClassInfoRecord(
     const auto loaded = loadRosterPrintClassInfoRecordDetailed(classId);
     if (!loaded)
     {
-        return std::unexpected(loaded.error());
+        return repositoryFailure(loaded.error());
     }
 
     return std::move(loaded->record);
 }
 
-Result<RosterPrintClassInfoReadOutcome>
+RepositoryResult<RosterPrintClassInfoReadOutcome>
 ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
     int classId
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading roster print class information failed: invalid class id %1.")
-                .arg(classId)
+                .arg(classId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -3849,7 +4118,7 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
             t.zoom_password
         FROM requested
         LEFT JOIN classes ON classes.id = requested.class_id
-        LEFT JOIN class_info ci ON ci.class_id = classes.id
+        LEFT JOIN class_info ci ON ci.class_id = requested.class_id
         LEFT JOIN teachers t ON ci.teacher_id = t.id
     )");
     metadataQuery.addBindValue(classId);
@@ -3861,13 +4130,13 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
         );
     if (!loadedMetadata)
     {
-        return std::unexpected(loadedMetadata.error().userMessage());
+        return repositoryFailure(loadedMetadata.error().userMessage());
     }
 
     const bool parentRowFound = metadataQuery.next();
     if (metadataQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             metadataQuery,
             QObject::tr("Loading roster print class information"),
             {},
@@ -3877,7 +4146,7 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
 
     if (!parentRowFound)
     {
-        return std::unexpected(QObject::tr(
+        return repositoryFailure(QObject::tr(
             "Loading roster print class information failed: no result was returned for class id %1."
             ).arg(classId));
     }
@@ -3907,10 +4176,11 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
 
     QSqlQuery scheduleQuery(m_database);
     scheduleQuery.prepare(R"(
+        WITH requested(class_id) AS (VALUES (?))
         SELECT schedule.day, schedule.start_time, schedule.end_time
-        FROM classes
-        INNER JOIN class_times schedule ON schedule.class_id = classes.id
-        WHERE classes.id = ?
+        FROM requested
+        INNER JOIN class_times schedule
+            ON schedule.class_id = requested.class_id
         ORDER BY schedule.id
     )");
     scheduleQuery.addBindValue(classId);
@@ -3922,7 +4192,7 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
         );
     if (!loadedSchedule)
     {
-        return std::unexpected(loadedSchedule.error().userMessage());
+        return repositoryFailure(loadedSchedule.error().userMessage());
     }
 
     while (scheduleQuery.next())
@@ -3936,7 +4206,7 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
 
     if (scheduleQuery.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             scheduleQuery,
             QObject::tr("Loading roster print regular class times"),
             {},
@@ -3947,7 +4217,7 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
     return outcome;
 }
 
-Result<QList<RosterPrintClassInfoReadRecord>>
+RepositoryResult<QList<RosterPrintClassInfoReadRecord>>
 ClassInfoRepository::loadRosterPrintClassInfoRecords(
     const QList<int>& classIds
     )
@@ -3972,9 +4242,12 @@ ClassInfoRepository::loadRosterPrintClassInfoRecords(
         const int classId = classIds.at(index);
         if (classId <= 0 || requestIndexByClassId.contains(classId))
         {
-            return std::unexpected(QObject::tr(
-                "Loading roster print class information failed: class ids must be positive and unique."
-                ));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading roster print class information failed: class ids must be positive and unique."
+                    ),
+                RepositoryErrorCode::InvalidInput
+                );
         }
 
         requestIndexByClassId.insert(classId, index);
@@ -4025,7 +4298,7 @@ ClassInfoRepository::loadRosterPrintClassInfoRecords(
         );
     if (!loadedMetadata)
     {
-        return std::unexpected(loadedMetadata.error().userMessage());
+        return repositoryFailure(loadedMetadata.error().userMessage());
     }
 
     bool invalidMetadataIdentity = false;
@@ -4050,7 +4323,10 @@ ClassInfoRepository::loadRosterPrintClassInfoRecords(
         {
             continue;
         }
-        if (metadataQuery.value("class_info_class_id").toInt() != classId)
+        bool infoIdentityValid = false;
+        const qint64 infoIdentity = metadataQuery.value("class_info_class_id")
+            .toString().toLongLong(&infoIdentityValid);
+        if (!infoIdentityValid || infoIdentity != classId)
         {
             invalidMetadataIdentity = true;
             break;
@@ -4069,7 +4345,7 @@ ClassInfoRepository::loadRosterPrintClassInfoRecords(
     }
     if (metadataQuery.lastError().isValid())
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Reading roster print class information metadata failed: %1")
                 .arg(metadataQuery.lastError().text())
             );
@@ -4084,9 +4360,12 @@ ClassInfoRepository::loadRosterPrintClassInfoRecords(
     }
     if (invalidMetadataIdentity)
     {
-        return std::unexpected(QObject::tr(
-            "Loading roster print class information returned an invalid class identity."
-            ));
+        return repositoryFailure(
+            QObject::tr(
+                "Loading roster print class information returned an invalid class identity."
+                ),
+            RepositoryErrorCode::Validation
+            );
     }
 
     QSqlQuery scheduleQuery(m_database);
@@ -4113,7 +4392,7 @@ ClassInfoRepository::loadRosterPrintClassInfoRecords(
         );
     if (!loadedSchedule)
     {
-        return std::unexpected(loadedSchedule.error().userMessage());
+        return repositoryFailure(loadedSchedule.error().userMessage());
     }
 
     bool invalidScheduleIdentity = false;
@@ -4138,22 +4417,25 @@ ClassInfoRepository::loadRosterPrintClassInfoRecords(
     }
     if (scheduleQuery.lastError().isValid())
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Reading roster print regular schedules failed: %1")
                 .arg(scheduleQuery.lastError().text())
             );
     }
     if (invalidScheduleIdentity)
     {
-        return std::unexpected(QObject::tr(
-            "Loading roster print regular schedules returned an invalid class identity."
-            ));
+        return repositoryFailure(
+            QObject::tr(
+                "Loading roster print regular schedules returned an invalid class identity."
+                ),
+            RepositoryErrorCode::Validation
+            );
     }
 
     return records;
 }
 
-Result<QList<SubPrepRosterOutputClassInfoReadRecord>>
+RepositoryResult<QList<SubPrepRosterOutputClassInfoReadRecord>>
 ClassInfoRepository::loadSubPrepRosterOutputClassInfoRecords(
     const QList<int>& classIds
     )
@@ -4175,9 +4457,12 @@ ClassInfoRepository::loadSubPrepRosterOutputClassInfoRecords(
         const int classId = classIds[index];
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(QObject::tr(
-                "Loading Sub Prep roster output class information failed: class identifiers must be positive and unique."
-                ));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading Sub Prep roster output class information failed: class identifiers must be positive and unique."
+                    ),
+                RepositoryErrorCode::InvalidInput
+                );
         }
 
         seenClassIds.insert(classId);
@@ -4217,7 +4502,7 @@ ClassInfoRepository::loadSubPrepRosterOutputClassInfoRecords(
         );
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return repositoryFailure(loaded.error().userMessage());
     }
 
     QList<SubPrepRosterOutputClassInfoReadRecord> records;
@@ -4229,9 +4514,12 @@ ClassInfoRepository::loadSubPrepRosterOutputClassInfoRecords(
         if (records.size() >= classIds.size()
             || requestedClassId != classIds[records.size()])
         {
-            return std::unexpected(QObject::tr(
-                "Loading Sub Prep roster output class information failed: returned class order did not match the request."
-                ));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading Sub Prep roster output class information failed: returned class order did not match the request."
+                    ),
+                RepositoryErrorCode::Validation
+                );
         }
 
         SubPrepRosterOutputClassInfoReadRecord record;
@@ -4240,19 +4528,30 @@ ClassInfoRepository::loadSubPrepRosterOutputClassInfoRecords(
             );
         if (classInfoClassId.isNull())
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr(
                     "Loading Sub Prep roster output class information failed for class id %1: no matching record exists."
-                    ).arg(requestedClassId)
+                    ).arg(requestedClassId),
+                RepositoryErrorCode::NotFound
                 );
         }
 
-        record.classId = classInfoClassId.toInt();
+        const auto parsedClassId = persistedClassId(
+            classInfoClassId, QObject::tr(
+                "Loading Sub Prep roster output class information failed: returned class identity did not match the request."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        record.classId = *parsedClassId;
         if (record.classId != requestedClassId)
         {
-            return std::unexpected(QObject::tr(
-                "Loading Sub Prep roster output class information failed: returned class identity did not match the request."
-                ));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading Sub Prep roster output class information failed: returned class identity did not match the request."
+                    ),
+                RepositoryErrorCode::Validation
+                );
         }
 
         const QVariant teacherId = query.value(
@@ -4261,12 +4560,15 @@ ClassInfoRepository::loadSubPrepRosterOutputClassInfoRecords(
         if (!teacherId.isNull())
         {
             bool teacherIdOk = false;
-            const qint64 parsedTeacherId = teacherId.toLongLong(&teacherIdOk);
+            const qint64 parsedTeacherId = teacherId.toString().toLongLong(&teacherIdOk);
             if (!teacherIdOk)
             {
-                return std::unexpected(QObject::tr(
-                    "Loading Sub Prep roster output class information failed: the database returned an invalid teacher identifier."
-                    ));
+                return repositoryFailure(
+                    QObject::tr(
+                        "Loading Sub Prep roster output class information failed: the database returned an invalid teacher identifier."
+                        ),
+                    RepositoryErrorCode::Validation
+                    );
             }
             record.teacherId = parsedTeacherId;
         }
@@ -4302,19 +4604,22 @@ ClassInfoRepository::loadSubPrepRosterOutputClassInfoRecords(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(query.lastError().text());
+        return repositoryFailure(query.lastError().text());
     }
     if (records.size() != classIds.size())
     {
-        return std::unexpected(QObject::tr(
-            "Loading Sub Prep roster output class information failed: the database returned an incomplete result."
-            ));
+        return repositoryFailure(
+            QObject::tr(
+                "Loading Sub Prep roster output class information failed: the database returned an incomplete result."
+                ),
+            RepositoryErrorCode::Validation
+            );
     }
 
     return records;
 }
 
-Result<QList<ClassNavigationReadRecord>>
+RepositoryResult<QList<ClassNavigationReadRecord>>
 ClassInfoRepository::loadClassesNavigationRecords(
     const QList<int>& classIds
     )
@@ -4332,10 +4637,11 @@ ClassInfoRepository::loadClassesNavigationRecords(
         const int classId = classIds[index];
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr(
                     "Loading classes navigation failed: class identifiers must be positive and unique."
-                    )
+                    ),
+                RepositoryErrorCode::InvalidInput
                 );
         }
 
@@ -4379,13 +4685,20 @@ ClassInfoRepository::loadClassesNavigationRecords(
         );
     if (!loadedMetadata)
     {
-        return std::unexpected(loadedMetadata.error().userMessage());
+        return repositoryFailure(loadedMetadata.error().userMessage());
     }
 
     while (metadataQuery.next())
     {
         ClassNavigationReadRecord record;
-        record.classId = metadataQuery.value("class_id").toInt();
+        const auto parsedClassId = persistedClassId(
+            metadataQuery.value("class_id"), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        record.classId = *parsedClassId;
         record.hasClassInfo =
             !metadataQuery.value("class_info_class_id").isNull();
         if (record.hasClassInfo)
@@ -4395,12 +4708,15 @@ ClassInfoRepository::loadClassesNavigationRecords(
             {
                 bool teacherIdValid = false;
                 const qint64 parsedTeacherId =
-                    teacherId.toLongLong(&teacherIdValid);
+                    teacherId.toString().toLongLong(&teacherIdValid);
                 if (!teacherIdValid)
                 {
-                    return std::unexpected(QObject::tr(
-                        "Loading classes navigation failed: a teacher identifier is invalid."
-                        ));
+                    return repositoryFailure(
+                        QObject::tr(
+                            "Loading classes navigation failed: a teacher identifier is invalid."
+                            ),
+                        RepositoryErrorCode::Validation
+                        );
                 }
                 record.teacherId = parsedTeacherId;
             }
@@ -4416,12 +4732,22 @@ ClassInfoRepository::loadClassesNavigationRecords(
         records.append(std::move(record));
     }
 
+    if (metadataQuery.lastError().isValid())
+    {
+        return repositoryFailure(SqlQueryUtils::errorFor(
+            metadataQuery,
+            QObject::tr("Loading classes navigation metadata"),
+            metadataQueryText
+            ).userMessage());
+    }
+
     if (records.size() != classIds.size())
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr(
                 "Loading classes navigation failed: the metadata query returned an incomplete class list."
-                )
+                ),
+            RepositoryErrorCode::Validation
             );
     }
 
@@ -4429,7 +4755,7 @@ ClassInfoRepository::loadClassesNavigationRecords(
         const QString& table,
         const QString& action,
         const bool intensive
-        ) -> Status
+        ) -> RepositoryStatus
     {
         QSqlQuery timesQuery(m_database);
         if (intensive)
@@ -4458,12 +4784,19 @@ ClassInfoRepository::loadClassesNavigationRecords(
             );
         if (!loadedTimes)
         {
-            return std::unexpected(loadedTimes.error().userMessage());
+            return repositoryFailure(loadedTimes.error().userMessage());
         }
 
         while (timesQuery.next())
         {
-            const int classId = timesQuery.value("class_id").toInt();
+            const auto parsedClassId = persistedClassId(
+                timesQuery.value("class_id"), QObject::tr(
+                    "Loading class information failed: the database returned an invalid class identifier."));
+            if (!parsedClassId)
+            {
+                return repositoryFailure(parsedClassId.error());
+            }
+            const int classId = *parsedClassId;
             const auto recordIndex = indexByClassId.constFind(classId);
             if (recordIndex == indexByClassId.cend())
             {
@@ -4488,7 +4821,7 @@ ClassInfoRepository::loadClassesNavigationRecords(
 
         if (timesQuery.lastError().isValid())
         {
-            return std::unexpected(SqlQueryUtils::errorFor(
+            return repositoryFailure(SqlQueryUtils::errorFor(
                 timesQuery,
                 action,
                 queryText
@@ -4498,28 +4831,28 @@ ClassInfoRepository::loadClassesNavigationRecords(
         return {};
     };
 
-    if (const Status loadedRegular = loadTimes(
+    if (const RepositoryStatus loadedRegular = loadTimes(
             QStringLiteral("class_times"),
             QObject::tr("Loading regular classes navigation schedules"),
             false
             ); !loadedRegular)
     {
-        return std::unexpected(loadedRegular.error());
+        return repositoryFailure(loadedRegular.error());
     }
 
-    if (const Status loadedIntensive = loadTimes(
+    if (const RepositoryStatus loadedIntensive = loadTimes(
             QStringLiteral("class_intensive_times"),
             QObject::tr("Loading intensive classes navigation schedules"),
             true
             ); !loadedIntensive)
     {
-        return std::unexpected(loadedIntensive.error());
+        return repositoryFailure(loadedIntensive.error());
     }
 
     return records;
 }
 
-Result<QList<ClassNavigationParentAwareReadRecord>>
+RepositoryResult<QList<ClassNavigationParentAwareReadRecord>>
 ClassInfoRepository::loadClassesNavigationRecordsWithParentProvenance(
     const QList<int>& classIds
     )
@@ -4537,9 +4870,12 @@ ClassInfoRepository::loadClassesNavigationRecordsWithParentProvenance(
         const int classId = classIds[index];
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(QObject::tr(
-                "Loading classes navigation failed: class identifiers must be positive and unique."
-                ));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading classes navigation failed: class identifiers must be positive and unique."
+                    ),
+                RepositoryErrorCode::InvalidInput
+                );
         }
 
         seenClassIds.insert(classId);
@@ -4586,14 +4922,21 @@ ClassInfoRepository::loadClassesNavigationRecordsWithParentProvenance(
         );
     if (!loadedMetadata)
     {
-        return std::unexpected(loadedMetadata.error().userMessage());
+        return repositoryFailure(loadedMetadata.error().userMessage());
     }
 
     while (metadataQuery.next())
     {
         ClassNavigationParentAwareReadRecord parentRecord;
         ClassNavigationReadRecord& record = parentRecord.details;
-        record.classId = metadataQuery.value("class_id").toInt();
+        const auto parsedClassId = persistedClassId(
+            metadataQuery.value("class_id"), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        record.classId = *parsedClassId;
         parentRecord.parentExists =
             !metadataQuery.value("parent_class_id").isNull();
         record.hasClassInfo = parentRecord.parentExists
@@ -4605,12 +4948,15 @@ ClassInfoRepository::loadClassesNavigationRecordsWithParentProvenance(
             {
                 bool teacherIdValid = false;
                 const qint64 parsedTeacherId =
-                    teacherId.toLongLong(&teacherIdValid);
+                    teacherId.toString().toLongLong(&teacherIdValid);
                 if (!teacherIdValid)
                 {
-                    return std::unexpected(QObject::tr(
-                        "Loading classes navigation failed: a teacher identifier is invalid."
-                        ));
+                    return repositoryFailure(
+                        QObject::tr(
+                            "Loading classes navigation failed: a teacher identifier is invalid."
+                            ),
+                        RepositoryErrorCode::Validation
+                        );
                 }
                 record.teacherId = parsedTeacherId;
             }
@@ -4631,7 +4977,7 @@ ClassInfoRepository::loadClassesNavigationRecordsWithParentProvenance(
 
     if (metadataQuery.lastError().isValid())
     {
-        return std::unexpected(metadataQuery.lastError().text());
+        return repositoryFailure(metadataQuery.lastError().text());
     }
 
     const auto loadTimes = [this,
@@ -4641,7 +4987,7 @@ ClassInfoRepository::loadClassesNavigationRecordsWithParentProvenance(
         const QString& table,
         const QString& action,
         const bool intensive
-        ) -> Status
+        ) -> RepositoryStatus
     {
         QSqlQuery timesQuery(m_database);
         if (intensive)
@@ -4675,12 +5021,19 @@ ClassInfoRepository::loadClassesNavigationRecordsWithParentProvenance(
             );
         if (!loadedTimes)
         {
-            return std::unexpected(loadedTimes.error().userMessage());
+            return repositoryFailure(loadedTimes.error().userMessage());
         }
 
         while (timesQuery.next())
         {
-            const int classId = timesQuery.value("class_id").toInt();
+            const auto parsedClassId = persistedClassId(
+                timesQuery.value("class_id"), QObject::tr(
+                    "Loading class information failed: the database returned an invalid class identifier."));
+            if (!parsedClassId)
+            {
+                return repositoryFailure(parsedClassId.error());
+            }
+            const int classId = *parsedClassId;
             const auto recordIndex = indexByClassId.constFind(classId);
             if (recordIndex == indexByClassId.cend())
             {
@@ -4711,28 +5064,28 @@ ClassInfoRepository::loadClassesNavigationRecordsWithParentProvenance(
 
         if (timesQuery.lastError().isValid())
         {
-            return std::unexpected(timesQuery.lastError().text());
+            return repositoryFailure(timesQuery.lastError().text());
         }
 
         return {};
     };
 
-    if (const Status loadedRegular = loadTimes(
+    if (const RepositoryStatus loadedRegular = loadTimes(
             QStringLiteral("class_times"),
             QObject::tr("Loading regular classes navigation schedules"),
             false
             ); !loadedRegular)
     {
-        return std::unexpected(loadedRegular.error());
+        return repositoryFailure(loadedRegular.error());
     }
 
-    if (const Status loadedIntensive = loadTimes(
+    if (const RepositoryStatus loadedIntensive = loadTimes(
             QStringLiteral("class_intensive_times"),
             QObject::tr("Loading intensive classes navigation schedules"),
             true
             ); !loadedIntensive)
     {
-        return std::unexpected(loadedIntensive.error());
+        return repositoryFailure(loadedIntensive.error());
     }
 
     return records;
@@ -4822,45 +5175,44 @@ ClassInfoRepository::rosterPrintClassInfoBatchReadMetrics() const noexcept
     return m_rosterPrintClassInfoBatchReadMetrics;
 }
 
-Result<SubPrepClassDetailsRecord>
+RepositoryResult<SubPrepClassDetailsRecord>
 ClassInfoRepository::loadSubPrepClassDetails(
     const int classId
     )
 {
-    const SubPrepClassDetailsDetailedResult detailed =
+    const RepositoryResult<SubPrepClassDetailsReadOutcome> detailed =
         loadSubPrepClassDetailsDetailed(classId);
     if (!detailed)
     {
-        return std::unexpected(detailed.error().diagnostic);
+        return repositoryFailure(detailed.error());
     }
 
     if (detailed->parentMissing)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr(
                 "Loading selected Sub Prep class details failed: no matching record exists for class id %1."
-                ).arg(classId)
+                ).arg(classId),
+            RepositoryErrorCode::NotFound
             );
     }
 
     return detailed->record;
 }
 
-SubPrepClassDetailsDetailedResult
+RepositoryResult<SubPrepClassDetailsReadOutcome>
 ClassInfoRepository::loadSubPrepClassDetailsDetailed(
     const int classId
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(
-            SubPrepClassDetailsReadFailure{
-                .kind = SubPrepClassDetailsReadFailure::Kind::InvalidInput,
-                .diagnostic = QObject::tr(
+        return repositoryFailure(
+            QObject::tr(
                 "Loading selected Sub Prep class details failed: invalid class id %1."
-                ).arg(classId)
-            }
-        );
+                ).arg(classId),
+            RepositoryErrorCode::InvalidInput
+            );
     }
 
     const QString action = QObject::tr(
@@ -4897,15 +5249,15 @@ ClassInfoRepository::loadSubPrepClassDetailsDetailed(
     )");
     if (!query.prepare(queryText))
     {
-        return std::unexpected(SubPrepClassDetailsReadFailure{
-            .kind = SubPrepClassDetailsReadFailure::Kind::Technical,
-            .diagnostic = SqlQueryUtils::errorFor(
+        return repositoryFailure(
+            SqlQueryUtils::errorFor(
                 query,
                 action,
                 queryText,
                 identity
-                ).userMessage()
-        });
+                ).userMessage(),
+            RepositoryErrorCode::Technical
+            );
     }
     query.addBindValue(classId);
 
@@ -4916,25 +5268,25 @@ ClassInfoRepository::loadSubPrepClassDetailsDetailed(
         );
     if (!executed)
     {
-        return std::unexpected(SubPrepClassDetailsReadFailure{
-            .kind = SubPrepClassDetailsReadFailure::Kind::Technical,
-            .diagnostic = executed.error().userMessage()
-        });
+        return repositoryFailure(
+            executed.error().userMessage(),
+            RepositoryErrorCode::Technical
+            );
     }
 
     if (!query.next())
     {
         if (query.lastError().isValid())
         {
-            return std::unexpected(SubPrepClassDetailsReadFailure{
-                .kind = SubPrepClassDetailsReadFailure::Kind::Technical,
-                .diagnostic = SqlQueryUtils::errorFor(
+            return repositoryFailure(
+                SqlQueryUtils::errorFor(
                     query,
                     action,
                     query.lastQuery(),
                     identity
-                    ).userMessage()
-            });
+                    ).userMessage(),
+                RepositoryErrorCode::Technical
+                );
         }
 
         return SubPrepClassDetailsReadOutcome{
@@ -4943,7 +5295,14 @@ ClassInfoRepository::loadSubPrepClassDetailsDetailed(
     }
 
     SubPrepClassDetailsRecord record;
-    record.classId = query.value(QStringLiteral("class_id")).toInt();
+    const auto parsedClassId = persistedClassId(
+        query.value(QStringLiteral("class_id")), QObject::tr(
+            "Loading class information failed: the database returned an invalid class identifier."));
+    if (!parsedClassId)
+    {
+        return repositoryFailure(parsedClassId.error());
+    }
+    record.classId = *parsedClassId;
     record.classNotes = query.value(QStringLiteral("class_notes")).toString();
 
     // A missing assignment, or a stale assignment whose teacher row no longer
@@ -4952,17 +5311,23 @@ ClassInfoRepository::loadSubPrepClassDetailsDetailed(
         query.value(QStringLiteral("assigned_teacher_id"));
     const QVariant resolvedTeacherId =
         query.value(QStringLiteral("resolved_teacher_id"));
-    bool assignedTeacherIdOk = false;
-    bool resolvedTeacherIdOk = false;
-    const qint64 assignedTeacherIdValue = assignedTeacherId.toLongLong(
-        &assignedTeacherIdOk
-        );
-    const qint64 resolvedTeacherIdValue = resolvedTeacherId.toLongLong(
-        &resolvedTeacherIdOk
-        );
-    if (assignedTeacherIdOk && resolvedTeacherIdOk
-        && assignedTeacherIdValue > 0
-        && resolvedTeacherIdValue > 0
+    const QString invalidTeacherDiagnostic = QObject::tr(
+        "Loading selected Sub Prep class details failed: invalid assigned teacher identifier.");
+    const auto assigned = persistedTeacherId<qint64>(
+        assignedTeacherId, invalidTeacherDiagnostic);
+    if (!assigned)
+    {
+        return repositoryFailure(assigned.error());
+    }
+    const auto resolved = persistedTeacherId<qint64>(
+        resolvedTeacherId, invalidTeacherDiagnostic);
+    if (!resolved)
+    {
+        return repositoryFailure(resolved.error());
+    }
+    const qint64 assignedTeacherIdValue = *assigned;
+    const qint64 resolvedTeacherIdValue = *resolved;
+    if (assignedTeacherIdValue > 0 && resolvedTeacherIdValue > 0
         && assignedTeacherIdValue == resolvedTeacherIdValue)
     {
         record.teacherId = assignedTeacherIdValue;
@@ -5000,7 +5365,7 @@ ClassInfoRepository::loadSubPrepClassDetailsDetailed(
     };
 }
 
-Result<QList<SubPrepClassSummaryRecord>>
+RepositoryResult<QList<SubPrepClassSummaryRecord>>
 ClassInfoRepository::loadSubPrepClassSummaries(
     const QList<int>& classIds,
     const QStringList& selectedDays,
@@ -5019,7 +5384,7 @@ ClassInfoRepository::loadSubPrepClassSummaries(
         );
 }
 
-Result<QList<SubPrepClassSummaryNavigationReadRecord>>
+RepositoryResult<QList<SubPrepClassSummaryNavigationReadRecord>>
 ClassInfoRepository::loadSubPrepClassNavigationSummaries(
     const QList<int>& classIds,
     const QStringList& selectedDays,
@@ -5028,7 +5393,7 @@ ClassInfoRepository::loadSubPrepClassNavigationSummaries(
     const int maxTotalMeetings
     )
 {
-    Result<QList<SubPrepClassSummaryRecord>> summaries =
+    RepositoryResult<QList<SubPrepClassSummaryRecord>> summaries =
         loadSubPrepClassSummariesImpl(
             classIds,
             selectedDays,
@@ -5039,7 +5404,7 @@ ClassInfoRepository::loadSubPrepClassNavigationSummaries(
             );
     if (!summaries)
     {
-        return std::unexpected(summaries.error());
+        return repositoryFailure(summaries.error());
     }
 
     QList<SubPrepClassSummaryNavigationReadRecord> navigationRecords;
@@ -5063,7 +5428,7 @@ ClassInfoRepository::loadSubPrepClassNavigationSummaries(
     return navigationRecords;
 }
 
-Result<QList<SubPrepClassSummaryRecord>>
+RepositoryResult<QList<SubPrepClassSummaryRecord>>
 ClassInfoRepository::loadSubPrepClassSummariesImpl(
     const QList<int>& classIds,
     const QStringList& selectedDays,
@@ -5081,15 +5446,17 @@ ClassInfoRepository::loadSubPrepClassSummariesImpl(
     constexpr qsizetype MaxClassIds = 4'096;
     if (classIds.size() > MaxClassIds)
     {
-        return std::unexpected(
-            QObject::tr("Loading Sub Prep class summaries failed: class scope exceeds its limit.")
+        return repositoryFailure(
+            QObject::tr("Loading Sub Prep class summaries failed: class scope exceeds its limit."),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
     if (type != ScheduleType::Regular && type != ScheduleType::Intensive)
     {
-        return std::unexpected(
-            QObject::tr("Loading Sub Prep class summaries failed: invalid schedule type.")
+        return repositoryFailure(
+            QObject::tr("Loading Sub Prep class summaries failed: invalid schedule type."),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -5098,8 +5465,9 @@ ClassInfoRepository::loadSubPrepClassSummariesImpl(
         || maxTotalMeetings < 0
         || maxTotalMeetings == std::numeric_limits<int>::max())
     {
-        return std::unexpected(
-            QObject::tr("Loading Sub Prep class summaries failed: invalid meeting limit.")
+        return repositoryFailure(
+            QObject::tr("Loading Sub Prep class summaries failed: invalid meeting limit."),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -5112,10 +5480,11 @@ ClassInfoRepository::loadSubPrepClassSummariesImpl(
     {
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr(
                     "Loading Sub Prep class summaries failed: class identifiers must be positive and unique."
-                    )
+                    ),
+                RepositoryErrorCode::InvalidInput
                 );
         }
         seenClassIds.insert(classId);
@@ -5135,8 +5504,9 @@ ClassInfoRepository::loadSubPrepClassSummariesImpl(
     };
     if (selectedDays.size() > validDays.size())
     {
-        return std::unexpected(
-            QObject::tr("Loading Sub Prep class summaries failed: invalid weekday scope.")
+        return repositoryFailure(
+            QObject::tr("Loading Sub Prep class summaries failed: invalid weekday scope."),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -5145,10 +5515,11 @@ ClassInfoRepository::loadSubPrepClassSummariesImpl(
     {
         if (!validDays.contains(day) || seenDays.contains(day))
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr(
                     "Loading Sub Prep class summaries failed: weekdays must be valid and unique."
-                    )
+                    ),
+                RepositoryErrorCode::InvalidInput
                 );
         }
         seenDays.insert(day);
@@ -5273,12 +5644,19 @@ ClassInfoRepository::loadSubPrepClassSummariesImpl(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryFailure(executed.error().userMessage());
     }
 
     while (query.next())
     {
-        const int classId = query.value(QStringLiteral("class_id")).toInt();
+        const auto parsedClassId = persistedClassId(
+            query.value(QStringLiteral("class_id")), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        const int classId = *parsedClassId;
         auto index = indexesByClassId.constFind(classId);
         if (index == indexesByClassId.cend())
         {
@@ -5287,13 +5665,14 @@ ClassInfoRepository::loadSubPrepClassSummariesImpl(
             bool teacherIdOk = false;
             record.teacherId = query.value(
                 QStringLiteral("teacher_id")
-                ).toLongLong(&teacherIdOk);
+                ).toString().toLongLong(&teacherIdOk);
             if (!teacherIdOk)
             {
-                return std::unexpected(
+                return repositoryFailure(
                     QObject::tr(
                         "Unable to load scoped Sub Prep class summaries for %1: a teacher identifier cannot be represented as a signed 64-bit value."
-                        ).arg(identity)
+                        ).arg(identity),
+                    RepositoryErrorCode::Validation
                     );
             }
             record.classGrade = query.value(QStringLiteral("class_grade"))
@@ -5345,7 +5724,7 @@ ClassInfoRepository::loadSubPrepClassSummariesImpl(
 
     if (query.lastError().type() != QSqlError::NoError)
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading scoped Sub Prep class summaries failed for %1: %2")
                 .arg(identity, query.lastError().text())
             );
@@ -5449,13 +5828,16 @@ ClassInfoRepository::loadSubPrepClassSummariesImpl(
             }
 
             bool classIdOk = false;
-            const int classId = rosterQuery.value(
+            const qint64 storedClassId = rosterQuery.value(
                 QStringLiteral("class_id")
-                ).toInt(&classIdOk);
+                ).toString().toLongLong(&classIdOk);
+            classIdOk = classIdOk && storedClassId > 0
+                && storedClassId <= std::numeric_limits<int>::max();
+            const int classId = classIdOk ? static_cast<int>(storedClassId) : -1;
             bool rowIndexOk = false;
             const qint64 rowIndex = rosterQuery.value(
                 QStringLiteral("row_index")
-                ).toLongLong(&rowIndexOk);
+                ).toString().toLongLong(&rowIndexOk);
             if (!classIdOk || !rowIndexOk)
             {
                 countsValid = false;
@@ -5506,7 +5888,7 @@ ClassInfoRepository::loadSubPrepClassSummariesImpl(
     return summaries;
 }
 
-Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
+RepositoryResult<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
     const QList<int>& classIds,
     const QStringList& selectedDays,
     const ScheduleType type,
@@ -5522,8 +5904,9 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
 
     if (type != ScheduleType::Regular && type != ScheduleType::Intensive)
     {
-        return std::unexpected(
-            QObject::tr("Loading scoped class information failed: invalid schedule type.")
+        return repositoryFailure(
+            QObject::tr("Loading scoped class information failed: invalid schedule type."),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -5532,8 +5915,9 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
         || maxTotalMeetings < 0
         || maxTotalMeetings == std::numeric_limits<int>::max())
     {
-        return std::unexpected(
-            QObject::tr("Loading scoped class information failed: invalid meeting limit.")
+        return repositoryFailure(
+            QObject::tr("Loading scoped class information failed: invalid meeting limit."),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -5542,10 +5926,11 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
     {
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr(
                     "Loading scoped class information failed: class identifiers must be positive and unique."
-                    )
+                    ),
+                RepositoryErrorCode::InvalidInput
                 );
         }
         seenClassIds.insert(classId);
@@ -5565,10 +5950,11 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
     {
         if (!validDays.contains(day) || seenDays.contains(day))
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr(
                     "Loading scoped class information failed: selected weekdays must be valid and unique."
-                    )
+                    ),
+                RepositoryErrorCode::InvalidInput
                 );
         }
         seenDays.insert(day);
@@ -5685,21 +6071,28 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryFailure(executed.error().userMessage());
     }
 
     while (query.next())
     {
-        const int classId = query.value(QStringLiteral("schedule_class_id"))
-                                .toInt();
+        const auto parsedClassId = persistedClassId(
+            query.value(QStringLiteral("schedule_class_id")), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        const int classId = *parsedClassId;
         const QVariant infoClassId =
             query.value(QStringLiteral("info_class_id"));
         if (infoClassId.isNull())
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr(
                     "Loading scoped Sub Prep class information failed for class id %1: no matching class information record exists."
-                    ).arg(classId)
+                    ).arg(classId),
+                RepositoryErrorCode::NotFound
                 );
         }
 
@@ -5707,10 +6100,24 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
         if (index == indexesByClassId.cend())
         {
             ClassInfo info;
-            info.classId = infoClassId.toInt();
+            const auto parsedInfoClassId = persistedClassId(
+                infoClassId, QObject::tr(
+                    "Loading class information failed: the database returned an invalid class identifier."));
+            if (!parsedInfoClassId)
+            {
+                return repositoryFailure(parsedInfoClassId.error());
+            }
+            info.classId = *parsedInfoClassId;
             const QVariant teacherId =
                 query.value(QStringLiteral("teacher_id"));
-            info.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+            const auto parsedTeacherId = persistedTeacherId<int>(
+                teacherId, QObject::tr(
+                    "Loading scoped Sub Prep class information failed: invalid assigned teacher identifier."));
+            if (!parsedTeacherId)
+            {
+                return repositoryFailure(parsedTeacherId.error());
+            }
+            info.teacherId = *parsedTeacherId;
             info.classGrade = query.value(QStringLiteral("class_grade"))
                                   .toString();
             info.classLevel = query.value(QStringLiteral("class_level"))
@@ -5752,10 +6159,20 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
         }
     }
 
+    if (query.lastError().isValid())
+    {
+        return repositoryFailure(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading scoped Sub Prep class information"),
+            {},
+            identity
+            ).userMessage());
+    }
+
     return infos;
 }
 
-Result<QList<SubPrepPrintSourceClassInfoReadRecord>>
+RepositoryResult<QList<SubPrepPrintSourceClassInfoReadRecord>>
 ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope(
     const QList<int>& classIds,
     const QStringList& selectedDays,
@@ -5771,9 +6188,12 @@ ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope(
 
     if (type != ScheduleType::Regular && type != ScheduleType::Intensive)
     {
-        return std::unexpected(QObject::tr(
-            "Loading scoped Sub Prep print source information failed: invalid schedule type."
-            ));
+        return repositoryFailure(
+            QObject::tr(
+                "Loading scoped Sub Prep print source information failed: invalid schedule type."
+                ),
+            RepositoryErrorCode::InvalidInput
+            );
     }
 
     if (maxMeetingsPerClass < 0
@@ -5781,9 +6201,12 @@ ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope(
         || maxTotalMeetings < 0
         || maxTotalMeetings == std::numeric_limits<int>::max())
     {
-        return std::unexpected(QObject::tr(
-            "Loading scoped Sub Prep print source information failed: invalid meeting limit."
-            ));
+        return repositoryFailure(
+            QObject::tr(
+                "Loading scoped Sub Prep print source information failed: invalid meeting limit."
+                ),
+            RepositoryErrorCode::InvalidInput
+            );
     }
 
     QSet<int> seenClassIds;
@@ -5795,9 +6218,12 @@ ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope(
     {
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(QObject::tr(
-                "Loading scoped Sub Prep print source information failed: class identifiers must be positive and unique."
-                ));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading scoped Sub Prep print source information failed: class identifiers must be positive and unique."
+                    ),
+                RepositoryErrorCode::InvalidInput
+                );
         }
 
         seenClassIds.insert(classId);
@@ -5820,9 +6246,12 @@ ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope(
     {
         if (!validDays.contains(day) || seenDays.contains(day))
         {
-            return std::unexpected(QObject::tr(
-                "Loading scoped Sub Prep print source information failed: selected weekdays must be valid and unique."
-                ));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading scoped Sub Prep print source information failed: selected weekdays must be valid and unique."
+                    ),
+                RepositoryErrorCode::InvalidInput
+                );
         }
 
         seenDays.insert(day);
@@ -5906,7 +6335,7 @@ ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryFailure(executed.error().userMessage());
     }
 
     while (query.next())
@@ -5914,12 +6343,12 @@ ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope(
         bool scheduleClassIdValid = false;
         const qint64 scheduleClassId = query.value(
             QStringLiteral("schedule_class_id")
-            ).toLongLong(&scheduleClassIdValid);
+            ).toString().toLongLong(&scheduleClassIdValid);
         const QVariant infoClassIdValue = query.value(
             QStringLiteral("info_class_id")
             );
         bool infoClassIdValid = false;
-        const qint64 infoClassId = infoClassIdValue.toLongLong(
+        const qint64 infoClassId = infoClassIdValue.toString().toLongLong(
             &infoClassIdValid
             );
         if (!scheduleClassIdValid
@@ -5928,21 +6357,27 @@ ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope(
             || scheduleClassId > std::numeric_limits<int>::max()
             || infoClassId != scheduleClassId)
         {
-            return std::unexpected(QObject::tr(
-                "Loading scoped Sub Prep print source information failed: the database returned an invalid class identifier."
-                ));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading scoped Sub Prep print source information failed: the database returned an invalid class identifier."
+                    ),
+                RepositoryErrorCode::Validation
+                );
         }
 
         const int classId = static_cast<int>(scheduleClassId);
         bool teacherIdValid = false;
         const qint64 teacherId = query.value(
             QStringLiteral("teacher_id")
-            ).toLongLong(&teacherIdValid);
+            ).toString().toLongLong(&teacherIdValid);
         if (!teacherIdValid || teacherId <= 0)
         {
-            return std::unexpected(QObject::tr(
-                "Loading scoped Sub Prep print source information failed for class id %1: the database returned an invalid teacher identifier."
-                ).arg(classId));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading scoped Sub Prep print source information failed for class id %1: the database returned an invalid teacher identifier."
+                    ).arg(classId),
+                RepositoryErrorCode::Validation
+                );
         }
 
         auto index = indexesByClassId.constFind(classId);
@@ -5981,9 +6416,12 @@ ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope(
         }
         else if (records[*index].teacherId != teacherId)
         {
-            return std::unexpected(QObject::tr(
-                "Loading scoped Sub Prep print source information failed for class id %1: the database returned inconsistent teacher identifiers."
-                ).arg(classId));
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading scoped Sub Prep print source information failed for class id %1: the database returned inconsistent teacher identifiers."
+                    ).arg(classId),
+                RepositoryErrorCode::Validation
+                );
         }
 
         ClassTime time{
@@ -6004,7 +6442,7 @@ ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(
+        return repositoryFailure(
             SqlQueryUtils::errorFor(
                 query,
                 QObject::tr("Loading scoped Sub Prep print source information"),
@@ -6016,7 +6454,7 @@ ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope(
     return records;
 }
 
-Result<QList<SubPrepRosterOutputScheduleReadRecord>>
+RepositoryResult<QList<SubPrepRosterOutputScheduleReadRecord>>
 ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords(
     const QList<int>& classIds,
     const QStringList& selectedDays,
@@ -6036,8 +6474,9 @@ ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords(
 
     if (type != ScheduleType::Regular && type != ScheduleType::Intensive)
     {
-        return std::unexpected(
-            QObject::tr("Loading scoped Sub Prep roster-output schedule failed: invalid schedule type.")
+        return repositoryFailure(
+            QObject::tr("Loading scoped Sub Prep roster-output schedule failed: invalid schedule type."),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -6046,8 +6485,9 @@ ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords(
         || maxTotalMeetings < 0
         || maxTotalMeetings == std::numeric_limits<int>::max())
     {
-        return std::unexpected(
-            QObject::tr("Loading scoped Sub Prep roster-output schedule failed: invalid meeting limit.")
+        return repositoryFailure(
+            QObject::tr("Loading scoped Sub Prep roster-output schedule failed: invalid meeting limit."),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
@@ -6060,10 +6500,11 @@ ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords(
     {
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr(
                     "Loading scoped Sub Prep roster-output schedule failed: class identifiers must be positive and unique."
-                    )
+                    ),
+                RepositoryErrorCode::InvalidInput
                 );
         }
 
@@ -6087,10 +6528,11 @@ ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords(
     {
         if (!validDays.contains(day) || seenDays.contains(day))
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr(
                     "Loading scoped Sub Prep roster-output schedule failed: selected weekdays must be valid and unique."
-                    )
+                    ),
+                RepositoryErrorCode::InvalidInput
                 );
         }
         seenDays.insert(day);
@@ -6174,14 +6616,19 @@ ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryFailure(executed.error().userMessage());
     }
 
     while (query.next())
     {
-        const int classId = query.value(
-            QStringLiteral("schedule_class_id")
-            ).toInt();
+        const auto parsedClassId = persistedClassId(
+            query.value(QStringLiteral("schedule_class_id")), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        const int classId = *parsedClassId;
         auto index = indexesByClassId.constFind(classId);
         if (index == indexesByClassId.cend())
         {
@@ -6194,12 +6641,15 @@ ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords(
             {
                 bool teacherIdOk = false;
                 const qint64 parsedTeacherId =
-                    teacherId.toLongLong(&teacherIdOk);
+                    teacherId.toString().toLongLong(&teacherIdOk);
                 if (!teacherIdOk)
                 {
-                    return std::unexpected(QObject::tr(
-                        "Loading scoped Sub Prep roster-output schedule failed: the database returned an invalid teacher identifier."
-                        ));
+                    return repositoryFailure(
+                        QObject::tr(
+                            "Loading scoped Sub Prep roster-output schedule failed: the database returned an invalid teacher identifier."
+                            ),
+                        RepositoryErrorCode::Validation
+                        );
                 }
                 record.teacherId = parsedTeacherId;
             }
@@ -6217,7 +6667,7 @@ ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading scoped Sub Prep roster-output schedule"),
             identity
@@ -6227,7 +6677,7 @@ ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords(
     return records;
 }
 
-Result<QList<ClassTeacherAssignment>>
+RepositoryResult<QList<ClassTeacherAssignment>>
 ClassInfoRepository::loadClassTeacherAssignments()
 {
     QList<ClassTeacherAssignment> assignments;
@@ -6251,21 +6701,35 @@ ClassInfoRepository::loadClassTeacherAssignments()
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryFailure(executed.error().userMessage());
     }
 
     while (query.next())
     {
         const QVariant teacherId = query.value(QStringLiteral("teacher_id"));
+        const auto parsedTeacherId = persistedTeacherId<int>(
+            teacherId, QObject::tr(
+                "Loading class teacher assignments failed: invalid assigned teacher identifier."));
+        if (!parsedTeacherId)
+        {
+            return repositoryFailure(parsedTeacherId.error());
+        }
+        const auto parsedClassId = persistedClassId(
+            query.value(QStringLiteral("class_id")), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
         assignments.append({
-            query.value(QStringLiteral("class_id")).toInt(),
-            teacherId.isNull() ? -1 : teacherId.toInt()
+            *parsedClassId,
+            *parsedTeacherId
         });
     }
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading class teacher assignments")
             ).userMessage());
@@ -6274,7 +6738,7 @@ ClassInfoRepository::loadClassTeacherAssignments()
     return assignments;
 }
 
-Result<QList<ClassTeacherAssignmentReadRecord>>
+RepositoryResult<QList<ClassTeacherAssignmentReadRecord>>
 ClassInfoRepository::loadClassTeacherAssignmentRecords()
 {
     QList<ClassTeacherAssignmentReadRecord> assignments;
@@ -6298,21 +6762,35 @@ ClassInfoRepository::loadClassTeacherAssignmentRecords()
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryFailure(executed.error().userMessage());
     }
 
     while (query.next())
     {
         const QVariant teacherId = query.value(QStringLiteral("teacher_id"));
+        const auto parsedTeacherId = persistedTeacherId<qint64>(
+            teacherId, QObject::tr(
+                "Loading class teacher assignments failed: invalid assigned teacher identifier."));
+        if (!parsedTeacherId)
+        {
+            return repositoryFailure(parsedTeacherId.error());
+        }
+        const auto parsedClassId = persistedClassId(
+            query.value(QStringLiteral("class_id")), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
         assignments.append({
-            query.value(QStringLiteral("class_id")).toInt(),
-            teacherId.isNull() ? -1 : teacherId.toLongLong()
+            *parsedClassId,
+            *parsedTeacherId
         });
     }
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading class teacher assignments")
             ).userMessage());
@@ -6321,7 +6799,7 @@ ClassInfoRepository::loadClassTeacherAssignmentRecords()
     return assignments;
 }
 
-Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
+RepositoryResult<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
 {
     ++m_scheduleClassInfoReadMetrics.scheduleClassInfosCallCount;
     QList<ClassInfo> infos;
@@ -6357,7 +6835,7 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
         );
     if (!loadedClasses)
     {
-        return std::unexpected(loadedClasses.error().userMessage());
+        return repositoryFailure(loadedClasses.error().userMessage());
     }
 
     while (query.next())
@@ -6366,20 +6844,28 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
         const QVariant storedClassIdValue = query.value(QStringLiteral("class_id"));
         bool storedClassIdOk = false;
         const qint64 storedClassId =
-            storedClassIdValue.toLongLong(&storedClassIdOk);
+            storedClassIdValue.toString().toLongLong(&storedClassIdOk);
         if (!storedClassIdOk
             || storedClassId <= 0
             || storedClassId > std::numeric_limits<int>::max())
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr(
                     "Loading schedule class information failed: invalid class id %1."
-                    ).arg(storedClassIdValue.toString())
+                    ).arg(storedClassIdValue.toString()),
+                RepositoryErrorCode::Validation
                 );
         }
         info.classId = static_cast<int>(storedClassId);
         const QVariant teacherId = query.value(QStringLiteral("teacher_id"));
-        info.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        const auto parsedTeacherId = persistedTeacherId<int>(
+            teacherId, QObject::tr(
+                "Loading schedule class information failed: invalid assigned teacher identifier."));
+        if (!parsedTeacherId)
+        {
+            return repositoryFailure(parsedTeacherId.error());
+        }
+        info.teacherId = *parsedTeacherId;
         info.teacherKr = query.value(QStringLiteral("teacher_kr")).toString();
         info.teacherEn = query.value(QStringLiteral("teacher_en")).toString();
         info.teacherPreferredName =
@@ -6405,7 +6891,7 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
     }
     if (query.lastError().isValid())
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading schedule class information failed: %1")
                 .arg(query.lastError().text())
             );
@@ -6416,7 +6902,7 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
         Times ClassInfo::* times,
         const bool intensive
         )
-        -> Status
+        -> RepositoryStatus
     {
         QSqlQuery timesQuery(m_database);
         if (intensive)
@@ -6447,14 +6933,19 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
             );
         if (!executed)
         {
-            return std::unexpected(executed.error().userMessage());
+            return repositoryFailure(executed.error().userMessage());
         }
 
         while (timesQuery.next())
         {
-            const auto index = indexesByClassId.constFind(
-                timesQuery.value(QStringLiteral("class_id")).toInt()
-                );
+            const auto parsedClassId = persistedClassId(
+                timesQuery.value(QStringLiteral("class_id")), QObject::tr(
+                    "Loading class information failed: the database returned an invalid class identifier."));
+            if (!parsedClassId)
+            {
+                return repositoryFailure(parsedClassId.error());
+            }
+            const auto index = indexesByClassId.constFind(*parsedClassId);
             if (index == indexesByClassId.cend())
             {
                 continue;
@@ -6468,7 +6959,7 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
         }
         if (timesQuery.lastError().isValid())
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr("Loading schedule class times from %1 failed: %2")
                     .arg(tableName, timesQuery.lastError().text())
                 );
@@ -6477,21 +6968,21 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
         return {};
     };
 
-    if (const Status status = loadTimes(
+    if (const RepositoryStatus status = loadTimes(
             QStringLiteral("class_times"),
             &ClassInfo::classTimes,
             false
             ); !status)
     {
-        return std::unexpected(status.error());
+        return repositoryFailure(status.error());
     }
-    if (const Status status = loadTimes(
+    if (const RepositoryStatus status = loadTimes(
             QStringLiteral("class_intensive_times"),
             &ClassInfo::intensiveTimes,
             true
             ); !status)
     {
-        return std::unexpected(status.error());
+        return repositoryFailure(status.error());
     }
 
     qint64 regularScheduleRowCount = 0;
@@ -6510,12 +7001,19 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
     return infos;
 }
 
-Status ClassInfoRepository::visitScheduleClassInfoRows(
+RepositoryStatus ClassInfoRepository::visitScheduleClassInfoRows(
     const ScheduleClassInfoVisitor& classInfoVisitor,
     const ScheduleClassTimeVisitor& scheduleTimeVisitor
     )
 {
     ++m_scheduleClassInfoReadMetrics.scheduleClassInfosCallCount;
+    if (!classInfoVisitor || !scheduleTimeVisitor)
+    {
+        return repositoryFailure(
+            QObject::tr("Loading schedule class information failed: both visitors are required."),
+            RepositoryErrorCode::InvalidInput
+            );
+    }
     qint64 completedClassCount = 0;
     qint64 regularScheduleRowCount = 0;
     qint64 intensiveScheduleRowCount = 0;
@@ -6552,7 +7050,7 @@ Status ClassInfoRepository::visitScheduleClassInfoRows(
         );
     if (!loadedClasses)
     {
-        return std::unexpected(loadedClasses.error().userMessage());
+        return repositoryFailure(loadedClasses.error().userMessage());
     }
 
     while (query.next())
@@ -6561,20 +7059,28 @@ Status ClassInfoRepository::visitScheduleClassInfoRows(
         const QVariant storedClassIdValue = query.value(QStringLiteral("class_id"));
         bool storedClassIdOk = false;
         const qint64 storedClassId =
-            storedClassIdValue.toLongLong(&storedClassIdOk);
+            storedClassIdValue.toString().toLongLong(&storedClassIdOk);
         if (!storedClassIdOk
             || storedClassId <= 0
             || storedClassId > std::numeric_limits<int>::max())
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr(
                     "Loading schedule class information failed: invalid class id %1."
-                    ).arg(storedClassIdValue.toString())
+                    ).arg(storedClassIdValue.toString()),
+                RepositoryErrorCode::Validation
                 );
         }
         info.classId = static_cast<int>(storedClassId);
         const QVariant teacherId = query.value(QStringLiteral("teacher_id"));
-        info.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        const auto parsedTeacherId = persistedTeacherId<int>(
+            teacherId, QObject::tr(
+                "Loading schedule class information failed: invalid assigned teacher identifier."));
+        if (!parsedTeacherId)
+        {
+            return repositoryFailure(parsedTeacherId.error());
+        }
+        info.teacherId = *parsedTeacherId;
         info.teacherKr = query.value(QStringLiteral("teacher_kr")).toString();
         info.teacherEn = query.value(QStringLiteral("teacher_en")).toString();
         info.teacherPreferredName =
@@ -6595,15 +7101,15 @@ Status ClassInfoRepository::visitScheduleClassInfoRows(
             info.fontColor = fontColor;
         }
 
-        if (const Status visited = classInfoVisitor(info); !visited)
+        if (const RepositoryStatus visited = classInfoVisitor(info); !visited)
         {
-            return std::unexpected(visited.error());
+            return repositoryFailure(visited.error());
         }
         ++completedClassCount;
     }
     if (query.lastError().isValid())
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading schedule class information failed: %1")
                 .arg(query.lastError().text())
             );
@@ -6612,7 +7118,7 @@ Status ClassInfoRepository::visitScheduleClassInfoRows(
     auto visitTimes = [&](
         const QString& tableName,
         const bool intensive
-        ) -> Status
+        ) -> RepositoryStatus
     {
         QSqlQuery timesQuery(m_database);
         timesQuery.setForwardOnly(true);
@@ -6644,23 +7150,29 @@ Status ClassInfoRepository::visitScheduleClassInfoRows(
             );
         if (!executed)
         {
-            return std::unexpected(executed.error().userMessage());
+            return repositoryFailure(executed.error().userMessage());
         }
 
         while (timesQuery.next())
         {
-            const int classId =
-                timesQuery.value(QStringLiteral("class_id")).toInt();
+            const auto parsedClassId = persistedClassId(
+                timesQuery.value(QStringLiteral("class_id")), QObject::tr(
+                    "Loading class information failed: the database returned an invalid class identifier."));
+            if (!parsedClassId)
+            {
+                return repositoryFailure(parsedClassId.error());
+            }
+            const int classId = *parsedClassId;
             const ClassTime time{
                 timesQuery.value(QStringLiteral("day")).toString(),
                 timesQuery.value(QStringLiteral("start_time")).toString(),
                 timesQuery.value(QStringLiteral("end_time")).toString()
             };
-            if (const Status visited =
+            if (const RepositoryStatus visited =
                     scheduleTimeVisitor(classId, time, intensive);
                 !visited)
             {
-                return std::unexpected(visited.error());
+                return repositoryFailure(visited.error());
             }
             if (intensive)
             {
@@ -6673,7 +7185,7 @@ Status ClassInfoRepository::visitScheduleClassInfoRows(
         }
         if (timesQuery.lastError().isValid())
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr("Loading schedule class times from %1 failed: %2")
                     .arg(tableName, timesQuery.lastError().text())
                 );
@@ -6682,19 +7194,19 @@ Status ClassInfoRepository::visitScheduleClassInfoRows(
         return {};
     };
 
-    if (const Status loadedRegular = visitTimes(
+    if (const RepositoryStatus loadedRegular = visitTimes(
             QStringLiteral("class_times"),
             false
             ); !loadedRegular)
     {
-        return std::unexpected(loadedRegular.error());
+        return repositoryFailure(loadedRegular.error());
     }
-    if (const Status loadedIntensive = visitTimes(
+    if (const RepositoryStatus loadedIntensive = visitTimes(
             QStringLiteral("class_intensive_times"),
             true
             ); !loadedIntensive)
     {
-        return std::unexpected(loadedIntensive.error());
+        return repositoryFailure(loadedIntensive.error());
     }
 
     m_scheduleClassInfoReadMetrics.completedClassCount += completedClassCount;
@@ -6705,7 +7217,7 @@ Status ClassInfoRepository::visitScheduleClassInfoRows(
     return {};
 }
 
-Result<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
+RepositoryResult<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
 ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
 {
     ++m_scheduleImportStateSnapshotClassInfoReadMetrics.callCount;
@@ -6738,13 +7250,20 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
         );
     if (!loadedClasses)
     {
-        return std::unexpected(loadedClasses.error().userMessage());
+        return repositoryFailure(loadedClasses.error().userMessage());
     }
 
     while (query.next())
     {
         ScheduleImportStateSnapshotClassInfoReadRecord info;
-        info.classId = query.value(QStringLiteral("class_id")).toInt();
+        const auto parsedClassId = persistedClassId(
+            query.value(QStringLiteral("class_id")), QObject::tr(
+                "Loading class information failed: the database returned an invalid class identifier."));
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        info.classId = *parsedClassId;
         const QVariant teacherId = query.value(QStringLiteral("teacher_id"));
         if (teacherId.isNull())
         {
@@ -6753,11 +7272,12 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
         else
         {
             bool teacherIdOk = false;
-            info.teacherId = teacherId.toLongLong(&teacherIdOk);
+            info.teacherId = teacherId.toString().toLongLong(&teacherIdOk);
             if (!teacherIdOk)
             {
-                return std::unexpected(
-                    QObject::tr("A class teacher ID could not be read.")
+                return repositoryFailure(
+                    QObject::tr("A class teacher ID could not be read."),
+                    RepositoryErrorCode::Validation
                     );
             }
         }
@@ -6777,7 +7297,7 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
     }
     if (query.lastError().isValid())
     {
-        return std::unexpected(
+        return repositoryFailure(
             QObject::tr("Loading schedule class information failed: %1")
                 .arg(query.lastError().text())
             );
@@ -6789,7 +7309,7 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
         const QString& tableName,
         Times ScheduleImportStateSnapshotClassInfoReadRecord::* times,
         const bool intensive
-        ) -> Status
+        ) -> RepositoryStatus
     {
         QSqlQuery timesQuery(m_database);
         if (intensive)
@@ -6823,16 +7343,21 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
             );
         if (!executed)
         {
-            return std::unexpected(executed.error().userMessage());
+            return repositoryFailure(executed.error().userMessage());
         }
 
         int returnedRowCount = 0;
         while (timesQuery.next())
         {
             ++returnedRowCount;
-            const auto index = indexesByClassId.constFind(
-                timesQuery.value(QStringLiteral("class_id")).toInt()
-                );
+            const auto parsedClassId = persistedClassId(
+                timesQuery.value(QStringLiteral("class_id")), QObject::tr(
+                    "Loading class information failed: the database returned an invalid class identifier."));
+            if (!parsedClassId)
+            {
+                return repositoryFailure(parsedClassId.error());
+            }
+            const auto index = indexesByClassId.constFind(*parsedClassId);
             if (index == indexesByClassId.cend())
             {
                 continue;
@@ -6846,7 +7371,7 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
         }
         if (timesQuery.lastError().isValid())
         {
-            return std::unexpected(
+            return repositoryFailure(
                 QObject::tr("Loading schedule class times from %1 failed: %2")
                     .arg(tableName, timesQuery.lastError().text())
                 );
@@ -6865,42 +7390,51 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
         return {};
     };
 
-    if (const Status status = loadTimes(
+    if (const RepositoryStatus status = loadTimes(
             QStringLiteral("class_times"),
             &ScheduleImportStateSnapshotClassInfoReadRecord::regularTimes,
             false
             ); !status)
     {
-        return std::unexpected(status.error());
+        return repositoryFailure(status.error());
     }
-    if (const Status status = loadTimes(
+    if (const RepositoryStatus status = loadTimes(
             QStringLiteral("class_intensive_times"),
             &ScheduleImportStateSnapshotClassInfoReadRecord::intensiveTimes,
             true
             ); !status)
     {
-        return std::unexpected(status.error());
+        return repositoryFailure(status.error());
     }
 
     return infos;
 }
 
-Result<QList<ClassConflict>> ClassInfoRepository::getClassTimeConflicts(
+RepositoryResult<QList<ClassConflict>> ClassInfoRepository::getClassTimeConflicts(
     int classId,
     const QList<ClassTime>& times,
     ScheduleType type
     )
 {
+    if (classId <= 0)
+    {
+        return repositoryFailure(
+            QObject::tr("Loading class time conflicts failed: invalid class id %1.")
+                .arg(classId),
+            RepositoryErrorCode::InvalidInput
+            );
+    }
+
     QList<ClassConflict> conflicts;
 
-    const Result<Classroom> currentClass =
+    const RepositoryResult<Classroom> currentClass =
         loadClassById(
             m_database,
             classId
             );
     if (!currentClass)
     {
-        return std::unexpected(currentClass.error());
+        return repositoryFailure(currentClass.error());
     }
 
     const QString currentClassName =
@@ -6991,7 +7525,7 @@ Result<QList<ClassConflict>> ClassInfoRepository::getClassTimeConflicts(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryFailure(executed.error().userMessage());
     }
 
     while (query.next())
@@ -7011,8 +7545,14 @@ Result<QList<ClassConflict>> ClassInfoRepository::getClassTimeConflicts(
             continue;
         }
 
-        const qint64 conflictingClassId =
-            query.value("class_id").toLongLong();
+        const auto parsedConflictingClassId = persistedClassId<qint64>(
+            query.value("class_id"), QObject::tr(
+                "Loading class time conflicts failed: the database returned an invalid class identifier."));
+        if (!parsedConflictingClassId)
+        {
+            return repositoryFailure(parsedConflictingClassId.error());
+        }
+        const qint64 conflictingClassId = *parsedConflictingClassId;
 
         const QString conflictingClassName =
             classDisplayName(
@@ -7050,7 +7590,7 @@ Result<QList<ClassConflict>> ClassInfoRepository::getClassTimeConflicts(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryFailure(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading class time conflicts"),
             {},

@@ -627,7 +627,8 @@ keepsPerClassRepositoryFailuresAlongsideSuccessfulSiblings()
     QCOMPARE(loaded->at(0).information->classGrade, QStringLiteral("E4"));
     QCOMPARE(loaded->at(1).classId, 0);
     QVERIFY(!loaded->at(1).information);
-    QVERIFY(!loaded->at(1).information.error().trimmed().isEmpty());
+    QVERIFY(!toLegacyDiagnostic(loaded->at(1).information.error())
+        .trimmed().isEmpty());
 }
 
 void NextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests::
@@ -725,7 +726,8 @@ batchSqlFailureReturnsIndependentEntriesForEveryClass()
     QCOMPARE(repositoryRead->size(), std::size_t(3));
     QCOMPARE(repositoryRead->at(0).classId, firstId);
     QVERIFY(!repositoryRead->at(0).information);
-    QVERIFY(!repositoryRead->at(0).information.error().trimmed().isEmpty());
+    QVERIFY(!toLegacyDiagnostic(repositoryRead->at(0).information.error())
+        .trimmed().isEmpty());
     QCOMPARE(repositoryRead->at(1).classId, deletedId);
     QVERIFY(repositoryRead->at(1).parentMissing);
     QVERIFY(repositoryRead->at(1).information);
@@ -737,7 +739,8 @@ batchSqlFailureReturnsIndependentEntriesForEveryClass()
     QVERIFY(repositoryRead->at(1).information->intensiveTimes.isEmpty());
     QCOMPARE(repositoryRead->at(2).classId, secondId);
     QVERIFY(!repositoryRead->at(2).information);
-    QVERIFY(!repositoryRead->at(2).information.error().trimmed().isEmpty());
+    QVERIFY(!toLegacyDiagnostic(repositoryRead->at(2).information.error())
+        .trimmed().isEmpty());
 
     Platform::ApplicationServicesMyClassesClassInformationBatchReadPort port(
         services

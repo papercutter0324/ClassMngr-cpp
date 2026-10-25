@@ -3412,7 +3412,7 @@ void ClassTransferTests::
         unassignedClass
     });
     QVERIFY2(records.has_value(),
-             records ? "" : qPrintable(records.error()));
+             records ? "" : qPrintable(records.error().diagnostic));
     QCOMPARE(records->size(), 2);
     QCOMPARE(records->at(0).classId, missingInfoClass);
     QVERIFY(!records->at(0).hasClassInfo);

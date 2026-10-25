@@ -3776,5 +3776,60 @@ failures: SQLite Driver not loaded/database not open and four roster UI
 assertions. The independent Tester did not rerun those broad suites, and no
 same-revision baseline was run; these failures remain unresolved and are not
 established as pre-existing. No full suite or other-platform build ran. F1449
-is independently verified with its exact-path commit pending and not pushed;
-F1450 is next but not active.
+is committed locally and not pushed.
+
+## F1450 — ClassInfoRepository structured results — verified, local commit pending — 2026-10-24
+
+Implementation, source review, final independent review, and focused core/direct
+acceptance are complete. All 51 fallible public `ClassInfoRepository` APIs,
+visitor callbacks, and embedded My Classes per-entry errors use
+`RepositoryResult`/`RepositoryStatus`; custom detailed failures are removed.
+The 14 `noexcept` metric accessors are unchanged. Categories and diagnostics
+preserve the accepted contract: missing entities are NotFound, explicit
+invalid input is InvalidInput, malformed or unrepresentable persisted IDs are
+Validation, and SQL/cursor/transaction/rollback failures are Technical.
+Both co-teacher APIs retain their respective lookup precedence and original FK
+diagnostics; a missing teacher is recoverable NotFound, while a missing class
+is nonrecoverable NotFound through explicit recoverability metadata. Class
+details schedule overlap remains Technical. ScheduleBuilder maps an invalid
+stored ID to nonrecoverable Validation. DataService/ClassService preserve
+legacy strings, and direct adapters map by code while preserving per-port
+behavior; ClassDetailsScheduleConflict NotFound remains recoverable under its
+existing helper policy. Independent review found no remaining actionable
+category, ID-width, transaction rollback, or direct-port mapping defect in
+scope.
+
+The typed test-support visitor implements `visitScheduleClassInfoRows`, keeps
+fixture order and failure injection, and avoids default DB reads. Singular
+detailed/legacy RosterPrint preserves orphan metadata, teacher, and schedules
+with `parentMissing`; batch RosterPrint continues suppressing orphan values
+under its separate existing test contract.
+
+Focused verification used macOS 27.0.1 arm64, Apple Clang 21, CMake 4.3.3,
+Ninja 1.13.2, Qt 6.12.0, and the existing `build/macos-clang-debug` preset
+tree (not cleared). `ClassMngr` and affected targets/supports built
+successfully. Repository/error CTests passed **2/2** and all **24** direct-port
+CTests passed. DataService lifecycle, ScheduleImport tests/dialog, focused
+ClassTransfer selectors, and ClassTransfer parity passed **6/6**. ScheduleWidget
+passed after the typed-visitor stub fix; its source/failure/retry cases passed
+**8**, and SubPrep schedule display/selection/error selectors passed **10**.
+`git diff --check` passed.
+
+Limits: no full suite or other-platform result. The broad ClassTransfer fallback
+test reproduced the same F1448 failure (**420 passed, 1 failed**): actual
+“Keep local: New Teacher”, expected “Keep local: Romanized One”.
+NavigationTeacherRead had one unchanged teacher-profile diagnostic mismatch
+(38/1). ClassDetailsSavePage timed out in an unchanged recording-port test
+(90s target, 30s isolated). SubPrepPackage PDF text comparison repeated the
+F1339 failure (13/1). SubPrepPage full CTest timed out in
+`unavailablePreferenceLoadsPreservePageValues`; focused schedule selectors
+passed and no DB-open errors remained after the stub fix. TestingClassesPage
+had 48 passed/4 roster UI assertions; the same broad category was seen in
+F1449, with no same-revision baseline. ScheduleTestingLayoutClearParity had
+3 passed/6 `fixture.databaseReady` failures (cause unresolved). ClassesPage
+timed out at the F1369 re-entry case. These are observations, not proven
+environment-only or pre-existing except for the cited recurring same-test
+records. ScheduleWidget's earlier 27 failures were resolved by the typed
+visitor test-support fix and are not final failures. Phase 3 and Batch 22
+remain In Progress; F1451 TeacherRepository is next, and F1450's local commit
+is pending.

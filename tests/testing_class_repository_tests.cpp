@@ -1,3 +1,4 @@
+#include "data/database/sql_query_utils.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/testing_class_repository.h"
@@ -38,6 +39,13 @@ private slots:
     void returnsEmptyTestingClassListWhenNoneExist();
     void loadsRegularClassTeacherAssignmentsInOneSnapshot();
     void rejectsPartialClassTeacherAssignmentsAfterCursorError();
+    void classInfoRepositoryPreservesErrorCategoriesAndParentOutcomes();
+    void classInfoVisitorsPreserveTypedFailuresAndRejectStoredIds();
+    void classInfoCoTeacherMissingParentsRollback();
+    void classInfoReadersValidateTeacherIdWidths();
+    void classInfoSavesReportCheckedRollbackFailures();
+    void classInfoReadersRejectMalformedClassIds();
+    void classInfoCoTeacherCommitFailuresRollback();
 };
 
 namespace
@@ -137,6 +145,44 @@ bool createSchema(
         }
     }
 
+    return true;
+}
+
+bool addClassInfoQuerySchema(QSqlDatabase& database)
+{
+    QSqlQuery query(database);
+    const QStringList statements{
+        QStringLiteral(R"(
+            CREATE TABLE teachers (
+                id INTEGER PRIMARY KEY,
+                teacher_kr TEXT,
+                teacher_en TEXT,
+                preferred_name TEXT,
+                preferred_romanization TEXT,
+                room_number TEXT,
+                wifi_name TEXT,
+                wifi_password TEXT,
+                internet_type TEXT,
+                zoom_id TEXT,
+                zoom_password TEXT,
+                projection_type TEXT,
+                notes TEXT
+            )
+        )"),
+        QStringLiteral("ALTER TABLE class_times ADD COLUMN day TEXT"),
+        QStringLiteral("ALTER TABLE class_times ADD COLUMN start_time TEXT"),
+        QStringLiteral("ALTER TABLE class_times ADD COLUMN end_time TEXT"),
+        QStringLiteral("ALTER TABLE class_intensive_times ADD COLUMN day TEXT"),
+        QStringLiteral("ALTER TABLE class_intensive_times ADD COLUMN start_time TEXT"),
+        QStringLiteral("ALTER TABLE class_intensive_times ADD COLUMN end_time TEXT")
+    };
+    for (const QString& statement : statements)
+    {
+        if (!query.exec(statement))
+        {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -2029,14 +2075,714 @@ void TestingClassRepositoryTests
         ClassInfoRepository repository(database);
         const auto assignments = repository.loadClassTeacherAssignments();
         QVERIFY(!assignments);
-        QVERIFY(assignments.error().contains(
+        QCOMPARE(assignments.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(assignments.error().diagnostic.contains(
             QStringLiteral("Loading class teacher assignments failed")
             ));
-        QVERIFY(assignments.error().contains(cursorError));
+        QVERIFY(assignments.error().diagnostic.contains(cursorError));
+
+        const auto exactAssignments =
+            repository.loadClassTeacherAssignmentRecords();
+        QVERIFY(!exactAssignments);
+        QCOMPARE(exactAssignments.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(exactAssignments.error().diagnostic.contains(cursorError));
 
         database.close();
     }
 
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests::
+classInfoRepositoryPreservesErrorCategoriesAndParentOutcomes()
+{
+    const QString connectionName = QStringLiteral("class_info_typed_errors");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+        QVERIFY(addClassInfoQuerySchema(database));
+        ClassInfoRepository repository(database);
+
+        const auto invalidRead = repository.loadClassInfo(0);
+        QVERIFY(!invalidRead);
+        QCOMPARE(invalidRead.error().code, RepositoryErrorCode::InvalidInput);
+        QCOMPARE(toLegacyDiagnostic(invalidRead.error()), QStringLiteral(
+            "Loading class information failed: invalid class id 0."));
+
+        for (const int invalidId : {0, -1})
+        {
+            const auto conflicts = repository.getClassTimeConflicts(
+                invalidId, {}, ScheduleType::Regular);
+            QVERIFY(!conflicts);
+            QCOMPARE(conflicts.error().code, RepositoryErrorCode::InvalidInput);
+            QCOMPARE(conflicts.error().diagnostic, QStringLiteral(
+                "Loading class time conflicts failed: invalid class id %1.").arg(invalidId));
+        }
+
+        const auto invalidParent = repository.checkClassDetailsParentDetailed(0);
+        QVERIFY(!invalidParent);
+        QCOMPARE(invalidParent.error().code, RepositoryErrorCode::InvalidInput);
+
+        const auto missingNotes = repository.saveClassNotesDetailed(
+            87, QStringLiteral("Draft"), QStringLiteral("Activities"));
+        QVERIFY(!missingNotes);
+        QCOMPARE(missingNotes.error().code, RepositoryErrorCode::NotFound);
+        QCOMPARE(toLegacyDiagnostic(missingNotes.error()), QStringLiteral(
+            "Saving class notes failed: parent class id 87 was not found."));
+        QCOMPARE(rowCount(database, QStringLiteral("class_info")), 0);
+
+        const auto missingSnapshot =
+            repository.loadClassCoTeacherAssignmentValidationSnapshotDetailed(87);
+        QVERIFY(!missingSnapshot);
+        QCOMPARE(missingSnapshot.error().code, RepositoryErrorCode::NotFound);
+
+        const auto absentGrade = repository.loadSelectedClassGradeRecordDetailed(87);
+        QVERIFY(absentGrade);
+        QVERIFY(absentGrade->parentMissing);
+        const auto legacyDefault = repository.loadClassInfo(87);
+        QVERIFY(legacyDefault);
+        QCOMPARE(legacyDefault->classId, 87);
+        QVERIFY(legacyDefault->classGrade.isEmpty());
+
+        const auto absentSubPrep = repository.loadSubPrepClassDetailsDetailed(87);
+        QVERIFY(absentSubPrep);
+        QVERIFY(absentSubPrep->parentMissing);
+        const auto missingSubPrep = repository.loadSubPrepClassDetails(87);
+        QVERIFY(!missingSubPrep);
+        QCOMPARE(missingSubPrep.error().code, RepositoryErrorCode::NotFound);
+        QCOMPARE(toLegacyDiagnostic(missingSubPrep.error()), QStringLiteral(
+            "Loading selected Sub Prep class details failed: no matching record exists for class id 87."));
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (1, 'Regular')")));
+        const auto missingTeacher = repository.saveClassCoTeacherAssignmentDetailed(
+            1, qint64{99});
+        QVERIFY(!missingTeacher);
+        QCOMPARE(missingTeacher.error().code, RepositoryErrorCode::NotFound);
+        QVERIFY(missingTeacher.error().recoverableOverride.has_value());
+        QVERIFY(*missingTeacher.error().recoverableOverride);
+        QCOMPARE(toLegacyDiagnostic(missingTeacher.error()), QStringLiteral(
+            "Saving class information failed: teacher id 99 was not found."));
+        QCOMPARE(rowCount(database, QStringLiteral("class_info")), 0);
+
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO class_info (class_id, teacher_id) VALUES (1, 'not-an-id')")));
+        const auto malformedTeacher = repository.loadClassSubtitleRecord(1);
+        QVERIFY(!malformedTeacher);
+        QCOMPARE(malformedTeacher.error().code, RepositoryErrorCode::Validation);
+        QCOMPARE(toLegacyDiagnostic(malformedTeacher.error()), QStringLiteral(
+            "Loading class subtitle failed: the database returned an invalid teacher identifier."));
+        const auto malformedSaveInfo = repository.loadClassDetailsSaveInfo(1);
+        QVERIFY(!malformedSaveInfo);
+        QCOMPARE(malformedSaveInfo.error().code, RepositoryErrorCode::Validation);
+
+        QVERIFY(query.exec(QStringLiteral("DROP TABLE class_info")));
+        const auto failedRead = repository.loadSelectedClassGradeRecordDetailed(1);
+        QVERIFY(!failedRead);
+        QCOMPARE(failedRead.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(failedRead.error().diagnostic.contains(
+            QStringLiteral("Loading class information failed")));
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests::
+classInfoVisitorsPreserveTypedFailuresAndRejectStoredIds()
+{
+    const QString connectionName = QStringLiteral("class_info_typed_visitors");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+        QVERIFY(addClassInfoQuerySchema(database));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (1, 'Regular')")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO class_times (class_id, day, start_time, end_time) "
+            "VALUES (1, 'Monday', '9:00 AM', '9:50 AM')")));
+        ClassInfoRepository repository(database);
+        const auto acceptClass = [](const ClassInfo&) -> RepositoryStatus
+        {
+            return {};
+        };
+        const auto acceptTime = [](int, const ClassTime&, bool) -> RepositoryStatus
+        {
+            return {};
+        };
+
+        const auto missingClassVisitor = repository.visitScheduleClassInfoRows({}, acceptTime);
+        QVERIFY(!missingClassVisitor);
+        QCOMPARE(missingClassVisitor.error().code, RepositoryErrorCode::InvalidInput);
+        const auto missingTimeVisitor = repository.visitScheduleClassInfoRows(acceptClass, {});
+        QVERIFY(!missingTimeVisitor);
+        QCOMPARE(missingTimeVisitor.error().code, RepositoryErrorCode::InvalidInput);
+        QCOMPARE(missingClassVisitor.error().diagnostic, QStringLiteral(
+            "Loading schedule class information failed: both visitors are required."));
+        QCOMPARE(repository.scheduleClassInfoReadMetrics().metadataStatementCount, 0);
+
+        const auto classRejected = repository.visitScheduleClassInfoRows(
+            [](const ClassInfo&) -> RepositoryStatus
+            {
+                return std::unexpected(RepositoryError{
+                    RepositoryErrorCode::Conflict,
+                    QStringLiteral("Class visitor rejected the row.")
+                });
+            }, acceptTime);
+        QVERIFY(!classRejected);
+        QCOMPARE(classRejected.error().code, RepositoryErrorCode::Conflict);
+        QCOMPARE(classRejected.error().diagnostic,
+                 QStringLiteral("Class visitor rejected the row."));
+
+        const auto timeRejected = repository.visitScheduleClassInfoRows(
+            acceptClass,
+            [](int, const ClassTime&, bool) -> RepositoryStatus
+            {
+                return std::unexpected(RepositoryError{
+                    RepositoryErrorCode::NotFound,
+                    QStringLiteral("Time visitor rejected the row.")
+                });
+            });
+        QVERIFY(!timeRejected);
+        QCOMPARE(timeRejected.error().code, RepositoryErrorCode::NotFound);
+        QCOMPARE(timeRejected.error().diagnostic,
+                 QStringLiteral("Time visitor rejected the row."));
+        QCOMPARE(repository.scheduleClassInfoReadMetrics().completedClassCount, 0);
+        QCOMPARE(repository.scheduleClassInfoReadMetrics().regularScheduleRowCount, 0);
+
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (2147483648, 'Wide')")));
+        const auto malformedId = repository.visitScheduleClassInfoRows(
+            acceptClass, acceptTime);
+        QVERIFY(!malformedId);
+        QCOMPARE(malformedId.error().code, RepositoryErrorCode::Validation);
+        QCOMPARE(malformedId.error().diagnostic, QStringLiteral(
+            "Loading schedule class information failed: invalid class id 2147483648."));
+        QCOMPARE(repository.scheduleClassInfoReadMetrics().completedClassCount, 0);
+
+        QVERIFY(query.exec(QStringLiteral(
+            "DELETE FROM classes WHERE id=2147483648")));
+        const auto completed = repository.visitScheduleClassInfoRows(
+            acceptClass, acceptTime);
+        QVERIFY(completed);
+        QCOMPARE(repository.scheduleClassInfoReadMetrics().completedClassCount, 1);
+        QCOMPARE(repository.scheduleClassInfoReadMetrics().regularScheduleRowCount, 1);
+        QCOMPARE(repository.scheduleClassInfoReadMetrics().intensiveScheduleRowCount, 0);
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests::classInfoCoTeacherMissingParentsRollback()
+{
+    const QString connectionName = QStringLiteral("class_info_missing_assignment_parent");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+        QVERIFY(addClassInfoQuerySchema(database));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral("DROP TABLE class_info")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE class_info ("
+            "class_id INTEGER PRIMARY KEY REFERENCES classes(id), "
+            "teacher_id INTEGER REFERENCES teachers(id))")));
+        QVERIFY(query.exec(QStringLiteral("INSERT INTO teachers (id) VALUES (7)")));
+        QVERIFY(query.exec(QStringLiteral("INSERT INTO classes (id, name) VALUES (1, 'Regular')")));
+        ClassInfoRepository repository(database);
+
+        for (const bool enforceForeignKeys : {true, false})
+        {
+            QVERIFY(query.exec(enforceForeignKeys
+                ? QStringLiteral("PRAGMA foreign_keys=ON")
+                : QStringLiteral("PRAGMA foreign_keys=OFF")));
+            QString expectedDiagnostic = QStringLiteral(
+                "Saving class information failed: parent class id 87 was not found.");
+            if (enforceForeignKeys)
+            {
+                QSqlQuery originalStatement(database);
+                originalStatement.prepare(QStringLiteral(
+                    "INSERT INTO class_info (class_id, teacher_id) VALUES (?, ?) "
+                    "ON CONFLICT(class_id) DO UPDATE SET teacher_id=excluded.teacher_id"));
+                originalStatement.addBindValue(87);
+                originalStatement.addBindValue(7);
+                QVERIFY(!originalStatement.exec());
+                expectedDiagnostic = SqlQueryUtils::errorFor(
+                    originalStatement, QStringLiteral("Saving class information"),
+                    {}, QStringLiteral("class id 87")).userMessage();
+            }
+
+            for (const bool detailed : {true, false})
+            {
+                for (const auto teacherId : {std::optional<qint64>{7}, std::optional<qint64>{}})
+                {
+                    const auto saved = detailed
+                        ? repository.saveClassCoTeacherAssignmentDetailed(87, teacherId)
+                        : repository.saveClassCoTeacherAssignment(87, teacherId);
+                    QVERIFY(!saved);
+                    QCOMPARE(saved.error().code, RepositoryErrorCode::NotFound);
+                    QVERIFY(saved.error().recoverableOverride.has_value());
+                    QVERIFY(!*saved.error().recoverableOverride);
+                    QCOMPARE(toLegacyDiagnostic(saved.error()), expectedDiagnostic);
+                    QCOMPARE(rowCount(database, QStringLiteral("class_info")), 0);
+                    // The missing-parent path must close its transaction, including
+                    // when the original statement succeeded with FK checks off.
+                    QVERIFY(database.transaction());
+                    QVERIFY(database.rollback());
+                }
+            }
+
+            QString expectedTeacherDiagnostic = QStringLiteral(
+                "Saving class information failed: teacher id 99 was not found.");
+            if (enforceForeignKeys)
+            {
+                QSqlQuery originalStatement(database);
+                originalStatement.prepare(QStringLiteral(
+                    "INSERT INTO class_info (class_id, teacher_id) VALUES (?, ?) "
+                    "ON CONFLICT(class_id) DO UPDATE SET teacher_id=excluded.teacher_id"));
+                originalStatement.addBindValue(1);
+                originalStatement.addBindValue(99);
+                QVERIFY(!originalStatement.exec());
+                expectedTeacherDiagnostic = SqlQueryUtils::errorFor(
+                    originalStatement, QStringLiteral("Saving class information"),
+                    {}, QStringLiteral("class id 1")).userMessage();
+            }
+            for (const bool detailed : {true, false})
+            {
+                const auto missingTeacher = detailed
+                    ? repository.saveClassCoTeacherAssignmentDetailed(1, qint64{99})
+                    : repository.saveClassCoTeacherAssignment(1, qint64{99});
+                QVERIFY(!missingTeacher);
+                QCOMPARE(missingTeacher.error().code, RepositoryErrorCode::NotFound);
+                QVERIFY(missingTeacher.error().recoverableOverride.has_value());
+                QVERIFY(*missingTeacher.error().recoverableOverride);
+                QCOMPARE(toLegacyDiagnostic(missingTeacher.error()), detailed
+                    ? QStringLiteral("Saving class information failed: teacher id 99 was not found.")
+                    : expectedTeacherDiagnostic);
+                QCOMPARE(rowCount(database, QStringLiteral("class_info")), 0);
+                QVERIFY(database.transaction());
+                QVERIFY(database.rollback());
+
+                QVERIFY(query.exec(QStringLiteral(
+                    "INSERT INTO class_info (class_id, teacher_id) VALUES (1, 7)")));
+                const auto rejectedUpdate = detailed
+                    ? repository.saveClassCoTeacherAssignmentDetailed(1, qint64{99})
+                    : repository.saveClassCoTeacherAssignment(1, qint64{99});
+                QVERIFY(!rejectedUpdate);
+                QCOMPARE(rejectedUpdate.error().code, RepositoryErrorCode::NotFound);
+                QVERIFY(rejectedUpdate.error().recoverableOverride.has_value());
+                QVERIFY(*rejectedUpdate.error().recoverableOverride);
+                QVERIFY(query.exec(QStringLiteral(
+                    "SELECT teacher_id FROM class_info WHERE class_id=1")));
+                QVERIFY(query.next());
+                QCOMPARE(query.value(0).toLongLong(), qint64{7});
+                query.finish();
+                QVERIFY(query.exec(QStringLiteral("DELETE FROM class_info WHERE class_id=1")));
+            }
+
+            const auto missingTeacher = repository.saveClassCoTeacherAssignmentDetailed(
+                87, qint64{99});
+            QVERIFY(!missingTeacher);
+            QCOMPARE(missingTeacher.error().code, RepositoryErrorCode::NotFound);
+            QVERIFY(missingTeacher.error().recoverableOverride.has_value());
+            QVERIFY(*missingTeacher.error().recoverableOverride);
+            QCOMPARE(missingTeacher.error().diagnostic, QStringLiteral(
+                "Saving class information failed: teacher id 99 was not found."));
+            QCOMPARE(rowCount(database, QStringLiteral("class_info")), 0);
+            QVERIFY(database.transaction());
+            QVERIFY(database.rollback());
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests::classInfoReadersValidateTeacherIdWidths()
+{
+    const QString connectionName = QStringLiteral("class_info_teacher_id_widths");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+        QVERIFY(addClassInfoQuerySchema(database));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (1, 'Regular')")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO class_info (class_id) VALUES (1)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO class_times (class_id, day, start_time, end_time) "
+            "VALUES (1, 'Monday', '9:00 AM', '9:50 AM')")));
+        ClassInfoRepository repository(database);
+        const auto acceptTime = [](int, const ClassTime&, bool) -> RepositoryStatus
+        {
+            return {};
+        };
+
+        const QStringList malformedIds{
+            QStringLiteral("not-an-id"), QStringLiteral("2147483648"),
+            QStringLiteral("-2147483649"), QStringLiteral("9223372036854775807"),
+            QStringLiteral("-9223372036854775808"),
+            QStringLiteral("9223372036854775808"), QStringLiteral("-9223372036854775809")
+        };
+        for (const QString& storedId : malformedIds)
+        {
+            query.prepare(QStringLiteral("UPDATE class_info SET teacher_id=? WHERE class_id=1"));
+            query.addBindValue(storedId);
+            QVERIFY(query.exec());
+            const auto info = repository.loadClassInfo(1);
+            QVERIFY(!info);
+            QCOMPARE(info.error().code, RepositoryErrorCode::Validation);
+            QCOMPARE(info.error().diagnostic, QStringLiteral(
+                "Loading class information failed: invalid assigned teacher identifier."));
+            const auto assignments = repository.loadClassTeacherAssignments();
+            QVERIFY(!assignments);
+            QCOMPARE(assignments.error().code, RepositoryErrorCode::Validation);
+            const auto schedule = repository.loadScheduleClassInfos();
+            QVERIFY(!schedule);
+            QCOMPARE(schedule.error().code, RepositoryErrorCode::Validation);
+            int visitedCount = 0;
+            const auto visited = repository.visitScheduleClassInfoRows(
+                [&visitedCount](const ClassInfo&) -> RepositoryStatus
+                {
+                    ++visitedCount;
+                    return {};
+                }, acceptTime);
+            QVERIFY(!visited);
+            QCOMPARE(visited.error().code, RepositoryErrorCode::Validation);
+            QCOMPARE(visitedCount, 0);
+
+            const auto scoped = repository.loadClassInfosForScheduleScope(
+                {1}, {QStringLiteral("Monday")}, ScheduleType::Regular, 5, 5, true);
+            QVERIFY(!scoped);
+            QCOMPARE(scoped.error().code, RepositoryErrorCode::Validation);
+            const auto exactAssignments = repository.loadClassTeacherAssignmentRecords();
+            const auto saveInfo = repository.loadClassDetailsSaveInfo(1);
+            const auto page = repository.loadClassPageDetails(1);
+            const auto detailedPage = repository.loadClassPageDetailsDetailed(1);
+            const auto subPrep = repository.loadSubPrepClassDetailsDetailed(1);
+            const auto snapshot = repository.loadScheduleImportStateSnapshotClassInfos();
+            if (storedId == QStringLiteral("2147483648")
+                || storedId == QStringLiteral("-2147483649")
+                || storedId == QStringLiteral("9223372036854775807")
+                || storedId == QStringLiteral("-9223372036854775808"))
+            {
+                QVERIFY(exactAssignments);
+                QCOMPARE(exactAssignments->size(), 1);
+                QCOMPARE(exactAssignments->first().teacherId, storedId.toLongLong());
+                QVERIFY(saveInfo);
+                QCOMPARE(saveInfo->teacherId, storedId.toLongLong());
+                QCOMPARE(saveInfo->info.teacherId,
+                         storedId.startsWith(QLatin1Char('-')) ? -2 : -1);
+                QVERIFY(page);
+                QCOMPARE(page->teacherId, storedId.toLongLong());
+                QVERIFY(detailedPage);
+                QCOMPARE(detailedPage->record.teacherId, storedId.toLongLong());
+                QVERIFY(!detailedPage->parentMissing);
+                QVERIFY(subPrep);
+                QCOMPARE(subPrep->record.teacherId, qint64{-1});
+                QVERIFY(subPrep->record.teacherKr.isEmpty());
+                QVERIFY(!subPrep->parentMissing);
+                QVERIFY(snapshot);
+                QCOMPARE(snapshot->first().teacherId, storedId.toLongLong());
+            }
+            else
+            {
+                QVERIFY(!exactAssignments);
+                QCOMPARE(exactAssignments.error().code, RepositoryErrorCode::Validation);
+                QVERIFY(!saveInfo);
+                QCOMPARE(saveInfo.error().code, RepositoryErrorCode::Validation);
+                QVERIFY(!page);
+                QCOMPARE(page.error().code, RepositoryErrorCode::Validation);
+                QVERIFY(!detailedPage);
+                QCOMPARE(detailedPage.error().code, RepositoryErrorCode::Validation);
+                QVERIFY(!subPrep);
+                QCOMPARE(subPrep.error().code, RepositoryErrorCode::Validation);
+                QVERIFY(!snapshot);
+                QCOMPARE(snapshot.error().code, RepositoryErrorCode::Validation);
+            }
+        }
+        QCOMPARE(repository.scheduleClassInfoReadMetrics().completedClassCount, 0);
+
+        // Preserve NULL/empty/unassigned sentinels and valid assignments even
+        // when their optional teacher-profile join has no matching row.
+        for (const QVariant& storedId : {QVariant(), QVariant(QStringLiteral("")),
+                QVariant(-1), QVariant(0), QVariant(7),
+                QVariant(std::numeric_limits<int>::min()),
+                QVariant(std::numeric_limits<int>::max())})
+        {
+            query.prepare(QStringLiteral("UPDATE class_info SET teacher_id=? WHERE class_id=1"));
+            query.addBindValue(storedId);
+            QVERIFY(query.exec());
+            const int expectedId = storedId.isNull() ? -1 : storedId.toInt();
+            const auto info = repository.loadClassInfo(1);
+            QVERIFY(info);
+            QCOMPARE(info->teacherId, expectedId);
+            const auto assignments = repository.loadClassTeacherAssignments();
+            QVERIFY(assignments);
+            QCOMPARE(assignments->first().teacherId, expectedId);
+            const auto exactAssignments = repository.loadClassTeacherAssignmentRecords();
+            QVERIFY(exactAssignments);
+            QCOMPARE(exactAssignments->first().teacherId, qint64{expectedId});
+            const auto page = repository.loadClassPageDetails(1);
+            QVERIFY(page);
+            QCOMPARE(page->teacherId, qint64{expectedId});
+            const auto detailedPage = repository.loadClassPageDetailsDetailed(1);
+            QVERIFY(detailedPage);
+            QVERIFY(!detailedPage->parentMissing);
+            QCOMPARE(detailedPage->record.teacherId, qint64{expectedId});
+            const auto subPrep = repository.loadSubPrepClassDetailsDetailed(1);
+            QVERIFY(subPrep);
+            QVERIFY(!subPrep->parentMissing);
+            QCOMPARE(subPrep->record.teacherId, qint64{-1});
+            QVERIFY(subPrep->record.teacherKr.isEmpty());
+            const auto scoped = repository.loadClassInfosForScheduleScope(
+                {1}, {QStringLiteral("Monday")}, ScheduleType::Regular, 5, 5, true);
+            QVERIFY(scoped);
+            QCOMPARE(scoped->size(), 1);
+            QCOMPARE(scoped->first().teacherId, expectedId);
+            const auto schedule = repository.loadScheduleClassInfos();
+            QVERIFY(schedule);
+            QCOMPARE(schedule->first().teacherId, expectedId);
+            int visitedCount = 0;
+            const auto visited = repository.visitScheduleClassInfoRows(
+                [&](const ClassInfo& record) -> RepositoryStatus
+                {
+                    ++visitedCount;
+                    if (record.teacherId != expectedId)
+                    {
+                        return std::unexpected(RepositoryError{
+                            RepositoryErrorCode::Validation,
+                            QStringLiteral("Teacher sentinel was changed.")});
+                    }
+                    return {};
+                }, acceptTime);
+            QVERIFY(visited);
+            QCOMPARE(visitedCount, 1);
+        }
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO teachers (id, teacher_kr) VALUES (7, 'Resolved teacher')")));
+        QVERIFY(query.exec(QStringLiteral("UPDATE class_info SET teacher_id=7 WHERE class_id=1")));
+        const auto resolvedSubPrep = repository.loadSubPrepClassDetailsDetailed(1);
+        QVERIFY(resolvedSubPrep);
+        QCOMPARE(resolvedSubPrep->record.teacherId, qint64{7});
+        QCOMPARE(resolvedSubPrep->record.teacherKr, QStringLiteral("Resolved teacher"));
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests::classInfoSavesReportCheckedRollbackFailures()
+{
+    const QString connectionName = QStringLiteral("class_info_checked_rollback");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+        QVERIFY(addClassInfoQuerySchema(database));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (1, 'Regular')")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO class_info (class_id, notes) VALUES (1, 'Original')")));
+        ClassInfoRepository repository(database);
+        ClassInfo info;
+        info.classId = 1;
+        info.notes = QStringLiteral("Replacement");
+
+        for (const QString& triggerAction : {QStringLiteral("ABORT"), QStringLiteral("ROLLBACK")})
+        {
+            QVERIFY(query.exec(QStringLiteral(
+                "CREATE TRIGGER reject_class_info_update BEFORE UPDATE ON class_info "
+                "BEGIN SELECT RAISE(%1, 'injected save failure'); END").arg(triggerAction)));
+            for (const bool notesOnly : {true, false})
+            {
+                const auto saved = notesOnly
+                    ? repository.saveClassNotesDetailed(1, info.notes, QStringLiteral("Activities"))
+                    : repository.saveClassDetailsDetailed(info, -1);
+                QVERIFY(!saved);
+                QCOMPARE(saved.error().code, RepositoryErrorCode::Technical);
+                QVERIFY(saved.error().diagnostic.contains(QStringLiteral("injected save failure")));
+                QVERIFY(saved.error().diagnostic.startsWith(notesOnly
+                    ? QStringLiteral("Saving class notes failed")
+                    : QStringLiteral("Saving class information failed")));
+                QCOMPARE(saved.error().diagnostic.contains(notesOnly
+                    ? QStringLiteral("Rolling back class notes save failed for class id 1:")
+                    : QStringLiteral("Rolling back class information save failed for class id 1:")),
+                    triggerAction == QStringLiteral("ROLLBACK"));
+                QVERIFY(query.exec(QStringLiteral("SELECT notes FROM class_info WHERE class_id=1")));
+                QVERIFY(query.next());
+                QCOMPARE(query.value(0).toString(), QStringLiteral("Original"));
+                query.finish();
+                QVERIFY(database.transaction());
+                QVERIFY(database.rollback());
+            }
+            QVERIFY(query.exec(QStringLiteral("DROP TRIGGER reject_class_info_update")));
+        }
+
+        // Parent-query SQL errors also release the transaction explicitly.
+        QVERIFY(query.exec(QStringLiteral("DROP TABLE classes")));
+        const auto failedNotesParent = repository.saveClassNotesDetailed(1, info.notes, QString());
+        QVERIFY(!failedNotesParent);
+        QCOMPARE(failedNotesParent.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(failedNotesParent.error().diagnostic.startsWith(
+            QStringLiteral("Checking class notes parent class failed")));
+        QVERIFY(database.transaction());
+        QVERIFY(database.rollback());
+        const auto failedDetailsParent = repository.saveClassDetailsDetailed(info, -1);
+        QVERIFY(!failedDetailsParent);
+        QCOMPARE(failedDetailsParent.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(failedDetailsParent.error().diagnostic.startsWith(
+            QStringLiteral("Checking class details parent class failed")));
+        QVERIFY(database.transaction());
+        QVERIFY(database.rollback());
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests::classInfoReadersRejectMalformedClassIds()
+{
+    const QString connectionName = QStringLiteral("class_info_persisted_class_id_validation");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+        QVERIFY(addClassInfoQuerySchema(database));
+        QSqlQuery query(database);
+        // A permissive legacy schema exposes invalid persisted values that an
+        // INTEGER PRIMARY KEY would otherwise reject before the read.
+        QVERIFY(query.exec(QStringLiteral("DROP TABLE classes")));
+        QVERIFY(query.exec(QStringLiteral("CREATE TABLE classes (id, name TEXT)")));
+        ClassInfoRepository repository(database);
+        for (const QVariant& storedId : {
+                QVariant(QStringLiteral("not-an-id")), QVariant(qint64{2147483648LL}),
+                QVariant(qint64{-2147483649LL}), QVariant(0), QVariant(-1),
+                QVariant(QStringLiteral("9223372036854775808")), QVariant()})
+        {
+            QVERIFY(query.exec(QStringLiteral("DELETE FROM classes")));
+            query.prepare(QStringLiteral("INSERT INTO classes (id, name) VALUES (?, 'Regular')"));
+            query.addBindValue(storedId);
+            QVERIFY(query.exec());
+            const auto assignments = repository.loadClassTeacherAssignments();
+            QVERIFY(!assignments);
+            QCOMPARE(assignments.error().code, RepositoryErrorCode::Validation);
+            const auto exactAssignments = repository.loadClassTeacherAssignmentRecords();
+            QVERIFY(!exactAssignments);
+            QCOMPARE(exactAssignments.error().code, RepositoryErrorCode::Validation);
+            const auto snapshot = repository.loadScheduleImportStateSnapshotClassInfos();
+            QVERIFY(!snapshot);
+            QCOMPARE(snapshot.error().code, RepositoryErrorCode::Validation);
+        }
+
+        QVERIFY(query.exec(QStringLiteral("DELETE FROM classes")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (2147483647, 'Maximum')")));
+        const auto assignments = repository.loadClassTeacherAssignments();
+        QVERIFY(assignments);
+        QCOMPARE(assignments->size(), 1);
+        QCOMPARE(assignments->first().classId, std::numeric_limits<int>::max());
+        const auto exactAssignments = repository.loadClassTeacherAssignmentRecords();
+        QVERIFY(exactAssignments);
+        QCOMPARE(exactAssignments->first().classId, std::numeric_limits<int>::max());
+        const auto snapshot = repository.loadScheduleImportStateSnapshotClassInfos();
+        QVERIFY(snapshot);
+        QCOMPARE(snapshot->first().classId, std::numeric_limits<int>::max());
+
+        // The class key in each schedule row must be checked independently of
+        // the valid parent metadata; SQLite's numeric join can match this text.
+        QVERIFY(query.exec(QStringLiteral("DROP TABLE classes")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE classes (id INTEGER PRIMARY KEY, name TEXT)")));
+        QVERIFY(query.exec(QStringLiteral("INSERT INTO classes VALUES (1, 'Regular')")));
+        QVERIFY(query.exec(QStringLiteral("DROP TABLE class_times")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE VIEW class_times AS SELECT 1 AS id, '1.0' AS class_id, "
+            "'Monday' AS day, '9:00 AM' AS start_time, '9:50 AM' AS end_time")));
+        const auto schedule = repository.loadScheduleClassInfos();
+        QVERIFY(!schedule);
+        QCOMPARE(schedule.error().code, RepositoryErrorCode::Validation);
+        const auto scheduleSnapshot = repository.loadScheduleImportStateSnapshotClassInfos();
+        QVERIFY(!scheduleSnapshot);
+        QCOMPARE(scheduleSnapshot.error().code, RepositoryErrorCode::Validation);
+        const auto visited = repository.visitScheduleClassInfoRows(
+            [](const ClassInfo&) -> RepositoryStatus { return {}; },
+            [](int, const ClassTime&, bool) -> RepositoryStatus { return {}; });
+        QVERIFY(!visited);
+        QCOMPARE(visited.error().code, RepositoryErrorCode::Validation);
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests::classInfoCoTeacherCommitFailuresRollback()
+{
+    const QString connectionName = QStringLiteral("class_info_assignment_commit_failure");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+        QVERIFY(addClassInfoQuerySchema(database));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral("PRAGMA foreign_keys=ON")));
+        QVERIFY(query.exec(QStringLiteral("INSERT INTO classes (id, name) VALUES (1, 'Regular')")));
+        QVERIFY(query.exec(QStringLiteral("INSERT INTO teachers (id) VALUES (7)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE deferred_assignment_check (teacher_id INTEGER, "
+            "FOREIGN KEY(teacher_id) REFERENCES teachers(id) DEFERRABLE INITIALLY DEFERRED)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TRIGGER fail_assignment_commit AFTER INSERT ON class_info "
+            "BEGIN INSERT INTO deferred_assignment_check VALUES (99); END")));
+        ClassInfoRepository repository(database);
+        for (const bool detailed : {true, false})
+        {
+            const auto saved = detailed
+                ? repository.saveClassCoTeacherAssignmentDetailed(1, qint64{7})
+                : repository.saveClassCoTeacherAssignment(1, qint64{7});
+            QVERIFY(!saved);
+            QCOMPARE(saved.error().code, RepositoryErrorCode::Technical);
+            QVERIFY(saved.error().diagnostic.startsWith(QStringLiteral(
+                "Committing class information failed for class id 1:")));
+            QVERIFY(saved.error().diagnostic.contains(QStringLiteral("FOREIGN KEY")));
+            QVERIFY(!saved.error().diagnostic.contains(QStringLiteral("Rolling back")));
+            QCOMPARE(rowCount(database, QStringLiteral("class_info")), 0);
+            QCOMPARE(rowCount(database, QStringLiteral("deferred_assignment_check")), 0);
+            QVERIFY(database.transaction());
+            QVERIFY(database.rollback());
+        }
+
+        QVERIFY(query.exec(QStringLiteral("DROP TRIGGER fail_assignment_commit")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TRIGGER rollback_assignment_write BEFORE INSERT ON class_info "
+            "BEGIN SELECT RAISE(ROLLBACK, 'injected assignment rollback'); END")));
+        for (const bool detailed : {true, false})
+        {
+            const auto saved = detailed
+                ? repository.saveClassCoTeacherAssignmentDetailed(1, qint64{7})
+                : repository.saveClassCoTeacherAssignment(1, qint64{7});
+            QVERIFY(!saved);
+            QCOMPARE(saved.error().code, RepositoryErrorCode::Technical);
+            QVERIFY(saved.error().diagnostic.startsWith(QStringLiteral(
+                "Saving class information failed for class id 1:")));
+            QVERIFY(saved.error().diagnostic.contains(QStringLiteral("injected assignment rollback")));
+            QVERIFY(saved.error().diagnostic.contains(QStringLiteral(
+                "Rolling back class information save failed for class id 1:")));
+            QCOMPARE(rowCount(database, QStringLiteral("class_info")), 0);
+            QVERIFY(database.transaction());
+            QVERIFY(database.rollback());
+        }
+    }
     QSqlDatabase::removeDatabase(connectionName);
 }
 

@@ -107,8 +107,8 @@ public:
                 );
         }
 
-        Result<std::vector<MyClassesClassInformationBatchReadEntry>> loaded =
-            [&]() -> Result<std::vector<MyClassesClassInformationBatchReadEntry>>
+        RepositoryResult<std::vector<MyClassesClassInformationBatchReadEntry>> loaded =
+            [&]() -> RepositoryResult<std::vector<MyClassesClassInformationBatchReadEntry>>
         {
             try
             {
@@ -118,14 +118,16 @@ public:
             }
             catch (const std::exception&)
             {
-                return std::unexpected(QStringLiteral(
-                    "My Classes class information could not be loaded."
+                return std::unexpected(RepositoryError(
+                    RepositoryErrorCode::Technical,
+                    QStringLiteral("My Classes class information could not be loaded.")
                     ));
             }
             catch (...)
             {
-                return std::unexpected(QStringLiteral(
-                    "My Classes class information could not be loaded."
+                return std::unexpected(RepositoryError(
+                    RepositoryErrorCode::Technical,
+                    QStringLiteral("My Classes class information could not be loaded.")
                     ));
             }
         }();
@@ -134,8 +136,8 @@ public:
         {
             return Application::MyClassesClassInformationBatchReadResult::failure(
                 error(
-                    Domain::ErrorCode::Technical,
-                    toStdString(loaded.error()),
+                    domainErrorCode(loaded.error().code),
+                    toStdString(toLegacyDiagnostic(loaded.error())),
                     true
                     )
                 );
@@ -192,8 +194,8 @@ public:
                     .information = Domain::Result<
                         Application::MyClassesClassInformationFields
                         >::failure(error(
-                            Domain::ErrorCode::Technical,
-                            toStdString(loadedEntry.information.error()),
+                            domainErrorCode(loadedEntry.information.error().code),
+                            toStdString(toLegacyDiagnostic(loadedEntry.information.error())),
                             true
                             ))
                 });
@@ -247,6 +249,26 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        ) noexcept
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] static std::optional<int> legacyId(
         const std::string& value
         )

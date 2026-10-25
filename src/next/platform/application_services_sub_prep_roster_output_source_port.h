@@ -187,7 +187,7 @@ public:
                 request.mode == Application::ScheduleViewMode::Intensive
                 ? ScheduleType::Intensive
                 : ScheduleType::Regular;
-            const ::Result<QList<SubPrepRosterOutputScheduleReadRecord>>
+            const RepositoryResult<QList<SubPrepRosterOutputScheduleReadRecord>>
                 loadedSchedule =
                 classInfoRepository->loadSubPrepRosterOutputScheduleRecords(
                     legacyClassIds,
