@@ -88,7 +88,7 @@ routeDisplaysRepositoryRowsAndStaysPutWhenLoadFails()
     QVERIFY(directory.isValid());
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
-    const Status seeded = services.dataService()->databaseSession()
+    const RepositoryStatus seeded = services.dataService()->databaseSession()
         ->nativeEnglishTeacherRepository()->saveDirectory(
             fixtureTeachers(), {});
     QVERIFY(seeded);

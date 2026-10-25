@@ -26,10 +26,12 @@ pushed. Evidence and limits are in the [progress
 log](04-Phase-3-Progress-Log.md). F1451 TeacherRepository is independently
 verified; it is committed locally as
 `f8261f96cb57f2c7baf41941be2636f1014fd9a4` and is not pushed. F1452
-GsTeamRepository implementation and independent verification are complete;
-the slice is accepted, its local commit is pending, and F1453 is next. Evidence
-and limits are in the [progress log](04-Phase-3-Progress-Log.md). The accepted
-queue is:
+GsTeamRepository is committed locally as
+`4ccb5c8ceda848e4f09afcd41a958437939aca14` and is not pushed. F1453
+NativeEnglishTeacherRepository implementation and independent verification
+are complete; the slice is accepted, its local commit is pending, and F1454 is
+next. Evidence and limits are in the [progress
+log](04-Phase-3-Progress-Log.md). The accepted queue is:
 
 1. **F1444** — shared `RepositoryError`/`RepositoryResult`/status contract and SQL error mapping.
 2. **F1445** — Workspace/database transaction, schema, lifecycle, and file-operation errors.

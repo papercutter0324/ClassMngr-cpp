@@ -344,7 +344,7 @@ Result<QList<NativeEnglishTeacher>> TeacherService::nativeEnglishTeachers() cons
     if (auto* repository = session()
             ? session()->nativeEnglishTeacherRepository() : nullptr)
     {
-        return repository->getAll();
+        return toLegacyResult(repository->getAll());
     }
     return dataService()
         ? dataService()->getNativeEnglishTeachers()
@@ -359,7 +359,7 @@ Status TeacherService::saveNativeEnglishTeacherDirectory(
     if (auto* repository = session()
             ? session()->nativeEnglishTeacherRepository() : nullptr)
     {
-        return repository->saveDirectory(teachers, deletedIds);
+        return toLegacyStatus(repository->saveDirectory(teachers, deletedIds));
     }
     return dataService()
         ? dataService()->saveNativeEnglishTeacherDirectory(teachers, deletedIds)

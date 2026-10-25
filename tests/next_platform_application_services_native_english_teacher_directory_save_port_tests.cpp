@@ -89,6 +89,7 @@ class NextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests
 private slots:
     void mapsTypedRowsAndDeletesThroughTheActiveSessionRepository();
     void unavailableSessionDoesNotUseTheDataServiceFallback();
+    void mapsRepositoryValidationErrorsToDomainValidation();
     void repositoryFailureRollsBackTheEntireSaveTransaction();
     void rollsBackCompanionWritesWhenUpdateFails_data();
     void rollsBackCompanionWritesWhenUpdateFails();
@@ -197,6 +198,42 @@ unavailableSessionDoesNotUseTheDataServiceFallback()
         nullServicesPort.saveNativeEnglishTeacherDirectory(request);
     QVERIFY(!nullServicesResult);
     QCOMPARE(nullServicesResult.error().code, Domain::ErrorCode::NotFound);
+}
+
+void NextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests::
+mapsRepositoryValidationErrorsToDomainValidation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Platform::ApplicationServicesNativeEnglishTeacherDirectorySavePort port(
+        &services);
+    Application::NativeEnglishTeacherDirectorySaveRequest emptyNameRequest;
+    emptyNameRequest.rows = {saveRow(QStringLiteral("  "))};
+    const auto emptyNameResult =
+        port.saveNativeEnglishTeacherDirectory(emptyNameRequest);
+    QVERIFY(!emptyNameResult);
+    QCOMPARE(emptyNameResult.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!emptyNameResult.error().recoverable);
+    QCOMPARE(
+        QString::fromStdString(emptyNameResult.error().message),
+        QStringLiteral("Every Native English Teacher must have a name."));
+
+    Application::NativeEnglishTeacherDirectorySaveRequest duplicateRequest;
+    duplicateRequest.rows = {
+        saveRow(QStringLiteral("Duplicate")),
+        saveRow(QStringLiteral(" duplicate "))
+    };
+    const auto duplicateResult =
+        port.saveNativeEnglishTeacherDirectory(duplicateRequest);
+    QVERIFY(!duplicateResult);
+    QCOMPARE(duplicateResult.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!duplicateResult.error().recoverable);
+    QCOMPARE(
+        QString::fromStdString(duplicateResult.error().message),
+        QStringLiteral("Native English Teacher names must be unique."));
 }
 
 void NextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests::

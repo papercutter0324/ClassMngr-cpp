@@ -25,13 +25,13 @@ GsTeamRepository* DatabaseSession::gsTeamRepository() const
     return nullptr;
 }
 
-Result<QList<NativeEnglishTeacher>>
+RepositoryResult<QList<NativeEnglishTeacher>>
 NativeEnglishTeacherRepository::getAll() const
 {
     return QList<NativeEnglishTeacher>{};
 }
 
-Status NativeEnglishTeacherRepository::saveDirectory(
+RepositoryStatus NativeEnglishTeacherRepository::saveDirectory(
     const QList<NativeEnglishTeacher>&,
     const QList<int>&
     )

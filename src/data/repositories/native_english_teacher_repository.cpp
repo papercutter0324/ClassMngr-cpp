@@ -18,15 +18,32 @@ QString normalizedName(const QString& value)
     return value.simplified().toCaseFolded();
 }
 
-NativeEnglishTeacherDirectorySaveOutcome queryError(
+RepositoryError queryError(
     const QSqlQuery& query,
     const QString& action
     )
 {
-    return {
-        .code = NativeEnglishTeacherDirectorySaveOutcomeCode::Failure,
-        .diagnostic = SqlQueryUtils::errorFor(query, action).userMessage()
-    };
+    return SqlQueryUtils::repositoryErrorFor(
+        SqlQueryUtils::errorFor(query, action));
+}
+
+RepositoryStatus failedWrite(
+    DatabaseTransaction& transaction,
+    QSqlDatabase& database,
+    RepositoryError error
+    )
+{
+    if (!transaction.rollbackChecked())
+    {
+        error.code = RepositoryErrorCode::Technical;
+        error.recoverableOverride.reset();
+        const QString rollbackDetail = database.lastError().text().trimmed();
+        error.diagnostic += rollbackDetail.isEmpty()
+            ? QObject::tr(" (rollback failed)")
+            : QObject::tr(" (rollback failed: %1)").arg(rollbackDetail);
+    }
+
+    return std::unexpected(std::move(error));
 }
 }
 
@@ -37,7 +54,8 @@ NativeEnglishTeacherRepository::NativeEnglishTeacherRepository(
 {
 }
 
-Result<QList<NativeEnglishTeacher>> NativeEnglishTeacherRepository::getAll() const
+RepositoryResult<QList<NativeEnglishTeacher>>
+NativeEnglishTeacherRepository::getAll() const
 {
     QList<NativeEnglishTeacher> result;
     QSqlQuery query(m_database);
@@ -63,7 +81,8 @@ Result<QList<NativeEnglishTeacher>> NativeEnglishTeacherRepository::getAll() con
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
 
     while (query.next())
@@ -73,7 +92,8 @@ Result<QList<NativeEnglishTeacher>> NativeEnglishTeacherRepository::getAll() con
         if (!idIsInteger || persistedId <= 0
             || persistedId > std::numeric_limits<int>::max())
         {
-            return std::unexpected(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
                 idIsInteger
                     ? QObject::tr(
                         "Native English Teacher id %1 is outside the supported positive 32-bit range."
@@ -81,7 +101,7 @@ Result<QList<NativeEnglishTeacher>> NativeEnglishTeacherRepository::getAll() con
                     : QObject::tr(
                         "A Native English Teacher id is not a valid 64-bit integer."
                         )
-                );
+                });
         }
 
         NativeEnglishTeacher teacher;
@@ -97,18 +117,15 @@ Result<QList<NativeEnglishTeacher>> NativeEnglishTeacherRepository::getAll() con
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(
-            SqlQueryUtils::errorFor(
-                query,
-                QObject::tr("Loading Native English Teacher directory")
-                ).userMessage()
-            );
+        return std::unexpected(queryError(
+            query,
+            QObject::tr("Loading Native English Teacher directory")));
     }
 
     return result;
 }
 
-Result<QList<NativeEnglishTeacherBirthdayReadRecord>>
+RepositoryResult<QList<NativeEnglishTeacherBirthdayReadRecord>>
 NativeEnglishTeacherRepository::loadBirthdayDirectoryReadRecords() const
 {
     QList<NativeEnglishTeacherBirthdayReadRecord> result;
@@ -135,7 +152,8 @@ NativeEnglishTeacherRepository::loadBirthdayDirectoryReadRecords() const
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
 
     while (query.next())
@@ -149,29 +167,16 @@ NativeEnglishTeacherRepository::loadBirthdayDirectoryReadRecords() const
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(query.lastError().text());
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            query.lastError().text()
+        });
     }
 
     return result;
 }
 
-Status NativeEnglishTeacherRepository::saveDirectory(
-    const QList<NativeEnglishTeacher>& teachers,
-    const QList<int>& deletedIds
-    )
-{
-    const NativeEnglishTeacherDirectorySaveOutcome outcome =
-        saveDirectoryWithOutcome(teachers, deletedIds);
-    if (outcome.code != NativeEnglishTeacherDirectorySaveOutcomeCode::Saved)
-    {
-        return std::unexpected(outcome.diagnostic);
-    }
-
-    return {};
-}
-
-NativeEnglishTeacherDirectorySaveOutcome
-NativeEnglishTeacherRepository::saveDirectoryWithOutcome(
+RepositoryStatus NativeEnglishTeacherRepository::saveDirectory(
     const QList<NativeEnglishTeacher>& teachers,
     const QList<int>& deletedIds
     )
@@ -183,17 +188,17 @@ NativeEnglishTeacherRepository::saveDirectoryWithOutcome(
         const QString name = normalizedName(teacher.name);
         if (name.isEmpty())
         {
-            return {
-                .code = NativeEnglishTeacherDirectorySaveOutcomeCode::Failure,
-                .diagnostic = QObject::tr("Every Native English Teacher must have a name.")
-            };
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr("Every Native English Teacher must have a name.")
+            });
         }
         if (names.contains(name))
         {
-            return {
-                .code = NativeEnglishTeacherDirectorySaveOutcomeCode::Failure,
-                .diagnostic = QObject::tr("Native English Teacher names must be unique.")
-            };
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr("Native English Teacher names must be unique.")
+            });
         }
         names.insert(name);
     }
@@ -201,10 +206,10 @@ NativeEnglishTeacherRepository::saveDirectoryWithOutcome(
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
     {
-        return {
-            .code = NativeEnglishTeacherDirectorySaveOutcomeCode::Failure,
-            .diagnostic = QObject::tr("Unable to start the directory save transaction.")
-        };
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr("Unable to start the directory save transaction.")
+        });
     }
 
     for (int id : deletedIds)
@@ -214,11 +219,17 @@ NativeEnglishTeacherRepository::saveDirectoryWithOutcome(
             continue;
         }
         QSqlQuery query(m_database);
-        query.prepare(QStringLiteral("DELETE FROM native_english_teachers WHERE id=?"));
+        if (!query.prepare(QStringLiteral(
+                "DELETE FROM native_english_teachers WHERE id=?")))
+        {
+            return failedWrite(transaction, m_database, queryError(
+                query, QObject::tr("Deleting a Native English Teacher")));
+        }
         query.addBindValue(id);
         if (!query.exec())
         {
-            return queryError(query, QObject::tr("Deleting a Native English Teacher"));
+            return failedWrite(transaction, m_database, queryError(
+                query, QObject::tr("Deleting a Native English Teacher")));
         }
     }
 
@@ -235,11 +246,15 @@ NativeEnglishTeacherRepository::saveDirectoryWithOutcome(
         QSqlQuery query(m_database);
         if (teacher.id > 0)
         {
-            query.prepare(R"(
+            if (!query.prepare(R"(
                 UPDATE native_english_teachers
                 SET name=?, position=?, phone_number=?, birthday=?, nationality=?, email=?
                 WHERE id=?
-            )");
+            )"))
+            {
+                return failedWrite(transaction, m_database, queryError(
+                    query, QObject::tr("Saving a Native English Teacher")));
+            }
             query.addBindValue(teacher.name);
             query.addBindValue(teacher.position);
             query.addBindValue(teacher.phoneNumber);
@@ -250,11 +265,15 @@ NativeEnglishTeacherRepository::saveDirectoryWithOutcome(
         }
         else
         {
-            query.prepare(R"(
+            if (!query.prepare(R"(
                 INSERT INTO native_english_teachers
                     (name, position, phone_number, birthday, nationality, email)
                 VALUES (?, ?, ?, ?, ?, ?)
-            )");
+            )"))
+            {
+                return failedWrite(transaction, m_database, queryError(
+                    query, QObject::tr("Saving a Native English Teacher")));
+            }
             query.addBindValue(teacher.name);
             query.addBindValue(teacher.position);
             query.addBindValue(teacher.phoneNumber);
@@ -265,26 +284,34 @@ NativeEnglishTeacherRepository::saveDirectoryWithOutcome(
 
         if (!query.exec())
         {
-            return queryError(query, QObject::tr("Saving a Native English Teacher"));
+            return failedWrite(transaction, m_database, queryError(
+                query, QObject::tr("Saving a Native English Teacher")));
         }
         if (teacher.id > 0 && query.numRowsAffected() == 0)
         {
-            return {
-                .code = NativeEnglishTeacherDirectorySaveOutcomeCode::Missing,
-                .diagnostic = QObject::tr(
+            return failedWrite(
+                transaction,
+                m_database,
+                RepositoryError{
+                    RepositoryErrorCode::NotFound,
+                    QObject::tr(
                     "Saving Native English Teacher id %1 failed: no matching record exists."
-                    ).arg(teacher.id)
-            };
+                    ).arg(teacher.id),
+                    true
+                });
         }
     }
 
     if (!transaction.commit())
     {
-        return {
-            .code = NativeEnglishTeacherDirectorySaveOutcomeCode::Failure,
-            .diagnostic = QObject::tr("Unable to commit the Native English Teacher directory.")
-        };
+        return failedWrite(
+            transaction,
+            m_database,
+            RepositoryError{
+                RepositoryErrorCode::Technical,
+                QObject::tr("Unable to commit the Native English Teacher directory.")
+            });
     }
 
-    return {.code = NativeEnglishTeacherDirectorySaveOutcomeCode::Saved};
+    return {};
 }

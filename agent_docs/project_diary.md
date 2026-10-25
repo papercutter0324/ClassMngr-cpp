@@ -8617,10 +8617,13 @@ Durable lesson: ID validity is caller-specific. Preserve documented sentinel
 IDs such as `-1` and `0` where the existing schedule-import path accepts them;
 do not apply a general positive-ID rule across repository projections.
 
+## 2026-10-24 — F1452 verified and committed; F1453 started
+
 F1451 is committed locally as `f8261f96cb57f2c7baf41941be2636f1014fd9a4`;
-it remains unpushed until Batch 22 closes. F1452 GsTeamRepository discovery
-is complete; implementation and independent verification are accepted, with
-the local commit pending. Batch 23 discovery remains due at F1462.
+it remains unpushed until Batch 22 closes. F1452 GsTeamRepository is accepted
+and committed locally as `4ccb5c8ceda848e4f09afcd41a958437939aca14`; it will
+be pushed when Batch 22 closes. F1453 NativeEnglishTeacherRepository
+discovery began. Batch 23 discovery remains due at F1462.
 
 F1452's accepted classification keeps missing/duplicate names as Validation,
 not Conflict: those are explicit save rules, and the schema has no matching
@@ -8634,3 +8637,19 @@ Independent focused verification passed six CTests, including injected
 rollback failure. Exact DataService/TeacherService conversion strings and the
 birthday cursor diagnostic were source-reviewed without dedicated runtime
 assertions; no full suite or other-platform build ran.
+
+
+## 2026-10-25 — F1453 verified; local commit pending
+
+F1453 follows the same schema-evidence rule: duplicate names are Validation,
+not Conflict because the table has no name uniqueness constraint. Keep empty
+saves, skipped nonpositive deletes, missing-delete no-ops, and nonpositive
+member IDs as insert requests. The birthday projection omits IDs and must not
+gain persisted-ID validation; its raw cursor diagnostic remains unchanged.
+
+F1453 independent macOS verification passed 12 focused CTests across
+DataService, the three repository ports, StaffDirectory, Native English
+application queries, and Teacher Import. Exact legacy errors, validation
+codes, stale-update recovery, SQL/cursor failures, and field/order behavior
+were exercised. Malformed-ID, raw birthday cursor message, no-op, and rollback
+failure branches remain source-reviewed without direct runtime assertions.

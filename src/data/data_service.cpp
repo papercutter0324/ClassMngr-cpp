@@ -240,7 +240,8 @@ Result<QList<NativeEnglishTeacher>> DataService::getNativeEnglishTeachers()
         return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
 
-    return m_session->nativeEnglishTeacherRepository()->getAll();
+    return toLegacyResult(
+        m_session->nativeEnglishTeacherRepository()->getAll());
 }
 
 Status DataService::saveNativeEnglishTeacherDirectory(
@@ -252,7 +253,10 @@ Status DataService::saveNativeEnglishTeacherDirectory(
     {
         return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
-    return m_session->nativeEnglishTeacherRepository()->saveDirectory(teachers, deletedIds);
+    return toLegacyStatus(
+        m_session->nativeEnglishTeacherRepository()->saveDirectory(
+            teachers,
+            deletedIds));
 }
 
 Result<QList<GsTeamMember>> DataService::getGsTeamMembers()

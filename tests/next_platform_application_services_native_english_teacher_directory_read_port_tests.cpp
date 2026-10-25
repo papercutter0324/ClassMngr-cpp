@@ -82,7 +82,7 @@ bool seedDirectory(ApplicationServices& services)
             QStringLiteral("010-9999-0002"), QStringLiteral("a@example.test"),
             QStringLiteral("02-03"), QStringLiteral("Australia"))
     };
-    const Status saved = services.workspaceStore()
+    const RepositoryStatus saved = services.workspaceStore()
         ->nativeEnglishTeacherRepository()->saveDirectory(teachers, {});
     return static_cast<bool>(saved);
 }
@@ -97,7 +97,7 @@ class NextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests
 private slots:
     void readsAllFieldsInRepositoryOrderFromTheActiveSession();
     void distinguishesUnavailableSessionFromRepositoryFailureWithoutFallback();
-    void rejectsUnrepresentableIdAsTechnicalFailureWithoutChangingStoredRow();
+    void rejectsUnrepresentableIdAsValidationFailureWithoutChangingStoredRow();
     void rejectsTerminalCursorErrorWithoutReturningPartialDirectory();
 };
 
@@ -170,7 +170,7 @@ distinguishesUnavailableSessionFromRepositoryFailureWithoutFallback()
 }
 
 void NextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests::
-rejectsUnrepresentableIdAsTechnicalFailureWithoutChangingStoredRow()
+rejectsUnrepresentableIdAsValidationFailureWithoutChangingStoredRow()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -212,11 +212,22 @@ rejectsUnrepresentableIdAsTechnicalFailureWithoutChangingStoredRow()
 
     Platform::ApplicationServicesNativeEnglishTeacherDirectoryReadPort port(
         &services);
+    const auto repositoryResult = services.workspaceStore()
+        ->nativeEnglishTeacherRepository()->getAll();
+    QVERIFY(!repositoryResult);
+    QCOMPARE(repositoryResult.error().code, RepositoryErrorCode::Validation);
+    QCOMPARE(
+        repositoryResult.error().diagnostic,
+        QStringLiteral(
+            "Native English Teacher id 2147483648 is outside the supported positive 32-bit range."));
+
     const auto result = port.readNativeEnglishTeacherDirectory();
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     QVERIFY(!result.error().recoverable);
-    QVERIFY(!result.error().message.empty());
+    QCOMPARE(
+        QString::fromStdString(result.error().message),
+        repositoryResult.error().diagnostic);
 
     QSqlQuery after(services.workspaceStore()->database());
     QVERIFY2(after.exec(storedRowSql), qPrintable(after.lastError().text()));
@@ -340,10 +351,10 @@ rejectsTerminalCursorErrorWithoutReturningPartialDirectory()
     const auto directResult = services.workspaceStore()
         ->nativeEnglishTeacherRepository()->getAll();
     QVERIFY(!directResult);
-    QVERIFY(directResult.error().contains(
+    QVERIFY(directResult.error().diagnostic.contains(
         QStringLiteral("Loading Native English Teacher directory")
         ));
-    QVERIFY(directResult.error().contains(cursorError));
+    QVERIFY(directResult.error().diagnostic.contains(cursorError));
 
     Platform::ApplicationServicesNativeEnglishTeacherDirectoryReadPort port(
         &services);

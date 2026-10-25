@@ -3879,13 +3879,15 @@ refresh selector passed. Rollback-failure injection was unavailable; that
 branch was source-reviewed, and successful rollback was exercised. No full
 suite or other-platform build ran.
 
-## F1452 — GsTeamRepository structured errors — independently verified, local commit pending — 2026-10-24
+## F1452 — GsTeamRepository structured errors — independently verified, committed locally — 2026-10-24
 
 Discovery is complete under `PHASE3-F1452-GSTEAMREPOSITORY-20261024`; Explorer
 `PHASE3-F1452-GSTEAM-SCOPE-DISCOVERY-20261024-EXP-01` and Investigator
 `PHASE3-F1452-GSTEAM-ERROR-RESEARCH-20261024-INV-01` support the accepted
 scope. Implementation and independent verification are complete. The slice is
-accepted, its local commit is pending, and F1453 is next.
+accepted. F1452 is committed locally as
+`4ccb5c8ceda848e4f09afcd41a958437939aca14` (`Phase3 - Add structured
+GsTeamRepository errors (F1452)`) and is not pushed.
 
 The scope converts all fallible `GsTeamRepository` APIs to
 `RepositoryResult`/`RepositoryStatus`, removes the custom save outcome, and
@@ -3914,3 +3916,39 @@ detail are retained and the error is nonrecoverable `Technical`.
 Source review confirmed exact `DataService`/`TeacherService` conversion strings
 and the raw birthday cursor diagnostic; those specific strings lack dedicated
 runtime assertions. No full suite or other-platform run was performed.
+
+## F1453 — NativeEnglishTeacherRepository structured errors — independently verified, local commit pending — 2026-10-25
+
+Discovery is complete under `PHASE3-F1453-NATIVEENGLISHREPOSITORY-20261024`;
+Explorer `PHASE3-F1453-NATIVEENGLISH-SCOPE-DISCOVERY-20261024-EXP-01` and
+Investigator `PHASE3-F1453-NATIVEENGLISH-ERROR-RESEARCH-20261024-INV-01`
+support the accepted scope. Implementation and independent verification are
+complete; the slice is accepted, its local commit is pending, and F1454 is next.
+
+The boundary covers all four public fallible APIs, with typed reads, a status
+result for save, and removal of the custom save outcome. Validation covers
+blank/duplicate normalized names and invalid persisted integer IDs; a positive
+stale update maps to `NotFound` with a recoverable override. SQL, cursor,
+transaction, and rollback failures are `Technical`; a checked rollback failure
+retains the primary diagnostic. Current paths do not produce `Conflict` or
+`InvalidInput`. Legacy conversions remain at `DataService`/`TeacherService`.
+
+Preserve exact diagnostics, position/name/ID ordering, raw birthday cursor
+text, integer bounds, and existing independent no-op behavior: empty saves,
+skipped nonpositive deletes, stale deletes, nonpositive (`<= 0`) member
+inserts, and unchecked IDs remain no-ops.
+
+Incremental macOS build targets succeeded. Twelve focused CTests passed across
+DataService lifecycle, Native English read/save/birthday ports, StaffDirectory
+read/save, Native English application queries/use cases, and Teacher Import.
+Runtime assertions cover exact legacy-facing messages, blank/duplicate
+validation, persisted ID above `INT_MAX` as `Validation` without mutation,
+stale-update recoverable `NotFound`, SQL-trigger and terminal-cursor
+`Technical`, ordering/projection, and unchanged Teacher Import codes.
+
+Limits: malformed persisted-ID behavior, raw birthday cursor text, empty/no-op
+paths, and rollback-failure handling were source-reviewed only; successful
+rollback was exercised. Source review confirmed `DataService`/`TeacherService`
+conversion strings, but those specific strings and the raw birthday cursor
+text lacked dedicated runtime assertions. No full suite or other-platform run
+was performed.

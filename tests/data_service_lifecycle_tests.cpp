@@ -5,6 +5,7 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/teacher_repository.h"
+#include "domain/models/native_english_teacher.h"
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "teacher_choices_cursor_error_fixture.h"
@@ -298,6 +299,7 @@ private slots:
     void campusListValidatesPersistedIds();
     void campusListRejectsLateFetchFailure();
     void teacherListValidatesPersistedIds();
+    void nativeEnglishTeacherErrorsKeepLegacyDiagnostics();
     void teacherImportFailureReturnsLegacyDiagnostic();
     void repositoryWriteFailuresAreObservable();
     void coreLookupReadFailuresAreObservable();
@@ -1763,6 +1765,48 @@ void DataServiceLifecycleTests::teacherListValidatesPersistedIds()
     QVERIFY(!teachersWithZeroId);
     QVERIFY(!teachersWithZeroId.error().isEmpty());
     QCOMPARE(snapshotTeacherRows(), rowsBeforeZeroRead);
+}
+
+void DataServiceLifecycleTests::nativeEnglishTeacherErrorsKeepLegacyDiagnostics()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("native-english-errors.db"))
+        ));
+    TeacherService teachers(service.databaseSession(), &service);
+
+    NativeEnglishTeacher unnamed;
+    unnamed.name = QStringLiteral("  \t ");
+    const QString saveDiagnostic =
+        QStringLiteral("Every Native English Teacher must have a name.");
+    const Status dataServiceSave =
+        service.saveNativeEnglishTeacherDirectory({unnamed}, {});
+    QVERIFY(!dataServiceSave);
+    QCOMPARE(dataServiceSave.error(), saveDiagnostic);
+
+    const Status teacherServiceSave =
+        teachers.saveNativeEnglishTeacherDirectory({unnamed}, {});
+    QVERIFY(!teacherServiceSave);
+    QCOMPARE(teacherServiceSave.error(), saveDiagnostic);
+
+    QSqlQuery insert(service.databaseSession()->database());
+    QVERIFY2(insert.exec(QStringLiteral(R"(
+        INSERT INTO native_english_teachers (id, name)
+        VALUES (0, 'Invalid Id')
+    )")), qPrintable(insert.lastError().text()));
+    const QString readDiagnostic = QStringLiteral(
+        "Native English Teacher id 0 is outside the supported positive 32-bit range.");
+
+    const auto dataServiceRead = service.getNativeEnglishTeachers();
+    QVERIFY(!dataServiceRead);
+    QCOMPARE(dataServiceRead.error(), readDiagnostic);
+
+    const auto teacherServiceRead = teachers.nativeEnglishTeachers();
+    QVERIFY(!teacherServiceRead);
+    QCOMPARE(teacherServiceRead.error(), readDiagnostic);
 }
 
 void DataServiceLifecycleTests::teacherImportFailureReturnsLegacyDiagnostic()

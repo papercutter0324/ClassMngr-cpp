@@ -68,13 +68,20 @@ are complete; commit `bd03110d7de6a034db9f631099164d9562c2435b` is local and
 not pushed. F1451 TeacherRepository implementation and independent focused
 verification are complete; commit `f8261f96cb57f2c7baf41941be2636f1014fd9a4`
 is local and not pushed. F1452 GsTeamRepository implementation and independent
-focused verification are complete; its local commit is pending. In the
-existing incremental macOS Debug tree, the six affected build targets
-compiled and six focused CTests passed 6/6, including rollback-failure
-injection. Source inspection confirms the exact legacy DataService and
-TeacherService diagnostic conversions and birthday cursor message; those exact
-boundary strings did not receive a dedicated runtime assertion. No full suite
-or other-platform build ran. F1451's focused CTest selection passed 24/24;
+focused verification are complete; commit `4ccb5c8ceda848e4f09afcd41a958437939aca14`
+is local and not pushed. F1453 NativeEnglishTeacherRepository implementation
+and independent focused verification are complete; its local commit is
+pending. In the existing incremental macOS Debug tree, affected application,
+DataService, Native English, StaffDirectory, and Teacher Import targets built;
+12 focused CTest targets passed 12/12. Exact legacy error strings, validation
+categories, stale-update recovery, SQL/cursor failures, ordering, and
+projections were covered. Malformed persisted IDs, raw birthday cursor text,
+no-op cases, and rollback-failure handling remain source-reviewed without
+direct runtime assertions. No full suite or other-platform build ran. F1452's
+affected targets built and six focused CTests passed 6/6, including
+rollback-failure injection. Its exact legacy and birthday cursor strings were
+source-reviewed without dedicated runtime assertions. F1451's focused CTest
+selection passed 24/24;
 after repair, the schedule-import nonpositive-ID selector passed 8 data cases
 and the changed TeacherProfileReadPort CTest passed 1/1. The broad ClassTransfer run had an
 unresolved fallback failure in the Executor run and aborted with a no-screens
@@ -190,8 +197,9 @@ diagnostic conversions, and affected platform adapters while preserving
 caller-specific missing-row, fallback, ordering, ID-width, and recoverability
 behavior. F1451 is independently accepted and committed locally at
 `f8261f96cb57f2c7baf41941be2636f1014fd9a4`; it will be pushed when Batch 22
-closes. F1452 GsTeamRepository is independently accepted and verified; its
-local commit is pending. Six focused CTests passed, including a seeded
+closes. F1452 GsTeamRepository is independently accepted and verified; commit
+`4ccb5c8ceda848e4f09afcd41a958437939aca14` is local and will be pushed when
+Batch 22 closes. Six focused CTests passed, including a seeded
 rollback-failure case. Legacy conversion strings and the birthday cursor's
 raw error diagnostic were confirmed by source inspection but lack dedicated
 runtime assertions. The accepted scope types every fallible repository API
@@ -200,7 +208,16 @@ diagnostics. Duplicate-name and malformed persisted-ID paths are Validation;
 stale positive updates are recoverable NotFound; SQL, cursor, transaction,
 and rollback failures are Technical. Duplicate names are not Conflict because
 current uniqueness is explicit validation, and no repository-level duplicate
-row-ID rule is added. Batch 23 discovery is due at F1462, the second-to-last
+row-ID rule is added. F1453 NativeEnglishTeacherRepository is independently
+accepted and verified; its local commit is pending and F1454 is next. Twelve
+focused CTests passed; rollback-failure, malformed-ID, raw birthday-cursor,
+and some no-op cases remain source-reviewed only. Its accepted scope types all
+public fallible methods and nested outcomes; blank/duplicate names and invalid
+int persisted IDs are Validation, positive stale updates are recoverable
+NotFound, and SQL, cursor, transaction, and rollback failures are Technical.
+Preserve no-op behavior, sort order, ID bounds, raw birthday cursor
+diagnostics, and legacy diagnostic conversion; add no Conflict path where the
+schema has no name-uniqueness constraint. Batch 23 discovery is due at F1462, the second-to-last
 Batch 22 candidate; search then for `DocumentCatalog`, DataService
 compatibility conversion, and other candidates beyond the accepted cap. The
 earlier file-compatibility and v2 source-boundary reviews remain valid; see
