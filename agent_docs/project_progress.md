@@ -79,13 +79,18 @@ focused CTests (5/5), covering SQL/cursor classification, diagnostic
 conversion, port recovery policy, and lifecycle behavior. Upsert collision,
 ordering, and raw unknown values were source-compared as unchanged. No full
 suite or other-platform build ran. F1455 RosterRepository implementation and
-independent verification are complete; its local commit is pending. A fresh
-macOS incremental Debug build succeeded and 22 focused CTests passed 22/22;
-`git diff --check` passed. A broader ClassTransfer dialog test still fails in
-teacher-profile fallback outside the changed roster/export path (no pre-change
-baseline); `ClassMngrClassesPageTests` timed out in offscreen mode after 45
-seconds without a specific hanging case. Neither is established as
-pre-existing. No full suite or other-platform build ran.
+independent verification are complete; commit
+`5cf27a6a7589eb19c0d859684b5e44f53b197c4e` is local and not pushed. A fresh
+macOS incremental Debug build succeeded and 22 focused CTests passed 22/22.
+A broader ClassTransfer teacher-profile fallback assertion failed outside the
+changed roster/export path, and `ClassMngrClassesPageTests` timed out in
+offscreen mode without a specific hanging case; neither has a pre-change
+baseline. F1456 CalendarEventRepository implementation and independent
+verification are complete; its local commit is pending. A fresh macOS build
+succeeded and four focused CTests passed 4/4, including 24 repository and 81
+calendar-port cases. Missing-delete no-op, malformed stored dates, negative-ID
+save, and single-save transaction start/commit cases remain source-reviewed
+only; no full suite or other-platform build ran.
 F1453
 was independently verified with 12 focused CTests. In the same existing
 incremental macOS Debug tree, affected application,

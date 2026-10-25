@@ -5,6 +5,7 @@
 #include "data/repositories/calendar_event_repository.h"
 #include "next/application/calendar_event_by_id_query_port.h"
 #include "next/application/calendar_event_projection.h"
+#include "next/platform/repository_error_code.h"
 #include "next/platform/calendar_event_time_status_adapter.h"
 
 #include <QByteArray>
@@ -126,9 +127,9 @@ public:
                     );
             }
 
-            const CalendarEventByIdLookupResult loaded =
+            const RepositoryResult<CalendarEvent> loaded =
                 repository->lookupCalendarEventById(eventId);
-            if (loaded.code != CalendarEventByIdLookupCode::Found)
+            if (!loaded)
             {
                 if (!store->isOpen())
                 {
@@ -138,7 +139,7 @@ public:
                         );
                 }
 
-                if (loaded.code == CalendarEventByIdLookupCode::Missing)
+                if (loaded.error().code == RepositoryErrorCode::NotFound)
                 {
                     return failureSummary(
                         Domain::ErrorCode::NotFound,
@@ -146,18 +147,18 @@ public:
                         );
                 }
 
-                const QByteArray errorBytes = loaded.diagnostic.toUtf8();
+                const QByteArray errorBytes = loaded.error().diagnostic.toUtf8();
                 const std::string message = errorBytes.isEmpty()
                     ? "Calendar event could not be loaded."
                     : "Calendar event could not be loaded: "
                         + errorBytes.toStdString();
                 return failureSummary(
-                    Domain::ErrorCode::Technical,
+                    repositoryDomainErrorCode(loaded.error().code),
                     message
                     );
             }
 
-            if (loaded.event.id != eventId)
+            if (loaded->id != eventId)
             {
                 return failureSummary(
                     Domain::ErrorCode::InvalidInput,
@@ -166,7 +167,7 @@ public:
             }
 
             return projectEvent(
-                loaded.event,
+                *loaded,
                 Application::CalendarEventOrder(0)
                 );
         }
@@ -225,7 +226,7 @@ public:
 
             QList<CalendarEvent> events;
             std::size_t rawRowCount = 0;
-            const Status visited = repository->visitCalendarEventsInRange(
+            const RepositoryStatus visited = repository->visitCalendarEventsInRange(
                 startDate,
                 endDate,
                 [&events, &rawRowCount](const CalendarEvent& event)
@@ -243,7 +244,7 @@ public:
                 );
             if (!visited)
             {
-                const QString repositoryError = visited.error();
+                const RepositoryError& repositoryError = visited.error();
                 if (!store->isOpen())
                 {
                     return failure(
@@ -252,13 +253,13 @@ public:
                         );
                 }
 
-                const QByteArray errorBytes = repositoryError.toUtf8();
+                const QByteArray errorBytes = repositoryError.diagnostic.toUtf8();
                 const std::string message = errorBytes.isEmpty()
                     ? "Calendar events could not be loaded."
                     : "Calendar events could not be loaded: "
                         + errorBytes.toStdString();
                 return failure(
-                    Domain::ErrorCode::Technical,
+                    repositoryDomainErrorCode(repositoryError.code),
                     message
                     );
             }

@@ -8659,12 +8659,15 @@ were exercised. Malformed-ID, raw birthday cursor message, no-op, and rollback
 failure branches remain source-reviewed without direct runtime assertions.
 
 
-## 2026-10-25 — F1454 verified and committed; F1455 verified and accepted
+## 2026-10-25 — F1454 committed; F1455 committed; F1456 verified and accepted
 
 F1454 is committed locally as `b362325f8a3d2f162a14e30c59ee171a52024e77`;
 it remains unpushed until Batch 22 closes. F1455 RosterRepository discovery
 is complete under the Heavy route; its scope is accepted, implementation and
-independent verification are complete, and its local commit is pending.
+independent verification are complete, and commit
+`5cf27a6a7589eb19c0d859684b5e44f53b197c4e` is local and not pushed. F1456
+CalendarEventRepository implementation and independent verification are
+complete; its scope is accepted and its local commit is pending.
 
 F1454 converts the two IntensiveSlotStateRepository fallible APIs and keeps
 all current repository errors Technical. Input validation stays in the typed
@@ -8681,6 +8684,18 @@ cursor errors remain Technical, exact diagnostic conversions pass, and the
 direct ports retain their differing recoverability. Upsert collision,
 ordering, and raw unfamiliar values were source-compared as unchanged. No full
 suite or other-platform build ran.
+
+F1456 preserves CalendarEventRepository's tolerant stored date/time reads,
+empty-batch success, no-op deletes, missing-event sentinels, and nonpositive
+save IDs as inserts. Invalid requests are InvalidInput, missing lookups and
+positive-ID updates are NotFound, and SQL/cursor/transaction failures are
+Technical. The schema provides no Conflict case; no new persisted-data
+Validation rule is accepted. The terminal cursor check and checked rollback
+are in scope. A fresh macOS build passed four focused CTests (4/4), including
+24 repository cases and 81 calendar-port cases. Missing-delete no-op,
+malformed stored dates, negative-ID save, and single-save transaction
+start/commit cases remain source-reviewed only; no full suite or other-platform
+build ran.
 
 F1455 converts every fallible public RosterRepository API and nested batch
 failure. Caller preconditions are InvalidInput, stored content rejected by a

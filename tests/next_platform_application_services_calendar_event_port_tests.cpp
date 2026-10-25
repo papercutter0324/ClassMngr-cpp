@@ -737,7 +737,7 @@ rejectsInvalidDirectSubPrepIntervalRequestsWithTheExpectedError()
         [&](const QDate&, const QDate&)
         {
             readerCalled = true;
-            return ::Result<QList<CalendarEventDateInterval>>(
+            return RepositoryResult<QList<CalendarEventDateInterval>>(
                 QList<CalendarEventDateInterval>{}
                 );
         }
@@ -821,7 +821,9 @@ readsTwoCalendarYearsOfSubPrepIntervalsWithoutProjectionTruncation()
                 .startDate = QDate(2028, 1, 1),
                 .endDate = QDate(2028, 1, 15)
             });
-            return ::Result<QList<CalendarEventDateInterval>>(std::move(intervals));
+            return RepositoryResult<QList<CalendarEventDateInterval>>(
+                std::move(intervals)
+                );
         }
         );
 
@@ -1024,7 +1026,7 @@ reportsSubPrepIntervalRepositoryFailureStructurally()
     QCOMPARE(
         portFailure.error().message,
         std::string("Sub Prep calendar intervals could not be loaded: ")
-            + repositoryFailure.error().toUtf8().toStdString()
+            + repositoryFailure.error().diagnostic.toUtf8().toStdString()
         );
 }
 
@@ -1172,11 +1174,11 @@ projectsByIdAsOwnedTypedMetadata()
     CalendarEventRepository* const repository =
         store->calendarEventRepository();
     QVERIFY(repository);
-    const CalendarEventByIdLookupResult lookup =
+    const RepositoryResult<CalendarEvent> lookup =
         repository->lookupCalendarEventById(eventId);
-    QCOMPARE(lookup.code, CalendarEventByIdLookupCode::Found);
-    QCOMPARE(lookup.event.id, eventId);
-    QCOMPARE(lookup.event.title, QStringLiteral("Activation event"));
+    QVERIFY(lookup);
+    QCOMPARE(lookup->id, eventId);
+    QCOMPARE(lookup->title, QStringLiteral("Activation event"));
 
     ApplicationServicesCalendarEventPort port(services);
     const auto result = port.loadEventById(calendarEventId(eventId));
@@ -2084,7 +2086,7 @@ reportsMissingCalendarEventUpdateStructurally()
         QStringLiteral(
             "Updating calendar event id %1 failed: no matching record exists."
             ).arg(eventId);
-    QCOMPARE(legacySaved.error(), expectedDiagnostic);
+    QCOMPARE(legacySaved.error().diagnostic, expectedDiagnostic);
 
     ApplicationServicesCalendarEventSavePort port(services);
     CalendarEventSaveRequest updateRequest = validSaveRequest();
@@ -4270,17 +4272,19 @@ reportsUnavailableAndInvalidRangesStructurally()
         store->calendarEventRepository();
     QVERIFY(repository);
     const int missingId = 999999;
-    const CalendarEventByIdLookupResult missingLookup =
+    const RepositoryResult<CalendarEvent> missingLookup =
         repository->lookupCalendarEventById(missingId);
-    QCOMPARE(missingLookup.code, CalendarEventByIdLookupCode::Missing);
+    QVERIFY(!missingLookup);
+    QCOMPARE(missingLookup.error().code, RepositoryErrorCode::NotFound);
     const QString missingDiagnostic = QObject::tr(
         "Loading calendar event failed: no matching record exists for event id %1."
         ).arg(missingId);
-    QCOMPARE(missingLookup.diagnostic, missingDiagnostic);
-    const ::Result<CalendarEvent> legacyMissing =
+    QCOMPARE(missingLookup.error().diagnostic, missingDiagnostic);
+    const RepositoryResult<CalendarEvent> legacyMissing =
         repository->getCalendarEvent(missingId);
     QVERIFY(!legacyMissing);
-    QCOMPARE(legacyMissing.error(), missingDiagnostic);
+    QCOMPARE(legacyMissing.error().code, RepositoryErrorCode::NotFound);
+    QCOMPARE(legacyMissing.error().diagnostic, missingDiagnostic);
 
     const auto missing = port.projectionById(missingId);
     verifyFailure(missing, ErrorCode::NotFound);
@@ -4342,10 +4346,11 @@ reportsCalendarEventRepositoryReadFailuresStructurally()
     CalendarEventRepository* const repository =
         store->calendarEventRepository();
     QVERIFY(repository);
-    const CalendarEventByIdLookupResult failedLookup =
+    const RepositoryResult<CalendarEvent> failedLookup =
         repository->lookupCalendarEventById(eventId);
-    QCOMPARE(failedLookup.code, CalendarEventByIdLookupCode::Failure);
-    QVERIFY(!failedLookup.diagnostic.isEmpty());
+    QVERIFY(!failedLookup);
+    QCOMPARE(failedLookup.error().code, RepositoryErrorCode::Technical);
+    QVERIFY(!failedLookup.error().diagnostic.isEmpty());
 
     ApplicationServicesCalendarEventPort port(services);
     verifyFailure(
@@ -4354,7 +4359,8 @@ reportsCalendarEventRepositoryReadFailuresStructurally()
         );
     const auto byIdFailure = port.projectionById(eventId);
     verifyFailure(byIdFailure, ErrorCode::Technical);
-    const QByteArray repositoryErrorBytes = failedLookup.diagnostic.toUtf8();
+    const QByteArray repositoryErrorBytes =
+        failedLookup.error().diagnostic.toUtf8();
     QVERIFY(!repositoryErrorBytes.isEmpty());
     QCOMPARE(
         byIdFailure.error().message,

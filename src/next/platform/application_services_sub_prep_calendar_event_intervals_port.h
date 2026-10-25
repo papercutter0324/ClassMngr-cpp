@@ -4,6 +4,7 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "next/application/sub_prep_calendar_event_intervals_query.h"
+#include "next/platform/repository_error_code.h"
 
 #include <QByteArray>
 #include <QDate>
@@ -24,7 +25,7 @@ class ApplicationServicesSubPrepCalendarEventIntervalsPort final
 {
 public:
     using IntervalRangeReader = std::function<
-        ::Result<QList<CalendarEventDateInterval>>(
+        RepositoryResult<QList<CalendarEventDateInterval>>(
             const QDate&,
             const QDate&
             )>;
@@ -100,7 +101,7 @@ public:
                 }
             }
 
-            const ::Result<QList<CalendarEventDateInterval>> loaded =
+            const RepositoryResult<QList<CalendarEventDateInterval>> loaded =
                 m_intervalRangeReader
                     ? m_intervalRangeReader(startDate, endDate)
                     : repository->loadCalendarEventDateIntervalsInRange(
@@ -117,9 +118,10 @@ public:
                         );
                 }
 
-                const QByteArray errorBytes = loaded.error().toUtf8();
+                const QByteArray errorBytes =
+                    loaded.error().diagnostic.toUtf8();
                 return failure(
-                    Domain::ErrorCode::Technical,
+                    repositoryDomainErrorCode(loaded.error().code),
                     errorBytes.isEmpty()
                         ? "Sub Prep calendar intervals could not be loaded."
                         : "Sub Prep calendar intervals could not be loaded: "

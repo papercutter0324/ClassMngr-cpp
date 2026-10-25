@@ -5,6 +5,7 @@
 #include "data/repositories/calendar_event_repository.h"
 #include "next/application/calendar_event_import_signature.h"
 #include "next/application/calendar_event_import_signature_query_port.h"
+#include "next/platform/repository_error_code.h"
 
 #include <QByteArray>
 #include <QDate>
@@ -109,7 +110,7 @@ public:
             }
 
             Application::CalendarEventImportSignatureKeys keys;
-            const Status visited =
+            const RepositoryStatus visited =
                 repository->visitCalendarEventImportSignatureSourcesInRange(
                     startDate,
                     endDate,
@@ -123,15 +124,15 @@ public:
                     );
             if (!visited)
             {
-                const QString repositoryError = visited.error();
+                const RepositoryError& repositoryError = visited.error();
                 if (!store->isOpen())
                 {
                     return unavailableSessionFailure();
                 }
 
                 return failure(
-                    Domain::ErrorCode::Technical,
-                    repositoryError.toUtf8().toStdString()
+                    repositoryDomainErrorCode(repositoryError.code),
+                    repositoryError.diagnostic.toUtf8().toStdString()
                     );
             }
 

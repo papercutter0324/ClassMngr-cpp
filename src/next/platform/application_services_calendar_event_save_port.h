@@ -7,6 +7,7 @@
 #include "domain/validation/calendar_event_validator.h"
 #include "next/application/calendar_event_save_port.h"
 #include "next/platform/calendar_event_time_status_adapter.h"
+#include "next/platform/repository_error_code.h"
 
 #include <QByteArray>
 #include <QDate>
@@ -155,27 +156,25 @@ public:
                     );
             }
 
-            const CalendarEventSaveOutcome saved =
+            const RepositoryResult<qint64> saved =
                 repository->saveCalendarEventWithOutcome(normalized);
-            if (saved.code != CalendarEventSaveOutcomeCode::Saved)
+            if (!saved)
             {
                 if (!store->isOpen())
                 {
                     return unavailableSessionFailure();
                 }
 
-                const QByteArray errorBytes = saved.diagnostic.toUtf8();
+                const QByteArray errorBytes = saved.error().diagnostic.toUtf8();
                 return failure(
-                    saved.code == CalendarEventSaveOutcomeCode::Missing
-                        ? Domain::ErrorCode::NotFound
-                        : Domain::ErrorCode::Technical,
+                    repositoryDomainErrorCode(saved.error().code),
                     errorBytes.isEmpty()
                         ? "Calendar event could not be saved."
                         : errorBytes.toStdString()
                     );
             }
 
-            if (saved.eventId <= 0)
+            if (*saved <= 0)
             {
                 return failure(
                     Domain::ErrorCode::Technical,
@@ -185,7 +184,7 @@ public:
 
             return Application::CalendarEventSaveResult::success(
                 *Domain::CalendarEventId::fromString(
-                    std::to_string(saved.eventId)
+                    std::to_string(*saved)
                     )
                 );
         }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 #include "domain/models/calendar_event.h"
 
 #include <functional>
@@ -8,34 +8,6 @@
 #include <QList>
 #include <QSqlDatabase>
 #include <QString>
-
-enum class CalendarEventByIdLookupCode
-{
-    Found,
-    Missing,
-    Failure
-};
-
-struct CalendarEventByIdLookupResult final
-{
-    CalendarEventByIdLookupCode code = CalendarEventByIdLookupCode::Failure;
-    CalendarEvent event;
-    QString diagnostic;
-};
-
-enum class CalendarEventSaveOutcomeCode
-{
-    Saved,
-    Missing,
-    Failure
-};
-
-struct CalendarEventSaveOutcome final
-{
-    CalendarEventSaveOutcomeCode code = CalendarEventSaveOutcomeCode::Failure;
-    qint64 eventId = 0;
-    QString diagnostic;
-};
 
 enum class CalendarEventRangeVisitDecision
 {
@@ -72,79 +44,79 @@ public:
         QSqlDatabase& database
         );
 
-    [[nodiscard]] Result<QList<CalendarEvent>> loadCalendarEventsForDate(
+    [[nodiscard]] RepositoryResult<QList<CalendarEvent>> loadCalendarEventsForDate(
         const QDate& date
         );
 
-    [[nodiscard]] Result<QList<CalendarEvent>> loadCalendarEventsInRange(
+    [[nodiscard]] RepositoryResult<QList<CalendarEvent>> loadCalendarEventsInRange(
         const QDate& startDate,
         const QDate& endDate
         );
 
-    [[nodiscard]] Status visitCalendarEventsInRange(
+    [[nodiscard]] RepositoryStatus visitCalendarEventsInRange(
         const QDate& startDate,
         const QDate& endDate,
         const CalendarEventRangeVisitor& visitor
         );
 
-    [[nodiscard]] Status visitCalendarEventImportSignatureSourcesInRange(
+    [[nodiscard]] RepositoryStatus visitCalendarEventImportSignatureSourcesInRange(
         const QDate& startDate,
         const QDate& endDate,
         const CalendarEventImportSignatureSourceRangeVisitor& visitor
         );
 
-    [[nodiscard]] Result<QList<CalendarEventDateInterval>>
+    [[nodiscard]] RepositoryResult<QList<CalendarEventDateInterval>>
     loadCalendarEventDateIntervalsInRange(
         const QDate& startDate,
         const QDate& endDate
         );
 
-    [[nodiscard]] Result<QList<CalendarEvent>> loadUpcomingCalendarEvents(
+    [[nodiscard]] RepositoryResult<QList<CalendarEvent>> loadUpcomingCalendarEvents(
         const QDate& fromDate,
         int limit
         );
 
-    [[nodiscard]] Result<QDate> findNextCalendarEventStartDate(
+    [[nodiscard]] RepositoryResult<QDate> findNextCalendarEventStartDate(
         const QDate& fromDate
         );
 
-    [[nodiscard]] Result<CalendarEvent> getCalendarEvent(
+    [[nodiscard]] RepositoryResult<CalendarEvent> getCalendarEvent(
         qint64 eventId
         );
-    [[nodiscard]] CalendarEventByIdLookupResult lookupCalendarEventById(
+    [[nodiscard]] RepositoryResult<CalendarEvent> lookupCalendarEventById(
         qint64 eventId
         );
 
-    [[nodiscard]] Result<QList<CalendarEvent>> loadCalendarEventsForRepeatSeriesFromDate(
+    [[nodiscard]] RepositoryResult<QList<CalendarEvent>> loadCalendarEventsForRepeatSeriesFromDate(
         const QString& repeatSeriesId,
         const QDate& startDate
         );
 
-    [[nodiscard]] Result<qint64> saveCalendarEvent(
+    [[nodiscard]] RepositoryResult<qint64> saveCalendarEvent(
         const CalendarEvent& event
         );
-    [[nodiscard]] CalendarEventSaveOutcome saveCalendarEventWithOutcome(
+    [[nodiscard]] RepositoryResult<qint64> saveCalendarEventWithOutcome(
         const CalendarEvent& event
         );
 
-    [[nodiscard]] Result<QList<qint64>> saveCalendarEvents(
+    [[nodiscard]] RepositoryResult<QList<qint64>> saveCalendarEvents(
         const QList<CalendarEvent>& events
         );
 
-    [[nodiscard]] Status deleteCalendarEvent(
+    [[nodiscard]] RepositoryStatus deleteCalendarEvent(
         qint64 eventId
         );
 
-    [[nodiscard]] Status deleteCalendarEventsForRepeatSeriesFromDate(
+    [[nodiscard]] RepositoryStatus deleteCalendarEventsForRepeatSeriesFromDate(
         const QString& repeatSeriesId,
         const QDate& startDate
         );
 
-    [[nodiscard]] Status deleteAllCalendarEvents();
+    [[nodiscard]] RepositoryStatus deleteAllCalendarEvents();
 
 private:
-    [[nodiscard]] CalendarEventSaveOutcome
-    saveCalendarEventOutcomeWithoutTransaction(
+    [[nodiscard]] RepositoryResult<qint64>
+    saveCalendarEventWithoutTransaction(
         const CalendarEvent& event
         );
 

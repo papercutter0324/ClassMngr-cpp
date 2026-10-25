@@ -164,6 +164,9 @@ private slots:
     void deleteAllCalendarEventsRemovesSeededRowsAndPreservesSequence();
     void singleEventCreateAndUpdateDetachOnlySelectedOccurrence();
     void writeFailuresAreReturnedAndBatchRollsBack();
+    void repositoryFailuresHaveTypedCategories();
+    void failedCursorFetchIsReportedAsTechnical();
+    void failedCheckedRollbackPreservesPrimaryDiagnostic();
 };
 
 void CalendarEventRepositoryTests::rangeQueryIncludesEventsThatOverlapRange()
@@ -447,7 +450,7 @@ rangeVisitorPreservesOrderAndStopsAtRequestedPrefix()
             );
 
         QStringList visitedTitles;
-        const Status visited = repository.visitCalendarEventsInRange(
+        const RepositoryStatus visited = repository.visitCalendarEventsInRange(
             QDate(2026, 7, 1),
             QDate(2026, 7, 31),
             [&visitedTitles](const CalendarEvent& event)
@@ -469,7 +472,7 @@ rangeVisitorPreservesOrderAndStopsAtRequestedPrefix()
 
         QStringList stoppedPrefix;
         int callbackCount = 0;
-        const Status stopped = repository.visitCalendarEventsInRange(
+        const RepositoryStatus stopped = repository.visitCalendarEventsInRange(
             QDate(2026, 7, 1),
             QDate(2026, 7, 31),
             [&stoppedPrefix, &callbackCount](const CalendarEvent& event)
@@ -638,7 +641,7 @@ signatureSourceVisitorProjectsSelectedFieldsAndInclusiveOrder()
 
         CalendarEventRepository repository(database);
         QList<CalendarEventImportSignatureSourceRecord> records;
-        const Status visited =
+        const RepositoryStatus visited =
             repository.visitCalendarEventImportSignatureSourcesInRange(
                 QDate(2026, 5, 1),
                 QDate(2026, 5, 31),
@@ -751,7 +754,7 @@ signatureSourceVisitorRejectsInvalidRangesAndReadFailures()
                 ++callbackCount;
                 return CalendarEventRangeVisitDecision::Continue;
             };
-        const Status invalidRange =
+        const RepositoryStatus invalidRange =
             repository.visitCalendarEventImportSignatureSourcesInRange(
                 QDate(2026, 5, 2),
                 QDate(2026, 5, 1),
@@ -762,7 +765,7 @@ signatureSourceVisitorRejectsInvalidRangesAndReadFailures()
 
         QSqlQuery dropTable(database);
         QVERIFY(dropTable.exec(QStringLiteral("DROP TABLE calendar_events")));
-        const Status readFailure =
+        const RepositoryStatus readFailure =
             repository.visitCalendarEventImportSignatureSourcesInRange(
                 QDate(2026, 5, 1),
                 QDate(2026, 5, 31),
@@ -876,12 +879,12 @@ void CalendarEventRepositoryTests::nextEventQueryFindsEarliestFutureStartDate()
                 )
             );
 
-        const Result<QDate> nextEventDate =
+        const RepositoryResult<QDate> nextEventDate =
             repository.findNextCalendarEventStartDate(QDate(2026, 7, 6));
         QVERIFY(nextEventDate);
         QCOMPARE(*nextEventDate, QDate(2026, 8, 12));
 
-        const Result<QDate> noNextEventDate =
+        const RepositoryResult<QDate> noNextEventDate =
             repository.findNextCalendarEventStartDate(QDate(2026, 9, 1));
         QVERIFY(noNextEventDate);
         QVERIFY(!noNextEventDate->isValid());
@@ -947,7 +950,7 @@ void CalendarEventRepositoryTests::savesAndLoadsRepeatSeriesId()
         createCalendarEventsTable(database);
 
         CalendarEventRepository repository(database);
-        const Result<qint64> savedEvent =
+        const RepositoryResult<qint64> savedEvent =
             repository.saveCalendarEvent(
                 makeEvent(
                     QStringLiteral("Series Event"),
@@ -962,7 +965,7 @@ void CalendarEventRepositoryTests::savesAndLoadsRepeatSeriesId()
         QVERIFY(savedEvent);
         const int eventId = *savedEvent;
 
-        const Result<CalendarEvent> loaded =
+        const RepositoryResult<CalendarEvent> loaded =
             repository.getCalendarEvent(eventId);
         QVERIFY(loaded);
 
@@ -1064,7 +1067,7 @@ storedTimesUseExactPadded24HourFormatAndPreserveEventRows()
 
         CalendarEventRepository repository(database);
 
-        const Result<CalendarEvent> canonical =
+        const RepositoryResult<CalendarEvent> canonical =
             repository.getCalendarEvent(canonicalId);
         QVERIFY(canonical);
         QCOMPARE(canonical->id, canonicalId);
@@ -1077,7 +1080,7 @@ storedTimesUseExactPadded24HourFormatAndPreserveEventRows()
         QCOMPARE(canonical->endDate, QDate(2026, 11, 4));
         QCOMPARE(canonical->endTime, QTime(17, 42));
 
-        const Result<CalendarEvent> padded =
+        const RepositoryResult<CalendarEvent> padded =
             repository.getCalendarEvent(paddedId);
         QVERIFY(padded);
         QCOMPARE(padded->id, paddedId);
@@ -1088,7 +1091,7 @@ storedTimesUseExactPadded24HourFormatAndPreserveEventRows()
         QCOMPARE(padded->endDate, QDate(2026, 11, 4));
         QCOMPARE(padded->endTime, QTime(11, 5));
 
-        const Result<CalendarEvent> malformed =
+        const RepositoryResult<CalendarEvent> malformed =
             repository.getCalendarEvent(malformedId);
         QVERIFY(malformed);
         QCOMPARE(malformed->id, malformedId);
@@ -1099,7 +1102,7 @@ storedTimesUseExactPadded24HourFormatAndPreserveEventRows()
         QCOMPARE(malformed->endDate, QDate(2026, 11, 4));
         QVERIFY(!malformed->endTime.isValid());
 
-        const Result<CalendarEvent> singleDigitHour =
+        const RepositoryResult<CalendarEvent> singleDigitHour =
             repository.getCalendarEvent(singleDigitHourId);
         QVERIFY(singleDigitHour);
         const QTime legacySingleDigitHour = QTime::fromString(
@@ -1161,7 +1164,7 @@ repeatSeriesBatchCreationPersistsOrderedRowsAndPreservesUnrelatedEvent()
             }
             return row;
         };
-        const Result<qint64> unrelatedCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> unrelatedCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Unrelated event"),
                 QDate(2026, 7, 2),
@@ -1198,7 +1201,7 @@ repeatSeriesBatchCreationPersistsOrderedRowsAndPreservesUnrelatedEvent()
             occurrenceForDate(QDate(2026, 7, 15))
         };
 
-        const Result<QList<qint64>> createdIds =
+        const RepositoryResult<QList<qint64>> createdIds =
             repository.saveCalendarEvents(occurrences);
         QVERIFY(createdIds);
         QCOMPARE(*createdIds, QList<qint64>({2, 3, 4}));
@@ -1365,7 +1368,7 @@ repeatSeriesSuffixSelectionAndPersistedUpdatesPreserveEarlierAndUnrelatedRows()
         createCalendarEventsTable(database);
 
         CalendarEventRepository repository(database);
-        const Result<qint64> earlierCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> earlierCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Earlier occurrence"),
                 QDate(2026, 7, 1),
@@ -1379,7 +1382,7 @@ repeatSeriesSuffixSelectionAndPersistedUpdatesPreserveEarlierAndUnrelatedRows()
         QVERIFY(earlierCreated);
         const int earlierId = earlierCreated.value();
 
-        const Result<qint64> selectedCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> selectedCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Selected occurrence"),
                 QDate(2026, 7, 8),
@@ -1393,7 +1396,7 @@ repeatSeriesSuffixSelectionAndPersistedUpdatesPreserveEarlierAndUnrelatedRows()
         QVERIFY(selectedCreated);
         const int selectedId = selectedCreated.value();
 
-        const Result<qint64> followingCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> followingCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Following occurrence"),
                 QDate(2026, 7, 15),
@@ -1407,7 +1410,7 @@ repeatSeriesSuffixSelectionAndPersistedUpdatesPreserveEarlierAndUnrelatedRows()
         QVERIFY(followingCreated);
         const int followingId = followingCreated.value();
 
-        const Result<qint64> otherSeriesCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> otherSeriesCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Other series on selected date"),
                 QDate(2026, 7, 8),
@@ -1421,7 +1424,7 @@ repeatSeriesSuffixSelectionAndPersistedUpdatesPreserveEarlierAndUnrelatedRows()
         QVERIFY(otherSeriesCreated);
         const int otherSeriesId = otherSeriesCreated.value();
 
-        const Result<qint64> unrelatedCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> unrelatedCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Unrelated event on selected date"),
                 QDate(2026, 7, 8),
@@ -1537,7 +1540,7 @@ repeatSeriesSuffixSelectionAndPersistedUpdatesPreserveEarlierAndUnrelatedRows()
         QCOMPARE(sequenceBefore, 5);
         QVERIFY(!sequenceQuery.next());
 
-        const Result<QList<CalendarEvent>> selectedAndFollowing =
+        const RepositoryResult<QList<CalendarEvent>> selectedAndFollowing =
             repository.loadCalendarEventsForRepeatSeriesFromDate(
                 QStringLiteral(" series-1 "),
                 QDate(2026, 7, 8)
@@ -1564,7 +1567,7 @@ repeatSeriesSuffixSelectionAndPersistedUpdatesPreserveEarlierAndUnrelatedRows()
             event.endDate = event.endDate.addDays(1);
             event.endTime = event.endTime.addSecs(30 * 60);
         }
-        const Result<QList<qint64>> saved =
+        const RepositoryResult<QList<qint64>> saved =
             repository.saveCalendarEvents(updatedEvents);
         QVERIFY(saved);
         QCOMPARE(saved.value(), selectedIdsBeforeUpdate);
@@ -1608,7 +1611,7 @@ repeatSeriesSuffixSelectionAndPersistedUpdatesPreserveEarlierAndUnrelatedRows()
                 )
             );
 
-        const Result<QList<CalendarEvent>> updatedSuffix =
+        const RepositoryResult<QList<CalendarEvent>> updatedSuffix =
             repository.loadCalendarEventsForRepeatSeriesFromDate(
                 QStringLiteral("series-1"),
                 QDate(2026, 7, 8)
@@ -1664,7 +1667,7 @@ repeatSeriesDeleteRemovesSelectedAndFollowingOnly()
         createCalendarEventsTable(database);
 
         CalendarEventRepository repository(database);
-        const Result<qint64> earlierCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> earlierCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Series 1"),
                 QDate(2026, 7, 1),
@@ -1678,7 +1681,7 @@ repeatSeriesDeleteRemovesSelectedAndFollowingOnly()
         QVERIFY(earlierCreated);
         const int earlierId = earlierCreated.value();
 
-        const Result<qint64> selectedCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> selectedCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Series 2"),
                 QDate(2026, 7, 8),
@@ -1692,7 +1695,7 @@ repeatSeriesDeleteRemovesSelectedAndFollowingOnly()
         QVERIFY(selectedCreated);
         const int selectedId = selectedCreated.value();
 
-        const Result<qint64> followingCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> followingCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Series 3"),
                 QDate(2026, 7, 15),
@@ -1706,7 +1709,7 @@ repeatSeriesDeleteRemovesSelectedAndFollowingOnly()
         QVERIFY(followingCreated);
         const int followingId = followingCreated.value();
 
-        const Result<qint64> otherSeriesCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> otherSeriesCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Other Series"),
                 QDate(2026, 7, 8),
@@ -1720,7 +1723,7 @@ repeatSeriesDeleteRemovesSelectedAndFollowingOnly()
         QVERIFY(otherSeriesCreated);
         const int otherSeriesId = otherSeriesCreated.value();
 
-        const Result<qint64> standaloneCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> standaloneCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Standalone"),
                 QDate(2026, 7, 8),
@@ -1825,7 +1828,7 @@ repeatSeriesDeleteRemovesSelectedAndFollowingOnly()
         QCOMPARE(sequenceQuery.value(0).toInt(), 5);
         QVERIFY(!sequenceQuery.next());
 
-        const Status deleted =
+        const RepositoryStatus deleted =
             repository.deleteCalendarEventsForRepeatSeriesFromDate(
             QStringLiteral("series-1"),
             QDate(2026, 7, 8)
@@ -1843,7 +1846,7 @@ repeatSeriesDeleteRemovesSelectedAndFollowingOnly()
         QCOMPARE(afterSnapshots.at(3), beforeSnapshots.at(3));
         QCOMPARE(afterSnapshots.at(4), beforeSnapshots.at(4));
 
-        const Result<QList<CalendarEvent>> remainingEvents =
+        const RepositoryResult<QList<CalendarEvent>> remainingEvents =
             repository.loadCalendarEventsInRange(
                 QDate(2026, 7, 1),
                 QDate(2026, 7, 31)
@@ -1893,7 +1896,7 @@ singleEventDeleteRemovesOnlySelectedEventAndPreservesSequence()
         createCalendarEventsTable(database);
 
         CalendarEventRepository repository(database);
-        const Result<qint64> targetCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> targetCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Target Event"),
                 QDate(2026, 7, 8),
@@ -1907,7 +1910,7 @@ singleEventDeleteRemovesOnlySelectedEventAndPreservesSequence()
         QVERIFY(targetCreated);
         const int targetId = targetCreated.value();
 
-        const Result<qint64> siblingCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> siblingCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Sibling Event"),
                 QDate(2026, 7, 15),
@@ -1921,7 +1924,7 @@ singleEventDeleteRemovesOnlySelectedEventAndPreservesSequence()
         QVERIFY(siblingCreated);
         const int siblingId = siblingCreated.value();
 
-        const Result<qint64> unrelatedCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> unrelatedCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Unrelated Event"),
                 QDate(2026, 7, 8),
@@ -1950,7 +1953,7 @@ singleEventDeleteRemovesOnlySelectedEventAndPreservesSequence()
         QVERIFY(sequenceBeforeDelete >= unrelatedId);
         QVERIFY(!sequenceQuery.next());
 
-        const Status deleted = repository.deleteCalendarEvent(targetId);
+        const RepositoryStatus deleted = repository.deleteCalendarEvent(targetId);
         QVERIFY(deleted);
         QVERIFY(!repository.getCalendarEvent(targetId).has_value());
         QVERIFY(calendarEventRowSnapshot(database, targetId).isEmpty());
@@ -1998,7 +2001,7 @@ deleteAllCalendarEventsRemovesSeededRowsAndPreservesSequence()
         createCalendarEventsTable(database);
 
         CalendarEventRepository repository(database);
-        const Result<qint64> firstCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> firstCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("First Event"),
                 QDate(2026, 7, 8),
@@ -2012,7 +2015,7 @@ deleteAllCalendarEventsRemovesSeededRowsAndPreservesSequence()
         QVERIFY(firstCreated);
         const int firstId = firstCreated.value();
 
-        const Result<qint64> secondCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> secondCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Second Event"),
                 QDate(2026, 7, 15),
@@ -2026,7 +2029,7 @@ deleteAllCalendarEventsRemovesSeededRowsAndPreservesSequence()
         QVERIFY(secondCreated);
         const int secondId = secondCreated.value();
 
-        const Result<qint64> thirdCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> thirdCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Third Event"),
                 QDate(2026, 7, 22),
@@ -2069,7 +2072,7 @@ deleteAllCalendarEventsRemovesSeededRowsAndPreservesSequence()
         QVERIFY(sequenceBeforeDelete >= thirdId);
         QVERIFY(!sequenceQuery.next());
 
-        const Status deleted = repository.deleteAllCalendarEvents();
+        const RepositoryStatus deleted = repository.deleteAllCalendarEvents();
         QVERIFY(deleted);
 
         QVERIFY(!repository.getCalendarEvent(firstId).has_value());
@@ -2124,7 +2127,7 @@ singleEventCreateAndUpdateDetachOnlySelectedOccurrence()
         createCalendarEventsTable(database);
 
         CalendarEventRepository repository(database);
-        const Result<qint64> selectedCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> selectedCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Original occurrence"),
                 QDate(2026, 9, 10),
@@ -2139,7 +2142,7 @@ singleEventCreateAndUpdateDetachOnlySelectedOccurrence()
         const int selectedId = selectedCreated.value();
         QVERIFY(selectedId > 0);
 
-        const Result<qint64> siblingCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> siblingCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Sibling occurrence"),
                 QDate(2026, 9, 17),
@@ -2153,7 +2156,7 @@ singleEventCreateAndUpdateDetachOnlySelectedOccurrence()
         QVERIFY(siblingCreated);
         const int siblingId = siblingCreated.value();
 
-        const Result<qint64> unrelatedCreated = repository.saveCalendarEvent(
+        const RepositoryResult<qint64> unrelatedCreated = repository.saveCalendarEvent(
             makeEvent(
                 QStringLiteral("Unrelated event"),
                 QDate(2026, 9, 18),
@@ -2182,7 +2185,7 @@ singleEventCreateAndUpdateDetachOnlySelectedOccurrence()
             QTime(14, 0),
             QStringLiteral("  Vacation  ")
             );
-        const Result<qint64> created = repository.saveCalendarEvent(createdEvent);
+        const RepositoryResult<qint64> created = repository.saveCalendarEvent(createdEvent);
         QVERIFY(created);
         const int createdId = created.value();
         QVERIFY(createdId > 0);
@@ -2214,7 +2217,7 @@ singleEventCreateAndUpdateDetachOnlySelectedOccurrence()
             QStringLiteral("  Holiday  ")
             );
         detachedUpdate.id = selectedId;
-        const Result<qint64> updated =
+        const RepositoryResult<qint64> updated =
             repository.saveCalendarEvent(detachedUpdate);
         QVERIFY(updated);
         QCOMPARE(updated.value(), selectedId);
@@ -2246,7 +2249,7 @@ singleEventCreateAndUpdateDetachOnlySelectedOccurrence()
         QVERIFY(sequenceAfterCreate >= createdId);
         QVERIFY(!sequenceQuery.next());
 
-        const Result<qint64> updatedAgain =
+        const RepositoryResult<qint64> updatedAgain =
             repository.saveCalendarEvent(detachedUpdate);
         QVERIFY(updatedAgain);
         QCOMPARE(updatedAgain.value(), selectedId);
@@ -2286,7 +2289,7 @@ void CalendarEventRepositoryTests::writeFailuresAreReturnedAndBatchRollsBack()
             )));
 
         CalendarEventRepository repository(database);
-        const Result<QList<qint64>> batchSaved = repository.saveCalendarEvents({
+        const RepositoryResult<QList<qint64>> batchSaved = repository.saveCalendarEvents({
             makeEvent(
                 QStringLiteral("Must Roll Back"),
                 QDate(2026, 8, 1),
@@ -2303,10 +2306,11 @@ void CalendarEventRepositoryTests::writeFailuresAreReturnedAndBatchRollsBack()
                 )
         });
         QVERIFY(!batchSaved);
-        QVERIFY(batchSaved.error().contains(
+        QCOMPARE(batchSaved.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(batchSaved.error().diagnostic.contains(
             QStringLiteral("Creating calendar event")
             ));
-        QVERIFY(batchSaved.error().contains(QStringLiteral("Reject")));
+        QVERIFY(batchSaved.error().diagnostic.contains(QStringLiteral("Reject")));
         QVERIFY(repository.loadCalendarEventsInRange(
             QDate(2026, 8, 1),
             QDate(2026, 8, 31)
@@ -2322,7 +2326,7 @@ void CalendarEventRepositoryTests::writeFailuresAreReturnedAndBatchRollsBack()
             QStringLiteral("Other"),
             QStringLiteral("failure-series")
             );
-        const Result<qint64> created = repository.saveCalendarEvent(existing);
+        const RepositoryResult<qint64> created = repository.saveCalendarEvent(existing);
         QVERIFY(created);
         existing.id = *created;
         existing.title = QStringLiteral("Changed");
@@ -2335,12 +2339,13 @@ void CalendarEventRepositoryTests::writeFailuresAreReturnedAndBatchRollsBack()
             "SELECT RAISE(ABORT, 'injected calendar update failure'); "
             "END"
             ).arg(existing.id)));
-        const Result<qint64> updated = repository.saveCalendarEvent(existing);
+        const RepositoryResult<qint64> updated = repository.saveCalendarEvent(existing);
         QVERIFY(!updated);
-        QVERIFY(updated.error().contains(
+        QCOMPARE(updated.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(updated.error().diagnostic.contains(
             QStringLiteral("Updating calendar event")
             ));
-        QVERIFY(updated.error().contains(
+        QVERIFY(updated.error().diagnostic.contains(
             QStringLiteral("calendar event id %1").arg(existing.id)
             ));
         QCOMPARE(repository.getCalendarEvent(existing.id)->title,
@@ -2355,28 +2360,263 @@ void CalendarEventRepositoryTests::writeFailuresAreReturnedAndBatchRollsBack()
             "END"
             )));
 
-        const Status eventDeleted = repository.deleteCalendarEvent(existing.id);
+        const RepositoryStatus eventDeleted = repository.deleteCalendarEvent(existing.id);
         QVERIFY(!eventDeleted);
-        QVERIFY(eventDeleted.error().contains(
+        QCOMPARE(eventDeleted.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(eventDeleted.error().diagnostic.contains(
             QStringLiteral("Deleting calendar event")
             ));
 
-        const Status seriesDeleted =
+        const RepositoryStatus seriesDeleted =
             repository.deleteCalendarEventsForRepeatSeriesFromDate(
                 QStringLiteral("failure-series"),
                 QDate(2026, 8, 3)
                 );
         QVERIFY(!seriesDeleted);
-        QVERIFY(seriesDeleted.error().contains(
+        QCOMPARE(seriesDeleted.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(seriesDeleted.error().diagnostic.contains(
             QStringLiteral("Deleting calendar repeat series events")
             ));
 
-        const Status allDeleted = repository.deleteAllCalendarEvents();
+        const RepositoryStatus allDeleted = repository.deleteAllCalendarEvents();
         QVERIFY(!allDeleted);
-        QVERIFY(allDeleted.error().contains(
+        QCOMPARE(allDeleted.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(allDeleted.error().diagnostic.contains(
             QStringLiteral("Deleting all calendar events")
             ));
         QCOMPARE(repository.getCalendarEvent(existing.id)->id, existing.id);
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::repositoryFailuresHaveTypedCategories()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_error_category_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        CalendarEventRepository repository(database);
+        QCOMPARE(
+            repository.loadCalendarEventsForDate(QDate()).error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+        QCOMPARE(
+            repository.visitCalendarEventsInRange(
+                QDate(2026, 8, 2),
+                QDate(2026, 8, 1),
+                [](const CalendarEvent&)
+                {
+                    return CalendarEventRangeVisitDecision::Continue;
+                }
+                ).error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+        QCOMPARE(
+            repository.visitCalendarEventsInRange(
+                QDate(2026, 8, 1),
+                QDate(2026, 8, 1),
+                CalendarEventRangeVisitor{}
+                ).error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+        QCOMPARE(
+            repository.visitCalendarEventImportSignatureSourcesInRange(
+                QDate(2026, 8, 1),
+                QDate(2026, 8, 1),
+                CalendarEventImportSignatureSourceRangeVisitor{}
+                ).error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+        QCOMPARE(
+            repository.loadCalendarEventDateIntervalsInRange(
+                QDate(),
+                QDate(2026, 8, 1)
+                ).error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+        QCOMPARE(
+            repository.loadUpcomingCalendarEvents(QDate(2026, 8, 1), 0)
+                .error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+        QCOMPARE(
+            repository.loadUpcomingCalendarEvents(QDate(), 1).error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+        QCOMPARE(
+            repository.findNextCalendarEventStartDate(QDate()).error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+        QCOMPARE(
+            repository.lookupCalendarEventById(0).error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+        QCOMPARE(
+            repository.deleteCalendarEvent(0).error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+        QCOMPARE(
+            repository.loadCalendarEventsForRepeatSeriesFromDate(
+                QStringLiteral("  "),
+                QDate(2026, 8, 1)
+                ).error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+        QCOMPARE(
+            repository.deleteCalendarEventsForRepeatSeriesFromDate(
+                QStringLiteral("series"),
+                QDate()
+                ).error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+        QCOMPARE(
+            repository.deleteCalendarEventsForRepeatSeriesFromDate(
+                QStringLiteral("  "),
+                QDate(2026, 8, 1)
+                ).error().code,
+            RepositoryErrorCode::InvalidInput
+            );
+
+        const RepositoryResult<CalendarEvent> missing =
+            repository.lookupCalendarEventById(1000);
+        QVERIFY(!missing);
+        QCOMPARE(missing.error().code, RepositoryErrorCode::NotFound);
+        QCOMPARE(
+            missing.error().diagnostic,
+            QObject::tr(
+                "Loading calendar event failed: no matching record exists for event id 1000."
+                )
+            );
+        const RepositoryResult<CalendarEvent> missingGet =
+            repository.getCalendarEvent(1000);
+        QVERIFY(!missingGet);
+        QCOMPARE(missingGet.error().code, RepositoryErrorCode::NotFound);
+
+        CalendarEvent missingUpdate = makeEvent(
+            QStringLiteral("Missing update"),
+            QDate(2026, 8, 1),
+            QTime(9, 0),
+            QDate(2026, 8, 1),
+            QTime(10, 0)
+            );
+        missingUpdate.id = 1000;
+        const RepositoryResult<qint64> update =
+            repository.saveCalendarEvent(missingUpdate);
+        QVERIFY(!update);
+        QCOMPARE(update.error().code, RepositoryErrorCode::NotFound);
+        QCOMPARE(
+            update.error().diagnostic,
+            QObject::tr(
+                "Updating calendar event id 1000 failed: no matching record exists."
+                )
+            );
+        const RepositoryResult<qint64> updateWithOutcome =
+            repository.saveCalendarEventWithOutcome(missingUpdate);
+        QVERIFY(!updateWithOutcome);
+        QCOMPARE(updateWithOutcome.error().code, RepositoryErrorCode::NotFound);
+
+        QSqlQuery dropQuery(database);
+        QVERIFY(dropQuery.exec(QStringLiteral("DROP TABLE calendar_events")));
+        const RepositoryResult<QList<CalendarEvent>> failedRead =
+            repository.loadCalendarEventsInRange(
+                QDate(2026, 8, 1),
+                QDate(2026, 8, 2)
+                );
+        QVERIFY(!failedRead);
+        QCOMPARE(failedRead.error().code, RepositoryErrorCode::Technical);
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::failedCursorFetchIsReportedAsTechnical()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_cursor_failure_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QSqlQuery setup(database);
+        QVERIFY(setup.exec(QStringLiteral(
+            "CREATE TABLE event_source (id INTEGER PRIMARY KEY)"
+            )));
+        QVERIFY(setup.exec(QStringLiteral("INSERT INTO event_source VALUES (1)")));
+        QVERIFY(setup.exec(QStringLiteral(
+            "CREATE VIEW calendar_events AS "
+            "SELECT id, 'Cursor failure' AS title, 'Other' AS event_type, "
+            "'Timed' AS time_status, NULL AS repeat_series_id, 0 AS all_day, "
+            "abs(-9223372036854775808) AS start_date, '' AS start_time, "
+            "'2026-08-01' AS end_date, '' AS end_time "
+            "FROM event_source"
+            )));
+
+        CalendarEventRepository repository(database);
+        const RepositoryResult<QDate> failed =
+            repository.findNextCalendarEventStartDate(QDate(2026, 8, 1));
+        QVERIFY(!failed);
+        QCOMPARE(failed.error().code, RepositoryErrorCode::Technical);
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::failedCheckedRollbackPreservesPrimaryDiagnostic()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_rollback_failure_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TRIGGER rollback_calendar_insert "
+            "BEFORE INSERT ON calendar_events "
+            "WHEN NEW.title = 'Rollback' "
+            "BEGIN "
+            "SELECT RAISE(ROLLBACK, 'injected calendar rollback failure'); "
+            "END"
+            )));
+
+        CalendarEventRepository repository(database);
+        const RepositoryResult<QList<qint64>> saved =
+            repository.saveCalendarEvents({
+                makeEvent(
+                    QStringLiteral("Rollback"),
+                    QDate(2026, 8, 1),
+                    QTime(9, 0),
+                    QDate(2026, 8, 1),
+                    QTime(10, 0)
+                    )
+            });
+        QVERIFY(!saved);
+        QCOMPARE(saved.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(saved.error().diagnostic.contains(
+            QStringLiteral("injected calendar rollback failure")
+            ));
+        QVERIFY(saved.error().diagnostic.contains(
+            QStringLiteral("rollback failed")
+            ));
     }
 
     QSqlDatabase::removeDatabase(connectionName);

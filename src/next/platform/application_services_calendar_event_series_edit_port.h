@@ -9,6 +9,7 @@
 #include "next/application/calendar_event_series_edit_plan.h"
 #include "next/domain/gregorian_date.h"
 #include "next/platform/calendar_event_time_status_adapter.h"
+#include "next/platform/repository_error_code.h"
 
 #include <QByteArray>
 #include <QDate>
@@ -97,7 +98,7 @@ public:
                     );
             }
 
-            const ::Result<QList<CalendarEvent>> seriesEvents =
+            const RepositoryResult<QList<CalendarEvent>> seriesEvents =
                 repository->loadCalendarEventsForRepeatSeriesFromDate(
                     repeatSeriesId,
                     startDate
@@ -109,9 +110,10 @@ public:
                     return unavailableStoreFailure();
                 }
 
-                const QByteArray errorBytes = seriesEvents.error().toUtf8();
+                const QByteArray errorBytes =
+                    seriesEvents.error().diagnostic.toUtf8();
                 return failure(
-                    Domain::ErrorCode::Technical,
+                    repositoryDomainErrorCode(seriesEvents.error().code),
                     errorBytes.isEmpty()
                         ? "Calendar repeat series could not be loaded."
                         : errorBytes.toStdString()
@@ -242,7 +244,7 @@ public:
                     );
             }
 
-            const ::Result<QList<qint64>> saved =
+            const RepositoryResult<QList<qint64>> saved =
                 repository->saveCalendarEvents(updatedEvents);
             if (!saved)
             {
@@ -251,9 +253,9 @@ public:
                     return unavailableStoreFailure();
                 }
 
-                const QByteArray errorBytes = saved.error().toUtf8();
+                const QByteArray errorBytes = saved.error().diagnostic.toUtf8();
                 return failure(
-                    Domain::ErrorCode::Technical,
+                    repositoryDomainErrorCode(saved.error().code),
                     errorBytes.isEmpty()
                         ? "Calendar repeat series could not be saved."
                         : errorBytes.toStdString()

@@ -3998,8 +3998,9 @@ No full suite or other-platform build was run.
 Discovery is complete under `PHASE3-F1455-ROSTER-20261025`; Explorer
 `PHASE3-F1455-ROSTER-SCOPE-DISCOVERY-20261025-EXP-01` and Investigator
 `PHASE3-F1455-ROSTER-ERROR-RESEARCH-20261025-INV-01` support the accepted
-scope. Independent verification is complete and the slice is accepted; the
-local commit is pending, and F1456 is next.
+scope. Independent verification is complete and the slice is accepted.
+F1455 is committed locally as
+`5cf27a6a7589eb19c0d859684b5e44f53b197c4e` and is not pushed; F1456 is next.
 
 Convert every fallible public `RosterRepository` API and nested per-item count
 failure to `RepositoryResult`/`RepositoryStatus`. Invalid caller requests map
@@ -4024,3 +4025,47 @@ there is no pre-change baseline. `ClassMngrClassesPageTests` timed out after
 45 seconds without output and uses test stubs for the relevant paths; no cause
 was established. Neither result establishes an F1455 regression or a
 pre-existing failure. No full-suite or other-platform verification is claimed.
+
+## F1456 — CalendarEventRepository structured errors — independently verified — 2026-10-25
+
+Discovery is complete under `PHASE3-F1456-CALENDAR-EVENT-SCOPE-20261025`;
+Explorer `PHASE3-F1456-CALENDAR-EVENT-SCOPE-20261025-EXP-01`, test map
+`PHASE3-F1456-CALENDAR-EVENT-TEST-MAP-20261025-EXP-02`, and Investigator
+`PHASE3-F1456-CALENDAR-EVENT-ERROR-RESEARCH-20261025-INV-01` support the
+accepted boundary. F1456 is independently verified and accepted; its local
+commit is pending, and F1457 is next. F1455 is committed locally as
+`5cf27a6a7589eb19c0d859684b5e44f53b197c4e` and is not pushed.
+
+Convert all fallible public `CalendarEventRepository` APIs and custom lookup
+and save outcomes to typed repository results. Adapt direct `DataService` and
+`CalendarService` legacy boundaries, Next ports, and
+`CalendarEventProjectionQuery`. Invalid dates/ranges, empty callbacks,
+invalid lookup or delete IDs, and blank repeat IDs map to `InvalidInput`;
+missing by-ID lookup and positive-ID update with no row map to `NotFound`.
+SQL, cursor, transaction-start, commit, and rollback failures map to
+`Technical`. Do not introduce `Conflict`: the schema has no concurrency or
+natural-key uniqueness semantics. The repository currently does not reject
+persisted event fields, so do not add `Validation` or stricter reads.
+
+Preserve nonpositive save IDs as insert requests, successful missing-row
+deletes, empty batch save and successful empty reads, the invalid-`QDate`
+no-event sentinel, zero-match repeat suffixes, source ordering, overlap,
+normalization, all-day behavior, exact legacy diagnostics, and caller-specific
+recoverability. Fix `findNextCalendarEventStartDate`'s missing `lastError`
+check and check rollback failures for transactional saves while retaining the
+primary diagnostic. Keep cursor and transaction failures `Technical`.
+
+The fresh macOS build succeeded for `ClassMngrData`, Features, AppServices,
+Next, repository, port, cache, lifecycle, and application targets. Four
+required focused CTests passed **4/4**. The repository test binary passed
+24/24, covering typed categories, failed cursor fetch as `Technical`, and
+checked rollback retaining the primary diagnostic; the port test binary
+passed 81/81. An initial stale test assertion was fixed. `git diff --check`
+passed.
+
+Source-review-only gaps: missing-delete no-op, malformed stored dates, and
+explicit negative-ID save; single-event transaction-start and commit failures
+were not directly exercised. Exact legacy diagnostic pass-through was
+source-reviewed; lifecycle tests check diagnostic content but not exact
+equality. These are verification limits, not reported production failures.
+No full suite or other-platform build was run.

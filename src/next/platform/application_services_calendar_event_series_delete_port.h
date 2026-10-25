@@ -4,6 +4,7 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "next/application/calendar_event_series_delete_port.h"
+#include "next/platform/repository_error_code.h"
 
 #include <QByteArray>
 #include <QDate>
@@ -86,7 +87,7 @@ public:
                     );
             }
 
-            const ::Status deleted =
+            const RepositoryStatus deleted =
                 repository->deleteCalendarEventsForRepeatSeriesFromDate(
                     repeatSeriesId,
                     startDate
@@ -98,9 +99,9 @@ public:
                     return unavailableStoreFailure();
                 }
 
-                const QByteArray errorBytes = deleted.error().toUtf8();
+                const QByteArray errorBytes = deleted.error().diagnostic.toUtf8();
                 return failure(
-                    Domain::ErrorCode::Technical,
+                    repositoryDomainErrorCode(deleted.error().code),
                     errorBytes.isEmpty()
                         ? "Calendar repeat series could not be deleted."
                         : errorBytes.toStdString()

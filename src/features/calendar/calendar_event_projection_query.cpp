@@ -294,7 +294,7 @@ ProjectionResult projectionFromRange(
     ProjectionInput input;
 
     std::optional<ClassMngr::Next::Domain::OperationError> conversionError;
-    const Status visited = repository.visitCalendarEventsInRange(
+    const RepositoryStatus visited = repository.visitCalendarEventsInRange(
         startDate,
         endDate,
         [&input, &conversionError, retainedEventLimit](
@@ -360,7 +360,7 @@ ProjectionResult projectionFromRange(
 
     if (!visited)
     {
-        return technicalFailure<Projection>(visited.error());
+        return repositoryFailure<Projection>(visited.error());
     }
 
     if (conversionError)
@@ -517,11 +517,11 @@ CalendarEventProjectionQuery::findNextEventDate(
         std::move(databasePath),
         [afterDate](CalendarEventRepository& repository)
         {
-            const ::Result<QDate> nextEventDate =
+            const RepositoryResult<QDate> nextEventDate =
                 repository.findNextCalendarEventStartDate(afterDate);
             if (!nextEventDate)
             {
-                return technicalFailure<QDate>(nextEventDate.error());
+                return repositoryFailure<QDate>(nextEventDate.error());
             }
 
             return ClassMngr::Next::Domain::Result<QDate>::success(

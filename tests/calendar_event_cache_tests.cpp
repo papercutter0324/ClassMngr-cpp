@@ -40,7 +40,7 @@ void saveEvent(
     event.endTime = QTime(10, 0);
 
     CalendarEventRepository repository(database);
-    const Result<qint64> saved = repository.saveCalendarEvent(event);
+    const RepositoryResult<qint64> saved = repository.saveCalendarEvent(event);
     QVERIFY(saved);
     QVERIFY(*saved > 0);
 }

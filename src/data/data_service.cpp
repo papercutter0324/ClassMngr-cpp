@@ -791,8 +791,8 @@ Result<QList<CalendarEvent>> DataService::loadCalendarEventsForDate(
             );
     }
 
-    return m_session->calendarEventRepository()->loadCalendarEventsForDate(
-        date
+    return toLegacyResult(
+        m_session->calendarEventRepository()->loadCalendarEventsForDate(date)
         );
 }
 
@@ -808,9 +808,11 @@ Result<QList<CalendarEvent>> DataService::loadCalendarEventsInRange(
             );
     }
 
-    return m_session->calendarEventRepository()->loadCalendarEventsInRange(
-        startDate,
-        endDate
+    return toLegacyResult(
+        m_session->calendarEventRepository()->loadCalendarEventsInRange(
+            startDate,
+            endDate
+            )
         );
 }
 
@@ -827,9 +829,11 @@ DataService::loadCalendarEventDateIntervalsInRange(
             );
     }
 
-    return m_session->calendarEventRepository()->loadCalendarEventDateIntervalsInRange(
-        startDate,
-        endDate
+    return toLegacyResult(
+        m_session->calendarEventRepository()->loadCalendarEventDateIntervalsInRange(
+            startDate,
+            endDate
+            )
         );
 }
 
@@ -845,9 +849,11 @@ Result<QList<CalendarEvent>> DataService::loadUpcomingCalendarEvents(
             );
     }
 
-    return m_session->calendarEventRepository()->loadUpcomingCalendarEvents(
-        fromDate,
-        limit
+    return toLegacyResult(
+        m_session->calendarEventRepository()->loadUpcomingCalendarEvents(
+            fromDate,
+            limit
+            )
         );
 }
 
@@ -862,8 +868,8 @@ Result<CalendarEvent> DataService::getCalendarEvent(
             );
     }
 
-    return m_session->calendarEventRepository()->getCalendarEvent(
-        eventId
+    return toLegacyResult(
+        m_session->calendarEventRepository()->getCalendarEvent(eventId)
         );
 }
 
@@ -879,9 +885,11 @@ Result<QList<CalendarEvent>> DataService::loadCalendarEventsForRepeatSeriesFromD
             );
     }
 
-    return m_session->calendarEventRepository()->loadCalendarEventsForRepeatSeriesFromDate(
-        repeatSeriesId,
-        startDate
+    return toLegacyResult(
+        m_session->calendarEventRepository()->loadCalendarEventsForRepeatSeriesFromDate(
+            repeatSeriesId,
+            startDate
+            )
         );
 }
 
@@ -896,8 +904,8 @@ Result<qint64> DataService::saveCalendarEvent(
             );
     }
 
-    return m_session->calendarEventRepository()->saveCalendarEvent(
-        event
+    return toLegacyResult(
+        m_session->calendarEventRepository()->saveCalendarEvent(event)
         );
 }
 
@@ -912,7 +920,9 @@ Result<QList<qint64>> DataService::saveCalendarEvents(
             );
     }
 
-    return m_session->calendarEventRepository()->saveCalendarEvents(events);
+    return toLegacyResult(
+        m_session->calendarEventRepository()->saveCalendarEvents(events)
+        );
 }
 
 Status DataService::deleteCalendarEvent(
@@ -926,7 +936,9 @@ Status DataService::deleteCalendarEvent(
             );
     }
 
-    return m_session->calendarEventRepository()->deleteCalendarEvent(eventId);
+    return toLegacyStatus(
+        m_session->calendarEventRepository()->deleteCalendarEvent(eventId)
+        );
 }
 
 Status DataService::deleteCalendarEventsForRepeatSeriesFromDate(
@@ -941,11 +953,11 @@ Status DataService::deleteCalendarEventsForRepeatSeriesFromDate(
             );
     }
 
-    return m_session->calendarEventRepository()
+    return toLegacyStatus(m_session->calendarEventRepository()
         ->deleteCalendarEventsForRepeatSeriesFromDate(
             repeatSeriesId,
             startDate
-            );
+            ));
 }
 
 Status DataService::deleteAllCalendarEvents()
@@ -957,7 +969,9 @@ Status DataService::deleteAllCalendarEvents()
             );
     }
 
-    return m_session->calendarEventRepository()->deleteAllCalendarEvents();
+    return toLegacyStatus(
+        m_session->calendarEventRepository()->deleteAllCalendarEvents()
+        );
 }
 
 Result<QList<ClassConflict>> DataService::getClassTimeConflicts(

@@ -1006,7 +1006,7 @@ Result<QList<CalendarEvent>> CalendarService::eventsForDate(const QDate& date) c
     {
         if (auto* repository = session()->calendarEventRepository())
         {
-            return repository->loadCalendarEventsForDate(date);
+            return toLegacyResult(repository->loadCalendarEventsForDate(date));
         }
         return std::unexpected(unavailableError());
     }
@@ -1024,7 +1024,9 @@ Result<QList<CalendarEvent>> CalendarService::eventsInRange(
     {
         if (auto* repository = session()->calendarEventRepository())
         {
-            return repository->loadCalendarEventsInRange(startDate, endDate);
+            return toLegacyResult(
+                repository->loadCalendarEventsInRange(startDate, endDate)
+                );
         }
         return std::unexpected(unavailableError());
     }
@@ -1043,9 +1045,11 @@ CalendarService::eventDateIntervalsInRange(
     {
         if (auto* repository = session()->calendarEventRepository())
         {
-            return repository->loadCalendarEventDateIntervalsInRange(
-                startDate,
-                endDate
+            return toLegacyResult(
+                repository->loadCalendarEventDateIntervalsInRange(
+                    startDate,
+                    endDate
+                    )
                 );
         }
         return std::unexpected(unavailableError());
@@ -1070,7 +1074,9 @@ Result<QList<CalendarEvent>> CalendarService::upcomingEvents(
     {
         if (auto* repository = session()->calendarEventRepository())
         {
-            return repository->loadUpcomingCalendarEvents(fromDate, limit);
+            return toLegacyResult(
+                repository->loadUpcomingCalendarEvents(fromDate, limit)
+                );
         }
         return std::unexpected(unavailableError());
     }
@@ -1085,7 +1091,7 @@ Result<CalendarEvent> CalendarService::event(qint64 eventId) const
     {
         if (auto* repository = session()->calendarEventRepository())
         {
-            return repository->getCalendarEvent(eventId);
+            return toLegacyResult(repository->getCalendarEvent(eventId));
         }
         return std::unexpected(unavailableError());
     }
@@ -1103,8 +1109,12 @@ Result<QList<CalendarEvent>> CalendarService::repeatSeriesFromDate(
     {
         if (auto* repository = session()->calendarEventRepository())
         {
-            return repository->loadCalendarEventsForRepeatSeriesFromDate(
-                repeatSeriesId, startDate);
+            return toLegacyResult(
+                repository->loadCalendarEventsForRepeatSeriesFromDate(
+                    repeatSeriesId,
+                    startDate
+                    )
+                );
         }
         return std::unexpected(unavailableError());
     }
@@ -1128,7 +1138,7 @@ Result<qint64> CalendarService::saveEvent(const CalendarEvent& event) const
     if (auto* repository = session()
             ? session()->calendarEventRepository() : nullptr)
     {
-        return repository->saveCalendarEvent(normalized);
+        return toLegacyResult(repository->saveCalendarEvent(normalized));
     }
     return dataService()
         ? dataService()->saveCalendarEvent(normalized)
@@ -1160,7 +1170,9 @@ Result<QList<qint64>> CalendarService::saveEvents(
     {
         if (auto* repository = session()->calendarEventRepository())
         {
-            return repository->saveCalendarEvents(normalizedEvents);
+            return toLegacyResult(
+                repository->saveCalendarEvents(normalizedEvents)
+                );
         }
         return std::unexpected(unavailableError());
     }
@@ -1175,7 +1187,7 @@ Status CalendarService::deleteEvent(qint64 eventId) const
     {
         if (auto* repository = session()->calendarEventRepository())
         {
-            return repository->deleteCalendarEvent(eventId);
+            return toLegacyStatus(repository->deleteCalendarEvent(eventId));
         }
         return std::unexpected(unavailableError());
     }
@@ -1196,8 +1208,12 @@ Status CalendarService::deleteRepeatSeriesFromDate(
     {
         if (auto* repository = session()->calendarEventRepository())
         {
-            return repository->deleteCalendarEventsForRepeatSeriesFromDate(
-                repeatSeriesId, startDate);
+            return toLegacyStatus(
+                repository->deleteCalendarEventsForRepeatSeriesFromDate(
+                    repeatSeriesId,
+                    startDate
+                    )
+                );
         }
         return std::unexpected(unavailableError());
     }
@@ -1216,7 +1232,7 @@ Status CalendarService::deleteAllEvents() const
     {
         if (auto* repository = session()->calendarEventRepository())
         {
-            return repository->deleteAllCalendarEvents();
+            return toLegacyStatus(repository->deleteAllCalendarEvents());
         }
         return std::unexpected(unavailableError());
     }
