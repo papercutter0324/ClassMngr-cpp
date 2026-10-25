@@ -12,6 +12,7 @@
 #include <QTemporaryDir>
 
 #include <cerrno>
+#include <cstring>
 #include <iostream>
 #include <optional>
 #include <stdexcept>
@@ -37,6 +38,38 @@ bool fail(const QString& message)
 {
     std::cerr << message.toStdString() << '\n';
     return false;
+}
+
+bool createFileSymlink(const QString& targetPath, const QString& linkPath)
+{
+#if defined(Q_OS_WIN)
+    const std::wstring target = targetPath.toStdWString();
+    const std::wstring link = linkPath.toStdWString();
+    if (CreateSymbolicLinkW(
+            link.c_str(),
+            target.c_str(),
+            SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
+            ))
+    {
+        return true;
+    }
+    return fail(QStringLiteral("could not create genuine file symlink fixture; "
+                               "CreateSymbolicLinkW error ")
+                + QString::number(GetLastError()));
+#elif defined(Q_OS_UNIX)
+    const QByteArray target = QFile::encodeName(targetPath);
+    const QByteArray link = QFile::encodeName(linkPath);
+    if (::symlink(target.constData(), link.constData()) == 0)
+    {
+        return true;
+    }
+    return fail(QStringLiteral("could not create genuine file symlink fixture; symlink error ")
+                + QString::fromLocal8Bit(std::strerror(errno)));
+#else
+    Q_UNUSED(targetPath);
+    Q_UNUSED(linkPath);
+    return fail(QStringLiteral("genuine file symlink fixture is unsupported on this platform"));
+#endif
 }
 
 std::optional<ResourceId> resourceId(const char* value)
@@ -1156,19 +1189,39 @@ bool testLoader(QCoreApplication& application)
     {
         return fail(QStringLiteral("could not create symlink escape target"));
     }
-    QFile::remove(stagedJsonPath);
-    if (QFile::link(outsideFile, stagedJsonPath))
+    if (!QFile::remove(stagedJsonPath))
     {
-        auto escapedJson = loader.loadJson(*jsonRequest);
-        if (escapedJson || escapedJson.error().code != ResourceErrorCode::UnsafePath)
-        {
-            return fail(QStringLiteral("resource symlink escape was not rejected"));
-        }
+        return fail(QStringLiteral("could not remove staged JSON before symlink escape fixture"));
     }
-    else
+    if (!createFileSymlink(outsideFile, stagedJsonPath))
     {
-        std::cerr << "symlink escape fixture could not be created on this platform; "
-                     "path traversal validation remains covered\n";
+        return false;
+    }
+    const QFileInfo stagedSymlinkInfo(stagedJsonPath);
+    if (!stagedSymlinkInfo.isSymLink())
+    {
+        return fail(QStringLiteral("symlink escape candidate is not a genuine filesystem symlink"));
+    }
+    const QString canonicalPackageRoot = QFileInfo(packageRoot).canonicalFilePath();
+    const QString canonicalTarget = stagedSymlinkInfo.canonicalFilePath();
+    if (canonicalPackageRoot.isEmpty() || canonicalTarget.isEmpty())
+    {
+        return fail(QStringLiteral("could not canonicalize symlink escape fixture paths"));
+    }
+    const QString relativeTarget = QDir::fromNativeSeparators(
+        QDir(canonicalPackageRoot).relativeFilePath(canonicalTarget)
+        );
+    if (relativeTarget == QStringLiteral(".")
+        || (relativeTarget != QStringLiteral("..")
+            && !relativeTarget.startsWith(QStringLiteral("../"))
+            && !QDir::isAbsolutePath(relativeTarget)))
+    {
+        return fail(QStringLiteral("symlink escape target does not resolve outside resource root"));
+    }
+    auto escapedJson = loader.loadJson(*jsonRequest);
+    if (escapedJson || escapedJson.error().code != ResourceErrorCode::UnsafePath)
+    {
+        return fail(QStringLiteral("resource symlink escape was not rejected"));
     }
 
     const QString maliciousCatalogPath = QDir(temporaryRoot.path()).filePath(
