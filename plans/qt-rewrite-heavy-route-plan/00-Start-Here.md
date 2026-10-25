@@ -20,8 +20,10 @@
   `5cf27a6a7589eb19c0d859684b5e44f53b197c4e` and is not pushed. F1456
   CalendarEventRepository is committed locally as
   `86667de56547273c8897198470e9c271a583035c` and is not pushed. F1457
-  SpeakingEvalRepository is independently verified and accepted; its local
-  commit is pending, and F1458 is next. Evidence and limits are in the
+  SpeakingEvalRepository is committed locally as
+  `2ccba709122ae44a246302bdf8dab8d6a179e3cb` and is not pushed. F1458
+  ScheduleImportRepository is independently verified and accepted; its local
+  commit is pending, and F1459 is next. Evidence and limits are in the
   [progress log](04-Phase-3-Progress-Log.md); see also the [Phase 3
   plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),

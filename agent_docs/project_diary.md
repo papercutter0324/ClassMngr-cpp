@@ -8659,7 +8659,7 @@ were exercised. Malformed-ID, raw birthday cursor message, no-op, and rollback
 failure branches remain source-reviewed without direct runtime assertions.
 
 
-## 2026-10-25 — F1454, F1455, F1456 committed; F1457 verified and accepted
+## 2026-10-25 — F1454–F1457 committed; F1458 verified and accepted
 
 F1454 is committed locally as `b362325f8a3d2f162a14e30c59ee171a52024e77`;
 it remains unpushed until Batch 22 closes. F1455 RosterRepository discovery
@@ -8668,9 +8668,11 @@ independent verification are complete, and commit
 `5cf27a6a7589eb19c0d859684b5e44f53b197c4e` is local and not pushed. F1456
 CalendarEventRepository implementation and independent verification are
 complete; commit `86667de56547273c8897198470e9c271a583035c` is local and not
-pushed. F1457 SpeakingEvalRepository discovery is complete; scope is accepted,
-implementation and independent verification are complete, and its local
-commit is pending.
+pushed. F1457 SpeakingEvalRepository scope, implementation, and independent
+verification are complete; commit `2ccba709122ae44a246302bdf8dab8d6a179e3cb`
+is local and not pushed. F1458 ScheduleImportRepository implementation and
+independent verification are complete; its scope is accepted and local commit
+is pending.
 
 F1454 converts the two IntensiveSlotStateRepository fallible APIs and keeps
 all current repository errors Technical. Input validation stays in the typed
@@ -8727,3 +8729,14 @@ passed 22/22. A broader ClassTransfer teacher-profile fallback assertion failed
 outside this roster/export path, and the broad Classes Page offscreen target
 timed out without a specific case; neither has a pre-change baseline. No full
 suite or other-platform build ran.
+
+F1458 structures failures from `preview`, legacy `apply`, and the active typed
+apply while preserving typed policy and state details. Invalid requests map to
+InvalidInput, malformed imported/persisted schedules to Validation, state
+changed since review or schedule overlap to Conflict, and SQL/cursor/closed
+database/transaction/rollback failures to Technical. Empty inventories and
+default class-info values remain successful. Shared-table writers stay outside
+this slice. Fresh build targets succeeded and five focused CTests passed 5/5;
+four QtTest executables reported 216 passing cases, with one optional workbook
+test skipped. Commit-failure rollback and rollback-failure injection remain
+unverified; no full suite or other-platform build ran.

@@ -429,10 +429,10 @@ Result<ScheduleImportPreview> DataService::previewScheduleImport(
             );
     }
 
-    return m_session->scheduleImportRepository()->preview(
+    return toLegacyResult(m_session->scheduleImportRepository()->preview(
         user,
         kind
-        );
+        ));
 }
 
 Result<ScheduleImportSummary> DataService::importSchedule(
@@ -446,7 +446,9 @@ Result<ScheduleImportSummary> DataService::importSchedule(
             );
     }
 
-    return m_session->scheduleImportRepository()->apply(plan);
+    return toLegacyResult(
+        m_session->scheduleImportRepository()->apply(plan)
+        );
 }
 
 Status DataService::saveClassInfo(

@@ -61,6 +61,8 @@ private slots:
     void filtersClassOptionsByGradeAndDayGroup();
     void ranksTeacherAndClassMatches();
     void previewRejectsUnknownKindBeforeReadingInventory();
+    void reportsRepositoryCategoriesForClosedAndFailedReads();
+    void reportsTransactionStartFailureAsTechnical();
     void previewsAndAppliesBaselineGeneratedWorkbookAgainstSeededDatabase();
     void previewsAndAppliesBaselineGeneratedIntensiveWorkbookAgainstSeededDatabase();
     void previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase();
@@ -87,6 +89,7 @@ private slots:
     void applyBatchReadFailureRollsBackBeforeWrites();
     void applyTeacherReadFailureRollsBackBeforeWrites();
     void typedApplyRejectsStaleSelectedClassBeforeWrites();
+    void typedApplyRejectsSkippedClassAfterExactMatchBecomesAmbiguous();
     void typedApplyRejectsNoncanonicalTargetsBeforeStateValidation();
     void typedApplyPreservesWideTeacherIdAndLowTeacherAssociation();
     void typedApplyAcceptsLegacyDisplayTimes_data();
@@ -162,7 +165,7 @@ QString typedApplyFailureMessage(
 {
     return result.has_value()
         ? QString()
-        : QString::fromStdU16String(result.error().message);
+        : result.error().repositoryError.diagnostic;
 }
 
 template <typename Id>
@@ -1590,7 +1593,7 @@ void ScheduleImportTests::appliesIntensiveSlotStatesSnapshot()
         ScheduleImportRepository repository(database);
         const auto imported = repository.apply(plan);
         const QString error =
-            imported.has_value() ? QString() : imported.error();
+            imported.has_value() ? QString() : imported.error().diagnostic;
         QVERIFY2(imported.has_value(), qPrintable(error));
 
         execOrFail(
@@ -1713,7 +1716,7 @@ appliesIntensiveSlotStateTimesWithLegacyQtSemantics()
         if (expectedValid)
         {
             const QString error =
-                imported.has_value() ? QString() : imported.error();
+                imported.has_value() ? QString() : imported.error().diagnostic;
             QVERIFY2(imported.has_value(), qPrintable(error));
 
             execOrFail(
@@ -1733,7 +1736,7 @@ appliesIntensiveSlotStateTimesWithLegacyQtSemantics()
         {
             QVERIFY(!imported.has_value());
             QCOMPARE(
-                imported.error(),
+                imported.error().diagnostic,
                 QStringLiteral(
                     "The import contains an invalid intensive slot state."
                     )
@@ -2283,10 +2286,125 @@ void ScheduleImportTests::previewRejectsUnknownKindBeforeReadingInventory()
                 );
             QVERIFY(!result.has_value());
             QCOMPARE(
-                result.error(),
+                result.error().diagnostic,
+                QStringLiteral("The schedule import kind is invalid.")
+                );
+            QCOMPARE(result.error().code, RepositoryErrorCode::InvalidInput);
+
+            ScheduleImportPlan invalidKindPlan;
+            invalidKindPlan.kind = static_cast<ScheduleImportKind>(kind);
+            const auto invalidKindApply = repository.apply(invalidKindPlan);
+            QVERIFY(!invalidKindApply.has_value());
+            QCOMPARE(
+                invalidKindApply.error().code,
+                RepositoryErrorCode::InvalidInput
+                );
+            QCOMPARE(
+                invalidKindApply.error().diagnostic,
                 QStringLiteral("The schedule import kind is invalid.")
                 );
         }
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::reportsRepositoryCategoriesForClosedAndFailedReads()
+{
+    const QString closedConnectionName =
+        QStringLiteral("schedule-import-closed-repository-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), closedConnectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        ScheduleImportRepository repository(database);
+        ScheduleImportUserBlock user;
+
+        const auto preview = repository.preview(user, ScheduleImportKind::Normal);
+        QVERIFY(!preview.has_value());
+        QCOMPARE(preview.error().code, RepositoryErrorCode::Technical);
+        QCOMPARE(
+            preview.error().diagnostic,
+            QStringLiteral("No Teacher Profile is open.")
+            );
+
+        const auto legacyApply = repository.apply(ScheduleImportPlan{});
+        QVERIFY(!legacyApply.has_value());
+        QCOMPARE(legacyApply.error().code, RepositoryErrorCode::Technical);
+        QCOMPARE(
+            legacyApply.error().diagnostic,
+            QStringLiteral("No Teacher Profile is open.")
+            );
+
+        const auto typedApply = repository.applyTyped(typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        }));
+        QVERIFY(!typedApply.has_value());
+        QCOMPARE(
+            typedApply.error().repositoryError.code,
+            RepositoryErrorCode::Technical
+            );
+        QCOMPARE(
+            typedApply.error().repositoryError.diagnostic,
+            QStringLiteral("No Teacher Profile is open.")
+            );
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(closedConnectionName);
+
+    const QString readFailureConnectionName =
+        QStringLiteral("schedule-import-preview-read-failure-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), readFailureConnectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::createSchema(database).has_value());
+        QSqlQuery query(database);
+        execOrFail(query, QStringLiteral("DROP TABLE teachers"));
+
+        ScheduleImportRepository repository(database);
+        const auto preview = repository.preview(
+            ScheduleImportUserBlock{},
+            ScheduleImportKind::Normal
+            );
+        QVERIFY(!preview.has_value());
+        QCOMPARE(preview.error().code, RepositoryErrorCode::Technical);
+        QVERIFY(preview.error().diagnostic.contains(QStringLiteral("Loading teachers")));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(readFailureConnectionName);
+}
+
+void ScheduleImportTests::reportsTransactionStartFailureAsTechnical()
+{
+    const QString connectionName =
+        QStringLiteral("schedule-import-transaction-start-failure-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::createSchema(database).has_value());
+        QVERIFY(database.transaction());
+
+        ScheduleImportRepository repository(database);
+        const auto failed = repository.applyTyped(typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        }));
+        QVERIFY(!failed.has_value());
+        QCOMPARE(
+            failed.error().repositoryError.code,
+            RepositoryErrorCode::Technical
+            );
+        QCOMPARE(
+            failed.error().repositoryError.diagnostic,
+            QStringLiteral("Unable to start the schedule import transaction.")
+            );
+        QVERIFY(database.rollback());
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);
@@ -2663,7 +2781,7 @@ previewsAndAppliesBaselineGeneratedWorkbookAgainstSeededDatabase()
         const auto preview =
             repository.preview(user, ScheduleImportKind::Normal);
         const QString previewError =
-            preview.has_value() ? QString() : preview.error();
+            preview.has_value() ? QString() : preview.error().diagnostic;
         QVERIFY2(preview.has_value(), qPrintable(previewError));
         QCOMPARE(preview->inventory.classCount, 1);
         QVERIFY(preview->inventory.hasRegularHours);
@@ -2716,7 +2834,7 @@ previewsAndAppliesBaselineGeneratedWorkbookAgainstSeededDatabase()
 
         const auto applied = repository.apply(plan);
         const QString applyError =
-            applied.has_value() ? QString() : applied.error();
+            applied.has_value() ? QString() : applied.error().diagnostic;
         QVERIFY2(applied.has_value(), qPrintable(applyError));
         QCOMPARE(applied->teachersCreated, 0);
         QCOMPARE(applied->teachersUpdated, 0);
@@ -3014,7 +3132,7 @@ previewsAndAppliesBaselineGeneratedIntensiveWorkbookAgainstSeededDatabase()
             ScheduleImportKind::Intensive
             );
         const QString previewError =
-            preview.has_value() ? QString() : preview.error();
+            preview.has_value() ? QString() : preview.error().diagnostic;
         QVERIFY2(preview.has_value(), qPrintable(previewError));
         QCOMPARE(preview->kind, ScheduleImportKind::Intensive);
         QCOMPARE(preview->inventory.classCount, 2);
@@ -3071,7 +3189,7 @@ previewsAndAppliesBaselineGeneratedIntensiveWorkbookAgainstSeededDatabase()
 
         const auto applied = repository.apply(plan);
         const QString applyError =
-            applied.has_value() ? QString() : applied.error();
+            applied.has_value() ? QString() : applied.error().diagnostic;
         QVERIFY2(applied.has_value(), qPrintable(applyError));
         QCOMPARE(applied->teachersCreated, 0);
         QCOMPARE(applied->teachersUpdated, 0);
@@ -3472,7 +3590,7 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
         ScheduleImportRepository repository(database);
         const auto preview = repository.preview(user, ScheduleImportKind::Normal);
         const QString previewError =
-            preview.has_value() ? QString() : preview.error();
+            preview.has_value() ? QString() : preview.error().diagnostic;
         QVERIFY2(preview.has_value(), qPrintable(previewError));
         QCOMPARE(preview->kind, ScheduleImportKind::Normal);
         QCOMPARE(preview->user.classes.size(), user.classes.size());
@@ -3574,7 +3692,7 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
 
         const auto applied = repository.apply(plan);
         const QString applyError =
-            applied.has_value() ? QString() : applied.error();
+            applied.has_value() ? QString() : applied.error().diagnostic;
         QVERIFY2(applied.has_value(), qPrintable(applyError));
         QCOMPARE(applied->teachersCreated, 1);
         QCOMPARE(applied->teachersUpdated, 0);
@@ -3984,8 +4102,9 @@ rejectsInvalidCourseAndPatternAtApplyBoundaryBeforeWrites()
         ScheduleImportRepository repository(database);
         const auto imported = repository.apply(plan);
         QVERIFY(!imported.has_value());
+        QCOMPARE(imported.error().code, RepositoryErrorCode::Validation);
         QVERIFY(
-            imported.error().contains(QStringLiteral("invalid class"))
+            imported.error().diagnostic.contains(QStringLiteral("invalid class"))
             );
 
         QCOMPARE(
@@ -4027,8 +4146,9 @@ rejectsInvalidCourseAndPatternAtApplyBoundaryBeforeWrites()
 
         const auto rejectedPattern = repository.apply(plan);
         QVERIFY(!rejectedPattern.has_value());
+        QCOMPARE(rejectedPattern.error().code, RepositoryErrorCode::Validation);
         QVERIFY(
-            rejectedPattern.error().contains(QStringLiteral("meeting pattern"))
+            rejectedPattern.error().diagnostic.contains(QStringLiteral("meeting pattern"))
             );
 
         QCOMPARE(
@@ -4220,7 +4340,7 @@ previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites()
             ScheduleImportKind::Normal
             );
         const QString previewError =
-            preview.has_value() ? QString() : preview.error();
+            preview.has_value() ? QString() : preview.error().diagnostic;
         QVERIFY2(preview.has_value(), qPrintable(previewError));
         QCOMPARE(preview->user.classes.size(), 2);
         QCOMPARE(preview->classes.size(), 2);
@@ -4288,7 +4408,7 @@ previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites()
 
         const auto imported = repository.apply(plan);
         QVERIFY(!imported.has_value());
-        QCOMPARE(imported.error(), QStringLiteral(
+        QCOMPARE(imported.error().diagnostic, QStringLiteral(
             "The proposed schedule overlaps: E4 Hercules conflicts with "
             "E4 Theseus on Monday."
             ));
@@ -4787,7 +4907,7 @@ previewsAndAppliesSyntheticIntensiveWorkbookAgainstSeededDatabase()
         const auto preview =
             repository.preview(user, ScheduleImportKind::Intensive);
         const QString previewError =
-            preview.has_value() ? QString() : preview.error();
+            preview.has_value() ? QString() : preview.error().diagnostic;
         QVERIFY2(preview.has_value(), qPrintable(previewError));
         QCOMPARE(preview->kind, ScheduleImportKind::Intensive);
         QCOMPARE(preview->inventory.classCount, 2);
@@ -4837,7 +4957,7 @@ previewsAndAppliesSyntheticIntensiveWorkbookAgainstSeededDatabase()
 
         const auto updated = repository.apply(plan);
         const QString applyError =
-            updated.has_value() ? QString() : updated.error();
+            updated.has_value() ? QString() : updated.error().diagnostic;
         QVERIFY2(updated.has_value(), qPrintable(applyError));
         QCOMPARE(updated->classesCreated, 0);
         QCOMPARE(updated->classesUpdated, 1);
@@ -5096,7 +5216,7 @@ void ScheduleImportTests::intensiveModesPreserveOrReplaceAbsentHours()
         const auto updated =
             repository.apply(plan);
         const QString updateError =
-            updated.has_value() ? QString() : updated.error();
+            updated.has_value() ? QString() : updated.error().diagnostic;
         QVERIFY2(updated.has_value(), qPrintable(updateError));
         QCOMPARE(updated->schedulesCleared, 0);
 
@@ -5150,7 +5270,7 @@ void ScheduleImportTests::intensiveModesPreserveOrReplaceAbsentHours()
         const auto replaced =
             repository.apply(plan);
         const QString replaceError =
-            replaced.has_value() ? QString() : replaced.error();
+            replaced.has_value() ? QString() : replaced.error().diagnostic;
         QVERIFY2(replaced.has_value(), qPrintable(replaceError));
         QCOMPARE(replaced->schedulesCleared, 1);
 
@@ -5332,7 +5452,7 @@ void ScheduleImportTests::fullSnapshotPreservesUnrelatedData()
         const auto imported =
             repository.apply(plan);
         const QString importError =
-            imported.has_value() ? QString() : imported.error();
+            imported.has_value() ? QString() : imported.error().diagnostic;
         QVERIFY2(
             imported.has_value(),
             qPrintable(importError)
@@ -5562,7 +5682,7 @@ void ScheduleImportTests::skippedExactMatchPreservesItsSchedule()
         const auto imported =
             repository.apply(plan);
         const QString error =
-            imported.has_value() ? QString() : imported.error();
+            imported.has_value() ? QString() : imported.error().diagnostic;
         QVERIFY2(imported.has_value(), qPrintable(error));
         QCOMPARE(imported->classesSkipped, 1);
         QCOMPARE(imported->schedulesCleared, 0);
@@ -5623,7 +5743,7 @@ void ScheduleImportTests::skippedExactMatchPreservesItsSchedule()
         const QString updateError =
             updatedProfileImport.has_value()
                 ? QString()
-                : updatedProfileImport.error();
+                : updatedProfileImport.error().diagnostic;
         QVERIFY2(
             updatedProfileImport.has_value(),
             qPrintable(updateError)
@@ -5889,7 +6009,7 @@ void ScheduleImportTests::rejectsDuplicateExistingTargetsBeforeWrites()
         const auto imported = repository.apply(plan);
         QVERIFY(!imported.has_value());
         QCOMPARE(
-            imported.error(),
+            imported.error().diagnostic,
             QStringLiteral(
                 "Each updated class must have a unique existing target."
                 )
@@ -5997,7 +6117,7 @@ preservesNonpositiveExistingTeacherTargetsAtApply()
         {
             QVERIFY(!imported.has_value());
             QVERIFY(
-                imported.error().contains(
+                imported.error().diagnostic.contains(
                     QStringLiteral("selected Korean teacher is no longer available")
                     )
                 );
@@ -6006,7 +6126,7 @@ preservesNonpositiveExistingTeacherTargetsAtApply()
         else
         {
             const QString error =
-                imported.has_value() ? QString() : imported.error();
+                imported.has_value() ? QString() : imported.error().diagnostic;
             QVERIFY2(imported.has_value(), qPrintable(error));
             QCOMPARE(imported->classesSkipped, 1);
 
@@ -6126,7 +6246,7 @@ convertsNonpositiveCreateAndSkipTeacherTargetsAtApply()
         {
             QVERIFY(!imported.has_value());
             QVERIFY(
-                imported.error().contains(
+                imported.error().diagnostic.contains(
                     QStringLiteral("cannot have an existing target")
                     )
                 );
@@ -6135,7 +6255,7 @@ convertsNonpositiveCreateAndSkipTeacherTargetsAtApply()
         else
         {
             const QString error =
-                imported.has_value() ? QString() : imported.error();
+                imported.has_value() ? QString() : imported.error().diagnostic;
             QVERIFY2(imported.has_value(), qPrintable(error));
             QCOMPARE(imported->classesSkipped, 1);
             if (action == static_cast<int>(ScheduleImportTeacherAction::Create))
@@ -6321,15 +6441,15 @@ void ScheduleImportTests::characterizesClassTargetsAtApply()
         {
             QVERIFY(!imported.has_value());
             QVERIFY2(
-                imported.error().contains(expectedError),
-                qPrintable(imported.error())
+                imported.error().diagnostic.contains(expectedError),
+                qPrintable(imported.error().diagnostic)
                 );
             QCOMPARE(persistedScheduleImportSnapshot(database), before);
         }
         else
         {
             const QString error =
-                imported.has_value() ? QString() : imported.error();
+                imported.has_value() ? QString() : imported.error().diagnostic;
             QVERIFY2(imported.has_value(), qPrintable(error));
             if (action == static_cast<int>(ScheduleImportClassAction::CreateNew))
             {
@@ -6487,8 +6607,9 @@ staleSelectedClassPreservesPersistedSnapshotBeforeWrites()
         ScheduleImportRepository repository(database);
         const auto imported = repository.apply(plan);
         QVERIFY(!imported.has_value());
+        QCOMPARE(imported.error().code, RepositoryErrorCode::Conflict);
         QVERIFY(
-            imported.error().contains(
+            imported.error().diagnostic.contains(
                 QStringLiteral("selected class is no longer available")
                 )
             );
@@ -6607,7 +6728,8 @@ void ScheduleImportTests::conflictsRollBackBeforeWrites()
         const auto imported =
             repository.apply(plan);
         QVERIFY(!imported.has_value());
-        QVERIFY(imported.error().contains(QStringLiteral("overlaps")));
+        QCOMPARE(imported.error().code, RepositoryErrorCode::Conflict);
+        QVERIFY(imported.error().diagnostic.contains(QStringLiteral("overlaps")));
 
         QSqlQuery query(database);
         execOrFail(query, QStringLiteral("SELECT COUNT(*) FROM teachers"));
@@ -6689,8 +6811,9 @@ void ScheduleImportTests::writeFailureRollsBackEveryChange()
         const auto imported =
             repository.apply(plan);
         QVERIFY(!imported.has_value());
+        QCOMPARE(imported.error().code, RepositoryErrorCode::Technical);
         QVERIFY(
-            imported.error().contains(
+            imported.error().diagnostic.contains(
                 QStringLiteral("forced schedule failure")
                 )
             );
@@ -7097,6 +7220,10 @@ void ScheduleImportTests::typedApplyRejectsStaleSelectedClassBeforeWrites()
         ScheduleImportRepository repository(database);
         const auto imported = repository.applyTyped(request);
         QVERIFY(!imported.has_value());
+        QCOMPARE(
+            imported.error().repositoryError.code,
+            RepositoryErrorCode::Conflict
+            );
         QVERIFY(imported.error().stateValidationError.has_value());
         QCOMPARE(
             imported.error().stateValidationError->code,
@@ -7121,6 +7248,10 @@ void ScheduleImportTests::typedApplyRejectsStaleSelectedClassBeforeWrites()
         request.classes[0].targetClassId.reset();
         const auto staleTeacher = repository.applyTyped(request);
         QVERIFY(!staleTeacher.has_value());
+        QCOMPARE(
+            staleTeacher.error().repositoryError.code,
+            RepositoryErrorCode::Conflict
+            );
         QVERIFY(staleTeacher.error().stateValidationError.has_value());
         QCOMPARE(
             staleTeacher.error().stateValidationError->code,
@@ -7129,6 +7260,75 @@ void ScheduleImportTests::typedApplyRejectsStaleSelectedClassBeforeWrites()
             );
         QVERIFY(!staleTeacher.error().policyIssue.has_value());
         QVERIFY(!staleTeacher.error().teacherTargetIssue.has_value());
+        QCOMPARE(persistedScheduleImportSnapshot(database), before);
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::
+typedApplyRejectsSkippedClassAfterExactMatchBecomesAmbiguous()
+{
+    const QString connectionName =
+        QStringLiteral("schedule-import-typed-skipped-class-conflict-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::createSchema(database).has_value());
+
+        QSqlQuery query(database);
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO teachers (id, teacher_kr, room_number) "
+            "VALUES (11, '김', '413')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (101, 'Existing class')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_info "
+            "(class_id, teacher_id, class_grade, class_level) "
+            "VALUES (101, 11, 'E4', 'Hercules')"));
+
+        auto request = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E4", u"Hercules")
+        });
+        const auto teacherId =
+            ClassMngr::Next::Domain::TeacherId::fromString("11");
+        const auto reviewedClassId =
+            ClassMngr::Next::Domain::ClassId::fromString("101");
+        QVERIFY(teacherId.has_value());
+        QVERIFY(reviewedClassId.has_value());
+        request.teachers[0].action =
+            ClassMngr::Next::Application::ScheduleImportReviewTeacherAction::Reuse;
+        request.teachers[0].targetTeacherId = *teacherId;
+        request.classes[0].action =
+            ClassMngr::Next::Application::ScheduleImportReviewClassAction::Skip;
+        request.classes[0].targetClassId = *reviewedClassId;
+
+        // A duplicate exact target appeared after review.
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (102, 'Duplicate class')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_info "
+            "(class_id, teacher_id, class_grade, class_level) "
+            "VALUES (102, 11, 'E4', 'Hercules')"));
+        const QStringList before = persistedScheduleImportSnapshot(database);
+
+        ScheduleImportRepository repository(database);
+        const auto failed = repository.applyTyped(request);
+        QVERIFY(!failed.has_value());
+        QCOMPARE(
+            failed.error().repositoryError.code,
+            RepositoryErrorCode::Conflict
+            );
+        QVERIFY(failed.error().stateValidationError.has_value());
+        QCOMPARE(
+            failed.error().stateValidationError->code,
+            ClassMngr::Next::Application::
+                ScheduleImportStateValidationErrorCode::SkippedClassNotUniqueExactMatch
+            );
         QCOMPARE(persistedScheduleImportSnapshot(database), before);
 
         database.close();
@@ -7211,6 +7411,10 @@ void ScheduleImportTests::typedApplyRejectsNoncanonicalTargetsBeforeStateValidat
         const auto noncanonicalTeacherResult =
             repository.applyTyped(noncanonicalTeacherTarget);
         QVERIFY(!noncanonicalTeacherResult.has_value());
+        QCOMPARE(
+            noncanonicalTeacherResult.error().repositoryError.code,
+            RepositoryErrorCode::InvalidInput
+            );
         QVERIFY(noncanonicalTeacherResult.error().teacherTargetIssue.has_value());
         QCOMPARE(
             noncanonicalTeacherResult.error().teacherTargetIssue->code,
@@ -7251,6 +7455,10 @@ void ScheduleImportTests::typedApplyRejectsNoncanonicalTargetsBeforeStateValidat
         const auto noncanonicalClassResult =
             repository.applyTyped(noncanonicalClassTarget);
         QVERIFY(!noncanonicalClassResult.has_value());
+        QCOMPARE(
+            noncanonicalClassResult.error().repositoryError.code,
+            RepositoryErrorCode::InvalidInput
+            );
         QVERIFY(noncanonicalClassResult.error().policyIssue.has_value());
         QCOMPARE(
             noncanonicalClassResult.error().policyIssue->code,
@@ -7519,6 +7727,10 @@ void ScheduleImportTests::typedApplyRejectsMalformedTimeBeforeWrites()
             persistedScheduleImportSnapshot(database);
         const auto malformedTimeImport = repository.applyTyped(request);
         QVERIFY(!malformedTimeImport.has_value());
+        QCOMPARE(
+            malformedTimeImport.error().repositoryError.code,
+            RepositoryErrorCode::Validation
+            );
         QVERIFY(malformedTimeImport.error().stateValidationError.has_value());
         QCOMPARE(
             malformedTimeImport.error().stateValidationError->code,
@@ -7568,6 +7780,10 @@ void ScheduleImportTests::typedApplyRejectsMalformedTimeBeforeWrites()
             const QStringList before = persistedScheduleImportSnapshot(database);
             const auto imported = repository.applyTyped(request);
             QVERIFY(!imported.has_value());
+            QCOMPARE(
+                imported.error().repositoryError.code,
+                RepositoryErrorCode::Validation
+                );
             QVERIFY(imported.error().policyIssue.has_value());
             QCOMPARE(
                 imported.error().policyIssue->code,
@@ -7589,6 +7805,10 @@ void ScheduleImportTests::typedApplyRejectsMalformedTimeBeforeWrites()
         const auto missingTimesImport =
             repository.applyTyped(laterCandidateMissingTimes);
         QVERIFY(!missingTimesImport.has_value());
+        QCOMPARE(
+            missingTimesImport.error().repositoryError.code,
+            RepositoryErrorCode::Validation
+            );
         QVERIFY(missingTimesImport.error().policyIssue.has_value());
         QCOMPARE(
             missingTimesImport.error().policyIssue->code,
@@ -7631,6 +7851,10 @@ void ScheduleImportTests::typedApplyRejectsOverlappingSchedulesBeforeWrites()
         const QStringList before = persistedScheduleImportSnapshot(database);
         const auto imported = repository.applyTyped(request);
         QVERIFY(!imported.has_value());
+        QCOMPARE(
+            imported.error().repositoryError.code,
+            RepositoryErrorCode::Conflict
+            );
         QVERIFY(imported.error().stateValidationError.has_value());
         QCOMPARE(
             imported.error().stateValidationError->code,
@@ -7702,11 +7926,24 @@ void ScheduleImportTests::typedWriteFailureRollsBackEveryChange()
         ScheduleImportRepository repository(database);
         const auto imported = repository.applyTyped(request);
         QVERIFY(!imported.has_value());
+        QCOMPARE(
+            imported.error().repositoryError.code,
+            RepositoryErrorCode::Technical
+            );
         QVERIFY(!imported.error().policyIssue.has_value());
         QVERIFY(!imported.error().teacherTargetIssue.has_value());
         QVERIFY(!imported.error().stateValidationError.has_value());
         QVERIFY(typedApplyFailureMessage(imported).contains(
             QStringLiteral("forced typed schedule failure")));
+        const auto legacyFailure = repository.apply(
+            legacyPlanFromTypedRequest(request)
+            );
+        QVERIFY(!legacyFailure.has_value());
+        QCOMPARE(legacyFailure.error().code, RepositoryErrorCode::Technical);
+        QCOMPARE(
+            legacyFailure.error().diagnostic,
+            typedApplyFailureMessage(imported)
+            );
         QCOMPARE(persistedScheduleImportSnapshot(database, true), before);
 
         database.close();
@@ -7855,6 +8092,10 @@ void ScheduleImportTests::typedIntensiveApplyRejectsNoncanonicalSlotDaysWithRoll
             const auto imported = repository.applyTyped(request);
             QVERIFY(!imported.has_value());
             QCOMPARE(
+                imported.error().repositoryError.code,
+                RepositoryErrorCode::Validation
+                );
+            QCOMPARE(
                 typedApplyFailureMessage(imported),
                 QStringLiteral(
                     "The import contains an invalid intensive slot state."
@@ -7870,6 +8111,26 @@ void ScheduleImportTests::typedIntensiveApplyRejectsNoncanonicalSlotDaysWithRoll
             QCOMPARE(query.value(2).toString(), QStringLiteral("essay"));
             QVERIFY(!query.next());
         }
+
+        execOrFail(query, QStringLiteral(
+            "CREATE TRIGGER reject_imported_intensive_slot_state "
+            "BEFORE INSERT ON intensive_slot_states BEGIN "
+            "SELECT RAISE(ABORT, 'forced intensive slot state failure'); END"));
+        request.intensiveSlotStates = {{u"Tuesday", u"16:00", u"lunch"}};
+        const QStringList beforeWriterFailure =
+            persistedScheduleImportSnapshot(database, true);
+        const auto writerFailure = repository.applyTyped(request);
+        QVERIFY(!writerFailure.has_value());
+        QCOMPARE(
+            writerFailure.error().repositoryError.code,
+            RepositoryErrorCode::Technical
+            );
+        QVERIFY(typedApplyFailureMessage(writerFailure).contains(
+            QStringLiteral("forced intensive slot state failure")));
+        QCOMPARE(
+            persistedScheduleImportSnapshot(database, true),
+            beforeWriterFailure
+            );
 
         database.close();
     }
@@ -7917,7 +8178,7 @@ void ScheduleImportTests::typedAndLegacyApplyShareNormalAndIntensiveResults()
                 legacyPlanFromTypedRequest(legacyRequest));
             const QString legacyError = legacyResult.has_value()
                 ? QString()
-                : legacyResult.error();
+                : legacyResult.error().diagnostic;
             QVERIFY2(legacyResult.has_value(), qPrintable(legacyError));
 
             compareScheduleImportSummaries(*legacyResult, *typedResult);
@@ -8141,7 +8402,13 @@ void ScheduleImportTests::typedApplyRejectsInvalidEnumsBeforeWrites()
         invalidTeacherAction.teachers[0].action =
             static_cast<ClassMngr::Next::Application::
                 ScheduleImportReviewTeacherAction>(255);
-        QVERIFY(!repository.applyTyped(invalidTeacherAction).has_value());
+        const auto invalidTeacherActionResult =
+            repository.applyTyped(invalidTeacherAction);
+        QVERIFY(!invalidTeacherActionResult.has_value());
+        QCOMPARE(
+            invalidTeacherActionResult.error().repositoryError.code,
+            RepositoryErrorCode::InvalidInput
+            );
         QCOMPARE(persistedScheduleImportSnapshot(database), before);
 
         auto invalidClassAction = typedCreateRequest({
@@ -8150,7 +8417,13 @@ void ScheduleImportTests::typedApplyRejectsInvalidEnumsBeforeWrites()
         invalidClassAction.classes[0].action =
             static_cast<ClassMngr::Next::Application::
                 ScheduleImportReviewClassAction>(255);
-        QVERIFY(!repository.applyTyped(invalidClassAction).has_value());
+        const auto invalidClassActionResult =
+            repository.applyTyped(invalidClassAction);
+        QVERIFY(!invalidClassActionResult.has_value());
+        QCOMPARE(
+            invalidClassActionResult.error().repositoryError.code,
+            RepositoryErrorCode::InvalidInput
+            );
         QCOMPARE(persistedScheduleImportSnapshot(database), before);
 
         auto invalidIntensiveMode = typedCreateRequest({
@@ -8160,7 +8433,13 @@ void ScheduleImportTests::typedApplyRejectsInvalidEnumsBeforeWrites()
         invalidIntensiveMode.intensiveMode =
             static_cast<ClassMngr::Next::Application::
                 ScheduleImportPlanIntensiveMode>(255);
-        QVERIFY(!repository.applyTyped(invalidIntensiveMode).has_value());
+        const auto invalidIntensiveModeResult =
+            repository.applyTyped(invalidIntensiveMode);
+        QVERIFY(!invalidIntensiveModeResult.has_value());
+        QCOMPARE(
+            invalidIntensiveModeResult.error().repositoryError.code,
+            RepositoryErrorCode::InvalidInput
+            );
         QCOMPARE(persistedScheduleImportSnapshot(database), before);
 
         auto invalidNormalScheduleMode = typedCreateRequest({
@@ -8171,6 +8450,10 @@ void ScheduleImportTests::typedApplyRejectsInvalidEnumsBeforeWrites()
         const auto invalidNormalModeResult =
             repository.applyTyped(invalidNormalScheduleMode);
         QVERIFY(!invalidNormalModeResult.has_value());
+        QCOMPARE(
+            invalidNormalModeResult.error().repositoryError.code,
+            RepositoryErrorCode::InvalidInput
+            );
         QVERIFY(invalidNormalModeResult.error().policyIssue.has_value());
         QCOMPARE(
             invalidNormalModeResult.error().policyIssue->code,
@@ -8194,6 +8477,10 @@ void ScheduleImportTests::typedApplyRejectsInvalidEnumsBeforeWrites()
         const auto invalidModeAndDiagnosticsResult =
             repository.applyTyped(invalidNormalScheduleMode);
         QVERIFY(!invalidModeAndDiagnosticsResult.has_value());
+        QCOMPARE(
+            invalidModeAndDiagnosticsResult.error().repositoryError.code,
+            RepositoryErrorCode::InvalidInput
+            );
         QVERIFY(invalidModeAndDiagnosticsResult.error().policyIssue.has_value());
         QCOMPARE(
             invalidModeAndDiagnosticsResult.error().policyIssue->code,
@@ -8537,7 +8824,7 @@ void ScheduleImportTests::seededWriteFailureRollsBackEveryChange()
 
         QString normalizedFailure = QStringLiteral("success");
         if (!imported.has_value()
-            && imported.error().contains(
+            && imported.error().diagnostic.contains(
                 QStringLiteral("F100_INJECTED_WEDNESDAY_INSERT_FAILURE")
                 ))
         {

@@ -202,6 +202,7 @@ rejectsGeneratedClassIdOutsideIntRangeAndRollsBack()
         port
         );
     QVERIFY(!result.has_value());
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!result.error().message.empty());
 
     requireQuery(query, QStringLiteral(R"(
@@ -320,6 +321,7 @@ void ScheduleImportApplyPortTests::reportsUnavailableAndClosedSession()
     const auto missing = missingPort.applyScheduleImport(typedRequest());
     QVERIFY(!missing);
     QCOMPARE(missing.error().message, std::u16string(u"No Teacher Profile is open."));
+    QCOMPARE(missing.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!missing.error().policyIssue.has_value());
 
     ApplicationServices services;
@@ -328,6 +330,7 @@ void ScheduleImportApplyPortTests::reportsUnavailableAndClosedSession()
     const auto closed = closedPort.applyScheduleImport(typedRequest());
     QVERIFY(!closed);
     QCOMPARE(closed.error().message, std::u16string(u"No Teacher Profile is open."));
+    QCOMPARE(closed.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!closed.error().policyIssue.has_value());
 }
 
@@ -435,6 +438,7 @@ void ScheduleImportApplyPortTests::mapsSummaryAndFailure()
         Result<ScheduleImportSummary>(std::unexpected(QStringLiteral("database failed"))));
     QVERIFY(!failed);
     QCOMPARE(failed.error().message, std::u16string(u"database failed"));
+    QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!failed.error().policyIssue.has_value());
 }
 
@@ -458,6 +462,7 @@ void ScheduleImportApplyPortTests::preservesStructuredRepositoryFailures()
     policyRequest.diagnosticsAcknowledged = false;
     const auto policyFailure = port.applyScheduleImport(policyRequest);
     QVERIFY(!policyFailure);
+    QCOMPARE(policyFailure.error().code, Domain::ErrorCode::InvalidInput);
     QVERIFY(policyFailure.error().policyIssue.has_value());
     QCOMPARE(
         policyFailure.error().policyIssue->code,
@@ -472,6 +477,7 @@ void ScheduleImportApplyPortTests::preservesStructuredRepositoryFailures()
         Application::ScheduleImportReviewTeacherAction::Reuse;
     const auto teacherFailure = port.applyScheduleImport(teacherRequest);
     QVERIFY(!teacherFailure);
+    QCOMPARE(teacherFailure.error().code, Domain::ErrorCode::InvalidInput);
     QVERIFY(teacherFailure.error().teacherTargetIssue.has_value());
     QCOMPARE(
         teacherFailure.error().teacherTargetIssue->code,
@@ -484,6 +490,20 @@ void ScheduleImportApplyPortTests::preservesStructuredRepositoryFailures()
         );
     QVERIFY(!teacherFailure.error().policyIssue.has_value());
     QVERIFY(!teacherFailure.error().stateValidationError.has_value());
+
+    auto malformedScheduleRequest = typedRequest();
+    malformedScheduleRequest.candidates[0].times[0].day = u"monday";
+    const auto malformedScheduleFailure =
+        port.applyScheduleImport(malformedScheduleRequest);
+    QVERIFY(!malformedScheduleFailure);
+    QCOMPARE(
+        malformedScheduleFailure.error().code,
+        Domain::ErrorCode::Validation
+        );
+    QCOMPARE(
+        malformedScheduleFailure.error().policyIssue->code,
+        Application::ScheduleImportPlanEligibilityIssueCode::InvalidMeetingWeekday
+        );
 
     auto overlappingRequest = typedRequest();
     auto secondCandidate = overlappingRequest.candidates.front();
@@ -510,6 +530,7 @@ void ScheduleImportApplyPortTests::preservesStructuredRepositoryFailures()
 
     const auto overlapFailure = port.applyScheduleImport(overlappingRequest);
     QVERIFY(!overlapFailure);
+    QCOMPARE(overlapFailure.error().code, Domain::ErrorCode::Conflict);
     QVERIFY2(
         overlapFailure.error().stateValidationError.has_value(),
         qPrintable(QString::fromStdU16String(overlapFailure.error().message))

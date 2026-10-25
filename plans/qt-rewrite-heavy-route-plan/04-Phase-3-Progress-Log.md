@@ -4071,14 +4071,15 @@ source-reviewed; lifecycle tests check diagnostic content but not exact
 equality. These are verification limits, not reported production failures.
 No full suite or other-platform build was run.
 
-## F1457 — SpeakingEvalRepository structured errors — independently verified — 2026-10-25
+## F1457 — SpeakingEvalRepository structured errors — independently verified, committed locally — 2026-10-25
 
 Discovery is complete: Explorer
 `PHASE3-F1457-SPEAKING-EVAL-SCOPE-20261025-EXP-01`, test map
 `PHASE3-F1457-SPEAKING-EVAL-TEST-MAP-20261025-EXP-02`, and Investigator
 `PHASE3-F1457-SPEAKING-EVAL-ERROR-RESEARCH-20261025-INV-01` support the
-accepted boundary. F1457 is independently verified and accepted; its local
-commit is pending, and F1458 is next. F1456 is committed locally as
+accepted boundary. F1457 is independently verified and accepted; it is
+committed locally as `2ccba709122ae44a246302bdf8dab8d6a179e3cb` and is not
+pushed. F1456 is committed locally as
 `86667de56547273c8897198470e9c271a583035c` and is not pushed.
 
 Convert all fallible public `SpeakingEvalRepository` APIs and custom
@@ -4126,3 +4127,53 @@ interrupted; it has no aggregate result. Source-review-only gaps are streaming
 callbacks/late fetch, rollback-failure retention of the primary diagnostic,
 and exact legacy diagnostic pass-through (mostly source-reviewed). No full
 suite or other-platform build was run.
+
+## F1458 — ScheduleImportRepository structured errors — independently verified — 2026-10-25
+
+Discovery is complete: Explorer `PHASE3-F1458-SCHEDULE-IMPORT-SCOPE-20261025-EXP-01`,
+test map `PHASE3-F1458-SCHEDULE-IMPORT-TEST-MAP-20261025-EXP-02`, and
+Investigator `PHASE3-F1458-SCHEDULE-IMPORT-ERROR-RESEARCH-20261025-INV-01`
+support the accepted boundary. Tester
+`PHASE3-F1458-SCHEDULE-IMPORT-VERIFY-20261025-TST-01` independently verified
+and accepted F1458; its local commit is pending, and F1459 is next. F1457 is
+committed locally as
+`2ccba709122ae44a246302bdf8dab8d6a179e3cb` and is not pushed.
+
+Structure every public failure from `preview`, legacy `apply`, and active
+`applyTyped`; adapt the `DataService`/`ScheduleService` legacy boundaries and
+the ScheduleImport apply port. Legacy methods return repository results/status
+with exact diagnostic conversion. The typed path carries the common category
+and diagnostic while preserving policy, teacher-target, and state-validation
+details; keep the Next application layer independent of `RepositoryError` and
+Qt through an explicit repository wrapper or similarly low-coupling shape.
+
+Map invalid kind/request/resolution shape and invalid enums/targets to
+`InvalidInput`; malformed imported/persisted schedule or slot values and
+invalid projected times to `Validation`; state changed since review (selected
+teacher/class unavailable, skip no longer unique, or overlap) to `Conflict`;
+SQL, cursor, closed database, transaction-start/commit, and checked rollback
+failures to `Technical`. Empty inventories and missing `class_info` defaults
+remain success. A stale target after review is `Conflict`; do not use
+`NotFound` for empty reads. Ordinary SQL constraint failures stay `Technical`,
+since schema uniqueness alone is not a conflict contract. Rollback errors must
+be reported while retaining the primary diagnostic.
+
+Preserve exact legacy messages, ignored-cell behavior, teacher/class ID
+conversions and boundaries, transaction snapshots, write order, normal versus
+intensive replacement, schedule/time normalization and stored text, the
+profile-name side effect, summary counts, and preview ordering/sentinels.
+Other table writers and schema are outside F1458.
+
+The fresh build succeeded for `ClassMngr` and the repository, apply-port,
+dialog, use-case, and DataService lifecycle targets. Five focused CTests passed
+**5/5**. Four QtTest executables reported **216 passed, 0 failed**, with one
+optional workbook case skipped because `CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was
+unset; the use-case assertion target passed. Coverage includes typed
+categories/detail mapping, invalid/closed/read failures, transaction start and
+write rollback, state conflicts and validation, normal/intensive parity,
+generated-ID boundaries and ordering, and dialog feedback. `git diff --check`
+passed.
+
+Source-review-only gaps: schedule-import commit-failure rollback and the
+checked rollback-failure branch were not induced. The optional workbook case
+was skipped, and no full suite or other-platform build was run.

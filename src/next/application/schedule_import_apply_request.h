@@ -4,6 +4,7 @@
 #include "next/application/schedule_import_candidate_index.h"
 #include "next/application/schedule_import_plan_validation.h"
 #include "next/application/schedule_import_state_validation.h"
+#include "next/domain/operation_result.h"
 
 #include <expected>
 #include <optional>
@@ -153,6 +154,7 @@ struct ScheduleImportApplyFailure final
     std::optional<ScheduleImportPlanEligibilityIssue> policyIssue;
     std::optional<ScheduleImportApplyTeacherTargetIssue> teacherTargetIssue;
     std::optional<ScheduleImportStateValidationError> stateValidationError;
+    Domain::ErrorCode code = Domain::ErrorCode::Technical;
 };
 
 using ScheduleImportApplyResult =

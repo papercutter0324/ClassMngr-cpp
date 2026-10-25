@@ -10,6 +10,27 @@
 namespace ClassMngr::Next::Application
 {
 
+[[nodiscard]] inline Domain::ErrorCode scheduleImportPolicyErrorCode(
+    const ScheduleImportPlanEligibilityIssueCode code
+    ) noexcept
+{
+    switch (code)
+    {
+    case ScheduleImportPlanEligibilityIssueCode::InvalidCourse:
+    case ScheduleImportPlanEligibilityIssueCode::InvalidTeacherKey:
+    case ScheduleImportPlanEligibilityIssueCode::MissingMeetingTimes:
+    case ScheduleImportPlanEligibilityIssueCode::InvalidMeetingWeekday:
+    case ScheduleImportPlanEligibilityIssueCode::InvalidMeetingPattern:
+        return Domain::ErrorCode::Validation;
+    case ScheduleImportPlanEligibilityIssueCode::InvalidIntensiveMode:
+    case ScheduleImportPlanEligibilityIssueCode::UnacknowledgedDiagnostics:
+    case ScheduleImportPlanEligibilityIssueCode::InvalidReviewDecision:
+    case ScheduleImportPlanEligibilityIssueCode::InvalidClassColor:
+        return Domain::ErrorCode::InvalidInput;
+    }
+    return Domain::ErrorCode::InvalidInput;
+}
+
 // Validate the typed apply contract before either a write port or persistence
 // adapter is called. UI and persistence edges remain responsible for turning
 // structured issues into localized messages.
@@ -49,9 +70,14 @@ validateScheduleImportApplyRequest(
 
     if (auto issue = validateScheduleImportPlanEligibility(policy))
     {
+        const Domain::ErrorCode code =
+            scheduleImportPolicyErrorCode(issue->code);
         return ScheduleImportApplyFailure{
             u"The import plan contains an invalid resolution.",
-            std::move(issue)
+            std::move(issue),
+            std::nullopt,
+            std::nullopt,
+            code
         };
     }
 
@@ -65,7 +91,10 @@ validateScheduleImportApplyRequest(
             u"The import plan contains an invalid resolution.",
             ScheduleImportPlanEligibilityIssue{
                 ScheduleImportPlanEligibilityIssueCode::InvalidIntensiveMode
-            }
+            },
+            std::nullopt,
+            std::nullopt,
+            Domain::ErrorCode::InvalidInput
         };
     }
 
@@ -83,7 +112,9 @@ validateScheduleImportApplyRequest(
                     ScheduleImportApplyTeacherTargetIssueCode::ExistingTeacherMissingTarget,
                     teacher.teacherKey,
                     teacher.targetTeacherId
-                }
+                },
+                std::nullopt,
+                Domain::ErrorCode::InvalidInput
             };
         }
         if (needsTarget
@@ -99,7 +130,9 @@ validateScheduleImportApplyRequest(
                     ScheduleImportApplyTeacherTargetIssueCode::InvalidExistingTeacherTarget,
                     teacher.teacherKey,
                     teacher.targetTeacherId
-                }
+                },
+                std::nullopt,
+                Domain::ErrorCode::InvalidInput
             };
         }
         if (!needsTarget && teacher.targetTeacherId)
@@ -111,7 +144,9 @@ validateScheduleImportApplyRequest(
                     ScheduleImportApplyTeacherTargetIssueCode::NonExistingTeacherHasTarget,
                     teacher.teacherKey,
                     teacher.targetTeacherId
-                }
+                },
+                std::nullopt,
+                Domain::ErrorCode::InvalidInput
             };
         }
     }

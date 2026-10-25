@@ -93,13 +93,20 @@ succeeded and four focused CTests passed 4/4, including 24 repository and 81
 calendar-port cases. Missing-delete no-op, malformed stored dates, negative-ID
 save, and single-save transaction start/commit cases remain source-reviewed
 only; no full suite or other-platform build ran. F1457 SpeakingEvalRepository
-implementation and independent verification are complete; its local commit is
-pending. Fresh production/test targets built. DataService lifecycle, Speaking
+implementation and independent verification are complete; commit
+`2ccba709122ae44a246302bdf8dab8d6a179e3cb` is local and not pushed. F1458
+ScheduleImportRepository implementation and independent verification are
+complete; its local commit is pending. F1457's fresh production/test targets
+built. DataService lifecycle, Speaking
 Evaluation service, analytics, read-port, roster-score import, and save-port
 targets passed; the save-port binary reported 16/16 cases. The changed
 ClassesPage selector passed 3/3, but its aggregate target hung without output
 and was interrupted. Rollback-failure primary-diagnostic and direct streaming
-callback cases remain source-reviewed only; no full suite or other-platform
+callback cases remain source-reviewed only. F1458's six requested build
+targets succeeded, and five focused CTests passed 5/5; four QtTest executables
+reported 216 passing cases, with one optional workbook test skipped because
+`CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was unset. Commit-failure rollback and
+rollback-failure injection remain unverified. No full suite or other-platform
 build ran.
 F1453
 was independently verified with 12 focused CTests. In the same existing

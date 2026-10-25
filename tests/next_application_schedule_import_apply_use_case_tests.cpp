@@ -130,6 +130,8 @@ int main()
         ScheduleImportApplyUseCase::execute(invalidNormalScheduleMode, port);
     require(!rejectedNormalScheduleMode
         && rejectedNormalScheduleMode.error().policyIssue.has_value());
+    require(rejectedNormalScheduleMode.error().code
+        == ClassMngr::Next::Domain::ErrorCode::InvalidInput);
     require(rejectedNormalScheduleMode.error().policyIssue->code
         == ScheduleImportPlanEligibilityIssueCode::InvalidIntensiveMode);
     require(rejectedNormalScheduleMode.error().policyIssue->candidateIndex.rawValue() == 0);
@@ -151,6 +153,8 @@ int main()
         ScheduleImportApplyUseCase::execute(invalidLaterCandidate, port);
     require(!rejectedLaterCandidate
         && rejectedLaterCandidate.error().policyIssue.has_value());
+    require(rejectedLaterCandidate.error().code
+        == ClassMngr::Next::Domain::ErrorCode::Validation);
     require(rejectedLaterCandidate.error().policyIssue->code
         == ScheduleImportPlanEligibilityIssueCode::InvalidCourse);
     require(rejectedLaterCandidate.error().policyIssue->candidateIndex
@@ -170,6 +174,8 @@ int main()
         const auto rejectedTarget = ScheduleImportApplyUseCase::execute(
             missingTeacherTarget, targetPort);
         require(!rejectedTarget && rejectedTarget.error().teacherTargetIssue.has_value());
+        require(rejectedTarget.error().code
+            == ClassMngr::Next::Domain::ErrorCode::InvalidInput);
         require(rejectedTarget.error().teacherTargetIssue->code
             == ScheduleImportApplyTeacherTargetIssueCode::ExistingTeacherMissingTarget);
         require(!rejectedTarget.error().policyIssue.has_value());
@@ -319,6 +325,8 @@ int main()
     invalid.diagnostics.push_back({});
     const auto rejected = ScheduleImportApplyUseCase::execute(invalid, port);
     require(!rejected && rejected.error().policyIssue.has_value());
+    require(rejected.error().code
+        == ClassMngr::Next::Domain::ErrorCode::InvalidInput);
     require(rejected.error().policyIssue->code
         == ScheduleImportPlanEligibilityIssueCode::UnacknowledgedDiagnostics);
     require(rejected.error().policyIssue->candidateIndex.rawValue() == 0);
@@ -344,6 +352,7 @@ int main()
     port.result = std::unexpected(ScheduleImportApplyFailure{u"write failed", std::nullopt});
     const auto failed = ScheduleImportApplyUseCase::execute(validRequest(), port);
     require(!failed && failed.error().message == u"write failed" && port.calls == 2);
+    require(failed.error().code == ClassMngr::Next::Domain::ErrorCode::Technical);
 
     ScheduleImportApplyFailure stateFailure;
     stateFailure.message = u"The proposed schedule overlaps.";
@@ -355,6 +364,7 @@ int main()
         "4:00 PM",
         "4:55 PM"
     };
+    stateFailure.code = ClassMngr::Next::Domain::ErrorCode::Conflict;
     port.result = std::unexpected(stateFailure);
     const auto stateFailed = ScheduleImportApplyUseCase::execute(
         validRequest(),
@@ -362,6 +372,7 @@ int main()
         );
     require(!stateFailed && port.calls == 3);
     require(stateFailed.error().stateValidationError.has_value());
+    require(stateFailed.error().code == ClassMngr::Next::Domain::ErrorCode::Conflict);
     require(stateFailed.error().stateValidationError->code
         == ScheduleImportStateValidationErrorCode::ProjectedScheduleOverlap);
     require(stateFailed.error().stateValidationError->classLabel == "E5 Zeus");

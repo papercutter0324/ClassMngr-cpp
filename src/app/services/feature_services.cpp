@@ -750,7 +750,7 @@ Result<ScheduleImportPreview> ScheduleService::previewImport(
     if (auto* repository = session()
             ? session()->scheduleImportRepository() : nullptr)
     {
-        return repository->preview(user, kind);
+        return toLegacyResult(repository->preview(user, kind));
     }
     return dataService()
         ? dataService()->previewScheduleImport(user, kind)
@@ -764,7 +764,7 @@ Result<ScheduleImportSummary> ScheduleService::importSchedule(
     if (auto* repository = session()
             ? session()->scheduleImportRepository() : nullptr)
     {
-        return repository->apply(plan);
+        return toLegacyResult(repository->apply(plan));
     }
     return dataService()
         ? dataService()->importSchedule(plan)

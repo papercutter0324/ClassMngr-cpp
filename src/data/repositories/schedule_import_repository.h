@@ -1,20 +1,33 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 #include "domain/models/schedule_import.h"
 #include "next/application/schedule_import_apply_request.h"
 #include "next/application/schedule_import_state_validation.h"
 
 #include <QSqlDatabase>
-#include <QString>
 
 #include <expected>
 #include <optional>
 #include <utility>
 
+struct ScheduleImportTypedApplyFailure final
+{
+    RepositoryError repositoryError;
+    std::optional<
+        ClassMngr::Next::Application::ScheduleImportPlanEligibilityIssue
+        > policyIssue;
+    std::optional<
+        ClassMngr::Next::Application::ScheduleImportApplyTeacherTargetIssue
+        > teacherTargetIssue;
+    std::optional<
+        ClassMngr::Next::Application::ScheduleImportStateValidationError
+        > stateValidationError;
+};
+
 using ScheduleImportTypedApplyResult = std::expected<
     ScheduleImportSummary,
-    ClassMngr::Next::Application::ScheduleImportApplyFailure
+    ScheduleImportTypedApplyFailure
     >;
 
 class ScheduleImportRepository
@@ -24,12 +37,12 @@ public:
         QSqlDatabase& database
         );
 
-    [[nodiscard]] Result<ScheduleImportPreview> preview(
+    [[nodiscard]] RepositoryResult<ScheduleImportPreview> preview(
         const ScheduleImportUserBlock& user,
         ScheduleImportKind kind
         );
 
-    [[nodiscard]] Result<ScheduleImportSummary> apply(
+    [[nodiscard]] RepositoryResult<ScheduleImportSummary> apply(
         const ScheduleImportPlan& plan
         );
 
@@ -38,32 +51,9 @@ public:
         );
 
 private:
-    struct ApplyCoreFailure final
-    {
-        QString message;
-        std::optional<
-            ClassMngr::Next::Application::ScheduleImportStateValidationError
-            > stateValidationError;
-
-        ApplyCoreFailure(QString message)
-            : message(std::move(message))
-        {
-        }
-
-        ApplyCoreFailure(
-            QString message,
-            ClassMngr::Next::Application::ScheduleImportStateValidationError
-                stateValidationError
-            )
-            : message(std::move(message)),
-              stateValidationError(std::move(stateValidationError))
-        {
-        }
-    };
-
     using ApplyCoreResult = std::expected<
         ScheduleImportSummary,
-        ApplyCoreFailure
+        ScheduleImportTypedApplyFailure
         >;
 
     [[nodiscard]] ApplyCoreResult applyCore(

@@ -17,6 +17,7 @@
 #include "next/domain/schedule_time.h"
 
 #include <QByteArray>
+#include <QDebug>
 #include <QHash>
 #include <QObject>
 #include <QRegularExpression>
@@ -398,12 +399,79 @@ QString matchExplanation(
     return {};
 }
 
-QString queryFailure(
+RepositoryError queryFailure(
     const QSqlQuery& query,
     const QString& action
     )
 {
-    return SqlQueryUtils::errorFor(query, action).userMessage();
+    return RepositoryError{
+        RepositoryErrorCode::Technical,
+        SqlQueryUtils::errorFor(query, action).userMessage()
+    };
+}
+
+RepositoryError technicalFailure(QString diagnostic)
+{
+    return RepositoryError{
+        RepositoryErrorCode::Technical,
+        std::move(diagnostic)
+    };
+}
+
+RepositoryError validationFailure(QString diagnostic)
+{
+    return RepositoryError{
+        RepositoryErrorCode::Validation,
+        std::move(diagnostic)
+    };
+}
+
+RepositoryErrorCode stateValidationErrorCode(
+    const ScheduleImportStateValidationErrorCode code
+    )
+{
+    using ErrorCode = ScheduleImportStateValidationErrorCode;
+    switch (code)
+    {
+    case ErrorCode::SelectedTeacherUnavailable:
+    case ErrorCode::SelectedClassUnavailable:
+    case ErrorCode::SkippedClassNotUniqueExactMatch:
+    case ErrorCode::ProjectedScheduleOverlap:
+        return RepositoryErrorCode::Conflict;
+    case ErrorCode::InvalidProjectedTime:
+        return RepositoryErrorCode::Validation;
+    case ErrorCode::InvalidStateKind:
+    case ErrorCode::InvalidIntensiveMode:
+    case ErrorCode::InvalidTeacherAction:
+    case ErrorCode::InvalidClassAction:
+    case ErrorCode::InvalidTeacherTarget:
+    case ErrorCode::MissingTeacherRoom:
+    case ErrorCode::CreateNewClassHasTarget:
+    case ErrorCode::InvalidClassCandidateIndex:
+        return RepositoryErrorCode::InvalidInput;
+    }
+    return RepositoryErrorCode::Technical;
+}
+
+RepositoryErrorCode applyValidationErrorCode(
+    const ScheduleImportApplyFailure& failure
+    )
+{
+    switch (failure.code)
+    {
+    case Domain::ErrorCode::InvalidInput:
+        return RepositoryErrorCode::InvalidInput;
+    case Domain::ErrorCode::NotFound:
+        return RepositoryErrorCode::NotFound;
+    case Domain::ErrorCode::Conflict:
+        return RepositoryErrorCode::Conflict;
+    case Domain::ErrorCode::Validation:
+        return RepositoryErrorCode::Validation;
+    case Domain::ErrorCode::Canceled:
+    case Domain::ErrorCode::Technical:
+        return RepositoryErrorCode::Technical;
+    }
+    return RepositoryErrorCode::Technical;
 }
 
 int legacyDayIndex(
@@ -852,7 +920,7 @@ QList<ClassTime> selectedTimes(
         : info.regularTimes;
 }
 
-Status writeScheduleEntries(
+RepositoryStatus writeScheduleEntries(
     QSqlDatabase& database,
     const QString& table,
     const std::vector<PersistedScheduleEntry>& entries
@@ -889,11 +957,11 @@ Status writeScheduleEntries(
                 != scheduleTime.endMinute().rawValue()
             )
         {
-            return std::unexpected(
+            return std::unexpected(validationFailure(
                 QObject::tr(
                     "A resolved schedule entry cannot be persisted."
                     )
-                );
+                ));
         }
 
         query.bindValue(0, classId);
@@ -915,7 +983,7 @@ Status writeScheduleEntries(
     return {};
 }
 
-Status writeIntensiveSlotStates(
+RepositoryStatus writeIntensiveSlotStates(
     QSqlDatabase& database,
     const QList<IntensiveSlotState>& states
     )
@@ -954,9 +1022,9 @@ Status writeIntensiveSlotStates(
             || keys.contains(key)
             )
         {
-            return std::unexpected(
+            return std::unexpected(validationFailure(
                 QObject::tr("The import contains an invalid intensive slot state.")
-                );
+                ));
         }
         keys.insert(key);
 
@@ -985,7 +1053,7 @@ ScheduleImportRepository::ScheduleImportRepository(
 {
 }
 
-Result<ScheduleImportPreview> ScheduleImportRepository::preview(
+RepositoryResult<ScheduleImportPreview> ScheduleImportRepository::preview(
     const ScheduleImportUserBlock& user,
     ScheduleImportKind kind
     )
@@ -1000,16 +1068,17 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
         matchingKind = ScheduleImportMatchingKind::Intensive;
         break;
     default:
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
             QObject::tr("The schedule import kind is invalid.")
-            );
+        });
     }
 
     if (!m_database.isOpen())
     {
-        return std::unexpected(
+        return std::unexpected(technicalFailure(
             QObject::tr("No Teacher Profile is open.")
-            );
+            ));
     }
 
     TeacherRepository teacherRepository(m_database);
@@ -1019,14 +1088,14 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
         teacherRepository.getAllTeachers();
     if (!teachers)
     {
-        return std::unexpected(toLegacyDiagnostic(teachers.error()));
+        return std::unexpected(teachers.error());
     }
 
     const RepositoryResult<QList<Classroom>> classrooms =
         classRepository.getClasses();
     if (!classrooms)
     {
-        return std::unexpected(toLegacyDiagnostic(classrooms.error()));
+        return std::unexpected(classrooms.error());
     }
 
     QHash<int, ClassInfo> classInfo;
@@ -1036,7 +1105,7 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
             classInfoRepository.loadClassInfo(classroom.id);
         if (!info)
         {
-            return std::unexpected(toLegacyDiagnostic(info.error()));
+            return std::unexpected(info.error());
         }
 
         classInfo.insert(classroom.id, *info);
@@ -1054,9 +1123,10 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
             );
     if (!matchingProjection)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
             QObject::tr("The schedule import kind is invalid.")
-            );
+        });
     }
     const ScheduleImportMatchingProjection& projection = *matchingProjection;
 
@@ -1153,27 +1223,54 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
     return result;
 }
 
-Result<ScheduleImportSummary> ScheduleImportRepository::apply(
+RepositoryResult<ScheduleImportSummary> ScheduleImportRepository::apply(
     const ScheduleImportPlan& plan
     )
 {
     if (!m_database.isOpen())
     {
-        return std::unexpected(
+        return std::unexpected(technicalFailure(
             QObject::tr("No Teacher Profile is open.")
-            );
+            ));
+    }
+
+    if (plan.kind != ScheduleImportKind::Normal
+        && plan.kind != ScheduleImportKind::Intensive)
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
+            QObject::tr("The schedule import kind is invalid.")
+        });
+    }
+    if (plan.intensiveMode != ScheduleImportIntensiveMode::UpdateExisting
+        && plan.intensiveMode != ScheduleImportIntensiveMode::ReplaceWithNew)
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
+            QObject::tr(
+                "Choose how the existing intensive schedule should be handled."
+                )
+        });
     }
 
     const Result<ValidatedScheduleImportPlan> validatedPlan =
         ScheduleImportPlanValidator::validate(plan);
     if (!validatedPlan)
     {
-        return std::unexpected(validatedPlan.error());
+        const auto requestValidation =
+            validateScheduleImportApplyRequest(applyRequestFromLegacyPlan(plan));
+        const RepositoryErrorCode code = requestValidation
+            ? applyValidationErrorCode(*requestValidation)
+            : RepositoryErrorCode::Validation;
+        return std::unexpected(RepositoryError{
+            code,
+            validatedPlan.error()
+        });
     }
     const ApplyCoreResult result = applyCore(applyRequestFromLegacyPlan(plan));
     if (!result)
     {
-        return std::unexpected(result.error().message);
+        return std::unexpected(result.error().repositoryError);
     }
     return *result;
 }
@@ -1184,29 +1281,33 @@ ScheduleImportTypedApplyResult ScheduleImportRepository::applyTyped(
 {
     if (!m_database.isOpen())
     {
-        return std::unexpected(ScheduleImportApplyFailure{
-            u"No Teacher Profile is open."
+        return std::unexpected(ScheduleImportTypedApplyFailure{
+            technicalFailure(QObject::tr("No Teacher Profile is open."))
         });
     }
 
     if (const auto failure = validateScheduleImportApplyRequest(request))
     {
-        ScheduleImportApplyFailure typedFailure;
-        typedFailure.message =
-            applyValidationFailureMessage(request, *failure).toStdU16String();
-        typedFailure.policyIssue = failure->policyIssue;
-        typedFailure.teacherTargetIssue = failure->teacherTargetIssue;
+        const QString diagnostic = applyValidationFailureMessage(
+            request,
+            *failure
+            );
+        ScheduleImportTypedApplyFailure typedFailure{
+            RepositoryError{
+                applyValidationErrorCode(*failure),
+                diagnostic
+            },
+            failure->policyIssue,
+            failure->teacherTargetIssue,
+            std::nullopt
+        };
         return std::unexpected(std::move(typedFailure));
     }
 
     const ApplyCoreResult result = applyCore(request);
     if (!result)
     {
-        ScheduleImportApplyFailure typedFailure;
-        typedFailure.message = result.error().message.toStdU16String();
-        typedFailure.stateValidationError =
-            result.error().stateValidationError;
-        return std::unexpected(std::move(typedFailure));
+        return std::unexpected(result.error());
     }
     return *result;
 }
@@ -1215,15 +1316,36 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
     const ScheduleImportApplyRequest& request
     )
 {
-
     DatabaseTransaction transaction(m_database);
+    const auto fail = [this, &transaction](
+                          RepositoryError error,
+                          std::optional<ScheduleImportStateValidationError>
+                              stateValidationError = std::nullopt
+                          ) -> ApplyCoreResult
+    {
+        if (!transaction.rollbackChecked())
+        {
+            qWarning().noquote()
+                << "Schedule import rollback failed after:"
+                << error.diagnostic
+                << m_database.lastError().text();
+            error.code = RepositoryErrorCode::Technical;
+        }
+        return std::unexpected(ScheduleImportTypedApplyFailure{
+            std::move(error),
+            std::nullopt,
+            std::nullopt,
+            std::move(stateValidationError)
+        });
+    };
+
     if (!transaction.started())
     {
-        return std::unexpected(
+        return fail(technicalFailure(
             QObject::tr(
                 "Unable to start the schedule import transaction."
                 )
-            );
+            ));
     }
 
     TeacherRepository teacherRepository(m_database);
@@ -1233,14 +1355,14 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
         teacherRepository.loadScheduleImportTeacherRecords();
     if (!existingTeachers)
     {
-        return std::unexpected(toLegacyDiagnostic(existingTeachers.error()));
+        return fail(existingTeachers.error());
     }
 
     const RepositoryResult<QList<Classroom>> existingClasses =
         classRepository.getClasses();
     if (!existingClasses)
     {
-        return std::unexpected(toLegacyDiagnostic(existingClasses.error()));
+        return fail(existingClasses.error());
     }
 
     const RepositoryResult<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
@@ -1248,8 +1370,7 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
             classInfoRepository.loadScheduleImportStateSnapshotClassInfos();
     if (!existingClassInfos)
     {
-        return std::unexpected(
-            toLegacyDiagnostic(existingClassInfos.error()));
+        return fail(existingClassInfos.error());
     }
 
     QHash<int, ScheduleImportStateSnapshotClassInfoReadRecord>
@@ -1294,10 +1415,13 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
         );
     if (currentState)
     {
-        return std::unexpected(ApplyCoreFailure{
-            stateValidationMessage(*currentState),
+        return fail(
+            RepositoryError{
+                stateValidationErrorCode(currentState->code),
+                stateValidationMessage(*currentState)
+            },
             *currentState
-        });
+            );
     }
 
     ScheduleImportSummary summary;
@@ -1375,11 +1499,10 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
 
             if (!query.exec())
             {
-                return std::unexpected(
-                    queryFailure(
-                        query,
-                        QObject::tr("Creating a Korean teacher")
-                        )
+                return fail(queryFailure(
+                    query,
+                    QObject::tr("Creating a Korean teacher")
+                    )
                     );
             }
 
@@ -1388,11 +1511,11 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
                 .toLongLong(&teacherIdOk);
             if (!teacherIdOk || teacherId <= 0)
             {
-                return std::unexpected(
+                return fail(technicalFailure(
                     QObject::tr(
                         "A Korean teacher could not be created."
                         )
-                    );
+                    ));
             }
             resolvedTeacherIds.insert(iterator.key(), teacherId);
             ++summary.teachersCreated;
@@ -1421,11 +1544,10 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
 
             if (!query.exec())
             {
-                return std::unexpected(
-                    queryFailure(
-                        query,
-                        QObject::tr("Updating a Korean teacher room")
-                        )
+                return fail(queryFailure(
+                    query,
+                    QObject::tr("Updating a Korean teacher room")
+                    )
                     );
             }
             ++summary.teachersUpdated;
@@ -1465,11 +1587,12 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
                 );
         if (teacherId <= 0)
         {
-            return std::unexpected(
+            return fail(RepositoryError{
+                RepositoryErrorCode::InvalidInput,
                 QObject::tr(
                     "A class cannot be imported because its Korean teacher was skipped."
                     )
-                );
+            });
         }
 
         int classId = legacyApplyId(resolution.targetClassId);
@@ -1494,11 +1617,10 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
                 );
             if (!query.exec())
             {
-                return std::unexpected(
-                    queryFailure(
-                        query,
-                        QObject::tr("Creating a class")
-                        )
+                return fail(queryFailure(
+                    query,
+                    QObject::tr("Creating a class")
+                    )
                     );
             }
             bool classIdOk = false;
@@ -1510,9 +1632,9 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
                 || generatedClassId > std::numeric_limits<int>::max()
                 )
             {
-                return std::unexpected(
+                return fail(technicalFailure(
                     QObject::tr("A class could not be created.")
-                    );
+                    ));
             }
             classId = static_cast<int>(generatedClassId);
             insertedClassIdsByCandidate[
@@ -1560,11 +1682,10 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
 
         if (!query.exec())
         {
-            return std::unexpected(
-                queryFailure(
-                    query,
-                    QObject::tr("Updating imported class information")
-                    )
+            return fail(queryFailure(
+                query,
+                QObject::tr("Updating imported class information")
+                )
                 );
         }
     }
@@ -1604,11 +1725,11 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
 
         if (classId <= 0)
         {
-            return std::unexpected(
+            return fail(validationFailure(
                 QObject::tr(
                     "A projected schedule has no persisted class target."
                     )
-                );
+                ));
         }
 
         QList<ClassTime> times;
@@ -1640,11 +1761,11 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
     const auto scheduleEntries = resolvedScheduleEntries(finalTimes);
     if (!scheduleEntries)
     {
-        return std::unexpected(
+        return fail(validationFailure(
             QObject::tr(
                 "A resolved schedule entry has an invalid class or time."
                 )
-            );
+            ));
     }
 
     if (!preservesAbsentIntensiveClasses)
@@ -1685,14 +1806,12 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
             query.bindValue(0, iterator.key());
             if (!query.exec())
             {
-                return std::unexpected(
-                    queryFailure(
-                        query,
-                        QObject::tr(
-                            "Clearing an existing intensive class schedule"
-                            )
+                return fail(queryFailure(
+                    query,
+                    QObject::tr(
+                        "Clearing an existing intensive class schedule"
                         )
-                    );
+                    ));
             }
         }
     }
@@ -1703,33 +1822,31 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
             )
         )
     {
-        return std::unexpected(
-            queryFailure(
-                query,
-                QObject::tr("Clearing the previous schedule snapshot")
-                )
+        return fail(queryFailure(
+            query,
+            QObject::tr("Clearing the previous schedule snapshot")
+            )
             );
     }
 
-    const Status written = writeScheduleEntries(
+    const RepositoryStatus written = writeScheduleEntries(
         m_database,
         timeTable,
         *scheduleEntries
         );
     if (!written)
     {
-        return std::unexpected(written.error());
+        return fail(written.error());
     }
 
     if (request.intensiveSchedule)
     {
         if (!query.exec(QStringLiteral("DELETE FROM intensive_slot_states")))
         {
-            return std::unexpected(
-                queryFailure(
-                    query,
-                    QObject::tr("Clearing the previous intensive slot states")
-                    )
+            return fail(queryFailure(
+                query,
+                QObject::tr("Clearing the previous intensive slot states")
+                )
                 );
         }
 
@@ -1745,11 +1862,11 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
                 QString::fromStdU16String(state.state)
             });
         }
-        const Status statesWritten =
+        const RepositoryStatus statesWritten =
             writeIntensiveSlotStates(m_database, slotStates);
         if (!statesWritten)
         {
-            return std::unexpected(statesWritten.error());
+            return fail(statesWritten.error());
         }
     }
 
@@ -1765,12 +1882,10 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
             );
         if (!query.exec())
         {
-            return std::unexpected(
-                queryFailure(
-                    query,
-                    QObject::tr("Reading My Information name")
-                    )
-                );
+            return fail(queryFailure(
+                query,
+                QObject::tr("Reading My Information name")
+                ));
         }
 
         QString existingName;
@@ -1778,6 +1893,13 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
         {
             existingName =
                 query.value(0).toString().trimmed();
+        }
+        else if (query.lastError().isValid())
+        {
+            return fail(queryFailure(
+                query,
+                QObject::tr("Reading My Information name")
+                ));
         }
 
         if (
@@ -1800,11 +1922,10 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
                 );
             if (!query.exec())
             {
-                return std::unexpected(
-                    queryFailure(
-                        query,
-                        QObject::tr("Saving My Information name")
-                        )
+                return fail(queryFailure(
+                    query,
+                    QObject::tr("Saving My Information name")
+                    )
                     );
             }
             summary.profileNameUpdated = true;
@@ -1813,12 +1934,12 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
 
     if (!transaction.commit())
     {
-        return std::unexpected(
+        return fail(technicalFailure(
             QObject::tr(
                 "Unable to commit the schedule import transaction: %1"
                 )
                 .arg(m_database.lastError().text())
-            );
+            ));
     }
 
     return summary;
