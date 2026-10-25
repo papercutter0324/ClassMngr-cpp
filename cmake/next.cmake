@@ -436,6 +436,8 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/workspace_creation_lifecycle_adapter.h
     src/next/platform/application_services_academic_calendar_schedule_preferences_port.h
     src/next/platform/application_services_document_catalog_port.h
+    src/next/platform/resource_document_catalog_port.cpp
+    src/next/platform/resource_document_catalog_port.h
     src/next/platform/application_services_calendar_event_port.h
     src/next/platform/calendar_event_time_status_adapter.h
     src/next/platform/application_services_sub_prep_calendar_event_intervals_port.h
@@ -630,6 +632,7 @@ target_link_libraries(ClassMngrNextPersistence
 target_link_libraries(ClassMngrNextPlatform
     INTERFACE
         ClassMngrNext::Application
+        ClassMngrNext::Resources
         Qt6::Core
         Qt6::Network
 )
@@ -684,6 +687,7 @@ classmngr_next_assert_dependencies(ClassMngrNextResources
 )
 classmngr_next_assert_dependencies(ClassMngrNextPlatform
     ClassMngrNext::Application
+    ClassMngrNext::Resources
     Qt6::Core
     Qt6::Network
 )

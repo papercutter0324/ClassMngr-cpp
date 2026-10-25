@@ -68,6 +68,48 @@ set_tests_properties(ClassMngrNextResourceLoaderTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
+# Project document metadata without staging or opening any document bodies.
+add_executable(ClassMngrNextResourceDocumentCatalogTests
+    cmake/tests/next_resource_document_catalog.cpp
+)
+target_compile_features(ClassMngrNextResourceDocumentCatalogTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(ClassMngrNextResourceDocumentCatalogTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextResourceDocumentCatalogTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_include_directories(ClassMngrNextResourceDocumentCatalogTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextResourceDocumentCatalogTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrNextResourceDocumentCatalogTests
+    PRIVATE
+        ClassMngrNext::Platform
+)
+add_dependencies(ClassMngrNextResourceDocumentCatalogTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextResourceDocumentCatalogTests
+    COMMAND ClassMngrNextResourceDocumentCatalogTests
+)
+set_tests_properties(ClassMngrNextResourceDocumentCatalogTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
 add_executable(ClassMngrNextResourceRootResolverTests
     cmake/tests/next_resource_root_resolver.cpp
 )
