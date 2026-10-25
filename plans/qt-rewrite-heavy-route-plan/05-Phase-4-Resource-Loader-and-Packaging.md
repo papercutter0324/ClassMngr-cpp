@@ -32,13 +32,22 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: Not started
+- Status: In progress
 - Default route: Heavy
 - Depends on: Phase 1
 - Blocks: Bootstrap, feature migration, packaging, and memory gates
-- Owner: Unassigned
-- Last updated: 2026-09-16
-- Current note: Replace dynamic resource packs with deterministic installed resources and explicit lifetimes.
+- Owner: Codex (Heavy route)
+- Last updated: 2026-10-25
+- Current note: F1464, the effective-resource inventory, passed independent
+  verification and is ready to commit; F1465 is next. The inventory covers
+  229 tracked paths under `resources/` and two Calendar QML inputs. Its 226
+  asset files total 65,707,627 exact source bytes; installed/resident sizes
+  remain unmeasured and have measurement methods. No installed overrides were
+  present in the application-owned pack directory. `dyb.png` has no identified
+  production feature caller; its owner or exclusion remains a migration
+  decision. F1465–F1468 cover baseline baking, generated catalog,
+  installed-tree packaging, and the typed loader. See the [inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md)
+  and [current batch tracker](Current-Slice-Batches.md).
 
 ### Slice batches
 
@@ -52,6 +61,29 @@ Use this section only when a decision, acceptance result, verification
 finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
+
+### F1464 — Effective-resource inventory — independently verified — 2026-10-25
+
+The reproducible inventory records 229 tracked paths under `resources/` and
+the two Calendar QML sources, for 231 unique records. The 226 `resources/assets`
+files total 65,707,627 exact source bytes. Each record carries a stable ID,
+source path, byte count and SHA-256, v2 packaging disposition, owner/tier and
+lifetime fields, streamability status, and installed/resident measurement
+method. It separates `documents.json` metadata from 51 document bodies,
+excludes the 28 speaking-evaluation art source inputs from the v2 tree, records
+the absent `roster-designs` payload, and excludes the Office lock artifact from
+v2 as transient. The legacy documents RCC currently includes that 165-byte
+artifact.
+
+The independent Tester confirmed tracked-path completeness, hashes, unique
+IDs, disposition counts, document/QML separation, and non-fabricated size
+reporting. The four focused utility tests and generator `--check` passed. No
+runtime build was needed for this inventory-only slice. Installed and decoded
+sizes remain unknown pending the v2 package/runtime. `dyb.png` has no identified
+production feature caller; it is recorded as optional legacy content without
+inventing a v2 feature owner. Resolve its claim or exclusion during consumer
+migration. No installed pack overrides were found in the application-owned
+data directory. F1464 is accepted; F1465 is next.
 
 ## Objective
 
@@ -71,6 +103,13 @@ There will be:
 - No resource-pack preferences.
 - No resource-pack leases.
 - No production source-directory fallback.
+
+The no-pack policy applies to the new `ClassMngrNext` runtime and its package.
+The legacy `ClassMngr` executable remains a temporary compatibility oracle
+through Phase 12 and may keep its existing RCC implementation and package
+inputs until cutover. It is not a fallback for the new loader. Remove the
+legacy pack implementation and its deployment behavior when the migrated
+application replaces that oracle.
 
 ## Work packages
 

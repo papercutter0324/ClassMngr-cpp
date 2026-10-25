@@ -6,21 +6,19 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-25
-- Current milestone: Phase 3 is Complete on the mandatory Heavy route. Batch 22
-  (F1444–F1463, 20 accepted slices) is complete and pushed to
-  `origin/Qt-Rewrite` at `ec66ccd9e398868b006cc7def8d68398cc400a26`; local and
-  remote matched and the branch was clean/up-to-date at inspection. The final
-  compatibility gate passed. Batch 23 discovery at F1462 found no eligible
-  repository candidate, so no follow-on queue was accepted.
-  Evidence and limits are in the
-  [progress log](04-Phase-3-Progress-Log.md); see also the [Phase 3
-  plan](04-Phase-3-Persistence-Rewrite.md),
-  [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),
-  [F1420 DataService migration map](../../docs/qt-rewrite/data-service-migration-map.md),
-  and [current batch tracker](Current-Slice-Batches.md).
-  Phase 2 closure evidence
-  and limitations remain in its [plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
-  and [progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 3 is Complete and Phase 4 is In progress on the
+  mandatory Heavy route. F1464, the effective-resource inventory, passed
+  independent verification and is ready to commit. The inventory records 229
+  tracked paths under `resources/` plus two Calendar QML inputs, with 226 asset
+  files totaling 65,707,627 exact source bytes. No installed overrides were
+  present in the application-owned pack directory. `dyb.png` remains recorded
+  as an optional legacy asset without a production feature caller; its owner
+  or exclusion must be resolved during migration. F1465 is next in Batch 1.
+  See the [Phase 4 inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md),
+  [Phase 4 plan](05-Phase-4-Resource-Loader-and-Packaging.md), and
+  [current batch tracker](Current-Slice-Batches.md). Phase 3's accepted
+  evidence and limits remain in the [progress log](04-Phase-3-Progress-Log.md)
+  and [plan](04-Phase-3-Persistence-Rewrite.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -39,7 +37,7 @@
 | 1 | 02-Phase-1-Build-System-and-Repository-Structure.md | Complete | Heavy | 0 |
 | 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | Complete | Heavy | 1 |
 | 3 | 04-Phase-3-Persistence-Rewrite.md | Complete | Heavy | 1, 2 |
-| 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Not started | Heavy | 1 |
+| 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | In progress | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Not started | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Not started | Heavy | 5 |
 | 7 | 08-Phase-7-Feature-Migration.md | Not started | Heavy | 2–6 |
