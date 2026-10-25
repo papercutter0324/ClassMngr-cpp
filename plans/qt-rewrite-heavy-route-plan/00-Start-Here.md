@@ -22,8 +22,12 @@
   translations, and two Calendar QML resource keys; the default install still
   stages only the legacy application. Windows and Linux destinations are
   source-reviewed but not host-staged. F1468, the typed resource loader, is
-  accepted and committed after independent macOS verification; Batch 1 push
-  is pending. It provides explicit root/catalog injection, catalog
+  accepted and committed as `eb473fab89410e6dc5f5527d872b56f150f7f6fd` after
+  independent macOS verification. Batch 1 (F1464–F1468) is pushed to `origin`;
+  the receipt is in the [Phase 4 progress log](05-Phase-4-Progress-Log.md).
+  F1469, installed resource-root resolution, is accepted, and F1470, explicit
+  resource scopes, is next. F1468 provides
+  explicit root/catalog injection, catalog
   validation, root-confined file reads, and RAII stream/font/translation
   ownership while keeping `ClassMngrNext` QtCore-only. The pack-backed
   document adapter used by legacy navigation remains queued for replacement
@@ -39,8 +43,7 @@
   exclusion must be resolved during migration.
   See the [Phase 4 inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md),
   [Phase 4 plan](05-Phase-4-Resource-Loader-and-Packaging.md), and
-  [current batch tracker](Current-Slice-Batches.md). Batch 1 will be pushed
-  after F1468. Phase 3's accepted
+  [current batch tracker](Current-Slice-Batches.md). Phase 3's accepted
   evidence and limits remain in the [progress log](04-Phase-3-Progress-Log.md)
   and [plan](04-Phase-3-Persistence-Rewrite.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate

@@ -2,54 +2,21 @@
 
 Phase 4 is In progress on the mandatory Heavy route.
 
-## Batch 1 — accepted, awaiting push
-
-1. **F1464 — Effective-resource inventory.** Refresh the checked-in baseline
-   inventory with logical identities, packaged/source distinction, exact
-   source bytes and hashes, installed/resident measurement methods, feature
-   owner, loading tier/method, lifetime, streamability, and release policy.
-   Keep document-catalog metadata separate from document
-   bodies. Resolve `roster-designs` absence explicitly. F1464 is accepted;
-   its inventory and verification evidence are in the Phase 4 plan.
-2. **F1465 — Offline baseline baker.** Produce canonical installed files from
-   the pinned repository baseline; validate paths and types and record content
-   hashes and provenance. No installed overrides were present in the checked
-   application-owned data directory. F1465 is accepted; its verification
-   evidence is in the Phase 4 plan.
-3. **F1466 — Generated resource catalog.** Generate the per-resource catalog
-   from the canonical tree, including IDs, type/category, loading policy, byte
-   size, and content hash.
-4. **F1467 — Deterministic installed-tree packaging.** Install the canonical
-   tree at the agreed Windows, macOS, and Linux package-relative locations and
-   validate staged layouts. F1467 is committed as
-   `153b85fb7b6314baf145ddd3f9584926111049d2`; macOS staging passed and
-   Windows/Linux host staging remains for the cross-platform gate.
-5. **F1468 — Typed resource loader.** Accepted after independent macOS review.
-   The loader uses explicit catalog/root injection, validates catalog records,
-   confines package-file access to the canonical root, and returns owning
-   text, JSON, image, font, stylesheet, translation, and stream results. Its
-   tests verify document-body laziness, hash integrity, and RAII release.
-   The source-ownership gate and QtCore-only `ClassMngrNext` check pass.
-
-F1464 is committed as `473e8325b9f98069c8396291d057a398a9683ebe`; F1465 is
-committed as `3423e1de05f129d407004192565a79f06e572579`; F1466 is committed as
-`b10e60e854f21e67ed3b3653b8c8b608c7588345`; F1467 is committed as
-`153b85fb7b6314baf145ddd3f9584926111049d2`. Batch 2 discovery is complete and
-its queue is below. Completed batch history
-and push receipts belong in the Phase 4 progress log, not this tracker.
-
-## Batch 2 — discovered, inactive
+## Batch 2 — active
 
 The accepted queue stays focused on the new resource runtime and document
 resource lifecycle. Theme/font/icon/campus/report UI consumers remain with
 their Phase 5–7 startup, shared-UI, and feature migrations; do not change their
 legacy oracle paths in Phase 4.
 
-1. **F1469 — Resolve the installed resource root.** Add platform-specific
-   package-root resolution for Windows, macOS, and Linux; depend on F1467 and
-   F1468 and never search the current directory or source tree.
-2. **F1470 — Add resource scopes.** Represent startup, page, feature, and
-   operation ownership explicitly in load requests and handles.
+1. **F1469 — Resolve the installed resource root.** Accepted after independent
+   macOS verification; depends on F1467/F1468 and does not search the current
+   directory or source tree. CMake selects the package root relative to the
+   executable directory; tests cover missing roots/catalogs, unrelated current
+   directory contents, and relocation. Mixed absolute/relative Linux install
+   directories with an install-time prefix override were not tested.
+2. **F1470 — Add resource scopes (next).** Represent startup, page, feature,
+   and operation ownership explicitly in load requests and handles.
 3. **F1471 — Add byte-budgeted resource caching.** Use explicit capacity and
    eviction; do not cache document bodies or unbounded decoded images.
 4. **F1472 — Add resource diagnostics.** Report load time, decoded size, cache

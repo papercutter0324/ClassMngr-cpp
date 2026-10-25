@@ -647,6 +647,8 @@ set(CLASSMNGR_NEXT_RESOURCES_SOURCES
     "src/next/resources/resource_id.h"
     "src/next/resources/resource_loader.cpp"
     "src/next/resources/resource_loader.h"
+    "src/next/resources/resource_root_resolver.cpp"
+    "src/next/resources/resource_root_resolver.h"
 )
 
 set(CLASSMNGR_CALENDAR_QML_EVENT_FILE

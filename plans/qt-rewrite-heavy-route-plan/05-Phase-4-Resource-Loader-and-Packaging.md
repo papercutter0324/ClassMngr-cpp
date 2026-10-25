@@ -38,21 +38,18 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Bootstrap, feature migration, packaging, and memory gates
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-25
-- Current note: F1468, the typed resource loader, is accepted and committed;
-  the Batch 1 push is pending. F1469 will resolve the platform-specific
-  installed resource root after that push. The loader uses explicit catalog
-  and resource-root injection, validates generated catalog records, confines
-  package-file access to the canonical root, and returns owning stream, font,
-  and translation handles. Independent macOS verification passed the loader,
-  Calendar-resource, and launch CTests 3/3; after strengthening durable
-  hash/lifecycle assertions, the loader CTest passed 1/1. The configure-time
-  ownership check validated all 1,618 handwritten sources, and the
-  `ClassMngrNext` executable remains QtCore-only. Its platform test's Windows
-  handle branch is source-reviewed but not host-compiled. Windows/Linux
-  package staging remains for F1483. The existing pack-backed document adapter
-  used by legacy navigation remains out of F1468 and is scheduled for
-  replacement at F1474; theme/font/icon/campus/report UI consumers stay with
-  their Phase 5–7 migrations. See the [inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md)
+- Current note: F1469, installed resource-root resolution, is accepted after
+  Batch 1 (F1464–F1468) was pushed to `origin`; see the [Phase 4 progress log](05-Phase-4-Progress-Log.md)
+  for the receipt. F1470, explicit resource scopes, is next. F1469 resolves
+  only the CMake-selected root relative to the executable directory, and its
+  macOS tests cover missing roots, unrelated working-directory contents, and
+  package relocation. Windows/Linux layouts and mixed absolute/relative Linux
+  install directories with an install-time prefix override remain unverified
+  for F1483. The resolver API is not yet called by the resource-free Next
+  shell; F1480 covers launched relocation. The pack-backed document adapter
+  used by legacy navigation remains scheduled for replacement at F1474;
+  theme/font/icon/campus/report UI consumers stay with their Phase 5–7
+  migrations. See the [inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md)
   and [current batch tracker](Current-Slice-Batches.md).
 
 ### Slice batches
@@ -181,7 +178,29 @@ source-reviewed and awaits host execution. `clang-format` was unavailable.
 The pack-backed `DocumentContentResourcePort` remains for the legacy navigation
 consumer until F1474 introduces loader-owned document content handles; it is
 not part of `src/next/resources/`. F1468 is accepted and committed; Batch 1
-awaits its push.
+is pushed, with the receipt in the [Phase 4 progress log](05-Phase-4-Progress-Log.md).
+
+### F1469 — Resolve installed resource root — independently verified — 2026-10-25
+
+`ResourceRootResolver` returns the resource root and catalog path selected by
+the platform install layout. It starts from the executable directory, uses
+only the CMake-provided relative root, canonicalizes the selected directory,
+and fails when the selected root or catalog is absent. It does not search the
+working directory, source tree, environment, or alternate roots. CMake selects
+`../Resources` for macOS bundles, `resources` beside the Windows executable,
+and a Linux relative path derived from the executable install directory and
+`${CMAKE_INSTALL_DATADIR}/ClassMngr`.
+
+The independent macOS run rebuilt the resolver, loader, Calendar-resource, and
+Next launch targets and passed their CTests 4/4. Resolver tests cover the
+configured layout, missing root/catalog, an unrelated current-directory
+resource tree, and relocation. Configure-time ownership validation passed for
+1,620 handwritten sources. Windows and Linux were source-reviewed but not
+host-built or staged. Install-time `--prefix` overrides with mixed absolute
+and relative Linux install directories were not tested; the standard preset
+uses relative install directories. The resolver remains an API without a Next
+runtime caller while the shell is resource-free; F1480 checks launched
+relocation. F1469 is accepted, and F1470 is next.
 
 ## Objective
 

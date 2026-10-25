@@ -68,6 +68,35 @@ set_tests_properties(ClassMngrNextResourceLoaderTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
+add_executable(ClassMngrNextResourceRootResolverTests
+    cmake/tests/next_resource_root_resolver.cpp
+)
+target_compile_features(ClassMngrNextResourceRootResolverTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(ClassMngrNextResourceRootResolverTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextResourceRootResolverTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_include_directories(ClassMngrNextResourceRootResolverTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextResourceRootResolverTests
+    PRIVATE
+        ClassMngrNext::Resources
+)
+add_test(
+    NAME ClassMngrNextResourceRootResolverTests
+    COMMAND ClassMngrNextResourceRootResolverTests
+)
+
 # Keep PowerPoint batch template compatibility independent of Qt and the
 # feature layer.
 add_executable(

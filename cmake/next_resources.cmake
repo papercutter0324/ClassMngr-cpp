@@ -165,6 +165,59 @@ else()
     cmake_path(NORMAL_PATH CLASSMNGR_NEXT_RESOURCE_INSTALL_ROOT)
 endif()
 
+if(APPLE)
+    # The executable lives in ClassMngr.app/Contents/MacOS while the resource
+    # component is installed in ClassMngr.app/Contents/Resources.
+    set(CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT "../Resources")
+elseif(WIN32)
+    # The Windows preset installs the executable into CMAKE_INSTALL_BINDIR and
+    # the resource component into the sibling `resources` directory.
+    set(CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT "resources")
+else()
+    if(IS_ABSOLUTE "${CMAKE_INSTALL_BINDIR}")
+        cmake_path(NORMAL_PATH CMAKE_INSTALL_BINDIR
+            OUTPUT_VARIABLE _classmngr_next_executable_install_directory
+        )
+    else()
+        cmake_path(ABSOLUTE_PATH CMAKE_INSTALL_BINDIR
+            BASE_DIRECTORY "${CMAKE_INSTALL_PREFIX}"
+            NORMALIZE
+            OUTPUT_VARIABLE _classmngr_next_executable_install_directory
+        )
+    endif()
+
+    if(IS_ABSOLUTE "${CLASSMNGR_NEXT_RESOURCE_INSTALL_ROOT}")
+        cmake_path(NORMAL_PATH CLASSMNGR_NEXT_RESOURCE_INSTALL_ROOT
+            OUTPUT_VARIABLE _classmngr_next_resource_install_directory
+        )
+    else()
+        cmake_path(ABSOLUTE_PATH CLASSMNGR_NEXT_RESOURCE_INSTALL_ROOT
+            BASE_DIRECTORY "${CMAKE_INSTALL_PREFIX}"
+            NORMALIZE
+            OUTPUT_VARIABLE _classmngr_next_resource_install_directory
+        )
+    endif()
+
+    file(RELATIVE_PATH CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT
+        "${_classmngr_next_executable_install_directory}"
+        "${_classmngr_next_resource_install_directory}"
+    )
+endif()
+
+string(REPLACE "\\" "/" CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT
+    "${CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT}"
+)
+if(CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT STREQUAL ""
+   OR IS_ABSOLUTE "${CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT}")
+    message(FATAL_ERROR
+        "ClassMngrNext resource root must be relative to the executable install directory"
+    )
+endif()
+target_compile_definitions(ClassMngrNextResources
+    INTERFACE
+        "CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT=\"${CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT}\""
+)
+
 install(DIRECTORY "${CLASSMNGR_NEXT_RESOURCE_ROOT}/assets/"
     DESTINATION "${CLASSMNGR_NEXT_RESOURCE_INSTALL_ROOT}/assets"
     COMPONENT ClassMngrNextResources
