@@ -7,11 +7,13 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-25
 - Current milestone: Phase 3 is Complete and Phase 4 is In progress on the
-  mandatory Heavy route. F1485 closes the Batch 2 commit set locally; its push
-  is pending. F1483 is committed as
+  mandatory Heavy route. F1485 closed and pushed Batch 2 from `Qt-Rewrite` to
+  `origin` as `1475a46d` (25 commits, F1469–F1485). F1483 is committed as
   `6428b2ca`; local macOS installation, relocated-root probing, the 193-file
   staged audit, focused CTest (3/3), and Linux guard fixtures (5/5) passed.
-  Windows and Linux Actions legs await the Batch 2 push. F1484 is accepted as
+  First and subsequent authenticated Actions API queries found no run or checks
+  for Batch 2 head `1475a46d`; F1483 native Windows/Linux results remain
+  pending. F1484 is accepted as
   verification-only: the `ClassMngrNext` shell prints its version with
   `QCoreApplication`, links only Qt Core, and has no tested launch-time storage
   or working-directory side effects. This claim covers the shell/package, not
@@ -19,9 +21,10 @@
   `LegacyDocumentContentResourcePort` and the legacy `documents` pack. Keep
   legacy RCC code and inputs as the compatibility oracle through Phase 12;
   Calendar QML remains compiled with `qt_add_resources`, not an external pack.
-  F1486 is queued for Batch 3 and will run after that batch's push, covering the
-  loader, document content/export, QtPdf session, and no-pack launch tests on
-  Windows and Linux. Phase 4 remains open until F1483 and F1486 pass; Phase 7/10
+  F1486 workflow expansion is committed as `094cda87`; Batch 3's push will
+  trigger its existing loader, document content/export, QtPdf session, and
+  no-pack launch tests on Windows and Linux. No F1486 results are available.
+  Phase 4 remains open until F1483 and F1486 pass; Phase 7/10
   rendering parity remains deferred, and legacy pack removal remains Phase 12.
   See the [Phase 4 progress log](05-Phase-4-Progress-Log.md),
   [resource inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md),

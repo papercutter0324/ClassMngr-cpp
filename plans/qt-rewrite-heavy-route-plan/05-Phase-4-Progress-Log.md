@@ -240,8 +240,9 @@ Focused CTest passed 3/3, and the Linux install-prefix guard fixtures passed
 mixed absolute/relative paths; both-relative, both-absolute, same-prefix mixed,
 and `DESTDIR` cases remain permitted.
 
-Windows and Linux Actions legs have not run; they await the Batch 2 push. No
-native results are claimed from the local macOS verification.
+At F1483 acceptance, the Windows/Linux Actions legs awaited the Batch 2 push;
+their current post-push status is recorded under F1485. The local macOS
+verification does not claim native results.
 
 ## F1484 — Verify Next launch removal boundary — accepted — 2026-10-25
 
@@ -262,24 +263,48 @@ package/layout legs and the planned F1486 checks remain open.
 
 ## F1485 — Assemble Phase 4 evidence; close Batch 2 commit set — accepted — 2026-10-25
 
-F1485 assembles the accepted evidence and closes the Batch 2 commit set after
-this acceptance record is committed; it does not close Phase 4. The evidence
-map is: F1464–F1467 inventory, catalog, and package; F1468 and F1470–F1478
+F1485 assembles the accepted evidence and closes the Batch 2 commit set; it does
+not close Phase 4. The evidence map is: F1464–F1467 inventory, catalog, and
+package; F1468 and F1470–F1478
 loader contracts, scopes, cache/diagnostics, document loading, and failures;
 F1474/F1475 selected PDF session release; F1479/F1484 no-pack shell behavior;
 F1481/F1482 staged completeness and exclusion provenance; and F1483 local
 macOS package/root verification plus guard fixtures.
 
-Read-only Git inspection found the pre-F1485 Batch 2 commits F1469–F1484 span
-24 commits from `d282e7f1` through `b331e49e`, after the Batch 1 tip
-`eb473fab`. At inspection, `origin/Qt-Rewrite` remained at `eb473fab`; no Batch
-2 push receipt exists. Commit this F1485 record, then push Batch 2 to trigger
-F1483's pending Windows/Linux Actions legs. F1486 is queued for Batch 3 and
-will run its existing loader, document content/export, QtPdf-session, and
-no-pack launch tests on native Windows x64 Debug and Linux GCC Debug after the
-Batch 3 push. No F1486 results are available.
+F1485 is committed as `1475a46dae77d8970852681dae7a2032ff907edf`. Batch 2
+was pushed successfully from `Qt-Rewrite` to `origin`; the push advanced
+`Qt-Rewrite` from `eb473fab89410e6dc5f5527d872b56f150f7f6fd` to
+`1475a46dae77d8970852681dae7a2032ff907edf`. The batch contains 25 commits,
+from F1469 `d282e7f1` through F1485 `1475a46d`. At that push, `HEAD` and
+`origin/Qt-Rewrite` both resolved to the new full SHA; F1486 later advanced
+local `HEAD` to `094cda87` while its Batch 3 push remains pending.
+
+The push was intended to trigger F1483's Windows/Linux Actions legs. First and
+subsequent authenticated GitHub Actions API queries found no workflow run or
+checks for head `1475a46d`; no run or pass is claimed, and native results remain
+pending. F1486 was queued for Batch 3 at this point; its committed workflow
+expansion is recorded below.
 
 Batch 2 closure is separate from the Phase 4 exit: Phase 4 remains In progress
 until F1483's native jobs and F1486 pass. Phase 7/10 rendering parity remains
 deferred. Legacy RCC implementation and pack inputs remain the compatibility
 oracle until Phase 12.
+
+## F1486 — Add native resource lifetime checks — committed — 2026-10-25
+
+F1486 is committed as `094cda87` and expands the Batch 3 workflow using
+existing tests only. After the Batch 3 push, the Windows x64 Debug and Linux
+GCC Debug jobs will run:
+
+- `ClassMngrNextResourceLoaderTests` (native handle/file-descriptor close)
+- `ClassMngrNextPlatformDocumentContentResourcePortTests`
+- `ClassMngrNextPlatformDocumentExportResourcePortTests`
+- `ClassMngrNextPlatformQtPdfSessionReleaseTests`
+- `ClassMngrNextLaunchFilesystemSideEffectsTests`
+- `ClassMngrNextLaunch`
+
+Linux QtPdf is mandatory; the job fails clearly if QtPdf is unavailable. F1483's
+root-resolver and install-prefix guard tests remain in its separate package and
+layout workflow. Independent workflow review passed. No native F1486 results
+are available; the Batch 3 push is pending. Phase 4 remains In progress until
+F1483's native jobs and F1486 pass.

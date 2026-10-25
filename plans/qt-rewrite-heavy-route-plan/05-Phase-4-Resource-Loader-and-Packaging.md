@@ -38,14 +38,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Bootstrap, feature migration, packaging, and memory gates
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-25
-- Current note: F1485 records the evidence and closes the Batch 2 commit set
-  locally; its push is pending. F1483 is committed as `6428b2ca`. Local macOS
-  verification installed the resource and probe components together,
-  resolved `../Resources`
-  to `Contents/Resources`, audited 193 staged files (187 SHA checks, five QMs,
-  two QML keys), passed focused CTest 3/3, and passed Linux guard fixtures 5/5.
-  The Windows/Linux Actions legs are triggered by push to `Qt-Rewrite` and
-  remain pending the Batch 2 push. The Linux guard rejects a changed
+- Current note: F1485 closed and pushed the Batch 2 commit set from
+  `Qt-Rewrite` to `origin` as `1475a46d` (25 commits, F1469–F1485). F1483 is
+  committed as `6428b2ca`; local macOS verification installed the resource and
+  probe components together and resolved `../Resources` to `Contents/Resources`.
+  The staged audit passed with 193 files (187 SHA checks, five QMs, two QML
+  keys). Focused CTest passed 3/3, and Linux guard fixtures passed 5/5.
+  The F1483 workflow is intended to trigger on pushes to `Qt-Rewrite`, but
+  first and subsequent authenticated Actions API queries found no run or checks
+  for `1475a46d`; native results remain pending. Its root-resolver and prefix
+  guard tests remain separate from F1486. The Linux guard rejects a changed
   `--prefix` only for mixed absolute/relative bindir/datadir; both-relative,
   both-absolute, same-prefix mixed, and `DESTDIR` cases remain allowed.
   F1484 is accepted as verification-only: the `ClassMngrNext` launch shell is
@@ -55,10 +57,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `LegacyDocumentContentResourcePort` to obtain the legacy `documents` pack.
   Keep legacy RCC implementation and pack inputs as the compatibility oracle
   through Phase 12. Calendar QML remains compiled via `qt_add_resources`, not
-  an external pack. F1486 is queued for Batch 3 and runs after that batch's
-  push, verifying the loader, document content/export, QtPdf session, and
-  no-pack launch tests on Windows and Linux. Phase 4 remains In progress until
-  F1483 and F1486 pass.
+  an external pack. F1486 workflow expansion is committed as `094cda87`; its
+  existing loader, content/export, QtPdf-session, and no-pack launch targets
+  are queued for native Windows x64 Debug and Linux GCC Debug after the Batch 3
+  push. No results are available; see the tracker for the exact target list.
+  Phase 4 remains In progress until F1483 and F1486 pass.
   Phase 7/10 rendering parity remains deferred; legacy pack removal remains
   Phase 12. Batch 1 (F1464–F1468) is pushed to `origin`; see
   the [Phase 4 progress log](05-Phase-4-Progress-Log.md) for its receipt. See
