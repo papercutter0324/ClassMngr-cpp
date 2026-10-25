@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 #include "domain/models/speaking_evaluation.h"
 
 #include <QList>
@@ -10,7 +10,6 @@
 
 #include <array>
 #include <cstddef>
-#include <expected>
 #include <functional>
 
 struct SpeakingEvalNamedRows
@@ -22,37 +21,11 @@ struct SpeakingEvalNamedRows
 class SpeakingEvalRepository
 {
 public:
-    struct SaveFailure final
-    {
-        enum class Kind
-        {
-            ParentClassMissing,
-            Technical
-        };
-
-        Kind kind = Kind::Technical;
-        QString diagnostic;
-    };
-
-    using SaveResult = std::expected<void, SaveFailure>;
-
-    struct ReadFailure final
-    {
-        enum class Kind
-        {
-            ParentClassMissing,
-            Technical
-        };
-
-        Kind kind = Kind::Technical;
-        QString diagnostic;
-    };
-
-    using ReadResult = std::expected<SpeakingEvalRows, ReadFailure>;
-    using BatchReadResult =
-        std::expected<QList<SpeakingEvalNamedRows>, ReadFailure>;
-    using ReadStreamResult = std::expected<void, ReadFailure>;
-    using BatchReadStreamResult = std::expected<void, ReadFailure>;
+    using SaveResult = RepositoryStatus;
+    using ReadResult = RepositoryResult<SpeakingEvalRows>;
+    using BatchReadResult = RepositoryResult<QList<SpeakingEvalNamedRows>>;
+    using ReadStreamResult = RepositoryStatus;
+    using BatchReadStreamResult = RepositoryStatus;
     using ReadRowConsumer = std::function<void(const QStringList&)>;
     using BatchReadRowConsumer =
         std::function<void(qsizetype, const QStringList&)>;
@@ -69,15 +42,15 @@ public:
         QSqlDatabase& database
         );
 
-    [[nodiscard]] Status saveSpeakingEval(
+    [[nodiscard]] RepositoryStatus saveSpeakingEval(
         int classId,
         const QString& evaluationName,
         const SpeakingEvalRows& rows,
         const QList<SpeakingEvalCellChange>& dirtyCells = {}
         );
 
-    // Typed callers can distinguish a missing parent class without changing
-    // the legacy Status/QString API or its foreign-key failure behavior.
+    // Detailed callers distinguish a parent class confirmed absent by an
+    // existence query; the legacy save path keeps its foreign-key diagnostic.
     [[nodiscard]] SaveResult saveSpeakingEvalDetailed(
         int classId,
         const QString& evaluationName,
@@ -85,13 +58,14 @@ public:
         const QList<SpeakingEvalCellChange>& dirtyCells = {}
         );
 
-    [[nodiscard]] Result<SpeakingEvalRows> loadSpeakingEval(
+    [[nodiscard]] RepositoryResult<SpeakingEvalRows> loadSpeakingEval(
         int classId,
         const QString& evaluationName
         );
 
-    // Typed callers can distinguish a parent class confirmed absent by the
-    // result query without changing the legacy QString-error API.
+    // Detailed callers distinguish a parent class confirmed absent by the
+    // result query; the legacy read keeps missing results as successful empty
+    // rows.
     [[nodiscard]] ReadResult loadSpeakingEvalDetailed(
         int classId,
         const QString& evaluationName
@@ -108,13 +82,15 @@ public:
         const ReadRowConsumer& consumer
         );
 
-    [[nodiscard]] Result<QList<SpeakingEvalNamedRows>> loadSpeakingEvalBatch(
+    [[nodiscard]] RepositoryResult<QList<SpeakingEvalNamedRows>>
+    loadSpeakingEvalBatch(
         int classId,
         const QStringList& evaluationNames
         );
 
-    // Typed callers can distinguish a parent class confirmed absent by the
-    // batch result query without changing the legacy batch API behavior.
+    // Detailed callers distinguish a parent class confirmed absent by the
+    // batch result query; the legacy batch keeps missing results as empty
+    // requested rows.
     [[nodiscard]] BatchReadResult loadSpeakingEvalBatchDetailed(
         int classId,
         const QStringList& evaluationNames
@@ -134,13 +110,14 @@ public:
     // Streams the eight dashboard cells in request order, then persisted row
     // order, without materializing sparse gaps or requiring a parent class.
     // Consumer exceptions propagate to the caller.
-    [[nodiscard]] Status forEachClassAnalyticsEvaluationRow(
+    [[nodiscard]] RepositoryStatus forEachClassAnalyticsEvaluationRow(
         int classId,
         const std::array<QString, 4>& evaluationNames,
         const std::function<void(const ClassAnalyticsEvaluationRow&)>& consumer
         );
 
-    [[nodiscard]] Result<QList<SpeakingEvalScore>> buildRosterScoreImport(
+    [[nodiscard]] RepositoryResult<QList<SpeakingEvalScore>>
+    buildRosterScoreImport(
         int classId,
         const QString& evaluationName
         );

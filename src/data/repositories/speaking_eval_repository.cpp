@@ -12,11 +12,25 @@
 #include <QSqlQuery>
 #include <QtGlobal>
 
+#include <algorithm>
 #include <array>
 #include <string_view>
 #include <utility>
 
 namespace NextDomain = ClassMngr::Next::Domain;
+
+namespace
+{
+
+RepositoryError speakingEvalError(
+    QString diagnostic,
+    const RepositoryErrorCode code = RepositoryErrorCode::Technical
+    )
+{
+    return RepositoryError(code, std::move(diagnostic));
+}
+
+} // namespace
 
 SpeakingEvalRepository::SpeakingEvalRepository(
     QSqlDatabase& database
@@ -25,12 +39,28 @@ SpeakingEvalRepository::SpeakingEvalRepository(
 {
 }
 
-Status SpeakingEvalRepository::forEachClassAnalyticsEvaluationRow(
+RepositoryStatus SpeakingEvalRepository::forEachClassAnalyticsEvaluationRow(
     const int classId,
     const std::array<QString, 4>& evaluationNames,
     const std::function<void(const ClassAnalyticsEvaluationRow&)>& consumer
     )
 {
+    if (classId <= 0
+        || std::any_of(
+            evaluationNames.cbegin(),
+            evaluationNames.cend(),
+            [](const QString& name) { return name.trimmed().isEmpty(); }
+            ))
+    {
+        return std::unexpected(speakingEvalError(
+            QObject::tr(
+                "Class Analytics evaluations could not be loaded: invalid "
+                "class id or evaluation name."
+                ),
+            RepositoryErrorCode::InvalidInput
+            ));
+    }
+
     QSqlQuery rowsQuery(m_database);
     rowsQuery.setForwardOnly(true);
     rowsQuery.prepare(R"(
@@ -66,7 +96,8 @@ Status SpeakingEvalRepository::forEachClassAnalyticsEvaluationRow(
         QStringLiteral("class id %1").arg(classId));
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
 
     std::array<bool, 4> seenRequests{};
@@ -79,9 +110,9 @@ Status SpeakingEvalRepository::forEachClassAnalyticsEvaluationRow(
             || requestOrder < 0
             || requestOrder >= static_cast<int>(evaluationNames.size()))
         {
-            return std::unexpected(QStringLiteral(
+            return std::unexpected(speakingEvalError(QStringLiteral(
                 "Class Analytics returned an invalid evaluation order."
-                ));
+                )));
         }
         seenRequests[static_cast<std::size_t>(requestOrder)] = true;
 
@@ -108,40 +139,34 @@ Status SpeakingEvalRepository::forEachClassAnalyticsEvaluationRow(
     }
     if (rowsQuery.lastError().isValid())
     {
-        return std::unexpected(rowsQuery.lastError().text());
+        return std::unexpected(speakingEvalError(rowsQuery.lastError().text()));
     }
     for (const bool seen : seenRequests)
     {
         if (!seen)
         {
-            return std::unexpected(QStringLiteral(
+            return std::unexpected(speakingEvalError(QStringLiteral(
                 "Class Analytics returned an incomplete evaluation batch."
-                ));
+                )));
         }
     }
     return {};
 }
 
-Status SpeakingEvalRepository::saveSpeakingEval(
+RepositoryStatus SpeakingEvalRepository::saveSpeakingEval(
     int classId,
     const QString& evaluationName,
     const SpeakingEvalRows& rows,
     const QList<SpeakingEvalCellChange>& dirtyCells
     )
 {
-    const SaveResult saved = saveSpeakingEvalInternal(
+    return saveSpeakingEvalInternal(
         classId,
         evaluationName,
         rows,
         dirtyCells,
         ParentClassPolicy::PreserveLegacyForeignKey
         );
-    if (!saved)
-    {
-        return std::unexpected(saved.error().diagnostic);
-    }
-
-    return {};
 }
 
 SpeakingEvalRepository::SaveResult
@@ -172,20 +197,18 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
 {
     const auto technicalFailure = [](QString diagnostic) -> SaveResult
     {
-        return std::unexpected(SaveFailure{
-            .kind = SaveFailure::Kind::Technical,
-            .diagnostic = std::move(diagnostic)
-        });
+        return std::unexpected(speakingEvalError(std::move(diagnostic)));
     };
 
     if (classId <= 0 || evaluationName.trimmed().isEmpty())
     {
-        return technicalFailure(
+        return std::unexpected(speakingEvalError(
             QObject::tr(
                 "Saving speaking evaluation failed: invalid class id or "
                 "evaluation name."
-                )
-            );
+                ),
+            RepositoryErrorCode::InvalidInput
+            ));
     }
 
     const QString normalizedEvaluationName = evaluationName.trimmed();
@@ -213,6 +236,17 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
             );
     }
 
+    const auto rollbackFailure = [&transaction](SaveResult failure)
+        -> SaveResult
+    {
+        if (!transaction.rollbackChecked())
+        {
+            return std::unexpected(speakingEvalError(
+                failure.error().diagnostic));
+        }
+        return failure;
+    };
+
     if (classifyMissingParent)
     {
         QSqlQuery parentQuery(m_database);
@@ -228,7 +262,8 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
             );
         if (!loaded)
         {
-            return technicalFailure(loaded.error().userMessage());
+            return rollbackFailure(technicalFailure(
+                loaded.error().userMessage()));
         }
 
         const bool parentClassExists = parentQuery.next();
@@ -236,12 +271,12 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
         parentQuery.finish();
         if (fetchError.isValid())
         {
-            return technicalFailure(
+            return rollbackFailure(technicalFailure(
                 QObject::tr(
                     "Checking speaking evaluation parent class failed for "
                     "class id %1: %2"
                     ).arg(classId).arg(fetchError.text())
-                );
+                ));
         }
 
         if (!parentClassExists)
@@ -256,24 +291,25 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
                     );
             }
 
-            return std::unexpected(SaveFailure{
-                .kind = SaveFailure::Kind::ParentClassMissing,
-                .diagnostic = QObject::tr(
+            return std::unexpected(speakingEvalError(
+                QObject::tr(
                     "Saving speaking evaluation failed: parent class id %1 "
                     "was not found."
-                    ).arg(classId)
-            });
+                    ).arg(classId),
+                RepositoryErrorCode::NotFound
+                ));
         }
     }
 
     QSqlQuery query(m_database);
-    auto execute = [&](const QString& action) -> Status
+    auto execute = [&](const QString& action) -> RepositoryStatus
     {
         const auto result = SqlQueryUtils::executePrepared(
             query, action, identity);
         return result
-            ? Status{}
-            : Status(std::unexpected(result.error().userMessage()));
+            ? RepositoryStatus{}
+            : RepositoryStatus(std::unexpected(
+                SqlQueryUtils::repositoryErrorFor(result.error())));
     };
 
     qint64 evaluationId = -1;
@@ -287,21 +323,22 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
     query.addBindValue(classId);
     query.addBindValue(normalizedEvaluationName);
 
-    Status statement = execute(QObject::tr("Loading speaking evaluation"));
+    RepositoryStatus statement = execute(
+        QObject::tr("Loading speaking evaluation"));
     if (!statement)
     {
-        return technicalFailure(statement.error());
+        return rollbackFailure(technicalFailure(statement.error().diagnostic));
     }
 
     const bool evaluationExists = query.next();
     const QSqlError evaluationFetchError = query.lastError();
     if (evaluationFetchError.isValid())
     {
-        return technicalFailure(
+        return rollbackFailure(technicalFailure(
             QObject::tr(
                 "Loading speaking evaluation failed for %1: %2"
                 ).arg(identity, evaluationFetchError.text())
-            );
+            ));
     }
 
     if (evaluationExists)
@@ -325,7 +362,7 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
         statement = execute(QObject::tr("Creating speaking evaluation"));
         if (!statement)
         {
-            return technicalFailure(statement.error());
+            return rollbackFailure(technicalFailure(statement.error().diagnostic));
         }
 
         evaluationId =
@@ -333,12 +370,12 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
 
         if (evaluationId <= 0)
         {
-            return technicalFailure(
+            return rollbackFailure(technicalFailure(
                 QObject::tr(
                     "Creating %1 failed: the database did not return a valid "
                     "record id."
                     ).arg(identity)
-                );
+                ));
         }
     }
 
@@ -358,7 +395,7 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
         statement = execute(QObject::tr("Ensuring speaking evaluation row"));
         if (!statement)
         {
-            return technicalFailure(statement.error());
+            return rollbackFailure(technicalFailure(statement.error().diagnostic));
         }
     }
 
@@ -373,7 +410,7 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
     statement = execute(QObject::tr("Loading speaking evaluation rows"));
     if (!statement)
     {
-        return technicalFailure(statement.error());
+        return rollbackFailure(technicalFailure(statement.error().diagnostic));
     }
 
     QHash<int, QStringList> existingRows;
@@ -401,22 +438,24 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
             rowIndexValue.toLongLong(&rowIndexValid);
             if (!rowIndexValid)
             {
-                return technicalFailure(
+                return rollbackFailure(std::unexpected(speakingEvalError(
                     QObject::tr(
                         "Loading speaking evaluation rows failed for %1: "
                         "invalid row index."
-                        ).arg(identity)
-                    );
+                        ).arg(identity),
+                    RepositoryErrorCode::Validation
+                    )));
             }
         }
         if (rowIndexStorageType != QStringLiteral("integer"))
         {
-            return technicalFailure(
+            return rollbackFailure(std::unexpected(speakingEvalError(
                 QObject::tr(
                     "Loading speaking evaluation rows failed for %1: "
                     "invalid row index."
-                    ).arg(identity)
-                );
+                    ).arg(identity),
+                RepositoryErrorCode::Validation
+                )));
         }
 
         existingRows.insert(
@@ -428,11 +467,11 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
     const QSqlError rowsFetchError = query.lastError();
     if (rowsFetchError.isValid())
     {
-        return technicalFailure(
+        return rollbackFailure(technicalFailure(
             QObject::tr(
                 "Loading speaking evaluation rows failed for %1: %2"
                 ).arg(identity, rowsFetchError.text())
-            );
+            ));
     }
 
     QList<SpeakingEvalCellChange> cellsToUpdate =
@@ -495,22 +534,23 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
         statement = execute(QObject::tr("Updating speaking evaluation cell"));
         if (!statement)
         {
-            return technicalFailure(statement.error());
+            return rollbackFailure(technicalFailure(statement.error().diagnostic));
         }
     }
 
     if (!transaction.commit())
     {
-        return technicalFailure(
+        const QString diagnostic =
             QObject::tr("Committing speaking evaluation failed for %1: %2")
-                .arg(identity, m_database.lastError().text())
-            );
+                .arg(identity, m_database.lastError().text());
+        (void)transaction.rollbackChecked();
+        return technicalFailure(diagnostic);
     }
 
     return {};
 }
 
-Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
+RepositoryResult<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
     int classId,
     const QString& evaluationName
     )
@@ -519,12 +559,13 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
 
     if (classId <= 0 || evaluationName.trimmed().isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(speakingEvalError(
             QObject::tr(
                 "Loading speaking evaluation failed: invalid class id or "
                 "evaluation name."
-                )
-            );
+                ),
+            RepositoryErrorCode::InvalidInput
+            ));
     }
 
     QSqlQuery query(m_database);
@@ -549,7 +590,8 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
         );
     if (!loadedEvaluation)
     {
-        return std::unexpected(loadedEvaluation.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(loadedEvaluation.error()));
     }
 
     if (!query.next())
@@ -557,13 +599,12 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
         if (query.lastError().isValid())
         {
             return std::unexpected(
-                SqlQueryUtils::errorFor(
+                SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
                     query,
                     QObject::tr("Loading speaking evaluation"),
                     {},
                     identity
-                    ).userMessage()
-                );
+                    )));
         }
 
         return rows;
@@ -588,7 +629,8 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
         );
     if (!loadedRows)
     {
-        return std::unexpected(loadedRows.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(loadedRows.error()));
     }
 
     while (query.next())
@@ -599,12 +641,13 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
                 != QStringLiteral("integer")
             )
         {
-            return std::unexpected(
+            return std::unexpected(speakingEvalError(
                 QObject::tr(
                     "Loading speaking evaluation rows failed for %1: "
                     "invalid row index storage type."
-                    ).arg(identity)
-                );
+                    ).arg(identity),
+                RepositoryErrorCode::Validation
+                ));
         }
 
         QStringList row;
@@ -625,13 +668,12 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
     if (query.lastError().isValid())
     {
         return std::unexpected(
-            SqlQueryUtils::errorFor(
+            SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
                 query,
                 QObject::tr("Loading speaking evaluation rows"),
                 {},
                 identity
-                ).userMessage()
-            );
+                )));
     }
 
     return rows;
@@ -669,20 +711,18 @@ SpeakingEvalRepository::forEachSpeakingEvalRowDetailed(
 {
     const auto technicalFailure = [](QString diagnostic) -> ReadStreamResult
     {
-        return std::unexpected(ReadFailure{
-            .kind = ReadFailure::Kind::Technical,
-            .diagnostic = std::move(diagnostic)
-        });
+        return std::unexpected(speakingEvalError(std::move(diagnostic)));
     };
 
     if (classId <= 0 || evaluationName.trimmed().isEmpty())
     {
-        return technicalFailure(
+        return std::unexpected(speakingEvalError(
             QObject::tr(
                 "Loading speaking evaluation failed: invalid class id or "
                 "evaluation name."
-                )
-            );
+                ),
+            RepositoryErrorCode::InvalidInput
+            ));
     }
 
     const QString identity = QObject::tr(
@@ -727,7 +767,8 @@ SpeakingEvalRepository::forEachSpeakingEvalRowDetailed(
         );
     if (!loaded)
     {
-        return technicalFailure(loaded.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(loaded.error()));
     }
 
     bool parentClassFound = false;
@@ -758,12 +799,13 @@ SpeakingEvalRepository::forEachSpeakingEvalRowDetailed(
                 != QStringLiteral("integer")
             )
         {
-            return technicalFailure(
+            return std::unexpected(speakingEvalError(
                 QObject::tr(
                     "Loading speaking evaluation rows failed for %1: "
                     "invalid row index storage type."
-                    ).arg(identity)
-                );
+                    ).arg(identity),
+                RepositoryErrorCode::Validation
+                ));
         }
 
         QStringList row;
@@ -779,31 +821,30 @@ SpeakingEvalRepository::forEachSpeakingEvalRowDetailed(
 
     if (query.lastError().isValid())
     {
-        return technicalFailure(
-            SqlQueryUtils::errorFor(
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
                 query,
                 QObject::tr("Loading speaking evaluation"),
                 {},
                 identity
-                ).userMessage()
-            );
+                )));
     }
 
     if (!parentClassFound)
     {
-        return std::unexpected(ReadFailure{
-            .kind = ReadFailure::Kind::ParentClassMissing,
-            .diagnostic = QObject::tr(
+        return std::unexpected(speakingEvalError(
+            QObject::tr(
                 "Loading speaking evaluation failed: parent class id %1 "
                 "was not found."
-                ).arg(classId)
-        });
+                ).arg(classId),
+            RepositoryErrorCode::NotFound
+            ));
     }
 
     return {};
 }
 
-Result<QList<SpeakingEvalNamedRows>>
+RepositoryResult<QList<SpeakingEvalNamedRows>>
 SpeakingEvalRepository::loadSpeakingEvalBatch(
     const int classId,
     const QStringList& evaluationNames
@@ -826,24 +867,26 @@ SpeakingEvalRepository::loadSpeakingEvalBatch(
 
     if (classId <= 0)
     {
-        return std::unexpected(
+        return std::unexpected(speakingEvalError(
             QObject::tr(
                 "Loading speaking evaluations failed: invalid class id or "
                 "evaluation name."
-                )
-            );
+                ),
+            RepositoryErrorCode::InvalidInput
+            ));
     }
 
     for (const QString& evaluationName : evaluationNames)
     {
         if (evaluationName.trimmed().isEmpty())
         {
-            return std::unexpected(
+            return std::unexpected(speakingEvalError(
                 QObject::tr(
                     "Loading speaking evaluations failed: invalid class id "
                     "or evaluation name."
-                    )
-                );
+                    ),
+                RepositoryErrorCode::InvalidInput
+                ));
         }
     }
 
@@ -906,7 +949,8 @@ SpeakingEvalRepository::loadSpeakingEvalBatch(
         );
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(loaded.error()));
     }
 
     while (query.next())
@@ -915,12 +959,11 @@ SpeakingEvalRepository::loadSpeakingEvalBatch(
         const int ordinal = query.value(0).toInt(&ordinalValid);
         if (!ordinalValid || ordinal < 0 || ordinal >= evaluations.size())
         {
-            return std::unexpected(
+            return std::unexpected(speakingEvalError(
                 QObject::tr(
                     "Loading speaking evaluations failed: the database "
                     "returned an invalid requested evaluation position."
-                    )
-                );
+                    )));
         }
 
         // LEFT JOIN preserves requested evaluations with no matching record
@@ -932,12 +975,13 @@ SpeakingEvalRepository::loadSpeakingEvalBatch(
 
         if (query.value(4).toString() != QStringLiteral("integer"))
         {
-            return std::unexpected(
+            return std::unexpected(speakingEvalError(
                 QObject::tr(
                     "Loading speaking evaluations failed for %1: "
                     "invalid row index storage type."
-                    ).arg(identity)
-                );
+                    ).arg(identity),
+                RepositoryErrorCode::Validation
+                ));
         }
 
         QStringList row;
@@ -952,13 +996,12 @@ SpeakingEvalRepository::loadSpeakingEvalBatch(
     if (query.lastError().isValid())
     {
         return std::unexpected(
-            SqlQueryUtils::errorFor(
+            SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
                 query,
                 QObject::tr("Loading speaking evaluations"),
                 queryText,
                 identity
-                ).userMessage()
-            );
+                )));
     }
 
     return evaluations;
@@ -1011,10 +1054,7 @@ SpeakingEvalRepository::forEachSpeakingEvalBatchRowDetailed(
     const auto technicalFailure = [](QString diagnostic)
         -> BatchReadStreamResult
     {
-        return std::unexpected(ReadFailure{
-            .kind = ReadFailure::Kind::Technical,
-            .diagnostic = std::move(diagnostic)
-        });
+        return std::unexpected(speakingEvalError(std::move(diagnostic)));
     };
 
     if (evaluationNames.isEmpty())
@@ -1024,24 +1064,26 @@ SpeakingEvalRepository::forEachSpeakingEvalBatchRowDetailed(
 
     if (classId <= 0)
     {
-        return technicalFailure(
+        return std::unexpected(speakingEvalError(
             QObject::tr(
                 "Loading speaking evaluations failed: invalid class id or "
                 "evaluation name."
-                )
-            );
+                ),
+            RepositoryErrorCode::InvalidInput
+            ));
     }
 
     for (const QString& evaluationName : evaluationNames)
     {
         if (evaluationName.trimmed().isEmpty())
         {
-            return technicalFailure(
+            return std::unexpected(speakingEvalError(
                 QObject::tr(
                     "Loading speaking evaluations failed: invalid class id "
                     "or evaluation name."
-                    )
-                );
+                    ),
+                RepositoryErrorCode::InvalidInput
+                ));
         }
     }
 
@@ -1107,7 +1149,8 @@ SpeakingEvalRepository::forEachSpeakingEvalBatchRowDetailed(
         );
     if (!loaded)
     {
-        return technicalFailure(loaded.error().userMessage());
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(loaded.error()));
     }
 
     bool parentClassFound = false;
@@ -1147,12 +1190,13 @@ SpeakingEvalRepository::forEachSpeakingEvalBatchRowDetailed(
 
         if (query.value(5).toString() != QStringLiteral("integer"))
         {
-            return technicalFailure(
+            return std::unexpected(speakingEvalError(
                 QObject::tr(
                     "Loading speaking evaluations failed for %1: "
                     "invalid row index storage type."
-                    ).arg(identity)
-                );
+                    ).arg(identity),
+                RepositoryErrorCode::Validation
+                ));
         }
 
         QStringList row;
@@ -1166,38 +1210,38 @@ SpeakingEvalRepository::forEachSpeakingEvalBatchRowDetailed(
 
     if (query.lastError().isValid())
     {
-        return technicalFailure(
-            SqlQueryUtils::errorFor(
+        return std::unexpected(
+            SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
                 query,
                 QObject::tr("Loading speaking evaluations"),
                 queryText,
                 identity
-                ).userMessage()
-            );
+                )));
     }
 
     if (!parentClassFound)
     {
-        return std::unexpected(ReadFailure{
-            .kind = ReadFailure::Kind::ParentClassMissing,
-            .diagnostic = QObject::tr(
+        return std::unexpected(speakingEvalError(
+            QObject::tr(
                 "Loading speaking evaluations failed: parent class id %1 "
                 "was not found."
-                ).arg(classId)
-        });
+                ).arg(classId),
+            RepositoryErrorCode::NotFound
+            ));
     }
 
     return {};
 }
 
-Result<QList<SpeakingEvalScore>> SpeakingEvalRepository::buildRosterScoreImport(
+RepositoryResult<QList<SpeakingEvalScore>>
+SpeakingEvalRepository::buildRosterScoreImport(
     int classId,
     const QString& evaluationName
     )
 {
     QList<SpeakingEvalScore> scores;
 
-    const Result<SpeakingEvalRows> rows =
+    const RepositoryResult<SpeakingEvalRows> rows =
         loadSpeakingEval(
             classId,
             evaluationName

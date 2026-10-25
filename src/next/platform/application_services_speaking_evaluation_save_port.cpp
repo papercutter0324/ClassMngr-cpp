@@ -3,6 +3,7 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "domain/models/speaking_evaluation.h"
+#include "next/platform/repository_error_code.h"
 
 #include <QByteArray>
 
@@ -158,14 +159,8 @@ saveEvaluation(
             );
         if (!saved)
         {
-            const Domain::ErrorCode code =
-                saved.error().kind
-                    == SpeakingEvalRepository::SaveFailure::Kind::
-                        ParentClassMissing
-                ? Domain::ErrorCode::NotFound
-                : Domain::ErrorCode::Technical;
             return failure(
-                code,
+                repositoryDomainErrorCode(saved.error().code),
                 toStdString(saved.error().diagnostic)
                 );
         }

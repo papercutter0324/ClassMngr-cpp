@@ -1416,8 +1416,8 @@ Status SpeakingEvaluationService::saveEvaluation(
     if (auto* repository = session()
             ? session()->speakingEvalRepository() : nullptr)
     {
-        return repository->saveSpeakingEval(
-            classId, normalizedName, normalizedRows, dirtyCells);
+        return toLegacyStatus(repository->saveSpeakingEval(
+            classId, normalizedName, normalizedRows, dirtyCells));
     }
     return dataService()
         ? dataService()->saveSpeakingEval(
@@ -1433,7 +1433,8 @@ Result<SpeakingEvalRows> SpeakingEvaluationService::evaluation(
     if (auto* repository = session()
             ? session()->speakingEvalRepository() : nullptr)
     {
-        return repository->loadSpeakingEval(classId, evaluationName);
+        return toLegacyResult(
+            repository->loadSpeakingEval(classId, evaluationName));
     }
     return dataService()
         ? dataService()->loadSpeakingEval(classId, evaluationName)
@@ -1582,7 +1583,8 @@ Result<QList<SpeakingEvalScore>> SpeakingEvaluationService::rosterScoreImport(
     if (auto* repository = session()
             ? session()->speakingEvalRepository() : nullptr)
     {
-        return repository->buildRosterScoreImport(classId, evaluationName);
+        return toLegacyResult(
+            repository->buildRosterScoreImport(classId, evaluationName));
     }
     return dataService()
         ? dataService()->buildRosterScoreImport(classId, evaluationName)

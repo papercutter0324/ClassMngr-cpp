@@ -3,6 +3,7 @@
 #include "core/application_services.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/speaking_eval_repository.h"
+#include "next/platform/repository_error_code.h"
 
 #include <QByteArray>
 #include <QStringList>
@@ -189,12 +190,8 @@ ApplicationServicesSpeakingEvaluationBatchReadPort::readEvaluations(
                 );
         if (!loaded)
         {
-            const Domain::ErrorCode code = loaded.error().kind
-                    == SpeakingEvalRepository::ReadFailure::Kind::ParentClassMissing
-                ? Domain::ErrorCode::NotFound
-                : Domain::ErrorCode::Technical;
             return failure(
-                code,
+                repositoryDomainErrorCode(loaded.error().code),
                 toStdString(loaded.error().diagnostic)
                 );
         }

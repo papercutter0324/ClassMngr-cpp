@@ -86,11 +86,21 @@ A broader ClassTransfer teacher-profile fallback assertion failed outside the
 changed roster/export path, and `ClassMngrClassesPageTests` timed out in
 offscreen mode without a specific hanging case; neither has a pre-change
 baseline. F1456 CalendarEventRepository implementation and independent
-verification are complete; its local commit is pending. A fresh macOS build
+verification are complete; commit `86667de56547273c8897198470e9c271a583035c`
+is local and not pushed. F1457 SpeakingEvalRepository discovery is complete;
+scope is accepted and implementation is active. A fresh macOS build
 succeeded and four focused CTests passed 4/4, including 24 repository and 81
 calendar-port cases. Missing-delete no-op, malformed stored dates, negative-ID
 save, and single-save transaction start/commit cases remain source-reviewed
-only; no full suite or other-platform build ran.
+only; no full suite or other-platform build ran. F1457 SpeakingEvalRepository
+implementation and independent verification are complete; its local commit is
+pending. Fresh production/test targets built. DataService lifecycle, Speaking
+Evaluation service, analytics, read-port, roster-score import, and save-port
+targets passed; the save-port binary reported 16/16 cases. The changed
+ClassesPage selector passed 3/3, but its aggregate target hung without output
+and was interrupted. Rollback-failure primary-diagnostic and direct streaming
+callback cases remain source-reviewed only; no full suite or other-platform
+build ran.
 F1453
 was independently verified with 12 focused CTests. In the same existing
 incremental macOS Debug tree, affected application,

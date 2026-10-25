@@ -2767,23 +2767,23 @@ void ClassesPageTests::evaluationsSectionShowsSelectedSpeakingEvaluation()
     SpeakingEvalRepository* const repository =
         session->speakingEvalRepository();
     QVERIFY(repository);
-    const Status winterSaved = repository->saveSpeakingEval(
+    const RepositoryStatus winterSaved = repository->saveSpeakingEval(
         42,
         QStringLiteral("Winter"),
         winter
         );
     if (!winterSaved.has_value())
     {
-        QFAIL(qPrintable(winterSaved.error()));
+        QFAIL(qPrintable(winterSaved.error().diagnostic));
     }
-    const Status summerSaved = repository->saveSpeakingEval(
+    const RepositoryStatus summerSaved = repository->saveSpeakingEval(
         42,
         QStringLiteral("Summer"),
         summer
         );
     if (!summerSaved.has_value())
     {
-        QFAIL(qPrintable(summerSaved.error()));
+        QFAIL(qPrintable(summerSaved.error().diagnostic));
     }
 
     ClassesPage page(&services);

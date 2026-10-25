@@ -4,6 +4,7 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "domain/models/speaking_evaluation.h"
+#include "next/platform/repository_error_code.h"
 
 #include <QByteArray>
 #include <QStringList>
@@ -166,19 +167,8 @@ ApplicationServicesSpeakingEvaluationReadPort::readEvaluation(
                 );
         if (!loaded)
         {
-            if (
-                loaded.error().kind
-                == SpeakingEvalRepository::ReadFailure::Kind::ParentClassMissing
-                )
-            {
-                return failure(
-                    Domain::ErrorCode::NotFound,
-                    toStdString(loaded.error().diagnostic)
-                    );
-            }
-
             return failure(
-                Domain::ErrorCode::Technical,
+                repositoryDomainErrorCode(loaded.error().code),
                 toStdString(loaded.error().diagnostic)
                 );
         }

@@ -4026,14 +4026,15 @@ there is no pre-change baseline. `ClassMngrClassesPageTests` timed out after
 was established. Neither result establishes an F1455 regression or a
 pre-existing failure. No full-suite or other-platform verification is claimed.
 
-## F1456 — CalendarEventRepository structured errors — independently verified — 2026-10-25
+## F1456 — CalendarEventRepository structured errors — independently verified, committed locally — 2026-10-25
 
 Discovery is complete under `PHASE3-F1456-CALENDAR-EVENT-SCOPE-20261025`;
 Explorer `PHASE3-F1456-CALENDAR-EVENT-SCOPE-20261025-EXP-01`, test map
 `PHASE3-F1456-CALENDAR-EVENT-TEST-MAP-20261025-EXP-02`, and Investigator
 `PHASE3-F1456-CALENDAR-EVENT-ERROR-RESEARCH-20261025-INV-01` support the
-accepted boundary. F1456 is independently verified and accepted; its local
-commit is pending, and F1457 is next. F1455 is committed locally as
+accepted boundary. F1456 is independently verified and accepted; it is
+committed locally as `86667de56547273c8897198470e9c271a583035c` and is not
+pushed. F1455 is committed locally as
 `5cf27a6a7589eb19c0d859684b5e44f53b197c4e` and is not pushed.
 
 Convert all fallible public `CalendarEventRepository` APIs and custom lookup
@@ -4069,3 +4070,59 @@ were not directly exercised. Exact legacy diagnostic pass-through was
 source-reviewed; lifecycle tests check diagnostic content but not exact
 equality. These are verification limits, not reported production failures.
 No full suite or other-platform build was run.
+
+## F1457 — SpeakingEvalRepository structured errors — independently verified — 2026-10-25
+
+Discovery is complete: Explorer
+`PHASE3-F1457-SPEAKING-EVAL-SCOPE-20261025-EXP-01`, test map
+`PHASE3-F1457-SPEAKING-EVAL-TEST-MAP-20261025-EXP-02`, and Investigator
+`PHASE3-F1457-SPEAKING-EVAL-ERROR-RESEARCH-20261025-INV-01` support the
+accepted boundary. F1457 is independently verified and accepted; its local
+commit is pending, and F1458 is next. F1456 is committed locally as
+`86667de56547273c8897198470e9c271a583035c` and is not pushed.
+
+Convert all fallible public `SpeakingEvalRepository` APIs and custom
+`SaveResult`/`ReadFailure` forms to `RepositoryResult`/`RepositoryStatus`.
+Adapt direct legacy `DataService`/`SpeakingEvaluationService` boundaries and
+Next save, read, batch, and analytics ports. Caller preconditions (nonpositive
+class ID, blank names, and nonempty invalid batch requests) map to
+`InvalidInput`; preserve empty-batch success before validation. Explicitly
+reported missing parents in detailed APIs map to `NotFound`; missing
+evaluation/header/no rows remain successful empty results. Where no explicit
+parent check exists, retain legacy parent/FK diagnostics as `Technical`.
+
+Stored non-NULL `row_index` values with invalid or non-integer storage that the
+repository currently rejects map to `Validation`; update the typed direct-port
+mapping from `Technical` to `Validation` while retaining recoverability. Add
+no new data checks. SQL, cursor, transaction, and rollback failures map to
+`Technical`; do not add `Conflict` despite schema uniqueness, as there is no
+concurrency/conflict contract. Checked rollback reporting must retain the
+original diagnostic.
+
+Preserve legacy read orphan behavior versus detailed parent detection;
+single/batch SQL-NULL `row_index` behavior; request and row order; duplicate
+requested names; empty batches; invalid dirty-cell-coordinate no-ops; full-grid
+updates when `dirtyCells` is empty; no cleanup of extra rows; trim-on-save but
+raw-name queries; callback provisional/borrowed lifetime and exception
+propagation; analytics left-join/no-parent behavior; and roster score-import
+projection. Direct SQL in `ClassTransferRepository`, `ClassRepository`, and
+`TestingClassRepository` remains outside F1457 and is addressed separately in
+the queue.
+
+The changed production, service, and port targets built. Focused tests passed
+for `ClassMngrDataServiceLifecycleTests`,
+`ClassMngrSpeakingEvaluationServiceTests`,
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`,
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`,
+and a fresh `ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests`.
+Runtime coverage includes direct-port `Validation` for rejected fractional
+persisted indexes, detailed-parent `NotFound`, and successful-empty behavior.
+The direct changed ClassesPage selector passed 3/3. After fixture repair, the
+fresh `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`
+target built and its CTest passed 1/1 (16 Qt cases). `git diff --check` passed.
+
+`ClassMngrClassesPageTests` produced no output for over three minutes and was
+interrupted; it has no aggregate result. Source-review-only gaps are streaming
+callbacks/late fetch, rollback-failure retention of the primary diagnostic,
+and exact legacy diagnostic pass-through (mostly source-reviewed). No full
+suite or other-platform build was run.

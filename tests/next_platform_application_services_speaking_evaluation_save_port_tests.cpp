@@ -158,6 +158,7 @@ private slots:
     void missingParentMapsNotFoundWithoutCreatingEvaluationRows();
     void noncanonicalTypedClassIdIsNonrecoverableInvalidInput();
     void legacyMissingParentPreservesForeignKeyDiagnostic();
+    void repositoryPreconditionsUseStructuredCategories();
     void rejectsRealRowIndexBeforeNarrowingAndRollsBack();
     void forwardsQuestionableKoreanNameDecision();
     void nullServicesPointerFailsRecoverably();
@@ -735,20 +736,21 @@ legacyMissingParentPreservesForeignKeyDiagnostic()
     QSqlDatabase database = store->database();
     SpeakingEvalRepository repository(database);
     const SpeakingEvalRows rows;
-    const Status result = repository.saveSpeakingEval(
+    const RepositoryStatus result = repository.saveSpeakingEval(
         missingClassId,
         evaluationName,
         rows
         );
     QVERIFY(!result);
     QCOMPARE(
-        result.error(),
+        result.error().diagnostic,
         QStringLiteral(
             "Creating speaking evaluation failed for evaluation "
             "'Missing Parent Baseline' for class id 100001: FOREIGN KEY "
             "constraint failed Unable to fetch row (database error 787)"
             )
         );
+    QCOMPARE(result.error().code, RepositoryErrorCode::Technical);
 
     QSqlQuery query(store->database());
     query.prepare(R"(
@@ -776,6 +778,56 @@ legacyMissingParentPreservesForeignKeyDiagnostic()
     QVERIFY(query.exec());
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toInt(), 0);
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
+repositoryPreconditionsUseStructuredCategories()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    QSqlDatabase database = store->database();
+    SpeakingEvalRepository repository(database);
+
+    const SpeakingEvalRows rows;
+    const RepositoryStatus missingDetailedParent =
+        repository.saveSpeakingEvalDetailed(
+            100001,
+            QStringLiteral("Winter"),
+            rows
+            );
+    QVERIFY(!missingDetailedParent);
+    QCOMPARE(missingDetailedParent.error().code, RepositoryErrorCode::NotFound);
+
+    const RepositoryStatus invalidSave = repository.saveSpeakingEval(
+        0,
+        QStringLiteral("Winter"),
+        rows
+        );
+    QVERIFY(!invalidSave);
+    QCOMPARE(invalidSave.error().code, RepositoryErrorCode::InvalidInput);
+
+    const auto invalidRead = repository.loadSpeakingEval(
+        1,
+        QStringLiteral(" ")
+        );
+    QVERIFY(!invalidRead);
+    QCOMPARE(invalidRead.error().code, RepositoryErrorCode::InvalidInput);
+
+    const auto emptyBatch = repository.loadSpeakingEvalBatch(0, {});
+    QVERIFY(emptyBatch);
+    QVERIFY(emptyBatch->isEmpty());
+
+    const auto invalidBatch = repository.loadSpeakingEvalBatch(
+        1,
+        {QStringLiteral(" ")}
+        );
+    QVERIFY(!invalidBatch);
+    QCOMPARE(invalidBatch.error().code, RepositoryErrorCode::InvalidInput);
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
@@ -876,7 +928,7 @@ rejectsRealRowIndexBeforeNarrowingAndRollsBack()
             ? QStringLiteral("The save unexpectedly accepted a REAL row index.")
             : QString::fromStdString(rejectedSave.error().message))
         );
-    QCOMPARE(rejectedSave.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(rejectedSave.error().code, Domain::ErrorCode::Validation);
     QVERIFY(!rejectedSave.error().recoverable);
     QVERIFY(!rejectedSave.error().message.empty());
     QVERIFY(QString::fromStdString(rejectedSave.error().message).contains(

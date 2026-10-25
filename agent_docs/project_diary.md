@@ -8659,7 +8659,7 @@ were exercised. Malformed-ID, raw birthday cursor message, no-op, and rollback
 failure branches remain source-reviewed without direct runtime assertions.
 
 
-## 2026-10-25 — F1454 committed; F1455 committed; F1456 verified and accepted
+## 2026-10-25 — F1454, F1455, F1456 committed; F1457 verified and accepted
 
 F1454 is committed locally as `b362325f8a3d2f162a14e30c59ee171a52024e77`;
 it remains unpushed until Batch 22 closes. F1455 RosterRepository discovery
@@ -8667,7 +8667,10 @@ is complete under the Heavy route; its scope is accepted, implementation and
 independent verification are complete, and commit
 `5cf27a6a7589eb19c0d859684b5e44f53b197c4e` is local and not pushed. F1456
 CalendarEventRepository implementation and independent verification are
-complete; its scope is accepted and its local commit is pending.
+complete; commit `86667de56547273c8897198470e9c271a583035c` is local and not
+pushed. F1457 SpeakingEvalRepository discovery is complete; scope is accepted,
+implementation and independent verification are complete, and its local
+commit is pending.
 
 F1454 converts the two IntensiveSlotStateRepository fallible APIs and keeps
 all current repository errors Technical. Input validation stays in the typed
@@ -8696,6 +8699,22 @@ are in scope. A fresh macOS build passed four focused CTests (4/4), including
 malformed stored dates, negative-ID save, and single-save transaction
 start/commit cases remain source-reviewed only; no full suite or other-platform
 build ran.
+
+F1457 converts every fallible SpeakingEvalRepository API and its custom
+missing-parent results to structured errors. Invalid caller preconditions are
+InvalidInput; explicit missing parents are NotFound, while missing evaluations
+remain successful empty reads. Fractional persisted row indexes rejected by a
+reader are Validation, and typed ports should preserve that category without
+changing their recovery policy. SQL, cursor, transaction, and rollback errors
+are Technical; there is no repository Conflict case. Preserve legacy versus
+detailed read behavior, SQL-NULL index differences, batch ordering/empty
+semantics, callback behavior, and save normalization. Fresh build/test targets
+passed for DataService lifecycle, Speaking Evaluation service, analytics, read
+port, roster-score import, and save port. The save-port test passed 16/16 Qt
+cases; the changed ClassesPage selector passed 3/3 while its aggregate target
+remained incomplete after hanging without output. Rollback-failure
+primary-diagnostic and direct streaming callback cases remain source-reviewed
+only. No full suite or other-platform build ran.
 
 F1455 converts every fallible public RosterRepository API and nested batch
 failure. Caller preconditions are InvalidInput, stored content rejected by a

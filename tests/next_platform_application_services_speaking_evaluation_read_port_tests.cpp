@@ -353,6 +353,20 @@ reportsDeletedParentEvenWhenOrphanEvaluationRowsRemain()
         QStringLiteral("Student A")
         );
 
+    const auto detailedRead = repository->loadSpeakingEvalDetailed(
+        *createdClass,
+        QStringLiteral("Winter")
+        );
+    QVERIFY(!detailedRead);
+    QCOMPARE(detailedRead.error().code, RepositoryErrorCode::NotFound);
+
+    const auto detailedBatchRead = repository->loadSpeakingEvalBatchDetailed(
+        *createdClass,
+        {QStringLiteral("Winter")}
+        );
+    QVERIFY(!detailedBatchRead);
+    QCOMPARE(detailedBatchRead.error().code, RepositoryErrorCode::NotFound);
+
     Platform::ApplicationServicesSpeakingEvaluationReadPort port(services);
     const auto typedRead = Application::SpeakingEvaluationQuery::execute(
         query(*createdClass, u"Winter"),
@@ -803,13 +817,27 @@ rejectsFractionalRowIndexesInTypedReads()
     QCOMPARE(storedTypes.value("storage_type").toString(), QStringLiteral("integer"));
     QVERIFY(!storedTypes.next());
 
+    const auto repositorySingle = repository->loadSpeakingEval(
+        *createdClass,
+        QStringLiteral("Winter")
+        );
+    QVERIFY(!repositorySingle);
+    QCOMPARE(repositorySingle.error().code, RepositoryErrorCode::Validation);
+
+    const auto repositoryBatch = repository->loadSpeakingEvalBatch(
+        *createdClass,
+        {QStringLiteral("Winter")}
+        );
+    QVERIFY(!repositoryBatch);
+    QCOMPARE(repositoryBatch.error().code, RepositoryErrorCode::Validation);
+
     Platform::ApplicationServicesSpeakingEvaluationReadPort singlePort(services);
     const auto single = Application::SpeakingEvaluationQuery::execute(
         query(*createdClass, u"Winter"),
         singlePort
         );
     QVERIFY(!single);
-    QCOMPARE(single.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(single.error().code, Domain::ErrorCode::Validation);
     QCOMPARE(singlePort.successfulCompletedRows(), std::size_t(0));
     QVERIFY(QString::fromStdString(single.error().message).contains(
         QStringLiteral("invalid row index storage type")
@@ -821,7 +849,7 @@ rejectsFractionalRowIndexesInTypedReads()
         batchPort
         );
     QVERIFY(!batch);
-    QCOMPARE(batch.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(batch.error().code, Domain::ErrorCode::Validation);
     QCOMPARE(batchPort.successfulCompletedRows(), std::size_t(0));
     QVERIFY(QString::fromStdString(batch.error().message).contains(
         QStringLiteral("invalid row index storage type")

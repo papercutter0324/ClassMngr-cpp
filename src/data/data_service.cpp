@@ -1095,11 +1095,13 @@ Status DataService::saveSpeakingEval(
             );
     }
 
-    return m_session->speakingEvalRepository()->saveSpeakingEval(
-        classId,
-        evaluationName,
-        rows,
-        dirtyCells
+    return toLegacyStatus(
+        m_session->speakingEvalRepository()->saveSpeakingEval(
+            classId,
+            evaluationName,
+            rows,
+            dirtyCells
+            )
         );
 }
 
@@ -1115,9 +1117,11 @@ Result<SpeakingEvalRows> DataService::loadSpeakingEval(
             );
     }
 
-    return m_session->speakingEvalRepository()->loadSpeakingEval(
-        classId,
-        evaluationName
+    return toLegacyResult(
+        m_session->speakingEvalRepository()->loadSpeakingEval(
+            classId,
+            evaluationName
+            )
         );
 }
 
@@ -1133,9 +1137,11 @@ Result<QList<SpeakingEvalScore>> DataService::buildRosterScoreImport(
             );
     }
 
-    return m_session->speakingEvalRepository()->buildRosterScoreImport(
-        classId,
-        evaluationName
+    return toLegacyResult(
+        m_session->speakingEvalRepository()->buildRosterScoreImport(
+            classId,
+            evaluationName
+            )
         );
 }
 

@@ -132,7 +132,7 @@ public:
                     std::u16string(Application::kClassAnalyticsEvaluationNames[index]));
             }
             Application::ClassAnalyticsEvaluationBatch batch;
-            const Status loaded = repository->forEachClassAnalyticsEvaluationRow(
+            const RepositoryStatus loaded = repository->forEachClassAnalyticsEvaluationRow(
                 *legacyId, evaluationNames,
                 [&](const SpeakingEvalRepository::ClassAnalyticsEvaluationRow& source)
                 {

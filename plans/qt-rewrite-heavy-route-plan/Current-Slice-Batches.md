@@ -36,8 +36,10 @@ complete; the slice is accepted. F1454 is committed locally as
 `b362325f8a3d2f162a14e30c59ee171a52024e77` and is not pushed. F1455
 RosterRepository is independently verified and accepted; it is committed
 locally as `5cf27a6a7589eb19c0d859684b5e44f53b197c4e` and is not pushed.
-F1456 CalendarEventRepository is independently verified and accepted; its
-local commit is pending, and F1457 is next. Evidence and limits are in the
+F1456 CalendarEventRepository is independently verified and accepted; it is
+committed locally as `86667de56547273c8897198470e9c271a583035c` and is not
+pushed. F1457 SpeakingEvalRepository is independently verified and accepted;
+its local commit is pending, and F1458 is next. Evidence and limits are in the
 [progress log](04-Phase-3-Progress-Log.md). The accepted queue is:
 
 1. **F1444** — shared `RepositoryError`/`RepositoryResult`/status contract and SQL error mapping.
