@@ -53,8 +53,9 @@ legacy oracle paths in Phase 4.
    PPTX/DOCX references and opens only the selected body under Operation scope,
    returning a move-only stream with explicit close and RAII release. It has no
    pack fallback or startup preload and is not wired to legacy report/workspace
-   UI; the Speaking Evaluation workspace remains unchanged. Unreferenced PPTX
-   and roster XLSX remain for F1482.
+   UI; the Speaking Evaluation workspace remains unchanged. F1482 later
+   classified three callerless roster workflow files and `dyb.png` as
+   `excluded_v2`.
 9. **F1477 — Define resource failure behavior.** Accepted and committed as
    `535dc382`. Unknown IDs report NotFound; corrupt selected PDF/PPTX streams
    fail without a handle or fallback and produce one CorruptResource diagnostic
@@ -91,11 +92,16 @@ legacy oracle paths in Phase 4.
     direct SHA checks, five nonempty generated QMs, and two compiled Calendar
     QML keys passed audit. The QML keys are not staged files. Calendar key CTest
     passed 1/1; Windows/Linux remain F1483.
-14. **F1482 — Resolve unowned/absent inventory entries (active).** Decide the v2
-    disposition of `dyb.png`, unused roster workflow files, and absent
-    `roster-designs` without inventing feature owners.
-15. **F1483 — Verify platform install roots.** Run the resource component
-    layout gate on Windows, macOS, and Linux presets/stages.
+14. **F1482 — Classify callerless resource assets.** Accepted; four tracked
+    assets (`dyb.png`, `Class Register.odt`, and the ODS/XLSX roster templates)
+    retain exact source provenance as `excluded_v2` and remain in the legacy
+    pack oracle. `roster-designs` remains a zero-source absence observation.
+    Independent macOS Debug verification passed 32 utility tests, inventory
+    `--check`, staged audit, and Calendar key CTest 1/1. The 226 asset files
+    total 65,707,627 bytes; all tracked resources total 65,708,813 bytes.
+15. **F1483 — Verify platform install roots (active).** Run the resource
+    component layout gate on Windows, macOS, and Linux presets/stages; F1482
+    verified macOS only.
 16. **F1484 — Record Phase 4 removal boundaries.** Check no-pack behavior in
     Next and record legacy pack removal as Phase 12 cutover work.
 17. **F1485 — Assemble the Phase 4 exit evidence.** Close only after the

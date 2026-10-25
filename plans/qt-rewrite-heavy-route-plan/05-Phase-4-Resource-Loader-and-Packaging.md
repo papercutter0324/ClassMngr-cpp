@@ -51,7 +51,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   no-pack startup side effects, is accepted and committed as `295d238d`; F1480,
   relocated package lookup, is accepted and committed as `cc60849d`; F1481,
   staged resource completeness, is accepted as verification-only with no
-  separate source-code delta; F1482 is active. F1479 excludes external or
+  separate source-code delta; F1482, inventory disposition for four
+  callerless assets, is accepted; F1483, platform install-root verification,
+  is active. F1479 excludes external or
   legacy runtime RCC-pack mounts; F1467's two Calendar QML resources remain
   compiled into `ClassMngrNext` with `qt_add_resources`. F1480's probe is
   test-only; the production Next startup remains unwired to the resolver/loader.
@@ -92,25 +94,25 @@ keep current status in this plan and live batches in the shared tracker.
 ### F1464 — Effective-resource inventory — independently verified — 2026-10-25
 
 The reproducible inventory records 229 tracked paths under `resources/` and
-the two Calendar QML sources, for 231 unique records. The 226 `resources/assets`
-files total 65,707,627 exact source bytes. Each record carries a stable ID,
-source path, byte count and SHA-256, v2 packaging disposition, owner/tier and
+the two Calendar QML sources, for 231 unique records. The 226
+`resources/assets` files total 65,707,627 exact bytes; all tracked resources
+total 65,708,813 bytes including three Windows templates. The separate Calendar
+QML inputs total 35,154 bytes. Each record carries a stable ID, source path,
+byte count and SHA-256, v2 packaging disposition, optional owner, tier and
 lifetime fields, streamability status, and installed/resident measurement
 method. It separates `documents.json` metadata from 51 document bodies,
-excludes the 28 speaking-evaluation art source inputs from the v2 tree, records
-the absent `roster-designs` payload, and excludes the Office lock artifact from
-v2 as transient. The legacy documents RCC currently includes that 165-byte
-artifact.
+records the absent `roster-designs` payload, and excludes the Office lock
+artifact from v2 as transient. The legacy documents RCC currently includes
+that 165-byte artifact.
 
 The independent Tester confirmed tracked-path completeness, hashes, unique
 IDs, disposition counts, document/QML separation, and non-fabricated size
 reporting. The four focused utility tests and generator `--check` passed. No
 runtime build was needed for this inventory-only slice. Installed and decoded
-sizes remain unknown pending the v2 package/runtime. `dyb.png` has no identified
-production feature caller; it is recorded as optional legacy content without
-inventing a v2 feature owner. Resolve its claim or exclusion during consumer
-migration. No installed pack overrides were found in the application-owned
-data directory. F1464 was committed as
+sizes remain unknown pending the v2 package/runtime. At F1464, `dyb.png` had
+no identified production feature caller; F1482 later recorded it as
+`excluded_v2` without inventing a v2 feature owner. No installed pack overrides
+were found in the application-owned data directory. F1464 was committed as
 `473e8325b9f98069c8396291d057a398a9683ebe`.
 
 ### F1465 — Offline baseline resource baker — independently verified — 2026-10-25

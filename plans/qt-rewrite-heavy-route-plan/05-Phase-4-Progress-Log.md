@@ -85,7 +85,8 @@ move-only loader-owned stream with explicit close and RAII release. It has no
 `ResourcePackManager` fallback or startup preload and is not wired to legacy
 report/workspace UI. Primary document selection still does not open export
 bodies. The legacy Speaking Evaluation workspace and cleanup tests were
-untouched; unreferenced PPTX and roster XLSX remain for F1482.
+untouched. F1482 later classified the three callerless roster workflow files
+and `dyb.png` as `excluded_v2`.
 
 `cmake --build --preset macos-clang-debug` passed incrementally on the standard
 macOS universal Debug configuration. Focused export/PDF port build and CTest
@@ -204,3 +205,25 @@ F1481 is verification-only; no code or implementation-document delta was
 needed. Focused Calendar key CTest passed 1/1, and `git diff --check` passed.
 The full suite and Windows/Linux were not run; F1483 owns the platform layout
 matrix. This acceptance record is the F1481 slice commit; Batch 2 remains open.
+
+## F1482 — Classify callerless resource assets — accepted — 2026-10-25
+
+F1482 marks four tracked callerless assets `excluded_v2`: `dyb.png`,
+`Class Register.odt`, `Roster Template 1 - By Day.ods`, and
+`Roster Template 1 - By Day.xlsx`. Their exact inventory IDs, paths, source
+sizes, and hashes remain for provenance; they stay in the legacy resource-pack
+oracle and are omitted from the v2 package. No `resources/` source changed.
+`roster-designs` remains a zero-source absence observation without placeholder
+records. The inventory has 231 records: 187 direct runtime resources, seven
+generated runtime resources, six v2 exclusions, and 31 build-only inputs. The
+226 asset files total 65,707,627 bytes; all tracked resources total 65,708,813
+bytes, and the two separate Calendar QML inputs total 35,154 bytes. The 194
+runtime catalog records comprise 187 direct files, five generated QMs, and two
+compiled QML keys.
+
+Independent macOS Debug verification passed all 32 Phase 4 Python utility
+tests, inventory `--check`, the staged-resource audit (193 files, 187 SHA
+checks, five generated QMs, and two Calendar QML keys), and Calendar key CTest
+1/1. QML keys are compiled resources, not staged files. Windows/Linux and the
+full suite were not run; F1483 owns the platform matrix. F1482 is accepted and
+Batch 2 remains open.

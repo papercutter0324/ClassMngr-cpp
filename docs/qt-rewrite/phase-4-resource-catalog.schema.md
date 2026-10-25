@@ -3,8 +3,9 @@
 `generate_resource_catalog.py` combines the Phase 4 inventory with the
 `resource-manifest.json` produced by `bake_resources.py`. It writes a
 deterministic `ClassMngrNext.ResourceCatalog` JSON document with one record for
-each runtime resource. Build-only inputs and v2 exclusions stay in the bake
-manifest and do not become catalog records.
+each runtime resource. Build-only inputs and v2 exclusions remain as records in
+the inventory; the bake manifest records aggregate disposition counts but does
+not copy them into the package, and the catalog omits them.
 
 ## Path contract
 
@@ -41,6 +42,19 @@ baker-owned tree.
   and do not claim an installed output size or hash before Qt builds it.
 - `location` is `resource_file` for package files and `qt_resource` for the
   compiled Calendar module resource.
+
+## Exclusion semantics
+
+An inventory entry with `package_disposition: excluded_v2` retains its stable
+logical ID, source path, exact source byte count and SHA-256, and disposition
+reason. The bake manifest includes the disposition in its aggregate counts but
+does not create a per-entry output; the baker does not copy the file into the
+v2 tree and the catalog generator omits it. This is a v2 packaging decision; for
+F1482's four callerless assets it does not remove the source asset from the
+legacy resource-pack oracle. F1482 applies this to `dyb.png` and three roster
+files. The splash image and Office lock file are the other `excluded_v2`
+assets. Absence observations such as `roster-designs` remain metadata only and
+do not create placeholder resource records.
 
 Document catalog metadata (`document.catalog-metadata`) and the 51 document
 body IDs remain separate. Bodies retain their viewer/operation loading tier

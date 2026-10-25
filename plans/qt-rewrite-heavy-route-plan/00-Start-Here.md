@@ -39,9 +39,11 @@
   effects, is accepted and committed as `295d238d`; F1480, relocated package
   lookup, is accepted and committed as `cc60849d`; F1481, staged resource
   completeness, is accepted as verification-only with no separate source-code
-  delta; F1482 is active. F1467's two Calendar QML resources stay compiled
-  into `ClassMngrNext`; F1479 excludes external/legacy runtime RCC-pack
-  mounting. F1480 is a test-only probe and leaves production startup unwired.
+  delta; F1482, inventory disposition for four callerless assets, is accepted;
+  F1483, platform install-root verification, is active. F1467's two Calendar
+  QML resources stay compiled into `ClassMngrNext`; F1479 excludes external or
+  legacy runtime RCC-pack mounting. F1480 is a test-only probe and leaves
+  production startup unwired.
   F1468 provides
   explicit root/catalog injection, catalog
   validation, root-confined file reads, and RAII stream/font/translation
@@ -55,12 +57,14 @@
   the v2 resource runtime and document lifecycle. Legacy
   theme/font/icon/campus/report UI consumers stay with their Phase 5–7
   migrations.
-  The inventory records 229 tracked
-  paths under `resources/` plus two Calendar QML inputs, with 226 asset files
-  totaling 65,707,627 exact source bytes. No installed overrides were present
-  in the application-owned pack directory. `dyb.png` remains recorded as an
-  optional legacy asset without a production feature caller; its owner or
-  exclusion must be resolved during migration.
+  The inventory has 231 source records: 229 paths under `resources/` and two
+  Calendar QML inputs. The 226 asset files total 65,707,627 exact bytes; all
+  tracked resources total 65,708,813 bytes including three Windows templates,
+  while the separate QML inputs total 35,154 bytes. F1482 retains exact source
+  records for four callerless assets as `excluded_v2`; they remain in the
+  legacy pack oracle and are absent from the v2 package. `roster-designs` stays
+  a zero-source absence observation. No installed overrides were present in
+  the application-owned pack directory.
   See the [Phase 4 inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md),
   [Phase 4 plan](05-Phase-4-Resource-Loader-and-Packaging.md), and
   [current batch tracker](Current-Slice-Batches.md). Phase 3's accepted

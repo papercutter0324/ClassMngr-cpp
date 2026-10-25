@@ -4,7 +4,7 @@ The companion [machine-readable inventory](phase-4-resource-inventory.json)
 records every tracked file under `resources/`, plus the two tracked Calendar
 QML module inputs located under `src/`. It gives each file a stable logical
 identity, exact source byte count and SHA-256, v2 packaging disposition and
-reason, owning feature, startup need, loading tier and method, expected
+reason, optional owning feature, startup need, loading tier and method, expected
 lifetime and release policy, streamability status, and an installed/resident
 size measurement method.
 
@@ -14,9 +14,12 @@ At source revision `58de51bf`, the tree has 226 tracked `resources/assets`
 files totaling **65,707,627 exact source bytes**. The total includes the 28
 speaking-evaluation source inputs under `templates/speaking-eval/sources/`;
 those inputs total 1,350,933 bytes and remain build-only. There are three
-additional tracked Windows packaging templates under `resources/windows/`,
-so 229 tracked paths are recorded under `resources/`. The two Calendar QML
-module sources are outside that tree and are listed separately.
+additional tracked Windows packaging templates under `resources/windows/`
+totaling 1,186 bytes, so 229 tracked paths are recorded under `resources/`; all
+229 total **65,708,813 exact source bytes**. The two Calendar QML module
+sources are outside that tree and are listed separately (two files, 35,154
+bytes). F1482 changed four packaging dispositions without changing any source
+path, size, or hash.
 
 | Asset group | Files | Exact source bytes |
 | --- | ---: | ---: |
@@ -34,16 +37,23 @@ module sources are outside that tree and are listed separately.
 
 These are exact tracked source-file sizes, not an installed-package or decoded
 memory measurement. The earlier Phase 0 inventory is an older snapshot; use
-this Phase 4 inventory for the refreshed source baseline.
+this Phase 4 inventory for the refreshed source baseline. The 65,707,627-byte
+figure is for `resources/assets`; the all-tracked-resources total also includes
+the three Windows templates. Calendar QML source bytes are counted separately.
 
 ## Packaging and loading disposition
 
-Among the 226 tracked asset files, 196 are intended for v2 runtime delivery
-(191 direct payloads and five generated translation outputs), 28 speaking-art
-inputs are build-only, and the splash image plus Office lock file are excluded.
-The three Windows templates are additional build-only inputs under
-`resources/`; the two Calendar QML sources are separate generated runtime
-inputs outside it. The JSON contains 231 records across these scopes.
+Among the 226 tracked asset files, 192 are intended for v2 runtime delivery
+(187 direct payloads and five generated translation outputs), 28 speaking-art
+inputs are build-only, and six assets are `excluded_v2`: the splash image, the
+Office lock file, `dyb.png`, and three callerless roster workflow files. The
+three Windows templates are additional build-only inputs under `resources/`;
+the two Calendar QML sources are separate generated runtime inputs outside it.
+The JSON contains 231 source records: 187 direct runtime resources, seven
+generated runtime resources (five translations and two Calendar QML
+components), six v2 exclusions, and 31 build-only inputs. The runtime catalog
+has 194 entries: 187 direct files, five generated QMs, and two compiled QML
+keys.
 
 - `resources/assets/documents/documents.json` is recorded in
   `document_catalog_metadata`, separate from the 51 `document_bodies` records.
@@ -64,15 +74,13 @@ inputs outside it. The JSON contains 231 records across these scopes.
   application-owned installed resource-pack directory was empty. The
   machine-readable inventory records this explicitly instead of creating
   placeholder assets.
-- `dyb.png` has no production feature caller in the current source tree.
-  `ResourcePaths::DynamicImages::acquire()` selects the shared `images` pack,
-  and `filePath()` resolves a relative path under that pack; the only other
-  `images` pack acquisition is the diagnostic resource trace. The pack is
-  optional in `ResourcePackManager`, while the legacy build still includes its
-  image payload. The v2 destination is an optional typed catalog entry in
-  `ClassMngrNext::Resources`, requested only by a future owning feature or
-  operation. It must not trigger startup decoding or recreate a global
-  compatibility helper.
+- F1482 classifies four tracked callerless assets—`dyb.png`, `Class Register.odt`,
+  `Roster Template 1 - By Day.ods`, and `Roster Template 1 - By Day.xlsx`—as
+  `excluded_v2`. Their exact IDs, source paths, sizes, and hashes remain in the
+  inventory for provenance; the files remain in the legacy resource-pack
+  oracle and are omitted from the v2 runtime package and catalog. These records
+  do not invent feature owners. The splash image and Office lock file remain
+  the other two `excluded_v2` assets.
 
 ## Size and streamability method
 
@@ -90,9 +98,8 @@ document and rendered-page measurements, and Office files to their actual
 consumer/import/export path. These methods avoid treating compressed source
 bytes as memory estimates. PDF streaming is marked as a file-backed candidate;
 Office document streaming remains consumer-dependent pending adapter
-validation. The `dyb.png` record names the exact shared-helper boundary and
-the expected typed-catalog migration destination; it does not assign a
-feature owner where the current production tree has no caller.
+validation. The four `excluded_v2` source records preserve provenance without
+assigning feature owners where the production tree has no caller.
 
 ## Reproducibility
 
