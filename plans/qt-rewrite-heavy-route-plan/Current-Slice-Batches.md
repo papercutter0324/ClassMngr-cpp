@@ -9,15 +9,18 @@ resource lifecycle. Theme/font/icon/campus/report UI consumers remain with
 their Phase 5–7 startup, shared-UI, and feature migrations; do not change their
 legacy oracle paths in Phase 4.
 
-1. **F1469 — Resolve the installed resource root.** Accepted after independent
-   macOS verification; depends on F1467/F1468 and does not search the current
+1. **F1469 — Resolve the installed resource root.** Accepted and committed as
+   `d282e7f1` after independent macOS verification; depends on F1467/F1468 and
+   does not search the current
    directory or source tree. CMake selects the package root relative to the
    executable directory; tests cover missing roots/catalogs, unrelated current
    directory contents, and relocation. Mixed absolute/relative Linux install
    directories with an install-time prefix override were not tested.
-2. **F1470 — Add resource scopes (next).** Represent startup, page, feature,
-   and operation ownership explicitly in load requests and handles.
-3. **F1471 — Add byte-budgeted resource caching.** Use explicit capacity and
+2. **F1470 — Add resource scopes.** Accepted after independent macOS review.
+   Every load request names a scope kind and owner, and each move-only result
+   retains that scope with its owned value. The four kinds and RAII cleanup are
+   covered by focused tests.
+3. **F1471 — Add byte-budgeted resource caching (next).** Use explicit capacity and
    eviction; do not cache document bodies or unbounded decoded images.
 4. **F1472 — Add resource diagnostics.** Report load time, decoded size, cache
    residency, and owner without adding a process-wide mutable singleton.

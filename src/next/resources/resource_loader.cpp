@@ -56,6 +56,71 @@ bool isInsideRoot(const QString& root, const QString& canonicalFile)
 
 }
 
+ResourceResult<ResourceScope> ResourceScope::create(
+    ResourceScopeKind kind,
+    QString ownerLabel
+    )
+{
+    const bool knownKind = kind == ResourceScopeKind::Startup
+        || kind == ResourceScopeKind::Page
+        || kind == ResourceScopeKind::Feature
+        || kind == ResourceScopeKind::Operation;
+    if (!knownKind)
+    {
+        return std::unexpected(error(
+            ResourceErrorCode::InvalidArgument,
+            QStringLiteral("resource scope kind is invalid")
+            ));
+    }
+    ownerLabel = ownerLabel.trimmed();
+    if (ownerLabel.isEmpty())
+    {
+        return std::unexpected(error(
+            ResourceErrorCode::InvalidArgument,
+            QStringLiteral("resource scope requires a nonempty owner label")
+            ));
+    }
+    return ResourceScope(kind, std::move(ownerLabel));
+}
+
+bool ResourceScope::isValid() const noexcept
+{
+    return (m_kind == ResourceScopeKind::Startup
+            || m_kind == ResourceScopeKind::Page
+            || m_kind == ResourceScopeKind::Feature
+            || m_kind == ResourceScopeKind::Operation)
+        && !m_ownerLabel.isEmpty();
+}
+
+ResourceResult<ResourceRequest> ResourceRequest::create(
+    ResourceId id,
+    ResourceScope scope
+    )
+{
+    if (!scope.isValid())
+    {
+        return std::unexpected(error(
+            ResourceErrorCode::InvalidArgument,
+            QStringLiteral("resource request requires a valid scope and nonempty owner label")
+            ));
+    }
+    return ResourceRequest(std::move(id), std::move(scope));
+}
+
+ResourceResult<ResourceRequest> ResourceRequest::create(
+    ResourceId id,
+    ResourceScopeKind kind,
+    QString ownerLabel
+    )
+{
+    auto scope = ResourceScope::create(kind, std::move(ownerLabel));
+    if (!scope)
+    {
+        return std::unexpected(scope.error());
+    }
+    return create(std::move(id), std::move(*scope));
+}
+
 ResourceFileStream::ResourceFileStream(std::unique_ptr<QFile> file)
     : m_file(std::move(file))
 {
@@ -403,9 +468,11 @@ ResourceResult<QByteArray> ResourceLoader::readBytes(
     return bytes;
 }
 
-ResourceResult<QString> ResourceLoader::loadText(const ResourceId& id) const
+ResourceResult<ScopedResource<QString>> ResourceLoader::loadText(
+    const ResourceRequest& request
+    ) const
 {
-    auto found = descriptor(id);
+    auto found = descriptor(request.id());
     if (!found)
     {
         return std::unexpected(found.error());
@@ -432,12 +499,14 @@ ResourceResult<QString> ResourceLoader::loadText(const ResourceId& id) const
             QStringLiteral("text resource is not valid UTF-8")
             ));
     }
-    return text;
+    return ScopedResource<QString>(text, request.scope());
 }
 
-ResourceResult<QJsonDocument> ResourceLoader::loadJson(const ResourceId& id) const
+ResourceResult<ScopedResource<QJsonDocument>> ResourceLoader::loadJson(
+    const ResourceRequest& request
+    ) const
 {
-    auto found = descriptor(id);
+    auto found = descriptor(request.id());
     if (!found)
     {
         return std::unexpected(found.error());
@@ -464,12 +533,14 @@ ResourceResult<QJsonDocument> ResourceLoader::loadJson(const ResourceId& id) con
             QStringLiteral("JSON resource cannot be parsed: ") + parseError.errorString()
             ));
     }
-    return document;
+    return ScopedResource<QJsonDocument>(document, request.scope());
 }
 
-ResourceResult<QImage> ResourceLoader::loadImage(const ResourceId& id) const
+ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImage(
+    const ResourceRequest& request
+    ) const
 {
-    auto found = descriptor(id);
+    auto found = descriptor(request.id());
     if (!found)
     {
         return std::unexpected(found.error());
@@ -505,12 +576,14 @@ ResourceResult<QImage> ResourceLoader::loadImage(const ResourceId& id) const
             QStringLiteral("image resource cannot be decoded: ") + reader.errorString()
             ));
     }
-    return image;
+    return ScopedResource<QImage>(image, request.scope());
 }
 
-ResourceResult<RegisteredFont> ResourceLoader::loadFont(const ResourceId& id) const
+ResourceResult<ScopedResource<RegisteredFont>> ResourceLoader::loadFont(
+    const ResourceRequest& request
+    ) const
 {
-    auto found = descriptor(id);
+    auto found = descriptor(request.id());
     if (!found)
     {
         return std::unexpected(found.error());
@@ -545,17 +618,23 @@ ResourceResult<RegisteredFont> ResourceLoader::loadFont(const ResourceId& id) co
             QStringLiteral("registered font resource has no family names")
             ));
     }
-    return RegisteredFont(registrationId, families);
+    return ScopedResource<RegisteredFont>(
+        RegisteredFont(registrationId, families),
+        request.scope()
+        );
 }
 
-ResourceResult<QString> ResourceLoader::loadStylesheet(const ResourceId& id) const
+ResourceResult<ScopedResource<QString>> ResourceLoader::loadStylesheet(
+    const ResourceRequest& request
+    ) const
 {
-    const ResourceDescriptor* found = m_catalog.find(id);
+    const ResourceDescriptor* found = m_catalog.find(request.id());
     if (found == nullptr)
     {
         return std::unexpected(error(
             ResourceErrorCode::NotFound,
-            QStringLiteral("resource ID is not present in the loaded catalog: ") + id.value()
+            QStringLiteral("resource ID is not present in the loaded catalog: ")
+                + request.id().value()
             ));
     }
     if (found->expectedType() != ResourceType::Stylesheet)
@@ -565,15 +644,15 @@ ResourceResult<QString> ResourceLoader::loadStylesheet(const ResourceId& id) con
             QStringLiteral("resource is not cataloged as a stylesheet")
             ));
     }
-    return loadText(id);
+    return loadText(request);
 }
 
-ResourceResult<ResourceTranslation> ResourceLoader::loadTranslation(
-    const ResourceId& id,
+ResourceResult<ScopedResource<ResourceTranslation>> ResourceLoader::loadTranslation(
+    const ResourceRequest& request,
     QCoreApplication& application
     ) const
 {
-    auto found = descriptor(id);
+    auto found = descriptor(request.id());
     if (!found)
     {
         return std::unexpected(found.error());
@@ -628,12 +707,14 @@ ResourceResult<ResourceTranslation> ResourceLoader::loadTranslation(
             ));
     }
     result.m_installed = true;
-    return result;
+    return ScopedResource<ResourceTranslation>(std::move(result), request.scope());
 }
 
-ResourceResult<ResourceFileStream> ResourceLoader::openStream(const ResourceId& id) const
+ResourceResult<ScopedResource<ResourceFileStream>> ResourceLoader::openStream(
+    const ResourceRequest& request
+    ) const
 {
-    auto found = descriptor(id);
+    auto found = descriptor(request.id());
     if (!found)
     {
         return std::unexpected(found.error());
@@ -680,7 +761,10 @@ ResourceResult<ResourceFileStream> ResourceLoader::openStream(const ResourceId& 
             QStringLiteral("cannot open file-backed resource stream: ") + file->errorString()
             ));
     }
-    return ResourceFileStream(std::move(file));
+    return ScopedResource<ResourceFileStream>(
+        ResourceFileStream(std::move(file)),
+        request.scope()
+        );
 }
 
 }

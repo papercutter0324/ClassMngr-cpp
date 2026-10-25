@@ -25,8 +25,9 @@
   accepted and committed as `eb473fab89410e6dc5f5527d872b56f150f7f6fd` after
   independent macOS verification. Batch 1 (F1464–F1468) is pushed to `origin`;
   the receipt is in the [Phase 4 progress log](05-Phase-4-Progress-Log.md).
-  F1469, installed resource-root resolution, is accepted, and F1470, explicit
-  resource scopes, is next. F1468 provides
+  F1469, installed resource-root resolution, is committed as `d282e7f1`.
+  F1470, explicit resource scopes, is accepted, and F1471, the byte-budgeted
+  resource cache, is next. F1468 provides
   explicit root/catalog injection, catalog
   validation, root-confined file reads, and RAII stream/font/translation
   ownership while keeping `ClassMngrNext` QtCore-only. The pack-backed

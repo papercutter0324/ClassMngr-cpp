@@ -2,6 +2,7 @@
 
 #include "resource_catalog.h"
 #include "resource_error.h"
+#include "resource_scope.h"
 
 #include <QByteArray>
 #include <QCoreApplication>
@@ -105,17 +106,27 @@ public:
         return m_catalog;
     }
 
-    [[nodiscard]] ResourceResult<QString> loadText(const ResourceId& id) const;
-    [[nodiscard]] ResourceResult<QJsonDocument> loadJson(const ResourceId& id) const;
-    [[nodiscard]] ResourceResult<QImage> loadImage(const ResourceId& id) const;
-    [[nodiscard]] ResourceResult<RegisteredFont> loadFont(const ResourceId& id) const;
-    [[nodiscard]] ResourceResult<QString> loadStylesheet(const ResourceId& id) const;
-    [[nodiscard]] ResourceResult<ResourceTranslation> loadTranslation(
-        const ResourceId& id,
+    [[nodiscard]] ResourceResult<ScopedResource<QString>> loadText(
+        const ResourceRequest& request
+        ) const;
+    [[nodiscard]] ResourceResult<ScopedResource<QJsonDocument>> loadJson(
+        const ResourceRequest& request
+        ) const;
+    [[nodiscard]] ResourceResult<ScopedResource<QImage>> loadImage(
+        const ResourceRequest& request
+        ) const;
+    [[nodiscard]] ResourceResult<ScopedResource<RegisteredFont>> loadFont(
+        const ResourceRequest& request
+        ) const;
+    [[nodiscard]] ResourceResult<ScopedResource<QString>> loadStylesheet(
+        const ResourceRequest& request
+        ) const;
+    [[nodiscard]] ResourceResult<ScopedResource<ResourceTranslation>> loadTranslation(
+        const ResourceRequest& request,
         QCoreApplication& application
         ) const;
-    [[nodiscard]] ResourceResult<ResourceFileStream> openStream(
-        const ResourceId& id
+    [[nodiscard]] ResourceResult<ScopedResource<ResourceFileStream>> openStream(
+        const ResourceRequest& request
         ) const;
 
 private:

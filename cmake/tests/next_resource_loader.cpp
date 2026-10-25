@@ -14,6 +14,8 @@
 #include <cerrno>
 #include <iostream>
 #include <optional>
+#include <type_traits>
+#include <utility>
 
 #if defined(Q_OS_UNIX)
 #include <fcntl.h>
@@ -38,6 +40,30 @@ bool fail(const QString& message)
 std::optional<ResourceId> resourceId(const char* value)
 {
     return ResourceId::fromString(QString::fromLatin1(value));
+}
+
+std::optional<ResourceRequest> resourceRequest(
+    const ResourceId& id,
+    ResourceScopeKind kind,
+    const QString& ownerLabel
+    )
+{
+    auto request = ResourceRequest::create(id, kind, ownerLabel);
+    if (!request)
+    {
+        fail(QStringLiteral("resource request was rejected: ") + request.error().message);
+        return std::nullopt;
+    }
+    return std::move(*request);
+}
+
+bool scopeMatches(
+    const ResourceScope& scope,
+    ResourceScopeKind kind,
+    const QString& ownerLabel
+    )
+{
+    return scope.kind() == kind && scope.ownerLabel() == ownerLabel;
 }
 
 bool stageFile(
@@ -220,39 +246,158 @@ bool testLoader(QCoreApplication& application)
         return fail(QStringLiteral("test resource IDs were rejected"));
     }
 
-    auto json = loader.loadJson(*jsonId);
-    if (!json || !json->isObject())
+    static_assert(!std::is_default_constructible_v<ResourceScope>);
+    static_assert(!std::is_default_constructible_v<ResourceRequest>);
+    static_assert(!std::is_copy_constructible_v<ScopedResource<QString>>);
+    if (ResourceScope::create(ResourceScopeKind::Startup, QString{}).has_value()
+        || ResourceScope::create(ResourceScopeKind::Page, QStringLiteral(" \t\n ")).has_value()
+        || ResourceRequest::create(
+            *jsonId,
+            ResourceScopeKind::Operation,
+            QString{}
+            ).has_value())
+    {
+        return fail(QStringLiteral("scope or request accepted a missing or blank owner label"));
+    }
+
+    auto jsonRequest = resourceRequest(
+        *jsonId,
+        ResourceScopeKind::Startup,
+        QStringLiteral("CampusCatalog")
+        );
+    auto imageRequest = resourceRequest(
+        *imageId,
+        ResourceScopeKind::Page,
+        QStringLiteral("CampusDetails")
+        );
+    auto fontRequest = resourceRequest(
+        *fontId,
+        ResourceScopeKind::Feature,
+        QStringLiteral("Typography")
+        );
+    auto stylesheetRequest = resourceRequest(
+        *stylesheetId,
+        ResourceScopeKind::Feature,
+        QStringLiteral("Theme")
+        );
+    auto translationRequest = resourceRequest(
+        *translationId,
+        ResourceScopeKind::Feature,
+        QStringLiteral("KoreanTranslation")
+        );
+    auto pdfRequest = resourceRequest(
+        *pdfId,
+        ResourceScopeKind::Operation,
+        QStringLiteral("RubricPreview")
+        );
+    auto qmlRequest = resourceRequest(
+        *qmlId,
+        ResourceScopeKind::Page,
+        QStringLiteral("EventCalendar")
+        );
+    auto qrcStreamRequest = resourceRequest(
+        *qmlId,
+        ResourceScopeKind::Operation,
+        QStringLiteral("CalendarPreview")
+        );
+    if (!jsonRequest || !imageRequest || !fontRequest || !stylesheetRequest
+        || !translationRequest || !pdfRequest || !qmlRequest || !qrcStreamRequest)
+    {
+        return false;
+    }
+
+    auto json = loader.loadJson(*jsonRequest);
+    if (!json || !json->get().isObject())
     {
         return fail(QStringLiteral("JSON loader failed: ")
             + (json ? QStringLiteral("document was not an object") : json.error().message));
     }
-    auto wrongType = loader.loadImage(*jsonId);
+    auto movedJson = std::move(*json);
+    if (!scopeMatches(
+            movedJson.scope(),
+            ResourceScopeKind::Startup,
+            QStringLiteral("CampusCatalog")
+            )
+        || !scopeMatches(
+            json->scope(),
+            ResourceScopeKind::Startup,
+            QStringLiteral("CampusCatalog")
+            ))
+    {
+        return fail(QStringLiteral("JSON handle lost its scope across a move"));
+    }
+
+    auto wrongType = loader.loadImage(*jsonRequest);
     if (wrongType || wrongType.error().code != ResourceErrorCode::TypeMismatch)
     {
         return fail(QStringLiteral("image loader did not reject a JSON resource"));
     }
 
-    auto image = loader.loadImage(*imageId);
-    if (!image || image->isNull())
+    auto image = loader.loadImage(*imageRequest);
+    if (!image || image->get().isNull()
+        || !scopeMatches(
+            image->scope(),
+            ResourceScopeKind::Page,
+            QStringLiteral("CampusDetails")
+            ))
     {
         return fail(QStringLiteral("image loader failed: ")
             + (image ? QStringLiteral("image was null") : image.error().message));
     }
+    auto replacementImageRequest = resourceRequest(
+        *imageId,
+        ResourceScopeKind::Operation,
+        QStringLiteral("CampusImagePreview")
+        );
+    if (!replacementImageRequest)
+    {
+        return false;
+    }
+    auto replacementImage = loader.loadImage(*replacementImageRequest);
+    if (!replacementImage)
+    {
+        return fail(QStringLiteral("replacement image load failed: ")
+            + replacementImage.error().message);
+    }
+    *image = std::move(*replacementImage);
+    if (!scopeMatches(
+            image->scope(),
+            ResourceScopeKind::Operation,
+            QStringLiteral("CampusImagePreview")
+            )
+        || !scopeMatches(
+            replacementImage->scope(),
+            ResourceScopeKind::Operation,
+            QStringLiteral("CampusImagePreview")
+            ))
+    {
+        return fail(QStringLiteral("image handle lost its scope during move assignment"));
+    }
 
-    auto stylesheet = loader.loadStylesheet(*stylesheetId);
-    if (!stylesheet || stylesheet->isEmpty())
+    auto stylesheet = loader.loadStylesheet(*stylesheetRequest);
+    if (!stylesheet || stylesheet->get().isEmpty()
+        || !scopeMatches(
+            stylesheet->scope(),
+            ResourceScopeKind::Feature,
+            QStringLiteral("Theme")
+            ))
     {
         return fail(QStringLiteral("stylesheet loader failed"));
     }
-    auto wrongStylesheetType = loader.loadStylesheet(*jsonId);
+    auto wrongStylesheetType = loader.loadStylesheet(*jsonRequest);
     if (wrongStylesheetType
         || wrongStylesheetType.error().code != ResourceErrorCode::TypeMismatch)
     {
         return fail(QStringLiteral("stylesheet loader did not reject a JSON resource"));
     }
 
-    auto qmlText = loader.loadText(*qmlId);
-    if (!qmlText || !qmlText->contains(QStringLiteral("Calendar")))
+    auto qmlText = loader.loadText(*qmlRequest);
+    if (!qmlText || !qmlText->get().contains(QStringLiteral("Calendar"))
+        || !scopeMatches(
+            qmlText->scope(),
+            ResourceScopeKind::Page,
+            QStringLiteral("EventCalendar")
+            ))
     {
         return fail(QStringLiteral("qrc Calendar text load failed: ")
             + (qmlText ? QStringLiteral("unexpected QML contents") : qmlText.error().message));
@@ -264,21 +409,36 @@ bool testLoader(QCoreApplication& application)
     {
         return fail(QStringLiteral("Calendar resource URL was conflated with a package file path"));
     }
-    auto qrcStream = loader.openStream(*qmlId);
+    auto qrcStream = loader.openStream(*qrcStreamRequest);
     if (qrcStream || qrcStream.error().code != ResourceErrorCode::UnsupportedOperation)
     {
         return fail(QStringLiteral("file stream loader accepted a qrc resource"));
     }
 
     const int fontRegistrationId = [&]() {
-        auto font = loader.loadFont(*fontId);
-        if (!font || font->familyNames().isEmpty())
+        auto font = loader.loadFont(*fontRequest);
+        if (!font || font->get().familyNames().isEmpty()
+            || !scopeMatches(
+                font->scope(),
+                ResourceScopeKind::Feature,
+                QStringLiteral("Typography")
+                ))
         {
             fail(QStringLiteral("font loader failed: ")
                 + (font ? QStringLiteral("no family names") : font.error().message));
             return -2;
         }
-        const int registrationId = font->registrationId();
+        const int registrationId = font->get().registrationId();
+        auto movedFont = std::move(*font);
+        if (!scopeMatches(
+                movedFont.scope(),
+                ResourceScopeKind::Feature,
+                QStringLiteral("Typography")
+                ))
+        {
+            fail(QStringLiteral("font result did not retain its scope after a move"));
+            return -2;
+        }
         return registrationId;
     }();
     if (fontRegistrationId < 0
@@ -293,12 +453,27 @@ bool testLoader(QCoreApplication& application)
         return fail(QStringLiteral("translation fallback was not the source text before installation"));
     }
     {
-        auto translation = loader.loadTranslation(*translationId, application);
-        if (!translation || !translation->isInstalled() || translation->translator().isEmpty())
+        auto translation = loader.loadTranslation(*translationRequest, application);
+        if (!translation || !translation->get().isInstalled()
+            || translation->get().translator().isEmpty()
+            || !scopeMatches(
+                translation->scope(),
+                ResourceScopeKind::Feature,
+                QStringLiteral("KoreanTranslation")
+                ))
         {
             return fail(QStringLiteral("translation loader failed: ")
                 + (translation ? QStringLiteral("translation was not installed")
                                : translation.error().message));
+        }
+        auto movedTranslation = std::move(*translation);
+        if (!scopeMatches(
+                movedTranslation.scope(),
+                ResourceScopeKind::Feature,
+                QStringLiteral("KoreanTranslation")
+                ))
+        {
+            return fail(QStringLiteral("translation result did not retain its scope after a move"));
         }
         if (QCoreApplication::translate("ActionRegistry", "Print") != QStringLiteral("인쇄"))
         {
@@ -318,18 +493,32 @@ bool testLoader(QCoreApplication& application)
     HANDLE nativeStreamHandle = INVALID_HANDLE_VALUE;
 #endif
     {
-        auto stream = loader.openStream(*pdfId);
-        if (!stream || !stream->isOpen())
+        auto streamResult = loader.openStream(*pdfRequest);
+        if (!streamResult || !streamResult->get().isOpen()
+            || !scopeMatches(
+                streamResult->scope(),
+                ResourceScopeKind::Operation,
+                QStringLiteral("RubricPreview")
+                ))
         {
             return fail(QStringLiteral("PDF file-backed stream failed: ")
-                + (stream ? QStringLiteral("stream was closed") : stream.error().message));
+                + (streamResult ? QStringLiteral("stream was closed") : streamResult.error().message));
         }
-        const QByteArray prefix = stream->device().read(4);
+        auto stream = std::move(*streamResult);
+        if (!scopeMatches(
+                stream.scope(),
+                ResourceScopeKind::Operation,
+                QStringLiteral("RubricPreview")
+                ))
+        {
+            return fail(QStringLiteral("stream result did not retain its scope after a move"));
+        }
+        const QByteArray prefix = stream.get().device().read(4);
         if (prefix != QByteArray("%PDF", 4))
         {
             return fail(QStringLiteral("PDF stream returned unexpected leading bytes"));
         }
-        auto* file = dynamic_cast<QFile*>(&stream->device());
+        auto* file = dynamic_cast<QFile*>(&stream.get().device());
         if (file == nullptr)
         {
             return fail(QStringLiteral("file stream did not expose its owning QFile device"));
@@ -380,7 +569,16 @@ bool testLoader(QCoreApplication& application)
     {
         return fail(QStringLiteral("missing resource ID was rejected"));
     }
-    auto missingImage = loader.loadImage(*missingId);
+    auto missingImageRequest = resourceRequest(
+        *missingId,
+        ResourceScopeKind::Page,
+        QStringLiteral("MissingCampusMap")
+        );
+    if (!missingImageRequest)
+    {
+        return false;
+    }
+    auto missingImage = loader.loadImage(*missingImageRequest);
     if (missingImage || missingImage.error().code != ResourceErrorCode::MissingFile)
     {
         return fail(QStringLiteral("missing packaged image did not return a missing-file error"));
@@ -400,7 +598,7 @@ bool testLoader(QCoreApplication& application)
     {
         return fail(QStringLiteral("could not prepare corrupt JSON fixture"));
     }
-    auto corruptJson = loader.loadJson(*jsonId);
+    auto corruptJson = loader.loadJson(*jsonRequest);
     if (corruptJson || corruptJson.error().code != ResourceErrorCode::CorruptResource
         || !corruptJson.error().message.contains(QStringLiteral("SHA-256")))
     {
@@ -424,7 +622,7 @@ bool testLoader(QCoreApplication& application)
     QFile::remove(stagedJsonPath);
     if (QFile::link(outsideFile, stagedJsonPath))
     {
-        auto escapedJson = loader.loadJson(*jsonId);
+        auto escapedJson = loader.loadJson(*jsonRequest);
         if (escapedJson || escapedJson.error().code != ResourceErrorCode::UnsafePath)
         {
             return fail(QStringLiteral("resource symlink escape was not rejected"));

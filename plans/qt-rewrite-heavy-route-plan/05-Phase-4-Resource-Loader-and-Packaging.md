@@ -38,9 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Bootstrap, feature migration, packaging, and memory gates
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-25
-- Current note: F1469, installed resource-root resolution, is accepted after
-  Batch 1 (F1464–F1468) was pushed to `origin`; see the [Phase 4 progress log](05-Phase-4-Progress-Log.md)
-  for the receipt. F1470, explicit resource scopes, is next. F1469 resolves
+- Current note: F1470, explicit resource scopes, is accepted; F1471, the
+  byte-budgeted resource cache, is next. F1469 is committed as `d282e7f1`.
+  Batch 1
+  (F1464–F1468) was pushed to `origin`; see the [Phase 4 progress log](05-Phase-4-Progress-Log.md)
+  for the receipt. F1469 resolves
   only the CMake-selected root relative to the executable directory, and its
   macOS tests cover missing roots, unrelated working-directory contents, and
   package relocation. Windows/Linux layouts and mixed absolute/relative Linux
@@ -200,7 +202,26 @@ host-built or staged. Install-time `--prefix` overrides with mixed absolute
 and relative Linux install directories were not tested; the standard preset
 uses relative install directories. The resolver remains an API without a Next
 runtime caller while the shell is resource-free; F1480 checks launched
-relocation. F1469 is accepted, and F1470 is next.
+relocation. F1469 is accepted and committed as `d282e7f1`; F1470 is accepted.
+
+### F1470 — Explicit resource scopes — independently verified — 2026-10-25
+
+Every loader method now requires a `ResourceRequest` with one of the four
+resource lifetimes: Startup, Page, Feature, or Operation. Request factories
+reject unknown scope kinds and empty owner labels. Each result is a
+move-only `ScopedResource<T>` that retains the scope value with its owned text,
+JSON, image, font, stylesheet, translation, or file stream. Moving or
+destroying the handle preserves the owner metadata and releases any contained
+RAII resource normally. The implementation adds no global scope registry,
+cache, diagnostics singleton, startup wiring, or legacy adapter change.
+
+Independent macOS verification rebuilt the loader, root resolver, Calendar
+resource-key, and Next launch targets; their CTests passed 4/4. Tests cover all
+four scope kinds, blank-owner rejection, move construction and assignment,
+font deregistration, translation removal, and stream-handle closure. The full
+suite and Windows/Linux builds were not run. The Next shell remains unwired to
+the loader until the later runtime verification slices. F1470 is accepted;
+F1471 is next.
 
 ## Objective
 
