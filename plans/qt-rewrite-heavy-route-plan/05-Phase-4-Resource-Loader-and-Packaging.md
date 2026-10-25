@@ -74,11 +74,21 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   standard macOS `ClassMngrFeatures` target build succeeded, and Tester
   confirmed the semantics and current object. CMake confirms `-G Visual Studio
   17 2022` is a supported preset override, and Windows configure had succeeded.
-  Both fixes are accepted locally; Windows/Linux reruns remain open. F1495 is
-  the docs receipt for the retry batch. Workflow remains `on.push` filtered to
-  `Qt-Rewrite`, absent from default `main`, with no dispatch. The run failures'
-  exact cause is unknown; user direction on extending scope remains pending.
-  F1483/F1486 native results are still required; Phase 4 remains In progress.
+  F1496 run `40221771224` at `59a8e5da` passed macOS install/probe, audit (193
+  files, 187 SHA checks, five QMs, two QML keys), and CTest 3/3; Linux passed
+  the same audit and focused tests 8/8. Windows build, install/probe, and audit
+  passed, but CTest was 7/8: the symlink-escape test used `QFile::link` on a
+  `.json` path, creating a `.lnk` shortcut instead of a real symlink. F1497
+  changes only the test fixture to use native `CreateSymbolicLinkW` with the
+  unprivileged flag on Windows and `symlink()` on POSIX, explicitly verifies a
+  real symlink and an outside canonical target, retains the `UnsafePath`
+  assertion, and fails clearly instead of skipping if setup fails. Executor
+  and independent Tester macOS loader CTest passed 1/1. Windows confirmation
+  remains pending. F1498 is the receipt for the fresh native rerun. F1483/F1486
+  native results are still required; Phase 4 remains In progress. Workflow
+  stays `on.push` filtered to `Qt-Rewrite`, absent from default `main`, with no
+  dispatch; previous run failures' exact cause is unknown and user direction
+  on extending scope remains pending.
   See the tracker and progress log for the run evidence.
   Phase 7/10 rendering parity remains deferred; legacy pack removal remains
   Phase 12. Batch 1 (F1464–F1468) is pushed to `origin`; see

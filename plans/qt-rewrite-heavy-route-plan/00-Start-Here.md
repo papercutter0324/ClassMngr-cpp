@@ -28,12 +28,19 @@
   byte mismatch and skipped install/audit/tests; Linux failed compiling
   `class_details_page.cpp:302` due to ambiguous long-to-QVariant conversion.
   F1493 adds byte-preserving `.gitattributes` rules; F1494 corrects the
-  QVariant conversion. Both fixes are accepted locally. Local `HEAD` is
-  `b7878846`; `origin/Qt-Rewrite` remains at `cc776f15`. F1495 records the
-  retry batch before its push. The workflow remains `on.push` filtered to
-  `Qt-Rewrite`, absent from default `main`, with no dispatch; the cause of
-  missing/failed runs is unknown and user direction on extending scope remains
-  pending. Windows/Linux reruns and F1483/F1486 native gates remain open. Batch
+  QVariant conversion. F1496 run `40221771224` at `59a8e5da` passed macOS
+  audit/CTest (3/3) and Linux audit/focused tests (8/8); Windows build,
+  install/probe, and audit passed, but CTest was 7/8 because its resource
+  symlink-escape fixture did not create a real Windows symlink. Explorer found
+  `QFile::link` creates a `.lnk` shortcut for the `.json` fixture on Windows.
+  F1497 now uses native `CreateSymbolicLinkW` (unprivileged flag) or POSIX
+  `symlink()`, verifies a real link and outside canonical target, retains
+  `UnsafePath`, and fails clearly rather than skipping; Executor and Tester
+  each passed macOS loader CTest 1/1. Windows confirmation remains open.
+  F1498 records the fresh rerun receipt. F1483/F1486 native gates remain open.
+  The workflow remains `on.push` filtered to `Qt-Rewrite`, absent from default
+  `main`, with no dispatch; the cause of earlier missing/failed runs is
+  unknown and user direction on extending scope remains pending. Batch
   3's F1486 workflow expansion is `094cda87`. A
   standard macOS Debug run of the six targeted
   F1486 CTests initially passed 5/6 because `ClassMngrNextResourceLoaderTests`

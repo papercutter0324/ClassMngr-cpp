@@ -407,8 +407,26 @@ research confirms `-G Visual Studio 17 2022` is supported as an override for
 the preset, and Windows configure had succeeded. Windows/Linux reruns remain
 required; these local checks do not close the native gates.
 
-## F1495 — Retry-batch documentation receipt — planned — 2026-10-25
+## F1496 — Retry resource-layout workflow — failed Windows test — 2026-10-25
 
-F1495 records the run and the two accepted local fixes before the retry batch
-push. Phase 4 remains In progress until F1483/F1486 native Windows/Linux gates
-pass.
+Actions run `40221771224` at head `59a8e5da7281d4f53d3e6020b8cff15b72c14fd8`
+passed macOS install/probe, audit (193 files, 187 SHA, five QMs, two QML keys),
+and CTest 3/3. Linux passed the same audit and focused tests 8/8. Windows build,
+install/probe, and audit passed; CTest was 7/8 because
+`ClassMngrNextResourceLoaderTests` reported that a resource symlink escape was
+not rejected.
+
+Explorer found the test used `QFile::link` on a `.json` fixture path, which
+creates a `.lnk` shortcut on Windows rather than a real symlink. F1497 changes
+only the test fixture: it creates links with Windows `CreateSymbolicLinkW` and
+the unprivileged flag or POSIX `symlink()`, explicitly checks that the path is
+a real symlink and its canonical target is outside the resource root, retains
+the `UnsafePath` assertion, and fails clearly rather than skipping if setup
+fails. Executor and independent Tester each passed the macOS loader CTest 1/1.
+Native Windows confirmation remains pending.
+
+## F1498 — Fresh native rerun receipt — planned — 2026-10-25
+
+F1498 records the corrected fixture and requests a fresh native rerun. The
+Windows result is still required; F1483/F1486 Windows/Linux gates remain open,
+and Phase 4 remains In progress.
