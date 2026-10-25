@@ -1015,11 +1015,11 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
     TeacherRepository teacherRepository(m_database);
     ClassRepository classRepository(m_database);
     ClassInfoRepository classInfoRepository(m_database);
-    const Result<QList<Teacher>> teachers =
+    const RepositoryResult<QList<Teacher>> teachers =
         teacherRepository.getAllTeachers();
     if (!teachers)
     {
-        return std::unexpected(teachers.error());
+        return std::unexpected(toLegacyDiagnostic(teachers.error()));
     }
 
     const RepositoryResult<QList<Classroom>> classrooms =
@@ -1229,11 +1229,11 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
     TeacherRepository teacherRepository(m_database);
     ClassRepository classRepository(m_database);
     ClassInfoRepository classInfoRepository(m_database);
-    const Result<QList<ScheduleImportTeacherReadRecord>> existingTeachers =
+    const RepositoryResult<QList<ScheduleImportTeacherReadRecord>> existingTeachers =
         teacherRepository.loadScheduleImportTeacherRecords();
     if (!existingTeachers)
     {
-        return std::unexpected(existingTeachers.error());
+        return std::unexpected(toLegacyDiagnostic(existingTeachers.error()));
     }
 
     const RepositoryResult<QList<Classroom>> existingClasses =

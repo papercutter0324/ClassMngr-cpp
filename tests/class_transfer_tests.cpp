@@ -5412,7 +5412,7 @@ importDialogBatchesDistinctMatchedTeacherDisplayNameReads()
     const auto clearEnglishName =
         [teacherRepository](const int teacherId)
     {
-        const Result<Teacher> loaded = teacherRepository->getTeacher(teacherId);
+        const RepositoryResult<Teacher> loaded = teacherRepository->getTeacher(teacherId);
         if (!loaded)
         {
             return false;
@@ -5424,7 +5424,7 @@ importDialogBatchesDistinctMatchedTeacherDisplayNameReads()
     const auto clearNamesExceptKorean =
         [teacherRepository](const int teacherId)
     {
-        const Result<Teacher> loaded = teacherRepository->getTeacher(teacherId);
+        const RepositoryResult<Teacher> loaded = teacherRepository->getTeacher(teacherId);
         if (!loaded)
         {
             return false;

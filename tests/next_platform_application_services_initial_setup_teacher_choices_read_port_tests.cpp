@@ -156,7 +156,8 @@ rejectsPartialTeacherChoicesAfterCursorError()
     QVERIFY(repository);
     const auto records = repository->loadInitialSetupTeacherChoiceRecords();
     QVERIFY(!records);
-    QVERIFY(records.error().contains(QStringLiteral("malformed"), Qt::CaseInsensitive));
+    QCOMPARE(records.error().code, RepositoryErrorCode::Technical);
+    QVERIFY(records.error().diagnostic.contains(QStringLiteral("malformed"), Qt::CaseInsensitive));
 
     Platform::ApplicationServicesInitialSetupTeacherChoicesReadPort port(
         &services

@@ -3206,9 +3206,9 @@ void MainWindowTeacherSidebarNavigationParityTests::wideTeacherSidebarRoundTrip(
     QCOMPARE(page->teacherId(), wideId);
     QCOMPARE(room->text(), QStringLiteral("Wide Room Saved"));
     const auto loaded = repository->lookupTeacherProfileById(wideId);
-    QCOMPARE(loaded.code, TeacherProfileLookupCode::Found);
-    QCOMPARE(loaded.profile.teacherId, wideId);
-    QCOMPARE(loaded.profile.roomNumber, QStringLiteral("Wide Room Saved"));
+    QVERIFY(loaded);
+    QCOMPARE(loaded->teacherId, wideId);
+    QCOMPARE(loaded->roomNumber, QStringLiteral("Wide Room Saved"));
 
     bool chooserSeen = false;
     qint64 chooserId = -1;
@@ -3243,7 +3243,9 @@ void MainWindowTeacherSidebarNavigationParityTests::wideTeacherSidebarRoundTrip(
     QCOMPARE(prompts.confirmations.constFirst().message,
         QStringLiteral("Delete '%1'?").arg(target.preferredDisplayName()));
     QVERIFY(prompts.messages.isEmpty());
-    QCOMPARE(repository->lookupTeacherProfileById(wideId).code, TeacherProfileLookupCode::Missing);
+    const auto deletedTeacher = repository->lookupTeacherProfileById(wideId);
+    QVERIFY(!deletedTeacher);
+    QCOMPARE(deletedTeacher.error().code, RepositoryErrorCode::NotFound);
     QVERIFY(!findTeacherLeaf(tree, coKeys, wideId));
     QVERIFY(!findTeacherLeaf(tree, allKeys, wideId));
     QVERIFY(findTeacherLeaf(tree, coKeys, sibling.id));

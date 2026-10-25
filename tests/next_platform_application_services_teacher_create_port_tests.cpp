@@ -217,7 +217,8 @@ legacyCreateRejectsUnrepresentableIdWithoutWrapping()
         ->createTeacher(legacyTeacher);
 
     QVERIFY(!created);
-    QVERIFY(created.error().contains(QStringLiteral("2147483648")));
+    QCOMPARE(created.error().code, RepositoryErrorCode::Validation);
+    QVERIFY(created.error().diagnostic.contains(QStringLiteral("2147483648")));
     QCOMPARE(teacherCount(services), 2);
 
     QSqlQuery query(services.workspaceStore()->database());

@@ -260,7 +260,7 @@ public:
                 }
             }
 
-            using TeacherProfileBatchResult = ::Result<
+            using TeacherProfileBatchResult = RepositoryResult<
                 QList<SubPrepPrintSourceTeacherProfileBatchReadRecord>
                 >;
             std::optional<TeacherProfileBatchResult> loadedTeacherProfiles;
@@ -428,7 +428,7 @@ public:
                             );
                     }
 
-                    const ::Result<
+                    const RepositoryResult<
                         SubPrepPrintSourceTeacherProfileReadFields
                         >& loadedTeacher =
                         profileEntry->second->profile;

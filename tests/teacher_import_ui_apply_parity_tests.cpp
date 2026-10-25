@@ -581,7 +581,7 @@ importRefreshesActiveTeacherPageBeforeFurtherEdit()
     original.zoomPassword = QStringLiteral("manual.zoom.password");
     original.projectionType = QStringLiteral("Any");
     original.notes = QStringLiteral("Manual notes");
-    const Result<int> created = services.databaseSession()
+    const RepositoryResult<int> created = services.databaseSession()
         ->teacherRepository()->createTeacher(original);
     QVERIFY(created);
     original.id = *created;
@@ -631,7 +631,7 @@ importRefreshesActiveTeacherPageBeforeFurtherEdit()
     QVERIFY(page->saveChanges());
     QVERIFY(!page->hasUnsavedChanges());
 
-    const Result<Teacher> persisted = services.databaseSession()
+    const RepositoryResult<Teacher> persisted = services.databaseSession()
         ->teacherRepository()->getTeacher(original.id);
     QVERIFY(persisted);
     QCOMPARE(persisted->teacherKr, QStringLiteral("홍길동"));
@@ -656,7 +656,7 @@ failedImportRefreshRequiresFreshTeacherProfileLoad()
     original.preferredName = original.teacherEn;
     original.roomNumber = QStringLiteral("Old Room");
     original.notes = QStringLiteral("Original notes");
-    const Result<int> created = services.databaseSession()
+    const RepositoryResult<int> created = services.databaseSession()
         ->teacherRepository()->createTeacher(original);
     QVERIFY(created);
     original.id = *created;
@@ -693,7 +693,7 @@ failedImportRefreshRequiresFreshTeacherProfileLoad()
     QVERIFY(!page.hasUnsavedChanges());
 
     page.saveData();
-    const Result<Teacher> untouched = services.databaseSession()
+    const RepositoryResult<Teacher> untouched = services.databaseSession()
         ->teacherRepository()->getTeacher(original.id);
     QVERIFY(untouched);
     QCOMPARE(untouched->teacherKr, QStringLiteral("Imported Name"));

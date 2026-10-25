@@ -3778,7 +3778,7 @@ same-revision baseline was run; these failures remain unresolved and are not
 established as pre-existing. No full suite or other-platform build ran. F1449
 is committed locally and not pushed.
 
-## F1450 — ClassInfoRepository structured results — verified, local commit pending — 2026-10-24
+## F1450 — ClassInfoRepository structured results — verified, committed locally — 2026-10-24
 
 Implementation, source review, final independent review, and focused core/direct
 acceptance are complete. All 51 fallible public `ClassInfoRepository` APIs,
@@ -3831,5 +3831,48 @@ timed out at the F1369 re-entry case. These are observations, not proven
 environment-only or pre-existing except for the cited recurring same-test
 records. ScheduleWidget's earlier 27 failures were resolved by the typed
 visitor test-support fix and are not final failures. Phase 3 and Batch 22
-remain In Progress; F1451 TeacherRepository is next, and F1450's local commit
-is pending.
+remain In Progress. F1450 is committed locally as
+`bd03110d7de6a034db9f631099164d9562c2435b` (`Phase3 - Add structured
+ClassInfoRepository errors (F1450)`) and is not pushed.
+
+## F1451 — TeacherRepository structured errors — independently verified, local commit pending — 2026-10-24
+
+Discovery is complete under `PHASE3-F1451-DISCOVERY-20261024`; Explorer
+`PHASE3-F1451-SCOPE-DISCOVERY-20261024-EXP-01` and Investigator
+`PHASE3-F1451-ERROR-OPTIONS-20261024-INV-01` support the accepted scope.
+Implementation and repair are complete; independent verification accepted the
+slice. Its local commit is pending; F1452 is next.
+
+All public fallible `TeacherRepository` APIs now return `RepositoryResult` or
+`RepositoryStatus`, including typed per-record errors in batch records and
+custom outcomes. Invalid requested IDs map to `InvalidInput`; missing rows to
+`NotFound`; malformed or out-of-range persisted IDs and invalid query results
+to `Validation`; SQL, cursor, transaction, and rollback failures to
+`Technical`. Legacy `DataService`/`TeacherService` conversions and
+string-based compatibility readers retain their diagnostic strings. Direct
+ports map typed failures under their existing code, message, and recoverability
+policies.
+
+The conversion preserves diagnostics, missing-row and inner-versus-left-join
+behavior, batch order, fallback paths and counters, ID widths, and caller
+recoverability. Transactional delete reports rollback failure as `Technical`
+while retaining the primary failure; cursor errors precede short-result
+validation.
+
+`ClassMngrData`, `ClassMngrAppServices`, and 19 affected Next port targets
+compiled. Executor self-check passed 23 focused CTests and the directly
+modified refresh selector. Independent focused verification passed 24 CTests
+and the ClassTransfer preview regression. After repair, the Schedule Import
+selector `preservesNonpositiveExistingTeacherTargetsAtApply` passed all eight
+data cases without weakening the test; TeacherProfileReadPort passed 1/1. The
+incremental Ninja recheck reported no work, and `git diff --check` passed.
+
+Limits: the executor's broad ClassTransfer run retained the recurring fallback
+selector failure (420 passed, 1 failed), also recorded for F1448/F1450; no
+same-source baseline establishes it as pre-existing. The independent wider
+ClassTransfer run aborted with `Cannot create window: no screens available`, so
+there is no full ClassTransfer pass. TeacherImport parity aborted in macOS
+bundle setup (`NSBundle initWithURL: nil URL argument`); its isolated modified
+refresh selector passed. Rollback-failure injection was unavailable; that
+branch was source-reviewed, and successful rollback was exercised. No full
+suite or other-platform build ran.

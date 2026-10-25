@@ -68,21 +68,13 @@ public:
 
         try
         {
-            const TeacherUpdateOutcome result =
+            const RepositoryStatus result =
                 repository->updateTeacherWithOutcome(
                     teacherFromProfile(profile), *parsedId);
-            if (result.code == TeacherUpdateOutcomeCode::Missing)
-            {
-                return Domain::Result<void>::failure({
-                    .code = Domain::ErrorCode::NotFound,
-                    .message = utf8(result.diagnostic),
-                    .recoverable = true
-                });
-            }
-            if (result.code != TeacherUpdateOutcomeCode::Updated)
+            if (!result)
             {
                 return Domain::Result<void>::failure(
-                    technicalError(result.diagnostic,
+                    repositoryError(result.error(),
                         QStringLiteral("Updating teacher failed.")));
             }
             return Domain::Result<void>::success();
@@ -119,37 +111,27 @@ public:
 
         try
         {
-            const TeacherProfileLookupResult result =
+            const RepositoryResult<TeacherProfileReadRecord> result =
                 repository->lookupTeacherProfileById(
                     *parsedId, QObject::tr("Loading teacher"));
-            switch (result.code)
+            if (!result)
             {
-            case TeacherProfileLookupCode::Found:
-                if (result.profile.teacherId != *parsedId)
-                {
-                    return Domain::Result<Domain::TeacherProfile>::failure(
-                        technicalError(QStringLiteral(
-                            "Reloaded teacher ID does not match the requested ID.")));
-                }
-
-                return Domain::Result<Domain::TeacherProfile>::success({
-                    .id = id,
-                    .fields = profileFieldsFromRecord(result.profile)
-                });
-            case TeacherProfileLookupCode::Missing:
-                return Domain::Result<Domain::TeacherProfile>::failure({
-                    .code = Domain::ErrorCode::NotFound,
-                    .message = utf8(result.diagnostic),
-                    .recoverable = true
-                });
-            case TeacherProfileLookupCode::Failure:
                 return Domain::Result<Domain::TeacherProfile>::failure(
-                    technicalError(result.diagnostic,
+                    repositoryError(result.error(),
                         QStringLiteral("Reloading teacher failed.")));
             }
 
-            return Domain::Result<Domain::TeacherProfile>::failure(
-                technicalError(QStringLiteral("Reloading teacher failed.")));
+            if (result->teacherId != *parsedId)
+            {
+                return Domain::Result<Domain::TeacherProfile>::failure(
+                    technicalError(QStringLiteral(
+                        "Reloaded teacher ID does not match the requested ID.")));
+            }
+
+            return Domain::Result<Domain::TeacherProfile>::success({
+                .id = id,
+                .fields = profileFieldsFromRecord(*result)
+            });
         }
         catch (const std::exception&)
         {
@@ -288,6 +270,40 @@ private:
         return {
             .code = Domain::ErrorCode::Technical,
             .message = utf8(message.isEmpty() ? fallback : message),
+            .recoverable = true
+        };
+    }
+
+    [[nodiscard]] static Domain::OperationError repositoryError(
+        const RepositoryError& error,
+        const QString& fallback
+        )
+    {
+        Domain::ErrorCode code = Domain::ErrorCode::Technical;
+        switch (error.code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            code = Domain::ErrorCode::InvalidInput;
+            break;
+        case RepositoryErrorCode::NotFound:
+            code = Domain::ErrorCode::NotFound;
+            break;
+        case RepositoryErrorCode::Conflict:
+            code = Domain::ErrorCode::Conflict;
+            break;
+        case RepositoryErrorCode::Validation:
+            code = Domain::ErrorCode::Validation;
+            break;
+        case RepositoryErrorCode::Technical:
+            code = Domain::ErrorCode::Technical;
+            break;
+        }
+        const QByteArray diagnostic = toLegacyDiagnostic(error).toUtf8();
+        return {
+            .code = code,
+            .message = diagnostic.isEmpty()
+                ? utf8(fallback)
+                : diagnostic.toStdString(),
             .recoverable = true
         };
     }

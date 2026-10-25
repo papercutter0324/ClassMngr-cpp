@@ -21,8 +21,11 @@ pushed. F1449 TestingClassRepository implementation and independent
 verification are complete; commit
 `71424f7334399ec3735c23172e4627b3cefb0641` is local and not pushed. F1450
 ClassInfoRepository implementation and focused verification are complete;
-its local commit is pending. Evidence and limits are in the [progress
-log](04-Phase-3-Progress-Log.md). F1451 is next. The accepted queue is:
+it is committed locally as `bd03110d7de6a034db9f631099164d9562c2435b` and not
+pushed. Evidence and limits are in the [progress
+log](04-Phase-3-Progress-Log.md). F1451 TeacherRepository is independently
+verified; its local slice commit is pending, and F1452 is next. The accepted
+queue is:
 
 1. **F1444** — shared `RepositoryError`/`RepositoryResult`/status contract and SQL error mapping.
 2. **F1445** — Workspace/database transaction, schema, lifecycle, and file-operation errors.

@@ -86,7 +86,7 @@ public:
             // detail projection is re-indexed into the class repository order.
             const RepositoryResult<QList<Classroom>> loadedClasses =
                 classRepository->getClasses();
-            const Result<QList<ScheduleImportTeacherReadRecord>>
+            const RepositoryResult<QList<ScheduleImportTeacherReadRecord>>
                 loadedTeachers =
                     teacherRepository->loadScheduleImportTeacherRecords();
             if (!loadedClasses)

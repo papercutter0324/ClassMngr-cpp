@@ -259,31 +259,17 @@ private:
     }
 
     [[nodiscard]] static Domain::OperationError fromTeacherDisplayNameLookup(
-        const TeacherDisplayNameLookupResult& lookup
+        const RepositoryError& lookupError
         )
     {
-        Domain::ErrorCode code = Domain::ErrorCode::Technical;
-        switch (lookup.code)
+        const QByteArray bytes = toLegacyDiagnostic(lookupError).toUtf8();
+        Domain::OperationError converted = fromRepositoryError(lookupError);
+        if (bytes.isEmpty())
         {
-        case TeacherDisplayNameLookupCode::Missing:
-            code = Domain::ErrorCode::NotFound;
-            break;
-        case TeacherDisplayNameLookupCode::InvalidInput:
-            code = Domain::ErrorCode::InvalidInput;
-            break;
-        case TeacherDisplayNameLookupCode::Found:
-        case TeacherDisplayNameLookupCode::Failure:
-            code = Domain::ErrorCode::Technical;
-            break;
+            converted.message =
+                "The class teacher display name could not be loaded.";
         }
-
-        const QByteArray bytes = lookup.diagnostic.toUtf8();
-        return error(
-            code,
-            bytes.isEmpty()
-                ? "The class teacher display name could not be loaded."
-                : bytes.toStdString()
-            );
+        return converted;
     }
 
     template <typename Value>
@@ -326,20 +312,20 @@ private:
 
         try
         {
-            const TeacherDisplayNameLookupResult loaded =
+            const RepositoryResult<TeacherDisplayNameReadRecord> loaded =
                 repository->lookupTeacherDisplayName(teacherId);
-            if (loaded.code != TeacherDisplayNameLookupCode::Found)
+            if (!loaded)
             {
                 return failure<std::u16string>(
-                    fromTeacherDisplayNameLookup(loaded)
+                    fromTeacherDisplayNameLookup(loaded.error())
                     );
             }
             Teacher teacher;
-            teacher.teacherKr = loaded.record.teacherKr;
-            teacher.teacherEn = loaded.record.teacherEn;
+            teacher.teacherKr = loaded->teacherKr;
+            teacher.teacherEn = loaded->teacherEn;
             teacher.preferredRomanization =
-                loaded.record.preferredRomanization;
-            teacher.preferredName = loaded.record.preferredName;
+                loaded->preferredRomanization;
+            teacher.preferredName = loaded->preferredName;
             return Domain::Result<std::u16string>::success(
                 teacher.preferredDisplayName().toStdU16String()
                 );

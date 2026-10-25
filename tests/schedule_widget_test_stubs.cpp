@@ -1124,16 +1124,23 @@ TeacherRepository::TeacherRepository(QSqlDatabase& database)
 {
 }
 
-Result<QList<Teacher>> TeacherRepository::getAllTeachers()
+RepositoryResult<QList<Teacher>> TeacherRepository::getAllTeachers()
 {
-    return DataService().getAllTeachers();
+    const Result<QList<Teacher>> loaded = DataService().getAllTeachers();
+    if (!loaded)
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            loaded.error()
+        });
+    }
+    return *loaded;
 }
 
-Result<QList<TestingTeacherChoiceReadRecord>>
+RepositoryResult<QList<TestingTeacherChoiceReadRecord>>
 TeacherRepository::loadTestingTeacherChoiceRecords()
 {
-    const Result<QList<Teacher>> loadedTeachers =
-        DataService().getAllTeachers();
+    const RepositoryResult<QList<Teacher>> loadedTeachers = getAllTeachers();
     if (!loadedTeachers)
     {
         return std::unexpected(loadedTeachers.error());
@@ -1153,22 +1160,24 @@ TeacherRepository::loadTestingTeacherChoiceRecords()
     return records;
 }
 
-Result<TeacherDisplayNameReadRecord>
+RepositoryResult<TeacherDisplayNameReadRecord>
 TeacherRepository::loadTeacherDisplayNameFields(const int teacherId)
 {
     ++ScheduleWidgetTestStubs::selectedClassSubtitleTeacherReadCount;
     if (ScheduleWidgetTestStubs::selectedClassSubtitleTeacherReadFailure)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QStringLiteral("Injected subtitle teacher read failure.")
-            );
+        });
     }
 
     if (teacherId <= 0)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
             QStringLiteral("Invalid subtitle teacher identifier.")
-            );
+        });
     }
 
     TeacherDisplayNameReadRecord record;
@@ -1181,14 +1190,14 @@ TeacherRepository::loadTeacherDisplayNameFields(const int teacherId)
     return record;
 }
 
-Result<QList<ScheduleImportTeacherReadRecord>>
+RepositoryResult<QList<ScheduleImportTeacherReadRecord>>
 TeacherRepository::loadScheduleImportTeacherRecords()
 {
     ++m_scheduleImportTeacherReadMetrics.callCount;
     ++m_scheduleImportTeacherReadMetrics.statementCount;
 
     QList<ScheduleImportTeacherReadRecord> records;
-    const Result<QList<Teacher>> teachers = DataService().getAllTeachers();
+    const RepositoryResult<QList<Teacher>> teachers = getAllTeachers();
     if (!teachers)
     {
         return std::unexpected(teachers.error());

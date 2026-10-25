@@ -214,20 +214,20 @@ public:
                     available.error());
             }
 
-            const Result<qint64> created =
+            const RepositoryResult<qint64> created =
                 available.value()->createTeacherWithWideId(
                     toLegacyTeacher(request.fields));
             if (!created)
             {
                 return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(created.error())
+                    domainErrorCode(created.error().code),
+                    toStdString(toLegacyDiagnostic(created.error()))
                     );
             }
             if (*created <= 0)
             {
                 return failure(
-                    Domain::ErrorCode::Technical,
+                    Domain::ErrorCode::Validation,
                     "Creating the teacher did not return a valid ID."
                     );
             }
@@ -237,7 +237,7 @@ public:
             if (!teacherId)
             {
                 return failure(
-                    Domain::ErrorCode::Technical,
+                    Domain::ErrorCode::Validation,
                     "Creating the teacher did not return a valid ID."
                     );
             }
@@ -261,6 +261,26 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        )
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] Domain::Result<TeacherRepository*> activeRepository() const
     {
         WorkspaceStore* const store =

@@ -64,13 +64,19 @@ ScheduleWidget and TestingClassesPage runs had unresolved current-run failures
 (SQLite driver/database-open errors and four roster UI assertions); no
 same-revision baseline was established. No full suite or other-platform build
 ran. F1450 ClassInfoRepository implementation and independent source review
-are complete; its local commit is pending. On the existing incremental macOS
-Debug tree, `ClassMngr` and affected targets built, repository/error CTests
-passed 2/2, all 24 direct-port CTests passed, and the DataService lifecycle,
-ScheduleImport, focused ClassTransfer parity, ScheduleWidget, and focused
-SubPrep schedule checks passed. Broader UI results include unresolved
-current-run failures and timeouts; exact outcomes and limits are recorded in
-the Phase 3 progress log. No full suite or other-platform build ran. Batch 23
+are complete; commit `bd03110d7de6a034db9f631099164d9562c2435b` is local and
+not pushed. F1451 TeacherRepository implementation and independent focused
+verification are complete; its commit is pending. On the existing incremental
+macOS Debug tree, `ClassMngrData`, `ClassMngrAppServices`, and 19 affected Next
+targets built. The focused CTest selection passed 24/24; after repair, the
+schedule-import nonpositive-ID selector passed 8 data cases and the changed
+TeacherProfileReadPort CTest passed 1/1. The broad ClassTransfer run had an
+unresolved fallback failure in the Executor run and aborted with a no-screens
+Qt error in the independent run. TeacherImport UI parity aborted during macOS
+bundle setup; its isolated modified refresh selector passed. No same-revision
+baseline was established, and rollback failure could not be injected. No full
+suite or other-platform build ran. Exact evidence and limits are recorded in
+the Phase 3 progress log. Batch 23
 discovery remains due when F1462 starts; search then for `DocumentCatalog`,
 DataService compatibility conversion, and other candidates beyond Batch 22's
 20-slice cap. Phase 3 remains In Progress until the structured-error
@@ -167,11 +173,17 @@ was unset). The broad ScheduleWidget and TestingClassesPage runs had unresolved
 current-run failures; no same-revision baseline was established. No full suite
 or other-platform build ran. F1449 is committed locally at
 `71424f7334399ec3735c23172e4627b3cefb0641` and will be pushed when Batch 22
-closes. F1450 ClassInfoRepository implementation is active under the Heavy
-route. F1450 is independently accepted and verified with its exact focused
-evidence and broader current-run limits in the [Phase 3 progress
-log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md); its local
-commit is pending. Batch 23 discovery is due at F1462, the second-to-last
+closes. F1450 ClassInfoRepository implementation is independently accepted
+and verified with its exact focused evidence and broader current-run limits in
+the [Phase 3 progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md).
+It is committed locally at `bd03110d7de6a034db9f631099164d9562c2435b` and
+will be pushed when Batch 22 closes. F1451 TeacherRepository discovery is
+complete and implementation is active. The accepted scope covers all
+fallible repository APIs and nested batch-item errors, required legacy
+diagnostic conversions, and affected platform adapters while preserving
+caller-specific missing-row, fallback, ordering, ID-width, and recoverability
+behavior. F1451 is independently accepted and verified; its local commit is
+pending. Batch 23 discovery is due at F1462, the second-to-last
 Batch 22 candidate; search then for `DocumentCatalog`, DataService
 compatibility conversion, and other candidates beyond the accepted cap. The
 earlier file-compatibility and v2 source-boundary reviews remain valid; see

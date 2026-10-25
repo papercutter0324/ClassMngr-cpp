@@ -6,12 +6,11 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-24
-- Current milestone: Phase 3 is In Progress again on the mandatory Heavy route
-  because the §3.3 structured-error audit reopened its exit gate. F1448 is
-  committed locally as `28cd7f39def7cc701e02cd8b488a7f21505fc745` and is not
-  pushed. F1449 implementation and verification are complete. F1450
-  ClassInfoRepository implementation and focused acceptance are complete;
-  its local commit is pending. Evidence and limits are in the
+- Current milestone: Phase 3 remains In Progress on the mandatory Heavy route
+  because the §3.3 structured-error audit reopened its exit gate. F1450 is
+  committed locally as `bd03110d7de6a034db9f631099164d9562c2435b` and is not
+  pushed. F1451 TeacherRepository is independently verified; its local commit
+  is pending, and F1452 is next. Evidence and limits are in the
   [progress log](04-Phase-3-Progress-Log.md); see also the [Phase 3
   plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),

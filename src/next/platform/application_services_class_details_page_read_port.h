@@ -193,15 +193,15 @@ public:
             {
                 try
                 {
-                    const TeacherDisplayNameLookupResult source =
+                    const RepositoryResult<TeacherDisplayNameReadRecord> source =
                         teacherRepository->lookupTeacherDisplayName(
                             loadedClassDetails->teacherId
                             );
-                    if (source.code != TeacherDisplayNameLookupCode::Found)
+                    if (!source)
                     {
                         snapshot.teacherDisplayName = teacherFailure(
                             fromTeacherDisplayNameLookup(
-                                source,
+                                source.error(),
                                 "The class teacher display name could not be loaded."
                                 )
                             );
@@ -209,11 +209,11 @@ public:
                     else
                     {
                         Teacher teacher;
-                        teacher.teacherKr = source.record.teacherKr;
-                        teacher.teacherEn = source.record.teacherEn;
+                        teacher.teacherKr = source->teacherKr;
+                        teacher.teacherEn = source->teacherEn;
                         teacher.preferredRomanization =
-                            source.record.preferredRomanization;
-                        teacher.preferredName = source.record.preferredName;
+                            source->preferredRomanization;
+                        teacher.preferredName = source->preferredName;
                         snapshot.teacherDisplayName =
                             Domain::Result<std::string>::success(
                                 utf8(teacher.preferredDisplayName())
@@ -429,26 +429,31 @@ private:
     }
 
     [[nodiscard]] static Domain::OperationError fromTeacherDisplayNameLookup(
-        const TeacherDisplayNameLookupResult& lookup,
+        const RepositoryError& lookupError,
         const char* fallback
         )
     {
         Domain::ErrorCode code = Domain::ErrorCode::Technical;
-        switch (lookup.code)
+        switch (lookupError.code)
         {
-        case TeacherDisplayNameLookupCode::Missing:
-            code = Domain::ErrorCode::NotFound;
-            break;
-        case TeacherDisplayNameLookupCode::InvalidInput:
+        case RepositoryErrorCode::InvalidInput:
             code = Domain::ErrorCode::InvalidInput;
             break;
-        case TeacherDisplayNameLookupCode::Found:
-        case TeacherDisplayNameLookupCode::Failure:
+        case RepositoryErrorCode::NotFound:
+            code = Domain::ErrorCode::NotFound;
+            break;
+        case RepositoryErrorCode::Conflict:
+            code = Domain::ErrorCode::Conflict;
+            break;
+        case RepositoryErrorCode::Validation:
+            code = Domain::ErrorCode::Validation;
+            break;
+        case RepositoryErrorCode::Technical:
             code = Domain::ErrorCode::Technical;
             break;
         }
 
-        const QByteArray bytes = lookup.diagnostic.toUtf8();
+        const QByteArray bytes = toLegacyDiagnostic(lookupError).toUtf8();
         return {
             .code = code,
             .message = bytes.isEmpty() ? fallback : bytes.toStdString(),

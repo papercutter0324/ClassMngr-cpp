@@ -1336,17 +1336,19 @@ ClassTransferRepository::readSnapshot(
                 }
                 else
                 {
-                    const TeacherProfileLookupResult profile =
+                    const RepositoryResult<TeacherProfileReadRecord> profile =
                         teacherRepository.lookupTeacherProfileById(
                             info.teacherId);
-                    if (profile.code != TeacherProfileLookupCode::Found)
+                    if (!profile)
                     {
-                        return failure(Domain::ErrorCode::Technical,
-                            profile.diagnostic);
+                        return failure(
+                            Domain::ErrorCode::Technical,
+                            toLegacyDiagnostic(profile.error())
+                            );
                     }
                     names = {
-                        normalized(profile.profile.teacherEn).toStdString(),
-                        normalized(profile.profile.teacherKr).toStdString()
+                        normalized(profile->teacherEn).toStdString(),
+                        normalized(profile->teacherKr).toStdString()
                     };
                 }
             }
@@ -1563,13 +1565,14 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
 
     if (!source.teacherIds.isEmpty())
     {
-        const Result<QList<ClassTransferExportTeacherProfileBatchReadRecord>> teacherProfiles =
+        const RepositoryResult<QList<ClassTransferExportTeacherProfileBatchReadRecord>> teacherProfiles =
             teacherRepository.loadClassTransferExportTeacherProfileRecords(source.teacherIds);
         if (!teacherProfiles)
         {
             // A batch-level failure occupies the first assigned-teacher
             // profile's position in the original sequence.
-            source.teacherBatchError = teacherProfiles.error();
+            source.teacherBatchError = toLegacyDiagnostic(
+                teacherProfiles.error());
         }
         else if (teacherProfiles->size() != source.teacherIds.size())
         {
@@ -1592,7 +1595,10 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
 
                 if (!record.profile)
                 {
-                    source.teacherErrorsById.insert(teacherId, record.profile.error());
+                    source.teacherErrorsById.insert(
+                        teacherId,
+                        toLegacyDiagnostic(record.profile.error())
+                        );
                     continue;
                 }
 

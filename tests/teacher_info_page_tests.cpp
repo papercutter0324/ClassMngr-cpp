@@ -642,7 +642,7 @@ repositoryUpdateFailureKeepsDirtyStateAndShowsWarning()
         QStringLiteral("injected profile update failure")));
     QCOMPARE(page.teacher().teacherEn, QStringLiteral("Alex"));
 
-    const Result<Teacher> unchanged = services.databaseSession()
+    const RepositoryResult<Teacher> unchanged = services.databaseSession()
         ->teacherRepository()->getTeacher(original.id);
     QVERIFY(unchanged);
     QCOMPARE(unchanged->teacherEn, QStringLiteral("Alex"));
@@ -738,7 +738,7 @@ repositoryReloadFailureRetainsSavedValuesAndRequiresReload()
     QCOMPARE(audit.value(0).toInt(), original.id);
     QCOMPARE(audit.value(1).toString(), QStringLiteral("Reload Failure"));
     QVERIFY(!audit.next());
-    const Result<Teacher> deleted = services.databaseSession()
+    const RepositoryResult<Teacher> deleted = services.databaseSession()
         ->teacherRepository()->getTeacher(original.id);
     QVERIFY(!deleted);
 
@@ -858,7 +858,7 @@ automaticUpdateFailureShowsStatusAndRetryClearsIt()
     QCOMPARE(notes->toPlainText(), QStringLiteral("Retained note"));
     QCOMPARE(page.teacher().teacherEn, QStringLiteral("Retried Profile"));
 
-    const Result<Teacher> persisted = services.databaseSession()
+    const RepositoryResult<Teacher> persisted = services.databaseSession()
         ->teacherRepository()->getTeacher(original.id);
     QVERIFY(persisted);
     QCOMPARE(persisted->teacherEn, QStringLiteral("Retried Profile"));

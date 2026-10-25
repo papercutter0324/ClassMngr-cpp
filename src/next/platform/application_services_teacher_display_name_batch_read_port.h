@@ -80,8 +80,8 @@ public:
                 );
         }
 
-        Result<QList<MyClassesTeacherDisplayNameBatchReadRecord>> loaded = [&]()
-            -> Result<QList<MyClassesTeacherDisplayNameBatchReadRecord>>
+        RepositoryResult<QList<MyClassesTeacherDisplayNameBatchReadRecord>> loaded = [&]()
+            -> RepositoryResult<QList<MyClassesTeacherDisplayNameBatchReadRecord>>
         {
             try
             {
@@ -91,25 +91,27 @@ public:
             }
             catch (const std::exception&)
             {
-                return std::unexpected(QStringLiteral(
-                    "Teacher display names could not be loaded."
-                    ));
+                return std::unexpected(RepositoryError{
+                    RepositoryErrorCode::Technical,
+                    QStringLiteral("Teacher display names could not be loaded.")
+                });
             }
             catch (...)
             {
-                return std::unexpected(QStringLiteral(
-                    "Teacher display names could not be loaded."
-                    ));
+                return std::unexpected(RepositoryError{
+                    RepositoryErrorCode::Technical,
+                    QStringLiteral("Teacher display names could not be loaded.")
+                });
             }
         }();
 
         if (!loaded)
         {
             return failure(
-                Domain::ErrorCode::Technical,
-                utf8(loaded.error()).empty()
+                domainErrorCode(loaded.error().code),
+                utf8(toLegacyDiagnostic(loaded.error())).empty()
                     ? "Teacher display names could not be loaded."
-                    : utf8(loaded.error()),
+                    : utf8(toLegacyDiagnostic(loaded.error())),
                 false
                 );
         }
@@ -147,6 +149,26 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        )
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] static std::string utf8(const QString& value)
     {
         const QByteArray bytes = value.toUtf8();

@@ -247,7 +247,7 @@ Result<int> TeacherService::create(const Teacher& teacher) const
 
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
-        return repository->createTeacher(normalized);
+        return toLegacyResult(repository->createTeacher(normalized));
     }
     return dataService()
         ? dataService()->createTeacher(normalized)
@@ -265,7 +265,7 @@ Result<int> TeacherService::save(const Teacher& teacher) const
 
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
-        return repository->saveTeacher(normalized);
+        return toLegacyResult(repository->saveTeacher(normalized));
     }
     return dataService()
         ? dataService()->saveTeacher(normalized)
@@ -289,7 +289,7 @@ Status TeacherService::update(const Teacher& teacher) const
 
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
-        return repository->updateTeacher(normalized);
+        return toLegacyStatus(repository->updateTeacher(normalized));
     }
     else if (dataService())
     {
@@ -305,7 +305,7 @@ Result<Teacher> TeacherService::teacher(int teacherId) const
     {
         if (auto* repository = session()->teacherRepository())
         {
-            return repository->getTeacher(teacherId);
+            return toLegacyResult(repository->getTeacher(teacherId));
         }
         return std::unexpected(unavailableError());
     }
@@ -318,7 +318,7 @@ Result<QList<Teacher>> TeacherService::teachers() const
 {
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
-        return repository->getAllTeachers();
+        return toLegacyResult(repository->getAllTeachers());
     }
     return dataService()
         ? dataService()->getAllTeachers()
@@ -329,7 +329,7 @@ Status TeacherService::remove(int teacherId) const
 {
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
-        return repository->deleteTeacher(teacherId);
+        return toLegacyStatus(repository->deleteTeacher(teacherId));
     }
     else if (dataService())
     {

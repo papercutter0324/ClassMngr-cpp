@@ -163,9 +163,8 @@ Result<int> DataService::createTeacher(
         return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
 
-    return m_session->teacherRepository()->createTeacher(
-        teacher
-        );
+    return toLegacyResult(
+        m_session->teacherRepository()->createTeacher(teacher));
 }
 
 Result<int> DataService::saveTeacher(
@@ -177,9 +176,8 @@ Result<int> DataService::saveTeacher(
         return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
 
-    return m_session->teacherRepository()->saveTeacher(
-        teacher
-        );
+    return toLegacyResult(
+        m_session->teacherRepository()->saveTeacher(teacher));
 }
 
 Status DataService::updateTeacher(
@@ -191,7 +189,8 @@ Status DataService::updateTeacher(
         return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
 
-    return m_session->teacherRepository()->updateTeacher(teacher);
+    return toLegacyStatus(
+        m_session->teacherRepository()->updateTeacher(teacher));
 }
 
 Result<Teacher> DataService::getTeacher(
@@ -205,9 +204,8 @@ Result<Teacher> DataService::getTeacher(
             );
     }
 
-    return m_session->teacherRepository()->getTeacher(
-        teacherId
-        );
+    return toLegacyResult(
+        m_session->teacherRepository()->getTeacher(teacherId));
 }
 
 Result<QList<Teacher>> DataService::getAllTeachers()
@@ -219,7 +217,7 @@ Result<QList<Teacher>> DataService::getAllTeachers()
             );
     }
 
-    return m_session->teacherRepository()->getAllTeachers();
+    return toLegacyResult(m_session->teacherRepository()->getAllTeachers());
 }
 
 Status DataService::deleteTeacher(
@@ -231,7 +229,8 @@ Status DataService::deleteTeacher(
         return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
 
-    return m_session->teacherRepository()->deleteTeacher(teacherId);
+    return toLegacyStatus(
+        m_session->teacherRepository()->deleteTeacher(teacherId));
 }
 
 Result<QList<NativeEnglishTeacher>> DataService::getNativeEnglishTeachers()

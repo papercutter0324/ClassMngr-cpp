@@ -243,8 +243,8 @@ public:
             legacyTeacherIds.append(teacherId);
         }
 
-        Result<QList<MyClassesTeacherDisplayNameBatchReadRecord>> loadedTeachers = [&]()
-            -> Result<QList<MyClassesTeacherDisplayNameBatchReadRecord>>
+        RepositoryResult<QList<MyClassesTeacherDisplayNameBatchReadRecord>> loadedTeachers = [&]()
+            -> RepositoryResult<QList<MyClassesTeacherDisplayNameBatchReadRecord>>
         {
             try
             {
@@ -254,15 +254,17 @@ public:
             }
             catch (const std::exception&)
             {
-                return std::unexpected(
+                return std::unexpected(RepositoryError{
+                    RepositoryErrorCode::Technical,
                     QStringLiteral("The assigned teacher display names could not be loaded.")
-                    );
+                });
             }
             catch (...)
             {
-                return std::unexpected(
+                return std::unexpected(RepositoryError{
+                    RepositoryErrorCode::Technical,
                     QStringLiteral("The assigned teacher display names could not be loaded.")
-                    );
+                });
             }
         }();
 
@@ -271,7 +273,7 @@ public:
             markAssignedTeacherFailures(
                 *loadedClasses,
                 snapshots,
-                legacyError(loadedTeachers.error())
+                classFieldsRepositoryError(loadedTeachers.error())
                 );
             return Application::SelectedClassSubtitleBatchReadResult::success(
                 std::move(snapshots)

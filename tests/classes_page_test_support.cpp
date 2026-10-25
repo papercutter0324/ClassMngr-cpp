@@ -38,19 +38,19 @@ ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
     };
 }
 
-TeacherDisplayNameLookupResult
+RepositoryResult<TeacherDisplayNameReadRecord>
 TeacherRepository::lookupTeacherDisplayName(const qint64 teacherId)
 {
     if (teacherId != 7 && teacherId != 8)
     {
-        return {
-            .code = teacherId <= 0
-                ? TeacherDisplayNameLookupCode::InvalidInput
-                : TeacherDisplayNameLookupCode::Missing,
-            .diagnostic = QStringLiteral(
+        return std::unexpected(RepositoryError{
+            teacherId <= 0
+                ? RepositoryErrorCode::InvalidInput
+                : RepositoryErrorCode::NotFound,
+            QStringLiteral(
                 "The test teacher display name is unavailable."
                 )
-        };
+        });
     }
 
     const Result<Teacher> loaded = DataService().getTeacher(
@@ -58,20 +58,17 @@ TeacherRepository::lookupTeacherDisplayName(const qint64 teacherId)
         );
     if (!loaded)
     {
-        return {
-            .code = TeacherDisplayNameLookupCode::Failure,
-            .diagnostic = loaded.error()
-        };
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            loaded.error()
+        });
     }
 
-    return {
-        .code = TeacherDisplayNameLookupCode::Found,
-        .record = {
-            .teacherKr = loaded->teacherKr,
-            .teacherEn = loaded->teacherEn,
-            .preferredRomanization = loaded->preferredRomanization,
-            .preferredName = loaded->preferredName
-        }
+    return TeacherDisplayNameReadRecord{
+        .teacherKr = loaded->teacherKr,
+        .teacherEn = loaded->teacherEn,
+        .preferredRomanization = loaded->preferredRomanization,
+        .preferredName = loaded->preferredName
     };
 }
 

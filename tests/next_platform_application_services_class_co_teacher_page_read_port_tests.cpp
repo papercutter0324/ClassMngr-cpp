@@ -159,44 +159,50 @@ teacherDisplayNameLookupReportsStructuredOutcomes()
 
     const int teacherId = createTeacher(services);
     QVERIFY(teacherId > 0);
-    const TeacherDisplayNameLookupResult found =
+    const RepositoryResult<TeacherDisplayNameReadRecord> found =
         repository->lookupTeacherDisplayName(teacherId);
-    QCOMPARE(found.code, TeacherDisplayNameLookupCode::Found);
-    QCOMPARE(found.record.preferredName, QStringLiteral(" Preferred Display "));
+    QVERIFY(found);
+    QCOMPARE(found->preferredName, QStringLiteral(" Preferred Display "));
     const auto legacyFound = repository->loadTeacherDisplayNameFields(teacherId);
     QVERIFY(legacyFound);
-    QCOMPARE(legacyFound->preferredName, found.record.preferredName);
+    QCOMPARE(legacyFound->preferredName, found->preferredName);
 
     constexpr int missingTeacherId = 812345;
-    const TeacherDisplayNameLookupResult missing =
+    const RepositoryResult<TeacherDisplayNameReadRecord> missing =
         repository->lookupTeacherDisplayName(missingTeacherId);
-    QCOMPARE(missing.code, TeacherDisplayNameLookupCode::Missing);
-    QVERIFY(missing.diagnostic.contains(QStringLiteral("no matching record")));
+    QVERIFY(!missing);
+    QCOMPARE(missing.error().code, RepositoryErrorCode::NotFound);
+    QVERIFY(missing.error().diagnostic.contains(QStringLiteral("no matching record")));
     const auto legacyMissing =
         repository->loadTeacherDisplayNameFields(missingTeacherId);
     QVERIFY(!legacyMissing);
-    QCOMPARE(legacyMissing.error(), missing.diagnostic);
+    QCOMPARE(legacyMissing.error().diagnostic,
+        toLegacyDiagnostic(missing.error()));
 
-    const TeacherDisplayNameLookupResult invalid =
+    const RepositoryResult<TeacherDisplayNameReadRecord> invalid =
         repository->lookupTeacherDisplayName(0);
-    QCOMPARE(invalid.code, TeacherDisplayNameLookupCode::InvalidInput);
+    QVERIFY(!invalid);
+    QCOMPARE(invalid.error().code, RepositoryErrorCode::InvalidInput);
     const auto legacyInvalid = repository->loadTeacherDisplayNameFields(0);
     QVERIFY(!legacyInvalid);
-    QCOMPARE(legacyInvalid.error(), invalid.diagnostic);
+    QCOMPARE(legacyInvalid.error().diagnostic,
+        toLegacyDiagnostic(invalid.error()));
 
     QSqlQuery damageProjection(services.workspaceStore()->database());
     QVERIFY2(damageProjection.exec(QStringLiteral(
         "ALTER TABLE teachers RENAME COLUMN preferred_name "
         "TO preferred_name_after_failure"
         )), qPrintable(damageProjection.lastError().text()));
-    const TeacherDisplayNameLookupResult failure =
+    const RepositoryResult<TeacherDisplayNameReadRecord> failure =
         repository->lookupTeacherDisplayName(teacherId);
-    QCOMPARE(failure.code, TeacherDisplayNameLookupCode::Failure);
-    QVERIFY(!failure.diagnostic.isEmpty());
+    QVERIFY(!failure);
+    QCOMPARE(failure.error().code, RepositoryErrorCode::Technical);
+    QVERIFY(!failure.error().diagnostic.isEmpty());
     const auto legacyFailure =
         repository->loadTeacherDisplayNameFields(teacherId);
     QVERIFY(!legacyFailure);
-    QCOMPARE(legacyFailure.error(), failure.diagnostic);
+    QCOMPARE(legacyFailure.error().diagnostic,
+        toLegacyDiagnostic(failure.error()));
 }
 
 void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::

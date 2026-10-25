@@ -46,7 +46,7 @@ public:
 
         try
         {
-            const Result<QList<KoreanTeacherBirthdayDirectoryReadRecord>> loaded =
+            const RepositoryResult<QList<KoreanTeacherBirthdayDirectoryReadRecord>> loaded =
                 repository->loadKoreanTeacherBirthdayDirectoryRecords();
             if (!loaded)
             {
@@ -100,12 +100,32 @@ private:
     }
 
     [[nodiscard]] static Domain::OperationError repositoryError(
-        const QString& message
+        const RepositoryError& repositoryError
         )
     {
-        const std::string detail = utf8(message);
+        Domain::ErrorCode code = Domain::ErrorCode::Technical;
+        switch (repositoryError.code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            code = Domain::ErrorCode::InvalidInput;
+            break;
+        case RepositoryErrorCode::NotFound:
+            code = Domain::ErrorCode::NotFound;
+            break;
+        case RepositoryErrorCode::Conflict:
+            code = Domain::ErrorCode::Conflict;
+            break;
+        case RepositoryErrorCode::Validation:
+            code = Domain::ErrorCode::Validation;
+            break;
+        case RepositoryErrorCode::Technical:
+            code = Domain::ErrorCode::Technical;
+            break;
+        }
+        const std::string detail =
+            utf8(toLegacyDiagnostic(repositoryError));
         return {
-            .code = Domain::ErrorCode::Technical,
+            .code = code,
             .message = detail.empty() ? "Teachers could not be loaded." : detail,
             .recoverable = false
         };

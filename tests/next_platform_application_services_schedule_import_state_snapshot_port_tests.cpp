@@ -266,7 +266,7 @@ mapsActiveSessionRecordsInRepositoryOrder()
 
     const RepositoryResult<QList<Classroom>> legacyOrder =
         services.workspaceStore()->classRepository()->getClasses();
-    const Result<QList<Teacher>> teacherOrder =
+    const RepositoryResult<QList<Teacher>> teacherOrder =
         services.workspaceStore()->teacherRepository()->getAllTeachers();
     QVERIFY(legacyOrder);
     QVERIFY(teacherOrder);
@@ -588,7 +588,7 @@ preservesLargeWorkspaceRecordsAndReadCounts()
         services.workspaceStore()->classInfoRepository();
     const RepositoryResult<QList<Classroom>> expectedClasses =
         classRepository->getClasses();
-    const Result<QList<ScheduleImportTeacherReadRecord>> expectedTeachers =
+    const RepositoryResult<QList<ScheduleImportTeacherReadRecord>> expectedTeachers =
         teacherRepository->loadScheduleImportTeacherRecords();
     const RepositoryResult<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
         expectedClassInfos =

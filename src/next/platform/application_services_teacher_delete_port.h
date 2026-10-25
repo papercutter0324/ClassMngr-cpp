@@ -87,14 +87,13 @@ public:
                     );
             }
 
-            const Status deleted = repository->deleteTeacher(teacherId);
+            const RepositoryStatus deleted = repository->deleteTeacher(teacherId);
             if (!deleted)
             {
-                return Application::TeacherDeleteResult::failure({
-                    .code = Domain::ErrorCode::Technical,
-                    .message = toStdString(deleted.error()),
-                    .recoverable = false
-                });
+                return failure(
+                    domainErrorCode(deleted.error().code),
+                    toStdString(toLegacyDiagnostic(deleted.error()))
+                    );
             }
 
             return Application::TeacherDeleteResult::success();
@@ -116,6 +115,26 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::ErrorCode domainErrorCode(
+        const RepositoryErrorCode code
+        )
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] static qint64 widePositiveInteger(
         const std::string& value
         )

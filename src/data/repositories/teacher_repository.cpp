@@ -104,13 +104,28 @@ QString teacherIdentity(qint64 teacherId)
     return QObject::tr("teacher id %1").arg(teacherId);
 }
 
-Status statusFromExecution(
+std::unexpected<RepositoryError> repositoryUnexpected(
+    QString diagnostic,
+    const RepositoryErrorCode code = RepositoryErrorCode::Technical
+    )
+{
+    return std::unexpected(RepositoryError{code, std::move(diagnostic)});
+}
+
+std::unexpected<RepositoryError> repositoryUnexpected(
+    const RepositoryError& error
+    )
+{
+    return std::unexpected(error);
+}
+
+RepositoryStatus statusFromExecution(
     const SqlQueryUtils::ExecutionResult& result
     )
 {
     if (!result)
     {
-        return std::unexpected(result.error().userMessage());
+        return repositoryUnexpected(result.error().userMessage());
     }
 
     return {};
@@ -124,29 +139,30 @@ TeacherRepository::TeacherRepository(
 {
 }
 
-Result<int> TeacherRepository::createTeacher(
+RepositoryResult<int> TeacherRepository::createTeacher(
     const Teacher& teacher
     )
 {
-    const Result<qint64> created = createTeacherWithWideId(teacher);
+    const RepositoryResult<qint64> created = createTeacherWithWideId(teacher);
     if (!created)
     {
-        return std::unexpected(created.error());
+        return repositoryUnexpected(created.error());
     }
     if (*created > std::numeric_limits<int>::max())
     {
-        return std::unexpected(
+        return repositoryUnexpected(
             QObject::tr(
                 "Creating teacher failed: generated record id %1 exceeds "
                 "the supported range for this caller."
-                ).arg(QString::number(*created))
+                ).arg(QString::number(*created)),
+            RepositoryErrorCode::Validation
             );
     }
 
     return static_cast<int>(*created);
 }
 
-Result<qint64> TeacherRepository::createTeacherWithWideId(
+RepositoryResult<qint64> TeacherRepository::createTeacherWithWideId(
     const Teacher& teacher
     )
 {
@@ -202,34 +218,35 @@ Result<qint64> TeacherRepository::createTeacherWithWideId(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     bool idOk = false;
     const qint64 teacherId = query.lastInsertId().toLongLong(&idOk);
     if (!idOk || teacherId <= 0)
     {
-        return std::unexpected(
+        return repositoryUnexpected(
             QObject::tr(
                 "Creating %1 failed: the database did not return a valid "
                 "record id."
-                ).arg(identity)
+                ).arg(identity),
+            RepositoryErrorCode::Validation
             );
     }
 
     return teacherId;
 }
 
-Result<int> TeacherRepository::saveTeacher(
+RepositoryResult<int> TeacherRepository::saveTeacher(
     const Teacher& teacher
     )
 {
     if (teacher.id > 0)
     {
-        const Status updated = updateTeacher(teacher);
+        const RepositoryStatus updated = updateTeacher(teacher);
         if (!updated)
         {
-            return std::unexpected(updated.error());
+            return repositoryUnexpected(updated.error());
         }
 
         return teacher.id;
@@ -238,31 +255,34 @@ Result<int> TeacherRepository::saveTeacher(
     return createTeacher(teacher);
 }
 
-Status TeacherRepository::updateTeacher(
+RepositoryStatus TeacherRepository::updateTeacher(
     const Teacher& teacher
     )
 {
-    const TeacherUpdateOutcome outcome = updateTeacherWithOutcome(teacher);
-    if (outcome.code != TeacherUpdateOutcomeCode::Updated)
-    {
-        return std::unexpected(outcome.diagnostic);
-    }
-
-    return {};
+    return updateTeacherWithOutcome(teacher);
 }
 
-TeacherUpdateOutcome TeacherRepository::updateTeacherWithOutcome(
+RepositoryStatus TeacherRepository::updateTeacherWithOutcome(
     const Teacher& teacher
     )
 {
     return updateTeacherWithOutcome(teacher, static_cast<qint64>(teacher.id));
 }
 
-TeacherUpdateOutcome TeacherRepository::updateTeacherWithOutcome(
+RepositoryStatus TeacherRepository::updateTeacherWithOutcome(
     const Teacher& teacher,
     const qint64 teacherId
     )
 {
+    if (teacherId <= 0)
+    {
+        return repositoryUnexpected(
+            QObject::tr("Updating teacher failed: invalid teacher id %1.")
+                .arg(teacherId),
+            RepositoryErrorCode::InvalidInput
+            );
+    }
+
     QSqlQuery query(m_database);
 
     query.prepare(R"(
@@ -310,50 +330,41 @@ TeacherUpdateOutcome TeacherRepository::updateTeacherWithOutcome(
         );
     if (!executed)
     {
-        return {
-            .code = TeacherUpdateOutcomeCode::Failure,
-            .diagnostic = executed.error().userMessage()
-        };
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     if (query.numRowsAffected() == 0)
     {
-        return {
-            .code = TeacherUpdateOutcomeCode::Missing,
-            .diagnostic = QObject::tr(
+        return repositoryUnexpected(
+            QObject::tr(
                 "Updating teacher failed for %1: no matching record exists."
-                ).arg(teacherIdentity(teacherId))
-        };
+                ).arg(teacherIdentity(teacherId)),
+            RepositoryErrorCode::NotFound
+            );
     }
 
-    return {.code = TeacherUpdateOutcomeCode::Updated};
+    return {};
 }
 
-Result<Teacher> TeacherRepository::getTeacher(
+RepositoryResult<Teacher> TeacherRepository::getTeacher(
     int teacherId
     )
 {
-    const TeacherByIdLookupResult lookup = lookupTeacherById(teacherId);
-    if (lookup.code == TeacherByIdLookupCode::Found)
-    {
-        return lookup.teacher;
-    }
-
-    return std::unexpected(lookup.diagnostic);
+    return lookupTeacherById(teacherId);
 }
 
-TeacherByIdLookupResult TeacherRepository::lookupTeacherById(
+RepositoryResult<Teacher> TeacherRepository::lookupTeacherById(
     int teacherId
     )
 {
     if (teacherId <= 0)
     {
-        return {
-            .code = TeacherByIdLookupCode::Failure,
-            .diagnostic = QObject::tr(
+        return repositoryUnexpected(
+            QObject::tr(
                 "Loading teacher failed: invalid teacher id %1."
-                ).arg(teacherId)
-        };
+                ).arg(teacherId),
+            RepositoryErrorCode::InvalidInput
+            );
     }
 
     QSqlQuery query(m_database);
@@ -373,42 +384,55 @@ TeacherByIdLookupResult TeacherRepository::lookupTeacherById(
         );
     if (!executed)
     {
-        return {
-            .code = TeacherByIdLookupCode::Failure,
-            .diagnostic = executed.error().userMessage()
-        };
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     if (!query.next())
     {
         if (query.lastError().isValid())
         {
-            return {
-                .code = TeacherByIdLookupCode::Failure,
-                .diagnostic = SqlQueryUtils::errorFor(
+            return repositoryUnexpected(SqlQueryUtils::errorFor(
                     query,
                     QObject::tr("Loading teacher"),
                     {},
                     teacherIdentity(teacherId)
-                    ).userMessage()
-            };
+                    ).userMessage());
         }
 
-        return {
-            .code = TeacherByIdLookupCode::Missing,
-            .diagnostic = QObject::tr(
+        return repositoryUnexpected(
+            QObject::tr(
                 "Loading teacher failed for %1: no matching record exists."
-                ).arg(teacherIdentity(teacherId))
-        };
+                ).arg(teacherIdentity(teacherId)),
+            RepositoryErrorCode::NotFound
+            );
     }
 
-    return {
-        .code = TeacherByIdLookupCode::Found,
-        .teacher = teacherFromQuery(query)
-    };
+    bool returnedTeacherIdOk = false;
+    const qint64 returnedTeacherId = query.value(QStringLiteral("id"))
+        .toLongLong(&returnedTeacherIdOk);
+    if (!returnedTeacherIdOk || returnedTeacherId != teacherId)
+    {
+        return repositoryUnexpected(
+            QObject::tr(
+                "Loading teacher failed for %1: the database returned a different teacher identifier."
+                ).arg(teacherIdentity(teacherId)),
+            RepositoryErrorCode::Validation
+            );
+    }
+    if (query.lastError().isValid())
+    {
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading teacher"),
+            {},
+            teacherIdentity(teacherId)
+            ).userMessage());
+    }
+
+    return teacherFromQuery(query);
 }
 
-Result<TeacherDisplayNameReadRecord>
+RepositoryResult<TeacherDisplayNameReadRecord>
 TeacherRepository::loadTeacherDisplayNameFields(
     int teacherId
     )
@@ -416,21 +440,15 @@ TeacherRepository::loadTeacherDisplayNameFields(
     return loadTeacherDisplayNameFields(static_cast<qint64>(teacherId));
 }
 
-Result<TeacherDisplayNameReadRecord>
+RepositoryResult<TeacherDisplayNameReadRecord>
 TeacherRepository::loadTeacherDisplayNameFields(
     qint64 teacherId
     )
 {
-    const TeacherDisplayNameLookupResult lookup =
-        lookupTeacherDisplayName(teacherId);
-    if (lookup.code == TeacherDisplayNameLookupCode::Found)
-    {
-        return lookup.record;
-    }
-    return std::unexpected(lookup.diagnostic);
+    return lookupTeacherDisplayName(teacherId);
 }
 
-TeacherDisplayNameLookupResult
+RepositoryResult<TeacherDisplayNameReadRecord>
 TeacherRepository::lookupTeacherDisplayName(
     int teacherId
     )
@@ -438,19 +456,19 @@ TeacherRepository::lookupTeacherDisplayName(
     return lookupTeacherDisplayName(static_cast<qint64>(teacherId));
 }
 
-TeacherDisplayNameLookupResult
+RepositoryResult<TeacherDisplayNameReadRecord>
 TeacherRepository::lookupTeacherDisplayName(
     qint64 teacherId
     )
 {
     if (teacherId <= 0)
     {
-        return {
-            .code = TeacherDisplayNameLookupCode::InvalidInput,
-            .diagnostic = QObject::tr(
+        return repositoryUnexpected(
+            QObject::tr(
                 "Loading teacher display name failed: invalid teacher id %1."
-                ).arg(teacherId)
-        };
+                ).arg(teacherId),
+            RepositoryErrorCode::InvalidInput
+            );
     }
 
     QSqlQuery query(m_database);
@@ -472,46 +490,37 @@ TeacherRepository::lookupTeacherDisplayName(
         );
     if (!executed)
     {
-        return {
-            .code = TeacherDisplayNameLookupCode::Failure,
-            .diagnostic = executed.error().userMessage()
-        };
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     if (!query.next())
     {
         if (query.lastError().isValid())
         {
-            return {
-                .code = TeacherDisplayNameLookupCode::Failure,
-                .diagnostic = SqlQueryUtils::errorFor(
+            return repositoryUnexpected(SqlQueryUtils::errorFor(
                     query,
                     QObject::tr("Loading teacher display name"),
                     {},
                     teacherIdentity(teacherId)
-                    ).userMessage()
-            };
+                    ).userMessage());
         }
 
-        return {
-            .code = TeacherDisplayNameLookupCode::Missing,
-            .diagnostic = QObject::tr(
+        return repositoryUnexpected(
+            QObject::tr(
                 "Loading teacher display name failed for %1: no matching record exists."
-                ).arg(teacherIdentity(teacherId))
-        };
+                ).arg(teacherIdentity(teacherId)),
+            RepositoryErrorCode::NotFound
+            );
     }
 
     if (query.lastError().isValid())
     {
-        return {
-            .code = TeacherDisplayNameLookupCode::Failure,
-            .diagnostic = SqlQueryUtils::errorFor(
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
                 query,
                 QObject::tr("Loading teacher display name"),
                 {},
                 teacherIdentity(teacherId)
-                ).userMessage()
-        };
+                ).userMessage());
     }
 
     bool returnedTeacherIdOk = false;
@@ -520,26 +529,23 @@ TeacherRepository::lookupTeacherDisplayName(
         );
     if (!returnedTeacherIdOk || returnedTeacherId != teacherId)
     {
-        return {
-            .code = TeacherDisplayNameLookupCode::Failure,
-            .diagnostic = QObject::tr(
+        return repositoryUnexpected(
+            QObject::tr(
                 "Loading teacher display name failed for %1: the database returned an invalid teacher identifier."
-                ).arg(teacherIdentity(teacherId))
-        };
+                ).arg(teacherIdentity(teacherId)),
+            RepositoryErrorCode::Validation
+            );
     }
 
-    return {
-        .code = TeacherDisplayNameLookupCode::Found,
-        .record = {
+    return TeacherDisplayNameReadRecord{
             query.value("teacher_kr").toString(),
             query.value("teacher_en").toString(),
             query.value("preferred_romanization").toString(),
             query.value("preferred_name").toString()
-        }
     };
 }
 
-Result<QList<TeacherDisplayNameBatchReadRecord>>
+RepositoryResult<QList<TeacherDisplayNameBatchReadRecord>>
 TeacherRepository::loadTeacherDisplayNameRecords(
     const QList<int>& teacherIds
     )
@@ -556,7 +562,7 @@ TeacherRepository::loadTeacherDisplayNameRecords(
         );
     if (!loaded)
     {
-        return std::unexpected(loaded.error());
+        return repositoryUnexpected(loaded.error());
     }
 
     QList<TeacherDisplayNameBatchReadRecord> records;
@@ -566,9 +572,9 @@ TeacherRepository::loadTeacherDisplayNameRecords(
         if (record.teacherId < std::numeric_limits<int>::min()
             || record.teacherId > std::numeric_limits<int>::max())
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading teacher display names failed: the database returned a teacher identifier outside the supported range."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
 
         records.append({
@@ -582,7 +588,7 @@ TeacherRepository::loadTeacherDisplayNameRecords(
     return records;
 }
 
-Result<QList<MyClassesTeacherDisplayNameBatchReadRecord>>
+RepositoryResult<QList<MyClassesTeacherDisplayNameBatchReadRecord>>
 TeacherRepository::loadMyClassesTeacherDisplayNameRecords(
     const QList<qint64>& teacherIds
     )
@@ -604,9 +610,9 @@ TeacherRepository::loadMyClassesTeacherDisplayNameRecords(
         const qint64 teacherId = teacherIds[index];
         if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading teacher display names failed: teacher identifiers must be positive and unique."
-                ));
+                ), RepositoryErrorCode::InvalidInput);
         }
 
         seenTeacherIds.insert(teacherId);
@@ -637,7 +643,7 @@ TeacherRepository::loadMyClassesTeacherDisplayNameRecords(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     QList<MyClassesTeacherDisplayNameBatchReadRecord> records;
@@ -663,9 +669,9 @@ TeacherRepository::loadMyClassesTeacherDisplayNameRecords(
             || requestedOrdinal < 0
             || requestedOrdinal >= teacherIds.size())
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading teacher display names failed: the database returned an invalid teacher identifier."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
 
         const qsizetype ordinal = static_cast<qsizetype>(requestedOrdinal);
@@ -674,9 +680,9 @@ TeacherRepository::loadMyClassesTeacherDisplayNameRecords(
             || requestedTeacherId != expectedTeacherId
             || returnedTeacherId != expectedTeacherId)
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading teacher display names failed: the database returned records in a different identifier order."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
         lastOrdinal = ordinal;
 
@@ -691,7 +697,7 @@ TeacherRepository::loadMyClassesTeacherDisplayNameRecords(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(
+        return repositoryUnexpected(
             SqlQueryUtils::errorFor(
                 query,
                 QObject::tr("Loading teacher display names")
@@ -708,7 +714,7 @@ TeacherRepository::teacherDisplayNameBatchReadMetrics() const noexcept
     return m_teacherDisplayNameBatchReadMetrics;
 }
 
-Result<QList<TeacherProfileBatchReadRecord>>
+RepositoryResult<QList<TeacherProfileBatchReadRecord>>
 TeacherRepository::loadTeacherProfileRecords(
     const QList<int>& teacherIds
     )
@@ -730,9 +736,9 @@ TeacherRepository::loadTeacherProfileRecords(
         const int teacherId = teacherIds[index];
         if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading teacher profiles failed: teacher identifiers must be positive and unique."
-                ));
+                ), RepositoryErrorCode::InvalidInput);
         }
 
         seenTeacherIds.insert(teacherId);
@@ -806,50 +812,71 @@ TeacherRepository::loadTeacherProfileRecords(
     {
         if (rowIndex >= teacherIds.size())
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading teacher profiles failed: the database returned an unexpected number of records."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
 
         const int requestedTeacherId = teacherIds[rowIndex];
-        if (query.value("requested_teacher_id").toInt()
-                != requestedTeacherId
-            || query.value("requested_ordinal").toInt() != rowIndex)
+        bool requestedTeacherIdOk = false;
+        const qint64 returnedRequestedTeacherId = query.value(
+            "requested_teacher_id").toLongLong(&requestedTeacherIdOk);
+        bool ordinalOk = false;
+        const qint64 returnedOrdinal = query.value("requested_ordinal")
+            .toLongLong(&ordinalOk);
+        if (!requestedTeacherIdOk
+            || returnedRequestedTeacherId != requestedTeacherId
+            || !ordinalOk
+            || returnedOrdinal != rowIndex)
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading teacher profiles failed: the database returned records in a different identifier order."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
 
         if (query.value("id").isNull())
         {
             entries.append({
                 requestedTeacherId,
-                std::unexpected(QObject::tr(
+                repositoryUnexpected(QObject::tr(
                     "Loading teacher failed for %1: no matching record exists."
-                    ).arg(teacherIdentity(requestedTeacherId)))
+                    ).arg(teacherIdentity(requestedTeacherId)),
+                    RepositoryErrorCode::NotFound)
             });
             ++rowIndex;
             continue;
         }
 
-        Teacher teacher = teacherFromQuery(query);
-        if (teacher.id != requestedTeacherId)
+        bool returnedTeacherIdOk = false;
+        const qint64 returnedTeacherId = query.value("id").toLongLong(
+            &returnedTeacherIdOk);
+        if (!returnedTeacherIdOk || returnedTeacherId != requestedTeacherId)
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading teacher profiles failed: a database record returned a different teacher identifier."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
 
+        Teacher teacher = teacherFromQuery(query);
         entries.append({requestedTeacherId, std::move(teacher)});
         ++rowIndex;
     }
 
+    if (query.lastError().isValid())
+    {
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading teacher profiles"),
+            {},
+            QStringLiteral("assigned teachers")
+            ).userMessage());
+    }
+
     if (rowIndex != teacherIds.size())
     {
-        return std::unexpected(QObject::tr(
+        return repositoryUnexpected(QObject::tr(
             "Loading teacher profiles failed: the database returned an incomplete record list."
-            ));
+            ), RepositoryErrorCode::Validation);
     }
 
     return entries;
@@ -857,7 +884,7 @@ TeacherRepository::loadTeacherProfileRecords(
 
 namespace
 {
-TeacherProfileLookupResult lookupTeacherProfileRecord(
+RepositoryResult<TeacherProfileReadRecord> lookupTeacherProfileRecord(
     QSqlDatabase& database,
     const qint64 teacherId,
     const QString& action
@@ -865,12 +892,12 @@ TeacherProfileLookupResult lookupTeacherProfileRecord(
 {
     if (teacherId <= 0)
     {
-        return {
-            .code = TeacherProfileLookupCode::Failure,
-            .diagnostic = QObject::tr(
+        return repositoryUnexpected(
+            QObject::tr(
                 "Loading teacher profile failed: invalid teacher id %1."
-                ).arg(teacherId)
-        };
+                ).arg(teacherId),
+            RepositoryErrorCode::InvalidInput
+            );
     }
 
     QSqlQuery query(database);
@@ -904,48 +931,50 @@ TeacherProfileLookupResult lookupTeacherProfileRecord(
         );
     if (!executed)
     {
-        return {
-            .code = TeacherProfileLookupCode::Failure,
-            .diagnostic = executed.error().userMessage()
-        };
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     if (!query.next())
     {
         if (query.lastError().isValid())
         {
-            return {
-                .code = TeacherProfileLookupCode::Failure,
-                .diagnostic = SqlQueryUtils::errorFor(
+            return repositoryUnexpected(SqlQueryUtils::errorFor(
                     query,
                     action,
                     {},
                     identity
-                    ).userMessage()
-            };
+                    ).userMessage());
         }
 
-        return {
-            .code = TeacherProfileLookupCode::Missing,
-            .diagnostic = QObject::tr(
+        return repositoryUnexpected(
+            QObject::tr(
                 "Loading teacher failed for %1: no matching record exists."
-                ).arg(identity)
-        };
+                ).arg(identity),
+            RepositoryErrorCode::NotFound
+            );
     }
 
     bool identifierValid = false;
     const qint64 returnedTeacherId = query.value(QStringLiteral("id"))
         .toLongLong(&identifierValid);
     if (!identifierValid || returnedTeacherId != teacherId)
-        return {
-            .code = TeacherProfileLookupCode::Failure,
-            .diagnostic = QObject::tr(
-                "Loading teacher profiles failed: a database record returned a different teacher identifier.")
-        };
+        return repositoryUnexpected(
+            QObject::tr(
+                "Loading teacher profiles failed: a database record returned a different teacher identifier."),
+            RepositoryErrorCode::Validation
+            );
 
-    return {
-        .code = TeacherProfileLookupCode::Found,
-        .profile = {
+    if (query.lastError().isValid())
+    {
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
+            query,
+            action,
+            {},
+            identity
+            ).userMessage());
+    }
+
+    return TeacherProfileReadRecord{
             .teacherId = returnedTeacherId,
             .teacherKr = query.value(QStringLiteral("teacher_kr")).toString(),
             .teacherEn = query.value(QStringLiteral("teacher_en")).toString(),
@@ -971,13 +1000,12 @@ TeacherProfileLookupResult lookupTeacherProfileRecord(
                 query.value(QStringLiteral("projection_type")).toString()
                 ),
             .notes = query.value(QStringLiteral("notes")).toString()
-        }
     };
 }
 
 }
 
-Result<QList<ClassTransferExportTeacherProfileBatchReadRecord>>
+RepositoryResult<QList<ClassTransferExportTeacherProfileBatchReadRecord>>
 TeacherRepository::loadClassTransferExportTeacherProfileRecords(
     const QList<qint64>& teacherIds
     )
@@ -999,9 +1027,9 @@ TeacherRepository::loadClassTransferExportTeacherProfileRecords(
         const qint64 teacherId = teacherIds[index];
         if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading teacher profiles failed: teacher identifiers must be positive and unique."
-                ));
+                ), RepositoryErrorCode::InvalidInput);
         }
 
         seenTeacherIds.insert(teacherId);
@@ -1017,13 +1045,7 @@ TeacherRepository::loadClassTransferExportTeacherProfileRecords(
             ++m_teacherProfileBatchReadMetrics.fallbackSingleReadCount;
             auto lookup = lookupTeacherProfileRecord(
                 m_database, teacherId, QObject::tr("Loading teacher"));
-            if (lookup.code == TeacherProfileLookupCode::Found
-                && lookup.profile.teacherId == teacherId)
-                entries.append({teacherId, std::move(lookup.profile)});
-            else
-                entries.append({teacherId, std::unexpected(lookup.diagnostic.isEmpty()
-                    ? QObject::tr("Loading teacher profiles failed: a database record returned a different teacher identifier.")
-                    : lookup.diagnostic)});
+            entries.append({teacherId, std::move(lookup)});
         }
         return entries;
     };
@@ -1082,9 +1104,9 @@ TeacherRepository::loadClassTransferExportTeacherProfileRecords(
     {
         if (rowIndex >= teacherIds.size())
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading teacher profiles failed: the database returned an unexpected number of records."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
 
         const qint64 requestedTeacherId = teacherIds[rowIndex];
@@ -1092,22 +1114,23 @@ TeacherRepository::loadClassTransferExportTeacherProfileRecords(
         const qint64 returnedRequestedId = query.value("requested_teacher_id")
             .toLongLong(&requestedIdValid);
         bool ordinalValid = false;
-        const int returnedOrdinal = query.value("requested_ordinal").toInt(&ordinalValid);
+        const qint64 returnedOrdinal = query.value("requested_ordinal").toLongLong(&ordinalValid);
         if (!requestedIdValid || returnedRequestedId != requestedTeacherId
             || !ordinalValid || returnedOrdinal != rowIndex)
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading teacher profiles failed: the database returned records in a different identifier order."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
 
         if (query.value("id").isNull())
         {
             entries.append({
                 requestedTeacherId,
-                std::unexpected(QObject::tr(
+                repositoryUnexpected(QObject::tr(
                     "Loading teacher failed for %1: no matching record exists."
-                    ).arg(teacherIdentity(requestedTeacherId)))
+                    ).arg(teacherIdentity(requestedTeacherId)),
+                    RepositoryErrorCode::NotFound)
             });
             ++rowIndex;
             continue;
@@ -1117,9 +1140,9 @@ TeacherRepository::loadClassTransferExportTeacherProfileRecords(
         const qint64 returnedTeacherId = query.value("id").toLongLong(&teacherIdValid);
         if (!teacherIdValid || returnedTeacherId != requestedTeacherId)
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading teacher profiles failed: a database record returned a different teacher identifier."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
 
         TeacherProfileReadRecord profile{
@@ -1154,12 +1177,17 @@ TeacherRepository::loadClassTransferExportTeacherProfileRecords(
     }
 
     if (query.lastError().isValid())
-        return std::unexpected(query.lastError().text());
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading teacher profiles"),
+            {},
+            QStringLiteral("assigned teachers")
+            ).userMessage());
     if (rowIndex != teacherIds.size())
     {
-        return std::unexpected(QObject::tr(
+        return repositoryUnexpected(QObject::tr(
             "Loading teacher profiles failed: the database returned an incomplete record list."
-            ));
+            ), RepositoryErrorCode::Validation);
     }
 
     return entries;
@@ -1171,19 +1199,19 @@ TeacherRepository::teacherProfileBatchReadMetrics() const noexcept
     return m_teacherProfileBatchReadMetrics;
 }
 
-TeacherProfileLookupResult TeacherRepository::lookupTeacherProfileById(
+RepositoryResult<TeacherProfileReadRecord> TeacherRepository::lookupTeacherProfileById(
     const qint64 teacherId)
 {
     return lookupTeacherProfileById(teacherId, QObject::tr("Loading teacher profile"));
 }
 
-TeacherProfileLookupResult TeacherRepository::lookupTeacherProfileById(
+RepositoryResult<TeacherProfileReadRecord> TeacherRepository::lookupTeacherProfileById(
     const qint64 teacherId, const QString& action)
 {
     return lookupTeacherProfileRecord(m_database, teacherId, action);
 }
 
-Result<QList<SubPrepPrintSourceTeacherProfileBatchReadRecord>>
+RepositoryResult<QList<SubPrepPrintSourceTeacherProfileBatchReadRecord>>
 TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecords(
     const QList<qint64>& teacherIds
     )
@@ -1205,9 +1233,9 @@ TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecords(
         const qint64 teacherId = teacherIds[index];
         if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading Sub Prep print source teacher profiles failed: teacher identifiers must be positive and unique."
-                ));
+                ), RepositoryErrorCode::InvalidInput);
         }
 
         seenTeacherIds.insert(teacherId);
@@ -1282,9 +1310,9 @@ TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecords(
     {
         if (rowIndex >= teacherIds.size())
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading Sub Prep print source teacher profiles failed: the database returned an unexpected number of records."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
 
         const qint64 requestedTeacherId = teacherIds[rowIndex];
@@ -1301,18 +1329,19 @@ TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecords(
             || !returnedOrdinalValid
             || returnedOrdinal != rowIndex)
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading Sub Prep print source teacher profiles failed: the database returned records in a different identifier order."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
 
         if (query.value(QStringLiteral("teacher_id")).isNull())
         {
             entries.append({
                 requestedTeacherId,
-                std::unexpected(QObject::tr(
+                repositoryUnexpected(QObject::tr(
                     "Loading teacher failed for %1: no matching record exists."
-                    ).arg(teacherIdentity(requestedTeacherId)))
+                    ).arg(teacherIdentity(requestedTeacherId)),
+                    RepositoryErrorCode::NotFound)
             });
             ++rowIndex;
             continue;
@@ -1325,9 +1354,9 @@ TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecords(
         if (!returnedTeacherIdValid
             || returnedTeacherId != requestedTeacherId)
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading Sub Prep print source teacher profiles failed: the database returned a different teacher identifier."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
 
         entries.append({
@@ -1365,11 +1394,21 @@ TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecords(
         ++rowIndex;
     }
 
+    if (query.lastError().isValid())
+    {
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading Sub Prep print source teacher profiles"),
+            {},
+            QStringLiteral("assigned teachers")
+            ).userMessage());
+    }
+
     if (rowIndex != teacherIds.size())
     {
-        return std::unexpected(QObject::tr(
+        return repositoryUnexpected(QObject::tr(
             "Loading Sub Prep print source teacher profiles failed: the database returned an incomplete record list."
-            ));
+            ), RepositoryErrorCode::Validation);
     }
 
     return entries;
@@ -1381,16 +1420,16 @@ TeacherRepository::subPrepPrintSourceTeacherProfileBatchReadMetrics() const noex
     return m_subPrepPrintSourceTeacherProfileBatchReadMetrics;
 }
 
-Result<SubPrepPrintSourceTeacherProfileReadFields>
+RepositoryResult<SubPrepPrintSourceTeacherProfileReadFields>
 TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecord(
     const qint64 teacherId
     )
 {
     if (teacherId <= 0)
     {
-        return std::unexpected(QObject::tr(
+        return repositoryUnexpected(QObject::tr(
             "Loading teacher failed: invalid %1."
-            ).arg(teacherIdentity(teacherId)));
+            ).arg(teacherIdentity(teacherId)), RepositoryErrorCode::InvalidInput);
     }
 
     QSqlQuery query(m_database);
@@ -1413,7 +1452,7 @@ TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecord(
         WHERE id = ?
     )")))
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading Sub Prep print source teacher profile"),
             {},
@@ -1429,14 +1468,23 @@ TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecord(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     if (!query.next())
     {
-        return std::unexpected(QObject::tr(
+        if (query.lastError().isValid())
+        {
+            return repositoryUnexpected(SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading Sub Prep print source teacher profile"),
+                {},
+                teacherIdentity(teacherId)
+                ).userMessage());
+        }
+        return repositoryUnexpected(QObject::tr(
             "Loading teacher failed for %1: no matching record exists."
-            ).arg(teacherIdentity(teacherId)));
+            ).arg(teacherIdentity(teacherId)), RepositoryErrorCode::NotFound);
     }
 
     bool returnedTeacherIdValid = false;
@@ -1445,9 +1493,9 @@ TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecord(
         ).toLongLong(&returnedTeacherIdValid);
     if (!returnedTeacherIdValid || returnedTeacherId != teacherId)
     {
-        return std::unexpected(QObject::tr(
+        return repositoryUnexpected(QObject::tr(
             "Loading Sub Prep print source teacher profile failed for %1: the database returned a different teacher identifier."
-            ).arg(teacherIdentity(teacherId)));
+            ).arg(teacherIdentity(teacherId)), RepositoryErrorCode::Validation);
     }
 
     SubPrepPrintSourceTeacherProfileReadFields profile{
@@ -1475,17 +1523,27 @@ TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecord(
         .notes = query.value(QStringLiteral("notes")).toString()
     };
 
-    if (query.next())
+    const bool hasDuplicate = query.next();
+    if (query.lastError().isValid())
     {
-        return std::unexpected(QObject::tr(
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading Sub Prep print source teacher profile"),
+            {},
+            teacherIdentity(teacherId)
+            ).userMessage());
+    }
+    if (hasDuplicate)
+    {
+        return repositoryUnexpected(QObject::tr(
             "Loading Sub Prep print source teacher profile failed for %1: the database returned duplicate records."
-            ).arg(teacherIdentity(teacherId)));
+            ).arg(teacherIdentity(teacherId)), RepositoryErrorCode::Validation);
     }
 
     return profile;
 }
 
-Result<QList<SubPrepRosterOutputTeacherProfileBatchReadRecord>>
+RepositoryResult<QList<SubPrepRosterOutputTeacherProfileBatchReadRecord>>
 TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
     const QList<qint64>& teacherIds
     )
@@ -1507,10 +1565,10 @@ TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
         const qint64 teacherId = teacherIds[index];
         if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading Sub Prep roster-output teacher profiles failed: "
                 "teacher identifiers must be positive and unique."
-                ));
+                ), RepositoryErrorCode::InvalidInput);
         }
 
         seenTeacherIds.insert(teacherId);
@@ -1534,7 +1592,7 @@ TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
     if (!query.prepare(queryText))
     {
         ++m_subPrepRosterOutputTeacherProfileBatchReadMetrics.statementCount;
-        return std::unexpected(query.lastError().text());
+        return repositoryUnexpected(query.lastError().text());
     }
 
     for (const qint64 teacherId : teacherIds)
@@ -1550,7 +1608,7 @@ TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     QList<SubPrepRosterOutputTeacherProfileBatchReadRecord> entries;
@@ -1560,10 +1618,10 @@ TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
     {
         if (rowIndex >= teacherIds.size())
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading Sub Prep roster-output teacher profiles failed: "
                 "the database returned an unexpected number of records."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
 
         const qint64 requestedTeacherId = teacherIds[rowIndex];
@@ -1571,23 +1629,28 @@ TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
         const qint64 returnedRequestedTeacherId = query.value(
             "requested_teacher_id"
             ).toLongLong(&returnedRequestedTeacherIdOk);
+        bool returnedOrdinalOk = false;
+        const qint64 returnedOrdinal = query.value("requested_ordinal")
+            .toLongLong(&returnedOrdinalOk);
         if (!returnedRequestedTeacherIdOk
             || returnedRequestedTeacherId != requestedTeacherId
-            || query.value("requested_ordinal").toInt() != rowIndex)
+            || !returnedOrdinalOk
+            || returnedOrdinal != rowIndex)
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading Sub Prep roster-output teacher profiles failed: "
                 "the database returned records in a different identifier order."
-                ));
+                ), RepositoryErrorCode::Validation);
         }
 
         if (query.value("id").isNull())
         {
             entries.append({
                 requestedTeacherId,
-                std::unexpected(QObject::tr(
+                repositoryUnexpected(QObject::tr(
                     "Loading teacher failed for %1: no matching record exists."
-                    ).arg(teacherIdentity(requestedTeacherId)))
+                    ).arg(teacherIdentity(requestedTeacherId)),
+                    RepositoryErrorCode::NotFound)
             });
             ++rowIndex;
             continue;
@@ -1601,10 +1664,10 @@ TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
             || returnedTeacherId <= 0
             || returnedTeacherId != requestedTeacherId)
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading Sub Prep roster-output teacher failed for %1: "
                 "the database returned a different teacher identifier."
-                ).arg(teacherIdentity(requestedTeacherId)));
+                ).arg(teacherIdentity(requestedTeacherId)), RepositoryErrorCode::Validation);
         }
 
         entries.append({
@@ -1621,12 +1684,22 @@ TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
         ++rowIndex;
     }
 
+    if (query.lastError().isValid())
+    {
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading Sub Prep roster-output teacher profiles"),
+            {},
+            QStringLiteral("assigned teachers")
+            ).userMessage());
+    }
+
     if (rowIndex != teacherIds.size())
     {
-        return std::unexpected(QObject::tr(
+        return repositoryUnexpected(QObject::tr(
             "Loading Sub Prep roster-output teacher profiles failed: "
             "the database returned an incomplete record list."
-            ));
+            ), RepositoryErrorCode::Validation);
     }
 
     return entries;
@@ -1638,7 +1711,7 @@ TeacherRepository::subPrepRosterOutputTeacherProfileBatchReadMetrics() const noe
     return m_subPrepRosterOutputTeacherProfileBatchReadMetrics;
 }
 
-Result<QList<MyClassesTeacherProfileBatchReadRecord>>
+RepositoryResult<QList<MyClassesTeacherProfileBatchReadRecord>>
 TeacherRepository::loadMyClassesTeacherProfileRecords(
     const QList<qint64>& teacherIds
     )
@@ -1660,9 +1733,9 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
         const qint64 teacherId = teacherIds[index];
         if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
         {
-            return std::unexpected(QObject::tr(
+            return repositoryUnexpected(QObject::tr(
                 "Loading My Classes teacher profiles failed: teacher identifiers must be positive and unique."
-                ));
+                ), RepositoryErrorCode::InvalidInput);
         }
 
         seenTeacherIds.insert(teacherId);
@@ -1694,7 +1767,7 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
     if (!query.prepare(queryText))
     {
         ++m_myClassesTeacherProfileBatchReadMetrics.statementCount;
-        return std::unexpected(query.lastError().text());
+        return repositoryUnexpected(query.lastError().text());
     }
 
     for (const qint64 teacherId : teacherIds)
@@ -1710,7 +1783,7 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     QList<MyClassesTeacherProfileBatchReadRecord> entries;
@@ -1722,10 +1795,9 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
         {
             entries.append({
                 .requestedTeacherId = -1,
-                .code = MyClassesTeacherProfileReadCode::Invalid,
-                .diagnostic = QObject::tr(
+                .profile = repositoryUnexpected(QObject::tr(
                     "Loading My Classes teacher profiles failed: the database returned an unexpected number of records."
-                    )
+                    ), RepositoryErrorCode::Validation)
             });
             ++rowIndex;
             continue;
@@ -1746,13 +1818,10 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
             || returnedOrdinal != rowIndex)
         {
             entries.append({
-                .requestedTeacherId = returnedRequestedTeacherIdValid
-                    ? returnedRequestedTeacherId
-                    : -1,
-                .code = MyClassesTeacherProfileReadCode::Invalid,
-                .diagnostic = QObject::tr(
+                .requestedTeacherId = requestedTeacherId,
+                .profile = repositoryUnexpected(QObject::tr(
                     "Loading My Classes teacher profiles failed: the database returned records in a different identifier order."
-                    )
+                    ), RepositoryErrorCode::Validation)
             });
             ++rowIndex;
             continue;
@@ -1762,10 +1831,10 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
         {
             entries.append({
                 .requestedTeacherId = requestedTeacherId,
-                .code = MyClassesTeacherProfileReadCode::Missing,
-                .diagnostic = QObject::tr(
+                .profile = repositoryUnexpected(QObject::tr(
                     "Loading teacher failed for %1: no matching record exists."
-                    ).arg(teacherIdentity(requestedTeacherId))
+                    ).arg(teacherIdentity(requestedTeacherId)),
+                    RepositoryErrorCode::NotFound)
             });
             ++rowIndex;
             continue;
@@ -1780,10 +1849,10 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
         {
             entries.append({
                 .requestedTeacherId = requestedTeacherId,
-                .code = MyClassesTeacherProfileReadCode::Invalid,
-                .diagnostic = QObject::tr(
+                .profile = repositoryUnexpected(QObject::tr(
                     "Loading My Classes teacher failed for %1: the database returned a different teacher identifier."
-                    ).arg(teacherIdentity(requestedTeacherId))
+                    ).arg(teacherIdentity(requestedTeacherId)),
+                    RepositoryErrorCode::Validation)
             });
             ++rowIndex;
             continue;
@@ -1791,7 +1860,6 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
 
         entries.append({
             .requestedTeacherId = requestedTeacherId,
-            .code = MyClassesTeacherProfileReadCode::Found,
             .profile = MyClassesTeacherProfileReadFields{
                 .teacherId = returnedTeacherId,
                 .teacherKr = query.value("teacher_kr").toString(),
@@ -1816,12 +1884,19 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading My Classes teacher profiles"),
             {},
             QStringLiteral("assigned teachers")
             ).userMessage());
+    }
+
+    if (rowIndex != teacherIds.size())
+    {
+        return repositoryUnexpected(QObject::tr(
+            "Loading My Classes teacher profiles failed: the database returned an incomplete record list."
+            ), RepositoryErrorCode::Validation);
     }
 
     return entries;
@@ -1833,7 +1908,7 @@ TeacherRepository::myClassesTeacherProfileBatchReadMetrics() const noexcept
     return m_myClassesTeacherProfileBatchReadMetrics;
 }
 
-Result<QList<Teacher>> TeacherRepository::getAllTeachers()
+RepositoryResult<QList<Teacher>> TeacherRepository::getAllTeachers()
 {
     QList<Teacher> teachers;
 
@@ -1850,7 +1925,7 @@ Result<QList<Teacher>> TeacherRepository::getAllTeachers()
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     while (query.next())
@@ -1864,10 +1939,11 @@ Result<QList<Teacher>> TeacherRepository::getAllTeachers()
             || storedTeacherId > std::numeric_limits<int>::max()
             )
         {
-            return std::unexpected(
+            return repositoryUnexpected(
                 QObject::tr(
                     "Loading teachers found an invalid teacher identifier %1."
-                    ).arg(query.value(QStringLiteral("id")).toString())
+                    ).arg(query.value(QStringLiteral("id")).toString()),
+                RepositoryErrorCode::Validation
                 );
         }
 
@@ -1878,7 +1954,7 @@ Result<QList<Teacher>> TeacherRepository::getAllTeachers()
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading teachers")
             ).userMessage());
@@ -1887,7 +1963,7 @@ Result<QList<Teacher>> TeacherRepository::getAllTeachers()
     return teachers;
 }
 
-Result<QList<ScheduleImportTeacherReadRecord>>
+RepositoryResult<QList<ScheduleImportTeacherReadRecord>>
 TeacherRepository::loadScheduleImportTeacherRecords()
 {
     ++m_scheduleImportTeacherReadMetrics.callCount;
@@ -1907,7 +1983,7 @@ TeacherRepository::loadScheduleImportTeacherRecords()
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     while (query.next())
@@ -1917,8 +1993,9 @@ TeacherRepository::loadScheduleImportTeacherRecords()
             .toLongLong(&teacherIdOk);
         if (!teacherIdOk)
         {
-            return std::unexpected(
-                QObject::tr("A Korean teacher ID could not be read.")
+            return repositoryUnexpected(
+                QObject::tr("A Korean teacher ID could not be read."),
+                RepositoryErrorCode::Validation
                 );
         }
         teachers.append({
@@ -1930,7 +2007,7 @@ TeacherRepository::loadScheduleImportTeacherRecords()
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading schedule import teachers")
             ).userMessage());
@@ -1946,7 +2023,7 @@ TeacherRepository::scheduleImportTeacherReadMetrics() const noexcept
     return m_scheduleImportTeacherReadMetrics;
 }
 
-Result<QList<InitialSetupTeacherChoiceReadRecord>>
+RepositoryResult<QList<InitialSetupTeacherChoiceReadRecord>>
 TeacherRepository::loadInitialSetupTeacherChoiceRecords()
 {
     QList<InitialSetupTeacherChoiceReadRecord> teachers;
@@ -1968,13 +2045,25 @@ TeacherRepository::loadInitialSetupTeacherChoiceRecords()
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     while (query.next())
     {
+        bool teacherIdOk = false;
+        const qint64 teacherId = query.value(QStringLiteral("id"))
+            .toLongLong(&teacherIdOk);
+        if (!teacherIdOk || teacherId <= 0)
+        {
+            return repositoryUnexpected(
+                QObject::tr(
+                    "Initial setup teacher choices contain an invalid teacher identifier."
+                    ),
+                RepositoryErrorCode::Validation
+                );
+        }
         teachers.append({
-            query.value(QStringLiteral("id")).toLongLong(),
+            teacherId,
             query.value(QStringLiteral("teacher_kr")).toString(),
             query.value(QStringLiteral("teacher_en")).toString(),
             query.value(QStringLiteral("preferred_romanization")).toString(),
@@ -1984,7 +2073,7 @@ TeacherRepository::loadInitialSetupTeacherChoiceRecords()
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(
+        return repositoryUnexpected(
             SqlQueryUtils::errorFor(query, QObject::tr("Loading teachers"))
                 .userMessage()
             );
@@ -1993,7 +2082,7 @@ TeacherRepository::loadInitialSetupTeacherChoiceRecords()
     return teachers;
 }
 
-Result<QList<TestingTeacherChoiceReadRecord>>
+RepositoryResult<QList<TestingTeacherChoiceReadRecord>>
 TeacherRepository::loadTestingTeacherChoiceRecords()
 {
     QList<TestingTeacherChoiceReadRecord> teachers;
@@ -2013,7 +2102,7 @@ TeacherRepository::loadTestingTeacherChoiceRecords()
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     while (query.next())
@@ -2021,10 +2110,11 @@ TeacherRepository::loadTestingTeacherChoiceRecords()
         bool teacherIdOk = false;
         const qint64 teacherId = query.value(QStringLiteral("id"))
             .toLongLong(&teacherIdOk);
-        if (!teacherIdOk)
+        if (!teacherIdOk || teacherId <= 0)
         {
-            return std::unexpected(
-                QObject::tr("A teacher has an invalid identifier.")
+            return repositoryUnexpected(
+                QObject::tr("A teacher has an invalid identifier."),
+                RepositoryErrorCode::Validation
                 );
         }
 
@@ -2037,7 +2127,7 @@ TeacherRepository::loadTestingTeacherChoiceRecords()
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(
+        return repositoryUnexpected(
             SqlQueryUtils::errorFor(query, QObject::tr("Loading teachers"))
                 .userMessage()
             );
@@ -2046,7 +2136,7 @@ TeacherRepository::loadTestingTeacherChoiceRecords()
     return teachers;
 }
 
-Result<QList<ClassCoTeacherTeacherChoiceReadRecord>>
+RepositoryResult<QList<ClassCoTeacherTeacherChoiceReadRecord>>
 TeacherRepository::loadClassCoTeacherTeacherChoiceRecords()
 {
     QList<ClassCoTeacherTeacherChoiceReadRecord> teachers;
@@ -2073,19 +2163,20 @@ TeacherRepository::loadClassCoTeacherTeacherChoiceRecords()
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     while (query.next())
     {
         bool teacherIdOk = false;
-        qint64 teacherId = query.value(QStringLiteral("id"))
+        const qint64 teacherId = query.value(QStringLiteral("id"))
             .toLongLong(&teacherIdOk);
         if (!teacherIdOk || teacherId <= 0)
         {
-            // Preserve invalid IDs for the application adapter to classify
-            // as a nonrecoverable validation failure.
-            teacherId = 0;
+            return repositoryUnexpected(
+                QObject::tr("A co-teacher has an invalid identifier."),
+                RepositoryErrorCode::Validation
+                );
         }
 
         teachers.append({
@@ -2104,13 +2195,13 @@ TeacherRepository::loadClassCoTeacherTeacherChoiceRecords()
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(query.lastError().text());
+        return repositoryUnexpected(query.lastError().text());
     }
 
     return teachers;
 }
 
-Result<QList<KoreanTeacherBirthdayDirectoryReadRecord>>
+RepositoryResult<QList<KoreanTeacherBirthdayDirectoryReadRecord>>
 TeacherRepository::loadKoreanTeacherBirthdayDirectoryRecords()
 {
     QList<KoreanTeacherBirthdayDirectoryReadRecord> teachers;
@@ -2132,7 +2223,7 @@ TeacherRepository::loadKoreanTeacherBirthdayDirectoryRecords()
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return repositoryUnexpected(executed.error().userMessage());
     }
 
     while (query.next())
@@ -2148,35 +2239,36 @@ TeacherRepository::loadKoreanTeacherBirthdayDirectoryRecords()
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(query.lastError().text());
+        return repositoryUnexpected(query.lastError().text());
     }
 
     return teachers;
 }
 
-Status TeacherRepository::deleteTeacher(
+RepositoryStatus TeacherRepository::deleteTeacher(
     int teacherId
     )
 {
     return deleteTeacher(static_cast<qint64>(teacherId));
 }
 
-Status TeacherRepository::deleteTeacher(
+RepositoryStatus TeacherRepository::deleteTeacher(
     qint64 teacherId
     )
 {
     if (teacherId <= 0)
     {
-        return std::unexpected(
+        return repositoryUnexpected(
             QObject::tr("Deleting teacher failed: invalid teacher id %1.")
-                .arg(teacherId)
+                .arg(teacherId),
+            RepositoryErrorCode::InvalidInput
             );
     }
 
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
     {
-        return std::unexpected(
+        return repositoryUnexpected(
             QObject::tr("Starting teacher deletion transaction failed for %1: %2")
                 .arg(teacherIdentity(teacherId), m_database.lastError().text())
             );
@@ -2193,7 +2285,7 @@ Status TeacherRepository::deleteTeacher(
 
     query.addBindValue(teacherId);
 
-    Status status = statusFromExecution(
+    RepositoryStatus status = statusFromExecution(
         SqlQueryUtils::executePrepared(
             query,
             QObject::tr("Removing teacher from classes"),
@@ -2202,7 +2294,16 @@ Status TeacherRepository::deleteTeacher(
         );
     if (!status)
     {
-        return status;
+        const RepositoryError primaryError = status.error();
+        if (!transaction.rollbackChecked())
+        {
+            return repositoryUnexpected(
+                QObject::tr("%1; rolling back teacher deletion failed: %2")
+                    .arg(primaryError.diagnostic, m_database.lastError().text()),
+                RepositoryErrorCode::Technical
+                );
+        }
+        return repositoryUnexpected(primaryError);
     }
 
     query.prepare(R"(
@@ -2221,15 +2322,32 @@ Status TeacherRepository::deleteTeacher(
         );
     if (!status)
     {
-        return status;
+        const RepositoryError primaryError = status.error();
+        if (!transaction.rollbackChecked())
+        {
+            return repositoryUnexpected(
+                QObject::tr("%1; rolling back teacher deletion failed: %2")
+                    .arg(primaryError.diagnostic, m_database.lastError().text()),
+                RepositoryErrorCode::Technical
+                );
+        }
+        return repositoryUnexpected(primaryError);
     }
 
     if (!transaction.commit())
     {
-        return std::unexpected(
+        const QString primaryDiagnostic =
             QObject::tr("Committing teacher deletion failed for %1: %2")
-                .arg(identity, m_database.lastError().text())
-            );
+                .arg(identity, m_database.lastError().text());
+        if (!transaction.rollbackChecked())
+        {
+            return repositoryUnexpected(
+                QObject::tr("%1; rolling back teacher deletion failed: %2")
+                    .arg(primaryDiagnostic, m_database.lastError().text()),
+                RepositoryErrorCode::Technical
+                );
+        }
+        return repositoryUnexpected(primaryDiagnostic);
     }
 
     return {};

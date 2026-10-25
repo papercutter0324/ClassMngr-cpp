@@ -395,7 +395,7 @@ public:
                 loadedTeacherProfiles;
             if (!requestedTeacherIds.isEmpty())
             {
-                const ::Result<QList<
+                const RepositoryResult<QList<
                     SubPrepRosterOutputTeacherProfileBatchReadRecord>>
                     loadedProfiles =
                     teacherRepository->loadSubPrepRosterOutputTeacherProfileRecords(
@@ -572,7 +572,7 @@ public:
                                 "A selected class teacher was not included in the profile batch."
                                 );
                         }
-                        const ::Result<
+                        const RepositoryResult<
                             SubPrepRosterOutputTeacherProfileReadFields>&
                             loadedTeacher =
                             loadedTeacherProfiles[teacherProfileIndex].profile;

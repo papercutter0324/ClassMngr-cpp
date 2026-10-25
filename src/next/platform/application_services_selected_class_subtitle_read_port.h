@@ -170,8 +170,8 @@ public:
             }
             else
             {
-                TeacherDisplayNameLookupResult loadedTeacher = [&]()
-                    -> TeacherDisplayNameLookupResult
+                RepositoryResult<TeacherDisplayNameReadRecord> loadedTeacher = [&]()
+                    -> RepositoryResult<TeacherDisplayNameReadRecord>
                 {
                     try
                     {
@@ -181,40 +181,36 @@ public:
                     }
                     catch (const std::exception&)
                     {
-                        return {
-                            .code = TeacherDisplayNameLookupCode::Failure,
-                            .diagnostic = QStringLiteral(
-                                "The assigned teacher display name could not be loaded."
-                                )
-                        };
+                        return std::unexpected(RepositoryError{
+                            RepositoryErrorCode::Technical,
+                            QStringLiteral("The assigned teacher display name could not be loaded.")
+                        });
                     }
                     catch (...)
                     {
-                        return {
-                            .code = TeacherDisplayNameLookupCode::Failure,
-                            .diagnostic = QStringLiteral(
-                                "The assigned teacher display name could not be loaded."
-                                )
-                        };
+                        return std::unexpected(RepositoryError{
+                            RepositoryErrorCode::Technical,
+                            QStringLiteral("The assigned teacher display name could not be loaded.")
+                        });
                     }
                 }();
 
-                if (loadedTeacher.code != TeacherDisplayNameLookupCode::Found)
+                if (!loadedTeacher)
                 {
                     assignedTeacher = Domain::Result<std::optional<
                         Application::SelectedClassSubtitleTeacherFields
                         >>::failure(
-                            fromTeacherDisplayNameLookup(loadedTeacher)
+                            fromTeacherDisplayNameLookup(loadedTeacher.error())
                             );
                 }
                 else
                 {
                     Application::SelectedClassSubtitleTeacherFields fields{
-                        loadedTeacher.record.teacherKr.toStdU16String(),
-                        loadedTeacher.record.teacherEn.toStdU16String(),
-                        loadedTeacher.record.preferredRomanization
+                        loadedTeacher->teacherKr.toStdU16String(),
+                        loadedTeacher->teacherEn.toStdU16String(),
+                        loadedTeacher->preferredRomanization
                             .toStdU16String(),
-                        loadedTeacher.record.preferredName.toStdU16String()
+                        loadedTeacher->preferredName.toStdU16String()
                     };
                     assignedTeacher = Domain::Result<std::optional<
                         Application::SelectedClassSubtitleTeacherFields
@@ -314,31 +310,18 @@ private:
     }
 
     [[nodiscard]] static Domain::OperationError fromTeacherDisplayNameLookup(
-        const TeacherDisplayNameLookupResult& lookup
+        const RepositoryError& lookupError
         )
     {
-        Domain::ErrorCode code = Domain::ErrorCode::Technical;
-        switch (lookup.code)
+        Domain::OperationError converted =
+            classFieldsRepositoryError(lookupError);
+        const QByteArray bytes = toLegacyDiagnostic(lookupError).toUtf8();
+        if (bytes.isEmpty())
         {
-        case TeacherDisplayNameLookupCode::Missing:
-            code = Domain::ErrorCode::NotFound;
-            break;
-        case TeacherDisplayNameLookupCode::InvalidInput:
-            code = Domain::ErrorCode::InvalidInput;
-            break;
-        case TeacherDisplayNameLookupCode::Found:
-        case TeacherDisplayNameLookupCode::Failure:
-            code = Domain::ErrorCode::Technical;
-            break;
+            converted.message =
+                "The assigned teacher display name could not be loaded.";
         }
-
-        const QByteArray bytes = lookup.diagnostic.toUtf8();
-        return error(
-            code,
-            bytes.isEmpty()
-                ? "The assigned teacher display name could not be loaded."
-                : bytes.toStdString()
-            );
+        return converted;
     }
 
     ApplicationServices* m_services;

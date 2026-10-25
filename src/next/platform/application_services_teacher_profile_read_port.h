@@ -61,23 +61,14 @@ public:
 
         try
         {
-            const TeacherProfileLookupResult loaded =
+            const RepositoryResult<TeacherProfileReadRecord> loaded =
                 repository->lookupTeacherProfileById(*parsedTeacherId);
-            switch (loaded.code)
+            if (!loaded)
             {
-            case TeacherProfileLookupCode::Missing:
-                return Application::TeacherProfileReadResult::failure({
-                    .code = Domain::ErrorCode::NotFound,
-                    .message = utf8(loaded.diagnostic),
-                    .recoverable = true
-                });
-            case TeacherProfileLookupCode::Failure:
                 return Application::TeacherProfileReadResult::failure(
-                    repositoryError(loaded.diagnostic));
-            case TeacherProfileLookupCode::Found:
-                break;
+                    repositoryError(loaded.error()));
             }
-            if (loaded.profile.teacherId != *parsedTeacherId)
+            if (loaded->teacherId != *parsedTeacherId)
             {
                 return Application::TeacherProfileReadResult::failure({
                     .code = Domain::ErrorCode::Validation,
@@ -88,7 +79,7 @@ public:
 
             return Application::TeacherProfileReadResult::success({
                 .teacherId = id,
-                .fields = profileFieldsFromRecord(loaded.profile)
+                .fields = profileFieldsFromRecord(*loaded)
             });
         }
         catch (const std::exception&)
@@ -166,16 +157,36 @@ private:
     }
 
     [[nodiscard]] static Domain::OperationError repositoryError(
-        const QString& message
+        const RepositoryError& error
         )
     {
-        const std::string detail = utf8(message);
+        Domain::ErrorCode code = Domain::ErrorCode::Technical;
+        switch (error.code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            code = Domain::ErrorCode::InvalidInput;
+            break;
+        case RepositoryErrorCode::NotFound:
+            code = Domain::ErrorCode::NotFound;
+            break;
+        case RepositoryErrorCode::Conflict:
+            code = Domain::ErrorCode::Conflict;
+            break;
+        case RepositoryErrorCode::Validation:
+            code = Domain::ErrorCode::Validation;
+            break;
+        case RepositoryErrorCode::Technical:
+            code = Domain::ErrorCode::Technical;
+            break;
+        }
+        const std::string detail = utf8(toLegacyDiagnostic(error));
         return {
-            .code = Domain::ErrorCode::Technical,
+            .code = code,
             .message = detail.empty()
                 ? "Teacher profile could not be loaded."
                 : detail,
-            .recoverable = false
+            .recoverable = code == Domain::ErrorCode::NotFound
+                || code == Domain::ErrorCode::InvalidInput
         };
     }
 

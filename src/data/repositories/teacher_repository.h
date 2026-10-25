@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 #include "domain/models/teacher.h"
 
 #include <QList>
@@ -97,7 +97,7 @@ struct TeacherDisplayNameBatchReadMetrics final
 struct TeacherProfileBatchReadRecord final
 {
     int teacherId = -1;
-    Result<Teacher> profile;
+    RepositoryResult<Teacher> profile;
 };
 
 struct TeacherProfileBatchReadMetrics final
@@ -130,21 +130,7 @@ struct TeacherProfileReadRecord final
 struct ClassTransferExportTeacherProfileBatchReadRecord final
 {
     qint64 teacherId = -1;
-    Result<TeacherProfileReadRecord> profile;
-};
-
-enum class TeacherProfileLookupCode
-{
-    Found,
-    Missing,
-    Failure
-};
-
-struct TeacherProfileLookupResult final
-{
-    TeacherProfileLookupCode code = TeacherProfileLookupCode::Failure;
-    TeacherProfileReadRecord profile;
-    QString diagnostic;
+    RepositoryResult<TeacherProfileReadRecord> profile;
 };
 
 struct SubPrepPrintSourceTeacherProfileReadFields final
@@ -167,7 +153,7 @@ struct SubPrepPrintSourceTeacherProfileReadFields final
 struct SubPrepPrintSourceTeacherProfileBatchReadRecord final
 {
     qint64 requestedTeacherId = -1;
-    Result<SubPrepPrintSourceTeacherProfileReadFields> profile;
+    RepositoryResult<SubPrepPrintSourceTeacherProfileReadFields> profile;
 };
 
 struct SubPrepPrintSourceTeacherProfileBatchReadMetrics final
@@ -190,7 +176,7 @@ struct SubPrepRosterOutputTeacherProfileReadFields final
 struct SubPrepRosterOutputTeacherProfileBatchReadRecord final
 {
     qint64 requestedTeacherId = -1;
-    Result<SubPrepRosterOutputTeacherProfileReadFields> profile;
+    RepositoryResult<SubPrepRosterOutputTeacherProfileReadFields> profile;
 };
 
 struct SubPrepRosterOutputTeacherProfileBatchReadMetrics final
@@ -217,21 +203,10 @@ struct MyClassesTeacherProfileReadFields final
     QString notes;
 };
 
-enum class MyClassesTeacherProfileReadCode
-{
-    Found,
-    Missing,
-    Invalid,
-    Failure
-};
-
 struct MyClassesTeacherProfileBatchReadRecord final
 {
     qint64 requestedTeacherId = -1;
-    MyClassesTeacherProfileReadCode code =
-        MyClassesTeacherProfileReadCode::Failure;
-    MyClassesTeacherProfileReadFields profile;
-    QString diagnostic;
+    RepositoryResult<MyClassesTeacherProfileReadFields> profile;
 };
 
 struct MyClassesTeacherProfileBatchReadMetrics final
@@ -241,48 +216,6 @@ struct MyClassesTeacherProfileBatchReadMetrics final
     int statementCount = 0;
 };
 
-enum class TeacherByIdLookupCode
-{
-    Found,
-    Missing,
-    Failure
-};
-
-struct TeacherByIdLookupResult final
-{
-    TeacherByIdLookupCode code = TeacherByIdLookupCode::Failure;
-    Teacher teacher;
-    QString diagnostic;
-};
-
-enum class TeacherDisplayNameLookupCode
-{
-    Found,
-    Missing,
-    InvalidInput,
-    Failure
-};
-
-struct TeacherDisplayNameLookupResult final
-{
-    TeacherDisplayNameLookupCode code = TeacherDisplayNameLookupCode::Failure;
-    TeacherDisplayNameReadRecord record;
-    QString diagnostic;
-};
-
-enum class TeacherUpdateOutcomeCode
-{
-    Updated,
-    Missing,
-    Failure
-};
-
-struct TeacherUpdateOutcome final
-{
-    TeacherUpdateOutcomeCode code = TeacherUpdateOutcomeCode::Failure;
-    QString diagnostic;
-};
-
 class TeacherRepository
 {
 public:
@@ -290,105 +223,105 @@ public:
         QSqlDatabase& database
         );
 
-    [[nodiscard]] Result<int> createTeacher(
+    [[nodiscard]] RepositoryResult<int> createTeacher(
         const Teacher& teacher
         );
-    [[nodiscard]] Result<qint64> createTeacherWithWideId(
-        const Teacher& teacher
-        );
-
-    [[nodiscard]] Result<int> saveTeacher(
+    [[nodiscard]] RepositoryResult<qint64> createTeacherWithWideId(
         const Teacher& teacher
         );
 
-    [[nodiscard]] Status updateTeacher(
-        const Teacher& teacher
-        );
-    [[nodiscard]] TeacherUpdateOutcome updateTeacherWithOutcome(
+    [[nodiscard]] RepositoryResult<int> saveTeacher(
         const Teacher& teacher
         );
 
-    [[nodiscard]] TeacherUpdateOutcome updateTeacherWithOutcome(
+    [[nodiscard]] RepositoryStatus updateTeacher(
+        const Teacher& teacher
+        );
+    [[nodiscard]] RepositoryStatus updateTeacherWithOutcome(
+        const Teacher& teacher
+        );
+
+    [[nodiscard]] RepositoryStatus updateTeacherWithOutcome(
         const Teacher& fields, qint64 teacherId
         );
 
-    [[nodiscard]] Result<Teacher> getTeacher(
+    [[nodiscard]] RepositoryResult<Teacher> getTeacher(
         int teacherId
         );
-    [[nodiscard]] TeacherByIdLookupResult lookupTeacherById(
+    [[nodiscard]] RepositoryResult<Teacher> lookupTeacherById(
         int teacherId
         );
-    [[nodiscard]] TeacherDisplayNameLookupResult lookupTeacherDisplayName(
+    [[nodiscard]] RepositoryResult<TeacherDisplayNameReadRecord> lookupTeacherDisplayName(
         int teacherId
         );
-    [[nodiscard]] TeacherDisplayNameLookupResult lookupTeacherDisplayName(
+    [[nodiscard]] RepositoryResult<TeacherDisplayNameReadRecord> lookupTeacherDisplayName(
         qint64 teacherId
         );
-    [[nodiscard]] Result<TeacherDisplayNameReadRecord>
+    [[nodiscard]] RepositoryResult<TeacherDisplayNameReadRecord>
         loadTeacherDisplayNameFields(int teacherId);
-    [[nodiscard]] Result<TeacherDisplayNameReadRecord>
+    [[nodiscard]] RepositoryResult<TeacherDisplayNameReadRecord>
         loadTeacherDisplayNameFields(qint64 teacherId);
-    [[nodiscard]] Result<QList<TeacherDisplayNameBatchReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<TeacherDisplayNameBatchReadRecord>>
         loadTeacherDisplayNameRecords(const QList<int>& teacherIds);
-    [[nodiscard]] Result<QList<MyClassesTeacherDisplayNameBatchReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<MyClassesTeacherDisplayNameBatchReadRecord>>
         loadMyClassesTeacherDisplayNameRecords(
             const QList<qint64>& teacherIds
             );
     [[nodiscard]] const TeacherDisplayNameBatchReadMetrics&
         teacherDisplayNameBatchReadMetrics() const noexcept;
-    [[nodiscard]] Result<QList<TeacherProfileBatchReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<TeacherProfileBatchReadRecord>>
         loadTeacherProfileRecords(const QList<int>& teacherIds);
-    [[nodiscard]] Result<QList<ClassTransferExportTeacherProfileBatchReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<ClassTransferExportTeacherProfileBatchReadRecord>>
         loadClassTransferExportTeacherProfileRecords(const QList<qint64>& teacherIds);
     [[nodiscard]] const TeacherProfileBatchReadMetrics&
         teacherProfileBatchReadMetrics() const noexcept;
-    [[nodiscard]] TeacherProfileLookupResult lookupTeacherProfileById(
+    [[nodiscard]] RepositoryResult<TeacherProfileReadRecord> lookupTeacherProfileById(
         qint64 teacherId
         );
     // Allows edit reloads to retain the legacy operation diagnostic.
-    [[nodiscard]] TeacherProfileLookupResult lookupTeacherProfileById(
+    [[nodiscard]] RepositoryResult<TeacherProfileReadRecord> lookupTeacherProfileById(
         qint64 teacherId, const QString& action
         );
-    [[nodiscard]] Result<
+    [[nodiscard]] RepositoryResult<
         QList<SubPrepPrintSourceTeacherProfileBatchReadRecord>>
         loadSubPrepPrintSourceTeacherProfileRecords(
             const QList<qint64>& teacherIds
             );
     [[nodiscard]] const SubPrepPrintSourceTeacherProfileBatchReadMetrics&
         subPrepPrintSourceTeacherProfileBatchReadMetrics() const noexcept;
-    [[nodiscard]] Result<QList<SubPrepRosterOutputTeacherProfileBatchReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<SubPrepRosterOutputTeacherProfileBatchReadRecord>>
         loadSubPrepRosterOutputTeacherProfileRecords(
             const QList<qint64>& teacherIds
             );
     [[nodiscard]] const SubPrepRosterOutputTeacherProfileBatchReadMetrics&
         subPrepRosterOutputTeacherProfileBatchReadMetrics() const noexcept;
-    [[nodiscard]] Result<QList<MyClassesTeacherProfileBatchReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<MyClassesTeacherProfileBatchReadRecord>>
         loadMyClassesTeacherProfileRecords(const QList<qint64>& teacherIds);
     [[nodiscard]] const MyClassesTeacherProfileBatchReadMetrics&
         myClassesTeacherProfileBatchReadMetrics() const noexcept;
 
-    [[nodiscard]] Result<QList<Teacher>> getAllTeachers();
-    [[nodiscard]] Result<QList<ScheduleImportTeacherReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<Teacher>> getAllTeachers();
+    [[nodiscard]] RepositoryResult<QList<ScheduleImportTeacherReadRecord>>
         loadScheduleImportTeacherRecords();
     [[nodiscard]] const ScheduleImportTeacherReadMetrics&
         scheduleImportTeacherReadMetrics() const noexcept;
-    [[nodiscard]] Result<QList<InitialSetupTeacherChoiceReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<InitialSetupTeacherChoiceReadRecord>>
         loadInitialSetupTeacherChoiceRecords();
-    [[nodiscard]] Result<QList<TestingTeacherChoiceReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<TestingTeacherChoiceReadRecord>>
         loadTestingTeacherChoiceRecords();
-    [[nodiscard]] Result<QList<ClassCoTeacherTeacherChoiceReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<ClassCoTeacherTeacherChoiceReadRecord>>
         loadClassCoTeacherTeacherChoiceRecords();
-    [[nodiscard]] Result<QList<KoreanTeacherBirthdayDirectoryReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<KoreanTeacherBirthdayDirectoryReadRecord>>
         loadKoreanTeacherBirthdayDirectoryRecords();
 
-    [[nodiscard]] Status deleteTeacher(
+    [[nodiscard]] RepositoryStatus deleteTeacher(
         int teacherId
         );
 
-    [[nodiscard]] Status deleteTeacher(qint64 teacherId);
+    [[nodiscard]] RepositoryStatus deleteTeacher(qint64 teacherId);
 
 private:
-    [[nodiscard]] Result<SubPrepPrintSourceTeacherProfileReadFields>
+    [[nodiscard]] RepositoryResult<SubPrepPrintSourceTeacherProfileReadFields>
         loadSubPrepPrintSourceTeacherProfileRecord(qint64 teacherId);
 
     QSqlDatabase& m_database;

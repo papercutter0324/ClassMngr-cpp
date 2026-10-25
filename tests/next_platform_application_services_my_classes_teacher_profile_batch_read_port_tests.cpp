@@ -142,6 +142,28 @@ readsConsumedFieldsInRequestedOrderAndReportsMissingTeacher()
         repository->teacherProfileBatchReadMetrics();
     QCOMPARE(broadAfter.callCount, broadBefore.callCount);
     QCOMPARE(broadAfter.statementCount, broadBefore.statementCount);
+
+    const auto repositoryBatch = repository->loadMyClassesTeacherProfileRecords(
+        {missingId, existingId}
+        );
+    QVERIFY(repositoryBatch);
+    QCOMPARE(repositoryBatch->size(), 2);
+    QVERIFY(!repositoryBatch->at(0).profile);
+    QCOMPARE(
+        repositoryBatch->at(0).profile.error().code,
+        RepositoryErrorCode::NotFound
+        );
+    QCOMPARE(
+        repositoryBatch->at(0).profile.error().diagnostic,
+        QStringLiteral("Loading teacher failed for teacher id %1: no matching record exists.")
+            .arg(missingId)
+        );
+    QVERIFY(repositoryBatch->at(1).profile);
+    QCOMPARE(repositoryBatch->at(1).profile->teacherId, existingId);
+
+    const auto invalidBatch = repository->loadMyClassesTeacherProfileRecords({0});
+    QVERIFY(!invalidBatch);
+    QCOMPARE(invalidBatch.error().code, RepositoryErrorCode::InvalidInput);
 }
 
 void NextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests::

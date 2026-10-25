@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "data/data_service.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/teacher.h"
@@ -263,41 +264,51 @@ reportsUnavailableMissingAndRepositoryFailureWithoutFallback()
     const int missingId = id + 1000;
     TeacherRepository* const repository =
         services.workspaceStore()->teacherRepository();
-    const TeacherProfileLookupResult typedProfileMissing =
+    const RepositoryResult<TeacherProfileReadRecord> typedProfileMissing =
         repository->lookupTeacherProfileById(missingId);
-    QCOMPARE(typedProfileMissing.code, TeacherProfileLookupCode::Missing);
-    const TeacherByIdLookupResult typedMissing =
+    QVERIFY(!typedProfileMissing);
+    QCOMPARE(typedProfileMissing.error().code, RepositoryErrorCode::NotFound);
+    const RepositoryResult<Teacher> typedMissing =
         repository->lookupTeacherById(missingId);
-    QCOMPARE(typedMissing.code, TeacherByIdLookupCode::Missing);
+    QVERIFY(!typedMissing);
+    QCOMPARE(typedMissing.error().code, RepositoryErrorCode::NotFound);
     const QString expectedMissingDiagnostic = QObject::tr(
         "Loading teacher failed for %1: no matching record exists."
         ).arg(QObject::tr("teacher id %1").arg(missingId));
-    QCOMPARE(typedMissing.diagnostic, expectedMissingDiagnostic);
+    QCOMPARE(typedMissing.error().diagnostic, expectedMissingDiagnostic);
 
-    const Result<Teacher> legacyMissing = repository->getTeacher(missingId);
+    const RepositoryResult<Teacher> legacyMissing = repository->getTeacher(missingId);
     QVERIFY(!legacyMissing);
-    QCOMPARE(legacyMissing.error(), typedMissing.diagnostic);
+    QCOMPARE(legacyMissing.error().diagnostic, typedMissing.error().diagnostic);
+    const Result<Teacher> dataServiceMissing =
+        services.dataService()->getTeacher(missingId);
+    QVERIFY(!dataServiceMissing);
+    QCOMPARE(
+        dataServiceMissing.error(),
+        toLegacyDiagnostic(typedMissing.error())
+        );
 
     const auto missing = port.readTeacherProfile(teacherId(missingId));
     QVERIFY(!missing);
     QCOMPARE(missing.error().code, Domain::ErrorCode::NotFound);
-    QCOMPARE(missing.error().message, utf8(typedProfileMissing.diagnostic));
+    QCOMPARE(missing.error().message, utf8(typedProfileMissing.error().diagnostic));
     QVERIFY(missing.error().recoverable);
 
     QSqlQuery query(services.workspaceStore()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE teachers")),
         qPrintable(query.lastError().text()));
-    const TeacherProfileLookupResult typedProfileFailure =
+    const RepositoryResult<TeacherProfileReadRecord> typedProfileFailure =
         repository->lookupTeacherProfileById(id);
-    QCOMPARE(typedProfileFailure.code, TeacherProfileLookupCode::Failure);
-    QVERIFY(!typedProfileFailure.diagnostic.isEmpty());
+    QVERIFY(!typedProfileFailure);
+    QCOMPARE(typedProfileFailure.error().code, RepositoryErrorCode::Technical);
+    QVERIFY(!typedProfileFailure.error().diagnostic.isEmpty());
 
     const auto repositoryFailure = port.readTeacherProfile(teacherId(id));
     QVERIFY(!repositoryFailure);
     QCOMPARE(repositoryFailure.error().code, Domain::ErrorCode::Technical);
     QCOMPARE(
         repositoryFailure.error().message,
-        utf8(typedProfileFailure.diagnostic)
+        utf8(typedProfileFailure.error().diagnostic)
         );
     QVERIFY(!repositoryFailure.error().recoverable);
 

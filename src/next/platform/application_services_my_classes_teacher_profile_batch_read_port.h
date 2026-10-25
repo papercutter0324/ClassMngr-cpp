@@ -112,8 +112,8 @@ public:
                 );
         }
 
-        Result<QList<MyClassesTeacherProfileBatchReadRecord>> loaded = [&]()
-            -> Result<QList<MyClassesTeacherProfileBatchReadRecord>>
+        RepositoryResult<QList<MyClassesTeacherProfileBatchReadRecord>> loaded = [&]()
+            -> RepositoryResult<QList<MyClassesTeacherProfileBatchReadRecord>>
         {
             try
             {
@@ -123,15 +123,17 @@ public:
             }
             catch (const std::exception&)
             {
-                return std::unexpected(QStringLiteral(
-                    "Assigned teacher profiles could not be loaded."
-                    ));
+                return std::unexpected(RepositoryError{
+                    RepositoryErrorCode::Technical,
+                    QStringLiteral("Assigned teacher profiles could not be loaded.")
+                });
             }
             catch (...)
             {
-                return std::unexpected(QStringLiteral(
-                    "Assigned teacher profiles could not be loaded."
-                    ));
+                return std::unexpected(RepositoryError{
+                    RepositoryErrorCode::Technical,
+                    QStringLiteral("Assigned teacher profiles could not be loaded.")
+                });
             }
         }();
 
@@ -175,51 +177,18 @@ public:
                 continue;
             }
 
-            switch (source.code)
+            if (!source.profile)
             {
-            case MyClassesTeacherProfileReadCode::Missing:
                 entries.push_back({
                     .teacherId = teacherIds[index],
                     .profile = Domain::Result<
                         Application::MyClassesTeacherProfileFields
-                        >::failure(error(
-                            Domain::ErrorCode::NotFound,
-                            repositoryDiagnostic(
-                                source.diagnostic,
-                                "The assigned teacher record was not found."
-                                ),
-                            true
-                            ))
+                        >::failure(repositoryError(source.profile.error()))
                 });
                 continue;
-            case MyClassesTeacherProfileReadCode::Invalid:
-                entries.push_back({
-                    .teacherId = teacherIds[index],
-                    .profile = Domain::Result<
-                        Application::MyClassesTeacherProfileFields
-                        >::failure(error(
-                            Domain::ErrorCode::Validation,
-                            repositoryDiagnostic(
-                                source.diagnostic,
-                                "The My Classes Teacher Profile repository returned an invalid record."
-                                ),
-                            false
-                            ))
-                });
-                continue;
-            case MyClassesTeacherProfileReadCode::Failure:
-                entries.push_back({
-                    .teacherId = teacherIds[index],
-                    .profile = Domain::Result<
-                        Application::MyClassesTeacherProfileFields
-                        >::failure(repositoryError(source.diagnostic))
-                });
-                continue;
-            case MyClassesTeacherProfileReadCode::Found:
-                break;
             }
 
-            if (source.profile.teacherId != legacyTeacherIds.at(
+            if (source.profile->teacherId != legacyTeacherIds.at(
                     static_cast<qsizetype>(index)))
             {
                 entries.push_back({
@@ -239,7 +208,7 @@ public:
                 .teacherId = teacherIds[index],
                 .profile = Domain::Result<
                     Application::MyClassesTeacherProfileFields
-                    >::success(profileFieldsFromReadFields(source.profile))
+                    >::success(profileFieldsFromReadFields(*source.profile))
             });
         }
 
@@ -285,26 +254,37 @@ private:
     }
 
     [[nodiscard]] static Domain::OperationError repositoryError(
-        const QString& message
+        const RepositoryError& repositoryError
         )
     {
-        const QByteArray bytes = message.toUtf8();
+        Domain::ErrorCode code = Domain::ErrorCode::Technical;
+        switch (repositoryError.code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            code = Domain::ErrorCode::InvalidInput;
+            break;
+        case RepositoryErrorCode::NotFound:
+            code = Domain::ErrorCode::NotFound;
+            break;
+        case RepositoryErrorCode::Conflict:
+            code = Domain::ErrorCode::Conflict;
+            break;
+        case RepositoryErrorCode::Validation:
+            code = Domain::ErrorCode::Validation;
+            break;
+        case RepositoryErrorCode::Technical:
+            code = Domain::ErrorCode::Technical;
+            break;
+        }
+        const QByteArray bytes = toLegacyDiagnostic(repositoryError).toUtf8();
         return error(
-            Domain::ErrorCode::Technical,
+            code,
             bytes.isEmpty()
                 ? "Teacher profile could not be loaded."
                 : bytes.toStdString(),
-            false
+            code == Domain::ErrorCode::NotFound
+                || code == Domain::ErrorCode::InvalidInput
             );
-    }
-
-    [[nodiscard]] static std::string repositoryDiagnostic(
-        const QString& message,
-        const char* fallback
-        )
-    {
-        const QByteArray bytes = message.toUtf8();
-        return bytes.isEmpty() ? fallback : bytes.toStdString();
     }
 
     [[nodiscard]] static Application::MyClassesTeacherProfileBatchReadResult

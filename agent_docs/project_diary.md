@@ -8586,3 +8586,33 @@ unrepresentable stored ID instead of silently truncating it. Preserve the
 singular RosterPrint orphan-data behavior separately from the batch reader’s
 intentional suppression, and make test doubles implement the repository path
 used by their adapter.
+
+F1450 was committed locally as `bd03110d7de6a034db9f631099164d9562c2435b`;
+it remains local until Batch 22 closes. Independent discovery accepted F1451
+to cover every fallible `TeacherRepository` API, including nested batch-item
+errors, legacy DataService/TeacherService conversions, and affected direct
+ports. Keep caller-specific lookup, missing-row, batching/fallback, identity,
+diagnostic, and recoverability behavior. Teacher deletion's transaction must
+report rollback failure as Technical while retaining the primary failure.
+
+
+## 2026-10-24 — F1451 verified; local commit pending
+
+F1451 converted all public fallible `TeacherRepository` operations and nested
+batch-item outcomes to `RepositoryResult`/`RepositoryStatus`. Legacy string
+edges and direct ports preserve exact diagnostics and caller-specific
+recoverability, missing-row, join, ordering, fallback, metrics, and ID-width
+behavior. Delete now checks rollback failures.
+
+Independent macOS focused verification passed 24 selected CTests. The repaired
+schedule-import selector passed eight data cases, including readable teacher
+IDs `-1` and `0`; the changed TeacherProfileReadPort CTest passed 1/1. The
+broader ClassTransfer run had an unresolved fallback failure in the Executor
+run and a no-screens Qt abort in the independent run. TeacherImport UI parity
+aborted during bundle setup; the modified refresh selector passed in isolation.
+No same-revision baseline, full suite, other-platform run, or injected rollback
+failure was obtained.
+
+Durable lesson: ID validity is caller-specific. Preserve documented sentinel
+IDs such as `-1` and `0` where the existing schedule-import path accepts them;
+do not apply a general positive-ID rule across repository projections.

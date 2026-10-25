@@ -4,6 +4,7 @@
 #include "data/database/database_schema_manager.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
+#include "data/repositories/teacher_repository.h"
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "teacher_choices_cursor_error_fixture.h"
@@ -1237,12 +1238,21 @@ void DataServiceLifecycleTests
         "END"
         ).arg(*createdTeacher)));
 
+    const RepositoryStatus repositoryDelete = service.databaseSession()
+        ->teacherRepository()->deleteTeacher(*createdTeacher);
+    QVERIFY(!repositoryDelete);
+    QCOMPARE(repositoryDelete.error().code, RepositoryErrorCode::Technical);
+    QVERIFY(repositoryDelete.error().diagnostic.contains(
+        QStringLiteral("injected teacher delete failure")
+        ));
+
     const Status deleted = service.deleteTeacher(*createdTeacher);
     QVERIFY(!deleted);
     QVERIFY(deleted.error().contains(QStringLiteral("Deleting teacher")));
     QVERIFY(deleted.error().contains(
         QStringLiteral("teacher id %1").arg(*createdTeacher)
         ));
+    QCOMPARE(deleted.error(), toLegacyDiagnostic(repositoryDelete.error()));
 
     const Result<Teacher> rolledBackTeacher =
         service.getTeacher(*createdTeacher);
