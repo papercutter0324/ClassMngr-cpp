@@ -61,10 +61,11 @@ legacy oracle paths in Phase 4.
    for the selected body. This test-only slice changes no production/legacy
    code; existing missing, type-mismatch, invalid-catalog, and no-fallback
    coverage remains.
-10. **F1478 — Verify type-specific lazy loads (active).** Exercise text, JSON,
-    image, font, stylesheet, translation, and stream paths without migrating
-    legacy feature UI consumers.
-11. **F1479 — Verify no-pack startup side effects.** Ensure the Next runtime
+10. **F1478 — Verify type-specific lazy loads.** Accepted as verification-only
+    using F1468's existing loader tests; no separate source-code delta was
+    needed. The selected examples exercise all seven loader APIs at request
+    time; legacy feature consumers remain on pack paths.
+11. **F1479 — Verify no-pack startup side effects (active).** Ensure the Next runtime
     makes no resource request, creates no pack storage/settings, mounts no RCC,
     and has no splash path.
 12. **F1480 — Verify relocated package lookup.** Resolve only the selected

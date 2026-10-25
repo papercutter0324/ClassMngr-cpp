@@ -114,4 +114,26 @@ The incremental macOS Debug build of `ClassMngrNextResourceLoaderTests`,
 targets up to date; the resource catalog regenerated. Independent focused
 CTest passed 3/3, and `git diff --check` passed. This verifies macOS Debug only;
 the full suite and Windows/Linux were not run. F1477 is committed as
-`535dc382`; F1478 is active.
+`535dc382`.
+
+## F1478 — Verify type-specific lazy loads — accepted — 2026-10-25
+
+This verification-only acceptance reuses F1468's existing `testLoader()`;
+independent review found no additional test code was needed, so no separate
+source-code delta was required. The test stages a temporary package with
+selected representative examples and exercises these APIs at request time:
+text (Calendar QML), JSON, image, font, stylesheet, translation, and stream.
+Unselected and unrelated document bodies remain
+absent. Assertions cover current scope through owned/moved handles,
+font/translation release, stream file closure, and wrong-type rejection.
+
+Source review confirms `ResourceCatalog` parses manifest metadata only and
+`ResourceLoader` construction does not open package bodies. There is no new
+loader or document-port use under legacy app/UI/feature paths; those consumers
+remain on pack paths.
+
+The independent macOS Debug build of `ClassMngrNextResourceLoaderTests`
+succeeded; the target was up to date and the resource catalog regenerated.
+Focused CTest passed 1/1, and `git diff --check` passed. The full suite and
+Windows/Linux were not run. F1478 is accepted as verification-only; F1479 is
+active.

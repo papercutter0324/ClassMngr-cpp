@@ -34,7 +34,8 @@
   QtPdf session-release verification, is accepted and committed as
   `8a2163d2`; F1476, operation-scoped Office export inputs, is accepted and
   committed as `2bbbd23d`; F1477, resource failure behavior, is accepted and
-  committed as `535dc382`; F1478 is active.
+  committed as `535dc382`; F1478, type-specific lazy-load verification, is
+  accepted with no separate source-code delta; F1479 is active.
   F1468 provides
   explicit root/catalog injection, catalog
   validation, root-confined file reads, and RAII stream/font/translation
