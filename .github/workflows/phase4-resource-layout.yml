@@ -130,7 +130,13 @@ jobs:
           cmake --build build/windows-x64-debug --config Debug `
             --target ClassMngrNextResourcePackage `
               ClassMngrNextResourceRootLayoutProbe `
-              ClassMngrNextResourceRootResolverTests --parallel 2
+              ClassMngrNextResourceRootResolverTests `
+              ClassMngrNextResourceLoaderTests `
+              ClassMngrNextPlatformDocumentContentResourcePortTests `
+              ClassMngrNextPlatformDocumentExportResourcePortTests `
+              ClassMngrNextPlatformQtPdfSessionReleaseTests `
+              ClassMngrNextLaunchFilesystemSideEffectsTests `
+              ClassMngrNext --parallel 2
 
       - name: Install resource and probe components
         shell: pwsh
@@ -174,7 +180,7 @@ jobs:
           $Env:PATH = "$Env:QT_MSVC_X64_PREFIX\bin;$Env:PATH"
           ctest --test-dir build/windows-x64-debug --build-config Debug `
             --output-on-failure `
-            -R 'ResourceRootResolver|ResourceInstallPrefixGuard'
+            -R '^(ClassMngrNextResourceRootResolverTests|ClassMngrNextResourceInstallPrefixGuardTests|ClassMngrNextResourceLoaderTests|ClassMngrNextPlatformDocumentContentResourcePortTests|ClassMngrNextPlatformDocumentExportResourcePortTests|ClassMngrNextPlatformQtPdfSessionReleaseTests|ClassMngrNextLaunchFilesystemSideEffectsTests|ClassMngrNextLaunch)$'
 
   linux:
     name: Linux x64 resource install layout
@@ -227,15 +233,18 @@ jobs:
             "${QT_VERSION}" linux_gcc_64 2>/dev/null || true)"
           modules=""
           echo "${available}" | grep -q qtdeclarative && modules="${modules} qtdeclarative"
-          echo "${available}" | grep -q qtpdf && modules="${modules} qtpdf"
+          if ! echo "${available}" | grep -Eq '(^|[[:space:]])qtpdf($|[[:space:]])'; then
+            echo "::error::Qt ${QT_VERSION} linux_gcc_64 qtpdf is required by the F1486 platform tests but is unavailable."
+            exit 1
+          fi
+          modules="${modules} qtpdf"
           echo "${available}" | grep -q qttools && modules="${modules} qttools"
           modules="$(echo ${modules})"
-          if [ -n "${modules}" ]; then
-            python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
-              --outputdir "${QT_ROOT}" --modules ${modules}
-          else
-            python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
-              --outputdir "${QT_ROOT}"
+          python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
+            --outputdir "${QT_ROOT}" --modules ${modules}
+          if [ ! -f "${QT_LINUX_PREFIX}/lib/cmake/Qt6Pdf/Qt6PdfConfig.cmake" ]; then
+            echo "::error::Qt ${QT_VERSION} qtpdf installation completed without Qt6PdfConfig.cmake at ${QT_LINUX_PREFIX}/lib/cmake/Qt6Pdf."
+            exit 1
           fi
 
       - name: Configure Debug preset
@@ -248,7 +257,13 @@ jobs:
           cmake --build --preset linux-gcc-debug \
             --target ClassMngrNextResourcePackage \
               ClassMngrNextResourceRootLayoutProbe \
-              ClassMngrNextResourceRootResolverTests --parallel 2
+              ClassMngrNextResourceRootResolverTests \
+              ClassMngrNextResourceLoaderTests \
+              ClassMngrNextPlatformDocumentContentResourcePortTests \
+              ClassMngrNextPlatformDocumentExportResourcePortTests \
+              ClassMngrNextPlatformQtPdfSessionReleaseTests \
+              ClassMngrNextLaunchFilesystemSideEffectsTests \
+              ClassMngrNext --parallel 2
 
       - name: Install resource and probe components
         shell: bash
@@ -279,4 +294,4 @@ jobs:
         run: |
           ctest --test-dir build/linux-gcc-debug \
             --output-on-failure \
-            -R 'ResourceRootResolver|ResourceInstallPrefixGuard'
+            -R '^(ClassMngrNextResourceRootResolverTests|ClassMngrNextResourceInstallPrefixGuardTests|ClassMngrNextResourceLoaderTests|ClassMngrNextPlatformDocumentContentResourcePortTests|ClassMngrNextPlatformDocumentExportResourcePortTests|ClassMngrNextPlatformQtPdfSessionReleaseTests|ClassMngrNextLaunchFilesystemSideEffectsTests|ClassMngrNextLaunch)$'
