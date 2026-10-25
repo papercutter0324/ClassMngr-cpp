@@ -1,5 +1,28 @@
 include_guard(GLOBAL)
 
+add_executable(ClassMngrNextCalendarResourceKeysTests
+    cmake/tests/next_calendar_resource_keys.cpp
+)
+target_compile_features(ClassMngrNextCalendarResourceKeysTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(ClassMngrNextCalendarResourceKeysTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+classmngr_next_add_calendar_qml_resources(ClassMngrNextCalendarResourceKeysTests)
+target_link_libraries(ClassMngrNextCalendarResourceKeysTests
+    PRIVATE
+        Qt6::Core
+)
+add_test(
+    NAME ClassMngrNextCalendarResourceKeysTests
+    COMMAND ClassMngrNextCalendarResourceKeysTests
+)
+
 # Keep PowerPoint batch template compatibility independent of Qt and the
 # feature layer.
 add_executable(

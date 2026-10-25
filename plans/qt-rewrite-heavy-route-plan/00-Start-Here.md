@@ -12,10 +12,18 @@
   offline baseline baker, is accepted and committed as
   `3423e1de05f129d407004192565a79f06e572579`. Its 14 focused tests pass; two
   fresh temporary bakes are byte-identical, and all 191 copied resources match
-  their inventory sources. F1466, the generated resource catalog, passed
-  independent verification and is ready to commit. Its 198 runtime records
-  include 191 direct resources and seven generated outputs; the catalog matches
-  the inventory and baked files. F1467 follows this commit.
+  their inventory sources. F1466, the generated resource catalog, is accepted
+  and committed as `b10e60e854f21e67ed3b3653b8c8b608c7588345`. Its 198 runtime
+  records include 191 direct resources and seven generated outputs; the
+  catalog matches the inventory and baked files. F1467, deterministic
+  installed-tree packaging, passed independent macOS verification and is ready
+  to commit. Its staged component contains 191 hash-verified files, five
+  translations, and two Calendar QML resource keys; the default install still
+  stages only the legacy application. Windows and Linux destinations are
+  source-reviewed but not host-staged. F1468 follows this commit. Batch 2
+  discovery accepted 17 candidates, F1469–F1485, focused on the v2 resource
+  runtime and document lifecycle. Legacy theme/font/icon/campus/report UI
+  consumers stay with their Phase 5–7 migrations.
   The inventory records 229 tracked
   paths under `resources/` plus two Calendar QML inputs, with 226 asset files
   totaling 65,707,627 exact source bytes. No installed overrides were present

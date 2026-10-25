@@ -202,6 +202,7 @@ include(cmake/deployment.cmake)
 include(cmake/platform/macos.cmake)
 include(cmake/platform/windows.cmake)
 include(cmake/next.cmake)
+include(cmake/next_resources.cmake)
 
 # Schedule Import's persistence edge adapts legacy database snapshots to a
 # Qt-free Application state-validation contract.

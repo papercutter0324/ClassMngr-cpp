@@ -42,8 +42,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   committed as `473e8325b9f98069c8396291d057a398a9683ebe`. F1465, the offline
   baseline baker, is accepted and committed as
   `3423e1de05f129d407004192565a79f06e572579`. F1466, the generated resource
-  catalog, passed independent verification and is ready to commit; F1467
-  follows. The inventory covers
+  catalog, is accepted and committed as
+  `b10e60e854f21e67ed3b3653b8c8b608c7588345`. F1467, deterministic
+  installed-tree packaging, passed independent macOS verification and is ready
+  to commit; F1468 follows. Batch 2 has 17 discovered candidates, F1469–F1485,
+  focused on the v2 resource runtime and document lifecycle. Legacy
+  theme/font/icon/campus/report UI consumers stay with their Phase 5–7
+  migrations. Windows and Linux install destinations are source-reviewed but
+  not host-staged; the cross-platform gate remains open. The inventory covers
   229 tracked paths under `resources/` and two Calendar QML inputs. Its 226
   asset files total 65,707,627 exact source bytes; installed/resident sizes
   remain unmeasured and have measurement methods. No installed overrides were
@@ -127,8 +133,33 @@ records remained size/hash unknown. CMake source review confirmed the Calendar
 QML module's URI and `/qt/qml` resource prefix. No CMake build or installed
 package was exercised. F1467 must install file resources and preserve the
 separate Qt-resource location for Calendar components; catalog generation
-alone does not establish package presence. F1466 is accepted and ready to
-commit.
+alone does not establish package presence. F1466 was committed as
+`b10e60e854f21e67ed3b3653b8c8b608c7588345`.
+
+### F1467 — Deterministic installed-tree packaging — independently verified — 2026-10-25
+
+The new `ClassMngrNextResources` install component packages the catalog,
+191 baked direct resources, and five generated translations at the F1466
+catalog paths. It is excluded from the default install so the legacy release
+continues to contain only its existing application and RCC packs. The two
+Calendar components are embedded at their `qrc:/qt/qml/ClassMngr/Calendar/`
+keys without adding QtQml/Quick linkage to the QtCore-only Next executable.
+The selected roots are Windows `${CMAKE_INSTALL_BINDIR}/resources`, macOS
+`ClassMngr.app/Contents/Resources`, and Linux
+`${CMAKE_INSTALL_DATADIR}/ClassMngr` (normally `share/ClassMngr`).
+
+Independent macOS verification built `ClassMngrNextResourcePackage`, staged
+the component, and audited 197 files: 191 hashes, five generated QMs, two QML
+keys, and no provenance manifest. A separate default install contained no v2
+assets/catalog and retained all six legacy RCC packs. The Calendar resource
+key and Next launch CTests passed 2/2; all 30 focused Phase 4 Python tests
+passed. The generated macOS install rules and staged package were verified;
+Windows and Linux paths were source-reviewed only and remain for the
+cross-platform gate. Optional Qt deployment warnings about local database
+drivers did not prevent the default install.
+
+F1467 is accepted and ready to commit; F1468 follows. Batch 1 will be pushed
+after F1468.
 
 ## Objective
 
@@ -221,6 +252,20 @@ Use the correct platform installation location:
 - Windows application resources.
 - macOS bundle Resources.
 - Linux application data directory.
+
+The deterministic v2 resource root selected for F1467 is:
+
+- Windows: `${CMAKE_INSTALL_BINDIR}/resources` beside the executable (the
+  Windows preset uses `.` for `CMAKE_INSTALL_BINDIR`).
+- macOS: `ClassMngr.app/Contents/Resources` in the final application bundle.
+- Linux: `${CMAKE_INSTALL_DATADIR}/ClassMngr` (normally `share/ClassMngr`).
+
+Install the v2 tree through the separate `ClassMngrNextResources` component,
+excluded from the default install while the legacy `ClassMngr` package remains
+the oracle. Put `resource-catalog.json` at the resource root beside `assets/`.
+Copy catalog `resource_file` entries to their package-relative paths. Calendar
+QML entries remain Qt resources at their `qrc:/qt/qml/ClassMngr/Calendar/...`
+URLs and are not copied as loose files.
 
 The loader must resolve only known package-relative paths. It must not search the source tree in a packaged build.
 
@@ -330,6 +375,18 @@ Large resources are not loaded or decoded until their owning feature or operatio
 Document catalog initialization must not load PDF bodies or call
 `QPdfDocument::load()`. A viewer/session request opens one selected document;
 ending that session closes the QtPdf document and releases its content handle.
+
+### Phase 4 gate scope
+
+The Phase 4 application target is the `ClassMngrNext` resource runtime. It is
+still a console shell and has no migrated feature pages. Phase 4 therefore
+verifies baseline resource identity and content at the catalog/loader boundary,
+along with no-pack startup and explicit load/release behavior. User-visible
+rendering parity for migrated feature pages remains a required Phase 7/10 gate;
+the legacy `ClassMngr` display alone is not evidence that the new loader passes
+that later gate. Legacy theme, font, icon, campus, and report UI consumers
+remain in their Phase 5–7 startup, shared-UI, and feature migrations; Phase 4
+does not alter those parity-oracle paths.
 
 ## Heavy-route requirements
 
