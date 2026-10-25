@@ -1,6 +1,7 @@
 #pragma once
 
 #include "resource_catalog.h"
+#include "resource_cache.h"
 #include "resource_error.h"
 #include "resource_scope.h"
 
@@ -100,6 +101,8 @@ class ResourceLoader final
 {
 public:
     explicit ResourceLoader(ResourceCatalog catalog);
+    // The injected cache is borrowed and must outlive this loader.
+    ResourceLoader(ResourceCatalog catalog, ResourceCache& cache);
 
     [[nodiscard]] const ResourceCatalog& catalog() const noexcept
     {
@@ -146,6 +149,7 @@ private:
         ) const;
 
     ResourceCatalog m_catalog;
+    ResourceCache* m_cache = nullptr;
 };
 
 }

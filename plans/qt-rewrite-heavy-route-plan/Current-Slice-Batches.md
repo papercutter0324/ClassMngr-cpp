@@ -16,13 +16,17 @@ legacy oracle paths in Phase 4.
    executable directory; tests cover missing roots/catalogs, unrelated current
    directory contents, and relocation. Mixed absolute/relative Linux install
    directories with an install-time prefix override were not tested.
-2. **F1470 — Add resource scopes.** Accepted after independent macOS review.
+2. **F1470 — Add resource scopes.** Accepted and committed as `f7b2cb22`
+   after independent macOS review.
    Every load request names a scope kind and owner, and each move-only result
    retains that scope with its owned value. The four kinds and RAII cleanup are
    covered by focused tests.
-3. **F1471 — Add byte-budgeted resource caching (next).** Use explicit capacity and
-   eviction; do not cache document bodies or unbounded decoded images.
-4. **F1472 — Add resource diagnostics.** Report load time, decoded size, cache
+3. **F1471 — Add byte-budgeted resource caching.** Accepted after focused
+   macOS verification. The injected per-instance cache uses
+   deterministic LRU and accounted payload bytes; text/JSON/image oversize
+   entries skip retention. Document bodies, streams, fonts, and translations
+   bypass it. Cache hits still read and hash package bytes before reuse.
+4. **F1472 — Add resource diagnostics (active).** Report load time, decoded size, cache
    residency, and owner without adding a process-wide mutable singleton.
 5. **F1473 — Load document catalog metadata through the new catalog.** Keep
    metadata startup-safe and document bodies unopened.

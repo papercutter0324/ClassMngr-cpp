@@ -54,6 +54,12 @@ bool isInsideRoot(const QString& root, const QString& canonicalFile)
         && !relative.startsWith(QStringLiteral("../"));
 }
 
+bool isCacheableDecodedResource(const ResourceDescriptor& descriptor)
+{
+    return descriptor.resourceKind() != QStringLiteral("document_body")
+        && !descriptor.id().value().startsWith(QStringLiteral("document.body:"));
+}
+
 }
 
 ResourceResult<ResourceScope> ResourceScope::create(
@@ -235,6 +241,12 @@ void ResourceTranslation::release() noexcept
 
 ResourceLoader::ResourceLoader(ResourceCatalog catalog)
     : m_catalog(std::move(catalog))
+{
+}
+
+ResourceLoader::ResourceLoader(ResourceCatalog catalog, ResourceCache& cache)
+    : m_catalog(std::move(catalog))
+    , m_cache(&cache)
 {
 }
 
@@ -490,6 +502,14 @@ ResourceResult<ScopedResource<QString>> ResourceLoader::loadText(
     {
         return std::unexpected(bytes.error());
     }
+    if (m_cache != nullptr && isCacheableDecodedResource(**found))
+    {
+        if (auto cached = m_cache->findText(request.id()))
+        {
+            return ScopedResource<QString>(std::move(*cached), request.scope());
+        }
+    }
+
     QStringDecoder decoder(QStringDecoder::Utf8);
     const QString text = decoder(*bytes);
     if (decoder.hasError())
@@ -498,6 +518,10 @@ ResourceResult<ScopedResource<QString>> ResourceLoader::loadText(
             ResourceErrorCode::CorruptResource,
             QStringLiteral("text resource is not valid UTF-8")
             ));
+    }
+    if (m_cache != nullptr && isCacheableDecodedResource(**found))
+    {
+        m_cache->insertText(request.id(), text, request.scope());
     }
     return ScopedResource<QString>(text, request.scope());
 }
@@ -524,6 +548,14 @@ ResourceResult<ScopedResource<QJsonDocument>> ResourceLoader::loadJson(
     {
         return std::unexpected(bytes.error());
     }
+    if (m_cache != nullptr && isCacheableDecodedResource(**found))
+    {
+        if (auto cached = m_cache->findJson(request.id()))
+        {
+            return ScopedResource<QJsonDocument>(std::move(*cached), request.scope());
+        }
+    }
+
     QJsonParseError parseError;
     const QJsonDocument document = QJsonDocument::fromJson(*bytes, &parseError);
     if (parseError.error != QJsonParseError::NoError || document.isNull())
@@ -532,6 +564,10 @@ ResourceResult<ScopedResource<QJsonDocument>> ResourceLoader::loadJson(
             ResourceErrorCode::CorruptResource,
             QStringLiteral("JSON resource cannot be parsed: ") + parseError.errorString()
             ));
+    }
+    if (m_cache != nullptr && isCacheableDecodedResource(**found))
+    {
+        m_cache->insertJson(request.id(), document, request.scope());
     }
     return ScopedResource<QJsonDocument>(document, request.scope());
 }
@@ -558,6 +594,14 @@ ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImage(
     {
         return std::unexpected(bytes.error());
     }
+    if (m_cache != nullptr && isCacheableDecodedResource(**found))
+    {
+        if (auto cached = m_cache->findImage(request.id()))
+        {
+            return ScopedResource<QImage>(std::move(*cached), request.scope());
+        }
+    }
+
     QBuffer buffer(&*bytes);
     if (!buffer.open(QIODevice::ReadOnly))
     {
@@ -575,6 +619,10 @@ ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImage(
             ResourceErrorCode::DecodeError,
             QStringLiteral("image resource cannot be decoded: ") + reader.errorString()
             ));
+    }
+    if (m_cache != nullptr && isCacheableDecodedResource(**found))
+    {
+        m_cache->insertImage(request.id(), image, request.scope());
     }
     return ScopedResource<QImage>(image, request.scope());
 }

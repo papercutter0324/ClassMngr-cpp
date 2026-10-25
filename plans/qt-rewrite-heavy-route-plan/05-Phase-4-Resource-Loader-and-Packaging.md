@@ -38,8 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Bootstrap, feature migration, packaging, and memory gates
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-25
-- Current note: F1470, explicit resource scopes, is accepted; F1471, the
-  byte-budgeted resource cache, is next. F1469 is committed as `d282e7f1`.
+- Current note: F1470, explicit resource scopes, is committed as
+  `f7b2cb22`; F1471, the byte-budgeted resource cache, is accepted; F1472,
+  resource diagnostics, is active. F1469 is committed as `d282e7f1`.
   Batch 1
   (F1464–F1468) was pushed to `origin`; see the [Phase 4 progress log](05-Phase-4-Progress-Log.md)
   for the receipt. F1469 resolves
@@ -220,8 +221,36 @@ resource-key, and Next launch targets; their CTests passed 4/4. Tests cover all
 four scope kinds, blank-owner rejection, move construction and assignment,
 font deregistration, translation removal, and stream-handle closure. The full
 suite and Windows/Linux builds were not run. The Next shell remains unwired to
-the loader until the later runtime verification slices. F1470 is accepted;
-F1471 is next.
+the loader until the later runtime verification slices. F1470 is accepted and
+committed; F1471 follows.
+
+### F1471 — Byte-budgeted resource cache — accepted — 2026-10-25
+
+`ResourceCache` has an explicit positive byte capacity, deterministic LRU
+eviction, and per-instance state. `ResourceLoader` accepts an injected cache;
+there is no global cache. It retains decoded text, JSON, and images only.
+Document bodies, streams, fonts, and translations bypass it. Values over the
+budget are skipped without evicting unrelated entries. A cache hit returns a
+new scoped handle for the current request while retaining the insertion owner
+in cache metadata. Loader-local input buffers are released after each load.
+
+The cache enforces its budget in **accounted payload bytes**, which excludes
+map/list, allocator, and Qt object overhead. Text is weighted by UTF-16 payload
+bytes, images by decoded pixel bytes, and JSON by compact UTF-8 serialization
+bytes. The JSON value is a deterministic budget weight, not a measurement of
+`QJsonDocument`'s internal allocation. Every load reads and verifies the
+packaged bytes and catalog SHA-256 before a cache lookup, including cache hits;
+a hit avoids decoding but still performs file I/O and hashing.
+
+Independent macOS verification rebuilt the loader and root-resolver test
+targets; `ClassMngrNextResourceLoaderTests` and
+`ClassMngrNextResourceRootResolverTests` passed 2/2. Tests cover positive
+capacity, accounted-byte limits, deterministic LRU recency, text/JSON/image
+oversize skipping without unrelated eviction, per-cache isolation, image and
+JSON cache hits with the current request scope, insertion-owner metadata,
+cache-hit SHA-256 failure after a same-size source mutation, and font,
+translation, stream, and document-body bypass. Windows and Linux were not run.
+F1471 is accepted; F1472 is active.
 
 ## Objective
 

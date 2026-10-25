@@ -14,6 +14,7 @@
 #include <cerrno>
 #include <iostream>
 #include <optional>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -97,6 +98,114 @@ bool writeBytes(const QString& path, const QByteArray& bytes)
         return false;
     }
     return file.write(bytes) == bytes.size();
+}
+
+bool testResourceCacheCore()
+{
+    bool rejectedZeroCapacity = false;
+    try
+    {
+        ResourceCache invalid(0);
+    }
+    catch (const std::invalid_argument&)
+    {
+        rejectedZeroCapacity = true;
+    }
+    if (!rejectedZeroCapacity)
+    {
+        return fail(QStringLiteral("resource cache accepted a zero byte capacity"));
+    }
+
+    const auto firstId = resourceId("resource:cache-first");
+    const auto secondId = resourceId("resource:cache-second");
+    const auto thirdId = resourceId("resource:cache-third");
+    const auto largeImageId = resourceId("resource:cache-large-image");
+    const auto largeJsonId = resourceId("resource:cache-large-json");
+    const auto documentBodyId = resourceId("document.body:cache-document.pdf");
+    if (!firstId || !secondId || !thirdId || !largeImageId || !largeJsonId
+        || !documentBodyId)
+    {
+        return fail(QStringLiteral("resource cache test IDs were rejected"));
+    }
+    auto scope = ResourceScope::create(
+        ResourceScopeKind::Feature,
+        QStringLiteral("CacheFixture")
+        );
+    if (!scope)
+    {
+        return fail(QStringLiteral("resource cache test scope was rejected"));
+    }
+
+    ResourceCache cache(16);
+    if (cache.capacityBytes() != 16 || cache.accountedBytes() != 0 || cache.entryCount() != 0)
+    {
+        return fail(QStringLiteral("resource cache did not retain its explicit byte capacity"));
+    }
+    cache.insertText(*firstId, QStringLiteral("AAAA"), *scope);
+    cache.insertText(*secondId, QStringLiteral("BBBB"), *scope);
+    if (cache.accountedBytes() != 16 || cache.entryCount() != 2)
+    {
+        return fail(QStringLiteral("resource cache byte accounting was incorrect"));
+    }
+
+    const auto firstHit = cache.findText(*firstId);
+    if (!firstHit || *firstHit != QStringLiteral("AAAA"))
+    {
+        return fail(QStringLiteral("resource cache could not return a text hit"));
+    }
+    cache.insertText(*thirdId, QStringLiteral("CCCC"), *scope);
+    if (cache.entryInfo(*secondId).has_value()
+        || !cache.entryInfo(*firstId).has_value()
+        || !cache.entryInfo(*thirdId).has_value()
+        || cache.accountedBytes() != 16)
+    {
+        return fail(QStringLiteral("resource cache did not update recency before LRU eviction"));
+    }
+
+    const auto oversizedTextId = resourceId("resource:cache-oversized-text");
+    if (!oversizedTextId)
+    {
+        return fail(QStringLiteral("oversized resource cache test ID was rejected"));
+    }
+    cache.insertText(*oversizedTextId, QString(9, QChar(u'x')), *scope);
+    cache.insertText(*documentBodyId, QStringLiteral("document"), *scope);
+    const QJsonDocument oversizedJson = QJsonDocument::fromJson(
+        QByteArrayLiteral("{\"message\":\"larger than the cache budget\"}")
+        );
+    if (oversizedJson.isNull())
+    {
+        return fail(QStringLiteral("oversized JSON cache fixture could not be parsed"));
+    }
+    cache.insertJson(*largeJsonId, oversizedJson, *scope);
+    QImage oversizedImage(4, 4, QImage::Format_RGBA8888);
+    cache.insertImage(*largeImageId, oversizedImage, *scope);
+    if (cache.entryInfo(*oversizedTextId).has_value()
+        || cache.entryInfo(*largeJsonId).has_value()
+        || cache.entryInfo(*documentBodyId).has_value()
+        || cache.entryInfo(*largeImageId).has_value()
+        || cache.entryCount() != 2
+        || cache.accountedBytes() != 16)
+    {
+        return fail(QStringLiteral("oversized cache values were retained or evicted resident values"));
+    }
+
+    ResourceCache isolatedCache(16);
+    if (isolatedCache.findText(*firstId).has_value())
+    {
+        return fail(QStringLiteral("resource cache entries leaked between instances"));
+    }
+    isolatedCache.insertText(*firstId, QStringLiteral("other"), *scope);
+    const auto isolatedValue = isolatedCache.findText(*firstId);
+    const auto originalValue = cache.findText(*firstId);
+    const auto metadata = cache.entryInfo(*firstId);
+    if (!isolatedValue || *isolatedValue != QStringLiteral("other")
+        || !originalValue || *originalValue != QStringLiteral("AAAA")
+        || !metadata || metadata->kind != ResourceCacheValueKind::Text
+        || !scopeMatches(metadata->scope, ResourceScopeKind::Feature, QStringLiteral("CacheFixture")))
+    {
+        return fail(QStringLiteral("resource cache instances or retained owner metadata were incorrect"));
+    }
+    return true;
 }
 
 std::optional<QByteArray> sameSizeValidJsonMutation(const QByteArray& original)
@@ -304,6 +413,171 @@ bool testLoader(QCoreApplication& application)
         || !translationRequest || !pdfRequest || !qmlRequest || !qrcStreamRequest)
     {
         return false;
+    }
+
+    auto cachedCatalog = ResourceCatalog::load(
+        QString::fromUtf8(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG),
+        packageRoot
+        );
+    if (!cachedCatalog)
+    {
+        return fail(QStringLiteral("cached loader catalog load failed: ")
+            + cachedCatalog.error().message);
+    }
+    ResourceCache loaderCache(64 * 1024 * 1024);
+    ResourceLoader cachedLoader(std::move(*cachedCatalog), loaderCache);
+
+    auto cachedJson = cachedLoader.loadJson(*jsonRequest);
+    if (!cachedJson || !cachedJson->get().isObject())
+    {
+        return fail(QStringLiteral("cached loader JSON load failed: ")
+            + (cachedJson ? QStringLiteral("document was not an object")
+                          : cachedJson.error().message));
+    }
+    const qint64 jsonWeight = static_cast<qint64>(
+        cachedJson->get().toJson(QJsonDocument::Compact).size()
+        );
+    const auto jsonMetadata = loaderCache.entryInfo(*jsonId);
+    auto jsonHitRequest = resourceRequest(
+        *jsonId,
+        ResourceScopeKind::Operation,
+        QStringLiteral("JsonCacheProbe")
+        );
+    if (!jsonHitRequest || !jsonMetadata
+        || jsonMetadata->kind != ResourceCacheValueKind::Json
+        || jsonMetadata->accountedBytes != jsonWeight
+        || !scopeMatches(
+            jsonMetadata->scope,
+            ResourceScopeKind::Startup,
+            QStringLiteral("CampusCatalog")
+            ))
+    {
+        return fail(QStringLiteral("JSON cache accounting or owner metadata was incorrect"));
+    }
+    auto cachedJsonHit = cachedLoader.loadJson(*jsonHitRequest);
+    if (!cachedJsonHit || !cachedJsonHit->get().isObject()
+        || !scopeMatches(
+            cachedJsonHit->scope(),
+            ResourceScopeKind::Operation,
+            QStringLiteral("JsonCacheProbe")
+            ))
+    {
+        return fail(QStringLiteral("JSON cache hit did not return a newly scoped owning handle"));
+    }
+
+    const QString cachedJsonPath = QDir(packageRoot).filePath(
+        QStringLiteral("assets/campuses/bundang.json")
+        );
+    const QByteArray originalCachedJson = [&]() {
+        QFile file(cachedJsonPath);
+        if (!file.open(QIODevice::ReadOnly))
+        {
+            return QByteArray{};
+        }
+        return file.readAll();
+    }();
+    const auto changedCachedJson = sameSizeValidJsonMutation(originalCachedJson);
+    if (originalCachedJson.isEmpty() || !changedCachedJson)
+    {
+        return fail(QStringLiteral("could not prepare cached JSON integrity fixture"));
+    }
+    if (!writeBytes(cachedJsonPath, *changedCachedJson))
+    {
+        writeBytes(cachedJsonPath, originalCachedJson);
+        return fail(QStringLiteral("could not write cached JSON integrity fixture"));
+    }
+    auto corruptedCacheHit = cachedLoader.loadJson(*jsonHitRequest);
+    const bool restoredCachedJson = writeBytes(cachedJsonPath, originalCachedJson);
+    if (!restoredCachedJson)
+    {
+        return fail(QStringLiteral("could not restore cached JSON integrity fixture"));
+    }
+    if (corruptedCacheHit
+        || corruptedCacheHit.error().code != ResourceErrorCode::CorruptResource
+        || !corruptedCacheHit.error().message.contains(QStringLiteral("SHA-256")))
+    {
+        return fail(QStringLiteral("JSON cache hit bypassed catalog integrity validation"));
+    }
+
+    auto cachedImage = cachedLoader.loadImage(*imageRequest);
+    if (!cachedImage || cachedImage->get().isNull())
+    {
+        return fail(QStringLiteral("cached loader image load failed: ")
+            + (cachedImage ? QStringLiteral("image was null") : cachedImage.error().message));
+    }
+    const auto imageMetadata = loaderCache.entryInfo(*imageId);
+    if (!imageMetadata || imageMetadata->kind != ResourceCacheValueKind::Image
+        || imageMetadata->accountedBytes != cachedImage->get().sizeInBytes()
+        || loaderCache.accountedBytes() > loaderCache.capacityBytes())
+    {
+        return fail(QStringLiteral("decoded image cache accounting exceeded or misreported its budget"));
+    }
+    auto imageHitRequest = resourceRequest(
+        *imageId,
+        ResourceScopeKind::Operation,
+        QStringLiteral("ImageCacheProbe")
+        );
+    if (!imageHitRequest)
+    {
+        return false;
+    }
+    auto cachedImageHit = cachedLoader.loadImage(*imageHitRequest);
+    if (!cachedImageHit || cachedImageHit->get().isNull()
+        || !scopeMatches(
+            cachedImageHit->scope(),
+            ResourceScopeKind::Operation,
+            QStringLiteral("ImageCacheProbe")
+            ))
+    {
+        return fail(QStringLiteral("image cache hit did not return a newly scoped owning handle"));
+    }
+
+    auto cachedStylesheet = cachedLoader.loadStylesheet(*stylesheetRequest);
+    auto cachedQmlText = cachedLoader.loadText(*qmlRequest);
+    if (!cachedStylesheet || !cachedQmlText)
+    {
+        return fail(QStringLiteral("cached loader failed to decode text resources"));
+    }
+    const auto stylesheetMetadata = loaderCache.entryInfo(*stylesheetId);
+    const auto qmlMetadata = loaderCache.entryInfo(*qmlId);
+    if (!stylesheetMetadata || !qmlMetadata
+        || stylesheetMetadata->kind != ResourceCacheValueKind::Text
+        || qmlMetadata->kind != ResourceCacheValueKind::Text)
+    {
+        return fail(QStringLiteral("decoded text resources were not retained in the cache"));
+    }
+
+    const qsizetype cachedEntryCount = loaderCache.entryCount();
+    const qint64 cachedAccountedBytes = loaderCache.accountedBytes();
+    {
+        auto uncachedFont = cachedLoader.loadFont(*fontRequest);
+        if (!uncachedFont || uncachedFont->get().familyNames().isEmpty())
+        {
+            return fail(QStringLiteral("cache bypass font load failed: ")
+                + (uncachedFont ? QStringLiteral("no family names")
+                                : uncachedFont.error().message));
+        }
+    }
+    {
+        auto uncachedTranslation = cachedLoader.loadTranslation(*translationRequest, application);
+        if (!uncachedTranslation || !uncachedTranslation->get().isInstalled())
+        {
+            return fail(QStringLiteral("cache bypass translation load failed: ")
+                + (uncachedTranslation ? QStringLiteral("translation was not installed")
+                                       : uncachedTranslation.error().message));
+        }
+    }
+    {
+        auto uncachedPdfStream = cachedLoader.openStream(*pdfRequest);
+        if (!uncachedPdfStream || !uncachedPdfStream->get().isOpen()
+            || loaderCache.entryCount() != cachedEntryCount
+            || loaderCache.accountedBytes() != cachedAccountedBytes
+            || loaderCache.entryInfo(*pdfId).has_value())
+        {
+            return fail(QStringLiteral(
+                "font, translation, or PDF stream paths changed cache contents"
+                ));
+        }
     }
 
     auto json = loader.loadJson(*jsonRequest);
@@ -749,7 +1023,7 @@ bool testLoader(QCoreApplication& application)
 int main(int argc, char** argv)
 {
     QGuiApplication application(argc, argv);
-    if (!testLoader(application))
+    if (!testResourceCacheCore() || !testLoader(application))
     {
         return 1;
     }
