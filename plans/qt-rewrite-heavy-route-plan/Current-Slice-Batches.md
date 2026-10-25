@@ -78,10 +78,15 @@ legacy oracle paths in Phase 4.
     resources are not external pack mounts.
     Filesystem behavior is process-tested; architecture claims are source/
     dependency-reviewed because there is no global loader-call counter.
-12. **F1480 — Verify relocated package lookup (active).** Resolve only the
-    selected installed root when launched from another working directory.
-13. **F1481 — Audit staged resource completeness.** Compare package files and
-    generated outputs with the catalog; validate Calendar Qt-resource keys.
+12. **F1480 — Verify relocated package lookup.** Accepted and committed as
+    `cc60849d`. A test-only macOS app-bundle probe launched from an unrelated
+    working directory resolves the executable-relative root and loads an
+    integrity-checked JSON resource. CWD and alternate-root decoys do not
+    provide fallback when the selected root is absent. Production startup
+    remains unwired to the resolver/loader; Windows/Linux layout coverage is
+    still F1483.
+13. **F1481 — Audit staged resource completeness (active).** Compare package
+    files and generated outputs with the catalog; validate Calendar Qt-resource keys.
 14. **F1482 — Resolve unowned/absent inventory entries.** Decide the v2
     disposition of `dyb.png`, unused roster workflow files, and absent
     `roster-designs` without inventing feature owners.

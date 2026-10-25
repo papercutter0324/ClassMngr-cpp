@@ -164,3 +164,24 @@ found the target up to date. Focused CTest passed 2/2 (`ClassMngrNextLaunch` and
 `ClassMngrNextLaunchFilesystemSideEffectsTests`), and `git diff --check` passed.
 The full suite and Windows/Linux were not run. No production startup code
 changed. F1479 is committed as `295d238d`.
+
+## F1480 — Verify relocated package lookup — accepted — 2026-10-25
+
+The macOS Debug-only probe copies the executable into a temporary
+`.app/Contents/MacOS` and stages only the generated catalog and
+`assets/campuses/bundang.json` under the selected `Contents/Resources`. Launched
+from an unrelated working directory, the probe calls the actual
+`ResourceRootResolver::resolve()`, selects the executable-relative root, and
+loads the integrity-checked JSON through `ResourceCatalog` and `ResourceLoader`.
+A negative child has no selected root but valid catalog/file decoys in its
+working directory and alternate app roots; it fails with `MissingFile` rather
+than using those decoys. The probe is test-only; production startup remains
+unwired to the resolver/loader. F1469's resolver tests remain in place.
+
+The standard `build/macos-clang-debug` incremental build of
+`ClassMngrNextResourceRootResolverTests` and
+`ClassMngrNextRelocatedResourceRootTests` succeeded; both targets were already
+built and catalog generation was the only build action. Independent focused
+CTest passed 2/2, and `git diff --check` passed. This verifies macOS Debug only;
+the Windows/Linux install-layout matrix remains for F1483. The full suite was
+not run. F1480 is committed as `cc60849d`; F1481 is active.

@@ -49,10 +49,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   is accepted and committed as `535dc382`; F1478, type-specific lazy-load
   verification, is accepted with no separate source-code delta; F1479,
   no-pack startup side effects, is accepted and committed as `295d238d`; F1480,
-  relocated package lookup, is active. F1479 excludes external or legacy
+  relocated package lookup, is accepted and committed as `cc60849d`; F1481,
+  staged resource completeness, is active. F1479 excludes external or legacy
   runtime RCC-pack mounts; F1467's two Calendar QML resources remain compiled
-  into `ClassMngrNext` with `qt_add_resources`. F1469 is committed as
-  `d282e7f1`.
+  into `ClassMngrNext` with `qt_add_resources`. F1480's probe is test-only;
+  the production Next startup remains unwired to the resolver/loader. F1469 is
+  committed as `d282e7f1`.
   Batch 1
   (F1464–F1468) was pushed to `origin`; see the [Phase 4 progress log](05-Phase-4-Progress-Log.md)
   for the receipt. F1469 resolves
@@ -61,8 +63,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   package relocation. Windows/Linux layouts and mixed absolute/relative Linux
   install directories with an install-time prefix override remain unverified
   for F1483. The resolver API is not yet called by the resource-free Next
-  shell; F1480 covers launched relocation. F1474's independent
-  `DocumentContentResourcePort` is not wired to legacy UI: `NavigationController`
+  shell; F1480's test-only probe verifies launched relocation. The
+  `DocumentContentResourcePort` is not wired to legacy UI; `NavigationController`
   continues to use `LegacyDocumentContentResourcePort` because the v2 Resources
   component is excluded from the default legacy install. Preserve the legacy
   viewer path until consumer migration. F1475 verifies QtPdf stream release
