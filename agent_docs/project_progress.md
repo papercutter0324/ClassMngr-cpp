@@ -120,7 +120,8 @@ unchanged. A fresh five-target build and 5/5 focused CTest suites passed; the
 added malformed-signature case rebuilt and passed separately (10 Qt cases).
 `git diff --check` passed. No full-suite or other-platform build ran. F1462
 CampusRecordRepository implementation and independent verification are
-complete and accepted; commit is pending. Its SQL and transaction failures
+complete and accepted; commit `9228864cbb40393bd84515ab06d02ca8c2d758ac` is
+local and not pushed. Its SQL and transaction failures
 remain Technical, invalid IDs are InvalidInput, missing lookups/updates are
 NotFound, malformed stored or generated IDs are Validation, and deleting a
 missing positive ID remains a successful no-op. A fresh lifecycle-target
@@ -131,7 +132,17 @@ source-reviewed only; no full-suite or other-platform build ran.
 Batch23 discovery completed at the scheduled trigger; no new eligible
 repository candidate was accepted. DataService compatibility remains part of
 the queued campus slices, while DocumentCatalog and other resource services
-are outside §3.3's repository scope. F1457's fresh production/test targets
+are outside §3.3's repository scope. F1463 CampusJsonRepository implementation
+and independent verification are complete and accepted; commit is pending.
+Point reads distinguish successful absence from Technical I/O and Validation
+JSON errors; writes use shared typed errors and preserve create Conflict. Bulk
+directory loads remain best-effort because their vector-only consumers
+intentionally skip bad records; the selected-record port propagates typed read
+failures. The repaired 4-target build passed 6/6 CTest cases and 68 Qt cases;
+the earlier 8-target run passed 10/10 CTest cases and 93 Qt cases, covering
+list adapters. `git diff --check` passed. Short-write/commit failures remain
+source-reviewed because QSaveFile has no deterministic injection seam. No full
+suite or other-platform build ran. F1457's fresh production/test targets
 built. DataService lifecycle, Speaking
 Evaluation service, analytics, read-port, roster-score import, and save-port
 targets passed; the save-port binary reported 16/16 cases. The changed

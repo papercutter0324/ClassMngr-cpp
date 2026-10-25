@@ -2,6 +2,7 @@
 
 #include "campus_json_codec.h"
 
+#include <QByteArray>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -58,15 +59,22 @@ CampusJsonRepository::loadCampuses() const
             continue;
         }
 
-        const std::optional<CampusInfo> campus =
-            readCampusFile(
-                filePath
-                );
+        const RepositoryResult<std::optional<CampusInfo>> loaded =
+            readCampusFile(filePath);
 
-        if (campus.has_value() && !isDefaultCampus(campus.value()))
+        // Bulk directory consumers intentionally use a best-effort policy:
+        // unavailable, unreadable, and malformed entries are omitted. Point
+        // reads return the underlying typed error instead.
+        if (!loaded || !loaded->has_value())
+        {
+            continue;
+        }
+
+        const CampusInfo& campus = loaded->value();
+        if (!isDefaultCampus(campus))
         {
             campuses.append(
-                campus.value()
+                campus
                 );
         }
     }
@@ -86,14 +94,14 @@ CampusJsonRepository::loadCampuses() const
     return campuses;
 }
 
-std::optional<CampusInfo>
+RepositoryResult<std::optional<CampusInfo>>
 CampusJsonRepository::loadCampus(
     const QString& campusId
     ) const
 {
     if (campusId.compare(QStringLiteral("default"), Qt::CaseInsensitive) == 0)
     {
-        return std::nullopt;
+        return std::optional<CampusInfo>{};
     }
 
     const QString campusFilePath =
@@ -104,11 +112,11 @@ CampusJsonRepository::loadCampus(
         );
 }
 
-Status CampusJsonRepository::saveCampus(
+RepositoryStatus CampusJsonRepository::saveCampus(
     const CampusInfo& campus
     ) const
 {
-    const Status directoryReady =
+    const RepositoryStatus directoryReady =
         ensureDirectory();
 
     if (!directoryReady)
@@ -132,22 +140,14 @@ Status CampusJsonRepository::saveCampus(
         );
 }
 
-CampusJsonRepository::CreateResult CampusJsonRepository::createCampus(
+RepositoryStatus CampusJsonRepository::createCampus(
     const CampusInfo& campus
     ) const
 {
-    const auto technicalFailure = [](const QString& message)
-    {
-        return CreateResult(std::unexpected(CreateError{
-            .code = CreateError::Code::Technical,
-            .message = message
-        }));
-    };
-
-    const Status directoryReady = ensureDirectory();
+    const RepositoryStatus directoryReady = ensureDirectory();
     if (!directoryReady)
     {
-        return technicalFailure(directoryReady.error());
+        return std::unexpected(directoryReady.error());
     }
 
     CampusInfo campusToSave = campus;
@@ -159,22 +159,22 @@ CampusJsonRepository::CreateResult CampusJsonRepository::createCampus(
     const QString filePath = filePathForCampusId(campusToSave.id);
     if (QFileInfo::exists(filePath))
     {
-        return CreateResult(std::unexpected(CreateError{
-            .code = CreateError::Code::Conflict,
-            .message = QObject::tr("A campus with this ID already exists.")
-        }));
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Conflict,
+            QObject::tr("A campus with this ID already exists.")
+        });
     }
 
-    const Status saved = writeCampusFile(campusToSave, filePath);
+    const RepositoryStatus saved = writeCampusFile(campusToSave, filePath);
     if (!saved)
     {
-        return technicalFailure(saved.error());
+        return std::unexpected(saved.error());
     }
 
     return {};
 }
 
-Status CampusJsonRepository::writeCampusFile(
+RepositoryStatus CampusJsonRepository::writeCampusFile(
     const CampusInfo& campus,
     const QString& filePath
     ) const
@@ -183,26 +183,35 @@ Status CampusJsonRepository::writeCampusFile(
 
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr("Unable to open campus file for writing:\n%1")
                 .arg(file.errorString())
-            );
+        });
     }
 
     const QJsonDocument document(
         CampusJsonCodec::toJson(campus)
         );
 
-    file.write(
-        document.toJson(QJsonDocument::Indented)
-        );
+    const QByteArray json = document.toJson(QJsonDocument::Indented);
+    const qint64 bytesWritten = file.write(json);
+    if (bytesWritten != json.size())
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr("Unable to write campus file:\n%1")
+                .arg(file.errorString())
+        });
+    }
 
     if (!file.commit())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr("Unable to save campus file:\n%1")
                 .arg(file.errorString())
-            );
+        });
     }
 
     return {};
@@ -272,7 +281,7 @@ QString CampusJsonRepository::idFromName(
     return id;
 }
 
-Status CampusJsonRepository::ensureDirectory() const
+RepositoryStatus CampusJsonRepository::ensureDirectory() const
 {
     QDir directory(m_directoryPath);
 
@@ -286,12 +295,14 @@ Status CampusJsonRepository::ensureDirectory() const
         return {};
     }
 
-    return std::unexpected(
+    return std::unexpected(RepositoryError{
+        RepositoryErrorCode::Technical,
         QObject::tr("Unable to create campus data directory.")
-        );
+    });
 }
 
-std::optional<CampusInfo> CampusJsonRepository::readCampusFile(
+RepositoryResult<std::optional<CampusInfo>>
+CampusJsonRepository::readCampusFile(
     const QString& filePath
     ) const
 {
@@ -299,26 +310,54 @@ std::optional<CampusInfo> CampusJsonRepository::readCampusFile(
 
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        return std::nullopt;
+        if (!QFileInfo::exists(filePath))
+        {
+            return std::optional<CampusInfo>{};
+        }
+
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr("Unable to open campus file for reading:\n%1")
+                .arg(file.errorString())
+        });
     }
 
     QJsonParseError parseError;
 
+    const QByteArray json = file.readAll();
+    if (file.error() != QFileDevice::NoError)
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr("Unable to read campus file:\n%1")
+                .arg(file.errorString())
+        });
+    }
+
     const QJsonDocument document =
         QJsonDocument::fromJson(
-            file.readAll(),
+            json,
             &parseError
             );
 
-    if (
-        parseError.error != QJsonParseError::NoError
-        || !document.isObject()
-        )
+    if (parseError.error != QJsonParseError::NoError)
     {
-        return std::nullopt;
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
+            QObject::tr("Unable to parse campus JSON:\n%1")
+                .arg(parseError.errorString())
+        });
     }
 
-    return CampusJsonCodec::fromJson(
+    if (!document.isObject())
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
+            QObject::tr("Campus JSON root must be an object.")
+        });
+    }
+
+    return std::optional<CampusInfo>{CampusJsonCodec::fromJson(
         document.object()
-        );
+    )};
 }

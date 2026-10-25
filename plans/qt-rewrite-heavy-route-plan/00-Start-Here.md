@@ -12,8 +12,10 @@
   `46ffe1a8711ee5ec8cb997b5921868aab553ebce` and is not pushed. F1461
   PersonalDetailsRepository is committed locally as
   `630260d30ec2c4df935c6dffd758d2cba2c7f071` and is not pushed. F1462
-  CampusRecordRepository is independently verified and accepted; its local
-  commit is pending. F1463 is next.
+  CampusRecordRepository is committed locally as
+  `9228864cbb40393bd84515ab06d02ca8c2d758ac` and is not pushed. F1463
+  CampusJsonRepository is independently verified and accepted; its local
+  commit is pending. Batch 22 closeout follows the F1463 commit.
   Batch 23 discovery is complete; no new candidate queue is accepted pending
   the post-F1463 exit audit.
   Evidence and limits are in the

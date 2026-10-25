@@ -4,6 +4,7 @@
 #include "next/application/campus_dashboard_selected_campus_read_port.h"
 #include "next/platform/campus_dashboard_campus_repository_adapter.h"
 
+#include <QByteArray>
 #include <QString>
 
 #include <optional>
@@ -39,10 +40,46 @@ public:
     [[nodiscard]] Application::CampusDashboardSelectedCampusReadResult
     loadCampus(const Domain::CampusId& campusId) const override
     {
-        const std::optional<CampusInfo> loaded = m_repository.loadCampus(
+        const RepositoryResult<std::optional<CampusInfo>> loaded =
+            m_repository.loadCampus(
             QString::fromUtf8(campusId.value())
             );
-        if (!loaded.has_value())
+        if (!loaded)
+        {
+            const RepositoryError& error = loaded.error();
+            Domain::ErrorCode code = Domain::ErrorCode::Technical;
+            switch (error.code)
+            {
+            case RepositoryErrorCode::InvalidInput:
+                code = Domain::ErrorCode::InvalidInput;
+                break;
+            case RepositoryErrorCode::NotFound:
+                code = Domain::ErrorCode::NotFound;
+                break;
+            case RepositoryErrorCode::Conflict:
+                code = Domain::ErrorCode::Conflict;
+                break;
+            case RepositoryErrorCode::Validation:
+                code = Domain::ErrorCode::Validation;
+                break;
+            case RepositoryErrorCode::Technical:
+                code = Domain::ErrorCode::Technical;
+                break;
+            }
+
+            const QByteArray diagnostic = error.diagnostic.toUtf8();
+            return Application::CampusDashboardSelectedCampusReadResult::failure(
+                Domain::OperationError{
+                    .code = code,
+                    .message = diagnostic.toStdString(),
+                    .recoverable = error.recoverableOverride.value_or(
+                        code == Domain::ErrorCode::NotFound
+                        )
+                }
+                );
+        }
+
+        if (!loaded->has_value())
         {
             return Application::CampusDashboardSelectedCampusReadResult::success(
                 std::nullopt
@@ -51,7 +88,7 @@ public:
 
         const std::optional<Application::CampusDashboardCampusSnapshot>
             snapshot = CampusDashboardCampusRepositoryAdapter::
-                snapshotFromCampusInfo(loaded.value());
+                snapshotFromCampusInfo(loaded->value());
         if (!snapshot.has_value())
         {
             return Application::CampusDashboardSelectedCampusReadResult::failure(

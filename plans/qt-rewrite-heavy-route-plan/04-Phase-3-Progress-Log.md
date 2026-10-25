@@ -4274,10 +4274,11 @@ missing-value defaults, the nine-key atomic save, field conversion, and
 best-effort Zoom migration. Actual read failures previously hidden as
 defaults are now visible. Active page ports remain unchanged.
 
-## F1462 — CampusRecordRepository structured errors — independently verified — 2026-10-25
+## F1462 — CampusRecordRepository structured errors — independently verified, committed locally — 2026-10-25
 
-F1462 is independently verified and accepted; its local commit is pending,
-and F1463 is next. A fresh rebuild of the affected lifecycle target passed.
+F1462 is independently verified and accepted. It is committed locally as
+`9228864cbb40393bd84515ab06d02ca8c2d758ac` and is not pushed. F1463 is next.
+A fresh rebuild of the affected lifecycle target passed.
 Direct QtTest passed 51/0/0 and CTest passed 1/1. Exact category and DataService
 legacy-diagnostic checks passed, including the new non-convertible persisted-ID
 `Validation` case. `git diff --check` passed. No full suite or other-platform
@@ -4306,3 +4307,26 @@ candidates. DocumentCatalog is a filesystem resource catalog outside Phase
 3 §3.3; ResourcePackManager and FeatureService are also outside scope. No other
 eligible repository candidate was found, so no queue is added pending the
 post-F1463 exit audit; revisit only if that audit supplies new evidence.
+
+## F1463 — CampusJsonRepository structured errors — independently verified, commit pending — 2026-10-25
+
+F1463 is independently verified and accepted; its local commit is pending.
+Tester `PHASE3-F1463-CAMPUS-JSON-VERIFY-20261025-TST-01` reported a fresh
+four-target build, 6/6 CTest cases, and 68 Qt cases passing after the success-
+contract repair. A prior eight-target run passed 10/10 CTest cases and 93 Qt
+cases, including all four bulk-list adapters. `git diff --check` passed.
+Short-write and commit-failure injection were unavailable and remain
+source-reviewed only. No full suite or other-platform build was run. Batch 22
+is ready for closeout after the F1463 commit.
+
+`createCampus` remains `RepositoryStatus` (void success) with typed errors; it
+does not return an ID. `saveCampus` returns typed status and point `loadCampus`
+returns a typed optional. Missing/default point reads remain successful
+absence; read I/O failures map to `Technical`, malformed JSON/nonobjects to
+`Validation`, create collisions to `Conflict`, and directory/write/commit
+failures to `Technical`. The selected-record adapter propagates typed errors.
+
+Keep vector-only `loadCampuses` best-effort, skipping default, malformed,
+unreadable, and unavailable entries. Preserve codec ID fallback,
+active/embedded resource-root fallback, ID normalization, serialization, and
+update/create semantics; no delete surface exists.

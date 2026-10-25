@@ -109,7 +109,7 @@ class CampusDashboardSelectedCampusReadAdapterTests : public QObject
 private slots:
     void init();
     void mapsSelectedCampusProjection();
-    void missingDefaultAndUnreadableRecordsStayAbsent();
+    void missingAndDefaultStayAbsentWhileReadErrorsPropagate();
 
 private:
     QTemporaryDir m_directory;
@@ -219,7 +219,7 @@ void CampusDashboardSelectedCampusReadAdapterTests::mapsSelectedCampusProjection
 }
 
 void CampusDashboardSelectedCampusReadAdapterTests::
-missingDefaultAndUnreadableRecordsStayAbsent()
+missingAndDefaultStayAbsentWhileReadErrorsPropagate()
 {
     CampusJsonRepository repository(m_directory.path());
     writeJson(
@@ -231,6 +231,13 @@ missingDefaultAndUnreadableRecordsStayAbsent()
     QVERIFY(malformedFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
     malformedFile.write("not-json");
     malformedFile.close();
+
+    QFile nonObjectFile(repository.filePathForCampusId(
+        QStringLiteral("non_object")
+        ));
+    QVERIFY(nonObjectFile.open(QIODevice::WriteOnly | QIODevice::Text));
+    nonObjectFile.write("[]");
+    nonObjectFile.close();
 
     QVERIFY(QDir().mkpath(
         repository.filePathForCampusId(QStringLiteral("unreadable"))
@@ -249,16 +256,32 @@ missingDefaultAndUnreadableRecordsStayAbsent()
     const auto missing = read("missing");
     const auto defaultCampus = read("default");
     const auto malformed = read("malformed");
+    const auto nonObject = read("non_object");
     const auto unreadable = read("unreadable");
 
     QVERIFY(missing);
     QVERIFY(!missing.value().has_value());
     QVERIFY(defaultCampus);
     QVERIFY(!defaultCampus.value().has_value());
-    QVERIFY(malformed);
-    QVERIFY(!malformed.value().has_value());
-    QVERIFY(unreadable);
-    QVERIFY(!unreadable.value().has_value());
+    QVERIFY(!malformed);
+    QCOMPARE(malformed.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(
+        malformed.error().message.starts_with(
+            "Unable to parse campus JSON:\n"
+            )
+        );
+
+    QVERIFY(!nonObject);
+    QCOMPARE(nonObject.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        nonObject.error().message,
+        std::string("Campus JSON root must be an object.")
+        );
+
+    QVERIFY(!unreadable);
+    QCOMPARE(unreadable.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(unreadable.error().message.starts_with("Unable to "));
+    QVERIFY(!unreadable.error().recoverable);
 }
 
 QTEST_APPLESS_MAIN(CampusDashboardSelectedCampusReadAdapterTests)

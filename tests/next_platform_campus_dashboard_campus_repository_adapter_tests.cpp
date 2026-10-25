@@ -140,6 +140,20 @@ void compareSnapshots(
     QCOMPARE(actual.housingLocationsJson, expected.housingLocationsJson);
 }
 
+std::optional<CampusInfo> loadCampusOrFail(
+    const CampusJsonRepository& repository,
+    const QString& campusId
+    )
+{
+    const RepositoryResult<std::optional<CampusInfo>> loaded =
+        repository.loadCampus(campusId);
+    if (!loaded)
+    {
+        qFatal("Unable to read campus repository test data.");
+    }
+    return loaded.value();
+}
+
 }
 
 class CampusDashboardCampusRepositoryAdapterTests : public QObject
@@ -190,8 +204,10 @@ savesAndReloadsEveryCampusField()
         );
     QVERIFY(saved);
 
-    const auto loaded = CampusJsonRepository(m_directory.path())
-        .loadCampus(QStringLiteral("alpha_campus"));
+    const auto loaded = loadCampusOrFail(
+        CampusJsonRepository(m_directory.path()),
+        QStringLiteral("alpha_campus")
+        );
     QVERIFY(loaded.has_value());
 
     const auto actual = Platform::CampusDashboardCampusRepositoryAdapter::
@@ -222,8 +238,10 @@ savesStandaloneMainImageWithoutMapPaths()
         );
     QVERIFY(saved);
 
-    const auto loaded = CampusJsonRepository(m_directory.path())
-        .loadCampus(QStringLiteral("standalone_main"));
+    const auto loaded = loadCampusOrFail(
+        CampusJsonRepository(m_directory.path()),
+        QStringLiteral("standalone_main")
+        );
     QVERIFY(loaded.has_value());
 
     const auto actual = Platform::CampusDashboardCampusRepositoryAdapter::
@@ -262,7 +280,7 @@ missingUpdateTargetReturnsRecoverableNotFoundWithoutCreatingFile()
         std::string("This campus no longer exists. Reload it before saving.")
         );
     QVERIFY(!QFile::exists(missingPath));
-    QVERIFY(!repository.loadCampus(source.id).has_value());
+    QVERIFY(!loadCampusOrFail(repository, source.id).has_value());
 }
 
 void CampusDashboardCampusRepositoryAdapterTests::
@@ -298,7 +316,10 @@ rejectsReservedCreateIdentityBeforeWritingDefaultFile()
         != std::string::npos
         );
     QVERIFY(!QFile::exists(reservedPath));
-    QVERIFY(!repository.loadCampus(QStringLiteral("default")).has_value());
+    QVERIFY(!loadCampusOrFail(
+        repository,
+        QStringLiteral("default")
+        ).has_value());
 }
 
 void CampusDashboardCampusRepositoryAdapterTests::
@@ -308,7 +329,7 @@ rejectsReservedUpdateNameWithoutChangingExistingFile()
     existing.id = QStringLiteral("alpha");
     existing.campusName = QStringLiteral("Alpha");
     CampusJsonRepository repository(m_directory.path());
-    const Status seeded = repository.saveCampus(existing);
+    const RepositoryStatus seeded = repository.saveCampus(existing);
     QVERIFY(seeded);
 
     const QString existingPath = repository.filePathForCampusId(
@@ -344,7 +365,10 @@ rejectsReservedUpdateNameWithoutChangingExistingFile()
     QFile unchangedFile(existingPath);
     QVERIFY(unchangedFile.open(QIODevice::ReadOnly));
     QCOMPARE(unchangedFile.readAll(), before);
-    const auto stillAlpha = repository.loadCampus(QStringLiteral("alpha"));
+    const auto stillAlpha = loadCampusOrFail(
+        repository,
+        QStringLiteral("alpha")
+        );
     QVERIFY(stillAlpha.has_value());
     QCOMPARE(stillAlpha->campusName, QStringLiteral("Alpha"));
 }
@@ -522,7 +546,7 @@ rejectsInvalidJsonBeforeCreateOrUpdateWrites()
     CampusInfo updateSource = representativeCampus();
     updateSource.id = QStringLiteral("invalid_json_update");
     updateSource.campusName = QStringLiteral("Invalid JSON Update");
-    const Status seeded = repository.saveCampus(updateSource);
+    const RepositoryStatus seeded = repository.saveCampus(updateSource);
     QVERIFY(seeded);
 
     QFile originalFile(repository.filePathForCampusId(updateSource.id));
@@ -591,8 +615,10 @@ acceptsValidEmptyJsonRootsForCreateAndUpdate()
     const auto baselineCreated =
         createBaselineRepository.createCampus(expectedCreateInput);
     QVERIFY(baselineCreated.has_value());
-    const auto expectedCreatedCampus =
-        createBaselineRepository.loadCampus(createSource.id);
+    const auto expectedCreatedCampus = loadCampusOrFail(
+        createBaselineRepository,
+        createSource.id
+        );
     QVERIFY(expectedCreatedCampus.has_value());
 
     const Domain::Result<void> created = adapter.saveCampus(
@@ -600,7 +626,7 @@ acceptsValidEmptyJsonRootsForCreateAndUpdate()
         Application::CampusDashboardCampusSaveIntent::Create
         );
     QVERIFY(created);
-    const auto createdCampus = repository.loadCampus(createSource.id);
+    const auto createdCampus = loadCampusOrFail(repository, createSource.id);
     QVERIFY(createdCampus.has_value());
     QVERIFY(
         createdCampus->directionsAddressEn
@@ -639,8 +665,10 @@ acceptsValidEmptyJsonRootsForCreateAndUpdate()
         Platform::CampusDashboardCampusRepositoryAdapter::
             campusInfoFromSnapshot(emptyUpdateSnapshot);
     QVERIFY(updateBaselineRepository.saveCampus(expectedUpdateInput));
-    const auto expectedUpdatedCampus =
-        updateBaselineRepository.loadCampus(updateSource.id);
+    const auto expectedUpdatedCampus = loadCampusOrFail(
+        updateBaselineRepository,
+        updateSource.id
+        );
     QVERIFY(expectedUpdatedCampus.has_value());
 
     const Domain::Result<void> updated = adapter.saveCampus(
@@ -648,7 +676,7 @@ acceptsValidEmptyJsonRootsForCreateAndUpdate()
         Application::CampusDashboardCampusSaveIntent::Update
         );
     QVERIFY(updated);
-    const auto updatedCampus = repository.loadCampus(updateSource.id);
+    const auto updatedCampus = loadCampusOrFail(repository, updateSource.id);
     QVERIFY(updatedCampus.has_value());
     QVERIFY(
         updatedCampus->directionsAddressEn
@@ -676,7 +704,7 @@ createCollisionPreservesExistingNormalizedDestination()
     existing.address = QStringLiteral("Sentinel Address");
 
     CampusJsonRepository repository(m_directory.path());
-    const Status seeded = repository.saveCampus(existing);
+    const RepositoryStatus seeded = repository.saveCampus(existing);
     QVERIFY(seeded);
 
     const QString existingPath = repository.filePathForCampusId(existing.id);
@@ -743,7 +771,10 @@ createThenUpdateRetainsTheCreatedId()
     QVERIFY(updated);
 
     const CampusJsonRepository repository(m_directory.path());
-    const auto saved = repository.loadCampus(QStringLiteral("unused_slug"));
+    const auto saved = loadCampusOrFail(
+        repository,
+        QStringLiteral("unused_slug")
+        );
     QVERIFY(saved.has_value());
     QCOMPARE(saved->id, QStringLiteral("unused_slug"));
     QCOMPARE(saved->campusName, QStringLiteral("Renamed Display Name"));
@@ -769,13 +800,10 @@ mapsCreateRepositoryFailureToTechnicalWithExactMessage()
         snapshotFromCampusInfo(source);
     QVERIFY(snapshot.has_value());
 
-    const CampusJsonRepository::CreateResult repositoryFailure =
+    const RepositoryStatus repositoryFailure =
         CampusJsonRepository(blocker.fileName()).createCampus(source);
     QVERIFY(!repositoryFailure);
-    QCOMPARE(
-        repositoryFailure.error().code,
-        CampusJsonRepository::CreateError::Code::Technical
-        );
+    QCOMPARE(repositoryFailure.error().code, RepositoryErrorCode::Technical);
 
     const Domain::Result<void> mappedFailure =
         Platform::CampusDashboardCampusRepositoryAdapter(blocker.fileName())
@@ -787,7 +815,7 @@ mapsCreateRepositoryFailureToTechnicalWithExactMessage()
     QCOMPARE(mappedFailure.error().code, Domain::ErrorCode::Technical);
     QCOMPARE(
         mappedFailure.error().message,
-        repositoryFailure.error().message.toUtf8().toStdString()
+        repositoryFailure.error().diagnostic.toUtf8().toStdString()
         );
     QVERIFY(!mappedFailure.error().recoverable);
 }
@@ -805,7 +833,7 @@ mapsRepositoryFailureToTechnicalWithExactMessage()
         CampusJsonRepository::idFromName(source.id) + QStringLiteral(".json");
     QVERIFY(QDir(m_directory.path()).mkdir(targetFileName));
 
-    const Status repositoryFailure =
+    const RepositoryStatus repositoryFailure =
         CampusJsonRepository(m_directory.path()).saveCampus(source);
     QVERIFY(!repositoryFailure);
 
@@ -819,7 +847,7 @@ mapsRepositoryFailureToTechnicalWithExactMessage()
     QCOMPARE(mappedFailure.error().code, Domain::ErrorCode::Technical);
     QCOMPARE(
         mappedFailure.error().message,
-        repositoryFailure.error().toUtf8().toStdString()
+        repositoryFailure.error().diagnostic.toUtf8().toStdString()
         );
     QVERIFY(!mappedFailure.error().recoverable);
 }

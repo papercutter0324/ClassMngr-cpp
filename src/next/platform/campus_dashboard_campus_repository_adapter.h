@@ -74,19 +74,15 @@ public:
         const CampusInfo campus = campusInfoFromSnapshot(snapshot);
         if (intent == Application::CampusDashboardCampusSaveIntent::Create)
         {
-            const CampusJsonRepository::CreateResult created =
+            const RepositoryStatus created =
                 m_repository.createCampus(campus);
             if (!created)
             {
-                const Domain::ErrorCode code =
-                    created.error().code
-                            == CampusJsonRepository::CreateError::Code::Conflict
-                        ? Domain::ErrorCode::Conflict
-                        : Domain::ErrorCode::Technical;
                 return Domain::Result<void>::failure({
-                    .code = code,
-                    .message = utf8(created.error().message),
-                    .recoverable = false
+                    .code = domainCodeFor(created.error().code),
+                    .message = utf8(created.error().diagnostic),
+                    .recoverable =
+                        created.error().recoverableOverride.value_or(false)
                 });
             }
 
@@ -105,13 +101,13 @@ public:
             });
         }
 
-        const Status saved = m_repository.saveCampus(campus);
+        const RepositoryStatus saved = m_repository.saveCampus(campus);
         if (!saved)
         {
             return Domain::Result<void>::failure({
-                .code = Domain::ErrorCode::Technical,
-                .message = utf8(saved.error()),
-                .recoverable = false
+                .code = domainCodeFor(saved.error().code),
+                .message = utf8(saved.error().diagnostic),
+                .recoverable = saved.error().recoverableOverride.value_or(false)
             });
         }
 
@@ -203,6 +199,26 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::ErrorCode domainCodeFor(
+        RepositoryErrorCode code
+        )
+    {
+        switch (code)
+        {
+        case RepositoryErrorCode::InvalidInput:
+            return Domain::ErrorCode::InvalidInput;
+        case RepositoryErrorCode::NotFound:
+            return Domain::ErrorCode::NotFound;
+        case RepositoryErrorCode::Conflict:
+            return Domain::ErrorCode::Conflict;
+        case RepositoryErrorCode::Validation:
+            return Domain::ErrorCode::Validation;
+        case RepositoryErrorCode::Technical:
+            return Domain::ErrorCode::Technical;
+        }
+        return Domain::ErrorCode::Technical;
+    }
+
     [[nodiscard]] static Domain::Result<void> validateSnapshotJson(
         const Application::CampusDashboardCampusSnapshot& snapshot
         )

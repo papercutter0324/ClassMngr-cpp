@@ -2,6 +2,7 @@
 #include "features/campus/ui/campus_map_preview.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
+#include <QDir>
 #include <QFile>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -22,6 +23,9 @@ class CampusMapTests : public QObject
 
 private slots:
     void mapConfigurationRoundTrips();
+    void typedPointReadsDistinguishAbsenceAndFailures();
+    void createAndSaveExposeSharedRepositoryErrors();
+    void bulkListingRemainsBestEffortAndSorted();
     void legacyAddressNoteMigratesToSharedField();
     void legacyImageMainRemainsSupported();
     void explicitEmptyMapDoesNotRestoreLegacyImage();
@@ -95,25 +99,26 @@ void CampusMapTests::mapConfigurationRoundTrips()
         );
     campus.housingLocations.append(housing);
 
-    const Status saved =
+    const RepositoryStatus saved =
         repository.saveCampus(campus);
     QVERIFY(saved.has_value());
 
-    const std::optional<CampusInfo> loaded =
+    const RepositoryResult<std::optional<CampusInfo>> loaded =
         repository.loadCampus(campus.id);
     QVERIFY(loaded.has_value());
+    QVERIFY(loaded->has_value());
     QCOMPARE(
-        loaded->mapImagePaths,
+        loaded->value().mapImagePaths,
         campus.mapImagePaths
         );
-    QCOMPARE(loaded->naverMapUrl, campus.naverMapUrl);
-    QCOMPARE(loaded->kakaoMapUrl, campus.kakaoMapUrl);
+    QCOMPARE(loaded->value().naverMapUrl, campus.naverMapUrl);
+    QCOMPARE(loaded->value().kakaoMapUrl, campus.kakaoMapUrl);
     QCOMPARE(
-        loaded->housingLocations,
+        loaded->value().housingLocations,
         campus.housingLocations
         );
     QCOMPARE(
-        loaded->directionsNote,
+        loaded->value().directionsNote,
         campus.directionsNote
         );
 
@@ -156,6 +161,194 @@ void CampusMapTests::mapConfigurationRoundTrips()
             .size(),
         2
         );
+}
+
+void CampusMapTests::typedPointReadsDistinguishAbsenceAndFailures()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    CampusJsonRepository repository(directory.path());
+
+    const RepositoryResult<std::optional<CampusInfo>> missing =
+        repository.loadCampus(QStringLiteral("missing"));
+    QVERIFY(missing);
+    QVERIFY(!missing->has_value());
+
+    const RepositoryResult<std::optional<CampusInfo>> defaultCampus =
+        repository.loadCampus(QStringLiteral("default"));
+    QVERIFY(defaultCampus);
+    QVERIFY(!defaultCampus->has_value());
+
+    const QString malformedPath = repository.filePathForCampusId(
+        QStringLiteral("malformed")
+        );
+    QFile malformedFile(malformedPath);
+    QVERIFY(malformedFile.open(QIODevice::WriteOnly | QIODevice::Text));
+    const QByteArray malformedJson("not-json");
+    QCOMPARE(malformedFile.write(malformedJson), qint64(malformedJson.size()));
+    malformedFile.close();
+
+    const RepositoryResult<std::optional<CampusInfo>> malformed =
+        repository.loadCampus(QStringLiteral("malformed"));
+    QVERIFY(!malformed);
+    QCOMPARE(malformed.error().code, RepositoryErrorCode::Validation);
+    QVERIFY(malformed.error().diagnostic.startsWith(
+        QStringLiteral("Unable to parse campus JSON:\n")
+        ));
+
+    const QString nonObjectPath = repository.filePathForCampusId(
+        QStringLiteral("non_object")
+        );
+    QFile nonObjectFile(nonObjectPath);
+    QVERIFY(nonObjectFile.open(QIODevice::WriteOnly | QIODevice::Text));
+    const QByteArray nonObjectJson("[]");
+    QCOMPARE(
+        nonObjectFile.write(nonObjectJson),
+        qint64(nonObjectJson.size())
+        );
+    nonObjectFile.close();
+
+    const RepositoryResult<std::optional<CampusInfo>> nonObject =
+        repository.loadCampus(QStringLiteral("non_object"));
+    QVERIFY(!nonObject);
+    QCOMPARE(nonObject.error().code, RepositoryErrorCode::Validation);
+    QCOMPARE(
+        nonObject.error().diagnostic,
+        QStringLiteral("Campus JSON root must be an object.")
+        );
+
+    const QString unreadablePath = repository.filePathForCampusId(
+        QStringLiteral("unreadable")
+        );
+    QVERIFY(QDir().mkpath(unreadablePath));
+
+    const RepositoryResult<std::optional<CampusInfo>> unreadable =
+        repository.loadCampus(QStringLiteral("unreadable"));
+    QVERIFY(!unreadable);
+    QCOMPARE(unreadable.error().code, RepositoryErrorCode::Technical);
+    QVERIFY(
+        unreadable.error().diagnostic.startsWith(
+            QStringLiteral("Unable to ")
+            )
+        );
+}
+
+void CampusMapTests::createAndSaveExposeSharedRepositoryErrors()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    CampusInfo campus;
+    campus.campusName = QStringLiteral("North-West Campus");
+
+    CampusJsonRepository repository(directory.path());
+    const RepositoryStatus created = repository.createCampus(campus);
+    QVERIFY(created);
+    QVERIFY(QFile::exists(repository.filePathForCampusId(
+        QStringLiteral("north_west_campus")
+        )));
+
+    const RepositoryStatus collision = repository.createCampus(campus);
+    QVERIFY(!collision);
+    QCOMPARE(collision.error().code, RepositoryErrorCode::Conflict);
+    QCOMPARE(
+        collision.error().diagnostic,
+        QStringLiteral("A campus with this ID already exists.")
+        );
+
+    campus.id = QStringLiteral("write_blocked");
+    QVERIFY(QDir().mkpath(repository.filePathForCampusId(campus.id)));
+    const RepositoryStatus writeFailure = repository.saveCampus(campus);
+    QVERIFY(!writeFailure);
+    QCOMPARE(writeFailure.error().code, RepositoryErrorCode::Technical);
+    QVERIFY(
+        writeFailure.error().diagnostic.startsWith(
+            QStringLiteral("Unable to open campus file for writing:\n")
+            )
+        );
+
+    QTemporaryDir blockerDirectory;
+    QVERIFY(blockerDirectory.isValid());
+    QFile blocker(blockerDirectory.filePath(QStringLiteral("not-a-directory")));
+    QVERIFY(blocker.open(QIODevice::WriteOnly));
+    blocker.write("file blocks directory creation");
+    blocker.close();
+
+    const RepositoryStatus directoryFailure =
+        CampusJsonRepository(blocker.fileName()).createCampus(campus);
+    QVERIFY(!directoryFailure);
+    QCOMPARE(directoryFailure.error().code, RepositoryErrorCode::Technical);
+    QCOMPARE(
+        directoryFailure.error().diagnostic,
+        QStringLiteral("Unable to create campus data directory.")
+        );
+}
+
+void CampusMapTests::bulkListingRemainsBestEffortAndSorted()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    CampusJsonRepository repository(directory.path());
+
+    CampusInfo beta;
+    beta.id = QStringLiteral("beta");
+    beta.campusName = QStringLiteral("Beta Campus");
+    QVERIFY(repository.saveCampus(beta));
+
+    CampusInfo alpha;
+    alpha.id = QStringLiteral("alpha");
+    alpha.campusName = QStringLiteral("Alpha Campus");
+    QVERIFY(repository.saveCampus(alpha));
+
+    CampusInfo defaultAlias;
+    defaultAlias.id = QStringLiteral("default_alias");
+    defaultAlias.campusName = QStringLiteral("Default");
+    QVERIFY(repository.saveCampus(defaultAlias));
+
+    QFile malformedFile(repository.filePathForCampusId(
+        QStringLiteral("malformed")
+        ));
+    QVERIFY(malformedFile.open(QIODevice::WriteOnly | QIODevice::Text));
+    malformedFile.write("not-json");
+    malformedFile.close();
+
+    const QString unreadablePath = repository.filePathForCampusId(
+        QStringLiteral("unreadable")
+        );
+    QFile unreadableFile(unreadablePath);
+    QVERIFY(unreadableFile.open(QIODevice::WriteOnly | QIODevice::Text));
+    const QByteArray validCampusJson(
+        "{\"id\":\"unreadable\",\"campus_name\":\"Unreadable Campus\"}"
+        );
+    QCOMPARE(
+        unreadableFile.write(validCampusJson),
+        qint64(validCampusJson.size())
+        );
+    unreadableFile.close();
+    QVERIFY(QFile::setPermissions(unreadablePath, QFileDevice::WriteOwner));
+
+    const RepositoryResult<std::optional<CampusInfo>> unreadableRead =
+        repository.loadCampus(QStringLiteral("unreadable"));
+    const bool readSucceeded = static_cast<bool>(unreadableRead);
+    if (!readSucceeded)
+    {
+        QCOMPARE(unreadableRead.error().code, RepositoryErrorCode::Technical);
+    }
+    else
+    {
+        QVERIFY(unreadableRead->has_value());
+    }
+
+    const QList<CampusInfo> campuses = repository.loadCampuses();
+    QCOMPARE(campuses.size(), readSucceeded ? 3 : 2);
+    QCOMPARE(campuses.at(0).id, QStringLiteral("alpha"));
+    QCOMPARE(campuses.at(1).id, QStringLiteral("beta"));
+    if (readSucceeded)
+    {
+        QCOMPARE(campuses.at(2).id, QStringLiteral("unreadable"));
+    }
 }
 
 void CampusMapTests::legacyAddressNoteMigratesToSharedField()
@@ -213,19 +406,19 @@ void CampusMapTests::legacyAddressNoteMigratesToSharedField()
         );
     file.close();
 
-    const std::optional<CampusInfo> loaded =
+    const RepositoryResult<std::optional<CampusInfo>> loaded =
         repository.loadCampus(
             QStringLiteral("legacy-note")
             );
 
-    QVERIFY(loaded.has_value());
+    QVERIFY(loaded);
+    QVERIFY(loaded->has_value());
     QCOMPARE(
-        loaded->directionsNote,
+        loaded->value().directionsNote,
         QStringLiteral("Legacy shared note")
         );
 
-    const Status saved =
-        repository.saveCampus(*loaded);
+    const RepositoryStatus saved = repository.saveCampus(loaded->value());
     QVERIFY(saved.has_value());
 
     QVERIFY(file.open(QIODevice::ReadOnly));
@@ -282,13 +475,14 @@ void CampusMapTests::legacyImageMainRemainsSupported()
         );
     file.close();
 
-    const std::optional<CampusInfo> loaded =
+    const RepositoryResult<std::optional<CampusInfo>> loaded =
         repository.loadCampus(
             QStringLiteral("legacy")
             );
-    QVERIFY(loaded.has_value());
+    QVERIFY(loaded);
+    QVERIFY(loaded->has_value());
     QCOMPARE(
-        loaded->mapImagePaths,
+        loaded->value().mapImagePaths,
         QStringList{QStringLiteral("/legacy/map.png")}
         );
 }
@@ -330,12 +524,13 @@ void CampusMapTests::explicitEmptyMapDoesNotRestoreLegacyImage()
         );
     file.close();
 
-    const std::optional<CampusInfo> loaded =
+    const RepositoryResult<std::optional<CampusInfo>> loaded =
         repository.loadCampus(
             QStringLiteral("empty-map")
             );
-    QVERIFY(loaded.has_value());
-    QVERIFY(loaded->mapImagePaths.isEmpty());
+    QVERIFY(loaded);
+    QVERIFY(loaded->has_value());
+    QVERIFY(loaded->value().mapImagePaths.isEmpty());
 }
 
 void CampusMapTests::mapUrlsRequireAbsoluteHttps()

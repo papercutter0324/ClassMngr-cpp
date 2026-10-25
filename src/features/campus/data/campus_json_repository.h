@@ -1,7 +1,7 @@
 #ifndef CAMPUS_JSON_REPOSITORY_H
 #define CAMPUS_JSON_REPOSITORY_H
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 #include "domain/models/campus_info.h"
 
 #include <QList>
@@ -13,35 +13,24 @@
 class CampusJsonRepository
 {
 public:
-    struct CreateError final
-    {
-        enum class Code
-        {
-            Conflict,
-            Technical
-        };
-
-        Code code = Code::Technical;
-        QString message;
-    };
-
-    using CreateResult = std::expected<void, CreateError>;
-
     explicit CampusJsonRepository(
         QString directoryPath
         );
 
+    // Vector-only callers keep the legacy best-effort policy: unavailable,
+    // unreadable, malformed, and default entries are omitted.
     [[nodiscard]] QList<CampusInfo> loadCampuses() const;
 
-    [[nodiscard]] std::optional<CampusInfo> loadCampus(
+    // Point reads keep absence distinct from read and validation failures.
+    [[nodiscard]] RepositoryResult<std::optional<CampusInfo>> loadCampus(
         const QString& campusId
         ) const;
 
-    [[nodiscard]] Status saveCampus(
+    [[nodiscard]] RepositoryStatus saveCampus(
         const CampusInfo& campus
         ) const;
 
-    [[nodiscard]] CreateResult createCampus(
+    [[nodiscard]] RepositoryStatus createCampus(
         const CampusInfo& campus
         ) const;
 
@@ -54,14 +43,14 @@ public:
         );
 
 private:
-    [[nodiscard]] Status ensureDirectory() const;
+    [[nodiscard]] RepositoryStatus ensureDirectory() const;
 
-    [[nodiscard]] Status writeCampusFile(
+    [[nodiscard]] RepositoryStatus writeCampusFile(
         const CampusInfo& campus,
         const QString& filePath
         ) const;
 
-    [[nodiscard]] std::optional<CampusInfo> readCampusFile(
+    [[nodiscard]] RepositoryResult<std::optional<CampusInfo>> readCampusFile(
         const QString& filePath
         ) const;
 

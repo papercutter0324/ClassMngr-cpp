@@ -8659,7 +8659,7 @@ were exercised. Malformed-ID, raw birthday cursor message, no-op, and rollback
 failure branches remain source-reviewed without direct runtime assertions.
 
 
-## 2026-10-25 — F1454–F1461 committed; F1462 discovery active
+## 2026-10-25 — F1454–F1462 committed; F1463 discovery active
 
 F1454 is committed locally as `b362325f8a3d2f162a14e30c59ee171a52024e77`;
 it remains unpushed until Batch 22 closes. F1455 RosterRepository discovery
@@ -8703,7 +8703,20 @@ NotFound, malformed stored/generated IDs Validation, and missing positive-ID
 deletes remain successful. A fresh lifecycle rebuild passed; CTest passed 1/1
 and direct QtTest passed 51 cases, including non-convertible persisted-ID
 coverage. Malformed IDs through `getCampus()` and nonpositive generated IDs are
-source-reviewed only; no full suite or other-platform build ran.
+source-reviewed only; no full suite or other-platform build ran. F1462 is
+committed locally as `9228864cbb40393bd84515ab06d02ca8c2d758ac` and not
+pushed. F1463 CampusJsonRepository implementation and independent verification
+are complete and accepted; commit is pending. Typed point reads distinguish
+absence from Technical I/O and Validation JSON failures; writes use shared
+repository errors and preserve create Conflict. Bulk directory loads remain
+best-effort because vector-only consumers intentionally skip
+malformed/unreadable records; the selected-record port propagates point-read
+errors. The repaired four-target build passed 6/6 CTest cases and 68 Qt cases;
+the prior eight-target run passed 10/10 CTest cases and 93 Qt cases, including
+bulk-list adapters. `git diff --check` passed. Short-write/commit failures are
+source-reviewed only because QSaveFile lacks a deterministic test seam. No full
+suite or other-platform build ran. The scheduled Batch23 scan found no
+additional eligible repository candidate.
 The scheduled Batch23 discovery completed through independent Explorer and
 Investigator scans. No new eligible repository candidate was accepted:
 DataService conversions stay inside the queued campus slices as legacy

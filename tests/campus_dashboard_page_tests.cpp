@@ -29,6 +29,11 @@
 namespace
 {
 
+std::optional<CampusInfo> loadCampusOrFail(
+    const QString& directory,
+    const QString& campusId
+    );
+
 class KoreanDefaultTranslator final : public QTranslator
 {
 public:
@@ -105,8 +110,10 @@ public:
 
         if (campusId.value() == "beta")
         {
-            const auto alpha = CampusJsonRepository(m_directory)
-                .loadCampus(QStringLiteral("alpha"));
+            const auto alpha = loadCampusOrFail(
+                m_directory,
+                QStringLiteral("alpha")
+                );
             if (alpha.has_value())
             {
                 alphaNameWhenBetaWasRead = alpha->campusName;
@@ -263,11 +270,26 @@ void saveCampus(
     campus.buildingName = building;
     campus.printerDriverUrlUnavailable = true;
 
-    const Status saved = CampusJsonRepository(directory).saveCampus(campus);
+    const RepositoryStatus saved =
+        CampusJsonRepository(directory).saveCampus(campus);
     if (!saved)
     {
         qFatal("Unable to create Campus Dashboard test data.");
     }
+}
+
+std::optional<CampusInfo> loadCampusOrFail(
+    const QString& directory,
+    const QString& campusId
+    )
+{
+    const RepositoryResult<std::optional<CampusInfo>> loaded =
+        CampusJsonRepository(directory).loadCampus(campusId);
+    if (!loaded)
+    {
+        qFatal("Unable to read Campus Dashboard test data.");
+    }
+    return loaded.value();
 }
 
 QPushButton* buttonWithText(
@@ -829,8 +851,10 @@ selectedCampusDetailUsesQueryAndSavesDirtyRecordFirst()
     QVERIFY(storedCampus.has_value());
     QCOMPARE(storedCampus->value(), std::string("beta"));
 
-    const auto savedAlpha = CampusJsonRepository(campusDirectory.path())
-        .loadCampus(QStringLiteral("alpha"));
+    const auto savedAlpha = loadCampusOrFail(
+        campusDirectory.path(),
+        QStringLiteral("alpha")
+        );
     QVERIFY(savedAlpha.has_value());
     QCOMPARE(savedAlpha->campusName, QStringLiteral("Alpha Revised"));
 
@@ -892,8 +916,10 @@ manualSaveWaitsForActionAndPersistsNormalizedFields()
     QVERIFY(nameEdit);
     QCOMPARE(selector->currentData().toString(), QStringLiteral("alpha"));
 
-    const auto beforeSave = CampusJsonRepository(fixture.campusDirectory.path())
-        .loadCampus(QStringLiteral("alpha"));
+    const auto beforeSave = loadCampusOrFail(
+        fixture.campusDirectory.path(),
+        QStringLiteral("alpha")
+        );
     QVERIFY(beforeSave.has_value());
     QCOMPARE(beforeSave->campusName, QStringLiteral("Alpha"));
     QCOMPARE(beforeSave->campusCode, QStringLiteral("ALPHA"));
@@ -907,9 +933,10 @@ manualSaveWaitsForActionAndPersistsNormalizedFields()
     QVERIFY(fixture.savePort.savedSnapshots.empty());
     QVERIFY(labelWithText(page, QStringLiteral("Unsaved changes")));
 
-    const auto stillUnchanged = CampusJsonRepository(
-        fixture.campusDirectory.path()
-        ).loadCampus(QStringLiteral("alpha"));
+    const auto stillUnchanged = loadCampusOrFail(
+        fixture.campusDirectory.path(),
+        QStringLiteral("alpha")
+        );
     QVERIFY(stillUnchanged.has_value());
     QCOMPARE(stillUnchanged->campusName, QStringLiteral("Alpha"));
     QCOMPARE(stillUnchanged->campusCode, QStringLiteral("ALPHA"));
@@ -932,9 +959,10 @@ manualSaveWaitsForActionAndPersistsNormalizedFields()
     QCOMPARE(savedSnapshot.campusName, std::string("Alpha Revised"));
     QCOMPARE(savedSnapshot.campusCode, std::string("AL2"));
 
-    const auto savedCampus = CampusJsonRepository(
-        fixture.campusDirectory.path()
-        ).loadCampus(QStringLiteral("alpha"));
+    const auto savedCampus = loadCampusOrFail(
+        fixture.campusDirectory.path(),
+        QStringLiteral("alpha")
+        );
     QVERIFY(savedCampus.has_value());
     QCOMPARE(savedCampus->campusName, QStringLiteral("Alpha Revised"));
     QCOMPARE(savedCampus->campusCode, QStringLiteral("AL2"));
@@ -984,9 +1012,10 @@ automaticSaveUsesDebounceAndPersistsOnce()
         std::string("AUTO")
         );
 
-    const auto savedCampus = CampusJsonRepository(
-        fixture.campusDirectory.path()
-        ).loadCampus(QStringLiteral("alpha"));
+    const auto savedCampus = loadCampusOrFail(
+        fixture.campusDirectory.path(),
+        QStringLiteral("alpha")
+        );
     QVERIFY(savedCampus.has_value());
     QCOMPARE(savedCampus->campusName, QStringLiteral("Alpha Autosaved"));
     QCOMPARE(savedCampus->campusCode, QStringLiteral("AUTO"));
@@ -1029,8 +1058,10 @@ void CampusDashboardPageTests::manualSaveFailureRetainsDirtyForm()
     QCOMPARE(selector->currentData().toString(), QStringLiteral("alpha"));
     QCOMPARE(nameEdit->text(), QStringLiteral("Alpha Draft"));
     QVERIFY(labelWithText(page, failureMessage));
-    const auto persisted = CampusJsonRepository(fixture.campusDirectory.path())
-        .loadCampus(QStringLiteral("alpha"));
+    const auto persisted = loadCampusOrFail(
+        fixture.campusDirectory.path(),
+        QStringLiteral("alpha")
+        );
     QVERIFY(persisted.has_value());
     QCOMPARE(persisted->campusName, QStringLiteral("Alpha"));
 }
@@ -1066,8 +1097,10 @@ void CampusDashboardPageTests::automaticSaveFailureRetainsDirtyForm()
     QCOMPARE(selector->currentData().toString(), QStringLiteral("alpha"));
     QCOMPARE(nameEdit->text(), QStringLiteral("Alpha Draft"));
     QVERIFY(labelWithText(page, failureMessage));
-    const auto persisted = CampusJsonRepository(fixture.campusDirectory.path())
-        .loadCampus(QStringLiteral("alpha"));
+    const auto persisted = loadCampusOrFail(
+        fixture.campusDirectory.path(),
+        QStringLiteral("alpha")
+        );
     QVERIFY(persisted.has_value());
     QCOMPARE(persisted->campusName, QStringLiteral("Alpha"));
 }
@@ -1315,9 +1348,10 @@ userEnteredLocalizedDefaultRemainsOrdinaryAfterFallback()
     QVERIFY(!page.hasUnsavedChanges());
     QVERIFY(labelWithText(page, QStringLiteral("Saved")));
 
-    const auto savedCampus = CampusJsonRepository(
-        fixture.campusDirectory.path()
-        ).loadCampus(QStringLiteral("campus"));
+    const auto savedCampus = loadCampusOrFail(
+        fixture.campusDirectory.path(),
+        QStringLiteral("campus")
+        );
     QVERIFY(savedCampus.has_value());
     QCOMPARE(savedCampus->campusName, QStringLiteral("기본값"));
 }
@@ -1946,8 +1980,10 @@ successfulNewCampusSaveRetainsIdForUpdates()
         fixture.savePort.savedSnapshots.back().id.value(),
         std::string("new_campus")
         );
-    const auto saved = CampusJsonRepository(fixture.campusDirectory.path())
-        .loadCampus(QStringLiteral("new_campus"));
+    const auto saved = loadCampusOrFail(
+        fixture.campusDirectory.path(),
+        QStringLiteral("new_campus")
+        );
     QVERIFY(saved.has_value());
     QCOMPARE(saved->campusName, updatedName);
     QCOMPARE(saved->campusCode, QStringLiteral("NEW-EDITED"));
@@ -2245,10 +2281,14 @@ adminSelectedCampusDetailFailureRestoresLoadedCampus()
         std::string("alpha")
         );
 
-    const auto savedAlpha = CampusJsonRepository(campusDirectory.path())
-        .loadCampus(QStringLiteral("alpha"));
-    const auto untouchedBeta = CampusJsonRepository(campusDirectory.path())
-        .loadCampus(QStringLiteral("beta"));
+    const auto savedAlpha = loadCampusOrFail(
+        campusDirectory.path(),
+        QStringLiteral("alpha")
+        );
+    const auto untouchedBeta = loadCampusOrFail(
+        campusDirectory.path(),
+        QStringLiteral("beta")
+        );
     QVERIFY(savedAlpha.has_value());
     QVERIFY(untouchedBeta.has_value());
     QCOMPARE(savedAlpha->campusName, QStringLiteral("Alpha Revised"));
