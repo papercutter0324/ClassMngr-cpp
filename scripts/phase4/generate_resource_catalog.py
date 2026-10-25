@@ -68,7 +68,12 @@ COLLECTION_RULES: dict[str, dict[str, Any]] = {
     },
     "excluded_resources": {
         "dispositions": {"excluded_v2"},
-        "kinds": {"legacy_splash_asset", "office_lock_file"},
+        "kinds": {
+            "legacy_splash_asset",
+            "office_lock_file",
+            "optional_dynamic_image",
+            "roster_workflow_file",
+        },
         "source_prefix": "resources/assets/",
     },
     "build_inputs": {
@@ -284,6 +289,10 @@ def _check_inventory(inventory: Any) -> tuple[list[dict[str, Any]], dict[str, st
 
             category = original.get("category")
             owner = original.get("owner_feature")
+            if disposition == "excluded_v2" and "owner_feature" not in original:
+                owner = None
+            elif not isinstance(owner, str) or not owner:
+                raise CatalogError(f"{logical_id!r} is missing its resource owner")
             tier = original.get("loading_tier")
             method = original.get("loading_method")
             lifetime = original.get("expected_lifetime")
@@ -292,8 +301,6 @@ def _check_inventory(inventory: Any) -> tuple[list[dict[str, Any]], dict[str, st
             streamability = original.get("streamability")
             if not isinstance(category, str) or not category:
                 raise CatalogError(f"{logical_id!r} is missing its resource category")
-            if not isinstance(owner, str) or not owner:
-                raise CatalogError(f"{logical_id!r} is missing its resource owner")
             for label, value in (
                 ("loading_tier", tier),
                 ("loading_method", method),

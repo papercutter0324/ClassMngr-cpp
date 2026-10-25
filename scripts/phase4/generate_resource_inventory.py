@@ -162,7 +162,7 @@ def _resource_status(root: Path, paths: Iterable[str]) -> list[str]:
     return sorted(changed)
 
 
-def _record_policy(path: str) -> dict[str, str]:
+def _record_policy(path: str) -> dict[str, str | None]:
     if path == "resources/assets/documents/documents.json":
         return {
             "collection": "document_catalog_metadata",
@@ -344,7 +344,7 @@ def _document_resident_method(path: str) -> str:
     return "resident_pdf" if Path(path).suffix.lower() == ".pdf" else "resident_office"
 
 
-def _asset_policy(path: str) -> dict[str, str]:
+def _asset_policy(path: str) -> dict[str, str | None]:
     if path.startswith("resources/assets/campuses/"):
         if Path(path).suffix.lower() == ".json":
             method = "Read the requested campus JSON on campus-feature entry; decode only the selected campus record."
@@ -368,6 +368,32 @@ def _asset_policy(path: str) -> dict[str, str]:
         )
 
     if path.startswith("resources/assets/files/"):
+        if path in {
+            "resources/assets/files/rosters/Class Register.odt",
+            "resources/assets/files/rosters/Roster Template 1 - By Day.ods",
+            "resources/assets/files/rosters/Roster Template 1 - By Day.xlsx",
+        }:
+            return {
+                "collection": "excluded_resources",
+                "kind": "roster_workflow_file",
+                "category": "files",
+                "owner": None,
+                "disposition": "excluded_v2",
+                "reason": (
+                    "No v2 production caller exists for this tracked roster file. "
+                    "Retain its exact source record for provenance; the file "
+                    "remains in the legacy resource-pack oracle."
+                ),
+                "startup": "not_required",
+                "tier": "excluded",
+                "load": "Do not load or install this roster file in the v2 package.",
+                "lifetime": "No v2 runtime lifetime.",
+                "release": "Excluded from the v2 runtime package; retained in source for legacy parity and provenance.",
+                "stream": "not_applicable",
+                "stream_ref": "stream_build_only",
+                "resident_ref": "resident_build_only",
+                "installed_ref": "installed_none",
+            }
         suffix = Path(path).suffix.lower()
         resident = "resident_office" if suffix in {".ods", ".odt", ".xlsx"} else "resident_build_only"
         return _runtime_policy(
@@ -441,37 +467,27 @@ def _asset_policy(path: str) -> dict[str, str]:
 
     if path.startswith("resources/assets/images/"):
         if path == "resources/assets/images/dyb.png":
-            return _runtime_policy(
-                path,
-                "optional_dynamic_image",
-                "images",
-                "Shared legacy helper only: ResourcePaths::DynamicImages; no production feature caller found",
-                "feature_or_operation_on_demand_if_claimed",
-                "not_required_no_legacy_feature_callsite",
-                (
-                    "The v2 destination is an optional typed resource descriptor "
-                    "in ClassMngrNext::Resources. Decode only after a migrated "
-                    "feature or operation explicitly requests its ResourceId; "
-                    "the current source tree has no production request call site."
+            return {
+                "collection": "excluded_resources",
+                "kind": "optional_dynamic_image",
+                "category": "images",
+                "owner": None,
+                "disposition": "excluded_v2",
+                "reason": (
+                    "No v2 production caller exists for this tracked image. "
+                    "Retain its exact source record for provenance; the file "
+                    "remains in the legacy resource-pack oracle."
                 ),
-                "No current feature consumer. If claimed during migration, retain the decoded image only for that feature/page or operation.",
-                "Do not load at startup. The requesting feature/operation releases decoded pixels on leave/completion; add no shared cache without an explicit budget.",
-                "no",
-                "stream_no",
-                "resident_image",
-                reason=(
-                    "The tracked image is part of the legacy optional images RCC "
-                    "and is retained as an optional v2 resource-catalog entry. "
-                    "No feature-level production caller currently requests it; "
-                    "the v2 catalog must not cause startup decoding."
-                ),
-                migration_destination=(
-                    "ClassMngrNext::Resources optional typed catalog descriptor; "
-                    "a future owning feature/operation must request it explicitly. "
-                    "Do not recreate ResourcePaths::DynamicImages as a global "
-                    "compatibility helper."
-                ),
-            )
+                "startup": "not_required",
+                "tier": "excluded",
+                "load": "Do not load or install this image in the v2 package.",
+                "lifetime": "No v2 runtime lifetime.",
+                "release": "Excluded from the v2 runtime package; retained in source for legacy parity and provenance.",
+                "stream": "not_applicable",
+                "stream_ref": "stream_build_only",
+                "resident_ref": "resident_build_only",
+                "installed_ref": "installed_none",
+            }
         return _runtime_policy(
             path,
             "feature_or_operation_image",
@@ -656,7 +672,10 @@ def _make_resource_record(root: Path, path: str) -> tuple[str, dict[str, object]
         "source_path": path,
         "resource_kind": policy["kind"],
         "category": policy["category"],
-        "owner_feature": policy["owner"],
+    }
+    if policy["owner"] is not None:
+        record["owner_feature"] = policy["owner"]
+    record.update({
         "package_disposition": policy["disposition"],
         "disposition_reason": policy["reason"],
         "source_file": _source_file_record(source),
@@ -679,7 +698,7 @@ def _make_resource_record(root: Path, path: str) -> tuple[str, dict[str, object]
             "status": "unknown" if policy["resident_ref"] != "resident_build_only" else "not_applicable",
             "method_ref": policy["resident_ref"],
         },
-    }
+    })
     if "migration_destination" in policy:
         record["v2_migration_destination"] = policy["migration_destination"]
     return policy["collection"], record

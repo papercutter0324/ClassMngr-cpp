@@ -22,6 +22,10 @@ class ResourceCatalogTests(unittest.TestCase):
             "resources/assets/documents/documents.json": b'{"documents": []}\n',
             "resources/assets/documents/Guides/guide.pdf": b"%PDF-1.7\nguide\n",
             "resources/assets/splash/splash.png": b"legacy splash\n",
+            "resources/assets/images/dyb.png": b"dynamic image\n",
+            "resources/assets/files/rosters/Class Register.odt": b"roster odt\n",
+            "resources/assets/files/rosters/Roster Template 1 - By Day.ods": b"roster ods\n",
+            "resources/assets/files/rosters/Roster Template 1 - By Day.xlsx": b"roster xlsx\n",
             "resources/windows/template.rc.in": b"build template\n",
             "src/features/calendar/ui/qml/EventCalendar.qml": b"import QtQuick\nItem {}\n",
         }
@@ -106,7 +110,27 @@ class ResourceCatalogTests(unittest.TestCase):
                     "resources/assets/splash/splash.png",
                     "legacy_splash_asset",
                     "excluded_v2",
-                )
+                ),
+                self._unowned_record(
+                    "resource:assets/images/dyb.png",
+                    "resources/assets/images/dyb.png",
+                    "optional_dynamic_image",
+                ),
+                self._unowned_record(
+                    "resource:assets/files/rosters/Class Register.odt",
+                    "resources/assets/files/rosters/Class Register.odt",
+                    "roster_workflow_file",
+                ),
+                self._unowned_record(
+                    "resource:assets/files/rosters/Roster Template 1 - By Day.ods",
+                    "resources/assets/files/rosters/Roster Template 1 - By Day.ods",
+                    "roster_workflow_file",
+                ),
+                self._unowned_record(
+                    "resource:assets/files/rosters/Roster Template 1 - By Day.xlsx",
+                    "resources/assets/files/rosters/Roster Template 1 - By Day.xlsx",
+                    "roster_workflow_file",
+                ),
             ],
             "build_inputs": [
                 self._record(
@@ -130,6 +154,11 @@ class ResourceCatalogTests(unittest.TestCase):
         self.inventory_path.write_text(
             json.dumps(self.inventory, indent=2) + "\n", encoding="utf-8"
         )
+
+    def _unowned_record(self, logical_id: str, source_path: str, kind: str) -> dict:
+        record = self._record(logical_id, source_path, kind, "excluded_v2")
+        record.pop("owner_feature")
+        return record
 
     def _bake(self) -> dict:
         return bake_resources(self.inventory_path, self.root, self.baked_root)
@@ -169,6 +198,14 @@ class ResourceCatalogTests(unittest.TestCase):
                 "calendar.qml:EventCalendar.qml",
             },
         )
+        excluded_ids = {
+            "resource:assets/images/dyb.png",
+            "resource:assets/files/rosters/Class Register.odt",
+            "resource:assets/files/rosters/Roster Template 1 - By Day.ods",
+            "resource:assets/files/rosters/Roster Template 1 - By Day.xlsx",
+        }
+        self.assertTrue(excluded_ids.isdisjoint(by_id))
+        self.assertEqual(len(self.inventory["excluded_resources"]), 5)
 
         metadata = by_id["document.catalog-metadata"]
         body = by_id["document.body:Guides/guide.pdf"]
@@ -205,6 +242,23 @@ class ResourceCatalogTests(unittest.TestCase):
         self.assertEqual(calendar["runtime_url"], "qrc:/qt/qml/ClassMngr/Calendar/EventCalendar.qml")
         self.assertEqual(calendar["expected_type"], "qml_module_component")
         self.assertNotIn("baked", calendar["provenance"])
+
+    def test_owner_may_be_omitted_only_for_excluded_resources(self) -> None:
+        # The fixture's unclaimed resources omit owner_feature and still bake
+        # successfully, while a runtime record must retain an explicit owner.
+        catalog = self._catalog()
+        self.assertEqual(len(catalog["records"]), 5)
+
+        self.inventory["resources"][0].pop("owner_feature")
+        self._save_inventory()
+        with self.assertRaisesRegex(CatalogError, "missing its resource owner"):
+            self._catalog()
+
+        self.inventory = self._inventory()
+        self.inventory["excluded_resources"][1]["owner_feature"] = None
+        self._save_inventory()
+        with self.assertRaisesRegex(CatalogError, "missing its resource owner"):
+            self._catalog()
 
     def test_catalog_bytes_are_deterministic(self) -> None:
         first = self._catalog()

@@ -86,23 +86,48 @@ class ResourceInventoryTests(unittest.TestCase):
         self.assertIn("legacy documents RCC glob includes", excluded[lock]["disposition_reason"])
         self.assertIn("165-byte", excluded[lock]["disposition_reason"])
 
-    def test_dyb_image_maps_to_typed_catalog_without_claiming_a_feature_caller(self) -> None:
-        image = self._write("resources/assets/images/dyb.png", b"image-bytes")
+    def test_dyb_image_is_excluded_without_inventing_a_feature_owner(self) -> None:
+        image_bytes = b"image-bytes"
+        image = self._write("resources/assets/images/dyb.png", image_bytes)
         inventory = build_inventory(self.root, [image])
 
-        record = inventory["resources"][0]
-        self.assertEqual(record["package_disposition"], "runtime_packaged")
-        self.assertIn("ResourcePaths::DynamicImages", record["owner_feature"])
-        self.assertIn("no production feature caller found", record["owner_feature"])
-        self.assertEqual(
-            record["loading_tier"],
-            "feature_or_operation_on_demand_if_claimed",
-        )
-        self.assertIn("ClassMngrNext::Resources", record["v2_migration_destination"])
-        self.assertEqual(
-            record["startup_necessity"],
-            "not_required_no_legacy_feature_callsite",
-        )
+        self.assertEqual(inventory["resources"], [])
+        record = inventory["excluded_resources"][0]
+        self.assertEqual(record["logical_id"], "resource:assets/images/dyb.png")
+        self.assertEqual(record["resource_kind"], "optional_dynamic_image")
+        self.assertEqual(record["package_disposition"], "excluded_v2")
+        self.assertNotIn("owner_feature", record)
+        self.assertEqual(record["source_file"]["bytes"], len(image_bytes))
+        self.assertEqual(record["source_file"]["sha256"], hashlib.sha256(image_bytes).hexdigest())
+        self.assertIn("No v2 production caller exists", record["disposition_reason"])
+        self.assertIn("legacy resource-pack oracle", record["disposition_reason"])
+        self.assertEqual(record["installed_size"]["method_ref"], "installed_none")
+
+    def test_unclaimed_roster_files_are_excluded_with_source_provenance(self) -> None:
+        contents = {
+            "resources/assets/files/rosters/Class Register.odt": b"register-source",
+            "resources/assets/files/rosters/Roster Template 1 - By Day.ods": b"ods-source",
+            "resources/assets/files/rosters/Roster Template 1 - By Day.xlsx": b"xlsx-source",
+        }
+        paths = [self._write(path, data) for path, data in contents.items()]
+
+        inventory = build_inventory(self.root, paths)
+
+        self.assertEqual(inventory["resources"], [])
+        records = {record["source_path"]: record for record in inventory["excluded_resources"]}
+        self.assertEqual(set(records), set(contents))
+        for path, data in contents.items():
+            with self.subTest(path=path):
+                record = records[path]
+                self.assertEqual(record["resource_kind"], "roster_workflow_file")
+                self.assertEqual(record["package_disposition"], "excluded_v2")
+                self.assertNotIn("owner_feature", record)
+                self.assertEqual(record["source_file"]["bytes"], len(data))
+                self.assertEqual(record["source_file"]["sha256"], hashlib.sha256(data).hexdigest())
+                self.assertIn("No v2 production caller exists", record["disposition_reason"])
+                self.assertIn("legacy resource-pack oracle", record["disposition_reason"])
+
+        self.assertEqual(inventory["absence_observations"]["roster_designs"]["tracked_file_count"], 0)
 
     def test_calendar_qml_is_listed_as_a_generated_runtime_resource(self) -> None:
         qml = self._write(

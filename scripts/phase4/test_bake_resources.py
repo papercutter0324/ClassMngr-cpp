@@ -20,6 +20,10 @@ class ResourceBakerTests(unittest.TestCase):
             "resources/assets/documents/documents.json": b'{"documents": []}\n',
             "resources/assets/documents/Guides/guide.pdf": b"%PDF-1.7\nguide\n",
             "resources/assets/splash/splash.png": b"legacy splash\n",
+            "resources/assets/images/dyb.png": b"dynamic image\n",
+            "resources/assets/files/rosters/Class Register.odt": b"roster odt\n",
+            "resources/assets/files/rosters/Roster Template 1 - By Day.ods": b"roster ods\n",
+            "resources/assets/files/rosters/Roster Template 1 - By Day.xlsx": b"roster xlsx\n",
             "resources/windows/template.rc.in": b"build template\n",
             "src/features/calendar/ui/qml/EventCalendar.qml": b"import QtQuick\nItem {}\n",
         }
@@ -97,7 +101,31 @@ class ResourceBakerTests(unittest.TestCase):
                     "resources/assets/splash/splash.png",
                     "legacy_splash_asset",
                     "excluded_v2",
-                )
+                ),
+                self._record(
+                    "resource:assets/images/dyb.png",
+                    "resources/assets/images/dyb.png",
+                    "optional_dynamic_image",
+                    "excluded_v2",
+                ),
+                self._record(
+                    "resource:assets/files/rosters/Class Register.odt",
+                    "resources/assets/files/rosters/Class Register.odt",
+                    "roster_workflow_file",
+                    "excluded_v2",
+                ),
+                self._record(
+                    "resource:assets/files/rosters/Roster Template 1 - By Day.ods",
+                    "resources/assets/files/rosters/Roster Template 1 - By Day.ods",
+                    "roster_workflow_file",
+                    "excluded_v2",
+                ),
+                self._record(
+                    "resource:assets/files/rosters/Roster Template 1 - By Day.xlsx",
+                    "resources/assets/files/rosters/Roster Template 1 - By Day.xlsx",
+                    "roster_workflow_file",
+                    "excluded_v2",
+                ),
             ],
             "build_inputs": [
                 self._record(
@@ -148,6 +176,8 @@ class ResourceBakerTests(unittest.TestCase):
         )
         self.assertFalse((self.output / "assets/translations/ClassMngr_fr_FR.ts").exists())
         self.assertFalse((self.output / "assets/splash/splash.png").exists())
+        self.assertFalse((self.output / "assets/images/dyb.png").exists())
+        self.assertFalse((self.output / "assets/files/rosters").exists())
         self.assertFalse((self.output / "windows/template.rc.in").exists())
 
         self.assertEqual(manifest["provenance"]["tracked_source_tree_ids"]["resources"], "a" * 40)
@@ -164,7 +194,7 @@ class ResourceBakerTests(unittest.TestCase):
             manifest["disposition_counts"],
             {
                 "build_only_excluded": 1,
-                "excluded_v2": 1,
+                "excluded_v2": 5,
                 "runtime_packaged": 3,
                 "runtime_packaged_generated": 2,
             },

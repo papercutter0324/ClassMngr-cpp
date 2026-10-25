@@ -54,7 +54,12 @@ COLLECTION_RESOURCE_KINDS = {
         "theme_stylesheet",
         "translation_source_for_generated_qm",
     },
-    "excluded_resources": {"legacy_splash_asset", "office_lock_file"},
+    "excluded_resources": {
+        "legacy_splash_asset",
+        "office_lock_file",
+        "optional_dynamic_image",
+        "roster_workflow_file",
+    },
     "build_inputs": {"speaking_report_art_source", "windows_packaging_template"},
     "calendar_qml_sources": {"calendar_qml_module_source"},
 }

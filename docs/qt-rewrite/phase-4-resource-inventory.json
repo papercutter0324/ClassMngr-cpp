@@ -19,8 +19,8 @@
     "calendar_qml_source_bytes_exact": 35154,
     "disposition_record_counts": {
       "build_only_excluded": 31,
-      "excluded_v2": 2,
-      "runtime_packaged": 191,
+      "excluded_v2": 6,
+      "runtime_packaged": 187,
       "runtime_packaged_generated": 7
     },
     "resource_assets_by_directory": {
@@ -2369,102 +2369,6 @@
         "bytes": null,
         "status": "unknown",
         "method_ref": "resident_json"
-      }
-    },
-    {
-      "logical_id": "resource:assets/files/rosters/Class Register.odt",
-      "source_path": "resources/assets/files/rosters/Class Register.odt",
-      "resource_kind": "roster_workflow_file",
-      "category": "files",
-      "owner_feature": "Roster import/export and roster-template workflows",
-      "package_disposition": "runtime_packaged",
-      "disposition_reason": "Canonical source payload is part of the v2 installed resource tree.",
-      "source_file": {
-        "bytes": 22411,
-        "sha256": "6cd33da08270f8453594336b74009a691326893130da22b7a6c0979d9a0d323b"
-      },
-      "installed_size": {
-        "bytes": null,
-        "status": "not_measured",
-        "method_ref": "installed_direct"
-      },
-      "startup_necessity": "not_required_until_roster_operation",
-      "loading_tier": "operation_on_demand",
-      "loading_method": "Open the selected roster template/file only for the owning import or export operation.",
-      "expected_lifetime": "Owning roster import/export operation only.",
-      "release_policy": "Release file handles and temporary model/buffer state when the operation completes.",
-      "streamability": {
-        "status": "consumer_dependent",
-        "method_ref": "stream_consumer_dependent"
-      },
-      "expected_resident_size": {
-        "bytes": null,
-        "status": "unknown",
-        "method_ref": "resident_office"
-      }
-    },
-    {
-      "logical_id": "resource:assets/files/rosters/Roster Template 1 - By Day.ods",
-      "source_path": "resources/assets/files/rosters/Roster Template 1 - By Day.ods",
-      "resource_kind": "roster_workflow_file",
-      "category": "files",
-      "owner_feature": "Roster import/export and roster-template workflows",
-      "package_disposition": "runtime_packaged",
-      "disposition_reason": "Canonical source payload is part of the v2 installed resource tree.",
-      "source_file": {
-        "bytes": 4765,
-        "sha256": "4ffd7808f9e7233a3a4b3eb4370cd5bddd0fd5358f9295b3af8eb009fd6e97e9"
-      },
-      "installed_size": {
-        "bytes": null,
-        "status": "not_measured",
-        "method_ref": "installed_direct"
-      },
-      "startup_necessity": "not_required_until_roster_operation",
-      "loading_tier": "operation_on_demand",
-      "loading_method": "Open the selected roster template/file only for the owning import or export operation.",
-      "expected_lifetime": "Owning roster import/export operation only.",
-      "release_policy": "Release file handles and temporary model/buffer state when the operation completes.",
-      "streamability": {
-        "status": "consumer_dependent",
-        "method_ref": "stream_consumer_dependent"
-      },
-      "expected_resident_size": {
-        "bytes": null,
-        "status": "unknown",
-        "method_ref": "resident_office"
-      }
-    },
-    {
-      "logical_id": "resource:assets/files/rosters/Roster Template 1 - By Day.xlsx",
-      "source_path": "resources/assets/files/rosters/Roster Template 1 - By Day.xlsx",
-      "resource_kind": "roster_workflow_file",
-      "category": "files",
-      "owner_feature": "Roster import/export and roster-template workflows",
-      "package_disposition": "runtime_packaged",
-      "disposition_reason": "Canonical source payload is part of the v2 installed resource tree.",
-      "source_file": {
-        "bytes": 11727,
-        "sha256": "8caf3bf1bf7c0813fc2826c4c5e346a87bef024adf1e9469cd79d9007f3abe39"
-      },
-      "installed_size": {
-        "bytes": null,
-        "status": "not_measured",
-        "method_ref": "installed_direct"
-      },
-      "startup_necessity": "not_required_until_roster_operation",
-      "loading_tier": "operation_on_demand",
-      "loading_method": "Open the selected roster template/file only for the owning import or export operation.",
-      "expected_lifetime": "Owning roster import/export operation only.",
-      "release_policy": "Release file handles and temporary model/buffer state when the operation completes.",
-      "streamability": {
-        "status": "consumer_dependent",
-        "method_ref": "stream_consumer_dependent"
-      },
-      "expected_resident_size": {
-        "bytes": null,
-        "status": "unknown",
-        "method_ref": "resident_office"
       }
     },
     {
@@ -5316,39 +5220,6 @@
       }
     },
     {
-      "logical_id": "resource:assets/images/dyb.png",
-      "source_path": "resources/assets/images/dyb.png",
-      "resource_kind": "optional_dynamic_image",
-      "category": "images",
-      "owner_feature": "Shared legacy helper only: ResourcePaths::DynamicImages; no production feature caller found",
-      "package_disposition": "runtime_packaged",
-      "disposition_reason": "The tracked image is part of the legacy optional images RCC and is retained as an optional v2 resource-catalog entry. No feature-level production caller currently requests it; the v2 catalog must not cause startup decoding.",
-      "source_file": {
-        "bytes": 9861,
-        "sha256": "04307b9f7977a20f4cb70b7ebd6469f174beeafaced9f10c291c0ec99a91c7c0"
-      },
-      "installed_size": {
-        "bytes": null,
-        "status": "not_measured",
-        "method_ref": "installed_direct"
-      },
-      "startup_necessity": "not_required_no_legacy_feature_callsite",
-      "loading_tier": "feature_or_operation_on_demand_if_claimed",
-      "loading_method": "The v2 destination is an optional typed resource descriptor in ClassMngrNext::Resources. Decode only after a migrated feature or operation explicitly requests its ResourceId; the current source tree has no production request call site.",
-      "expected_lifetime": "No current feature consumer. If claimed during migration, retain the decoded image only for that feature/page or operation.",
-      "release_policy": "Do not load at startup. The requesting feature/operation releases decoded pixels on leave/completion; add no shared cache without an explicit budget.",
-      "streamability": {
-        "status": "no",
-        "method_ref": "stream_no"
-      },
-      "expected_resident_size": {
-        "bytes": null,
-        "status": "unknown",
-        "method_ref": "resident_image"
-      },
-      "v2_migration_destination": "ClassMngrNext::Resources optional typed catalog descriptor; a future owning feature/operation must request it explicitly. Do not recreate ResourcePaths::DynamicImages as a global compatibility helper."
-    },
-    {
       "logical_id": "resource:assets/styles/dark.qss",
       "source_path": "resources/assets/styles/dark.qss",
       "resource_kind": "theme_stylesheet",
@@ -6460,6 +6331,130 @@
       "loading_method": "Do not load or install this transient lock artifact.",
       "expected_lifetime": "No v2 runtime lifetime.",
       "release_policy": "Excluded from the v2 runtime package.",
+      "streamability": {
+        "status": "not_applicable",
+        "method_ref": "stream_build_only"
+      },
+      "expected_resident_size": {
+        "bytes": null,
+        "status": "not_applicable",
+        "method_ref": "resident_build_only"
+      }
+    },
+    {
+      "logical_id": "resource:assets/files/rosters/Class Register.odt",
+      "source_path": "resources/assets/files/rosters/Class Register.odt",
+      "resource_kind": "roster_workflow_file",
+      "category": "files",
+      "package_disposition": "excluded_v2",
+      "disposition_reason": "No v2 production caller exists for this tracked roster file. Retain its exact source record for provenance; the file remains in the legacy resource-pack oracle.",
+      "source_file": {
+        "bytes": 22411,
+        "sha256": "6cd33da08270f8453594336b74009a691326893130da22b7a6c0979d9a0d323b"
+      },
+      "installed_size": {
+        "bytes": null,
+        "status": "not_applicable",
+        "method_ref": "installed_none"
+      },
+      "startup_necessity": "not_required",
+      "loading_tier": "excluded",
+      "loading_method": "Do not load or install this roster file in the v2 package.",
+      "expected_lifetime": "No v2 runtime lifetime.",
+      "release_policy": "Excluded from the v2 runtime package; retained in source for legacy parity and provenance.",
+      "streamability": {
+        "status": "not_applicable",
+        "method_ref": "stream_build_only"
+      },
+      "expected_resident_size": {
+        "bytes": null,
+        "status": "not_applicable",
+        "method_ref": "resident_build_only"
+      }
+    },
+    {
+      "logical_id": "resource:assets/files/rosters/Roster Template 1 - By Day.ods",
+      "source_path": "resources/assets/files/rosters/Roster Template 1 - By Day.ods",
+      "resource_kind": "roster_workflow_file",
+      "category": "files",
+      "package_disposition": "excluded_v2",
+      "disposition_reason": "No v2 production caller exists for this tracked roster file. Retain its exact source record for provenance; the file remains in the legacy resource-pack oracle.",
+      "source_file": {
+        "bytes": 4765,
+        "sha256": "4ffd7808f9e7233a3a4b3eb4370cd5bddd0fd5358f9295b3af8eb009fd6e97e9"
+      },
+      "installed_size": {
+        "bytes": null,
+        "status": "not_applicable",
+        "method_ref": "installed_none"
+      },
+      "startup_necessity": "not_required",
+      "loading_tier": "excluded",
+      "loading_method": "Do not load or install this roster file in the v2 package.",
+      "expected_lifetime": "No v2 runtime lifetime.",
+      "release_policy": "Excluded from the v2 runtime package; retained in source for legacy parity and provenance.",
+      "streamability": {
+        "status": "not_applicable",
+        "method_ref": "stream_build_only"
+      },
+      "expected_resident_size": {
+        "bytes": null,
+        "status": "not_applicable",
+        "method_ref": "resident_build_only"
+      }
+    },
+    {
+      "logical_id": "resource:assets/files/rosters/Roster Template 1 - By Day.xlsx",
+      "source_path": "resources/assets/files/rosters/Roster Template 1 - By Day.xlsx",
+      "resource_kind": "roster_workflow_file",
+      "category": "files",
+      "package_disposition": "excluded_v2",
+      "disposition_reason": "No v2 production caller exists for this tracked roster file. Retain its exact source record for provenance; the file remains in the legacy resource-pack oracle.",
+      "source_file": {
+        "bytes": 11727,
+        "sha256": "8caf3bf1bf7c0813fc2826c4c5e346a87bef024adf1e9469cd79d9007f3abe39"
+      },
+      "installed_size": {
+        "bytes": null,
+        "status": "not_applicable",
+        "method_ref": "installed_none"
+      },
+      "startup_necessity": "not_required",
+      "loading_tier": "excluded",
+      "loading_method": "Do not load or install this roster file in the v2 package.",
+      "expected_lifetime": "No v2 runtime lifetime.",
+      "release_policy": "Excluded from the v2 runtime package; retained in source for legacy parity and provenance.",
+      "streamability": {
+        "status": "not_applicable",
+        "method_ref": "stream_build_only"
+      },
+      "expected_resident_size": {
+        "bytes": null,
+        "status": "not_applicable",
+        "method_ref": "resident_build_only"
+      }
+    },
+    {
+      "logical_id": "resource:assets/images/dyb.png",
+      "source_path": "resources/assets/images/dyb.png",
+      "resource_kind": "optional_dynamic_image",
+      "category": "images",
+      "package_disposition": "excluded_v2",
+      "disposition_reason": "No v2 production caller exists for this tracked image. Retain its exact source record for provenance; the file remains in the legacy resource-pack oracle.",
+      "source_file": {
+        "bytes": 9861,
+        "sha256": "04307b9f7977a20f4cb70b7ebd6469f174beeafaced9f10c291c0ec99a91c7c0"
+      },
+      "installed_size": {
+        "bytes": null,
+        "status": "not_applicable",
+        "method_ref": "installed_none"
+      },
+      "startup_necessity": "not_required",
+      "loading_tier": "excluded",
+      "loading_method": "Do not load or install this image in the v2 package.",
+      "expected_lifetime": "No v2 runtime lifetime.",
+      "release_policy": "Excluded from the v2 runtime package; retained in source for legacy parity and provenance.",
       "streamability": {
         "status": "not_applicable",
         "method_ref": "stream_build_only"
