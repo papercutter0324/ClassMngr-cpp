@@ -5,7 +5,11 @@
 #include "next/application/roster_row_removal.h"
 #include "next/platform/application_services_roster_save_port.h"
 
+#include <QSqlDriver>
 #include <QSqlError>
+#include <QSqlField>
+#include <QSqlRecord>
+#include <QSqlResult>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
@@ -14,6 +18,79 @@ using namespace ClassMngr::Next;
 
 namespace
 {
+// A real SQLite query may materialize a sort before the first row. This driver
+// guarantees one delivered row followed by a terminal fetch failure.
+class RosterCursorFailureResult final : public QSqlResult
+{
+public:
+    explicit RosterCursorFailureResult(const QSqlDriver* driver) : QSqlResult(driver) {}
+protected:
+    bool prepare(const QString& query) override
+    {
+        setQuery(query);
+        return true;
+    }
+    bool exec() override
+    {
+        setActive(true);
+        setSelect(true);
+        setAt(QSql::BeforeFirstRow);
+        setLastError({});
+        return true;
+    }
+    bool reset(const QString& query) override { return prepare(query) && exec(); }
+    bool fetch(const int index) override
+    {
+        if (index == 0)
+        {
+            setAt(0);
+            return true;
+        }
+        setAt(QSql::AfterLastRow);
+        setLastError(QSqlError(QStringLiteral("Roster cursor"),
+            QStringLiteral("injected roster cursor failure"), QSqlError::StatementError));
+        return false;
+    }
+    bool fetchFirst() override { return fetch(0); }
+    bool fetchLast() override { return fetch(1); }
+    QVariant data(const int index) override
+    {
+        const QVariantList values{1, 0, QStringLiteral("integer"), 0,
+            QStringLiteral("integer"), QStringLiteral("Visible")};
+        return at() == 0 && index >= 0 && index < values.size()
+            ? values[index] : QVariant{};
+    }
+    bool isNull(const int index) override { return data(index).isNull(); }
+    int size() override { return -1; }
+    int numRowsAffected() override { return 0; }
+    QSqlRecord record() const override
+    {
+        QSqlRecord fields;
+        for (const auto* name : {"class_id", "row_index", "row_index_storage_type",
+                                "col_index", "col_index_storage_type", "value"})
+            fields.append(QSqlField(QString::fromLatin1(name)));
+        return fields;
+    }
+};
+
+class RosterCursorFailureDriver final : public QSqlDriver
+{
+public:
+    bool hasFeature(const DriverFeature feature) const override
+    {
+        return feature == PreparedQueries;
+    }
+    bool open(const QString&, const QString&, const QString&, const QString&,
+              int, const QString&) override
+    {
+        setOpen(true);
+        setOpenError(false);
+        return true;
+    }
+    void close() override { setOpen(false); }
+    QSqlResult* createResult() const override { return new RosterCursorFailureResult(this); }
+};
+
 Application::RosterSnapshot visibleRoster()
 {
     Application::RosterSnapshot snapshot;
@@ -62,6 +139,9 @@ private slots:
     void ambiguousOrUnknownTailFailsWithoutWrites();
     void row24RemovalKeepsAbsoluteTailPositions();
     void verySparseTailStaysSparseAndWindowInputsAreChecked();
+    void structuredSaveErrorsAndCheckedRollback();
+    void repositoryInputErrorsAreTyped();
+    void availabilityVisitorReportsTerminalCursorFailure();
 };
 
 void NextPlatformRosterWindowSaveTests::sparseTailRemapsCanonicalColumnsAndConfirmedRemoval()
@@ -92,6 +172,7 @@ void NextPlatformRosterWindowSaveTests::sparseTailRemapsCanonicalColumnsAndConfi
     const auto before = rawState(services);
     const auto unauthorized = port.saveRoster({.classId = classId, .roster = snapshot});
     QVERIFY(!unauthorized);
+    QCOMPARE(unauthorized.error().code, Domain::ErrorCode::Validation);
     QCOMPARE(rawState(services), before);
     const auto saved = port.saveRoster({.classId = classId, .roster = snapshot,
         .removedCustomColumns = {u" REMOVE   me "}});
@@ -167,6 +248,8 @@ void NextPlatformRosterWindowSaveTests::ambiguousOrUnknownTailFailsWithoutWrites
     const auto saved = repository->saveRosterWindowsWithParentCheck({{
         .classId = *id, .roster = replacement, .removedCustomColumns = removed}});
     QVERIFY(!saved);
+    QCOMPARE(saved.error().code, removed.contains(QStringLiteral("Korean"))
+        ? RepositoryErrorCode::InvalidInput : RepositoryErrorCode::Validation);
     QCOMPARE(rawState(services), before);
 }
 
@@ -241,6 +324,167 @@ void NextPlatformRosterWindowSaveTests::verySparseTailStaysSparseAndWindowInputs
     QVERIFY(window);
     QVERIFY(window->hasRowsOutsideWindow);
     QVERIFY(window->roster.rows.size() <= 25);
+}
+
+
+void NextPlatformRosterWindowSaveTests::structuredSaveErrorsAndCheckedRollback()
+{
+    QTemporaryDir directory;
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath("structured-errors.db")));
+    const auto id = services.classService()->create(QStringLiteral("Structured errors"));
+    QVERIFY(id);
+    auto* repository = services.workspaceStore()->rosterRepository();
+    QVERIFY(repository);
+    Roster original;
+    original.columns = {QStringLiteral("English")};
+    original.columnWidths = {160};
+    original.rows = {{QStringLiteral("Original")}};
+    QVERIFY(repository->saveRoster(*id, original));
+    const auto before = rawState(services);
+
+    const auto invalidId = repository->saveRoster(0, original);
+    QVERIFY(!invalidId);
+    QCOMPARE(invalidId.error().code, RepositoryErrorCode::InvalidInput);
+    QCOMPARE(invalidId.error().diagnostic,
+        QStringLiteral("Saving roster failed: invalid class id 0."));
+    const auto missing = repository->saveRosterWithParentCheck(*id + 1, original);
+    QVERIFY(!missing);
+    QCOMPARE(missing.error().code, RepositoryErrorCode::NotFound);
+    QVERIFY(missing.error().diagnostic.contains(QStringLiteral("was not found")));
+    const auto emptyWindows = repository->saveRosterWindowsWithParentCheck({});
+    QVERIFY(!emptyWindows);
+    QCOMPARE(emptyWindows.error().code, RepositoryErrorCode::InvalidInput);
+    QVERIFY(repository->saveRosters({}));
+
+    Roster duplicateHeaders = original;
+    duplicateHeaders.columns.append(QStringLiteral(" english "));
+    duplicateHeaders.columnWidths.append(160);
+    const auto invalidMapping = repository->saveRosterWindowsWithParentCheck({{
+        .classId = *id, .roster = duplicateHeaders}});
+    QVERIFY(!invalidMapping);
+    QCOMPARE(invalidMapping.error().code, RepositoryErrorCode::InvalidInput);
+    QCOMPARE(rawState(services), before);
+
+    Roster replacement = original;
+    replacement.rows[0][0] = QStringLiteral("Replacement");
+    const auto save = [&](const int mode) -> RepositoryStatus
+    {
+        switch (mode)
+        {
+        case 0: return repository->saveRoster(*id, replacement);
+        case 1: return repository->saveRosterWithParentCheck(*id, replacement);
+        case 2: return repository->saveRosters({{*id, replacement}});
+        default: return repository->saveRosterWindowsWithParentCheck({{
+            .classId = *id, .roster = replacement}});
+        }
+    };
+
+    QSqlDatabase database = services.workspaceStore()->database();
+    QSqlQuery query(database);
+    QVERIFY(query.exec(QStringLiteral("PRAGMA foreign_keys=ON")));
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TABLE deferred_roster_check (class_id INTEGER, "
+        "FOREIGN KEY(class_id) REFERENCES classes(id) DEFERRABLE INITIALLY DEFERRED)")));
+    for (const QString& failure : {QStringLiteral("ABORT"), QStringLiteral("ROLLBACK"),
+                                  QStringLiteral("COMMIT")})
+    {
+        const QString trigger = failure == QStringLiteral("COMMIT")
+            ? QStringLiteral("CREATE TRIGGER reject_roster_write AFTER INSERT ON roster_columns "
+                "BEGIN INSERT INTO deferred_roster_check VALUES (2147483647); END")
+            : QStringLiteral("CREATE TRIGGER reject_roster_write BEFORE INSERT ON roster_columns "
+                "BEGIN SELECT RAISE(%1, 'injected roster write failure'); END").arg(failure);
+        QVERIFY2(query.exec(trigger), qPrintable(query.lastError().text()));
+        for (const int mode : {0, 1, 2, 3})
+        {
+            const auto failed = save(mode);
+            QVERIFY(!failed);
+            QCOMPARE(failed.error().code, RepositoryErrorCode::Technical);
+            QVERIFY2(failed.error().diagnostic.contains(failure == QStringLiteral("COMMIT")
+                    ? QStringLiteral("FOREIGN KEY") : QStringLiteral("injected roster write failure")),
+                qPrintable(failed.error().diagnostic));
+            QCOMPARE(failed.error().diagnostic.contains(QStringLiteral("Rolling back")),
+                failure == QStringLiteral("ROLLBACK"));
+            QCOMPARE(rawState(services), before);
+            QVERIFY(database.transaction());
+            QVERIFY(database.rollback());
+            QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM deferred_roster_check")));
+            QVERIFY(query.next());
+            QCOMPARE(query.value(0).toInt(), 0);
+            query.finish();
+        }
+        QVERIFY(query.exec(QStringLiteral("DROP TRIGGER reject_roster_write")));
+    }
+}
+
+
+void NextPlatformRosterWindowSaveTests::repositoryInputErrorsAreTyped()
+{
+    QTemporaryDir directory;
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath("input-errors.db")));
+    auto* repository = services.workspaceStore()->rosterRepository();
+    QVERIFY(repository);
+    const auto invalid = [](const auto& result)
+    {
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, RepositoryErrorCode::InvalidInput);
+        QVERIFY(!result.error().diagnostic.isEmpty());
+        QVERIFY(!result.error().recoverableOverride.has_value());
+    };
+    invalid(repository->saveRosterWithParentCheck(0, {}));
+    invalid(repository->saveRosters({{0, {}}}));
+    invalid(repository->loadRoster(0));
+    invalid(repository->loadRosterDetailed(0));
+    invalid(repository->loadRosterWindowDetailed(1, 0));
+    invalid(repository->loadSpeakingEvaluationRosterNames(0));
+    invalid(repository->loadSpeakingEvaluationRosterNamesDetailed(0));
+    invalid(repository->loadFullRosters({1, 1}));
+    invalid(repository->loadRostersForTemplatePrint({0}));
+    invalid(repository->loadRosterColumnNamesForClasses({0}));
+    invalid(repository->loadRosterColumnNamesForClassesWithParentProvenance({0}));
+    invalid(repository->loadMyClassesStudentCountRecords({0}));
+    invalid(repository->loadSubPrepStudentCountRecords({0}));
+    invalid(repository->forEachRosterDataCellForClasses({1}, 25, {}));
+    invalid(repository->forEachRosterDataCellForExistingClasses({1}, 25, {}));
+    invalid(repository->loadRosterForOutput(0, {}, 0, 0, 0));
+    invalid(repository->loadRosterForOutput(1, {}, kRosterRepositoryOutputMaxRows + 1, 0, 0));
+    invalid(repository->loadRosterForOutput(1, {QStringLiteral(" ")}, 0, 0, 0));
+    invalid(repository->getRosterStudentCount(0));
+    // Empty requests retain their existing early success, even without a callback.
+    QVERIFY(repository->forEachRosterDataCellForClasses({}, 0, {}));
+    QVERIFY(repository->forEachRosterDataCellForExistingClasses({}, 0, {}));
+}
+
+
+void NextPlatformRosterWindowSaveTests::availabilityVisitorReportsTerminalCursorFailure()
+{
+    const QString connection = QStringLiteral("roster-terminal-cursor-failure");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(new RosterCursorFailureDriver, connection);
+        QVERIFY(database.open());
+        RosterRepository repository(database);
+        for (const bool parentRooted : {false, true})
+        {
+            int delivered = 0;
+            const auto consume = [&](int classId, int row, int column, const QString& value)
+            {
+                ++delivered;
+                QCOMPARE(classId, 1);
+                QCOMPARE(row, 0);
+                QCOMPARE(column, 0);
+                QCOMPARE(value, QStringLiteral("Visible"));
+            };
+            const auto failed = parentRooted
+                ? repository.forEachRosterDataCellForExistingClasses({1}, 25, consume)
+                : repository.forEachRosterDataCellForClasses({1}, 25, consume);
+            QCOMPARE(delivered, 1);
+            QVERIFY(!failed);
+            QCOMPARE(failed.error().code, RepositoryErrorCode::Technical);
+            QVERIFY(failed.error().diagnostic.contains(QStringLiteral("injected roster cursor failure")));
+        }
+    }
+    QSqlDatabase::removeDatabase(connection);
 }
 
 QTEST_MAIN(NextPlatformRosterWindowSaveTests)

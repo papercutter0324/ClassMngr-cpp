@@ -258,12 +258,12 @@ public:
         {
             try
             {
-                const ::Result<int> source =
+                const RepositoryResult<int> source =
                     rosterRepository->getRosterStudentCount(*legacyClassId);
                 if (!source)
                 {
                     snapshot.studentCount = studentCountFailure(
-                        fromLegacyRosterError(
+                        fromRepositoryError(
                             source.error(),
                             "The class student count could not be loaded."
                             )
@@ -392,35 +392,6 @@ private:
         }
 
         const QByteArray bytes = toLegacyDiagnostic(repositoryError).toUtf8();
-        return {
-            .code = code,
-            .message = bytes.isEmpty() ? fallback : bytes.toStdString(),
-            .recoverable = false
-        };
-    }
-
-    [[nodiscard]] static Domain::OperationError fromLegacyRosterError(
-        const QString& message,
-        const char* fallback
-        )
-    {
-        const QString normalized = message.toLower();
-        Domain::ErrorCode code = Domain::ErrorCode::Technical;
-        if (normalized.contains(QStringLiteral("not found"))
-            || normalized.contains(QStringLiteral("no matching record"))
-            || normalized.contains(QStringLiteral("unavailable")))
-        {
-            code = Domain::ErrorCode::NotFound;
-        }
-        else if (normalized.contains(QStringLiteral("invalid")))
-        {
-            code = Domain::ErrorCode::InvalidInput;
-        }
-        else if (normalized.contains(QStringLiteral("validation")))
-        {
-            code = Domain::ErrorCode::Validation;
-        }
-        const QByteArray bytes = message.toUtf8();
         return {
             .code = code,
             .message = bytes.isEmpty() ? fallback : bytes.toStdString(),

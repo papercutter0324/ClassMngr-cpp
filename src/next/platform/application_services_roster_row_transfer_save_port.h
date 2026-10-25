@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/platform/repository_error_code.h"
+
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/workspace_store.h"
@@ -55,8 +57,7 @@ public:
             });
             if (!saved)
                 return failure(
-                    saved.error().kind == RosterRepository::SaveFailure::Kind::ParentClassMissing
-                        ? Domain::ErrorCode::NotFound : Domain::ErrorCode::Technical,
+                    repositoryDomainErrorCode(saved.error().code),
                     saved.error().diagnostic.toUtf8().toStdString());
             return Domain::Result<void>::success();
         }

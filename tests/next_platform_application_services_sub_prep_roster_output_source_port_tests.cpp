@@ -381,7 +381,7 @@ class NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests final
 private slots:
     void initTestCase();
     void readsSelectedClassesModeAndRequestedRosterColumns();
-    void rejectsFractionalRosterRowIndexAsTechnical();
+    void rejectsFractionalRosterRowIndexAsValidation();
     void rejectsLateRosterColumnFetchFailureAsTechnical();
     void rejectsLateRosterCellFetchFailureAsTechnical();
     void returnsEmptyRosterOutputWhenHeadersHaveNoStoredCells();
@@ -654,7 +654,7 @@ readsSelectedClassesModeAndRequestedRosterColumns()
 }
 
 void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
-rejectsFractionalRosterRowIndexAsTechnical()
+rejectsFractionalRosterRowIndexAsValidation()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -738,7 +738,7 @@ rejectsFractionalRosterRowIndexAsTechnical()
         ));
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, ErrorCode::Technical);
+    QCOMPARE(result.error().code, ErrorCode::Validation);
     QVERIFY(
         result.error().message.find("row_index has non-INTEGER SQLite storage")
         != std::string::npos

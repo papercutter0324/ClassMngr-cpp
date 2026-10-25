@@ -474,7 +474,7 @@ rejectsOutOfRangeIntegerRosterWidthWithoutPartialSnapshot()
     const auto result = query.execute({classId(classIdValue)});
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     const QString diagnostic = QString::fromStdString(result.error().message);
     QVERIFY2(
         diagnostic.contains(QStringLiteral("class id %1").arg(classIdValue))
@@ -515,7 +515,7 @@ fractionalColumnIndexIsRejectedByTemplatePrintRead()
     const Application::RosterTemplatePrintSourceReadQuery query(port);
     const auto result = query.execute({classId(classIdValue)});
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
 
     QSqlQuery storedCells(services.workspaceStore()->database());
     QVERIFY(storedCells.prepare(QStringLiteral(

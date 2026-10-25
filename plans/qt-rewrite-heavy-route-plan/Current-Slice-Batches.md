@@ -32,9 +32,11 @@ NativeEnglishTeacherRepository implementation and independent verification
 are complete; the slice is accepted. F1453 is committed locally as
 `78189be6fe288a1ac6e8fef8760c151edf687f20` and is not pushed. F1454
 IntensiveSlotStateRepository implementation and independent verification are
-complete; the slice is accepted, its local commit is pending, and F1455 is next.
-Evidence and limits are in the [progress log](04-Phase-3-Progress-Log.md). The
-accepted queue is:
+complete; the slice is accepted. F1454 is committed locally as
+`b362325f8a3d2f162a14e30c59ee171a52024e77` and is not pushed. F1455
+RosterRepository is independently verified and accepted; its local commit is
+pending, and F1456 is next. Its accepted boundary, evidence, and limits are in the [progress
+log](04-Phase-3-Progress-Log.md). The accepted queue is:
 
 1. **F1444** — shared `RepositoryError`/`RepositoryResult`/status contract and SQL error mapping.
 2. **F1445** — Workspace/database transaction, schema, lifecycle, and file-operation errors.

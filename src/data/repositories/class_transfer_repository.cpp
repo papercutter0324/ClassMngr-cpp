@@ -1524,7 +1524,7 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
     {
         for (ClassTransferExportSourceClass& pending : source.classes)
         {
-            Result<Roster> roster =
+            RepositoryResult<Roster> roster =
                 rosterRepository.loadRoster(pending.classId);
             if (roster)
             {
@@ -1532,7 +1532,7 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
             }
             else
             {
-                pending.rosterError = roster.error();
+                pending.rosterError = toLegacyDiagnostic(roster.error());
             }
         }
     }

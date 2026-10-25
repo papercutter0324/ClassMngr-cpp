@@ -111,15 +111,15 @@ public:
                     );
             }
 
-            const Result<QList<RosterRepository::TemplatePrintReadRecord>>
+            const RepositoryResult<QList<RosterRepository::TemplatePrintReadRecord>>
                 rosterRecords = rosterRepository->loadRostersForTemplatePrint(
                     legacyClassIds
                     );
             if (!rosterRecords)
             {
                 return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(rosterRecords.error())
+                    domainErrorCode(rosterRecords.error().code),
+                    toStdString(toLegacyDiagnostic(rosterRecords.error()))
                     );
             }
             if (rosterRecords->size() != legacyClassIds.size())

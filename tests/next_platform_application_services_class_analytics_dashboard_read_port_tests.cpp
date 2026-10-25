@@ -364,7 +364,7 @@ rejectsFractionalRosterColumnWithoutInflatingAnalyticsRowCount()
     Platform::ApplicationServicesClassAnalyticsDashboardReadPort port(services);
     const auto roster = port.readRosterNames(*typedClassId);
     QVERIFY(!roster);
-    QCOMPARE(roster.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(roster.error().code, Domain::ErrorCode::Validation);
     QVERIFY(roster.error().recoverable);
     QVERIFY(roster.error().message
             == "Roster data contains a non-integer column index.");
@@ -451,7 +451,7 @@ rejectsInvalidRosterColumnPositionStorage()
     Platform::ApplicationServicesClassAnalyticsDashboardReadPort port(services);
     const auto result = port.readRosterNames(*typedClassId);
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     QVERIFY(result.error().recoverable);
     QVERIFY(result.error().message
             == "Roster columns contain an invalid position representation.");
@@ -528,19 +528,19 @@ rejectsRosterRowsOutsideClassAnalyticsIntegerRange()
 
     const auto intMaxResult = port.readRosterNames(*intMaxTypedClassId);
     QVERIFY(!intMaxResult);
-    QCOMPARE(intMaxResult.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(intMaxResult.error().code, Domain::ErrorCode::Validation);
     QVERIFY(intMaxResult.error().recoverable);
     QVERIFY(intMaxResult.error().message == expectedMessage);
 
     const auto aboveIntMaxResult = port.readRosterNames(*aboveIntMaxTypedClassId);
     QVERIFY(!aboveIntMaxResult);
-    QCOMPARE(aboveIntMaxResult.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(aboveIntMaxResult.error().code, Domain::ErrorCode::Validation);
     QVERIFY(aboveIntMaxResult.error().recoverable);
     QVERIFY(aboveIntMaxResult.error().message == expectedMessage);
 
     const auto fractionalResult = port.readRosterNames(*fractionalTypedClassId);
     QVERIFY(!fractionalResult);
-    QCOMPARE(fractionalResult.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(fractionalResult.error().code, Domain::ErrorCode::Validation);
     QVERIFY(fractionalResult.error().recoverable);
     QVERIFY(fractionalResult.error().message == expectedMessage);
 }

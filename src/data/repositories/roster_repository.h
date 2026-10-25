@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/result.h"
+#include "repository_error.h"
 #include "domain/models/roster.h"
 
 #include <QList>
@@ -37,20 +37,6 @@ struct RosterWindowReadOutcome final
 class RosterRepository
 {
 public:
-    struct SaveFailure final
-    {
-        enum class Kind
-        {
-            ParentClassMissing,
-            Technical
-        };
-
-        Kind kind = Kind::Technical;
-        QString diagnostic;
-    };
-
-    using SaveResult = std::expected<void, SaveFailure>;
-
     // Replaces [0, 25), preserving sparse tail rows at absolute indices.
     // Only explicitly confirmed, displayed custom columns may lose tail cells.
     struct WindowSaveRequest final
@@ -60,7 +46,7 @@ public:
         QStringList removedCustomColumns;
     };
 
-    [[nodiscard]] SaveResult saveRosterWindowsWithParentCheck(
+    [[nodiscard]] RepositoryStatus saveRosterWindowsWithParentCheck(
         const QList<WindowSaveRequest>& windows);
 
 
@@ -97,7 +83,7 @@ public:
     struct MyClassesStudentCountReadEntry final
     {
         int classId = 0;
-        Result<int> studentCount;
+        RepositoryResult<int> studentCount;
         bool parentMissing = false;
     };
 
@@ -113,7 +99,7 @@ public:
     struct SubPrepStudentCountReadEntry final
     {
         int classId = 0;
-        Result<int> studentCount = 0;
+        RepositoryResult<int> studentCount = 0;
         int columnCount = 0;
         int rowCount = 0;
         int cellCount = 0;
@@ -165,32 +151,32 @@ public:
         QSqlDatabase& database
         );
 
-    [[nodiscard]] Status saveRoster(
+    [[nodiscard]] RepositoryStatus saveRoster(
         int classId,
         const Roster& roster
         );
 
     // Used by typed callers that need to distinguish a missing parent class
     // from other repository failures.
-    [[nodiscard]] SaveResult saveRosterWithParentCheck(
+    [[nodiscard]] RepositoryStatus saveRosterWithParentCheck(
         int classId,
         const Roster& roster
         );
 
-    [[nodiscard]] Status saveRosters(
+    [[nodiscard]] RepositoryStatus saveRosters(
         const QList<QPair<int, Roster>>& rosters
         );
 
-    [[nodiscard]] Result<Roster> loadRoster(
+    [[nodiscard]] RepositoryResult<Roster> loadRoster(
         int classId
         );
     // Adds parent provenance while retaining requested-ID child row loading.
-    [[nodiscard]] Result<RosterReadOutcome> loadRosterDetailed(
+    [[nodiscard]] RepositoryResult<RosterReadOutcome> loadRosterDetailed(
         int classId
         );
     // Loads every ordered column and width, but materializes cells only for
     // rows [0, rowLimit). Reports any persisted row outside that window.
-    [[nodiscard]] Result<RosterWindowReadOutcome> loadRosterWindowDetailed(
+    [[nodiscard]] RepositoryResult<RosterWindowReadOutcome> loadRosterWindowDetailed(
         int classId,
         int rowLimit
         );
@@ -198,17 +184,17 @@ public:
     // Reads only the first English/Korean name columns and preserves the
     // legacy materialized-row shape, including sparse rows caused by any
     // valid roster cell.
-    [[nodiscard]] Result<SpeakingEvaluationRosterNamesReadRecord>
+    [[nodiscard]] RepositoryResult<SpeakingEvaluationRosterNamesReadRecord>
     loadSpeakingEvaluationRosterNames(int classId);
     // Adds parent provenance for typed callers while keeping the legacy
     // projection API and its requested-ID child-row behavior intact.
-    [[nodiscard]] Result<SpeakingEvaluationRosterNamesReadOutcome>
+    [[nodiscard]] RepositoryResult<SpeakingEvaluationRosterNamesReadOutcome>
     loadSpeakingEvaluationRosterNamesDetailed(int classId);
 
     // Reports sparse row sizing once, then streams only the first exact
     // English/Korean columns. Unrelated in-range columns still affect sizing.
     // Consumer exceptions propagate to the caller.
-    [[nodiscard]] Status forEachClassAnalyticsRosterNameCell(
+    [[nodiscard]] RepositoryStatus forEachClassAnalyticsRosterNameCell(
         int classId,
         const std::function<void(const ClassAnalyticsRosterNamesMetadata&)>&
             metadataConsumer,
@@ -216,32 +202,32 @@ public:
             cellConsumer
         );
 
-    [[nodiscard]] Result<QList<TemplatePrintReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<TemplatePrintReadRecord>>
     loadRostersForTemplatePrint(const QList<int>& classIds);
     // Loads complete roster snapshots in request order, including widths and
     // sparse row shape. Uses one column read and, when needed, one cell read.
-    [[nodiscard]] Result<QList<FullRosterReadRecord>>
+    [[nodiscard]] RepositoryResult<QList<FullRosterReadRecord>>
     loadFullRosters(const QList<int>& classIds);
     [[nodiscard]] const TemplatePrintBatchReadMetrics&
     templatePrintBatchReadMetrics() const noexcept;
 
     // Reads ordered column names for every requested class in one statement.
     // Classes without roster columns are returned with an empty column list.
-    [[nodiscard]] Result<QList<ColumnNamesForClass>>
+    [[nodiscard]] RepositoryResult<QList<ColumnNamesForClass>>
     loadRosterColumnNamesForClasses(
         const QList<int>& classIds
         );
     // Reads columns through the requested parent class. Confirmed missing
     // parents are retained as entries with parentMissing set; SQL failures
     // remain failures of the outer batch result.
-    [[nodiscard]] Result<QList<ParentAwareColumnNamesForClass>>
+    [[nodiscard]] RepositoryResult<QList<ParentAwareColumnNamesForClass>>
     loadRosterColumnNamesForClassesWithParentProvenance(
         const QList<int>& classIds
         );
 
     // Counts nonblank English/Korean cells without constructing roster rows.
     // A successful batch uses one ordered column read and one sparse cell read.
-    [[nodiscard]] Result<QList<MyClassesStudentCountReadEntry>>
+    [[nodiscard]] RepositoryResult<QList<MyClassesStudentCountReadEntry>>
     loadMyClassesStudentCountRecords(
         const QList<int>& classIds
         );
@@ -250,7 +236,7 @@ public:
 
     // Reads Sub Prep print counts and legacy profiler dimensions in set based
     // statements. Failures stay local to each class in the returned entries.
-    [[nodiscard]] Result<QList<SubPrepStudentCountReadEntry>>
+    [[nodiscard]] RepositoryResult<QList<SubPrepStudentCountReadEntry>>
     loadSubPrepStudentCountRecords(
         const QList<int>& classIds
         );
@@ -259,14 +245,14 @@ public:
 
     // Streams sparse cells for the requested classes without materializing
     // roster snapshots. Rows outside [0, rowLimit) are omitted.
-    [[nodiscard]] Status forEachRosterDataCellForClasses(
+    [[nodiscard]] RepositoryStatus forEachRosterDataCellForClasses(
         const QList<int>& classIds,
         int rowLimit,
         const std::function<void(int, int, int, const QString&)>& consumer
         );
     // Streams sparse cells only through an existing parent class. Orphaned
     // roster rows are excluded even when their class id was requested.
-    [[nodiscard]] Status forEachRosterDataCellForExistingClasses(
+    [[nodiscard]] RepositoryStatus forEachRosterDataCellForExistingClasses(
         const QList<int>& classIds,
         int rowLimit,
         const std::function<void(int, int, int, const QString&)>& consumer
@@ -274,7 +260,7 @@ public:
 
     // Loads only the requested columns and rejects row, cell, or UTF-8 byte
     // limits before allocating the projected cell matrix.
-    [[nodiscard]] Result<Roster> loadRosterForOutput(
+    [[nodiscard]] RepositoryResult<Roster> loadRosterForOutput(
         int classId,
         const QStringList& requestedColumns,
         std::size_t maxRows,
@@ -282,29 +268,29 @@ public:
         std::size_t maxTextBytes
         );
 
-    [[nodiscard]] Result<int> getRosterStudentCount(
+    [[nodiscard]] RepositoryResult<int> getRosterStudentCount(
         int classId
         );
 
 private:
-    [[nodiscard]] Status writeRosterWindow(const WindowSaveRequest& window);
-    [[nodiscard]] Status writeRoster(
+    [[nodiscard]] RepositoryStatus writeRosterWindow(const WindowSaveRequest& window);
+    [[nodiscard]] RepositoryStatus writeRoster(
         int classId,
         const Roster& roster
         );
-    [[nodiscard]] Result<MyClassesStudentCountReadEntry>
+    [[nodiscard]] RepositoryResult<MyClassesStudentCountReadEntry>
     loadMyClassesStudentCountRecord(int classId);
-    [[nodiscard]] Result<SpeakingEvaluationRosterNamesReadOutcome>
+    [[nodiscard]] RepositoryResult<SpeakingEvaluationRosterNamesReadOutcome>
     loadSpeakingEvaluationRosterNamesImpl(int classId, bool parentRooted);
-    [[nodiscard]] Result<SubPrepStudentCountReadEntry>
+    [[nodiscard]] RepositoryResult<SubPrepStudentCountReadEntry>
     loadSubPrepStudentCountRecord(int classId);
-    [[nodiscard]] Result<SubPrepStudentCountReadEntry>
+    [[nodiscard]] RepositoryResult<SubPrepStudentCountReadEntry>
     loadSingleClassSubPrepStudentCountRecord(int classId);
-    [[nodiscard]] Result<RosterWindowReadOutcome> loadRosterDetailedImpl(
+    [[nodiscard]] RepositoryResult<RosterWindowReadOutcome> loadRosterDetailedImpl(
         int classId,
         std::optional<int> rowLimit
         );
-    [[nodiscard]] Result<QList<FullRosterReadRecord>> loadFullRostersImpl(
+    [[nodiscard]] RepositoryResult<QList<FullRosterReadRecord>> loadFullRostersImpl(
         const QList<int>& classIds,
         TemplatePrintBatchReadMetrics* templatePrintMetrics,
         bool templatePrintContext

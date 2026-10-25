@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/platform/repository_error_code.h"
+
 #include "core/application_services.h"
 #include "core/utils/student_name_utils.h"
 #include "data/database/workspace_store.h"
@@ -62,7 +64,7 @@ public:
         try
         {
             Application::ClassAnalyticsRosterNames roster;
-            const Status loaded = repository->forEachClassAnalyticsRosterNameCell(
+            const RepositoryStatus loaded = repository->forEachClassAnalyticsRosterNameCell(
                 *legacyId,
                 [&](const RosterRepository::ClassAnalyticsRosterNamesMetadata& metadata)
                 {
@@ -247,6 +249,15 @@ private:
         )
     {
         return failure<Value>(Domain::ErrorCode::Technical, std::move(message));
+    }
+
+    template<typename Value>
+    [[nodiscard]] static Domain::Result<Value> repositoryFailure(
+        const RepositoryError& error
+        )
+    {
+        return failure<Value>(repositoryDomainErrorCode(error.code),
+            error.diagnostic.toStdString());
     }
 
     template<typename Value>

@@ -680,7 +680,7 @@ public:
                 const std::size_t textBytesRemaining =
                     Application::kSubPrepRosterOutputMaxTotalTextBytes
                     - totalTextBytes;
-                const ::Result<Roster> loadedRoster =
+                const RepositoryResult<Roster> loadedRoster =
                     rosterRepository->loadRosterForOutput(
                         classId,
                         rosterColumns,
@@ -998,34 +998,6 @@ private:
         }
 
         const QString message = toLegacyDiagnostic(error);
-        const QByteArray bytes = message.toUtf8();
-        return failure(
-            code,
-            bytes.isEmpty() ? std::string(fallback) : bytes.toStdString()
-            );
-    }
-
-    [[nodiscard]] static Application::SubPrepRosterOutputSourceReadResult
-    repositoryFailure(const QString& message, const char* fallback)
-    {
-        const QString normalized = message.toLower();
-        Domain::ErrorCode code = Domain::ErrorCode::Technical;
-        if (normalized.contains(QStringLiteral("no matching record"))
-            || normalized.contains(QStringLiteral("not found"))
-            || normalized.contains(QStringLiteral("does not exist")))
-        {
-            code = Domain::ErrorCode::NotFound;
-        }
-        else if (normalized.contains(QStringLiteral("limit"))
-                 || normalized.contains(QStringLiteral("exceed")))
-        {
-            code = Domain::ErrorCode::Validation;
-        }
-        else if (normalized.contains(QStringLiteral("invalid")))
-        {
-            code = Domain::ErrorCode::InvalidInput;
-        }
-
         const QByteArray bytes = message.toUtf8();
         return failure(
             code,

@@ -555,8 +555,8 @@ singleClassStudentCountMatchesFullLoaderValidation()
         return std::tuple{
             static_cast<bool>(fullRoster),
             static_cast<bool>(singleCount),
-            fullRoster ? QString() : fullRoster.error(),
-            singleCount ? QString() : singleCount.error()
+            fullRoster ? QString() : toLegacyDiagnostic(fullRoster.error()),
+            singleCount ? QString() : toLegacyDiagnostic(singleCount.error())
         };
     };
 
@@ -699,7 +699,8 @@ singleClassStudentCountMatchesFullLoaderValidation()
 
     const auto invalidClassCount = repository->getRosterStudentCount(0);
     QVERIFY(!invalidClassCount);
-    QVERIFY(invalidClassCount.error().contains(QStringLiteral("invalid class id")));
+    QCOMPARE(invalidClassCount.error().code, RepositoryErrorCode::InvalidInput);
+    QVERIFY(invalidClassCount.error().diagnostic.contains(QStringLiteral("invalid class id")));
 
     const auto failedClass = services.classService()->create(
         QStringLiteral("Failed Count Does Not Profile")
@@ -917,7 +918,7 @@ rejectsOutOfRangeIntegerRosterWidth()
         );
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     const QString diagnostic = QString::fromStdString(result.error().message);
     QVERIFY2(
         diagnostic.contains(QStringLiteral("class id %1").arg(*createdClass))
@@ -1104,7 +1105,7 @@ rejectsMalformedColumnPosition()
         );
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     const QString diagnostic = QString::fromStdString(result.error().message);
     QVERIFY2(
         diagnostic.contains(QStringLiteral("position"), Qt::CaseInsensitive),
@@ -1239,7 +1240,7 @@ rejectsMalformedColumnIndexWithoutOverwritingColumnZero()
         );
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     const QString diagnostic = QString::fromStdString(result.error().message);
     QVERIFY2(
         diagnostic.contains(QStringLiteral("column index"), Qt::CaseInsensitive),
@@ -1294,7 +1295,7 @@ rejectsFractionalColumnIndexBeforeOverwritingColumnZero()
         );
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     const QString diagnostic = QString::fromStdString(result.error().message);
     QVERIFY2(
         diagnostic.contains(QStringLiteral("column index"), Qt::CaseInsensitive),
@@ -1350,7 +1351,7 @@ rejectsFractionalAvailabilityColumnIndex()
         );
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     const QString diagnostic = QString::fromStdString(result.error().message);
     QVERIFY2(
         diagnostic.contains(QStringLiteral("column index"), Qt::CaseInsensitive),
@@ -1420,7 +1421,7 @@ rejectsFractionalAvailabilityRowIndex()
         );
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     const QString diagnostic = QString::fromStdString(result.error().message);
     QVERIFY2(
         diagnostic.contains(QStringLiteral("row index"), Qt::CaseInsensitive),
@@ -1485,7 +1486,7 @@ rejectsRowIndexBeyondIntRangeWithoutDenseExpansion()
         );
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     const QString diagnostic = QString::fromStdString(result.error().message);
     QVERIFY2(
         diagnostic.contains(QStringLiteral("row index"), Qt::CaseInsensitive),
@@ -1614,7 +1615,7 @@ readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit()
     QCOMPARE(result.value()[4].firstEmptyRowResult.value().rawValue(), 0);
 
     std::vector<std::tuple<int, int, int>> streamedOrder;
-    const Status streamed =
+    const RepositoryStatus streamed =
         services.workspaceStore()->rosterRepository()
             ->forEachRosterDataCellForClasses(
                 orderedIds,
@@ -1882,7 +1883,7 @@ rejectsMalformedAvailabilityColumnIndex()
         );
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     const QString diagnostic = QString::fromStdString(result.error().message);
     QVERIFY2(
         diagnostic.contains(QStringLiteral("column index"), Qt::CaseInsensitive),

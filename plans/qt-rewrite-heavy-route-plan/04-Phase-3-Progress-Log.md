@@ -3955,13 +3955,16 @@ conversion strings, but those specific strings and the raw birthday cursor
 text lacked dedicated runtime assertions. No full suite or other-platform run
 was performed.
 
-## F1454 — IntensiveSlotStateRepository structured errors — independently verified, local commit pending — 2026-10-25
+## F1454 — IntensiveSlotStateRepository structured errors — independently verified, committed locally — 2026-10-25
 
 Discovery is complete under `PHASE3-F1454-INTENSIVESLOTSTATEREPOSITORY-2025`;
 Explorer `PHASE3-F1454-INTENSIVESLOT-SCOPE-DISCOVERY-2025-EXP-01` and
 Investigator `PHASE3-F1454-INTENSIVESLOT-ERROR-RESEARCH-2025-INV-01` support
 the accepted scope. Implementation and independent verification are complete;
-the slice is accepted, its local commit is pending, and F1455 is next.
+the slice is accepted. F1454 is committed locally as
+`b362325f8a3d2f162a14e30c59ee171a52024e77` (`Phase3 - Add structured
+IntensiveSlotStateRepository errors (F1454)`) and is not pushed. F1455
+discovery has started; its scope is not yet accepted.
 
 The two public fallible APIs, `loadIntensiveSlotStates` and
 `saveIntensiveSlotState`, become `RepositoryResult`/`RepositoryStatus`. All
@@ -3989,3 +3992,35 @@ recoverability. Upsert collision, day/start ordering, and raw unfamiliar or
 whitespace values were source-compared unchanged.
 
 No full suite or other-platform build was run.
+
+## F1455 — RosterRepository structured errors — independently verified — 2026-10-25
+
+Discovery is complete under `PHASE3-F1455-ROSTER-20261025`; Explorer
+`PHASE3-F1455-ROSTER-SCOPE-DISCOVERY-20261025-EXP-01` and Investigator
+`PHASE3-F1455-ROSTER-ERROR-RESEARCH-20261025-INV-01` support the accepted
+scope. Independent verification is complete and the slice is accepted; the
+local commit is pending, and F1456 is next.
+
+Convert every fallible public `RosterRepository` API and nested per-item count
+failure to `RepositoryResult`/`RepositoryStatus`. Invalid caller requests map
+to `InvalidInput`; malformed persisted content rejected by a reader maps to
+`Validation`; SQL, cursor, and transaction failures map to `Technical`. Do not
+use `Conflict` without concurrency semantics. Preserve parent provenance,
+successful-empty behavior, no-write and transaction/rollback semantics, and
+typed adapter mappings' diagnostics and recoverability. Add the missing cursor
+`lastError` check.
+
+The independent fresh macOS incremental Debug build succeeded for Data,
+Features, AppServices, and affected repository, adapter, compatibility, and
+test targets; 22/22 focused CTests passed and `git diff --check` passed.
+Coverage spans window save; roster reads, saves, columns, availability, and
+template printing; Speaking Evaluation names; analytics; My Classes and Sub
+Prep; DataService lifecycle and repository errors; ClassTransfer export; and
+testing-class repository/navigation.
+
+Limits: exception review traced the broader `ClassMngrClassTransfer` failure
+to teacher-profile display-name reads outside the F1455 roster/export path;
+there is no pre-change baseline. `ClassMngrClassesPageTests` timed out after
+45 seconds without output and uses test stubs for the relevant paths; no cause
+was established. Neither result establishes an F1455 regression or a
+pre-existing failure. No full-suite or other-platform verification is claimed.

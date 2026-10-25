@@ -499,6 +499,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_details_schedule_conflict_port.h
     src/next/platform/application_services_class_details_validation_context_port.h
     src/next/platform/application_services_classes_navigation_read_port.h
+    src/next/platform/repository_error_code.h
     src/next/platform/application_services_roster_row_transfer_save_port.h
     src/next/platform/application_services_roster_read_port.h
     src/next/platform/application_services_roster_window_read_port.h

@@ -992,7 +992,7 @@ Status DataService::saveRoster(
             );
     }
 
-    return m_session->rosterRepository()->saveRoster(classId, roster);
+    return toLegacyStatus(m_session->rosterRepository()->saveRoster(classId, roster));
 }
 
 Status DataService::saveRosters(
@@ -1006,9 +1006,9 @@ Status DataService::saveRosters(
             );
     }
 
-    return m_session->rosterRepository()->saveRosters(
+    return toLegacyStatus(m_session->rosterRepository()->saveRosters(
         rosters
-        );
+        ));
 }
 
 Result<Roster> DataService::loadRoster(
@@ -1022,9 +1022,9 @@ Result<Roster> DataService::loadRoster(
             );
     }
 
-    return m_session->rosterRepository()->loadRoster(
+    return toLegacyResult(m_session->rosterRepository()->loadRoster(
         classId
-        );
+        ));
 }
 
 Result<Roster> DataService::loadRosterForOutput(
@@ -1042,13 +1042,13 @@ Result<Roster> DataService::loadRosterForOutput(
             );
     }
 
-    return m_session->rosterRepository()->loadRosterForOutput(
+    return toLegacyResult(m_session->rosterRepository()->loadRosterForOutput(
         classId,
         requestedColumns,
         maxRows,
         maxCells,
         maxTextBytes
-        );
+        ));
 }
 
 Result<int> DataService::getRosterStudentCount(
@@ -1062,9 +1062,9 @@ Result<int> DataService::getRosterStudentCount(
             );
     }
 
-    return m_session->rosterRepository()->getRosterStudentCount(
+    return toLegacyResult(m_session->rosterRepository()->getRosterStudentCount(
         classId
-        );
+        ));
 }
 
 Status DataService::saveSpeakingEval(

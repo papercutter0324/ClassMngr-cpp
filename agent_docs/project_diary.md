@@ -8659,7 +8659,12 @@ were exercised. Malformed-ID, raw birthday cursor message, no-op, and rollback
 failure branches remain source-reviewed without direct runtime assertions.
 
 
-## 2026-10-25 — F1454 verified; local commit pending
+## 2026-10-25 — F1454 verified and committed; F1455 verified and accepted
+
+F1454 is committed locally as `b362325f8a3d2f162a14e30c59ee171a52024e77`;
+it remains unpushed until Batch 22 closes. F1455 RosterRepository discovery
+is complete under the Heavy route; its scope is accepted, implementation and
+independent verification are complete, and its local commit is pending.
 
 F1454 converts the two IntensiveSlotStateRepository fallible APIs and keeps
 all current repository errors Technical. Input validation stays in the typed
@@ -8675,4 +8680,16 @@ DataService lifecycle, read/save ports, and ScheduleWidget. SQL and terminal
 cursor errors remain Technical, exact diagnostic conversions pass, and the
 direct ports retain their differing recoverability. Upsert collision,
 ordering, and raw unfamiliar values were source-compared as unchanged. No full
-suite or other-platform build ran; F1455 is next.
+suite or other-platform build ran.
+
+F1455 converts every fallible public RosterRepository API and nested batch
+failure. Caller preconditions are InvalidInput, stored content rejected by a
+reader is Validation, and SQL, cursor, transaction, and rollback failures are
+Technical; no Conflict category is introduced without concurrency semantics.
+Preserve parent provenance and intentional successful-empty behavior, fix the
+missing terminal cursor check, and check rollback while retaining the primary
+diagnostic. A fresh macOS incremental Debug build succeeded; 22 focused CTests
+passed 22/22. A broader ClassTransfer teacher-profile fallback assertion failed
+outside this roster/export path, and the broad Classes Page offscreen target
+timed out without a specific case; neither has a pre-change baseline. No full
+suite or other-platform build ran.

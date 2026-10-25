@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/platform/repository_error_code.h"
+
 #include "core/application_services.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
@@ -141,7 +143,7 @@ public:
             const auto transactionFailure = store->withReadTransaction(
                 [&]() -> RepositoryStatus
                 {
-                    const Result<
+                    const RepositoryResult<
                         QList<RosterRepository::ParentAwareColumnNamesForClass>
                         > loaded = repository
                             ->loadRosterColumnNamesForClassesWithParentProvenance(
@@ -150,8 +152,8 @@ public:
                     if (!loaded)
                     {
                         return operationFailure(
-                            Domain::ErrorCode::Technical,
-                            loaded.error()
+                            repositoryDomainErrorCode(loaded.error().code),
+                            toLegacyDiagnostic(loaded.error())
                             );
                     }
                     if (loaded->size() != legacyClassIds.size())
@@ -200,7 +202,7 @@ public:
                     }
 
                     bool sawUnexpectedClassId = false;
-                    const Status streamed =
+                    const RepositoryStatus streamed =
                         repository->forEachRosterDataCellForExistingClasses(
                             legacyClassIds,
                             static_cast<int>(Application::RosterModeledRowCount),
@@ -237,8 +239,8 @@ public:
                     if (!streamed)
                     {
                         return operationFailure(
-                            Domain::ErrorCode::Technical,
-                            streamed.error()
+                            repositoryDomainErrorCode(streamed.error().code),
+                            toLegacyDiagnostic(streamed.error())
                             );
                     }
                     if (sawUnexpectedClassId)

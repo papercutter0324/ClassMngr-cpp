@@ -1257,7 +1257,7 @@ Status RosterService::saveRoster(
 
     if (auto* repository = session() ? session()->rosterRepository() : nullptr)
     {
-        return repository->saveRoster(classId, normalized);
+        return toLegacyStatus(repository->saveRoster(classId, normalized));
     }
     if (dataService())
     {
@@ -1306,7 +1306,7 @@ Status RosterService::saveRosters(
 
     if (auto* repository = session() ? session()->rosterRepository() : nullptr)
     {
-        return repository->saveRosters(normalizedRosters);
+        return toLegacyStatus(repository->saveRosters(normalizedRosters));
     }
     return dataService()
         ? dataService()->saveRosters(normalizedRosters)
@@ -1317,7 +1317,7 @@ Result<Roster> RosterService::roster(int classId) const
 {
     if (auto* repository = session() ? session()->rosterRepository() : nullptr)
     {
-        return repository->loadRoster(classId);
+        return toLegacyResult(repository->loadRoster(classId));
     }
     return dataService()
         ? dataService()->loadRoster(classId)
@@ -1336,13 +1336,13 @@ Result<Roster> RosterService::rosterForOutput(
     {
         if (auto* repository = session()->rosterRepository())
         {
-            return repository->loadRosterForOutput(
+            return toLegacyResult(repository->loadRosterForOutput(
                 classId,
                 requestedColumns,
                 maxRows,
                 maxCells,
                 maxTextBytes
-                );
+                ));
         }
         return std::unexpected(unavailableError());
     }
@@ -1363,7 +1363,7 @@ Result<int> RosterService::studentCount(int classId) const
     {
         if (auto* repository = session()->rosterRepository())
         {
-            return repository->getRosterStudentCount(classId);
+            return toLegacyResult(repository->getRosterStudentCount(classId));
         }
         return std::unexpected(unavailableError());
     }
@@ -1452,7 +1452,7 @@ Result<SpeakingEvaluationDashboard> SpeakingEvaluationService::analyticsDashboar
     if (auto* repository = session()
             ? session()->rosterRepository() : nullptr)
     {
-        loadedRoster = repository->loadRoster(classId);
+        loadedRoster = toLegacyResult(repository->loadRoster(classId));
     }
     else if (dataService())
     {

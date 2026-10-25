@@ -24,6 +24,22 @@
 namespace
 {
 
+RepositoryStatus rollbackRosterFailure(
+    DatabaseTransaction& transaction,
+    QSqlDatabase& database,
+    RepositoryError error,
+    const QString& rollbackAction
+    )
+{
+    if (!transaction.rollbackChecked())
+    {
+        error.code = RepositoryErrorCode::Technical;
+        error.diagnostic += QStringLiteral("\n%1: %2")
+            .arg(rollbackAction, database.lastError().text());
+    }
+    return std::unexpected(std::move(error));
+}
+
 std::optional<int> checkedRosterWidth(
     const QVariant& widthValue,
     const QString& storageType
@@ -58,7 +74,7 @@ struct MyClassesStudentCountColumnReadRecord final
     bool parentMissing = false;
 };
 
-Result<QList<MyClassesStudentCountColumnReadRecord>>
+RepositoryResult<QList<MyClassesStudentCountColumnReadRecord>>
 loadMyClassesStudentCountColumnsParentRooted(
     QSqlDatabase& database,
     const QList<int>& classIds
@@ -83,9 +99,9 @@ loadMyClassesStudentCountColumnsParentRooted(
         const int classId = classIds.at(index);
         if (classId <= 0 || requestIndexByClassId.contains(classId))
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr(
                 "Loading My Classes student-count columns failed: class ids must be positive and unique."
-                ));
+                )});
         }
 
         requestIndexByClassId.insert(classId, index);
@@ -117,10 +133,8 @@ loadMyClassesStudentCountColumnsParentRooted(
     query.setForwardOnly(true);
     if (!query.prepare(queryText))
     {
-        return std::unexpected(
-            QObject::tr("Preparing My Classes student-count column read failed: %1")
-                .arg(query.lastError().text())
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Preparing My Classes student-count column read failed: %1")
+                .arg(query.lastError().text())});
     }
 
     const auto loaded = SqlQueryUtils::executePrepared(
@@ -130,7 +144,7 @@ loadMyClassesStudentCountColumnsParentRooted(
         );
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loaded.error()));
     }
 
     while (query.next())
@@ -147,9 +161,9 @@ loadMyClassesStudentCountColumnsParentRooted(
             || classIds.at(requestOrder) != classId
             || !requestIndexByClassId.contains(classId))
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                 "Loading My Classes student-count columns returned an invalid class identity."
-                ));
+                )});
         }
 
         const qsizetype recordIndex = requestOrder;
@@ -162,18 +176,18 @@ loadMyClassesStudentCountColumnsParentRooted(
                 query.value("parent_class_id").toInt(&parentClassIdValid);
             if (!parentClassIdValid || parentClassId != classId)
             {
-                return std::unexpected(QObject::tr(
+                return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading My Classes student-count columns returned an invalid parent identity."
-                    ));
+                    )});
             }
         }
 
         if (sawRequest.at(recordIndex)
             && records[recordIndex].parentMissing != parentMissing)
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                 "Loading My Classes student-count columns returned inconsistent parent records."
-                ));
+                )});
         }
         sawRequest[recordIndex] = true;
         records[recordIndex].parentMissing = parentMissing;
@@ -189,19 +203,17 @@ loadMyClassesStudentCountColumnsParentRooted(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(
-            QObject::tr("Reading My Classes student-count columns failed: %1")
-                .arg(query.lastError().text())
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Reading My Classes student-count columns failed: %1")
+                .arg(query.lastError().text())});
     }
 
     for (const bool found : sawRequest)
     {
         if (!found)
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr(
                 "Loading My Classes student-count columns returned an incomplete class list."
-                ));
+                )});
         }
     }
 
@@ -217,7 +229,7 @@ RosterRepository::RosterRepository(
 {
 }
 
-Status RosterRepository::forEachClassAnalyticsRosterNameCell(
+RepositoryStatus RosterRepository::forEachClassAnalyticsRosterNameCell(
     const int classId,
     const std::function<void(const ClassAnalyticsRosterNamesMetadata&)>&
         metadataConsumer,
@@ -240,13 +252,13 @@ Status RosterRepository::forEachClassAnalyticsRosterNameCell(
         QStringLiteral("class id %1").arg(classId));
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
     if (!columnCountQuery.next())
     {
-        return std::unexpected(QStringLiteral(
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QStringLiteral(
             "Roster column count could not be read."
-            ));
+            )});
     }
     bool invalidPositionCountIsValid = false;
     const qlonglong invalidPositionCount = columnCountQuery.value(
@@ -254,9 +266,9 @@ Status RosterRepository::forEachClassAnalyticsRosterNameCell(
             &invalidPositionCountIsValid);
     if (!invalidPositionCountIsValid || invalidPositionCount != 0)
     {
-        return std::unexpected(QStringLiteral(
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QStringLiteral(
             "Roster columns contain an invalid position representation."
-            ));
+            )});
     }
     if (columnCountQuery.value("column_count").toInt() <= 0)
     {
@@ -338,13 +350,13 @@ Status RosterRepository::forEachClassAnalyticsRosterNameCell(
         QStringLiteral("class id %1").arg(classId));
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(executed.error()));
     }
     if (!rosterQuery.next())
     {
-        return std::unexpected(QStringLiteral(
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QStringLiteral(
             "Roster names could not be read."
-            ));
+            )});
     }
 
     bool invalidNameRowIndexesIsValid = false;
@@ -353,9 +365,9 @@ Status RosterRepository::forEachClassAnalyticsRosterNameCell(
             &invalidNameRowIndexesIsValid);
     if (!invalidNameRowIndexesIsValid || invalidNameRowIndexes != 0)
     {
-        return std::unexpected(QStringLiteral(
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QStringLiteral(
             "Roster data contains a row index outside the Class Analytics range."
-            ));
+            )});
     }
 
     bool invalidNameColumnIndexesIsValid = false;
@@ -365,9 +377,9 @@ Status RosterRepository::forEachClassAnalyticsRosterNameCell(
     if (!invalidNameColumnIndexesIsValid
         || invalidNameColumnIndexes != 0)
     {
-        return std::unexpected(QStringLiteral(
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QStringLiteral(
             "Roster data contains a non-integer column index."
-            ));
+            )});
     }
 
     const QVariant englishColumnValue =
@@ -417,9 +429,9 @@ Status RosterRepository::forEachClassAnalyticsRosterNameCell(
                 >= static_cast<unsigned long long>(
                     std::numeric_limits<std::size_t>::max()))
         {
-            return std::unexpected(QStringLiteral(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QStringLiteral(
                 "Roster data contains a row index outside the Class Analytics range."
-                ));
+                )});
         }
         metadata.rowCount =
             static_cast<std::size_t>(*maximumRowIndex) + 1;
@@ -446,9 +458,9 @@ Status RosterRepository::forEachClassAnalyticsRosterNameCell(
                     >= static_cast<unsigned long long>(
                         rosterRowCount))
             {
-                return std::unexpected(QStringLiteral(
+                return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QStringLiteral(
                     "Roster data contains a row index outside the Class Analytics range."
-                    ));
+                    )});
             }
 
             const int column = rosterQuery.value("col_index").toInt();
@@ -470,207 +482,161 @@ Status RosterRepository::forEachClassAnalyticsRosterNameCell(
     while (rosterQuery.next());
     if (rosterQuery.lastError().isValid())
     {
-        return std::unexpected(rosterQuery.lastError().text());
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, rosterQuery.lastError().text()});
     }
     return {};
 }
 
-Status RosterRepository::saveRoster(
-    int classId,
-    const Roster& roster
-    )
-{
-    if (classId <= 0)
-    {
-        return std::unexpected(
-            QObject::tr("Saving roster failed: invalid class id %1.")
-                .arg(classId)
-            );
-    }
-
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
-    {
-        return std::unexpected(
-            QObject::tr("Starting roster save transaction failed for class id %1: %2")
-                .arg(classId)
-                .arg(m_database.lastError().text())
-            );
-    }
-
-    const Status saved = writeRoster(classId, roster);
-    if (!saved)
-    {
-        return saved;
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(
-            QObject::tr("Committing roster save failed for class id %1: %2")
-                .arg(classId)
-                .arg(m_database.lastError().text())
-            );
-    }
-
-    return {};
-}
-
-RosterRepository::SaveResult RosterRepository::saveRosterWithParentCheck(
+RepositoryStatus RosterRepository::saveRoster(
     const int classId,
     const Roster& roster
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(SaveFailure{
-            .kind = SaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
-                "Saving roster failed: invalid class id %1."
-                ).arg(classId)
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
+            QObject::tr("Saving roster failed: invalid class id %1.").arg(classId)
         });
-    }
-
-    const QString identity = QObject::tr("class id %1").arg(classId);
-    DatabaseTransaction transaction(
-        m_database,
-        DatabaseTransaction::Mode::Immediate
-        );
-    if (!transaction.started())
-    {
-        return std::unexpected(SaveFailure{
-            .kind = SaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
-                "Starting roster save transaction failed for %1: %2"
-                ).arg(identity, transaction.startError())
-        });
-    }
-
-    bool parentClassExists = false;
-    {
-        QSqlQuery query(m_database);
-        query.prepare(QStringLiteral(
-            "SELECT 1 FROM classes WHERE id=?"
-            ));
-        query.addBindValue(classId);
-
-        const auto loaded = SqlQueryUtils::executePrepared(
-            query,
-            QObject::tr("Checking roster parent class"),
-            identity
-            );
-        if (!loaded)
-        {
-            return std::unexpected(SaveFailure{
-                .kind = SaveFailure::Kind::Technical,
-                .diagnostic = loaded.error().userMessage()
-            });
-        }
-
-        parentClassExists = query.next();
-        const QSqlError fetchError = query.lastError();
-        query.finish();
-        if (!parentClassExists && fetchError.isValid())
-        {
-            return std::unexpected(SaveFailure{
-                .kind = SaveFailure::Kind::Technical,
-                .diagnostic = QObject::tr(
-                    "Checking roster parent class failed for %1: %2"
-                    ).arg(identity, fetchError.text())
-            });
-        }
-    }
-
-    if (!parentClassExists)
-    {
-        if (!transaction.rollbackChecked())
-        {
-            return std::unexpected(SaveFailure{
-                .kind = SaveFailure::Kind::Technical,
-                .diagnostic = QObject::tr(
-                    "Rolling back roster save failed for %1: %2"
-                    ).arg(identity, m_database.lastError().text())
-            });
-        }
-
-        return std::unexpected(SaveFailure{
-            .kind = SaveFailure::Kind::ParentClassMissing,
-            .diagnostic = QObject::tr(
-                "Saving roster failed: parent class id %1 was not found."
-                ).arg(classId)
-        });
-    }
-
-    const Status saved = writeRoster(classId, roster);
-    if (!saved)
-    {
-        return std::unexpected(SaveFailure{
-            .kind = SaveFailure::Kind::Technical,
-            .diagnostic = saved.error()
-        });
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(SaveFailure{
-            .kind = SaveFailure::Kind::Technical,
-            .diagnostic = QObject::tr(
-                "Committing roster save failed for %1: %2"
-                ).arg(identity, m_database.lastError().text())
-        });
-    }
-
-    return {};
-}
-
-Status RosterRepository::saveRosters(
-    const QList<QPair<int, Roster>>& rosters
-    )
-{
-    if (rosters.isEmpty())
-    {
-        return {};
     }
 
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
     {
-        return std::unexpected(
-            QObject::tr("Starting roster batch save transaction failed: %1")
-                .arg(m_database.lastError().text())
-            );
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr("Starting roster save transaction failed for class id %1: %2")
+                .arg(classId).arg(m_database.lastError().text())
+        });
     }
 
-    for (const auto& roster : rosters)
+    const auto fail = [&](RepositoryError error)
     {
-        const Status saved = writeRoster(roster.first, roster.second);
-        if (!saved)
-        {
-            return saved;
-        }
-    }
+        return rollbackRosterFailure(transaction, m_database, std::move(error),
+            QObject::tr("Rolling back roster save failed for class id %1").arg(classId));
+    };
+    const RepositoryStatus saved = writeRoster(classId, roster);
+    if (!saved)
+        return fail(saved.error());
 
     if (!transaction.commit())
     {
-        return std::unexpected(
-            QObject::tr("Committing roster batch save failed: %1")
-                .arg(m_database.lastError().text())
-            );
+        return fail(RepositoryError{RepositoryErrorCode::Technical,
+            QObject::tr("Committing roster save failed for class id %1: %2")
+                .arg(classId).arg(m_database.lastError().text())});
     }
-
     return {};
 }
 
-RosterRepository::SaveResult RosterRepository::saveRosterWindowsWithParentCheck(
+RepositoryStatus RosterRepository::saveRosterWithParentCheck(
+    const int classId,
+    const Roster& roster
+    )
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput,
+            QObject::tr("Saving roster failed: invalid class id %1.").arg(classId)});
+    }
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    DatabaseTransaction transaction(m_database, DatabaseTransaction::Mode::Immediate);
+    if (!transaction.started())
+    {
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical,
+            QObject::tr("Starting roster save transaction failed for %1: %2")
+                .arg(identity, transaction.startError())});
+    }
+    const auto fail = [&](RepositoryError error)
+    {
+        return rollbackRosterFailure(transaction, m_database, std::move(error),
+            QObject::tr("Rolling back roster save failed for %1").arg(identity));
+    };
+
+    bool parentClassExists = false;
+    {
+        QSqlQuery query(m_database);
+        query.prepare(QStringLiteral("SELECT 1 FROM classes WHERE id=?"));
+        query.addBindValue(classId);
+        const auto loaded = SqlQueryUtils::executePrepared(
+            query, QObject::tr("Checking roster parent class"), identity);
+        if (!loaded)
+        {
+            query.finish();
+            return fail(SqlQueryUtils::repositoryErrorFor(loaded.error()));
+        }
+        parentClassExists = query.next();
+        const QSqlError fetchError = query.lastError();
+        query.finish();
+        if (!parentClassExists && fetchError.isValid())
+        {
+            return fail(RepositoryError{RepositoryErrorCode::Technical,
+                QObject::tr("Checking roster parent class failed for %1: %2")
+                    .arg(identity, fetchError.text())});
+        }
+    }
+    if (!parentClassExists)
+    {
+        return fail(RepositoryError{RepositoryErrorCode::NotFound,
+            QObject::tr("Saving roster failed: parent class id %1 was not found.")
+                .arg(classId)});
+    }
+
+    const RepositoryStatus saved = writeRoster(classId, roster);
+    if (!saved)
+        return fail(saved.error());
+    if (!transaction.commit())
+    {
+        return fail(RepositoryError{RepositoryErrorCode::Technical,
+            QObject::tr("Committing roster save failed for %1: %2")
+                .arg(identity, m_database.lastError().text())});
+    }
+    return {};
+}
+
+RepositoryStatus RosterRepository::saveRosters(
+    const QList<QPair<int, Roster>>& rosters
+    )
+{
+    if (rosters.isEmpty())
+        return {};
+
+    DatabaseTransaction transaction(m_database);
+    if (!transaction.started())
+    {
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical,
+            QObject::tr("Starting roster batch save transaction failed: %1")
+                .arg(m_database.lastError().text())});
+    }
+    const auto fail = [&](RepositoryError error)
+    {
+        return rollbackRosterFailure(transaction, m_database, std::move(error),
+            QObject::tr("Rolling back roster batch save failed"));
+    };
+    for (const auto& roster : rosters)
+    {
+        const RepositoryStatus saved = writeRoster(roster.first, roster.second);
+        if (!saved)
+            return fail(saved.error());
+    }
+    if (!transaction.commit())
+    {
+        return fail(RepositoryError{RepositoryErrorCode::Technical,
+            QObject::tr("Committing roster batch save failed: %1")
+                .arg(m_database.lastError().text())});
+    }
+    return {};
+}
+
+RepositoryStatus RosterRepository::saveRosterWindowsWithParentCheck(
     const QList<WindowSaveRequest>& windows)
 {
-    const auto technical = [](const QString& diagnostic) -> SaveResult
+    const auto invalid = [](const QString& diagnostic) -> RepositoryStatus
     {
-        return std::unexpected(SaveFailure{
-            .kind = SaveFailure::Kind::Technical, .diagnostic = diagnostic});
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, diagnostic});
     };
     if (windows.isEmpty())
-        return technical(QObject::tr("Roster window save requires at least one window."));
+        return invalid(QObject::tr("Roster window save requires at least one window."));
 
     QSet<int> identities;
     constexpr int rowLimit = static_cast<int>(
@@ -682,16 +648,21 @@ RosterRepository::SaveResult RosterRepository::saveRosterWindowsWithParentCheck(
             || window.roster.columns.size() > std::numeric_limits<int>::max()
             || window.roster.rows.size() > rowLimit
             || window.roster.columnWidths.size() != window.roster.columns.size())
-            return technical(QObject::tr("Invalid roster window save request."));
+            return invalid(QObject::tr("Invalid roster window save request."));
         for (const auto& row : window.roster.rows)
             if (row.size() > window.roster.columns.size())
-                return technical(QObject::tr("Roster window row exceeds its column count."));
+                return invalid(QObject::tr("Roster window row exceeds its column count."));
         identities.insert(window.classId);
     }
 
     DatabaseTransaction transaction(m_database, DatabaseTransaction::Mode::Immediate);
     if (!transaction.started())
-        return technical(transaction.startError());
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, transaction.startError()});
+    const auto fail = [&](RepositoryError error)
+    {
+        return rollbackRosterFailure(transaction, m_database, std::move(error),
+            QObject::tr("Rolling back roster window save failed"));
+    };
 
     // Check every parent under the write lock before the first mutation.
     for (const auto& window : windows)
@@ -700,28 +671,28 @@ RosterRepository::SaveResult RosterRepository::saveRosterWindowsWithParentCheck(
         parent.prepare(QStringLiteral("SELECT 1 FROM classes WHERE id=?"));
         parent.addBindValue(window.classId);
         if (!parent.exec())
-            return technical(parent.lastError().text());
+            return fail(RepositoryError{RepositoryErrorCode::Technical, parent.lastError().text()});
         const bool found = parent.next();
-        if (parent.lastError().isValid())
-            return technical(parent.lastError().text());
+        const auto fetchError = parent.lastError();
+        parent.finish();
+        if (fetchError.isValid())
+            return fail(RepositoryError{RepositoryErrorCode::Technical, fetchError.text()});
         if (!found)
-            return std::unexpected(SaveFailure{
-                .kind = SaveFailure::Kind::ParentClassMissing,
-                .diagnostic = QObject::tr("Roster parent class %1 was not found.")
-                    .arg(window.classId)});
+            return fail(RepositoryError{RepositoryErrorCode::NotFound,
+                QObject::tr("Roster parent class %1 was not found.").arg(window.classId)});
     }
     for (const auto& window : windows)
     {
         const auto saved = writeRosterWindow(window);
         if (!saved)
-            return technical(saved.error());
+            return fail(saved.error());
     }
     if (!transaction.commit())
-        return technical(m_database.lastError().text());
+        return fail(RepositoryError{RepositoryErrorCode::Technical, m_database.lastError().text()});
     return {};
 }
 
-Status RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
+RepositoryStatus RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
 {
     constexpr int rowLimit = static_cast<int>(
         ClassMngr::Next::Application::RosterModeledRowCount);
@@ -742,10 +713,12 @@ Status RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
             result.append(QChar(unit));
         return result;
     };
-    const auto invalidMapping = []() -> Status
+    const auto invalidMapping = [](
+        const RepositoryErrorCode code = RepositoryErrorCode::Validation
+        ) -> RepositoryStatus
     {
-        return std::unexpected(QObject::tr(
-            "Roster tail columns cannot be mapped unambiguously; the roster was not saved."));
+        return std::unexpected(RepositoryError{code, QObject::tr(
+            "Roster tail columns cannot be mapped unambiguously; the roster was not saved.")});
     };
 
     QStringList targetNames;
@@ -753,7 +726,7 @@ Status RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
     {
         const auto normalized = identity(name);
         if (normalized.isEmpty() || targetNames.contains(normalized, Qt::CaseInsensitive))
-            return invalidMapping();
+            return invalidMapping(RepositoryErrorCode::InvalidInput);
         targetNames.append(normalized);
     }
 
@@ -764,7 +737,7 @@ Status RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
         "WHERE class_id=? ORDER BY position, id"));
     columns.addBindValue(window.classId);
     if (!columns.exec())
-        return std::unexpected(columns.lastError().text());
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, columns.lastError().text()});
     while (columns.next())
     {
         // col_index refers to the ordered source header ordinal, as on read.
@@ -775,7 +748,7 @@ Status RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
         sourceNames.append(identity(columns.value(0).toString()));
     }
     if (columns.lastError().isValid())
-        return std::unexpected(columns.lastError().text());
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, columns.lastError().text()});
     columns.finish();
 
     QStringList removedNames;
@@ -783,7 +756,7 @@ Status RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
     {
         const auto normalized = identity(name);
         if (normalized.isEmpty() || Roster::BaseColumns.contains(normalized, Qt::CaseInsensitive))
-            return invalidMapping();
+            return invalidMapping(RepositoryErrorCode::InvalidInput);
         // A removal followed by re-adding the same header keeps that identity.
         removedNames.append(normalized);
     }
@@ -816,7 +789,7 @@ Status RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
     tailColumns.addBindValue(window.classId);
     tailColumns.addBindValue(rowLimit);
     if (!tailColumns.exec())
-        return std::unexpected(tailColumns.lastError().text());
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, tailColumns.lastError().text()});
     while (tailColumns.next())
     {
         bool valid = false;
@@ -828,17 +801,17 @@ Status RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
             return invalidMapping();
     }
     if (tailColumns.lastError().isValid())
-        return std::unexpected(tailColumns.lastError().text());
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, tailColumns.lastError().text()});
     tailColumns.finish();
 
     const QString suffix = QUuid::createUuid().toString(QUuid::Id128);
     const QString mapTable = QStringLiteral("roster_window_map_%1").arg(suffix);
     const QString tailTable = QStringLiteral("roster_window_tail_%1").arg(suffix);
     QSqlQuery query(m_database);
-    const auto exec = [&query](const QString& sql) -> Status
+    const auto exec = [&query](const QString& sql) -> RepositoryStatus
     {
         if (!query.exec(sql))
-            return std::unexpected(query.lastError().text());
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, query.lastError().text()});
         return {};
     };
     auto result = exec(QStringLiteral(
@@ -854,7 +827,7 @@ Status RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
         query.addBindValue(index);
         query.addBindValue(mapping[index]);
         if (!query.exec())
-            return std::unexpected(query.lastError().text());
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, query.lastError().text()});
     }
     query.prepare(QStringLiteral(
         "CREATE TEMP TABLE %1 AS SELECT d.row_index, m.new_index AS col_index, d.value "
@@ -863,7 +836,7 @@ Status RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
     query.addBindValue(window.classId);
     query.addBindValue(rowLimit);
     if (!query.exec())
-        return std::unexpected(query.lastError().text());
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, query.lastError().text()});
 
     // The staging table includes every retained tail cell, with only its column
     // ordinal changed. In particular row 25 never fills a removed visible row.
@@ -875,24 +848,22 @@ Status RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
         "SELECT ?, row_index, col_index, value FROM %1").arg(tailTable));
     query.addBindValue(window.classId);
     if (!query.exec())
-        return std::unexpected(query.lastError().text());
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, query.lastError().text()});
     result = exec(QStringLiteral("DROP TABLE %1").arg(tailTable));
     if (!result)
         return result;
     return exec(QStringLiteral("DROP TABLE %1").arg(mapTable));
 }
 
-Status RosterRepository::writeRoster(
+RepositoryStatus RosterRepository::writeRoster(
     int classId,
     const Roster& roster
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Saving roster failed: invalid class id %1.")
-                .arg(classId)
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Saving roster failed: invalid class id %1.")
+                .arg(classId)});
     }
 
     QSqlQuery query(m_database);
@@ -904,16 +875,16 @@ Status RosterRepository::writeRoster(
     query.addBindValue(classId);
 
     const QString identity = QObject::tr("class id %1").arg(classId);
-    auto execute = [&](const QString& action) -> Status
+    auto execute = [&](const QString& action) -> RepositoryStatus
     {
         const auto result = SqlQueryUtils::executePrepared(
             query, action, identity);
         return result
-            ? Status{}
-            : Status(std::unexpected(result.error().userMessage()));
+            ? RepositoryStatus{}
+            : RepositoryStatus(std::unexpected(SqlQueryUtils::repositoryErrorFor(result.error())));
     };
 
-    Status statement = execute(QObject::tr("Deleting roster columns"));
+    RepositoryStatus statement = execute(QObject::tr("Deleting roster columns"));
     if (!statement)
     {
         return statement;
@@ -1003,7 +974,7 @@ Status RosterRepository::writeRoster(
     return {};
 }
 
-Result<Roster> RosterRepository::loadRoster(
+RepositoryResult<Roster> RosterRepository::loadRoster(
     int classId
     )
 {
@@ -1016,7 +987,7 @@ Result<Roster> RosterRepository::loadRoster(
     return std::move(loaded->roster);
 }
 
-Result<RosterReadOutcome> RosterRepository::loadRosterDetailed(
+RepositoryResult<RosterReadOutcome> RosterRepository::loadRosterDetailed(
     int classId
     )
 {
@@ -1032,22 +1003,22 @@ Result<RosterReadOutcome> RosterRepository::loadRosterDetailed(
     };
 }
 
-Result<RosterWindowReadOutcome> RosterRepository::loadRosterWindowDetailed(
+RepositoryResult<RosterWindowReadOutcome> RosterRepository::loadRosterWindowDetailed(
     const int classId,
     const int rowLimit
     )
 {
     if (rowLimit <= 0)
     {
-        return std::unexpected(QObject::tr(
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr(
             "Loading a roster window failed: row limit must be positive."
-            ));
+            )});
     }
 
     return loadRosterDetailedImpl(classId, rowLimit);
 }
 
-Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
+RepositoryResult<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
     const int classId,
     const std::optional<int> rowLimit
     )
@@ -1056,10 +1027,8 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
 
     if (classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Loading roster failed: invalid class id %1.")
-                .arg(classId)
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading roster failed: invalid class id %1.")
+                .arg(classId)});
     }
 
     QSqlQuery query(m_database);
@@ -1092,25 +1061,25 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
         );
     if (!loadedColumns)
     {
-        return std::unexpected(loadedColumns.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedColumns.error()));
     }
 
     const bool parentRowFound = query.next();
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading roster columns"),
             {},
             identity
-            ).userMessage());
+            )));
     }
 
     if (!parentRowFound)
     {
-        return std::unexpected(QObject::tr(
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr(
             "Loading roster columns failed: no result was returned for %1."
-            ).arg(identity));
+            ).arg(identity)});
     }
 
     outcome.parentMissing = query.value("parent_class_id").isNull();
@@ -1134,11 +1103,9 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
             || position < 0
             )
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster columns failed for %1: invalid position."
-                    ).arg(identity)
-                );
+                    ).arg(identity)});
         }
 
         outcome.roster.columns.append(
@@ -1152,13 +1119,11 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
             );
         if (!width)
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster columns failed for class id %1: width %2 is outside the supported int range."
                     )
                     .arg(classId)
-                    .arg(widthValue.toString())
-                );
+                    .arg(widthValue.toString())});
         }
         outcome.roster.columnWidths.append(*width);
     }
@@ -1166,12 +1131,12 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading roster columns"),
             {},
             identity
-            ).userMessage());
+            )));
     }
 
     if (outcome.roster.columns.isEmpty() && !rowLimit)
@@ -1198,24 +1163,22 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
                 );
             if (!checkedRowIndexes)
             {
-                return std::unexpected(checkedRowIndexes.error().userMessage());
+                return std::unexpected(SqlQueryUtils::repositoryErrorFor(checkedRowIndexes.error()));
             }
             if (invalidRowIndexQuery.next())
             {
-                return std::unexpected(
-                    QObject::tr(
+                return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                         "Loading roster data failed for %1: invalid row index."
-                        ).arg(identity)
-                    );
+                        ).arg(identity)});
             }
             if (invalidRowIndexQuery.lastError().isValid())
             {
-                return std::unexpected(SqlQueryUtils::errorFor(
+                return std::unexpected(SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
                     invalidRowIndexQuery,
                     QObject::tr("Validating roster row indexes"),
                     {},
                     identity
-                    ).userMessage());
+                    )));
             }
         }
 
@@ -1236,23 +1199,23 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
             );
         if (!checkedOverflow)
         {
-            return std::unexpected(checkedOverflow.error().userMessage());
+            return std::unexpected(SqlQueryUtils::repositoryErrorFor(checkedOverflow.error()));
         }
         if (!overflowQuery.next())
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr(
                 "Checking roster rows failed for %1: no result was returned."
-                ).arg(identity));
+                ).arg(identity)});
         }
         outcome.hasRowsOutsideWindow = overflowQuery.value(0).toBool();
         if (overflowQuery.lastError().isValid())
         {
-            return std::unexpected(SqlQueryUtils::errorFor(
+            return std::unexpected(SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
                 overflowQuery,
                 QObject::tr("Checking roster rows outside the window"),
                 {},
                 identity
-                ).userMessage());
+                )));
         }
     }
 
@@ -1293,7 +1256,7 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
         );
     if (!loadedData)
     {
-        return std::unexpected(loadedData.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedData.error()));
     }
 
     while (query.next())
@@ -1303,11 +1266,9 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
                 != QStringLiteral("integer")
             )
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster data failed for %1: invalid row index."
-                    ).arg(identity)
-                );
+                    ).arg(identity)});
         }
 
         bool rowIndexValid = false;
@@ -1315,19 +1276,15 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
             query.value("row_index").toLongLong(&rowIndexValid);
         if (!rowIndexValid)
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster data failed for %1: invalid row index."
-                    ).arg(identity)
-                );
+                    ).arg(identity)});
         }
         if (rowIndex < 0)
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster data failed for %1: row index %2 is negative."
-                    ).arg(identity).arg(rowIndex)
-                );
+                    ).arg(identity).arg(rowIndex)});
         }
         if (rowIndex > std::numeric_limits<int>::max())
         {
@@ -1336,11 +1293,9 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
                 outcome.hasRowsOutsideWindow = true;
                 continue;
             }
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster data failed for %1: row index %2 exceeds the supported range."
-                    ).arg(identity).arg(rowIndex)
-                );
+                    ).arg(identity).arg(rowIndex)});
         }
         const int row = static_cast<int>(rowIndex);
 
@@ -1355,11 +1310,9 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
                 != QStringLiteral("integer")
             )
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster data failed for %1: invalid column index."
-                    ).arg(identity)
-                );
+                    ).arg(identity)});
         }
 
         bool columnIndexValid = false;
@@ -1367,11 +1320,9 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
             query.value("col_index").toLongLong(&columnIndexValid);
         if (!columnIndexValid)
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster data failed for %1: invalid column index."
-                    ).arg(identity)
-                );
+                    ).arg(identity)});
         }
 
         if (
@@ -1405,18 +1356,18 @@ Result<RosterWindowReadOutcome> RosterRepository::loadRosterDetailedImpl(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading roster data"),
             {},
             identity
-            ).userMessage());
+            )));
     }
 
     return outcome;
 }
 
-Result<RosterRepository::SpeakingEvaluationRosterNamesReadRecord>
+RepositoryResult<RosterRepository::SpeakingEvaluationRosterNamesReadRecord>
 RosterRepository::loadSpeakingEvaluationRosterNames(
     const int classId
     )
@@ -1430,7 +1381,7 @@ RosterRepository::loadSpeakingEvaluationRosterNames(
     return std::move(loaded->rosterNames);
 }
 
-Result<RosterRepository::SpeakingEvaluationRosterNamesReadOutcome>
+RepositoryResult<RosterRepository::SpeakingEvaluationRosterNamesReadOutcome>
 RosterRepository::loadSpeakingEvaluationRosterNamesDetailed(
     const int classId
     )
@@ -1438,7 +1389,7 @@ RosterRepository::loadSpeakingEvaluationRosterNamesDetailed(
     return loadSpeakingEvaluationRosterNamesImpl(classId, true);
 }
 
-Result<RosterRepository::SpeakingEvaluationRosterNamesReadOutcome>
+RepositoryResult<RosterRepository::SpeakingEvaluationRosterNamesReadOutcome>
 RosterRepository::loadSpeakingEvaluationRosterNamesImpl(
     const int classId,
     const bool parentRooted
@@ -1446,12 +1397,10 @@ RosterRepository::loadSpeakingEvaluationRosterNamesImpl(
 {
     if (classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr(
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr(
                 "Loading Speaking Evaluation roster names failed: "
                 "invalid class id %1."
-                ).arg(classId)
-            );
+                ).arg(classId)});
     }
 
     SpeakingEvaluationRosterNamesReadOutcome outcome;
@@ -1493,7 +1442,7 @@ RosterRepository::loadSpeakingEvaluationRosterNamesImpl(
         );
     if (!loadedColumns)
     {
-        return std::unexpected(loadedColumns.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedColumns.error()));
     }
 
     auto collectColumnName = [&](const QString& columnName)
@@ -1523,12 +1472,10 @@ RosterRepository::loadSpeakingEvaluationRosterNamesImpl(
         {
             if (columnsQuery.lastError().isValid())
             {
-                return std::unexpected(
-                    QObject::tr(
+                return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr(
                         "Loading Speaking Evaluation roster name columns failed "
                         "for %1: %2"
-                        ).arg(identity, columnsQuery.lastError().text())
-                    );
+                        ).arg(identity, columnsQuery.lastError().text())});
             }
 
             outcome.parentMissing = true;
@@ -1536,10 +1483,10 @@ RosterRepository::loadSpeakingEvaluationRosterNamesImpl(
         }
         if (columnsQuery.value(0).isNull())
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr(
                 "Loading Speaking Evaluation roster name columns failed "
                 "for %1: parent provenance was unavailable."
-                ).arg(identity));
+                ).arg(identity)});
         }
 
         do
@@ -1560,12 +1507,10 @@ RosterRepository::loadSpeakingEvaluationRosterNamesImpl(
     }
     if (columnsQuery.lastError().isValid())
     {
-        return std::unexpected(
-            QObject::tr(
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr(
                 "Loading Speaking Evaluation roster name columns failed "
                 "for %1: %2"
-                ).arg(identity, columnsQuery.lastError().text())
-            );
+                ).arg(identity, columnsQuery.lastError().text())});
     }
 
     record.hasEnglishColumn = englishColumn >= 0;
@@ -1673,26 +1618,22 @@ RosterRepository::loadSpeakingEvaluationRosterNamesImpl(
         );
     if (!loadedRows)
     {
-        return std::unexpected(loadedRows.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedRows.error()));
     }
 
     while (rowsQuery.next())
     {
         if (rowsQuery.value(1).toInt() != 0)
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading Speaking Evaluation roster names failed for %1: a column index is not stored as an integer."
-                    ).arg(identity)
-                );
+                    ).arg(identity)});
         }
         if (rowsQuery.value(2).toInt() != 0)
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading Speaking Evaluation roster names failed for %1: a row index is not stored as an integer."
-                    ).arg(identity)
-                );
+                    ).arg(identity)});
         }
 
         bool rowIndexValid = false;
@@ -1700,11 +1641,9 @@ RosterRepository::loadSpeakingEvaluationRosterNamesImpl(
             rowsQuery.value(0).toLongLong(&rowIndexValid);
         if (!rowIndexValid)
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading Speaking Evaluation roster names failed for %1: invalid row index."
-                    ).arg(identity)
-                );
+                    ).arg(identity)});
         }
         if (sourceRowIndex < 0)
         {
@@ -1712,11 +1651,9 @@ RosterRepository::loadSpeakingEvaluationRosterNamesImpl(
         }
         if (sourceRowIndex > std::numeric_limits<int>::max())
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading Speaking Evaluation roster names failed for %1: row index %2 exceeds the supported range."
-                    ).arg(identity).arg(sourceRowIndex)
-                );
+                    ).arg(identity).arg(sourceRowIndex)});
         }
         const int rowIndex = static_cast<int>(sourceRowIndex);
 
@@ -1734,17 +1671,15 @@ RosterRepository::loadSpeakingEvaluationRosterNamesImpl(
     }
     if (rowsQuery.lastError().isValid())
     {
-        return std::unexpected(
-            QObject::tr(
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr(
                 "Loading Speaking Evaluation roster names failed for %1: %2"
-                ).arg(identity, rowsQuery.lastError().text())
-            );
+                ).arg(identity, rowsQuery.lastError().text())});
     }
 
     return outcome;
 }
 
-Result<QList<RosterRepository::FullRosterReadRecord>>
+RepositoryResult<QList<RosterRepository::FullRosterReadRecord>>
 RosterRepository::loadFullRostersImpl(
     const QList<int>& classIds,
     TemplatePrintBatchReadMetrics* templatePrintMetrics,
@@ -1773,11 +1708,11 @@ RosterRepository::loadFullRostersImpl(
         const int classId = classIds.at(index);
         if (classId <= 0 || requestIndexByClassId.contains(classId))
         {
-            return std::unexpected(templatePrintContext
+            return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, templatePrintContext
                 ? QObject::tr(
                     "Loading template print rosters failed: class ids must be positive and unique.")
                 : QObject::tr(
-                    "Loading full rosters failed: class ids must be positive and unique."));
+                    "Loading full rosters failed: class ids must be positive and unique.")});
         }
 
         requestIndexByClassId.insert(classId, index);
@@ -1835,7 +1770,7 @@ RosterRepository::loadFullRostersImpl(
         );
     if (!loadedColumns)
     {
-        return std::unexpected(loadedColumns.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedColumns.error()));
     }
 
     bool invalidColumnIdentity = false;
@@ -1871,8 +1806,7 @@ RosterRepository::loadFullRostersImpl(
             );
         if (!width)
         {
-            return std::unexpected(
-                (templatePrintContext
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, (templatePrintContext
                     ? QObject::tr(
                         "Loading template print roster columns failed for class id %1: width %2 is outside the supported int range."
                         )
@@ -1880,28 +1814,25 @@ RosterRepository::loadFullRostersImpl(
                         "Loading full roster columns failed for class id %1: width %2 is outside the supported int range."
                         ))
                     .arg(classId)
-                    .arg(widthValue.toString())
-                );
+                    .arg(widthValue.toString())});
         }
         roster.columns.append(columnsQuery.value("name").toString());
         roster.columnWidths.append(*width);
     }
     if (columnsQuery.lastError().isValid())
     {
-        return std::unexpected(
-            (templatePrintContext
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, (templatePrintContext
                 ? QObject::tr("Reading template print roster columns failed: %1")
                 : QObject::tr("Reading full roster columns failed: %1"))
-                .arg(columnsQuery.lastError().text())
-            );
+                .arg(columnsQuery.lastError().text())});
     }
     if (invalidColumnIdentity)
     {
-        return std::unexpected(templatePrintContext
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, templatePrintContext
             ? QObject::tr(
                 "Loading template print roster columns returned an invalid class identity.")
             : QObject::tr(
-                "Loading full roster columns returned an invalid class identity."));
+                "Loading full roster columns returned an invalid class identity.")});
     }
 
     bool anyColumns = false;
@@ -1975,7 +1906,7 @@ RosterRepository::loadFullRostersImpl(
         );
     if (!loadedCells)
     {
-        return std::unexpected(loadedCells.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedCells.error()));
     }
 
     bool invalidCellIdentity = false;
@@ -1988,11 +1919,9 @@ RosterRepository::loadFullRostersImpl(
                 != QStringLiteral("integer")
             )
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster data failed for class id %1: invalid column index."
-                    ).arg(classId)
-                );
+                    ).arg(classId)});
         }
         const int columnIndex = cellsQuery.value("col_index").toInt();
         if (requestOrder < 0
@@ -2014,37 +1943,29 @@ RosterRepository::loadFullRostersImpl(
                 != QStringLiteral("integer")
             )
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster data failed for %1: invalid row index."
-                    ).arg(rosterIdentity)
-                );
+                    ).arg(rosterIdentity)});
         }
         const qlonglong sourceRowIndex =
             cellsQuery.value("row_index").toLongLong(&rowIndexValid);
         if (!rowIndexValid)
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster data failed for %1: invalid row index."
-                    ).arg(rosterIdentity)
-                );
+                    ).arg(rosterIdentity)});
         }
         if (sourceRowIndex < 0)
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster data failed for %1: row index %2 is negative."
-                    ).arg(rosterIdentity).arg(sourceRowIndex)
-                );
+                    ).arg(rosterIdentity).arg(sourceRowIndex)});
         }
         if (sourceRowIndex > std::numeric_limits<int>::max())
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster data failed for %1: row index %2 exceeds the supported range."
-                    ).arg(rosterIdentity).arg(sourceRowIndex)
-                );
+                    ).arg(rosterIdentity).arg(sourceRowIndex)});
         }
         const int rowIndex = static_cast<int>(sourceRowIndex);
 
@@ -2066,26 +1987,24 @@ RosterRepository::loadFullRostersImpl(
     }
     if (cellsQuery.lastError().isValid())
     {
-        return std::unexpected(
-            (templatePrintContext
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, (templatePrintContext
                 ? QObject::tr("Reading template print roster cells failed: %1")
                 : QObject::tr("Reading full roster cells failed: %1"))
-                .arg(cellsQuery.lastError().text())
-            );
+                .arg(cellsQuery.lastError().text())});
     }
     if (invalidCellIdentity)
     {
-        return std::unexpected(templatePrintContext
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, templatePrintContext
             ? QObject::tr(
                 "Loading template print roster cells returned an invalid class identity.")
             : QObject::tr(
-                "Loading full roster cells returned an invalid class identity."));
+                "Loading full roster cells returned an invalid class identity.")});
     }
 
     return records;
 }
 
-Result<QList<RosterRepository::FullRosterReadRecord>>
+RepositoryResult<QList<RosterRepository::FullRosterReadRecord>>
 RosterRepository::loadFullRosters(
     const QList<int>& classIds
     )
@@ -2093,7 +2012,7 @@ RosterRepository::loadFullRosters(
     return loadFullRostersImpl(classIds, nullptr, false);
 }
 
-Result<QList<RosterRepository::TemplatePrintReadRecord>>
+RepositoryResult<QList<RosterRepository::TemplatePrintReadRecord>>
 RosterRepository::loadRostersForTemplatePrint(
     const QList<int>& classIds
     )
@@ -2108,7 +2027,7 @@ RosterRepository::templatePrintBatchReadMetrics() const noexcept
     return m_templatePrintBatchReadMetrics;
 }
 
-Result<QList<RosterRepository::ColumnNamesForClass>>
+RepositoryResult<QList<RosterRepository::ColumnNamesForClass>>
 RosterRepository::loadRosterColumnNamesForClasses(
     const QList<int>& classIds
     )
@@ -2130,9 +2049,7 @@ RosterRepository::loadRosterColumnNamesForClasses(
         const int classId = classIds.at(index);
         if (classId <= 0 || recordIndexByClassId.contains(classId))
         {
-            return std::unexpected(
-                QObject::tr("Loading roster columns failed: class ids must be positive and unique.")
-                );
+            return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading roster columns failed: class ids must be positive and unique.")});
         }
 
         recordIndexByClassId.insert(classId, index);
@@ -2163,10 +2080,8 @@ RosterRepository::loadRosterColumnNamesForClasses(
     QSqlQuery query(m_database);
     if (!query.prepare(queryText))
     {
-        return std::unexpected(
-            QObject::tr("Preparing roster column batch read failed: %1")
-                .arg(query.lastError().text())
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Preparing roster column batch read failed: %1")
+                .arg(query.lastError().text())});
     }
 
     const auto loadedColumns = SqlQueryUtils::executePrepared(
@@ -2176,7 +2091,7 @@ RosterRepository::loadRosterColumnNamesForClasses(
         );
     if (!loadedColumns)
     {
-        return std::unexpected(loadedColumns.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedColumns.error()));
     }
 
     while (query.next())
@@ -2190,9 +2105,7 @@ RosterRepository::loadRosterColumnNamesForClasses(
         const auto recordIndex = recordIndexByClassId.constFind(classId);
         if (recordIndex == recordIndexByClassId.cend())
         {
-            return std::unexpected(
-                QObject::tr("Loading roster column names returned an unexpected class id.")
-                );
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr("Loading roster column names returned an unexpected class id.")});
         }
 
         records[*recordIndex].columns.append(query.value("name").toString());
@@ -2200,16 +2113,14 @@ RosterRepository::loadRosterColumnNamesForClasses(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(
-            QObject::tr("Reading roster column batch failed: %1")
-                .arg(query.lastError().text())
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Reading roster column batch failed: %1")
+                .arg(query.lastError().text())});
     }
 
     return records;
 }
 
-Result<QList<RosterRepository::ParentAwareColumnNamesForClass>>
+RepositoryResult<QList<RosterRepository::ParentAwareColumnNamesForClass>>
 RosterRepository::loadRosterColumnNamesForClassesWithParentProvenance(
     const QList<int>& classIds
     )
@@ -2233,9 +2144,9 @@ RosterRepository::loadRosterColumnNamesForClassesWithParentProvenance(
         const int classId = classIds.at(index);
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr(
                 "Loading parent-aware roster columns failed: class ids must be positive and unique."
-                ));
+                )});
         }
 
         seenClassIds.insert(classId);
@@ -2273,10 +2184,8 @@ RosterRepository::loadRosterColumnNamesForClassesWithParentProvenance(
     query.setForwardOnly(true);
     if (!query.prepare(queryText))
     {
-        return std::unexpected(
-            QObject::tr("Preparing parent-aware roster column batch read failed: %1")
-                .arg(query.lastError().text())
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Preparing parent-aware roster column batch read failed: %1")
+                .arg(query.lastError().text())});
     }
 
     const auto loadedColumns = SqlQueryUtils::executePrepared(
@@ -2286,7 +2195,7 @@ RosterRepository::loadRosterColumnNamesForClassesWithParentProvenance(
         );
     if (!loadedColumns)
     {
-        return std::unexpected(loadedColumns.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedColumns.error()));
     }
 
     while (query.next())
@@ -2302,9 +2211,9 @@ RosterRepository::loadRosterColumnNamesForClassesWithParentProvenance(
             || requestOrder >= classIds.size()
             || classIds.at(requestOrder) != classId)
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                 "Loading parent-aware roster columns returned an invalid class identity."
-                ));
+                )});
         }
 
         const bool parentMissing =
@@ -2316,9 +2225,9 @@ RosterRepository::loadRosterColumnNamesForClassesWithParentProvenance(
                 query.value("parent_class_id").toInt(&parentClassIdValid);
             if (!parentClassIdValid || parentClassId != classId)
             {
-                return std::unexpected(QObject::tr(
+                return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading parent-aware roster columns returned an invalid parent identity."
-                    ));
+                    )});
             }
         }
 
@@ -2326,9 +2235,9 @@ RosterRepository::loadRosterColumnNamesForClassesWithParentProvenance(
         if (sawRequest.at(recordIndex)
             && records[recordIndex].parentMissing != parentMissing)
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                 "Loading parent-aware roster columns returned inconsistent parent records."
-                ));
+                )});
         }
         sawRequest[recordIndex] = true;
         records[recordIndex].parentMissing = parentMissing;
@@ -2345,26 +2254,24 @@ RosterRepository::loadRosterColumnNamesForClassesWithParentProvenance(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(
-            QObject::tr("Reading parent-aware roster column batch failed: %1")
-                .arg(query.lastError().text())
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Reading parent-aware roster column batch failed: %1")
+                .arg(query.lastError().text())});
     }
 
     for (const bool found : sawRequest)
     {
         if (!found)
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr(
                 "Loading parent-aware roster columns returned an incomplete class list."
-                ));
+                )});
         }
     }
 
     return records;
 }
 
-Result<QList<RosterRepository::MyClassesStudentCountReadEntry>>
+RepositoryResult<QList<RosterRepository::MyClassesStudentCountReadEntry>>
 RosterRepository::loadMyClassesStudentCountRecords(
     const QList<int>& classIds
     )
@@ -2387,9 +2294,9 @@ RosterRepository::loadMyClassesStudentCountRecords(
         const int classId = classIds.at(index);
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr(
                 "Loading My Classes student counts failed: class ids must be positive and unique."
-                ));
+                )});
         }
         seenClassIds.insert(classId);
         requestIndexByClassId.insert(classId, index);
@@ -2397,7 +2304,7 @@ RosterRepository::loadMyClassesStudentCountRecords(
 
     const auto readIndividually =
         [this, &classIds]()
-        -> Result<QList<MyClassesStudentCountReadEntry>>
+        -> RepositoryResult<QList<MyClassesStudentCountReadEntry>>
     {
         QList<MyClassesStudentCountReadEntry> entries;
         entries.reserve(classIds.size());
@@ -2567,7 +2474,7 @@ RosterRepository::loadMyClassesStudentCountRecords(
     {
         entries.append({
             classIds.at(static_cast<qsizetype>(index)),
-            Result<int>{counts[index]},
+            RepositoryResult<int>{counts[index]},
             loadedColumns->at(static_cast<qsizetype>(index)).parentMissing
         });
     }
@@ -2580,7 +2487,7 @@ RosterRepository::myClassesStudentCountBatchReadMetrics() const noexcept
     return m_myClassesStudentCountBatchReadMetrics;
 }
 
-Result<QList<RosterRepository::SubPrepStudentCountReadEntry>>
+RepositoryResult<QList<RosterRepository::SubPrepStudentCountReadEntry>>
 RosterRepository::loadSubPrepStudentCountRecords(
     const QList<int>& classIds
     )
@@ -2603,9 +2510,9 @@ RosterRepository::loadSubPrepStudentCountRecords(
         const int classId = classIds.at(index);
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr(
                 "Loading Sub Prep student counts failed: class ids must be positive and unique."
-                ));
+                )});
         }
         seenClassIds.insert(classId);
         requestIndexByClassId.insert(classId, index);
@@ -2613,7 +2520,7 @@ RosterRepository::loadSubPrepStudentCountRecords(
 
     const auto readIndividually =
         [this, &classIds]()
-        -> Result<QList<SubPrepStudentCountReadEntry>>
+        -> RepositoryResult<QList<SubPrepStudentCountReadEntry>>
     {
         QList<SubPrepStudentCountReadEntry> entries;
         entries.reserve(classIds.size());
@@ -2629,7 +2536,7 @@ RosterRepository::loadSubPrepStudentCountRecords(
             {
                 entries.append({
                     classId,
-                    Result<int>{std::unexpected(loaded.error())},
+                    RepositoryResult<int>{std::unexpected(loaded.error())},
                     0,
                     0,
                     0
@@ -2859,7 +2766,7 @@ RosterRepository::subPrepStudentCountBatchReadMetrics() const noexcept
     return m_subPrepStudentCountBatchReadMetrics;
 }
 
-Status RosterRepository::forEachRosterDataCellForClasses(
+RepositoryStatus RosterRepository::forEachRosterDataCellForClasses(
     const QList<int>& classIds,
     const int rowLimit,
     const std::function<void(int, int, int, const QString&)>& consumer
@@ -2871,9 +2778,7 @@ Status RosterRepository::forEachRosterDataCellForClasses(
     }
     if (rowLimit <= 0 || !consumer)
     {
-        return std::unexpected(
-            QObject::tr("Loading roster availability failed: invalid request.")
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading roster availability failed: invalid request.")});
     }
 
     QStringList requestedClasses;
@@ -2885,9 +2790,7 @@ Status RosterRepository::forEachRosterDataCellForClasses(
         const int classId = classIds.at(index);
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(
-                QObject::tr("Loading roster availability failed: class ids must be positive and unique.")
-                );
+            return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading roster availability failed: class ids must be positive and unique.")});
         }
 
         seenClassIds.insert(classId);
@@ -2924,10 +2827,8 @@ Status RosterRepository::forEachRosterDataCellForClasses(
     query.setForwardOnly(true);
     if (!query.prepare(queryText))
     {
-        return std::unexpected(
-            QObject::tr("Preparing roster availability read failed: %1")
-                .arg(query.lastError().text())
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Preparing roster availability read failed: %1")
+                .arg(query.lastError().text())});
     }
     query.addBindValue(rowLimit);
 
@@ -2938,7 +2839,7 @@ Status RosterRepository::forEachRosterDataCellForClasses(
         );
     if (!loadedCells)
     {
-        return std::unexpected(loadedCells.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedCells.error()));
     }
 
     while (query.next())
@@ -2948,11 +2849,9 @@ Status RosterRepository::forEachRosterDataCellForClasses(
                 != QStringLiteral("integer")
             )
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster availability failed: invalid row index."
-                    )
-                );
+                    )});
         }
 
         if (
@@ -2960,11 +2859,9 @@ Status RosterRepository::forEachRosterDataCellForClasses(
                 != QStringLiteral("integer")
             )
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster availability failed: invalid column index."
-                    )
-                );
+                    )});
         }
 
         bool columnIndexValid = false;
@@ -2972,11 +2869,9 @@ Status RosterRepository::forEachRosterDataCellForClasses(
             query.value("col_index").toLongLong(&columnIndexValid);
         if (!columnIndexValid)
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading roster availability failed: invalid column index."
-                    )
-                );
+                    )});
         }
         if (
             columnIndex < std::numeric_limits<int>::min()
@@ -2994,10 +2889,16 @@ Status RosterRepository::forEachRosterDataCellForClasses(
             );
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical,
+            QObject::tr("Reading roster availability cells failed: %1")
+                .arg(query.lastError().text())});
+    }
     return {};
 }
 
-Status RosterRepository::forEachRosterDataCellForExistingClasses(
+RepositoryStatus RosterRepository::forEachRosterDataCellForExistingClasses(
     const QList<int>& classIds,
     const int rowLimit,
     const std::function<void(int, int, int, const QString&)>& consumer
@@ -3009,9 +2910,7 @@ Status RosterRepository::forEachRosterDataCellForExistingClasses(
     }
     if (rowLimit <= 0 || !consumer)
     {
-        return std::unexpected(
-            QObject::tr("Loading parent-rooted roster availability failed: invalid request.")
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading parent-rooted roster availability failed: invalid request.")});
     }
 
     QStringList requestedClasses;
@@ -3023,9 +2922,7 @@ Status RosterRepository::forEachRosterDataCellForExistingClasses(
         const int classId = classIds.at(index);
         if (classId <= 0 || seenClassIds.contains(classId))
         {
-            return std::unexpected(
-                QObject::tr("Loading parent-rooted roster availability failed: class ids must be positive and unique.")
-                );
+            return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading parent-rooted roster availability failed: class ids must be positive and unique.")});
         }
 
         seenClassIds.insert(classId);
@@ -3064,10 +2961,8 @@ Status RosterRepository::forEachRosterDataCellForExistingClasses(
     query.setForwardOnly(true);
     if (!query.prepare(queryText))
     {
-        return std::unexpected(
-            QObject::tr("Preparing parent-rooted roster availability read failed: %1")
-                .arg(query.lastError().text())
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Preparing parent-rooted roster availability read failed: %1")
+                .arg(query.lastError().text())});
     }
     query.addBindValue(rowLimit);
 
@@ -3078,7 +2973,7 @@ Status RosterRepository::forEachRosterDataCellForExistingClasses(
         );
     if (!loadedCells)
     {
-        return std::unexpected(loadedCells.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedCells.error()));
     }
 
     while (query.next())
@@ -3088,11 +2983,9 @@ Status RosterRepository::forEachRosterDataCellForExistingClasses(
                 != QStringLiteral("integer")
             )
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading parent-rooted roster availability failed: invalid row index."
-                    )
-                );
+                    )});
         }
 
         if (
@@ -3100,11 +2993,9 @@ Status RosterRepository::forEachRosterDataCellForExistingClasses(
                 != QStringLiteral("integer")
             )
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading parent-rooted roster availability failed: invalid column index."
-                    )
-                );
+                    )});
         }
 
         bool columnIndexValid = false;
@@ -3112,11 +3003,9 @@ Status RosterRepository::forEachRosterDataCellForExistingClasses(
             query.value("col_index").toLongLong(&columnIndexValid);
         if (!columnIndexValid)
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Loading parent-rooted roster availability failed: invalid column index."
-                    )
-                );
+                    )});
         }
         if (
             columnIndex < std::numeric_limits<int>::min()
@@ -3136,26 +3025,22 @@ Status RosterRepository::forEachRosterDataCellForExistingClasses(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(
-            QObject::tr("Reading parent-rooted roster availability cells failed: %1")
-                .arg(query.lastError().text())
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Reading parent-rooted roster availability cells failed: %1")
+                .arg(query.lastError().text())});
     }
 
     return {};
 }
 
-Result<RosterRepository::MyClassesStudentCountReadEntry>
+RepositoryResult<RosterRepository::MyClassesStudentCountReadEntry>
 RosterRepository::loadMyClassesStudentCountRecord(
     const int classId
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Loading My Classes student count failed: invalid class id %1.")
-                .arg(classId)
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading My Classes student count failed: invalid class id %1.")
+                .arg(classId)});
     }
 
     ++m_myClassesStudentCountBatchReadMetrics.columnStatementCount;
@@ -3169,9 +3054,9 @@ RosterRepository::loadMyClassesStudentCountRecord(
     }
     if (loadedColumns->size() != 1 || loadedColumns->front().classId != classId)
     {
-        return std::unexpected(QObject::tr(
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr(
             "Loading My Classes student count failed: roster columns returned an incomplete class record."
-            ));
+            )});
     }
 
     const MyClassesStudentCountColumnReadRecord& columnRecord =
@@ -3180,7 +3065,7 @@ RosterRepository::loadMyClassesStudentCountRecord(
     {
         return MyClassesStudentCountReadEntry{
             classId,
-            Result<int>{0},
+            RepositoryResult<int>{0},
             true
         };
     }
@@ -3192,7 +3077,7 @@ RosterRepository::loadMyClassesStudentCountRecord(
     {
         return MyClassesStudentCountReadEntry{
             classId,
-            Result<int>{0},
+            RepositoryResult<int>{0},
             false
         };
     }
@@ -3215,10 +3100,8 @@ RosterRepository::loadMyClassesStudentCountRecord(
         ORDER BY row_index, col_index
     )"))
     {
-        return std::unexpected(
-            QObject::tr("Preparing My Classes student-count read failed: %1")
-                .arg(query.lastError().text())
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Preparing My Classes student-count read failed: %1")
+                .arg(query.lastError().text())});
     }
     query.addBindValue(classId);
     query.addBindValue(englishColumn);
@@ -3234,7 +3117,7 @@ RosterRepository::loadMyClassesStudentCountRecord(
         );
     if (!loadedCells)
     {
-        return std::unexpected(loadedCells.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedCells.error()));
     }
 
     int count = 0;
@@ -3252,22 +3135,18 @@ RosterRepository::loadMyClassesStudentCountRecord(
         if (query.value("row_index_storage_type").toString()
             != QStringLiteral("integer"))
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Reading My Classes student-count cells failed for class id %1: invalid row index."
-                    ).arg(classId)
-                );
+                    ).arg(classId)});
         }
         bool rowIndexValid = false;
         const qlonglong rowIndex =
             query.value("row_index").toLongLong(&rowIndexValid);
         if (!rowIndexValid)
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Reading My Classes student-count cells failed for class id %1: invalid row index."
-                    ).arg(classId)
-                );
+                    ).arg(classId)});
         }
         if (rowIndex < 0)
         {
@@ -3286,20 +3165,18 @@ RosterRepository::loadMyClassesStudentCountRecord(
     }
     if (query.lastError().isValid())
     {
-        return std::unexpected(
-            QObject::tr("Reading My Classes student-count cells failed: %1")
-                .arg(query.lastError().text())
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Reading My Classes student-count cells failed: %1")
+                .arg(query.lastError().text())});
     }
     finishCurrentRow();
     return MyClassesStudentCountReadEntry{
         classId,
-        Result<int>{count},
+        RepositoryResult<int>{count},
         false
     };
 }
 
-Result<Roster> RosterRepository::loadRosterForOutput(
+RepositoryResult<Roster> RosterRepository::loadRosterForOutput(
     const int classId,
     const QStringList& requestedColumns,
     const std::size_t maxRows,
@@ -3310,10 +3187,8 @@ Result<Roster> RosterRepository::loadRosterForOutput(
     const QString identity = QObject::tr("class id %1").arg(classId);
     if (classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Loading roster output failed: invalid class id %1.")
-                .arg(classId)
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading roster output failed: invalid class id %1.")
+                .arg(classId)});
     }
     if (requestedColumns.size()
             > static_cast<qsizetype>(kRosterRepositoryOutputMaxColumns)
@@ -3321,9 +3196,7 @@ Result<Roster> RosterRepository::loadRosterForOutput(
         || maxCells > kRosterRepositoryOutputMaxCells
         || maxTextBytes > kRosterRepositoryOutputMaxTextBytes)
     {
-        return std::unexpected(
-            QObject::tr("Loading roster output failed: a requested limit exceeds its bound.")
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading roster output failed: a requested limit exceeds its bound.")});
     }
 
     for (qsizetype index = 0; index < requestedColumns.size(); ++index)
@@ -3339,9 +3212,7 @@ Result<Roster> RosterRepository::loadRosterForOutput(
                     kRosterRepositoryOutputMaxColumnNameBytes
                     ))
         {
-            return std::unexpected(
-                QObject::tr("Loading roster output failed: a column name is blank or too long.")
-                );
+            return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading roster output failed: a column name is blank or too long.")});
         }
         for (qsizetype other = 0; other < index; ++other)
         {
@@ -3350,9 +3221,7 @@ Result<Roster> RosterRepository::loadRosterForOutput(
                     Qt::CaseInsensitive
                     ) == 0)
             {
-                return std::unexpected(
-                    QObject::tr("Loading roster output failed: requested columns are duplicated.")
-                    );
+                return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading roster output failed: requested columns are duplicated.")});
             }
         }
     }
@@ -3400,7 +3269,7 @@ Result<Roster> RosterRepository::loadRosterForOutput(
         );
     if (!loadedColumns)
     {
-        return std::unexpected(loadedColumns.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedColumns.error()));
     }
 
     int sourceColumnIndex = 0;
@@ -3408,9 +3277,7 @@ Result<Roster> RosterRepository::loadRosterForOutput(
     {
         if (sourceColumnIndex >= 4'096)
         {
-            return std::unexpected(
-                QObject::tr("Loading roster output failed: roster schema exceeds its safe column limit.")
-                );
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr("Loading roster output failed: roster schema exceeds its safe column limit.")});
         }
 
         bool byteLengthValid = false;
@@ -3418,9 +3285,7 @@ Result<Roster> RosterRepository::loadRosterForOutput(
             columnsQuery.value("name_bytes").toULongLong(&byteLengthValid);
         if (!byteLengthValid)
         {
-            return std::unexpected(
-                QObject::tr("Loading roster output failed: a column name has invalid size metadata.")
-                );
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr("Loading roster output failed: a column name has invalid size metadata.")});
         }
 
         if (rawNameBytes <= kRosterRepositoryOutputMaxColumnNameBytes)
@@ -3443,14 +3308,12 @@ Result<Roster> RosterRepository::loadRosterForOutput(
     }
     if (columnsQuery.lastError().isValid())
     {
-        return std::unexpected(
-            SqlQueryUtils::errorFor(
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
                 columnsQuery,
                 QObject::tr("Loading bounded roster output columns"),
                 {},
                 identity
-                ).userMessage()
-            );
+                )));
     }
     columnsQuery.finish();
 
@@ -3466,9 +3329,7 @@ Result<Roster> RosterRepository::loadRosterForOutput(
         if (selected.textBytes > maxTextBytes
             || totalTextBytes > maxTextBytes - selected.textBytes)
         {
-            return std::unexpected(
-                QObject::tr("Loading roster output failed: column names exceed the text byte limit.")
-                );
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr("Loading roster output failed: column names exceed the text byte limit.")});
         }
         totalTextBytes += selected.textBytes;
         sourceIndexes.append(selected.sourceIndex);
@@ -3511,13 +3372,11 @@ Result<Roster> RosterRepository::loadRosterForOutput(
         );
     if (!loadedMaximumRow)
     {
-        return std::unexpected(loadedMaximumRow.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedMaximumRow.error()));
     }
     if (!maximumRowQuery.next())
     {
-        return std::unexpected(
-            QObject::tr("Loading roster output failed: row count could not be read.")
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Loading roster output failed: row count could not be read.")});
     }
 
     const QVariant maximumRowValue = maximumRowQuery.value(
@@ -3532,11 +3391,9 @@ Result<Roster> RosterRepository::loadRosterForOutput(
             ).toInt(&storageFlagValid);
         if (!storageFlagValid || hasNonIntegerRowIndex != 0)
         {
-            return std::unexpected(
-                QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                     "Roster row_index has non-INTEGER SQLite storage."
-                    )
-                );
+                    )});
         }
 
         bool rowIndexValid = false;
@@ -3545,9 +3402,7 @@ Result<Roster> RosterRepository::loadRosterForOutput(
         if (!rowIndexValid || maximumRowIndex < 0
             || static_cast<qulonglong>(maximumRowIndex) >= maxRows)
         {
-            return std::unexpected(
-                QObject::tr("Loading roster output failed: roster rows exceed the requested limit.")
-                );
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr("Loading roster output failed: roster rows exceed the requested limit.")});
         }
         rowCount = static_cast<std::size_t>(maximumRowIndex) + 1;
     }
@@ -3557,9 +3412,7 @@ Result<Roster> RosterRepository::loadRosterForOutput(
         static_cast<std::size_t>(roster.columns.size());
     if (columnCount != 0 && rowCount > maxCells / columnCount)
     {
-        return std::unexpected(
-            QObject::tr("Loading roster output failed: roster cells exceed the requested limit.")
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr("Loading roster output failed: roster cells exceed the requested limit.")});
     }
     const std::size_t cellCount = rowCount * columnCount;
 
@@ -3619,7 +3472,7 @@ Result<Roster> RosterRepository::loadRosterForOutput(
         );
     if (!loadedValues)
     {
-        return std::unexpected(loadedValues.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedValues.error()));
     }
 
     std::size_t loadedCellCount = 0;
@@ -3627,9 +3480,7 @@ Result<Roster> RosterRepository::loadRosterForOutput(
     {
         if (loadedCellCount >= cellCount)
         {
-            return std::unexpected(
-                QObject::tr("Loading roster output failed: stored cells exceed their bounded matrix.")
-                );
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr("Loading roster output failed: stored cells exceed their bounded matrix.")});
         }
         ++loadedCellCount;
 
@@ -3640,9 +3491,7 @@ Result<Roster> RosterRepository::loadRosterForOutput(
             || cellBytes > kRosterRepositoryOutputMaxCellBytes
             || cellBytes > maxTextBytes - totalTextBytes)
         {
-            return std::unexpected(
-                QObject::tr("Loading roster output failed: a cell exceeds the text byte limit.")
-                );
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr("Loading roster output failed: a cell exceeds the text byte limit.")});
         }
         totalTextBytes += static_cast<std::size_t>(cellBytes);
 
@@ -3667,30 +3516,26 @@ Result<Roster> RosterRepository::loadRosterForOutput(
     }
     if (valuesQuery.lastError().isValid())
     {
-        return std::unexpected(
-            SqlQueryUtils::errorFor(
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
                 valuesQuery,
                 QObject::tr("Loading bounded roster output values"),
                 {},
                 identity
-                ).userMessage()
-            );
+                )));
     }
 
     return roster;
 }
 
-Result<RosterRepository::SubPrepStudentCountReadEntry>
+RepositoryResult<RosterRepository::SubPrepStudentCountReadEntry>
 RosterRepository::loadSingleClassSubPrepStudentCountRecord(
     const int classId
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Loading Sub Prep student count failed: invalid class id %1.")
-                .arg(classId)
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading Sub Prep student count failed: invalid class id %1.")
+                .arg(classId)});
     }
 
     const QString identity = QObject::tr("class id %1").arg(classId);
@@ -3722,24 +3567,24 @@ RosterRepository::loadSingleClassSubPrepStudentCountRecord(
         );
     if (!loadedColumns)
     {
-        return std::unexpected(loadedColumns.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedColumns.error()));
     }
 
     const bool parentRowFound = query.next();
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading roster columns"),
             {},
             identity
-            ).userMessage());
+            )));
     }
     if (!parentRowFound)
     {
-        return std::unexpected(QObject::tr(
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr(
             "Loading roster columns failed: no result was returned for %1."
-            ).arg(identity));
+            ).arg(identity)});
     }
 
     QStringList columns;
@@ -3758,9 +3603,9 @@ RosterRepository::loadSingleClassSubPrepStudentCountRecord(
                 != QStringLiteral("integer")
             || position < 0)
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                 "Loading roster columns failed for %1: invalid position."
-                ).arg(identity));
+                ).arg(identity)});
         }
 
         columns.append(query.value("name").toString());
@@ -3770,21 +3615,21 @@ RosterRepository::loadSingleClassSubPrepStudentCountRecord(
                 widthValue,
                 query.value("width_storage_type").toString()))
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                 "Loading roster columns failed for class id %1: width %2 is outside the supported int range."
-                ).arg(classId).arg(widthValue.toString()));
+                ).arg(classId).arg(widthValue.toString())});
         }
     }
     while (query.next());
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading roster columns"),
             {},
             identity
-            ).userMessage());
+            )));
     }
 
     const int englishColumn = columns.indexOf(QStringLiteral("English"));
@@ -3821,7 +3666,7 @@ RosterRepository::loadSingleClassSubPrepStudentCountRecord(
         );
     if (!loadedData)
     {
-        return std::unexpected(loadedData.error().userMessage());
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(loadedData.error()));
     }
 
     int rowCount = 0;
@@ -3833,9 +3678,9 @@ RosterRepository::loadSingleClassSubPrepStudentCountRecord(
         if (query.value("row_index_storage_type").toString()
             != QStringLiteral("integer"))
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                 "Loading roster data failed for %1: invalid row index."
-                ).arg(identity));
+                ).arg(identity)});
         }
 
         bool rowIndexValid = false;
@@ -3843,29 +3688,29 @@ RosterRepository::loadSingleClassSubPrepStudentCountRecord(
             query.value("row_index").toLongLong(&rowIndexValid);
         if (!rowIndexValid)
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                 "Loading roster data failed for %1: invalid row index."
-                ).arg(identity));
+                ).arg(identity)});
         }
         if (rowIndex < 0)
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                 "Loading roster data failed for %1: row index %2 is negative."
-                ).arg(identity).arg(rowIndex));
+                ).arg(identity).arg(rowIndex)});
         }
         if (rowIndex > std::numeric_limits<int>::max())
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                 "Loading roster data failed for %1: row index %2 exceeds the supported range."
-                ).arg(identity).arg(rowIndex));
+                ).arg(identity).arg(rowIndex)});
         }
 
         if (query.value("col_index_storage_type").toString()
             != QStringLiteral("integer"))
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                 "Loading roster data failed for %1: invalid column index."
-                ).arg(identity));
+                ).arg(identity)});
         }
 
         bool columnIndexValid = false;
@@ -3873,9 +3718,9 @@ RosterRepository::loadSingleClassSubPrepStudentCountRecord(
             query.value("col_index").toLongLong(&columnIndexValid);
         if (!columnIndexValid)
         {
-            return std::unexpected(QObject::tr(
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr(
                 "Loading roster data failed for %1: invalid column index."
-                ).arg(identity));
+                ).arg(identity)});
         }
 
         if (columnIndex < 0 || columnIndex >= columns.size())
@@ -3907,12 +3752,12 @@ RosterRepository::loadSingleClassSubPrepStudentCountRecord(
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(SqlQueryUtils::errorFor(
+        return std::unexpected(SqlQueryUtils::repositoryErrorFor(SqlQueryUtils::errorFor(
             query,
             QObject::tr("Loading roster data"),
             {},
             identity
-            ).userMessage());
+            )));
     }
     if (currentRowHasStudent)
     {
@@ -3940,20 +3785,18 @@ RosterRepository::loadSingleClassSubPrepStudentCountRecord(
     };
 }
 
-Result<RosterRepository::SubPrepStudentCountReadEntry>
+RepositoryResult<RosterRepository::SubPrepStudentCountReadEntry>
 RosterRepository::loadSubPrepStudentCountRecord(
     const int classId
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Loading Sub Prep student count failed: invalid class id %1.")
-                .arg(classId)
-            );
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading Sub Prep student count failed: invalid class id %1.")
+                .arg(classId)});
     }
 
-    const Result<Roster> roster =
+    const RepositoryResult<Roster> roster =
         loadRoster(classId);
     if (!roster)
     {
@@ -4007,7 +3850,7 @@ RosterRepository::loadSubPrepStudentCountRecord(
     };
 }
 
-Result<int> RosterRepository::getRosterStudentCount(
+RepositoryResult<int> RosterRepository::getRosterStudentCount(
     const int classId
     )
 {

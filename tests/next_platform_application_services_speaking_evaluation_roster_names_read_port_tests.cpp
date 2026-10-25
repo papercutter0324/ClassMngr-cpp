@@ -238,7 +238,7 @@ missingParentWithOrphansReturnsNotFoundAndPreservesLegacyRead()
     QVERIFY(repository != nullptr);
     const auto legacy =
         repository->loadSpeakingEvaluationRosterNames(*createdClass);
-    QVERIFY2(legacy, legacy ? "" : qPrintable(legacy.error()));
+    QVERIFY2(legacy, legacy ? "" : qPrintable(legacy.error().diagnostic));
     QVERIFY(legacy->hasEnglishColumn);
     QVERIFY(legacy->hasKoreanColumn);
     QCOMPARE(legacy->rows.size(), 2);
@@ -433,7 +433,7 @@ rejectsFractionalRowIndexBeforeOverwritingRosterName()
             );
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     QVERIFY2(
         QString::fromStdString(result.error().message).contains(
             QStringLiteral("row index"),
@@ -490,7 +490,7 @@ rejectsRowIndexOutsideLegacyRange()
             );
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     QVERIFY(!result.error().message.empty());
 }
 
@@ -570,7 +570,7 @@ rejectsFractionalColumnIndex()
             );
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     QVERIFY(!result.error().message.empty());
 }
 

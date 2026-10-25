@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/platform/repository_error_code.h"
+
 #include "core/application_services.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
@@ -94,7 +96,7 @@ public:
             QStringList removedColumns;
             for (const auto& column : request.removedCustomColumns)
                 removedColumns.append(legacyText(column));
-            const RosterRepository::SaveResult saved =
+            const RepositoryStatus saved =
                 repository->saveRosterWindowsWithParentCheck({{
                     .classId = *classId,
                     .roster = legacyRoster(request.roster),
@@ -103,10 +105,7 @@ public:
             if (!saved)
             {
                 return failure(
-                    saved.error().kind
-                            == RosterRepository::SaveFailure::Kind::ParentClassMissing
-                        ? Domain::ErrorCode::NotFound
-                        : Domain::ErrorCode::Technical,
+                    repositoryDomainErrorCode(saved.error().code),
                     toStdString(saved.error().diagnostic)
                     );
             }

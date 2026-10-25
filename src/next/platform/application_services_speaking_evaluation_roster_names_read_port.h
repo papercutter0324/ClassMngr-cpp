@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/platform/repository_error_code.h"
+
 #include "core/application_services.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
@@ -92,8 +94,8 @@ public:
             if (!loaded)
             {
                 return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(loaded.error())
+                    repositoryDomainErrorCode(loaded.error().code),
+                    toStdString(toLegacyDiagnostic(loaded.error()))
                     );
             }
             if (loaded->parentMissing)

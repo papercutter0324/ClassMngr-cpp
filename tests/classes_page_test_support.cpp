@@ -72,9 +72,12 @@ TeacherRepository::lookupTeacherDisplayName(const qint64 teacherId)
     };
 }
 
-Result<int> RosterRepository::getRosterStudentCount(const int classId)
+RepositoryResult<int> RosterRepository::getRosterStudentCount(const int classId)
 {
-    return DataService().getRosterStudentCount(classId);
+    const auto loaded = DataService().getRosterStudentCount(classId);
+    if (!loaded)
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, loaded.error()});
+    return *loaded;
 }
 
 RepositoryResult<SelectedClassGradeReadRecord>

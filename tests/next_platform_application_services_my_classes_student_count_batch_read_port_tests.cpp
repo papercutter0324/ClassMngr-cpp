@@ -456,7 +456,7 @@ rejectsFractionalRowIndexInBatchAndFallbackStudentCounts()
     QVERIFY(!loaded.value()[0].studentCount);
     QCOMPARE(
         loaded.value()[0].studentCount.error().code,
-        Domain::ErrorCode::Technical
+        Domain::ErrorCode::Validation
         );
     QVERIFY(loaded.value()[0].studentCount.error().message.find("row index")
         != std::string::npos);
@@ -564,7 +564,7 @@ reportsMissingParentsAfterPerClassFallback()
     QVERIFY(loaded.value()[2].classId == classId(malformedId));
     QVERIFY(!loaded.value()[2].studentCount);
     QCOMPARE(loaded.value()[2].studentCount.error().code,
-             Domain::ErrorCode::Technical);
+             Domain::ErrorCode::Validation);
     QVERIFY(loaded.value()[3].classId == classId(noColumnsId));
     QVERIFY(loaded.value()[3].studentCount);
     QCOMPARE(loaded.value()[3].studentCount.value().rawValue(), 0);

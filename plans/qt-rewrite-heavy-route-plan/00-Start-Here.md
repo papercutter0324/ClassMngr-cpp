@@ -14,8 +14,10 @@
   is committed locally as `4ccb5c8ceda848e4f09afcd41a958437939aca14` and is
   not pushed. F1453 is committed locally as
   `78189be6fe288a1ac6e8fef8760c151edf687f20` and is not pushed. F1454
-  IntensiveSlotStateRepository is independently verified and accepted; its
-  local commit is pending, and F1455 is next. Evidence and limits are in the
+  is committed locally as
+  `b362325f8a3d2f162a14e30c59ee171a52024e77` and is not pushed. F1455
+  RosterRepository is independently verified and accepted; its local commit
+  is pending, and F1456 is next. Evidence and limits are in the
   [progress log](04-Phase-3-Progress-Log.md); see also the [Phase 3
   plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),

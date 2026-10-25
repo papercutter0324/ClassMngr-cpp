@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/platform/repository_error_code.h"
+
 #include "core/application_services.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/roster_repository.h"
@@ -110,8 +112,8 @@ public:
                 );
         }
 
-        Result<QList<RosterRepository::MyClassesStudentCountReadEntry>> loaded =
-            [&]() -> Result<
+        RepositoryResult<QList<RosterRepository::MyClassesStudentCountReadEntry>> loaded =
+            [&]() -> RepositoryResult<
                 QList<RosterRepository::MyClassesStudentCountReadEntry>
                 >
         {
@@ -123,15 +125,15 @@ public:
             }
             catch (const std::exception&)
             {
-                return std::unexpected(QStringLiteral(
+                return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QStringLiteral(
                     "My Classes student counts could not be loaded."
-                    ));
+                    )});
             }
             catch (...)
             {
-                return std::unexpected(QStringLiteral(
+                return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QStringLiteral(
                     "My Classes student counts could not be loaded."
-                    ));
+                    )});
             }
         }();
 
@@ -260,12 +262,12 @@ private:
     }
 
     [[nodiscard]] static Domain::OperationError repositoryError(
-        const QString& message
+        const RepositoryError& repositoryFailure
         )
     {
-        const QByteArray bytes = message.toUtf8();
+        const QByteArray bytes = repositoryFailure.diagnostic.toUtf8();
         return error(
-            Domain::ErrorCode::Technical,
+            repositoryDomainErrorCode(repositoryFailure.code),
             bytes.isEmpty()
                 ? "My Classes student count could not be loaded."
                 : bytes.toStdString(),
