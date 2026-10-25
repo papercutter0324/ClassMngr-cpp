@@ -27,8 +27,10 @@
   the receipt is in the [Phase 4 progress log](05-Phase-4-Progress-Log.md).
   F1469, installed resource-root resolution, is committed as `d282e7f1`.
   F1470, explicit resource scopes, is committed as `f7b2cb22`. F1471, the
-  byte-budgeted resource cache, is committed as `bbbe5232`. F1472, resource
-  diagnostics, is accepted; F1473, document catalog metadata, is active.
+  byte-budgeted resource cache, is committed as `8ca1ddc5`. F1472, resource
+  diagnostics, is committed as `9ce7e35c`. F1473, document catalog metadata,
+  is accepted and committed as `2084cb4f`; F1474, loader-owned document
+  content handles, is active.
   F1468 provides
   explicit root/catalog injection, catalog
   validation, root-confined file reads, and RAII stream/font/translation

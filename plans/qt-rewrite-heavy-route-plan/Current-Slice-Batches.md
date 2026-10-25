@@ -22,17 +22,19 @@ legacy oracle paths in Phase 4.
    retains that scope with its owned value. The four kinds and RAII cleanup are
    covered by focused tests.
 3. **F1471 — Add byte-budgeted resource caching.** Accepted and committed as
-   `bbbe5232` after focused macOS verification. The injected per-instance
+   `8ca1ddc5` after focused macOS verification. The injected per-instance
    cache uses deterministic LRU and accounted payload bytes; oversized
    text/JSON/image entries skip retention. Document bodies, streams, fonts,
    and translations bypass it. Cache hits still read and hash package bytes.
-4. **F1472 — Add resource diagnostics.** Accepted after focused macOS
-   verification. The injected per-loader sink reports each logical load once,
-   includes outcome and available cache/accounted-size metadata, and requires
-   thread-safe sinks for concurrent calls. It adds no global singleton.
-5. **F1473 — Load document catalog metadata through the new catalog
-   (active).** Keep metadata startup-safe and document bodies unopened.
-6. **F1474 — Add loader-owned document content handles.** Replace the
+4. **F1472 — Add resource diagnostics.** Accepted and committed as `9ce7e35c`
+   after focused macOS verification. The injected per-loader sink reports each
+   logical load once, includes outcome and available cache/accounted-size
+   metadata, and requires thread-safe sinks for concurrent calls. It adds no
+   global singleton.
+5. **F1473 — Load document catalog metadata through the new catalog.** Accepted
+   and committed as `2084cb4f`; it remains unwired to Next startup and loads no
+   document bodies.
+6. **F1474 — Add loader-owned document content handles (active).** Replace the
    pack-backed Next document resource adapter used by legacy navigation with a
    loader-owned handle. Preserve selected-document request, file/device
    ownership, and explicit close in the new resource boundary; keep the legacy

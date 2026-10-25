@@ -40,8 +40,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-25
 - Current note: F1470, explicit resource scopes, is committed as
   `f7b2cb22`; F1471, the byte-budgeted resource cache, is committed as
-  `bbbe5232`; F1472, resource diagnostics, is accepted; F1473, document
-  catalog metadata, is active. F1469 is committed as `d282e7f1`.
+  `8ca1ddc5`; F1472, resource diagnostics, is committed as `9ce7e35c`; F1473,
+  document catalog metadata, is accepted and committed as `2084cb4f`; F1474,
+  loader-owned document content handles, is active. F1469 is committed as
+  `d282e7f1`.
   Batch 1
   (F1464–F1468) was pushed to `origin`; see the [Phase 4 progress log](05-Phase-4-Progress-Log.md)
   for the receipt. F1469 resolves
@@ -251,7 +253,7 @@ oversize skipping without unrelated eviction, per-cache isolation, image and
 JSON cache hits with the current request scope, insertion-owner metadata,
 cache-hit SHA-256 failure after a same-size source mutation, and font,
 translation, stream, and document-body bypass. Windows and Linux were not run.
-F1471 is accepted and committed as `bbbe5232`.
+F1471 is accepted and committed as `8ca1ddc5`.
 
 ### F1472 — Per-loader resource diagnostics — accepted — 2026-10-25
 
@@ -278,7 +280,24 @@ reporting, source/decoded sizes and cache metrics, SHA-256 failure events, type
 mismatch, stream reporting without body sizing, UTF-16 text and image weights,
 font/translation events, sink isolation and exception handling, and stylesheet
 event cardinality. Windows, Linux, and the full suite were not run. F1472 is
-accepted; F1473 is active.
+accepted and committed as `9ce7e35c`.
+
+### F1473 — Load document catalog metadata — accepted — 2026-10-25
+
+`ResourceDocumentCatalogPort` loads only `document.catalog-metadata` through
+`loadJson` with Startup owner `DocumentCatalogMetadata`. It parses schema v1
+into the bounded `DocumentCatalogProjection`, preserving seven folders, 30
+documents, localized/default names, ordering, print/export flags, and
+references. It is not wired to Next startup. The isolated-package test stages
+only the generated catalog manifest and `documents.json`, with all document
+bodies absent; it confirms one successful Startup diagnostic for the metadata
+ID and no body request.
+
+Independent macOS verification built `ClassMngrNextResourceDocumentCatalogTests`
+incrementally (up to date; objects newer than sources), passed its focused
+CTest 1/1, reviewed CMake ownership/dependency inclusion, and passed
+`git diff --check`. Windows/Linux and malformed-metadata/error branches were
+not verified; the full suite was not run. F1473 is committed as `2084cb4f`.
 
 ## Objective
 
