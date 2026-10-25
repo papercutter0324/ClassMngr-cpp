@@ -41,8 +41,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Current note: The §3.3 structured-error audit reopened Phase 3's exit gate.
   F1460 SettingsRepository is committed locally as
   `46ffe1a8711ee5ec8cb997b5921868aab553ebce` and is not pushed. F1461
-  PersonalDetailsRepository is independently verified and accepted; its local
-  commit is pending. F1462 is next, with Batch 23 discovery due when it starts.
+  PersonalDetailsRepository is committed locally as
+  `630260d30ec2c4df935c6dffd758d2cba2c7f071` and is not pushed. F1462
+  CampusRecordRepository is independently verified and accepted; its local
+  commit is pending. F1463 is next.
+  Batch 23 discovery is complete; no new candidate queue is accepted pending
+  the post-F1463 exit audit.
   Evidence and limits are in
   [progress log](04-Phase-3-Progress-Log.md); the queue is in the
   [current batch tracker](Current-Slice-Batches.md).
@@ -60,13 +64,16 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1461 PersonalDetailsRepository verified — 2026-10-25
+## Latest Progress Update — F1462 CampusRecordRepository verified — 2026-10-25
 
 F1460 SettingsRepository is independently verified and committed locally as
 `46ffe1a8711ee5ec8cb997b5921868aab553ebce`; it is not pushed. F1461
-PersonalDetailsRepository is independently verified and accepted; its local
-commit is pending. F1462 is next, and Batch 23 discovery is due when F1462
-starts. See the [progress log](04-Phase-3-Progress-Log.md) and [current batch
+PersonalDetailsRepository is independently verified and committed locally as
+`630260d30ec2c4df935c6dffd758d2cba2c7f071`; it is not pushed. F1462
+CampusRecordRepository is independently verified and accepted; its local
+commit is pending. F1463 is next. Batch 23 discovery is complete with no new
+candidate queue accepted pending the post-F1463 exit audit. See the [progress
+log](04-Phase-3-Progress-Log.md) and [current batch
 tracker](Current-Slice-Batches.md).
 
 ## Objective

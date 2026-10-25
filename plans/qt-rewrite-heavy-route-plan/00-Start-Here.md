@@ -10,8 +10,12 @@
   because the §3.3 structured-error audit reopened its exit gate. F1460
   SettingsRepository is committed locally as
   `46ffe1a8711ee5ec8cb997b5921868aab553ebce` and is not pushed. F1461
-  PersonalDetailsRepository is independently verified and accepted; its local
-  commit is pending. F1462 is next, with Batch 23 discovery due when it starts.
+  PersonalDetailsRepository is committed locally as
+  `630260d30ec2c4df935c6dffd758d2cba2c7f071` and is not pushed. F1462
+  CampusRecordRepository is independently verified and accepted; its local
+  commit is pending. F1463 is next.
+  Batch 23 discovery is complete; no new candidate queue is accepted pending
+  the post-F1463 exit audit.
   Evidence and limits are in the
   [progress log](04-Phase-3-Progress-Log.md); see also the [Phase 3
   plan](04-Phase-3-Persistence-Rewrite.md),

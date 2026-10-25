@@ -3,6 +3,7 @@
 #include "data/database/database_file_operations_internal.h"
 #include "data/database/database_schema_manager.h"
 #include "data/database/workspace_store.h"
+#include "data/repositories/campus_record_repository.h"
 #include "data/repositories/intensive_slot_state_repository.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/settings_repository.h"
@@ -298,6 +299,8 @@ private slots:
     void unsupportedSchemaClosesDatabaseSession();
     void classDeleteFailureRollsBackAllChanges();
     void teacherDeleteFailureRollsBackClassAssignments();
+    void campusRepositoryReturnsStructuredOutcomes();
+    void campusSingleReadRejectsLateFetchFailure();
     void campusCreationValidatesGeneratedIdAtomically();
     void campusListValidatesPersistedIds();
     void campusListRejectsLateFetchFailure();
@@ -1270,6 +1273,267 @@ void DataServiceLifecycleTests
         );
 }
 
+void DataServiceLifecycleTests::campusRepositoryReturnsStructuredOutcomes()
+{
+    const QString noCampusServiceMessage =
+        QStringLiteral("No Teacher Profile is open.");
+    DataService unavailableService;
+    const Result<int> unavailableSave =
+        unavailableService.saveCampus(CampusRecord{});
+    QVERIFY(!unavailableSave);
+    QCOMPARE(unavailableSave.error(), noCampusServiceMessage);
+    const Result<CampusRecord> unavailableRead =
+        unavailableService.getCampus(1);
+    QVERIFY(!unavailableRead);
+    QCOMPARE(unavailableRead.error(), noCampusServiceMessage);
+    const Result<QList<CampusRecord>> unavailableList =
+        unavailableService.getAllCampuses();
+    QVERIFY(!unavailableList);
+    QCOMPARE(unavailableList.error(), noCampusServiceMessage);
+    const Status unavailableDelete = unavailableService.deleteCampus(1);
+    QVERIFY(!unavailableDelete);
+    QCOMPARE(unavailableDelete.error(), noCampusServiceMessage);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("structured-campus-outcomes.db"))
+        ));
+
+    DatabaseSession* const session = service.databaseSession();
+    QVERIFY(session != nullptr);
+    CampusRecordRepository* const repository =
+        session->campusRecordRepository();
+    QVERIFY(repository != nullptr);
+
+    const RepositoryResult<CampusRecord> invalidRead =
+        repository->getCampus(0);
+    QVERIFY(!invalidRead);
+    QCOMPARE(invalidRead.error().code, RepositoryErrorCode::InvalidInput);
+    QCOMPARE(
+        invalidRead.error().diagnostic,
+        QStringLiteral("Loading campus failed: invalid campus id 0.")
+        );
+    const Result<CampusRecord> legacyInvalidRead = service.getCampus(0);
+    QVERIFY(!legacyInvalidRead);
+    QCOMPARE(legacyInvalidRead.error(), invalidRead.error().diagnostic);
+
+    const RepositoryStatus invalidDelete = repository->deleteCampus(-3);
+    QVERIFY(!invalidDelete);
+    QCOMPARE(invalidDelete.error().code, RepositoryErrorCode::InvalidInput);
+    QCOMPARE(
+        invalidDelete.error().diagnostic,
+        QStringLiteral("Deleting campus failed: invalid campus id -3.")
+        );
+
+    CampusRecord campus;
+    campus.id = -10;
+    campus.name = QStringLiteral("F1462 Structured Campus");
+    campus.officeNumber = QStringLiteral("Office 12");
+    const RepositoryResult<int> created = repository->saveCampus(campus);
+    QVERIFY(created);
+    QVERIFY(*created > 0);
+
+    const RepositoryResult<CampusRecord> loaded =
+        repository->getCampus(*created);
+    QVERIFY(loaded);
+    QCOMPARE(loaded->id, *created);
+    QCOMPARE(loaded->name, campus.name);
+    QCOMPARE(loaded->officeNumber, campus.officeNumber);
+
+    const int missingId = *created + 1000;
+    const RepositoryResult<CampusRecord> missingRead =
+        repository->getCampus(missingId);
+    QVERIFY(!missingRead);
+    QCOMPARE(missingRead.error().code, RepositoryErrorCode::NotFound);
+    QCOMPARE(
+        missingRead.error().diagnostic,
+        QStringLiteral(
+            "Loading campus failed for campus id %1: no matching record exists."
+            ).arg(missingId)
+        );
+    const Result<CampusRecord> legacyMissingRead = service.getCampus(missingId);
+    QVERIFY(!legacyMissingRead);
+    QCOMPARE(legacyMissingRead.error(), missingRead.error().diagnostic);
+
+    CampusRecord missingUpdate;
+    missingUpdate.id = missingId;
+    missingUpdate.name = QStringLiteral("F1462 Missing Campus");
+    const RepositoryResult<int> updateResult =
+        repository->saveCampus(missingUpdate);
+    QVERIFY(!updateResult);
+    QCOMPARE(updateResult.error().code, RepositoryErrorCode::NotFound);
+    QCOMPARE(
+        updateResult.error().diagnostic,
+        QStringLiteral("Updating campus id %1 failed: no matching record exists.")
+            .arg(missingId)
+        );
+    const Result<int> legacyUpdateResult = service.saveCampus(missingUpdate);
+    QVERIFY(!legacyUpdateResult);
+    QCOMPARE(legacyUpdateResult.error(), updateResult.error().diagnostic);
+
+    const RepositoryStatus missingDelete = repository->deleteCampus(missingId);
+    QVERIFY(missingDelete);
+    QVERIFY(service.deleteCampus(missingId));
+
+    const RepositoryResult<QList<CampusRecord>> allCampuses =
+        repository->getAllCampuses();
+    QVERIFY(allCampuses);
+    QCOMPARE(allCampuses->size(), 1);
+    QCOMPARE(allCampuses->first().id, *created);
+
+    QSqlDatabase database = session->database();
+    QVERIFY(database.transaction());
+    CampusRecord transactionStartCampus;
+    transactionStartCampus.name = QStringLiteral("F1462 Start Failure Campus");
+    const RepositoryResult<int> transactionStartFailure =
+        repository->saveCampus(transactionStartCampus);
+    QVERIFY(!transactionStartFailure);
+    QCOMPARE(
+        transactionStartFailure.error().code,
+        RepositoryErrorCode::Technical
+        );
+    QCOMPARE(
+        transactionStartFailure.error().diagnostic,
+        QStringLiteral(
+            "Creating campus 'F1462 Start Failure Campus' failed: "
+            "could not start a transaction."
+            )
+        );
+    QVERIFY(database.rollback());
+
+    QSqlQuery setup(database);
+    QVERIFY(setup.exec(QStringLiteral("PRAGMA foreign_keys = ON")));
+    QVERIFY(setup.exec(QStringLiteral("DROP TABLE campuses")));
+    const RepositoryResult<QList<CampusRecord>> failedSqlRead =
+        repository->getAllCampuses();
+    QVERIFY(!failedSqlRead);
+    QCOMPARE(failedSqlRead.error().code, RepositoryErrorCode::Technical);
+    QVERIFY(failedSqlRead.error().diagnostic.startsWith(
+        QStringLiteral("Loading campuses failed:")
+        ));
+    const Result<QList<CampusRecord>> legacyFailedSqlRead =
+        service.getAllCampuses();
+    QVERIFY(!legacyFailedSqlRead);
+    QCOMPARE(legacyFailedSqlRead.error(), failedSqlRead.error().diagnostic);
+
+    QVERIFY(setup.exec(QStringLiteral(
+        "CREATE TABLE campus_commit_parent (id INTEGER PRIMARY KEY)"
+        )));
+    QVERIFY(setup.exec(QStringLiteral(R"(
+        CREATE TABLE campuses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            building_name TEXT,
+            address TEXT,
+            phone_number TEXT,
+            office_number TEXT,
+            transit_steps TEXT,
+            arrival_info TEXT,
+            image_path TEXT,
+            office_wifi TEXT,
+            office_wifi_password TEXT,
+            printer_name TEXT,
+            printer_steps TEXT,
+            photocopier_code TEXT,
+            housing_locations TEXT,
+            required_parent_id INTEGER NOT NULL DEFAULT 999
+                REFERENCES campus_commit_parent(id)
+                DEFERRABLE INITIALLY DEFERRED
+        )
+    )")));
+    QSqlQuery foreignKeyCheck(database);
+    QVERIFY(foreignKeyCheck.exec(QStringLiteral("PRAGMA foreign_keys")));
+    QVERIFY(foreignKeyCheck.next());
+    QCOMPARE(foreignKeyCheck.value(0).toInt(), 1);
+
+    CampusRecord commitFailureCampus;
+    commitFailureCampus.name = QStringLiteral("F1462 Commit Failure Campus");
+    const RepositoryResult<int> commitFailure =
+        repository->saveCampus(commitFailureCampus);
+    QVERIFY(!commitFailure);
+    QCOMPARE(commitFailure.error().code, RepositoryErrorCode::Technical);
+    QCOMPARE(
+        commitFailure.error().diagnostic,
+        QStringLiteral(
+            "Creating campus 'F1462 Commit Failure Campus' failed: "
+            "could not commit the transaction."
+            )
+        );
+
+    QSqlQuery rowsAfterFailedCommit(database);
+    QVERIFY(rowsAfterFailedCommit.exec(
+        QStringLiteral("SELECT COUNT(*) FROM campuses")
+        ));
+    QVERIFY(rowsAfterFailedCommit.next());
+    QCOMPARE(rowsAfterFailedCommit.value(0).toInt(), 0);
+}
+
+void DataServiceLifecycleTests::campusSingleReadRejectsLateFetchFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("late-campus-single-fetch.db"))
+        ));
+
+    DatabaseSession* const session = service.databaseSession();
+    QVERIFY(session != nullptr);
+    CampusRecordRepository* const repository =
+        session->campusRecordRepository();
+    QVERIFY(repository != nullptr);
+
+    QSqlDatabase database = session->database();
+    QSqlQuery setup(database);
+    QVERIFY(setup.exec(QStringLiteral("DROP TABLE campuses")));
+    QVERIFY(setup.exec(QStringLiteral(R"(
+        CREATE TABLE campus_single_cursor_error_backing (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            payload TEXT NOT NULL
+        )
+    )")));
+    QVERIFY(setup.exec(QStringLiteral(R"(
+        INSERT INTO campus_single_cursor_error_backing (id, name, payload)
+        VALUES (2, 'F1462 Broken Campus', '{')
+    )")));
+    QVERIFY(setup.exec(QStringLiteral(R"(
+        CREATE VIEW campuses AS
+        SELECT
+            id,
+            name,
+            json_extract(payload, '$.building_name') AS building_name,
+            NULL AS address,
+            NULL AS phone_number,
+            NULL AS office_number,
+            NULL AS transit_steps,
+            NULL AS arrival_info,
+            NULL AS image_path,
+            NULL AS office_wifi,
+            NULL AS office_wifi_password,
+            NULL AS printer_name,
+            NULL AS printer_steps,
+            NULL AS photocopier_code,
+            NULL AS housing_locations
+        FROM campus_single_cursor_error_backing
+    )")));
+
+    const RepositoryResult<CampusRecord> failedRead =
+        repository->getCampus(2);
+    QVERIFY(!failedRead);
+    QCOMPARE(failedRead.error().code, RepositoryErrorCode::Technical);
+    QVERIFY(failedRead.error().diagnostic.startsWith(
+        QStringLiteral("Loading campus failed for campus id 2:")
+        ));
+    const Result<CampusRecord> legacyFailedRead = service.getCampus(2);
+    QVERIFY(!legacyFailedRead);
+    QCOMPARE(legacyFailedRead.error(), failedRead.error().diagnostic);
+}
+
 void DataServiceLifecycleTests::campusCreationValidatesGeneratedIdAtomically()
 {
     QTemporaryDir directory;
@@ -1323,6 +1587,16 @@ void DataServiceLifecycleTests::campusCreationValidatesGeneratedIdAtomically()
 
     CampusRecord campus;
     campus.name = QStringLiteral("F871 Out Of Range Campus");
+    const RepositoryResult<int> typedCreatedCampus =
+        service.databaseSession()->campusRecordRepository()->saveCampus(campus);
+    QVERIFY(!typedCreatedCampus);
+    QCOMPARE(
+        typedCreatedCampus.error().code,
+        RepositoryErrorCode::Validation
+        );
+    QVERIFY(typedCreatedCampus.error().diagnostic.contains(
+        QStringLiteral("outside the supported integer range")
+        ));
     const Result<int> createdCampus = service.saveCampus(campus);
     QVERIFY(!createdCampus);
     QVERIFY(createdCampus.error().contains(
@@ -1400,6 +1674,17 @@ void DataServiceLifecycleTests::campusListValidatesPersistedIds()
     QVERIFY(campusesWithWideId.error().contains(
         QStringLiteral("outside the supported integer range")
         ));
+    const RepositoryResult<QList<CampusRecord>> typedCampusesWithWideId =
+        service.databaseSession()->campusRecordRepository()->getAllCampuses();
+    QVERIFY(!typedCampusesWithWideId);
+    QCOMPARE(
+        typedCampusesWithWideId.error().code,
+        RepositoryErrorCode::Validation
+        );
+    QCOMPARE(
+        typedCampusesWithWideId.error().diagnostic,
+        campusesWithWideId.error()
+        );
 
     QVERIFY(query.exec(QStringLiteral(
         "SELECT id, name, typeof(id) AS id_type "
@@ -1441,6 +1726,17 @@ void DataServiceLifecycleTests::campusListValidatesPersistedIds()
     QVERIFY(campusesWithZeroId.error().contains(
         QStringLiteral("invalid campus id 0")
         ));
+    const RepositoryResult<QList<CampusRecord>> typedCampusesWithZeroId =
+        service.databaseSession()->campusRecordRepository()->getAllCampuses();
+    QVERIFY(!typedCampusesWithZeroId);
+    QCOMPARE(
+        typedCampusesWithZeroId.error().code,
+        RepositoryErrorCode::Validation
+        );
+    QCOMPARE(
+        typedCampusesWithZeroId.error().diagnostic,
+        campusesWithZeroId.error()
+        );
 
     QVERIFY(query.exec(QStringLiteral(
         "SELECT id, name, typeof(id) AS id_type "
@@ -1470,6 +1766,50 @@ void DataServiceLifecycleTests::campusListValidatesPersistedIds()
         QStringLiteral("F872 B Campus")
         );
     QVERIFY(!query.next());
+
+    query.finish();
+    QSqlQuery malformedIdSetup(database);
+    QVERIFY(malformedIdSetup.exec(QStringLiteral("DROP TABLE campuses")));
+    QVERIFY(malformedIdSetup.exec(QStringLiteral(R"(
+        CREATE TABLE campus_non_numeric_id_backing (
+            id TEXT NOT NULL,
+            name TEXT NOT NULL
+        )
+    )")));
+    QVERIFY(malformedIdSetup.exec(QStringLiteral(R"(
+        INSERT INTO campus_non_numeric_id_backing (id, name)
+        VALUES ('not-an-integer', 'F872 Malformed ID Campus')
+    )")));
+    QVERIFY(malformedIdSetup.exec(QStringLiteral(R"(
+        CREATE VIEW campuses AS
+        SELECT id, name FROM campus_non_numeric_id_backing
+    )")));
+
+    QSqlQuery malformedIdPreflight(database);
+    QVERIFY(malformedIdPreflight.exec(QStringLiteral(
+        "SELECT id FROM campuses"
+        )));
+    QVERIFY(malformedIdPreflight.next());
+    bool preflightConversionOk = true;
+    const qint64 preflightCampusId =
+        malformedIdPreflight.value("id").toLongLong(&preflightConversionOk);
+    QCOMPARE(preflightCampusId, qint64{0});
+    QVERIFY(!preflightConversionOk);
+    malformedIdPreflight.finish();
+
+    const RepositoryResult<QList<CampusRecord>> campusesWithMalformedId =
+        service.databaseSession()->campusRecordRepository()->getAllCampuses();
+    QVERIFY(!campusesWithMalformedId);
+    QCOMPARE(
+        campusesWithMalformedId.error().code,
+        RepositoryErrorCode::Validation
+        );
+    QCOMPARE(
+        campusesWithMalformedId.error().diagnostic,
+        QStringLiteral(
+            "Loading campuses failed: the database returned invalid campus id 0."
+            )
+        );
 }
 
 void DataServiceLifecycleTests::campusListRejectsLateFetchFailure()
@@ -1550,6 +1890,15 @@ void DataServiceLifecycleTests::campusListRejectsLateFetchFailure()
         QStringLiteral("Loading campuses")
         ));
     QVERIFY(failedCampuses.error().contains(terminalCursorDetail));
+
+    const RepositoryResult<QList<CampusRecord>> typedFailedCampuses =
+        service.databaseSession()->campusRecordRepository()->getAllCampuses();
+    QVERIFY(!typedFailedCampuses);
+    QCOMPARE(
+        typedFailedCampuses.error().code,
+        RepositoryErrorCode::Technical
+        );
+    QCOMPARE(typedFailedCampuses.error().diagnostic, failedCampuses.error());
 }
 
 void DataServiceLifecycleTests::teacherListValidatesPersistedIds()

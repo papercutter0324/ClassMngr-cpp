@@ -1164,8 +1164,8 @@ Result<int> DataService::saveCampus(
             );
     }
 
-    return m_session->campusRecordRepository()->saveCampus(
-        campus
+    return toLegacyResult(
+        m_session->campusRecordRepository()->saveCampus(campus)
         );
 }
 
@@ -1180,8 +1180,8 @@ Result<CampusRecord> DataService::getCampus(
             );
     }
 
-    return m_session->campusRecordRepository()->getCampus(
-        campusId
+    return toLegacyResult(
+        m_session->campusRecordRepository()->getCampus(campusId)
         );
 }
 
@@ -1194,7 +1194,9 @@ Result<QList<CampusRecord>> DataService::getAllCampuses()
             );
     }
 
-    return m_session->campusRecordRepository()->getAllCampuses();
+    return toLegacyResult(
+        m_session->campusRecordRepository()->getAllCampuses()
+        );
 }
 
 Status DataService::deleteCampus(
@@ -1208,7 +1210,9 @@ Status DataService::deleteCampus(
             );
     }
 
-    return m_session->campusRecordRepository()->deleteCampus(campusId);
+    return toLegacyStatus(
+        m_session->campusRecordRepository()->deleteCampus(campusId)
+        );
 }
 
 void DataService::save()

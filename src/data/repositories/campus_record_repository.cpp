@@ -69,7 +69,7 @@ CampusRecordRepository::CampusRecordRepository(
 {
 }
 
-Result<int> CampusRecordRepository::saveCampus(
+RepositoryResult<int> CampusRecordRepository::saveCampus(
     const CampusRecord& campus
     )
 {
@@ -120,15 +120,19 @@ Result<int> CampusRecordRepository::saveCampus(
             );
         if (!executed)
         {
-            return std::unexpected(executed.error().userMessage());
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Technical,
+                executed.error().userMessage()
+            });
         }
 
         if (query.numRowsAffected() == 0)
         {
-            return std::unexpected(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::NotFound,
                 QObject::tr("Updating %1 failed: no matching record exists.")
                     .arg(campusIdentity(campus))
-                );
+            });
         }
 
         return campus.id;
@@ -137,10 +141,11 @@ Result<int> CampusRecordRepository::saveCampus(
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr("Creating %1 failed: could not start a transaction.")
                 .arg(campusIdentity(campus))
-            );
+        });
     }
 
     query.prepare(R"(
@@ -185,7 +190,10 @@ Result<int> CampusRecordRepository::saveCampus(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            executed.error().userMessage()
+        });
     }
 
     bool campusIdConversionOk = false;
@@ -193,46 +201,50 @@ Result<int> CampusRecordRepository::saveCampus(
         query.lastInsertId().toLongLong(&campusIdConversionOk);
     if (!campusIdConversionOk || generatedCampusId <= 0)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr(
                 "Creating %1 failed: the database did not return a valid "
                 "record id."
                 ).arg(campusIdentity(campus))
-            );
+        });
     }
 
     if (generatedCampusId > std::numeric_limits<int>::max())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr(
                 "Creating %1 failed: the database returned an id outside "
                 "the supported integer range."
                 ).arg(campusIdentity(campus))
-            );
+        });
     }
 
     const int campusId = static_cast<int>(generatedCampusId);
     if (!transaction.commit())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr("Creating %1 failed: could not commit the transaction.")
                 .arg(campusIdentity(campus))
-            );
+        });
     }
 
     return campusId;
 }
 
-Result<CampusRecord> CampusRecordRepository::getCampus(
+RepositoryResult<CampusRecord> CampusRecordRepository::getCampus(
     int campusId
     )
 {
     if (campusId <= 0)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
             QObject::tr("Loading campus failed: invalid campus id %1.")
                 .arg(campusId)
-            );
+        });
     }
 
     QSqlQuery query(m_database);
@@ -247,26 +259,69 @@ Result<CampusRecord> CampusRecordRepository::getCampus(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            executed.error().userMessage()
+        });
     }
 
     if (!query.next())
     {
-        return std::unexpected(
+        if (query.lastError().isValid())
+        {
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Technical,
+                SqlQueryUtils::errorFor(
+                    query,
+                    QObject::tr("Loading campus"),
+                    {},
+                    QObject::tr("campus id %1").arg(campusId)
+                ).userMessage()
+            });
+        }
+
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::NotFound,
             QObject::tr(
                 "Loading campus failed for campus id %1: no matching "
                 "record exists."
                 ).arg(campusId)
-            );
+        });
+    }
+
+    bool campusIdConversionOk = false;
+    const qint64 storedCampusId =
+        query.value("id").toLongLong(&campusIdConversionOk);
+    if (!campusIdConversionOk || storedCampusId <= 0)
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
+            QObject::tr(
+                "Loading campus failed: the database returned invalid "
+                "campus id %1."
+                ).arg(query.value("id").toString())
+        });
+    }
+
+    if (storedCampusId > std::numeric_limits<int>::max())
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
+            QObject::tr(
+                "Loading campus failed: campus id %1 is outside the "
+                "supported integer range."
+                ).arg(QString::number(storedCampusId))
+        });
     }
 
     return campusFromQuery(
         query,
-        query.value("id").toInt()
+        static_cast<int>(storedCampusId)
         );
 }
 
-Result<QList<CampusRecord>> CampusRecordRepository::getAllCampuses()
+RepositoryResult<QList<CampusRecord>>
+CampusRecordRepository::getAllCampuses()
 {
     QList<CampusRecord> campuses;
 
@@ -283,7 +338,10 @@ Result<QList<CampusRecord>> CampusRecordRepository::getAllCampuses()
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            executed.error().userMessage()
+        });
     }
 
     while (query.next())
@@ -293,22 +351,24 @@ Result<QList<CampusRecord>> CampusRecordRepository::getAllCampuses()
             query.value("id").toLongLong(&campusIdConversionOk);
         if (!campusIdConversionOk || storedCampusId <= 0)
         {
-            return std::unexpected(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
                 QObject::tr(
                     "Loading campuses failed: the database returned invalid "
                     "campus id %1."
                     ).arg(QString::number(storedCampusId))
-                );
+            });
         }
 
         if (storedCampusId > std::numeric_limits<int>::max())
         {
-            return std::unexpected(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
                 QObject::tr(
                     "Loading campuses failed: campus id %1 is outside the "
                     "supported integer range."
                     ).arg(QString::number(storedCampusId))
-                );
+            });
         }
 
         campuses.append(
@@ -321,27 +381,29 @@ Result<QList<CampusRecord>> CampusRecordRepository::getAllCampuses()
 
     if (query.lastError().isValid())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             SqlQueryUtils::errorFor(
                 query,
                 QObject::tr("Loading campuses")
                 ).userMessage()
-            );
+        });
     }
 
     return campuses;
 }
 
-Status CampusRecordRepository::deleteCampus(
+RepositoryStatus CampusRecordRepository::deleteCampus(
     int campusId
     )
 {
     if (campusId <= 0)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
             QObject::tr("Deleting campus failed: invalid campus id %1.")
                 .arg(campusId)
-            );
+        });
     }
 
     QSqlQuery query(m_database);
@@ -360,7 +422,10 @@ Status CampusRecordRepository::deleteCampus(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            executed.error().userMessage()
+        });
     }
 
     return {};

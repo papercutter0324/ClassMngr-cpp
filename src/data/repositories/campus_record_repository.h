@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 #include "domain/models/campus.h"
 
 #include <QList>
@@ -13,17 +13,17 @@ public:
         QSqlDatabase& database
         );
 
-    [[nodiscard]] Result<int> saveCampus(
+    [[nodiscard]] RepositoryResult<int> saveCampus(
         const CampusRecord& campus
         );
 
-    [[nodiscard]] Result<CampusRecord> getCampus(
+    [[nodiscard]] RepositoryResult<CampusRecord> getCampus(
         int campusId
         );
 
-    [[nodiscard]] Result<QList<CampusRecord>> getAllCampuses();
+    [[nodiscard]] RepositoryResult<QList<CampusRecord>> getAllCampuses();
 
-    [[nodiscard]] Status deleteCampus(
+    [[nodiscard]] RepositoryStatus deleteCampus(
         int campusId
         );
 

@@ -47,9 +47,13 @@ ClassTransferRepository is committed locally as
 `12feaf380f2bc5368f3a709821a73a81b34d50fd` and is not pushed. F1460
 SettingsRepository is independently verified and accepted; it is committed
 locally as `46ffe1a8711ee5ec8cb997b5921868aab553ebce` and is not pushed.
-F1461 PersonalDetailsRepository is independently verified and accepted; its
-local commit is pending. Evidence and limits are in the [progress
-log](04-Phase-3-Progress-Log.md). Batch 22 remains open; push only after F1463
+F1461 PersonalDetailsRepository is independently verified and accepted; it is
+committed locally as `630260d30ec2c4df935c6dffd758d2cba2c7f071` and is not
+pushed. F1462 CampusRecordRepository is independently verified and accepted;
+its local commit is pending, and F1463 is next. Batch 23 discovery is complete
+with no new candidate queue accepted pending the post-F1463 exit audit.
+Evidence and limits are in the [progress log](04-Phase-3-Progress-Log.md).
+Batch 22 remains open; push only after F1463
 and Phase 3 closeout. The accepted queue is:
 
 1. **F1444** — shared `RepositoryError`/`RepositoryResult`/status contract and SQL error mapping.
@@ -79,9 +83,9 @@ Keep the F1418 `ApplicationServices::saveDatabase()` wrapper void; F1445 typed
 F1447 does not include the separately queued ClassRepository (F1448) or
 TestingClassRepository (F1449).
 
-## Batch 23 discovery reminder
+## Batch 23 discovery — complete, no new queue accepted
 
-Start discovery when F1462 (candidate 19 of 20, the second-to-last candidate)
-begins. The independent API scan found likely eligible DocumentCatalog and
-DataService compatibility-conversion surfaces beyond Batch 22's 20-candidate
-limit; search for these and any other candidates then.
+The F1462 (candidate 19 of 20) trigger has been met. Independent scans found
+no new eligible repository candidate; defer any new queue until the post-F1463
+exit audit supplies new evidence. See the [progress log](04-Phase-3-Progress-Log.md)
+for scan IDs and boundary findings.

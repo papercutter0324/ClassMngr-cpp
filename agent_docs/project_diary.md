@@ -8659,7 +8659,7 @@ were exercised. Malformed-ID, raw birthday cursor message, no-op, and rollback
 failure branches remain source-reviewed without direct runtime assertions.
 
 
-## 2026-10-25 — F1454–F1460 committed; F1461 discovery active
+## 2026-10-25 — F1454–F1461 committed; F1462 discovery active
 
 F1454 is committed locally as `b362325f8a3d2f162a14e30c59ee171a52024e77`;
 it remains unpushed until Batch 22 closes. F1455 RosterRepository discovery
@@ -8695,7 +8695,21 @@ defaults will be surfaced; active page ports stay unchanged. Independent
 verification passed a fresh five-target build and 5/5 focused CTest suites;
 the follow-up malformed-signature test rebuilt and passed (10 Qt cases).
 `git diff --check` passed. No full suite or other-platform build ran. F1461 is
-accepted with commit pending; Batch 23 discovery is due when F1462 starts.
+committed locally as `630260d30ec2c4df935c6dffd758d2cba2c7f071` and not
+pushed. F1462 CampusRecordRepository implementation and independent
+verification are complete and accepted; commit is pending. SQL/transaction
+failures are Technical, invalid caller IDs InvalidInput, absent lookups/updates
+NotFound, malformed stored/generated IDs Validation, and missing positive-ID
+deletes remain successful. A fresh lifecycle rebuild passed; CTest passed 1/1
+and direct QtTest passed 51 cases, including non-convertible persisted-ID
+coverage. Malformed IDs through `getCampus()` and nonpositive generated IDs are
+source-reviewed only; no full suite or other-platform build ran.
+The scheduled Batch23 discovery completed through independent Explorer and
+Investigator scans. No new eligible repository candidate was accepted:
+DataService conversions stay inside the queued campus slices as legacy
+compatibility, and DocumentCatalog, ResourcePackManager, and FeatureService are
+outside §3.3's repository scope. The final exit-gate audit can reconsider only
+if new evidence changes that boundary.
 
 F1454 converts the two IntensiveSlotStateRepository fallible APIs and keeps
 all current repository errors Technical. Input validation stays in the typed

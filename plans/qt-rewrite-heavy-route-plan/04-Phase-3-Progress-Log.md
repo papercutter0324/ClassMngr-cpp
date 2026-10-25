@@ -4258,9 +4258,10 @@ DataService lifecycle, ScheduleWidget, and all 20 settings preference ports;
 error; it was source-reviewed as `Technical`. No full suite or other-platform
 run was performed.
 
-## F1461 — PersonalDetailsRepository structured errors — independently verified — 2026-10-25
+## F1461 — PersonalDetailsRepository structured errors — independently verified, committed locally — 2026-10-25
 
-F1461 is independently verified and accepted; its local commit is pending.
+F1461 is independently verified and accepted. It is committed locally as
+`630260d30ec2c4df935c6dffd758d2cba2c7f071` and is not pushed.
 Tester `PHASE3-F1461-PERSONAL-DETAILS-VERIFY-20261025-TST-01` reported a fresh
 five-target build and 5/5 focused CTest suites (36 Qt cases) passing. After
 adding signature-image normalization coverage, the dedicated repository
@@ -4272,3 +4273,36 @@ operations; surface service/query errors as `Technical`. Preserve successful
 missing-value defaults, the nine-key atomic save, field conversion, and
 best-effort Zoom migration. Actual read failures previously hidden as
 defaults are now visible. Active page ports remain unchanged.
+
+## F1462 — CampusRecordRepository structured errors — independently verified — 2026-10-25
+
+F1462 is independently verified and accepted; its local commit is pending,
+and F1463 is next. A fresh rebuild of the affected lifecycle target passed.
+Direct QtTest passed 51/0/0 and CTest passed 1/1. Exact category and DataService
+legacy-diagnostic checks passed, including the new non-convertible persisted-ID
+`Validation` case. `git diff --check` passed. No full suite or other-platform
+build was run.
+
+Map SQL, cursor, and transaction failures to `Technical`; invalid
+requested IDs to `InvalidInput`; positive-ID missing lookups and updates to
+`NotFound`; and invalid or out-of-range generated/persisted IDs to
+`Validation`. Preserve exact diagnostics, avoid name validation, retain
+successful missing-positive-ID deletes, treat saves with `id <= 0` as creates,
+and preserve existing no-op/delete behavior. DataService string signatures
+remain the compatibility boundary.
+
+Source-review-only gaps: malformed stored-ID handling through `getCampus()`
+and terminal cursor errors; nonpositive generated-ID validation. The
+non-convertible persisted-ID `Validation` path has direct runtime coverage.
+
+## Batch 23 discovery — complete, no new queue accepted — 2026-10-25
+
+The scheduled F1462 trigger (candidate 19 of 20) started the independent scans:
+Explorer `PHASE3-BATCH23-CANDIDATE-SCAN-A-20261025-EXP-01` and Investigator
+`PHASE3-BATCH23-CANDIDATE-SCAN-B-20261025-INV-01`. No new eligible repository
+candidate was accepted. DataService category conversion is a legacy boundary;
+CampusRecord and CampusJson adaptations belong to F1462/F1463, not separate
+candidates. DocumentCatalog is a filesystem resource catalog outside Phase
+3 §3.3; ResourcePackManager and FeatureService are also outside scope. No other
+eligible repository candidate was found, so no queue is added pending the
+post-F1463 exit audit; revisit only if that audit supplies new evidence.

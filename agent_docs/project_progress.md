@@ -110,7 +110,8 @@ and empty batch saves remain successful. A fresh forced build of ClassMngr and
 23 focused test targets succeeded; 23 CTest suites passed. A late cursor-fetch
 failure was source-reviewed but not injected; no full-suite or other-platform
 build ran. F1461 PersonalDetailsRepository implementation and independent
-verification are complete and accepted; commit is pending. Its public
+verification are complete and accepted; commit
+`630260d30ec2c4df935c6dffd758d2cba2c7f071` is local and not pushed. Its public
 read/save operations expose typed repository outcomes, mapping service/query
 failures to Technical while keeping missing-key defaults, the atomic nine-key
 save, field conversion, and best-effort Zoom migration. Actual read failures
@@ -118,7 +119,19 @@ previously hidden as defaults now remain visible; active page ports are
 unchanged. A fresh five-target build and 5/5 focused CTest suites passed; the
 added malformed-signature case rebuilt and passed separately (10 Qt cases).
 `git diff --check` passed. No full-suite or other-platform build ran. F1462
-discovery is due when that slice starts. F1457's fresh production/test targets
+CampusRecordRepository implementation and independent verification are
+complete and accepted; commit is pending. Its SQL and transaction failures
+remain Technical, invalid IDs are InvalidInput, missing lookups/updates are
+NotFound, malformed stored or generated IDs are Validation, and deleting a
+missing positive ID remains a successful no-op. A fresh lifecycle-target
+rebuild passed; CTest passed 1/1 and direct QtTest passed 51 cases, including
+the new non-convertible persisted-ID test. `git diff --check` passed. Malformed
+stored IDs through `getCampus()` and nonpositive generated IDs remain
+source-reviewed only; no full-suite or other-platform build ran.
+Batch23 discovery completed at the scheduled trigger; no new eligible
+repository candidate was accepted. DataService compatibility remains part of
+the queued campus slices, while DocumentCatalog and other resource services
+are outside §3.3's repository scope. F1457's fresh production/test targets
 built. DataService lifecycle, Speaking
 Evaluation service, analytics, read-port, roster-score import, and save-port
 targets passed; the save-port binary reported 16/16 cases. The changed
