@@ -7,7 +7,8 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-25
 - Current milestone: Phase 3 is Complete and Phase 4 is In progress on the
-  mandatory Heavy route. Batch 2 remains open. F1483 is committed as
+  mandatory Heavy route. F1485 closes the Batch 2 commit set locally; its push
+  is pending. F1483 is committed as
   `6428b2ca`; local macOS installation, relocated-root probing, the 193-file
   staged audit, focused CTest (3/3), and Linux guard fixtures (5/5) passed.
   Windows and Linux Actions legs await the Batch 2 push. F1484 is accepted as
@@ -18,12 +19,10 @@
   `LegacyDocumentContentResourcePort` and the legacy `documents` pack. Keep
   legacy RCC code and inputs as the compatibility oracle through Phase 12;
   Calendar QML remains compiled with `qt_add_resources`, not an external pack.
-  F1485 is next to assemble evidence and close the Batch 2 commit set; the
-  subsequent Batch 2 push triggers F1483's native Windows/Linux Actions legs.
-  Batch 3 discovery found that Windows native resource-handle assertions and
-  fresh Windows/Linux loader and document stream/session tests remain unrun;
-  F1486 is planned after Batch 2 closes. Phase 4 remains open until F1483's
-  native jobs and F1486 pass.
+  F1486 is queued for Batch 3 and will run after that batch's push, covering the
+  loader, document content/export, QtPdf session, and no-pack launch tests on
+  Windows and Linux. Phase 4 remains open until F1483 and F1486 pass; Phase 7/10
+  rendering parity remains deferred, and legacy pack removal remains Phase 12.
   See the [Phase 4 progress log](05-Phase-4-Progress-Log.md),
   [resource inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md),
   and [current batch tracker](Current-Slice-Batches.md). Batch 1's push receipt

@@ -38,8 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Bootstrap, feature migration, packaging, and memory gates
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-25
-- Current note: Batch 2 remains open. F1483 is committed as `6428b2ca`. Local
-  macOS verification installed the resource and probe components together,
+- Current note: F1485 records the evidence and closes the Batch 2 commit set
+  locally; its push is pending. F1483 is committed as `6428b2ca`. Local macOS
+  verification installed the resource and probe components together,
   resolved `../Resources`
   to `Contents/Resources`, audited 193 staged files (187 SHA checks, five QMs,
   two QML keys), passed focused CTest 3/3, and passed Linux guard fixtures 5/5.
@@ -54,13 +55,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `LegacyDocumentContentResourcePort` to obtain the legacy `documents` pack.
   Keep legacy RCC implementation and pack inputs as the compatibility oracle
   through Phase 12. Calendar QML remains compiled via `qt_add_resources`, not
-  an external pack. F1485 is next to assemble evidence and close the Batch 2
-  commit set; the subsequent Batch 2 push triggers F1483's native Windows/Linux
-  Actions legs. Batch 3 discovery identified unrun Windows native
-  resource-handle assertions and fresh Windows/Linux loader and document
-  stream/session verification; F1486 is planned after Batch 2 closes. Phase 4
-  remains In progress until F1483's native jobs and F1486 pass. Batch 1
-  (F1464–F1468) is pushed to `origin`; see
+  an external pack. F1486 is queued for Batch 3 and runs after that batch's
+  push, verifying the loader, document content/export, QtPdf session, and
+  no-pack launch tests on Windows and Linux. Phase 4 remains In progress until
+  F1483 and F1486 pass.
+  Phase 7/10 rendering parity remains deferred; legacy pack removal remains
+  Phase 12. Batch 1 (F1464–F1468) is pushed to `origin`; see
   the [Phase 4 progress log](05-Phase-4-Progress-Log.md) for its receipt. See
   the [inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md) and
   [current batch tracker](Current-Slice-Batches.md).

@@ -260,13 +260,26 @@ through Phase 12. Calendar QML is compiled with `qt_add_resources`, not an
 external pack. Windows/Linux are not verified by this slice; F1483's native
 package/layout legs and the planned F1486 checks remain open.
 
-## Batch 3 discovery — F1486 planned
+## F1485 — Assemble Phase 4 evidence; close Batch 2 commit set — accepted — 2026-10-25
 
-Read-only discovery found that Windows native resource-handle assertions and
-fresh Windows/Linux verification of the existing F1468 loader and F1475
-document stream/session lifetime tests remain unrun. F1486 is planned as a
-bounded verification-only slice using those existing tests, not as a feature
-migration. This platform/lifetime work is separate from the F1483 package and
-install-layout matrix. F1485 is next to assemble evidence and close the Batch 2
-commit set; the subsequent Batch 2 push triggers F1483's native Windows/Linux
-Actions legs. Phase 4 remains In progress until those jobs and F1486 pass.
+F1485 assembles the accepted evidence and closes the Batch 2 commit set after
+this acceptance record is committed; it does not close Phase 4. The evidence
+map is: F1464–F1467 inventory, catalog, and package; F1468 and F1470–F1478
+loader contracts, scopes, cache/diagnostics, document loading, and failures;
+F1474/F1475 selected PDF session release; F1479/F1484 no-pack shell behavior;
+F1481/F1482 staged completeness and exclusion provenance; and F1483 local
+macOS package/root verification plus guard fixtures.
+
+Read-only Git inspection found the pre-F1485 Batch 2 commits F1469–F1484 span
+24 commits from `d282e7f1` through `b331e49e`, after the Batch 1 tip
+`eb473fab`. At inspection, `origin/Qt-Rewrite` remained at `eb473fab`; no Batch
+2 push receipt exists. Commit this F1485 record, then push Batch 2 to trigger
+F1483's pending Windows/Linux Actions legs. F1486 is queued for Batch 3 and
+will run its existing loader, document content/export, QtPdf-session, and
+no-pack launch tests on native Windows x64 Debug and Linux GCC Debug after the
+Batch 3 push. No F1486 results are available.
+
+Batch 2 closure is separate from the Phase 4 exit: Phase 4 remains In progress
+until F1483's native jobs and F1486 pass. Phase 7/10 rendering parity remains
+deferred. Legacy RCC implementation and pack inputs remain the compatibility
+oracle until Phase 12.
