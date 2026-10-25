@@ -1,4 +1,13 @@
 classmngr_add_qt_test(
+    NAME PersonalDetailsRepository
+    SOURCES
+        tests/personal_details_repository_tests.cpp
+    LIBRARIES
+        Qt6::Sql
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME ClassTransferExportCodecParity
     SOURCES tests/class_transfer_export_codec_parity_tests.cpp
     LIBRARIES Qt6::Test Qt6::Widgets

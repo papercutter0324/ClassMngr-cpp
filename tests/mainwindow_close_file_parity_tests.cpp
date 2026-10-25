@@ -812,12 +812,13 @@ newFileActionReplacesOpenProfileWithCreatedProfile()
 
     ApplicationServices reopenedOriginalServices;
     QVERIFY(reopenedOriginalServices.openDatabase(originalProfilePath));
-    const PersonalDetails reopenedOriginalDetails =
+    const auto reopenedOriginalDetailsResult =
         PersonalDetailsRepository(
             reopenedOriginalServices.settingsService()
             ).load();
-    QCOMPARE(reopenedOriginalDetails.name, originalProfileDetails.name);
-    QCOMPARE(reopenedOriginalDetails.campus, originalProfileDetails.campus);
+    QVERIFY(reopenedOriginalDetailsResult);
+    QCOMPARE(reopenedOriginalDetailsResult->name, originalProfileDetails.name);
+    QCOMPARE(reopenedOriginalDetailsResult->campus, originalProfileDetails.campus);
     reopenedOriginalServices.closeDatabase();
 
     QVERIFY(services->hasOpenDatabase());

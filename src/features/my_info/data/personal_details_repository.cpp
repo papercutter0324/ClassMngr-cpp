@@ -24,26 +24,40 @@ const QString LegacyZoomPasswordKey =
 const QString LegacyZoomNotAvailableKey =
     QStringLiteral("subPrep/personalZoomNotAvailable");
 
-QVariant loadWithLegacyFallback(
+const QString UnavailableSettingsDiagnostic =
+    QStringLiteral("No Teacher Profile service is available.");
+
+RepositoryResult<QVariant> loadWithLegacyFallback(
     const PersonalDetailsRepository& repository,
     const QString& primaryKey,
     const QString& legacyKey,
     const QVariant& defaultValue
     )
 {
-    QVariant value = repository.loadSetting(primaryKey, QVariant());
+    RepositoryResult<QVariant> value = repository.loadSetting(
+        primaryKey,
+        QVariant()
+        );
+    if (!value)
+    {
+        return std::unexpected(value.error());
+    }
 
-    if (value.isValid())
+    if (value->isValid())
     {
         return value;
     }
 
     value = repository.loadSetting(legacyKey, QVariant());
-
-    if (value.isValid())
+    if (!value)
     {
-        [[maybe_unused]] const Status migrated =
-            repository.saveSetting(primaryKey, value);
+        return std::unexpected(value.error());
+    }
+
+    if (value->isValid())
+    {
+        [[maybe_unused]] const RepositoryStatus migrated =
+            repository.saveSetting(primaryKey, *value);
         return value;
     }
 
@@ -56,63 +70,117 @@ PersonalDetailsRepository::PersonalDetailsRepository(SettingsService* settingsSe
 {
 }
 
-PersonalDetails PersonalDetailsRepository::load() const
+RepositoryResult<PersonalDetails> PersonalDetailsRepository::load() const
 {
     PersonalDetails details;
 
-    if (!isAvailable())
+    const RepositoryResult<QVariant> name = loadSetting(NameKey, QString());
+    if (!name)
     {
-        return details;
+        return std::unexpected(name.error());
     }
+    details.name = name->toString();
 
-    details.name = loadSetting(NameKey, QString()).toString();
-    details.campus = loadSetting(CampusKey, QString()).toString();
-    details.zoomLoginId = loadWithLegacyFallback(
+    const RepositoryResult<QVariant> campus = loadSetting(CampusKey, QString());
+    if (!campus)
+    {
+        return std::unexpected(campus.error());
+    }
+    details.campus = campus->toString();
+
+    const RepositoryResult<QVariant> zoomLoginId = loadWithLegacyFallback(
         *this,
         ZoomLoginIdKey,
         LegacyZoomEmailKey,
         QStringLiteral("N/A")
-        ).toString();
-    details.zoomPassword = loadWithLegacyFallback(
+        );
+    if (!zoomLoginId)
+    {
+        return std::unexpected(zoomLoginId.error());
+    }
+    details.zoomLoginId = zoomLoginId->toString();
+
+    const RepositoryResult<QVariant> zoomPassword = loadWithLegacyFallback(
         *this,
         ZoomPasswordKey,
         LegacyZoomPasswordKey,
         QStringLiteral("N/A")
-        ).toString();
-    details.zoomNotAvailable = loadWithLegacyFallback(
+        );
+    if (!zoomPassword)
+    {
+        return std::unexpected(zoomPassword.error());
+    }
+    details.zoomPassword = zoomPassword->toString();
+
+    const RepositoryResult<QVariant> zoomNotAvailable = loadWithLegacyFallback(
         *this,
         ZoomNotAvailableKey,
         LegacyZoomNotAvailableKey,
         true
-        ).toBool();
+        );
+    if (!zoomNotAvailable)
+    {
+        return std::unexpected(zoomNotAvailable.error());
+    }
+    details.zoomNotAvailable = zoomNotAvailable->toBool();
+
+    const RepositoryResult<QVariant> signatureImage =
+        loadSetting(SignatureImageKey, QString());
+    if (!signatureImage)
+    {
+        return std::unexpected(signatureImage.error());
+    }
     details.signatureImage =
         SignatureImage::prepareForEmbedding(
             QByteArray::fromBase64(
-                loadSetting(SignatureImageKey, QString())
-                    .toString()
+                signatureImage->toString()
                     .toLatin1()
                 )
             );
-    details.signatureMode =
-        loadSetting(
-            SignatureModeKey,
-            static_cast<int>(SignatureMode::Image)
-            ).toInt()
+
+    const RepositoryResult<QVariant> signatureMode = loadSetting(
+        SignatureModeKey,
+        static_cast<int>(SignatureMode::Image)
+        );
+    if (!signatureMode)
+    {
+        return std::unexpected(signatureMode.error());
+    }
+    details.signatureMode = signatureMode->toInt()
             == static_cast<int>(SignatureMode::Type)
             ? SignatureMode::Type
             : SignatureMode::Image;
-    details.typedSignatureText =
-        loadSetting(TypedSignatureTextKey, QString()).toString();
-    details.typedSignatureFont =
-        loadSetting(TypedSignatureFontKey, 0).toInt();
+
+    const RepositoryResult<QVariant> typedSignatureText = loadSetting(
+        TypedSignatureTextKey,
+        QString()
+        );
+    if (!typedSignatureText)
+    {
+        return std::unexpected(typedSignatureText.error());
+    }
+    details.typedSignatureText = typedSignatureText->toString();
+
+    const RepositoryResult<QVariant> typedSignatureFont = loadSetting(
+        TypedSignatureFontKey,
+        0
+        );
+    if (!typedSignatureFont)
+    {
+        return std::unexpected(typedSignatureFont.error());
+    }
+    details.typedSignatureFont = typedSignatureFont->toInt();
+
     return details;
 }
 
-bool PersonalDetailsRepository::save(const PersonalDetails& details) const
+RepositoryStatus PersonalDetailsRepository::save(
+    const PersonalDetails& details
+    ) const
 {
-    if (!isAvailable())
+    if (!m_settingsService)
     {
-        return false;
+        return std::unexpected(RepositoryError{UnavailableSettingsDiagnostic});
     }
 
     const QVariantMap settings = {
@@ -137,16 +205,21 @@ bool PersonalDetailsRepository::save(const PersonalDetails& details) const
         }
     };
 
-    return m_settingsService->saveAll(settings).has_value();
+    const Status saved = m_settingsService->saveAll(settings);
+    if (!saved)
+    {
+        return std::unexpected(RepositoryError{saved.error()});
+    }
+    return {};
 }
 
-Status PersonalDetailsRepository::saveCampus(const QString& campus) const
+RepositoryStatus PersonalDetailsRepository::saveCampus(
+    const QString& campus
+    ) const
 {
     if (!isAvailable())
     {
-        return std::unexpected(
-            QStringLiteral("No Teacher Profile service is available.")
-            );
+        return std::unexpected(RepositoryError{UnavailableSettingsDiagnostic});
     }
 
     return saveSetting(CampusKey, campus);
@@ -158,27 +231,39 @@ bool PersonalDetailsRepository::isAvailable() const
         && m_settingsService->isAvailable();
 }
 
-QVariant PersonalDetailsRepository::loadSetting(
+RepositoryResult<QVariant> PersonalDetailsRepository::loadSetting(
     const QString& key,
     const QVariant& defaultValue
     ) const
 {
-    return m_settingsService
-        ? m_settingsService->loadOrDefault(key, defaultValue)
-        : defaultValue;
+    if (!m_settingsService)
+    {
+        return std::unexpected(RepositoryError{UnavailableSettingsDiagnostic});
+    }
+
+    const Result<QVariant> loaded = m_settingsService->load(key);
+    if (!loaded)
+    {
+        return std::unexpected(RepositoryError{loaded.error()});
+    }
+
+    return loaded->isValid() ? *loaded : defaultValue;
 }
 
-Status PersonalDetailsRepository::saveSetting(
+RepositoryStatus PersonalDetailsRepository::saveSetting(
     const QString& key,
     const QVariant& value
     ) const
 {
     if (!m_settingsService)
     {
-        return std::unexpected(
-            QStringLiteral("No Teacher Profile service is available.")
-            );
+        return std::unexpected(RepositoryError{UnavailableSettingsDiagnostic});
     }
 
-    return m_settingsService->save(key, value);
+    const Status saved = m_settingsService->save(key, value);
+    if (!saved)
+    {
+        return std::unexpected(RepositoryError{saved.error()});
+    }
+    return {};
 }

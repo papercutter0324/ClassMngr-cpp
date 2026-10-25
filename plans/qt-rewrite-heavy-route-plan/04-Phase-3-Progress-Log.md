@@ -4234,14 +4234,13 @@ pre-existing or to F1459.
 Source-review-only gaps: successful scalar fallback, malformed batch-count /
 order recovery, export commit/rollback injection, and assertions for every
 legacy conversion. No full suite or cross-platform verification was run.
-F1460 SettingsRepository discovery is complete and scope is accepted;
-implementation is active and independent verification is pending.
 
-## F1460 — SettingsRepository structured errors — independently verified — 2026-10-25
+## F1460 — SettingsRepository structured errors — independently verified, committed locally — 2026-10-25
 
 Discovery is complete and the bounded scope is accepted. Tester
 `PHASE3-F1460-SETTINGS-VERIFY-20261025-TST-01` independently verified and
-accepted F1460; its local commit is pending, and F1461 is next. F1459 is
+accepted F1460. It is committed locally as
+`46ffe1a8711ee5ec8cb997b5921868aab553ebce` and is not pushed. F1459 is
 committed locally as
 `12feaf380f2bc5368f3a709821a73a81b34d50fd` and is not pushed.
 
@@ -4258,3 +4257,18 @@ DataService lifecycle, ScheduleWidget, and all 20 settings preference ports;
 `git diff --check` passed. No fixture exercised the late `query.next()` fetch
 error; it was source-reviewed as `Technical`. No full suite or other-platform
 run was performed.
+
+## F1461 — PersonalDetailsRepository structured errors — independently verified — 2026-10-25
+
+F1461 is independently verified and accepted; its local commit is pending.
+Tester `PHASE3-F1461-PERSONAL-DETAILS-VERIFY-20261025-TST-01` reported a fresh
+five-target build and 5/5 focused CTest suites (36 Qt cases) passing. After
+adding signature-image normalization coverage, the dedicated repository
+target rebuilt and passed 1/1 CTest with 10 Qt cases. `git diff --check`
+passed. No full-suite or other-platform build was run.
+
+Expose typed repository results for PersonalDetailsRepository read/save
+operations; surface service/query errors as `Technical`. Preserve successful
+missing-value defaults, the nine-key atomic save, field conversion, and
+best-effort Zoom migration. Actual read failures previously hidden as
+defaults are now visible. Active page ports remain unchanged.

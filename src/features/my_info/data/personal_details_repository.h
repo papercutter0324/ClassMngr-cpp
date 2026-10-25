@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/result.h"
+#include "data/repositories/repository_error.h"
 
 #include <QByteArray>
 #include <QString>
@@ -32,13 +32,16 @@ class PersonalDetailsRepository
 public:
     explicit PersonalDetailsRepository(SettingsService* settingsService);
 
-    PersonalDetails load() const;
-    bool save(const PersonalDetails& details) const;
-    [[nodiscard]] Status saveCampus(const QString& campus) const;
+    [[nodiscard]] RepositoryResult<PersonalDetails> load() const;
+    [[nodiscard]] RepositoryStatus save(const PersonalDetails& details) const;
+    [[nodiscard]] RepositoryStatus saveCampus(const QString& campus) const;
 
     bool isAvailable() const;
-    QVariant loadSetting(const QString& key, const QVariant& defaultValue) const;
-    [[nodiscard]] Status saveSetting(
+    [[nodiscard]] RepositoryResult<QVariant> loadSetting(
+        const QString& key,
+        const QVariant& defaultValue
+        ) const;
+    [[nodiscard]] RepositoryStatus saveSetting(
         const QString& key,
         const QVariant& value
         ) const;

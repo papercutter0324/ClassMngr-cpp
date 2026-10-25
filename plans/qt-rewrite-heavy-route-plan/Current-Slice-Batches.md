@@ -45,8 +45,10 @@ accepted; it is committed locally as
 `b968a9d2f93016ac03c1df9af8704ed5854ef2c2` and is not pushed. F1459
 ClassTransferRepository is committed locally as
 `12feaf380f2bc5368f3a709821a73a81b34d50fd` and is not pushed. F1460
-SettingsRepository is independently verified and accepted; its local commit
-is pending, and F1461 is next. Evidence and limits are in the [progress
+SettingsRepository is independently verified and accepted; it is committed
+locally as `46ffe1a8711ee5ec8cb997b5921868aab553ebce` and is not pushed.
+F1461 PersonalDetailsRepository is independently verified and accepted; its
+local commit is pending. Evidence and limits are in the [progress
 log](04-Phase-3-Progress-Log.md). Batch 22 remains open; push only after F1463
 and Phase 3 closeout. The accepted queue is:
 

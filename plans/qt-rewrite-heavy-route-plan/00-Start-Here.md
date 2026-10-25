@@ -7,27 +7,12 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-25
 - Current milestone: Phase 3 remains In Progress on the mandatory Heavy route
-  because the §3.3 structured-error audit reopened its exit gate. F1450 is
-  committed locally as `bd03110d7de6a034db9f631099164d9562c2435b` and is not
-  pushed. F1451 is committed locally as
-  `f8261f96cb57f2c7baf41941be2636f1014fd9a4` and is not pushed. F1452
-  is committed locally as `4ccb5c8ceda848e4f09afcd41a958437939aca14` and is
-  not pushed. F1453 is committed locally as
-  `78189be6fe288a1ac6e8fef8760c151edf687f20` and is not pushed. F1454
-  is committed locally as
-  `b362325f8a3d2f162a14e30c59ee171a52024e77` and is not pushed. F1455
-  RosterRepository is committed locally as
-  `5cf27a6a7589eb19c0d859684b5e44f53b197c4e` and is not pushed. F1456
-  CalendarEventRepository is committed locally as
-  `86667de56547273c8897198470e9c271a583035c` and is not pushed. F1457
-  SpeakingEvalRepository is committed locally as
-  `2ccba709122ae44a246302bdf8dab8d6a179e3cb` and is not pushed. F1458
-  ScheduleImportRepository is committed locally as
-  `b968a9d2f93016ac03c1df9af8704ed5854ef2c2` and is not pushed. F1459
-  ClassTransferRepository is committed locally as
-  `12feaf380f2bc5368f3a709821a73a81b34d50fd` and is not pushed. F1460
-  SettingsRepository is independently verified and accepted; its local commit
-  is pending, and F1461 is next. Evidence and limits are in the
+  because the §3.3 structured-error audit reopened its exit gate. F1460
+  SettingsRepository is committed locally as
+  `46ffe1a8711ee5ec8cb997b5921868aab553ebce` and is not pushed. F1461
+  PersonalDetailsRepository is independently verified and accepted; its local
+  commit is pending. F1462 is next, with Batch 23 discovery due when it starts.
+  Evidence and limits are in the
   [progress log](04-Phase-3-Progress-Log.md); see also the [Phase 3
   plan](04-Phase-3-Persistence-Rewrite.md),
   [schema baseline](../../docs/qt-rewrite/phase-3-schema-baseline.md),

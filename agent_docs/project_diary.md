@@ -8659,7 +8659,7 @@ were exercised. Malformed-ID, raw birthday cursor message, no-op, and rollback
 failure branches remain source-reviewed without direct runtime assertions.
 
 
-## 2026-10-25 — F1454–F1459 committed; F1460 verified and accepted
+## 2026-10-25 — F1454–F1460 committed; F1461 discovery active
 
 F1454 is committed locally as `b362325f8a3d2f162a14e30c59ee171a52024e77`;
 it remains unpushed until Batch 22 closes. F1455 RosterRepository discovery
@@ -8677,7 +8677,8 @@ ClassTransferRepository implementation and independent verification are
 complete; its scope is accepted and commit
 `12feaf380f2bc5368f3a709821a73a81b34d50fd` is local and not pushed. F1460
 SettingsRepository implementation and independent verification are complete
-and accepted; commit is pending. Its three operations return typed repository
+and accepted; commit `46ffe1a8711ee5ec8cb997b5921868aab553ebce` is local and
+not pushed. Its three operations return typed repository
 results, operational failures remain Technical with existing diagnostics,
 DataService and SettingsService retain QString compatibility boundaries, and
 direct preference ports preserve fallback, warning, and best-effort policies.
@@ -8685,8 +8686,16 @@ Missing settings and empty batch saves remain successful; unrelated direct SQL
 access to `app_settings` stays outside this slice. A fresh forced build of
 ClassMngr and 23 focused test targets succeeded; 23 CTest suites passed.
 Late cursor-fetch error handling is source-reviewed but was not injected by the
-SQLite fixture. No full suite or other-platform build ran. F1461 is next after
-the slice commit; Batch 23 discovery remains due at F1462.
+SQLite fixture. No full suite or other-platform build ran. F1461
+PersonalDetailsRepository discovery is complete and scope is accepted:
+surface repository read/save outcomes as typed results, retain Technical
+diagnostics, keep missing-key defaults, atomic nine-key saves, field
+conversions, and best-effort Zoom migration. Query failures formerly hidden as
+defaults will be surfaced; active page ports stay unchanged. Independent
+verification passed a fresh five-target build and 5/5 focused CTest suites;
+the follow-up malformed-signature test rebuilt and passed (10 Qt cases).
+`git diff --check` passed. No full suite or other-platform build ran. F1461 is
+accepted with commit pending; Batch 23 discovery is due when F1462 starts.
 
 F1454 converts the two IntensiveSlotStateRepository fallible APIs and keeps
 all current repository errors Technical. Input validation stays in the typed

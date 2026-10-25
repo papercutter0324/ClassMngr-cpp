@@ -273,12 +273,11 @@ void MainWindowExitConfirmationParityTests::closeSavePersistsPersonalName()
 
     ApplicationServices verificationServices;
     QVERIFY(verificationServices.openDatabase(workspacePath));
-    QCOMPARE(
+    const auto loadedDetails =
         PersonalDetailsRepository(verificationServices.settingsService())
-            .load()
-            .name,
-        draftName
-        );
+            .load();
+    QVERIFY(loadedDetails);
+    QCOMPARE(loadedDetails->name, draftName);
     verificationServices.closeDatabase();
 }
 
@@ -399,12 +398,11 @@ exitActionCancelPreservesDraftBeforeDiscardAcceptsClose()
     services->closeDatabase();
     ApplicationServices verificationServices;
     QVERIFY(verificationServices.openDatabase(workspacePath));
-    QCOMPARE(
+    const auto loadedDetails =
         PersonalDetailsRepository(verificationServices.settingsService())
-            .load()
-            .name,
-        baselineName
-        );
+            .load();
+    QVERIFY(loadedDetails);
+    QCOMPARE(loadedDetails->name, baselineName);
     verificationServices.closeDatabase();
 }
 

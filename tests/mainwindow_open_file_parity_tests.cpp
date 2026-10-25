@@ -346,10 +346,10 @@ openFileSaveThenChooserCancelPreservesWorkspace()
         sidebar->selectedKeys(),
         QStringList{QStringLiteral("my_workspace")}
         );
-    QCOMPARE(
-        PersonalDetailsRepository(services->settingsService()).load().name,
-        draft
-        );
+    const auto loadedDetails =
+        PersonalDetailsRepository(services->settingsService()).load();
+    QVERIFY(loadedDetails);
+    QCOMPARE(loadedDetails->name, draft);
 }
 
 void MainWindowOpenFileParityTests::
@@ -416,10 +416,10 @@ openFileLoadsOtherProfileAndSelectsWorkspaceSchedule()
     QVERIFY(services);
     QVERIFY(services->hasOpenDatabase());
     QCOMPARE(services->currentDatabasePath(), profileAPath);
-    QCOMPARE(
-        PersonalDetailsRepository(services->settingsService()).load().name,
-        profileADetails.name
-        );
+    const auto loadedProfileADetails =
+        PersonalDetailsRepository(services->settingsService()).load();
+    QVERIFY(loadedProfileADetails);
+    QCOMPARE(loadedProfileADetails->name, profileADetails.name);
 
     PageManager* const pages = window.pageManager();
     QVERIFY(pages);
@@ -470,8 +470,10 @@ openFileLoadsOtherProfileAndSelectsWorkspaceSchedule()
 
     QVERIFY(services->hasOpenDatabase());
     QCOMPARE(services->currentDatabasePath(), profileBPath);
-    const PersonalDetails activeDetails =
+    const auto activeDetailsResult =
         PersonalDetailsRepository(services->settingsService()).load();
+    QVERIFY(activeDetailsResult);
+    const PersonalDetails& activeDetails = *activeDetailsResult;
     QCOMPARE(activeDetails.name, profileBDetails.name);
     QCOMPARE(activeDetails.campus, profileBDetails.campus);
 
