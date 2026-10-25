@@ -139,6 +139,41 @@ add_test(
     COMMAND ClassMngrNextResourceRootResolverTests
 )
 
+if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_executable(ClassMngrNextRelocatedResourceRootTests
+        cmake/tests/next_relocated_resource_root.cpp
+    )
+    target_compile_features(ClassMngrNextRelocatedResourceRootTests
+        PRIVATE
+            cxx_std_23
+    )
+    set_target_properties(ClassMngrNextRelocatedResourceRootTests
+        PROPERTIES
+            AUTOMOC OFF
+            AUTOUIC OFF
+            AUTORCC OFF
+    )
+    set_property(TARGET ClassMngrNextRelocatedResourceRootTests
+        PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+    )
+    target_compile_definitions(ClassMngrNextRelocatedResourceRootTests
+        PRIVATE
+            CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+            CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+    )
+    target_link_libraries(ClassMngrNextRelocatedResourceRootTests
+        PRIVATE
+            ClassMngrNext::Resources
+    )
+    add_dependencies(ClassMngrNextRelocatedResourceRootTests
+        ClassMngrNextResourcePackage
+    )
+    add_test(
+        NAME ClassMngrNextRelocatedResourceRootTests
+        COMMAND ClassMngrNextRelocatedResourceRootTests
+    )
+endif()
+
 # Keep PowerPoint batch template compatibility independent of Qt and the
 # feature layer.
 add_executable(
