@@ -8659,7 +8659,7 @@ were exercised. Malformed-ID, raw birthday cursor message, no-op, and rollback
 failure branches remain source-reviewed without direct runtime assertions.
 
 
-## 2026-10-25 — F1454–F1457 committed; F1458 verified and accepted
+## 2026-10-25 — F1454–F1458 committed; F1459 verified and accepted
 
 F1454 is committed locally as `b362325f8a3d2f162a14e30c59ee171a52024e77`;
 it remains unpushed until Batch 22 closes. F1455 RosterRepository discovery
@@ -8671,8 +8671,10 @@ complete; commit `86667de56547273c8897198470e9c271a583035c` is local and not
 pushed. F1457 SpeakingEvalRepository scope, implementation, and independent
 verification are complete; commit `2ccba709122ae44a246302bdf8dab8d6a179e3cb`
 is local and not pushed. F1458 ScheduleImportRepository implementation and
-independent verification are complete; its scope is accepted and local commit
-is pending.
+independent verification are complete; its scope is accepted and commit
+`b968a9d2f93016ac03c1df9af8704ed5854ef2c2` is local and not pushed. F1459
+ClassTransferRepository implementation and independent verification are
+complete; its scope is accepted and local commit is pending.
 
 F1454 converts the two IntensiveSlotStateRepository fallible APIs and keeps
 all current repository errors Technical. Input validation stays in the typed
@@ -8740,3 +8742,19 @@ this slice. Fresh build targets succeeded and five focused CTests passed 5/5;
 four QtTest executables reported 216 passing cases, with one optional workbook
 test skipped. Commit-failure rollback and rollback-failure injection remain
 unverified; no full suite or other-platform build ran.
+
+F1459 converts ClassTransferRepository failures while preserving the already
+typed preview snapshot. Staged export errors and custom import failures retain
+RepositoryError categories, diagnostics, and stage precedence. Invalid caller
+choices are InvalidInput, missing export classes NotFound, malformed packages
+and unsupported IDs Validation, stale targets and schedule overlap Conflict,
+and SQL/cursor/transaction failures Technical. Keep export fallback/order,
+wide teacher IDs and legacy projection, replacement/skip semantics, and
+transaction atomicity. Other repository writers and JSON/schema version
+boundaries stay outside this slice. Fresh affected-target build succeeded;
+five of six focused CTests passed, with 420 cases passing in the integration
+target before one unbaselined teacher-profile fallback UI failure. The other
+five targets, including apply-port coverage, passed. Scalar fallback success,
+malformed batch ordering recovery, export commit/rollback injection, and all
+legacy conversion strings remain source-reviewed only; no full suite or
+other-platform build ran.

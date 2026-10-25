@@ -690,7 +690,7 @@ Result<ClassTransferPackage> ClassService::buildTransferPackage(
     if (auto* repository = session()
             ? session()->classTransferRepository() : nullptr)
     {
-        return repository->buildPackage(classIds);
+        return toLegacyResult(repository->buildPackage(classIds));
     }
     return dataService()
         ? dataService()->buildClassTransferPackage(classIds)
@@ -704,7 +704,7 @@ Result<ClassImportPreview> ClassService::previewImport(
     if (auto* repository = session()
             ? session()->classTransferRepository() : nullptr)
     {
-        return repository->previewImport(package);
+        return toLegacyResult(repository->previewImport(package));
     }
     return dataService()
         ? dataService()->previewClassImport(package)
@@ -735,7 +735,8 @@ Result<ClassImportSummary> ClassService::importClasses(
     if (auto* repository = session()
             ? session()->classTransferRepository() : nullptr)
     {
-        return repository->importClasses(*normalizedPackage, request);
+        return toLegacyResult(
+            repository->importClasses(*normalizedPackage, request));
     }
     return dataService()
         ? dataService()->importClasses(*normalizedPackage, request)

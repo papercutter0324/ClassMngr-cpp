@@ -1,6 +1,7 @@
 #include "core/application_services.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/class_repository.h"
+#include "data/repositories/class_transfer_legacy_package_adapter.h"
 #include "data/repositories/class_transfer_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_transfer.h"
@@ -135,10 +136,12 @@ class NextPlatformApplicationServicesClassTransferApplyPortTests final
 private slots:
     void rejectsUnavailableSessionWithoutFallback();
     void rejectsInvalidPayloadWithoutWrites();
+    void rejectsMalformedCallerChoicesAsInvalidInput();
+    void failedImportTransactionStartIsTechnicalWithoutWrites();
     void rejectsStaleChoiceWithoutWrites();
     void rejectsOnceValidChoiceAfterDestinationChanges();
     void preflightsScheduleConflictBeforeWrites();
-    void keepsMalformedPersistedScheduleTechnicalBeforeWrites();
+    void classifiesMalformedPersistedScheduleAsValidationBeforeWrites();
     void normalizesOwnedPackageWithoutChangingArrayOrder();
     void createsWithNormalizedPayloadAndTypedSummary();
     void skipsClassAndPreservesPositiveCount();
@@ -146,7 +149,9 @@ private slots:
     void createNewAcceptsIntMaxGeneratedClassId();
     void replacesClassAndTeacherThroughRepository();
     void importsSpeakingEvaluationWithWideGeneratedId();
+    void failedImportCommitRollsBackAndKeepsCommitDiagnostic();
     void lateWriteFailureRollsBackTransferRows();
+    void lateWriteFailureKeepsPrimaryDiagnosticWhenRollbackWasAlreadyForced();
 };
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::
@@ -189,6 +194,57 @@ rejectsInvalidPayloadWithoutWrites()
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::
+rejectsMalformedCallerChoicesAsInvalidInput()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    auto command = createCommand();
+    command.choices.classes.front().packageClassIndex =
+        Application::ClassTransferPackageClassIndex{8};
+    const ::ClassTransferPackage legacyPackage =
+        ClassMngr::Data::Legacy::toLegacyClassTransferPackage(command.package);
+    const auto repositoryResult = services.workspaceStore()
+        ->classTransferRepository()->importClasses(
+            legacyPackage, command.choices);
+    QVERIFY(!repositoryResult);
+    QCOMPARE(repositoryResult.error().code, RepositoryErrorCode::InvalidInput);
+    QCOMPARE(repositoryResult.error().diagnostic,
+        QStringLiteral("The class import plan contains an invalid or duplicate class entry."));
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+
+    const auto result = port.apply(std::move(command));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("teachers")), 0);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("classes")), 0);
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+failedImportTransactionStartIsTechnicalWithoutWrites()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlDatabase database = services.workspaceStore()->database();
+    QVERIFY(database.transaction());
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+
+    const auto result = port.apply(createCommand());
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(result.error().message.find(
+        "Unable to start the class import transaction") != std::string::npos);
+    QCOMPARE(count(database, QStringLiteral("teachers")), 0);
+    QCOMPARE(count(database, QStringLiteral("classes")), 0);
+    QVERIFY(database.rollback());
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
 rejectsStaleChoiceWithoutWrites()
 {
     QTemporaryDir directory;
@@ -196,13 +252,15 @@ rejectsStaleChoiceWithoutWrites()
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath(directory)));
     auto command = createCommand();
+    command.choices.classes.front().action =
+        Application::ClassTransferReviewClassAction::Replace;
     command.choices.classes.front().targetClassId = classId(999);
     Platform::ApplicationServicesClassTransferApplyPort port(services);
 
     const auto result = port.apply(command);
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Conflict);
     QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("teachers")), 0);
     QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("classes")), 0);
 }
@@ -242,7 +300,7 @@ rejectsOnceValidChoiceAfterDestinationChanges()
     const auto result = port.apply(command);
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Conflict);
     QVERIFY(result.error().message.find("replacement") != std::string::npos
         || result.error().message.find("class") != std::string::npos);
     QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("teachers")), 1);
@@ -273,9 +331,24 @@ preflightsScheduleConflictBeforeWrites()
     const qint64 changesBefore =
         totalChanges(services.workspaceStore()->database());
     QVERIFY(changesBefore >= 0);
+    auto command = createCommand(std::move(package));
+    const ::ClassTransferPackage legacyPackage =
+        ClassMngr::Data::Legacy::toLegacyClassTransferPackage(command.package);
+    const auto detailed = services.workspaceStore()->classTransferRepository()
+        ->importClassesWithFailureDetails(legacyPackage, command.choices);
+    QVERIFY(!detailed);
+    QCOMPARE(detailed.error().kind,
+        ClassTransferImportError::Kind::ScheduleConflict);
+    QCOMPARE(detailed.error().repositoryError.code,
+        RepositoryErrorCode::Conflict);
+    QCOMPARE(detailed.error().message,
+        QStringLiteral(
+            "Schedule conflicts prevent this import:\n\n"
+            "Regular schedule: E4 Theseus \u2014 Monday 9:00 AM\u201310:00 AM "
+            "conflicts with E4 Theseus \u2014 Monday 9:00 AM\u201310:00 AM"));
     Platform::ApplicationServicesClassTransferApplyPort port(services);
 
-    const auto result = port.apply(createCommand(std::move(package)));
+    const auto result = port.apply(command);
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Conflict);
@@ -293,7 +366,7 @@ preflightsScheduleConflictBeforeWrites()
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::
-keepsMalformedPersistedScheduleTechnicalBeforeWrites()
+classifiesMalformedPersistedScheduleAsValidationBeforeWrites()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -316,7 +389,7 @@ keepsMalformedPersistedScheduleTechnicalBeforeWrites()
     const auto result = port.apply(createCommand());
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     QVERIFY(result.error().message.find("invalid regular schedule entry")
         != std::string::npos);
     QCOMPARE(totalChanges(database), changesBefore);
@@ -402,7 +475,7 @@ createNewRejectsGeneratedClassIdOutsideIntAndRollsBack()
     const auto result = port.apply(createCommand());
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     QCOMPARE(count(database, QStringLiteral("teachers")), 0);
     QCOMPARE(count(database, QStringLiteral("classes")), 1);
     QCOMPARE(count(database, QStringLiteral("class_info")), 0);
@@ -662,6 +735,36 @@ importsSpeakingEvaluationWithWideGeneratedId()
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::
+failedImportCommitRollsBackAndKeepsCommitDiagnostic()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlDatabase database = services.workspaceStore()->database();
+    QSqlQuery deferConstraints(database);
+    QVERIFY(deferConstraints.exec(QStringLiteral("PRAGMA defer_foreign_keys = ON")));
+    QSqlQuery trigger(database);
+    QVERIFY(trigger.exec(QStringLiteral(
+        "CREATE TRIGGER fail_transfer_commit AFTER INSERT ON classes "
+        "BEGIN INSERT INTO roster_data(class_id, row_index, col_index, value) "
+        "VALUES (999999, 0, 0, 'deferred foreign key'); END")));
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+
+    const auto result = port.apply(createCommand());
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(result.error().message.find("commit the class import transaction")
+        != std::string::npos);
+    QVERIFY(result.error().message.find("FOREIGN KEY")
+        != std::string::npos);
+    QCOMPARE(count(database, QStringLiteral("teachers")), 0);
+    QCOMPARE(count(database, QStringLiteral("classes")), 0);
+    QCOMPARE(count(database, QStringLiteral("roster_data")), 0);
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
 lateWriteFailureRollsBackTransferRows()
 {
     QTemporaryDir directory;
@@ -688,6 +791,31 @@ lateWriteFailureRollsBackTransferRows()
     QCOMPARE(count(database, QStringLiteral("class_info")), 0);
     QCOMPARE(count(database, QStringLiteral("roster_columns")), 0);
     QCOMPARE(count(database, QStringLiteral("roster_data")), 0);
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+lateWriteFailureKeepsPrimaryDiagnosticWhenRollbackWasAlreadyForced()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlDatabase database = services.workspaceStore()->database();
+    QSqlQuery trigger(database);
+    QVERIFY(trigger.exec(QStringLiteral(
+        "CREATE TRIGGER fail_transfer_with_rollback BEFORE INSERT ON classes "
+        "BEGIN SELECT RAISE(ROLLBACK, 'F367 forced rollback'); END")));
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+
+    const auto result = port.apply(createCommand());
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(result.error().message.find("F367 forced rollback")
+        != std::string::npos);
+    QVERIFY(result.error().recoverable);
+    QCOMPARE(count(database, QStringLiteral("teachers")), 0);
+    QCOMPARE(count(database, QStringLiteral("classes")), 0);
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesClassTransferApplyPortTests)

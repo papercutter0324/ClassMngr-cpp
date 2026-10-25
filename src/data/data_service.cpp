@@ -376,7 +376,8 @@ Result<ClassTransferPackage> DataService::buildClassTransferPackage(
             );
     }
 
-    return m_session->classTransferRepository()->buildPackage(classIds);
+    return toLegacyResult(
+        m_session->classTransferRepository()->buildPackage(classIds));
 }
 
 Result<ClassImportPreview> DataService::previewClassImport(
@@ -390,7 +391,8 @@ Result<ClassImportPreview> DataService::previewClassImport(
             );
     }
 
-    return m_session->classTransferRepository()->previewImport(package);
+    return toLegacyResult(
+        m_session->classTransferRepository()->previewImport(package));
 }
 
 Result<ClassImportSummary> DataService::importClasses(
@@ -414,7 +416,8 @@ Result<ClassImportSummary> DataService::importClasses(
             );
     }
 
-    return m_session->classTransferRepository()->importClasses(package, request);
+    return toLegacyResult(
+        m_session->classTransferRepository()->importClasses(package, request));
 }
 
 Result<ScheduleImportPreview> DataService::previewScheduleImport(

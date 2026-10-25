@@ -96,7 +96,9 @@ only; no full suite or other-platform build ran. F1457 SpeakingEvalRepository
 implementation and independent verification are complete; commit
 `2ccba709122ae44a246302bdf8dab8d6a179e3cb` is local and not pushed. F1458
 ScheduleImportRepository implementation and independent verification are
-complete; its local commit is pending. F1457's fresh production/test targets
+complete; commit `b968a9d2f93016ac03c1df9af8704ed5854ef2c2` is local and not
+pushed. F1459 ClassTransferRepository implementation and independent
+verification are complete; its local commit is pending. F1457's fresh production/test targets
 built. DataService lifecycle, Speaking
 Evaluation service, analytics, read-port, roster-score import, and save-port
 targets passed; the save-port binary reported 16/16 cases. The changed
@@ -106,8 +108,14 @@ callback cases remain source-reviewed only. F1458's six requested build
 targets succeeded, and five focused CTests passed 5/5; four QtTest executables
 reported 216 passing cases, with one optional workbook test skipped because
 `CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was unset. Commit-failure rollback and
-rollback-failure injection remain unverified. No full suite or other-platform
-build ran.
+rollback-failure injection remain unverified. F1459's full affected-target
+build succeeded; five of six focused CTests passed. The ClassTransfer
+integration target had 420 passing cases and one teacher-profile fallback UI
+failure with no same-revision baseline; it is not attributed as pre-existing.
+The other five targets, including the 20-case apply port, passed. Successful
+scalar fallback, malformed batch count/order recovery, export commit/rollback
+injection, and every legacy conversion remain source-reviewed only. No full
+suite or other-platform build ran.
 F1453
 was independently verified with 12 focused CTests. In the same existing
 incremental macOS Debug tree, affected application,

@@ -41,8 +41,11 @@ committed locally as `86667de56547273c8897198470e9c271a583035c` and is not
 pushed. F1457 SpeakingEvalRepository is independently verified and accepted;
 it is committed locally as `2ccba709122ae44a246302bdf8dab8d6a179e3cb` and is
 not pushed. F1458 ScheduleImportRepository is independently verified and
-accepted; its local commit is pending, and F1459 is next. Evidence and limits
-are in the [progress log](04-Phase-3-Progress-Log.md). The accepted queue is:
+accepted; it is committed locally as
+`b968a9d2f93016ac03c1df9af8704ed5854ef2c2` and is not pushed. F1459
+ClassTransferRepository is independently verified and accepted; its local
+commit is pending, and F1460 is next. Evidence and limits are in the
+[progress log](04-Phase-3-Progress-Log.md). The accepted queue is:
 
 1. **F1444** — shared `RepositoryError`/`RepositoryResult`/status contract and SQL error mapping.
 2. **F1445** — Workspace/database transaction, schema, lifecycle, and file-operation errors.

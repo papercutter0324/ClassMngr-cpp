@@ -2,7 +2,6 @@
 #include "next/platform/class_transfer_apply_legacy_adapter.h"
 #include "next/platform/class_transfer_preview_legacy_adapter.h"
 
-#include "core/result.h"
 #include "data/database/database_transaction.h"
 #include "data/database/sql_query_utils.h"
 #include "data/repositories/class_info_repository.h"
@@ -14,6 +13,7 @@
 #include "next/application/class_transfer_matching_policy.h"
 #include "next/application/class_transfer_projection.h"
 #include "next/application/class_transfer_preview_query.h"
+#include "next/platform/repository_error_code.h"
 
 #include <QHash>
 #include <QObject>
@@ -32,24 +32,37 @@
 
 namespace
 {
-ClassMngr::Next::Domain::ErrorCode domainErrorCode(
-    const RepositoryErrorCode code
+RepositoryErrorCode repositoryErrorCode(
+    const ClassMngr::Next::Domain::ErrorCode code
     )
 {
     switch (code)
     {
-    case RepositoryErrorCode::InvalidInput:
-        return ClassMngr::Next::Domain::ErrorCode::InvalidInput;
-    case RepositoryErrorCode::NotFound:
-        return ClassMngr::Next::Domain::ErrorCode::NotFound;
-    case RepositoryErrorCode::Conflict:
-        return ClassMngr::Next::Domain::ErrorCode::Conflict;
-    case RepositoryErrorCode::Validation:
-        return ClassMngr::Next::Domain::ErrorCode::Validation;
-    case RepositoryErrorCode::Technical:
-        return ClassMngr::Next::Domain::ErrorCode::Technical;
+    case ClassMngr::Next::Domain::ErrorCode::InvalidInput:
+        return RepositoryErrorCode::InvalidInput;
+    case ClassMngr::Next::Domain::ErrorCode::NotFound:
+        return RepositoryErrorCode::NotFound;
+    case ClassMngr::Next::Domain::ErrorCode::Conflict:
+        return RepositoryErrorCode::Conflict;
+    case ClassMngr::Next::Domain::ErrorCode::Validation:
+        return RepositoryErrorCode::Validation;
+    case ClassMngr::Next::Domain::ErrorCode::Canceled:
+        return RepositoryErrorCode::Technical;
+    case ClassMngr::Next::Domain::ErrorCode::Technical:
+        return RepositoryErrorCode::Technical;
     }
-    return ClassMngr::Next::Domain::ErrorCode::Technical;
+    return RepositoryErrorCode::Technical;
+}
+
+RepositoryError repositoryErrorForOperation(
+    const ClassMngr::Next::Domain::OperationError& error
+    )
+{
+    const QByteArray bytes = QByteArray::fromStdString(error.message);
+    return RepositoryError{
+        repositoryErrorCode(error.code),
+        QString::fromUtf8(bytes.constData(), bytes.size())
+    };
 }
 
 struct ScheduledTime
@@ -119,10 +132,79 @@ QString reviewIssueMessage(
     return QObject::tr("The class import choices are invalid.");
 }
 
+RepositoryErrorCode reviewIssueErrorCode(
+    const ClassMngr::Next::Application::ClassTransferReviewDecisionIssueCode code
+    )
+{
+    using IssueCode =
+        ClassMngr::Next::Application::ClassTransferReviewDecisionIssueCode;
+    switch (code)
+    {
+    case IssueCode::ClassTargetNotInMatchSet:
+    case IssueCode::TeacherTargetNotInMatchSet:
+        return RepositoryErrorCode::Conflict;
+    case IssueCode::InvalidClassAction:
+    case IssueCode::InvalidClassIndex:
+    case IssueCode::DuplicateClassResolution:
+    case IssueCode::UnknownClassResolution:
+    case IssueCode::MissingClassResolution:
+    case IssueCode::ReplaceClassMissingTarget:
+    case IssueCode::NonReplaceClassHasTarget:
+    case IssueCode::DuplicateClassReplacementTarget:
+    case IssueCode::InvalidTeacherAction:
+    case IssueCode::EmptyTeacherKey:
+    case IssueCode::DuplicateTeacherResolution:
+    case IssueCode::UnknownTeacherResolution:
+    case IssueCode::MissingTeacherResolution:
+    case IssueCode::UniqueTeacherCannotBeCreated:
+    case IssueCode::CreateTeacherHasTarget:
+    case IssueCode::TeacherActionMissingTarget:
+    case IssueCode::DuplicateTeacherReplacementTarget:
+        return RepositoryErrorCode::InvalidInput;
+    }
+    return RepositoryErrorCode::InvalidInput;
+}
+
+RepositoryError* firstExportError(ClassTransferExportSource& source)
+{
+    for (ClassTransferExportSourceClass& pending : source.classes)
+    {
+        if (pending.infoError)
+        {
+            return &*pending.infoError;
+        }
+        if (pending.rosterError)
+        {
+            return &*pending.rosterError;
+        }
+        if (pending.teacherId > 0)
+        {
+            if (source.teacherBatchError)
+            {
+                return &*source.teacherBatchError;
+            }
+            auto teacherError = source.teacherErrorsById.find(pending.teacherId);
+            if (teacherError != source.teacherErrorsById.end())
+            {
+                return &teacherError.value();
+            }
+        }
+        if (pending.evaluationError)
+        {
+            return &*pending.evaluationError;
+        }
+    }
+    if (source.selectionOrReadError)
+    {
+        return &*source.selectionOrReadError;
+    }
+    return nullptr;
+}
+
 QList<ClassTransferEvaluation> loadEvaluations(
     QSqlDatabase& database,
     int classId,
-    QString* errorMessage
+    std::optional<RepositoryError>* error
     )
 {
     QList<ClassTransferEvaluation> evaluations;
@@ -139,8 +221,11 @@ QList<ClassTransferEvaluation> loadEvaluations(
 
     if (!evaluationQuery.exec())
     {
-        *errorMessage = QObject::tr("Unable to read speaking evaluations: %1")
-            .arg(evaluationQuery.lastError().text());
+        *error = RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr("Unable to read speaking evaluations: %1")
+                .arg(evaluationQuery.lastError().text())
+        };
         return {};
     }
 
@@ -152,9 +237,12 @@ QList<ClassTransferEvaluation> loadEvaluations(
             );
         if (!evaluationIdOk)
         {
-            *errorMessage = QObject::tr(
-                "Unable to read speaking evaluations: invalid evaluation identifier for class %1."
-                ).arg(classId);
+            *error = RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "Unable to read speaking evaluations: invalid evaluation identifier for class %1."
+                    ).arg(classId)
+            };
             return {};
         }
 
@@ -167,8 +255,11 @@ QList<ClassTransferEvaluation> loadEvaluations(
 
     if (evaluationQuery.lastError().isValid())
     {
-        *errorMessage = QObject::tr("Unable to read speaking evaluations: %1")
-            .arg(evaluationQuery.lastError().text());
+        *error = RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr("Unable to read speaking evaluations: %1")
+                .arg(evaluationQuery.lastError().text())
+        };
         return {};
     }
 
@@ -195,8 +286,11 @@ QList<ClassTransferEvaluation> loadEvaluations(
 
     if (!rowQuery.exec())
     {
-        *errorMessage = QObject::tr("Unable to read speaking evaluation rows: %1")
-            .arg(rowQuery.lastError().text());
+        *error = RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr("Unable to read speaking evaluation rows: %1")
+                .arg(rowQuery.lastError().text())
+        };
         return {};
     }
 
@@ -208,9 +302,12 @@ QList<ClassTransferEvaluation> loadEvaluations(
             ).toLongLong(&evaluationIdOk);
         if (!evaluationIdOk)
         {
-            *errorMessage = QObject::tr(
-                "Unable to read speaking evaluation rows: invalid evaluation identifier for class %1."
-                ).arg(classId);
+            *error = RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "Unable to read speaking evaluation rows: invalid evaluation identifier for class %1."
+                    ).arg(classId)
+            };
             return {};
         }
 
@@ -241,8 +338,11 @@ QList<ClassTransferEvaluation> loadEvaluations(
 
     if (rowQuery.lastError().isValid())
     {
-        *errorMessage = QObject::tr("Unable to read speaking evaluation rows: %1")
-            .arg(rowQuery.lastError().text());
+        *error = RepositoryError{
+            RepositoryErrorCode::Technical,
+            QObject::tr("Unable to read speaking evaluation rows: %1")
+                .arg(rowQuery.lastError().text())
+        };
         return {};
     }
 
@@ -439,7 +539,7 @@ QString timeDescription(
             );
 }
 
-Status appendAndValidateTimes(
+RepositoryStatus appendAndValidateTimes(
     QList<ScheduledTime>* destination,
     const QString& classLabel,
     const QList<ClassTime>& times,
@@ -452,7 +552,8 @@ Status appendAndValidateTimes(
         const auto candidate = candidateForTime(time, category);
         if (!candidate)
         {
-            return std::unexpected(
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
                 QObject::tr("%1 contains an invalid %2 schedule entry: %3 %4–%5")
                     .arg(
                         classLabel,
@@ -461,7 +562,7 @@ Status appendAndValidateTimes(
                         time.startTime,
                         time.endTime
                         )
-                );
+            });
         }
 
         destination->append({
@@ -540,15 +641,7 @@ QStringList findScheduleConflicts(
     return regularConflicts;
 }
 
-QString operationErrorText(
-    const ClassMngr::Next::Domain::OperationError& error
-    )
-{
-    return QString::fromUtf8(error.message.data(),
-        static_cast<qsizetype>(error.message.size()));
-}
-
-Result<ClassImportPreview> buildPreview(
+RepositoryResult<ClassImportPreview> buildPreview(
     ClassMngr::Next::Application::ClassTransferPreviewReadPort& readPort,
     const ClassTransferPackage& package
     )
@@ -559,14 +652,14 @@ Result<ClassImportPreview> buildPreview(
         ClassMngr::Next::Platform::classTransferPreviewRequest(package));
     if (!result)
     {
-        return std::unexpected(operationErrorText(result.error()));
+        return std::unexpected(repositoryErrorForOperation(result.error()));
     }
 
     return ClassMngr::Next::Platform::legacyClassTransferPreview(
         result.value());
 }
 
-Result<ValidatedPlan> validatePlan(
+RepositoryResult<ValidatedPlan> validatePlan(
     QSqlDatabase& database,
     const ClassTransferPackage& package,
     const ClassMngr::Next::Application::ClassTransferApplyRequest& choices
@@ -583,7 +676,12 @@ Result<ValidatedPlan> validatePlan(
     const auto candidates = ClassMngr::Next::Platform::classTransferApplyCandidates(
         package, *previewResult, true);
     if (!candidates)
-        return std::unexpected(candidates.error());
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
+            candidates.error()
+        });
+    }
     auto request = choices;
     for (auto& resolution : request.teachers)
         if (QString::fromStdString(resolution.teacherKey.value()).trimmed().isEmpty())
@@ -593,7 +691,11 @@ Result<ValidatedPlan> validatePlan(
         request, *candidates);
     if (!decision.accepted())
     {
-        return std::unexpected(reviewIssueMessage(decision.issues.front().code));
+        const auto issueCode = decision.issues.front().code;
+        return std::unexpected(RepositoryError{
+            reviewIssueErrorCode(issueCode),
+            reviewIssueMessage(issueCode)
+        });
     }
 
     const auto plan = ClassMngr::Next::Platform::validatedClassTransferLegacyPlan(request);
@@ -641,7 +743,7 @@ std::expected<void, ClassTransferImportError> preflightSchedules(
 
         const ClassTransferClass& transferClass = package.classes[index];
         const QString label = transferClassLabel(transferClass);
-        Status status = appendAndValidateTimes(
+        RepositoryStatus status = appendAndValidateTimes(
             &importedSchedules,
             label,
             transferClass.info.classTimes,
@@ -651,7 +753,10 @@ std::expected<void, ClassTransferImportError> preflightSchedules(
 
         if (!status)
         {
-            return status;
+            return std::unexpected(ClassTransferImportError{
+                ClassTransferImportError::Kind::RepositoryFailure,
+                status.error()
+            });
         }
 
         status = appendAndValidateTimes(
@@ -664,7 +769,10 @@ std::expected<void, ClassTransferImportError> preflightSchedules(
 
         if (!status)
         {
-            return status;
+            return std::unexpected(ClassTransferImportError{
+                ClassTransferImportError::Kind::RepositoryFailure,
+                status.error()
+            });
         }
     }
 
@@ -676,7 +784,10 @@ std::expected<void, ClassTransferImportError> preflightSchedules(
         classRepository.getClasses();
     if (!destinationClasses)
     {
-        return std::unexpected(toLegacyDiagnostic(destinationClasses.error()));
+        return std::unexpected(ClassTransferImportError{
+            ClassTransferImportError::Kind::RepositoryFailure,
+            destinationClasses.error()
+        });
     }
 
     QList<Classroom> eligibleDestinationClasses;
@@ -700,7 +811,10 @@ std::expected<void, ClassTransferImportError> preflightSchedules(
         if (!destinationRecords)
         {
             return std::unexpected(
-                toLegacyDiagnostic(destinationRecords.error()));
+                ClassTransferImportError{
+                    ClassTransferImportError::Kind::RepositoryFailure,
+                    destinationRecords.error()
+                });
         }
 
         for (qsizetype index = 0; index < destinationRecords->size(); ++index)
@@ -713,7 +827,7 @@ std::expected<void, ClassTransferImportError> preflightSchedules(
             info.classLevel = record.level;
 
             const QString label = destinationClassLabel(classroom, info);
-            Status status = appendAndValidateTimes(
+            RepositoryStatus status = appendAndValidateTimes(
                 &existingSchedules,
                 label,
                 record.regularTimes,
@@ -723,7 +837,10 @@ std::expected<void, ClassTransferImportError> preflightSchedules(
 
             if (!status)
             {
-                return status;
+                return std::unexpected(ClassTransferImportError{
+                    ClassTransferImportError::Kind::RepositoryFailure,
+                    status.error()
+                });
             }
 
             status = appendAndValidateTimes(
@@ -736,7 +853,10 @@ std::expected<void, ClassTransferImportError> preflightSchedules(
 
             if (!status)
             {
-                return status;
+                return std::unexpected(ClassTransferImportError{
+                    ClassTransferImportError::Kind::RepositoryFailure,
+                    status.error()
+                });
             }
         }
     }
@@ -750,25 +870,28 @@ std::expected<void, ClassTransferImportError> preflightSchedules(
     {
         return std::unexpected(ClassTransferImportError{
             ClassTransferImportError::Kind::ScheduleConflict,
-            QObject::tr("Schedule conflicts prevent this import:\n\n%1")
-                .arg(conflicts.join(QLatin1Char('\n')))
+            RepositoryError{
+                RepositoryErrorCode::Conflict,
+                QObject::tr("Schedule conflicts prevent this import:\n\n%1")
+                    .arg(conflicts.join(QLatin1Char('\n')))
+            }
         });
     }
 
     return {};
 }
 
-Status queryFailure(
+RepositoryStatus queryFailure(
     const QSqlQuery& query,
     const QString& operation
     )
 {
-    return std::unexpected(
-        SqlQueryUtils::errorFor(query, operation).userMessage()
-        );
+    return std::unexpected(SqlQueryUtils::repositoryErrorFor(
+        SqlQueryUtils::errorFor(query, operation)
+        ));
 }
 
-Result<qint64> insertTeacher(
+RepositoryResult<qint64> insertTeacher(
     QSqlDatabase& database,
     const Teacher& teacher
     )
@@ -809,15 +932,16 @@ Result<qint64> insertTeacher(
 
     if (!idValid || id <= 0)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Validation,
             QObject::tr("The imported teacher did not receive a Teacher Profile ID.")
-            );
+        });
     }
 
     return id;
 }
 
-Status updateTeacher(
+RepositoryStatus updateTeacher(
     QSqlDatabase& database,
     qint64 teacherId,
     const Teacher& teacher
@@ -855,15 +979,16 @@ Status updateTeacher(
 
     if (query.numRowsAffected() != 1)
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Conflict,
             QObject::tr("The matched teacher no longer exists.")
-            );
+        });
     }
 
     return {};
 }
 
-Status clearClassData(
+RepositoryStatus clearClassData(
     QSqlDatabase& database,
     int classId
     )
@@ -907,7 +1032,7 @@ Status clearClassData(
     return {};
 }
 
-Status writeClassData(
+RepositoryStatus writeClassData(
     QSqlDatabase& database,
     int classId,
     qint64 teacherId,
@@ -942,7 +1067,7 @@ Status writeClassData(
 
     const auto writeTimes = [&database, classId](
         const QString& table,
-        const QList<ClassTime>& times) -> Status
+        const QList<ClassTime>& times) -> RepositoryStatus
     {
         for (const ClassTime& time : times)
         {
@@ -968,7 +1093,7 @@ Status writeClassData(
         return {};
     };
 
-    Status status = writeTimes(
+    RepositoryStatus status = writeTimes(
         QStringLiteral("class_times"), info.classTimes);
 
     if (!status)
@@ -1120,7 +1245,7 @@ ClassTransferRepository::readSnapshot(
     const auto repositoryFailure = [&failure](const RepositoryError& error)
     {
         return failure(
-            domainErrorCode(error.code),
+            ClassMngr::Next::Platform::repositoryDomainErrorCode(error.code),
             toLegacyDiagnostic(error),
             error.recoverableOverride.value_or(true)
             );
@@ -1380,28 +1505,35 @@ ClassTransferRepository::readSnapshot(
     return ClassTransferPreviewReadResult::success(std::move(snapshot));
 }
 
-Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
+RepositoryResult<ClassTransferExportSource> ClassTransferRepository::readExportSource(
     const QList<int>& classIds
     )
 {
     if (!m_database.isOpen())
     {
-        return std::unexpected(QObject::tr("No Teacher Profile is open."));
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::NotFound,
+            QObject::tr("No Teacher Profile is open.")
+        });
     }
 
     if (classIds.isEmpty())
     {
-        return std::unexpected(QObject::tr("No classes were selected."));
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
+            QObject::tr("No classes were selected.")
+        });
     }
 
     DatabaseTransaction transaction(m_database);
 
     if (!transaction.started())
     {
-        return std::unexpected(
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr("Unable to start the class export transaction: %1")
                 .arg(m_database.lastError().text())
-            );
+        });
     }
 
     ClassRepository classRepository(m_database);
@@ -1424,8 +1556,11 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
 
         if (classId <= 0 || seenClasses.contains(classId))
         {
-            source.selectionOrReadError = QObject::tr(
-                "The class selection contains an invalid or duplicate class.");
+            source.selectionOrReadError = RepositoryError{
+                RepositoryErrorCode::InvalidInput,
+                QObject::tr(
+                    "The class selection contains an invalid or duplicate class.")
+            };
             break;
         }
 
@@ -1433,7 +1568,7 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
             classRepository.getClassById(classId);
         if (!classroom)
         {
-            source.selectionOrReadError = toLegacyDiagnostic(classroom.error());
+            source.selectionOrReadError = classroom.error();
             break;
         }
 
@@ -1490,7 +1625,7 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
             }
             else
             {
-                pending.infoError = toLegacyDiagnostic(info.error());
+                pending.infoError = info.error();
             }
         }
     }
@@ -1532,7 +1667,7 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
             }
             else
             {
-                pending.rosterError = toLegacyDiagnostic(roster.error());
+                pending.rosterError = roster.error();
             }
         }
     }
@@ -1542,7 +1677,7 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
     // succeed, and before evaluations, to retain their former read order.
     for (ClassTransferExportSourceClass& pending : source.classes)
     {
-        if (!pending.infoError.isEmpty() || !pending.rosterError.isEmpty())
+        if (pending.infoError || pending.rosterError)
         {
             break;
         }
@@ -1557,7 +1692,7 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
         pending.evaluationAttempted = true;
         pending.evaluations = loadEvaluations(
             m_database, pending.classId, &pending.evaluationError);
-        if (!pending.evaluationError.isEmpty())
+        if (pending.evaluationError)
         {
             break;
         }
@@ -1571,13 +1706,15 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
         {
             // A batch-level failure occupies the first assigned-teacher
             // profile's position in the original sequence.
-            source.teacherBatchError = toLegacyDiagnostic(
-                teacherProfiles.error());
+            source.teacherBatchError = teacherProfiles.error();
         }
         else if (teacherProfiles->size() != source.teacherIds.size())
         {
-            source.teacherBatchError = QObject::tr(
-                "Loading teacher profiles failed: the database returned an unexpected number of records.");
+            source.teacherBatchError = RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "Loading teacher profiles failed: the database returned an unexpected number of records.")
+            };
         }
         else
         {
@@ -1588,8 +1725,11 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
                     teacherProfiles->at(index);
                 if (record.teacherId != teacherId)
                 {
-                    source.teacherBatchError = QObject::tr(
-                        "Loading teacher profiles failed: the database returned records in a different identifier order.");
+                    source.teacherBatchError = RepositoryError{
+                        RepositoryErrorCode::Validation,
+                        QObject::tr(
+                            "Loading teacher profiles failed: the database returned records in a different identifier order.")
+                    };
                     break;
                 }
 
@@ -1597,15 +1737,18 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
                 {
                     source.teacherErrorsById.insert(
                         teacherId,
-                        toLegacyDiagnostic(record.profile.error())
+                        record.profile.error()
                         );
                     continue;
                 }
 
                 if (record.profile->teacherId != teacherId)
                 {
-                    source.teacherBatchError = QObject::tr(
-                        "Loading teacher profiles failed: a database record returned a different teacher identifier.");
+                    source.teacherBatchError = RepositoryError{
+                        RepositoryErrorCode::Validation,
+                        QObject::tr(
+                            "Loading teacher profiles failed: a database record returned a different teacher identifier.")
+                    };
                     break;
                 }
 
@@ -1614,21 +1757,43 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
         }
     }
 
-    bool readFailed = !source.selectionOrReadError.isEmpty()
-        || !source.teacherBatchError.isEmpty() || !source.teacherErrorsById.isEmpty();
+    bool readFailed = source.selectionOrReadError.has_value()
+        || source.teacherBatchError.has_value()
+        || !source.teacherErrorsById.isEmpty();
     for (const auto& pending : source.classes)
-        readFailed = readFailed || !pending.infoError.isEmpty()
-            || !pending.rosterError.isEmpty() || !pending.evaluationError.isEmpty();
+        readFailed = readFailed || pending.infoError.has_value()
+            || pending.rosterError.has_value()
+            || pending.evaluationError.has_value();
     if (readFailed)
-        return source; // Transaction destructor rolls back, exactly as error replay did.
+    {
+        if (!transaction.rollbackChecked())
+        {
+            if (RepositoryError* primary = firstExportError(source))
+            {
+                primary->code = RepositoryErrorCode::Technical;
+            }
+        }
+        return source;
+    }
 
     if (!transaction.commit())
-        return std::unexpected(QObject::tr("Unable to finish the class export transaction: %1")
-            .arg(m_database.lastError().text()));
+    {
+        const QString commitDiagnostic = m_database.lastError().text();
+        RepositoryError error{
+            RepositoryErrorCode::Technical,
+            QObject::tr("Unable to finish the class export transaction: %1")
+                .arg(commitDiagnostic)
+        };
+        if (!transaction.rollbackChecked())
+        {
+            error.code = RepositoryErrorCode::Technical;
+        }
+        return std::unexpected(std::move(error));
+    }
     return source;
 }
 
-Result<ClassTransferPackage> ClassTransferRepository::buildPackage(const QList<int>& classIds)
+RepositoryResult<ClassTransferPackage> ClassTransferRepository::buildPackage(const QList<int>& classIds)
 {
     auto loaded = readExportSource(classIds);
     if (!loaded)
@@ -1646,20 +1811,20 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(const QList<i
     // selection, or class lookup failure.
     for (const ClassTransferExportSourceClass& pending : pendingClasses)
     {
-        if (!pending.infoError.isEmpty())
+        if (pending.infoError)
         {
-            return std::unexpected(pending.infoError);
+            return std::unexpected(*pending.infoError);
         }
-        if (!pending.rosterError.isEmpty())
+        if (pending.rosterError)
         {
-            return std::unexpected(pending.rosterError);
+            return std::unexpected(*pending.rosterError);
         }
 
         if (pending.teacherId > 0)
         {
-            if (!teacherBatchError.isEmpty())
+            if (teacherBatchError)
             {
-                return std::unexpected(teacherBatchError);
+                return std::unexpected(*teacherBatchError);
             }
             const auto teacherError =
                 teacherErrorsById.constFind(pending.teacherId);
@@ -1669,15 +1834,15 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(const QList<i
             }
         }
 
-        if (!pending.evaluationError.isEmpty())
+        if (pending.evaluationError)
         {
-            return std::unexpected(pending.evaluationError);
+            return std::unexpected(*pending.evaluationError);
         }
     }
 
-    if (!selectionOrReadError.isEmpty())
+    if (selectionOrReadError)
     {
-        return std::unexpected(selectionOrReadError);
+        return std::unexpected(*selectionOrReadError);
     }
 
     QHash<qint64, QString> teacherKeys;
@@ -1752,14 +1917,14 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(const QList<i
     return package;
 }
 
-Result<ClassImportPreview> ClassTransferRepository::previewImport(
+RepositoryResult<ClassImportPreview> ClassTransferRepository::previewImport(
     const ClassTransferPackage& package
     )
 {
     return buildPreview(*this, package);
 }
 
-Result<ClassImportSummary> ClassTransferRepository::importClasses(
+RepositoryResult<ClassImportSummary> ClassTransferRepository::importClasses(
     const ClassTransferPackage& package,
     const ClassImportPlan& plan
     )
@@ -1768,7 +1933,7 @@ Result<ClassImportSummary> ClassTransferRepository::importClasses(
         ClassMngr::Next::Platform::classTransferApplyRequest(plan));
 }
 
-Result<ClassImportSummary> ClassTransferRepository::importClasses(
+RepositoryResult<ClassImportSummary> ClassTransferRepository::importClasses(
     const ClassTransferPackage& package,
     const ClassMngr::Next::Application::ClassTransferApplyRequest& request
     )
@@ -1777,7 +1942,7 @@ Result<ClassImportSummary> ClassTransferRepository::importClasses(
         importClassesWithFailureDetails(package, request);
     if (!result)
     {
-        return std::unexpected(result.error().message);
+        return std::unexpected(result.error().repositoryError);
     }
     return *result;
 }
@@ -1790,7 +1955,10 @@ ClassTransferRepository::importClassesWithFailureDetails(
 {
     if (!m_database.isOpen())
     {
-        return std::unexpected(QObject::tr("No Teacher Profile is open."));
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::NotFound,
+            QObject::tr("No Teacher Profile is open.")
+        });
     }
 
     const auto validatedResult = validatePlan(m_database, package, request);
@@ -1824,11 +1992,43 @@ ClassTransferRepository::importClassesWithFailureDetails(
 
     if (!transaction.started())
     {
-        return std::unexpected(
-            QObject::tr("Unable to start the class import transaction: %1")
-                .arg(m_database.lastError().text())
-            );
+        return std::unexpected(ClassTransferImportError{
+            RepositoryError{
+                RepositoryErrorCode::Technical,
+                QObject::tr("Unable to start the class import transaction: %1")
+                    .arg(m_database.lastError().text())
+            }
+        });
     }
+
+    const auto failTransaction = [&transaction](
+        RepositoryError error,
+        const ClassTransferImportError::Kind kind =
+            ClassTransferImportError::Kind::RepositoryFailure
+        ) -> ClassTransferDetailedImportResult
+    {
+        const QString commitContext =
+            QObject::tr("Unable to commit the class import transaction:");
+        if (error.code == RepositoryErrorCode::Technical
+            && error.diagnostic.contains(
+                QStringLiteral("FOREIGN KEY constraint failed"),
+                Qt::CaseInsensitive
+                )
+            && !error.diagnostic.contains(commitContext))
+        {
+            error.diagnostic = QObject::tr(
+                "Unable to commit the class import transaction: %1"
+                ).arg(error.diagnostic);
+        }
+        if (!transaction.rollbackChecked())
+        {
+            error.code = RepositoryErrorCode::Technical;
+        }
+        return std::unexpected(ClassTransferImportError{
+            kind,
+            std::move(error)
+        });
+    };
 
     QHash<QString, qint64> teacherIds;
 
@@ -1849,7 +2049,7 @@ ClassTransferRepository::importClassesWithFailureDetails(
 
             if (!teacherId)
             {
-                return std::unexpected(teacherId.error());
+                return failTransaction(teacherId.error());
             }
 
             teacherIds.insert(transferTeacher.key, *teacherId);
@@ -1858,7 +2058,7 @@ ClassTransferRepository::importClassesWithFailureDetails(
         {
             if (resolution.action == TeacherImportAction::ReplaceExisting)
             {
-                const Status updated = updateTeacher(
+                const RepositoryStatus updated = updateTeacher(
                     m_database,
                     resolution.targetTeacherId,
                     transferTeacher.teacher
@@ -1866,7 +2066,7 @@ ClassTransferRepository::importClassesWithFailureDetails(
 
                 if (!updated)
                 {
-                    return std::unexpected(updated.error());
+                    return failTransaction(updated.error());
                 }
             }
 
@@ -1899,9 +2099,10 @@ ClassTransferRepository::importClassesWithFailureDetails(
 
             if (!query.exec())
             {
-                return std::unexpected(
-                    queryFailure(query, QObject::tr("Creating an imported class")).error()
-                    );
+                return failTransaction(queryFailure(
+                    query,
+                    QObject::tr("Creating an imported class")
+                    ).error());
             }
 
             bool classIdValid = false;
@@ -1911,9 +2112,10 @@ ClassTransferRepository::importClassesWithFailureDetails(
             if (!classIdValid || generatedClassId <= 0
                 || generatedClassId > std::numeric_limits<int>::max())
             {
-                return std::unexpected(
+                return failTransaction(RepositoryError{
+                    RepositoryErrorCode::Validation,
                     QObject::tr("The imported class did not receive a Teacher Profile ID.")
-                    );
+                });
             }
 
             classId = static_cast<int>(generatedClassId);
@@ -1925,18 +2127,30 @@ ClassTransferRepository::importClassesWithFailureDetails(
             query.addBindValue(transferClass.name);
             query.addBindValue(classId);
 
-            if (!query.exec() || query.numRowsAffected() != 1)
+            if (!query.exec())
             {
-                return std::unexpected(
-                    queryFailure(query, QObject::tr("Updating a replaced class")).error()
-                    );
+                return failTransaction(queryFailure(
+                    query,
+                    QObject::tr("Updating a replaced class")
+                    ).error());
+            }
+            if (query.numRowsAffected() != 1)
+            {
+                const RepositoryError diagnostic = queryFailure(
+                    query,
+                    QObject::tr("Updating a replaced class")
+                    ).error();
+                return failTransaction(RepositoryError{
+                    RepositoryErrorCode::Conflict,
+                    diagnostic.diagnostic
+                });
             }
 
-            const Status cleared = clearClassData(m_database, classId);
+            const RepositoryStatus cleared = clearClassData(m_database, classId);
 
             if (!cleared)
             {
-                return std::unexpected(cleared.error());
+                return failTransaction(cleared.error());
             }
 
             summary.replacedClassIds.append(classId);
@@ -1945,21 +2159,23 @@ ClassTransferRepository::importClassesWithFailureDetails(
         const qint64 teacherId = transferClass.teacherKey.isEmpty()
             ? -1
             : teacherIds.value(transferClass.teacherKey, -1);
-        const Status written = writeClassData(
+        const RepositoryStatus written = writeClassData(
             m_database, classId, teacherId, transferClass);
 
         if (!written)
         {
-            return std::unexpected(written.error());
+            return failTransaction(written.error());
         }
     }
 
     if (!transaction.commit())
     {
-        return std::unexpected(
+        const QString commitDiagnostic = m_database.lastError().text();
+        return failTransaction(RepositoryError{
+            RepositoryErrorCode::Technical,
             QObject::tr("Unable to commit the class import transaction: %1")
-                .arg(m_database.lastError().text())
-            );
+                .arg(commitDiagnostic)
+        });
     }
 
     return summary;

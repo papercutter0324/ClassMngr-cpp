@@ -3,6 +3,7 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/class_transfer_repository.h"
 #include "next/application/class_transfer_export_query.h"
+#include "next/platform/repository_error_code.h"
 #include <charconv>
 #include <string>
 
@@ -17,7 +18,10 @@ public:
         using namespace Application;
         WorkspaceStore* store = m_services.workspaceStore();
         if (!store || !store->classTransferRepository())
-            return ClassTransferExportSourceResult::failure(error(QStringLiteral("No Teacher Profile service is available.")));
+            return ClassTransferExportSourceResult::failure(error(RepositoryError{
+                RepositoryErrorCode::NotFound,
+                QStringLiteral("No Teacher Profile service is available.")
+            }));
         QList<int> ids;
         for (const auto& id : request.classIds)
         {
@@ -34,15 +38,16 @@ public:
         ClassTransferExportSource output;
         output.exportedAtUtcMilliseconds = Application::ClassTransferExportUtcMilliseconds{
             read->exportedAtUtc.toMSecsSinceEpoch()};
-        if (!read->selectionOrReadError.isEmpty())
-            output.deferredSelectionOrLookupError = error(read->selectionOrReadError);
-        if (!read->teacherBatchError.isEmpty())
-            output.teacherBatchError = error(read->teacherBatchError);
+        if (read->selectionOrReadError)
+            output.deferredSelectionOrLookupError = error(*read->selectionOrReadError);
+        if (read->teacherBatchError)
+            output.teacherBatchError = error(*read->teacherBatchError);
         for (const qint64 id : read->teacherIds)
         {
             ClassExportSourceTeacher teacher{*Domain::TeacherId::fromString(std::to_string(id)), {}};
-            if (read->teacherErrorsById.contains(id))
-                teacher.profile = ClassExportStage<ClassExportTeacherProfile>::error(error(read->teacherErrorsById.value(id)));
+            const auto teacherError = read->teacherErrorsById.constFind(id);
+            if (teacherError != read->teacherErrorsById.cend())
+                teacher.profile = ClassExportStage<ClassExportTeacherProfile>::error(error(*teacherError));
             else if (read->teachersById.contains(id))
             {
                 const TeacherProfileReadRecord& source = read->teachersById[id];
@@ -71,8 +76,8 @@ public:
                 ClassTransferExportSelectionOrdinal{
                     static_cast<std::size_t>(source.selectedIndex)
                     }, source.name.toStdU16String(), {}, {}, {}, {}};
-            if (!source.infoError.isEmpty())
-                item.info = ClassExportStage<ClassExportSourceInfo>::error(error(source.infoError));
+            if (source.infoError)
+                item.info = ClassExportStage<ClassExportSourceInfo>::error(error(*source.infoError));
             else
             {
                 ClassExportSourceInfo value;
@@ -102,8 +107,8 @@ public:
                     value.intensiveTimes.push_back({time.day.toStdU16String(), time.startTime.toStdU16String(), time.endTime.toStdU16String()});
                 item.info = ClassExportStage<ClassExportSourceInfo>::value(std::move(value));
             }
-            if (!source.rosterError.isEmpty())
-                item.roster = ClassExportStage<ClassExportRoster>::error(error(source.rosterError));
+            if (source.rosterError)
+                item.roster = ClassExportStage<ClassExportRoster>::error(error(*source.rosterError));
             else
             {
                 ClassExportRoster value;
@@ -118,8 +123,8 @@ public:
             {
                 item.teacher = ClassExportStage<std::optional<Domain::TeacherId>>::value(source.teacherId > 0
                     ? Domain::TeacherId::fromString(std::to_string(source.teacherId)) : std::nullopt);
-                if (!source.evaluationError.isEmpty())
-                    item.evaluations = ClassExportStage<std::vector<ClassExportEvaluation>>::error(error(source.evaluationError));
+                if (source.evaluationError)
+                    item.evaluations = ClassExportStage<std::vector<ClassExportEvaluation>>::error(error(*source.evaluationError));
                 else
                 {
                     std::vector<ClassExportEvaluation> values;
@@ -133,9 +138,14 @@ public:
         return ClassTransferExportSourceResult::success(std::move(output));
     }
 private:
-    static Domain::OperationError error(const QString& message)
+    static Domain::OperationError error(const RepositoryError& failure)
     {
-        return {Domain::ErrorCode::Technical, message.toUtf8().toStdString(), true};
+        const QByteArray message = failure.diagnostic.toUtf8();
+        return {
+            repositoryDomainErrorCode(failure.code),
+            std::string(message.constData(), static_cast<std::size_t>(message.size())),
+            true
+        };
     }
     static Application::ClassExportRows rows(const QList<QStringList>& source)
     {

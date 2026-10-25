@@ -4128,14 +4128,15 @@ callbacks/late fetch, rollback-failure retention of the primary diagnostic,
 and exact legacy diagnostic pass-through (mostly source-reviewed). No full
 suite or other-platform build was run.
 
-## F1458 — ScheduleImportRepository structured errors — independently verified — 2026-10-25
+## F1458 — ScheduleImportRepository structured errors — independently verified, committed locally — 2026-10-25
 
 Discovery is complete: Explorer `PHASE3-F1458-SCHEDULE-IMPORT-SCOPE-20261025-EXP-01`,
 test map `PHASE3-F1458-SCHEDULE-IMPORT-TEST-MAP-20261025-EXP-02`, and
 Investigator `PHASE3-F1458-SCHEDULE-IMPORT-ERROR-RESEARCH-20261025-INV-01`
 support the accepted boundary. Tester
 `PHASE3-F1458-SCHEDULE-IMPORT-VERIFY-20261025-TST-01` independently verified
-and accepted F1458; its local commit is pending, and F1459 is next. F1457 is
+and accepted F1458. It is committed locally as
+`b968a9d2f93016ac03c1df9af8704ed5854ef2c2` and is not pushed. F1457 is
 committed locally as
 `2ccba709122ae44a246302bdf8dab8d6a179e3cb` and is not pushed.
 
@@ -4177,3 +4178,58 @@ passed.
 Source-review-only gaps: schedule-import commit-failure rollback and the
 checked rollback-failure branch were not induced. The optional workbook case
 was skipped, and no full suite or other-platform build was run.
+
+## F1459 — ClassTransferRepository structured errors — independently verified — 2026-10-25
+
+Discovery is complete: Explorer `PHASE3-F1459-CLASS-TRANSFER-SCOPE-20261025-EXP-01`,
+test map `PHASE3-F1459-CLASS-TRANSFER-TEST-MAP-20261025-EXP-02`, and
+Investigator `PHASE3-F1459-CLASS-TRANSFER-ERROR-RESEARCH-20261025-INV-01`
+support the accepted boundary. Tester
+`PHASE3-F1459-CLASS-TRANSFER-VERIFY-20261025-TST-01` independently verified
+and accepted F1459; its local commit is pending, and F1460 is next. F1458 is
+committed locally as
+`b968a9d2f93016ac03c1df9af8704ed5854ef2c2` and is not pushed.
+
+Convert all public fallible `ClassTransferRepository` APIs from `QString` and
+custom errors to `RepositoryResult`/`RepositoryStatus`; preserve the existing
+typed Domain result from `readSnapshot`. Detailed import errors and staged
+per-class export errors carry the repository category/diagnostic while keeping
+their current kinds, details, and stage ordering. Adapt `DataService` and
+`ClassService` legacy strings plus Next export/apply ports, preserving exact
+diagnostics and per-port recoverability.
+
+Map invalid caller selection/request/resolution to `InvalidInput`; explicit
+missing class during export to `NotFound`; malformed package/schedule data and
+unsupported generated/destination ID representations to `Validation`;
+schedule overlaps and targets absent from the current match set after review
+to `Conflict` (the API cannot distinguish stale from fabricated targets).
+SQL, cursor, transaction-start/commit, and checked rollback failures map to
+`Technical`. Do not infer `Conflict` from SQL constraint failures. Preserve
+current schema/codec boundaries; repository-level version validation remains
+out of scope. Check rollback and retain the primary diagnostic.
+
+Preserve export-batch fallback, staged-failure precedence, selected
+class/teacher order, wide teacher IDs and `-1` legacy projection, error
+staging, import replace/skip/no-op behavior, full snapshot and transaction
+atomicity, write order, and exact package schema/version handling in the codec.
+`readSnapshot` remains typed. ClassTransfer direct SQL/writers are in scope;
+other repositories, schema, and codec are outside this category migration.
+
+The full affected-target build succeeded and `git diff --check` passed. With
+`QT_QPA_PLATFORM=offscreen`, five of six focused CTests passed: codec parity,
+apply-package adapter, apply port, export query, and export source. Apply-port
+tests passed all 20 cases, including stale-target `Conflict`, malformed
+schedule `Validation`, transaction-start failure, and commit diagnostic plus
+rollback.
+
+`ClassMngrClassTransferTests` ran 421 cases: 420 passed and one failed in
+`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`
+(`class_transfer_tests.cpp:5624`): actual `Keep local: New Teacher`, expected
+`Keep local: Romanized One`. Earlier source exploration locates this in the
+teacher-profile fallback UI path, outside the changed repository export/apply
+methods. There is no same-revision baseline; the failure is not attributed as
+pre-existing or to F1459.
+
+Source-review-only gaps: successful scalar fallback, malformed batch-count /
+order recovery, export commit/rollback injection, and assertions for every
+legacy conversion. No full suite or cross-platform verification was run.

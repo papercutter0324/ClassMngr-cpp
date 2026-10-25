@@ -242,7 +242,7 @@ void ClassTransferExportCodecParityTests::failurePrecedence()
     if (scenario == 7) QVERIFY(fixture.sql(QStringLiteral("DROP TABLE roster_data")));
     auto legacy = fixture.services.dataService()->databaseSession()->classTransferRepository()->buildPackage(ids);
     auto actual = exportJson(fixture.services, ids);
-    QVERIFY(!legacy); QVERIFY(!actual); QCOMPARE(actual.error(), legacy.error());
+    QVERIFY(!legacy); QVERIFY(!actual); QCOMPARE(actual.error(), legacy.error().diagnostic);
     if (scenario == 4) QVERIFY(!actual.error().contains(QStringLiteral("selection")));
     if (scenario == 5) QVERIFY(actual.error().contains(QStringLiteral("speaking evaluation rows")));
     if (scenario == 6) QVERIFY(!actual.error().contains(QStringLiteral("selection")));

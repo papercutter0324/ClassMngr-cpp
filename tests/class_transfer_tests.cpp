@@ -6027,7 +6027,7 @@ void ClassTransferTests::typedApplyRevalidatesStaleTeacherAndMakesNoWrites()
     QVERIFY2(before && changesBefore, qPrintable(error));
     const auto result = service.databaseSession()->classTransferRepository()->importClasses(*package, choices);
     QVERIFY(!result);
-    QCOMPARE(result.error(), QStringLiteral("A selected teacher is not one of the inferred matches."));
+    QCOMPARE(result.error().diagnostic, QStringLiteral("A selected teacher is not one of the inferred matches."));
     const auto after = persistedDatabaseSnapshot(database, &error);
     const auto changesAfter = sqliteTotalChanges(database, &error);
     QVERIFY2(after && changesAfter, qPrintable(error));

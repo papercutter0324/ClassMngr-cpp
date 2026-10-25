@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/result.h"
 #include "data/repositories/class_info_repository.h"
+#include "data/repositories/repository_error.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_transfer.h"
 #include "next/application/class_transfer_apply_request.h"
@@ -12,6 +12,7 @@
 #include <QSqlDatabase>
 
 #include <expected>
+#include <optional>
 #include <utility>
 
 // Owning staged export reads. Errors remain attached to their original read
@@ -22,11 +23,11 @@ struct ClassTransferExportSourceClass
     int selectedIndex = -1;
     QString name;
     ClassTransferExportClassInfoReadRecord info;
-    QString infoError;
+    std::optional<RepositoryError> infoError;
     Roster roster;
-    QString rosterError;
+    std::optional<RepositoryError> rosterError;
     QList<ClassTransferEvaluation> evaluations;
-    QString evaluationError;
+    std::optional<RepositoryError> evaluationError;
     qint64 teacherId = -1;
     bool evaluationAttempted = false;
 };
@@ -37,9 +38,9 @@ struct ClassTransferExportSource
     QList<ClassTransferExportSourceClass> classes;
     QList<qint64> teacherIds;
     QHash<qint64, TeacherProfileReadRecord> teachersById;
-    QHash<qint64, QString> teacherErrorsById;
-    QString teacherBatchError;
-    QString selectionOrReadError;
+    QHash<qint64, RepositoryError> teacherErrorsById;
+    std::optional<RepositoryError> teacherBatchError;
+    std::optional<RepositoryError> selectionOrReadError;
 };
 
 struct ClassTransferImportError
@@ -52,16 +53,40 @@ struct ClassTransferImportError
 
     Kind kind = Kind::RepositoryFailure;
     QString message;
+    RepositoryError repositoryError;
 
-    // Ordinary repository failures keep their existing string-only behavior.
+    // Keep the established diagnostic text available to legacy callers.
     ClassTransferImportError(QString failureMessage)
-        : message(std::move(failureMessage))
+        : ClassTransferImportError(
+              Kind::RepositoryFailure,
+              RepositoryError{std::move(failureMessage)}
+              )
+    {
+    }
+
+    ClassTransferImportError(RepositoryError failure)
+        : ClassTransferImportError(
+              Kind::RepositoryFailure,
+              std::move(failure)
+              )
     {
     }
 
     ClassTransferImportError(Kind failureKind, QString failureMessage)
+        : ClassTransferImportError(
+              failureKind,
+              RepositoryError{std::move(failureMessage)}
+              )
+    {
+    }
+
+    ClassTransferImportError(
+        Kind failureKind,
+        RepositoryError failure
+        )
         : kind(failureKind),
-          message(std::move(failureMessage))
+          message(failure.diagnostic),
+          repositoryError(std::move(failure))
     {
     }
 };
@@ -79,15 +104,15 @@ public:
 
     // Commits only a successful read snapshot; staged failures roll back and
     // remain available to callers for the existing per-class error replay.
-    [[nodiscard]] Result<ClassTransferExportSource> readExportSource(
+    [[nodiscard]] RepositoryResult<ClassTransferExportSource> readExportSource(
         const QList<int>& classIds
         );
 
-    [[nodiscard]] Result<ClassTransferPackage> buildPackage(
+    [[nodiscard]] RepositoryResult<ClassTransferPackage> buildPackage(
         const QList<int>& classIds
         );
 
-    [[nodiscard]] Result<ClassImportPreview> previewImport(
+    [[nodiscard]] RepositoryResult<ClassImportPreview> previewImport(
         const ClassTransferPackage& package
         );
 
@@ -97,18 +122,18 @@ public:
         const ClassMngr::Next::Application::ClassTransferPreviewRequest& request
         ) const override;
 
-    [[nodiscard]] Result<ClassImportSummary> importClasses(
+    [[nodiscard]] RepositoryResult<ClassImportSummary> importClasses(
         const ClassTransferPackage& package,
         const ClassImportPlan& plan
         );
 
-    [[nodiscard]] Result<ClassImportSummary> importClasses(
+    [[nodiscard]] RepositoryResult<ClassImportSummary> importClasses(
         const ClassTransferPackage& package,
         const ClassMngr::Next::Application::ClassTransferApplyRequest& request
         );
 
-    // Retains the failure origin needed by typed callers while the established
-    // importClasses overloads continue to expose their QString errors.
+    // Retains the failure origin while importClasses exposes the same
+    // diagnostic through its structured repository error.
     [[nodiscard]] ClassTransferDetailedImportResult
     importClassesWithFailureDetails(
         const ClassTransferPackage& package,

@@ -6,6 +6,7 @@
 #include "data/repositories/class_transfer_legacy_package_adapter.h"
 #include "domain/validation/class_transfer_package_validator.h"
 #include "next/application/class_transfer_apply.h"
+#include "next/platform/repository_error_code.h"
 
 #include <QByteArray>
 #include <QString>
@@ -83,14 +84,11 @@ public:
                 );
             if (!imported)
             {
+                const RepositoryError& repositoryError =
+                    imported.error().repositoryError;
                 const QByteArray message = imported.error().message.toUtf8();
-                const Domain::ErrorCode code =
-                    imported.error().kind
-                        == ClassTransferImportError::Kind::ScheduleConflict
-                    ? Domain::ErrorCode::Conflict
-                    : Domain::ErrorCode::Technical;
                 return failure(
-                    code,
+                    repositoryDomainErrorCode(repositoryError.code),
                     std::string(message.constData(),
                         static_cast<std::size_t>(message.size())),
                     true

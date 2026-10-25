@@ -29,6 +29,7 @@ class ClassTransferExportSourceTests : public QObject
     Q_OBJECT
 private slots:
     void successfulSourceHasEveryRequiredStageAndSanitizedProjection();
+    void reportsTypedSelectionAndLookupFailures();
     void rosterWidthAdapterPreservesSignedIntsAndOrder();
     void outOfRangeIntegerRosterWidthFailsTheRosterStage();
     void malformedRosterRowIndexReturnsEstablishedReadError();
@@ -69,6 +70,45 @@ void ClassTransferExportSourceTests::successfulSourceHasEveryRequiredStageAndSan
     auto legacy = repository->buildPackage({value}); QVERIFY(legacy);
     QCOMPARE(legacy->classes[0].info.classId, -1); QCOMPARE(legacy->classes[0].info.teacherId, -1);
     auto database = services.workspaceStore()->database(); QVERIFY(database.transaction()); QVERIFY(database.rollback());
+}
+void ClassTransferExportSourceTests::reportsTypedSelectionAndLookupFailures()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
+    auto* repository = services.workspaceStore()->classTransferRepository();
+    QVERIFY(repository);
+
+    const auto emptySelection = repository->buildPackage({});
+    QVERIFY(!emptySelection);
+    QCOMPARE(emptySelection.error().code, RepositoryErrorCode::InvalidInput);
+    QCOMPARE(emptySelection.error().diagnostic, QStringLiteral("No classes were selected."));
+
+    const auto invalidSelection = repository->buildPackage({0});
+    QVERIFY(!invalidSelection);
+    QCOMPARE(invalidSelection.error().code, RepositoryErrorCode::InvalidInput);
+    QCOMPARE(invalidSelection.error().diagnostic,
+        QStringLiteral("The class selection contains an invalid or duplicate class."));
+
+    const auto missingClass = repository->buildPackage({900001});
+    QVERIFY(!missingClass);
+    QCOMPARE(missingClass.error().code, RepositoryErrorCode::NotFound);
+    QVERIFY(missingClass.error().diagnostic.contains(QStringLiteral("class id 900001")));
+
+    QSqlQuery insert(services.workspaceStore()->database());
+    QVERIFY(insert.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Duplicate selection')")));
+    const int classId = insert.lastInsertId().toInt();
+    const auto duplicateSelection = repository->buildPackage({classId, classId});
+    QVERIFY(!duplicateSelection);
+    QCOMPARE(duplicateSelection.error().code, RepositoryErrorCode::InvalidInput);
+    QCOMPARE(duplicateSelection.error().diagnostic,
+        QStringLiteral("The class selection contains an invalid or duplicate class."));
+
+    Platform::ApplicationServicesClassTransferExportSourceReadPort port(services);
+    const auto mappedEmptySelection = ClassTransferExportQuery(port).execute({});
+    QVERIFY(!mappedEmptySelection);
+    QCOMPARE(mappedEmptySelection.error().code, Domain::ErrorCode::InvalidInput);
 }
 void ClassTransferExportSourceTests::rosterWidthAdapterPreservesSignedIntsAndOrder()
 {
@@ -138,7 +178,7 @@ void ClassTransferExportSourceTests::outOfRangeIntegerRosterWidthFailsTheRosterS
     QCOMPARE(source.value().classes.size(), std::size_t(1));
     const auto& roster = source.value().classes.front().roster;
     QCOMPARE(roster.state(), ClassExportStageState::Error);
-    QCOMPARE(roster.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(roster.error().code, Domain::ErrorCode::Validation);
     const QString diagnostic = QString::fromStdString(roster.error().message);
     QVERIFY2(
         diagnostic.contains(QStringLiteral("class id %1").arg(classId))
@@ -149,7 +189,7 @@ void ClassTransferExportSourceTests::outOfRangeIntegerRosterWidthFailsTheRosterS
 
     const auto exported = ClassTransferExportQuery(port).execute({{id(classId)}});
     QVERIFY(!exported);
-    QCOMPARE(exported.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(exported.error().code, Domain::ErrorCode::Validation);
     QVERIFY(QString::fromStdString(exported.error().message).contains(
         QStringLiteral("width"), Qt::CaseInsensitive));
 }
@@ -757,6 +797,17 @@ void ClassTransferExportSourceTests::stagedErrorRollsBackAndKeepsDownstreamNotAt
     QVERIFY(sql.exec(QStringLiteral("INSERT INTO classes(name) VALUES('First')"))); const int first = sql.lastInsertId().toInt();
     QVERIFY(sql.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Second')"))); const int second = sql.lastInsertId().toInt();
     QVERIFY(sql.exec(QStringLiteral("DROP TABLE class_times")));
+    auto* repository = services.workspaceStore()->classTransferRepository();
+    QVERIFY(repository);
+    const auto typedSource = repository->readExportSource({first, second, -1});
+    QVERIFY(typedSource);
+    QCOMPARE(typedSource->classes.size(), 2);
+    QVERIFY(typedSource->classes.front().infoError.has_value());
+    QCOMPARE(typedSource->classes.front().infoError->code,
+        RepositoryErrorCode::Technical);
+    QVERIFY(typedSource->selectionOrReadError.has_value());
+    QCOMPARE(typedSource->selectionOrReadError->code,
+        RepositoryErrorCode::InvalidInput);
     Platform::ApplicationServicesClassTransferExportSourceReadPort port(services);
     auto source = port.readSource({{id(first), id(second), id(-1)}}); QVERIFY(source);
     QCOMPARE(source.value().classes.size(), std::size_t(2));

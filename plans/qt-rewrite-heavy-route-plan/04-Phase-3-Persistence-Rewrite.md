@@ -54,8 +54,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `86667de56547273c8897198470e9c271a583035c` and is not pushed. F1457
   SpeakingEvalRepository is committed locally as
   `2ccba709122ae44a246302bdf8dab8d6a179e3cb` and is not pushed. F1458
-  ScheduleImportRepository is independently verified and accepted; its local
-  commit is pending, and F1459 is next. Evidence and limits are in
+  ScheduleImportRepository is committed locally as
+  `b968a9d2f93016ac03c1df9af8704ed5854ef2c2` and is not pushed. F1459
+  ClassTransferRepository is independently verified and accepted; its local
+  commit is pending, and F1460 is next. Evidence and limits are in
   [progress log](04-Phase-3-Progress-Log.md); the queue is in the
   [current batch tracker](Current-Slice-Batches.md).
 
@@ -72,7 +74,7 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
-## Latest Progress Update — F1458 ScheduleImportRepository verified — 2026-10-25
+## Latest Progress Update — F1459 ClassTransferRepository verified — 2026-10-25
 
 F1451 is committed locally as `f8261f96cb57f2c7baf41941be2636f1014fd9a4`
 and is not pushed. F1452 is committed locally as
@@ -86,8 +88,10 @@ CalendarEventRepository is committed locally as
 `86667de56547273c8897198470e9c271a583035c` and is not pushed. F1457
 SpeakingEvalRepository is committed locally as
 `2ccba709122ae44a246302bdf8dab8d6a179e3cb` and is not pushed. F1458
-ScheduleImportRepository is independently verified and accepted; its local
-commit is pending, and F1459 is next. Evidence and limits are in the
+ScheduleImportRepository is committed locally as
+`b968a9d2f93016ac03c1df9af8704ed5854ef2c2` and is not pushed. F1459
+ClassTransferRepository is independently verified and accepted; its local
+commit is pending, and F1460 is next. Evidence and limits are in the
 [progress log](04-Phase-3-Progress-Log.md); the ordered queue is in the
 [current batch tracker](Current-Slice-Batches.md).
 
