@@ -356,21 +356,28 @@ Batch 4 was pushed successfully to `origin/Qt-Rewrite` in two commits, from
 `ea46415a93e8285e4cb1f81e9aec5b79f7533286`: F1487
 `f86c79fc81a2b2fd34c6993509b4cd314aacaec1` and F1488
 `ea46415a93e8285e4cb1f81e9aec5b79f7533286`. Local `HEAD` and
-`origin/Qt-Rewrite` match at the new tip. Actions API for this exact head found
-zero runs and zero check-runs; combined status is pending. No workflow result is
-claimed. F1483/F1486 Windows/Linux native results remain required and open; the
+`origin/Qt-Rewrite` matched at the new tip at that time. Actions API for this
+exact head found zero runs and zero check-runs; combined status is pending. No
+workflow result is claimed. F1483/F1486 Windows/Linux native results remain required and open; the
 user's direction on extending workflow scope to `main` is still pending.
 
-## F1490 — Prepare fresh push trigger receipt — planned — 2026-10-25
+## F1490 — Fresh push trigger receipt — startup failure — 2026-10-25
 
-Explorer's read-only check at 2026-10-25 18:11:18 UTC confirmed remote
-`Qt-Rewrite` head `1579fa7d9ba6e012969219d733d9cacc613ccce2`; local `HEAD` and
-`origin/Qt-Rewrite` match. Actions API returned zero runs and zero check-runs
-for this exact head, with combined status pending. The last branch Actions run
-was 2026-10-18; re-enabling Actions did not create a run for the already-pushed
-head. The workflow remains `on.push` filtered to `Qt-Rewrite`, with no dispatch,
-and is absent from default `main`. A fresh push is required. F1490 is the small
-status/trigger receipt commit intended to create that push event; no cause for
-the absent run is established. User direction on extending workflow scope to
-`main` remains pending. F1483/F1486 native Windows/Linux results remain open;
-Phase 4 remains In progress.
+F1490's push at `fd9ee27a955bce7f4a5b13df33245a25a4e1101b` created Actions run
+`40220179197` for `.github/workflows/phase4-resource-layout.yml`, event `push`.
+Current local `HEAD` and `origin/Qt-Rewrite` are at that exact SHA.
+It ended `startup_failure` at 18:13:01 UTC with zero jobs, checks, or artifacts;
+log requests returned 404. The connected API exposes no exact cause or full-run
+rerun tool. With zero jobs, failed-job rerun is inapplicable. The previous
+branch run was October 18; re-enabling Actions had not created a run for the
+already-pushed `1579fa7d` head.
+
+Static review at the F1490 SHA passed Ruby YAML parsing and workflow-structure
+checks, with no evident YAML defect; a GitHub-specific linter was unavailable.
+CMake research confirms `-G Visual Studio 17 2022` is a supported override for
+the Visual Studio 18 preset, not a generator conflict. The user reports the
+issue solved and requests a retry. Workflow remains `on.push` filtered to
+`Qt-Rewrite`, absent from default `main`, with no dispatch. F1492 is planned as
+a small documentation receipt commit/push to create a fresh push event. The
+cause of the startup failure remains unknown. F1483/F1486 native Windows/Linux
+results remain required and open; Phase 4 remains In progress.

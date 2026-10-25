@@ -80,7 +80,7 @@ Batch 4 advanced `origin/Qt-Rewrite` from
 `ea46415a93e8285e4cb1f81e9aec5b79f7533286` in two commits: F1487
 `f86c79fc81a2b2fd34c6993509b4cd314aacaec1`, then F1488
 `ea46415a93e8285e4cb1f81e9aec5b79f7533286`. Local `HEAD` and
-`origin/Qt-Rewrite` match at `ea46415a93e8285e4cb1f81e9aec5b79f7533286`.
+`origin/Qt-Rewrite` matched at that tip at the time of the push.
 Actions API returned zero runs and zero check-runs for this exact head; combined
 status is pending. No run is claimed.
 
@@ -92,16 +92,25 @@ the workflow file is absent from default `main`, and no dispatch tool is
 available. The cause of missing runs is unknown. User direction on extending
 workflow scope to `main` remains pending; Phase 4 remains In progress.
 
-## F1490 — Fresh push trigger receipt — planned
+## F1490 — Fresh push trigger receipt — startup failure
 
-Explorer's read-only check at 2026-10-25 18:11:18 UTC confirmed current remote
-`Qt-Rewrite` head `1579fa7d9ba6e012969219d733d9cacc613ccce2`; local `HEAD` and
-`origin/Qt-Rewrite` match. Actions API returned zero runs and zero check-runs
-for this exact head; combined status is pending. The last branch Actions run
-was 2026-10-18, and re-enabling Actions did not create a run for the already-
-pushed head. The workflow remains `on.push` filtered to `Qt-Rewrite`, with no
-dispatch and no copy on default `main`; a fresh push is required. F1490 is the
-small status/trigger receipt commit intended to generate that event. The cause
-of missing runs is unknown, and user direction on extending scope to `main`
-remains pending. F1483/F1486 native Windows/Linux results are still open; Phase
-4 remains In progress.
+F1490's push at `fd9ee27a955bce7f4a5b13df33245a25a4e1101b` created Actions run
+`40220179197` for `.github/workflows/phase4-resource-layout.yml` (event `push`).
+Current local `HEAD` and `origin/Qt-Rewrite` are at that exact SHA.
+It ended `startup_failure` at 18:13:01 UTC with zero jobs, checks, or artifacts;
+log requests returned 404. The connected API exposes no exact cause or full-run
+rerun; with zero jobs, failed-job rerun is inapplicable. Before this push, the
+last branch run was October 18, and re-enabling Actions did not create a run for
+already-pushed head `1579fa7d`. Static Ruby YAML/structure review at the F1490
+SHA found no evident defect; a GitHub-specific linter was unavailable. CMake
+research confirms `-G Visual Studio 17 2022` is supported for the Visual Studio
+18 preset, so it is not a generator conflict. The issue is reported solved and
+the user requests a retry. Workflow remains `on.push` filtered to `Qt-Rewrite`,
+absent from default `main`, with no dispatch. The cause of startup failure is
+unknown.
+
+## F1492 — Fresh push retry receipt — planned
+
+F1492 is the small documentation receipt commit/push intended to create a fresh
+push event. The user reports the issue solved and requests the retry. F1483 and
+F1486 native Windows/Linux results remain open; Phase 4 remains In progress.

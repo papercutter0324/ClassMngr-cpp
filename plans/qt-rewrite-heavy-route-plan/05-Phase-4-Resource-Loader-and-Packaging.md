@@ -63,15 +63,19 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `f86c79fc81a2b2fd34c6993509b4cd314aacaec1`, then F1488
   `ea46415a93e8285e4cb1f81e9aec5b79f7533286`. Current `Qt-Rewrite`, local
   `HEAD`, and `origin/Qt-Rewrite` are at
-  `1579fa7d9ba6e012969219d733d9cacc613ccce2`. Actions API returned zero runs
-  and zero check-runs for this head; combined status is pending. The last
-  branch Actions run was 2026-10-18; re-enabling Actions did not create a run
-  for this already-pushed head. Workflow remains `on.push` filtered to
-  `Qt-Rewrite`; no dispatch is available, and the workflow is absent from
-  default `main`, so a fresh push is required. F1490 is the small status/trigger
-  receipt commit intended to generate that event. The cause of missing runs is
-  unknown; user direction on extending scope to `main` remains pending. F1483
-  and F1486 native results remain unverified. A standard macOS Debug run of six targeted F1486
+  `fd9ee27a955bce7f4a5b13df33245a25a4e1101b`. F1490's push created Actions
+  run `40220179197` for `.github/workflows/phase4-resource-layout.yml` (event
+  push), which ended `startup_failure` at 18:13:01 UTC with zero jobs, checks,
+  or artifacts; logs returned 404. The connected API exposes neither the exact
+  cause nor full-run rerun; zero jobs makes failed-job rerun inapplicable.
+  Static Ruby YAML/structure review found no evident defect; a GitHub-specific
+  linter is unavailable. CMake confirms `-G Visual Studio 17 2022` is a
+  supported override, not a generator conflict. The issue was reported solved;
+  F1492 is the documentation receipt commit/push planned to generate a fresh
+  push event. Workflow remains `on.push` filtered to `Qt-Rewrite`, absent from
+  default `main`, with no dispatch. The cause remains unknown; user direction
+  on extending scope to `main` is pending. F1483/F1486 native results remain
+  unverified. A standard macOS Debug run of six targeted F1486
   CTests initially passed 5/6 because `ClassMngrNextResourceLoaderTests` had
   stale counts. Explorer confirmed F1482's four `excluded_v2` records explain
   198→194 catalog records. F1488 corrected assertions to 194 total (192
