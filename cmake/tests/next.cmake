@@ -4648,6 +4648,21 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformQtPdfSessionRelease
+    SOURCES
+        tests/next_platform_qtpdf_session_release_tests.cpp
+    COMPILE_DEFINITIONS
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Pdf
+        Qt6::Test
+    DEPENDENCIES
+        ClassMngrNextResourcePackage
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformQtJobWorker
     SOURCES
         tests/next_platform_qt_job_worker_tests.cpp
