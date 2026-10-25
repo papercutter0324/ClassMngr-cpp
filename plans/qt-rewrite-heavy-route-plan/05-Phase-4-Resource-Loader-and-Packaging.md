@@ -43,7 +43,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `8ca1ddc5`; F1472, resource diagnostics, is committed as `9ce7e35c`; F1473,
   document catalog metadata, is accepted and committed as `2084cb4f`; F1474,
   loader-owned document content handles, is accepted and committed as
-  `34926f4b`; F1475 is active. F1469 is committed as `d282e7f1`.
+  `34926f4b`; F1475, isolated QtPdf session-release verification, is accepted
+  and committed as `8a2163d2`; F1476 is active. F1469 is committed as
+  `d282e7f1`.
   Batch 1
   (F1464–F1468) was pushed to `origin`; see the [Phase 4 progress log](05-Phase-4-Progress-Log.md)
   for the receipt. F1469 resolves
@@ -56,7 +58,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `DocumentContentResourcePort` is not wired to legacy UI: `NavigationController`
   continues to use `LegacyDocumentContentResourcePort` because the v2 Resources
   component is excluded from the default legacy install. Preserve the legacy
-  viewer path until consumer migration; F1475 owns QtPdf integration.
+  viewer path until consumer migration. F1475 verifies QtPdf stream release
+  in an isolated test; it does not wire the port into the production viewer.
   Theme/font/icon/campus/report UI consumers stay with their Phase 5–7
   migrations. See the [inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md)
   and [current batch tracker](Current-Slice-Batches.md).

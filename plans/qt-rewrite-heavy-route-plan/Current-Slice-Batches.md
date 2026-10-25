@@ -41,11 +41,15 @@ legacy oracle paths in Phase 4.
    reference. Legacy `NavigationController` remains on its existing adapter
    until consumer migration because the v2 Resources component is excluded
    from the default install.
-7. **F1475 — Verify PDF session release at the new boundary (active).** Cover
-   open, close, replacement/reopen, and owner release of a QtPdf document and
-   handle in an isolated integration test.
-8. **F1476 — Scope Office/report inputs to operations.** Preserve temporary
-   workspace cleanup and do not preload PowerPoint bodies.
+7. **F1475 — Verify PDF session release at the new boundary.** Accepted and
+   committed as `8a2163d2`. Its isolated QtPdf test verifies document close
+   before stream close, explicit handle release, and reopen with a fresh
+   ViewerSession generation. It does not wire the port into the production
+   viewer. Qt Core/QtPdf cache versions differ; configuration, build, link,
+   and focused test succeeded, but cross-platform compatibility remains
+   unverified.
+8. **F1476 — Scope Office/report inputs to operations (active).** Preserve
+   temporary workspace cleanup and do not preload PowerPoint bodies.
 9. **F1477 — Define resource failure behavior.** Cover missing, corrupt, and
    type-mismatched files/catalog entries with no pack fallback.
 10. **F1478 — Verify type-specific lazy loads.** Exercise text, JSON, image,

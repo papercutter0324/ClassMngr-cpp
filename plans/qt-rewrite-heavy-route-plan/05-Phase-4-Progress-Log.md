@@ -32,7 +32,8 @@ The optional export reference is not opened at primary selection. The port is
 not wired to legacy UI: `NavigationController` continues to use
 `LegacyDocumentContentResourcePort` because the Phase 4 v2 Resources component
 from F1467 is excluded from the default legacy install. Preserve that legacy
-viewer path until consumer migration; QtPdf integration belongs to F1475.
+viewer path until consumer migration. F1475 verifies QtPdf release in an
+isolated test and does not wire the port into the production viewer.
 
 The initial attempt to connect the new port to legacy navigation failed three
 parity cases because the default install has no v2 resources. Keeping the port
@@ -52,3 +53,24 @@ missing body, and parser rejection of `expected_type` inconsistent with the
 The full PageManager suite stalled in `registeredPagesAreCreatedOnFirstUse`;
 the affected PDF cases passed individually. Windows/Linux were not run, and
 `git diff --check` passed. F1474 is committed as `34926f4b`.
+
+## F1475 — QtPdf session-release verification — accepted — 2026-10-25
+
+`NextPlatformQtPdfSessionRelease` exercises the F1474 loader-owned stream only
+in an isolated test. It loads the selected PDF from the borrowed stream device,
+waits for QtPdf Ready/page count, verifies that closing the document reaches
+Null while the stream remains open, then explicitly closes/releases the first
+handle and opens again with a fresh handle and `ViewerSession` generation.
+Destroying the active owner verifies `document-null-while-stream-open` before
+`stream-about-to-close`. This does not wire the port into the production
+viewer; F1474's independent Next boundary and retained legacy adapter remain
+unchanged.
+
+The standard `build/macos-clang-debug` incremental target succeeded. Independent
+build review saw the package catalog regenerate and the test target remain up
+to date; focused CTest passed 1/1, and `git diff --check` passed. The full suite
+and Windows/Linux were not run. Existing cache metadata reports Qt Core 6.12.0
+and QtPdf 6.140.0; configure, build, link, and test succeeded without an
+observed compatibility failure. The metadata mismatch remains unresolved, and
+fresh cross-platform compatibility is not established. F1475 is committed as
+`8a2163d2`.
