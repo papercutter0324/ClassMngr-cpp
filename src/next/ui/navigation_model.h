@@ -6,6 +6,7 @@
 #include <QStringList>
 
 #include <expected>
+#include <functional>
 #include <optional>
 #include <vector>
 
@@ -112,6 +113,21 @@ struct NavigationPageMetadata final
     QStringList requiredPermissions;
 };
 
+struct NavigationHistoryActionState final
+{
+    bool backEnabled = false;
+    bool forwardEnabled = false;
+};
+
+// Derives the value state for history actions from history position and
+// whether each adjacent target is currently available. The availability
+// predicate is supplied by the owning navigation policy.
+[[nodiscard]] NavigationHistoryActionState deriveNavigationHistoryActionState(
+    const std::vector<PageId>& history,
+    std::optional<std::size_t> historyIndex,
+    const std::function<bool(const PageId&)>& targetIsAvailable
+    );
+
 // Stores the sidebar graph, descriptor-derived route metadata, access context,
 // selection, and committed page-ID history. It owns no widgets or page
 // instances; ApplicationShell performs guard and PageHost activation before
@@ -145,8 +161,9 @@ public:
     [[nodiscard]] std::optional<PageId> selectedPageId() const;
     [[nodiscard]] const std::vector<PageId>& history() const noexcept;
     [[nodiscard]] std::optional<std::size_t> historyIndex() const noexcept;
-    [[nodiscard]] bool canGoBack() const noexcept;
-    [[nodiscard]] bool canGoForward() const noexcept;
+    [[nodiscard]] NavigationHistoryActionState historyActionState() const;
+    [[nodiscard]] bool canGoBack() const;
+    [[nodiscard]] bool canGoForward() const;
     [[nodiscard]] std::optional<PageId> backTarget() const;
     [[nodiscard]] std::optional<PageId> forwardTarget() const;
     [[nodiscard]] Application::WorkspaceLifecycleState workspaceState() const noexcept;

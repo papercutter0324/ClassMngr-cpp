@@ -5,7 +5,7 @@ Phase 5 completed on the mandatory Heavy route at implementation head
 
 ## Phase 6 — Batch 1 (active)
 
-F1514–F1517 are complete. F1518 is current. Continue in order, commit each
+F1514–F1518 are complete. F1519 is current. Continue in order, commit each
 accepted slice, then push the batch. Start Batch 2 discovery when F1526 starts
 because it is the second-to-last candidate.
 
@@ -36,9 +36,14 @@ because it is the second-to-last candidate.
    Keep missing/duplicate/unavailable bus errors distinct from operation
    errors; recheck availability during synchronous dispatch. Checked state and
    navigation remain outside the bus; feature command handlers migrate later.
-5. **F1518 — Action presentation (current):** derive enabled state from application state
-   and permissions.
-6. **F1519 — Semantic prompt service:** message/choice/unsaved-change/named-
+5. **F1518 — Action presentation (complete):** derive enabled state for the
+   existing Back/Forward shell actions from navigation history, workspace
+   visibility, and explicit permission state. Disable an action when its
+   history target is no longer visible or permitted, and refresh after route
+   or access-context changes. Keep a value-only state rule with a thin shell
+   presenter; no generic QAction registry or checked state is needed until
+   feature actions migrate. CommandBus and navigation remain separate.
+6. **F1519 — Semantic prompt service (current):** message/choice/unsaved-change/named-
    action contracts with a value-only Qt automation adapter.
 7. **F1520 — File dialog service:** typed request/response adapter and current
    directory, filter, overwrite, default-action, and platform behavior.

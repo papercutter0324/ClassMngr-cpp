@@ -391,9 +391,11 @@ std::optional<QIcon> ApplicationShell::navigationIconFor(
 
 void ApplicationShell::synchronizeHistoryControls()
 {
-    const bool configured = m_navigationModel.has_value();
-    m_backButton->setEnabled(configured && m_navigationModel->canGoBack());
-    m_forwardButton->setEnabled(configured && m_navigationModel->canGoForward());
+    const NavigationHistoryActionState state = m_navigationModel
+        ? m_navigationModel->historyActionState()
+        : NavigationHistoryActionState{};
+    m_backButton->setEnabled(state.backEnabled);
+    m_forwardButton->setEnabled(state.forwardEnabled);
 }
 
 void ApplicationShell::closeEvent(QCloseEvent* event)

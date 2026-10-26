@@ -34,6 +34,27 @@ bool validAvailability(const NavigationWorkspaceAvailability availability)
 
 }  // namespace
 
+NavigationHistoryActionState deriveNavigationHistoryActionState(
+    const std::vector<PageId>& history,
+    const std::optional<std::size_t> historyIndex,
+    const std::function<bool(const PageId&)>& targetIsAvailable
+    )
+{
+    if (!historyIndex || *historyIndex >= history.size())
+    {
+        return {};
+    }
+
+    const bool backEnabled = *historyIndex > 0
+        && targetIsAvailable(history[*historyIndex - 1]);
+    const bool forwardEnabled = *historyIndex + 1 < history.size()
+        && targetIsAvailable(history[*historyIndex + 1]);
+    return NavigationHistoryActionState{
+        .backEnabled = backEnabled,
+        .forwardEnabled = forwardEnabled
+    };
+}
+
 NavigationNode NavigationNode::group(
     QString id,
     QString label,
@@ -370,10 +391,21 @@ std::optional<PageId> NavigationModel::currentPageId() const { return m_currentP
 std::optional<PageId> NavigationModel::selectedPageId() const { return m_currentPageId; }
 const std::vector<PageId>& NavigationModel::history() const noexcept { return m_history; }
 std::optional<std::size_t> NavigationModel::historyIndex() const noexcept { return m_historyIndex; }
-bool NavigationModel::canGoBack() const noexcept { return m_historyIndex && *m_historyIndex > 0; }
-bool NavigationModel::canGoForward() const noexcept
+NavigationHistoryActionState NavigationModel::historyActionState() const
 {
-    return m_historyIndex && *m_historyIndex + 1 < m_history.size();
+    return deriveNavigationHistoryActionState(
+        m_history,
+        m_historyIndex,
+        [this](const PageId& target) { return isPageVisible(target); }
+        );
+}
+bool NavigationModel::canGoBack() const
+{
+    return historyActionState().backEnabled;
+}
+bool NavigationModel::canGoForward() const
+{
+    return historyActionState().forwardEnabled;
 }
 std::optional<PageId> NavigationModel::backTarget() const
 {

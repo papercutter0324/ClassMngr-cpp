@@ -4,6 +4,7 @@
 #include "next/ui/navigation_model.h"
 #include "next/ui/page_host.h"
 
+#include <QPushButton>
 #include <QTreeWidget>
 #include <QTreeWidgetItemIterator>
 #include <QtTest/QtTest>
@@ -212,7 +213,9 @@ private slots:
     void initTestCase();
     void orderedTreeUsesDescriptorMetadataAndValidatesReferences();
     void workspaceAndPermissionsFilterRoutesAndChooseInitialPages();
+    void historyActionStateRequiresAvailableAdjacentRoutes();
     void shellCommitsHistoryOnlyAfterGuardAndActivationSuccess();
+    void shellHistoryControlsTrackAccessRevocation();
 
 private:
     std::unique_ptr<Resources::ResourceLoader> m_loader;
@@ -383,6 +386,59 @@ void NavigationModelTests::workspaceAndPermissionsFilterRoutesAndChooseInitialPa
     QVERIFY(!openWithPermissions.isPageVisible(pageId(QStringLiteral("classes"))));
     QCOMPARE(openWithPermissions.grantedPermissionIds(),
              std::optional<QStringList>(QStringList{QStringLiteral("classes.view")}));
+}
+
+void NavigationModelTests::historyActionStateRequiresAvailableAdjacentRoutes()
+{
+    const std::vector<Ui::PageId> history{
+        pageId(QStringLiteral("campus_information")),
+        pageId(QStringLiteral("my_workspace")),
+        pageId(QStringLiteral("classes"))
+    };
+    const auto allAvailable = [](const Ui::PageId&) { return true; };
+
+    const Ui::NavigationHistoryActionState initial =
+        Ui::deriveNavigationHistoryActionState({}, std::nullopt, allAvailable);
+    QVERIFY(!initial.backEnabled);
+    QVERIFY(!initial.forwardEnabled);
+
+    const Ui::NavigationHistoryActionState available =
+        Ui::deriveNavigationHistoryActionState(history, std::size_t(1), allAvailable);
+    QVERIFY(available.backEnabled);
+    QVERIFY(available.forwardEnabled);
+
+    const QStringList withoutBackTarget{
+        QStringLiteral("my_workspace"), QStringLiteral("classes")
+    };
+    const Ui::NavigationHistoryActionState unavailableBack =
+        Ui::deriveNavigationHistoryActionState(
+            history,
+            std::size_t(1),
+            [&withoutBackTarget](const Ui::PageId& target) {
+                return withoutBackTarget.contains(target.value());
+            }
+            );
+    QVERIFY(!unavailableBack.backEnabled);
+    QVERIFY(unavailableBack.forwardEnabled);
+
+    const QStringList withoutForwardTarget{
+        QStringLiteral("campus_information"), QStringLiteral("my_workspace")
+    };
+    const Ui::NavigationHistoryActionState unavailableForward =
+        Ui::deriveNavigationHistoryActionState(
+            history,
+            std::size_t(1),
+            [&withoutForwardTarget](const Ui::PageId& target) {
+                return withoutForwardTarget.contains(target.value());
+            }
+            );
+    QVERIFY(unavailableForward.backEnabled);
+    QVERIFY(!unavailableForward.forwardEnabled);
+
+    const Ui::NavigationHistoryActionState invalidIndex =
+        Ui::deriveNavigationHistoryActionState(history, std::size_t(3), allAvailable);
+    QVERIFY(!invalidIndex.backEnabled);
+    QVERIFY(!invalidIndex.forwardEnabled);
 }
 
 void NavigationModelTests::shellCommitsHistoryOnlyAfterGuardAndActivationSuccess()
@@ -581,6 +637,171 @@ void NavigationModelTests::shellCommitsHistoryOnlyAfterGuardAndActivationSuccess
     QVERIFY(tree->currentItem() != nullptr);
     QCOMPARE(tree->currentItem()->data(0, Qt::UserRole + 1).toString(),
              QStringLiteral("campus_information"));
+}
+
+void NavigationModelTests::shellHistoryControlsTrackAccessRevocation()
+{
+    using Ui::NavigationNode;
+    using Ui::NavigationWorkspaceAvailability;
+    constexpr auto workspace = NavigationWorkspaceAvailability::WorkspaceOpen;
+    const Ui::PageId campusPage = pageId(QStringLiteral("campus_information"));
+    const Ui::PageId workspacePage = pageId(QStringLiteral("my_workspace"));
+    const Ui::PageId protectedPage = pageId(QStringLiteral("classes"));
+    const QStringList classPermission{QStringLiteral("classes.view")};
+    PageProbe campus{QStringLiteral("campus_information")};
+    PageProbe workspaceProbe{QStringLiteral("my_workspace")};
+    PageProbe protectedProbe{QStringLiteral("classes")};
+
+    Ui::ApplicationShell shell(*m_loader);
+    QVERIFY(shell.pageHost().registerPage(descriptorFor(
+        QStringLiteral("campus_information"), QStringLiteral("Campus Info"),
+        {}, {}, &campus
+        )));
+    QVERIFY(shell.pageHost().registerPage(descriptorFor(
+        QStringLiteral("my_workspace"), QStringLiteral("My Workspace"),
+        {}, {}, &workspaceProbe
+        )));
+    QVERIFY(shell.pageHost().registerPage(descriptorFor(
+        QStringLiteral("classes"), QStringLiteral("Classes"), classPermission,
+        {}, &protectedProbe
+        )));
+
+    auto configuration = shell.configureNavigation(
+        {
+            NavigationNode::page(campusPage),
+            NavigationNode::group(
+                QStringLiteral("workspace"),
+                QStringLiteral("Workspace"),
+                {
+                    NavigationNode::page(workspacePage, workspace),
+                    NavigationNode::page(protectedPage, workspace)
+                },
+                workspace
+                )
+        },
+        campusPage,
+        workspacePage,
+        Application::WorkspaceLifecycleState::Closed
+        );
+    QVERIFY(configuration);
+
+    auto* const backButton = shell.findChild<QPushButton*>(
+        QStringLiteral("classMngrNextNavigationBack")
+        );
+    auto* const forwardButton = shell.findChild<QPushButton*>(
+        QStringLiteral("classMngrNextNavigationForward")
+        );
+    QVERIFY(backButton != nullptr);
+    QVERIFY(forwardButton != nullptr);
+    QVERIFY(!backButton->isEnabled());
+    QVERIFY(!forwardButton->isEnabled());
+
+    QVERIFY(shell.navigateTo(campusPage, Ui::NavigationCause::Initial));
+    QVERIFY(!backButton->isEnabled());
+    QVERIFY(!forwardButton->isEnabled());
+
+    shell.updateNavigationAccessContext(
+        Application::WorkspaceLifecycleState::Open,
+        classPermission
+        );
+    QVERIFY(shell.navigateTo(workspacePage));
+    QVERIFY(backButton->isEnabled());
+    QVERIFY(!forwardButton->isEnabled());
+    QVERIFY(shell.navigateBack());
+    QVERIFY(!backButton->isEnabled());
+    QVERIFY(forwardButton->isEnabled());
+
+    // The forward target disappears when workspace visibility is revoked.
+    shell.updateNavigationAccessContext(
+        Application::WorkspaceLifecycleState::Closed,
+        classPermission
+        );
+    QVERIFY(!backButton->isEnabled());
+    QVERIFY(!forwardButton->isEnabled());
+    const auto stateBeforeWorkspaceRejectedForward = shell.navigationModel()->historyActionState();
+    const auto historyBeforeWorkspaceRejectedForward = shell.navigationModel()->history();
+    const auto indexBeforeWorkspaceRejectedForward = shell.navigationModel()->historyIndex();
+    const auto currentBeforeWorkspaceRejectedForward = shell.navigationModel()->currentPageId();
+    const auto selectedBeforeWorkspaceRejectedForward = shell.navigationModel()->selectedPageId();
+    const auto activeBeforeWorkspaceRejectedForward = shell.pageHost().activePageKey();
+    QVERIFY(!shell.navigateForward());
+    QCOMPARE(shell.navigationModel()->historyActionState().backEnabled,
+             stateBeforeWorkspaceRejectedForward.backEnabled);
+    QCOMPARE(shell.navigationModel()->historyActionState().forwardEnabled,
+             stateBeforeWorkspaceRejectedForward.forwardEnabled);
+    QCOMPARE(shell.navigationModel()->history(), historyBeforeWorkspaceRejectedForward);
+    QCOMPARE(shell.navigationModel()->historyIndex(), indexBeforeWorkspaceRejectedForward);
+    QCOMPARE(shell.navigationModel()->currentPageId(), currentBeforeWorkspaceRejectedForward);
+    QCOMPARE(shell.navigationModel()->selectedPageId(), selectedBeforeWorkspaceRejectedForward);
+    QCOMPARE(shell.pageHost().activePageKey(), activeBeforeWorkspaceRejectedForward);
+
+    shell.updateNavigationAccessContext(
+        Application::WorkspaceLifecycleState::Open,
+        classPermission
+        );
+    QVERIFY(shell.navigateForward());
+    QVERIFY(shell.navigateBack());
+    QVERIFY(forwardButton->isEnabled());
+    QVERIFY(shell.navigateTo(protectedPage));
+    QCOMPARE(shell.navigationModel()->history().size(), std::size_t(2));
+    QVERIFY(backButton->isEnabled());
+    QVERIFY(!forwardButton->isEnabled());
+    QVERIFY(shell.navigateTo(workspacePage));
+    QVERIFY(backButton->isEnabled());
+    QVERIFY(!forwardButton->isEnabled());
+
+    // Permission revocation hides the Back target and rejects the action.
+    shell.updateNavigationAccessContext(
+        Application::WorkspaceLifecycleState::Open,
+        std::nullopt
+        );
+    QVERIFY(!backButton->isEnabled());
+    QVERIFY(!forwardButton->isEnabled());
+    const auto stateBeforePermissionRejectedBack = shell.navigationModel()->historyActionState();
+    const auto historyBeforePermissionRejectedBack = shell.navigationModel()->history();
+    const auto indexBeforePermissionRejectedBack = shell.navigationModel()->historyIndex();
+    const auto currentBeforePermissionRejectedBack = shell.navigationModel()->currentPageId();
+    const auto selectedBeforePermissionRejectedBack = shell.navigationModel()->selectedPageId();
+    const auto activeBeforePermissionRejectedBack = shell.pageHost().activePageKey();
+    QVERIFY(!shell.navigateBack());
+    QCOMPARE(shell.navigationModel()->historyActionState().backEnabled,
+             stateBeforePermissionRejectedBack.backEnabled);
+    QCOMPARE(shell.navigationModel()->historyActionState().forwardEnabled,
+             stateBeforePermissionRejectedBack.forwardEnabled);
+    QCOMPARE(shell.navigationModel()->history(), historyBeforePermissionRejectedBack);
+    QCOMPARE(shell.navigationModel()->historyIndex(), indexBeforePermissionRejectedBack);
+    QCOMPARE(shell.navigationModel()->currentPageId(), currentBeforePermissionRejectedBack);
+    QCOMPARE(shell.navigationModel()->selectedPageId(), selectedBeforePermissionRejectedBack);
+    QCOMPARE(shell.pageHost().activePageKey(), activeBeforePermissionRejectedBack);
+
+    // Regrant, then move to the history start so the protected route is the
+    // Forward target. Revoking its permission disables and rejects Forward.
+    shell.updateNavigationAccessContext(
+        Application::WorkspaceLifecycleState::Open,
+        classPermission
+        );
+    QVERIFY(shell.navigateBack());
+    QVERIFY(shell.navigateBack());
+    QCOMPARE(shell.navigationModel()->currentPageId(), std::optional<Ui::PageId>(campusPage));
+    QVERIFY(!backButton->isEnabled());
+    QVERIFY(forwardButton->isEnabled());
+    shell.updateNavigationAccessContext(
+        Application::WorkspaceLifecycleState::Open,
+        std::nullopt
+        );
+    QVERIFY(!backButton->isEnabled());
+    QVERIFY(!forwardButton->isEnabled());
+    const auto historyBeforePermissionRejectedForward = shell.navigationModel()->history();
+    const auto indexBeforePermissionRejectedForward = shell.navigationModel()->historyIndex();
+    const auto currentBeforePermissionRejectedForward = shell.navigationModel()->currentPageId();
+    const auto selectedBeforePermissionRejectedForward = shell.navigationModel()->selectedPageId();
+    const auto activeBeforePermissionRejectedForward = shell.pageHost().activePageKey();
+    QVERIFY(!shell.navigateForward());
+    QCOMPARE(shell.navigationModel()->history(), historyBeforePermissionRejectedForward);
+    QCOMPARE(shell.navigationModel()->historyIndex(), indexBeforePermissionRejectedForward);
+    QCOMPARE(shell.navigationModel()->currentPageId(), currentBeforePermissionRejectedForward);
+    QCOMPARE(shell.navigationModel()->selectedPageId(), selectedBeforePermissionRejectedForward);
+    QCOMPARE(shell.pageHost().activePageKey(), activeBeforePermissionRejectedForward);
 }
 
 QTEST_MAIN(NavigationModelTests)

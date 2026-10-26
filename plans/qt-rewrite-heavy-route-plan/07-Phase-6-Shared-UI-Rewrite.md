@@ -38,8 +38,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 is active on the Heavy route. F1514–F1517 are accepted;
-  F1518 — shell action state — is next. Batch 1's ordered candidates are in
+- Current note: Phase 6 is active on the Heavy route. F1514–F1518 are accepted;
+  F1519 — semantic prompt service — is next. Batch 1's ordered candidates are in
   the shared slice-batch tracker. The existing Staff Directory model/view and
   bounded-widget test are the planned representative-table gate
   evidence; its full feature migration remains in Phase 7C.
@@ -123,6 +123,19 @@ Independent macOS Debug build and CTest passed for
 `ClassMngrNextCommandBusTests` and `ClassMngrNextApplicationRuntimeTests` (2/2).
 Coverage includes availability changing between query and dispatch, with the
 handler kept uncalled. `git diff --check` passed. No full suite or
+cross-platform build ran.
+
+### F1518 — complete — 2026-10-26
+
+Back/Forward enabled state now derives from both history position and current
+visibility/permission of each history target. The shell presents the model's
+value state and refreshes it after navigation or access-context changes. An
+inaccessible target disables the action; a rejected history move preserves
+the current/selected route, history, and active page. This covers existing
+shell navigation controls; feature menu/action migration remains later work.
+
+Independent incremental macOS Debug build and CTest passed for Navigation,
+PageHost, and Bootstrap (3/3); `git diff --check` passed. No full suite or
 cross-platform build ran.
 
 ## Objective

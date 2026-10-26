@@ -10,8 +10,9 @@
   mandatory Heavy route. F1514–F1516 are accepted: Next page registration is
   descriptor-based and lazy, `PageHost` exposes explicit lifecycle state, and
   `NavigationModel` drives guarded placeholder navigation with history. F1517
-  added a typed, widget-free CommandBus; F1518 — shell action state — is next.
-  Phase 5 — Startup and
+  added a typed, widget-free CommandBus, and F1518 made Back/Forward action
+  state follow history-target availability. F1519 — semantic prompt service —
+  is next. Phase 5 — Startup and
   Bootstrap Rewrite — completed at implementation head
   `6bbff54abc524723e23911d65130b1b198dde2b3`; its startup, data-policy,
   deferred-update, shutdown, and splash-removal criteria passed. Focused macOS
