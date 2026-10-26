@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
 - Last updated: 2026-10-25
-- Current note: Phase 5 is active on the Heavy route. F1501–F1503 are complete; F1503 added a bootstrap-owned Qt startup diagnostics sink and typed `CoreServicesCreated` outcome. The focused macOS Debug bootstrap, launch, and filesystem CTests passed 3/3. F1504 is next to load the Next resource catalog/loader under a startup scope. The ordered batch is in `Current-Slice-Batches.md`.
+- Current note: Phase 5 is active on the Heavy route. F1501–F1504 are complete; F1504 composes the app-relative metadata catalog, lazy loader, and retained Startup scope. The six focused macOS Debug bootstrap/resource/launch CTests passed 6/6. F1505 is next to load settings, apply language/theme, and register required fonts in order. The ordered batch is in `Current-Slice-Batches.md`.
 
 ### Slice batches
 
@@ -109,6 +109,26 @@ passed 3/3. Tests directly checked the four ordered observer events and Qt log
 records, plus the typed core-service failure, absence of a shell, and retained
 startup/shutdown behavior. `git diff --check` passed. No full suite ran.
 F1504 is next.
+
+### F1504 — complete — 2026-10-25
+
+The bootstrap now uses `ResourceRootResolver`'s executable-directory-relative
+package lookup, loads only the resource catalog metadata, constructs and
+retains `ResourceLoader`, and retains a named `Startup` scope. It records
+`CoreServicesCreated` only after the complete resource owner exists. No payload
+API is called. Resolver, catalog, or scope construction failure produces a
+typed `CoreServicesCreated` failure before shell construction. Production has
+no working-directory, source-tree, legacy RCC, or resource-pack fallback.
+
+Independent macOS Debug verification passed: the preset configured, affected
+bootstrap/resource/launch targets built, and six focused CTests passed 6/6
+(bootstrap, resource loader, root resolver, document catalog, launch, and
+filesystem side effects). Success used the generated catalog with an empty
+payload root; failure cases covered resolver error, missing root, and invalid
+catalog. Source review confirms the bootstrap retains its Startup scope and
+does not call a loader payload method. The full suite and a native install
+matrix were not rerun; Phase 4 retains the package-root matrix evidence.
+F1505 is next.
 
 ## Objective
 

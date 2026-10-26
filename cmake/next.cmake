@@ -745,6 +745,7 @@ target_link_libraries(ClassMngrNext
     PRIVATE
         Qt6::Widgets
         ClassMngrNext::Application
+        ClassMngrNext::Resources
 )
 
 get_target_property(_classmngr_next_executable_dependencies
@@ -753,10 +754,10 @@ get_target_property(_classmngr_next_executable_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
 if(NOT "${_classmngr_next_executable_dependencies}"
-   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application")
+   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrNext::Resources")
     message(FATAL_ERROR
-        "ClassMngrNext must link only Qt6::Core, Qt6::Widgets, and "
-        "ClassMngrNext::Application; found "
+        "ClassMngrNext must link only Qt6::Core, Qt6::Widgets, "
+        "ClassMngrNext::Application, and ClassMngrNext::Resources; found "
         "[${_classmngr_next_executable_dependencies}]"
     )
 endif()

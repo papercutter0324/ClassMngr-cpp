@@ -131,10 +131,10 @@ get_target_property(_classmngr_next_resource_link_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_resource_link_dependencies)
 if(NOT "${_classmngr_next_resource_link_dependencies}"
-   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application")
+   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrNext::Resources")
     message(FATAL_ERROR
         "ClassMngrNext resource embedding must retain its Widgets application "
-        "link; found "
+        "and Resources links; found "
         "[${_classmngr_next_resource_link_dependencies}]"
     )
 endif()

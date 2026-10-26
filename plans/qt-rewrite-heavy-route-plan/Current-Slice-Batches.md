@@ -22,11 +22,16 @@ its native matrix passed before this batch began.
    sink before resource initialization; log typed stage outcomes and attribute
    sink-construction failure to `CoreServicesCreated`. Independent focused
    CTest passed 3/3.
-4. **F1504 — Accepted / in progress:** Load the Next resource catalog/loader
-   under an explicit startup scope without acquiring feature resources during
-   bootstrap.
-5. **F1505 — Discovered:** Load settings, apply language/theme, and register
-   only required fonts in the specified order.
+4. **F1504 — Complete:** Resolve the installed resource package
+   from the executable directory, parse metadata only, and retain the Next
+   `ResourceLoader` with an explicit `Startup` scope. Do not request payloads or
+   fall back to the working directory, source tree, legacy RCCs, or resource
+   packs. Resolution/catalog failures must fail `CoreServicesCreated` before
+   the shell is built; verify success against the generated catalog with an
+   empty payload root and verify the typed failure path. Six focused macOS
+   Debug CTests passed 6/6.
+5. **F1505 — Accepted / in progress:** Load settings, apply language/theme,
+   and register only required fonts in the specified order.
 6. **F1506 — Discovered:** Apply an explicit workspace startup policy and
    retain the session through Next contracts with typed no-workspace/open
    failure results.

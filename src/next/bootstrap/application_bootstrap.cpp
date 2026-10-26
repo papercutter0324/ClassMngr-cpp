@@ -1,6 +1,9 @@
 #include "next/bootstrap/application_bootstrap.h"
 
 #include "next/bootstrap/qt_startup_diagnostics_sink.h"
+#include "next/resources/resource_catalog.h"
+#include "next/resources/resource_loader.h"
+#include "next/resources/resource_scope.h"
 #include "next/ui/application_shell.h"
 
 #include <QApplication>
@@ -13,6 +16,21 @@
 
 namespace ClassMngr::Next::Bootstrap
 {
+
+struct ApplicationBootstrap::CoreServices final
+{
+    CoreServices(
+        Resources::ResourceCatalog catalog,
+        Resources::ResourceScope startupScope
+        )
+        : resourceLoader(std::move(catalog))
+        , startupResourceScope(std::move(startupScope))
+    {
+    }
+
+    Resources::ResourceLoader resourceLoader;
+    Resources::ResourceScope startupResourceScope;
+};
 
 int ApplicationBootstrap::run(int argc, char* argv[])
 {
@@ -46,11 +64,13 @@ int ApplicationBootstrap::run(int argc, char* argv[])
 ApplicationBootstrap::ApplicationBootstrap(
     QApplication& application,
     StartupEventObserver startupEventObserver,
-    StartupDiagnosticsSinkFactory startupDiagnosticsSinkFactory
+    StartupDiagnosticsSinkFactory startupDiagnosticsSinkFactory,
+    ResourcePackagePathsResolver resourcePackagePathsResolver
     )
     : m_application(application),
       m_startupEventObserver(std::move(startupEventObserver)),
       m_startupDiagnosticsSinkFactory(std::move(startupDiagnosticsSinkFactory)),
+      m_resourcePackagePathsResolver(std::move(resourcePackagePathsResolver)),
       m_shutdownCoordinator([&application] {
           application.quit();
       })
@@ -118,6 +138,29 @@ Application::StartupResult ApplicationBootstrap::start()
     {
         m_startupDiagnosticsSink->record(*processCreated.latestStageResult);
     }
+
+    // Core services own metadata and the named request scope. ResourceLoader
+    // remains lazy here: bootstrap does not call any payload-loading API.
+    bool coreServicesReady = false;
+    try
+    {
+        coreServicesReady = createCoreServices();
+    }
+    catch (...)
+    {
+        // Report construction failures through the typed startup-stage result.
+    }
+    if (!coreServicesReady)
+    {
+        const Application::StartupResult failure = m_startupCoordinator.recordStage(
+            Application::StartupStage::CoreServicesCreated,
+            Application::StartupStageOutcome::Failed,
+            Application::StartupFailureReason::StageFailed
+            );
+        observeStartupResult(failure);
+        return failure;
+    }
+
     const Application::StartupResult coreServicesCreated =
         m_startupCoordinator.recordStage(
             Application::StartupStage::CoreServicesCreated
@@ -165,6 +208,42 @@ Application::StartupResult ApplicationBootstrap::start()
         m_startupCoordinator.recordStage(Application::StartupStage::InitialPageReady);
     observeStartupResult(initialPageReady);
     return initialPageReady;
+}
+
+bool ApplicationBootstrap::createCoreServices()
+{
+    const Resources::ResourceResult<Resources::ResourcePackagePaths> packagePaths =
+        m_resourcePackagePathsResolver
+            ? m_resourcePackagePathsResolver()
+            : Resources::ResourceRootResolver::resolve();
+    if (!packagePaths)
+    {
+        return false;
+    }
+
+    auto catalog = Resources::ResourceCatalog::load(
+        packagePaths->catalogFilePath,
+        packagePaths->resourceRoot
+        );
+    if (!catalog)
+    {
+        return false;
+    }
+
+    auto startupScope = Resources::ResourceScope::create(
+        Resources::ResourceScopeKind::Startup,
+        QStringLiteral("application-bootstrap")
+        );
+    if (!startupScope)
+    {
+        return false;
+    }
+
+    m_coreServices = std::make_unique<CoreServices>(
+        std::move(*catalog),
+        std::move(*startupScope)
+        );
+    return true;
 }
 
 Application::ShutdownResult ApplicationBootstrap::shutdown()

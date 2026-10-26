@@ -17,9 +17,11 @@ target_include_directories(ClassMngrNextBootstrapTests
 target_compile_definitions(ClassMngrNextBootstrapTests
     PRIVATE
         CLASSMNGR_NEXT_VERSION="${PROJECT_VERSION}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
 )
 target_link_libraries(ClassMngrNextBootstrapTests
     PRIVATE
+        ClassMngrNext::Resources
         Qt6::Test
         Qt6::Widgets
 )
@@ -31,6 +33,9 @@ set_target_properties(ClassMngrNextBootstrapTests
 )
 set_property(TARGET ClassMngrNextBootstrapTests
     PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextBootstrapTests
+    ClassMngrNextResourcePackage
 )
 add_test(
     NAME ClassMngrNextBootstrapTests

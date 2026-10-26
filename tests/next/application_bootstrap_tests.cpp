@@ -1,11 +1,18 @@
 #include "next/application/shutdown_coordinator.h"
 #include "next/application/startup_coordinator.h"
 #include "next/bootstrap/application_bootstrap.h"
+#include "next/resources/resource_catalog.h"
+#include "next/resources/resource_descriptor.h"
+#include "next/resources/resource_error.h"
 #include "next/ui/application_shell.h"
 #include "next/ui/initial_page.h"
 
 #include <QApplication>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QLabel>
+#include <QTemporaryDir>
 #include <QtTest/QtTest>
 
 #include <array>
@@ -22,6 +29,10 @@ class ApplicationBootstrapTests final : public QObject
 private slots:
     void createsVisibleShellAndReportsOnlyCompletedStartupStage();
     void diagnosticsSinkConstructionFailureStopsBeforeShellCreation();
+    void generatedCatalogStartsWithAnEmptyPayloadRoot();
+    void packagePathResolutionFailureDoesNotUseCurrentDirectoryFallback();
+    void missingResourcePackageFailsCoreServicesBeforeShellCreation();
+    void invalidResourceCatalogFailsCoreServicesBeforeShellCreation();
     void startupCoordinatorAcceptsEveryPhaseFiveStageInOrder();
     void startupCoordinatorRejectsInvalidTransitionsWithoutRecordingThem();
     void startupCoordinatorRetainsTypedWarningAndTerminalFailure();
@@ -29,11 +40,119 @@ private slots:
     void startupFailureAndShutdownActionAreReportedPrecisely();
 };
 
+namespace
+{
+
+void ignoreCoreServicesFailureMessages()
+{
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=process-created outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        "ClassMngrNext startup stage=core-services-created outcome=failed "
+        "diagnostic=stage-failed diagnostic_stage=core-services-created"
+        );
+}
+
+void verifyCoreServicesFailure(
+    const Application::StartupResult& result,
+    const std::vector<Application::StartupEvent>& observedEvents,
+    const Bootstrap::ApplicationBootstrap& bootstrap,
+    const QApplication& application,
+    bool previousQuitPolicy
+    )
+{
+    QCOMPARE(result.status, Application::StartupStatus::Failed);
+    QVERIFY(!result.succeeded());
+    QVERIFY(result.failure.has_value());
+    QCOMPARE(*result.failure, Application::StartupFailureReason::StageFailed);
+    QVERIFY(result.diagnostic.has_value());
+    QCOMPARE(result.diagnostic->code, Application::StartupDiagnosticCode::StageFailed);
+    QVERIFY(result.diagnostic->stage.has_value());
+    QCOMPARE(*result.diagnostic->stage, Application::StartupStage::CoreServicesCreated);
+
+    QCOMPARE(result.stageResults.size(), std::size_t{2});
+    QCOMPARE(result.stageResults[0].stage, Application::StartupStage::ProcessCreated);
+    QCOMPARE(result.stageResults[0].outcome, Application::StartupStageOutcome::Completed);
+    QVERIFY(!result.stageResults[0].diagnostic.has_value());
+    QCOMPARE(result.stageResults[1].stage, Application::StartupStage::CoreServicesCreated);
+    QCOMPARE(result.stageResults[1].outcome, Application::StartupStageOutcome::Failed);
+    QVERIFY(result.stageResults[1].diagnostic.has_value());
+    QCOMPARE(
+        result.stageResults[1].diagnostic->code,
+        Application::StartupDiagnosticCode::StageFailed
+        );
+    QCOMPARE(result.completedEvents.size(), std::size_t{1});
+    QCOMPARE(result.completedEvents[0].stage, Application::StartupStage::ProcessCreated);
+    QCOMPARE(result.completedEvents[0].outcome, Application::StartupStageOutcome::Completed);
+
+    QVERIFY(result.latestStageResult.has_value());
+    QCOMPARE(result.latestStageResult->stage, Application::StartupStage::CoreServicesCreated);
+    QCOMPARE(result.latestStageResult->outcome, Application::StartupStageOutcome::Failed);
+    QVERIFY(result.latestStageResult->diagnostic.has_value());
+    QCOMPARE(
+        result.latestStageResult->diagnostic->code,
+        Application::StartupDiagnosticCode::StageFailed
+        );
+    QVERIFY(result.latestStageResult->diagnostic->stage.has_value());
+    QCOMPARE(
+        *result.latestStageResult->diagnostic->stage,
+        Application::StartupStage::CoreServicesCreated
+        );
+
+    QCOMPARE(observedEvents.size(), std::size_t{2});
+    QCOMPARE(observedEvents[0].stage, Application::StartupStage::ProcessCreated);
+    QCOMPARE(observedEvents[0].outcome, Application::StartupStageOutcome::Completed);
+    QCOMPARE(observedEvents[1].stage, Application::StartupStage::CoreServicesCreated);
+    QCOMPARE(observedEvents[1].outcome, Application::StartupStageOutcome::Failed);
+    QVERIFY(observedEvents[1].diagnostic.has_value());
+    QCOMPARE(observedEvents[1].diagnostic->code, Application::StartupDiagnosticCode::StageFailed);
+    QVERIFY(observedEvents[1].diagnostic->stage.has_value());
+    QCOMPARE(*observedEvents[1].diagnostic->stage, Application::StartupStage::CoreServicesCreated);
+
+    QVERIFY(bootstrap.shell() == nullptr);
+    QCOMPARE(application.quitOnLastWindowClosed(), previousQuitPolicy);
+}
+
+QString configuredResourceCatalogPath()
+{
+    return QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG);
+}
+
+QString configuredResourceRelativeRoot()
+{
+    return QStringLiteral(CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT);
+}
+
+Bootstrap::ApplicationBootstrap::ResourcePackagePathsResolver resolverForEmptyRoot(
+    QString resourceRoot
+    )
+{
+    return [resourceRoot = std::move(resourceRoot)]()
+        -> Resources::ResourceResult<Resources::ResourcePackagePaths> {
+        return Resources::ResourcePackagePaths{
+            resourceRoot,
+            configuredResourceCatalogPath()
+        };
+    };
+}
+
+}
+
 void ApplicationBootstrapTests::
 createsVisibleShellAndReportsOnlyCompletedStartupStage()
 {
     QApplication& application = *qApp;
     std::vector<Application::StartupEvent> observedEvents;
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString resourceRoot = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("resources")
+        );
+    QVERIFY(QDir().mkpath(resourceRoot));
 
     QTest::ignoreMessage(
         QtInfoMsg,
@@ -59,7 +178,9 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
         application,
         [&observedEvents](const Application::StartupEvent& event) {
             observedEvents.push_back(event);
-        }
+        },
+        {},
+        resolverForEmptyRoot(resourceRoot)
         );
 
     const Application::StartupResult result = bootstrap.start();
@@ -197,6 +318,242 @@ diagnosticsSinkConstructionFailureStopsBeforeShellCreation()
     QCOMPARE(*repeatedStart.failure, Application::StartupFailureReason::AlreadyStarted);
     QCOMPARE(observedEvents.size(), std::size_t{2});
     QVERIFY(bootstrap.shell() == nullptr);
+}
+
+void ApplicationBootstrapTests::generatedCatalogStartsWithAnEmptyPayloadRoot()
+{
+    QApplication& application = *qApp;
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString resourceRoot = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("resources")
+        );
+    QVERIFY(QDir().mkpath(resourceRoot));
+
+    auto catalog = Resources::ResourceCatalog::load(
+        configuredResourceCatalogPath(),
+        resourceRoot
+        );
+    QVERIFY2(catalog.has_value(), catalog ? "" : qPrintable(catalog.error().message));
+    QVERIFY(!catalog->records().empty());
+    bool foundAbsentPackagePayload = false;
+    for (const Resources::ResourceDescriptor& record : catalog->records())
+    {
+        if (record.location() != Resources::ResourceLocation::PackageFile)
+        {
+            continue;
+        }
+        foundAbsentPackagePayload = true;
+        const QString payloadPath = QDir(resourceRoot).filePath(record.packageRelativePath());
+        QVERIFY2(
+            !QFileInfo::exists(payloadPath),
+            qPrintable(QStringLiteral("payload unexpectedly exists: ") + payloadPath)
+            );
+    }
+    QVERIFY(foundAbsentPackagePayload);
+    QCOMPARE(
+        QDir(resourceRoot).entryList(
+            QDir::AllEntries | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot
+            ).size(),
+        0
+        );
+
+    std::vector<Application::StartupEvent> observedEvents;
+    int resolverCalls = 0;
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=process-created outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=core-services-created outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=shell-created outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=initial-page-ready outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        {},
+        [&resolverCalls, resourceRoot]() -> Resources::ResourceResult<Resources::ResourcePackagePaths> {
+            ++resolverCalls;
+            return Resources::ResourcePackagePaths{
+                resourceRoot,
+                configuredResourceCatalogPath()
+            };
+        }
+        );
+
+    const Application::StartupResult result = bootstrap.start();
+
+    QVERIFY(result.succeeded());
+    QCOMPARE(result.status, Application::StartupStatus::InitialExperienceAvailable);
+    QVERIFY(!result.failure.has_value());
+    QVERIFY(!result.diagnostic.has_value());
+    QCOMPARE(resolverCalls, 1);
+    QCOMPARE(observedEvents.size(), std::size_t{4});
+    constexpr std::array expectedStages{
+        Application::StartupStage::ProcessCreated,
+        Application::StartupStage::CoreServicesCreated,
+        Application::StartupStage::ShellCreated,
+        Application::StartupStage::InitialPageReady
+    };
+    QCOMPARE(result.stageResults.size(), expectedStages.size());
+    QCOMPARE(result.completedEvents.size(), expectedStages.size());
+    for (std::size_t index = 0; index < expectedStages.size(); ++index)
+    {
+        QCOMPARE(result.stageResults[index].stage, expectedStages[index]);
+        QCOMPARE(result.stageResults[index].outcome, Application::StartupStageOutcome::Completed);
+        QCOMPARE(result.completedEvents[index].stage, expectedStages[index]);
+        QCOMPARE(observedEvents[index].stage, expectedStages[index]);
+        QCOMPARE(observedEvents[index].outcome, Application::StartupStageOutcome::Completed);
+        QVERIFY(!observedEvents[index].diagnostic.has_value());
+    }
+
+    QVERIFY(bootstrap.shell() != nullptr);
+    QVERIFY(bootstrap.shell()->isVisible());
+    QCOMPARE(
+        QDir(resourceRoot).entryList(
+            QDir::AllEntries | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot
+            ).size(),
+        0
+        );
+}
+
+void ApplicationBootstrapTests::missingResourcePackageFailsCoreServicesBeforeShellCreation()
+{
+    QApplication& application = *qApp;
+    const bool previousQuitPolicy = application.quitOnLastWindowClosed();
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString missingRoot = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("missing-resources")
+        );
+
+    std::vector<Application::StartupEvent> observedEvents;
+    int resolverCalls = 0;
+    ignoreCoreServicesFailureMessages();
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        {},
+        [&resolverCalls, missingRoot]()
+            -> Resources::ResourceResult<Resources::ResourcePackagePaths> {
+            ++resolverCalls;
+            return Resources::ResourcePackagePaths{
+                missingRoot,
+                configuredResourceCatalogPath()
+            };
+        }
+        );
+
+    const Application::StartupResult result = bootstrap.start();
+
+    verifyCoreServicesFailure(result, observedEvents, bootstrap, application, previousQuitPolicy);
+    QCOMPARE(resolverCalls, 1);
+}
+
+void ApplicationBootstrapTests::packagePathResolutionFailureDoesNotUseCurrentDirectoryFallback()
+{
+    QApplication& application = *qApp;
+    const bool previousQuitPolicy = application.quitOnLastWindowClosed();
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString workingDirectory = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("working")
+        );
+    QVERIFY(QDir().mkpath(workingDirectory));
+    const QString fallbackRoot = QDir(workingDirectory).filePath(
+        configuredResourceRelativeRoot()
+        );
+    QVERIFY(QDir().mkpath(fallbackRoot));
+    const QString fallbackCatalogPath = QDir(fallbackRoot).filePath(
+        QStringLiteral("resource-catalog.json")
+        );
+    QVERIFY(QFile::copy(configuredResourceCatalogPath(), fallbackCatalogPath));
+
+    const QString previousCurrentDirectory = QDir::currentPath();
+    std::vector<Application::StartupEvent> observedEvents;
+    int resolverCalls = 0;
+    ignoreCoreServicesFailureMessages();
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        {},
+        [&resolverCalls]() -> Resources::ResourceResult<Resources::ResourcePackagePaths> {
+            ++resolverCalls;
+            return std::unexpected(Resources::ResourceError{
+                Resources::ResourceErrorCode::MissingFile,
+                QStringLiteral("injected missing package")
+            });
+        }
+        );
+
+    QVERIFY(QDir::setCurrent(workingDirectory));
+    const Application::StartupResult result = bootstrap.start();
+    QVERIFY(QDir::setCurrent(previousCurrentDirectory));
+
+    verifyCoreServicesFailure(result, observedEvents, bootstrap, application, previousQuitPolicy);
+    QCOMPARE(resolverCalls, 1);
+    QCOMPARE(QDir::currentPath(), previousCurrentDirectory);
+}
+
+void ApplicationBootstrapTests::invalidResourceCatalogFailsCoreServicesBeforeShellCreation()
+{
+    QApplication& application = *qApp;
+    const bool previousQuitPolicy = application.quitOnLastWindowClosed();
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString resourceRoot = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("resources")
+        );
+    QVERIFY(QDir().mkpath(resourceRoot));
+    const QString invalidCatalogPath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("invalid-resource-catalog.json")
+        );
+    QFile invalidCatalog(invalidCatalogPath);
+    QVERIFY(invalidCatalog.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QCOMPARE(invalidCatalog.write("{ invalid json\n"), qint64{15});
+    invalidCatalog.close();
+
+    std::vector<Application::StartupEvent> observedEvents;
+    int resolverCalls = 0;
+    ignoreCoreServicesFailureMessages();
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        {},
+        [&resolverCalls, resourceRoot, invalidCatalogPath]()
+            -> Resources::ResourceResult<Resources::ResourcePackagePaths> {
+            ++resolverCalls;
+            return Resources::ResourcePackagePaths{
+                resourceRoot,
+                invalidCatalogPath
+            };
+        }
+        );
+
+    const Application::StartupResult result = bootstrap.start();
+
+    verifyCoreServicesFailure(result, observedEvents, bootstrap, application, previousQuitPolicy);
+    QCOMPARE(resolverCalls, 1);
 }
 
 void ApplicationBootstrapTests::
@@ -502,8 +859,19 @@ closeRequestsShutdownOnceAndRestoresApplicationPolicy()
 {
     QApplication& application = *qApp;
     const bool previousQuitPolicy = application.quitOnLastWindowClosed();
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString resourceRoot = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("resources")
+        );
+    QVERIFY(QDir().mkpath(resourceRoot));
     {
-        Bootstrap::ApplicationBootstrap bootstrap(application);
+        Bootstrap::ApplicationBootstrap bootstrap(
+            application,
+            {},
+            {},
+            resolverForEmptyRoot(resourceRoot)
+            );
         const Application::StartupResult startup = bootstrap.start();
         QVERIFY(startup.succeeded());
         QVERIFY(!bootstrap.shutdownRequested());

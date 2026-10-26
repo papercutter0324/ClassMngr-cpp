@@ -13,7 +13,9 @@
   `MainWindow`. Independent macOS Debug verification passed its three focused
   CTests. F1502 established the ten-stage typed model. F1503 is complete: the
   bootstrap owns a Qt diagnostics sink and logs factual stage results. F1504
-  is integrating the Next resource loader under a startup scope. See the
+  is complete: startup loads catalog metadata and retains a lazy loader and
+  startup scope without reading payloads. Its six focused CTests passed. F1505
+  is adding ordered settings, localization, theme, and required fonts. See the
   [Phase 5 plan](06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
   and [current batch tracker](Current-Slice-Batches.md). Phase 4 remains
   Complete at F1500; rendering parity remains a Phase 7/10 gate, and legacy

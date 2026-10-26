@@ -10,8 +10,9 @@ minimal shell/page, and coordinates shutdown without invoking legacy
 `MainWindow`. Independent macOS Debug CTest passed 3/3. F1502 is complete:
 the ten-stage model and factual startup observer passed three focused CTests.
 F1503 is complete: the bootstrap-owned Qt diagnostics sink and core-stage
-failure path passed the three focused CTests. F1504 is in progress to load the
-Next resource catalog/loader under a startup scope.
+failure path passed the three focused CTests. F1504 is complete: app-relative
+metadata catalog, lazy loader, and Startup scope passed six focused CTests.
+F1505 is in progress for ordered settings, language, theme, and required fonts.
 Remaining Phase 5 work and its
 acceptance order are in the [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [active batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
@@ -37,7 +38,7 @@ resource and document lifecycle contracts.
 
 Phases 0–4 are Complete. Phase 5 is In progress on the Heavy route. F1501 is
 complete with focused independent bootstrap and shutdown verification. F1502
-and F1503 are complete; F1504 is active. Phase 5 is not complete until the startup, data
+F1502–F1504 are complete; F1505 is active. Phase 5 is not complete until the startup, data
 policy, update, shutdown, splash-removal, and workflow-isolation exit gates
 pass.
 
