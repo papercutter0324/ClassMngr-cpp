@@ -248,7 +248,6 @@ renderedClassesRootClickDispatchesToClassesPage()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -356,7 +355,6 @@ classesRootCancelRestoresDirtyTeacherSelection()
     startupOptions.loadMostRecentDatabase = false;
     startupOptions.initialDatabasePath = workspacePath;
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -557,7 +555,6 @@ classesRootReadFailureRestoresSelectionAfterDiscard()
     startupOptions.loadMostRecentDatabase = false;
     startupOptions.initialDatabasePath = workspacePath;
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -740,7 +737,6 @@ detailsLeaveChoicesPreserveCancelSaveAndDiscardBehavior()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -942,7 +938,6 @@ cleanDetailsLeaveRestoresSnapshotAndStaleDataReloads()
     startupOptions.loadMostRecentDatabase = false;
     startupOptions.initialDatabasePath = workspacePath;
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1138,7 +1133,6 @@ sameTurnCleanReentryRestoresBeforeDeferredDelete()
     startupOptions.loadMostRecentDatabase = false;
     startupOptions.initialDatabasePath = workspacePath;
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1283,7 +1277,6 @@ classesRootContextMenuAddClassCreatesAndOpensClass()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1481,7 +1474,6 @@ void MainWindowClassesSidebarRootNavigationTests::newClassActionCreatesAndOpensC
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1578,7 +1570,6 @@ classReadFailurePreservesAddClassRoute()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

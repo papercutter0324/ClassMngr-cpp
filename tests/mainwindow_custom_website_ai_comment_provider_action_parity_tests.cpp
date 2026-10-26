@@ -161,7 +161,6 @@ customWebsiteActionCapturesAndPersistsEnteredUrl()
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -330,7 +329,6 @@ customWebsiteActionCancellationKeepsPreviousSettings()
             );
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -442,7 +440,6 @@ customWebsiteActionInvalidUrlKeepsPreviousSettingsAndReportsWarning()
             );
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -637,7 +634,6 @@ failedCustomWebsiteSaveKeepsProviderAndUrlAndAllowsRetry()
         };
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

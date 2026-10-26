@@ -238,7 +238,6 @@ renderedSubPrepRootClickDispatchesToSubPrepPage()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

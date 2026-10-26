@@ -119,7 +119,6 @@ openFileCancelPreservesDraftAndChooserCancelKeepsWorkspace()
     const FileDialogServiceScope fileDialogScope(&fileDialogs);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -258,7 +257,6 @@ openFileSaveThenChooserCancelPreservesWorkspace()
     const FileDialogServiceScope fileDialogScope(&fileDialogs);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -403,7 +401,6 @@ openFileLoadsOtherProfileAndSelectsWorkspaceSchedule()
     const FileDialogServiceScope fileDialogScope(&fileDialogs);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

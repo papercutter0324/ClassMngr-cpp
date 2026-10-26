@@ -242,7 +242,6 @@ noDatabaseScheduleDisplayPreferenceFailureRestoresDefaultsWithoutRefreshingSched
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -438,7 +437,6 @@ preferenceWriteAndReadFailureRestoresSelectionAndRetryRefreshesOnce()
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -741,7 +739,6 @@ middleSchoolPreferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce()
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1014,7 +1011,6 @@ middleSchoolPreferenceReadFailurePreservesKnownVisibleState()
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1154,7 +1150,6 @@ evaluationDefaultPolicyReadFailureShowsWarningAndDisablesControls()
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1283,7 +1278,6 @@ evaluationDefaultPolicyFailureRestoresSelectionAndSuccessfulRetryDoesNotRefresh(
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1574,7 +1568,6 @@ evaluationDefaultPolicyReadFailureAfterSaveFailureRestoresLastKnownSelection()
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1736,7 +1729,6 @@ dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -2117,7 +2109,6 @@ classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -2531,7 +2522,6 @@ excelImportTimeoutFailureRestoresSelectionAndAllowsRetry()
     startupOptions.excelImportTimeoutPreferencesPort = makeFaultablePort();
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -2739,7 +2729,6 @@ excelImportTimeoutInvalidItemDataRestoresSelectionAndWarns()
     startupOptions.excelImportTimeoutPreferencesPort = timeoutPort;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

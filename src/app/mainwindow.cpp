@@ -90,7 +90,6 @@ StartupScheduleWidgetMetrics startupScheduleWidgetMetrics(
 // =========================================================
 
 MainWindow::MainWindow(
-    std::function<void(const QString&)> progressCallback,
     bool isAdmin,
     LanguageService* languageService,
     UpdateController* updateController,
@@ -104,39 +103,29 @@ MainWindow::MainWindow(
     , m_languageService(languageService)
     , m_updateController(updateController)
 {
-    progressCallback(tr("Creating main window..."));
     ui->setupUi(this);
     recordStartupCheckpoint(QStringLiteral("main-window-shell-created"));
 
-    progressCallback(tr("Initializing application services..."));
     initializeServices();
     recordStartupCheckpoint(QStringLiteral("services-created"));
 
-    progressCallback(tr("Configuring window..."));
     initializeWindow();
 
-    progressCallback(tr("Loading pages..."));
     initializePages();
     recordStartupCheckpoint(QStringLiteral("page-manager-initialized"));
 
-    progressCallback(tr("Loading sidebar..."));
     initializeSidebar();
 
-    progressCallback(tr("Initializing actions..."));
     createActions();
 
-    progressCallback(tr("Initializing controllers..."));
     connectControllers();
     recordStartupCheckpoint(QStringLiteral("controllers-connected"));
 
-    progressCallback(tr("Building menus..."));
     buildMenus();
     m_fileController->populateRecentMenu();
 
-    progressCallback(tr("Connecting signals..."));
     connectSignals();
 
-    progressCallback(tr("Loading recent file..."));
     if (
         !m_startupOptions
             .initialDatabasePath
@@ -177,7 +166,6 @@ MainWindow::MainWindow(
             : QStringLiteral("none")
         );
 
-    progressCallback(tr("Configuring window..."));
 }
 
 ApplicationServices* MainWindow::services() const

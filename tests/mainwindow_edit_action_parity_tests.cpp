@@ -175,7 +175,6 @@ undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -272,7 +271,6 @@ pasteActionReplacesSelectedPersonalNameFromClipboard()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -367,7 +365,6 @@ cutActionCopiesSelectedPersonalNameFromFocusedEditor()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -465,7 +462,6 @@ copyActionCopiesSelectedPersonalNameFromFocusedEditor()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

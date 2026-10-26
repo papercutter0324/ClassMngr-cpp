@@ -152,32 +152,6 @@ inline QString appDefault()
 }
 }
 
-namespace ResourcePaths::Images
-{
-inline constexpr auto Splash =
-    ":/assets/splash/splash.png";
-
-inline QString splash()
-{
-    return Detail::resolveResourcePath(
-        QString::fromUtf8(Splash)
-        );
-}
-}
-
-namespace ResourcePaths::Splash
-{
-inline Result<ResourcePackLease> acquire()
-{
-    return Detail::acquirePack(QStringLiteral("splash"));
-}
-
-inline QString imagePath(const ResourcePackLease& lease)
-{
-    return Detail::leasedPath(lease, QStringLiteral("splash.png"));
-}
-}
-
 namespace ResourcePaths::DynamicImages
 {
 inline Result<ResourcePackLease> acquire()

@@ -2662,13 +2662,17 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         );
     const QJsonArray checkpoints =
         metrics.value(QStringLiteral("checkpoints")).toArray();
-    QVERIFY(checkpoints.size() >= 17);
+    QVERIFY(checkpoints.size() >= 16);
 
     QSet<QString> checkpointNames;
+    int startupPageLoadedIndex = -1;
+    int windowShownIndex = -1;
+    int startupCompleteIndex = -1;
     QJsonObject startupComplete;
     int startupCompleteCount = 0;
-    for (const QJsonValue& value : checkpoints)
+    for (int index = 0; index < checkpoints.size(); ++index)
     {
+        const QJsonValue& value = checkpoints.at(index);
         const QJsonObject checkpoint = value.toObject();
         const QString name = checkpoint.value(QStringLiteral("name")).toString();
         checkpointNames.insert(name);
@@ -2683,7 +2687,16 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         if (name == QStringLiteral("startup-complete"))
         {
             startupComplete = checkpoint;
+            startupCompleteIndex = index;
             ++startupCompleteCount;
+        }
+        else if (name == QStringLiteral("startup-page-loaded"))
+        {
+            startupPageLoadedIndex = index;
+        }
+        else if (name == QStringLiteral("window-shown"))
+        {
+            windowShownIndex = index;
         }
     }
 
@@ -2694,8 +2707,6 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         QStringLiteral("locale-applied"),
         QStringLiteral("font-applied"),
         QStringLiteral("theme-applied"),
-        QStringLiteral("resource-system-initialized"),
-        QStringLiteral("splash-shown"),
         QStringLiteral("services-created"),
         QStringLiteral("main-window-shell-created"),
         QStringLiteral("page-manager-initialized"),
@@ -2711,6 +2722,13 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
     {
         QVERIFY(checkpointNames.contains(requiredCheckpoint));
     }
+    QVERIFY(!checkpointNames.contains(QStringLiteral("resource-system-initialized")));
+    QVERIFY(!checkpointNames.contains(QStringLiteral("splash-shown")));
+    QVERIFY(!metrics.contains(QStringLiteral("progressUpdates")));
+    QVERIFY(!metrics.contains(QStringLiteral("finalProgress")));
+    QVERIFY(startupPageLoadedIndex >= 0);
+    QVERIFY(windowShownIndex > startupPageLoadedIndex);
+    QVERIFY(startupCompleteIndex > windowShownIndex);
     QVERIFY(!startupComplete.isEmpty());
     QCOMPARE(startupCompleteCount, 1);
 
@@ -2855,6 +2873,8 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
     }
 
     const QJsonObject representativeReport = representativeDocument.object();
+    QVERIFY(!representativeReport.contains(QStringLiteral("progressUpdates")));
+    QVERIFY(!representativeReport.contains(QStringLiteral("finalProgress")));
     QCOMPARE(
         representativeReport.value(QStringLiteral("format")).toString(),
         QStringLiteral("classmngr-startup-profile-v2")
@@ -2876,26 +2896,36 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
 
     QHash<QString, QJsonObject> representativeCheckpoints;
     QHash<QString, int> representativeCheckpointCounts;
+    int representativePageLoadedIndex = -1;
+    int representativeWindowShownIndex = -1;
+    int representativeStartupCompleteIndex = -1;
     QJsonObject representativeWindowShown;
     QJsonObject representativeStartupComplete;
     QJsonObject representativeSettledOneSecond;
     QJsonObject representativeSettledFiveSeconds;
-    for (const QJsonValue& value : representativeReport
-             .value(QStringLiteral("checkpoints"))
-             .toArray())
+    const QJsonArray representativeCheckpointArray =
+        representativeReport.value(QStringLiteral("checkpoints")).toArray();
+    for (int index = 0; index < representativeCheckpointArray.size(); ++index)
     {
+        const QJsonValue& value = representativeCheckpointArray.at(index);
         const QJsonObject checkpoint = value.toObject();
         const QString name = checkpoint.value(QStringLiteral("name")).toString();
         representativeCheckpoints.insert(name, checkpoint);
         ++representativeCheckpointCounts[name];
 
-        if (name == QStringLiteral("window-shown"))
+        if (name == QStringLiteral("startup-page-loaded"))
+        {
+            representativePageLoadedIndex = index;
+        }
+        else if (name == QStringLiteral("window-shown"))
         {
             representativeWindowShown = checkpoint;
+            representativeWindowShownIndex = index;
         }
         else if (name == QStringLiteral("startup-complete"))
         {
             representativeStartupComplete = checkpoint;
+            representativeStartupCompleteIndex = index;
         }
         else if (name == QStringLiteral("settled-1s"))
         {
@@ -2922,6 +2952,11 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         );
     QVERIFY(!representativeSettledOneSecond.isEmpty());
     QVERIFY(!representativeSettledFiveSeconds.isEmpty());
+    QVERIFY(!representativeCheckpointCounts.contains(QStringLiteral("splash-shown")));
+    QVERIFY(!representativeCheckpointCounts.contains(QStringLiteral("resource-system-initialized")));
+    QVERIFY(representativePageLoadedIndex >= 0);
+    QVERIFY(representativeWindowShownIndex > representativePageLoadedIndex);
+    QVERIFY(representativeStartupCompleteIndex > representativeWindowShownIndex);
 
     const QJsonObject representativeStartupMetrics =
         representativeStartupComplete.value(QStringLiteral("metrics")).toObject();
@@ -2934,8 +2969,7 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
 
     // These three checkpoints are the permanent startup regression surface:
     // first visible frame, completed startup, and five-second steady state.
-    // Widget counts may drop when the splash is released, but hidden pages or
-    // schedules must never appear in any of the three snapshots.
+    // Hidden pages or schedules must never appear in any of the snapshots.
     for (const QString& checkpointName : {
              QStringLiteral("window-shown"),
              QStringLiteral("startup-complete"),
@@ -3128,14 +3162,8 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
 
     const double startupCompleteMs =
         startupComplete.value(QStringLiteral("elapsedMs")).toDouble(-1.0);
-    const double progressUpdates =
-        metrics.value(QStringLiteral("progressUpdates")).toDouble(-1.0);
-    const double finalProgress =
-        metrics.value(QStringLiteral("finalProgress")).toDouble(-1.0);
 
     QVERIFY(startupCompleteMs >= 0.0);
-    QVERIFY(progressUpdates > 0.0);
-    QCOMPARE(finalProgress, 100.0);
     QVERIFY(processStartToExitMs >= startupCompleteMs);
 
 #if defined(Q_OS_WIN)
@@ -3146,16 +3174,14 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
 #endif
 
     std::printf(
-        "Startup performance: startupComplete=%.0f ms, process=%lld ms, widgets=%d, pages=%d/%d, schedules=%d, renders=%.0f, progressUpdates=%.0f, finalProgress=%.0f\n",
+        "Startup performance: startupComplete=%.0f ms, process=%lld ms, widgets=%d, pages=%d/%d, schedules=%d, renders=%.0f\n",
         startupCompleteMs,
         static_cast<long long>(processStartToExitMs),
         startupMetrics.value(QStringLiteral("widgetCount")).toInt(),
         startupMetrics.value(QStringLiteral("instantiatedPageCount")).toInt(),
         startupMetrics.value(QStringLiteral("registeredPageCount")).toInt(),
         startupMetrics.value(QStringLiteral("liveScheduleWidgetCount")).toInt(),
-        startupMetrics.value(QStringLiteral("scheduleRenderCount")).toDouble(),
-        progressUpdates,
-        finalProgress
+        startupMetrics.value(QStringLiteral("scheduleRenderCount")).toDouble()
         );
     std::fflush(stdout);
 
@@ -13855,6 +13881,8 @@ void StartupPerformanceTests::capturesLargeResourceTraceWhenConfigured()
         qPrintable(metricsParseError.errorString())
     );
     const QJsonObject metrics = metricsDocument.object();
+    QVERIFY(!metrics.contains(QStringLiteral("progressUpdates")));
+    QVERIFY(!metrics.contains(QStringLiteral("finalProgress")));
     const auto checkpointNamed =
         [&metrics](const QString& name)
         {
@@ -13881,6 +13909,8 @@ void StartupPerformanceTests::capturesLargeResourceTraceWhenConfigured()
             );
     QVERIFY(!resourceTraceStart.isEmpty());
     QVERIFY(!resourceTraceComplete.isEmpty());
+    QVERIFY(checkpointNamed(QStringLiteral("splash-shown")).isEmpty());
+    QVERIFY(checkpointNamed(QStringLiteral("resource-system-initialized")).isEmpty());
     QVERIFY(
         resourceTraceComplete.value(QStringLiteral("detail"))
             .toString()
@@ -13937,11 +13967,15 @@ void StartupPerformanceTests::capturesLargeResourceTraceWhenConfigured()
 
     const QJsonArray packLifecycles =
         trace.value(QStringLiteral("packLifecycles")).toArray();
-    QCOMPARE(packLifecycles.size(), 7);
+    QCOMPARE(packLifecycles.size(), 6);
+    QSet<QString> packIds;
     for (const QJsonValue& packValue : packLifecycles)
     {
         const QJsonObject pack = packValue.toObject();
-        if (pack.value(QStringLiteral("packId")).toString()
+        const QString packId = pack.value(QStringLiteral("packId")).toString();
+        packIds.insert(packId);
+        QVERIFY(packId != QStringLiteral("splash"));
+        if (packId
             == QStringLiteral("roster-designs"))
         {
             QVERIFY(!pack.value(QStringLiteral("required")).toBool());
@@ -13956,6 +13990,15 @@ void StartupPerformanceTests::capturesLargeResourceTraceWhenConfigured()
             pack.value(QStringLiteral("mountedBefore")).toBool()
             );
     }
+    const QSet<QString> expectedPackIdsInTrace{
+        QStringLiteral("campuses"),
+        QStringLiteral("templates"),
+        QStringLiteral("roster-designs"),
+        QStringLiteral("documents"),
+        QStringLiteral("files"),
+        QStringLiteral("images")
+    };
+    QCOMPARE(packIds, expectedPackIdsInTrace);
 
     bool sawEmbeddedEntry = false;
     bool sawImageEntry = false;
@@ -13966,6 +14009,16 @@ void StartupPerformanceTests::capturesLargeResourceTraceWhenConfigured()
     for (const QJsonValue& entryValue : entries)
     {
         const QJsonObject entry = entryValue.toObject();
+        QVERIFY(
+            entry.value(QStringLiteral("resourcePack")).toString()
+                != QStringLiteral("splash")
+            );
+        QVERIFY(
+            !entry.value(QStringLiteral("path")).toString().contains(
+                QStringLiteral("splash"),
+                Qt::CaseInsensitive
+                )
+            );
         sawEmbeddedEntry =
             sawEmbeddedEntry
             || entry.value(QStringLiteral("resourcePack")).toString()

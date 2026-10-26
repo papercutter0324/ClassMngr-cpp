@@ -303,8 +303,6 @@ set(CLASSMNGR_UI_SHARED_SOURCES
     "src/ui/shared/widgets/sidebar/sidebar_teachers.cpp"
     "src/ui/shared/widgets/sidebar/sidebar_tree.cpp"
     "src/ui/shared/widgets/sidebar/sidebar_types.h"
-    "src/ui/shared/widgets/splash/splashscreen.cpp"
-    "src/ui/shared/widgets/splash/splashscreen.h"
     "src/ui/shared/widgets/text_fit_dialog_button_box.h"
     "src/ui/shared/widgets/text_fit_push_button.h"
 )

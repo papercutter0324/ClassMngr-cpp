@@ -39,6 +39,7 @@
 #include <QSignalSpy>
 #include <QStringList>
 #include <QTableWidget>
+#include <QTabWidget>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTreeWidget>
@@ -113,7 +114,6 @@ public:
         startupOptions.loadMostRecentDatabase = false;
         startupOptions.initialDatabasePath = workspacePath;
         window = std::make_unique<MainWindow>(
-            [](const QString&) {},
             false,
             &languageService,
             nullptr,
@@ -1603,20 +1603,102 @@ scheduleImportPersistsAndRefreshesTeacherSidebar()
                 return;
             }
 
+            QTabWidget* const resolutionTabs = review->findChild<QTabWidget*>(
+                QStringLiteral("scheduleImportResolutionTabs")
+                );
+            QWidget* const classResolutionPage = review->findChild<QWidget*>(
+                QStringLiteral("scheduleImportClassScrollArea")
+                );
+            QWidget* const teacherResolutionPage = review->findChild<QWidget*>(
+                QStringLiteral("scheduleImportTeacherScrollArea")
+                );
+            if (!resolutionTabs || !classResolutionPage || !teacherResolutionPage)
+            {
+                fail(QStringLiteral(
+                    "The workbook review is missing its resolution tabs."
+                    ));
+                return;
+            }
+
+            const int classTabIndex = resolutionTabs->indexOf(
+                classResolutionPage
+                );
+            const int teacherTabIndex = resolutionTabs->indexOf(
+                teacherResolutionPage
+                );
+            if (classTabIndex < 0 || teacherTabIndex < 0)
+            {
+                fail(QStringLiteral(
+                    "The workbook review is missing a resolution tab."
+                    ));
+                return;
+            }
+
+            if (stage == 2)
+            {
+                if (resolutionTabs->currentIndex() != classTabIndex)
+                {
+                    resolutionTabs->setCurrentIndex(classTabIndex);
+                    return;
+                }
+
+                for (int index = 0; index < 3; ++index)
+                {
+                    auto* const classAction = review->findChild<QComboBox*>(
+                        QStringLiteral("scheduleImportClassAction_%1")
+                            .arg(index)
+                        );
+                    if (!classAction)
+                    {
+                        fail(QStringLiteral(
+                            "The Classes tab is missing an import resolution."
+                            ));
+                        return;
+                    }
+
+                    int createClass = -1;
+                    for (int actionIndex = 0;
+                         actionIndex < classAction->count();
+                         ++actionIndex)
+                    {
+                        if (classAction->itemData(actionIndex).toInt()
+                            == static_cast<int>(ScheduleImportClassAction::CreateNew))
+                        {
+                            createClass = actionIndex;
+                            break;
+                        }
+                    }
+                    if (createClass < 0)
+                    {
+                        fail(QStringLiteral(
+                            "The Classes tab cannot create the imported classes."
+                            ));
+                        return;
+                    }
+                    classAction->setCurrentIndex(createClass);
+                }
+
+                resolutionTabs->setCurrentIndex(teacherTabIndex);
+                stage = 3;
+                return;
+            }
+
+            if (resolutionTabs->currentIndex() != teacherTabIndex)
+            {
+                resolutionTabs->setCurrentIndex(teacherTabIndex);
+                return;
+            }
+
             for (int index = 0; index < 3; ++index)
             {
                 auto* const teacherAction = review->findChild<QComboBox*>(
                     QStringLiteral("scheduleImportTeacherAction_%1")
                         .arg(index)
                     );
-                auto* const classAction = review->findChild<QComboBox*>(
-                    QStringLiteral("scheduleImportClassAction_%1")
-                        .arg(index)
-                    );
-                if (!teacherAction || !classAction)
+                if (!teacherAction)
                 {
                     fail(QStringLiteral(
-                        "The workbook review is missing an import resolution."
+                        "The Korean Teachers tab is missing an import resolution."
                         ));
                     return;
                 }
@@ -1633,27 +1715,14 @@ scheduleImportPersistsAndRefreshesTeacherSidebar()
                         break;
                     }
                 }
-                int createClass = -1;
-                for (int actionIndex = 0;
-                     actionIndex < classAction->count();
-                     ++actionIndex)
-                {
-                    if (classAction->itemData(actionIndex).toInt()
-                        == static_cast<int>(ScheduleImportClassAction::CreateNew))
-                    {
-                        createClass = actionIndex;
-                        break;
-                    }
-                }
-                if (createTeacher < 0 || createClass < 0)
+                if (createTeacher < 0)
                 {
                     fail(QStringLiteral(
-                        "The workbook review cannot create the imported records."
+                        "The Korean Teachers tab cannot create the imported teachers."
                         ));
                     return;
                 }
                 teacherAction->setCurrentIndex(createTeacher);
-                classAction->setCurrentIndex(createClass);
             }
 
             auto* const apply = review->findChild<QPushButton*>(

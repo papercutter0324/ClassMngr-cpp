@@ -228,7 +228,6 @@ actionUpdatesOverflowTooltipAndPersistsPreference()
         };
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -411,7 +410,6 @@ actionUpdatesMarqueeDelegateAndPersistsPreference()
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -485,7 +483,6 @@ actionReloadsUnknownPairBeforeSavingToggle()
         };
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

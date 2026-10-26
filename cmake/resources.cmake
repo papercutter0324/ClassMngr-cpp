@@ -94,11 +94,6 @@ classmngr_add_scoped_resource_pack(
     images
     "${PROJECT_SOURCE_DIR}/resources/assets/images"
 )
-classmngr_add_scoped_resource_pack(
-    splash
-    "${PROJECT_SOURCE_DIR}/resources/assets/splash"
-)
-
 file(GLOB_RECURSE CLASSMNGR_SPEAKING_EVAL_TEMPLATE_FILES CONFIGURE_DEPENDS
     RELATIVE "${PROJECT_SOURCE_DIR}/resources/assets/templates"
     "${PROJECT_SOURCE_DIR}/resources/assets/templates/speaking-eval/*"
@@ -203,7 +198,6 @@ foreach(scoped_resource_directory IN ITEMS
         documents
         files
         images
-        splash
         templates/speaking-eval)
     foreach(embedded_resource_file IN LISTS CLASSMNGR_EMBEDDED_PACK_FILES)
         if(embedded_resource_file MATCHES

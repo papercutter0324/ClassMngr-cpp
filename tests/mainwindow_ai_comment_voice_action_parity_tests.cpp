@@ -124,7 +124,6 @@ thirdPersonActionControlsBatchPromptVoice()
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -335,7 +334,6 @@ failedThirdPersonActionPreservesPromptVoiceAndAllowsRetry()
         };
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

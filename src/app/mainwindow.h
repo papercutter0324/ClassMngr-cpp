@@ -144,7 +144,6 @@ class MainWindow : public QMainWindow
 public:
 
     explicit MainWindow(
-        std::function<void(const QString&)> progressCallback,
         bool isAdmin,
         LanguageService* languageService,
         UpdateController* updateController,

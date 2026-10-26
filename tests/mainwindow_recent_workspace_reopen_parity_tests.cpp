@@ -184,7 +184,6 @@ recentActionReturnsFromOtherPageToSameWorkspaceSchedule()
     MainWindowStartupOptions startupOptions;
     startupOptions.loadMostRecentDatabase = false;
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -337,7 +336,6 @@ recentActionSwitchesActiveWorkspaceAndUpdatesHistoryWithoutChooser()
     const FileDialogServiceScope fileDialogScope(&fileDialogs);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -434,7 +432,6 @@ missingRecentActionPrunesAndPreservesActiveWorkspace()
     const FileDialogServiceScope fileDialogScope(&fileDialogs);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

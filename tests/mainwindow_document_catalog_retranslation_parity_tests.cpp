@@ -353,7 +353,6 @@ void MainWindowDocumentCatalogRetranslationParityTests::
             lastDiagnostic = error;
         };
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -774,7 +773,6 @@ void MainWindowDocumentCatalogRetranslationParityTests::
         );
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

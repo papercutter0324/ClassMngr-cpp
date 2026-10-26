@@ -152,8 +152,7 @@ ResourcePackManager::ResourcePackManager(
         {QStringLiteral("roster-designs"), Version(1, 0, 0), true},
         {QStringLiteral("documents"), Version(1, 0, 0), true},
         {QStringLiteral("files"), Version(1, 0, 0), false},
-        {QStringLiteral("images"), Version(1, 0, 0), false},
-        {QStringLiteral("splash"), Version(1, 0, 0), false}
+        {QStringLiteral("images"), Version(1, 0, 0), false}
     })
 {
     if (!storageDirectory.trimmed().isEmpty())

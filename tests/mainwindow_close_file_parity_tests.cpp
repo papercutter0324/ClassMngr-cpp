@@ -420,7 +420,6 @@ closeFileCancelPreservesDraftBeforeDiscardClosesWorkspace()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -595,7 +594,6 @@ closeFileSavePersistsDraftBeforeClosingWorkspace()
     const FileDialogServiceScope fileDialogScope(&fileDialogs);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -743,7 +741,6 @@ newFileActionReplacesOpenProfileWithCreatedProfile()
     const FileDialogServiceScope fileDialogScope(&fileDialogs);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -912,7 +909,6 @@ upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1110,7 +1106,6 @@ importClassesActionRequestsJsonAndCancellationIsSilent()
     const FileDialogServiceScope fileDialogScope(&fileDialogs);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1292,7 +1287,6 @@ importClassesActionReviewsAndAppliesJsonPackage()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1651,7 +1645,6 @@ exportClassesActionReachesJsonPickerAndCancellationIsSilent()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1820,7 +1813,6 @@ newTeacherActionShowsRequiredNameWarningWithoutNavigation()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -2004,7 +1996,6 @@ exportClassesActionWritesSelectedClassPackage()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

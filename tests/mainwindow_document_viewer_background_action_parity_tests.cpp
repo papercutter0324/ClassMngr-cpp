@@ -138,7 +138,6 @@ whiteAndBlackActionsUpdateViewerAndDefaultRestoresIt()
         };
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

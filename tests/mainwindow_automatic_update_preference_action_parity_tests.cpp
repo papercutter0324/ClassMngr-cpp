@@ -110,7 +110,6 @@ actionPersistsDisabledAndEnabledPreferences()
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -187,7 +186,6 @@ failedActionRestoresPreferenceAndSuccessfulRetryPersists()
         };
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

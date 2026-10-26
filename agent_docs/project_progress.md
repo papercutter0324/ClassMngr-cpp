@@ -45,8 +45,11 @@ dialog automation runs through Qt presentation/test adapters with value-only
 results. The six-target incremental macOS Debug build passed, focused CTest
 passed 4/4, and all direct workflow, CLI, semantic prompt, Sub Prep, Schedule
 Import, and Calendar Import selectors passed without skips. Schedule Import
-assertions remain at 5 users and 96 class candidates. F1513 is next; Batch 2
-discovery found no other slices beyond F1513.
+assertions remain at 5 users and 96 class candidates. F1513 is ready to commit
+after targeted macOS verification; the Windows x64 workflow is pending the
+authorized batch push. Its removal has no splash pack in the generated legacy
+manifest or Next catalog; the Phase 4 audit source and legacy feature-owned
+pack leases remain.
 Remaining Phase 5 work and its
 acceptance order are in the [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [active batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
@@ -71,7 +74,8 @@ resource and document lifecycle contracts.
 ## Overall Progress
 
 Phases 0–4 are Complete. Phase 5 is In progress on the Heavy route. F1501–F1512
-are complete with focused independent verification; F1513 is next. Phase 5 is
+are complete with focused independent verification; F1513 has passed targeted
+macOS checks and awaits its Windows x64 workflow result. Phase 5 is
 not complete until the startup, data policy, update, shutdown,
 splash-removal, and workflow-isolation exit gates pass.
 

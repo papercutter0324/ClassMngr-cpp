@@ -91,7 +91,6 @@ manualAndAutomaticActionsUpdatePageAndPersistPreference()
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -212,7 +211,6 @@ failedActionPreservesEffectiveModeAndRetryAppliesIt()
         };
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

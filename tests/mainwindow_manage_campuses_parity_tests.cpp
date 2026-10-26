@@ -500,7 +500,6 @@ cancelPreservesDirtyWorkspaceWhenManageCampusesIsTriggered()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         true,
         &languageService,
         nullptr,
@@ -609,7 +608,6 @@ discardOpensCampusInformationOnReusedDashboard()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         true,
         &languageService,
         nullptr,
@@ -750,7 +748,6 @@ importTeachersCancelPreservesDirtyWorkspace()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         true,
         &languageService,
         nullptr,
@@ -881,7 +878,6 @@ importTeachersDiscardRestoresDraftAndRejectsDialog()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         true,
         &languageService,
         nullptr,
@@ -1017,7 +1013,6 @@ importTeachersActionAppliesCheckedInWorkbookFromWorkspace()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         true,
         &languageService,
         nullptr,

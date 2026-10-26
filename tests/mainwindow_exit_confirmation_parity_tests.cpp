@@ -99,7 +99,6 @@ closeCancelPreservesDraftBeforeDiscardAcceptsClose()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -217,7 +216,6 @@ void MainWindowExitConfirmationParityTests::closeSavePersistsPersonalName()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -314,7 +312,6 @@ exitActionCancelPreservesDraftBeforeDiscardAcceptsClose()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

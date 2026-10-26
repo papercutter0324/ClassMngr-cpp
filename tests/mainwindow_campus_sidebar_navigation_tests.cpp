@@ -158,7 +158,6 @@ renderedCampusRootAndSectionsDispatchToCampusDashboard()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -395,7 +394,6 @@ usefulLinksUrlLeavesHandOffToQtWithoutNavigation()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

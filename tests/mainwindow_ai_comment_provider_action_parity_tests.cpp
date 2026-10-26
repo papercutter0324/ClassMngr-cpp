@@ -107,7 +107,6 @@ providerActionsUpdateProviderAndBatchDialogLabel()
     startupOptions.loadMostRecentDatabase = false;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -411,7 +410,6 @@ failedStandardProviderActionRestoresStateAndAllowsRetry()
         };
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

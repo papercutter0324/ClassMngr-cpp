@@ -400,7 +400,6 @@ addTeacherActionPreservesRequiredNameValidationOutcome()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -515,7 +514,6 @@ manualTeacherSavePreservesSelectedDuplicateOccurrence()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -806,7 +804,6 @@ refreshedTeacherLeavesDispatchCancelAndDiscard()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1190,7 +1187,6 @@ failedTeacherProfileReadRestoresSidebarSelection()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1395,7 +1391,6 @@ campusDirectoryCancelRestoresTeacherSidebarSelection()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1617,7 +1612,6 @@ staffDirectoryCancelRestoresTeacherSidebarSelection()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -1841,7 +1835,6 @@ staffDirectoryLoadFailureRestoresTeacherSidebarSelection()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -2107,7 +2100,6 @@ languageSwitchPreservesDuplicateTeacherOccurrenceAndDraft()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -2402,7 +2394,6 @@ deleteTeacherActionChooserCancelPreservesWorkspace()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -2768,7 +2759,6 @@ deleteTeacherActionChooserDeleteRemovesOnlyTarget()
     const UserPromptServiceScope promptScope(&prompts);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -3102,7 +3092,7 @@ void MainWindowTeacherSidebarNavigationParityTests::wideTeacherSidebarRoundTrip(
     options.initialDatabasePath = path;
     FakeUserPromptService prompts;
     const UserPromptServiceScope scope(&prompts);
-    MainWindow window([](const QString&) {}, false, &language, nullptr, std::move(options));
+    MainWindow window(false, &language, nullptr, std::move(options));
     window.show();
     QApplication::processEvents();
     auto* services = window.services();

@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 5 is active on the Heavy route. F1501–F1512 are complete; F1513 is next to remove the remaining legacy splash UI, leases, minimum duration, resource paths, and startup pack initialization. F1512 isolates Sub Prep, Schedule Import, and Calendar Import dialog automation behind Qt presentation/test adapters with value-only results. `ApplicationBootstrap` and `StartupCoordinator` do not scan top-level widgets to discover or activate prompts; workflow sequencing remains explicit and post-startup. UI presenter inputs such as `QWidget* parent` stay at the UI boundary and never enter `ApplicationRuntime` or domain contracts. Independent macOS Debug verification passed the six-target build, focused CTest 4/4, and direct workflow, semantic prompt, workspace/CLI, Schedule Import, Sub Prep, and Calendar Import selectors with no skips. The Schedule Import fixture retains its 5-user and 96-candidate assertions. Preserve Next's recognized value-bearing performance options and ordinary positional workspace selection. Batch 2 discovery found no further slices beyond F1513. F1511's retryable shutdown and F1510's deferred app-update behavior remain accepted; resource updates remain absent from startup.
+- Current note: Phase 5 is active on the Heavy route. F1501–F1512 are complete; F1513 is locally verified and ready to commit, with the Windows x64 workflow pending the authorized batch push. The eight-target incremental macOS Debug build passed; focused CTest passed 5/5, Next startup dependency boundary 1/1, and all eight direct startup/workflow selectors passed without skips. The generated legacy manifest and resource trace contain no splash pack; the Next catalog has no splash resource. The Phase 4 audit PNG and translation sources remain unchanged. F1513 removes splash UI, progress callback, lease, minimum duration, resource path, splash pack registration, and splash-only eager pack initialization. Preserve legacy feature-owned pack acquisitions under Phase 4's compatibility allowance; the pack-free startup gate applies to `ClassMngrNext`. F1512 isolates Sub Prep, Schedule Import, and Calendar Import dialog automation behind Qt presentation/test adapters with value-only results; its independent build and focused checks passed. `ApplicationBootstrap` and `StartupCoordinator` do not scan top-level widgets to discover or activate prompts; workflow sequencing remains explicit and post-startup. UI presenter inputs such as `QWidget* parent` stay at the UI boundary and never enter `ApplicationRuntime` or domain contracts. Preserve Next's recognized value-bearing performance options and ordinary positional workspace selection. Batch 2 discovery found no further slices beyond F1513. F1511's retryable shutdown and F1510's deferred app-update behavior remain accepted; resource updates remain absent from startup.
 
 ### Slice batches
 
@@ -340,7 +340,9 @@ Every stage must emit diagnostics without requiring a visible splash screen.
 Remove:
 
 - SplashScreen class.
-- Splash image.
+- Splash image from application runtime and package. Keep the tracked source
+  PNG only as a Phase 4 inventory audit input; do not compile, package, load,
+  or display it.
 - Splash progress bar.
 - Fade animation.
 - Splash leases.
@@ -352,6 +354,13 @@ Remove:
 The normal main window appears as soon as the shell and initial page prerequisites are ready.
 
 Do not replace the splash with another full-screen startup surface. If a page needs data, use its ordinary loading or empty state inside the main window.
+
+Phase 4 scopes its no-pack policy to `ClassMngrNext` and allows the legacy
+`ClassMngr` compatibility oracle to retain feature-owned RCC packs through
+Phase 12. F1513 removes the splash pack and splash-only eager global
+initialization; it preserves feature-owned legacy pack acquisitions required by
+the initial page and other workflows. The no-resource-pack startup gate
+applies to `ClassMngrNext`.
 
 ### 5.4 Startup data policy
 
@@ -432,7 +441,10 @@ request, choice, trace, and capture rather than reintroducing widget searches.
 
 ## Exit gate
 
-Startup has no progress callback, splash lease, minimum splash duration, or resource-pack initialization.
+`ClassMngrNext` startup has no progress callback, splash lease, minimum splash
+duration, or resource-pack initialization. Legacy `ClassMngr` has no splash
+surface or splash-specific eager pack initialization; it may retain lazy
+feature-owned packs under the Phase 4 compatibility allowance.
 
 The main window appears with the correct theme, language, and initial page. Every startup allocation is attributable to a named stage.
 

@@ -114,7 +114,6 @@ emptyStateSetupButtonOpensWizardAndReturnsToMyWorkspaceSchedule()
     const FileDialogServiceScope fileDialogScope(&fileDialogs);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -268,7 +267,6 @@ emptyStateOpenProfileButtonReachesOpenTeacherProfilePicker()
     const FileDialogServiceScope fileDialogScope(&fileDialogs);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -444,7 +442,6 @@ emptyStateNewProfileButtonCreatesTeacherProfileWithoutSetup()
     const FileDialogServiceScope fileDialogScope(&fileDialogs);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

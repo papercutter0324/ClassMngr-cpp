@@ -582,7 +582,6 @@ mainWindowRenderedLeavesNavigateWithinOpenSession()
     startupOptions.initialDatabasePath = workspacePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

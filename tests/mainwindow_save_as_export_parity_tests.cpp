@@ -139,7 +139,6 @@ saveAsActionMovesTheOpenSessionAndUpdatesRecentHistory()
     startupOptions.initialDatabasePath = sourcePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -223,7 +222,6 @@ saveAsActionCancellationPreservesOpenProfile()
     startupOptions.initialDatabasePath = sourcePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -343,7 +341,6 @@ exportActionPreservesWorkspaceAndUpdatesExportDirectoryPreference()
     startupOptions.initialDatabasePath = sourcePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -440,7 +437,6 @@ printCurrentPageActionCancellationPreservesWorkspaceState()
     startupOptions.initialDatabasePath = sourcePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -606,7 +602,6 @@ saveCurrentPageAsActionWritesSchedulePdf()
     startupOptions.initialDatabasePath = sourcePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -758,7 +753,6 @@ workspaceChildTabChangesRefreshPrintAndSaveAsActions()
     startupOptions.initialDatabasePath = sourcePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
@@ -837,7 +831,6 @@ saveActionCommitsActiveDatabaseTransaction()
     startupOptions.initialDatabasePath = sourcePath;
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,

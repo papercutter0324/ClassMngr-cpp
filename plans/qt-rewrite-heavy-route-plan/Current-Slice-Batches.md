@@ -137,7 +137,7 @@ its native matrix passed before this batch began.
     invocation/order, not the underlying QSettings write status. Retry is
     available while bootstrap remains alive; destroying the bootstrap ends
     ownership even if close still fails.
-12. **F1512 — Complete; ready to commit:** Separate legacy startup/performance workflow
+12. **F1512 — Complete; committed as `88245658`:** Separate legacy startup/performance workflow
     automation from production startup and use a semantic prompt seam.
     Acceptance: `ApplicationBootstrap` and `StartupCoordinator` must not scan
     top-level widgets to discover or activate prompts. Workflow automation
@@ -176,9 +176,56 @@ its native matrix passed before this batch began.
     handlers. This is targeted validation, not a full suite. The legacy splash
     checkpoint remains unchanged. Independent scope, implementation, and
     verification reviews are complete.
-13. **F1513 — Discovered:** Remove the legacy splash class/image/progress,
-    leases, minimum duration, resource paths, and startup pack initialization
-    after the workflow compatibility path is isolated.
+13. **F1513 — Ready to commit; Windows workflow pending:** Remove the legacy splash surface and its startup
+    path now that workflow dialog automation is isolated.
+    Acceptance: remove `SplashScreen`, its image from application runtime and
+    package, progress bar, fade, lease, minimum-duration delay, startup
+    progress callback, splash resource paths, and any hidden splash creation
+    or trace path. Remove splash pack registration from runtime definitions,
+    CMake targets, and generated manifests. Keep the tracked
+    `resources/assets/splash/splash.png` only as the Phase 4 inventory audit
+    input; it must not be compiled, packaged, loaded, or shown. Remove the
+    splash-only eager `ResourcePackManager::initialize()` call and keep
+    feature-owned legacy pack use required by the initial page and workflows.
+    Per Phase 4, the pack-free startup gate applies to `ClassMngrNext`; legacy
+    `ClassMngr` remains the compatibility oracle through Phase 12 and may
+    acquire non-splash feature packs. Preserve language, fonts, theme, app
+    icon, initial page, `startup-page-loaded`, `window-shown`,
+    `startup-complete`, and queued F1512 workflow execution.
+    Verification: build `ClassMngr`, `ClassMngrStartupPerformanceTests`,
+    `ClassMngrResourcePackTests`, `ClassMngrNext`,
+    `ClassMngrNextBootstrapTests`, `ClassMngrNextResourceLoaderTests`,
+    `ClassMngrScheduleTestingLayoutClearParityTests`, and
+    `ClassMngrMainWindowScheduleTestingClassesHandoffParityTests` in the
+    incremental macOS Debug tree. Run focused resource-pack, Next bootstrap,
+    Next loader, and MainWindow constructor CTests. Directly run startup metrics
+    and representative workflow selectors plus F1512 Schedule Import,
+    Calendar Import, and Sub Prep selectors with required roots set and no
+    skips. Assert splash and progress telemetry are absent, startup page/window
+    checkpoints remain ordered, Next remains pack-free, the generated legacy
+    manifest has no splash pack, and non-splash legacy packs still work. Keep
+    the Phase 4 audit image, translation sources, and inventory unchanged; any
+    stale localized splash strings have no active code path.
+    Implementation and independent macOS verification: the eight-target
+    incremental macOS Debug build succeeded, including the Next resource bake
+    (187 direct resources and 7 generated runtime inputs). Focused CTest passed
+    5/5 and the Next startup dependency boundary passed 1/1. All eight direct
+    selectors passed without skips: startup metrics, representative workflow,
+    resource trace, Schedule Import cancel/apply, Sub Prep output, and Calendar
+    Import normal/expected-failure. Calendar's local HTTP fixture required
+    loopback permission. Resource-pack QtTest passed 12/12, including
+    `rejectsSplashPack`. The legacy manifest contains the five non-splash RCC
+    packs, and the Next catalog has 194 records with no splash. The 191-entry
+    resource trace has zero errors and six non-splash lifecycle IDs. Startup
+    metrics omit `splash-shown`, `resource-system-initialized`, and progress
+    fields while preserving ordered page/window/completion checkpoints.
+    `git diff --check` passed. The tracked PNG remains only as Phase 4 audit
+    input. No local Windows result: this host is macOS ARM64 and the prescribed
+    `build/windows-x64-debug` folder/preset/toolchain is unavailable. The
+    authorized batch push is expected to trigger the `Refactoring baseline`
+    Windows x64 Debug job; Phase 5 remains in progress until that result is
+    checked. This is targeted validation, not a full suite or the whole Phase
+    5 exit gate.
 
 Initial Batch 1 discovery found no other slices beyond F1501–F1513.
 

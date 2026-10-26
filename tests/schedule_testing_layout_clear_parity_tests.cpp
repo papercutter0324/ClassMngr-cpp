@@ -16,7 +16,6 @@
 #include <QApplication>
 #include <QCheckBox>
 #include <QDialog>
-#include <QFile>
 #include <QLabel>
 #include <QPushButton>
 #include <QQueue>
@@ -375,15 +374,15 @@ public:
         if (withDatabase)
         {
             options.initialDatabasePath = databasePath(directory);
-            QFile emptyDatabase(options.initialDatabasePath);
-            databaseFileReady = emptyDatabase.open(QIODevice::WriteOnly);
-            if (databaseFileReady)
+            databaseSeedReady = seedServices
+                .openDatabase(options.initialDatabasePath)
+                .has_value();
+            if (databaseSeedReady)
             {
-                emptyDatabase.close();
+                seedServices.closeDatabase();
             }
         }
         window = std::make_unique<MainWindow>(
-            [](const QString&) {},
             false,
             nullptr,
             nullptr,
@@ -657,13 +656,14 @@ public:
 
     QTemporaryDir directory;
     RecordingPromptService prompts;
+    ApplicationServices seedServices;
     std::unique_ptr<MainWindow> window;
     SeedIds ids;
     MyWorkspacePage* workspace = nullptr;
     SchedulePage* workspaceSchedule = nullptr;
     SchedulePage* standaloneSchedule = nullptr;
     bool databaseReady = false;
-    bool databaseFileReady = false;
+    bool databaseSeedReady = false;
     bool foundDialog = false;
     bool foundScheduleTab = false;
     bool foundClearButton = false;
@@ -743,7 +743,7 @@ void ScheduleTestingLayoutClearParityTests::
 confirmationCancelLeavesRowsAndViewsUntouched()
 {
     LayoutClearFixture fixture(true);
-    QVERIFY(fixture.databaseFileReady);
+    QVERIFY(fixture.databaseSeedReady);
     QVERIFY(fixture.databaseReady);
     QVERIFY(fixture.seed());
     QVERIFY2(fixture.prepareScheduleViews(),
@@ -779,7 +779,7 @@ void ScheduleTestingLayoutClearParityTests::
 writeFailureWarnsAndPreservesRowsWithoutRefresh()
 {
     LayoutClearFixture fixture(true);
-    QVERIFY(fixture.databaseFileReady);
+    QVERIFY(fixture.databaseSeedReady);
     QVERIFY(fixture.databaseReady);
     QVERIFY(fixture.seed());
     QVERIFY2(fixture.prepareScheduleViews(),
@@ -828,7 +828,7 @@ void ScheduleTestingLayoutClearParityTests::
 successClearsLayoutPreservesSavedDataAndRefreshesViews()
 {
     LayoutClearFixture fixture(true);
-    QVERIFY(fixture.databaseFileReady);
+    QVERIFY(fixture.databaseSeedReady);
     QVERIFY(fixture.databaseReady);
     QVERIFY(fixture.seed());
     QVERIFY2(fixture.prepareScheduleViews(),
@@ -920,7 +920,7 @@ void ScheduleTestingLayoutClearParityTests::
 preferencesToggleTestingGradeVisibilityAndRefreshesSchedule()
 {
     LayoutClearFixture fixture(true);
-    QVERIFY(fixture.databaseFileReady);
+    QVERIFY(fixture.databaseSeedReady);
     QVERIFY(fixture.databaseReady);
     QVERIFY(fixture.seedRegularTestingPreferenceClasses());
     QVERIFY2(fixture.prepareScheduleViews(),
@@ -999,7 +999,7 @@ void ScheduleTestingLayoutClearParityTests::
 schedulePreferenceSaveFailureRestoresControlsAndCanRetry()
 {
     LayoutClearFixture fixture(true);
-    QVERIFY(fixture.databaseFileReady);
+    QVERIFY(fixture.databaseSeedReady);
     QVERIFY(fixture.databaseReady);
     QVERIFY(fixture.seedRegularTestingPreferenceClasses());
 

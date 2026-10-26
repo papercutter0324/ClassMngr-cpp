@@ -18,7 +18,6 @@
 #include "next/platform/settings_manager_font_size_preferences_port.h"
 #include "next/platform/settings_manager_language_preferences_port.h"
 #include "next/platform/settings_manager_theme_preferences_port.h"
-#include "ui/shared/widgets/splash/splashscreen.h"
 #include "ui/shared/constants/options.h"
 #include "core/utils/platform.h"
 #include "features/calendar/ui/calendar_page.h"
@@ -972,8 +971,7 @@ bool writeStartupResourceTrace()
         QStringLiteral("roster-designs"),
         QStringLiteral("documents"),
         QStringLiteral("files"),
-        QStringLiteral("images"),
-        QStringLiteral("splash")
+        QStringLiteral("images")
     };
     for (const QString& packId : resourcePackIds)
     {
@@ -1027,14 +1025,6 @@ bool writeStartupResourceTrace()
             expectedLifetime = QStringLiteral("catalog-metadata");
             loadPolicy = QStringLiteral("on-demand");
             streamable = true;
-        }
-        else if (packId == QStringLiteral("splash"))
-        {
-            classification = QStringLiteral("core");
-            owner = QStringLiteral("SplashScreen");
-            expectedLifetime = QStringLiteral("startup-only");
-            loadPolicy = QStringLiteral("startup");
-            startupNecessary = true;
         }
         else if (packId == QStringLiteral("templates"))
         {
@@ -9967,9 +9957,7 @@ void scheduleStartupPerformanceWorkflow(
 bool writeStartupPerformanceMetrics(
     const QString& outputPath,
     const StartupProfiler& profiler,
-    const StartupPerformanceMode& mode,
-    int progressUpdates,
-    int finalProgress
+    const StartupPerformanceMode& mode
     )
 {
     if (outputPath.trimmed().isEmpty())
@@ -9992,15 +9980,6 @@ bool writeStartupPerformanceMetrics(
     }
 
     QJsonObject metrics = profiler.reportJson();
-
-    metrics.insert(
-        QStringLiteral("progressUpdates"),
-        progressUpdates
-        );
-    metrics.insert(
-        QStringLiteral("finalProgress"),
-        finalProgress
-        );
 
     metrics.insert(
         QStringLiteral("format"),
@@ -10735,105 +10714,11 @@ int main(int argc, char *argv[])
     }
 
 
-    // =====================================================
-    // Splash Screen
-    // =====================================================
-
-    if (
-        const Status resourcePackStatus =
-            ResourcePackManager::instance().initialize();
-        !resourcePackStatus
-        )
-    {
-        qWarning().noquote() << resourcePackStatus.error();
-    }
-
-    if (startupPerformance.enabled)
-    {
-        startupProfiler.checkpoint(
-            QStringLiteral("resource-system-initialized")
-            );
-    }
-
-    auto splashLease = ResourcePaths::Splash::acquire();
-    if (!splashLease)
-    {
-        qWarning().noquote() << splashLease.error();
-        return 1;
-    }
-
-    auto splash = std::make_unique<SplashScreen>(
-        ResourcePaths::Splash::imagePath(*splashLease)
-        );
-
-    splash->centerOnScreen();
-    splash->show();
-
-    app.processEvents();
-
-    if (startupPerformance.enabled)
-    {
-        startupProfiler.checkpoint(QStringLiteral("splash-shown"));
-    }
-
-
-
-    // =====================================================
-    // Progress Callback
-    // =====================================================
-
-    // Language and font setup complete before the splash can be displayed.
-    int completedStartupSteps = 2;
-    int progressUpdates = 0;
-    int progress = 0;
     bool visualCaptureSucceeded = true;
-
-    auto updateProgress =
-        [&](const QString &message)
-    {
-        ++completedStartupSteps;
-        ++progressUpdates;
-
-        progress =
-            qMin(
-                100,
-                (100 * completedStartupSteps)
-                    / AppSettings::StartupProgressSteps
-                );
-
-        splash->setMessage(message);
-        splash->setProgress(progress);
-
-        app.processEvents();
-    };
-
-
-
-    // =====================================================
-    // Startup Timer
-    // =====================================================
-
-    QElapsedTimer startupTimer;
-
-    startupTimer.start();
 
     // =====================================================
     // Main Window
     // =====================================================
-
-    updateProgress(
-        QCoreApplication::translate(
-            "MainWindow",
-            "Loading resource packs..."
-            )
-        );
-
-    updateProgress(
-        QCoreApplication::translate(
-            "MainWindow",
-            "Loading application icon..."
-            )
-        );
 
     app.setWindowIcon(getAppIcon());
 
@@ -10841,7 +10726,6 @@ int main(int argc, char *argv[])
     std::unique_ptr<UpdateController> updateController;
 
     auto windowOwner = std::make_unique<MainWindow>(
-        updateProgress,
         isAdminMode(app.arguments()),
         &languageService,
         nullptr,
@@ -10867,32 +10751,6 @@ int main(int argc, char *argv[])
         );
     MainWindow& window = *windowOwner;
 
-    updateProgress(
-        QCoreApplication::translate(
-            "MainWindow",
-            "Ready..."
-            )
-        );
-
-    Q_ASSERT(
-        completedStartupSteps
-            == AppSettings::StartupProgressSteps
-        );
-
-    // =====================================================
-    // Ensure Minimum Splash Time
-    // =====================================================
-
-    int elapsed =
-        static_cast<int>(
-            startupTimer.elapsed()
-            );
-
-    int remaining =
-        qMax(0, AppSettings::MinimumSplashDurationMs - elapsed);
-
-
-
     // =====================================================
     // Finish Startup
     // =====================================================
@@ -10905,9 +10763,7 @@ int main(int argc, char *argv[])
             &updateController,
             &startupPerformance,
             &startupProfiler,
-            &visualCaptureSucceeded,
-            progressUpdates,
-            progress
+            &visualCaptureSucceeded
         ]()
     {
         // These tasks intentionally run in a later event-loop turn, after
@@ -10935,9 +10791,7 @@ int main(int argc, char *argv[])
                 &startupProfiler,
                 &startupPerformance,
                 &visualCaptureSucceeded,
-                workflowSucceeded,
-                progressUpdates,
-                progress
+                workflowSucceeded
             ]()
         {
             if (
@@ -10964,9 +10818,7 @@ int main(int argc, char *argv[])
                 || writeStartupPerformanceMetrics(
                        startupPerformance.outputPath,
                        startupProfiler,
-                       startupPerformance,
-                       progressUpdates,
-                       progress
+                       startupPerformance
                        );
             app.exit(
                 metricsWritten
@@ -11160,15 +11012,12 @@ int main(int argc, char *argv[])
         scheduleResourceTraceCompletion();
     };
 
-    // This is the single transition from startup to normal operation.  The
-    // splash and its resource lease are gone before the checkpoint is taken,
-    // and all optional work is queued only after that snapshot.
+    // This is the single transition from startup to normal operation. All
+    // optional work is queued only after the startup-complete snapshot.
     auto finish =
         [
             &app,
             &window,
-            &splash,
-            &splashLease,
             &startupPerformance,
             &startupProfiler,
             &visualCaptureSucceeded,
@@ -11182,9 +11031,6 @@ int main(int argc, char *argv[])
         {
             startupProfiler.checkpoint(QStringLiteral("window-shown"));
         }
-
-        splash.reset();
-        splashLease->reset();
 
         if (startupPerformance.enabled)
         {
@@ -11211,17 +11057,7 @@ int main(int argc, char *argv[])
             );
     };
 
-    auto startFinish = [&splash, &finish]()
-    {
-        splash->fadeOut(finish);
-    };
-
-    if (remaining <= 0)
-        startFinish();
-    else
-        QTimer::singleShot(remaining, startFinish);
-
-
+    finish();
 
     // =====================================================
     // Run App

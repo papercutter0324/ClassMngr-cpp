@@ -100,6 +100,7 @@ class ResourcePackTests : public QObject
 
 private slots:
     void knowsConfiguredPacks();
+    void rejectsSplashPack();
     void parsesKnownPacks();
     void requiresConfiguredPacks();
     void rejectsUnsafeArtifacts();
@@ -123,6 +124,22 @@ void ResourcePackTests::knowsConfiguredPacks()
     QCOMPARE(
         manager.currentVersion(QStringLiteral("documents")).toString(),
         QStringLiteral("1.0.0")
+        );
+}
+
+void ResourcePackTests::rejectsSplashPack()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ResourcePackManager manager(directory.path());
+    const auto splashPack = manager.acquire(QStringLiteral("splash"));
+
+    QVERIFY(!splashPack.has_value());
+    QVERIFY(
+        splashPack.error().contains(
+            QStringLiteral("Unknown resource pack 'splash'.")
+            )
         );
 }
 

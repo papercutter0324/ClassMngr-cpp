@@ -117,7 +117,6 @@ darkThemeActionAndLightRestorationUpdateApplicationState()
     startupOptions.startupThemeService = std::move(startupThemeService);
 
     MainWindow window(
-        [](const QString&) {},
         false,
         &languageService,
         nullptr,
