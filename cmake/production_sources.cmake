@@ -65,17 +65,9 @@ set(CLASSMNGR_SETTINGS_SOURCES
     "src/core/settingsmanager.h"
 )
 
-set(CLASSMNGR_DATA_SOURCES
-    "src/data/data_service.cpp"
-    "src/data/data_service.h"
-    "src/data/database/database_file_operations.cpp"
-    "src/data/database/database_file_operations.h"
-    "src/data/database/database_file_operations_internal.h"
+set(CLASSMNGR_WORKSPACE_STORE_SOURCES
     "src/data/database/database_schema_manager.cpp"
     "src/data/database/database_schema_manager.h"
-    "src/data/database/database_session.h"
-    "src/data/database/sqlite_online_backup.cpp"
-    "src/data/database/sqlite_online_backup.h"
     "src/data/database/workspace_store.cpp"
     "src/data/database/workspace_store.h"
     "src/data/database/workspace_store_fwd.h"
@@ -83,6 +75,8 @@ set(CLASSMNGR_DATA_SOURCES
     "src/data/database/database_transaction.h"
     "src/data/database/sql_query_utils.cpp"
     "src/data/database/sql_query_utils.h"
+    "src/data/repositories/teacher_import_sql_persistence_adapter.cpp"
+    "src/data/repositories/teacher_import_sql_persistence_adapter.h"
     "src/data/repositories/calendar_event_repository.cpp"
     "src/data/repositories/calendar_event_repository.h"
     "src/data/repositories/campus_record_repository.cpp"
@@ -93,7 +87,6 @@ set(CLASSMNGR_DATA_SOURCES
     "src/data/repositories/class_repository.h"
     "src/data/repositories/class_transfer_repository.cpp"
     "src/data/repositories/class_transfer_repository.h"
-    "src/data/repositories/class_transfer_legacy_package_adapter.h"
     "src/data/repositories/gs_team_repository.cpp"
     "src/data/repositories/gs_team_repository.h"
     "src/data/repositories/intensive_slot_state_repository.cpp"
@@ -102,7 +95,6 @@ set(CLASSMNGR_DATA_SOURCES
     "src/data/repositories/native_english_teacher_repository.h"
     "src/data/repositories/roster_repository.cpp"
     "src/data/repositories/roster_repository.h"
-    "src/data/repositories/repository_error.h"
     "src/data/repositories/schedule_import_repository.cpp"
     "src/data/repositories/schedule_import_repository.h"
     "src/data/repositories/settings_repository.cpp"
@@ -111,15 +103,33 @@ set(CLASSMNGR_DATA_SOURCES
     "src/data/repositories/speaking_eval_repository.h"
     "src/data/repositories/teacher_import_repository.cpp"
     "src/data/repositories/teacher_import_repository.h"
-    "src/data/repositories/teacher_import_legacy_plan_adapter.h"
-    "src/data/repositories/teacher_import_sql_persistence_adapter.cpp"
-    "src/data/repositories/teacher_import_sql_persistence_adapter.h"
     "src/data/repositories/teacher_repository.cpp"
     "src/data/repositories/teacher_repository.h"
     "src/data/repositories/testing_block_repository.cpp"
     "src/data/repositories/testing_block_repository.h"
     "src/data/repositories/testing_class_repository.cpp"
     "src/data/repositories/testing_class_repository.h"
+    "src/features/schedule/services/schedule_import_plan_validator.cpp"
+)
+
+set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
+    "src/next/platform/workspace_store_gateway.cpp"
+    "src/next/platform/workspace_store_gateway.h"
+    "src/next/platform/next_startup_profiler_inactive_workspace_compat.cpp"
+)
+
+set(CLASSMNGR_DATA_SOURCES
+    "src/data/data_service.cpp"
+    "src/data/data_service.h"
+    "src/data/database/database_file_operations.cpp"
+    "src/data/database/database_file_operations.h"
+    "src/data/database/database_file_operations_internal.h"
+    "src/data/database/database_session.h"
+    "src/data/database/sqlite_online_backup.cpp"
+    "src/data/database/sqlite_online_backup.h"
+    "src/data/repositories/class_transfer_legacy_package_adapter.h"
+    "src/data/repositories/repository_error.h"
+    "src/data/repositories/teacher_import_legacy_plan_adapter.h"
 )
 
 set(CLASSMNGR_DOMAIN_SOURCES
@@ -424,7 +434,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/schedule/import/schedule_workbook_parser.h"
     "src/features/schedule/schedule_settings_preferences.cpp"
     "src/features/schedule/schedule_settings_preferences.h"
-    "src/features/schedule/services/schedule_import_plan_validator.cpp"
     "src/features/schedule/services/schedule_import_plan_validator.h"
     "src/features/schedule/services/schedule_import_review_model.cpp"
     "src/features/schedule/services/schedule_import_review_model.h"

@@ -1,8 +1,11 @@
 #include "next/bootstrap/application_bootstrap.h"
 
 #include "next/bootstrap/qt_startup_diagnostics_sink.h"
+#include "next/application/recent_workspace_history_use_case.h"
 #include "next/platform/settings_manager_language_preferences_port.h"
+#include "next/platform/settings_manager_recent_workspace_history_port.h"
 #include "next/platform/settings_manager_theme_preferences_port.h"
+#include "next/platform/workspace_store_gateway.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_scope.h"
@@ -10,6 +13,7 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QFileInfo>
 #include <QLocale>
 #include <QStringList>
 #include <QStyleHints>
@@ -87,6 +91,33 @@ namespace
     return {};
 }
 
+[[nodiscard]] bool isSupportedStartupWorkspacePath(const QString& path)
+{
+    return path.endsWith(QStringLiteral(".tps"), Qt::CaseInsensitive)
+        || path.endsWith(QStringLiteral(".db"), Qt::CaseInsensitive);
+}
+
+[[nodiscard]] QString normalizedStartupWorkspacePath(const QString& path)
+{
+    QString supportedPath = path;
+    if (QFileInfo(supportedPath).suffix().isEmpty())
+    {
+        supportedPath += QStringLiteral(".tps");
+    }
+    return QFileInfo(supportedPath).absoluteFilePath();
+}
+
+[[nodiscard]] Application::StartupWorkspaceOpenFailed startupWorkspaceException()
+{
+    return Application::StartupWorkspaceOpenFailed{
+        Domain::OperationError{
+            .code = Domain::ErrorCode::Technical,
+            .message = "Startup workspace composition failed.",
+            .recoverable = false
+        }
+    };
+}
+
 }  // namespace
 
 struct ApplicationBootstrap::CoreServices final
@@ -149,13 +180,15 @@ ApplicationBootstrap::ApplicationBootstrap(
     StartupEventObserver startupEventObserver,
     StartupDiagnosticsSinkFactory startupDiagnosticsSinkFactory,
     ResourcePackagePathsResolver resourcePackagePathsResolver,
-    std::optional<QStringList> systemUiLanguages
+    std::optional<QStringList> systemUiLanguages,
+    StartupWorkspaceSeams startupWorkspaceSeams
     )
     : m_application(application),
       m_startupEventObserver(std::move(startupEventObserver)),
       m_startupDiagnosticsSinkFactory(std::move(startupDiagnosticsSinkFactory)),
       m_resourcePackagePathsResolver(std::move(resourcePackagePathsResolver)),
       m_systemUiLanguages(std::move(systemUiLanguages)),
+      m_startupWorkspaceSeams(std::move(startupWorkspaceSeams)),
       m_shutdownCoordinator([&application] {
           application.quit();
       })
@@ -164,6 +197,7 @@ ApplicationBootstrap::ApplicationBootstrap(
 
 ApplicationBootstrap::~ApplicationBootstrap()
 {
+    releaseWorkspace();
     if (m_quitOnLastWindowClosedChanged)
     {
         m_application.setQuitOnLastWindowClosed(
@@ -363,6 +397,29 @@ Application::StartupResult ApplicationBootstrap::start()
     {
         rollbackStartupComposition();
         return requiredFontsLoadedResult;
+    }
+
+    Application::StartupStageOutcome workspaceOutcome =
+        Application::StartupStageOutcome::Warning;
+    try
+    {
+        workspaceOutcome = openStartupWorkspace();
+    }
+    catch (...)
+    {
+        releaseWorkspace();
+        m_startupWorkspaceOutcome = startupWorkspaceException();
+    }
+    const Application::StartupResult workspaceOpenedResult =
+        m_startupCoordinator.recordStage(
+            Application::StartupStage::WorkspaceOpened,
+            workspaceOutcome
+            );
+    observeStartupResult(workspaceOpenedResult);
+    if (workspaceOpenedResult.status == Application::StartupStatus::Failed)
+    {
+        rollbackStartupComposition();
+        return workspaceOpenedResult;
     }
 
     m_previousQuitOnLastWindowClosed = m_application.quitOnLastWindowClosed();
@@ -580,6 +637,235 @@ bool ApplicationBootstrap::loadRequiredFonts()
     return true;
 }
 
+Application::StartupStageOutcome ApplicationBootstrap::openStartupWorkspace()
+{
+    const std::optional<Application::WorkspaceLocation> commandLineLocation =
+        commandLineStartupWorkspaceLocation();
+    const bool recentAutoOpenEnabled =
+        m_startupWorkspaceSeams.recentAutoOpenEnabled.value_or(true);
+
+    std::unique_ptr<Application::RecentWorkspaceHistoryPort> historyPort;
+    Application::RecentWorkspaceHistory history;
+    const auto makeHistoryPort = [&]()
+    {
+        if (historyPort)
+        {
+            return;
+        }
+        historyPort = m_startupWorkspaceSeams.recentWorkspaceHistoryPortFactory
+            ? m_startupWorkspaceSeams.recentWorkspaceHistoryPortFactory()
+            : std::make_unique<Platform::SettingsManagerRecentWorkspaceHistoryPort>();
+    };
+
+    if (!commandLineLocation.has_value() && recentAutoOpenEnabled)
+    {
+        makeHistoryPort();
+        if (historyPort)
+        {
+            history = historyPort->load();
+        }
+    }
+
+    const Application::StartupWorkspaceSelection selection =
+        Application::StartupWorkspacePolicy::select(
+            commandLineLocation,
+            recentAutoOpenEnabled,
+            history
+            );
+    const auto* const noCandidate =
+        std::get_if<Application::StartupNoWorkspaceCandidate>(&selection);
+    if (noCandidate != nullptr)
+    {
+        m_startupWorkspaceOutcome = Application::StartupWorkspaceNotOpened{
+            noCandidate->reason
+        };
+        return Application::StartupStageOutcome::Warning;
+    }
+
+    const Application::StartupWorkspaceCandidate& candidate =
+        std::get<Application::StartupWorkspaceCandidate>(selection);
+    if (candidate.source == Application::StartupWorkspaceSource::CommandLine)
+    {
+        // Legacy startup records a successfully opened command-line profile
+        // in recent history, even though it does not consult that history to
+        // select the profile.
+        makeHistoryPort();
+        if (historyPort)
+        {
+            history = historyPort->load();
+        }
+    }
+
+    const QString selectedPath =
+        normalizedStartupWorkspacePath(QString::fromUtf8(
+            candidate.location.value().data(),
+            static_cast<qsizetype>(candidate.location.value().size())
+            ));
+    const Application::WorkspaceLocation selectedLocation(
+        selectedPath.toUtf8().toStdString()
+        );
+
+    if (candidate.source != Application::StartupWorkspaceSource::CommandLine)
+    {
+        const bool exists = m_startupWorkspaceSeams.pathExists
+            ? m_startupWorkspaceSeams.pathExists(selectedLocation)
+            : QFileInfo::exists(selectedPath);
+        if (!exists)
+        {
+            std::optional<Domain::OperationError> historyError;
+            if (historyPort)
+            {
+                const Application::RecentWorkspaceHistory pruned =
+                    Application::RecentWorkspaceHistoryUseCase::prune(
+                        history,
+                        candidate.location,
+                        selectedLocation
+                        );
+                const Domain::Result<void> saved = historyPort->save(pruned);
+                if (!saved)
+                {
+                    historyError = saved.error();
+                }
+            }
+            m_startupWorkspaceOutcome = Application::StartupWorkspaceNotOpened{
+                Application::StartupNoWorkspaceReason::StaleRecentPathPruned,
+                std::move(historyError)
+            };
+            return Application::StartupStageOutcome::Warning;
+        }
+    }
+
+    ensureWorkspaceComposition();
+    const Domain::Result<Application::WorkspaceSession> opened =
+        m_workspaceCoordinator->openWorkspace(
+            Application::OpenWorkspaceRequest{selectedLocation}
+            );
+    if (!opened)
+    {
+        m_startupWorkspaceOutcome = Application::StartupWorkspaceOpenFailed{
+            opened.error()
+        };
+        releaseWorkspace();
+        return Application::StartupStageOutcome::Warning;
+    }
+
+    std::optional<Domain::OperationError> historyError;
+    if (historyPort)
+    {
+        const Application::RecentWorkspaceHistory recorded =
+            Application::RecentWorkspaceHistoryUseCase::record(
+                history,
+                candidate.location,
+                opened.value().location()
+                );
+        const Domain::Result<void> saved = historyPort->save(recorded);
+        if (!saved)
+        {
+            historyError = saved.error();
+        }
+    }
+
+    m_startupWorkspaceOutcome = Application::StartupWorkspaceOpened{
+        opened.value(),
+        std::move(historyError)
+    };
+    return std::get<Application::StartupWorkspaceOpened>(
+            *m_startupWorkspaceOutcome
+            ).historyError.has_value()
+        ? Application::StartupStageOutcome::Warning
+        : Application::StartupStageOutcome::Completed;
+}
+
+std::optional<Application::WorkspaceLocation>
+ApplicationBootstrap::commandLineStartupWorkspaceLocation() const
+{
+    const QStringList arguments = m_startupWorkspaceSeams.commandLineArguments
+        ? *m_startupWorkspaceSeams.commandLineArguments
+        : m_application.arguments();
+
+    for (int index = 1; index < arguments.size(); ++index)
+    {
+        const QString& argument = arguments.at(index);
+        if (argument == QStringLiteral("--startup-performance-workflow"))
+        {
+            continue;
+        }
+
+        if (argument == QStringLiteral("--startup-performance-output")
+            || argument == QStringLiteral("--startup-performance-scenario")
+            || argument == QStringLiteral("--startup-performance-settle-ms")
+            || argument == QStringLiteral("--startup-visual-capture-output")
+            || argument == QStringLiteral("--startup-visual-capture-language")
+            || argument == QStringLiteral("--startup-visual-capture-theme"))
+        {
+            ++index;
+            continue;
+        }
+
+        if (argument.startsWith(QLatin1Char('-'))
+            || !isSupportedStartupWorkspacePath(argument))
+        {
+            continue;
+        }
+
+        const QByteArray encoded = argument.toUtf8();
+        return Application::WorkspaceLocation(std::string(
+            encoded.constData(),
+            static_cast<std::size_t>(encoded.size())
+            ));
+    }
+    return std::nullopt;
+}
+
+void ApplicationBootstrap::ensureWorkspaceComposition()
+{
+    if (m_workspaceCoordinator)
+    {
+        return;
+    }
+
+    if (m_startupWorkspaceSeams.workspaceGatewayFactory)
+    {
+        m_workspaceGateway =
+            m_startupWorkspaceSeams.workspaceGatewayFactory();
+    }
+    else
+    {
+        m_workspaceGateway =
+            std::make_unique<Platform::WorkspaceStoreGateway>();
+    }
+    if (!m_workspaceGateway)
+    {
+        throw std::runtime_error("Startup workspace gateway unavailable.");
+    }
+
+    m_workspaceUseCase = std::make_unique<Application::WorkspaceUseCase>(
+        *m_workspaceGateway
+        );
+    m_workspaceCoordinator = std::make_unique<Application::WorkspaceCoordinator>(
+        *m_workspaceUseCase,
+        m_workspaceState,
+        m_workspaceSelectionState
+        );
+}
+
+void ApplicationBootstrap::releaseWorkspace() noexcept
+{
+    if (m_workspaceCoordinator
+        && m_workspaceState.snapshot().session().has_value())
+    {
+        static_cast<void>(m_workspaceCoordinator->closeWorkspace());
+    }
+    if (m_workspaceState.snapshot().session().has_value())
+    {
+        static_cast<void>(m_workspaceState.close());
+    }
+
+    m_workspaceCoordinator.reset();
+    m_workspaceUseCase.reset();
+    m_workspaceGateway.reset();
+}
+
 Application::StartupResult ApplicationBootstrap::failStartupStage(
     const Application::StartupStage stage,
     const Application::StartupFailureReason reason
@@ -598,6 +884,7 @@ Application::StartupResult ApplicationBootstrap::failStartupStage(
 void ApplicationBootstrap::rollbackStartupComposition() noexcept
 {
     m_shell.reset();
+    releaseWorkspace();
 
     if (m_coreServices)
     {
@@ -661,6 +948,10 @@ bool ApplicationBootstrap::createCoreServices()
 
 Application::ShutdownResult ApplicationBootstrap::shutdown()
 {
+    if (!m_shutdownCoordinator.shutdownRequested())
+    {
+        releaseWorkspace();
+    }
     return m_shutdownCoordinator.requestShutdown();
 }
 
@@ -677,6 +968,18 @@ Ui::ApplicationShell* ApplicationBootstrap::shell() noexcept
 const Ui::ApplicationShell* ApplicationBootstrap::shell() const noexcept
 {
     return m_shell.get();
+}
+
+const std::optional<Application::StartupWorkspaceOutcome>&
+ApplicationBootstrap::startupWorkspaceOutcome() const noexcept
+{
+    return m_startupWorkspaceOutcome;
+}
+
+Application::WorkspaceStateSnapshot
+ApplicationBootstrap::workspaceStateSnapshot() const
+{
+    return m_workspaceState.snapshot();
 }
 
 void ApplicationBootstrap::observeStartupResult(

@@ -43,9 +43,22 @@ its native matrix passed before this batch began.
    bootstrap/preference CTest 3/3, and launch/filesystem CTest 2/2. Locale
    fallback and regional selection were exercised through a deterministic
    locale-list seam. No full suite ran.
-6. **F1506 — Discovered:** Apply an explicit workspace startup policy and
-   retain the session through Next contracts with typed no-workspace/open
-   failure results.
+6. **F1506 — Complete:** Preserve legacy workspace choice order:
+   first supported command-line path; otherwise the first recent workspace
+   when recent auto-open is enabled; use last-file only when the recent list is
+   empty; no candidate is a valid no-workspace start. Preserve stale-first-MRU
+   behavior by pruning the missing entry and stopping that attempt. Use one
+   Next-owned `WorkspaceStore` through a dedicated store-backed adapter and the
+   existing Next workspace contracts; do not construct `ApplicationServices`,
+   link broad `Platform`/Network, or create a second store. Typed no-workspace
+   and open-error warnings permit the empty shell to appear; retain a successful
+   `WorkspaceSession` in Next state. Do not record `StartupReady` until the
+   runtime, PageHost, and startup catalog are composed. Independent checks must
+   cover policy order, session retention, no-workspace/open failure, and the
+   no-create-on-missing-path boundary. Independent macOS Debug verification
+   passed six focused QtTest cases (8/8 including setup/cleanup), the bootstrap
+   and dependency-boundary CTests (2/2), and builds of ClassMngrNext and
+   ClassMngr. Link inspection confirmed no Network or broad legacy target.
 7. **F1507 — Discovered:** Compose `ApplicationRuntime` from Next use cases and
    platform adapters without feature-page ownership.
 8. **F1508 — Discovered:** Connect the shell to a factory-only PageHost with

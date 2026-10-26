@@ -24,6 +24,8 @@ target_compile_definitions(ClassMngrNextBootstrapTests
 target_link_libraries(ClassMngrNextBootstrapTests
     PRIVATE
         ClassMngrNext::Resources
+        ClassMngrNextWorkspace
+        Qt6::Sql
         Qt6::Test
         Qt6::Widgets
 )
@@ -46,6 +48,57 @@ add_test(
 set_tests_properties(ClassMngrNextBootstrapTests
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+# Preserve the narrow production startup link boundary and keep its
+# WorkspaceStore profiler compatibility object out of the legacy executable.
+get_target_property(_classmngr_next_startup_links
+    ClassMngrNext
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_next_workspace_links
+    ClassMngrNextWorkspace
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_workspace_store_links
+    ClassMngrWorkspaceStore
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_next_workspace_sources
+    ClassMngrNextWorkspace
+    SOURCES
+)
+get_target_property(_classmngr_legacy_sources
+    ClassMngr
+    SOURCES
+)
+foreach(_classmngr_next_boundary_value IN ITEMS
+        _classmngr_next_startup_links
+        _classmngr_next_workspace_links
+        _classmngr_workspace_store_links
+        _classmngr_next_workspace_sources
+        _classmngr_legacy_sources)
+    string(REPLACE ";" "|" ${_classmngr_next_boundary_value}
+        "${${_classmngr_next_boundary_value}}"
+    )
+endforeach()
+set(_classmngr_next_boundary_report
+    "${CMAKE_CURRENT_BINARY_DIR}/next-workspace-dependency-boundary.txt"
+)
+file(WRITE "${_classmngr_next_boundary_report}"
+    "NEXT_LINKS=${_classmngr_next_startup_links}\n"
+    "NEXT_WORKSPACE_LINKS=${_classmngr_next_workspace_links}\n"
+    "WORKSPACE_STORE_LINKS=${_classmngr_workspace_store_links}\n"
+    "NEXT_WORKSPACE_SOURCES=${_classmngr_next_workspace_sources}\n"
+    "LEGACY_SOURCES=${_classmngr_legacy_sources}\n"
+)
+add_test(
+    NAME NextStartupWorkspaceDependencyBoundary
+    COMMAND
+        "${CMAKE_COMMAND}"
+        "-DREPORT_FILE=${_classmngr_next_boundary_report}"
+        -P
+        "${PROJECT_SOURCE_DIR}/cmake/tests/next_workspace_dependency_boundary.cmake"
 )
 
 add_executable(ClassMngrNextCalendarResourceKeysTests

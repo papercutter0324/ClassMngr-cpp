@@ -204,6 +204,14 @@ include(cmake/platform/windows.cmake)
 include(cmake/next.cmake)
 include(cmake/next_resources.cmake)
 
+# WorkspaceStore and its repository closure are shared by the legacy runtime
+# and the narrow Next startup adapter. Keep their Application contract usage
+# explicit without exposing the store through the Next Platform umbrella.
+target_link_libraries(ClassMngrWorkspaceStore
+    PRIVATE
+        ClassMngrNext::Application
+)
+
 # Schedule Import's persistence edge adapts legacy database snapshots to a
 # Qt-free Application state-validation contract.
 target_link_libraries(ClassMngrData

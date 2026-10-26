@@ -110,6 +110,21 @@ classmngr_add_production_objects(
     LIBRARIES
         Qt6::Core
 )
+add_library(ClassMngrWorkspaceStore STATIC
+    ${CLASSMNGR_WORKSPACE_STORE_SOURCES}
+)
+target_link_libraries(ClassMngrWorkspaceStore
+    PUBLIC
+        ClassMngrBuildSettings
+        ClassMngrSQLiteSnapshot
+        Qt6::Gui
+        Qt6::Sql
+)
+set_target_properties(ClassMngrWorkspaceStore
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 classmngr_add_production_objects(
     TARGET ClassMngrData
     SOURCES ${CLASSMNGR_DATA_SOURCES}
@@ -195,6 +210,7 @@ add_library(ClassMngrRuntime STATIC
 target_link_libraries(ClassMngrRuntime
     PUBLIC
         ClassMngrBuildSettings
+        ClassMngrWorkspaceStore
         ${_classmngr_legacy_runtime_dependencies}
     PRIVATE
         ClassMngrSQLiteSnapshot
@@ -218,6 +234,7 @@ if(APPLE AND BUILD_TESTING)
     target_link_libraries(ClassMngrTestRuntime
         PUBLIC
             ClassMngrBuildSettings
+            ClassMngrWorkspaceStore
             ${_classmngr_legacy_runtime_dependencies}
         PRIVATE
             ClassMngrSQLiteSnapshot

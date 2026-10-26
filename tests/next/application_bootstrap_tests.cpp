@@ -9,6 +9,7 @@
 #include "next/ui/application_shell.h"
 #include "next/ui/initial_page.h"
 #include "core/settingsmanager.h"
+#include "data/database/workspace_store.h"
 #include "ui/shared/state/option_state_keys.h"
 
 #include <QApplication>
@@ -20,6 +21,7 @@
 #include <QLabel>
 #include <QLocale>
 #include <QStyleHints>
+#include <QSqlDatabase>
 #include <QTemporaryDir>
 #include <QWidget>
 #include <QtTest/QtTest>
@@ -29,6 +31,8 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <string>
+#include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next;
@@ -60,6 +64,12 @@ private slots:
     void startupCoordinatorRetainsTypedWarningAndTerminalFailure();
     void closeRequestsShutdownOnceAndRestoresApplicationPolicy();
     void startupFailureAndShutdownActionAreReportedPrecisely();
+    void startupWorkspacePolicyPreservesLegacyCandidateOrder();
+    void noWorkspaceRemainsAnExplicitNonFatalWarning();
+    void staleFirstRecentPathIsPrunedWithoutTryingLaterCandidates();
+    void recentOpenErrorDoesNotFallThroughToLaterCandidates();
+    void missingExplicitWorkspaceDoesNotCreateFileOrParent();
+    void successfulStartupRetainsSessionAndReleasesStoreOnShutdown();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -67,6 +77,104 @@ private:
 
 namespace
 {
+
+class SilentStartupDiagnosticsSink final : public Bootstrap::StartupDiagnosticsSink
+{
+public:
+    void record(const Application::StartupEvent&) noexcept override
+    {
+    }
+};
+
+struct RecentWorkspaceHistoryProbe final
+{
+    Application::RecentWorkspaceHistory history;
+    std::vector<Application::RecentWorkspaceHistory> saves;
+    int loadCount = 0;
+};
+
+class RecordingRecentWorkspaceHistoryPort final
+    : public Application::RecentWorkspaceHistoryPort
+{
+public:
+    explicit RecordingRecentWorkspaceHistoryPort(
+        std::shared_ptr<RecentWorkspaceHistoryProbe> probe
+        )
+        : m_probe(std::move(probe))
+    {
+    }
+
+    [[nodiscard]] Application::RecentWorkspaceHistory load() const override
+    {
+        ++m_probe->loadCount;
+        return m_probe->history;
+    }
+
+    [[nodiscard]] Domain::Result<void> save(
+        const Application::RecentWorkspaceHistory& history
+        ) const override
+    {
+        m_probe->saves.push_back(history);
+        return Domain::Result<void>::success();
+    }
+
+    [[nodiscard]] Domain::Result<void> clear() const override
+    {
+        return Domain::Result<void>::success();
+    }
+
+private:
+    std::shared_ptr<RecentWorkspaceHistoryProbe> m_probe;
+};
+
+Bootstrap::ApplicationBootstrap::StartupDiagnosticsSinkFactory
+silentStartupDiagnosticsSinkFactory()
+{
+    return [] {
+        return std::make_unique<SilentStartupDiagnosticsSink>();
+    };
+}
+
+Application::WorkspaceLocation workspaceLocation(const QString& path)
+{
+    return Application::WorkspaceLocation(
+        QFileInfo(path).absoluteFilePath().toUtf8().toStdString()
+        );
+}
+
+void verifyWorkspaceStartupOrder(
+    const Application::StartupResult& result,
+    const std::vector<Application::StartupEvent>& observedEvents,
+    const Bootstrap::ApplicationBootstrap& bootstrap,
+    const Application::StartupStageOutcome workspaceOutcome
+    )
+{
+    QVERIFY(result.succeeded());
+    QCOMPARE(result.status, Application::StartupStatus::InitialExperienceAvailable);
+    constexpr std::array expectedStages{
+        Application::StartupStage::ProcessCreated,
+        Application::StartupStage::CoreServicesCreated,
+        Application::StartupStage::SettingsLoaded,
+        Application::StartupStage::LanguageLoaded,
+        Application::StartupStage::ThemeLoaded,
+        Application::StartupStage::RequiredFontsLoaded,
+        Application::StartupStage::WorkspaceOpened,
+        Application::StartupStage::ShellCreated,
+        Application::StartupStage::InitialPageReady
+    };
+    QCOMPARE(observedEvents.size(), expectedStages.size());
+    QCOMPARE(result.stageResults.size(), expectedStages.size());
+    for (std::size_t index = 0; index < expectedStages.size(); ++index)
+    {
+        QCOMPARE(observedEvents[index].stage, expectedStages[index]);
+        QCOMPARE(result.stageResults[index].stage, expectedStages[index]);
+    }
+    QCOMPARE(observedEvents[6].outcome, workspaceOutcome);
+    QCOMPARE(result.stageResults[6].outcome, workspaceOutcome);
+    QCOMPARE(result.stageResults.back().stage, Application::StartupStage::InitialPageReady);
+    QVERIFY(bootstrap.shell() != nullptr);
+    QVERIFY(bootstrap.shell()->isVisible());
+}
 
 void ignoreCoreServicesFailureMessages()
 {
@@ -462,7 +570,7 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     QCOMPARE(result.status, Application::StartupStatus::InitialExperienceAvailable);
     QVERIFY(result.succeeded());
     QVERIFY(!result.failure.has_value());
-    QCOMPARE(result.stageResults.size(), std::size_t{8});
+    QCOMPARE(result.stageResults.size(), std::size_t{9});
     QCOMPARE(result.completedEvents.size(), std::size_t{8});
     QVERIFY(!result.diagnostic.has_value());
 
@@ -473,6 +581,7 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
         Application::StartupStage::LanguageLoaded,
         Application::StartupStage::ThemeLoaded,
         Application::StartupStage::RequiredFontsLoaded,
+        Application::StartupStage::WorkspaceOpened,
         Application::StartupStage::ShellCreated,
         Application::StartupStage::InitialPageReady
     };
@@ -480,12 +589,29 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     for (std::size_t index = 0; index < expectedStages.size(); ++index)
     {
         QCOMPARE(result.stageResults[index].stage, expectedStages[index]);
+        QCOMPARE(observedEvents[index].stage, expectedStages[index]);
+        if (expectedStages[index] == Application::StartupStage::WorkspaceOpened)
+        {
+            QCOMPARE(result.stageResults[index].outcome, Application::StartupStageOutcome::Warning);
+            QVERIFY(result.stageResults[index].diagnostic.has_value());
+            QCOMPARE(result.stageResults[index].diagnostic->code,
+                     Application::StartupDiagnosticCode::StageWarning);
+            QCOMPARE(observedEvents[index].outcome, Application::StartupStageOutcome::Warning);
+            QVERIFY(observedEvents[index].diagnostic.has_value());
+            QVERIFY(observedEvents[index].diagnostic->stage.has_value());
+            QCOMPARE(*observedEvents[index].diagnostic->stage, expectedStages[index]);
+            continue;
+        }
+
         QCOMPARE(result.stageResults[index].outcome, Application::StartupStageOutcome::Completed);
         QVERIFY(!result.stageResults[index].diagnostic.has_value());
-        QCOMPARE(result.completedEvents[index].stage, expectedStages[index]);
-        QCOMPARE(observedEvents[index].stage, expectedStages[index]);
         QCOMPARE(observedEvents[index].outcome, Application::StartupStageOutcome::Completed);
         QVERIFY(!observedEvents[index].diagnostic.has_value());
+    }
+    for (std::size_t index = 0; index < result.completedEvents.size(); ++index)
+    {
+        const std::size_t stageIndex = index < 6 ? index : index + 1;
+        QCOMPARE(result.completedEvents[index].stage, expectedStages[stageIndex]);
     }
     QVERIFY(!result.stageResults.empty());
     QVERIFY(result.stageResults.back().stage != Application::StartupStage::StartupReady);
@@ -565,6 +691,7 @@ loadsOnlySelectedLanguageThemeAndRequiredFontsBeforeShell()
         Application::StartupStage::LanguageLoaded,
         Application::StartupStage::ThemeLoaded,
         Application::StartupStage::RequiredFontsLoaded,
+        Application::StartupStage::WorkspaceOpened,
         Application::StartupStage::ShellCreated,
         Application::StartupStage::InitialPageReady
     };
@@ -572,8 +699,15 @@ loadsOnlySelectedLanguageThemeAndRequiredFontsBeforeShell()
     for (std::size_t index = 0; index < expectedStages.size(); ++index)
     {
         QCOMPARE(observedEvents[index].stage, expectedStages[index]);
-        QCOMPARE(observedEvents[index].outcome, Application::StartupStageOutcome::Completed);
+        QCOMPARE(
+            observedEvents[index].outcome,
+            index == 6
+                ? Application::StartupStageOutcome::Warning
+                : Application::StartupStageOutcome::Completed
+            );
     }
+    QCOMPARE(result.stageResults.size(), expectedStages.size());
+    QCOMPARE(result.completedEvents.size(), expectedStages.size() - 1);
     QCOMPARE(languageProbe.languageChangeCount(), 1);
     QCOMPARE(
         QCoreApplication::translate("AboutDialog", "Inter Font License"),
@@ -635,7 +769,7 @@ systemDefaultUsesFirstSupportedLocaleFromOrderedList()
 
     QVERIFY(result.succeeded());
     QCOMPARE(result.status, Application::StartupStatus::InitialExperienceAvailable);
-    QCOMPARE(observedEvents.size(), std::size_t{8});
+    QCOMPARE(observedEvents.size(), std::size_t{9});
     QCOMPARE(observedEvents[2].stage, Application::StartupStage::SettingsLoaded);
     QCOMPARE(observedEvents[3].stage, Application::StartupStage::LanguageLoaded);
     QCOMPARE(observedEvents[3].outcome, Application::StartupStageOutcome::Completed);
@@ -646,9 +780,10 @@ systemDefaultUsesFirstSupportedLocaleFromOrderedList()
         );
     QCOMPARE(observedEvents[4].stage, Application::StartupStage::ThemeLoaded);
     QCOMPARE(observedEvents[5].stage, Application::StartupStage::RequiredFontsLoaded);
-    QCOMPARE(observedEvents[6].stage, Application::StartupStage::ShellCreated);
-    QCOMPARE(observedEvents[7].stage, Application::StartupStage::InitialPageReady);
-    QVERIFY(!containsStage(observedEvents, Application::StartupStage::WorkspaceOpened));
+    QCOMPARE(observedEvents[6].stage, Application::StartupStage::WorkspaceOpened);
+    QCOMPARE(observedEvents[6].outcome, Application::StartupStageOutcome::Warning);
+    QCOMPARE(observedEvents[7].stage, Application::StartupStage::ShellCreated);
+    QCOMPARE(observedEvents[8].stage, Application::StartupStage::InitialPageReady);
     QVERIFY(!containsStage(observedEvents, Application::StartupStage::StartupReady));
 
     languageProbe.close();
@@ -687,9 +822,9 @@ systemDefaultFallsBackToSourceEnglishForUnsupportedLocales()
 
     QVERIFY(result.succeeded());
     QCOMPARE(result.status, Application::StartupStatus::InitialExperienceAvailable);
-    QCOMPARE(result.stageResults.size(), std::size_t{8});
+    QCOMPARE(result.stageResults.size(), std::size_t{9});
     QCOMPARE(result.completedEvents.size(), std::size_t{7});
-    QCOMPARE(observedEvents.size(), std::size_t{8});
+    QCOMPARE(observedEvents.size(), std::size_t{9});
     QCOMPARE(observedEvents[3].stage, Application::StartupStage::LanguageLoaded);
     QCOMPARE(observedEvents[3].outcome, Application::StartupStageOutcome::Warning);
     QVERIFY(observedEvents[3].diagnostic.has_value());
@@ -705,7 +840,11 @@ systemDefaultFallsBackToSourceEnglishForUnsupportedLocales()
         );
     QVERIFY(bootstrap.shell() != nullptr);
     QVERIFY(bootstrap.shell()->isVisible());
-    QVERIFY(!containsStage(observedEvents, Application::StartupStage::WorkspaceOpened));
+    QCOMPARE(observedEvents[6].stage, Application::StartupStage::WorkspaceOpened);
+    QCOMPARE(observedEvents[6].outcome, Application::StartupStageOutcome::Warning);
+    QVERIFY(observedEvents[6].diagnostic.has_value());
+    QCOMPARE(observedEvents[6].diagnostic->code,
+             Application::StartupDiagnosticCode::StageWarning);
     QVERIFY(!containsStage(observedEvents, Application::StartupStage::StartupReady));
 
     languageProbe.close();
@@ -741,7 +880,7 @@ void ApplicationBootstrapTests::systemDefaultThemeFollowsCurrentStyleColorScheme
     const Application::StartupResult result = bootstrap.start();
 
     QVERIFY(result.succeeded());
-    QCOMPARE(observedEvents.size(), std::size_t{8});
+    QCOMPARE(observedEvents.size(), std::size_t{9});
     QCOMPARE(observedEvents[4].stage, Application::StartupStage::ThemeLoaded);
     QCOMPARE(observedEvents[4].outcome, Application::StartupStageOutcome::Completed);
     QCOMPARE(
@@ -750,7 +889,10 @@ void ApplicationBootstrapTests::systemDefaultThemeFollowsCurrentStyleColorScheme
             QStringLiteral("assets/styles/%1.qss").arg(theme)
             ))
         );
-    QVERIFY(!containsStage(observedEvents, Application::StartupStage::WorkspaceOpened));
+    QCOMPARE(observedEvents[6].stage, Application::StartupStage::WorkspaceOpened);
+    QCOMPARE(observedEvents[6].outcome, Application::StartupStageOutcome::Warning);
+    QCOMPARE(observedEvents[7].stage, Application::StartupStage::ShellCreated);
+    QCOMPARE(observedEvents[8].stage, Application::StartupStage::InitialPageReady);
     QVERIFY(!containsStage(observedEvents, Application::StartupStage::StartupReady));
 
     application.setStyleSheet(previousStyleSheet);
@@ -1190,28 +1332,13 @@ void ApplicationBootstrapTests::generatedCatalogStartsWithOnlySelectedStartupPay
     QVERIFY(!result.failure.has_value());
     QVERIFY(!result.diagnostic.has_value());
     QCOMPARE(resolverCalls, 1);
-    QCOMPARE(observedEvents.size(), std::size_t{8});
-    constexpr std::array expectedStages{
-        Application::StartupStage::ProcessCreated,
-        Application::StartupStage::CoreServicesCreated,
-        Application::StartupStage::SettingsLoaded,
-        Application::StartupStage::LanguageLoaded,
-        Application::StartupStage::ThemeLoaded,
-        Application::StartupStage::RequiredFontsLoaded,
-        Application::StartupStage::ShellCreated,
-        Application::StartupStage::InitialPageReady
-    };
-    QCOMPARE(result.stageResults.size(), expectedStages.size());
-    QCOMPARE(result.completedEvents.size(), expectedStages.size());
-    for (std::size_t index = 0; index < expectedStages.size(); ++index)
-    {
-        QCOMPARE(result.stageResults[index].stage, expectedStages[index]);
-        QCOMPARE(result.stageResults[index].outcome, Application::StartupStageOutcome::Completed);
-        QCOMPARE(result.completedEvents[index].stage, expectedStages[index]);
-        QCOMPARE(observedEvents[index].stage, expectedStages[index]);
-        QCOMPARE(observedEvents[index].outcome, Application::StartupStageOutcome::Completed);
-        QVERIFY(!observedEvents[index].diagnostic.has_value());
-    }
+    QCOMPARE(result.completedEvents.size(), std::size_t{8});
+    verifyWorkspaceStartupOrder(
+        result,
+        observedEvents,
+        bootstrap,
+        Application::StartupStageOutcome::Warning
+        );
 
     QVERIFY(bootstrap.shell() != nullptr);
     QVERIFY(bootstrap.shell()->isVisible());
@@ -1739,6 +1866,517 @@ startupFailureAndShutdownActionAreReportedPrecisely()
     QVERIFY(second.shutdownRequested);
     QVERIFY(!second.newlyRequested);
     QCOMPARE(shutdownActionCount, 1);
+}
+
+void ApplicationBootstrapTests::
+startupWorkspacePolicyPreservesLegacyCandidateOrder()
+{
+    const Application::WorkspaceLocation commandLine("command-line.db");
+    const Application::WorkspaceLocation firstRecent("first-recent.tps");
+    const Application::WorkspaceLocation secondRecent("second-recent.db");
+    const Application::WorkspaceLocation lastFile("legacy-last.tps");
+    Application::RecentWorkspaceHistory history;
+    history.paths = {firstRecent, secondRecent};
+    history.lastPath = lastFile;
+
+    const Application::StartupWorkspaceSelection commandLineSelection =
+        Application::StartupWorkspacePolicy::select(
+            commandLine,
+            false,
+            history
+            );
+    const auto* const commandLineCandidate =
+        std::get_if<Application::StartupWorkspaceCandidate>(&commandLineSelection);
+    QVERIFY(commandLineCandidate != nullptr);
+    QCOMPARE(commandLineCandidate->location.value(), commandLine.value());
+    QCOMPARE(
+        commandLineCandidate->source,
+        Application::StartupWorkspaceSource::CommandLine
+        );
+
+    const Application::StartupWorkspaceSelection recentSelection =
+        Application::StartupWorkspacePolicy::select(
+            std::nullopt,
+            true,
+            history
+            );
+    const auto* const recentCandidate =
+        std::get_if<Application::StartupWorkspaceCandidate>(&recentSelection);
+    QVERIFY(recentCandidate != nullptr);
+    QCOMPARE(recentCandidate->location.value(), firstRecent.value());
+    QCOMPARE(recentCandidate->source, Application::StartupWorkspaceSource::Recent);
+
+    history.paths.clear();
+    const Application::StartupWorkspaceSelection lastFileSelection =
+        Application::StartupWorkspacePolicy::select(
+            std::nullopt,
+            true,
+            history
+            );
+    const auto* const lastFileCandidate =
+        std::get_if<Application::StartupWorkspaceCandidate>(&lastFileSelection);
+    QVERIFY(lastFileCandidate != nullptr);
+    QCOMPARE(lastFileCandidate->location.value(), lastFile.value());
+    QCOMPARE(lastFileCandidate->source, Application::StartupWorkspaceSource::LastFile);
+
+    const Application::StartupWorkspaceSelection disabledSelection =
+        Application::StartupWorkspacePolicy::select(
+            std::nullopt,
+            false,
+            history
+            );
+    const auto* const disabledOutcome =
+        std::get_if<Application::StartupNoWorkspaceCandidate>(&disabledSelection);
+    QVERIFY(disabledOutcome != nullptr);
+    QCOMPARE(
+        disabledOutcome->reason,
+        Application::StartupNoWorkspaceReason::RecentAutoOpenDisabled
+        );
+}
+
+void ApplicationBootstrapTests::
+noWorkspaceRemainsAnExplicitNonFatalWarning()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(QStringLiteral("ko_KR"), QStringLiteral("light")));
+
+    std::vector<Application::StartupEvent> observedEvents;
+    int historyFactoryCalls = 0;
+    int gatewayFactoryCalls = 0;
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    seams.recentAutoOpenEnabled = false;
+    seams.recentWorkspaceHistoryPortFactory = [&historyFactoryCalls] {
+        ++historyFactoryCalls;
+        return std::unique_ptr<Application::RecentWorkspaceHistoryPort>{};
+    };
+    seams.workspaceGatewayFactory = [&gatewayFactoryCalls] {
+        ++gatewayFactoryCalls;
+        return std::unique_ptr<Application::WorkspaceGateway>{};
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    const Application::StartupResult result = bootstrap.start();
+
+    verifyWorkspaceStartupOrder(
+        result,
+        observedEvents,
+        bootstrap,
+        Application::StartupStageOutcome::Warning
+        );
+    QVERIFY(bootstrap.startupWorkspaceOutcome().has_value());
+    const auto* const notOpened = std::get_if<Application::StartupWorkspaceNotOpened>(
+        &bootstrap.startupWorkspaceOutcome().value()
+        );
+    QVERIFY(notOpened != nullptr);
+    QCOMPARE(
+        notOpened->reason,
+        Application::StartupNoWorkspaceReason::RecentAutoOpenDisabled
+        );
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Closed);
+    QCOMPARE(historyFactoryCalls, 0);
+    QCOMPARE(gatewayFactoryCalls, 0);
+
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+staleFirstRecentPathIsPrunedWithoutTryingLaterCandidates()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(QStringLiteral("ko_KR"), QStringLiteral("light")));
+
+    const QString stalePath = QStringLiteral("stale-first-profile");
+    const Application::WorkspaceLocation secondRecent("second-good-profile.db");
+    const Application::WorkspaceLocation lastFile("legacy-last-profile.tps");
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    historyProbe->history.paths = {
+        Application::WorkspaceLocation(stalePath.toUtf8().toStdString()),
+        secondRecent
+    };
+    historyProbe->history.lastPath = lastFile;
+
+    int gatewayFactoryCalls = 0;
+    std::vector<std::string> checkedPaths;
+    std::vector<Application::StartupEvent> observedEvents;
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    seams.recentAutoOpenEnabled = true;
+    seams.pathExists = [&checkedPaths](const Application::WorkspaceLocation& location) {
+        checkedPaths.push_back(location.value());
+        return false;
+    };
+    seams.workspaceGatewayFactory = [&gatewayFactoryCalls] {
+        ++gatewayFactoryCalls;
+        return std::unique_ptr<Application::WorkspaceGateway>{};
+    };
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    const Application::StartupResult result = bootstrap.start();
+
+    verifyWorkspaceStartupOrder(
+        result,
+        observedEvents,
+        bootstrap,
+        Application::StartupStageOutcome::Warning
+        );
+    QVERIFY(bootstrap.startupWorkspaceOutcome().has_value());
+    const auto* const notOpened = std::get_if<Application::StartupWorkspaceNotOpened>(
+        &bootstrap.startupWorkspaceOutcome().value()
+        );
+    QVERIFY(notOpened != nullptr);
+    QCOMPARE(notOpened->reason, Application::StartupNoWorkspaceReason::StaleRecentPathPruned);
+    QVERIFY(!notOpened->historyError.has_value());
+    QCOMPARE(checkedPaths.size(), std::size_t{1});
+    QCOMPARE(
+        checkedPaths.front(),
+        QFileInfo(stalePath + QStringLiteral(".tps")).absoluteFilePath().toUtf8().toStdString()
+        );
+    QCOMPARE(historyProbe->loadCount, 1);
+    QCOMPARE(historyProbe->saves.size(), std::size_t{1});
+    QCOMPARE(historyProbe->saves.front().paths.size(), std::size_t{1});
+    QCOMPARE(
+        historyProbe->saves.front().paths.front().value(),
+        secondRecent.value()
+        );
+    QVERIFY(historyProbe->saves.front().lastPath.has_value());
+    QCOMPARE(historyProbe->saves.front().lastPath->value(), lastFile.value());
+    QCOMPARE(gatewayFactoryCalls, 0);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Closed);
+
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+recentOpenErrorDoesNotFallThroughToLaterCandidates()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(QStringLiteral("ko_KR"), QStringLiteral("light")));
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString firstRecentPath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("invalid-first-recent.tps")
+        );
+    QFile invalidWorkspace(firstRecentPath);
+    QVERIFY(invalidWorkspace.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QCOMPARE(invalidWorkspace.write("not a workspace database\n"), qint64{25});
+    invalidWorkspace.close();
+
+    const QString secondRecentPath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("second-recent.db")
+        );
+    const QString lastFilePath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("legacy-last.tps")
+        );
+    const auto createWorkspaceFile = [](const QString& path) {
+        WorkspaceStore store;
+        const RepositoryStatus created = store.open(path);
+        if (!created)
+        {
+            return false;
+        }
+        store.close();
+        return true;
+    };
+    QVERIFY(createWorkspaceFile(secondRecentPath));
+    QVERIFY(createWorkspaceFile(lastFilePath));
+    const QStringList connectionsBefore = QSqlDatabase::connectionNames();
+
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    historyProbe->history.paths = {
+        workspaceLocation(firstRecentPath),
+        workspaceLocation(secondRecentPath)
+    };
+    historyProbe->history.lastPath = workspaceLocation(lastFilePath);
+    std::vector<std::string> checkedPaths;
+    std::vector<Application::StartupEvent> observedEvents;
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    seams.recentAutoOpenEnabled = true;
+    seams.pathExists = [&checkedPaths](const Application::WorkspaceLocation& location) {
+        checkedPaths.push_back(location.value());
+        return true;
+    };
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    const Application::StartupResult result = bootstrap.start();
+
+    verifyWorkspaceStartupOrder(
+        result,
+        observedEvents,
+        bootstrap,
+        Application::StartupStageOutcome::Warning
+        );
+    QVERIFY(bootstrap.startupWorkspaceOutcome().has_value());
+    const auto* const failed = std::get_if<Application::StartupWorkspaceOpenFailed>(
+        &bootstrap.startupWorkspaceOutcome().value()
+        );
+    QVERIFY(failed != nullptr);
+    QVERIFY(!failed->error.message.empty());
+    QCOMPARE(checkedPaths.size(), std::size_t{1});
+    QCOMPARE(checkedPaths.front(), workspaceLocation(firstRecentPath).value());
+    QCOMPARE(historyProbe->loadCount, 1);
+    QVERIFY(historyProbe->saves.empty());
+    QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Closed);
+    QCOMPARE(QSqlDatabase::connectionNames(), connectionsBefore);
+    QVERIFY(QFileInfo::exists(secondRecentPath));
+    QVERIFY(QFileInfo::exists(lastFilePath));
+
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+missingExplicitWorkspaceDoesNotCreateFileOrParent()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(QStringLiteral("ko_KR"), QStringLiteral("light")));
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString missingParent = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("missing-parent")
+        );
+    const QString missingPath = QDir(missingParent).filePath(
+        QStringLiteral("missing-profile.tps")
+        );
+    const QString firstRecentPath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("first-recent.tps")
+        );
+    const QString secondRecentPath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("second-recent.db")
+        );
+    const QString lastFilePath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("legacy-last.tps")
+        );
+    QVERIFY(!QFileInfo::exists(missingParent));
+    QVERIFY(!QFileInfo::exists(missingPath));
+    const auto createWorkspaceFile = [](const QString& path) {
+        WorkspaceStore store;
+        const RepositoryStatus created = store.open(path);
+        if (!created)
+        {
+            return false;
+        }
+        store.close();
+        return true;
+    };
+    QVERIFY(createWorkspaceFile(firstRecentPath));
+    QVERIFY(createWorkspaceFile(secondRecentPath));
+    QVERIFY(createWorkspaceFile(lastFilePath));
+    const QStringList connectionsBefore = QSqlDatabase::connectionNames();
+
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    historyProbe->history.paths = {
+        workspaceLocation(firstRecentPath),
+        workspaceLocation(secondRecentPath)
+    };
+    historyProbe->history.lastPath = workspaceLocation(lastFilePath);
+
+    std::vector<Application::StartupEvent> observedEvents;
+    int pathExistsCalls = 0;
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"),
+        QStringLiteral("--startup-performance-output"),
+        QStringLiteral("ignored-output.json"),
+        QStringLiteral("notes.txt"),
+        missingPath,
+        firstRecentPath
+    };
+    seams.recentAutoOpenEnabled = true;
+    seams.pathExists = [&pathExistsCalls](const Application::WorkspaceLocation&) {
+        ++pathExistsCalls;
+        return true;
+    };
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    const Application::StartupResult result = bootstrap.start();
+
+    verifyWorkspaceStartupOrder(
+        result,
+        observedEvents,
+        bootstrap,
+        Application::StartupStageOutcome::Warning
+        );
+    QVERIFY(bootstrap.startupWorkspaceOutcome().has_value());
+    const auto* const failed = std::get_if<Application::StartupWorkspaceOpenFailed>(
+        &bootstrap.startupWorkspaceOutcome().value()
+        );
+    QVERIFY(failed != nullptr);
+    QCOMPARE(failed->error.code, Domain::ErrorCode::NotFound);
+    QVERIFY(!failed->error.message.empty());
+    QVERIFY(!QFileInfo::exists(missingParent));
+    QVERIFY(!QFileInfo::exists(missingPath));
+    QCOMPARE(pathExistsCalls, 0);
+    QCOMPARE(historyProbe->loadCount, 1);
+    QVERIFY(historyProbe->saves.empty());
+    QCOMPARE(QSqlDatabase::connectionNames(), connectionsBefore);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Closed);
+
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+successfulStartupRetainsSessionAndReleasesStoreOnShutdown()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(QStringLiteral("ko_KR"), QStringLiteral("light")));
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString workspacePath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("startup-profile.tps")
+        );
+    {
+        WorkspaceStore seedStore;
+        const RepositoryStatus created = seedStore.open(workspacePath);
+        QVERIFY2(created.has_value(), "could not create a valid workspace fixture");
+        seedStore.close();
+    }
+
+    const QStringList connectionsBefore = QSqlDatabase::connectionNames();
+    std::vector<Application::StartupEvent> observedEvents;
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app"), workspacePath};
+    seams.recentAutoOpenEnabled = false;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    const Application::StartupResult result = bootstrap.start();
+
+    verifyWorkspaceStartupOrder(
+        result,
+        observedEvents,
+        bootstrap,
+        Application::StartupStageOutcome::Completed
+        );
+    QVERIFY(bootstrap.startupWorkspaceOutcome().has_value());
+    const auto* const opened = std::get_if<Application::StartupWorkspaceOpened>(
+        &bootstrap.startupWorkspaceOutcome().value()
+        );
+    QVERIFY(opened != nullptr);
+    QCOMPARE(
+        opened->session.location().value(),
+        workspaceLocation(workspacePath).value()
+        );
+    QVERIFY(!opened->historyError.has_value());
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Open);
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    QCOMPARE(
+        bootstrap.workspaceStateSnapshot().session()->workspaceId().value(),
+        opened->session.workspaceId().value()
+        );
+    QCOMPARE(
+        bootstrap.workspaceStateSnapshot().session()->location().value(),
+        opened->session.location().value()
+        );
+    QVERIFY(QFileInfo::exists(workspacePath));
+    QCOMPARE(QSqlDatabase::connectionNames().size(), connectionsBefore.size() + 1);
+
+    const Application::ShutdownResult shutdown = bootstrap.shutdown();
+    QVERIFY(shutdown.shutdownRequested);
+    QVERIFY(shutdown.newlyRequested);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Closed);
+    QCOMPARE(QSqlDatabase::connectionNames(), connectionsBefore);
+
+    const Application::ShutdownResult repeatedShutdown = bootstrap.shutdown();
+    QVERIFY(repeatedShutdown.shutdownRequested);
+    QVERIFY(!repeatedShutdown.newlyRequested);
+    QCOMPARE(QSqlDatabase::connectionNames(), connectionsBefore);
+
+    application.setStyleSheet(previousStyleSheet);
 }
 
 QTEST_MAIN(ApplicationBootstrapTests)

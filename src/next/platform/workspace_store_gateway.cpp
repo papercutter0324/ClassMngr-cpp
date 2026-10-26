@@ -1,0 +1,238 @@
+#include "next/platform/workspace_store_gateway.h"
+
+#include "data/database/workspace_store.h"
+#include "next/platform/repository_error_code.h"
+
+#include <QByteArray>
+#include <QString>
+
+#include <string>
+#include <utility>
+
+namespace ClassMngr::Next::Platform
+{
+namespace
+{
+
+[[nodiscard]] std::string toUtf8(const QString& value)
+{
+    const QByteArray encoded = value.toUtf8();
+    return std::string(
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+        );
+}
+
+[[nodiscard]] QString fromUtf8(const std::string& value)
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+[[nodiscard]] Domain::OperationError operationError(
+    const RepositoryError& error
+    )
+{
+    const bool recoverable = error.recoverableOverride.value_or(
+        error.code == RepositoryErrorCode::NotFound
+            || error.code == RepositoryErrorCode::Conflict
+            || error.code == RepositoryErrorCode::Validation
+        );
+    return Domain::OperationError{
+        .code = repositoryDomainErrorCode(error.code),
+        .message = toUtf8(error.diagnostic),
+        .recoverable = recoverable
+    };
+}
+
+[[nodiscard]] Domain::OperationError notOpenError()
+{
+    return Domain::OperationError{
+        .code = Domain::ErrorCode::NotFound,
+        .message = "No workspace is open in the workspace store.",
+        .recoverable = false
+    };
+}
+
+[[nodiscard]] Domain::OperationError unsupportedOperationError(
+    const char* operation
+    )
+{
+    return Domain::OperationError{
+        .code = Domain::ErrorCode::Technical,
+        .message = std::string(operation)
+            + " is not available through the startup workspace adapter.",
+        .recoverable = false
+    };
+}
+
+} // namespace
+
+WorkspaceStoreGateway::WorkspaceStoreGateway()
+    : m_store(std::make_unique<WorkspaceStore>())
+{
+}
+
+WorkspaceStoreGateway::~WorkspaceStoreGateway() = default;
+
+Domain::Result<Application::WorkspaceSession>
+WorkspaceStoreGateway::createWorkspace(
+    const Application::CreateWorkspaceRequest& request
+    )
+{
+    const RepositoryStatus status = m_store->open(fromUtf8(request.location.value()));
+    if (!status)
+    {
+        return Domain::Result<Application::WorkspaceSession>::failure(
+            operationError(status.error())
+            );
+    }
+    return sessionForOpenStore();
+}
+
+Domain::Result<Application::WorkspaceSession>
+WorkspaceStoreGateway::openWorkspace(
+    const Application::OpenWorkspaceRequest& request
+    )
+{
+    const RepositoryStatus status =
+        m_store->openExisting(fromUtf8(request.location.value()));
+    if (!status)
+    {
+        return Domain::Result<Application::WorkspaceSession>::failure(
+            operationError(status.error())
+            );
+    }
+    return sessionForOpenStore();
+}
+
+Domain::Result<void> WorkspaceStoreGateway::closeWorkspace(
+    const Application::CloseWorkspaceRequest& request
+    )
+{
+    const Domain::Result<void> valid = validateSession(request.session);
+    if (!valid)
+    {
+        return valid;
+    }
+
+    m_store->close();
+    if (m_store->isOpen() || !m_store->databasePath().isEmpty())
+    {
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Workspace store did not close cleanly.",
+            .recoverable = false
+        });
+    }
+    return Domain::Result<void>::success();
+}
+
+Domain::Result<void> WorkspaceStoreGateway::saveWorkspace(
+    const Application::SaveWorkspaceRequest& request
+    )
+{
+    const Domain::Result<void> valid = validateSession(request.session);
+    if (!valid)
+    {
+        return valid;
+    }
+
+    const RepositoryStatus status = m_store->commit();
+    if (!status)
+    {
+        return Domain::Result<void>::failure(operationError(status.error()));
+    }
+    return Domain::Result<void>::success();
+}
+
+Domain::Result<Application::WorkspaceLocation>
+WorkspaceStoreGateway::saveWorkspaceAs(
+    const Application::SaveWorkspaceAsRequest& request
+    )
+{
+    const Domain::Result<void> valid = validateSession(request.session);
+    if (!valid)
+    {
+        return Domain::Result<Application::WorkspaceLocation>::failure(
+            valid.error()
+            );
+    }
+    return Domain::Result<Application::WorkspaceLocation>::failure(
+        unsupportedOperationError("Save workspace as")
+        );
+}
+
+Domain::Result<Application::WorkspaceLocation>
+WorkspaceStoreGateway::exportWorkspace(
+    const Application::ExportWorkspaceRequest& request
+    )
+{
+    const Domain::Result<void> valid = validateSession(request.session);
+    if (!valid)
+    {
+        return Domain::Result<Application::WorkspaceLocation>::failure(
+            valid.error()
+            );
+    }
+    return Domain::Result<Application::WorkspaceLocation>::failure(
+        unsupportedOperationError("Export workspace")
+        );
+}
+
+Domain::Result<Application::WorkspaceSession>
+WorkspaceStoreGateway::sessionForOpenStore() const
+{
+    if (!m_store->isOpen() || m_store->databasePath().isEmpty())
+    {
+        return Domain::Result<Application::WorkspaceSession>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Workspace store reported success without an open workspace.",
+            .recoverable = false
+        });
+    }
+
+    const std::string location = toUtf8(m_store->databasePath());
+    const auto workspaceId = Domain::WorkspaceId::fromString(location);
+    if (!workspaceId)
+    {
+        return Domain::Result<Application::WorkspaceSession>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Workspace store returned an invalid workspace location.",
+            .recoverable = false
+        });
+    }
+
+    return Domain::Result<Application::WorkspaceSession>::success(
+        Application::WorkspaceSession(
+            *workspaceId,
+            Application::WorkspaceLocation(location)
+            )
+        );
+}
+
+Domain::Result<void> WorkspaceStoreGateway::validateSession(
+    const Application::WorkspaceSession& session
+    ) const
+{
+    if (!m_store->isOpen())
+    {
+        return Domain::Result<void>::failure(notOpenError());
+    }
+
+    const std::string openLocation = toUtf8(m_store->databasePath());
+    if (session.location().value() != openLocation
+        || session.workspaceId().value() != openLocation)
+    {
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Conflict,
+            .message = "Workspace session does not match the open workspace store.",
+            .recoverable = false
+        });
+    }
+    return Domain::Result<void>::success();
+}
+
+} // namespace ClassMngr::Next::Platform

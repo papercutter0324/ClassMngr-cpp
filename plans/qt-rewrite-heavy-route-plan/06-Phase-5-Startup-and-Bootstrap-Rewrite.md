@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
 - Last updated: 2026-10-25
-- Current note: Phase 5 is active on the Heavy route. F1501–F1505 are complete; F1506 is next to define the explicit workspace startup policy and retain a typed Next session. F1505 preserves settings compatibility, applies one selected catalog translation and theme, and retains only the required fonts before shell construction. Workspace and `StartupReady` stages remain unimplemented until F1506.
+- Current note: Phase 5 is active on the Heavy route. F1501–F1506 are complete; F1507 is next to compose `ApplicationRuntime` from Next use cases and platform adapters without feature-page ownership. F1506 applies the legacy-compatible workspace selection order through a single Next-owned store and retains a typed session. No candidate or open failure leaves a warning and permits the empty shell; `StartupReady` remains deferred until runtime, PageHost, and startup catalog composition.
 
 ### Slice batches
 
@@ -154,7 +154,29 @@ fonts, and translation/theme/font failure cleanup before shell creation. The
 Next link commands have no Platform target or Qt Network reference. No full
 suite or other-platform build ran. Settings-read failure has no injectable
 test seam and was not exercised.
-F1506 is next.
+### F1506 — complete — 2026-10-25
+
+Startup now applies the legacy workspace-selection order: a supported command
+line path, then the first recent path when enabled, then the last-file path
+only when the recent list is empty. A stale first MRU path is pruned and ends
+that attempt. The dedicated Next workspace composition owns one
+`WorkspaceStore`, reuses the Next workspace state/use-case contracts, and does
+not construct `ApplicationServices` or link Network, the broad legacy runtime,
+or Next Platform. Successful open retains the returned session. No candidate
+and typed open errors each produce a non-fatal `WorkspaceOpened` warning so
+the empty shell can appear; open errors do not fall through to another path.
+Shutdown closes through the same store. `StartupReady` remains deferred until
+runtime, PageHost, and startup catalog composition.
+
+Independent macOS Debug verification passed: bootstrap QtTest passed 8/8 for
+the six focused new cases, focused bootstrap/dependency-boundary CTest passed
+2/2, and `ClassMngrNextBootstrapTests`, `ClassMngrNext`, and `ClassMngr` built.
+The test verifies candidate order, no-workspace/open-error results, stale-MRU
+behavior, missing-path no-create, session retention, stage order, and shutdown
+release. The generated Next link has no Qt Network, Next Platform, Runtime,
+Core, AppServices, or ApplicationServices dependency. Source ownership
+validated 1,647 files. The full suite and other platforms were not run.
+F1507 is next.
 
 ## Objective
 

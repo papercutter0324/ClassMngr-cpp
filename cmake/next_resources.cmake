@@ -131,10 +131,10 @@ get_target_property(_classmngr_next_resource_link_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_resource_link_dependencies)
 if(NOT "${_classmngr_next_resource_link_dependencies}"
-   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrNext::Resources")
+   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrNext::Resources;ClassMngrNextWorkspace")
     message(FATAL_ERROR
         "ClassMngrNext resource embedding must retain its Widgets application "
-        "and Resources links; found "
+        "and Resources links plus the narrow workspace adapter; found "
         "[${_classmngr_next_resource_link_dependencies}]"
     )
 endif()

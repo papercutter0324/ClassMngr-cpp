@@ -43,6 +43,9 @@ endfunction()
 function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrCore ${CLASSMNGR_CORE_SOURCES})
     _classmngr_record_manifest(ClassMngrSettings ${CLASSMNGR_SETTINGS_SOURCES})
+    _classmngr_record_manifest(ClassMngrWorkspaceStore
+        ${CLASSMNGR_WORKSPACE_STORE_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrData ${CLASSMNGR_DATA_SOURCES})
     _classmngr_record_manifest(ClassMngrDomain ${CLASSMNGR_DOMAIN_SOURCES})
     _classmngr_record_manifest(ClassMngrUiShared ${CLASSMNGR_UI_SHARED_SOURCES})
@@ -52,6 +55,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_source_owner(ClassMngrNext "${CLASSMNGR_NEXT_MAIN_SOURCE}")
     _classmngr_record_manifest(ClassMngrNext
         ${CLASSMNGR_NEXT_BOOTSTRAP_SOURCES}
+    )
+    _classmngr_record_manifest(ClassMngrNextWorkspace
+        ${CLASSMNGR_NEXT_WORKSPACE_SOURCES}
     )
     _classmngr_record_manifest(ClassMngrNextDomain
         ${CLASSMNGR_NEXT_DOMAIN_SOURCES}

@@ -16,8 +16,10 @@
   is complete: startup loads catalog metadata and retains a lazy loader and
   startup scope without reading payloads. Its six focused CTests passed. F1505
   is complete: ordered settings, localization, selected theme, and required
-  fonts load before the shell, with focused verification passing. F1506 is next
-  to define workspace startup policy and session retention. See the
+  fonts load before the shell, with focused verification passing. F1506 is
+  complete: startup preserves legacy workspace selection order through a
+  single Next-owned store with typed no-workspace/open-failure results. F1507
+  is next to compose `ApplicationRuntime` without feature-page ownership. See
   [Phase 5 plan](06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
   and [current batch tracker](Current-Slice-Batches.md). Phase 4 remains
   Complete at F1500; rendering parity remains a Phase 7/10 gate, and legacy

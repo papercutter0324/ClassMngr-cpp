@@ -423,6 +423,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/workspace_coordinator.h
     src/next/application/workspace_state.h
     src/next/application/workspace_use_case.h
+    src/next/application/startup_workspace_policy.h
     src/next/application/shutdown_coordinator.h
     src/next/application/startup_coordinator.h
 )
@@ -656,6 +657,25 @@ foreach(_classmngr_next_feature IN LISTS _classmngr_next_feature_targets)
     )
 endforeach()
 
+# Keep the startup workspace adapter outside the broad Next Platform target:
+# it needs the shared store and Qt Sql, but not Qt Network or legacy services.
+add_library(ClassMngrNextWorkspace STATIC
+    ${CLASSMNGR_NEXT_WORKSPACE_SOURCES}
+)
+target_link_libraries(ClassMngrNextWorkspace
+    PRIVATE
+        ClassMngrBuildSettings
+        ClassMngrNext::Application
+        ClassMngrWorkspaceStore
+        ClassMngrDomain
+        Qt6::Sql
+)
+set_target_properties(ClassMngrNextWorkspace
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+
 function(classmngr_next_assert_dependencies target)
     get_target_property(_classmngr_next_actual_dependencies
         "${target}"
@@ -747,6 +767,7 @@ target_link_libraries(ClassMngrNext
         Qt6::Widgets
         ClassMngrNext::Application
         ClassMngrNext::Resources
+        ClassMngrNextWorkspace
 )
 
 get_target_property(_classmngr_next_executable_dependencies
@@ -755,10 +776,11 @@ get_target_property(_classmngr_next_executable_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
 if(NOT "${_classmngr_next_executable_dependencies}"
-   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrNext::Resources")
+   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrNext::Resources;ClassMngrNextWorkspace")
     message(FATAL_ERROR
         "ClassMngrNext must link only Qt6::Core, Qt6::Widgets, "
-        "ClassMngrNext::Application, and ClassMngrNext::Resources; found "
+        "ClassMngrNext::Application, ClassMngrNext::Resources, and "
+        "ClassMngrNextWorkspace; found "
         "[${_classmngr_next_executable_dependencies}]"
     )
 endif()
