@@ -1,6 +1,6 @@
 # Qt Rewrite Phase 0 - Feature Preservation Matrix
 
-Status: In progress
+Phase 0 status: Complete (user-declared 2026-09-18)
 Snapshot: `75755460`
 
 Every row is a required v2 vertical slice. A row is not accepted merely because
@@ -45,6 +45,7 @@ available to the engineering test harness.
 
 ## Acceptance rule
 
-Before a v2 slice begins, add or identify a fixture and an automated acceptance
-check for its persistent behavior. Phase 0 still has open fixture and visual
-work, so no v2 feature implementation is authorized by this matrix yet.
+Phase 0 was declared complete by the user on 2026-09-18, and Phase 7 was
+authorized by the user on 2026-10-26. The fixture and visual evidence gaps
+listed above remain. Before each v2 slice begins, add or identify a fixture and
+an automated acceptance check for its persistent behavior.

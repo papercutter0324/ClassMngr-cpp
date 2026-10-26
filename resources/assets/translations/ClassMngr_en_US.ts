@@ -9701,4 +9701,39 @@ Version: %2</source>
         <translation>Your co-teacher assignment could not be saved. Your changes are still here.</translation>
     </message>
 </context>
+<context>
+    <name>InitialPage</name>
+    <message><source>Initial Setup</source><translation>Initial Setup</translation></message>
+    <message><source>Create a ClassMngr profile to begin setup. Your profile is saved as a .tps file.</source><translation>Create a ClassMngr profile to begin setup. Your profile is saved as a .tps file.</translation></message>
+    <message><source>Choose where to save your profile.</source><translation>Choose where to save your profile.</translation></message>
+    <message><source>Profile created. Setup is pending.</source><translation>Profile created. Setup is pending.</translation></message>
+    <message><source>An interrupted setup needs your choice.</source><translation>An interrupted setup needs your choice.</translation></message>
+    <message><source>The setup recovery record could not be read.</source><translation>The setup recovery record could not be read.</translation></message>
+    <message><source>Profile: %1</source><translation>Profile: %1</translation></message>
+    <message><source>Profile to recover: %1</source><translation>Profile to recover: %1</translation></message>
+    <message><source>The previous profile is preserved until setup is complete.</source><translation>The previous profile is preserved until setup is complete.</translation></message>
+    <message><source>Restore Previous Profile</source><translation>Restore Previous Profile</translation></message>
+    <message><source>No previous profile was replaced. You can resume or discard this profile.</source><translation>No previous profile was replaced. You can resume or discard this profile.</translation></message>
+    <message><source>Discard Incomplete Profile</source><translation>Discard Incomplete Profile</translation></message>
+    <message><source>Create Profile…</source><translation>Create Profile…</translation></message>
+    <message><source>Resume Setup</source><translation>Resume Setup</translation></message>
+    <message><source>Cancel Setup</source><translation>Cancel Setup</translation></message>
+    <message><source>Choose a profile destination</source><translation>Choose a profile destination</translation></message>
+    <message><source>ClassMngr profiles (*.tps)</source><translation>ClassMngr profiles (*.tps)</translation></message>
+    <message><source>The profile save dialog could not be opened: %1</source><translation>The profile save dialog could not be opened: %1</translation></message>
+    <message><source>Profile creation was canceled.</source><translation>Profile creation was canceled.</translation></message>
+    <message><source>The profile destination is invalid: %1</source><translation>The profile destination is invalid: %1</translation></message>
+    <message><source>Profile setup could not begin: %1</source><translation>Profile setup could not begin: %1</translation></message>
+    <message><source>The interrupted setup could not be found.</source><translation>The interrupted setup could not be found.</translation></message>
+    <message><source>Setup could not resume: %1</source><translation>Setup could not resume: %1</translation></message>
+    <message><source>The previous profile was restored.</source><translation>The previous profile was restored.</translation></message>
+    <message><source>The profile could not be restored. The recovery files are still available.</source><translation>The profile could not be restored. The recovery files are still available.</translation></message>
+    <message><source>Setup was canceled.</source><translation>Setup was canceled.</translation></message>
+    <message><source>The setup could not be canceled. The recovery files are still available.</source><translation>The setup could not be canceled. The recovery files are still available.</translation></message>
+    <message><source>The setup recovery record could not be read. Keep the recovery files in place and restart after resolving the issue.</source><translation>The setup recovery record could not be read. Keep the recovery files in place and restart after resolving the issue.</translation></message>
+</context>
+<context>
+    <name>NextNavigation</name>
+    <message><source>Initial Setup</source><translation>Initial Setup</translation></message>
+</context>
 </TS>

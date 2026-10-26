@@ -2,9 +2,12 @@
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_scope.h"
+#include "next/ui/initial_page.h"
 #include "next/ui/page_host.h"
 
+#include <QLabel>
 #include <QPointer>
+#include <QPushButton>
 #include <QTest>
 #include <QVector>
 
@@ -227,6 +230,7 @@ private slots:
     void lifecycleStatesAreQueryableObservableAndRejectReentrantMutations();
     void registrationIsLazyAndPagesSuspendReuseReleaseAndRecreate();
     void factoryAndActivationFailuresPreserveTheCurrentPage();
+    void initialSetupPageShowsPendingAndRecoveryActions();
 
 private:
     Test::MemoryPreferences m_preferences;
@@ -806,6 +810,101 @@ void PageHostTests::factoryAndActivationFailuresPreserveTheCurrentPage()
     QVERIFY(!lifecycleLog.contains(QStringLiteral("stable.suspend")));
     QVERIFY(host.releasePage(QStringLiteral("stable")));
     QCOMPARE(stable.suspensionCalls, 1);
+}
+
+void PageHostTests::initialSetupPageShowsPendingAndRecoveryActions()
+{
+    Ui::PageHost host(*m_loader, m_preferences.model);
+    Ui::InitialSetupPageState state;
+    int createCalls = 0;
+    int resumeCalls = 0;
+    int restoreCalls = 0;
+    int cancelCalls = 0;
+    const Ui::InitialSetupPageActions actions{
+        .state = [&state] { return state; },
+        .createProfile = [&] {
+            ++createCalls;
+            state.setupPending = true;
+            state.profileLocation = QStringLiteral("/profiles/class.tps");
+        },
+        .resumeSetup = [&] { ++resumeCalls; },
+        .restoreSetup = [&] { ++restoreCalls; },
+        .cancelSetup = [&] {
+            ++cancelCalls;
+            state.setupPending = false;
+        }
+    };
+    const Ui::PageDescriptor descriptor{
+        .id = *Ui::PageId::fromString(QStringLiteral("initial_setup")),
+        .label = QStringLiteral("Initial Setup"),
+        .factory = [actions](const Ui::PageContext& context)
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            return std::unique_ptr<Ui::Page>(
+                std::make_unique<Ui::InitialPage>(context, actions)
+                );
+        }
+    };
+    QVERIFY(host.registerPage(descriptor));
+    QVERIFY(host.activatePage(QStringLiteral("initial_setup")));
+
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        host.pageInstance(QStringLiteral("initial_setup"))
+        );
+    QVERIFY(page);
+    auto* const createButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCreateProfile")
+        );
+    auto* const resumeButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupResume")
+        );
+    auto* const restoreButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupRestore")
+        );
+    auto* const cancelButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCancel")
+        );
+    auto* const profileLabel = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupProfileLocation")
+        );
+    QVERIFY(createButton);
+    QVERIFY(resumeButton);
+    QVERIFY(restoreButton);
+    QVERIFY(cancelButton);
+    QVERIFY(profileLabel);
+
+    QVERIFY(!createButton->isHidden());
+    QVERIFY(resumeButton->isHidden());
+    QVERIFY(restoreButton->isHidden());
+    QVERIFY(cancelButton->isHidden());
+    QVERIFY(page->styleSheet().isEmpty());
+
+    createButton->click();
+    QCOMPARE(createCalls, 1);
+    QVERIFY(createButton->isHidden());
+    QVERIFY(!cancelButton->isHidden());
+    QVERIFY(profileLabel->text().contains(QStringLiteral("/profiles/class.tps")));
+    cancelButton->click();
+    QCOMPARE(cancelCalls, 1);
+
+    state = Ui::InitialSetupPageState{
+        .recoveryAvailable = true,
+        .recoveryHasOriginalProfile = true,
+        .recoveryProfileLocation = QStringLiteral("/profiles/recover.tps")
+    };
+    page->refreshSetupState();
+    QVERIFY(createButton->isHidden());
+    QVERIFY(!resumeButton->isHidden());
+    QVERIFY(!restoreButton->isHidden());
+    QVERIFY(cancelButton->isHidden());
+    QCOMPARE(restoreButton->text(), QStringLiteral("Restore Previous Profile"));
+    resumeButton->click();
+    restoreButton->click();
+    QCOMPARE(resumeCalls, 1);
+    QCOMPARE(restoreCalls, 1);
+
+    state.recoveryHasOriginalProfile = false;
+    page->refreshSetupState();
+    QCOMPARE(restoreButton->text(), QStringLiteral("Discard Incomplete Profile"));
 }
 
 QTEST_MAIN(PageHostTests)

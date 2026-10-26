@@ -1,10 +1,12 @@
 #pragma once
 
 #include "next/application/recent_workspace_history.h"
+#include "next/application/file_dialog_port.h"
 #include "next/application/shutdown_coordinator.h"
 #include "next/application/startup_coordinator.h"
 #include "next/application/startup_workspace_policy.h"
 #include "next/application/application_runtime.h"
+#include "next/application/initial_setup_lifecycle.h"
 #include "next/application/workspace_contracts.h"
 #include "next/application/workspace_state.h"
 #include "next/bootstrap/startup_diagnostics_sink.h"
@@ -22,6 +24,7 @@ class QApplication;
 namespace ClassMngr::Next::Ui
 {
 class ApplicationShell;
+struct InitialSetupPageState;
 }
 
 namespace ClassMngr::Next::Bootstrap
@@ -46,11 +49,16 @@ public:
     {
         std::optional<QStringList> commandLineArguments;
         std::optional<bool> recentAutoOpenEnabled;
+        std::optional<QString> initialSetupRecoveryJournalPath;
         std::function<bool(const Application::WorkspaceLocation&)> pathExists;
         std::function<std::unique_ptr<Application::WorkspaceGateway>()>
             workspaceGatewayFactory;
         std::function<std::unique_ptr<Application::RecentWorkspaceHistoryPort>()>
             recentWorkspaceHistoryPortFactory;
+        // Keeps the visible Initial Setup save action testable without
+        // opening a native operating-system dialog.
+        std::function<std::unique_ptr<Application::FileDialogPort>()>
+            initialSetupFileDialogPortFactory;
     };
 
     struct ShutdownSeams final
@@ -104,6 +112,11 @@ private:
     [[nodiscard]] std::optional<Application::WorkspaceLocation>
     commandLineStartupWorkspaceLocation() const;
     void ensureWorkspaceComposition();
+    [[nodiscard]] Ui::InitialSetupPageState initialSetupPageState() const;
+    void beginInitialSetupProfile();
+    void resumeInitialSetupProfile();
+    void restoreInitialSetupProfile();
+    void cancelInitialSetupProfile();
     [[nodiscard]] bool releaseWorkspace() noexcept;
     [[nodiscard]] std::optional<Application::ShutdownFailureReason>
     runShutdownSequence() noexcept;
@@ -133,6 +146,10 @@ private:
     std::unique_ptr<CoreServices> m_coreServices;
     std::unique_ptr<Application::WorkspaceGateway> m_workspaceGateway;
     std::unique_ptr<Application::ApplicationRuntime> m_applicationRuntime;
+    std::unique_ptr<Application::InitialSetupLifecyclePort>
+        m_initialSetupLifecyclePort;
+    std::unique_ptr<Application::InitialSetupLifecycle> m_initialSetupLifecycle;
+    QString m_initialSetupStatusMessage;
     std::optional<Application::StartupWorkspaceOutcome> m_startupWorkspaceOutcome;
     Application::StartupCoordinator m_startupCoordinator;
     Application::ShutdownCoordinator m_shutdownCoordinator;

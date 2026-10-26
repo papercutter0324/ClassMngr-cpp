@@ -120,6 +120,8 @@ set(CLASSMNGR_WORKSPACE_STORE_SOURCES
 set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
     "src/next/platform/workspace_store_gateway.cpp"
     "src/next/platform/workspace_store_gateway.h"
+    "src/next/platform/workspace_store_initial_setup_lifecycle_adapter.cpp"
+    "src/next/platform/workspace_store_initial_setup_lifecycle_adapter.h"
     "src/next/platform/next_startup_profiler_inactive_workspace_compat.cpp"
 )
 

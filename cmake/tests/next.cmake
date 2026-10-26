@@ -82,6 +82,7 @@ target_compile_definitions(ClassMngrNextThemePresenterTests
 add_executable(ClassMngrNextPageHostTests
     tests/next/page_host_tests.cpp
     tests/next/preferences_test_ports.h
+    src/next/ui/initial_page.cpp
     src/next/ui/page_host.cpp
 )
 target_compile_features(ClassMngrNextPageHostTests
@@ -2235,6 +2236,23 @@ classmngr_add_qt_test(
         ClassMngrNext::Application
         ClassMngrNext::Platform
         Qt6::Test
+)
+
+# Exercise setup replacement and interruption recovery through the v2
+# WorkspaceStore gateway with checked-in persistent fixture data.
+classmngr_add_qt_test(
+    NAME NextPlatformWorkspaceStoreInitialSetupLifecycleAdapter
+    SOURCES
+        tests/next_platform_workspace_store_initial_setup_lifecycle_adapter_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNextWorkspace
+        ClassMngrWorkspaceStore
+        ClassMngrNextWorkspaceDomain
+        Qt6::Sql
+        Qt6::Test
+    COMPILE_DEFINITIONS
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
 )
 
 classmngr_add_qt_test(

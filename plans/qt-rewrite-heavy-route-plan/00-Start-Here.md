@@ -6,12 +6,10 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-26
-- Current milestone: Phase 6 is complete on the Heavy route. F1528 closes the
-  §6.7 bounded review-window requirement, and the shell/representative-table
-  exit gate passed. Batch 3 discovery found no other Phase 6 slices. Phase 7
-  is next and has not started. See the [Phase 6 plan](07-Phase-6-Shared-UI-Rewrite.md)
-  and [current batch tracker](Current-Slice-Batches.md). Rendering parity
-  remains a Phase 7/10 gate, and legacy pack removal remains a Phase 12 gate.
+- Current milestone: Phase 7 remains in progress. 7A.1, the user-visible v2
+  profile-bootstrap stage, is accepted after focused macOS Debug verification.
+  Next is 7A.2, setup personal details and signature. See the [Phase 7 plan](08-Phase-7-Feature-Migration.md)
+  and [current batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -35,7 +33,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | Not started | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — 7A.1 accepted; 7A.2 next | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |

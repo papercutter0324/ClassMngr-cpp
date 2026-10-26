@@ -9871,6 +9871,7 @@ Version: %2</source>
     <message><source>Address</source><translation>주소</translation></message>
     <message><source>Housing</source><translation>숙소</translation></message>
     <message><source>Maps</source><translation>지도</translation></message>
+    <message><source>Initial Setup</source><translation>초기 설정</translation></message>
 </context>
 <context>
     <name>NextShell</name>
@@ -9881,5 +9882,36 @@ Version: %2</source>
 <context>
     <name>NextPlaceholder</name>
     <message><source>This section is being prepared.</source><translation>이 섹션은 준비 중입니다.</translation></message>
+</context>
+<context>
+    <name>InitialPage</name>
+    <message><source>Initial Setup</source><translation>초기 설정</translation></message>
+    <message><source>Create a ClassMngr profile to begin setup. Your profile is saved as a .tps file.</source><translation>ClassMngr 프로필을 만들어 설정을 시작하세요. 프로필은 .tps 파일로 저장됩니다.</translation></message>
+    <message><source>Choose where to save your profile.</source><translation>프로필을 저장할 위치를 선택하세요.</translation></message>
+    <message><source>Profile created. Setup is pending.</source><translation>프로필을 만들었습니다. 설정이 진행 중입니다.</translation></message>
+    <message><source>An interrupted setup needs your choice.</source><translation>중단된 설정을 어떻게 처리할지 선택하세요.</translation></message>
+    <message><source>The setup recovery record could not be read.</source><translation>설정 복구 기록을 읽을 수 없습니다.</translation></message>
+    <message><source>Profile: %1</source><translation>프로필: %1</translation></message>
+    <message><source>Profile to recover: %1</source><translation>복구할 프로필: %1</translation></message>
+    <message><source>The previous profile is preserved until setup is complete.</source><translation>설정이 완료될 때까지 이전 프로필을 보관합니다.</translation></message>
+    <message><source>Restore Previous Profile</source><translation>이전 프로필 복원</translation></message>
+    <message><source>No previous profile was replaced. You can resume or discard this profile.</source><translation>교체된 이전 프로필이 없습니다. 이 프로필을 이어서 설정하거나 삭제할 수 있습니다.</translation></message>
+    <message><source>Discard Incomplete Profile</source><translation>미완성 프로필 삭제</translation></message>
+    <message><source>Create Profile…</source><translation>프로필 만들기…</translation></message>
+    <message><source>Resume Setup</source><translation>설정 이어하기</translation></message>
+    <message><source>Cancel Setup</source><translation>설정 취소</translation></message>
+    <message><source>Choose a profile destination</source><translation>프로필 저장 위치 선택</translation></message>
+    <message><source>ClassMngr profiles (*.tps)</source><translation>ClassMngr 프로필 (*.tps)</translation></message>
+    <message><source>The profile save dialog could not be opened: %1</source><translation>프로필 저장 대화상자를 열 수 없습니다: %1</translation></message>
+    <message><source>Profile creation was canceled.</source><translation>프로필 만들기를 취소했습니다.</translation></message>
+    <message><source>The profile destination is invalid: %1</source><translation>프로필 저장 위치가 올바르지 않습니다: %1</translation></message>
+    <message><source>Profile setup could not begin: %1</source><translation>프로필 설정을 시작할 수 없습니다: %1</translation></message>
+    <message><source>The interrupted setup could not be found.</source><translation>중단된 설정을 찾을 수 없습니다.</translation></message>
+    <message><source>Setup could not resume: %1</source><translation>설정을 이어할 수 없습니다: %1</translation></message>
+    <message><source>The previous profile was restored.</source><translation>이전 프로필을 복원했습니다.</translation></message>
+    <message><source>The profile could not be restored. The recovery files are still available.</source><translation>프로필을 복원할 수 없습니다. 복구 파일은 그대로 보관되어 있습니다.</translation></message>
+    <message><source>Setup was canceled.</source><translation>설정을 취소했습니다.</translation></message>
+    <message><source>The setup could not be canceled. The recovery files are still available.</source><translation>설정을 취소할 수 없습니다. 복구 파일은 그대로 보관되어 있습니다.</translation></message>
+    <message><source>The setup recovery record could not be read. Keep the recovery files in place and restart after resolving the issue.</source><translation>설정 복구 기록을 읽을 수 없습니다. 복구 파일을 그대로 두고 문제를 해결한 뒤 다시 시작하세요.</translation></message>
 </context>
 </TS>

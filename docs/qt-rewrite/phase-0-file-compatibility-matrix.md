@@ -1,11 +1,13 @@
 # Qt Rewrite Phase 0 - File and Output Compatibility Matrix
 
-Status: In progress
+Phase 0 status: Complete (user-declared 2026-09-18)
 Snapshot: `75755460`
 
 This matrix distinguishes formats that the application owns from files that it
 only imports, stages, or generates. Exact fixture content and byte-level output
-comparisons are still open Phase 0 work.
+comparisons remain outstanding. Phase 0 was user-declared complete on
+2026-09-18; Phase 7 slices remain subject to the feature matrix's per-slice
+fixture and automated persistent-behavior acceptance gate.
 
 | Format/path | Current behavior | Read/write contract | Current evidence | v2 acceptance |
 | --- | --- | --- | --- | --- |

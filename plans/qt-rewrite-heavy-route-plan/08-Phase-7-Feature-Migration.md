@@ -32,13 +32,19 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: Not started
+- Status: In progress
 - Default route: Heavy
 - Depends on: Phases 2 through 6
 - Blocks: Final parity, memory hardening, and cutover
-- Owner: Unassigned
-- Last updated: 2026-09-16
-- Current note: Migrate complete vertical slices, not isolated UI files.
+- Owner: Codex (Heavy route)
+- Last updated: 2026-10-26
+- Current note: 7A.1, the user-visible v2 profile-bootstrap stage, is accepted
+  after focused macOS Debug verification in `build/macos-clang-debug`. Next is
+  7A.2, setup personal details and signature. Full wizard/setup, recent-history
+  completion (candidate #13), and the remaining 7A flows are open. The original
+  profile backup remains retained; recent-history insertion waits for full
+  setup completion. The implementation commit is next; no commit hash yet. See
+  the progress log for verification details and limits.
 
 ### Slice batches
 
@@ -52,6 +58,29 @@ Use this section only when a decision, acceptance result, verification
 finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
+
+### 7A.1 — Profile-bootstrap stage accepted (2026-10-26)
+
+- Acceptance: the user-visible v2 profile-bootstrap stage creates a real `.tps`
+  through `WorkspaceStoreGateway`, supports cancel/failure and explicit restart
+  recovery, and keeps `InitialSetupLifecycle` pending across later
+  setup-screen slices. Keep the original-profile backup; candidate #13 owns
+  recent-history insertion after the full setup workflow completes.
+- Verification passed on macOS Debug using `build/macos-clang-debug`: build of
+  `ClassMngrNext`, `ClassMngrNextPageHostTests`, `ClassMngrNextBootstrapTests`,
+  `ClassMngrNextApplicationInitialSetupLifecycleTests`, the legacy platform
+  lifecycle test, and the new store-backed setup lifecycle test; focused CTest
+  passed 5/5. The fixture-backed platform test covers real SQLite seed/reopen
+  and recovery. `createActionUsesSelectedPathAndDoesNotRecordPendingProfile`
+  clicks the visible action with a fake dialog, verifies the selected path, one
+  recent-history read, and zero saves. English/Korean × light/dark appearance
+  passed 4/4 offscreen. `python3
+  scripts/phase4/generate_resource_inventory.py --check` and five generator
+  tests passed. Two focused verifiers independently confirmed these results.
+- Limits and next work: the Windows preset is unavailable on this macOS host;
+  no full suite, Windows build, cross-platform run, package, or memory gate ran.
+  Full wizard/setup, recent-history completion, and remaining 7A flows remain
+  open. The implementation commit is next; no commit hash yet.
 
 ## Objective
 

@@ -1,8 +1,8 @@
 # Project Progress
 
-Active deployment plan: Qt Rewrite Phase 6 — Shared UI Rewrite.
-Current deployment: `phase6-shared-ui-20261026`. Route: Heavy.
-Phases 0–6 are Complete; Phase 7 is not started. F1514 added descriptor-based
+Active deployment plan: Qt Rewrite Phase 7 — Feature Migration.
+Current deployment: `phase7-feature-migration-20261026`. Route: Heavy.
+Phases 0–6 are Complete; Phase 7 is in progress. F1514 added descriptor-based
 lazy registration, F1515 added explicit page lifecycle states, and F1516 added
 guarded placeholder navigation with history. F1517 added the typed CommandBus;
 F1518 made history action state respect target visibility. F1519 added typed
@@ -24,18 +24,18 @@ and [Start Here](../plans/qt-rewrite-heavy-route-plan/00-Start-Here.md).
 
 ## Goal
 
-Complete Phase 6's shared UI rewrite: explicit page descriptors and lifecycle,
-navigation and action state, dialog/notification and preference services, and
-reusable model/view presentation while preserving current behavior and
-appearance.
+Complete Phase 7 feature migration, beginning with the user-visible 7A
+profile-bootstrap path and its transaction-safe persistence, cancellation,
+recovery, and acceptance evidence.
 
 ## Overall Progress
 
-Phases 0–6 are Complete. F1514–F1528 are accepted; Batch 1 is pushed, and
-F1528 closes the remaining bounded review-window requirement in §6.7. The
-Batch 3 scan found no additional Phase 6 candidates. Phase 7 is the next
-planned phase and has not started. The current slice-batch tracker has no
-active candidates: `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
+Phases 0–6 are Complete. Phase 7 started on the Heavy route on 2026-10-26.
+Slice 7A.1, the user-visible v2 profile-bootstrap stage, passed independent
+focused macOS Debug verification and is accepted. The next candidate is 7A.2,
+personal details and signature. Full setup-screen migration and the remaining
+7A file workflows are open; active candidates are tracked in
+`plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained
@@ -76,23 +76,20 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-26 (Phase 6 complete at F1528)
+### Current checkpoint — 2026-10-26 (Phase 7 started; 7A.1 selected)
 
-Phase 6 is Complete on the Heavy route. F1528 adds opt-in resident row windows
-with a fixed capacity for each windowed lifetime, wide logical offset/total
-metadata, in-place reset, and release of replaced rows. Independent incremental
-macOS Debug verification passed the model and Staff Directory regression
-CTest suites 2/2. The real `QTableView` test traverses 257 windows over 16,387
-logical rows with a 64-row cap; a valid logical offset above `INT_MAX` is also
-checked. Staff Directory remains unwindowed because persistence reads every
-row through `rowCount()`/`rowAt()`. The window model bounds the supplied
-resident rows; feature code still owns loading each window and full-source
-persistence. Batch 3 discovery found no other Phase 6 slices. No full suite,
-cross-platform build, packaged memory measurement, or native-window review ran.
-Window/splitter keys remain intact, with lifecycle behavior deferred under
-F1524 because there are no active callers. Phase 7/10 owns rendering parity;
-Phase 9 owns packaged Release memory measurement; Phase 12 owns legacy
-resource-pack removal.
+Phase 7 is in progress on the Heavy route. Slice 7A.1 adds a v2 user-visible
+profile-bootstrap route backed by `WorkspaceStore`, with pending-state
+recovery, safe cancel/restore, and no recent-history write before setup is
+complete. Independent focused macOS Debug verification passed: affected
+targets built; five focused CTests passed; English/Korean × light/dark
+appearance rows passed 4/4; resource inventory check and five generator tests
+passed. The persistence acceptance uses
+`tests/fixtures/workspaces/representative_startup.sql` and reopens the seeded
+SQLite profile. The Windows preset was unavailable; no full suite,
+cross-platform build, packaged memory test, or Phase 7 gate was run. Slice
+7A.2, personal details and signature, is next; the full setup flow and
+remaining 7A file workflows remain open.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

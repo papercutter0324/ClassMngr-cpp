@@ -3,10 +3,22 @@
 #include "next/application/workspace_contracts.h"
 
 #include <string>
+#include <optional>
 #include <utility>
 
 namespace ClassMngr::Next::Application
 {
+
+struct InitialSetupRecoveryRecord final
+{
+    WorkspaceLocation profile;
+    WorkspaceLocation originalBackup;
+
+    friend bool operator==(
+        const InitialSetupRecoveryRecord&,
+        const InitialSetupRecoveryRecord&
+        ) = default;
+};
 
 // Platform boundary for replacing a profile during the first-run setup flow.
 // File operations must be non-destructive: moveProfile must not replace an
@@ -40,6 +52,45 @@ public:
     [[nodiscard]] virtual Domain::Result<WorkspaceSession> createWorkspace(
         const CreateWorkspaceRequest& request
         ) = 0;
+
+    // Durable recovery is optional for adapters that only support the legacy
+    // in-process setup flow. The v2 store adapter persists this record before
+    // it moves an existing profile.
+    [[nodiscard]] virtual Domain::Result<WorkspaceSession> openWorkspace(
+        const OpenWorkspaceRequest& request
+        )
+    {
+        static_cast<void>(request);
+        return Domain::Result<WorkspaceSession>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Workspace recovery is not available through this adapter.",
+            .recoverable = false
+        });
+    }
+
+    [[nodiscard]] virtual Domain::Result<
+        std::optional<InitialSetupRecoveryRecord>> pendingRecovery() const
+    {
+        return Domain::Result<
+            std::optional<InitialSetupRecoveryRecord>>::success(
+                std::nullopt
+                );
+    }
+
+    [[nodiscard]] virtual bool recordPendingRecovery(
+        const InitialSetupRecoveryRecord& record
+        )
+    {
+        static_cast<void>(record);
+        return true;
+    }
+
+    virtual void clearPendingRecovery(
+        const InitialSetupRecoveryRecord& record
+        ) noexcept
+    {
+        static_cast<void>(record);
+    }
 };
 
 enum class InitialSetupBeginFailure
@@ -140,10 +191,7 @@ public:
         if (m_port.profileExists(m_profile))
         {
             m_originalBackup = m_port.recoveryLocationFor(m_profile);
-            if (
-                m_originalBackup.empty()
-                || !m_port.moveProfile(m_profile, m_originalBackup)
-                )
+            if (m_originalBackup.empty())
             {
                 result.failure = InitialSetupBeginFailure::PreserveProfile;
                 result.originalBackup = m_originalBackup;
@@ -154,6 +202,38 @@ public:
                 m_originalBackup = WorkspaceLocation{};
                 return result;
             }
+        }
+
+        if (!m_port.recordPendingRecovery(
+                InitialSetupRecoveryRecord{m_profile, m_originalBackup}
+                ))
+        {
+            result.failure = InitialSetupBeginFailure::PreserveProfile;
+            result.originalBackup = m_originalBackup;
+            result.error = technicalFailure(
+                "The setup recovery record could not be saved."
+                );
+            m_profile = WorkspaceLocation{};
+            m_originalBackup = WorkspaceLocation{};
+            return result;
+        }
+
+        if (
+            !m_originalBackup.empty()
+            && !m_port.moveProfile(m_profile, m_originalBackup)
+            )
+        {
+            m_port.clearPendingRecovery(
+                InitialSetupRecoveryRecord{m_profile, m_originalBackup}
+                );
+            result.failure = InitialSetupBeginFailure::PreserveProfile;
+            result.originalBackup = m_originalBackup;
+            result.error = technicalFailure(
+                "The existing profile could not be preserved."
+                );
+            m_profile = WorkspaceLocation{};
+            m_originalBackup = WorkspaceLocation{};
+            return result;
         }
 
         m_hasPendingSetup = true;
@@ -192,8 +272,98 @@ public:
             result.originalBackupRemovalFailed = true;
         }
 
+        if (!result.originalBackupRemovalFailed)
+        {
+            m_port.clearPendingRecovery(
+                InitialSetupRecoveryRecord{m_profile, m_originalBackup}
+                );
+        }
+
         clearPendingSetup();
         return result;
+    }
+
+    // Reattach to an interrupted setup without deleting the original backup.
+    // A missing target is recreated; an existing target must pass the normal
+    // store-backed open validation before it becomes active.
+    [[nodiscard]] InitialSetupBeginResult resume(
+        const InitialSetupRecoveryRecord& recovery
+        )
+    {
+        InitialSetupBeginResult result;
+        result.profile = recovery.profile;
+        result.originalBackup = recovery.originalBackup;
+        if (m_hasPendingSetup)
+        {
+            result.failure = InitialSetupBeginFailure::AlreadyActive;
+            result.error = conflict(
+                "An initial setup profile replacement is already active."
+                );
+            return result;
+        }
+        if (recovery.profile.empty())
+        {
+            result.failure = InitialSetupBeginFailure::CreateWorkspace;
+            result.error = technicalFailure(
+                "The setup recovery record does not contain a profile path."
+                );
+            return result;
+        }
+
+        result.workspaceWasOpen = m_port.hasActiveWorkspace();
+        const auto closed = m_port.closeActiveWorkspace();
+        if (!closed)
+        {
+            result.failure = InitialSetupBeginFailure::CloseWorkspace;
+            result.error = closed.error();
+            return result;
+        }
+        result.workspaceClosed = true;
+
+        m_profile = recovery.profile;
+        m_originalBackup = recovery.originalBackup;
+        m_hasPendingSetup = true;
+
+        const auto resumed = m_port.profileExists(m_profile)
+            ? m_port.openWorkspace(OpenWorkspaceRequest{m_profile})
+            : m_port.createWorkspace(CreateWorkspaceRequest{m_profile});
+        if (!resumed)
+        {
+            result.failure = InitialSetupBeginFailure::CreateWorkspace;
+            result.error = resumed.error();
+            clearPendingSetup();
+            return result;
+        }
+
+        result.createdProfile = resumed.value().location();
+        return result;
+    }
+
+    // Restore is safe even when an interrupted target is not a valid database:
+    // cancel only uses Platform file operations and keeps both sides recoverable.
+    [[nodiscard]] InitialSetupCancelResult restore(
+        const InitialSetupRecoveryRecord& recovery
+        )
+    {
+        if (m_hasPendingSetup)
+        {
+            if (m_profile != recovery.profile
+                || m_originalBackup != recovery.originalBackup)
+            {
+                return InitialSetupCancelResult{};
+            }
+        }
+        else
+        {
+            if (recovery.profile.empty())
+            {
+                return InitialSetupCancelResult{};
+            }
+            m_profile = recovery.profile;
+            m_originalBackup = recovery.originalBackup;
+            m_hasPendingSetup = true;
+        }
+        return cancel();
     }
 
     [[nodiscard]] InitialSetupCancelResult cancel()
@@ -228,6 +398,9 @@ public:
                 return result;
             }
 
+            m_port.clearPendingRecovery(
+                InitialSetupRecoveryRecord{m_profile, m_originalBackup}
+                );
             result.status = InitialSetupCancelStatus::Canceled;
             clearPendingSetup();
             return result;
@@ -269,6 +442,10 @@ public:
             return result;
         }
 
+        m_port.clearPendingRecovery(
+            InitialSetupRecoveryRecord{m_profile, m_originalBackup}
+            );
+
         if (
             !result.incompleteRecovery.empty()
             && m_port.profileExists(result.incompleteRecovery)
@@ -298,6 +475,16 @@ public:
     [[nodiscard]] bool hasPendingSetup() const noexcept
     {
         return m_hasPendingSetup;
+    }
+
+    [[nodiscard]] const WorkspaceLocation& pendingProfile() const noexcept
+    {
+        return m_profile;
+    }
+
+    [[nodiscard]] const WorkspaceLocation& pendingOriginalBackup() const noexcept
+    {
+        return m_originalBackup;
     }
 
 private:

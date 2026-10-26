@@ -1,5 +1,6 @@
 #include "next/application/shutdown_coordinator.h"
 #include "next/application/startup_coordinator.h"
+#include "next/application/file_dialog_port.h"
 #include "next/application/language_preferences_port.h"
 #include "next/application/theme_preferences_port.h"
 #include "next/bootstrap/application_bootstrap.h"
@@ -7,6 +8,7 @@
 #include "next/resources/resource_descriptor.h"
 #include "next/resources/resource_error.h"
 #include "next/ui/application_shell.h"
+#include "next/ui/initial_page.h"
 #include "next/ui/page_host.h"
 #include "next/ui/placeholder_page.h"
 #include "core/settingsmanager.h"
@@ -33,6 +35,7 @@
 #include <QPushButton>
 #include <QSysInfo>
 #include <QSqlDatabase>
+#include <QSaveFile>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTreeWidget>
@@ -92,6 +95,8 @@ private slots:
     void startupWorkspacePolicyPreservesLegacyCandidateOrder();
     void noWorkspaceRemainsAnExplicitNonFatalWarning();
     void staleFirstRecentPathIsPrunedWithoutTryingLaterCandidates();
+    void interruptedSetupOffersRecoveryBeforeAutoOpenOrRecentHistory();
+    void createActionUsesSelectedPathAndDoesNotRecordPendingProfile();
     void recentOpenErrorDoesNotFallThroughToLaterCandidates();
     void missingExplicitWorkspaceDoesNotCreateFileOrParent();
     void successfulStartupRetainsSessionAndReleasesStoreOnShutdown();
@@ -240,11 +245,11 @@ public:
 
         shellShowObserved = true;
         const Ui::PageHost& host = shell->pageHost();
-        initialPageRegisteredAtShow = host.isPageRegistered(QStringLiteral("campus_information"));
+        initialPageRegisteredAtShow = host.isPageRegistered(QStringLiteral("initial_setup"));
         activePageAtShow = host.activePageKey()
-            == std::optional<QString>(QStringLiteral("campus_information"));
-        initialPageInstanceAtShow = dynamic_cast<const Ui::PlaceholderPage*>(
-            host.pageInstance(QStringLiteral("campus_information"))
+            == std::optional<QString>(QStringLiteral("initial_setup"));
+        initialPageInstanceAtShow = dynamic_cast<const Ui::InitialPage*>(
+            host.pageInstance(QStringLiteral("initial_setup"))
             ) != nullptr;
         return false;
     }
@@ -264,6 +269,7 @@ struct RecentWorkspaceHistoryProbe final
     Application::RecentWorkspaceHistory history;
     std::vector<Application::RecentWorkspaceHistory> saves;
     int loadCount = 0;
+    int saveCount = 0;
 };
 
 class RecordingRecentWorkspaceHistoryPort final
@@ -287,6 +293,7 @@ public:
         const Application::RecentWorkspaceHistory& history
         ) const override
     {
+        ++m_probe->saveCount;
         m_probe->saves.push_back(history);
         return Domain::Result<void>::success();
     }
@@ -298,6 +305,81 @@ public:
 
 private:
     std::shared_ptr<RecentWorkspaceHistoryProbe> m_probe;
+};
+
+struct InitialSetupFileDialogProbe final
+{
+    Application::FileDialogPath selectedPath;
+    std::optional<Application::SaveFileDialogRequest> lastSaveRequest;
+    int saveCount = 0;
+};
+
+class RecordingInitialSetupFileDialogPort final
+    : public Application::FileDialogPort
+{
+public:
+    explicit RecordingInitialSetupFileDialogPort(
+        std::shared_ptr<InitialSetupFileDialogProbe> probe
+        )
+        : m_probe(std::move(probe))
+    {
+    }
+
+    [[nodiscard]] Domain::Result<
+        Application::FileDialogResponse<Application::FileDialogPath>>
+    openOneFile(const Application::OpenFileDialogRequest&) override
+    {
+        return unexpectedCall<
+            Application::FileDialogResponse<Application::FileDialogPath>>();
+    }
+
+    [[nodiscard]] Domain::Result<
+        Application::FileDialogResponse<std::vector<Application::FileDialogPath>>>
+    openManyFiles(const Application::OpenFileDialogRequest&) override
+    {
+        return unexpectedCall<
+            Application::FileDialogResponse<std::vector<Application::FileDialogPath>>>();
+    }
+
+    [[nodiscard]] Domain::Result<
+        Application::FileDialogResponse<Application::SavedFileDialogSelection>>
+    saveFile(const Application::SaveFileDialogRequest& request) override
+    {
+        ++m_probe->saveCount;
+        m_probe->lastSaveRequest = request;
+        return Domain::Result<
+            Application::FileDialogResponse<
+                Application::SavedFileDialogSelection>>::success(
+                    Application::FileDialogResponse<
+                        Application::SavedFileDialogSelection>{
+                        .selection = Application::SavedFileDialogSelection{
+                            .path = m_probe->selectedPath,
+                            .openAfterSaving = false
+                        }
+                    }
+                    );
+    }
+
+    [[nodiscard]] Domain::Result<
+        Application::FileDialogResponse<Application::FileDialogPath>>
+    selectDirectory(const Application::SelectDirectoryDialogRequest&) override
+    {
+        return unexpectedCall<
+            Application::FileDialogResponse<Application::FileDialogPath>>();
+    }
+
+private:
+    template <typename Response>
+    [[nodiscard]] static Domain::Result<Response> unexpectedCall()
+    {
+        return Domain::Result<Response>::failure(Domain::OperationError{
+            .code = Domain::ErrorCode::Technical,
+            .message = "Unexpected file dialog call.",
+            .recoverable = false
+        });
+    }
+
+    std::shared_ptr<InitialSetupFileDialogProbe> m_probe;
 };
 
 struct BootstrapWorkspaceGatewayProbe final
@@ -1009,18 +1091,18 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
 
     Ui::PageHost& pageHost = shell->pageHost();
     QVERIFY(shell->centralWidget() != static_cast<QWidget*>(&pageHost));
-    QVERIFY(pageHost.isPageRegistered(QStringLiteral("campus_information")));
-    QVERIFY(pageHost.hasPageInstance(QStringLiteral("campus_information")));
+    QVERIFY(pageHost.isPageRegistered(QStringLiteral("initial_setup")));
+    QVERIFY(pageHost.hasPageInstance(QStringLiteral("initial_setup")));
     QCOMPARE(pageHost.activePageKey(),
-             std::optional<QString>(QStringLiteral("campus_information")));
+             std::optional<QString>(QStringLiteral("initial_setup")));
     QVERIFY(shell->navigationModel() != nullptr);
     QCOMPARE(shell->navigationModel()->initialPageId()->value(),
-             QStringLiteral("campus_information"));
+             QStringLiteral("initial_setup"));
     QCOMPARE(shell->navigationModel()->selectedPageId()->value(),
-             QStringLiteral("campus_information"));
+             QStringLiteral("initial_setup"));
     const std::vector<Ui::NavigationNode>& navigationNodes =
         shell->navigationModel()->nodes();
-    QCOMPARE(navigationNodes.size(), std::size_t(7));
+    QCOMPARE(navigationNodes.size(), std::size_t(8));
     QCOMPARE(navigationNodes[0].pageId->value(), QStringLiteral("my_workspace"));
     QCOMPARE(navigationNodes[1].pageId->value(), QStringLiteral("classes"));
     QCOMPARE(navigationNodes[2].pageId->value(), QStringLiteral("sub_prep"));
@@ -1028,6 +1110,7 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     QCOMPARE(navigationNodes[4].label, QStringLiteral("Campus Staff"));
     QCOMPARE(navigationNodes[5].label, QStringLiteral("Useful Links"));
     QCOMPARE(navigationNodes[6].label, QStringLiteral("Campus Directory"));
+    QCOMPARE(navigationNodes[7].pageId->value(), QStringLiteral("initial_setup"));
     QCOMPARE(navigationNodes[4].children.size(), std::size_t(3));
     QCOMPARE(navigationNodes[4].children[0].label, QStringLiteral("Korean Teachers"));
     QCOMPARE(navigationNodes[4].children[1].pageId->value(),
@@ -1058,12 +1141,12 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
         QVERIFY(link.children.empty());
     }
 
-    const auto initialPageId = Ui::PageId::fromString(QStringLiteral("campus_information"));
+    const auto initialPageId = Ui::PageId::fromString(QStringLiteral("initial_setup"));
     QVERIFY(initialPageId.has_value());
     const auto initialDescriptor = pageHost.pageDescriptor(*initialPageId);
     QVERIFY(initialDescriptor.has_value());
-    QCOMPARE(initialDescriptor->id.value(), QStringLiteral("campus_information"));
-    QCOMPARE(initialDescriptor->label, QStringLiteral("Information"));
+    QCOMPARE(initialDescriptor->id.value(), QStringLiteral("initial_setup"));
+    QCOMPARE(initialDescriptor->label, QStringLiteral("Initial Setup"));
     QVERIFY(!initialDescriptor->iconResourceId.has_value());
     QVERIFY(initialDescriptor->requiredPermissions.isEmpty());
     QVERIFY(initialDescriptor->resourcePolicy == Ui::PageResourcePolicy::PageScoped);
@@ -1073,30 +1156,30 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
         QVERIFY(!descriptor.iconResourceId.has_value());
     }
 
-    auto* const page = dynamic_cast<Ui::PlaceholderPage*>(
-        pageHost.pageInstance(QStringLiteral("campus_information"))
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        pageHost.pageInstance(QStringLiteral("initial_setup"))
         );
     QVERIFY(page != nullptr);
     QVERIFY(page->isVisible());
-    QCOMPARE(page->objectName(), QStringLiteral("classMngrNextPlaceholderPage"));
-    QCOMPARE(page->resourceContext().pageKey(), QStringLiteral("campus_information"));
+    QCOMPARE(page->objectName(), QStringLiteral("classMngrNextInitialSetupPage"));
+    QCOMPARE(page->resourceContext().pageKey(), QStringLiteral("initial_setup"));
     QCOMPARE(page->resourceContext().pageScope().kind(), Resources::ResourceScopeKind::Page);
     QCOMPARE(page->resourceContext().pageScope().ownerLabel(),
-             QStringLiteral("campus_information"));
+             QStringLiteral("initial_setup"));
 
     QLabel* const title = page->findChild<QLabel*>(
-        QStringLiteral("classMngrNextPlaceholderPageTitle")
+        QStringLiteral("classMngrNextInitialSetupTitle")
         );
     QVERIFY(title != nullptr);
-    QCOMPARE(title->text(), QStringLiteral("Information"));
+    QCOMPARE(title->text(), QStringLiteral("Initial Setup"));
 
     QLabel* const description = page->findChild<QLabel*>(
-        QStringLiteral("classMngrNextPlaceholderPageDescription")
+        QStringLiteral("classMngrNextInitialSetupDescription")
         );
     QVERIFY(description != nullptr);
     QCOMPARE(
         description->text(),
-        QStringLiteral("This section is being prepared.")
+        QStringLiteral("Create a ClassMngr profile to begin setup. Your profile is saved as a .tps file.")
         );
 
     QTreeWidget* const navigationTree = shell->findChild<QTreeWidget*>(
@@ -1186,7 +1269,7 @@ startupUpdateCheckWaitsForVisibleInitialPageAndLivesUntilShutdown()
     QVERIFY(shell->isVisible());
     QCOMPARE(
         shell->pageHost().activePageKey(),
-        std::optional<QString>(QStringLiteral("campus_information"))
+        std::optional<QString>(QStringLiteral("initial_setup"))
         );
 
     // StartupReady has queued the callback, but it must not run inside start().
@@ -1582,10 +1665,31 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
     QCOMPARE(application.styleSheet(), expectedQss);
     QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
              Application::WorkspaceLifecycleState::Closed);
-    const auto selectedPage = *Ui::PageId::fromString(QStringLiteral("campus_information"));
+    const auto selectedPage = *Ui::PageId::fromString(QStringLiteral("initial_setup"));
     QCOMPARE(shell->navigationModel()->currentPageId(), std::optional{selectedPage});
     QCOMPARE(shell->navigationModel()->selectedPageId(), std::optional{selectedPage});
     QCOMPARE(shell->pageHost().activePageKey(), std::optional{selectedPage.value()});
+
+    auto* const setupPage = dynamic_cast<Ui::InitialPage*>(
+        shell->pageHost().pageInstance(QStringLiteral("initial_setup"))
+        );
+    QVERIFY(setupPage);
+    auto* const setupTitle = setupPage->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupTitle")
+        );
+    auto* const createProfileButton = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCreateProfile")
+        );
+    QVERIFY(setupTitle);
+    QVERIFY(createProfileButton);
+    QCOMPARE(
+        setupTitle->text(),
+        korean ? QStringLiteral("초기 설정") : QStringLiteral("Initial Setup")
+        );
+    QCOMPARE(
+        createProfileButton->text(),
+        korean ? QStringLiteral("프로필 만들기…") : QStringLiteral("Create Profile…")
+        );
 
     struct Label final { const char* id; const char* english; const char* korean; };
     const Label pageLabels[] = {
@@ -1595,6 +1699,7 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
         {"native_english_teachers", "Native English Teachers", "원어민 영어 교사"},
         {"gs_team", "GS Team", "GS 팀"},
         {"campus_information", "Information", "정보"},
+        {"initial_setup", "Initial Setup", "초기 설정"},
         {"campus_directions", "Directions", "오시는 길"},
         {"campus_address", "Address", "주소"},
         {"campus_housing", "Housing", "숙소"},
@@ -1652,10 +1757,9 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
     QVERIFY(!forward->isEnabled());
     QCOMPARE(tree->selectedItems().size(), 1);
     QVERIFY(tree->currentItem());
-    QCOMPARE(tree->currentItem()->text(0), korean ? QStringLiteral("정보") : QStringLiteral("Information"));
+    QCOMPARE(tree->currentItem()->text(0), korean ? QStringLiteral("초기 설정") : QStringLiteral("Initial Setup"));
     QVERIFY(tree->currentItem()->isSelected());
-    QVERIFY(tree->currentItem()->parent());
-    QVERIFY(tree->currentItem()->parent()->isExpanded());
+    QVERIFY(!tree->currentItem()->parent());
     QStringList treeLabels;
     for (QTreeWidgetItemIterator item(tree); *item; ++item)
     {
@@ -1669,7 +1773,8 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
         QStringLiteral("LMS Website"), QStringLiteral("Highlights Library"),
         QStringLiteral("Campus Directory"), QStringLiteral("Information"),
         QStringLiteral("Directions"), QStringLiteral("Address"),
-        QStringLiteral("Housing"), QStringLiteral("Maps")};
+        QStringLiteral("Housing"), QStringLiteral("Maps"),
+        QStringLiteral("Initial Setup")};
     const QStringList koreanTreeLabels{
         QStringLiteral("유용한 링크"), QStringLiteral("Dropbox"),
         QStringLiteral("방학 캘린더"), QStringLiteral("연간 캘린더"),
@@ -1677,16 +1782,18 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
         QStringLiteral("LMS 웹사이트"), QStringLiteral("Highlights 라이브러리"),
         QStringLiteral("캠퍼스 디렉터리"), QStringLiteral("정보"),
         QStringLiteral("오시는 길"), QStringLiteral("주소"),
-        QStringLiteral("숙소"), QStringLiteral("지도")};
+        QStringLiteral("숙소"), QStringLiteral("지도"),
+        QStringLiteral("초기 설정")};
     QCOMPARE(treeLabels, korean ? koreanTreeLabels : englishTreeLabels);
     auto* const page = shell->pageHost().pageInstance(selectedPage.value());
     QVERIFY(page);
-    auto* const title = page->findChild<QLabel*>(QStringLiteral("classMngrNextPlaceholderPageTitle"));
-    auto* const description = page->findChild<QLabel*>(QStringLiteral("classMngrNextPlaceholderPageDescription"));
+    auto* const title = page->findChild<QLabel*>(QStringLiteral("classMngrNextInitialSetupTitle"));
+    auto* const description = page->findChild<QLabel*>(QStringLiteral("classMngrNextInitialSetupDescription"));
     QVERIFY(title && description);
     QCOMPARE(title->text(), tree->currentItem()->text(0));
-    QCOMPARE(description->text(), korean ? QStringLiteral("이 섹션은 준비 중입니다.")
-                                       : QStringLiteral("This section is being prepared."));
+    QCOMPARE(description->text(), korean
+        ? QStringLiteral("ClassMngr 프로필을 만들어 설정을 시작하세요. 프로필은 .tps 파일로 저장됩니다.")
+        : QStringLiteral("Create a ClassMngr profile to begin setup. Your profile is saved as a .tps file."));
 
     shell->activateWindow();
     tree->setFocus(Qt::OtherFocusReason);
@@ -1695,7 +1802,14 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
     shell->repaint();
     QApplication::processEvents();
     QCOMPARE(tree->frameWidth(), 2);
-    QVERIFY(description->height() >= description->heightForWidth(description->width()));
+    const int descriptionHeightForWidth = description->heightForWidth(description->width());
+    QVERIFY2(
+        description->height() >= descriptionHeightForWidth,
+        qPrintable(QStringLiteral("description geometry is %1x%2; heightForWidth=%3")
+                       .arg(description->width())
+                       .arg(description->height())
+                       .arg(descriptionHeightForWidth))
+        );
     const QPixmap capture = shell->grab();
     QVERIFY(!capture.isNull());
     QCOMPARE(capture.size() / capture.devicePixelRatio(), QSize(1024, 720));
@@ -3340,6 +3454,235 @@ staleFirstRecentPathIsPrunedWithoutTryingLaterCandidates()
     QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
              Application::WorkspaceLifecycleState::Closed);
 
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+interruptedSetupOffersRecoveryBeforeAutoOpenOrRecentHistory()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("interrupted.tps")
+        );
+    const QString backupPath = temporaryDirectory.filePath(
+        QStringLiteral(".interrupted.initial-setup-backup")
+        );
+    const QString journalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    const auto writeFile = [](const QString& path, const QByteArray& contents) {
+        QFile file(path);
+        return file.open(QIODevice::WriteOnly | QIODevice::Truncate)
+            && file.write(contents) == contents.size();
+    };
+    QVERIFY(writeFile(profilePath, QByteArrayLiteral("incomplete profile")));
+    QVERIFY(writeFile(backupPath, QByteArrayLiteral("original profile")));
+    QSaveFile recoveryJournal(journalPath);
+    QVERIFY(recoveryJournal.open(QIODevice::WriteOnly));
+    const QByteArray recoveryPayload = QJsonDocument(QJsonObject{
+        {QStringLiteral("version"), 1},
+        {QStringLiteral("profile"), QFileInfo(profilePath).absoluteFilePath()},
+        {QStringLiteral("originalBackup"), QFileInfo(backupPath).absoluteFilePath()}
+    }).toJson(QJsonDocument::Compact);
+    QCOMPARE(recoveryJournal.write(recoveryPayload), qint64(recoveryPayload.size()));
+    QVERIFY(recoveryJournal.commit());
+
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    historyProbe->history.paths = {workspaceLocation(profilePath)};
+    int historyFactoryCalls = 0;
+    int gatewayFactoryCalls = 0;
+    int pathExistsCalls = 0;
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"), profilePath
+    };
+    seams.recentAutoOpenEnabled = true;
+    seams.initialSetupRecoveryJournalPath = journalPath;
+    seams.pathExists = [&pathExistsCalls](const Application::WorkspaceLocation&) {
+        ++pathExistsCalls;
+        return true;
+    };
+    seams.recentWorkspaceHistoryPortFactory = [&] {
+        ++historyFactoryCalls;
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+    seams.workspaceGatewayFactory = [&] {
+        ++gatewayFactoryCalls;
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    const Application::StartupResult result = bootstrap.start();
+    QVERIFY(result.succeeded());
+    QCOMPARE(result.stageResults[6].outcome, Application::StartupStageOutcome::Warning);
+    const auto* const notOpened = std::get_if<Application::StartupWorkspaceNotOpened>(
+        &bootstrap.startupWorkspaceOutcome().value()
+        );
+    QVERIFY(notOpened);
+    QCOMPARE(notOpened->reason, Application::StartupNoWorkspaceReason::NoCandidate);
+    QCOMPARE(historyFactoryCalls, 0);
+    QCOMPARE(historyProbe->loadCount, 0);
+    QVERIFY(historyProbe->saves.empty());
+    QCOMPARE(pathExistsCalls, 0);
+    QCOMPARE(gatewayFactoryCalls, 1);
+    QCOMPARE(gatewayProbe->openCalls, 0);
+
+    auto* const setupPage = dynamic_cast<Ui::InitialPage*>(
+        bootstrap.shell()->pageHost().pageInstance(QStringLiteral("initial_setup"))
+        );
+    QVERIFY(setupPage);
+    auto* const resumeButton = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupResume")
+        );
+    auto* const restoreButton = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupRestore")
+        );
+    QVERIFY(resumeButton);
+    QVERIFY(restoreButton);
+    QVERIFY(!resumeButton->isHidden());
+    QVERIFY(!restoreButton->isHidden());
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    QCOMPARE(gatewayProbe->destroyed, 1);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+createActionUsesSelectedPathAndDoesNotRecordPendingProfile()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString selectedProfilePath = temporaryDirectory.filePath(
+        QStringLiteral("selected-from-setup-action.tps")
+        );
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->selectedPath = Application::FileDialogPath(
+        selectedProfilePath.toUtf8().toStdString()
+        );
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    seams.recentAutoOpenEnabled = true;
+    seams.initialSetupRecoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+    seams.initialSetupFileDialogPortFactory = [fileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(fileDialogProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    QCOMPARE(historyProbe->loadCount, 1);
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(historyProbe->history.paths.empty());
+    QVERIFY(historyProbe->saves.empty());
+
+    auto* const setupPage = dynamic_cast<Ui::InitialPage*>(
+        bootstrap.shell()->pageHost().pageInstance(QStringLiteral("initial_setup"))
+        );
+    QVERIFY(setupPage);
+    auto* const createButton = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCreateProfile")
+        );
+    QVERIFY(createButton);
+    QVERIFY(!createButton->isHidden());
+    createButton->click();
+
+    QCOMPARE(fileDialogProbe->saveCount, 1);
+    QVERIFY(fileDialogProbe->lastSaveRequest.has_value());
+    const Application::SaveFileDialogRequest& request =
+        *fileDialogProbe->lastSaveRequest;
+    QCOMPARE(request.purpose, Application::FileDialogPurpose::General);
+    QCOMPARE(request.title, std::string("Choose a profile destination"));
+    QCOMPARE(request.suggestedFileName, std::string("ClassMngr.tps"));
+    QCOMPARE(request.nameFilters, std::vector<std::string>{
+        "ClassMngr profiles (*.tps)"
+    });
+    QCOMPARE(request.defaultSuffix, std::string("tps"));
+    QVERIFY(request.confirmOverwrite);
+    QCOMPARE(
+        fileDialogProbe->selectedPath.value(),
+        selectedProfilePath.toUtf8().toStdString()
+        );
+    QVERIFY(QFileInfo::exists(selectedProfilePath));
+    QVERIFY(QFileInfo(selectedProfilePath).size() > 0);
+
+    auto* const statusLabel = setupPage->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupStatus")
+        );
+    auto* const profileLabel = setupPage->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupProfileLocation")
+        );
+    QVERIFY(statusLabel);
+    QVERIFY(profileLabel);
+    QCOMPARE(statusLabel->text(), QStringLiteral("Profile created. Setup is pending."));
+    QCOMPARE(
+        profileLabel->text(),
+        QStringLiteral("Profile: %1").arg(QFileInfo(selectedProfilePath).absoluteFilePath())
+        );
+
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(historyProbe->saves.empty());
+    QVERIFY(historyProbe->history.paths.empty());
+    const std::string selectedWorkspacePath = selectedProfilePath.toUtf8().toStdString();
+    for (const Application::RecentWorkspaceHistory& savedHistory : historyProbe->saves)
+    {
+        QVERIFY(std::none_of(
+            savedHistory.paths.begin(),
+            savedHistory.paths.end(),
+            [&selectedWorkspacePath](const Application::WorkspaceLocation& location) {
+                return location.value() == selectedWorkspacePath;
+            }
+            ));
+        QVERIFY(!savedHistory.lastPath.has_value()
+            || savedHistory.lastPath->value() != selectedWorkspacePath);
+    }
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);
 }
 

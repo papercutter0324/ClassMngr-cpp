@@ -7,13 +7,17 @@
 #include "next/platform/settings_manager_preferences_port.h"
 #include "next/platform/resource_document_catalog_port.h"
 #include "next/platform/workspace_store_gateway.h"
+#include "next/platform/workspace_store_initial_setup_lifecycle_adapter.h"
+#include "next/platform/qsettings_file_dialog_directory_preferences_adapter.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/application_shell.h"
 #include "next/ui/font_size_presenter.h"
+#include "next/ui/initial_page.h"
 #include "next/ui/page_host.h"
 #include "next/ui/placeholder_page.h"
+#include "next/ui/qt_file_dialog_presenter.h"
 #include "next/ui/theme_presenter.h"
 
 #include <QApplication>
@@ -182,6 +186,30 @@ namespace
     };
 }
 
+[[nodiscard]] Ui::PageDescriptor initialSetupPageDescriptor(
+    std::function<Ui::InitialSetupPageActions()> actionsFactory
+    )
+{
+    return Ui::PageDescriptor{
+        .id = pageId(QStringLiteral("initial_setup")),
+        .label = navigationLabel("Initial Setup"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = [actionsFactory = std::move(actionsFactory)](
+                       const Ui::PageContext& context
+                       ) mutable
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            std::unique_ptr<Ui::Page> page =
+                std::make_unique<Ui::InitialPage>(context, actionsFactory());
+            return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                std::move(page)
+            };
+        },
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
+    };
+}
+
 [[nodiscard]] std::vector<Ui::NavigationNode> placeholderNavigationTree()
 {
     using Ui::NavigationNode;
@@ -261,7 +289,8 @@ namespace
                 NavigationNode::page(pageId(QStringLiteral("campus_housing"))),
                 NavigationNode::page(pageId(QStringLiteral("campus_map")))
             }
-            )
+            ),
+        NavigationNode::page(pageId(QStringLiteral("initial_setup")))
     };
 }
 
@@ -664,9 +693,27 @@ Application::StartupResult ApplicationBootstrap::start()
 
         if (initialPageFailure.isEmpty())
         {
+            const Ui::PageHostResult<void> registration =
+                m_shell->pageHost().registerPage(initialSetupPageDescriptor([this] {
+                    return Ui::InitialSetupPageActions{
+                        .state = [this] { return initialSetupPageState(); },
+                        .createProfile = [this] { beginInitialSetupProfile(); },
+                        .resumeSetup = [this] { resumeInitialSetupProfile(); },
+                        .restoreSetup = [this] { restoreInitialSetupProfile(); },
+                        .cancelSetup = [this] { cancelInitialSetupProfile(); }
+                    };
+                }));
+            if (!registration)
+            {
+                initialPageFailure = registration.error().message;
+            }
+        }
+
+        if (initialPageFailure.isEmpty())
+        {
             const auto navigationConfiguration = m_shell->configureNavigation(
                 placeholderNavigationTree(),
-                pageId(QStringLiteral("campus_information")),
+                pageId(QStringLiteral("initial_setup")),
                 pageId(QStringLiteral("my_workspace")),
                 m_applicationRuntime->workspaceState().snapshot().lifecycle()
                 );
@@ -925,6 +972,18 @@ Application::StartupStageOutcome ApplicationBootstrap::openStartupWorkspace()
     // free; only the selected open operation touches a workspace file.
     ensureWorkspaceComposition();
 
+    // An interrupted setup must stay visible as a recovery choice. Do not
+    // auto-open its target from command-line or recent history while the user
+    // is deciding whether to resume the new profile or restore the original.
+    const auto pendingSetup = m_initialSetupLifecyclePort->pendingRecovery();
+    if (!pendingSetup || pendingSetup.value().has_value())
+    {
+        m_startupWorkspaceOutcome = Application::StartupWorkspaceNotOpened{
+            Application::StartupNoWorkspaceReason::NoCandidate
+        };
+        return Application::StartupStageOutcome::Warning;
+    }
+
     const std::optional<Application::WorkspaceLocation> commandLineLocation =
         commandLineStartupWorkspaceLocation();
     const bool recentAutoOpenEnabled =
@@ -1126,6 +1185,242 @@ void ApplicationBootstrap::ensureWorkspaceComposition()
     m_applicationRuntime = std::make_unique<Application::ApplicationRuntime>(
         *m_workspaceGateway
         );
+    m_initialSetupLifecyclePort =
+        std::make_unique<Platform::WorkspaceStoreInitialSetupLifecycleAdapter>(
+            m_applicationRuntime->workspaceCoordinator(),
+            m_applicationRuntime->workspaceState(),
+            m_startupWorkspaceSeams.initialSetupRecoveryJournalPath.value_or(
+                QString{}
+                )
+            );
+    m_initialSetupLifecycle =
+        std::make_unique<Application::InitialSetupLifecycle>(
+            *m_initialSetupLifecyclePort
+            );
+}
+
+Ui::InitialSetupPageState ApplicationBootstrap::initialSetupPageState() const
+{
+    Ui::InitialSetupPageState state;
+    if (m_initialSetupLifecycle
+        && m_initialSetupLifecycle->hasPendingSetup())
+    {
+        state.setupPending = true;
+        state.profileLocation = QString::fromUtf8(
+            m_initialSetupLifecycle->pendingProfile().value().data(),
+            static_cast<qsizetype>(
+                m_initialSetupLifecycle->pendingProfile().value().size()
+                )
+            );
+        state.recoveryHasOriginalProfile =
+            !m_initialSetupLifecycle->pendingOriginalBackup().empty();
+        return state;
+    }
+
+    if (!m_initialSetupLifecyclePort)
+    {
+        state.recoveryError = true;
+        return state;
+    }
+
+    const auto recovery = m_initialSetupLifecyclePort->pendingRecovery();
+    if (!recovery)
+    {
+        state.recoveryError = true;
+        state.statusMessage = QCoreApplication::translate(
+            "InitialPage",
+            "The setup recovery record could not be read. Keep the recovery files in place and restart after resolving the issue."
+            );
+        return state;
+    }
+    if (!recovery.value().has_value())
+    {
+        return state;
+    }
+
+    state.recoveryAvailable = true;
+    state.recoveryProfileLocation = QString::fromUtf8(
+        recovery.value()->profile.value().data(),
+        static_cast<qsizetype>(recovery.value()->profile.value().size())
+        );
+    state.recoveryHasOriginalProfile =
+        !recovery.value()->originalBackup.empty();
+    return state;
+}
+
+void ApplicationBootstrap::beginInitialSetupProfile()
+{
+    if (!m_initialSetupLifecycle || !m_shell)
+    {
+        return;
+    }
+
+    const Application::SaveFileDialogRequest request{
+        .purpose = Application::FileDialogPurpose::General,
+        .title = QCoreApplication::translate(
+            "InitialPage",
+            "Choose a profile destination"
+            ).toUtf8().toStdString(),
+        .suggestedFileName = "ClassMngr.tps",
+        .nameFilters = {
+            QCoreApplication::translate(
+                "InitialPage",
+                "ClassMngr profiles (*.tps)"
+                ).toUtf8().toStdString()
+        },
+        .defaultSuffix = "tps",
+        .confirmOverwrite = true
+    };
+    using SaveDialogResult = Domain::Result<
+        Application::FileDialogResponse<Application::SavedFileDialogSelection>>;
+    const SaveDialogResult selected = [&]() -> SaveDialogResult {
+        if (m_startupWorkspaceSeams.initialSetupFileDialogPortFactory)
+        {
+            std::unique_ptr<Application::FileDialogPort> fileDialog =
+                m_startupWorkspaceSeams.initialSetupFileDialogPortFactory();
+            if (!fileDialog)
+            {
+                return SaveDialogResult::failure(Domain::OperationError{
+                    .code = Domain::ErrorCode::Technical,
+                    .message = "Initial setup file dialog port is unavailable.",
+                    .recoverable = false
+                });
+            }
+            return fileDialog->saveFile(request);
+        }
+
+        Platform::QSettingsFileDialogDirectoryPreferencesAdapter directoryPreferences;
+        Ui::QtFileDialogPresenter fileDialog(directoryPreferences, m_shell.get());
+        return fileDialog.saveFile(request);
+    }();
+    if (!selected)
+    {
+        m_initialSetupStatusMessage = QCoreApplication::translate(
+            "InitialPage",
+            "The profile save dialog could not be opened: %1"
+            ).arg(QString::fromUtf8(
+                selected.error().message.data(),
+                static_cast<qsizetype>(selected.error().message.size())
+                ));
+        return;
+    }
+    if (!selected.value().selection.has_value())
+    {
+        m_initialSetupStatusMessage = QCoreApplication::translate(
+            "InitialPage",
+            "Profile creation was canceled."
+            );
+        return;
+    }
+
+    const auto location = Platform::
+        WorkspaceStoreInitialSetupLifecycleAdapter::profileLocationForSetupPath(
+            selected.value().selection->path
+            );
+    if (!location)
+    {
+        m_initialSetupStatusMessage = QCoreApplication::translate(
+            "InitialPage",
+            "The profile destination is invalid: %1"
+            ).arg(QString::fromUtf8(
+                location.error().message.data(),
+                static_cast<qsizetype>(location.error().message.size())
+                ));
+        return;
+    }
+
+    const auto started = m_initialSetupLifecycle->begin(location.value());
+    if (!started.started())
+    {
+        m_initialSetupStatusMessage = QCoreApplication::translate(
+            "InitialPage",
+            "Profile setup could not begin: %1"
+            ).arg(QString::fromUtf8(
+                started.error.message.data(),
+                static_cast<qsizetype>(started.error.message.size())
+                ));
+        return;
+    }
+    m_initialSetupStatusMessage.clear();
+}
+
+void ApplicationBootstrap::resumeInitialSetupProfile()
+{
+    if (!m_initialSetupLifecyclePort || !m_initialSetupLifecycle)
+    {
+        return;
+    }
+    const auto recovery = m_initialSetupLifecyclePort->pendingRecovery();
+    if (!recovery || !recovery.value().has_value())
+    {
+        m_initialSetupStatusMessage = QCoreApplication::translate(
+            "InitialPage",
+            "The interrupted setup could not be found."
+            );
+        return;
+    }
+
+    const auto resumed = m_initialSetupLifecycle->resume(*recovery.value());
+    if (!resumed.started())
+    {
+        m_initialSetupStatusMessage = QCoreApplication::translate(
+            "InitialPage",
+            "Setup could not resume: %1"
+            ).arg(QString::fromUtf8(
+                resumed.error.message.data(),
+                static_cast<qsizetype>(resumed.error.message.size())
+                ));
+        return;
+    }
+    m_initialSetupStatusMessage.clear();
+}
+
+void ApplicationBootstrap::restoreInitialSetupProfile()
+{
+    if (!m_initialSetupLifecyclePort || !m_initialSetupLifecycle)
+    {
+        return;
+    }
+    const auto recovery = m_initialSetupLifecyclePort->pendingRecovery();
+    if (!recovery || !recovery.value().has_value())
+    {
+        m_initialSetupStatusMessage = QCoreApplication::translate(
+            "InitialPage",
+            "The interrupted setup could not be found."
+            );
+        return;
+    }
+
+    const auto restored = m_initialSetupLifecycle->restore(*recovery.value());
+    m_initialSetupStatusMessage = restored.status
+            == Application::InitialSetupCancelStatus::Canceled
+        ? QCoreApplication::translate(
+              "InitialPage",
+              "The previous profile was restored."
+              )
+        : QCoreApplication::translate(
+              "InitialPage",
+              "The profile could not be restored. The recovery files are still available."
+              );
+}
+
+void ApplicationBootstrap::cancelInitialSetupProfile()
+{
+    if (!m_initialSetupLifecycle)
+    {
+        return;
+    }
+    const auto canceled = m_initialSetupLifecycle->cancel();
+    m_initialSetupStatusMessage = canceled.status
+            == Application::InitialSetupCancelStatus::Canceled
+        ? QCoreApplication::translate(
+              "InitialPage",
+              "Setup was canceled."
+              )
+        : QCoreApplication::translate(
+              "InitialPage",
+              "The setup could not be canceled. The recovery files are still available."
+              );
 }
 
 bool ApplicationBootstrap::releaseWorkspace() noexcept
@@ -1157,7 +1452,9 @@ bool ApplicationBootstrap::releaseWorkspace() noexcept
         }
     }
 
-    // The runtime borrows the gateway, so release it before the gateway owner.
+    // Setup and the runtime borrow the gateway; release borrowers first.
+    m_initialSetupLifecycle.reset();
+    m_initialSetupLifecyclePort.reset();
     m_applicationRuntime.reset();
     m_workspaceGateway.reset();
     return true;
