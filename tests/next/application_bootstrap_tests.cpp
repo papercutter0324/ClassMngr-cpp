@@ -3095,6 +3095,7 @@ missingExplicitWorkspaceDoesNotCreateFileOrParent()
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
     seams.commandLineArguments = QStringList{
         QStringLiteral("test-app"),
+        QStringLiteral("--startup-performance-workflow"),
         QStringLiteral("--startup-performance-output"),
         QStringLiteral("ignored-output.json"),
         QStringLiteral("notes.txt"),
@@ -3163,9 +3164,14 @@ successfulStartupRetainsSessionAndReleasesStoreOnShutdown()
     const QString workspacePath = QDir(temporaryDirectory.path()).filePath(
         QStringLiteral("startup-profile.tps")
         );
+    const QString performanceOutputPath =
+        QDir(temporaryDirectory.path()).filePath(
+            QStringLiteral("metrics.db")
+            );
+    for (const QString& seedPath : {workspacePath, performanceOutputPath})
     {
         WorkspaceStore seedStore;
-        const RepositoryStatus created = seedStore.open(workspacePath);
+        const RepositoryStatus created = seedStore.open(seedPath);
         QVERIFY2(created.has_value(), "could not create a valid workspace fixture");
         seedStore.close();
     }
@@ -3173,7 +3179,13 @@ successfulStartupRetainsSessionAndReleasesStoreOnShutdown()
     const QStringList connectionsBefore = QSqlDatabase::connectionNames();
     std::vector<Application::StartupEvent> observedEvents;
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
-    seams.commandLineArguments = QStringList{QStringLiteral("test-app"), workspacePath};
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"),
+        QStringLiteral("--startup-performance-workflow"),
+        QStringLiteral("--startup-performance-output"),
+        performanceOutputPath,
+        workspacePath
+    };
     seams.recentAutoOpenEnabled = false;
     Bootstrap::ApplicationBootstrap bootstrap(
         application,

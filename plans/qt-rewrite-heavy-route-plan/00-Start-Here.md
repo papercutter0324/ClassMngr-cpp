@@ -28,8 +28,11 @@
   first queued event-loop callback after `StartupReady`, with no resource-update
   call during startup. F1511 is complete: shutdown flushes settings, cancels
   the active deferred update request, preserves the shell/runtime/session on
-  close failure, and releases the page/resources before quit. F1512 is next to
-  isolate legacy workflow automation behind semantic prompts. See
+  close failure, and releases the page/resources before quit. F1512 is
+  complete: dialog automation for Sub Prep, Schedule Import, and Calendar
+  Import uses Qt test adapters, with focused build and workflow checks passing.
+  F1513 is next to remove the remaining splash startup; Batch 2 discovery found
+  no other slices. See
   [Phase 5 plan](06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
   and [current batch tracker](Current-Slice-Batches.md). Phase 4 remains
   Complete at F1500; rendering parity remains a Phase 7/10 gate, and legacy

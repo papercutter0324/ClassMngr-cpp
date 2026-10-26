@@ -50,6 +50,25 @@ QMessageBox::Icon messageBoxIcon(
     return QMessageBox::NoIcon;
 }
 
+PromptSeverity promptSeverity(
+    const QMessageBox& dialog
+    )
+{
+    switch (dialog.icon())
+    {
+        case QMessageBox::Warning:
+            return PromptSeverity::Warning;
+        case QMessageBox::Critical:
+            return PromptSeverity::Error;
+        case QMessageBox::NoIcon:
+        case QMessageBox::Information:
+        case QMessageBox::Question:
+            return PromptSeverity::Information;
+    }
+
+    return PromptSeverity::Information;
+}
+
 QString translatedButtonText(
     const char* text
     )
@@ -238,6 +257,7 @@ std::optional<PromptSnapshot> QtPromptTestDriver::activePrompt(
         .objectName = prompt->objectName(),
         .title = prompt->windowTitle(),
         .text = prompt->text(),
+        .severity = promptSeverity(*prompt),
         .visible = prompt->isVisible()
     };
 }

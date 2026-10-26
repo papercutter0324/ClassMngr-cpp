@@ -137,167 +137,51 @@ its native matrix passed before this batch began.
     invocation/order, not the underlying QSettings write status. Retry is
     available while bootstrap remains alive; destroying the bootstrap ends
     ownership even if close still fails.
-12. **F1512 — Discovered:** Separate legacy startup/performance workflow
-    automation from production startup and use a semantic prompt seam. Begin
-    next-batch discovery when work on this second-to-last candidate starts.
+12. **F1512 — Complete; ready to commit:** Separate legacy startup/performance workflow
+    automation from production startup and use a semantic prompt seam.
+    Acceptance: `ApplicationBootstrap` and `StartupCoordinator` must not scan
+    top-level widgets to discover or activate prompts. Workflow automation
+    remains at the Qt presentation/test boundary, communicates semantic prompt
+    request/choice values without returning widget pointers, and keeps any UI
+    presenter inputs such as `QWidget* parent` out of Application/Domain
+    contracts. Isolate direct prompt/form/dialog lookup and control automation
+    across Sub Prep, Schedule Import, and Calendar Import behind Qt
+    presentation/test adapters. Preserve Next's existing workspace argument
+    handling, including recognized value-bearing performance options, and
+    ordinary positional workspace selection. Existing `IUserPromptService`
+    fake tests cover semantic request/choice; legacy subprocess tests cover
+    workflow trace/capture through the Qt adapter. A single combined
+    fake/workflow test is conditional on a v2 workflow migration, which is not
+    part of this slice. Preserve current workflow behavior while isolating
+    widget access; remove splash startup in F1513.
+    Implementation: Sub Prep, Schedule Import source/review, and Calendar
+    Import Preferences dialog automation now run through Qt presentation/test
+    adapters with value-only results. Next's existing recognized
+    value-bearing performance options and ordinary positional workspace
+    selection remain supported. The Schedule Import workbook fixture now
+    writes each worksheet row once across its teacher blocks, with five
+    distinct teacher headers; assertions remain at 5 users and 96 candidates.
+    Independent verification: build `ClassMngr`, `ClassMngrNext`,
+    `ClassMngrNextBootstrapTests`, `ClassMngrNextApplicationRuntimeTests`,
+    `ClassMngrDialogServicesTests`, and `ClassMngrStartupPerformanceTests` in
+    the incremental macOS Debug tree; all six built successfully. Focused
+    CTest passed 4/4 and `git diff --check` passed. Direct QtTest selectors
+    passed without skips: representative workflow (3), semantic prompt fake
+    and driver (5), startup workspace/CLI (4), Schedule Import cancel and
+    apply (3 each; 5 users and 96 candidates), Sub Prep output (3), and
+    Calendar Import normal and expected-failure (3 each). Calendar Import's
+    local HTTP fixture required loopback access after its first sandboxed bind
+    attempt failed. Source review confirms no widget-pointer returns from the
+    adapters and no direct dialog discovery in the three scoped workflow
+    handlers. This is targeted validation, not a full suite. The legacy splash
+    checkpoint remains unchanged. Independent scope, implementation, and
+    verification reviews are complete.
 13. **F1513 — Discovered:** Remove the legacy splash class/image/progress,
     leases, minimum duration, resource paths, and startup pack initialization
     after the workflow compatibility path is isolated.
 
-No other candidates beyond the 20-slice batch limit were identified in the
-initial Phase 5 discovery.
+Initial Batch 1 discovery found no other slices beyond F1501–F1513.
 
-## Batch 2 — pushed
+## Batch 2 — discovered
 
-F1485 closed the Batch 2 commit set. The 25 commits span F1469 `d282e7f1`
-through F1485 `1475a46d`. The successful push from `Qt-Rewrite` to `origin`
-advanced `Qt-Rewrite` from
-`eb473fab89410e6dc5f5527d872b56f150f7f6fd` to
-`1475a46dae77d8970852681dae7a2032ff907edf`; at the time of the receipt, local
-`HEAD` and `origin/Qt-Rewrite` matched at that SHA.
-
-The push was intended to trigger F1483's native Windows/Linux Actions legs.
-First and subsequent authenticated GitHub Actions API queries found no workflow
-run or checks for head `1475a46d`. No run or result is claimed; the native
-package/layout verification remains pending.
-
-## Batch 3 — pushed
-
-F1486 is committed as `094cda87` and expands the workflow using existing tests
-only. The successful push from `Qt-Rewrite` to `origin` advanced the ref in two
-commits, from Batch 2 tip
-`1475a46dae77d8970852681dae7a2032ff907edf` to
-`a2e506a74c316bf902d6a4b5cd956970286471b3` (F1486 workflow commit
-`094cda87`, followed by its documentation commit `a2e506a7`). Local `HEAD` and
-`origin/Qt-Rewrite` matched at the new tip at that time. Current local `HEAD`
-and `origin/Qt-Rewrite` both resolve to
-`1605bac36d4192bf027440a2b83dce8a5e2d99d1`, parent
-`a2e506a74c316bf902d6a4b5cd956970286471b3`, tree
-`12f431a05225f30aecb076fd88886403a2e0e8fc`. This is the same tree and parent
-as the former local receipt commit `9fe1f26fe3ace50996d58b87cf045f9afab31afb`,
-now superseded by the published commit. The intended Windows x64 Debug and
-Linux GCC Debug jobs cover loader native resource-handle assertions, document
-content/export ports, QtPdf session release, and no-pack startup:
-
-- `ClassMngrNextResourceLoaderTests`
-- `ClassMngrNextPlatformDocumentContentResourcePortTests`
-- `ClassMngrNextPlatformDocumentExportResourcePortTests`
-- `ClassMngrNextPlatformQtPdfSessionReleaseTests`
-- `ClassMngrNextLaunchFilesystemSideEffectsTests`
-- `ClassMngrNextLaunch`
-
-Supplementary standard macOS Debug verification ran six targeted F1486 CTests:
-5/6 passed. Only `ClassMngrNextResourceLoaderTests` failed: the generated
-catalog has 194 records, classified by the generator as 187 runtime-packaged
-plus 7 generated. C++ `directCount` counts `PackageFile`: current totals are
-194 records (192 `PackageFile`, 2 `QtResource`). The five generated QM files
-are among the 192 package files; the other two generated records are Qt QML.
-Correct expectations are 192 `PackageFile` plus 2 `QtResource`, 194 total.
-The assertion at `cmake/tests/next_resource_loader.cpp:333` expects 198 total
-and 196 `PackageFile`. Explorer confirmed these expectations are stale; F1482's
-four `excluded_v2` records account for the 198-to-194 change. Executor
-corrected counts while preserving coverage; its standard macOS Debug build
-and focused CTest passed 1/1. Independent Tester reran all six targeted F1486
-CTests on the standard macOS Debug preset; 6/6 passed. F1488 is accepted, and
-F1487 is committed as `f86c79fc`. Required Windows/Linux Actions results
-remain open; the macOS pass does not replace them.
-
-Linux QtPdf is mandatory and fails clearly if unavailable. Independent workflow
-review passed. Authenticated Actions API queries found no workflow runs/checks
-for these heads: Batch 2 `1475a46d`, Batch 3 `a2e506a7`, and current remote
-`1605bac3`. Combined status for `1605bac3` is pending. No run or result is
-claimed, and F1483/F1486 native outcomes remain pending. The push filter targets
-`Qt-Rewrite` and push workflows can run on non-default branches. The repository
-default is `main`, where this workflow file is absent; `workflow_dispatch`
-requires it on the default branch. No dispatch tool is exposed. The missing run
-cause is unknown; do not assume credential suppression or Actions settings.
-User direction is needed on whether to extend workflow scope to `main`. F1483's
-root-resolver and prefix-guard tests remain in its separate package/layout
-matrix. Phase 4 remains In progress pending both native gates and that
-direction.
-Phase 7/10 rendering parity remains deferred; legacy RCC implementation and
-pack inputs remain the compatibility oracle through Phase 12.
-
-## Batch 4 — pushed
-
-Batch 4 advanced `origin/Qt-Rewrite` from
-`1605bac36d4192bf027440a2b83dce8a5e2d99d1` to
-`ea46415a93e8285e4cb1f81e9aec5b79f7533286` in two commits: F1487
-`f86c79fc81a2b2fd34c6993509b4cd314aacaec1`, then F1488
-`ea46415a93e8285e4cb1f81e9aec5b79f7533286`. Local `HEAD` and
-`origin/Qt-Rewrite` matched at that tip at the time of the push.
-Actions API returned zero runs and zero check-runs for this exact head; combined
-status is pending. No run is claimed.
-
-F1488 is accepted. The corrected resource-loader counts are 194 total: 192
-`PackageFile` and 2 `QtResource`; all six focused F1486 CTests passed on the
-standard macOS Debug preset. F1483/F1486 native Windows/Linux results remain
-open. The push filter targets `Qt-Rewrite` and supports non-default branches;
-the workflow file is absent from default `main`, and no dispatch tool is
-available. The cause of missing runs is unknown. User direction on extending
-workflow scope to `main` remains pending; Phase 4 remains In progress.
-
-## F1490 — Fresh push trigger receipt — startup failure
-
-F1490's push at `fd9ee27a955bce7f4a5b13df33245a25a4e1101b` created Actions run
-`40220179197` for `.github/workflows/phase4-resource-layout.yml` (event `push`).
-Current local `HEAD` and `origin/Qt-Rewrite` are at that exact SHA.
-It ended `startup_failure` at 18:13:01 UTC with zero jobs, checks, or artifacts;
-log requests returned 404. The connected API exposes no exact cause or full-run
-rerun; with zero jobs, failed-job rerun is inapplicable. Before this push, the
-last branch run was October 18, and re-enabling Actions did not create a run for
-already-pushed head `1579fa7d`. Static Ruby YAML/structure review at the F1490
-SHA found no evident defect; a GitHub-specific linter was unavailable. CMake
-research confirms `-G Visual Studio 17 2022` is supported for the Visual Studio
-18 preset, so it is not a generator conflict. The issue is reported solved and
-the user requests a retry. Workflow remains `on.push` filtered to `Qt-Rewrite`,
-absent from default `main`, with no dispatch. The cause of startup failure is
-unknown.
-
-## F1492 — Retry resource-layout workflow — failed overall
-
-Push head `cc776f1564e54cdc2492f9594d0580dd4c21e7d3` created Actions run
-`40220727653`, which failed overall. macOS passed install/probe, audit
-(193 files, 187 SHA, five QMs, two QML keys), and CTest 3/3. Windows resource
-bake failed on `bundang.json` bytes differing from inventory; later install,
-audit, and tests were skipped. Explorer confirmed the local blob/hash matches
-inventory and there was no repository `.gitattributes`; Windows `autocrlf` was
-not observed, so EOL conversion is likely but unconfirmed. Linux failed
-compiling `class_details_page.cpp:302` on ambiguous long-to-QVariant conversion.
-
-## Retry batch — F1496 results; F1498 native rerun passed
-
-F1493 (`64fcedcd`) adds `resources/** -text` and Calendar QML `-text` rules;
-Tester confirmed all 232 inventory paths are covered. F1494 (`b7878846`) makes
-the QVariant conversion explicitly `qlonglong`. Executor's standard macOS
-`ClassMngrFeatures` target build succeeded, and Tester confirmed the semantics
-and current object. CMake confirms the VS 17 generator override is supported;
-Windows configure had succeeded. F1496 run `40221771224` at `59a8e5da` passed
-macOS audit (193 files, 187 SHA, five QMs, two QML keys) and CTest 3/3; Linux
-passed the same audit and focused tests 8/8. Windows build, install/probe, and
-audit passed, but CTest was 7/8 because the symlink-escape fixture did not
-create a real symlink. Explorer confirmed `QFile::link` creates a `.lnk`
-shortcut for a `.json` path on Windows. F1497 changes only the fixture to use
-Windows `CreateSymbolicLinkW` with the unprivileged flag or POSIX `symlink()`,
-verifies a real link with an outside canonical target, keeps the `UnsafePath`
-assertion, and fails clearly instead of skipping if setup fails. Executor and
-independent Tester macOS loader CTests each passed 1/1.
-
-Windows confirmation was completed by Actions run `40223401741` at head
-`2470d756300254522b823a86fe3977382e868055`. macOS, Windows x64, and Linux x64
-resource install/probe audits passed; macOS focused layout tests passed 3/3,
-and Windows/Linux each passed all eight CTests. The F1483/F1486 native gates
-are closed.
-
-## F1500 — Retry after Actions reenabled — passed
-
-The user confirmed Actions were reenabled and requested this retry.
-Commit `277de9057168e67dc0b9ebc2e39719acc204a60f` on `Qt-Rewrite` created
-[Actions run 40224983452](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40224983452),
-which completed successfully at that exact head. macOS, Windows x64, and Linux
-x64 passed install/probe and the 193-file audit (187 SHA-256 checks, five QM
-files, two QML keys); macOS CTest passed 3/3 and Windows/Linux each passed 8/8.
-The Windows real-symlink containment fixture passed with `CreateSymbolicLinkW`
-and no skip. Phase 4 is Complete. Phase 5 is next and remains Not started.
-Rendering parity remains a Phase 7/10 gate; legacy-pack removal remains a
-Phase 12 gate.
+No other slices were found.

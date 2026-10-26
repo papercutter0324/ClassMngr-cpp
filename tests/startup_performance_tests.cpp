@@ -259,8 +259,8 @@ QByteArray largeScheduleImportWorksheet(
         const QString nameCell =
             spreadsheetColumnName(startColumn) + QStringLiteral("1");
         xml += QStringLiteral(
-            "<c r=\"%1\" t=\"inlineStr\"><is><t>Alice</t></is></c>"
-            ).arg(nameCell).toUtf8();
+            "<c r=\"%1\" t=\"inlineStr\"><is><t>%2</t></is></c>"
+            ).arg(nameCell, teacherNames[block]).toUtf8();
         for (int dayIndex = 0; dayIndex < days.size(); ++dayIndex)
         {
             const QString cell =
@@ -273,61 +273,68 @@ QByteArray largeScheduleImportWorksheet(
     }
     xml.append(QByteArrayLiteral("</row>"));
 
-    for (int candidate = 0; candidate < 96; ++candidate)
+    for (int localRow = 0; localRow < 20; ++localRow)
     {
-        const int block = candidate / 20;
-        const int localRow = candidate % 20;
         const int row = localRow + 2;
-        const int startColumn = 1 + block * 7;
-        const int teacherIndex = candidate / 4;
-        const int courseIndex = candidate % 4;
-        const QString time =
-            QStringLiteral("%1:00~%1:55")
-                .arg(
-                    3
-                    + (
-                        conflictFree
-                            ? localRow % 7
-                            : (candidate / 4) % 6
-                        )
-                    );
-        const QString timeCell =
-            spreadsheetColumnName(startColumn) + QString::number(row);
-        const int dayColumn =
-            startColumn + 1 + (
-                conflictFree
-                    ? candidate % days.size()
-                    : (candidate / 4) % days.size()
-                );
-        const QString classCell =
-            spreadsheetColumnName(dayColumn) + QString::number(row);
-        const QString classGrade =
-            conflictFree
-                ? QStringLiteral("E6")
-                : grades[courseIndex];
-        const QString classLevel =
-            conflictFree
-                ? QStringList{
-                      QStringLiteral("Helios"),
-                      QStringLiteral("Poseidon"),
-                      QStringLiteral("Gaia"),
-                      QStringLiteral("Hera")
-                  }[courseIndex]
-                : levels[courseIndex];
-        const QString classValue =
-            QStringLiteral("%1 (%2)&#10;%3-%4")
-                .arg(teacherNames[teacherIndex])
-                .arg(301 + teacherIndex)
-                .arg(classGrade)
-                .arg(classLevel);
-
         xml += QStringLiteral("<row r=\"%1\">").arg(row).toUtf8();
-        xml += QStringLiteral(
-            "<c r=\"%1\" t=\"inlineStr\"><is><t>%2</t></is></c>"
-            ).arg(timeCell, time).toUtf8();
-        xml += QStringLiteral(
-            "<c r=\"%1\" t=\"inlineStr\"><is><t>%2</t></is></c>"
-            ).arg(classCell, classValue).toUtf8();
+        for (int block = 0; block < 5; ++block)
+        {
+            const int candidate = block * 20 + localRow;
+            if (candidate >= 96)
+            {
+                continue;
+            }
+
+            const int startColumn = 1 + block * 7;
+            const int teacherIndex = candidate / 4;
+            const int courseIndex = candidate % 4;
+            const QString time =
+                QStringLiteral("%1:00~%1:55")
+                    .arg(
+                        3
+                        + (
+                            conflictFree
+                                ? localRow % 7
+                                : (candidate / 4) % 6
+                            )
+                        );
+            const QString timeCell =
+                spreadsheetColumnName(startColumn) + QString::number(row);
+            const int dayColumn =
+                startColumn + 1 + (
+                    conflictFree
+                        ? candidate % days.size()
+                        : (candidate / 4) % days.size()
+                    );
+            const QString classCell =
+                spreadsheetColumnName(dayColumn) + QString::number(row);
+            const QString classGrade =
+                conflictFree
+                    ? QStringLiteral("E6")
+                    : grades[courseIndex];
+            const QString classLevel =
+                conflictFree
+                    ? QStringList{
+                          QStringLiteral("Helios"),
+                          QStringLiteral("Poseidon"),
+                          QStringLiteral("Gaia"),
+                          QStringLiteral("Hera")
+                      }[courseIndex]
+                    : levels[courseIndex];
+            const QString classValue =
+                QStringLiteral("%1 (%2)&#10;%3-%4")
+                    .arg(teacherNames[teacherIndex])
+                    .arg(301 + teacherIndex)
+                    .arg(classGrade)
+                    .arg(classLevel);
+
+            xml += QStringLiteral(
+                "<c r=\"%1\" t=\"inlineStr\"><is><t>%2</t></is></c>"
+                ).arg(timeCell, time).toUtf8();
+            xml += QStringLiteral(
+                "<c r=\"%1\" t=\"inlineStr\"><is><t>%2</t></is></c>"
+                ).arg(classCell, classValue).toUtf8();
+        }
         xml += QByteArrayLiteral("</row>");
     }
 

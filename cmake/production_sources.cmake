@@ -212,6 +212,8 @@ set(CLASSMNGR_UI_SHARED_SOURCES
     "src/ui/shared/dialogs/update_dialog.h"
     "src/ui/shared/dialogs/user_prompt_service.cpp"
     "src/ui/shared/dialogs/user_prompt_service.h"
+    "src/ui/shared/testing/qt_startup_workflow_test_adapters.cpp"
+    "src/ui/shared/testing/qt_startup_workflow_test_adapters.h"
     "src/ui/shared/input/hangul_composer.cpp"
     "src/ui/shared/input/hangul_composer.h"
     "src/ui/shared/menus/menu_utils.h"

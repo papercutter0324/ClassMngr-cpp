@@ -49,6 +49,7 @@ struct PromptSnapshot
     QString objectName;
     QString title;
     QString text;
+    PromptSeverity severity = PromptSeverity::Information;
     bool visible = false;
 };
 

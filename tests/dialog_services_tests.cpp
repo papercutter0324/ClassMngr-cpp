@@ -148,6 +148,7 @@ void DialogServicesTests::fakePromptServiceRecordsRequestsAndScriptsChoices()
         .parent = &parent,
         .title = QStringLiteral("Delete report"),
         .message = QStringLiteral("Delete this report?"),
+        .severity = PromptSeverity::Warning,
         .acceptText = QStringLiteral("Delete"),
         .rejectText = QStringLiteral("Keep Report"),
         .destructive = true
@@ -159,6 +160,10 @@ void DialogServicesTests::fakePromptServiceRecordsRequestsAndScriptsChoices()
     QCOMPARE(service.messages.first().parent, &parent);
     QCOMPARE(service.messages.first().title, QStringLiteral("Saved"));
     QCOMPARE(service.confirmations.size(), 1);
+    QCOMPARE(
+        service.confirmations.first().severity,
+        PromptSeverity::Warning
+        );
     QCOMPARE(
         service.confirmations.first().rejectText,
         QStringLiteral("Keep Report")
@@ -325,6 +330,15 @@ void DialogServicesTests::messageMapsSeverityDetailsAndParent()
                 static_cast<int>(dialog->icon()),
                 icon
                 );
+            const std::optional<PromptSnapshot> snapshot =
+                DialogServices::promptTestDriver().activePrompt(
+                    QStringLiteral("classmngrUserPrompt")
+                    );
+            QVERIFY(snapshot.has_value());
+            QCOMPARE(
+                snapshot->severity,
+                static_cast<PromptSeverity>(severity)
+                );
 #if !defined(Q_OS_MACOS)
             QCOMPARE(dialog->windowTitle(), QStringLiteral("Policy title"));
 #endif
@@ -413,6 +427,7 @@ void DialogServicesTests::promptTestDriverInspectsAndCapturesAsyncPrompt()
     QCOMPARE(snapshot->id, promptId);
     QCOMPARE(snapshot->title, QStringLiteral("Async warning"));
     QCOMPARE(snapshot->text, QStringLiteral("Inspect this warning."));
+    QCOMPARE(snapshot->severity, PromptSeverity::Warning);
     QVERIFY(snapshot->visible);
 
     const QString capturePath = temporaryDirectory.filePath(

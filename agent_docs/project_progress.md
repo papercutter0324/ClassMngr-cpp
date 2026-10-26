@@ -40,7 +40,13 @@ shutdown releases the page/resources before quitting. Independent incremental
 macOS Debug builds passed for `ClassMngr`, `ClassMngrNext`, and the affected
 bootstrap/updater tests. Focused bootstrap CTest passed 1/1, the updater CTest
 passed 1/1 using local loopback after sandbox retry, and `git diff --check`
-passed. F1512 is next for workflow automation isolation.
+passed. F1512 is complete: Sub Prep, Schedule Import, and Calendar Import
+dialog automation runs through Qt presentation/test adapters with value-only
+results. The six-target incremental macOS Debug build passed, focused CTest
+passed 4/4, and all direct workflow, CLI, semantic prompt, Sub Prep, Schedule
+Import, and Calendar Import selectors passed without skips. Schedule Import
+assertions remain at 5 users and 96 class candidates. F1513 is next; Batch 2
+discovery found no other slices beyond F1513.
 Remaining Phase 5 work and its
 acceptance order are in the [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [active batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
@@ -64,8 +70,8 @@ resource and document lifecycle contracts.
 
 ## Overall Progress
 
-Phases 0–4 are Complete. Phase 5 is In progress on the Heavy route. F1501–F1511
-are complete with focused independent verification; F1512 is next. Phase 5 is
+Phases 0–4 are Complete. Phase 5 is In progress on the Heavy route. F1501–F1512
+are complete with focused independent verification; F1513 is next. Phase 5 is
 not complete until the startup, data policy, update, shutdown,
 splash-removal, and workflow-isolation exit gates pass.
 
