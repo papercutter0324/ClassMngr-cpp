@@ -5,9 +5,8 @@ Phase 5 completed on the mandatory Heavy route at implementation head
 
 ## Phase 6 — Batch 1 (active)
 
-F1514–F1526 are complete. F1527 is current. Continue in order, commit each
-accepted slice, then push the batch. Start Batch 2 discovery when F1526 starts
-because it is the second-to-last candidate.
+F1514–F1527 are complete. Batch 1 is ready for its slice commit and batch push.
+Batch 2 discovery began with F1526 because it was the second-to-last candidate.
 
 1. **F1514 — Page descriptors and lazy registration (complete):** stable page
    identity and descriptor metadata integrated with `PageHost`; registration
@@ -94,14 +93,15 @@ because it is the second-to-last candidate.
 13. **F1526 — Representative-table gate evidence (complete):** verify the
     existing Staff Directory model/view consumer demonstrates bounded object
     creation; keep its full feature migration in Phase 7C.
-14. **F1527 — Appearance evidence (current):** capture shell/shared-UI baselines for
-    supported themes and languages and verify labels, icons, focus, and
-    selection behavior.
+14. **F1527 — Appearance evidence (complete):** captured English and Korean
+    shell baselines under Light and Dark themes; verified translated labels,
+    selected route/item, focus, icon absence, initial action state, placeholder
+    fit, and shared sidebar frame. Focused macOS Debug CTest passed 4/4.
 
 Batch 2 discovery started when F1526 began. The paired scan found one additional
 Phase 6 primitive requirement: bounded review-window data support, because
 F1525 retains all supplied rows. F1528 is discovered and inactive until Batch 1
-is accepted and pushed. Window/splitter keys and accessors remain intact; their
+is committed and pushed. Window/splitter keys and accessors remain intact; their
 Next lifecycle behavior stays deferred under the F1524 decision because there
 are no active callers. Do not remove temporary legacy prompt automation while
 its workflows remain unmigrated; those owners are later feature-migration

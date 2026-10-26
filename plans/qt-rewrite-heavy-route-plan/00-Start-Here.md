@@ -6,12 +6,11 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-26
-- Current milestone: Phase 6 F1526 representative-table evidence passed on the
-  Heavy route. Staff Directory demonstrates fixed widget counts across 96
-  model rows, on-demand editors, and page-owned model/delegate cleanup. F1527
-  appearance evidence is current. Paired Batch 2 discovery found F1528 —
-  bounded review-window model — required to satisfy Phase 6 §6.7; it will begin
-  after Batch 1 is accepted and pushed. See the [Phase 6 plan](07-Phase-6-Shared-UI-Rewrite.md)
+- Current milestone: Phase 6 F1527 appearance evidence passed on the Heavy
+  route: English and Korean shell baselines under Light and Dark themes, with
+  translated labels, selection/focus, action state, and placeholder layout
+  checked. F1528 — bounded review-window model — remains for §6.7 and starts
+  after Batch 1 is committed and pushed. See the [Phase 6 plan](07-Phase-6-Shared-UI-Rewrite.md)
   and [current batch tracker](Current-Slice-Batches.md). Rendering parity
   remains a Phase 7/10 gate, and legacy pack removal remains a Phase 12 gate.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate

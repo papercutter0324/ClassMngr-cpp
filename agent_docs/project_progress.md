@@ -13,8 +13,10 @@ notify operations around the validated preferences state. F1523 added the
 theme presenter using existing QSS and preference storage. F1524 added font
 size to the shared preferences state, a complete snapshot adapter, startup
 language/theme/font selection, and page access to the same model. F1525 added a
-shared editable text-row model adopted by Staff Directory. F1526,
-representative-table gate evidence, is next. Phase 5
+shared editable text-row model adopted by Staff Directory. F1526 accepted
+Staff Directory as the representative model/view gate. F1527 captured and
+verified English/Korean shell appearance under Light/Dark themes. F1528, the
+bounded review-window model, is queued after the Batch 1 push. Phase 5
 platform evidence and broad-suite limitations remain in the
 [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [Start Here](../plans/qt-rewrite-heavy-route-plan/00-Start-Here.md).
@@ -28,9 +30,9 @@ appearance.
 
 ## Overall Progress
 
-Phases 0–5 are Complete. Phase 6 is In progress; F1514–F1526 are accepted.
-F1527 is current in Batch 1, and F1528 was discovered for
-Batch 2 to provide bounded review-window data support. The current and next
+Phases 0–5 are Complete. Phase 6 is In progress; F1514–F1527 are accepted.
+F1528 was discovered for Batch 2 to provide bounded review-window data support
+required by §6.7. Batch 1 is ready to commit and push. The current and next
 batch candidates are in
 `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
@@ -73,65 +75,20 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-26 (Phase 6, F1525 accepted)
+### Current checkpoint — 2026-10-26 (Phase 6, F1527 accepted)
 
-F1514 established descriptor-based lazy registration. F1515 added observable
-page states, release/recreation, and failure cleanup while retaining
-activation rollback; its test fixture was corrected after a dangling-probe
-`SIGTRAP`. F1516 adds a descriptor-backed navigation tree, workspace and
-permission filtering, guarded activation, history, supplied-icon rendering,
-and inert placeholders for fixed links. Independent macOS Debug verification
-passed 3/3 focused CTests and `git diff --check`. Missing-icon behavior was
-reviewed but not separately induced. F1517 adds a typed application command
-bus with separate availability and execution errors; its focused tests passed
-2/2. F1518 makes history actions respect target visibility and permission. Its
-Navigation, PageHost, and Bootstrap tests passed 3/3. F1519 adds a typed
-Qt-free user-prompt port and a Next Qt presenter with value-only automation;
-independent prompt, Bootstrap, Navigation, and PageHost verification passed
-5/5 CTests. F1520 adds a typed Qt-free file-dialog port and Next presenter
-that preserves UTF-8 selections, per-purpose directory memory, operation
-defaults, and warning-plus-selection on preference-write failure. Its contract,
-presenter, and QSettings adapter CTests passed 3/3. Full-suite and
-cross-platform builds did not run; native panels and window-manager behavior
-were not exercised. F1521 adds a shell-owned transient notification port on a
-status bar hidden while idle. Its notification, shell/navigation, and bootstrap
-CTest suites passed 4/4; the presenter suite passed five repeats. Full-suite,
-cross-platform, and native display testing did not run. F1522 adds the Qt-free
-preferences model over the validated state, with separate read/apply/persist
-and observer notification. Its model and existing preference-state tests
-passed 2/2; failures preserve state and dirty data remains retryable. Changed
-reentrant operations are rejected, while no-op apply is harmless. Full-suite
-and cross-platform builds did not run. F1523 adds the Next theme presenter over
-the existing packaged QSS and typed storage port. Presenter, Bootstrap, and
-theme adapter tests passed 3/3. SystemDefault matches current Next startup
-behavior and does not track later OS scheme changes; native screenshots and
-broader appearance parity remain for F1527. No full or cross-platform build
-ran. Dynamic teacher/document data and URL actions remain deferred to
-feature/platform migration. F1524 adds validated font size and composes the
-typed preference ports into one complete snapshot adapter. Bootstrap uses one
-model for startup language, theme, and font selection, and PageContext exposes
-that model to future pages. Sequential writes can partially persist; errors
-keep the model dirty for full-snapshot retry, and the legacy teacher and
-PowerPoint writers cannot report failures. Window/splitter persistence remains
-deferred because no active callers exist. Independent focused macOS Debug
-build passed and CTest passed 9/9; `git diff --check` passed. No full suite,
-cross-platform build, or screenshots ran. F1525 adds the shared editable
-text-row model used by Staff Directory. It centralizes standard Qt model
-mechanics while leaving row metadata, persistence, delegate, and refresh state
-in the feature. Focused macOS Debug build passed and CTest passed 7/7; CMake
-validated 1,694 handwritten files and `git diff --check` passed. A broader CTest
-selection hit a macOS `NSBundle initWithURL: nil URL argument` failure in
-`wizardSuccessTranscript`; focused acceptance targets passed. The model retains
-all supplied rows and does not page backing data; boundedness evidence covers
-widget/editor allocation. No full suite, cross-platform build, or screenshots
-ran. F1526 accepts Staff Directory as the representative model/view gate:
-widget counts remain fixed across 96 rows, editors stay on demand, refresh
-failure is covered, and model/delegate release is verified. Paired Batch 2
-discovery found F1528 to provide bounded review-window model support required
-by Phase 6 §6.7 after F1525's complete-row storage was confirmed.
-Window/splitter keys remain intact with lifecycle behavior deferred under
-F1524 because they have no active callers. F1527 is current, followed by
-F1528 after the Batch 1 push. Phase 7/10 owns rendering parity; Phase 12 owns
+Phase 6 slices F1514–F1527 are accepted. The shell appearance gate now has
+four reviewed 1024×720, 1× baselines for English and Korean under Light and
+Dark themes. Tests cover labels, selection/focus, placeholder fit, icon
+absence, and initial Back/Forward action state. Independent incremental macOS
+Debug verification passed 4/4 focused CTests across Bootstrap, ThemePresenter,
+Navigation, and PageHost. The Next tree uses the existing 2px solid, 8px-radius
+sidebar frame; placeholder typography and spacing are preserved. No full suite,
+native-window test, cross-platform build, or cross-platform visual parity ran.
+F1528 was discovered to add bounded review-window model support required by
+Phase 6 §6.7; it begins after Batch 1 is committed and pushed. Window/splitter
+keys remain intact, with their lifecycle behavior deferred under F1524 because
+there are no active callers. Phase 7/10 owns rendering parity; Phase 12 owns
 legacy resource-pack removal.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)

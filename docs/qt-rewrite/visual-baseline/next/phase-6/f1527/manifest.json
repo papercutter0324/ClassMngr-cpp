@@ -1,0 +1,121 @@
+{
+    "captures": [
+        {
+            "baseStyle": "fusion",
+            "devicePixelRatio": 1,
+            "file": "shell-en_US-light.png",
+            "focusTarget": "classMngrNextNavigationTree",
+            "fontFamily": "Inter",
+            "fontPointSize": 15,
+            "locale": "en_US",
+            "logicalSize": [
+                1024,
+                720
+            ],
+            "operatingSystem": "macOS Golden Gate (27.0.1)",
+            "pixelSize": [
+                1024,
+                720
+            ],
+            "qpaPlatform": "offscreen",
+            "qssSha256": "5e17901f04bd62207582b96a11175f9a4d0e47c340844464d88b031298b6c548",
+            "qtVersion": "6.12.0",
+            "resolvedQss": "resource:assets/styles/light.qss",
+            "route": "campus_information",
+            "selectedLabel": "Information",
+            "styleClass": "QStyleSheetStyle",
+            "themePreference": "light",
+            "translationQmSha256": "6994a1e5f4b2b426f0810206003817ba1bf4aae0246a3ce45fce33198f32973c",
+            "workspaceState": "closed"
+        },
+        {
+            "baseStyle": "fusion",
+            "devicePixelRatio": 1,
+            "file": "shell-en_US-dark.png",
+            "focusTarget": "classMngrNextNavigationTree",
+            "fontFamily": "Inter",
+            "fontPointSize": 15,
+            "locale": "en_US",
+            "logicalSize": [
+                1024,
+                720
+            ],
+            "operatingSystem": "macOS Golden Gate (27.0.1)",
+            "pixelSize": [
+                1024,
+                720
+            ],
+            "qpaPlatform": "offscreen",
+            "qssSha256": "86aaa9a3c86e925518d3d75a4025f688d1b4443c93c436198403eaf3ed6e9056",
+            "qtVersion": "6.12.0",
+            "resolvedQss": "resource:assets/styles/dark.qss",
+            "route": "campus_information",
+            "selectedLabel": "Information",
+            "styleClass": "QStyleSheetStyle",
+            "themePreference": "dark",
+            "translationQmSha256": "6994a1e5f4b2b426f0810206003817ba1bf4aae0246a3ce45fce33198f32973c",
+            "workspaceState": "closed"
+        },
+        {
+            "baseStyle": "fusion",
+            "devicePixelRatio": 1,
+            "file": "shell-ko_KR-light.png",
+            "focusTarget": "classMngrNextNavigationTree",
+            "fontFamily": "Pretendard Variable",
+            "fontPointSize": 16,
+            "locale": "ko_KR",
+            "logicalSize": [
+                1024,
+                720
+            ],
+            "operatingSystem": "macOS Golden Gate (27.0.1)",
+            "pixelSize": [
+                1024,
+                720
+            ],
+            "qpaPlatform": "offscreen",
+            "qssSha256": "5e17901f04bd62207582b96a11175f9a4d0e47c340844464d88b031298b6c548",
+            "qtVersion": "6.12.0",
+            "resolvedQss": "resource:assets/styles/light.qss",
+            "route": "campus_information",
+            "selectedLabel": "정보",
+            "styleClass": "QStyleSheetStyle",
+            "themePreference": "light",
+            "translationQmSha256": "f0d3b0a40b01063e41e25e58725d920fbc80143f135c9faf01687ce19c759b6c",
+            "workspaceState": "closed"
+        },
+        {
+            "baseStyle": "fusion",
+            "devicePixelRatio": 1,
+            "file": "shell-ko_KR-dark.png",
+            "focusTarget": "classMngrNextNavigationTree",
+            "fontFamily": "Pretendard Variable",
+            "fontPointSize": 16,
+            "locale": "ko_KR",
+            "logicalSize": [
+                1024,
+                720
+            ],
+            "operatingSystem": "macOS Golden Gate (27.0.1)",
+            "pixelSize": [
+                1024,
+                720
+            ],
+            "qpaPlatform": "offscreen",
+            "qssSha256": "86aaa9a3c86e925518d3d75a4025f688d1b4443c93c436198403eaf3ed6e9056",
+            "qtVersion": "6.12.0",
+            "resolvedQss": "resource:assets/styles/dark.qss",
+            "route": "campus_information",
+            "selectedLabel": "정보",
+            "styleClass": "QStyleSheetStyle",
+            "themePreference": "dark",
+            "translationQmSha256": "f0d3b0a40b01063e41e25e58725d920fbc80143f135c9faf01687ce19c759b6c",
+            "workspaceState": "closed"
+        }
+    ],
+    "kind": "human-review-baselines",
+    "schemaVersion": 1,
+    "scope": "Next placeholder shell client area",
+    "sourceRevision": "a402bba5393c99466432f9f4986699ffb31a7278",
+    "sourceState": "F1527 implementation working tree"
+}

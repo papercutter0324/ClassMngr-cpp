@@ -14,15 +14,24 @@
 #include "ui/shared/state/option_state_keys.h"
 
 #include <QApplication>
+#include <QCryptographicHash>
 #include <QEvent>
 #include <QFontDatabase>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QPointer>
+#include <QPixmap>
 #include <QLabel>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QMap>
 #include <QLocale>
 #include <QStyleHints>
+#include <QStyle>
+#include <QPushButton>
+#include <QSysInfo>
 #include <QSqlDatabase>
 #include <QTemporaryDir>
 #include <QTimer>
@@ -57,6 +66,8 @@ private slots:
     void startupUpdateCheckDoesNotConstructDispatcherAfterShutdownBeforeQueuedTurn();
     void loadsOnlySelectedLanguageThemeAndRequiredFontsBeforeShell();
     void loadedPreferencesReachPagesAndFontStartupRestoresOnTeardown();
+    void shellAppearanceUsesSelectedThemeAndLanguage_data();
+    void shellAppearanceUsesSelectedThemeAndLanguage();
     void systemDefaultUsesFirstSupportedLocaleFromOrderedList();
     void systemDefaultFallsBackToSourceEnglishForUnsupportedLocales();
     void systemDefaultThemeFollowsCurrentStyleColorScheme();
@@ -89,6 +100,7 @@ private slots:
 
 private:
     QTemporaryDir m_settingsRoot;
+    QJsonArray m_appearanceCaptures;
 };
 
 namespace
@@ -98,6 +110,14 @@ class SilentStartupDiagnosticsSink final : public Bootstrap::StartupDiagnosticsS
 {
 public:
     void record(const Application::StartupEvent&) noexcept override
+    {
+    }
+};
+
+class SilentStartupUpdateDispatcher final : public Bootstrap::StartupUpdateDispatcher
+{
+public:
+    void dispatch() override
     {
     }
 };
@@ -658,27 +678,45 @@ private:
 class StartupPreferencesGuard final
 {
 public:
-    StartupPreferencesGuard(const int language, const int theme)
+    StartupPreferencesGuard(
+        const int language,
+        const int theme,
+        const std::optional<int> fontOffset = std::nullopt
+        )
         : m_languageKey(QString::fromUtf8(OptionKeys::Language))
         , m_themeKey(QString::fromUtf8(OptionKeys::Theme))
+        , m_fontKey(QString::fromUtf8(OptionKeys::FontSize))
         , m_previousLanguage(SettingsManager::instance().get(m_languageKey))
         , m_previousTheme(SettingsManager::instance().get(m_themeKey))
+        , m_previousFont(SettingsManager::instance().get(m_fontKey))
+        , m_fontOffset(fontOffset)
     {
         SettingsManager::instance().set(m_languageKey, language);
         SettingsManager::instance().set(m_themeKey, theme);
+        if (m_fontOffset)
+        {
+            SettingsManager::instance().set(m_fontKey, *m_fontOffset);
+        }
     }
 
     ~StartupPreferencesGuard()
     {
         restore(m_languageKey, m_previousLanguage);
         restore(m_themeKey, m_previousTheme);
+        if (m_fontOffset)
+        {
+            restore(m_fontKey, m_previousFont);
+        }
     }
 
 private:
     QString m_languageKey;
     QString m_themeKey;
+    QString m_fontKey;
     QVariant m_previousLanguage;
     QVariant m_previousTheme;
+    QVariant m_previousFont;
+    std::optional<int> m_fontOffset;
 
     static void restore(const QString& key, const QVariant& value)
     {
@@ -812,6 +850,28 @@ void ApplicationBootstrapTests::initTestCase()
 
 void ApplicationBootstrapTests::cleanupTestCase()
 {
+    const QString outputDirectory = qEnvironmentVariable(
+        "CLASSMNGR_NEXT_APPEARANCE_CAPTURE_DIR");
+    if (!outputDirectory.isEmpty())
+    {
+        QCOMPARE(m_appearanceCaptures.size(), 4);
+        const QString sourceRevision = qEnvironmentVariable(
+            "CLASSMNGR_NEXT_APPEARANCE_REVISION");
+        QVERIFY(!sourceRevision.isEmpty());
+        const QJsonObject manifest{
+            {QStringLiteral("schemaVersion"), 1},
+            {QStringLiteral("kind"), QStringLiteral("human-review-baselines")},
+            {QStringLiteral("sourceRevision"), sourceRevision},
+            {QStringLiteral("sourceState"), qEnvironmentVariable(
+                "CLASSMNGR_NEXT_APPEARANCE_SOURCE_STATE", "unspecified")},
+            {QStringLiteral("scope"), QStringLiteral("Next placeholder shell client area")},
+            {QStringLiteral("captures"), m_appearanceCaptures}
+        };
+        QFile file(QDir(outputDirectory).filePath(QStringLiteral("manifest.json")));
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        const QByteArray contents = QJsonDocument(manifest).toJson(QJsonDocument::Indented);
+        QCOMPARE(file.write(contents), contents.size());
+    }
     SettingsManager::instance().clear();
     SettingsManager::instance().sync();
 }
@@ -1472,6 +1532,209 @@ void ApplicationBootstrapTests::loadedPreferencesReachPagesAndFontStartupRestore
     QCOMPARE(application.font(), previousFont);
     if (previousStoredFont.isValid()) settings.set(fontKey, previousStoredFont);
     else settings.remove(fontKey);
+}
+
+void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage_data()
+{
+    QTest::addColumn<QString>("locale");
+    QTest::addColumn<int>("storedLanguage");
+    QTest::addColumn<QString>("theme");
+    QTest::addColumn<int>("storedTheme");
+    QTest::newRow("english-light") << QStringLiteral("en_US") << 1
+        << QStringLiteral("light") << static_cast<int>(Application::Theme::Light);
+    QTest::newRow("english-dark") << QStringLiteral("en_US") << 1
+        << QStringLiteral("dark") << static_cast<int>(Application::Theme::Dark);
+    QTest::newRow("korean-light") << QStringLiteral("ko_KR") << 5
+        << QStringLiteral("light") << static_cast<int>(Application::Theme::Light);
+    QTest::newRow("korean-dark") << QStringLiteral("ko_KR") << 5
+        << QStringLiteral("dark") << static_cast<int>(Application::Theme::Dark);
+}
+
+void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
+{
+    QFETCH(QString, locale);
+    QFETCH(int, storedLanguage);
+    QFETCH(QString, theme);
+    QFETCH(int, storedTheme);
+    QApplication& application = *qApp;
+    const bool korean = locale == QStringLiteral("ko_KR");
+    const QString baseStyleName = application.style()->objectName();
+    StartupPreferencesGuard preferences(storedLanguage, storedTheme, 0);
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(locale, theme));
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams workspace;
+    workspace.commandLineArguments = QStringList{QStringLiteral("appearance-test")};
+    workspace.recentAutoOpenEnabled = false;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application, {}, silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()), QStringList{QStringLiteral("en-US")},
+        std::move(workspace), [] {
+            return std::make_unique<SilentStartupUpdateDispatcher>();
+        });
+    QVERIFY(bootstrap.start().succeeded());
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    QCOMPARE(shell->windowTitle(), QStringLiteral("ClassMngr Next"));
+    shell->resize(1024, 720);
+    const QString expectedQss = readTextFile(QDir(resources.resourceRoot()).filePath(
+        QStringLiteral("assets/styles/%1.qss").arg(theme)));
+    QCOMPARE(application.styleSheet(), expectedQss);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Closed);
+    const auto selectedPage = *Ui::PageId::fromString(QStringLiteral("campus_information"));
+    QCOMPARE(shell->navigationModel()->currentPageId(), std::optional{selectedPage});
+    QCOMPARE(shell->navigationModel()->selectedPageId(), std::optional{selectedPage});
+    QCOMPARE(shell->pageHost().activePageKey(), std::optional{selectedPage.value()});
+
+    struct Label final { const char* id; const char* english; const char* korean; };
+    const Label pageLabels[] = {
+        {"my_workspace", "My Workspace", "내 작업 공간"},
+        {"classes", "Classes", "수업"},
+        {"sub_prep", "Sub Prep", "대체 수업 준비"},
+        {"native_english_teachers", "Native English Teachers", "원어민 영어 교사"},
+        {"gs_team", "GS Team", "GS 팀"},
+        {"campus_information", "Information", "정보"},
+        {"campus_directions", "Directions", "오시는 길"},
+        {"campus_address", "Address", "주소"},
+        {"campus_housing", "Housing", "숙소"},
+        {"campus_map", "Maps", "지도"}
+    };
+    for (const Label& expected : pageLabels)
+    {
+        const auto descriptor = shell->pageHost().pageDescriptor(
+            *Ui::PageId::fromString(QString::fromLatin1(expected.id)));
+        QVERIFY(descriptor);
+        QCOMPARE(descriptor->label, QString::fromUtf8(korean ? expected.korean : expected.english));
+        QVERIFY(!descriptor->iconResourceId);
+    }
+    const Label nodeLabels[] = {
+        {"co_teachers", "Co-Teachers", "공동 교사"},
+        {"campus_staff", "Campus Staff", "캠퍼스 직원"},
+        {"teachers_all_korean", "Korean Teachers", "한국인 교사"},
+        {"useful_links", "Useful Links", "유용한 링크"},
+        {"useful_dropbox", "Dropbox", "Dropbox"},
+        {"useful_vacation_calendar", "Vacation Calendar", "방학 캘린더"},
+        {"useful_yearly_calendar", "Yearly Calendar", "연간 캘린더"},
+        {"useful_training_website", "Training Website", "교육 웹사이트"},
+        {"useful_net_website", "NET Website", "NET 웹사이트"},
+        {"useful_lms_website", "LMS Website", "LMS 웹사이트"},
+        {"useful_highlights_library", "Highlights Library", "Highlights 라이브러리"},
+        {"campus_info", "Campus Directory", "캠퍼스 디렉터리"}
+    };
+    QMap<QString, QString> actualNodeLabels;
+    std::function<void(const Ui::NavigationNode&)> collectLabels;
+    collectLabels = [&](const Ui::NavigationNode& node) {
+        if (node.kind != Ui::NavigationNode::Kind::Page)
+        {
+            actualNodeLabels.insert(node.id, node.label);
+        }
+        for (const auto& child : node.children) collectLabels(child);
+    };
+    for (const auto& node : shell->navigationModel()->nodes()) collectLabels(node);
+    QCOMPARE(actualNodeLabels.size(), qsizetype(std::size(nodeLabels)));
+    for (const Label& expected : nodeLabels)
+    {
+        QCOMPARE(actualNodeLabels.value(QString::fromLatin1(expected.id)),
+                 QString::fromUtf8(korean ? expected.korean : expected.english));
+    }
+
+    auto* const tree = shell->findChild<QTreeWidget*>(
+        QStringLiteral("classMngrNextNavigationTree"));
+    auto* const back = shell->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextNavigationBack"));
+    auto* const forward = shell->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextNavigationForward"));
+    QVERIFY(tree && back && forward);
+    QCOMPARE(back->text(), korean ? QStringLiteral("뒤로") : QStringLiteral("Back"));
+    QCOMPARE(forward->text(), korean ? QStringLiteral("앞으로") : QStringLiteral("Forward"));
+    QVERIFY(!back->isEnabled());
+    QVERIFY(!forward->isEnabled());
+    QCOMPARE(tree->selectedItems().size(), 1);
+    QVERIFY(tree->currentItem());
+    QCOMPARE(tree->currentItem()->text(0), korean ? QStringLiteral("정보") : QStringLiteral("Information"));
+    QVERIFY(tree->currentItem()->isSelected());
+    QVERIFY(tree->currentItem()->parent());
+    QVERIFY(tree->currentItem()->parent()->isExpanded());
+    QStringList treeLabels;
+    for (QTreeWidgetItemIterator item(tree); *item; ++item)
+    {
+        treeLabels.push_back((*item)->text(0));
+        QVERIFY((*item)->icon(0).isNull());
+    }
+    const QStringList englishTreeLabels{
+        QStringLiteral("Useful Links"), QStringLiteral("Dropbox"),
+        QStringLiteral("Vacation Calendar"), QStringLiteral("Yearly Calendar"),
+        QStringLiteral("Training Website"), QStringLiteral("NET Website"),
+        QStringLiteral("LMS Website"), QStringLiteral("Highlights Library"),
+        QStringLiteral("Campus Directory"), QStringLiteral("Information"),
+        QStringLiteral("Directions"), QStringLiteral("Address"),
+        QStringLiteral("Housing"), QStringLiteral("Maps")};
+    const QStringList koreanTreeLabels{
+        QStringLiteral("유용한 링크"), QStringLiteral("Dropbox"),
+        QStringLiteral("방학 캘린더"), QStringLiteral("연간 캘린더"),
+        QStringLiteral("교육 웹사이트"), QStringLiteral("NET 웹사이트"),
+        QStringLiteral("LMS 웹사이트"), QStringLiteral("Highlights 라이브러리"),
+        QStringLiteral("캠퍼스 디렉터리"), QStringLiteral("정보"),
+        QStringLiteral("오시는 길"), QStringLiteral("주소"),
+        QStringLiteral("숙소"), QStringLiteral("지도")};
+    QCOMPARE(treeLabels, korean ? koreanTreeLabels : englishTreeLabels);
+    auto* const page = shell->pageHost().pageInstance(selectedPage.value());
+    QVERIFY(page);
+    auto* const title = page->findChild<QLabel*>(QStringLiteral("classMngrNextPlaceholderPageTitle"));
+    auto* const description = page->findChild<QLabel*>(QStringLiteral("classMngrNextPlaceholderPageDescription"));
+    QVERIFY(title && description);
+    QCOMPARE(title->text(), tree->currentItem()->text(0));
+    QCOMPARE(description->text(), korean ? QStringLiteral("이 섹션은 준비 중입니다.")
+                                       : QStringLiteral("This section is being prepared."));
+
+    shell->activateWindow();
+    tree->setFocus(Qt::OtherFocusReason);
+    QTRY_VERIFY(tree->hasFocus());
+    QTRY_COMPARE(shell->size(), QSize(1024, 720));
+    shell->repaint();
+    QApplication::processEvents();
+    QCOMPARE(tree->frameWidth(), 2);
+    QVERIFY(description->height() >= description->heightForWidth(description->width()));
+    const QPixmap capture = shell->grab();
+    QVERIFY(!capture.isNull());
+    QCOMPARE(capture.size() / capture.devicePixelRatio(), QSize(1024, 720));
+    const QString outputDirectory = qEnvironmentVariable("CLASSMNGR_NEXT_APPEARANCE_CAPTURE_DIR");
+    if (!outputDirectory.isEmpty())
+    {
+        QCOMPARE(capture.devicePixelRatio(), qreal(1));
+        QVERIFY(QDir().mkpath(outputDirectory));
+        const QString filename = QStringLiteral("shell-%1-%2.png").arg(locale, theme);
+        QVERIFY(capture.save(QDir(outputDirectory).filePath(filename), "PNG"));
+        QFile translation(QDir(resources.resourceRoot()).filePath(
+            QStringLiteral("assets/translations/ClassMngr_%1.qm").arg(locale)));
+        QVERIFY(translation.open(QIODevice::ReadOnly));
+        m_appearanceCaptures.append(QJsonObject{
+            {QStringLiteral("file"), filename},
+            {QStringLiteral("locale"), locale},
+            {QStringLiteral("themePreference"), theme},
+            {QStringLiteral("resolvedQss"), QStringLiteral("resource:assets/styles/%1.qss").arg(theme)},
+            {QStringLiteral("qssSha256"), QString::fromLatin1(QCryptographicHash::hash(
+                expectedQss.toUtf8(), QCryptographicHash::Sha256).toHex())},
+            {QStringLiteral("translationQmSha256"), QString::fromLatin1(QCryptographicHash::hash(
+                translation.readAll(), QCryptographicHash::Sha256).toHex())},
+            {QStringLiteral("route"), selectedPage.value()},
+            {QStringLiteral("workspaceState"), QStringLiteral("closed")},
+            {QStringLiteral("focusTarget"), tree->objectName()},
+            {QStringLiteral("selectedLabel"), tree->currentItem()->text(0)},
+            {QStringLiteral("logicalSize"), QJsonArray{shell->width(), shell->height()}},
+            {QStringLiteral("pixelSize"), QJsonArray{capture.width(), capture.height()}},
+            {QStringLiteral("devicePixelRatio"), capture.devicePixelRatio()},
+            {QStringLiteral("fontFamily"), application.font().family()},
+            {QStringLiteral("fontPointSize"), application.font().pointSize()},
+            {QStringLiteral("qtVersion"), QString::fromLatin1(qVersion())},
+            {QStringLiteral("qpaPlatform"), QGuiApplication::platformName()},
+            {QStringLiteral("baseStyle"), baseStyleName},
+            {QStringLiteral("styleClass"), QString::fromLatin1(application.style()->metaObject()->className())},
+            {QStringLiteral("operatingSystem"), QSysInfo::prettyProductName()}
+        });
+    }
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
 }
 
 void ApplicationBootstrapTests::systemDefaultThemeFollowsCurrentStyleColorScheme()

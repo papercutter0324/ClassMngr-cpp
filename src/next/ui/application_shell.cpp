@@ -3,6 +3,7 @@
 #include "next/ui/page_host.h"
 
 #include <QCloseEvent>
+#include <QCoreApplication>
 #include <QHBoxLayout>
 #include <QPixmap>
 #include <QPushButton>
@@ -45,13 +46,15 @@ ApplicationShell::ApplicationShell(
     , m_contentWidget(new QWidget(this))
     , m_pageHost(new PageHost(resourceLoader, preferences, m_contentWidget))
     , m_navigationTree(new QTreeWidget(m_contentWidget))
-    , m_backButton(new QPushButton(tr("Back"), m_contentWidget))
-    , m_forwardButton(new QPushButton(tr("Forward"), m_contentWidget))
+    , m_backButton(new QPushButton(
+          QCoreApplication::translate("NextShell", "Back"), m_contentWidget))
+    , m_forwardButton(new QPushButton(
+          QCoreApplication::translate("NextShell", "Forward"), m_contentWidget))
     , m_notificationPresenter(*statusBar())
 {
     statusBar()->setObjectName(QStringLiteral("classMngrNextNotificationStatusBar"));
     setObjectName(QStringLiteral("classMngrNextApplicationShell"));
-    setWindowTitle(tr("ClassMngr Next"));
+    setWindowTitle(QCoreApplication::translate("NextShell", "ClassMngr Next"));
     setMinimumSize(720, 480);
     resize(1024, 720);
 

@@ -9847,4 +9847,39 @@ Version: %2</source>
         <translation>화면 키보드를 사용하려면 편집할 수 있는 텍스트 셀을 선택하세요.</translation>
     </message>
 </context>
+<context>
+    <name>NextNavigation</name>
+    <message><source>My Workspace</source><translation>내 작업 공간</translation></message>
+    <message><source>Classes</source><translation>수업</translation></message>
+    <message><source>Sub Prep</source><translation>대체 수업 준비</translation></message>
+    <message><source>Co-Teachers</source><translation>공동 교사</translation></message>
+    <message><source>Campus Staff</source><translation>캠퍼스 직원</translation></message>
+    <message><source>Korean Teachers</source><translation>한국인 교사</translation></message>
+    <message><source>Native English Teachers</source><translation>원어민 영어 교사</translation></message>
+    <message><source>GS Team</source><translation>GS 팀</translation></message>
+    <message><source>Useful Links</source><translation>유용한 링크</translation></message>
+    <message><source>Dropbox</source><translation>Dropbox</translation></message>
+    <message><source>Vacation Calendar</source><translation>방학 캘린더</translation></message>
+    <message><source>Yearly Calendar</source><translation>연간 캘린더</translation></message>
+    <message><source>Training Website</source><translation>교육 웹사이트</translation></message>
+    <message><source>NET Website</source><translation>NET 웹사이트</translation></message>
+    <message><source>LMS Website</source><translation>LMS 웹사이트</translation></message>
+    <message><source>Highlights Library</source><translation>Highlights 라이브러리</translation></message>
+    <message><source>Campus Directory</source><translation>캠퍼스 디렉터리</translation></message>
+    <message><source>Information</source><translation>정보</translation></message>
+    <message><source>Directions</source><translation>오시는 길</translation></message>
+    <message><source>Address</source><translation>주소</translation></message>
+    <message><source>Housing</source><translation>숙소</translation></message>
+    <message><source>Maps</source><translation>지도</translation></message>
+</context>
+<context>
+    <name>NextShell</name>
+    <message><source>Back</source><translation>뒤로</translation></message>
+    <message><source>Forward</source><translation>앞으로</translation></message>
+    <message><source>ClassMngr Next</source><translation>ClassMngr Next</translation></message>
+</context>
+<context>
+    <name>NextPlaceholder</name>
+    <message><source>This section is being prepared.</source><translation>이 섹션은 준비 중입니다.</translation></message>
+</context>
 </TS>

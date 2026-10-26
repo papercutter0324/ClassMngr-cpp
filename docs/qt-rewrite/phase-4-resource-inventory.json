@@ -3,7 +3,7 @@
   "title": "Phase 4 effective resource inventory",
   "source_snapshot": {
     "tracked_source_tree_ids": {
-      "resources": "99714502a7ec26fa07a7a7983425167c39a6cdd2",
+      "resources": "7e6da6020f5c2f86317bfb67e8e1c7ace925adb3",
       "calendar_qml": "b75d01f27817b205ad63deca347be0506e3b9796"
     },
     "tracked_input_worktree_changes": [],
@@ -14,8 +14,8 @@
     "tracked_files_under_resources_assets": 226,
     "tracked_files_under_resources_windows": 3,
     "tracked_calendar_qml_sources_outside_resources": 2,
-    "resource_asset_source_bytes_exact": 65707627,
-    "all_tracked_resources_source_bytes_exact": 65708813,
+    "resource_asset_source_bytes_exact": 65710550,
+    "all_tracked_resources_source_bytes_exact": 65711736,
     "calendar_qml_source_bytes_exact": 35154,
     "disposition_record_counts": {
       "build_only_excluded": 31,
@@ -54,7 +54,7 @@
       },
       "styles": {
         "files": 2,
-        "source_bytes": 30777
+        "source_bytes": 31093
       },
       "templates": {
         "files": 55,
@@ -62,7 +62,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 1732872
+        "source_bytes": 1735479
       }
     },
     "resource_categories": {
@@ -104,7 +104,7 @@
       },
       "styles": {
         "files": 2,
-        "source_bytes": 30777
+        "source_bytes": 31093
       },
       "templates": {
         "files": 55,
@@ -112,7 +112,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 1732872
+        "source_bytes": 1735479
       }
     }
   },
@@ -5228,8 +5228,8 @@
       "package_disposition": "runtime_packaged",
       "disposition_reason": "Canonical source payload is part of the v2 installed resource tree.",
       "source_file": {
-        "bytes": 15355,
-        "sha256": "191115bef21a655c8c9a3489942921ca6fbf231f32b0e1b0d199c4b10aa41cc8"
+        "bytes": 15513,
+        "sha256": "86aaa9a3c86e925518d3d75a4025f688d1b4443c93c436198403eaf3ed6e9056"
       },
       "installed_size": {
         "bytes": null,
@@ -5260,8 +5260,8 @@
       "package_disposition": "runtime_packaged",
       "disposition_reason": "Canonical source payload is part of the v2 installed resource tree.",
       "source_file": {
-        "bytes": 15422,
-        "sha256": "d2171bc177bedbf85be7929c390ef856465699409bbf194ca4689af580eccd94"
+        "bytes": 15580,
+        "sha256": "5e17901f04bd62207582b96a11175f9a4d0e47c340844464d88b031298b6c548"
       },
       "installed_size": {
         "bytes": null,
@@ -6284,8 +6284,8 @@
       "package_disposition": "runtime_packaged_generated",
       "disposition_reason": "Qt Linguist produces the runtime .qm from this tracked TS source; only the selected locale is loaded.",
       "source_file": {
-        "bytes": 372517,
-        "sha256": "eeff02526cb99985ea4da5b9d18e285cfd1bac539d7e16fa6b4c11f58b075993"
+        "bytes": 375124,
+        "sha256": "1a2bbd4f2bc3f64f6072046317eda379d7f5a3f716e9582ef8c67bcecf10eeef"
       },
       "installed_size": {
         "bytes": null,

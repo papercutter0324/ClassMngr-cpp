@@ -38,14 +38,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 is active on the Heavy route. F1514–F1526 are accepted;
-  F1527 — appearance evidence — is current in Batch 1. Paired Batch 2 discovery found
-  F1528 — bounded review-window model — to address the Phase 6 §6.7 windowing
-  requirement exposed by F1525. Batch 2 begins after Batch 1 is accepted and
-  pushed. The existing Staff Directory model/view and bounded-widget test are
-  the representative-table evidence; full feature migration remains in Phase
-  7C. The dormant window/splitter keys stay intact, with no new lifecycle
-  behavior, per the F1524 deferral decision.
+- Current note: Phase 6 remains active on the Heavy route. F1514–F1527 are
+  accepted; F1527 verified shell appearance and labels in English and Korean
+  under both supported themes. Batch 1 is ready to commit and push. F1528 —
+  bounded review-window model — is the discovered Batch 2 requirement for
+  §6.7, and starts after that push. Staff Directory remains the representative
+  model/view consumer; its full feature migration is Phase 7C. Window/splitter
+  preference lifecycle behavior remains deferred under F1524 because there
+  are no active callers.
 
 ### Slice batches
 
@@ -331,6 +331,34 @@ the remaining Phase 6 §6.7 shared-primitive requirement. F1528 is inactive
 until Batch 1 is accepted and pushed. Window/splitter keys remain intact and
 their lifecycle behavior remains deferred under the F1524 decision because
 there are no active callers.
+
+### F1527 — complete — 2026-10-26
+
+Captured and reviewed the Next placeholder shell in English and Korean under
+Light and Dark themes at 1024×720 and 1× scale. The baselines and manifest are
+in `docs/qt-rewrite/visual-baseline/next/phase-6/f1527/`. The review exposed
+missing Korean translation contexts for navigation labels, shell actions, and
+placeholder text; those Next contexts are now explicit. It also exposed a
+clipped English placeholder description and a tree missing the legacy
+sidebar's 2px solid, 8px-radius frame. The description now uses available
+content width, and the tree uses the existing theme border colors and frame
+dimensions. Typography, margins, spacing, palette, and selection colors remain
+unchanged.
+
+The appearance assertions cover translated page and group labels, selected
+route/item, focus, placeholder text fit, icon absence, disabled initial
+Back/Forward actions, theme stylesheet, and frame width. Independent
+incremental macOS Debug build and focused CTest passed 4/4 across Bootstrap,
+ThemePresenter, Navigation, and PageHost. `git diff --check`, the resource
+inventory check, four-capture manifest checks, and CMake ownership validation
+for 1,694 handwritten files passed. No full suite, native-window capture,
+cross-platform build, or cross-platform visual parity was claimed.
+
+Paired Batch 2 discovery found F1528, a bounded review-window model, to satisfy
+the remaining Phase 6 §6.7 shared-primitive requirement. It starts after Batch
+1 is committed and pushed. Window/splitter keys remain intact and their
+lifecycle behavior remains deferred under the F1524 decision because there
+are no active callers.
 
 ## Objective
 

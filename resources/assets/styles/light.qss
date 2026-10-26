@@ -81,8 +81,15 @@ QWidget#sectionCard {
     border-radius: 8px;
 }
 
-QTreeWidget#sidebarTree {
+QTreeWidget#sidebarTree,
+QTreeWidget#classMngrNextNavigationTree {
     border-color: #d2d0c9;
+}
+
+QTreeWidget#classMngrNextNavigationTree {
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 8px;
 }
 
 QFrame[role="card"]:hover,

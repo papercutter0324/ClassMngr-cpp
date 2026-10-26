@@ -1,6 +1,7 @@
 #include "next/ui/placeholder_page.h"
 
 #include <QFont>
+#include <QCoreApplication>
 #include <QLabel>
 #include <QVBoxLayout>
 
@@ -26,20 +27,22 @@ PlaceholderPage::PlaceholderPage(
     title->setFont(titleFont);
 
     auto* const description = new QLabel(
-        tr("This section is being prepared."),
+        QCoreApplication::translate(
+            "NextPlaceholder", "This section is being prepared."),
         this
         );
     description->setObjectName(
         QStringLiteral("classMngrNextPlaceholderPageDescription")
         );
     description->setWordWrap(true);
+    description->setAlignment(Qt::AlignCenter);
 
     auto* const layout = new QVBoxLayout(this);
     layout->setContentsMargins(40, 36, 40, 36);
     layout->addStretch(1);
     layout->addWidget(title, 0, Qt::AlignHCenter);
     layout->addSpacing(10);
-    layout->addWidget(description, 0, Qt::AlignHCenter);
+    layout->addWidget(description);
     layout->addStretch(1);
 }
 
