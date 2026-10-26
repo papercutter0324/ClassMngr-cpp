@@ -37,8 +37,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 2, 3, and 4
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-25
-- Current note: Phase 5 is active on the Heavy route. F1501–F1507 are complete; F1508 is next to connect the shell to a factory-only PageHost with explicit page/resource lifetimes. F1507 added a Qt-free `ApplicationRuntime` that owns the workspace application state and use cases. PageHost, startup catalog, and `StartupReady` remain deferred.
+- Last updated: 2026-10-26
+- Current note: Phase 5 is active on the Heavy route. F1501–F1508 are complete; F1509 is next to integrate required document-catalog metadata and prove startup does not load PDF content or create QtPdf viewers. F1508 connected the shell through a lazy factory-only PageHost with explicit page/resource lifetimes. `StartupReady` remains deferred.
 
 ### Slice batches
 
@@ -176,7 +176,39 @@ behavior, missing-path no-create, session retention, stage order, and shutdown
 release. The generated Next link has no Qt Network, Next Platform, Runtime,
 Core, AppServices, or ApplicationServices dependency. Source ownership
 validated 1,647 files. The full suite and other platforms were not run.
-F1507 is next.
+### F1507 — complete — 2026-10-25
+
+The bootstrap now composes a Qt-free `ApplicationRuntime` from the abstract
+`WorkspaceGateway`. The runtime owns `WorkspaceState`, `SelectionState`,
+`WorkspaceUseCase`, and `WorkspaceCoordinator` in reference-safe member order;
+the concrete store gateway outlives the runtime. Bootstrap routes startup
+opening, state snapshots, workspace operations, and close through that one
+runtime. A runtime exists even when there is no workspace or startup opening
+fails, with its workspace state closed. There is no feature-page ownership,
+platform type, extra startup stage, or early `StartupReady`.
+
+Independent macOS Debug verification passed: runtime/bootstrap/dependency CTests
+3/3; the affected runtime and bootstrap tests and `ClassMngrNext` rebuilt. The
+runtime test links without Qt libraries. No full suite or other platform ran.
+
+### F1508 — complete — 2026-10-26
+
+`ApplicationShell` now hosts a Next-only `PageHost`; the initial page is
+registered as a factory and created only when activated. The host suspends the
+outgoing page, reuses it on return, and destroys it on explicit release while
+retaining the factory for recreation. Factories receive a page context with
+the Next loader and a named Page scope. Scope labels do not expire resources:
+pages retain page-scoped RAII handles while suspended, release feature-scoped
+handles in their suspension hook, and release all remaining handles when
+destroyed. Typed factory/activation failures clean up the attempted page while
+preserving the previous active page. Bootstrap activates the initial page
+before showing the shell and recording `InitialPageReady`; it does not emit
+`StartupReady`.
+
+Independent incremental macOS Debug verification passed PageHost QtTest 4/4,
+the bootstrap QtTest 30/30, and focused CTest 2/2. Affected production and test
+targets built; CMake source ownership validated 1,653 handwritten files.
+The full suite and other platforms were not run.
 
 ## Objective
 

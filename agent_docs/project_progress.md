@@ -23,7 +23,11 @@ cleanup) and the bootstrap/dependency CTests 2/2. F1507 is complete: the
 Qt-free `ApplicationRuntime` owns the workspace application state and use
 cases, including on no-workspace startup. Independent macOS Debug verification
 passed runtime/bootstrap/dependency CTests 3/3; the runtime target links
-without Qt libraries. F1508 is next for PageHost lifecycle composition.
+without Qt libraries. F1508 is complete: a lazy factory PageHost now owns
+initial-page creation and suspend/release lifecycle with explicit resource
+scopes. Independent incremental macOS Debug verification passed PageHost
+QtTest 4/4, bootstrap QtTest 30/30, and focused CTest 2/2. F1509 is next for
+startup catalog metadata and the no-PDF/QtPdf check.
 Remaining Phase 5 work and its
 acceptance order are in the [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [active batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
@@ -47,8 +51,8 @@ resource and document lifecycle contracts.
 
 ## Overall Progress
 
-Phases 0–4 are Complete. Phase 5 is In progress on the Heavy route. F1501–F1507
-are complete with focused independent verification; F1508 is next. Phase 5 is
+Phases 0–4 are Complete. Phase 5 is In progress on the Heavy route. F1501–F1508
+are complete with focused independent verification; F1509 is next. Phase 5 is
 not complete until the startup, data policy, update, shutdown, splash-removal,
 and workflow-isolation exit gates pass.
 

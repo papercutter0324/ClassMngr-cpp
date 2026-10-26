@@ -8850,3 +8850,12 @@ and inspect a native symlink; and `std::int64_t` should be explicitly boxed as
 `qlonglong` at the `QVariant` boundary for portable Qt builds. These fixes are
 recorded in the Phase 4 plan and progress log. Phase 4 is Complete; Phase 5 is
 the next planned phase.
+
+## 2026-10-26 — Next runtime and page lifetime
+
+`ApplicationRuntime` is Qt-free and uses the abstract workspace gateway. It is
+composed even when no workspace is active so a closed state can still support
+later create/open operations. Next `ResourceScope` values label ownership but
+do not expire handles: page-scoped RAII handles stay with suspended pages,
+feature handles are cleared on suspension, and release destroys the page and
+its remaining handles.

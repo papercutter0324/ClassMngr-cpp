@@ -7,8 +7,8 @@
 namespace ClassMngr::Next::Ui
 {
 
-InitialPage::InitialPage(QWidget* parent)
-    : QWidget(parent)
+InitialPage::InitialPage(const PageContext& context, QWidget* parent)
+    : Page(context, parent)
 {
     setObjectName(QStringLiteral("classMngrNextInitialPage"));
 

@@ -8,6 +8,7 @@
 #include "next/resources/resource_error.h"
 #include "next/ui/application_shell.h"
 #include "next/ui/initial_page.h"
+#include "next/ui/page_host.h"
 #include "core/settingsmanager.h"
 #include "data/database/workspace_store.h"
 #include "ui/shared/state/option_state_keys.h"
@@ -86,6 +87,53 @@ public:
     void record(const Application::StartupEvent&) noexcept override
     {
     }
+};
+
+class InitialPageShowOrderProbe final : public QObject
+{
+public:
+    explicit InitialPageShowOrderProbe(QApplication& application)
+        : m_application(application)
+    {
+        m_application.installEventFilter(this);
+    }
+
+    ~InitialPageShowOrderProbe() override
+    {
+        m_application.removeEventFilter(this);
+    }
+
+    bool eventFilter(QObject* watched, QEvent* event) override
+    {
+        if (event->type() != QEvent::Show)
+        {
+            return false;
+        }
+        auto* const shell = dynamic_cast<Ui::ApplicationShell*>(watched);
+        if (!shell)
+        {
+            return false;
+        }
+
+        shellShowObserved = true;
+        const Ui::PageHost& host = shell->pageHost();
+        initialPageRegisteredAtShow = host.isPageRegistered(QStringLiteral("initial"));
+        activePageAtShow = host.activePageKey()
+            == std::optional<QString>(QStringLiteral("initial"));
+        initialPageInstanceAtShow = dynamic_cast<const Ui::InitialPage*>(
+            host.pageInstance(QStringLiteral("initial"))
+            ) != nullptr;
+        return false;
+    }
+
+    bool shellShowObserved = false;
+    bool initialPageRegisteredAtShow = false;
+    bool activePageAtShow = false;
+    bool initialPageInstanceAtShow = false;
+    bool initialPageReadyObservedAfterShow = false;
+
+private:
+    QApplication& m_application;
 };
 
 struct RecentWorkspaceHistoryProbe final
@@ -646,6 +694,7 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     const QString locale = expectedEnglishLocale();
     QVERIFY2(resources.addStartupResources(locale, QStringLiteral("light")),
              qPrintable(QStringLiteral("could not stage selected startup resources for %1").arg(locale)));
+    InitialPageShowOrderProbe showOrder(application);
 
     QTest::ignoreMessage(
         QtInfoMsg,
@@ -669,8 +718,12 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
         );
     Bootstrap::ApplicationBootstrap bootstrap(
         application,
-        [&observedEvents](const Application::StartupEvent& event) {
+        [&observedEvents, &showOrder](const Application::StartupEvent& event) {
             observedEvents.push_back(event);
+            if (event.stage == Application::StartupStage::InitialPageReady)
+            {
+                showOrder.initialPageReadyObservedAfterShow = showOrder.shellShowObserved;
+            }
         },
         {},
         resolverForRoot(resources.resourceRoot())
@@ -678,6 +731,11 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
 
     const Application::StartupResult result = bootstrap.start();
 
+    QVERIFY(showOrder.shellShowObserved);
+    QVERIFY(showOrder.initialPageRegisteredAtShow);
+    QVERIFY(showOrder.activePageAtShow);
+    QVERIFY(showOrder.initialPageInstanceAtShow);
+    QVERIFY(showOrder.initialPageReadyObservedAfterShow);
     QCOMPARE(result.status, Application::StartupStatus::InitialExperienceAvailable);
     QVERIFY(result.succeeded());
     QVERIFY(!result.failure.has_value());
@@ -740,10 +798,21 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     QVERIFY(!(shell->windowState() & Qt::WindowFullScreen));
     QCOMPARE(shell->windowTitle(), QStringLiteral("ClassMngr Next"));
 
-    auto* const page = dynamic_cast<Ui::InitialPage*>(shell->centralWidget());
+    Ui::PageHost& pageHost = shell->pageHost();
+    QCOMPARE(shell->centralWidget(), static_cast<QWidget*>(&pageHost));
+    QVERIFY(pageHost.isPageRegistered(QStringLiteral("initial")));
+    QVERIFY(pageHost.hasPageInstance(QStringLiteral("initial")));
+    QCOMPARE(pageHost.activePageKey(), std::optional<QString>(QStringLiteral("initial")));
+
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        pageHost.pageInstance(QStringLiteral("initial"))
+        );
     QVERIFY(page != nullptr);
     QVERIFY(page->isVisible());
     QCOMPARE(page->objectName(), QStringLiteral("classMngrNextInitialPage"));
+    QCOMPARE(page->resourceContext().pageKey(), QStringLiteral("initial"));
+    QCOMPARE(page->resourceContext().pageScope().kind(), Resources::ResourceScopeKind::Page);
+    QCOMPARE(page->resourceContext().pageScope().ownerLabel(), QStringLiteral("initial"));
 
     QLabel* const title = page->findChild<QLabel*>(
         QStringLiteral("classMngrNextInitialPageTitle")

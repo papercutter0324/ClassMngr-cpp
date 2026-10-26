@@ -1,14 +1,14 @@
 #pragma once
 
-#include <QWidget>
+#include "next/ui/page.h"
 
 namespace ClassMngr::Next::Ui
 {
 
-class InitialPage final : public QWidget
+class InitialPage final : public Page
 {
 public:
-    explicit InitialPage(QWidget* parent = nullptr);
+    explicit InitialPage(const PageContext& context, QWidget* parent = nullptr);
 };
 
 }  // namespace ClassMngr::Next::Ui

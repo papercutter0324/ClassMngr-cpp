@@ -660,6 +660,9 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/application_shell.h"
     "src/next/ui/initial_page.cpp"
     "src/next/ui/initial_page.h"
+    "src/next/ui/page.h"
+    "src/next/ui/page_host.cpp"
+    "src/next/ui/page_host.h"
 )
 
 set(CLASSMNGR_NEXT_RESOURCES_SOURCES

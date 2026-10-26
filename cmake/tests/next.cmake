@@ -50,6 +50,52 @@ set_tests_properties(ClassMngrNextBootstrapTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
+# Exercise page-host lifecycle behavior with real page-scoped and feature-scoped
+# file handles while keeping the test independent of the bootstrap fixture.
+add_executable(ClassMngrNextPageHostTests
+    tests/next/page_host_tests.cpp
+    src/next/ui/page_host.cpp
+)
+target_compile_features(ClassMngrNextPageHostTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextPageHostTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextPageHostTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrNextPageHostTests
+    PRIVATE
+        ClassMngrNext::Resources
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextPageHostTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextPageHostTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextPageHostTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextPageHostTests
+    COMMAND ClassMngrNextPageHostTests
+)
+set_tests_properties(ClassMngrNextPageHostTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
 # Keep application-runtime ownership and workspace coordination Qt-free.
 add_executable(ClassMngrNextApplicationRuntimeTests
     tests/next/application_runtime_tests.cpp

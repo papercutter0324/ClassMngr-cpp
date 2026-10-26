@@ -10,6 +10,8 @@
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/application_shell.h"
+#include "next/ui/initial_page.h"
+#include "next/ui/page_host.h"
 
 #include <QApplication>
 #include <QDebug>
@@ -432,7 +434,9 @@ Application::StartupResult ApplicationBootstrap::start()
 
     try
     {
-        m_shell = std::make_unique<Ui::ApplicationShell>();
+        m_shell = std::make_unique<Ui::ApplicationShell>(
+            m_coreServices->resourceLoader
+            );
         m_shell->setCloseHandler([this] {
             static_cast<void>(shutdown());
         });
@@ -453,6 +457,59 @@ Application::StartupResult ApplicationBootstrap::start()
     {
         rollbackStartupComposition();
         return shellCreated;
+    }
+
+    bool initialPageActivated = false;
+    QString initialPageFailure;
+    try
+    {
+        const Ui::PageHostResult<void> registration =
+            m_shell->pageHost().registerPage(
+                QStringLiteral("initial"),
+                [](const Ui::PageContext& context)
+                    -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+                    std::unique_ptr<Ui::Page> page =
+                        std::make_unique<Ui::InitialPage>(context);
+                    return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                        std::move(page)
+                    };
+                }
+                );
+        if (!registration)
+        {
+            initialPageFailure = registration.error().message;
+        }
+        else
+        {
+            const Ui::PageHostResult<void> activation =
+                m_shell->pageHost().activatePage(QStringLiteral("initial"));
+            if (activation)
+            {
+                initialPageActivated = true;
+            }
+            else
+            {
+                initialPageFailure = activation.error().message;
+            }
+        }
+    }
+    catch (const std::exception& exception)
+    {
+        initialPageFailure = QString::fromUtf8(exception.what());
+    }
+    catch (...)
+    {
+        initialPageFailure = QStringLiteral("initial page activation failed");
+    }
+    if (!initialPageActivated)
+    {
+        qCritical().noquote()
+            << "ClassMngrNext could not activate the initial page:"
+            << initialPageFailure;
+        return failStartupStage(
+            Application::StartupStage::InitialPageReady,
+            Application::StartupFailureReason::InitialExperienceUnavailable
+            );
     }
 
     m_shell->show();

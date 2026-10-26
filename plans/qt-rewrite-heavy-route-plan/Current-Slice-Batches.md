@@ -73,8 +73,20 @@ its native matrix passed before this batch began.
    passed the runtime/bootstrap/dependency CTests 3/3; the runtime tests link
    without Qt libraries. `ClassMngrNext` and the affected runtime test targets
    rebuilt. No full suite or other platform ran.
-8. **F1508 — Discovered:** Connect the shell to a factory-only PageHost with
-   create/activate/suspend/release lifecycle and explicit page/resource scopes.
+8. **F1508 — Complete:** Add a Next-only, lazy factory PageHost
+   and connect `ApplicationShell` through it; registration must not construct
+   pages. Activation creates once, switch-away suspends, returning reuses, and
+   explicit release destroys the page and releases its page-scoped handles.
+   Factories receive a page resource context; page code owns feature handles
+   and clears them on suspension because `ResourceScope` labels requests but
+   does not expire handles. Keep `PageManager` out of Next. Register the current
+   initial page as a factory and preserve its visible shell behavior. A failed
+   factory/activation must not retain a partial page or leak scoped handles.
+   Verify lazy construction, lifecycle call order, reuse/release, feature vs
+   page handle lifetimes, failure cleanup, and bootstrap initial-page display.
+   Independent incremental macOS Debug verification passed PageHost QtTest
+   4/4, bootstrap QtTest 30/30, and focused CTest 2/2. Source ownership
+   validated 1,653 files. No full suite or other platform ran.
 9. **F1509 — Discovered:** Verify startup constructs only the usable initial
    page and required metadata; add the document-catalog no-QtPdf startup
    negative check.

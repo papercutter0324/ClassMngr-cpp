@@ -5,7 +5,7 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-25
+- Last updated: 2026-10-26
 - Current milestone: Phase 5 — Startup and Bootstrap Rewrite — is In progress
   on the mandatory Heavy route. F1501 is complete: the production
   `ClassMngrNext` path now enters through `ApplicationBootstrap`, shows a
@@ -20,8 +20,10 @@
   complete: startup preserves legacy workspace selection order through a
   single Next-owned store with typed no-workspace/open-failure results. F1507
   is complete: a Qt-free `ApplicationRuntime` owns the workspace state and
-  use cases, including on no-workspace startup. F1508 is next to add the
-  factory-only PageHost and explicit page/resource lifetimes. See
+  use cases, including on no-workspace startup. F1508 is complete: the shell
+  uses a lazy factory PageHost with explicit page/resource lifetimes. F1509 is
+  next to integrate startup document metadata and verify the PDF/QtPdf negative
+  boundary. See
   [Phase 5 plan](06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
   and [current batch tracker](Current-Slice-Batches.md). Phase 4 remains
   Complete at F1500; rendering parity remains a Phase 7/10 gate, and legacy
