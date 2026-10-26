@@ -8865,3 +8865,8 @@ F1509 stores the localized `DocumentCatalogProjection` in the Qt-free runtime.
 page. A metadata failure can be recorded as `InitialPageReady` failure before
 `ShellCreated`; successful or warning initial-page outcomes still require a
 shell.
+
+F1510 keeps the app updater in narrow shared targets, but defers updater and
+network-manager construction until the first queued event-loop turn after
+`StartupReady`, with a visible shell and active initial page. No resource-pack
+update service is composed into startup.

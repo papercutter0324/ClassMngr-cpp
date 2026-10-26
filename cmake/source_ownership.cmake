@@ -42,6 +42,7 @@ endfunction()
 
 function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrCore ${CLASSMNGR_CORE_SOURCES})
+    _classmngr_record_manifest(ClassMngrUpdater ${CLASSMNGR_UPDATER_SOURCES})
     _classmngr_record_manifest(ClassMngrSettings ${CLASSMNGR_SETTINGS_SOURCES})
     _classmngr_record_manifest(ClassMngrWorkspaceStore
         ${CLASSMNGR_WORKSPACE_STORE_SOURCES}
@@ -55,6 +56,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_source_owner(ClassMngrNext "${CLASSMNGR_NEXT_MAIN_SOURCE}")
     _classmngr_record_manifest(ClassMngrNext
         ${CLASSMNGR_NEXT_BOOTSTRAP_SOURCES}
+    )
+    _classmngr_record_manifest(ClassMngrNextStartupUpdates
+        ${CLASSMNGR_NEXT_STARTUP_UPDATE_SOURCES}
     )
     _classmngr_record_manifest(ClassMngrNextDocumentCatalog
         ${CLASSMNGR_NEXT_DOCUMENT_CATALOG_SOURCES}

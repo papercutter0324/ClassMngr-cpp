@@ -101,8 +101,20 @@ its native matrix passed before this batch began.
    32/32 and six focused CTests 6/6. The generated boundary report excludes
    Platform, Network, QtPdf, and broad legacy dependencies. No full suite or
    other platform ran.
-10. **F1510 — Discovered:** Start app update checks only after the window is
-    interactive and remove resource-update checks from startup.
+10. **F1510 — Complete:** Reuse `StartupUpdateCheckUseCase` and
+    the existing startup-check port after successful `StartupReady`, scheduled
+    on the first queued event-loop callback so the shell/page is already
+    interactive. Do not construct `UpdateService`/network manager or dispatch
+    a request during `ApplicationBootstrap::start()`. Preserve build-config,
+    settings preference, API URL, and one-shot eligibility checks. Keep the
+    Next dependency narrow with dedicated updater/startup-update targets, not
+    the Platform umbrella or broad Core/Runtime. No resource-update service
+    is called from startup; preserve manual update behavior. Verify zero
+    service/port calls before the callback, one eligible dispatch afterward,
+    disabled/unconfigured gates, and no resource-update call. Independent
+    incremental macOS Debug verification passed the final focused bootstrap
+    test, CTest 8/8, and the updater/controller loopback suites 2/2 with
+    elevated local-socket permissions. No full suite or other platform ran.
 11. **F1511 — Discovered:** Complete shutdown coordination for settings, jobs,
     workspace, resource scopes, external automation, and development diagnostics.
 12. **F1512 — Discovered:** Separate legacy startup/performance workflow

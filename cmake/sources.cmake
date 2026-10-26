@@ -105,6 +105,13 @@ classmngr_add_production_objects(
         ZLIB::ZLIB
 )
 classmngr_add_production_objects(
+    TARGET ClassMngrUpdater
+    SOURCES ${CLASSMNGR_UPDATER_SOURCES}
+    LIBRARIES
+        Qt6::Core
+        Qt6::Network
+)
+classmngr_add_production_objects(
     TARGET ClassMngrSettings
     SOURCES ${CLASSMNGR_SETTINGS_SOURCES}
     LIBRARIES
@@ -199,6 +206,7 @@ set(_classmngr_legacy_runtime_dependencies
 
 add_library(ClassMngrRuntime STATIC
     $<TARGET_OBJECTS:ClassMngrCore>
+    $<TARGET_OBJECTS:ClassMngrUpdater>
     $<TARGET_OBJECTS:ClassMngrSettings>
     $<TARGET_OBJECTS:ClassMngrData>
     $<TARGET_OBJECTS:ClassMngrDomain>
@@ -223,6 +231,7 @@ target_link_libraries(ClassMngrRuntime
 if(APPLE AND BUILD_TESTING)
     add_library(ClassMngrTestRuntime SHARED
         $<TARGET_OBJECTS:ClassMngrCore>
+        $<TARGET_OBJECTS:ClassMngrUpdater>
         $<TARGET_OBJECTS:ClassMngrSettings>
         $<TARGET_OBJECTS:ClassMngrData>
         $<TARGET_OBJECTS:ClassMngrDomain>

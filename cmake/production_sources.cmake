@@ -14,8 +14,6 @@ set(CLASSMNGR_CORE_SOURCES
     "src/core/fontmanager.h"
     "src/core/language_service.cpp"
     "src/core/language_service.h"
-    "src/core/network/http_request_policy.cpp"
-    "src/core/network/http_request_policy.h"
     "src/core/process_memory_snapshot.cpp"
     "src/core/process_memory_snapshot.h"
     "src/core/resource_packs/resource_pack_configuration.cpp"
@@ -32,20 +30,12 @@ set(CLASSMNGR_CORE_SOURCES
     "src/core/startup_profiler.h"
     "src/core/theme_service.cpp"
     "src/core/theme_service.h"
-    "src/core/updater/github_release.cpp"
-    "src/core/updater/github_release.h"
-    "src/core/updater/update_configuration.cpp"
-    "src/core/updater/update_configuration.h"
     "src/core/updater/update_downloader.cpp"
     "src/core/updater/update_downloader.h"
     "src/core/updater/update_installer.cpp"
     "src/core/updater/update_installer.h"
-    "src/core/updater/update_service.cpp"
-    "src/core/updater/update_service.h"
     "src/core/updater/update_signature_verifier.cpp"
     "src/core/updater/update_signature_verifier.h"
-    "src/core/updater/version.cpp"
-    "src/core/updater/version.h"
     "src/core/utils/colorutils.cpp"
     "src/core/utils/colorutils.h"
     "src/core/utils/file_name_utils.cpp"
@@ -58,6 +48,21 @@ set(CLASSMNGR_CORE_SOURCES
     "src/core/utils/student_name_utils.h"
     "src/core/zip_archive_writer.cpp"
     "src/core/zip_archive_writer.h"
+)
+
+# The application update-check closure is shared by the legacy runtime and
+# the narrow Next startup-update composition. Keep it outside ClassMngrCore.
+set(CLASSMNGR_UPDATER_SOURCES
+    "src/core/network/http_request_policy.cpp"
+    "src/core/network/http_request_policy.h"
+    "src/core/updater/github_release.cpp"
+    "src/core/updater/github_release.h"
+    "src/core/updater/update_configuration.cpp"
+    "src/core/updater/update_configuration.h"
+    "src/core/updater/update_service.cpp"
+    "src/core/updater/update_service.h"
+    "src/core/updater/version.cpp"
+    "src/core/updater/version.h"
 )
 
 set(CLASSMNGR_SETTINGS_SOURCES
@@ -663,6 +668,11 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/page.h"
     "src/next/ui/page_host.cpp"
     "src/next/ui/page_host.h"
+)
+
+set(CLASSMNGR_NEXT_STARTUP_UPDATE_SOURCES
+    "src/next/bootstrap/startup_update_dispatcher.cpp"
+    "src/next/bootstrap/startup_update_dispatcher.h"
 )
 
 set(CLASSMNGR_NEXT_DOCUMENT_CATALOG_SOURCES

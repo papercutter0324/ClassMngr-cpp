@@ -24,6 +24,7 @@
 #include <QStyleHints>
 #include <QSqlDatabase>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QWidget>
 #include <QtTest/QtTest>
 
@@ -46,6 +47,9 @@ private slots:
     void initTestCase();
     void cleanupTestCase();
     void createsVisibleShellAndReportsOnlyCompletedStartupStage();
+    void startupUpdateCheckWaitsForVisibleInitialPageAndLivesUntilShutdown();
+    void startupUpdateCheckDoesNotConstructDispatcherAfterFailedStartup();
+    void startupUpdateCheckDoesNotConstructDispatcherAfterShutdownBeforeQueuedTurn();
     void loadsOnlySelectedLanguageThemeAndRequiredFontsBeforeShell();
     void systemDefaultUsesFirstSupportedLocaleFromOrderedList();
     void systemDefaultFallsBackToSourceEnglishForUnsupportedLocales();
@@ -89,6 +93,57 @@ public:
     void record(const Application::StartupEvent&) noexcept override
     {
     }
+};
+
+struct StartupUpdateDispatcherProbe final
+{
+    int factoryCalls = 0;
+    int dispatchCalls = 0;
+    int asynchronousCompletions = 0;
+    int destroyed = 0;
+    bool visibleAtDispatch = false;
+    bool initialPageActiveAtDispatch = false;
+};
+
+class RecordingStartupUpdateDispatcher final
+    : public Bootstrap::StartupUpdateDispatcher
+{
+public:
+    RecordingStartupUpdateDispatcher(
+        QApplication& application,
+        Ui::ApplicationShell*& shell,
+        std::shared_ptr<StartupUpdateDispatcherProbe> probe
+        )
+        : m_application(application)
+        , m_shell(shell)
+        , m_probe(std::move(probe))
+    {
+    }
+
+    ~RecordingStartupUpdateDispatcher() override
+    {
+        ++m_probe->destroyed;
+    }
+
+    void dispatch() override
+    {
+        ++m_probe->dispatchCalls;
+        m_probe->visibleAtDispatch = m_shell && m_shell->isVisible();
+        m_probe->initialPageActiveAtDispatch = m_shell
+            && m_shell->pageHost().activePageKey()
+                == std::optional<QString>(QStringLiteral("initial"));
+
+        // Model an asynchronous updater completion without issuing network I/O.
+        const std::shared_ptr<StartupUpdateDispatcherProbe> probe = m_probe;
+        QTimer::singleShot(0, &m_application, [probe] {
+            ++probe->asynchronousCompletions;
+        });
+    }
+
+private:
+    QApplication& m_application;
+    Ui::ApplicationShell*& m_shell;
+    std::shared_ptr<StartupUpdateDispatcherProbe> m_probe;
 };
 
 class InitialPageShowOrderProbe final : public QObject
@@ -860,6 +915,164 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
         );
 
     application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+startupUpdateCheckWaitsForVisibleInitialPageAndLivesUntilShutdown()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    const auto probe = std::make_shared<StartupUpdateDispatcherProbe>();
+    Ui::ApplicationShell* shell = nullptr;
+    bool factoryUnusedAtStartupReady = false;
+    bool dispatcherCreatedBeforeStartupReady = false;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&probe, &factoryUnusedAtStartupReady,
+         &dispatcherCreatedBeforeStartupReady](const Application::StartupEvent& event) {
+            if (event.stage == Application::StartupStage::StartupReady)
+            {
+                factoryUnusedAtStartupReady = probe->factoryCalls == 0;
+            }
+            else if (probe->factoryCalls != 0)
+            {
+                dispatcherCreatedBeforeStartupReady = true;
+            }
+        },
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        {},
+        [&application, &shell, probe] {
+            ++probe->factoryCalls;
+            return std::make_unique<RecordingStartupUpdateDispatcher>(
+                application, shell, probe
+                );
+        }
+        );
+
+    const Application::StartupResult result = bootstrap.start();
+    QCOMPARE(result.status, Application::StartupStatus::StartupReady);
+    QVERIFY(result.succeeded());
+    QVERIFY(factoryUnusedAtStartupReady);
+    QVERIFY(!dispatcherCreatedBeforeStartupReady);
+    QCOMPARE(probe->factoryCalls, 0);
+    QCOMPARE(probe->dispatchCalls, 0);
+    QCOMPARE(probe->destroyed, 0);
+
+    shell = bootstrap.shell();
+    QVERIFY(shell != nullptr);
+    QVERIFY(shell->isVisible());
+    QCOMPARE(
+        shell->pageHost().activePageKey(),
+        std::optional<QString>(QStringLiteral("initial"))
+        );
+
+    // StartupReady has queued the callback, but it must not run inside start().
+    // The first event-loop turn sees the visible shell and active initial page.
+    QCOMPARE(probe->factoryCalls, 0);
+    QCOMPARE(probe->dispatchCalls, 0);
+    QCoreApplication::processEvents();
+    QCOMPARE(probe->dispatchCalls, 1);
+    QCOMPARE(probe->factoryCalls, 1);
+    QVERIFY(probe->visibleAtDispatch);
+    QVERIFY(probe->initialPageActiveAtDispatch);
+    QTRY_COMPARE(probe->asynchronousCompletions, 1);
+    QCOMPARE(probe->destroyed, 0);
+
+    // Later visibility and activation changes cannot dispatch a second time.
+    shell->hide();
+    shell->show();
+    shell->activateWindow();
+    QCoreApplication::processEvents();
+    QCOMPARE(probe->factoryCalls, 1);
+    QCOMPARE(probe->dispatchCalls, 1);
+    QCOMPARE(probe->destroyed, 0);
+
+    static_cast<void>(bootstrap.shutdown());
+    QCOMPARE(probe->destroyed, 1);
+    QCoreApplication::processEvents();
+    QCOMPARE(probe->factoryCalls, 1);
+    QCOMPARE(probe->dispatchCalls, 1);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+startupUpdateCheckDoesNotConstructDispatcherAfterFailedStartup()
+{
+    QApplication& application = *qApp;
+    const auto probe = std::make_shared<StartupUpdateDispatcherProbe>();
+    ignoreCoreServicesFailureMessages();
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        []() -> std::unique_ptr<Bootstrap::StartupDiagnosticsSink> {
+            throw std::runtime_error("injected diagnostics sink construction failure");
+        },
+        {},
+        std::nullopt,
+        {},
+        [probe] {
+            ++probe->factoryCalls;
+            return std::unique_ptr<Bootstrap::StartupUpdateDispatcher>{};
+        }
+        );
+
+    const Application::StartupResult result = bootstrap.start();
+    QCOMPARE(result.status, Application::StartupStatus::Failed);
+    QVERIFY(!containsStage(result.completedEvents, Application::StartupStage::StartupReady));
+    QCOMPARE(probe->factoryCalls, 0);
+    QCOMPARE(probe->dispatchCalls, 0);
+    QCoreApplication::processEvents();
+    QCOMPARE(probe->factoryCalls, 0);
+    QCOMPARE(probe->dispatchCalls, 0);
+}
+
+void ApplicationBootstrapTests::
+startupUpdateCheckDoesNotConstructDispatcherAfterShutdownBeforeQueuedTurn()
+{
+    QApplication& application = *qApp;
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+    const auto probe = std::make_shared<StartupUpdateDispatcherProbe>();
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        {},
+        [probe] {
+            ++probe->factoryCalls;
+            return std::unique_ptr<Bootstrap::StartupUpdateDispatcher>{};
+        }
+        );
+
+    const Application::StartupResult result = bootstrap.start();
+    QCOMPARE(result.status, Application::StartupStatus::StartupReady);
+    QCOMPARE(probe->factoryCalls, 0);
+    QCOMPARE(probe->dispatchCalls, 0);
+    static_cast<void>(bootstrap.shutdown());
+    QCoreApplication::processEvents();
+    QCOMPARE(probe->factoryCalls, 0);
+    QCOMPARE(probe->dispatchCalls, 0);
 }
 
 void ApplicationBootstrapTests::

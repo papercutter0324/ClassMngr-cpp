@@ -703,6 +703,33 @@ set_target_properties(ClassMngrNextDocumentCatalog
         POSITION_INDEPENDENT_CODE ON
 )
 
+# Keep the asynchronous startup update composition narrow: it uses the
+# application contract, saved settings, and the dedicated updater closure.
+add_library(ClassMngrNextStartupUpdates STATIC
+    ${CLASSMNGR_NEXT_STARTUP_UPDATE_SOURCES}
+)
+target_compile_features(ClassMngrNextStartupUpdates
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextStartupUpdates
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextStartupUpdates
+    PRIVATE
+        ClassMngrBuildSettings
+        ClassMngrNext::Application
+        ClassMngrUpdater
+        ClassMngrSettings
+        Qt6::Network
+)
+set_target_properties(ClassMngrNextStartupUpdates
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+
 function(classmngr_next_assert_dependencies target)
     get_target_property(_classmngr_next_actual_dependencies
         "${target}"
@@ -771,7 +798,6 @@ endforeach()
 qt_add_executable(ClassMngrNext
     "${PROJECT_SOURCE_DIR}/${CLASSMNGR_NEXT_MAIN_SOURCE}"
     ${_classmngr_next_bootstrap_sources}
-    $<TARGET_OBJECTS:ClassMngrSettings>
 )
 
 target_compile_features(ClassMngrNext
@@ -801,6 +827,8 @@ target_link_libraries(ClassMngrNext
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNextDocumentCatalog
+        ClassMngrNextStartupUpdates
+        Qt6::Network
 )
 
 get_target_property(_classmngr_next_executable_dependencies
@@ -809,11 +837,12 @@ get_target_property(_classmngr_next_executable_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
 if(NOT "${_classmngr_next_executable_dependencies}"
-   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextDocumentCatalog")
+   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;Qt6::Network")
     message(FATAL_ERROR
         "ClassMngrNext must link only Qt6::Core, Qt6::Widgets, "
         "ClassMngrNext::Application, ClassMngrNext::Resources, "
-        "ClassMngrNextWorkspace, and ClassMngrNextDocumentCatalog; found "
+        "ClassMngrNextWorkspace, ClassMngrNextDocumentCatalog, "
+        "ClassMngrNextStartupUpdates, and Qt6::Network; found "
         "[${_classmngr_next_executable_dependencies}]"
     )
 endif()

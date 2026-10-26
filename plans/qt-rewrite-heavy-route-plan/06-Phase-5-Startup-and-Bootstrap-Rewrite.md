@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 5 is active on the Heavy route. F1501–F1509 are complete; F1510 is next to start application updates only after the window is interactive. Startup now retains document-catalog metadata before the initial page is ready, emits `StartupReady` only after the page is active, and never loads PDF bodies or creates QtPdf viewers.
+- Current note: Phase 5 is active on the Heavy route. F1501–F1510 are complete; F1511 is next to complete shutdown coordination for settings, jobs, workspace, resource scopes, external automation, and development diagnostics. F1510 defers app-update service creation and dispatch until the first queued event-loop callback after `StartupReady`; resource updates remain absent from startup.
 
 ### Slice batches
 
@@ -229,6 +229,25 @@ runtime, PageHost, and dependency boundary). The integrated fixture omits all
 document bodies; metadata failure creates no shell or ready stage. Link checks
 confirmed no Platform, Network, QtPdf, or broad legacy dependency. The full
 suite and other platforms were not run.
+
+### F1510 — complete — 2026-10-26
+
+Application update support now uses the existing `StartupUpdateCheckUseCase`
+and `UpdateServiceStartupCheckPort` through a dedicated `ClassMngrUpdater` and
+`ClassMngrNextStartupUpdates` boundary. `ApplicationBootstrap::start()` does
+not construct the update service or network manager. After successful
+`StartupReady`, a one-shot queued event-loop callback checks that the shell is
+visible and the initial page active, then creates the dispatcher and evaluates
+the existing build, preference, URL, and one-shot gates. Native foreground
+focus is not required. The updater remains owned through shutdown. No resource
+update service is called from startup; manual update behavior remains covered.
+
+Independent incremental macOS Debug verification passed: the final focused
+bootstrap QtTest case passed 3/3, focused update/bootstrap/manual/preference/
+dependency CTests passed 8/8, and the two socket-backed updater/controller
+suites passed 2/2 using local ephemeral loopback under escalated test
+permissions. `ClassMngr`, `ClassMngrNext`, and the affected test targets built;
+source ownership validated 1,655 files. No full suite or other platform ran.
 
 ## Objective
 

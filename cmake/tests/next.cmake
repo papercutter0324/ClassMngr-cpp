@@ -26,6 +26,7 @@ target_link_libraries(ClassMngrNextBootstrapTests
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
+        ClassMngrNextStartupUpdates
         Qt6::Sql
         Qt6::Test
         Qt6::Widgets
@@ -228,6 +229,14 @@ get_target_property(_classmngr_next_startup_links
     ClassMngrNext
     LINK_LIBRARIES
 )
+get_target_property(_classmngr_next_startup_update_links
+    ClassMngrNextStartupUpdates
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_updater_links
+    ClassMngrUpdater
+    LINK_LIBRARIES
+)
 get_target_property(_classmngr_next_workspace_links
     ClassMngrNextWorkspace
     LINK_LIBRARIES
@@ -258,6 +267,8 @@ get_target_property(_classmngr_legacy_sources
 )
 foreach(_classmngr_next_boundary_value IN ITEMS
         _classmngr_next_startup_links
+        _classmngr_next_startup_update_links
+        _classmngr_updater_links
         _classmngr_next_workspace_links
         _classmngr_workspace_store_links
         _classmngr_next_workspace_sources
@@ -274,6 +285,8 @@ set(_classmngr_next_boundary_report
 )
 file(WRITE "${_classmngr_next_boundary_report}"
     "NEXT_LINKS=${_classmngr_next_startup_links}\n"
+    "NEXT_STARTUP_UPDATE_LINKS=${_classmngr_next_startup_update_links}\n"
+    "UPDATER_LINKS=${_classmngr_updater_links}\n"
     "NEXT_WORKSPACE_LINKS=${_classmngr_next_workspace_links}\n"
     "WORKSPACE_STORE_LINKS=${_classmngr_workspace_store_links}\n"
     "NEXT_WORKSPACE_SOURCES=${_classmngr_next_workspace_sources}\n"

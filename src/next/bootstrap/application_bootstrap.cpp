@@ -20,6 +20,7 @@
 #include <QLocale>
 #include <QStringList>
 #include <QStyleHints>
+#include <QTimer>
 
 #include <cstdio>
 #include <cstring>
@@ -184,7 +185,8 @@ ApplicationBootstrap::ApplicationBootstrap(
     StartupDiagnosticsSinkFactory startupDiagnosticsSinkFactory,
     ResourcePackagePathsResolver resourcePackagePathsResolver,
     std::optional<QStringList> systemUiLanguages,
-    StartupWorkspaceSeams startupWorkspaceSeams
+    StartupWorkspaceSeams startupWorkspaceSeams,
+    StartupUpdateDispatcherFactory startupUpdateDispatcherFactory
     )
     : m_application(application),
       m_startupEventObserver(std::move(startupEventObserver)),
@@ -192,6 +194,9 @@ ApplicationBootstrap::ApplicationBootstrap(
       m_resourcePackagePathsResolver(std::move(resourcePackagePathsResolver)),
       m_systemUiLanguages(std::move(systemUiLanguages)),
       m_startupWorkspaceSeams(std::move(startupWorkspaceSeams)),
+      m_startupUpdateDispatcherFactory(
+          std::move(startupUpdateDispatcherFactory)
+          ),
       m_shutdownCoordinator([&application] {
           application.quit();
       })
@@ -200,6 +205,8 @@ ApplicationBootstrap::ApplicationBootstrap(
 
 ApplicationBootstrap::~ApplicationBootstrap()
 {
+    m_callbackLifetime.reset();
+    m_startupUpdateDispatcher.reset();
     releaseWorkspace();
     if (m_quitOnLastWindowClosedChanged)
     {
@@ -555,6 +562,11 @@ Application::StartupResult ApplicationBootstrap::start()
     {
         rollbackStartupComposition();
         return startupReady;
+    }
+
+    if (startupReady.status == Application::StartupStatus::StartupReady)
+    {
+        scheduleStartupUpdateCheck();
     }
 
     if (m_coreServices)
@@ -988,6 +1000,77 @@ void ApplicationBootstrap::releaseWorkspace() noexcept
     m_workspaceGateway.reset();
 }
 
+void ApplicationBootstrap::scheduleStartupUpdateCheck()
+{
+    if (m_startupUpdateCheckScheduled
+        || m_startupUpdateCheckConsumed
+        || m_shutdownCoordinator.shutdownRequested()
+        || m_startupCoordinator.result().status
+            != Application::StartupStatus::StartupReady
+        || !m_shell)
+    {
+        return;
+    }
+
+    m_startupUpdateCheckScheduled = true;
+    const std::weak_ptr<int> lifetime(m_callbackLifetime);
+    QTimer::singleShot(0, &m_application, [this, lifetime]
+    {
+        if (lifetime.expired())
+        {
+            return;
+        }
+        tryDispatchStartupUpdateCheck();
+    });
+}
+
+void ApplicationBootstrap::tryDispatchStartupUpdateCheck()
+{
+    if (!m_startupUpdateCheckScheduled
+        || m_startupUpdateCheckConsumed
+        || m_shutdownCoordinator.shutdownRequested()
+        || m_startupCoordinator.result().status
+            != Application::StartupStatus::StartupReady
+        || !m_shell)
+    {
+        return;
+    }
+
+    const std::optional<QString> activePageKey =
+        m_shell->pageHost().activePageKey();
+    if (!m_shell->isVisible()
+        || !activePageKey.has_value()
+        || *activePageKey != QStringLiteral("initial"))
+    {
+        return;
+    }
+
+    m_startupUpdateCheckConsumed = true;
+
+    try
+    {
+        m_startupUpdateDispatcher = m_startupUpdateDispatcherFactory
+            ? m_startupUpdateDispatcherFactory()
+            : makeStartupUpdateDispatcher();
+        if (!m_startupUpdateDispatcher)
+        {
+            qWarning() << "ClassMngrNext startup update dispatcher is unavailable.";
+            return;
+        }
+        m_startupUpdateDispatcher->dispatch();
+    }
+    catch (const std::exception& exception)
+    {
+        qWarning().noquote()
+            << "ClassMngrNext startup update check could not be dispatched:"
+            << exception.what();
+    }
+    catch (...)
+    {
+        qWarning() << "ClassMngrNext startup update check could not be dispatched.";
+    }
+}
+
 Application::StartupResult ApplicationBootstrap::failStartupStage(
     const Application::StartupStage stage,
     const Application::StartupFailureReason reason
@@ -1070,6 +1153,7 @@ bool ApplicationBootstrap::createCoreServices()
 
 Application::ShutdownResult ApplicationBootstrap::shutdown()
 {
+    m_startupUpdateDispatcher.reset();
     if (!m_shutdownCoordinator.shutdownRequested())
     {
         releaseWorkspace();

@@ -8,6 +8,7 @@
 #include "next/application/workspace_contracts.h"
 #include "next/application/workspace_state.h"
 #include "next/bootstrap/startup_diagnostics_sink.h"
+#include "next/bootstrap/startup_update_dispatcher.h"
 #include "next/resources/resource_root_resolver.h"
 
 #include <QStringList>
@@ -33,6 +34,8 @@ public:
         std::function<void(const Application::StartupEvent&)>;
     using StartupDiagnosticsSinkFactory =
         std::function<std::unique_ptr<StartupDiagnosticsSink>()>;
+    using StartupUpdateDispatcherFactory =
+        std::function<std::unique_ptr<StartupUpdateDispatcher>()>;
     using ResourcePackagePathsResolver =
         std::function<Resources::ResourceResult<Resources::ResourcePackagePaths>()>;
 
@@ -62,7 +65,8 @@ public:
         StartupDiagnosticsSinkFactory startupDiagnosticsSinkFactory = {},
         ResourcePackagePathsResolver resourcePackagePathsResolver = {},
         std::optional<QStringList> systemUiLanguages = std::nullopt,
-        StartupWorkspaceSeams startupWorkspaceSeams = {}
+        StartupWorkspaceSeams startupWorkspaceSeams = {},
+        StartupUpdateDispatcherFactory startupUpdateDispatcherFactory = {}
         );
     ~ApplicationBootstrap();
 
@@ -93,6 +97,8 @@ private:
     commandLineStartupWorkspaceLocation() const;
     void ensureWorkspaceComposition();
     void releaseWorkspace() noexcept;
+    void scheduleStartupUpdateCheck();
+    void tryDispatchStartupUpdateCheck();
     [[nodiscard]] Application::StartupResult failStartupStage(
         Application::StartupStage stage,
         Application::StartupFailureReason reason =
@@ -107,7 +113,10 @@ private:
     ResourcePackagePathsResolver m_resourcePackagePathsResolver;
     std::optional<QStringList> m_systemUiLanguages;
     StartupWorkspaceSeams m_startupWorkspaceSeams;
+    StartupUpdateDispatcherFactory m_startupUpdateDispatcherFactory;
+    std::shared_ptr<int> m_callbackLifetime = std::make_shared<int>(0);
     std::unique_ptr<StartupDiagnosticsSink> m_startupDiagnosticsSink;
+    std::unique_ptr<StartupUpdateDispatcher> m_startupUpdateDispatcher;
     std::unique_ptr<CoreServices> m_coreServices;
     std::unique_ptr<Application::WorkspaceGateway> m_workspaceGateway;
     std::unique_ptr<Application::ApplicationRuntime> m_applicationRuntime;
@@ -117,6 +126,8 @@ private:
     std::unique_ptr<Ui::ApplicationShell> m_shell;
     bool m_previousQuitOnLastWindowClosed = true;
     bool m_quitOnLastWindowClosedChanged = false;
+    bool m_startupUpdateCheckScheduled = false;
+    bool m_startupUpdateCheckConsumed = false;
 };
 
 }  // namespace ClassMngr::Next::Bootstrap

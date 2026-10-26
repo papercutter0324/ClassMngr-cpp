@@ -7,6 +7,10 @@ string(REPLACE "\n" ";" _report_lines "${_report}")
 foreach(_line IN LISTS _report_lines)
     if(_line MATCHES "^NEXT_LINKS=(.*)$")
         set(_next_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_STARTUP_UPDATE_LINKS=(.*)$")
+        set(_next_startup_update_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^UPDATER_LINKS=(.*)$")
+        set(_updater_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_LINKS=(.*)$")
         set(_next_workspace_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^WORKSPACE_STORE_LINKS=(.*)$")
@@ -25,11 +29,30 @@ foreach(_line IN LISTS _report_lines)
 endforeach()
 
 set(_expected_next_links
-    "Qt6::Core|Qt6::Widgets|ClassMngrNext::Application|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextDocumentCatalog"
+    "Qt6::Core|Qt6::Widgets|ClassMngrNext::Application|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextDocumentCatalog|ClassMngrNextStartupUpdates|Qt6::Network"
 )
 if(NOT _next_links STREQUAL _expected_next_links)
     message(FATAL_ERROR
         "Unexpected direct ClassMngrNext dependencies: [${_next_links}]"
+    )
+endif()
+
+set(_expected_next_startup_update_links
+    "ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrUpdater|ClassMngrSettings|Qt6::Network"
+)
+if(NOT _next_startup_update_links STREQUAL _expected_next_startup_update_links)
+    message(FATAL_ERROR
+        "Unexpected direct ClassMngrNextStartupUpdates dependencies: "
+        "[${_next_startup_update_links}]"
+    )
+endif()
+
+set(_expected_updater_links
+    "ClassMngrBuildSettings|Qt6::Core|Qt6::Network"
+)
+if(NOT _updater_links STREQUAL _expected_updater_links)
+    message(FATAL_ERROR
+        "Unexpected direct ClassMngrUpdater dependencies: [${_updater_links}]"
     )
 endif()
 
@@ -41,7 +64,7 @@ if(NOT _document_catalog_test_links STREQUAL "ClassMngrNext::DocumentCatalog")
 endif()
 
 set(_expected_bootstrap_test_links
-    "ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|Qt6::Sql|Qt6::Test|Qt6::Widgets"
+    "ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrNextStartupUpdates|Qt6::Sql|Qt6::Test|Qt6::Widgets"
 )
 if(NOT _bootstrap_test_links STREQUAL _expected_bootstrap_test_links)
     message(FATAL_ERROR
@@ -83,7 +106,6 @@ foreach(_required_store_dependency IN ITEMS
 endforeach()
 
 foreach(_forbidden_dependency IN ITEMS
-        Qt6::Network
         Qt6::Pdf
         Qt6::PdfWidgets
         ClassMngrNext::Platform
@@ -97,7 +119,9 @@ foreach(_forbidden_dependency IN ITEMS
             _workspace_store_links
             _document_catalog_test_links
             _bootstrap_test_links
-            _document_catalog_library_links)
+            _document_catalog_library_links
+            _next_startup_update_links
+            _updater_links)
         string(FIND "${${_dependency_set}}" "${_forbidden_dependency}" _dependency_index)
         if(NOT _dependency_index EQUAL -1)
             message(FATAL_ERROR
@@ -106,6 +130,21 @@ foreach(_forbidden_dependency IN ITEMS
             )
         endif()
     endforeach()
+endforeach()
+
+foreach(_network_forbidden_set IN ITEMS
+        _next_workspace_links
+        _workspace_store_links
+        _document_catalog_test_links
+        _bootstrap_test_links
+        _document_catalog_library_links)
+    string(FIND "${${_network_forbidden_set}}" "Qt6::Network" _network_dependency_index)
+    if(NOT _network_dependency_index EQUAL -1)
+        message(FATAL_ERROR
+            "Qt6::Network escaped the dedicated updater/startup-update targets into "
+            "${_network_forbidden_set}: [${${_network_forbidden_set}}]"
+        )
+    endif()
 endforeach()
 
 foreach(_required_workspace_source IN ITEMS

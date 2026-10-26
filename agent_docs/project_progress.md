@@ -30,7 +30,11 @@ QtTest 4/4, bootstrap QtTest 30/30, and focused CTest 2/2. F1509 is complete:
 startup retains localized catalog metadata and records `StartupReady` only
 after the initial page is active, with no PDF body or QtPdf viewer. Independent
 macOS Debug verification passed bootstrap QtTest 32/32 and six focused CTests
-6/6. F1510 is next for deferred application updates.
+6/6. F1510 is complete: app-update creation and dispatch wait until the first
+queued event-loop callback after `StartupReady`; resource-update startup calls
+remain absent. The final bootstrap test passed 3/3, focused CTest passed 8/8,
+and the updater/controller loopback suites passed 2/2. F1511 is next for
+shutdown coordination.
 Remaining Phase 5 work and its
 acceptance order are in the [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [active batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
@@ -55,7 +59,7 @@ resource and document lifecycle contracts.
 ## Overall Progress
 
 Phases 0–4 are Complete. Phase 5 is In progress on the Heavy route. F1501–F1509
-are complete with focused independent verification; F1510 is next. Phase 5 is
+are complete with focused independent verification; F1511 is next. Phase 5 is
 not complete until the startup, data policy, update, shutdown, splash-removal,
 and workflow-isolation exit gates pass.
 
