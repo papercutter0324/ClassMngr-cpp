@@ -287,8 +287,32 @@ jobs:
             }
 
             $metrics = Get-Content -LiteralPath $metricsPath -Raw | ConvertFrom-Json
-            if ($metrics.finalProgress -ne 100) {
-              throw "Packaged application did not complete startup."
+            if ($metrics.format -cne 'classmngr-startup-profile-v2') {
+              throw "Unexpected startup metrics format '$($metrics.format)'; expected classmngr-startup-profile-v2."
+            }
+
+            $checkpointNames = @($metrics.checkpoints | ForEach-Object { $_.name })
+            $startupCompleteCount = @($checkpointNames | Where-Object { $_ -ceq 'startup-complete' }).Count
+            if ($startupCompleteCount -ne 1) {
+              throw "Expected exactly one startup-complete checkpoint; found $startupCompleteCount."
+            }
+
+            $pageLoadedIndex = [Array]::LastIndexOf($checkpointNames, 'startup-page-loaded')
+            $windowShownIndex = [Array]::LastIndexOf($checkpointNames, 'window-shown')
+            $startupCompleteIndex = [Array]::LastIndexOf($checkpointNames, 'startup-complete')
+            if ($pageLoadedIndex -lt 0 -or $windowShownIndex -le $pageLoadedIndex -or $startupCompleteIndex -le $windowShownIndex) {
+              throw "Expected startup-page-loaded < window-shown < startup-complete; found indices $pageLoadedIndex, $windowShownIndex, $startupCompleteIndex."
+            }
+
+            foreach ($checkpoint in @('splash-shown', 'resource-system-initialized')) {
+              if ($checkpointNames -ccontains $checkpoint) {
+                throw "Unexpected legacy startup checkpoint '$checkpoint' in packaged startup metrics."
+              }
+            }
+            foreach ($field in @('progressUpdates', 'finalProgress')) {
+              if ($metrics.PSObject.Properties.Name -ccontains $field) {
+                throw "Unexpected progress-only field '$field' in startup metrics; expected the lifecycle-only v2 schema."
+              }
             }
           }
           finally {
