@@ -186,6 +186,22 @@ Ui::PageHost::PageFactory factoryFor(PageProbe& probe)
     };
 }
 
+Ui::PageDescriptor descriptorFor(
+    const QString& pageId,
+    Ui::PageFactory factory
+    )
+{
+    return Ui::PageDescriptor{
+        .id = *Ui::PageId::fromString(pageId),
+        .label = pageId.trimmed(),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = std::move(factory),
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
+    };
+}
+
 QString catalogPath()
 {
     return QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG);
@@ -204,6 +220,8 @@ class PageHostTests final : public QObject
 
 private slots:
     void initTestCase();
+    void descriptorRegistrationRetainsMetadataWithoutConstructingPages();
+    void invalidAndDuplicateDescriptorsAreRejected();
     void registrationIsLazyAndPagesSuspendReuseReleaseAndRecreate();
     void factoryAndActivationFailuresPreserveTheCurrentPage();
 
@@ -226,6 +244,149 @@ void PageHostTests::initTestCase()
     QCOMPARE(descriptor->streamabilityStatus(), QStringLiteral("candidate_file_backed"));
 }
 
+void PageHostTests::descriptorRegistrationRetainsMetadataWithoutConstructingPages()
+{
+    Ui::PageHost host(*m_loader);
+    PageProbe reports;
+    reports.key = QStringLiteral("reports");
+    reports.name = QStringLiteral("reports");
+
+    const auto pageId = Ui::PageId::fromString(QStringLiteral(" reports "));
+    QVERIFY(pageId.has_value());
+    QCOMPARE(pageId->value(), QStringLiteral("reports"));
+
+    const auto iconResourceId = Resources::ResourceId::fromString(
+        QStringLiteral("document.body:Book Reports/Book Report Grading Rubric.pdf")
+        );
+    QVERIFY(iconResourceId.has_value());
+
+    const Ui::PageDescriptor descriptor{
+        .id = *pageId,
+        .label = QStringLiteral("Reports"),
+        .iconResourceId = *iconResourceId,
+        .requiredPermissions = {
+            QStringLiteral("reports.view"),
+            QStringLiteral("workspace.read")
+        },
+        .factory = factoryFor(reports),
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
+    };
+
+    QVERIFY(host.registerPage(descriptor));
+    QCOMPARE(reports.factoryCalls, 0);
+    QCOMPARE(reports.constructed, 0);
+    QVERIFY(!host.hasPageInstance(QStringLiteral("reports")));
+    QVERIFY(!host.activePageKey().has_value());
+
+    const auto retained = host.pageDescriptor(*pageId);
+    QVERIFY(retained.has_value());
+    QCOMPARE(retained->id.value(), QStringLiteral("reports"));
+    QCOMPARE(retained->label, QStringLiteral("Reports"));
+    QVERIFY(retained->iconResourceId.has_value());
+    QCOMPARE(retained->iconResourceId->value(), iconResourceId->value());
+    QCOMPARE(retained->requiredPermissions, descriptor.requiredPermissions);
+    QVERIFY(retained->resourcePolicy == Ui::PageResourcePolicy::PageScoped);
+    QVERIFY(retained->initialDataPolicy == Ui::PageInitialDataPolicy::None);
+
+    const std::vector<Ui::PageDescriptor> registered = host.pageDescriptors();
+    QCOMPARE(registered.size(), std::size_t{1});
+    QCOMPARE(registered.front().id.value(), QStringLiteral("reports"));
+    QCOMPARE(reports.factoryCalls, 0);
+    QCOMPARE(reports.constructed, 0);
+}
+
+void PageHostTests::invalidAndDuplicateDescriptorsAreRejected()
+{
+    Ui::PageHost host(*m_loader);
+    PageProbe first;
+    first.key = QStringLiteral("duplicate");
+    first.name = QStringLiteral("first");
+    PageProbe second;
+    second.key = QStringLiteral("duplicate");
+    second.name = QStringLiteral("second");
+
+    QVERIFY(!Ui::PageId::fromString(QStringLiteral("   ")).has_value());
+
+    const auto invalidId = Ui::PageId::fromString(QStringLiteral("invalid"));
+    QVERIFY(invalidId.has_value());
+    const auto invalid = host.registerPage(Ui::PageDescriptor{
+        .id = *invalidId,
+        .label = QStringLiteral("  "),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = factoryFor(first)
+    });
+    QVERIFY(!invalid.has_value());
+    QCOMPARE(invalid.error().code, Ui::PageHostErrorCode::InvalidPageDescriptor);
+    QCOMPARE(invalid.error().pageKey, QStringLiteral("invalid"));
+    QVERIFY(!invalid.error().message.trimmed().isEmpty());
+    QCOMPARE(first.factoryCalls, 0);
+    QCOMPARE(first.constructed, 0);
+
+    const auto emptyFactoryId = Ui::PageId::fromString(QStringLiteral("empty-factory"));
+    QVERIFY(emptyFactoryId.has_value());
+    const auto emptyFactory = host.registerPage(Ui::PageDescriptor{
+        .id = *emptyFactoryId,
+        .label = QStringLiteral("Empty factory"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = Ui::PageFactory{}
+    });
+    QVERIFY(!emptyFactory.has_value());
+    QCOMPARE(emptyFactory.error().code, Ui::PageHostErrorCode::InvalidFactory);
+    QCOMPARE(emptyFactory.error().pageKey, QStringLiteral("empty-factory"));
+    QVERIFY(!emptyFactory.error().message.trimmed().isEmpty());
+    QCOMPARE(first.factoryCalls, 0);
+    QCOMPARE(first.constructed, 0);
+
+    const auto blankPermissionId = Ui::PageId::fromString(
+        QStringLiteral("blank-permission")
+        );
+    QVERIFY(blankPermissionId.has_value());
+    const auto blankPermission = host.registerPage(Ui::PageDescriptor{
+        .id = *blankPermissionId,
+        .label = QStringLiteral("Blank permission"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {QStringLiteral(" ")},
+        .factory = factoryFor(first)
+    });
+    QVERIFY(!blankPermission.has_value());
+    QCOMPARE(
+        blankPermission.error().code,
+        Ui::PageHostErrorCode::InvalidPageDescriptor
+        );
+    QCOMPARE(blankPermission.error().pageKey, QStringLiteral("blank-permission"));
+    QVERIFY(!blankPermission.error().message.trimmed().isEmpty());
+    QCOMPARE(first.factoryCalls, 0);
+    QCOMPARE(first.constructed, 0);
+
+    const auto duplicateId = Ui::PageId::fromString(QStringLiteral("duplicate"));
+    QVERIFY(duplicateId.has_value());
+    QVERIFY(host.registerPage(Ui::PageDescriptor{
+        .id = *duplicateId,
+        .label = QStringLiteral("First"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = factoryFor(first)
+    }));
+    const auto duplicate = host.registerPage(Ui::PageDescriptor{
+        .id = *duplicateId,
+        .label = QStringLiteral("Second"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = factoryFor(second)
+    });
+    QVERIFY(!duplicate.has_value());
+    QCOMPARE(duplicate.error().code, Ui::PageHostErrorCode::DuplicatePageKey);
+    QCOMPARE(duplicate.error().pageKey, QStringLiteral("duplicate"));
+    QVERIFY(!duplicate.error().message.trimmed().isEmpty());
+    QCOMPARE(first.factoryCalls, 0);
+    QCOMPARE(first.constructed, 0);
+    QCOMPARE(second.factoryCalls, 0);
+    QCOMPARE(second.constructed, 0);
+}
+
 void PageHostTests::registrationIsLazyAndPagesSuspendReuseReleaseAndRecreate()
 {
     Ui::PageHost host(*m_loader);
@@ -242,8 +403,14 @@ void PageHostTests::registrationIsLazyAndPagesSuspendReuseReleaseAndRecreate()
     alpha.lifecycleLog = &lifecycleLog;
     beta.lifecycleLog = &lifecycleLog;
 
-    QVERIFY(host.registerPage(QStringLiteral(" alpha "), factoryFor(alpha)));
-    QVERIFY(host.registerPage(QStringLiteral("beta"), factoryFor(beta)));
+    QVERIFY(host.registerPage(descriptorFor(
+        QStringLiteral("alpha"),
+        factoryFor(alpha)
+        )));
+    QVERIFY(host.registerPage(descriptorFor(
+        QStringLiteral("beta"),
+        factoryFor(beta)
+        )));
     QCOMPARE(alpha.factoryCalls, 0);
     QCOMPARE(alpha.constructed, 0);
     QCOMPARE(beta.factoryCalls, 0);
@@ -381,8 +548,11 @@ void PageHostTests::factoryAndActivationFailuresPreserveTheCurrentPage()
     activationFailure.lifecycleLog = &lifecycleLog;
     factoryPartial.lifecycleLog = &lifecycleLog;
 
-    QVERIFY(host.registerPage(QStringLiteral("stable"), factoryFor(stable)));
-    QVERIFY(host.registerPage(
+    QVERIFY(host.registerPage(descriptorFor(
+        QStringLiteral("stable"),
+        factoryFor(stable)
+        )));
+    QVERIFY(host.registerPage(descriptorFor(
         QStringLiteral("factory-failure"),
         [&factoryPartial](const Ui::PageContext& context)
             -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
@@ -396,24 +566,24 @@ void PageHostTests::factoryAndActivationFailuresPreserveTheCurrentPage()
                 QStringLiteral("requested factory failure")
             });
         }
-        ));
-    QVERIFY(host.registerPage(
+        )));
+    QVERIFY(host.registerPage(descriptorFor(
         QStringLiteral("factory-throws"),
         [](const Ui::PageContext&) -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
             throw std::runtime_error("requested factory exception");
         }
-        ));
-    QVERIFY(host.registerPage(
+        )));
+    QVERIFY(host.registerPage(descriptorFor(
         QStringLiteral("factory-null"),
         [](const Ui::PageContext&)
             -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
             return std::unique_ptr<Ui::Page>{};
         }
-        ));
-    QVERIFY(host.registerPage(
+        )));
+    QVERIFY(host.registerPage(descriptorFor(
         activationFailure.key,
         factoryFor(activationFailure)
-        ));
+        )));
 
     QVERIFY(host.activatePage(QStringLiteral("stable")));
     auto* const stablePage = dynamic_cast<ProbePage*>(

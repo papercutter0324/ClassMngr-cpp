@@ -71,25 +71,64 @@ PageHost::~PageHost()
 }
 
 PageHostResult<void> PageHost::registerPage(
-    QString pageKey,
-    PageFactory factory
+    PageDescriptor descriptor
     )
 {
+    const QString pageKey = descriptor.id.value();
     const auto normalizedKey = normalizedPageKey(pageKey);
     if (!normalizedKey)
     {
         return std::unexpected(error(
-            PageHostErrorCode::InvalidPageKey,
+            PageHostErrorCode::InvalidPageDescriptor,
             pageKey,
-            QStringLiteral("page key must not be empty")
+            QStringLiteral("page descriptor ID must not be empty")
             ));
     }
-    if (!factory)
+    const auto normalizedId = PageId::fromString(*normalizedKey);
+    if (!normalizedId)
+    {
+        return std::unexpected(error(
+            PageHostErrorCode::InvalidPageDescriptor,
+            pageKey,
+            QStringLiteral("page descriptor ID must not be empty")
+            ));
+    }
+    descriptor.id = *normalizedId;
+
+    if (descriptor.label.trimmed().isEmpty())
+    {
+        return std::unexpected(error(
+            PageHostErrorCode::InvalidPageDescriptor,
+            *normalizedKey,
+            QStringLiteral("page descriptor label must not be empty")
+            ));
+    }
+    if (!descriptor.factory)
     {
         return std::unexpected(error(
             PageHostErrorCode::InvalidFactory,
             *normalizedKey,
-            QStringLiteral("page factory is empty")
+            QStringLiteral("page descriptor factory is empty")
+            ));
+    }
+    for (const QString& permission : descriptor.requiredPermissions)
+    {
+        if (permission.trimmed().isEmpty())
+        {
+            return std::unexpected(error(
+                PageHostErrorCode::InvalidPageDescriptor,
+                *normalizedKey,
+                QStringLiteral("page descriptor permission ID must not be empty")
+                ));
+        }
+    }
+    if (descriptor.resourcePolicy != PageResourcePolicy::PageScoped
+        || descriptor.initialDataPolicy != PageInitialDataPolicy::None)
+    {
+        return std::unexpected(error(
+            PageHostErrorCode::InvalidPageDescriptor,
+            *normalizedKey,
+            QStringLiteral("page descriptor contains an unsupported policy value")
             ));
     }
     if (m_transitionInProgress)
@@ -105,11 +144,14 @@ PageHostResult<void> PageHost::registerPage(
         return std::unexpected(error(
             PageHostErrorCode::DuplicatePageKey,
             *normalizedKey,
-            QStringLiteral("a page factory is already registered for this key")
+            QStringLiteral("a page descriptor is already registered for this ID")
             ));
     }
 
-    m_pages.insert(*normalizedKey, PageEntry{std::move(factory), nullptr});
+    m_pages.insert(
+        *normalizedKey,
+        PageEntry{std::move(descriptor), nullptr}
+        );
     return {};
 }
 
@@ -178,7 +220,7 @@ PageHostResult<void> PageHost::activatePage(const QString& pageKey)
             });
         try
         {
-            factoryResult = entry.factory(context);
+            factoryResult = entry.descriptor.factory(context);
         }
         catch (const std::exception& exception)
         {
@@ -355,6 +397,30 @@ Page* PageHost::pageInstance(const QString& pageKey) const
 
     const auto entry = m_pages.constFind(*normalizedKey);
     return entry == m_pages.cend() ? nullptr : entry->page;
+}
+
+std::optional<PageDescriptor> PageHost::pageDescriptor(
+    const PageId& pageId
+    ) const
+{
+    const auto entry = m_pages.constFind(pageId.value());
+    if (entry == m_pages.cend())
+    {
+        return std::nullopt;
+    }
+
+    return entry->descriptor;
+}
+
+std::vector<PageDescriptor> PageHost::pageDescriptors() const
+{
+    std::vector<PageDescriptor> descriptors;
+    descriptors.reserve(static_cast<std::size_t>(m_pages.size()));
+    for (auto entry = m_pages.cbegin(); entry != m_pages.cend(); ++entry)
+    {
+        descriptors.push_back(entry->descriptor);
+    }
+    return descriptors;
 }
 
 std::optional<QString> PageHost::normalizedPageKey(const QString& pageKey)

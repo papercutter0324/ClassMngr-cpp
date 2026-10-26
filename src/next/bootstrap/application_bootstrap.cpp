@@ -516,14 +516,21 @@ Application::StartupResult ApplicationBootstrap::start()
     {
         const Ui::PageHostResult<void> registration =
             m_shell->pageHost().registerPage(
-                QStringLiteral("initial"),
-                [](const Ui::PageContext& context)
-                    -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
-                    std::unique_ptr<Ui::Page> page =
-                        std::make_unique<Ui::InitialPage>(context);
-                    return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
-                        std::move(page)
-                    };
+                Ui::PageDescriptor{
+                    .id = *Ui::PageId::fromString(QStringLiteral("initial")),
+                    .label = QStringLiteral("Home"),
+                    .iconResourceId = std::nullopt,
+                    .requiredPermissions = {},
+                    .factory = [](const Ui::PageContext& context)
+                        -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+                        std::unique_ptr<Ui::Page> page =
+                            std::make_unique<Ui::InitialPage>(context);
+                        return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                            std::move(page)
+                        };
+                    },
+                    .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+                    .initialDataPolicy = Ui::PageInitialDataPolicy::None
                 }
                 );
         if (!registration)

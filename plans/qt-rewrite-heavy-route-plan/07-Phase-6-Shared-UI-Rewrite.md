@@ -32,13 +32,17 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: Not started
+- Status: In progress
 - Default route: Heavy
 - Depends on: Phase 5
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
-- Last updated: 2026-09-16
-- Current note: Replace page/controller ownership with explicit presentation lifecycles.
+- Last updated: 2026-10-26
+- Current note: Phase 6 is active on the Heavy route. F1514 is accepted;
+  F1515 — explicit page lifecycle state — is next. Batch 1's ordered candidates
+  are in the shared slice-batch tracker. The existing Staff Directory
+  model/view and bounded-widget test are the planned representative-table gate
+  evidence; its full feature migration remains in Phase 7C.
 
 ### Slice batches
 
@@ -52,6 +56,20 @@ Use this section only when a decision, acceptance result, verification
 finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
+
+### F1514 — complete — 2026-10-26
+
+`PageDescriptor` now carries validated stable identity, label, optional icon
+resource ID, required permission IDs, factory, resource policy, and initial-data
+policy. `PageHost` retains and exposes descriptors without constructing pages;
+the Next bootstrap registers its placeholder through this API. The old
+string/factory registration path was removed, and the focused lifecycle and
+failure tests now use descriptors. Permission and policy values remain
+metadata; their enforcement belongs to navigation/application slices.
+
+The incremental macOS Debug build of `ClassMngrNextPageHostTests` and
+`ClassMngrNextBootstrapTests` passed. Focused CTest passed 2/2, and
+`git diff --check` passed. No full suite or cross-platform build ran.
 
 ## Objective
 

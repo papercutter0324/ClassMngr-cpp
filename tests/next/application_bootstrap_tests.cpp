@@ -948,6 +948,17 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     QVERIFY(pageHost.hasPageInstance(QStringLiteral("initial")));
     QCOMPARE(pageHost.activePageKey(), std::optional<QString>(QStringLiteral("initial")));
 
+    const auto initialPageId = Ui::PageId::fromString(QStringLiteral("initial"));
+    QVERIFY(initialPageId.has_value());
+    const auto initialDescriptor = pageHost.pageDescriptor(*initialPageId);
+    QVERIFY(initialDescriptor.has_value());
+    QCOMPARE(initialDescriptor->id.value(), QStringLiteral("initial"));
+    QCOMPARE(initialDescriptor->label, QStringLiteral("Home"));
+    QVERIFY(!initialDescriptor->iconResourceId.has_value());
+    QVERIFY(initialDescriptor->requiredPermissions.isEmpty());
+    QVERIFY(initialDescriptor->resourcePolicy == Ui::PageResourcePolicy::PageScoped);
+    QVERIFY(initialDescriptor->initialDataPolicy == Ui::PageInitialDataPolicy::None);
+
     auto* const page = dynamic_cast<Ui::InitialPage*>(
         pageHost.pageInstance(QStringLiteral("initial"))
         );

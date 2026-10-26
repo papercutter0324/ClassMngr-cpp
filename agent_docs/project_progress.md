@@ -1,52 +1,30 @@
 # Project Progress
 
-Active deployment plan: Qt Rewrite Phase 5 — Startup and Bootstrap Rewrite.
-Current deployment: `phase5_startup_bootstrap_rewrite_20261026`. Route: Heavy.
-Phases 0–4 are Complete. Phase 5 passed its documented exit gate at
-implementation head `6bbff54abc524723e23911d65130b1b198dde2b3`; F1501–F1513
-are complete. `ClassMngrNext` now has an explicit staged bootstrap, named
-diagnostics, bounded resource/data loading, preference/localization/theme/font
-setup, workspace/runtime composition, lazy initial-page hosting, deferred app
-updates, coordinated shutdown, and splash-free startup. Dialog automation for
-Sub Prep, Schedule Import, and Calendar Import is isolated behind value-only
-Qt presentation/test adapters. Legacy startup has no splash surface or
-splash-specific eager pack initialization; feature-owned legacy packs remain
-under Phase 4's compatibility allowance.
-
-Phase-specific evidence includes the eight-target incremental macOS Debug
-build, focused CTest 5/5, startup dependency boundary 1/1, resource-pack
-QtTest 12/12, and eight direct startup/workflow selectors without skips. The
-Windows packaged Release smoke passed its ordered startup checkpoint and
-forbidden-field assertions; Windows x64 and ARM64 Release builds passed. The
-Phase 4 resource-install matrix also passed on macOS, Windows x64, and Linux
-x64. Actions runs [40301659949](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40301659949)
-and [40301659977](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40301659977)
-passed their respective workflows.
-
-The full Debug CTest suites did not pass: Linux reported 11 broad failures or
-timeouts and Windows reported 14. Linux `ClassMngrStartupPerformanceTests`
-passed; the Windows target timed out at 120 seconds after emitting startup
-metrics. The Windows run had zero `0xc0000135` loader failures after the CTest
-Qt DLL path fix. Its failing DocumentCatalog source test expects a legacy
-member name removed by Phase 4 commit `34926f4b`; independent review found the
-assertion stale and outside Next startup. These broad-suite results remain
-visible in [run 40301659920](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40301659920)
-and are not reported as passing suites.
+Active deployment plan: Qt Rewrite Phase 6 — Shared UI Rewrite.
+Current deployment: `phase6-shared-ui-20261026`. Route: Heavy.
+Phases 0–5 are Complete; Phase 6 is In progress. F1514 is accepted:
+`PageDescriptor` now backs lazy Next page registration, and `PageHost` retains
+descriptor metadata without constructing pages. The old string/factory
+registration path is removed. F1515, explicit page lifecycle state, is next.
+The incremental macOS Debug build of `ClassMngrNextPageHostTests` and
+`ClassMngrNextBootstrapTests` passed; focused CTest passed 2/2 and
+`git diff --check` passed. Full-suite and cross-platform verification were not
+run. Phase 5 platform evidence and broad-suite limitations remain in the
+[Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
+and [Start Here](../plans/qt-rewrite-heavy-route-plan/00-Start-Here.md).
 
 ## Goal
 
-Complete Phase 5's startup and bootstrap rewrite: use an explicit Next
-composition root and stage diagnostics, show a usable initial page without a
-splash, keep startup resource and data loading bounded, defer application
-updates until interactive, and coordinate shutdown. Preserve the Phase 4
-resource and document lifecycle contracts.
+Complete Phase 6's shared UI rewrite: explicit page descriptors and lifecycle,
+navigation and action state, dialog/notification and preference services, and
+reusable model/view presentation while preserving current behavior and
+appearance.
 
 ## Overall Progress
 
-Phases 0–5 are Complete. Phase 5's documented startup, data policy, update,
-shutdown, splash-removal, and workflow-isolation exit gate passed. The full
-Linux and Windows Debug CTest suites remain incomplete as recorded above; the
-exit gate did not require a full-suite pass.
+Phases 0–5 are Complete. Phase 6 is In progress; F1514 is accepted and F1515
+is next. The current batch and ordered candidates are in
+`plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained
@@ -87,23 +65,15 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-26 (Phase 5 complete)
+### Current checkpoint — 2026-10-26 (Phase 6, F1514 accepted)
 
-Phase 5 completed at implementation head
-`6bbff54abc524723e23911d65130b1b198dde2b3` on `Qt-Rewrite`. The phase-specific
-macOS checks, Windows packaged startup smoke, Windows x64/ARM64 Release builds,
-and Phase 4 resource-install matrix passed. The required behavior is covered:
-no splash/progress startup path, a usable localized/theme-correct initial page,
-stage-attributed startup, metadata-only catalog readiness, isolated prompt
-automation, deferred application updates, and coordinated shutdown.
-
-The full Linux and Windows Debug CTest suites have recorded failures and
-timeouts; see the current deployment summary above and run 40301659920. The
-Windows performance target emitted metrics before timing out, and a separate
-legacy DocumentCatalog source assertion is stale after the Phase 4 port rename.
-Those results are not a full-suite pass. Phase 6 is next; visual parity remains
-scheduled for Phases 7/10, and legacy resource-pack removal remains scheduled
-for Phase 12.
+F1514 adds validated page descriptors, removes the string/factory registration
+path, and keeps registration lazy through the actual Next bootstrap. The
+incremental macOS Debug build of `ClassMngrNextPageHostTests` and
+`ClassMngrNextBootstrapTests` passed; focused CTest passed 2/2 and
+`git diff --check` passed. Full-suite and cross-platform verification were not
+run. F1515 is next. Phase 7/10 still owns rendering parity, and Phase 12 owns
+legacy resource-pack removal.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

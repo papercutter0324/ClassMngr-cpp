@@ -1,15 +1,16 @@
 #pragma once
 
 #include "next/ui/page.h"
+#include "next/ui/page_descriptor.h"
 
-#include <QHash>
+#include <QMap>
 #include <QString>
 #include <QWidget>
 
 #include <expected>
-#include <functional>
 #include <memory>
 #include <optional>
+#include <vector>
 
 class QStackedWidget;
 
@@ -27,7 +28,8 @@ enum class PageHostErrorCode
     FactoryReturnedNull,
     PageAlreadyParented,
     ActivationFailed,
-    ReentrantOperation
+    ReentrantOperation,
+    InvalidPageDescriptor
 };
 
 struct PageHostError final
@@ -43,8 +45,7 @@ using PageHostResult = std::expected<Value, PageHostError>;
 class PageHost final : public QWidget
 {
 public:
-    using PageFactory = std::function<
-        PageOperationResult<std::unique_ptr<Page>>(const PageContext&)>;
+    using PageFactory = Ui::PageFactory;
 
     // The resource loader is borrowed and must outlive this host.
     explicit PageHost(
@@ -57,8 +58,7 @@ public:
     PageHost& operator=(const PageHost&) = delete;
 
     [[nodiscard]] PageHostResult<void> registerPage(
-        QString pageKey,
-        PageFactory factory
+        PageDescriptor descriptor
         );
     [[nodiscard]] PageHostResult<void> activatePage(const QString& pageKey);
     [[nodiscard]] PageHostResult<void> releasePage(const QString& pageKey);
@@ -68,11 +68,16 @@ public:
     [[nodiscard]] bool hasPageInstance(const QString& pageKey) const;
     // Returns a borrowed pointer. PageHost remains the widget owner.
     [[nodiscard]] Page* pageInstance(const QString& pageKey) const;
+    [[nodiscard]] std::optional<PageDescriptor> pageDescriptor(
+        const PageId& pageId
+        ) const;
+    // Returns descriptor values in stable, sorted page-ID order.
+    [[nodiscard]] std::vector<PageDescriptor> pageDescriptors() const;
 
 private:
     struct PageEntry final
     {
-        PageFactory factory;
+        PageDescriptor descriptor;
         Page* page = nullptr;
     };
 
@@ -89,7 +94,7 @@ private:
     Resources::ResourceLoader& m_resourceLoader;
     QStackedWidget* m_stack = nullptr;
     QWidget* m_emptyPage = nullptr;
-    QHash<QString, PageEntry> m_pages;
+    QMap<QString, PageEntry> m_pages;
     std::optional<QString> m_activePageKey;
     bool m_transitionInProgress = false;
 };
