@@ -5,7 +5,7 @@ Phase 5 completed on the mandatory Heavy route at implementation head
 
 ## Phase 6 — Batch 1 (active)
 
-F1514–F1516 are complete. F1517 is current. Continue in order, commit each
+F1514–F1517 are complete. F1518 is current. Continue in order, commit each
 accepted slice, then push the batch. Start Batch 2 discovery when F1526 starts
 because it is the second-to-last candidate.
 
@@ -30,8 +30,13 @@ because it is the second-to-last candidate.
    a descriptor supplies a resource ID. Defer dynamic document nodes, teacher
    rows/IDs, external URL actions, and feature data/loading to their migration
    slices.
-4. **F1517 — Command bus (current):** typed command dispatch and results.
-5. **F1518 — Action presentation:** derive enabled state from application state
+4. **F1517 — Command bus (complete):** widget-free application `CommandBus`
+   with typed registration/dispatch keyed by C++ command type, a typed
+   `canExecute` predicate, and handlers returning `Domain::Result<void>`.
+   Keep missing/duplicate/unavailable bus errors distinct from operation
+   errors; recheck availability during synchronous dispatch. Checked state and
+   navigation remain outside the bus; feature command handlers migrate later.
+5. **F1518 — Action presentation (current):** derive enabled state from application state
    and permissions.
 6. **F1519 — Semantic prompt service:** message/choice/unsaved-change/named-
    action contracts with a value-only Qt automation adapter.

@@ -172,6 +172,33 @@ add_test(
     COMMAND ClassMngrNextApplicationRuntimeTests
 )
 
+# Exercise typed application command registration and synchronous dispatch
+# without introducing a Qt dependency into the command contract tests.
+add_executable(ClassMngrNextCommandBusTests
+    tests/next/command_bus_tests.cpp
+)
+target_compile_features(ClassMngrNextCommandBusTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(ClassMngrNextCommandBusTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextCommandBusTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(ClassMngrNextCommandBusTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextCommandBusTests
+    COMMAND ClassMngrNextCommandBusTests
+)
+
 add_executable(ClassMngrNextCalendarResourceKeysTests
     cmake/tests/next_calendar_resource_keys.cpp
 )

@@ -38,9 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 is active on the Heavy route. F1514–F1516 are accepted;
-  F1517 — CommandBus — is next. Batch 1's ordered candidates are in the shared
-  slice-batch tracker. The existing Staff Directory model/view and
+- Current note: Phase 6 is active on the Heavy route. F1514–F1517 are accepted;
+  F1518 — shell action state — is next. Batch 1's ordered candidates are in
+  the shared slice-batch tracker. The existing Staff Directory model/view and
   bounded-widget test are the planned representative-table gate
   evidence; its full feature migration remains in Phase 7C.
 
@@ -109,6 +109,21 @@ icon; this failure path was reviewed but not separately induced in a test.
 The incremental macOS Debug build covered the navigation, PageHost, and
 bootstrap targets. Focused CTest passed 3/3, and `git diff --check` passed.
 No full suite or cross-platform build ran.
+
+### F1517 — complete — 2026-10-26
+
+The application-layer `CommandBus` now provides synchronous typed handler
+registration and dispatch keyed by C++ command type. It reports missing,
+duplicate, invalid-handler, and unavailable bus errors separately from the
+handler's unchanged `Domain::Result<void>`. Availability is queried and
+rechecked on dispatch; checked state and NavigationModel remain outside the
+bus. The bus and focused test target have no Qt Widgets dependency.
+
+Independent macOS Debug build and CTest passed for
+`ClassMngrNextCommandBusTests` and `ClassMngrNextApplicationRuntimeTests` (2/2).
+Coverage includes availability changing between query and dispatch, with the
+handler kept uncalled. `git diff --check` passed. No full suite or
+cross-platform build ran.
 
 ## Objective
 
