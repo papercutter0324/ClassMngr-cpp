@@ -2256,6 +2256,24 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformWorkspaceStorePersonalDetailsPort
+    SOURCES
+        tests/next_platform_workspace_store_personal_details_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNextWorkspace
+        ClassMngrNextWorkspaceDomain
+        ClassMngrSignature
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+    COMPILE_DEFINITIONS
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME UpdateControllerAutomaticStartup
     SOURCES
         tests/update_controller_automatic_startup_tests.cpp

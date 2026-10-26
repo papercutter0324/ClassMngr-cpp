@@ -36,4 +36,37 @@ public:
         ) const = 0;
 };
 
+// Initial Setup reads the complete compatibility bundle before presenting its
+// editable fields. Keeping that read typed prevents a partial or failed read
+// from being mistaken for empty settings and later overwriting saved values.
+using PersonalDetailsReadResult =
+    Domain::Result<PersonalDetailsSaveRequest>;
+
+class PersonalDetailsReadPort
+{
+public:
+    virtual ~PersonalDetailsReadPort() = default;
+
+    [[nodiscard]] virtual PersonalDetailsReadResult read() const = 0;
+};
+
+class PersonalDetailsReadQuery final
+{
+public:
+    explicit PersonalDetailsReadQuery(
+        const PersonalDetailsReadPort& port
+        ) noexcept
+        : m_port(port)
+    {
+    }
+
+    [[nodiscard]] PersonalDetailsReadResult execute() const
+    {
+        return m_port.read();
+    }
+
+private:
+    const PersonalDetailsReadPort& m_port;
+};
+
 } // namespace ClassMngr::Next::Application

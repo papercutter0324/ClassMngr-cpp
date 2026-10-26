@@ -201,7 +201,6 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     qt_add_executable(ClassMngrSignatureImageProcessorTests
         tests/signature_image_processor_tests.cpp
-        src/features/my_info/data/signature_image_processor.cpp
     )
 
     target_compile_features(ClassMngrSignatureImageProcessorTests
@@ -216,6 +215,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     target_link_libraries(ClassMngrSignatureImageProcessorTests
         PRIVATE
+            ClassMngrSignature
             Qt6::Core
             Qt6::Gui
             Qt6::Test

@@ -38,13 +38,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-26
-- Current note: 7A.1, the user-visible v2 profile-bootstrap stage, is accepted
-  after focused macOS Debug verification in `build/macos-clang-debug`. Next is
-  7A.2, setup personal details and signature. Full wizard/setup, recent-history
-  completion (candidate #13), and the remaining 7A flows are open. The original
-  profile backup remains retained; recent-history insertion waits for full
-  setup completion. The implementation commit is next; no commit hash yet. See
-  the progress log for verification details and limits.
+- Current note: 7A.1 is accepted and committed as `d49f34fe`; 7A.2, personal
+  details and signature, is functionally verified. 7A.3 teacher entry is next.
+  No retained Phase 0/7 screenshot matches the legacy wizard or the new screen;
+  screenshot/reference comparison remains an open 7A parity item. 7A and Phase
+  7 exit gates remain open. The 7A.2 source commit is next. See the progress log
+  for verification details and limits.
 
 ### Slice batches
 
@@ -61,6 +60,8 @@ keep current status in this plan and live batches in the shared tracker.
 
 ### 7A.1 — Profile-bootstrap stage accepted (2026-10-26)
 
+- Commit: `d49f34fe` (`Phase7 - Add v2 setup profile bootstrap`). Git was
+  verified clean; the branch is one commit ahead of origin.
 - Acceptance: the user-visible v2 profile-bootstrap stage creates a real `.tps`
   through `WorkspaceStoreGateway`, supports cancel/failure and explicit restart
   recovery, and keeps `InitialSetupLifecycle` pending across later
@@ -80,7 +81,27 @@ keep current status in this plan and live batches in the shared tracker.
 - Limits and next work: the Windows preset is unavailable on this macOS host;
   no full suite, Windows build, cross-platform run, package, or memory gate ran.
   Full wizard/setup, recent-history completion, and remaining 7A flows remain
-  open. The implementation commit is next; no commit hash yet.
+  open.
+
+### 7A.2 — Personal details and signature functionally verified (2026-10-26)
+
+- Result: independent Tester recheck found no production defect. The personal
+  details/signature screen is functionally verified. The Phase 7 screenshot
+  comparison requirement remains open for 7A: no retained Phase 0/7 screenshot
+  matches the legacy setup wizard or the new screen. Existing label, theme, and
+  geometry assertions are not screenshot comparisons.
+- Verification passed on macOS: six assigned targets built; focused CTest
+  passed 5/5. `imageSignatureSaveReopensAndResumesFromFixture` verifies image
+  mode persistence and preview after reopening/resuming a real `.tps`.
+  `failedPersonalDetailsSavePreservesReplacementBackup` verifies setup remains
+  pending, journal/backup hash stay unchanged, and seeded records survive a
+  forced write failure. Both new QtTests passed three cases each. The appearance
+  test passed six QtTest cases, including setup/cleanup, across English/Korean
+  and light/dark. Resource inventory `--check` and `git diff --check` passed.
+- Limits and next work: Windows, full suite, and package checks remain unrun;
+  Phase 7 and 7A exit gates remain open. The screenshot/reference comparison
+  remains an open 7A parity item. 7A.3 teacher entry is next; the 7A.2 source
+  commit is next.
 
 ## Objective
 

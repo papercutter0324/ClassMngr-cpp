@@ -120,6 +120,7 @@ set(CLASSMNGR_WORKSPACE_STORE_SOURCES
 set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
     "src/next/platform/workspace_store_gateway.cpp"
     "src/next/platform/workspace_store_gateway.h"
+    "src/next/platform/workspace_store_personal_details_port.h"
     "src/next/platform/workspace_store_initial_setup_lifecycle_adapter.cpp"
     "src/next/platform/workspace_store_initial_setup_lifecycle_adapter.h"
     "src/next/platform/next_startup_profiler_inactive_workspace_compat.cpp"
@@ -396,9 +397,7 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/documents/document_catalog.h"
     "src/features/my_info/data/personal_details_repository.cpp"
     "src/features/my_info/data/personal_details_repository.h"
-    "src/features/my_info/data/signature_image_processor.cpp"
     "src/features/my_info/data/signature_image_processor.h"
-    "src/features/my_info/data/typed_signature_renderer.cpp"
     "src/features/my_info/data/typed_signature_renderer.h"
     "src/features/my_info/ui/my_classes_page.cpp"
     "src/features/my_info/ui/my_classes_page.h"
@@ -601,6 +600,13 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/next/platform/application_services_speaking_evaluation_save_port.cpp"
     "src/next/platform/application_services_sub_prep_personal_zoom_preferences_port.cpp"
     "src/next/platform/application_services_sub_prep_preferences_port.cpp"
+)
+
+# These deterministic image and typed-signature processors have no legacy
+# service dependencies. Keep one implementation available to both runtimes.
+set(CLASSMNGR_SIGNATURE_SOURCES
+    "src/features/my_info/data/signature_image_processor.cpp"
+    "src/features/my_info/data/typed_signature_renderer.cpp"
 )
 
 set(CLASSMNGR_APP_SERVICES_SOURCES

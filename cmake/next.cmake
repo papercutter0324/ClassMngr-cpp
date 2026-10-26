@@ -318,6 +318,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/middle_school_analytics_preferences.h
     src/next/application/personal_display_name_preferences.h
     src/next/application/personal_details_save.h
+    src/next/application/personal_details_save_use_case.h
     src/next/application/personal_signature_image.h
     src/next/application/personal_signature_preferences.h
     src/next/application/sub_prep_preferences.h
@@ -679,6 +680,8 @@ add_library(ClassMngrNextWorkspace OBJECT
     ${CLASSMNGR_NEXT_WORKSPACE_SOURCES}
 )
 target_link_libraries(ClassMngrNextWorkspace
+    PUBLIC
+        ClassMngrSignature
     PRIVATE
         ClassMngrBuildSettings
         ClassMngrNext::Application

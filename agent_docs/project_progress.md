@@ -32,9 +32,11 @@ recovery, and acceptance evidence.
 
 Phases 0–6 are Complete. Phase 7 started on the Heavy route on 2026-10-26.
 Slice 7A.1, the user-visible v2 profile-bootstrap stage, passed independent
-focused macOS Debug verification and is accepted. The next candidate is 7A.2,
-personal details and signature. Full setup-screen migration and the remaining
-7A file workflows are open; active candidates are tracked in
+focused macOS Debug verification and was committed as `d49f34fe`. Slice 7A.2,
+personal details and signature, passed functional persistence verification;
+7A.3 teacher entry is next. Setup-screen screenshot comparison remains open
+for the 7A parity gate. Full setup-screen migration and the remaining 7A file
+workflows are open; active candidates are tracked in
 `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
@@ -78,7 +80,8 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ### Current checkpoint — 2026-10-26 (Phase 7 started; 7A.1 selected)
 
-Phase 7 is in progress on the Heavy route. Slice 7A.1 adds a v2 user-visible
+Phase 7 is in progress on the Heavy route. Slice 7A.1, committed at
+`d49f34fe`, adds a v2 user-visible
 profile-bootstrap route backed by `WorkspaceStore`, with pending-state
 recovery, safe cancel/restore, and no recent-history write before setup is
 complete. Independent focused macOS Debug verification passed: affected
@@ -88,8 +91,14 @@ passed. The persistence acceptance uses
 `tests/fixtures/workspaces/representative_startup.sql` and reopens the seeded
 SQLite profile. The Windows preset was unavailable; no full suite,
 cross-platform build, packaged memory test, or Phase 7 gate was run. Slice
-7A.2, personal details and signature, is next; the full setup flow and
-remaining 7A file workflows remain open.
+Slice 7A.2, personal details and signature, passed its focused functional
+checks: five focused CTests, both new fixture-backed QtTests, six English/
+Korean and light/dark appearance cases, resource inventory validation, and
+diff-check. Image mode survives `.tps` reopen/resume; a failed personal save
+retains the original backup and seeded records. 7A.3 teacher entry is next.
+No screenshot comparison exists yet for the setup/personal-details screens;
+the 7A visual parity gate remains open. The Windows preset, full suite,
+cross-platform build, and packaging remain unverified.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

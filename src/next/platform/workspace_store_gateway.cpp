@@ -2,6 +2,8 @@
 
 #include "data/database/workspace_store.h"
 #include "next/platform/repository_error_code.h"
+#include "next/application/personal_details_save_use_case.h"
+#include "next/platform/workspace_store_personal_details_port.h"
 
 #include <QByteArray>
 #include <QString>
@@ -76,6 +78,24 @@ WorkspaceStoreGateway::WorkspaceStoreGateway()
 }
 
 WorkspaceStoreGateway::~WorkspaceStoreGateway() = default;
+
+Application::PersonalDetailsReadResult
+WorkspaceStoreGateway::readPersonalDetails() const
+{
+    WorkspaceStorePersonalDetailsPort port(*m_store);
+    const Application::PersonalDetailsReadQuery query(port);
+    return query.execute();
+}
+
+Application::PersonalDetailsSaveResult
+WorkspaceStoreGateway::savePersonalDetails(
+    const Application::PersonalDetailsSaveRequest& request
+    ) const
+{
+    WorkspaceStorePersonalDetailsPort port(*m_store);
+    const Application::PersonalDetailsSaveUseCase useCase(port);
+    return useCase.execute(request);
+}
 
 Domain::Result<Application::WorkspaceSession>
 WorkspaceStoreGateway::createWorkspace(

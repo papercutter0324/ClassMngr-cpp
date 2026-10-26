@@ -7,6 +7,7 @@
 #include "next/application/startup_workspace_policy.h"
 #include "next/application/application_runtime.h"
 #include "next/application/initial_setup_lifecycle.h"
+#include "next/application/personal_details_save.h"
 #include "next/application/workspace_contracts.h"
 #include "next/application/workspace_state.h"
 #include "next/bootstrap/startup_diagnostics_sink.h"
@@ -14,6 +15,7 @@
 #include "next/resources/resource_root_resolver.h"
 
 #include <QStringList>
+#include <QByteArray>
 
 #include <functional>
 #include <memory>
@@ -117,6 +119,14 @@ private:
     void resumeInitialSetupProfile();
     void restoreInitialSetupProfile();
     void cancelInitialSetupProfile();
+    [[nodiscard]] Application::PersonalDetailsReadResult
+    loadInitialSetupPersonalDetails() const;
+    [[nodiscard]] Application::PersonalDetailsSaveResult
+    saveInitialSetupPersonalDetails(
+        const Application::PersonalDetailsSaveRequest& request
+        ) const;
+    [[nodiscard]] Domain::Result<std::optional<QByteArray>>
+    chooseInitialSetupSignatureImage();
     [[nodiscard]] bool releaseWorkspace() noexcept;
     [[nodiscard]] std::optional<Application::ShutdownFailureReason>
     runShutdownSequence() noexcept;

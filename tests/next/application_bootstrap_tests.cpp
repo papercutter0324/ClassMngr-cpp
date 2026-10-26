@@ -12,19 +12,25 @@
 #include "next/ui/page_host.h"
 #include "next/ui/placeholder_page.h"
 #include "core/settingsmanager.h"
+#include "features/my_info/data/signature_image_processor.h"
 #include "data/database/workspace_store.h"
+#include "next/platform/workspace_store_personal_details_port.h"
 #include "ui/shared/state/option_state_keys.h"
 
 #include <QApplication>
 #include <QCryptographicHash>
+#include <QComboBox>
 #include <QEvent>
 #include <QFontDatabase>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QGroupBox>
+#include <QImage>
 #include <QPointer>
 #include <QPixmap>
 #include <QLabel>
+#include <QLineEdit>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -33,14 +39,18 @@
 #include <QStyleHints>
 #include <QStyle>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QSysInfo>
 #include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QSaveFile>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTreeWidget>
 #include <QTreeWidgetItemIterator>
 #include <QWidget>
+#include <QUuid>
 #include <QtTest/QtTest>
 
 #include <array>
@@ -71,6 +81,8 @@ private slots:
     void loadedPreferencesReachPagesAndFontStartupRestoresOnTeardown();
     void shellAppearanceUsesSelectedThemeAndLanguage_data();
     void shellAppearanceUsesSelectedThemeAndLanguage();
+    void initialSetupPersonalDetailsAppearance_data();
+    void initialSetupPersonalDetailsAppearance();
     void systemDefaultUsesFirstSupportedLocaleFromOrderedList();
     void systemDefaultFallsBackToSourceEnglishForUnsupportedLocales();
     void systemDefaultThemeFollowsCurrentStyleColorScheme();
@@ -97,6 +109,8 @@ private slots:
     void staleFirstRecentPathIsPrunedWithoutTryingLaterCandidates();
     void interruptedSetupOffersRecoveryBeforeAutoOpenOrRecentHistory();
     void createActionUsesSelectedPathAndDoesNotRecordPendingProfile();
+    void imageSignatureSaveReopensAndResumesFromFixture();
+    void failedPersonalDetailsSavePreservesReplacementBackup();
     void recentOpenErrorDoesNotFallThroughToLaterCandidates();
     void missingExplicitWorkspaceDoesNotCreateFileOrParent();
     void successfulStartupRetainsSessionAndReleasesStoreOnShutdown();
@@ -310,8 +324,11 @@ private:
 struct InitialSetupFileDialogProbe final
 {
     Application::FileDialogPath selectedPath;
+    std::optional<Application::FileDialogPath> openPath;
     std::optional<Application::SaveFileDialogRequest> lastSaveRequest;
+    std::optional<Application::OpenFileDialogRequest> lastOpenRequest;
     int saveCount = 0;
+    int openCount = 0;
 };
 
 class RecordingInitialSetupFileDialogPort final
@@ -327,10 +344,16 @@ public:
 
     [[nodiscard]] Domain::Result<
         Application::FileDialogResponse<Application::FileDialogPath>>
-    openOneFile(const Application::OpenFileDialogRequest&) override
+    openOneFile(const Application::OpenFileDialogRequest& request) override
     {
-        return unexpectedCall<
-            Application::FileDialogResponse<Application::FileDialogPath>>();
+        ++m_probe->openCount;
+        m_probe->lastOpenRequest = request;
+        return Domain::Result<
+            Application::FileDialogResponse<Application::FileDialogPath>>::success(
+                Application::FileDialogResponse<Application::FileDialogPath>{
+                    .selection = m_probe->openPath
+                }
+                );
     }
 
     [[nodiscard]] Domain::Result<
@@ -917,6 +940,207 @@ bool containsFontFamilyLike(const QStringList& families, const QString& name)
         [&name](const QString& family) {
             return family.contains(name, Qt::CaseInsensitive);
         }
+        );
+}
+
+bool executeWorkspaceSql(const QString& path, const QString& statement)
+{
+    const QString connectionName = QStringLiteral("setup-test-%1").arg(
+        QUuid::createUuid().toString(QUuid::WithoutBraces)
+        );
+    bool executed = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(path);
+        if (database.open())
+        {
+            QSqlQuery query(database);
+            executed = query.exec(statement);
+            database.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return executed;
+}
+
+QString workspaceFixturePath(const QString& fixtureName)
+{
+    return QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral("/tests/fixtures/workspaces/")
+        + fixtureName;
+}
+
+bool executeWorkspaceFixture(
+    const QString& profilePath,
+    const QString& fixtureName,
+    QString* errorMessage
+    )
+{
+    QFile fixture(workspaceFixturePath(fixtureName));
+    if (!fixture.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        if (errorMessage)
+        {
+            *errorMessage = fixture.errorString();
+        }
+        return false;
+    }
+    const QStringList statements = QString::fromUtf8(fixture.readAll())
+        .split(QLatin1Char(';'), Qt::SkipEmptyParts);
+
+    const QString connectionName = QStringLiteral("setup-fixture-%1").arg(
+        QUuid::createUuid().toString(QUuid::WithoutBraces)
+        );
+    bool executed = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(profilePath);
+        if (!database.open())
+        {
+            if (errorMessage)
+            {
+                *errorMessage = database.lastError().text();
+            }
+        }
+        else
+        {
+            executed = true;
+            QSqlQuery query(database);
+            for (const QString& rawStatement : statements)
+            {
+                const QString statement = rawStatement.trimmed();
+                if (statement.isEmpty())
+                {
+                    continue;
+                }
+                if (!query.exec(statement))
+                {
+                    if (errorMessage)
+                    {
+                        *errorMessage = QStringLiteral("%1: %2")
+                            .arg(statement.simplified().left(160),
+                                 query.lastError().text());
+                    }
+                    executed = false;
+                    break;
+                }
+            }
+            database.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return executed;
+}
+
+bool createWorkspaceWithFixture(
+    const QString& profilePath,
+    const QString& fixtureName,
+    QString* errorMessage
+    )
+{
+    {
+        WorkspaceStore store;
+        const RepositoryStatus opened = store.open(profilePath);
+        if (!opened)
+        {
+            if (errorMessage)
+            {
+                *errorMessage = opened.error().diagnostic;
+            }
+            return false;
+        }
+        store.close();
+    }
+    return executeWorkspaceFixture(profilePath, fixtureName, errorMessage);
+}
+
+struct RepresentativeProfileRecords final
+{
+    QStringList teachers;
+    QStringList classes;
+
+    friend bool operator==(
+        const RepresentativeProfileRecords&,
+        const RepresentativeProfileRecords&)
+        = default;
+};
+
+std::optional<RepresentativeProfileRecords> readRepresentativeProfileRecords(
+    const QString& profilePath,
+    QString* errorMessage
+    )
+{
+    WorkspaceStore store;
+    const RepositoryStatus opened = store.openExisting(profilePath);
+    if (!opened)
+    {
+        if (errorMessage)
+        {
+            *errorMessage = opened.error().diagnostic;
+        }
+        return std::nullopt;
+    }
+
+    RepresentativeProfileRecords records;
+    {
+        QSqlQuery query(store.database());
+        if (!query.exec(QStringLiteral(
+                "SELECT teacher_en FROM teachers ORDER BY id"))
+            )
+        {
+            if (errorMessage)
+            {
+                *errorMessage = query.lastError().text();
+            }
+            return std::nullopt;
+        }
+        while (query.next())
+        {
+            records.teachers.push_back(query.value(0).toString());
+        }
+
+        if (!query.exec(QStringLiteral(
+                "SELECT name FROM classes ORDER BY id"))
+            )
+        {
+            if (errorMessage)
+            {
+                *errorMessage = query.lastError().text();
+            }
+            return std::nullopt;
+        }
+        while (query.next())
+        {
+            records.classes.push_back(query.value(0).toString());
+        }
+    }
+    store.close();
+    return records;
+}
+
+std::optional<QByteArray> fileSha256(
+    const QString& path,
+    QString* errorMessage
+    )
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        if (errorMessage)
+        {
+            *errorMessage = file.errorString();
+        }
+        return std::nullopt;
+    }
+    return QCryptographicHash::hash(
+        file.readAll(),
+        QCryptographicHash::Sha256
         );
 }
 
@@ -1631,6 +1855,154 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage_data
         << QStringLiteral("light") << static_cast<int>(Application::Theme::Light);
     QTest::newRow("korean-dark") << QStringLiteral("ko_KR") << 5
         << QStringLiteral("dark") << static_cast<int>(Application::Theme::Dark);
+}
+
+void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance_data()
+{
+    QTest::addColumn<QString>("locale");
+    QTest::addColumn<int>("storedLanguage");
+    QTest::addColumn<QString>("theme");
+    QTest::addColumn<int>("storedTheme");
+    QTest::newRow("english-light") << QStringLiteral("en_US") << 1
+        << QStringLiteral("light") << static_cast<int>(Application::Theme::Light);
+    QTest::newRow("english-dark") << QStringLiteral("en_US") << 1
+        << QStringLiteral("dark") << static_cast<int>(Application::Theme::Dark);
+    QTest::newRow("korean-light") << QStringLiteral("ko_KR") << 5
+        << QStringLiteral("light") << static_cast<int>(Application::Theme::Light);
+    QTest::newRow("korean-dark") << QStringLiteral("ko_KR") << 5
+        << QStringLiteral("dark") << static_cast<int>(Application::Theme::Dark);
+}
+
+void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
+{
+    QFETCH(QString, locale);
+    QFETCH(int, storedLanguage);
+    QFETCH(QString, theme);
+    QFETCH(int, storedTheme);
+
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(storedLanguage, storedTheme, 0);
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(locale, theme));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString selectedProfilePath = temporaryDirectory.filePath(
+        QStringLiteral("appearance-setup-profile.tps")
+        );
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->selectedPath = Application::FileDialogPath(
+        selectedProfilePath.toUtf8().toStdString()
+        );
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams workspace;
+    workspace.commandLineArguments = QStringList{QStringLiteral("appearance-test")};
+    workspace.recentAutoOpenEnabled = false;
+    workspace.initialSetupRecoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    workspace.initialSetupFileDialogPortFactory = [fileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(
+            fileDialogProbe
+            );
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        QStringList{QStringLiteral("en-US")},
+        std::move(workspace),
+        [] { return std::make_unique<SilentStartupUpdateDispatcher>(); }
+        );
+    QVERIFY(bootstrap.start().succeeded());
+
+    Ui::InitialPage* const page = dynamic_cast<Ui::InitialPage*>(
+        bootstrap.shell()->pageHost().pageInstance(
+            QStringLiteral("initial_setup")
+            )
+        );
+    QVERIFY(page);
+    auto* const createButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCreateProfile")
+        );
+    QVERIFY(createButton);
+    createButton->click();
+
+    const bool korean = locale == QStringLiteral("ko_KR");
+    auto* const detailsGroup = page->findChild<QGroupBox*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalDetails")
+        );
+    auto* const nameLabel = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalNameLabel")
+        );
+    auto* const imageMode = page->findChild<QRadioButton*>(
+        QStringLiteral("classMngrNextInitialSetupSignatureImageMode")
+        );
+    auto* const typeMode = page->findChild<QRadioButton*>(
+        QStringLiteral("classMngrNextInitialSetupSignatureTypeMode")
+        );
+    auto* const chooseSignature = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupChooseSignature")
+        );
+    auto* const saveDetails = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalDetailsSave")
+        );
+    auto* const typedSignature = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTypedSignature")
+        );
+    auto* const preview = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupSignaturePreview")
+        );
+    QVERIFY(detailsGroup && nameLabel && imageMode && typeMode);
+    QVERIFY(chooseSignature && saveDetails && typedSignature && preview);
+    QVERIFY(!detailsGroup->isHidden());
+    QCOMPARE(
+        detailsGroup->title(),
+        korean ? QStringLiteral("정보 입력") : QStringLiteral("Add Your Information")
+        );
+    QCOMPARE(
+        nameLabel->text(),
+        korean ? QStringLiteral("내 이름 *") : QStringLiteral("My Name *")
+        );
+    QCOMPARE(
+        imageMode->text(),
+        korean ? QStringLiteral("이미지") : QStringLiteral("Image")
+        );
+    QCOMPARE(
+        typeMode->text(),
+        korean ? QStringLiteral("직접 입력") : QStringLiteral("Type")
+        );
+    QCOMPARE(
+        chooseSignature->text(),
+        korean ? QStringLiteral("서명 이미지 추가...")
+               : QStringLiteral("Add Signature Image...")
+        );
+    QCOMPARE(
+        saveDetails->text(),
+        korean ? QStringLiteral("변경 사항 저장") : QStringLiteral("Save Changes")
+        );
+    QCOMPARE(
+        application.styleSheet(),
+        readTextFile(QDir(resources.resourceRoot()).filePath(
+            QStringLiteral("assets/styles/%1.qss").arg(theme)
+            ))
+        );
+
+    typeMode->click();
+    QCOMPARE(
+        typedSignature->placeholderText(),
+        korean ? QStringLiteral("서명을 입력하세요")
+               : QStringLiteral("Type your signature")
+        );
+    typedSignature->setText(QString::fromUtf8("김선생님"));
+    QVERIFY(preview->text().isEmpty());
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
 }
 
 void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
@@ -3588,10 +3960,21 @@ createActionUsesSelectedPathAndDoesNotRecordPendingProfile()
     const QString selectedProfilePath = temporaryDirectory.filePath(
         QStringLiteral("selected-from-setup-action.tps")
         );
+    const QString selectedSignatureImagePath = temporaryDirectory.filePath(
+        QStringLiteral("selected-signature.png")
+        );
+    QImage signatureSource(4, 2, QImage::Format_RGB32);
+    signatureSource.fill(Qt::white);
+    signatureSource.setPixelColor(1, 0, Qt::black);
+    signatureSource.setPixelColor(2, 1, Qt::black);
+    QVERIFY(signatureSource.save(selectedSignatureImagePath, "PNG"));
     auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
     auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
     fileDialogProbe->selectedPath = Application::FileDialogPath(
         selectedProfilePath.toUtf8().toStdString()
+        );
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        selectedSignatureImagePath.toUtf8().toStdString()
         );
 
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
@@ -3665,6 +4048,157 @@ createActionUsesSelectedPathAndDoesNotRecordPendingProfile()
         QStringLiteral("Profile: %1").arg(QFileInfo(selectedProfilePath).absoluteFilePath())
         );
 
+    auto* const personalName = setupPage->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalName")
+        );
+    auto* const typedMode = setupPage->findChild<QRadioButton*>(
+        QStringLiteral("classMngrNextInitialSetupSignatureTypeMode")
+        );
+    auto* const imageMode = setupPage->findChild<QRadioButton*>(
+        QStringLiteral("classMngrNextInitialSetupSignatureImageMode")
+        );
+    auto* const chooseSignature = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupChooseSignature")
+        );
+    auto* const removeSignature = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupRemoveSignature")
+        );
+    auto* const signaturePreview = setupPage->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupSignaturePreview")
+        );
+    auto* const typedSignature = setupPage->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTypedSignature")
+        );
+    auto* const signatureFont = setupPage->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupSignatureFont")
+        );
+    auto* const savePersonalDetails = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalDetailsSave")
+        );
+    auto* const personalDetailsStatus = setupPage->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalDetailsStatus")
+        );
+    auto* const retryPersonalDetails = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalDetailsRetry")
+        );
+    auto* const cancelSetup = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCancel")
+        );
+    QVERIFY(personalName);
+    QVERIFY(typedMode);
+    QVERIFY(imageMode);
+    QVERIFY(chooseSignature);
+    QVERIFY(removeSignature);
+    QVERIFY(signaturePreview);
+    QVERIFY(typedSignature);
+    QVERIFY(signatureFont);
+    QVERIFY(savePersonalDetails);
+    QVERIFY(personalDetailsStatus);
+    QVERIFY(retryPersonalDetails);
+    QVERIFY(cancelSetup);
+
+    savePersonalDetails->click();
+    QCOMPARE(
+        personalDetailsStatus->text(),
+        QStringLiteral("Enter your name before saving.")
+        );
+
+    const QString savedName = QString::fromUtf8("김선생님 / 🧭");
+    const QString savedSignature = QString::fromUtf8("김선생님");
+    personalName->setText(savedName);
+    QVERIFY(imageMode->isChecked());
+    chooseSignature->click();
+    QCOMPARE(fileDialogProbe->openCount, 1);
+    QVERIFY(fileDialogProbe->lastOpenRequest.has_value());
+    QCOMPARE(
+        fileDialogProbe->lastOpenRequest->purpose,
+        Application::FileDialogPurpose::SignatureImage
+        );
+    QVERIFY(!signaturePreview->pixmap().isNull());
+    QVERIFY(removeSignature->isEnabled());
+    removeSignature->click();
+    QCOMPARE(
+        signaturePreview->text(),
+        QStringLiteral("No signature image added")
+        );
+    QVERIFY(!removeSignature->isEnabled());
+    chooseSignature->click();
+    QCOMPARE(fileDialogProbe->openCount, 2);
+    QVERIFY(!signaturePreview->pixmap().isNull());
+    QVERIFY(removeSignature->isEnabled());
+
+    typedMode->click();
+    typedSignature->setText(savedSignature);
+    QVERIFY(!signaturePreview->pixmap().isNull());
+    signatureFont->setCurrentIndex(2);
+    QVERIFY(executeWorkspaceSql(
+        selectedProfilePath,
+        QStringLiteral(
+            "ALTER TABLE app_settings RENAME TO app_settings_read_failure"
+            )
+        ));
+    retryPersonalDetails->click();
+    QVERIFY(personalDetailsStatus->text().startsWith(
+        QStringLiteral(
+            "Personal details could not be loaded. Your form is unchanged; retry to load saved values."
+            )
+        ));
+    QVERIFY(!retryPersonalDetails->isHidden());
+    QCOMPARE(personalName->text(), savedName);
+    QCOMPARE(typedSignature->text(), savedSignature);
+    QVERIFY(typedMode->isChecked());
+    QCOMPARE(signatureFont->currentIndex(), 2);
+    QVERIFY(!cancelSetup->isHidden());
+
+    QVERIFY(executeWorkspaceSql(
+        selectedProfilePath,
+        QStringLiteral(
+            "ALTER TABLE app_settings_read_failure RENAME TO app_settings"
+            )
+        ));
+    retryPersonalDetails->click();
+    QVERIFY(personalDetailsStatus->text().isEmpty());
+    QVERIFY(retryPersonalDetails->isHidden());
+    QCOMPARE(personalName->text(), savedName);
+    QCOMPARE(typedSignature->text(), savedSignature);
+    QVERIFY(typedMode->isChecked());
+    QCOMPARE(signatureFont->currentIndex(), 2);
+
+    QVERIFY(executeWorkspaceSql(
+        selectedProfilePath,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_initial_setup_ui_save
+            BEFORE INSERT ON app_settings
+            WHEN NEW.key = 'myInfo/typedSignatureText'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced setup details failure');
+            END
+        )")
+        ));
+
+    savePersonalDetails->click();
+    QVERIFY(personalDetailsStatus->text().startsWith(
+        QStringLiteral(
+            "Personal details could not be saved. Setup remains pending; retry to save."
+            )
+        ));
+    QCOMPARE(personalName->text(), savedName);
+    QCOMPARE(typedSignature->text(), savedSignature);
+    QVERIFY(typedMode->isChecked());
+    QCOMPARE(signatureFont->currentIndex(), 2);
+    QVERIFY(!cancelSetup->isHidden());
+
+    QVERIFY(executeWorkspaceSql(
+        selectedProfilePath,
+        QStringLiteral("DROP TRIGGER fail_initial_setup_ui_save")
+        ));
+    savePersonalDetails->click();
+    QCOMPARE(
+        personalDetailsStatus->text(),
+        QStringLiteral("Personal details saved. Setup is still pending.")
+        );
+    QVERIFY(!cancelSetup->isHidden());
+
     QCOMPARE(historyProbe->saveCount, 0);
     QVERIFY(historyProbe->saves.empty());
     QVERIFY(historyProbe->history.paths.empty());
@@ -3683,6 +4217,471 @@ createActionUsesSelectedPathAndDoesNotRecordPendingProfile()
     }
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams resumeSeams;
+    resumeSeams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    resumeSeams.recentAutoOpenEnabled = false;
+    resumeSeams.initialSetupRecoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    Bootstrap::ApplicationBootstrap resumedBootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(resumeSeams)
+        );
+    QVERIFY(resumedBootstrap.start().succeeded());
+    auto* const resumedPage = dynamic_cast<Ui::InitialPage*>(
+        resumedBootstrap.shell()->pageHost().pageInstance(
+            QStringLiteral("initial_setup")
+            )
+        );
+    QVERIFY(resumedPage);
+    auto* const resumeButton = resumedPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupResume")
+        );
+    QVERIFY(resumeButton);
+    QVERIFY(!resumeButton->isHidden());
+    resumeButton->click();
+
+    auto* const resumedName = resumedPage->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalName")
+        );
+    auto* const resumedSignature = resumedPage->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTypedSignature")
+        );
+    auto* const resumedMode = resumedPage->findChild<QRadioButton*>(
+        QStringLiteral("classMngrNextInitialSetupSignatureTypeMode")
+        );
+    auto* const resumedCancel = resumedPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCancel")
+        );
+    QVERIFY(resumedName);
+    QVERIFY(resumedSignature);
+    QVERIFY(resumedMode);
+    QVERIFY(resumedCancel);
+    QCOMPARE(resumedName->text(), savedName);
+    QCOMPARE(resumedSignature->text(), savedSignature);
+    QVERIFY(resumedMode->isChecked());
+    QVERIFY(!resumedCancel->isHidden());
+    QVERIFY(resumedBootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::imageSignatureSaveReopensAndResumesFromFixture()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("image-signature.tps")
+        );
+    const QString imagePath = temporaryDirectory.filePath(
+        QStringLiteral("fixture-signature.png")
+        );
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    QImage sourceImage(4, 2, QImage::Format_RGB32);
+    sourceImage.fill(Qt::white);
+    sourceImage.setPixelColor(1, 0, Qt::black);
+    sourceImage.setPixelColor(2, 1, Qt::black);
+    QVERIFY(sourceImage.save(imagePath, "PNG"));
+
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->selectedPath = Application::FileDialogPath(
+        profilePath.toUtf8().toStdString()
+        );
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        imagePath.toUtf8().toStdString()
+        );
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.initialSetupFileDialogPortFactory = [fileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(
+            fileDialogProbe
+            );
+    };
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        bootstrap.shell()->pageHost().pageInstance(
+            QStringLiteral("initial_setup")
+            )
+        );
+    QVERIFY(page);
+    auto* const createButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCreateProfile")
+        );
+    QVERIFY(createButton);
+    createButton->click();
+    QVERIFY(QFileInfo::exists(profilePath));
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+
+    QString fixtureError;
+    QVERIFY2(
+        executeWorkspaceFixture(
+            profilePath,
+            QStringLiteral("initial_setup_personal_details.sql"),
+            &fixtureError
+            ),
+        qPrintable(fixtureError)
+        );
+    page->refreshPersonalDetails();
+
+    auto* const nameEdit = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalName")
+        );
+    auto* const imageMode = page->findChild<QRadioButton*>(
+        QStringLiteral("classMngrNextInitialSetupSignatureImageMode")
+        );
+    auto* const chooseSignature = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupChooseSignature")
+        );
+    auto* const saveDetails = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalDetailsSave")
+        );
+    auto* const detailsStatus = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalDetailsStatus")
+        );
+    auto* const preview = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupSignaturePreview")
+        );
+    QVERIFY(nameEdit && imageMode && chooseSignature && saveDetails);
+    QVERIFY(detailsStatus && preview);
+    QCOMPARE(nameEdit->text(), QStringLiteral("Fixture Teacher"));
+    QVERIFY(imageMode->isChecked());
+
+    chooseSignature->click();
+    QCOMPARE(fileDialogProbe->openCount, 1);
+    QVERIFY(!preview->pixmap().isNull());
+    saveDetails->click();
+    QCOMPARE(
+        detailsStatus->text(),
+        QStringLiteral("Personal details saved. Setup is still pending.")
+        );
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+
+    QFile sourceFile(imagePath);
+    QVERIFY(sourceFile.open(QIODevice::ReadOnly));
+    const QByteArray sourceBytes = sourceFile.readAll();
+    const QByteArray pagePreparedImage =
+        SignatureImage::prepareForEmbedding(sourceBytes);
+    const QByteArray persistedImage =
+        SignatureImage::prepareForEmbedding(pagePreparedImage);
+    const QByteArray reloadedImage =
+        SignatureImage::prepareForEmbedding(persistedImage);
+    QVERIFY(!reloadedImage.isEmpty());
+
+    WorkspaceStore reopened;
+    QVERIFY(reopened.openExisting(profilePath));
+    Platform::WorkspaceStorePersonalDetailsPort detailsPort(reopened);
+    const Application::PersonalDetailsReadQuery readDetails(detailsPort);
+    const auto savedDetails = readDetails.execute();
+    QVERIFY(savedDetails);
+    QCOMPARE(savedDetails.value().name, std::string("Fixture Teacher"));
+    QCOMPARE(
+        savedDetails.value().campus.value(),
+        std::string("Fixture Campus")
+        );
+    QCOMPARE(
+        savedDetails.value().zoomLoginId,
+        std::string("fixture.zoom@example.test")
+        );
+    QCOMPARE(savedDetails.value().zoomPassword, std::string("fixture-only"));
+    QVERIFY(!savedDetails.value().zoomNotAvailable);
+    QCOMPARE(
+        savedDetails.value().signatureMode,
+        Application::PersonalSignatureMode::Image
+        );
+    QCOMPARE(
+        savedDetails.value().signatureImage.value(),
+        std::string(
+            reloadedImage.constData(),
+            static_cast<std::size_t>(reloadedImage.size())
+            )
+        );
+    SettingsRepository* const settings = reopened.settingsRepository();
+    QVERIFY(settings);
+    const auto storedSignatureMode = settings->loadSetting(
+        QStringLiteral("myInfo/signatureMode")
+        );
+    const auto storedSignatureImage = settings->loadSetting(
+        QStringLiteral("myInfo/signatureImage")
+        );
+    QVERIFY(storedSignatureMode);
+    QVERIFY(storedSignatureImage);
+    QCOMPARE(storedSignatureMode->toInt(), 0);
+    QCOMPARE(
+        storedSignatureImage->toString(),
+        QString::fromLatin1(persistedImage.toBase64())
+        );
+    reopened.close();
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams resumeSeams;
+    resumeSeams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    resumeSeams.recentAutoOpenEnabled = false;
+    resumeSeams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    Bootstrap::ApplicationBootstrap resumedBootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(resumeSeams)
+        );
+    QVERIFY(resumedBootstrap.start().succeeded());
+    auto* const resumedPage = dynamic_cast<Ui::InitialPage*>(
+        resumedBootstrap.shell()->pageHost().pageInstance(
+            QStringLiteral("initial_setup")
+            )
+        );
+    QVERIFY(resumedPage);
+    auto* const resumeButton = resumedPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupResume")
+        );
+    QVERIFY(resumeButton);
+    QVERIFY(!resumeButton->isHidden());
+    resumeButton->click();
+    auto* const resumedName = resumedPage->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalName")
+        );
+    auto* const resumedImageMode = resumedPage->findChild<QRadioButton*>(
+        QStringLiteral("classMngrNextInitialSetupSignatureImageMode")
+        );
+    auto* const resumedPreview = resumedPage->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupSignaturePreview")
+        );
+    auto* const cancelSetup = resumedPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCancel")
+        );
+    QVERIFY(resumedName && resumedImageMode && resumedPreview && cancelSetup);
+    QCOMPARE(resumedName->text(), QStringLiteral("Fixture Teacher"));
+    QVERIFY(resumedImageMode->isChecked());
+    QVERIFY(!resumedPreview->pixmap().isNull());
+    QVERIFY(!cancelSetup->isHidden());
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+    QVERIFY(resumedBootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+failedPersonalDetailsSavePreservesReplacementBackup()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("representative-original.tps")
+        );
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    QString fixtureError;
+    QVERIFY2(
+        createWorkspaceWithFixture(
+            profilePath,
+            QStringLiteral("representative_startup.sql"),
+            &fixtureError
+            ),
+        qPrintable(fixtureError)
+        );
+
+    const RepresentativeProfileRecords expectedRecords{
+        .teachers = {
+            QStringLiteral("Dana Kim"),
+            QStringLiteral("Jordan Lee"),
+            QStringLiteral("Minseo Park"),
+            QStringLiteral("Eugene Choi")
+        },
+        .classes = {
+            QStringLiteral("Bluebird E4"),
+            QStringLiteral("Falcon E5"),
+            QStringLiteral("Hawk M1"),
+            QStringLiteral("Owl M2"),
+            QStringLiteral("Robin E6"),
+            QStringLiteral("Swift M3"),
+            QStringLiteral("Cedar Intensive"),
+            QStringLiteral("Maple Intensive")
+        }
+    };
+    const auto originalRecords = readRepresentativeProfileRecords(
+        profilePath,
+        &fixtureError
+        );
+    QVERIFY2(originalRecords.has_value(), qPrintable(fixtureError));
+    QCOMPARE(*originalRecords, expectedRecords);
+
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->selectedPath = Application::FileDialogPath(
+        profilePath.toUtf8().toStdString()
+        );
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"), profilePath
+    };
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.initialSetupFileDialogPortFactory = [fileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(
+            fileDialogProbe
+            );
+    };
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    const auto initialSetupPageId = Ui::PageId::fromString(
+        QStringLiteral("initial_setup")
+        );
+    QVERIFY(initialSetupPageId);
+    QVERIFY(bootstrap.shell()->navigateTo(*initialSetupPageId));
+
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        bootstrap.shell()->pageHost().pageInstance(
+            QStringLiteral("initial_setup")
+            )
+        );
+    QVERIFY(page);
+    auto* const createButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCreateProfile")
+        );
+    QVERIFY(createButton);
+    QVERIFY(!createButton->isHidden());
+    createButton->click();
+    QCOMPARE(fileDialogProbe->saveCount, 1);
+    QVERIFY(QFileInfo::exists(profilePath));
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+
+    QFile journalBeforeFile(recoveryJournalPath);
+    QVERIFY(journalBeforeFile.open(QIODevice::ReadOnly));
+    const QByteArray journalBefore = journalBeforeFile.readAll();
+    journalBeforeFile.close();
+    const QJsonDocument journalDocument = QJsonDocument::fromJson(journalBefore);
+    QVERIFY(journalDocument.isObject());
+    const QJsonObject journalRecord = journalDocument.object();
+    QCOMPARE(
+        journalRecord.value(QStringLiteral("profile")).toString(),
+        QFileInfo(profilePath).absoluteFilePath()
+        );
+    const QString backupPath = journalRecord.value(
+        QStringLiteral("originalBackup")
+        ).toString();
+    QVERIFY(!backupPath.isEmpty());
+    QVERIFY(QFileInfo::exists(backupPath));
+
+    const auto backupHashBefore = fileSha256(backupPath, &fixtureError);
+    QVERIFY2(backupHashBefore.has_value(), qPrintable(fixtureError));
+    const auto backupRecordsBefore = readRepresentativeProfileRecords(
+        backupPath,
+        &fixtureError
+        );
+    QVERIFY2(backupRecordsBefore.has_value(), qPrintable(fixtureError));
+    QCOMPARE(*backupRecordsBefore, expectedRecords);
+
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_replacement_personal_details_save
+            BEFORE INSERT ON app_settings
+            WHEN NEW.key = 'myInfo/name'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced replacement details failure');
+            END
+        )")
+        ));
+    auto* const nameEdit = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalName")
+        );
+    auto* const saveDetails = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalDetailsSave")
+        );
+    auto* const detailsStatus = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalDetailsStatus")
+        );
+    auto* const setupStatus = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupStatus")
+        );
+    auto* const cancelSetup = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCancel")
+        );
+    QVERIFY(nameEdit && saveDetails && detailsStatus && setupStatus && cancelSetup);
+    nameEdit->setText(QString::fromUtf8("교체 시도"));
+    saveDetails->click();
+    QVERIFY(detailsStatus->text().startsWith(
+        QStringLiteral(
+            "Personal details could not be saved. Setup remains pending; retry to save."
+            )
+        ));
+    QCOMPARE(setupStatus->text(), QStringLiteral("Profile created. Setup is pending."));
+    QCOMPARE(nameEdit->text(), QString::fromUtf8("교체 시도"));
+    QVERIFY(!cancelSetup->isHidden());
+    QVERIFY(QFileInfo::exists(profilePath));
+    QVERIFY(QFileInfo::exists(backupPath));
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+
+    QFile journalAfterFile(recoveryJournalPath);
+    QVERIFY(journalAfterFile.open(QIODevice::ReadOnly));
+    QCOMPARE(journalAfterFile.readAll(), journalBefore);
+    journalAfterFile.close();
+    const auto backupHashAfter = fileSha256(backupPath, &fixtureError);
+    QVERIFY2(backupHashAfter.has_value(), qPrintable(fixtureError));
+    QCOMPARE(*backupHashAfter, *backupHashBefore);
+    const auto backupRecordsAfter = readRepresentativeProfileRecords(
+        backupPath,
+        &fixtureError
+        );
+    QVERIFY2(backupRecordsAfter.has_value(), qPrintable(fixtureError));
+    QCOMPARE(*backupRecordsAfter, expectedRecords);
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    QVERIFY(QFileInfo::exists(backupPath));
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+    QFile journalAfterShutdown(recoveryJournalPath);
+    QVERIFY(journalAfterShutdown.open(QIODevice::ReadOnly));
+    QCOMPARE(journalAfterShutdown.readAll(), journalBefore);
+    journalAfterShutdown.close();
     application.setStyleSheet(previousStyleSheet);
 }
 

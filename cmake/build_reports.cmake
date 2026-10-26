@@ -65,6 +65,7 @@ set(_classmngr_qt_module_report_targets
     ClassMngrNext
     ClassMngr
     ClassMngrRuntime
+    ClassMngrSignature
     ClassMngrCore
     ClassMngrData
     ClassMngrDomain

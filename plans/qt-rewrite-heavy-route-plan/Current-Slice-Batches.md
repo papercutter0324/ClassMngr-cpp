@@ -20,13 +20,13 @@ Discovery is complete from two independent Explorer maps. Ordered candidates:
 14. Normal replacement and interrupted-create recovery.
 15. Schema-v6 `.db` input and native `.tps` normalization.
 
-Candidate #1, the user-visible v2 profile-bootstrap stage, is verified and
-accepted; see the [Phase 7 progress log](08-Phase-7-Feature-Migration.md#progress-log)
-for evidence and limits. Current candidate: **#2 — setup personal details and
-signature**. Batch 1 remains active and unpushed. The implementation commit is
-next; no commit hash yet.
+Candidate #1, the user-visible v2 profile-bootstrap stage, is accepted and
+committed as `d49f34fe`. Candidate #2, setup personal details and signature, is
+functionally verified; its screenshot/reference comparison remains an open 7A
+parity item because no matching Phase 0/7 screenshot exists. See the [Phase 7
+progress log](08-Phase-7-Feature-Migration.md#progress-log) for evidence and
+limits. Current candidate: **#3 — setup teacher entry**. Batch 1 remains active
+and unpushed. Next-batch discovery has not started.
 
 Import, export, open, and save failure handling belongs to each owning
 candidate, not a separate errors-only slice. No other slices were found.
-
-Next-batch discovery has not started.

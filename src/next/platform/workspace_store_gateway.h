@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/personal_details_save.h"
 #include "next/application/workspace_contracts.h"
 
 #include <memory>
@@ -47,6 +48,14 @@ public:
     exportWorkspace(
         const Application::ExportWorkspaceRequest& request
         ) override;
+
+    // Setup feature operations share the active store owned by this gateway.
+    [[nodiscard]] Application::PersonalDetailsReadResult
+    readPersonalDetails() const;
+    [[nodiscard]] Application::PersonalDetailsSaveResult
+    savePersonalDetails(
+        const Application::PersonalDetailsSaveRequest& request
+        ) const;
 
 private:
     [[nodiscard]] Domain::Result<Application::WorkspaceSession> sessionForOpenStore() const;

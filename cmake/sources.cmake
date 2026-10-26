@@ -186,6 +186,28 @@ classmngr_add_production_objects(
         Qt6::Widgets
 )
 
+add_library(ClassMngrSignature STATIC
+    ${CLASSMNGR_SIGNATURE_SOURCES}
+)
+target_compile_features(ClassMngrSignature
+    PUBLIC
+        cxx_std_23
+)
+target_include_directories(ClassMngrSignature
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrSignature
+    PUBLIC
+        ClassMngrBuildSettings
+        Qt6::Gui
+)
+set_target_properties(ClassMngrSignature
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+
 # Keep the complete legacy runtime module set available to the application and
 # focused tests, including QuickControls2 dependencies discovered from QML.
 set(_classmngr_legacy_runtime_dependencies
@@ -218,6 +240,7 @@ add_library(ClassMngrRuntime STATIC
 target_link_libraries(ClassMngrRuntime
     PUBLIC
         ClassMngrBuildSettings
+        ClassMngrSignature
         ClassMngrWorkspaceStore
         ${_classmngr_legacy_runtime_dependencies}
     PRIVATE
@@ -267,6 +290,7 @@ if(APPLE AND BUILD_TESTING)
     target_link_libraries(ClassMngrTestRuntime
         PUBLIC
             ClassMngrBuildSettings
+            ClassMngrSignature
             ClassMngrWorkspaceStore
             ${_classmngr_legacy_runtime_dependencies}
         PRIVATE

@@ -3065,6 +3065,11 @@ Use Open Teacher Profile to reopen it.</source>
         <source>No signature image added</source>
         <translation>추가된 서명 이미지 없음</translation>
     </message>
+    <message><source>Image</source><translation>이미지</translation></message>
+    <message><source>Type</source><translation>직접 입력</translation></message>
+    <message><source>Type your signature</source><translation>서명을 입력하세요</translation></message>
+    <message><source>Choose a style</source><translation>스타일 선택</translation></message>
+    <message><source>Type your signature to see a preview.</source><translation>미리 보기를 보려면 서명을 입력하세요.</translation></message>
 </context>
 <context>
     <name>QObject</name>
@@ -9913,5 +9918,17 @@ Version: %2</source>
     <message><source>Setup was canceled.</source><translation>설정을 취소했습니다.</translation></message>
     <message><source>The setup could not be canceled. The recovery files are still available.</source><translation>설정을 취소할 수 없습니다. 복구 파일은 그대로 보관되어 있습니다.</translation></message>
     <message><source>The setup recovery record could not be read. Keep the recovery files in place and restart after resolving the issue.</source><translation>설정 복구 기록을 읽을 수 없습니다. 복구 파일을 그대로 두고 문제를 해결한 뒤 다시 시작하세요.</translation></message>
+</context>
+<context>
+    <name>InitialSetupPersonalDetailsPage</name>
+    <message><source>Add Your Information</source><translation>정보 입력</translation></message>
+    <message><source>Retry</source><translation>다시 시도</translation></message>
+    <message><source>Save Changes</source><translation>변경 사항 저장</translation></message>
+    <message><source>The signature image could not be selected: %1</source><translation>서명 이미지를 선택할 수 없습니다: %1</translation></message>
+    <message><source>Personal details could not be loaded. Your form is unchanged; retry to load saved values.</source><translation>개인 정보를 불러오지 못했습니다. 입력한 내용은 그대로 유지됩니다. 저장된 값을 다시 불러오려면 다시 시도하세요.</translation></message>
+    <message><source>Load the saved personal details before saving.</source><translation>저장하기 전에 개인 정보를 불러오세요.</translation></message>
+    <message><source>Enter your name before saving.</source><translation>저장하기 전에 이름을 입력하세요.</translation></message>
+    <message><source>Personal details could not be saved. Setup remains pending; retry to save.</source><translation>개인 정보를 저장하지 못했습니다. 초기 설정은 계속 진행 중입니다. 다시 시도하여 저장하세요.</translation></message>
+    <message><source>Personal details saved. Setup is still pending.</source><translation>개인 정보를 저장했습니다. 초기 설정은 계속 진행 중입니다.</translation></message>
 </context>
 </TS>

@@ -23,6 +23,7 @@
 #include <QApplication>
 #include <QCoreApplication>
 #include <QDebug>
+#include <QFile>
 #include <QFileInfo>
 #include <QLocale>
 #include <QStringList>
@@ -700,7 +701,18 @@ Application::StartupResult ApplicationBootstrap::start()
                         .createProfile = [this] { beginInitialSetupProfile(); },
                         .resumeSetup = [this] { resumeInitialSetupProfile(); },
                         .restoreSetup = [this] { restoreInitialSetupProfile(); },
-                        .cancelSetup = [this] { cancelInitialSetupProfile(); }
+                        .cancelSetup = [this] { cancelInitialSetupProfile(); },
+                        .loadPersonalDetails = [this] {
+                            return loadInitialSetupPersonalDetails();
+                        },
+                        .savePersonalDetails = [this](
+                            const Application::PersonalDetailsSaveRequest& request
+                            ) {
+                            return saveInitialSetupPersonalDetails(request);
+                        },
+                        .chooseSignatureImage = [this] {
+                            return chooseInitialSetupSignatureImage();
+                        }
                     };
                 }));
             if (!registration)
@@ -1421,6 +1433,169 @@ void ApplicationBootstrap::cancelInitialSetupProfile()
               "InitialPage",
               "The setup could not be canceled. The recovery files are still available."
               );
+}
+
+Application::PersonalDetailsReadResult
+ApplicationBootstrap::loadInitialSetupPersonalDetails() const
+{
+    if (!m_initialSetupLifecycle
+        || !m_initialSetupLifecycle->hasPendingSetup())
+    {
+        return Application::PersonalDetailsReadResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "No setup profile is active.",
+            .recoverable = true
+        });
+    }
+
+    auto* const storeGateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+        m_workspaceGateway.get()
+        );
+    if (!storeGateway)
+    {
+        return Application::PersonalDetailsReadResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "The setup profile settings store is unavailable.",
+            .recoverable = true
+        });
+    }
+
+    return storeGateway->readPersonalDetails();
+}
+
+Application::PersonalDetailsSaveResult
+ApplicationBootstrap::saveInitialSetupPersonalDetails(
+    const Application::PersonalDetailsSaveRequest& request
+    ) const
+{
+    if (!m_initialSetupLifecycle
+        || !m_initialSetupLifecycle->hasPendingSetup())
+    {
+        return Application::PersonalDetailsSaveResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "No setup profile is active.",
+            .recoverable = true
+        });
+    }
+
+    auto* const storeGateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+        m_workspaceGateway.get()
+        );
+    if (!storeGateway)
+    {
+        return Application::PersonalDetailsSaveResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "The setup profile settings store is unavailable.",
+            .recoverable = true
+        });
+    }
+
+    return storeGateway->savePersonalDetails(request);
+}
+
+Domain::Result<std::optional<QByteArray>>
+ApplicationBootstrap::chooseInitialSetupSignatureImage()
+{
+    if (!m_initialSetupLifecycle
+        || !m_initialSetupLifecycle->hasPendingSetup())
+    {
+        return Domain::Result<std::optional<QByteArray>>::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "No setup profile is active.",
+            .recoverable = true
+        });
+    }
+
+    const QByteArray title = QCoreApplication::translate(
+        "PersonalDetailsPage",
+        "Choose Signature Image"
+        ).toUtf8();
+    const QByteArray supportedImages = QCoreApplication::translate(
+        "PersonalDetailsPage",
+        "Supported Images (%1)"
+        ).arg(QStringLiteral("*.png *.jpg *.jpeg *.bmp *.gif *.webp")).toUtf8();
+    const Application::OpenFileDialogRequest request{
+        .purpose = Application::FileDialogPurpose::SignatureImage,
+        .title = std::string(title.constData(),
+                             static_cast<std::size_t>(title.size())),
+        .nameFilters = {
+            std::string(
+                supportedImages.constData(),
+                static_cast<std::size_t>(supportedImages.size())
+                )
+        }
+    };
+
+    using Response = Application::FileDialogResponse<
+        Application::FileDialogPath>;
+    const Domain::Result<Response> selected = [&]() -> Domain::Result<Response> {
+        if (m_startupWorkspaceSeams.initialSetupFileDialogPortFactory)
+        {
+            std::unique_ptr<Application::FileDialogPort> fileDialog =
+                m_startupWorkspaceSeams.initialSetupFileDialogPortFactory();
+            if (!fileDialog)
+            {
+                return Domain::Result<Response>::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = "The signature image file dialog is unavailable.",
+                    .recoverable = true
+                });
+            }
+            return fileDialog->openOneFile(request);
+        }
+
+        if (!m_shell)
+        {
+            return Domain::Result<Response>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "The signature image file dialog is unavailable.",
+                .recoverable = true
+            });
+        }
+
+        Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+            directoryPreferences;
+        Ui::QtFileDialogPresenter fileDialog(directoryPreferences, m_shell.get());
+        return fileDialog.openOneFile(request);
+    }();
+
+    if (!selected)
+    {
+        return Domain::Result<std::optional<QByteArray>>::failure(
+            selected.error()
+            );
+    }
+    if (!selected.value().selection.has_value())
+    {
+        return Domain::Result<std::optional<QByteArray>>::success(std::nullopt);
+    }
+
+    const std::string& pathBytes = selected.value().selection->value();
+    const QString path = QString::fromUtf8(
+        pathBytes.data(),
+        static_cast<qsizetype>(pathBytes.size())
+        );
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        const QByteArray diagnostic = file.errorString().toUtf8();
+        std::string message = "The selected signature image could not be opened.";
+        if (!diagnostic.isEmpty())
+        {
+            message.append(" ");
+            message.append(
+                diagnostic.constData(),
+                static_cast<std::size_t>(diagnostic.size())
+                );
+        }
+        return Domain::Result<std::optional<QByteArray>>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = std::move(message),
+            .recoverable = true
+        });
+    }
+
+    return Domain::Result<std::optional<QByteArray>>::success(file.readAll());
 }
 
 bool ApplicationBootstrap::releaseWorkspace() noexcept
