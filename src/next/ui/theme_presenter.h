@@ -1,6 +1,6 @@
 #pragma once
 
-#include "next/application/theme_preferences_port.h"
+#include "next/application/preferences_model.h"
 #include "next/application/user_preferences_state.h"
 #include "next/resources/resource_loader.h"
 
@@ -22,7 +22,7 @@ public:
         QApplication& application,
         Resources::ResourceLoader& resourceLoader,
         Resources::ResourceScope startupScope,
-        Application::ThemePreferencesPort& preferences,
+        Application::PreferencesModel& preferences,
         ColorSchemeProvider colorSchemeProvider = {}
         );
     ~ThemePresenter();
@@ -31,13 +31,11 @@ public:
     ThemePresenter& operator=(const ThemePresenter&) = delete;
 
     // Startup uses the value already read at the settings stage and never
-    // writes it back. Application::Theme is the persisted port vocabulary.
-    [[nodiscard]] Domain::Result<void> applyStartupPreference(
-        Application::Theme preference
-        );
+    // writes it back.
+    [[nodiscard]] Domain::Result<void> applyStartupPreference();
 
     // This value-only seam is ready for the future preference action consumer.
-    // It persists before changing the installed stylesheet or active value.
+    // It stages QSS for coherent observers and restores it on save failure.
     [[nodiscard]] Domain::Result<void> changePreference(
         Application::ThemePreference preference
         );
@@ -67,13 +65,14 @@ private:
     QApplication& m_application;
     Resources::ResourceLoader& m_resourceLoader;
     Resources::ResourceScope m_startupScope;
-    Application::ThemePreferencesPort& m_preferences;
+    Application::PreferencesModel& m_preferences;
     ColorSchemeProvider m_colorSchemeProvider;
     std::optional<Resources::ScopedResource<QString>> m_activeStylesheet;
     std::optional<Application::ThemePreference> m_activePreference;
     std::optional<Appearance> m_activeAppearance;
     QString m_previousApplicationStylesheet;
     bool m_applicationStylesheetInstalled = false;
+    bool m_applying = false;
 };
 
 }  // namespace ClassMngr::Next::Ui

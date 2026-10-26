@@ -38,8 +38,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 is active on the Heavy route. F1514–F1523 are accepted;
-  F1524 — other presentation preferences — is next. Batch 1's ordered candidates are in
+- Current note: Phase 6 is active on the Heavy route. F1514–F1524 are accepted;
+  F1525 — shared model/view primitives — is next. Batch 1's ordered candidates are in
   the shared slice-batch tracker. The existing Staff Directory model/view and
   bounded-widget test are the planned representative-table gate
   evidence; its full feature migration remains in Phase 7C.
@@ -239,6 +239,37 @@ resource-load/write failures, persistence ordering, no-op behavior, and
 stylesheet restoration. `git diff --check` passed. No full suite,
 cross-platform build, or screenshot comparison ran; appearance evidence remains
 F1527.
+
+### F1524 — complete — 2026-10-26
+
+Added validated `FontSize` to `UserPreferencesState`, a Qt-free aggregate
+snapshot adapter over the existing typed preference ports, and a
+SettingsManager composition for complete startup reads and sequential writes.
+The Next bootstrap now loads one `PreferencesModel` for startup language,
+theme, and font selection; `ApplicationShell` and `PageHost` pass that same
+model through `PageContext` for future page actions. `ThemePresenter` stages
+the candidate QSS so observers see a style matching the committed preference,
+and restores the old style when persistence fails. Startup font selection
+preserves the current locale-dependent font family and size rules and restores
+the prior application font during teardown.
+
+Snapshot writes are sequential and non-atomic: an error stops later writes,
+leaves earlier writes in place, and keeps the model dirty so a full-snapshot
+retry can repair storage. The existing teacher and PowerPoint writers return
+`void`, so their write success cannot be checked. Global window/splitter state
+remains deferred because the keys have no active callers; current workspace
+campus data and per-dialog geometry remain separate. Legacy preference
+controllers and feature consumers were not migrated.
+
+Independent incremental macOS Debug build covered `ClassMngrNext` and the
+Bootstrap, ThemePresenter, PageHost, Navigation, PreferencesModel,
+ApplicationUserPreferences, PreferencesSnapshotAdapter, FontSizePresenter,
+and SettingsManagerPreferencesPort tests. Focused CTest passed 9/9. Coverage
+includes full-state round trips, partial-write/retry, startup preference
+selection, shared page context, font restoration, theme rollback, observer
+visibility, and stylesheet resource lifetime. `git diff --check` passed. No
+full suite, cross-platform build, or appearance screenshots ran; screenshots
+and shell appearance checks remain F1527.
 
 ## Objective
 

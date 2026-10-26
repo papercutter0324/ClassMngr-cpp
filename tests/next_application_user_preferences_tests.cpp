@@ -19,6 +19,7 @@ class NextApplicationUserPreferencesTests final : public QObject
 private slots:
     void defaultsMatchVerifiedLegacyDefaults();
     void enumPreferencesAcceptEveryDeclaredValue();
+    void fontSizesValidateAndParticipateInEquality();
     void flagsAcceptBothValues();
     void timeoutChoiceConversionsAreClosedAndExplicit();
     void validTimeoutsUpdateTheSnapshot();
@@ -34,6 +35,7 @@ void NextApplicationUserPreferencesTests::defaultsMatchVerifiedLegacyDefaults()
     UserPreferencesState state;
     const UserPreferencesSnapshot snapshot = state.snapshot();
 
+    QCOMPARE(snapshot.fontSize(), FontSize::Normal);
     QCOMPARE(snapshot.themePreference(), ThemePreference::SystemDefault);
     QCOMPARE(snapshot.languagePreference(), LanguagePreference::SystemDefault);
     QVERIFY(snapshot.sidebarTooltipsEnabled());
@@ -77,6 +79,23 @@ void NextApplicationUserPreferencesTests::enumPreferencesAcceptEveryDeclaredValu
         state.snapshot().languagePreference(),
         LanguagePreference::SystemDefault
         );
+}
+
+void NextApplicationUserPreferencesTests::fontSizesValidateAndParticipateInEquality()
+{
+    UserPreferencesState state;
+    const auto original = state;
+    for (const auto size : {FontSize::Small, FontSize::Normal, FontSize::Large, FontSize::ExtraLarge})
+    {
+        QVERIFY(state.setFontSize(size));
+        QCOMPARE(state.snapshot().fontSize(), size);
+    }
+    QVERIFY(state != original);
+    const auto before = state.snapshot();
+    const auto invalid = state.setFontSize(static_cast<FontSize>(99));
+    QVERIFY(!invalid);
+    QCOMPARE(invalid.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(state.snapshot(), before);
 }
 
 void NextApplicationUserPreferencesTests::flagsAcceptBothValues()

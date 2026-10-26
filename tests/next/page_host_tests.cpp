@@ -1,3 +1,4 @@
+#include "preferences_test_ports.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_scope.h"
@@ -220,6 +221,7 @@ class PageHostTests final : public QObject
 
 private slots:
     void initTestCase();
+    void preferencesModelIsSharedThroughPageContext();
     void descriptorRegistrationRetainsMetadataWithoutConstructingPages();
     void invalidAndDuplicateDescriptorsAreRejected();
     void lifecycleStatesAreQueryableObservableAndRejectReentrantMutations();
@@ -227,6 +229,7 @@ private slots:
     void factoryAndActivationFailuresPreserveTheCurrentPage();
 
 private:
+    Test::MemoryPreferences m_preferences;
     std::unique_ptr<Resources::ResourceLoader> m_loader;
 };
 
@@ -245,9 +248,33 @@ void PageHostTests::initTestCase()
     QCOMPARE(descriptor->streamabilityStatus(), QStringLiteral("candidate_file_backed"));
 }
 
+void PageHostTests::preferencesModelIsSharedThroughPageContext()
+{
+    Ui::PageHost host(*m_loader, m_preferences.model);
+    Application::PreferencesModel* factoryModel = nullptr;
+    auto descriptor = Ui::PageDescriptor{
+        .id = *Ui::PageId::fromString(QStringLiteral("preferences-probe")),
+        .label = QStringLiteral("Preferences probe"),
+        .factory = [&](const Ui::PageContext& context) -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            factoryModel = &context.preferences();
+            return std::make_unique<Ui::Page>(context);
+        }
+    };
+    QVERIFY(host.registerPage(std::move(descriptor)));
+    QVERIFY(host.activatePage(QStringLiteral("preferences-probe")));
+    QCOMPARE(factoryModel, &m_preferences.model);
+    auto* page = host.pageInstance(QStringLiteral("preferences-probe"));
+    QVERIFY(page);
+    QCOMPARE(&page->resourceContext().preferences(), &m_preferences.model);
+    auto candidate = m_preferences.model.state();
+    QVERIFY(candidate.setFontSize(Application::FontSize::Large));
+    QVERIFY(m_preferences.model.apply(candidate));
+    QCOMPARE(page->resourceContext().preferences().snapshot().fontSize(), Application::FontSize::Large);
+}
+
 void PageHostTests::descriptorRegistrationRetainsMetadataWithoutConstructingPages()
 {
-    Ui::PageHost host(*m_loader);
+    Ui::PageHost host(*m_loader, m_preferences.model);
     PageProbe reports;
     reports.key = QStringLiteral("reports");
     reports.name = QStringLiteral("reports");
@@ -307,7 +334,7 @@ void PageHostTests::descriptorRegistrationRetainsMetadataWithoutConstructingPage
 
 void PageHostTests::invalidAndDuplicateDescriptorsAreRejected()
 {
-    Ui::PageHost host(*m_loader);
+    Ui::PageHost host(*m_loader, m_preferences.model);
     PageProbe first;
     first.key = QStringLiteral("duplicate");
     first.name = QStringLiteral("first");
@@ -405,7 +432,7 @@ void PageHostTests::lifecycleStatesAreQueryableObservableAndRejectReentrantMutat
     beta.key = QStringLiteral("beta");
     beta.name = QStringLiteral("beta");
     // Keep page probes alive until the host has destroyed any retained pages.
-    Ui::PageHost host(*m_loader);
+    Ui::PageHost host(*m_loader, m_preferences.model);
 
     const Ui::PageId alphaId = *Ui::PageId::fromString(alpha.key);
     const Ui::PageId betaId = *Ui::PageId::fromString(beta.key);
@@ -516,7 +543,7 @@ void PageHostTests::lifecycleStatesAreQueryableObservableAndRejectReentrantMutat
 
 void PageHostTests::registrationIsLazyAndPagesSuspendReuseReleaseAndRecreate()
 {
-    Ui::PageHost host(*m_loader);
+    Ui::PageHost host(*m_loader, m_preferences.model);
     host.resize(360, 240);
     host.show();
 
@@ -656,7 +683,7 @@ void PageHostTests::registrationIsLazyAndPagesSuspendReuseReleaseAndRecreate()
 
 void PageHostTests::factoryAndActivationFailuresPreserveTheCurrentPage()
 {
-    Ui::PageHost host(*m_loader);
+    Ui::PageHost host(*m_loader, m_preferences.model);
     host.resize(360, 240);
     host.show();
 

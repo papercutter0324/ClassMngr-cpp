@@ -420,6 +420,8 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/last_selected_campus_id_policy.h
     src/next/application/user_preferences_state.h
     src/next/application/preferences_model.h
+    src/next/application/preferences_snapshot_adapter.h
+    src/next/application/show_all_teachers_preferences.h
     src/next/application/workspace_contracts.h
     src/next/application/command_bus.h
     src/next/application/user_prompt_port.h
@@ -568,6 +570,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/settings_manager_ai_comment_provider_preferences_port.h
     src/next/platform/settings_manager_ai_comment_voice_preferences_port.h
     src/next/platform/settings_manager_font_size_preferences_port.h
+    src/next/platform/settings_manager_preferences_port.h
     src/next/platform/settings_manager_document_viewer_background_preferences_port.h
     src/next/platform/settings_manager_document_page_spacing_preferences_port.h
     src/next/platform/settings_manager_save_mode_preferences_port.h

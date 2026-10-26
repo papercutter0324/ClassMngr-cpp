@@ -81,6 +81,7 @@ target_compile_definitions(ClassMngrNextThemePresenterTests
 # file handles while keeping the test independent of the bootstrap fixture.
 add_executable(ClassMngrNextPageHostTests
     tests/next/page_host_tests.cpp
+    tests/next/preferences_test_ports.h
     src/next/ui/page_host.cpp
 )
 target_compile_features(ClassMngrNextPageHostTests
@@ -5328,4 +5329,26 @@ classmngr_add_qt_test(
     LIBRARIES
         Qt6::Test
     OFFSCREEN
+)
+
+add_executable(ClassMngrNextPreferencesSnapshotAdapterTests
+    tests/next/preferences_snapshot_adapter_tests.cpp
+)
+target_compile_features(ClassMngrNextPreferencesSnapshotAdapterTests PRIVATE cxx_std_23)
+target_link_libraries(ClassMngrNextPreferencesSnapshotAdapterTests PRIVATE ClassMngrNext::Application)
+set_property(TARGET ClassMngrNextPreferencesSnapshotAdapterTests PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE)
+add_test(NAME ClassMngrNextPreferencesSnapshotAdapterTests COMMAND ClassMngrNextPreferencesSnapshotAdapterTests)
+
+classmngr_add_qt_test(
+    NAME NextFontSizePresenter
+    OFFSCREEN
+    SOURCES tests/next/font_size_presenter_tests.cpp
+    LIBRARIES ClassMngrNext::Application Qt6::Test Qt6::Widgets
+)
+set_property(TARGET ClassMngrNextFontSizePresenterTests PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE)
+
+classmngr_add_qt_test(
+    NAME NextPlatformSettingsManagerPreferencesPort
+    SOURCES tests/next_platform_settings_manager_preferences_port_tests.cpp
+    LIBRARIES ClassMngrNext::Platform Qt6::Test
 )

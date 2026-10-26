@@ -3,15 +3,15 @@
 #include "next/bootstrap/qt_startup_diagnostics_sink.h"
 #include "next/application/recent_workspace_history_use_case.h"
 #include "core/settingsmanager.h"
-#include "next/platform/settings_manager_language_preferences_port.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
-#include "next/platform/settings_manager_theme_preferences_port.h"
+#include "next/platform/settings_manager_preferences_port.h"
 #include "next/platform/resource_document_catalog_port.h"
 #include "next/platform/workspace_store_gateway.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/application_shell.h"
+#include "next/ui/font_size_presenter.h"
 #include "next/ui/page_host.h"
 #include "next/ui/placeholder_page.h"
 #include "next/ui/theme_presenter.h"
@@ -275,20 +275,21 @@ struct ApplicationBootstrap::CoreServices final
         )
         : resourceLoader(std::move(catalog))
         , startupResourceScope(std::move(startupScope))
+        , preferences(preferencesPort, preferencesPort)
     {
     }
 
     Resources::ResourceLoader resourceLoader;
     Resources::ResourceScope startupResourceScope;
-    Platform::SettingsManagerThemePreferencesPort themePreferencesPort;
-    Application::LanguagePreference languagePreference =
-        Application::LanguagePreference::SystemDefault;
-    Application::Theme themePreference = Application::Theme::SystemDefault;
+    // Declared before the borrowing model and presenters; destroyed after them.
+    Platform::SettingsManagerPreferencesPort preferencesPort;
+    Application::PreferencesModel preferences;
     QString loadedLocale;
     std::optional<Resources::ScopedResource<Resources::ResourceTranslation>> translation;
     std::optional<Resources::ScopedResource<Resources::RegisteredFont>> interFont;
     std::optional<Resources::ScopedResource<Resources::RegisteredFont>> pretendardFont;
     std::unique_ptr<Ui::ThemePresenter> themePresenter;
+    std::unique_ptr<Ui::FontSizePresenter> fontSizePresenter;
 };
 
 int ApplicationBootstrap::run(int argc, char* argv[])
@@ -615,7 +616,8 @@ Application::StartupResult ApplicationBootstrap::start()
     try
     {
         m_shell = std::make_unique<Ui::ApplicationShell>(
-            m_coreServices->resourceLoader
+            m_coreServices->resourceLoader,
+            m_coreServices->preferences
             );
         m_shell->setCloseHandler([this] {
             const Application::ShutdownResult result =
@@ -744,9 +746,13 @@ bool ApplicationBootstrap::loadStartupPreferences()
         return false;
     }
 
-    m_coreServices->languagePreference =
-        Platform::SettingsManagerLanguagePreferencesPort{}.read();
-    m_coreServices->themePreference = m_coreServices->themePreferencesPort.read();
+    const auto loaded = m_coreServices->preferences.load();
+    if (!loaded)
+    {
+        qCritical().noquote() << "ClassMngrNext could not load preferences:"
+                              << QString::fromStdString(loaded.error().message);
+        return false;
+    }
     return true;
 }
 
@@ -761,7 +767,7 @@ Application::StartupStageOutcome ApplicationBootstrap::loadStartupLanguage()
         ? *m_systemUiLanguages
         : QLocale::system().uiLanguages();
     QString locale;
-    switch (m_coreServices->languagePreference)
+    switch (m_coreServices->preferences.snapshot().languagePreference())
     {
     case Application::LanguagePreference::English:
         locale = englishLocaleFor(systemLanguages);
@@ -817,9 +823,7 @@ bool ApplicationBootstrap::loadStartupTheme()
     }
 
     const Domain::Result<void> applied =
-        m_coreServices->themePresenter->applyStartupPreference(
-            m_coreServices->themePreference
-            );
+        m_coreServices->themePresenter->applyStartupPreference();
     if (!applied)
     {
         qCritical().noquote() << "ClassMngrNext could not apply selected theme:"
@@ -873,6 +877,10 @@ bool ApplicationBootstrap::loadRequiredFonts()
         return false;
     }
     m_coreServices->pretendardFont.emplace(std::move(*pretendardFont));
+    m_coreServices->fontSizePresenter->applyStartupPreference(
+        m_coreServices->preferences.snapshot().fontSize(), m_coreServices->loadedLocale,
+        m_coreServices->interFont->get().familyNames().value(0),
+        m_coreServices->pretendardFont->get().familyNames().value(0));
     return true;
 }
 
@@ -1257,6 +1265,10 @@ void ApplicationBootstrap::rollbackStartupComposition() noexcept
         {
             m_coreServices->themePresenter->restore();
         }
+        if (m_coreServices->fontSizePresenter)
+        {
+            m_coreServices->fontSizePresenter->restore();
+        }
         m_coreServices->translation.reset();
         m_coreServices->pretendardFont.reset();
         m_coreServices->interFont.reset();
@@ -1308,8 +1320,9 @@ bool ApplicationBootstrap::createCoreServices()
         m_application,
         m_coreServices->resourceLoader,
         m_coreServices->startupResourceScope,
-        m_coreServices->themePreferencesPort
+        m_coreServices->preferences
         );
+    m_coreServices->fontSizePresenter = std::make_unique<Ui::FontSizePresenter>(m_application);
     return true;
 }
 

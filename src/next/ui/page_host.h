@@ -64,9 +64,10 @@ class PageHost final : public QWidget
 public:
     using PageFactory = Ui::PageFactory;
 
-    // The resource loader is borrowed and must outlive this host.
+    // The resource loader and preferences model are borrowed and must outlive this host.
     explicit PageHost(
         Resources::ResourceLoader& resourceLoader,
+        Application::PreferencesModel& preferences,
         QWidget* parent = nullptr
         );
     ~PageHost() override;
@@ -129,6 +130,7 @@ private:
     void destroyPage(PageEntry& entry) noexcept;
 
     Resources::ResourceLoader& m_resourceLoader;
+    Application::PreferencesModel& m_preferences;
     QStackedWidget* m_stack = nullptr;
     QWidget* m_emptyPage = nullptr;
     QMap<QString, PageEntry> m_pages;

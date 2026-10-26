@@ -612,12 +612,49 @@ void observerSubscriptionsCanChangeDuringDelivery()
         );
 }
 
+void saveBeforeCommitFailureAndRecovery()
+{
+    FakeReadPort reader;
+    FakePersistPort writer;
+    PreferencesModel model(reader, writer);
+    int notifications = 0;
+    auto subscribed = model.subscribe([&](UserPreferencesSnapshot snapshot) {
+        ++notifications;
+        expect(!model.isDirty(), "Saved values must be clean during notification.");
+        expect(snapshot == writer.writes.back(), "Observers see persisted snapshot.");
+        const auto reentrant = model.applyAndPersist(model.state());
+        expect(!reentrant && reentrant.error().code == Domain::ErrorCode::Conflict,
+               "Even same-state save must reject notification reentrancy.");
+    });
+    expect(static_cast<bool>(subscribed), "Subscribe should succeed.");
+    expectApplyResult(model.applyAndPersist(model.state()), false, "Clean same state is a no-op.");
+    expect(writer.calls == 0, "Clean same state skips writer.");
+    const auto oldState = model.state();
+    auto candidate = stateWith(ThemePreference::Dark, LanguagePreference::Korean);
+    expect(static_cast<bool>(candidate.setFontSize(FontSize::ExtraLarge)), "Font is valid.");
+    const auto failure = error(Domain::ErrorCode::Technical, "Later field failed.");
+    writer.result = PreferencesPersistResult::failure(failure);
+    const auto failed = model.applyAndPersist(candidate);
+    expect(!failed && failed.error() == failure, "First write failure is preserved.");
+    expect(model.state() == oldState && model.isDirty(), "Failure preserves current state and marks dirty.");
+    expect(notifications == 0, "Failure must not notify.");
+    writer.result = PreferencesPersistResult::success();
+    expectApplyResult(model.applyAndPersist(model.state()), false, "Retry current snapshot repairs storage.");
+    expect(!model.isDirty() && writer.writes.back() == oldState.snapshot(), "Retry writes old state cleanly.");
+    expect(notifications == 0, "Recovery without change must not notify.");
+    expectApplyResult(model.applyAndPersist(candidate), true, "Changed candidate persists and commits.");
+    expect(model.state() == candidate && notifications == 1, "Changed candidate notifies once.");
+    expectApplyResult(model.applyAndPersist(candidate), false, "Repeated candidate is a no-op.");
+    expect(writer.calls == 3 && notifications == 1, "Repeated candidate neither writes nor notifies.");
+}
+
 }
 
 int main()
 {
     try
     {
+        saveBeforeCommitFailureAndRecovery();
         readSuccessFailureAndAtomicity();
         applyValidationChangeNoOpAndNoWriteThrough();
         persistSuccessFailureAndRetry();

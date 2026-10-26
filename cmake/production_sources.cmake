@@ -682,6 +682,7 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/placeholder_page.h"
     "src/next/ui/theme_presenter.cpp"
     "src/next/ui/theme_presenter.h"
+    "src/next/ui/font_size_presenter.h"
 )
 
 set(CLASSMNGR_NEXT_STARTUP_UPDATE_SOURCES

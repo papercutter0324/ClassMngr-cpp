@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/workspace_state.h"
+#include "next/application/preferences_model.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/navigation_model.h"
 #include "next/ui/qt_notification_presenter.h"
@@ -37,9 +38,10 @@ public:
     using NavigationGuard = std::function<NavigationGuardDecision(
         const NavigationGuardRequest&)>;
 
-    // The resource loader is borrowed and must outlive this shell.
+    // The resource loader and preferences model are borrowed and must outlive this shell.
     explicit ApplicationShell(
         Resources::ResourceLoader& resourceLoader,
+        Application::PreferencesModel& preferences,
         QWidget* parent = nullptr
         );
 

@@ -37,12 +37,13 @@ constexpr int NodeIdRole = Qt::UserRole + 2;
 
 ApplicationShell::ApplicationShell(
     Resources::ResourceLoader& resourceLoader,
+    Application::PreferencesModel& preferences,
     QWidget* parent
     )
     : QMainWindow(parent)
     , m_resourceLoader(&resourceLoader)
     , m_contentWidget(new QWidget(this))
-    , m_pageHost(new PageHost(resourceLoader, m_contentWidget))
+    , m_pageHost(new PageHost(resourceLoader, preferences, m_contentWidget))
     , m_navigationTree(new QTreeWidget(m_contentWidget))
     , m_backButton(new QPushButton(tr("Back"), m_contentWidget))
     , m_forwardButton(new QPushButton(tr("Forward"), m_contentWidget))

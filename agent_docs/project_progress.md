@@ -10,8 +10,10 @@ semantic prompt contracts and a value-only Qt automation boundary. F1520 added
 the typed file-dialog port and Qt presenter. F1521 added a transient
 shell-owned notification service. F1522 added explicit read/apply/persist/
 notify operations around the validated preferences state. F1523 added the
-theme presenter using existing QSS and preference storage. F1524, other
-presentation preferences, is next. Phase 5
+theme presenter using existing QSS and preference storage. F1524 added font
+size to the shared preferences state, a complete snapshot adapter, startup
+language/theme/font selection, and page access to the same model. F1525,
+shared model/view primitives, is next. Phase 5
 platform evidence and broad-suite limitations remain in the
 [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [Start Here](../plans/qt-rewrite-heavy-route-plan/00-Start-Here.md).
@@ -25,8 +27,8 @@ appearance.
 
 ## Overall Progress
 
-Phases 0–5 are Complete. Phase 6 is In progress; F1514–F1523 are accepted and
-F1524 is next. The current batch and ordered candidates are in
+Phases 0–5 are Complete. Phase 6 is In progress; F1514–F1524 are accepted and
+F1525 is next. The current batch and ordered candidates are in
 `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
@@ -68,7 +70,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-26 (Phase 6, F1523 accepted)
+### Current checkpoint — 2026-10-26 (Phase 6, F1524 accepted)
 
 F1514 established descriptor-based lazy registration. F1515 added observable
 page states, release/recreation, and failure cleanup while retaining
@@ -102,8 +104,16 @@ theme adapter tests passed 3/3. SystemDefault matches current Next startup
 behavior and does not track later OS scheme changes; native screenshots and
 broader appearance parity remain for F1527. No full or cross-platform build
 ran. Dynamic teacher/document data and URL actions remain deferred to
-feature/platform migration. F1524 is next. Phase 7/10 owns rendering parity;
-Phase 12 owns legacy resource-pack removal.
+feature/platform migration. F1524 adds validated font size and composes the
+typed preference ports into one complete snapshot adapter. Bootstrap uses one
+model for startup language, theme, and font selection, and PageContext exposes
+that model to future pages. Sequential writes can partially persist; errors
+keep the model dirty for full-snapshot retry, and the legacy teacher and
+PowerPoint writers cannot report failures. Window/splitter persistence remains
+deferred because no active callers exist. Independent focused macOS Debug
+build passed and CTest passed 9/9; `git diff --check` passed. No full suite,
+cross-platform build, or screenshots ran. F1525 is next. Phase 7/10 owns
+rendering parity; Phase 12 owns legacy resource-pack removal.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

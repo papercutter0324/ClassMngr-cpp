@@ -24,7 +24,9 @@ public:
     [[nodiscard]] virtual PreferencesStateReadResult read() const = 0;
 };
 
-// Persists one complete application preference snapshot.
+// Persists one complete application preference snapshot. Implementations may
+// write sequentially: failure can leave partial storage changes, so callers
+// must permit an idempotent full-snapshot retry. No rollback is guaranteed.
 class PreferencesSnapshotPersistPort
 {
 public:
@@ -162,6 +164,35 @@ public:
         }
 
         return Domain::Result<void>::success();
+    }
+
+    // Save before committing or notifying. The writer may have partially
+    // persisted a failed candidate: keep the old state, mark it dirty, and
+    // allow a full snapshot retry to repair storage. No rollback is promised.
+    [[nodiscard]] Domain::Result<bool> applyAndPersist(UserPreferencesState candidate)
+    {
+        if (m_isNotifying)
+        {
+            return Domain::Result<bool>::failure(notificationConflict());
+        }
+        const bool changed = candidate != m_state;
+        if (!changed && !m_dirty)
+        {
+            return Domain::Result<bool>::success(false);
+        }
+        const PreferencesPersistResult result = m_persistPort.persist(candidate.snapshot());
+        if (!result)
+        {
+            m_dirty = true;
+            return Domain::Result<bool>::failure(result.error());
+        }
+        m_state = std::move(candidate);
+        m_dirty = false;
+        if (changed)
+        {
+            notifyObservers(m_state.snapshot());
+        }
+        return Domain::Result<bool>::success(changed);
     }
 
     [[nodiscard]] Domain::Result<ObserverId> subscribe(Observer observer)

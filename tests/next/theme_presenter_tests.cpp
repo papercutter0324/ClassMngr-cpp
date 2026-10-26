@@ -1,4 +1,4 @@
-#include "next/application/theme_preferences_port.h"
+#include "next/application/preferences_model.h"
 #include "next/application/user_preferences_state.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
@@ -15,6 +15,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -137,26 +138,32 @@ private:
 };
 
 class FakeThemePreferencesPort final
-    : public Application::ThemePreferencesPort
+    : public Application::PreferencesStateReadPort,
+      public Application::PreferencesSnapshotPersistPort
 {
 public:
-    mutable Application::Theme storedPreference =
-        Application::Theme::SystemDefault;
+    mutable Application::ThemePreference storedPreference =
+        Application::ThemePreference::SystemDefault;
     mutable int readCount = 0;
-    mutable std::vector<Application::Theme> writes;
+    mutable std::vector<Application::ThemePreference> writes;
     mutable bool failWrites = false;
-    mutable std::function<void(Application::Theme)> beforeWrite;
+    mutable std::function<void(Application::ThemePreference)> beforeWrite;
 
-    [[nodiscard]] Application::Theme read() const override
+    Application::PreferencesModel model{*this, *this};
+
+    [[nodiscard]] Application::PreferencesStateReadResult read() const override
     {
         ++readCount;
-        return storedPreference;
+        Application::UserPreferencesState state;
+        static_cast<void>(state.setThemePreference(storedPreference));
+        return Application::PreferencesStateReadResult::success(state);
     }
 
-    [[nodiscard]] Domain::Result<void> write(
-        const Application::Theme preference
+    [[nodiscard]] Domain::Result<void> persist(
+        const Application::UserPreferencesSnapshot& snapshot
         ) const override
     {
+        const auto preference = snapshot.themePreference();
         writes.push_back(preference);
         if (beforeWrite)
         {
@@ -182,7 +189,7 @@ class ThemePresenterTests final : public QObject
     Q_OBJECT
 
 private slots:
-    void allPreferencesMapExplicitlyAndPersistBeforeApplyingStyle();
+    void allPreferencesPersistThroughModelWithStagedStyle();
     void systemDefaultUsesDarkOnlyForDarkScheme();
     void startupPreferenceAppliesWithoutWritingStorage();
     void repeatedPreferenceIsANoOp();
@@ -190,9 +197,11 @@ private slots:
     void persistenceFailureKeepsAppliedTheme();
     void teardownRestoresPriorStylesheetBeforeReleasingTheme();
     void invalidPreferenceIsRejectedWithoutChangingTheme();
+    void observersSeeCommittedStyleAndReentrantChangesFail();
+    void observerExceptionRetainsCommittedStyleUntilTeardown();
 };
 
-void ThemePresenterTests::allPreferencesMapExplicitlyAndPersistBeforeApplyingStyle()
+void ThemePresenterTests::allPreferencesPersistThroughModelWithStagedStyle()
 {
     QApplication& application = *qApp;
     ApplicationStyleGuard styleGuard(application);
@@ -203,7 +212,7 @@ void ThemePresenterTests::allPreferencesMapExplicitlyAndPersistBeforeApplyingSty
     FakeThemePreferencesPort preferences;
     std::vector<QString> stylesheetsSeenWhilePersisting;
     preferences.beforeWrite = [&application, &stylesheetsSeenWhilePersisting](
-        const Application::Theme
+        const Application::ThemePreference
         ) {
         stylesheetsSeenWhilePersisting.push_back(application.styleSheet());
     };
@@ -211,43 +220,42 @@ void ThemePresenterTests::allPreferencesMapExplicitlyAndPersistBeforeApplyingSty
         application,
         resources.loader(),
         resources.scope(),
-        preferences,
+        preferences.model,
         [] { return Qt::ColorScheme::Light; }
         );
 
     struct PreferenceCase final
     {
         Application::ThemePreference preference;
-        Application::Theme persistedPreference;
+        Application::ThemePreference persistedPreference;
         QString stylesheetName;
     };
     const PreferenceCase cases[] = {
         {
-            Application::ThemePreference::SystemDefault,
-            Application::Theme::SystemDefault,
-            QStringLiteral("light")
-        },
-        {
             Application::ThemePreference::Light,
-            Application::Theme::Light,
+            Application::ThemePreference::Light,
             QStringLiteral("light")
         },
         {
             Application::ThemePreference::Dark,
-            Application::Theme::Dark,
+            Application::ThemePreference::Dark,
             QStringLiteral("dark")
+        },
+        {
+            Application::ThemePreference::SystemDefault,
+            Application::ThemePreference::SystemDefault,
+            QStringLiteral("light")
         }
     };
 
     for (const PreferenceCase& testCase : cases)
     {
-        const QString priorStylesheet = application.styleSheet();
         const Domain::Result<void> changed = presenter.changePreference(
             testCase.preference
             );
         QVERIFY(changed);
         QCOMPARE(preferences.writes.back(), testCase.persistedPreference);
-        QCOMPARE(stylesheetsSeenWhilePersisting.back(), priorStylesheet);
+        QCOMPARE(stylesheetsSeenWhilePersisting.back(), resources.stylesheet(testCase.stylesheetName));
         QCOMPARE(application.styleSheet(), resources.stylesheet(testCase.stylesheetName));
         QVERIFY(presenter.ownsActiveStylesheet());
     }
@@ -282,12 +290,10 @@ void ThemePresenterTests::systemDefaultUsesDarkOnlyForDarkScheme()
                 application,
                 resources.loader(),
                 resources.scope(),
-                preferences,
+                preferences.model,
                 [scheme = testCase.scheme] { return scheme; }
                 );
-            const Domain::Result<void> applied = presenter.applyStartupPreference(
-                Application::Theme::SystemDefault
-                );
+            const Domain::Result<void> applied = presenter.applyStartupPreference();
             QVERIFY(applied);
             QCOMPARE(
                 application.styleSheet(),
@@ -308,18 +314,17 @@ void ThemePresenterTests::startupPreferenceAppliesWithoutWritingStorage()
     ThemeResourceFixture resources;
     QVERIFY(resources.initialize(true, true));
     FakeThemePreferencesPort preferences;
-    preferences.storedPreference = Application::Theme::Dark;
+    preferences.storedPreference = Application::ThemePreference::Dark;
     Ui::ThemePresenter presenter(
         application,
         resources.loader(),
         resources.scope(),
-        preferences,
+        preferences.model,
         [] { return Qt::ColorScheme::Light; }
         );
 
-    const Domain::Result<void> applied = presenter.applyStartupPreference(
-        preferences.read()
-        );
+    QVERIFY(preferences.model.load());
+    const Domain::Result<void> applied = presenter.applyStartupPreference();
     QVERIFY(applied);
     QCOMPARE(preferences.readCount, 1);
     QVERIFY(preferences.writes.empty());
@@ -337,7 +342,7 @@ void ThemePresenterTests::repeatedPreferenceIsANoOp()
         application,
         resources.loader(),
         resources.scope(),
-        preferences
+        preferences.model
         );
 
     QVERIFY(presenter.changePreference(Application::ThemePreference::Dark));
@@ -361,10 +366,12 @@ void ThemePresenterTests::stylesheetLoadFailureKeepsAppliedThemeAndSkipsPersiste
         application,
         resources.loader(),
         resources.scope(),
-        preferences
+        preferences.model
         );
 
-    QVERIFY(presenter.applyStartupPreference(Application::Theme::Light));
+    preferences.storedPreference = Application::ThemePreference::Light;
+    QVERIFY(preferences.model.load());
+    QVERIFY(presenter.applyStartupPreference());
     const QString activeStylesheet = application.styleSheet();
     const Domain::Result<void> failed = presenter.changePreference(
         Application::ThemePreference::Dark
@@ -394,10 +401,12 @@ void ThemePresenterTests::persistenceFailureKeepsAppliedTheme()
         application,
         resources.loader(),
         resources.scope(),
-        preferences
+        preferences.model
         );
 
-    QVERIFY(presenter.applyStartupPreference(Application::Theme::Light));
+    preferences.storedPreference = Application::ThemePreference::Light;
+    QVERIFY(preferences.model.load());
+    QVERIFY(presenter.applyStartupPreference());
     const QString activeStylesheet = application.styleSheet();
     preferences.failWrites = true;
     const Domain::Result<void> failed = presenter.changePreference(
@@ -407,11 +416,13 @@ void ThemePresenterTests::persistenceFailureKeepsAppliedTheme()
     QCOMPARE(failed.error().message, std::string("Injected theme preference write failure."));
     QCOMPARE(application.styleSheet(), activeStylesheet);
     QCOMPARE(preferences.writes.size(), std::size_t{1});
-    QCOMPARE(preferences.writes.front(), Application::Theme::Dark);
+    QCOMPARE(preferences.writes.front(), Application::ThemePreference::Dark);
 
     preferences.failWrites = false;
     QVERIFY(presenter.changePreference(Application::ThemePreference::Light));
-    QCOMPARE(preferences.writes.size(), std::size_t{1});
+    QCOMPARE(preferences.writes.size(), std::size_t{2});
+    QVERIFY(!preferences.model.isDirty());
+    QCOMPARE(preferences.model.snapshot().themePreference(), Application::ThemePreference::Light);
     QCOMPARE(application.styleSheet(), activeStylesheet);
 }
 
@@ -430,9 +441,11 @@ void ThemePresenterTests::teardownRestoresPriorStylesheetBeforeReleasingTheme()
             application,
             resources.loader(),
             resources.scope(),
-            preferences
+            preferences.model
             );
-        QVERIFY(presenter.applyStartupPreference(Application::Theme::Dark));
+        preferences.storedPreference = Application::ThemePreference::Dark;
+        QVERIFY(preferences.model.load());
+        QVERIFY(presenter.applyStartupPreference());
         QVERIFY(presenter.ownsActiveStylesheet());
         QCOMPARE(application.styleSheet(), resources.stylesheet(QStringLiteral("dark")));
     }
@@ -454,7 +467,7 @@ void ThemePresenterTests::invalidPreferenceIsRejectedWithoutChangingTheme()
         application,
         resources.loader(),
         resources.scope(),
-        preferences
+        preferences.model
         );
 
     const Domain::Result<void> failed = presenter.changePreference(
@@ -465,6 +478,53 @@ void ThemePresenterTests::invalidPreferenceIsRejectedWithoutChangingTheme()
     QCOMPARE(application.styleSheet(), priorStylesheet);
     QVERIFY(preferences.writes.empty());
     QVERIFY(!presenter.ownsActiveStylesheet());
+}
+
+void ThemePresenterTests::observersSeeCommittedStyleAndReentrantChangesFail()
+{
+    auto& application = *qApp;
+    ApplicationStyleGuard guard(application);
+    ThemeResourceFixture resources;
+    QVERIFY(resources.initialize(true, true));
+    FakeThemePreferencesPort preferences;
+    Ui::ThemePresenter presenter(application, resources.loader(), resources.scope(), preferences.model);
+    QVERIFY(presenter.applyStartupPreference());
+    int notifications = 0;
+    auto subscribed = preferences.model.subscribe([&](Application::UserPreferencesSnapshot snapshot) {
+        ++notifications;
+        QCOMPARE(snapshot.themePreference(), Application::ThemePreference::Dark);
+        QCOMPARE(application.styleSheet(), resources.stylesheet(QStringLiteral("dark")));
+        QVERIFY(!preferences.model.isDirty());
+        const auto reentrant = presenter.changePreference(Application::ThemePreference::Light);
+        QVERIFY(!reentrant);
+        QCOMPARE(reentrant.error().code, Domain::ErrorCode::Conflict);
+    });
+    QVERIFY(subscribed);
+    QVERIFY(presenter.changePreference(Application::ThemePreference::Dark));
+    QCOMPARE(notifications, 1);
+    QCOMPARE(preferences.writes.size(), std::size_t{1});
+}
+
+void ThemePresenterTests::observerExceptionRetainsCommittedStyleUntilTeardown()
+{
+    auto& application = *qApp;
+    ApplicationStyleGuard guard(application);
+    const auto previous = application.styleSheet();
+    ThemeResourceFixture resources;
+    QVERIFY(resources.initialize(true, true));
+    FakeThemePreferencesPort preferences;
+    {
+        Ui::ThemePresenter presenter(application, resources.loader(), resources.scope(), preferences.model);
+        const auto subscribed = preferences.model.subscribe([](Application::UserPreferencesSnapshot) {
+            throw std::runtime_error("Observer failed after commit.");
+        });
+        QVERIFY(subscribed);
+        QVERIFY_THROWS_EXCEPTION(std::runtime_error, static_cast<void>(presenter.changePreference(Application::ThemePreference::Dark)));
+        QCOMPARE(preferences.model.snapshot().themePreference(), Application::ThemePreference::Dark);
+        QCOMPARE(application.styleSheet(), resources.stylesheet(QStringLiteral("dark")));
+        QVERIFY(presenter.ownsActiveStylesheet());
+    }
+    QCOMPARE(application.styleSheet(), previous);
 }
 
 QTEST_MAIN(ThemePresenterTests)

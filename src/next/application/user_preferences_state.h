@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/excel_import_timeout_preferences.h"
+#include "next/application/font_size_preferences.h"
 #include "next/application/last_selected_campus_id_policy.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
@@ -102,6 +103,11 @@ public:
         return m_languagePreference;
     }
 
+    [[nodiscard]] FontSize fontSize() const noexcept
+    {
+        return m_fontSize;
+    }
+
     [[nodiscard]] bool sidebarTooltipsEnabled() const noexcept
     {
         return m_sidebarTooltipsEnabled;
@@ -176,6 +182,7 @@ private:
 
     ThemePreference m_themePreference = ThemePreference::SystemDefault;
     LanguagePreference m_languagePreference = LanguagePreference::SystemDefault;
+    FontSize m_fontSize = FontSize::Normal;
     bool m_sidebarTooltipsEnabled = true;
     bool m_sidebarMarqueeEnabled = true;
     bool m_showAllTeachers = true;
@@ -188,6 +195,8 @@ private:
 
 // Owns explicit application preferences only. Setters return structured
 // validation results and leave the current snapshot untouched on failure.
+// Dormant global window/splitter keys have no active behavior and are deferred.
+// Dialog geometry and the workspace current campus have separate owners.
 // There is no persistence, dirty tracking, notification, or presentation
 // behavior in this state owner.
 class UserPreferencesState final
@@ -237,6 +246,22 @@ public:
 
         m_snapshot.m_languagePreference = preference;
         return Domain::Result<void>::success();
+    }
+
+    [[nodiscard]] Domain::Result<void> setFontSize(const FontSize size)
+    {
+        switch (size)
+        {
+        case FontSize::Small:
+        case FontSize::Normal:
+        case FontSize::Large:
+        case FontSize::ExtraLarge:
+            m_snapshot.m_fontSize = size;
+            return Domain::Result<void>::success();
+        }
+        return Domain::Result<void>::failure(
+            UserPreferencesStateDetail::invalidInput(
+                "Font size must be Small, Normal, Large, or ExtraLarge."));
     }
 
     [[nodiscard]] Domain::Result<void> setSidebarTooltipsEnabled(

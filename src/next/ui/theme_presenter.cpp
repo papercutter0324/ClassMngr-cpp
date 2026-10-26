@@ -3,6 +3,7 @@
 #include "next/resources/resource_id.h"
 
 #include <QString>
+#include <QScopedValueRollback>
 
 namespace ClassMngr::Next::Ui
 {
@@ -24,7 +25,7 @@ ThemePresenter::ThemePresenter(
     QApplication& application,
     Resources::ResourceLoader& resourceLoader,
     Resources::ResourceScope startupScope,
-    Application::ThemePreferencesPort& preferences,
+    Application::PreferencesModel& preferences,
     ColorSchemeProvider colorSchemeProvider
     )
     : m_application(application)
@@ -46,27 +47,9 @@ ThemePresenter::~ThemePresenter()
     restore();
 }
 
-Domain::Result<void> ThemePresenter::applyStartupPreference(
-    const Application::Theme preference
-    )
+Domain::Result<void> ThemePresenter::applyStartupPreference()
 {
-    Application::ThemePreference mappedPreference;
-    switch (preference)
-    {
-    case Application::Theme::SystemDefault:
-        mappedPreference = Application::ThemePreference::SystemDefault;
-        break;
-    case Application::Theme::Light:
-        mappedPreference = Application::ThemePreference::Light;
-        break;
-    case Application::Theme::Dark:
-        mappedPreference = Application::ThemePreference::Dark;
-        break;
-    default:
-        return invalidThemePreference();
-    }
-
-    return apply(mappedPreference, false);
+    return apply(m_preferences.snapshot().themePreference(), false);
 }
 
 Domain::Result<void> ThemePresenter::changePreference(
@@ -81,6 +64,16 @@ Domain::Result<void> ThemePresenter::apply(
     const bool persist
     )
 {
+    if (m_applying)
+    {
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Conflict,
+            .message = "A theme preference change is already in progress.",
+            .recoverable = true
+        });
+    }
+    const QScopedValueRollback<bool> applying(m_applying, true);
+
     switch (preference)
     {
     case Application::ThemePreference::SystemDefault:
@@ -91,7 +84,9 @@ Domain::Result<void> ThemePresenter::apply(
         return invalidThemePreference();
     }
 
-    if (m_activePreference == preference)
+    if (m_activePreference == preference
+        && (!persist || (!m_preferences.isDirty()
+            && m_preferences.snapshot().themePreference() == preference)))
     {
         return Domain::Result<void>::success();
     }
@@ -103,42 +98,54 @@ Domain::Result<void> ThemePresenter::apply(
         return Domain::Result<void>::failure(candidateStylesheet.error());
     }
 
+    const QString previousStylesheet = m_application.styleSheet();
+    // The old scoped handle stays alive while Qt stages the candidate and
+    // while synchronous model observers inspect the newly committed state.
+    m_application.setStyleSheet(candidateStylesheet.value().get());
+    const auto retainStylesheet = [&] {
+        if (!m_applicationStylesheetInstalled)
+        {
+            m_previousApplicationStylesheet = previousStylesheet;
+        }
+        m_activeStylesheet.emplace(std::move(candidateStylesheet.value()));
+        m_activePreference = preference;
+        m_activeAppearance = candidateAppearance;
+        m_applicationStylesheetInstalled = true;
+    };
     if (persist)
     {
-        Application::Theme persistedPreference;
-        switch (preference)
+        auto candidate = m_preferences.state();
+        const auto validated = candidate.setThemePreference(preference);
+        if (!validated)
         {
-        case Application::ThemePreference::SystemDefault:
-            persistedPreference = Application::Theme::SystemDefault;
-            break;
-        case Application::ThemePreference::Light:
-            persistedPreference = Application::Theme::Light;
-            break;
-        case Application::ThemePreference::Dark:
-            persistedPreference = Application::Theme::Dark;
-            break;
-        default:
-            return invalidThemePreference();
+            m_application.setStyleSheet(previousStylesheet);
+            return validated;
         }
-
-        const Domain::Result<void> persisted =
-            m_preferences.write(persistedPreference);
-        if (!persisted)
+        try
         {
-            return Domain::Result<void>::failure(persisted.error());
+            const auto persisted = m_preferences.applyAndPersist(candidate);
+            if (!persisted)
+            {
+                m_application.setStyleSheet(previousStylesheet);
+                return Domain::Result<void>::failure(persisted.error());
+            }
+        }
+        catch (...)
+        {
+            // Model observer exceptions are rethrown after committing and
+            // fanout. Retain the committed QSS even when a subscriber throws.
+            if (!m_preferences.isDirty() && m_preferences.state() == candidate)
+            {
+                retainStylesheet();
+            }
+            else
+            {
+                m_application.setStyleSheet(previousStylesheet);
+            }
+            throw;
         }
     }
-
-    if (!m_applicationStylesheetInstalled)
-    {
-        m_previousApplicationStylesheet = m_application.styleSheet();
-    }
-
-    m_application.setStyleSheet(candidateStylesheet.value().get());
-    m_activeStylesheet.emplace(std::move(candidateStylesheet.value()));
-    m_activePreference = preference;
-    m_activeAppearance = candidateAppearance;
-    m_applicationStylesheetInstalled = true;
+    retainStylesheet();
     return Domain::Result<void>::success();
 }
 

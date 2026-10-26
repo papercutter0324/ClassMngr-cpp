@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/resources/resource_loader.h"
+#include "next/application/preferences_model.h"
 #include "next/resources/resource_scope.h"
 
 #include <QWidget>
@@ -25,6 +26,11 @@ using PageOperationResult = std::expected<Value, PageOperationError>;
 class PageContext final
 {
 public:
+    [[nodiscard]] Application::PreferencesModel& preferences() const noexcept
+    {
+        return *m_preferences;
+    }
+
     [[nodiscard]] Resources::ResourceLoader& resourceLoader() const noexcept
     {
         return *m_resourceLoader;
@@ -45,16 +51,19 @@ private:
 
     PageContext(
         Resources::ResourceLoader& resourceLoader,
+        Application::PreferencesModel& preferences,
         Resources::ResourceScope pageScope,
         QString pageKey
         )
         : m_resourceLoader(&resourceLoader)
+        , m_preferences(&preferences)
         , m_pageScope(std::move(pageScope))
         , m_pageKey(std::move(pageKey))
     {
     }
 
     Resources::ResourceLoader* m_resourceLoader;
+    Application::PreferencesModel* m_preferences;
     Resources::ResourceScope m_pageScope;
     QString m_pageKey;
 };

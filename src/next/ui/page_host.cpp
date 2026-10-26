@@ -42,10 +42,12 @@ QString callbackErrorMessage(const QString& message, const QString& fallback)
 
 PageHost::PageHost(
     Resources::ResourceLoader& resourceLoader,
+    Application::PreferencesModel& preferences,
     QWidget* parent
     )
     : QWidget(parent)
     , m_resourceLoader(resourceLoader)
+    , m_preferences(preferences)
     , m_stack(new QStackedWidget(this))
     , m_emptyPage(new QWidget(m_stack))
 {
@@ -211,6 +213,7 @@ PageHostResult<void> PageHost::activatePage(const QString& pageKey)
 
         const PageContext context(
             m_resourceLoader,
+            m_preferences,
             std::move(*pageScope),
             *normalizedKey
             );

@@ -1,3 +1,4 @@
+#include "preferences_test_ports.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/application_shell.h"
@@ -221,6 +222,7 @@ private slots:
     void shellOwnsTransientNotificationPortAndKeepsIdleStatusBarHidden();
 
 private:
+    Test::MemoryPreferences m_preferences;
     std::unique_ptr<Resources::ResourceLoader> m_loader;
 };
 
@@ -454,7 +456,7 @@ void NavigationModelTests::shellCommitsHistoryOnlyAfterGuardAndActivationSuccess
         QStringLiteral("resource:assets/icons/check.png")
         );
     QVERIFY(checkIcon.has_value());
-    Ui::ApplicationShell shell(*m_loader);
+    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
     for (Ui::PageDescriptor descriptor : commonDescriptors(
              &campus,
              &workspace,
@@ -655,7 +657,7 @@ void NavigationModelTests::shellHistoryControlsTrackAccessRevocation()
     PageProbe workspaceProbe{QStringLiteral("my_workspace")};
     PageProbe protectedProbe{QStringLiteral("classes")};
 
-    Ui::ApplicationShell shell(*m_loader);
+    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
     QVERIFY(shell.pageHost().registerPage(descriptorFor(
         QStringLiteral("campus_information"), QStringLiteral("Campus Info"),
         {}, {}, &campus
@@ -809,7 +811,7 @@ void NavigationModelTests::shellHistoryControlsTrackAccessRevocation()
 
 void NavigationModelTests::shellOwnsTransientNotificationPortAndKeepsIdleStatusBarHidden()
 {
-    auto shell = std::make_unique<Ui::ApplicationShell>(*m_loader);
+    auto shell = std::make_unique<Ui::ApplicationShell>(*m_loader, m_preferences.model);
     QStatusBar* const statusBar = shell->statusBar();
 
     QCOMPARE(statusBar->objectName(), QStringLiteral("classMngrNextNotificationStatusBar"));

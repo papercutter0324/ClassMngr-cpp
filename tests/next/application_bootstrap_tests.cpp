@@ -56,6 +56,7 @@ private slots:
     void startupUpdateCheckDoesNotConstructDispatcherAfterFailedStartup();
     void startupUpdateCheckDoesNotConstructDispatcherAfterShutdownBeforeQueuedTurn();
     void loadsOnlySelectedLanguageThemeAndRequiredFontsBeforeShell();
+    void loadedPreferencesReachPagesAndFontStartupRestoresOnTeardown();
     void systemDefaultUsesFirstSupportedLocaleFromOrderedList();
     void systemDefaultFallsBackToSourceEnglishForUnsupportedLocales();
     void systemDefaultThemeFollowsCurrentStyleColorScheme();
@@ -1430,6 +1431,49 @@ systemDefaultFallsBackToSourceEnglishForUnsupportedLocales()
     application.setStyleSheet(previousStyleSheet);
 }
 
+void ApplicationBootstrapTests::loadedPreferencesReachPagesAndFontStartupRestoresOnTeardown()
+{
+    auto& application = *qApp;
+    const QFont previousFont = application.font();
+    StartupPreferencesGuard preferences(5, 0);
+    auto& settings = SettingsManager::instance();
+    const auto fontKey = QString::fromUtf8(OptionKeys::FontSize);
+    const auto previousStoredFont = settings.get(fontKey);
+    settings.set(fontKey, 4);
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addTranslation(QStringLiteral("ko_KR")));
+    QVERIFY(resources.addTheme(QStringLiteral("dark")));
+    QVERIFY(resources.addRequiredFonts());
+    QVERIFY(resources.addDocumentCatalogMetadata());
+    {
+        Bootstrap::ApplicationBootstrap bootstrap(application, {}, {}, resolverForRoot(resources.resourceRoot()));
+        QVERIFY(bootstrap.start().succeeded());
+        auto& host = bootstrap.shell()->pageHost();
+        QVERIFY(host.activePageKey());
+        auto* page = host.pageInstance(*host.activePageKey());
+        QVERIFY(page);
+        auto& model = page->resourceContext().preferences();
+        QCOMPARE(model.snapshot().languagePreference(), Application::LanguagePreference::Korean);
+        QCOMPARE(model.snapshot().themePreference(), Application::ThemePreference::Dark);
+        QCOMPARE(model.snapshot().fontSize(), Application::FontSize::ExtraLarge);
+        QVERIFY(!model.isDirty());
+        int expectedSize = 14 + 4 + 1;
+#ifdef Q_OS_MACOS
+        ++expectedSize;
+#endif
+        QCOMPARE(application.font().pointSize(), expectedSize);
+        QCOMPARE(bootstrap.shell()->font().pointSize(), expectedSize);
+        QCOMPARE(settings.get(fontKey).toInt(), 4);
+        QCOMPARE(settings.get(QString::fromUtf8(OptionKeys::Theme)).toInt(), 0);
+        QVERIFY(bootstrap.shutdown().shutdownRequested);
+        QCOMPARE(application.font(), previousFont);
+    }
+    QCOMPARE(application.font(), previousFont);
+    if (previousStoredFont.isValid()) settings.set(fontKey, previousStoredFont);
+    else settings.remove(fontKey);
+}
+
 void ApplicationBootstrapTests::systemDefaultThemeFollowsCurrentStyleColorScheme()
 {
     QApplication& application = *qApp;
@@ -2063,6 +2107,7 @@ void ApplicationBootstrapTests::invalidResourceCatalogFailsCoreServicesBeforeShe
 void ApplicationBootstrapTests::documentCatalogMetadataFailureStopsBeforeShellCreation()
 {
     QApplication& application = *qApp;
+    const QFont previousFont = application.font();
     const bool previousQuitPolicy = application.quitOnLastWindowClosed();
     StartupPreferencesGuard preferences(
         static_cast<int>(Application::LanguagePreference::English),
@@ -2156,6 +2201,7 @@ void ApplicationBootstrapTests::documentCatalogMetadataFailureStopsBeforeShellCr
     QVERIFY(!containsStage(observedEvents, Application::StartupStage::ShellCreated));
     QVERIFY(!containsStage(observedEvents, Application::StartupStage::StartupReady));
     QCOMPARE(application.quitOnLastWindowClosed(), previousQuitPolicy);
+    QCOMPARE(application.font(), previousFont);
 }
 
 void ApplicationBootstrapTests::

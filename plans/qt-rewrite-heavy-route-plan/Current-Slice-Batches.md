@@ -5,7 +5,7 @@ Phase 5 completed on the mandatory Heavy route at implementation head
 
 ## Phase 6 — Batch 1 (active)
 
-F1514–F1523 are complete. F1524 is current. Continue in order, commit each
+F1514–F1524 are complete. F1525 is current. Continue in order, commit each
 accepted slice, then push the batch. Start Batch 2 discovery when F1526 starts
 because it is the second-to-last candidate.
 
@@ -75,9 +75,16 @@ because it is the second-to-last candidate.
     Palette and QSS are unchanged. SystemDefault samples the color scheme when
     applied; later OS color-scheme changes are not tracked, matching current
     Next startup behavior.
-11. **F1524 — Other presentation preferences (current):** language, font, window,
-    splitter, campus, and feature settings through the preferences boundary.
-12. **F1525 — Shared model/view primitives:** reusable bounded models,
+11. **F1524 — Other presentation preferences (complete):** add typed font size
+    to the shared preferences state, compose the existing preference ports into
+    a complete SettingsManager snapshot reader/writer, and use one model for
+    startup language/theme/font selection and future page access. Snapshot
+    writes are sequential and non-atomic; reported failures keep the model dirty
+    for full-snapshot retry, while legacy void writers cannot report errors.
+    Global window/splitter persistence remains deferred because it has no active
+    behavior to preserve; workspace current-campus data and keyed dialog
+    geometry remain separate.
+12. **F1525 — Shared model/view primitives (current):** reusable bounded models,
     delegates, on-demand editors, and refresh/loading states.
 13. **F1526 — Representative-table gate evidence:** verify the existing Staff
     Directory model/view consumer demonstrates bounded object creation; keep
