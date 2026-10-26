@@ -665,6 +665,11 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/page_host.h"
 )
 
+set(CLASSMNGR_NEXT_DOCUMENT_CATALOG_SOURCES
+    "src/next/platform/resource_document_catalog_port.cpp"
+    "src/next/platform/resource_document_catalog_port.h"
+)
+
 set(CLASSMNGR_NEXT_RESOURCES_SOURCES
     "src/next/resources/resource_catalog.cpp"
     "src/next/resources/resource_catalog.h"

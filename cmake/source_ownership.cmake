@@ -56,6 +56,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrNext
         ${CLASSMNGR_NEXT_BOOTSTRAP_SOURCES}
     )
+    _classmngr_record_manifest(ClassMngrNextDocumentCatalog
+        ${CLASSMNGR_NEXT_DOCUMENT_CATALOG_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrNextWorkspace
         ${CLASSMNGR_NEXT_WORKSPACE_SOURCES}
     )

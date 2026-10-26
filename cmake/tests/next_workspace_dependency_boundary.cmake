@@ -13,17 +13,50 @@ foreach(_line IN LISTS _report_lines)
         set(_workspace_store_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_SOURCES=(.*)$")
         set(_next_workspace_sources "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^DOCUMENT_CATALOG_TEST_LINKS=(.*)$")
+        set(_document_catalog_test_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^BOOTSTRAP_TEST_LINKS=(.*)$")
+        set(_bootstrap_test_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^DOCUMENT_CATALOG_LIBRARY_LINKS=(.*)$")
+        set(_document_catalog_library_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^LEGACY_SOURCES=(.*)$")
         set(_legacy_sources "${CMAKE_MATCH_1}")
     endif()
 endforeach()
 
 set(_expected_next_links
-    "Qt6::Core|Qt6::Widgets|ClassMngrNext::Application|ClassMngrNext::Resources|ClassMngrNextWorkspace"
+    "Qt6::Core|Qt6::Widgets|ClassMngrNext::Application|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextDocumentCatalog"
 )
 if(NOT _next_links STREQUAL _expected_next_links)
     message(FATAL_ERROR
         "Unexpected direct ClassMngrNext dependencies: [${_next_links}]"
+    )
+endif()
+
+if(NOT _document_catalog_test_links STREQUAL "ClassMngrNext::DocumentCatalog")
+    message(FATAL_ERROR
+        "The document catalog component test must link only its narrow adapter target: "
+        "[${_document_catalog_test_links}]"
+    )
+endif()
+
+set(_expected_bootstrap_test_links
+    "ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|Qt6::Sql|Qt6::Test|Qt6::Widgets"
+)
+if(NOT _bootstrap_test_links STREQUAL _expected_bootstrap_test_links)
+    message(FATAL_ERROR
+        "Unexpected direct ClassMngrNextBootstrapTests dependencies: "
+        "[${_bootstrap_test_links}]"
+    )
+endif()
+
+set(_expected_document_catalog_library_links
+    "Qt6::Core|ClassMngrNext::Application|ClassMngrNext::Resources"
+)
+if(NOT _document_catalog_library_links STREQUAL _expected_document_catalog_library_links)
+    message(FATAL_ERROR
+        "Unexpected direct ClassMngrNextDocumentCatalog dependencies: "
+        "[${_document_catalog_library_links}]"
     )
 endif()
 
@@ -51,6 +84,8 @@ endforeach()
 
 foreach(_forbidden_dependency IN ITEMS
         Qt6::Network
+        Qt6::Pdf
+        Qt6::PdfWidgets
         ClassMngrNext::Platform
         ClassMngrRuntime
         ClassMngrCore
@@ -59,7 +94,10 @@ foreach(_forbidden_dependency IN ITEMS
     foreach(_dependency_set IN ITEMS
             _next_links
             _next_workspace_links
-            _workspace_store_links)
+            _workspace_store_links
+            _document_catalog_test_links
+            _bootstrap_test_links
+            _document_catalog_library_links)
         string(FIND "${${_dependency_set}}" "${_forbidden_dependency}" _dependency_index)
         if(NOT _dependency_index EQUAL -1)
             message(FATAL_ERROR

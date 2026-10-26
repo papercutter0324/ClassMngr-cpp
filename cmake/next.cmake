@@ -440,8 +440,6 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/workspace_creation_lifecycle_adapter.h
     src/next/platform/application_services_academic_calendar_schedule_preferences_port.h
     src/next/platform/application_services_document_catalog_port.h
-    src/next/platform/resource_document_catalog_port.cpp
-    src/next/platform/resource_document_catalog_port.h
     src/next/platform/application_services_calendar_event_port.h
     src/next/platform/calendar_event_time_status_adapter.h
     src/next/platform/application_services_sub_prep_calendar_event_intervals_port.h
@@ -677,6 +675,34 @@ set_target_properties(ClassMngrNextWorkspace
         POSITION_INDEPENDENT_CODE ON
 )
 
+# Startup catalog metadata is consumed by ClassMngrNext without the broader
+# Platform umbrella, which also owns network-facing adapters.
+add_library(ClassMngrNextDocumentCatalog STATIC
+    ${CLASSMNGR_NEXT_DOCUMENT_CATALOG_SOURCES}
+)
+add_library(ClassMngrNext::DocumentCatalog ALIAS
+    ClassMngrNextDocumentCatalog
+)
+target_compile_features(ClassMngrNextDocumentCatalog
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextDocumentCatalog
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextDocumentCatalog
+    PUBLIC
+        Qt6::Core
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+)
+set_target_properties(ClassMngrNextDocumentCatalog
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+
 function(classmngr_next_assert_dependencies target)
     get_target_property(_classmngr_next_actual_dependencies
         "${target}"
@@ -715,6 +741,11 @@ classmngr_next_assert_dependencies(ClassMngrNextPlatform
     ClassMngrNext::Resources
     Qt6::Core
     Qt6::Network
+)
+classmngr_next_assert_dependencies(ClassMngrNextDocumentCatalog
+    Qt6::Core
+    ClassMngrNext::Application
+    ClassMngrNext::Resources
 )
 classmngr_next_assert_dependencies(ClassMngrNextUiShared
     ClassMngrNext::Application
@@ -769,6 +800,7 @@ target_link_libraries(ClassMngrNext
         ClassMngrNext::Application
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
+        ClassMngrNextDocumentCatalog
 )
 
 get_target_property(_classmngr_next_executable_dependencies
@@ -777,11 +809,11 @@ get_target_property(_classmngr_next_executable_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
 if(NOT "${_classmngr_next_executable_dependencies}"
-   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrNext::Resources;ClassMngrNextWorkspace")
+   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextDocumentCatalog")
     message(FATAL_ERROR
         "ClassMngrNext must link only Qt6::Core, Qt6::Widgets, "
-        "ClassMngrNext::Application, ClassMngrNext::Resources, and "
-        "ClassMngrNextWorkspace; found "
+        "ClassMngrNext::Application, ClassMngrNext::Resources, "
+        "ClassMngrNextWorkspace, and ClassMngrNextDocumentCatalog; found "
         "[${_classmngr_next_executable_dependencies}]"
     )
 endif()

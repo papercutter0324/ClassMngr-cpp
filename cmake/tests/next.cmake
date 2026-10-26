@@ -25,6 +25,7 @@ target_link_libraries(ClassMngrNextBootstrapTests
     PRIVATE
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
+        ClassMngrNext::DocumentCatalog
         Qt6::Sql
         Qt6::Test
         Qt6::Widgets
@@ -120,57 +121,6 @@ target_link_libraries(ClassMngrNextApplicationRuntimeTests
 add_test(
     NAME ClassMngrNextApplicationRuntimeTests
     COMMAND ClassMngrNextApplicationRuntimeTests
-)
-
-# Preserve the narrow production startup link boundary and keep its
-# WorkspaceStore profiler compatibility object out of the legacy executable.
-get_target_property(_classmngr_next_startup_links
-    ClassMngrNext
-    LINK_LIBRARIES
-)
-get_target_property(_classmngr_next_workspace_links
-    ClassMngrNextWorkspace
-    LINK_LIBRARIES
-)
-get_target_property(_classmngr_workspace_store_links
-    ClassMngrWorkspaceStore
-    LINK_LIBRARIES
-)
-get_target_property(_classmngr_next_workspace_sources
-    ClassMngrNextWorkspace
-    SOURCES
-)
-get_target_property(_classmngr_legacy_sources
-    ClassMngr
-    SOURCES
-)
-foreach(_classmngr_next_boundary_value IN ITEMS
-        _classmngr_next_startup_links
-        _classmngr_next_workspace_links
-        _classmngr_workspace_store_links
-        _classmngr_next_workspace_sources
-        _classmngr_legacy_sources)
-    string(REPLACE ";" "|" ${_classmngr_next_boundary_value}
-        "${${_classmngr_next_boundary_value}}"
-    )
-endforeach()
-set(_classmngr_next_boundary_report
-    "${CMAKE_CURRENT_BINARY_DIR}/next-workspace-dependency-boundary.txt"
-)
-file(WRITE "${_classmngr_next_boundary_report}"
-    "NEXT_LINKS=${_classmngr_next_startup_links}\n"
-    "NEXT_WORKSPACE_LINKS=${_classmngr_next_workspace_links}\n"
-    "WORKSPACE_STORE_LINKS=${_classmngr_workspace_store_links}\n"
-    "NEXT_WORKSPACE_SOURCES=${_classmngr_next_workspace_sources}\n"
-    "LEGACY_SOURCES=${_classmngr_legacy_sources}\n"
-)
-add_test(
-    NAME NextStartupWorkspaceDependencyBoundary
-    COMMAND
-        "${CMAKE_COMMAND}"
-        "-DREPORT_FILE=${_classmngr_next_boundary_report}"
-        -P
-        "${PROJECT_SOURCE_DIR}/cmake/tests/next_workspace_dependency_boundary.cmake"
 )
 
 add_executable(ClassMngrNextCalendarResourceKeysTests
@@ -269,8 +219,78 @@ target_compile_definitions(ClassMngrNextResourceDocumentCatalogTests
 )
 target_link_libraries(ClassMngrNextResourceDocumentCatalogTests
     PRIVATE
-        ClassMngrNext::Platform
+        ClassMngrNext::DocumentCatalog
 )
+
+# Preserve the narrow production startup link boundary and keep its
+# WorkspaceStore profiler compatibility object out of the legacy executable.
+get_target_property(_classmngr_next_startup_links
+    ClassMngrNext
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_next_workspace_links
+    ClassMngrNextWorkspace
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_workspace_store_links
+    ClassMngrWorkspaceStore
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_next_workspace_sources
+    ClassMngrNextWorkspace
+    SOURCES
+)
+get_target_property(_classmngr_document_catalog_test_links
+    ClassMngrNextResourceDocumentCatalogTests
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_bootstrap_test_links
+    ClassMngrNextBootstrapTests
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_document_catalog_library_links
+    ClassMngrNextDocumentCatalog
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_legacy_sources
+    ClassMngr
+    SOURCES
+)
+foreach(_classmngr_next_boundary_value IN ITEMS
+        _classmngr_next_startup_links
+        _classmngr_next_workspace_links
+        _classmngr_workspace_store_links
+        _classmngr_next_workspace_sources
+        _classmngr_document_catalog_test_links
+        _classmngr_bootstrap_test_links
+        _classmngr_document_catalog_library_links
+        _classmngr_legacy_sources)
+    string(REPLACE ";" "|" ${_classmngr_next_boundary_value}
+        "${${_classmngr_next_boundary_value}}"
+    )
+endforeach()
+set(_classmngr_next_boundary_report
+    "${CMAKE_CURRENT_BINARY_DIR}/next-workspace-dependency-boundary.txt"
+)
+file(WRITE "${_classmngr_next_boundary_report}"
+    "NEXT_LINKS=${_classmngr_next_startup_links}\n"
+    "NEXT_WORKSPACE_LINKS=${_classmngr_next_workspace_links}\n"
+    "WORKSPACE_STORE_LINKS=${_classmngr_workspace_store_links}\n"
+    "NEXT_WORKSPACE_SOURCES=${_classmngr_next_workspace_sources}\n"
+    "DOCUMENT_CATALOG_TEST_LINKS=${_classmngr_document_catalog_test_links}\n"
+    "BOOTSTRAP_TEST_LINKS=${_classmngr_bootstrap_test_links}\n"
+    "DOCUMENT_CATALOG_LIBRARY_LINKS=${_classmngr_document_catalog_library_links}\n"
+    "LEGACY_SOURCES=${_classmngr_legacy_sources}\n"
+)
+add_test(
+    NAME NextStartupWorkspaceDependencyBoundary
+    COMMAND
+        "${CMAKE_COMMAND}"
+        "-DREPORT_FILE=${_classmngr_next_boundary_report}"
+        -P
+        "${PROJECT_SOURCE_DIR}/cmake/tests/next_workspace_dependency_boundary.cmake"
+)
+
 add_dependencies(ClassMngrNextResourceDocumentCatalogTests
     ClassMngrNextResourcePackage
 )

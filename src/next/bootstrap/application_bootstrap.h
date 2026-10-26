@@ -87,6 +87,7 @@ private:
     [[nodiscard]] Application::StartupStageOutcome loadStartupLanguage();
     [[nodiscard]] bool loadStartupTheme();
     [[nodiscard]] bool loadRequiredFonts();
+    [[nodiscard]] bool loadRequiredDocumentCatalog();
     [[nodiscard]] Application::StartupStageOutcome openStartupWorkspace();
     [[nodiscard]] std::optional<Application::WorkspaceLocation>
     commandLineStartupWorkspaceLocation() const;

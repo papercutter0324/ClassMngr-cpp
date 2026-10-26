@@ -163,6 +163,7 @@ public:
         }
 
         if (stage == StartupStage::InitialPageReady
+            && outcome != StartupStageOutcome::Failed
             && !hasSuccessfulStage(StartupStage::ShellCreated))
         {
             return failedResult(StartupFailureReason::InvalidTransition, stage);

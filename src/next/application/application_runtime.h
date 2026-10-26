@@ -1,9 +1,13 @@
 #pragma once
 
+#include "next/application/document_catalog_projection.h"
 #include "next/application/selection_state.h"
 #include "next/application/workspace_coordinator.h"
 #include "next/application/workspace_state.h"
 #include "next/application/workspace_use_case.h"
+
+#include <optional>
+#include <utility>
 
 namespace ClassMngr::Next::Application
 {
@@ -48,6 +52,19 @@ public:
         return m_selectionState;
     }
 
+    [[nodiscard]] const std::optional<DocumentCatalogProjection>&
+    startupDocumentCatalogProjection() const noexcept
+    {
+        return m_startupDocumentCatalogProjection;
+    }
+
+    void retainStartupDocumentCatalogProjection(
+        DocumentCatalogProjection projection
+        )
+    {
+        m_startupDocumentCatalogProjection.emplace(std::move(projection));
+    }
+
     [[nodiscard]] WorkspaceCoordinator& workspaceCoordinator() noexcept
     {
         return m_workspaceCoordinator;
@@ -61,6 +78,7 @@ public:
 private:
     WorkspaceState m_workspaceState;
     SelectionState m_selectionState;
+    std::optional<DocumentCatalogProjection> m_startupDocumentCatalogProjection;
     WorkspaceUseCase m_workspaceUseCase;
     WorkspaceCoordinator m_workspaceCoordinator;
 };

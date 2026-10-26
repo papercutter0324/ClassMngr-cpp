@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 5 is active on the Heavy route. F1501–F1508 are complete; F1509 is next to integrate required document-catalog metadata and prove startup does not load PDF content or create QtPdf viewers. F1508 connected the shell through a lazy factory-only PageHost with explicit page/resource lifetimes. `StartupReady` remains deferred.
+- Current note: Phase 5 is active on the Heavy route. F1501–F1509 are complete; F1510 is next to start application updates only after the window is interactive. Startup now retains document-catalog metadata before the initial page is ready, emits `StartupReady` only after the page is active, and never loads PDF bodies or creates QtPdf viewers.
 
 ### Slice batches
 
@@ -209,6 +209,26 @@ Independent incremental macOS Debug verification passed PageHost QtTest 4/4,
 the bootstrap QtTest 30/30, and focused CTest 2/2. Affected production and test
 targets built; CMake source ownership validated 1,653 handwritten files.
 The full suite and other platforms were not run.
+
+### F1509 — complete — 2026-10-26
+
+Bootstrap now projects the localized document-catalog metadata through the
+Next `ResourceDocumentCatalogPort` and retains the immutable projection in
+`ApplicationRuntime`. The adapter belongs to a narrow target using Qt Core,
+Next Application, and Next Resources; `ClassMngrNext` still avoids Platform,
+Network, QtPdf, and broad legacy targets. Metadata failure records a typed
+`InitialPageReady` failure before shell creation. The coordinator permits that
+ordered failure while still requiring `ShellCreated` for successful or warning
+`InitialPageReady` results. On success, bootstrap activates and shows the
+initial page, records `InitialPageReady`, then records `StartupReady`. It does
+not create a body session or viewer.
+
+Independent incremental macOS Debug verification passed the bootstrap
+QtTest 32/32 and six focused CTests 6/6 (resource catalog, loader, bootstrap,
+runtime, PageHost, and dependency boundary). The integrated fixture omits all
+document bodies; metadata failure creates no shell or ready stage. Link checks
+confirmed no Platform, Network, QtPdf, or broad legacy dependency. The full
+suite and other platforms were not run.
 
 ## Objective
 

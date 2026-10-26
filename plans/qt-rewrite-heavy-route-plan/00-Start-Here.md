@@ -22,8 +22,9 @@
   is complete: a Qt-free `ApplicationRuntime` owns the workspace state and
   use cases, including on no-workspace startup. F1508 is complete: the shell
   uses a lazy factory PageHost with explicit page/resource lifetimes. F1509 is
-  next to integrate startup document metadata and verify the PDF/QtPdf negative
-  boundary. See
+  complete: startup retains localized catalog metadata, creates no PDF body or
+  QtPdf viewer, and records `StartupReady` only after the initial page is active.
+  F1510 is next to defer application update checks until interactive. See
   [Phase 5 plan](06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
   and [current batch tracker](Current-Slice-Batches.md). Phase 4 remains
   Complete at F1500; rendering parity remains a Phase 7/10 gate, and legacy

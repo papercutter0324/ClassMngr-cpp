@@ -8859,3 +8859,9 @@ later create/open operations. Next `ResourceScope` values label ownership but
 do not expire handles: page-scoped RAII handles stay with suspended pages,
 feature handles are cleared on suspension, and release destroys the page and
 its remaining handles.
+
+F1509 stores the localized `DocumentCatalogProjection` in the Qt-free runtime.
+`StartupReady` follows successful metadata loading and activation of the initial
+page. A metadata failure can be recorded as `InitialPageReady` failure before
+`ShellCreated`; successful or warning initial-page outcomes still require a
+shell.

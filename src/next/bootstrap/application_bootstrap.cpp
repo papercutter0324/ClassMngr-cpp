@@ -5,6 +5,7 @@
 #include "next/platform/settings_manager_language_preferences_port.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
 #include "next/platform/settings_manager_theme_preferences_port.h"
+#include "next/platform/resource_document_catalog_port.h"
 #include "next/platform/workspace_store_gateway.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
@@ -428,6 +429,28 @@ Application::StartupResult ApplicationBootstrap::start()
         return workspaceOpenedResult;
     }
 
+    bool documentCatalogLoaded = false;
+    try
+    {
+        documentCatalogLoaded = loadRequiredDocumentCatalog();
+    }
+    catch (const std::exception& exception)
+    {
+        qCritical().noquote() << "ClassMngrNext could not load the startup document catalog:"
+                              << exception.what();
+    }
+    catch (...)
+    {
+        qCritical() << "ClassMngrNext could not load the startup document catalog.";
+    }
+    if (!documentCatalogLoaded)
+    {
+        return failStartupStage(
+            Application::StartupStage::InitialPageReady,
+            Application::StartupFailureReason::InitialExperienceUnavailable
+            );
+    }
+
     m_previousQuitOnLastWindowClosed = m_application.quitOnLastWindowClosed();
     m_application.setQuitOnLastWindowClosed(false);
     m_quitOnLastWindowClosedChanged = true;
@@ -524,12 +547,22 @@ Application::StartupResult ApplicationBootstrap::start()
             Application::StartupFailureReason::InitialExperienceUnavailable
             );
     }
+    const Application::StartupResult startupReady = m_startupCoordinator.recordStage(
+        Application::StartupStage::StartupReady
+        );
+    observeStartupResult(startupReady);
+    if (startupReady.status == Application::StartupStatus::Failed)
+    {
+        rollbackStartupComposition();
+        return startupReady;
+    }
+
     if (m_coreServices)
     {
         m_coreServices->previousApplicationStylesheet.clear();
         m_coreServices->applicationStylesheetChanged = false;
     }
-    return initialPageReady;
+    return startupReady;
 }
 
 bool ApplicationBootstrap::loadStartupPreferences()
@@ -695,6 +728,40 @@ bool ApplicationBootstrap::loadRequiredFonts()
         return false;
     }
     m_coreServices->pretendardFont.emplace(std::move(*pretendardFont));
+    return true;
+}
+
+bool ApplicationBootstrap::loadRequiredDocumentCatalog()
+{
+    if (!m_coreServices)
+    {
+        return false;
+    }
+
+    // The runtime owns startup application data regardless of whether a
+    // workspace was selected or opened successfully.
+    ensureWorkspaceComposition();
+    if (!m_applicationRuntime)
+    {
+        return false;
+    }
+
+    const Platform::ResourceDocumentCatalogPort catalogPort(
+        m_coreServices->resourceLoader
+        );
+    Domain::Result<Application::DocumentCatalogProjection> projection =
+        catalogPort.projection(m_coreServices->loadedLocale);
+    if (!projection)
+    {
+        qCritical().noquote()
+            << "ClassMngrNext could not project startup document catalog metadata:"
+            << QString::fromStdString(projection.error().message);
+        return false;
+    }
+
+    m_applicationRuntime->retainStartupDocumentCatalogProjection(
+        std::move(projection.value())
+        );
     return true;
 }
 

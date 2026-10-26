@@ -108,6 +108,46 @@ bool expect(
     return condition;
 }
 
+bool runtimeRetainsStartupDocumentCatalogProjection()
+{
+    RecordingWorkspaceGateway gateway;
+    ApplicationRuntime runtime(gateway);
+    if (!expect(!runtime.startupDocumentCatalogProjection().has_value()))
+    {
+        return false;
+    }
+
+    const auto folderId = Domain::DocumentFolderId::fromString("folder-guides");
+    if (!folderId.has_value())
+    {
+        return false;
+    }
+
+    DocumentCatalogProjectionInput input;
+    input.folders.push_back(DocumentFolderMetadata{
+        .id = *folderId,
+        .path = DocumentCatalogPath("Guides"),
+        .key = DocumentFolderKey("guides"),
+        .displayName = "Guides",
+        .order = DocumentFolderOrder(10),
+        .parentPath = DocumentCatalogPath("")
+    });
+    auto projection = DocumentCatalogProjection::create(std::move(input));
+    if (!expect(projection.hasValue()))
+    {
+        return false;
+    }
+
+    runtime.retainStartupDocumentCatalogProjection(std::move(projection.value()));
+    const auto& retained = runtime.startupDocumentCatalogProjection();
+    return expect(retained.has_value())
+        && expect(retained->folders().size() == 1)
+        && expect(retained->documents().empty())
+        && expect(retained->folders().front().id == *folderId)
+        && expect(retained->folders().front().path.value() == "Guides")
+        && expect(retained->folders().front().displayName == "Guides");
+}
+
 bool emptyRuntimeCanCreateAndOpenLater(RecordingWorkspaceGateway& gateway)
 {
     ApplicationRuntime runtime(gateway);
@@ -292,6 +332,11 @@ int main()
     }
 
     if (!failedAdapterCallsDoNotCommitRuntimeState())
+    {
+        return EXIT_FAILURE;
+    }
+
+    if (!runtimeRetainsStartupDocumentCatalogProjection())
     {
         return EXIT_FAILURE;
     }

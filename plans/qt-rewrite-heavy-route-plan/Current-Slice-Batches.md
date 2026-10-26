@@ -87,9 +87,20 @@ its native matrix passed before this batch began.
    Independent incremental macOS Debug verification passed PageHost QtTest
    4/4, bootstrap QtTest 30/30, and focused CTest 2/2. Source ownership
    validated 1,653 files. No full suite or other platform ran.
-9. **F1509 — Discovered:** Verify startup constructs only the usable initial
-   page and required metadata; add the document-catalog no-QtPdf startup
-   negative check.
+9. **F1509 — Complete:** Load the localized Next
+   `DocumentCatalogProjection` from the `document.catalog-metadata` resource
+   and retain it in `ApplicationRuntime` before shell/page readiness. Reuse
+   `ResourceDocumentCatalogPort` through a narrow target that does not pull
+   `ClassMngrNext::Platform` or Network. Catalog failure is a typed
+   `InitialPageReady` failure and creates no shell; on success emit
+   `InitialPageReady` and then `StartupReady`. Use the existing metadata-only
+   test, plus an integrated bootstrap test whose package fixture omits every
+   document body and checks that no QtPdf viewer is present. Do not construct
+   a viewer, `QPdfDocument`, body session, or feature page during startup.
+   Independent incremental macOS Debug verification passed bootstrap QtTest
+   32/32 and six focused CTests 6/6. The generated boundary report excludes
+   Platform, Network, QtPdf, and broad legacy dependencies. No full suite or
+   other platform ran.
 10. **F1510 — Discovered:** Start app update checks only after the window is
     interactive and remove resource-update checks from startup.
 11. **F1511 — Discovered:** Complete shutdown coordination for settings, jobs,
