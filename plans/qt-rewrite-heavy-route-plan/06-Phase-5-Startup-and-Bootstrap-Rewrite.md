@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
 - Last updated: 2026-10-25
-- Current note: Phase 5 is active on the Heavy route. F1501 is complete at `993834ed`; F1502 is complete with the ten-stage typed coordinator and factual process/shell/page events. The focused macOS Debug bootstrap, launch, and filesystem CTests passed 3/3. F1503 is next to compose platform services and logging before resource initialization. The ordered batch is in `Current-Slice-Batches.md`.
+- Current note: Phase 5 is active on the Heavy route. F1501–F1503 are complete; F1503 added a bootstrap-owned Qt startup diagnostics sink and typed `CoreServicesCreated` outcome. The focused macOS Debug bootstrap, launch, and filesystem CTests passed 3/3. F1504 is next to load the Next resource catalog/loader under a startup scope. The ordered batch is in `Current-Slice-Batches.md`.
 
 ### Slice batches
 
@@ -90,7 +90,25 @@ targets built; the three focused CTests passed 3/3. The bootstrap tests cover
 the full state sequence, invalid transitions, warning and terminal failure,
 the factual three-event production sequence, and retained close/shutdown
 assertions. `git diff --check` passed for the changed test file. No full suite
-ran. F1503 is next.
+ran.
+
+### F1503 — complete — 2026-10-25
+
+Production bootstrap now owns a narrow Qt startup diagnostics sink and routes
+typed stage/outcome/diagnostic records through Qt logging. The sink is created
+before `CoreServicesCreated`; startup records the factual order
+`ProcessCreated` → `CoreServicesCreated` → `ShellCreated` → `InitialPageReady`.
+If sink construction fails, startup returns a typed failure attributed to
+`CoreServicesCreated`, logs through the early fallback, and creates no shell.
+This uses Qt's configured logging destination and creates no persistent log
+file, global message handler, or legacy `StartupProfiler` dependency.
+
+Independent macOS Debug verification passed: the bootstrap test target built,
+the `ClassMngrNext` target was current, and bootstrap/launch/filesystem CTests
+passed 3/3. Tests directly checked the four ordered observer events and Qt log
+records, plus the typed core-service failure, absence of a shell, and retained
+startup/shutdown behavior. `git diff --check` passed. No full suite ran.
+F1504 is next.
 
 ## Objective
 

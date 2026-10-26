@@ -18,10 +18,13 @@ its native matrix passed before this batch began.
    synthesize missing resource, settings, language, theme, font, workspace, or
    runtime events and do not emit `StartupReady` before those prerequisites are
    composed. Independent macOS Debug focused CTest passed 3/3.
-3. **F1503 — Accepted / in progress:** Compose platform services, logging, and diagnostics
-   before resource initialization; attribute startup failures to their stage.
-4. **F1504 — Discovered:** Load the Next resource catalog/loader under an
-   explicit startup scope without acquiring feature resources during bootstrap.
+3. **F1503 — Complete:** Compose the bootstrap-owned Qt startup diagnostics
+   sink before resource initialization; log typed stage outcomes and attribute
+   sink-construction failure to `CoreServicesCreated`. Independent focused
+   CTest passed 3/3.
+4. **F1504 — Accepted / in progress:** Load the Next resource catalog/loader
+   under an explicit startup scope without acquiring feature resources during
+   bootstrap.
 5. **F1505 — Discovered:** Load settings, apply language/theme, and register
    only required fonts in the specified order.
 6. **F1506 — Discovered:** Apply an explicit workspace startup policy and

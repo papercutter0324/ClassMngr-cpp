@@ -11,9 +11,9 @@
   `ClassMngrNext` path now enters through `ApplicationBootstrap`, shows a
   minimal shell/page, and coordinates shutdown without wrapping legacy
   `MainWindow`. Independent macOS Debug verification passed its three focused
-  CTests. F1502 is complete: the ten-stage model is typed and ordered, and the
-  bootstrap emits only factual stages without an early readiness claim. F1503
-  is composing platform services and logging before resources. See the
+  CTests. F1502 established the ten-stage typed model. F1503 is complete: the
+  bootstrap owns a Qt diagnostics sink and logs factual stage results. F1504
+  is integrating the Next resource loader under a startup scope. See the
   [Phase 5 plan](06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
   and [current batch tracker](Current-Slice-Batches.md). Phase 4 remains
   Complete at F1500; rendering parity remains a Phase 7/10 gate, and legacy

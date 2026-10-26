@@ -1,5 +1,6 @@
 #include "next/bootstrap/application_bootstrap.h"
 
+#include "next/bootstrap/qt_startup_diagnostics_sink.h"
 #include "next/ui/application_shell.h"
 
 #include <QApplication>
@@ -7,6 +8,7 @@
 #include <cstdio>
 #include <cstring>
 #include <exception>
+#include <stdexcept>
 #include <utility>
 
 namespace ClassMngr::Next::Bootstrap
@@ -43,10 +45,12 @@ int ApplicationBootstrap::run(int argc, char* argv[])
 
 ApplicationBootstrap::ApplicationBootstrap(
     QApplication& application,
-    StartupEventObserver startupEventObserver
+    StartupEventObserver startupEventObserver,
+    StartupDiagnosticsSinkFactory startupDiagnosticsSinkFactory
     )
     : m_application(application),
       m_startupEventObserver(std::move(startupEventObserver)),
+      m_startupDiagnosticsSinkFactory(std::move(startupDiagnosticsSinkFactory)),
       m_shutdownCoordinator([&application] {
           application.quit();
       })
@@ -77,6 +81,51 @@ Application::StartupResult ApplicationBootstrap::start()
     if (processCreated.status == Application::StartupStatus::Failed)
     {
         return processCreated;
+    }
+
+    try
+    {
+        m_startupDiagnosticsSink = m_startupDiagnosticsSinkFactory
+            ? m_startupDiagnosticsSinkFactory()
+            : makeQtStartupDiagnosticsSink();
+        if (!m_startupDiagnosticsSink)
+        {
+            throw std::runtime_error("Startup diagnostics sink unavailable.");
+        }
+    }
+    catch (...)
+    {
+        if (processCreated.latestStageResult.has_value())
+        {
+            writeEarlyQtStartupDiagnostic(*processCreated.latestStageResult);
+        }
+        const Application::StartupResult failure = m_startupCoordinator.recordStage(
+            Application::StartupStage::CoreServicesCreated,
+            Application::StartupStageOutcome::Failed,
+            Application::StartupFailureReason::StageFailed
+            );
+        if (failure.latestStageResult.has_value())
+        {
+            writeEarlyQtStartupDiagnostic(*failure.latestStageResult);
+        }
+        observeStartupResult(failure);
+        return failure;
+    }
+
+    // ProcessCreated predates the diagnostics owner. Retain event order by
+    // flushing it through the newly-created sink before recording its owner.
+    if (processCreated.latestStageResult.has_value())
+    {
+        m_startupDiagnosticsSink->record(*processCreated.latestStageResult);
+    }
+    const Application::StartupResult coreServicesCreated =
+        m_startupCoordinator.recordStage(
+            Application::StartupStage::CoreServicesCreated
+            );
+    observeStartupResult(coreServicesCreated);
+    if (coreServicesCreated.status == Application::StartupStatus::Failed)
+    {
+        return coreServicesCreated;
     }
 
     m_previousQuitOnLastWindowClosed = m_application.quitOnLastWindowClosed();
@@ -145,6 +194,10 @@ void ApplicationBootstrap::observeStartupResult(
     if (m_startupEventObserver && result.latestStageResult.has_value())
     {
         m_startupEventObserver(*result.latestStageResult);
+    }
+    if (m_startupDiagnosticsSink && result.latestStageResult.has_value())
+    {
+        m_startupDiagnosticsSink->record(*result.latestStageResult);
     }
 }
 

@@ -9,6 +9,8 @@
 #include <QtTest/QtTest>
 
 #include <array>
+#include <memory>
+#include <stdexcept>
 #include <vector>
 
 using namespace ClassMngr::Next;
@@ -19,6 +21,7 @@ class ApplicationBootstrapTests final : public QObject
 
 private slots:
     void createsVisibleShellAndReportsOnlyCompletedStartupStage();
+    void diagnosticsSinkConstructionFailureStopsBeforeShellCreation();
     void startupCoordinatorAcceptsEveryPhaseFiveStageInOrder();
     void startupCoordinatorRejectsInvalidTransitionsWithoutRecordingThem();
     void startupCoordinatorRetainsTypedWarningAndTerminalFailure();
@@ -31,6 +34,27 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
 {
     QApplication& application = *qApp;
     std::vector<Application::StartupEvent> observedEvents;
+
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=process-created outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=core-services-created outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=shell-created outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=initial-page-ready outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
     Bootstrap::ApplicationBootstrap bootstrap(
         application,
         [&observedEvents](const Application::StartupEvent& event) {
@@ -43,12 +67,13 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     QCOMPARE(result.status, Application::StartupStatus::InitialExperienceAvailable);
     QVERIFY(result.succeeded());
     QVERIFY(!result.failure.has_value());
-    QCOMPARE(result.stageResults.size(), std::size_t{3});
-    QCOMPARE(result.completedEvents.size(), std::size_t{3});
+    QCOMPARE(result.stageResults.size(), std::size_t{4});
+    QCOMPARE(result.completedEvents.size(), std::size_t{4});
     QVERIFY(!result.diagnostic.has_value());
 
     constexpr std::array expectedStages{
         Application::StartupStage::ProcessCreated,
+        Application::StartupStage::CoreServicesCreated,
         Application::StartupStage::ShellCreated,
         Application::StartupStage::InitialPageReady
     };
@@ -98,6 +123,80 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
         description->text(),
         QStringLiteral("The next-generation workspace is under development.")
         );
+}
+
+void ApplicationBootstrapTests::
+diagnosticsSinkConstructionFailureStopsBeforeShellCreation()
+{
+    QApplication& application = *qApp;
+    const bool previousQuitPolicy = application.quitOnLastWindowClosed();
+    std::vector<Application::StartupEvent> observedEvents;
+
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=process-created outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        "ClassMngrNext startup stage=core-services-created outcome=failed "
+        "diagnostic=stage-failed diagnostic_stage=core-services-created"
+        );
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        []() -> std::unique_ptr<Bootstrap::StartupDiagnosticsSink> {
+            throw std::runtime_error("injected diagnostics sink construction failure");
+        }
+        );
+
+    const Application::StartupResult result = bootstrap.start();
+
+    QCOMPARE(result.status, Application::StartupStatus::Failed);
+    QVERIFY(!result.succeeded());
+    QVERIFY(result.failure.has_value());
+    QCOMPARE(*result.failure, Application::StartupFailureReason::StageFailed);
+    QVERIFY(result.diagnostic.has_value());
+    QCOMPARE(result.diagnostic->code, Application::StartupDiagnosticCode::StageFailed);
+    QVERIFY(result.diagnostic->stage.has_value());
+    QCOMPARE(*result.diagnostic->stage, Application::StartupStage::CoreServicesCreated);
+    QCOMPARE(result.stageResults.size(), std::size_t{2});
+    QCOMPARE(result.completedEvents.size(), std::size_t{1});
+    QVERIFY(result.latestStageResult.has_value());
+    QCOMPARE(result.latestStageResult->stage, Application::StartupStage::CoreServicesCreated);
+    QCOMPARE(result.latestStageResult->outcome, Application::StartupStageOutcome::Failed);
+    QVERIFY(result.latestStageResult->diagnostic.has_value());
+    QCOMPARE(
+        result.latestStageResult->diagnostic->code,
+        Application::StartupDiagnosticCode::StageFailed
+        );
+    QCOMPARE(result.stageResults[0].stage, Application::StartupStage::ProcessCreated);
+    QCOMPARE(result.stageResults[0].outcome, Application::StartupStageOutcome::Completed);
+    QCOMPARE(result.stageResults[1].stage, Application::StartupStage::CoreServicesCreated);
+    QCOMPARE(result.stageResults[1].outcome, Application::StartupStageOutcome::Failed);
+    QCOMPARE(result.completedEvents[0].stage, Application::StartupStage::ProcessCreated);
+
+    QCOMPARE(observedEvents.size(), std::size_t{2});
+    QCOMPARE(observedEvents[0].stage, Application::StartupStage::ProcessCreated);
+    QCOMPARE(observedEvents[0].outcome, Application::StartupStageOutcome::Completed);
+    QCOMPARE(observedEvents[1].stage, Application::StartupStage::CoreServicesCreated);
+    QCOMPARE(observedEvents[1].outcome, Application::StartupStageOutcome::Failed);
+    QVERIFY(observedEvents[1].diagnostic.has_value());
+    QCOMPARE(observedEvents[1].diagnostic->code, Application::StartupDiagnosticCode::StageFailed);
+    QVERIFY(observedEvents[1].diagnostic->stage.has_value());
+    QCOMPARE(*observedEvents[1].diagnostic->stage, Application::StartupStage::CoreServicesCreated);
+
+    QVERIFY(bootstrap.shell() == nullptr);
+    QCOMPARE(application.quitOnLastWindowClosed(), previousQuitPolicy);
+
+    const Application::StartupResult repeatedStart = bootstrap.start();
+    QCOMPARE(repeatedStart.status, Application::StartupStatus::Failed);
+    QVERIFY(repeatedStart.failure.has_value());
+    QCOMPARE(*repeatedStart.failure, Application::StartupFailureReason::AlreadyStarted);
+    QCOMPARE(observedEvents.size(), std::size_t{2});
+    QVERIFY(bootstrap.shell() == nullptr);
 }
 
 void ApplicationBootstrapTests::

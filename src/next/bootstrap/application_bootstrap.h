@@ -2,6 +2,7 @@
 
 #include "next/application/shutdown_coordinator.h"
 #include "next/application/startup_coordinator.h"
+#include "next/bootstrap/startup_diagnostics_sink.h"
 
 #include <functional>
 #include <memory>
@@ -21,6 +22,8 @@ class ApplicationBootstrap final
 public:
     using StartupEventObserver =
         std::function<void(const Application::StartupEvent&)>;
+    using StartupDiagnosticsSinkFactory =
+        std::function<std::unique_ptr<StartupDiagnosticsSink>()>;
 
     // Sole production process entry. It handles the side-effect-free version
     // probe before creating QApplication, then owns startup and event-loop
@@ -30,7 +33,8 @@ public:
     // Injected QApplication seam for focused startup composition tests.
     explicit ApplicationBootstrap(
         QApplication& application,
-        StartupEventObserver startupEventObserver = {}
+        StartupEventObserver startupEventObserver = {},
+        StartupDiagnosticsSinkFactory startupDiagnosticsSinkFactory = {}
         );
     ~ApplicationBootstrap();
 
@@ -48,6 +52,8 @@ private:
 
     QApplication& m_application;
     StartupEventObserver m_startupEventObserver;
+    StartupDiagnosticsSinkFactory m_startupDiagnosticsSinkFactory;
+    std::unique_ptr<StartupDiagnosticsSink> m_startupDiagnosticsSink;
     Application::StartupCoordinator m_startupCoordinator;
     Application::ShutdownCoordinator m_shutdownCoordinator;
     std::unique_ptr<Ui::ApplicationShell> m_shell;

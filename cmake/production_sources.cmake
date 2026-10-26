@@ -641,6 +641,9 @@ set(CLASSMNGR_NEXT_MAIN_SOURCE "src/next/main.cpp")
 set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/bootstrap/application_bootstrap.cpp"
     "src/next/bootstrap/application_bootstrap.h"
+    "src/next/bootstrap/startup_diagnostics_sink.h"
+    "src/next/bootstrap/qt_startup_diagnostics_sink.cpp"
+    "src/next/bootstrap/qt_startup_diagnostics_sink.h"
     "src/next/ui/application_shell.cpp"
     "src/next/ui/application_shell.h"
     "src/next/ui/initial_page.cpp"
