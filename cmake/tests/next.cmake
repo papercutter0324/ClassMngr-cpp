@@ -249,6 +249,18 @@ get_target_property(_classmngr_next_workspace_sources
     ClassMngrNextWorkspace
     SOURCES
 )
+get_target_property(_classmngr_next_workspace_type
+    ClassMngrNextWorkspace
+    TYPE
+)
+get_target_property(_classmngr_next_workspace_domain_links
+    ClassMngrNextWorkspaceDomain
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_next_workspace_domain_type
+    ClassMngrNextWorkspaceDomain
+    TYPE
+)
 get_target_property(_classmngr_document_catalog_test_links
     ClassMngrNextResourceDocumentCatalogTests
     LINK_LIBRARIES
@@ -265,6 +277,10 @@ get_target_property(_classmngr_legacy_sources
     ClassMngr
     SOURCES
 )
+get_target_property(_classmngr_legacy_links
+    ClassMngr
+    LINK_LIBRARIES
+)
 foreach(_classmngr_next_boundary_value IN ITEMS
         _classmngr_next_startup_links
         _classmngr_next_startup_update_links
@@ -272,10 +288,14 @@ foreach(_classmngr_next_boundary_value IN ITEMS
         _classmngr_next_workspace_links
         _classmngr_workspace_store_links
         _classmngr_next_workspace_sources
+        _classmngr_next_workspace_type
+        _classmngr_next_workspace_domain_links
+        _classmngr_next_workspace_domain_type
         _classmngr_document_catalog_test_links
         _classmngr_bootstrap_test_links
         _classmngr_document_catalog_library_links
-        _classmngr_legacy_sources)
+        _classmngr_legacy_sources
+        _classmngr_legacy_links)
     string(REPLACE ";" "|" ${_classmngr_next_boundary_value}
         "${${_classmngr_next_boundary_value}}"
     )
@@ -290,10 +310,14 @@ file(WRITE "${_classmngr_next_boundary_report}"
     "NEXT_WORKSPACE_LINKS=${_classmngr_next_workspace_links}\n"
     "WORKSPACE_STORE_LINKS=${_classmngr_workspace_store_links}\n"
     "NEXT_WORKSPACE_SOURCES=${_classmngr_next_workspace_sources}\n"
+    "NEXT_WORKSPACE_TYPE=${_classmngr_next_workspace_type}\n"
+    "NEXT_WORKSPACE_DOMAIN_LINKS=${_classmngr_next_workspace_domain_links}\n"
+    "NEXT_WORKSPACE_DOMAIN_TYPE=${_classmngr_next_workspace_domain_type}\n"
     "DOCUMENT_CATALOG_TEST_LINKS=${_classmngr_document_catalog_test_links}\n"
     "BOOTSTRAP_TEST_LINKS=${_classmngr_bootstrap_test_links}\n"
     "DOCUMENT_CATALOG_LIBRARY_LINKS=${_classmngr_document_catalog_library_links}\n"
     "LEGACY_SOURCES=${_classmngr_legacy_sources}\n"
+    "LEGACY_LINKS=${_classmngr_legacy_links}\n"
 )
 add_test(
     NAME NextStartupWorkspaceDependencyBoundary

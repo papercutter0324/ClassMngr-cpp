@@ -656,9 +656,18 @@ foreach(_classmngr_next_feature IN LISTS _classmngr_next_feature_targets)
     )
 endforeach()
 
+# Reuse the Domain objects without linking unused validation implementations
+# into Next. This archive must follow WorkspaceStore in the adapter's closure.
+add_library(ClassMngrNextWorkspaceDomain STATIC)
+target_link_libraries(ClassMngrNextWorkspaceDomain
+    PRIVATE
+        ClassMngrDomain
+)
+
 # Keep the startup workspace adapter outside the broad Next Platform target:
 # it needs the shared store and Qt Sql, but not Qt Network or legacy services.
-add_library(ClassMngrNextWorkspace STATIC
+# Its profiler hooks must precede WorkspaceStore's archive on every linker.
+add_library(ClassMngrNextWorkspace OBJECT
     ${CLASSMNGR_NEXT_WORKSPACE_SOURCES}
 )
 target_link_libraries(ClassMngrNextWorkspace
@@ -666,7 +675,7 @@ target_link_libraries(ClassMngrNextWorkspace
         ClassMngrBuildSettings
         ClassMngrNext::Application
         ClassMngrWorkspaceStore
-        ClassMngrDomain
+        ClassMngrNextWorkspaceDomain
         Qt6::Sql
 )
 set_target_properties(ClassMngrNextWorkspace

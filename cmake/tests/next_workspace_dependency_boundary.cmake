@@ -17,6 +17,12 @@ foreach(_line IN LISTS _report_lines)
         set(_workspace_store_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_SOURCES=(.*)$")
         set(_next_workspace_sources "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_WORKSPACE_TYPE=(.*)$")
+        set(_next_workspace_type "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_WORKSPACE_DOMAIN_LINKS=(.*)$")
+        set(_next_workspace_domain_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_WORKSPACE_DOMAIN_TYPE=(.*)$")
+        set(_next_workspace_domain_type "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^DOCUMENT_CATALOG_TEST_LINKS=(.*)$")
         set(_document_catalog_test_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^BOOTSTRAP_TEST_LINKS=(.*)$")
@@ -25,6 +31,8 @@ foreach(_line IN LISTS _report_lines)
         set(_document_catalog_library_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^LEGACY_SOURCES=(.*)$")
         set(_legacy_sources "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^LEGACY_LINKS=(.*)$")
+        set(_legacy_links "${CMAKE_MATCH_1}")
     endif()
 endforeach()
 
@@ -84,11 +92,25 @@ if(NOT _document_catalog_library_links STREQUAL _expected_document_catalog_libra
 endif()
 
 set(_expected_workspace_links
-    "ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrWorkspaceStore|ClassMngrDomain|Qt6::Sql"
+    "ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrWorkspaceStore|ClassMngrNextWorkspaceDomain|Qt6::Sql"
 )
 if(NOT _next_workspace_links STREQUAL _expected_workspace_links)
     message(FATAL_ERROR
         "Unexpected direct ClassMngrNextWorkspace dependencies: [${_next_workspace_links}]"
+    )
+endif()
+
+if(NOT _next_workspace_type STREQUAL "OBJECT_LIBRARY")
+    message(FATAL_ERROR
+        "ClassMngrNextWorkspace must supply its profiler hooks as direct objects; "
+        "found ${_next_workspace_type}"
+    )
+endif()
+if(NOT _next_workspace_domain_type STREQUAL "STATIC_LIBRARY"
+   OR NOT _next_workspace_domain_links STREQUAL "ClassMngrDomain")
+    message(FATAL_ERROR
+        "ClassMngrNextWorkspaceDomain must archive only the shared Domain objects: "
+        "type=${_next_workspace_domain_type}, links=[${_next_workspace_domain_links}]"
     )
 endif()
 
@@ -116,6 +138,7 @@ foreach(_forbidden_dependency IN ITEMS
     foreach(_dependency_set IN ITEMS
             _next_links
             _next_workspace_links
+            _next_workspace_domain_links
             _workspace_store_links
             _document_catalog_test_links
             _bootstrap_test_links
@@ -134,6 +157,7 @@ endforeach()
 
 foreach(_network_forbidden_set IN ITEMS
         _next_workspace_links
+        _next_workspace_domain_links
         _workspace_store_links
         _document_catalog_test_links
         _bootstrap_test_links
@@ -166,3 +190,13 @@ if(NOT _legacy_compat_index EQUAL -1)
         "[${_legacy_sources}]"
     )
 endif()
+
+foreach(_next_only_target IN ITEMS ClassMngrNextWorkspace ClassMngrNextWorkspaceDomain)
+    string(FIND "${_legacy_links}|${_legacy_sources}" "${_next_only_target}" _legacy_next_target_index)
+    if(NOT _legacy_next_target_index EQUAL -1)
+        message(FATAL_ERROR
+            "Next-only workspace target ${_next_only_target} entered ClassMngr: "
+            "links=[${_legacy_links}], sources=[${_legacy_sources}]"
+        )
+    endif()
+endforeach()
