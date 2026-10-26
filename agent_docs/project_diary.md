@@ -8909,3 +8909,14 @@ load failures after the CTest PATH fix. The separate DocumentCatalog source
 test still expects the old member renamed by Phase 4, so it is a stale test
 assertion rather than a Next startup failure. Keep these broad-suite results
 visible; the Phase 5 behavior gate did not require a full-suite pass.
+
+## 2026-10-26 — Phase 6 bounded windows
+
+Keep a windowed table model's resident-row capacity fixed while it is in
+windowed mode; a capacity change requires an explicit transition back to the
+unwindowed state before selecting another bound. Keep feature persistence
+separate from a resident window when its save path expects `rowCount()` and
+`rowAt()` to enumerate the complete dataset. Exercise large logical data by
+replacing bounded windows in place, and verify invalid replacements preserve
+the current generation and indexes. The shared model bounds the supplied rows;
+feature code still owns fetching each window and persisting the full source.

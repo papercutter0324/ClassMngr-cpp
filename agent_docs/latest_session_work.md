@@ -1,6 +1,29 @@
 # Latest Session Work
 
-## Current Deployment Handoff — phase5_startup_bootstrap_rewrite_20261026 (complete)
+## Current Deployment Handoff — phase6-shared-ui-20261026 (complete)
+
+- Heavy route; branch `Qt-Rewrite`. Phase 6 is complete at F1528; Phase 7 is
+  next and has not started. Batch 1 (F1514–F1527) was pushed at `a3ff4d1c`.
+  Batch 3 discovery found no further Phase 6 slices.
+- F1528 adds an opt-in resident row window with a fixed capacity for the
+  windowed lifetime, qint64 logical offset/total metadata, in-place reset, and
+  old-generation release. Staff Directory remains unwindowed because its save
+  path enumerates all rows. The incremental macOS Debug model and Staff
+  Directory regression CTests passed 2/2.
+- The model test visits 257 windows across a synthetic 16,387-row source with
+  a 64-row resident cap, checks valid metadata above `INT_MAX`, and proves
+  rejected capacity changes preserve active state. The window model bounds
+  supplied resident rows; feature code owns loading each window and saving the
+  complete source.
+- F1527 added reviewed English/Korean shell baselines in Light and Dark themes
+  at 1024×720, 1× scale. Its focused Bootstrap, ThemePresenter, Navigation,
+  and PageHost CTests passed 4/4.
+- The Phase 6 exit gate is recorded in the
+  [Phase 6 plan](../plans/qt-rewrite-heavy-route-plan/07-Phase-6-Shared-UI-Rewrite.md).
+  No full suite, cross-platform build, native-window review, or packaged memory
+  measurement ran; Phase 9 owns the packaged Release memory gate.
+
+## Historical Deployment Handoff — phase5_startup_bootstrap_rewrite_20261026 (complete)
 
 - Heavy route; branch `Qt-Rewrite`. Phase 5 passed its documented exit gate
   at implementation head `6bbff54abc524723e23911d65130b1b198dde2b3`.

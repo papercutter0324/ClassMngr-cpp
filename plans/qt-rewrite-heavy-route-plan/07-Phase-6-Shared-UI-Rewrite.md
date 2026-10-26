@@ -32,20 +32,19 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: In progress
+- Status: Complete
 - Default route: Heavy
 - Depends on: Phase 5
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 remains active on the Heavy route. F1514–F1527 are
-  accepted; F1527 verified shell appearance and labels in English and Korean
-  under both supported themes. Batch 1 is ready to commit and push. F1528 —
-  bounded review-window model — is the discovered Batch 2 requirement for
-  §6.7, and starts after that push. Staff Directory remains the representative
-  model/view consumer; its full feature migration is Phase 7C. Window/splitter
-  preference lifecycle behavior remains deferred under F1524 because there
-  are no active callers.
+- Current note: Phase 6 is complete on the Heavy route. F1528 closes the §6.7
+  bounded review-window requirement; independent model and Staff Directory
+  regression CTests passed 2/2. The shell and representative-table exit-gate
+  evidence is recorded under F1526–F1527. Batch 3 discovery found no other
+  Phase 6 slices. Staff Directory's full feature migration is Phase 7C.
+  Window/splitter preference lifecycle behavior remains deferred under F1524
+  because there are no active callers.
 
 ### Slice batches
 
@@ -327,10 +326,9 @@ migration. The latter remains Phase 7C, and packaged Release memory measurement
 remains Phase 9. No full suite or cross-platform build ran.
 
 Paired Batch 2 discovery found F1528, a bounded review-window model, to satisfy
-the remaining Phase 6 §6.7 shared-primitive requirement. F1528 is inactive
-until Batch 1 is accepted and pushed. Window/splitter keys remain intact and
-their lifecycle behavior remains deferred under the F1524 decision because
-there are no active callers.
+the remaining Phase 6 §6.7 shared-primitive requirement. Window/splitter keys
+remain intact and their lifecycle behavior remains deferred under the F1524
+decision because there are no active callers.
 
 ### F1527 — complete — 2026-10-26
 
@@ -354,11 +352,46 @@ inventory check, four-capture manifest checks, and CMake ownership validation
 for 1,694 handwritten files passed. No full suite, native-window capture,
 cross-platform build, or cross-platform visual parity was claimed.
 
-Paired Batch 2 discovery found F1528, a bounded review-window model, to satisfy
-the remaining Phase 6 §6.7 shared-primitive requirement. It starts after Batch
-1 is committed and pushed. Window/splitter keys remain intact and their
-lifecycle behavior remains deferred under the F1524 decision because there
-are no active callers.
+### F1528 — complete — 2026-10-26
+
+Added opt-in bounded review windows to `EditableTextTableModel<Row>`. The
+windowed path keeps only the resident rows, exposes a wide logical offset and
+total-row count, and reports the active resident capacity. The first valid
+window establishes a fixed capacity for that windowed lifetime; a different
+capacity is rejected before reset or mutation. `setRows()` explicitly returns
+the model to unwindowed mode, so existing full-row consumers can retain their
+behavior. Insert/remove remain available when unwindowed and are rejected
+while windowed. Replacing a window resets indexes and releases the prior row
+generation. Feature code still owns fetching/provisioning each window and
+persisting the complete source.
+
+Staff Directory remains unwindowed because its save path iterates `rowCount()`
+and reads every `rowAt()`. The focused model test attaches a real `QTableView`
+and visits all 257 windows for a synthetic 16,387-row logical source with a
+64-row capacity. It verifies the resident cap, logical metadata including
+valid values above `INT_MAX`, rejected input/capacity changes preserving the
+active generation and indexes, and release after replacement. The existing
+Staff Directory page regression was rerun.
+
+Independent incremental macOS Debug build covered
+`ClassMngrEditableTextTableModelTests` and
+`ClassMngrStaffDirectoryPageTests`; focused CTest passed 2/2. CMake ownership
+validation passed for 1,694 handwritten files, and `git diff --check` passed.
+No full suite, cross-platform build, or packaged memory measurement ran; the
+packaged Release memory gate remains Phase 9.
+
+### Phase 6 exit gate — passed — 2026-10-26
+
+The shell navigation gate is covered by lazy page registration and lifecycle,
+workspace/permission-aware navigation and history actions, and the F1527
+English/Korean Light/Dark appearance baselines. Tests verify labels, intentional
+icon absence, initial Back/Forward state, selected route/item and focus without
+constructing unrelated pages. Staff Directory is the representative large
+model/view consumer with bounded widget/editor creation. F1528 adds bounded
+resident model rows and in-place window replacement for large logical sources.
+No further Phase 6 candidates were found. Full Staff Directory feature
+migration remains Phase 7C; visual parity remains in Phase 7/10.
+
 
 ## Objective
 

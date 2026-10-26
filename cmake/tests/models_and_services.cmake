@@ -5,6 +5,8 @@ classmngr_add_qt_test(
     LIBRARIES
         Qt6::Core
         Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
 )
 set_property(TARGET ClassMngrEditableTextTableModelTests
     PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE

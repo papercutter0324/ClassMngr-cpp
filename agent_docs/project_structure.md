@@ -14,8 +14,8 @@
 - `src/features`: calendar, campus, classes, documents, my-info, roster,
   schedule, setup, speaking evaluation, substitute preparation, and teacher
   modules; each may contain data, services, and UI.
-- `src/ui/shared`: reusable actions, components, dialogs, pages, printing,
-  state, styles, validation, and widgets.
+- `src/ui/shared`: reusable actions, components, dialogs, models, pages,
+  printing, state, styles, validation, and widgets.
 - `resources`: fonts, icons, styles, translations, documents, templates,
   campus/files/images assets, and resource-pack inputs.
 - `tests`: focused Qt test sources and fixtures.
@@ -46,7 +46,11 @@ settings, and updates. Core provides cross-cutting services. Data owns the
 SQLite session, schema management, transactions, and repositories. Domain
 holds framework-light records and business validation. Feature modules combine
 feature-specific models, services, import/export logic, and pages. Shared UI
-contains reusable Qt widgets and presentation infrastructure.
+contains reusable Qt widgets and presentation infrastructure, including
+`EditableTextTableModel<Row>` in `models`. Its fixed-capacity resident window
+is opt-in; `setRows()` retains the unwindowed compatibility path. Feature code
+owns window fetching and persistence of the complete source. Staff Directory
+remains unwindowed because its save path enumerates `rowCount()` and `rowAt()`.
 
 ## Main Interfaces and Integration Boundaries
 

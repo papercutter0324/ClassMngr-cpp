@@ -6,11 +6,10 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-26
-- Current milestone: Phase 6 F1527 appearance evidence passed on the Heavy
-  route: English and Korean shell baselines under Light and Dark themes, with
-  translated labels, selection/focus, action state, and placeholder layout
-  checked. F1528 — bounded review-window model — remains for §6.7 and starts
-  after Batch 1 is committed and pushed. See the [Phase 6 plan](07-Phase-6-Shared-UI-Rewrite.md)
+- Current milestone: Phase 6 is complete on the Heavy route. F1528 closes the
+  §6.7 bounded review-window requirement, and the shell/representative-table
+  exit gate passed. Batch 3 discovery found no other Phase 6 slices. Phase 7
+  is next and has not started. See the [Phase 6 plan](07-Phase-6-Shared-UI-Rewrite.md)
   and [current batch tracker](Current-Slice-Batches.md). Rendering parity
   remains a Phase 7/10 gate, and legacy pack removal remains a Phase 12 gate.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
@@ -35,7 +34,7 @@
 | 3 | 04-Phase-3-Persistence-Rewrite.md | Complete | Heavy | 1, 2 |
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
-| 6 | 07-Phase-6-Shared-UI-Rewrite.md | In progress | Heavy | 5 |
+| 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
 | 7 | 08-Phase-7-Feature-Migration.md | Not started | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |

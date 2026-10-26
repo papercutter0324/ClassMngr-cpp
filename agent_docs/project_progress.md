@@ -2,7 +2,7 @@
 
 Active deployment plan: Qt Rewrite Phase 6 — Shared UI Rewrite.
 Current deployment: `phase6-shared-ui-20261026`. Route: Heavy.
-Phases 0–5 are Complete; Phase 6 is In progress. F1514 added descriptor-based
+Phases 0–6 are Complete; Phase 7 is not started. F1514 added descriptor-based
 lazy registration, F1515 added explicit page lifecycle states, and F1516 added
 guarded placeholder navigation with history. F1517 added the typed CommandBus;
 F1518 made history action state respect target visibility. F1519 added typed
@@ -15,9 +15,10 @@ size to the shared preferences state, a complete snapshot adapter, startup
 language/theme/font selection, and page access to the same model. F1525 added a
 shared editable text-row model adopted by Staff Directory. F1526 accepted
 Staff Directory as the representative model/view gate. F1527 captured and
-verified English/Korean shell appearance under Light/Dark themes. F1528, the
-bounded review-window model, is queued after the Batch 1 push. Phase 5
-platform evidence and broad-suite limitations remain in the
+verified English/Korean shell appearance under Light/Dark themes and was
+pushed with Batch 1 at `a3ff4d1c`. F1528 completed the bounded review-window
+model and Phase 6 exit gate; Batch 3 discovery found no other Phase 6 slices.
+Phase 5 platform evidence and broad-suite limitations remain in the
 [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [Start Here](../plans/qt-rewrite-heavy-route-plan/00-Start-Here.md).
 
@@ -30,11 +31,11 @@ appearance.
 
 ## Overall Progress
 
-Phases 0–5 are Complete. Phase 6 is In progress; F1514–F1527 are accepted.
-F1528 was discovered for Batch 2 to provide bounded review-window data support
-required by §6.7. Batch 1 is ready to commit and push. The current and next
-batch candidates are in
-`plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
+Phases 0–6 are Complete. F1514–F1528 are accepted; Batch 1 is pushed, and
+F1528 closes the remaining bounded review-window requirement in §6.7. The
+Batch 3 scan found no additional Phase 6 candidates. Phase 7 is the next
+planned phase and has not started. The current slice-batch tracker has no
+active candidates: `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained
@@ -75,21 +76,23 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-26 (Phase 6, F1527 accepted)
+### Current checkpoint — 2026-10-26 (Phase 6 complete at F1528)
 
-Phase 6 slices F1514–F1527 are accepted. The shell appearance gate now has
-four reviewed 1024×720, 1× baselines for English and Korean under Light and
-Dark themes. Tests cover labels, selection/focus, placeholder fit, icon
-absence, and initial Back/Forward action state. Independent incremental macOS
-Debug verification passed 4/4 focused CTests across Bootstrap, ThemePresenter,
-Navigation, and PageHost. The Next tree uses the existing 2px solid, 8px-radius
-sidebar frame; placeholder typography and spacing are preserved. No full suite,
-native-window test, cross-platform build, or cross-platform visual parity ran.
-F1528 was discovered to add bounded review-window model support required by
-Phase 6 §6.7; it begins after Batch 1 is committed and pushed. Window/splitter
-keys remain intact, with their lifecycle behavior deferred under F1524 because
-there are no active callers. Phase 7/10 owns rendering parity; Phase 12 owns
-legacy resource-pack removal.
+Phase 6 is Complete on the Heavy route. F1528 adds opt-in resident row windows
+with a fixed capacity for each windowed lifetime, wide logical offset/total
+metadata, in-place reset, and release of replaced rows. Independent incremental
+macOS Debug verification passed the model and Staff Directory regression
+CTest suites 2/2. The real `QTableView` test traverses 257 windows over 16,387
+logical rows with a 64-row cap; a valid logical offset above `INT_MAX` is also
+checked. Staff Directory remains unwindowed because persistence reads every
+row through `rowCount()`/`rowAt()`. The window model bounds the supplied
+resident rows; feature code still owns loading each window and full-source
+persistence. Batch 3 discovery found no other Phase 6 slices. No full suite,
+cross-platform build, packaged memory measurement, or native-window review ran.
+Window/splitter keys remain intact, with lifecycle behavior deferred under
+F1524 because there are no active callers. Phase 7/10 owns rendering parity;
+Phase 9 owns packaged Release memory measurement; Phase 12 owns legacy
+resource-pack removal.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

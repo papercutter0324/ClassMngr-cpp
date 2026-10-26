@@ -1,10 +1,13 @@
 #include "ui/shared/models/editable_text_table_model.h"
 
 #include <QAbstractItemModelTester>
+#include <QApplication>
 #include <QPersistentModelIndex>
 #include <QSignalSpy>
+#include <QTableView>
 #include <QtTest>
 
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -54,6 +57,8 @@ private slots:
     void editsRejectInvalidRequestsAndNotifyChangedCells();
     void rowOperationsSignalAndPreserveMetadata();
     void resetReplacesThePreviousGenerationAndClearsRows();
+    void windowRowsExposeMetadataAndRejectInvalidReplacement();
+    void windowedTableViewBoundsResidentRowsAcrossLargeLogicalSource();
 };
 
 void EditableTextTableModelTests::schemasExposeRolesHeadersAndMetadata_data()
@@ -70,7 +75,11 @@ void EditableTextTableModelTests::schemasExposeRolesHeadersAndMetadata()
     QAbstractItemModelTester tester(
         &model, QAbstractItemModelTester::FailureReportingMode::QtTest);
     model.setRows({rowWithId(77, columns)});
+    QVERIFY(!model.isWindowed());
     QCOMPARE(model.rowCount(), 1);
+    QCOMPARE(model.logicalRowOffset(), qint64(0));
+    QCOMPARE(model.totalRowCount(), qint64(1));
+    QCOMPARE(model.windowCapacity(), 0);
     QCOMPARE(model.columnCount(), columns);
     QCOMPARE(model.rowCount(model.index(0, 0)), 0);
     QCOMPARE(model.columnCount(model.index(0, 0)), 0);
@@ -214,6 +223,157 @@ void EditableTextTableModelTests::resetReplacesThePreviousGenerationAndClearsRow
     QVERIFY(!model.removeRows(0, 1));
 }
 
-QTEST_GUILESS_MAIN(EditableTextTableModelTests)
+void EditableTextTableModelTests::windowRowsExposeMetadataAndRejectInvalidReplacement()
+{
+    TestModel model(5);
+    QAbstractItemModelTester tester(
+        &model, QAbstractItemModelTester::FailureReportingMode::QtTest);
+    QSignalSpy resets(&model, &QAbstractItemModel::modelReset);
+
+    auto priorGeneration = std::make_shared<int>(10);
+    const std::weak_ptr<int> priorGenerationRef = priorGeneration;
+    TestRow priorRow = rowWithId(10, 5);
+    priorRow.generation = std::move(priorGeneration);
+    model.setWindowRows({std::move(priorRow)}, 12, 40, 2);
+    QPersistentModelIndex priorIndex(model.index(0, 0));
+    QCOMPARE(model.rowCount(), 1);
+    QVERIFY(model.isWindowed());
+    QCOMPARE(model.logicalRowOffset(), qint64(12));
+    QCOMPARE(model.totalRowCount(), qint64(40));
+    QCOMPARE(model.windowCapacity(), 2);
+    QCOMPARE(model.rowAt(0).id, 10);
+    QCOMPARE(resets.size(), 1);
+
+    QVERIFY_THROWS_EXCEPTION(
+        std::invalid_argument,
+        model.setWindowRows({rowWithId(20, 5)}, 0, 1, 0));
+    QVERIFY_THROWS_EXCEPTION(
+        std::length_error,
+        model.setWindowRows(
+            {rowWithId(20, 5), rowWithId(21, 5), rowWithId(22, 5)}, 0, 3, 2));
+    QVERIFY_THROWS_EXCEPTION(
+        std::invalid_argument,
+        model.setWindowRows({rowWithId(25, 5)}, 13, 40, 3));
+    QVERIFY(priorIndex.isValid());
+    QVERIFY(!priorGenerationRef.expired());
+    QCOMPARE(model.rowAt(0).id, 10);
+    QCOMPARE(model.logicalRowOffset(), qint64(12));
+    QCOMPARE(model.totalRowCount(), qint64(40));
+    QCOMPARE(model.windowCapacity(), 2);
+    QCOMPARE(resets.size(), 1);
+    QVERIFY_THROWS_EXCEPTION(
+        std::invalid_argument,
+        model.setWindowRows({rowWithId(20, 5)}, -1, 40, 2));
+    QVERIFY_THROWS_EXCEPTION(
+        std::invalid_argument,
+        model.setWindowRows({rowWithId(20, 5)}, 0, -1, 2));
+    QVERIFY_THROWS_EXCEPTION(
+        std::invalid_argument,
+        model.setWindowRows({rowWithId(20, 5)}, 41, 40, 2));
+    QVERIFY_THROWS_EXCEPTION(
+        std::invalid_argument,
+        model.setWindowRows({rowWithId(20, 5)}, 40, 40, 2));
+    QVERIFY_THROWS_EXCEPTION(
+        std::length_error,
+        model.setWindowRows(
+            {rowWithId(20, 5)}, std::numeric_limits<qint64>::max(),
+            std::numeric_limits<qint64>::max(), 2));
+    QVERIFY_THROWS_EXCEPTION(
+        std::invalid_argument,
+        model.setWindowRows({rowWithId(20, 4)}, 0, 1, 2));
+
+    QCOMPARE(resets.size(), 1);
+    QVERIFY(priorIndex.isValid());
+    QVERIFY(!priorGenerationRef.expired());
+    QCOMPARE(model.logicalRowOffset(), qint64(12));
+    QCOMPARE(model.totalRowCount(), qint64(40));
+    QCOMPARE(model.windowCapacity(), 2);
+    QCOMPARE(model.rowAt(0).id, 10);
+
+    model.setWindowRows({rowWithId(30, 5), rowWithId(31, 5)}, 14, 40, 2);
+    QVERIFY(priorGenerationRef.expired());
+    QVERIFY(!priorIndex.isValid());
+    QCOMPARE(resets.size(), 2);
+    QCOMPARE(model.rowCount(), 2);
+    QCOMPARE(model.logicalRowOffset(), qint64(14));
+    QCOMPARE(model.totalRowCount(), qint64(40));
+    QVERIFY(!model.insertRows(0, 1));
+    QVERIFY(!model.removeRows(0, 1));
+    QCOMPARE(model.rowCount(), 2);
+
+    model.setRows({rowWithId(50, 5)});
+    QVERIFY(!model.isWindowed());
+    QCOMPARE(model.logicalRowOffset(), qint64(0));
+    QCOMPARE(model.totalRowCount(), qint64(1));
+    QCOMPARE(model.windowCapacity(), 0);
+    QVERIFY(model.insertRows(1, 1));
+    QVERIFY(model.removeRows(1, 1));
+
+    const qint64 wideOffset =
+        static_cast<qint64>(std::numeric_limits<int>::max()) + 42;
+    const qint64 wideTotal = wideOffset + 1;
+    model.setWindowRows({rowWithId(60, 5)}, wideOffset, wideTotal, 3);
+    QVERIFY(model.isWindowed());
+    QCOMPARE(model.logicalRowOffset(), wideOffset);
+    QCOMPARE(model.totalRowCount(), wideTotal);
+    QCOMPARE(model.windowCapacity(), 3);
+}
+
+void EditableTextTableModelTests::
+    windowedTableViewBoundsResidentRowsAcrossLargeLogicalSource()
+{
+    constexpr qint64 logicalRowCount = 16387;
+    constexpr int capacity = 64;
+    TestModel model(5);
+    QAbstractItemModelTester tester(
+        &model, QAbstractItemModelTester::FailureReportingMode::QtTest);
+    QTableView view;
+    view.setModel(&model);
+    view.resize(640, 360);
+    view.show();
+    QApplication::processEvents();
+    QCOMPARE(view.model(), &model);
+
+    std::weak_ptr<int> previousGeneration;
+    int maximumResidentRows = 0;
+    for (qint64 offset = 0; offset < logicalRowCount; offset += capacity)
+    {
+        const int count = static_cast<int>(
+            logicalRowCount - offset < capacity ? logicalRowCount - offset : capacity);
+        auto generation = std::make_shared<int>(static_cast<int>(offset));
+        QVector<TestRow> rows;
+        rows.reserve(count);
+        for (int localRow = 0; localRow < count; ++localRow)
+        {
+            TestRow row = rowWithId(static_cast<int>(offset) + localRow, 5);
+            row.generation = generation;
+            rows.push_back(std::move(row));
+        }
+
+        model.setWindowRows(std::move(rows), offset, logicalRowCount, capacity);
+        QVERIFY(model.rowCount() <= capacity);
+        QCOMPARE(view.model()->rowCount(), model.rowCount());
+        QCOMPARE(model.logicalRowOffset(), offset);
+        QCOMPARE(model.totalRowCount(), logicalRowCount);
+        QCOMPARE(model.windowCapacity(), capacity);
+        QCOMPARE(model.rowAt(0).id, static_cast<int>(offset));
+        maximumResidentRows = std::max(maximumResidentRows, model.rowCount());
+
+        if (offset > 0)
+        {
+            QVERIFY(previousGeneration.expired());
+        }
+        previousGeneration = generation;
+    }
+
+    QCOMPARE(model.rowCount(), 3);
+    QVERIFY(maximumResidentRows <= capacity);
+    QVERIFY(!previousGeneration.expired());
+    model.setRows({});
+    QVERIFY(previousGeneration.expired());
+    QCOMPARE(view.model()->rowCount(), 0);
+}
+
+QTEST_MAIN(EditableTextTableModelTests)
 
 #include "editable_text_table_model_tests.moc"
