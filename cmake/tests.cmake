@@ -179,18 +179,8 @@ function(classmngr_finalize_test_targets)
     get_property(test_names DIRECTORY "${PROJECT_SOURCE_DIR}" PROPERTY TESTS)
 
     foreach(test_name IN LISTS test_names)
-        if(NOT TARGET "${test_name}")
-            continue()
-        endif()
-
-        get_target_property(test_is_standalone_cpp
-            "${test_name}"
-            CLASSMNGR_STANDALONE_CPP_TEST
-        )
-        if(test_is_standalone_cpp)
-            continue()
-        endif()
-
+        # Standalone Qt tests and CTest wrappers still need Qt's DLL directory.
+        # Set it before the target/runtime skips below.
         if(WIN32)
             get_property(test_environment_modifications
                 TEST "${test_name}"
@@ -209,6 +199,18 @@ function(classmngr_finalize_test_targets)
                         "${test_environment_modifications}"
                 )
             endif()
+        endif()
+
+        if(NOT TARGET "${test_name}")
+            continue()
+        endif()
+
+        get_target_property(test_is_standalone_cpp
+            "${test_name}"
+            CLASSMNGR_STANDALONE_CPP_TEST
+        )
+        if(test_is_standalone_cpp)
+            continue()
         endif()
 
         get_target_property(test_qml_module_uri
