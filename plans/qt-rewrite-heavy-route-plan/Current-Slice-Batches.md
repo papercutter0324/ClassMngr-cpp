@@ -12,10 +12,13 @@ its native matrix passed before this batch began.
    the implemented stages, and coordinated shutdown. Keep `--version`
    side-effect-free and keep legacy startup out of the new bootstrap.
    Independent macOS Debug CTest passed 3/3; see the Phase 5 progress log.
-2. **F1502 — Accepted / next:** Define the complete startup stage model, legal
-   transitions, and typed warning/failure outcomes; emit diagnostics only
-   after real stage completion.
-3. **F1503 — Discovered:** Compose platform services, logging, and diagnostics
+2. **F1502 — Complete:** Define the full Phase 5 stage catalog,
+   typed completion/warning/failure events, and monotonic legal transitions.
+   Wire actual process/shell/page stages into the current bootstrap, but do not
+   synthesize missing resource, settings, language, theme, font, workspace, or
+   runtime events and do not emit `StartupReady` before those prerequisites are
+   composed. Independent macOS Debug focused CTest passed 3/3.
+3. **F1503 — Accepted / in progress:** Compose platform services, logging, and diagnostics
    before resource initialization; attribute startup failures to their stage.
 4. **F1504 — Discovered:** Load the Next resource catalog/loader under an
    explicit startup scope without acquiring feature resources during bootstrap.

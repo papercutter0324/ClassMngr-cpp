@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
 - Last updated: 2026-10-25
-- Current note: Phase 5 is active on the Heavy route. F1501 is complete: `ClassMngrNext` now uses `ApplicationBootstrap` as its production root, displays a minimal shell/page, reports only `InitialExperienceAvailable`, and coordinates close/shutdown. Independent macOS Debug verification passed 3/3 focused CTests. F1502 is next; complete startup stages and diagnostics remain open. The ordered batch is in `Current-Slice-Batches.md`.
+- Current note: Phase 5 is active on the Heavy route. F1501 is complete at `993834ed`; F1502 is complete with the ten-stage typed coordinator and factual process/shell/page events. The focused macOS Debug bootstrap, launch, and filesystem CTests passed 3/3. F1503 is next to compose platform services and logging before resource initialization. The ordered batch is in `Current-Slice-Batches.md`.
 
 ### Slice batches
 
@@ -71,7 +71,26 @@ the affected target build passed; focused CTest passed 3/3
 reported 5/5 QtTest cases. Source ownership validated 1,640 handwritten files.
 The full suite and an external subprocess close of the ordinary GUI path were
 not run; shell readiness and close were tested through the production
-bootstrap API under the offscreen platform. F1502 is next.
+bootstrap API under the offscreen platform.
+
+### F1502 — complete — 2026-10-25
+
+`StartupCoordinator` now models all ten planned Phase 5 stages, typed
+completed/warning/failed outcomes, diagnostic codes, and monotonic transitions.
+Duplicate, backward, invalid, failed, and early `StartupReady` outcomes are
+rejected; readiness requires a non-failed outcome for every prerequisite.
+`ApplicationBootstrap` emits only the real `ProcessCreated`, `ShellCreated`,
+and `InitialPageReady` events and remains `InitialExperienceAvailable` until
+later slices compose the missing owners. Its callback carries Qt-free typed
+events; no widget scan or false ready stage is introduced.
+
+Independent macOS Debug verification passed: `cmake --preset
+macos-clang-debug`; the `ClassMngrNext`, bootstrap test, and launch side-effect
+targets built; the three focused CTests passed 3/3. The bootstrap tests cover
+the full state sequence, invalid transitions, warning and terminal failure,
+the factual three-event production sequence, and retained close/shutdown
+assertions. `git diff --check` passed for the changed test file. No full suite
+ran. F1503 is next.
 
 ## Objective
 

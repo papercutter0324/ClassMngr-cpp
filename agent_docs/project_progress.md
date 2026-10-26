@@ -7,7 +7,9 @@ Phase 4 is Complete at `277de9057168e67dc0b9ebc2e39719acc204a60f`; Actions run
 passed on macOS, Windows x64, and Linux x64. Phase 5 is In progress. F1501 is
 complete: `ClassMngrNext` enters through `ApplicationBootstrap`, shows its
 minimal shell/page, and coordinates shutdown without invoking legacy
-`MainWindow`. Independent macOS Debug CTest passed 3/3. F1502 is next.
+`MainWindow`. Independent macOS Debug CTest passed 3/3. F1502 is complete:
+the ten-stage model and factual startup observer passed three focused CTests.
+F1503 is in progress to compose platform services and logging before resources.
 Remaining Phase 5 work and its
 acceptance order are in the [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [active batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
@@ -32,8 +34,8 @@ resource and document lifecycle contracts.
 ## Overall Progress
 
 Phases 0–4 are Complete. Phase 5 is In progress on the Heavy route. F1501 is
-complete with focused independent bootstrap and shutdown verification. Phase
-5 is not complete until the startup, data
+complete with focused independent bootstrap and shutdown verification. F1502
+is complete; F1503 is active. Phase 5 is not complete until the startup, data
 policy, update, shutdown, splash-removal, and workflow-isolation exit gates
 pass.
 

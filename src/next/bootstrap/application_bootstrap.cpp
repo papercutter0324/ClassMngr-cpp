@@ -41,8 +41,12 @@ int ApplicationBootstrap::run(int argc, char* argv[])
     return eventLoopExitCode;
 }
 
-ApplicationBootstrap::ApplicationBootstrap(QApplication& application)
+ApplicationBootstrap::ApplicationBootstrap(
+    QApplication& application,
+    StartupEventObserver startupEventObserver
+    )
     : m_application(application),
+      m_startupEventObserver(std::move(startupEventObserver)),
       m_shutdownCoordinator([&application] {
           application.quit();
       })
@@ -67,6 +71,14 @@ Application::StartupResult ApplicationBootstrap::start()
         return beginResult;
     }
 
+    const Application::StartupResult processCreated =
+        m_startupCoordinator.recordStage(Application::StartupStage::ProcessCreated);
+    observeStartupResult(processCreated);
+    if (processCreated.status == Application::StartupStatus::Failed)
+    {
+        return processCreated;
+    }
+
     m_previousQuitOnLastWindowClosed = m_application.quitOnLastWindowClosed();
     m_application.setQuitOnLastWindowClosed(false);
     m_quitOnLastWindowClosedChanged = true;
@@ -77,16 +89,33 @@ Application::StartupResult ApplicationBootstrap::start()
         m_shell->setCloseHandler([this] {
             static_cast<void>(shutdown());
         });
-        m_shell->show();
     }
     catch (const std::exception&)
     {
-        return m_startupCoordinator.fail(
+        const Application::StartupResult failure = m_startupCoordinator.recordStage(
+            Application::StartupStage::ShellCreated,
+            Application::StartupStageOutcome::Failed,
             Application::StartupFailureReason::InitialExperienceUnavailable
             );
+        observeStartupResult(failure);
+        return failure;
     }
 
-    return m_startupCoordinator.initialExperienceAvailable();
+    const Application::StartupResult shellCreated = m_startupCoordinator.recordStage(
+        Application::StartupStage::ShellCreated
+        );
+    observeStartupResult(shellCreated);
+    if (shellCreated.status == Application::StartupStatus::Failed)
+    {
+        return shellCreated;
+    }
+
+    m_shell->show();
+
+    const Application::StartupResult initialPageReady =
+        m_startupCoordinator.recordStage(Application::StartupStage::InitialPageReady);
+    observeStartupResult(initialPageReady);
+    return initialPageReady;
 }
 
 Application::ShutdownResult ApplicationBootstrap::shutdown()
@@ -107,6 +136,16 @@ Ui::ApplicationShell* ApplicationBootstrap::shell() noexcept
 const Ui::ApplicationShell* ApplicationBootstrap::shell() const noexcept
 {
     return m_shell.get();
+}
+
+void ApplicationBootstrap::observeStartupResult(
+    const Application::StartupResult& result
+    ) const
+{
+    if (m_startupEventObserver && result.latestStageResult.has_value())
+    {
+        m_startupEventObserver(*result.latestStageResult);
+    }
 }
 
 }  // namespace ClassMngr::Next::Bootstrap
