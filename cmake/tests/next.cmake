@@ -105,6 +105,7 @@ add_executable(ClassMngrNextNavigationTests
     src/next/ui/application_shell.cpp
     src/next/ui/navigation_model.cpp
     src/next/ui/page_host.cpp
+    src/next/ui/qt_notification_presenter.cpp
 )
 target_compile_features(ClassMngrNextNavigationTests
     PRIVATE
@@ -224,6 +225,71 @@ target_link_libraries(ClassMngrNextPromptContractTests
 add_test(
     NAME ClassMngrNextPromptContractTests
     COMMAND ClassMngrNextPromptContractTests
+)
+
+# Keep notification request values and the fakeable application boundary
+# independent of Qt.
+add_executable(ClassMngrNextNotificationContractTests
+    tests/next/notification_port_tests.cpp
+)
+target_compile_features(ClassMngrNextNotificationContractTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(ClassMngrNextNotificationContractTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextNotificationContractTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(ClassMngrNextNotificationContractTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextNotificationContractTests
+    COMMAND ClassMngrNextNotificationContractTests
+)
+
+# Exercise transient notification presentation and lifecycle under the
+# offscreen Widgets platform.
+add_executable(ClassMngrNextNotificationPresenterTests
+    tests/next/qt_notification_presenter_tests.cpp
+    src/next/ui/qt_notification_presenter.cpp
+)
+target_compile_features(ClassMngrNextNotificationPresenterTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextNotificationPresenterTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextNotificationPresenterTests
+    PRIVATE
+        ClassMngrNext::Application
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextNotificationPresenterTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextNotificationPresenterTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_test(
+    NAME ClassMngrNextNotificationPresenterTests
+    COMMAND ClassMngrNextNotificationPresenterTests
+)
+set_tests_properties(ClassMngrNextNotificationPresenterTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
 # Keep file-dialog request/response values and cancellation independent of Qt.

@@ -7,6 +7,7 @@
 #include <QPixmap>
 #include <QPushButton>
 #include <QSignalBlocker>
+#include <QStatusBar>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QTreeWidgetItemIterator>
@@ -45,7 +46,9 @@ ApplicationShell::ApplicationShell(
     , m_navigationTree(new QTreeWidget(m_contentWidget))
     , m_backButton(new QPushButton(tr("Back"), m_contentWidget))
     , m_forwardButton(new QPushButton(tr("Forward"), m_contentWidget))
+    , m_notificationPresenter(*statusBar())
 {
+    statusBar()->setObjectName(QStringLiteral("classMngrNextNotificationStatusBar"));
     setObjectName(QStringLiteral("classMngrNextApplicationShell"));
     setWindowTitle(tr("ClassMngr Next"));
     setMinimumSize(720, 480);
@@ -127,6 +130,11 @@ PageHost& ApplicationShell::pageHost() noexcept
 const PageHost& ApplicationShell::pageHost() const noexcept
 {
     return *m_pageHost;
+}
+
+Application::NotificationPort& ApplicationShell::notificationPort() noexcept
+{
+    return m_notificationPresenter;
 }
 
 NavigationModel* ApplicationShell::navigationModel() noexcept

@@ -38,8 +38,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 is active on the Heavy route. F1514–F1520 are accepted;
-  F1521 — notification service — is next. Batch 1's ordered candidates are in
+- Current note: Phase 6 is active on the Heavy route. F1514–F1521 are accepted;
+  F1522 — preferences model — is next. Batch 1's ordered candidates are in
   the shared slice-batch tracker. The existing Staff Directory model/view and
   bounded-widget test are the planned representative-table gate
   evidence; its full feature migration remains in Phase 7C.
@@ -177,6 +177,24 @@ timing, and warning-plus-selection. The adapter target remains independently
 covered. `git diff --check` passed. Native OS panels and window-manager keyboard
 behavior were not exercised in this offscreen environment; the presenter tests
 verify platform routing and Qt dialog policy flags.
+
+### F1521 — complete — 2026-10-26
+
+Added a Qt-free `NotificationPort` with UTF-8 message text and typed
+Information/Warning/Error severity, plus a transient Qt presenter owned by the
+Next shell. The hidden-when-idle QStatusBar shows one notice at a time, replaces
+an active notice, clears explicitly, and expires after a finite five-second
+default. Warning and error messages receive translated severity labels. The
+service has no action/history/persistence layer; prompts remain responsible
+for choices and acknowledgment, and job models continue to own progress.
+No feature callers were migrated.
+
+Independent macOS Debug build covered the Next app, notification contract and
+presenter, Navigation, and Bootstrap targets. Focused CTest passed 4/4, and
+the presenter suite passed five repeated runs. Coverage includes idle
+visibility, severity, expiry, replacement, explicit clear, presenter/shell
+destruction, invalid requests, and wrong-thread failures. `git diff --check`
+passed. Native display and window-manager behavior were not tested.
 
 ## Objective
 

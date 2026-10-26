@@ -5,6 +5,8 @@
 #include "next/ui/page_host.h"
 
 #include <QPushButton>
+#include <QPointer>
+#include <QStatusBar>
 #include <QTreeWidget>
 #include <QTreeWidgetItemIterator>
 #include <QtTest/QtTest>
@@ -216,6 +218,7 @@ private slots:
     void historyActionStateRequiresAvailableAdjacentRoutes();
     void shellCommitsHistoryOnlyAfterGuardAndActivationSuccess();
     void shellHistoryControlsTrackAccessRevocation();
+    void shellOwnsTransientNotificationPortAndKeepsIdleStatusBarHidden();
 
 private:
     std::unique_ptr<Resources::ResourceLoader> m_loader;
@@ -802,6 +805,40 @@ void NavigationModelTests::shellHistoryControlsTrackAccessRevocation()
     QCOMPARE(shell.navigationModel()->currentPageId(), currentBeforePermissionRejectedForward);
     QCOMPARE(shell.navigationModel()->selectedPageId(), selectedBeforePermissionRejectedForward);
     QCOMPARE(shell.pageHost().activePageKey(), activeBeforePermissionRejectedForward);
+}
+
+void NavigationModelTests::shellOwnsTransientNotificationPortAndKeepsIdleStatusBarHidden()
+{
+    auto shell = std::make_unique<Ui::ApplicationShell>(*m_loader);
+    QStatusBar* const statusBar = shell->statusBar();
+
+    QCOMPARE(statusBar->objectName(), QStringLiteral("classMngrNextNotificationStatusBar"));
+    QVERIFY(statusBar->isHidden());
+
+    shell->show();
+    QApplication::processEvents();
+    QVERIFY(statusBar->isHidden());
+
+    const auto shown = shell->notificationPort().show(Application::NotificationRequest{
+        .message = "Workspace saved.",
+        .severity = Application::NotificationSeverity::Information
+    });
+    QVERIFY(shown.hasValue());
+    QVERIFY(statusBar->isVisible());
+    QCOMPARE(statusBar->currentMessage(), QStringLiteral("Workspace saved."));
+
+    QVERIFY(shell->notificationPort().clear().hasValue());
+    QVERIFY(statusBar->isHidden());
+    QVERIFY(statusBar->currentMessage().isEmpty());
+
+    QVERIFY(shell->notificationPort().show(Application::NotificationRequest{
+        .message = "Replacement before close",
+        .severity = Application::NotificationSeverity::Warning
+    }).hasValue());
+    QVERIFY(statusBar->isVisible());
+    QPointer<QStatusBar> statusBarLifetime(statusBar);
+    shell.reset();
+    QVERIFY(statusBarLifetime.isNull());
 }
 
 QTEST_MAIN(NavigationModelTests)

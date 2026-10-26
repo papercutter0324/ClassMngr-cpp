@@ -668,6 +668,8 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/navigation_model.cpp"
     "src/next/ui/navigation_model.h"
     "src/next/ui/prompt_automation.h"
+    "src/next/ui/qt_notification_presenter.cpp"
+    "src/next/ui/qt_notification_presenter.h"
     "src/next/ui/qt_file_dialog_presenter.cpp"
     "src/next/ui/qt_file_dialog_presenter.h"
     "src/next/ui/qt_user_prompt_presenter.cpp"

@@ -5,7 +5,7 @@ Phase 5 completed on the mandatory Heavy route at implementation head
 
 ## Phase 6 — Batch 1 (active)
 
-F1514–F1520 are complete. F1521 is current. Continue in order, commit each
+F1514–F1521 are complete. F1522 is current. Continue in order, commit each
 accepted slice, then push the batch. Start Batch 2 discovery when F1526 starts
 because it is the second-to-last candidate.
 
@@ -56,10 +56,13 @@ because it is the second-to-last candidate.
    per-purpose directory memory. Cancellation is a normal empty selection;
    preference-write failures accompany accepted selections as warnings.
    PlatformDefault and the optional Qt-only open-after-save accessory remain.
-8. **F1521 — Notification service (current):** presentation boundary and
-   lifecycle.
-9. **F1522 — Preferences model:** separate read, apply, persist, and notify
-   behavior.
+8. **F1521 — Notification service (complete):** Qt-free message/severity port
+   backed by a shell-owned QStatusBar presenter. Notices replace the current
+   message, clear explicitly, and expire after a finite five-second default;
+   the status bar stays hidden while idle. Prompts remain for decisions and job
+   progress remains separate; no feature callers were migrated.
+9. **F1522 — Preferences model (current):** separate read, apply, persist, and
+   notify behavior.
 10. **F1523 — Theme presenter:** apply and persist theme without changing its
     appearance.
 11. **F1524 — Other presentation preferences:** language, font, window,

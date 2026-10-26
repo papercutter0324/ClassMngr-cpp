@@ -3,6 +3,7 @@
 #include "next/application/workspace_state.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/navigation_model.h"
+#include "next/ui/qt_notification_presenter.h"
 
 #include <QHash>
 #include <QIcon>
@@ -46,6 +47,7 @@ public:
     void setNavigationGuard(NavigationGuard guard);
     [[nodiscard]] PageHost& pageHost() noexcept;
     [[nodiscard]] const PageHost& pageHost() const noexcept;
+    [[nodiscard]] Application::NotificationPort& notificationPort() noexcept;
     [[nodiscard]] NavigationModel* navigationModel() noexcept;
     [[nodiscard]] const NavigationModel* navigationModel() const noexcept;
     [[nodiscard]] NavigationModelResult<void> configureNavigation(
@@ -88,6 +90,7 @@ private:
     std::vector<Resources::ScopedResource<QImage>> m_navigationIconImages;
     NavigationGuard m_navigationGuard;
     CloseHandler m_closeHandler;
+    QtNotificationPresenter m_notificationPresenter;
 };
 
 }  // namespace ClassMngr::Next::Ui

@@ -81,6 +81,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/campus_dashboard_selected_campus_read_port.h
     src/next/application/campus_dashboard_selected_campus_read_query.h
     src/next/application/my_info_campus_directory_query_port.h
+    src/next/application/notification_port.h
     src/next/application/calendar_event_import_signature_query_port.h
     src/next/application/calendar_event_import_save_port.h
     src/next/application/calendar_event_save_port.h
