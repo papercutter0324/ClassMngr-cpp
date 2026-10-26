@@ -173,6 +173,26 @@ add_test(
     COMMAND ClassMngrNextApplicationRuntimeTests
 )
 
+# Keep typed preference state coordination independent of Qt and legacy ports.
+add_executable(ClassMngrNextPreferencesModelTests
+    tests/next/preferences_model_tests.cpp
+)
+target_compile_features(ClassMngrNextPreferencesModelTests
+    PRIVATE
+        cxx_std_23
+)
+set_property(TARGET ClassMngrNextPreferencesModelTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(ClassMngrNextPreferencesModelTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextPreferencesModelTests
+    COMMAND ClassMngrNextPreferencesModelTests
+)
+
 # Exercise typed application command registration and synchronous dispatch
 # without introducing a Qt dependency into the command contract tests.
 add_executable(ClassMngrNextCommandBusTests

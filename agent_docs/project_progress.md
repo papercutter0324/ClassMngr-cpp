@@ -8,7 +8,9 @@ guarded placeholder navigation with history. F1517 added the typed CommandBus;
 F1518 made history action state respect target visibility. F1519 added typed
 semantic prompt contracts and a value-only Qt automation boundary. F1520 added
 the typed file-dialog port and Qt presenter. F1521 added a transient
-shell-owned notification service. F1522, the preferences model, is next. Phase 5
+shell-owned notification service. F1522 added explicit read/apply/persist/
+notify operations around the validated preferences state. F1523, the theme
+presenter, is next. Phase 5
 platform evidence and broad-suite limitations remain in the
 [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [Start Here](../plans/qt-rewrite-heavy-route-plan/00-Start-Here.md).
@@ -22,8 +24,8 @@ appearance.
 
 ## Overall Progress
 
-Phases 0–5 are Complete. Phase 6 is In progress; F1514–F1521 are accepted and
-F1522 is next. The current batch and ordered candidates are in
+Phases 0–5 are Complete. Phase 6 is In progress; F1514–F1522 are accepted and
+F1523 is next. The current batch and ordered candidates are in
 `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
@@ -65,7 +67,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-26 (Phase 6, F1521 accepted)
+### Current checkpoint — 2026-10-26 (Phase 6, F1522 accepted)
 
 F1514 established descriptor-based lazy registration. F1515 added observable
 page states, release/recreation, and failure cleanup while retaining
@@ -88,9 +90,14 @@ cross-platform builds did not run; native panels and window-manager behavior
 were not exercised. F1521 adds a shell-owned transient notification port on a
 status bar hidden while idle. Its notification, shell/navigation, and bootstrap
 CTest suites passed 4/4; the presenter suite passed five repeats. Full-suite,
-cross-platform, and native display testing did not run. Dynamic teacher/document
-data and URL actions remain deferred to feature/platform migration. F1522 is
-next. Phase 7/10 owns rendering parity;
+cross-platform, and native display testing did not run. F1522 adds the Qt-free
+preferences model over the validated state, with separate read/apply/persist
+and observer notification. Its model and existing preference-state tests
+passed 2/2; failures preserve state and dirty data remains retryable. Changed
+reentrant operations are rejected, while no-op apply is harmless. Full-suite
+and cross-platform builds did not run. Dynamic teacher/document data and URL
+actions remain deferred to feature/platform migration. F1523 is next. Phase
+7/10 owns rendering parity;
 Phase 12 owns legacy resource-pack removal.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)

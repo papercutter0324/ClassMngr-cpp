@@ -38,8 +38,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 is active on the Heavy route. F1514–F1521 are accepted;
-  F1522 — preferences model — is next. Batch 1's ordered candidates are in
+- Current note: Phase 6 is active on the Heavy route. F1514–F1522 are accepted;
+  F1523 — theme presenter — is next. Batch 1's ordered candidates are in
   the shared slice-batch tracker. The existing Staff Directory model/view and
   bounded-widget test are the planned representative-table gate
   evidence; its full feature migration remains in Phase 7C.
@@ -195,6 +195,26 @@ the presenter suite passed five repeated runs. Coverage includes idle
 visibility, severity, expiry, replacement, explicit clear, presenter/shell
 destruction, invalid requests, and wrong-thread failures. `git diff --check`
 passed. Native display and window-manager behavior were not tested.
+
+### F1522 — complete — 2026-10-26
+
+Added a Qt-free `PreferencesModel` around the existing validated
+`UserPreferencesState`, with distinct read, in-memory apply, and whole-snapshot
+persist ports. It tracks dirty state, skips writes when clean, retains dirty
+state after write failure for retry, and notifies subscribers with copies of
+the committed snapshot. Failed reads/writes preserve model state. Changed
+`apply`/`load`/`persist` operations during synchronous observer delivery return
+`Conflict`; an identical apply remains a no-op. Subscription changes during
+delivery are safe, and observer exceptions are rethrown after remaining
+observers receive the committed value. No storage adapters, theme presenters,
+or feature consumers were changed; those remain F1523/F1524 work.
+
+Independent macOS Debug build and focused CTest covered the new Preferences
+Model test and existing User Preferences state test (2/2). Coverage includes
+load/apply/persist separation, failure atomicity and retry, dirty-state
+handling, observer ordering, reentrancy, subscription lifecycle, and exception
+visibility. The new Application target remains Qt-free. `git diff --check`
+passed. No full suite or cross-platform build ran.
 
 ## Objective
 

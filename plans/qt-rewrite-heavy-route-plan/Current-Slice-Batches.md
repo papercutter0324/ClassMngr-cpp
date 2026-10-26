@@ -5,7 +5,7 @@ Phase 5 completed on the mandatory Heavy route at implementation head
 
 ## Phase 6 — Batch 1 (active)
 
-F1514–F1521 are complete. F1522 is current. Continue in order, commit each
+F1514–F1522 are complete. F1523 is current. Continue in order, commit each
 accepted slice, then push the batch. Start Batch 2 discovery when F1526 starts
 because it is the second-to-last candidate.
 
@@ -61,9 +61,14 @@ because it is the second-to-last candidate.
    message, clear explicitly, and expire after a finite five-second default;
    the status bar stays hidden while idle. Prompts remain for decisions and job
    progress remains separate; no feature callers were migrated.
-9. **F1522 — Preferences model (current):** separate read, apply, persist, and
-   notify behavior.
-10. **F1523 — Theme presenter:** apply and persist theme without changing its
+9. **F1522 — Preferences model (complete):** Qt-free coordinator around the
+   existing validated `UserPreferencesState`, with distinct read, in-memory
+   apply, whole-snapshot persist, dirty tracking, and synchronous observer
+   notifications. Failed reads/writes preserve model state; writes are retried
+   while dirty. Changed mutations during observer delivery return `Conflict`;
+   no-op apply remains a no-op. Existing storage adapters and consumers remain
+   unchanged.
+10. **F1523 — Theme presenter (current):** apply and persist theme without changing its
     appearance.
 11. **F1524 — Other presentation preferences:** language, font, window,
     splitter, campus, and feature settings through the preferences boundary.
