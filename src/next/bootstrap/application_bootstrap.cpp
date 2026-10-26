@@ -2,6 +2,7 @@
 
 #include "next/bootstrap/qt_startup_diagnostics_sink.h"
 #include "next/application/recent_workspace_history_use_case.h"
+#include "core/settingsmanager.h"
 #include "next/platform/settings_manager_language_preferences_port.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
 #include "next/platform/settings_manager_theme_preferences_port.h"
@@ -186,7 +187,8 @@ ApplicationBootstrap::ApplicationBootstrap(
     ResourcePackagePathsResolver resourcePackagePathsResolver,
     std::optional<QStringList> systemUiLanguages,
     StartupWorkspaceSeams startupWorkspaceSeams,
-    StartupUpdateDispatcherFactory startupUpdateDispatcherFactory
+    StartupUpdateDispatcherFactory startupUpdateDispatcherFactory,
+    ShutdownSeams shutdownSeams
     )
     : m_application(application),
       m_startupEventObserver(std::move(startupEventObserver)),
@@ -197,8 +199,9 @@ ApplicationBootstrap::ApplicationBootstrap(
       m_startupUpdateDispatcherFactory(
           std::move(startupUpdateDispatcherFactory)
           ),
-      m_shutdownCoordinator([&application] {
-          application.quit();
+      m_shutdownSeams(std::move(shutdownSeams)),
+      m_shutdownCoordinator([this] {
+          return runShutdownSequence();
       })
 {
 }
@@ -206,8 +209,20 @@ ApplicationBootstrap::ApplicationBootstrap(
 ApplicationBootstrap::~ApplicationBootstrap()
 {
     m_callbackLifetime.reset();
-    m_startupUpdateDispatcher.reset();
-    releaseWorkspace();
+    if (m_startupUpdateDispatcher)
+    {
+        m_startupUpdateDispatcher->cancel();
+        m_startupUpdateDispatcher.reset();
+    }
+    m_shell.reset();
+    if (m_coreServices && m_coreServices->applicationStylesheetChanged)
+    {
+        m_application.setStyleSheet(m_coreServices->previousApplicationStylesheet);
+        m_coreServices->applicationStylesheetChanged = false;
+    }
+    static_cast<void>(releaseWorkspace());
+    m_coreServices.reset();
+    m_startupDiagnosticsSink.reset();
     if (m_quitOnLastWindowClosedChanged)
     {
         m_application.setQuitOnLastWindowClosed(
@@ -468,7 +483,13 @@ Application::StartupResult ApplicationBootstrap::start()
             m_coreServices->resourceLoader
             );
         m_shell->setCloseHandler([this] {
-            static_cast<void>(shutdown());
+            const Application::ShutdownResult result =
+                m_shutdownCoordinator.requestShutdown();
+            if (result.shutdownRequested)
+            {
+                scheduleShutdownFinalization();
+            }
+            return result.shutdownRequested;
         });
     }
     catch (const std::exception&)
@@ -987,17 +1008,39 @@ void ApplicationBootstrap::ensureWorkspaceComposition()
         );
 }
 
-void ApplicationBootstrap::releaseWorkspace() noexcept
+bool ApplicationBootstrap::releaseWorkspace() noexcept
 {
     if (m_applicationRuntime
         && m_applicationRuntime->workspaceState().snapshot().session().has_value())
     {
-        static_cast<void>(m_applicationRuntime->workspaceCoordinator().closeWorkspace());
+        try
+        {
+            const Domain::Result<void> closeResult =
+                m_applicationRuntime->workspaceCoordinator().closeWorkspace();
+            if (!closeResult)
+            {
+#ifndef NDEBUG
+                qWarning().noquote()
+                    << "ClassMngrNext could not close the workspace during teardown:"
+                    << QString::fromUtf8(closeResult.error().message.data(),
+                                         static_cast<qsizetype>(closeResult.error().message.size()));
+#endif
+                return false;
+            }
+        }
+        catch (...)
+        {
+#ifndef NDEBUG
+            qWarning() << "ClassMngrNext could not close the workspace during teardown.";
+#endif
+            return false;
+        }
     }
 
     // The runtime borrows the gateway, so release it before the gateway owner.
     m_applicationRuntime.reset();
     m_workspaceGateway.reset();
+    return true;
 }
 
 void ApplicationBootstrap::scheduleStartupUpdateCheck()
@@ -1089,7 +1132,7 @@ Application::StartupResult ApplicationBootstrap::failStartupStage(
 void ApplicationBootstrap::rollbackStartupComposition() noexcept
 {
     m_shell.reset();
-    releaseWorkspace();
+    static_cast<void>(releaseWorkspace());
 
     if (m_coreServices)
     {
@@ -1153,12 +1196,147 @@ bool ApplicationBootstrap::createCoreServices()
 
 Application::ShutdownResult ApplicationBootstrap::shutdown()
 {
-    m_startupUpdateDispatcher.reset();
-    if (!m_shutdownCoordinator.shutdownRequested())
+    const Application::ShutdownResult result =
+        m_shutdownCoordinator.requestShutdown();
+    if (result.shutdownRequested && !m_shutdownFinalizationScheduled)
     {
-        releaseWorkspace();
+        finalizeShutdown();
     }
-    return m_shutdownCoordinator.requestShutdown();
+    return result;
+}
+
+std::optional<Application::ShutdownFailureReason>
+ApplicationBootstrap::runShutdownSequence() noexcept
+{
+#ifndef NDEBUG
+    qInfo() << "ClassMngrNext shutdown: flushing settings.";
+#endif
+    bool settingsFlushed = false;
+    try
+    {
+        if (m_shutdownSeams.flushSettings)
+        {
+            settingsFlushed = m_shutdownSeams.flushSettings();
+        }
+        else
+        {
+            SettingsManager::instance().sync();
+            settingsFlushed = true;
+        }
+    }
+    catch (...)
+    {
+        settingsFlushed = false;
+    }
+    if (!settingsFlushed)
+    {
+#ifndef NDEBUG
+        qWarning() << "ClassMngrNext shutdown stopped because settings could not be flushed.";
+#endif
+        return Application::ShutdownFailureReason::SettingsFlushFailed;
+    }
+
+    if (m_startupUpdateDispatcher)
+    {
+#ifndef NDEBUG
+        qInfo() << "ClassMngrNext shutdown: cancelling the startup update check.";
+#endif
+        m_startupUpdateDispatcher->cancel();
+        m_startupUpdateDispatcher.reset();
+    }
+
+    if (m_applicationRuntime
+        && m_applicationRuntime->workspaceState().snapshot().session().has_value())
+    {
+#ifndef NDEBUG
+        qInfo() << "ClassMngrNext shutdown: closing the workspace session.";
+#endif
+        try
+        {
+            const Domain::Result<void> closeResult =
+                m_applicationRuntime->workspaceCoordinator().closeWorkspace();
+            if (!closeResult)
+            {
+#ifndef NDEBUG
+                qWarning().noquote()
+                    << "ClassMngrNext shutdown stopped because the workspace could not be closed:"
+                    << QString::fromUtf8(closeResult.error().message.data(),
+                                         static_cast<qsizetype>(closeResult.error().message.size()));
+#endif
+                return Application::ShutdownFailureReason::WorkspaceCloseFailed;
+            }
+        }
+        catch (...)
+        {
+#ifndef NDEBUG
+            qWarning() << "ClassMngrNext shutdown stopped because the workspace close threw.";
+#endif
+            return Application::ShutdownFailureReason::WorkspaceCloseFailed;
+        }
+    }
+
+#ifndef NDEBUG
+    qInfo() << "ClassMngrNext shutdown: owned work and workspace are settled.";
+#endif
+    return std::nullopt;
+}
+
+void ApplicationBootstrap::scheduleShutdownFinalization()
+{
+    if (m_shutdownFinalized || m_shutdownFinalizationScheduled)
+    {
+        return;
+    }
+    m_shutdownFinalizationScheduled = true;
+    const std::weak_ptr<int> lifetime(m_callbackLifetime);
+    QTimer::singleShot(0, &m_application, [this, lifetime]
+    {
+        if (lifetime.expired())
+        {
+            return;
+        }
+        m_shutdownFinalizationScheduled = false;
+        finalizeShutdown();
+    });
+}
+
+void ApplicationBootstrap::finalizeShutdown()
+{
+    if (m_shutdownFinalized)
+    {
+        return;
+    }
+    m_shutdownFinalized = true;
+    m_callbackLifetime.reset();
+
+#ifndef NDEBUG
+    qInfo() << "ClassMngrNext shutdown: releasing page and startup resources.";
+#endif
+    // CloseEvent must return before its shell can be destroyed. The accepted
+    // close path queues this finalizer for the next event-loop turn; direct
+    // shutdown can release it synchronously.
+    m_shell.reset();
+    static_cast<void>(releaseWorkspace());
+    if (m_coreServices && m_coreServices->applicationStylesheetChanged)
+    {
+        m_application.setStyleSheet(m_coreServices->previousApplicationStylesheet);
+        m_coreServices->applicationStylesheetChanged = false;
+    }
+    m_coreServices.reset();
+    m_startupDiagnosticsSink.reset();
+
+    if (m_quitOnLastWindowClosedChanged)
+    {
+        m_application.setQuitOnLastWindowClosed(
+            m_previousQuitOnLastWindowClosed
+            );
+        m_quitOnLastWindowClosedChanged = false;
+    }
+
+#ifndef NDEBUG
+    qInfo() << "ClassMngrNext shutdown: requesting application quit.";
+#endif
+    m_application.quit();
 }
 
 bool ApplicationBootstrap::shutdownRequested() const noexcept

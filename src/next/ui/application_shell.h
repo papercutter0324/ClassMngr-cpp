@@ -19,7 +19,9 @@ class PageHost;
 class ApplicationShell final : public QMainWindow
 {
 public:
-    using CloseHandler = std::function<void()>;
+    // Returning false rejects the close and leaves the shell available for a
+    // retry when an application shutdown step cannot complete.
+    using CloseHandler = std::function<bool()>;
 
     // The resource loader is borrowed and must outlive this shell.
     explicit ApplicationShell(

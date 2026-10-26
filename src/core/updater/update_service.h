@@ -6,9 +6,12 @@
 #include <QDateTime>
 #include <QNetworkAccessManager>
 #include <QObject>
+#include <QPointer>
 
 #include <chrono>
 #include <optional>
+
+class QNetworkReply;
 
 struct UpdateCheckResult
 {
@@ -65,6 +68,11 @@ public slots:
         CheckPolicy policy = CheckPolicy::Force
         );
 
+    // Stops the currently running release check without reporting it as a
+    // network failure. Intended for owner teardown; manual update behavior is
+    // unchanged unless this operation is explicitly requested.
+    void cancelActiveCheck() noexcept;
+
 signals:
     void checkStarted();
     void checkSucceeded(
@@ -97,7 +105,9 @@ private:
 
     UpdateConfiguration m_configuration;
     QNetworkAccessManager m_network;
+    QPointer<QNetworkReply> m_activeReply;
     bool m_busy = false;
+    bool m_cancelRequested = false;
     std::optional<UpdateCheckResult> m_lastResult;
     QDateTime m_lastSuccessfulCheckUtc;
 };

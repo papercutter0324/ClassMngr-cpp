@@ -115,8 +115,28 @@ its native matrix passed before this batch began.
     incremental macOS Debug verification passed the final focused bootstrap
     test, CTest 8/8, and the updater/controller loopback suites 2/2 with
     elevated local-socket permissions. No full suite or other platform ran.
-11. **F1511 — Discovered:** Complete shutdown coordination for settings, jobs,
+11. **F1511 — Complete:** Complete shutdown coordination for settings, jobs,
     workspace, resource scopes, external automation, and development diagnostics.
+    Acceptance: settings flush and cancellation of the active deferred updater
+    happen before their dependencies are released, with settings flush
+    observable to focused tests. A workspace-close failure keeps the runtime
+    and session available for retry and prevents a close-triggered application
+    quit. Successful shutdown releases page/resource ownership and any Next-
+    owned automation while diagnostics and QApplication are alive, then quits;
+    repeated shutdown performs final cleanup once.
+    Independent incremental macOS Debug verification built `ClassMngr`,
+    `ClassMngrNext`, `ClassMngrNextBootstrapTests`, and `ClassMngrUpdaterTests`.
+    Focused bootstrap CTest passed 1/1, with 7/7 QtTest cases before the final
+    page-pointer assertion; focused CTest passed again after that change.
+    Updater CTest passed 1/1 after retrying a sandbox-blocked local loopback
+    bind with escalated permission. Coverage includes settings-flush retry,
+    close veto/retry, update cancellation/order, suppressed completion, direct
+    page destruction, idempotence, and F1510 scheduling. No full suite or other
+    platform ran. `git diff --check` passed.
+    Limitation: `SettingsManager::sync()` has no status result; tests verify
+    invocation/order, not the underlying QSettings write status. Retry is
+    available while bootstrap remains alive; destroying the bootstrap ends
+    ownership even if close still fails.
 12. **F1512 — Discovered:** Separate legacy startup/performance workflow
     automation from production startup and use a semantic prompt seam. Begin
     next-batch discovery when work on this second-to-last candidate starts.

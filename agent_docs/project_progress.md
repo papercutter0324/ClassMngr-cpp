@@ -33,8 +33,14 @@ macOS Debug verification passed bootstrap QtTest 32/32 and six focused CTests
 6/6. F1510 is complete: app-update creation and dispatch wait until the first
 queued event-loop callback after `StartupReady`; resource-update startup calls
 remain absent. The final bootstrap test passed 3/3, focused CTest passed 8/8,
-and the updater/controller loopback suites passed 2/2. F1511 is next for
-shutdown coordination.
+and the updater/controller loopback suites passed 2/2. F1511 is complete:
+settings flush and deferred-update cancellation precede workspace close;
+failures preserve retry while the bootstrap remains alive, and successful
+shutdown releases the page/resources before quitting. Independent incremental
+macOS Debug builds passed for `ClassMngr`, `ClassMngrNext`, and the affected
+bootstrap/updater tests. Focused bootstrap CTest passed 1/1, the updater CTest
+passed 1/1 using local loopback after sandbox retry, and `git diff --check`
+passed. F1512 is next for workflow automation isolation.
 Remaining Phase 5 work and its
 acceptance order are in the [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [active batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
@@ -58,10 +64,10 @@ resource and document lifecycle contracts.
 
 ## Overall Progress
 
-Phases 0–4 are Complete. Phase 5 is In progress on the Heavy route. F1501–F1509
-are complete with focused independent verification; F1511 is next. Phase 5 is
-not complete until the startup, data policy, update, shutdown, splash-removal,
-and workflow-isolation exit gates pass.
+Phases 0–4 are Complete. Phase 5 is In progress on the Heavy route. F1501–F1511
+are complete with focused independent verification; F1512 is next. Phase 5 is
+not complete until the startup, data policy, update, shutdown,
+splash-removal, and workflow-isolation exit gates pass.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained

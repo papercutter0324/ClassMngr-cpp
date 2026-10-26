@@ -43,7 +43,10 @@ void ApplicationShell::closeEvent(QCloseEvent* event)
     QMainWindow::closeEvent(event);
     if (event->isAccepted() && m_closeHandler)
     {
-        m_closeHandler();
+        if (!m_closeHandler())
+        {
+            event->ignore();
+        }
     }
 }
 

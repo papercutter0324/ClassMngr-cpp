@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 5 is active on the Heavy route. F1501–F1510 are complete; F1511 is next to complete shutdown coordination for settings, jobs, workspace, resource scopes, external automation, and development diagnostics. F1510 defers app-update service creation and dispatch until the first queued event-loop callback after `StartupReady`; resource updates remain absent from startup.
+- Current note: Phase 5 is active on the Heavy route. F1501–F1511 are complete; F1512 is next to isolate legacy startup workflow automation behind a semantic prompt seam. F1511 flushes settings, cancels the active deferred update request, preserves the workspace session and shell on close failure, and releases page/resource ownership before application quit. Shutdown diagnostics are development-only; Next has no external automation object or worker registry. The injected settings seam verifies flush invocation and ordering; `SettingsManager::sync()` does not report a QSettings status. F1510 continues to defer app-update creation and dispatch until the first queued event-loop callback after `StartupReady`; resource updates remain absent from startup.
 
 ### Slice batches
 
@@ -248,6 +248,34 @@ dependency CTests passed 8/8, and the two socket-backed updater/controller
 suites passed 2/2 using local ephemeral loopback under escalated test
 permissions. `ClassMngr`, `ClassMngrNext`, and the affected test targets built;
 source ownership validated 1,655 files. No full suite or other platform ran.
+
+### F1511 — complete — 2026-10-26
+
+Shutdown now flushes settings, explicitly cancels the deferred startup update
+request, then closes the workspace. Settings-flush and workspace-close failures
+remain retryable while the bootstrap is alive; a close failure rejects the
+shell close and retains its runtime/session and gateway. Successful close
+queues finalization after `closeEvent` returns, destroys the shell/page and
+startup resource owners while `QApplication` is alive, restores application
+policy, and requests quit once. The updater aborts its active `QNetworkReply`
+and suppresses the cancellation outcome; legacy/manual update behavior remains
+unchanged. No other application jobs or external automation objects are
+currently instantiated in Next, so no registry or placeholder owner was added.
+
+Independent incremental macOS Debug verification built `ClassMngr`,
+`ClassMngrNext`, `ClassMngrNextBootstrapTests`, and `ClassMngrUpdaterTests`.
+The focused bootstrap CTest passed 1/1; its QtTest run passed 7/7 cases before
+the final direct page-lifetime assertion, and the final CTest passed again
+after that assertion. The updater CTest passed 1/1 using local loopback after
+the sandbox blocked its initial bind. The final build had no ignored-result
+warning, and `git diff --check` passed. No full suite or other platform ran.
+
+`SettingsManager::sync()` returns no QSettings status, so shutdown verifies
+that flush is called and ordered but does not claim to detect an underlying
+settings-write error. If a caller forcibly destroys `ApplicationBootstrap`
+after a failed workspace close, its owned runtime cannot outlive the bootstrap
+for another retry; the normal shell-close path prevents that by keeping the
+bootstrap alive and vetoing close.
 
 ## Objective
 

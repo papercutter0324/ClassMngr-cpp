@@ -13,6 +13,12 @@ public:
     virtual ~StartupUpdateDispatcher() = default;
 
     virtual void dispatch() = 0;
+
+    // Cancel any owned asynchronous work before its dependencies are torn
+    // down. Implementations without pending work may keep the default no-op.
+    virtual void cancel() noexcept
+    {
+    }
 };
 
 [[nodiscard]] std::unique_ptr<StartupUpdateDispatcher>

@@ -38,12 +38,28 @@ public:
             ));
     }
 
+    void cancel() noexcept override
+    {
+        if (m_cancelled)
+        {
+            return;
+        }
+        m_cancelled = true;
+        m_service.cancelActiveCheck();
+    }
+
+    ~ProductionStartupUpdateDispatcher() override
+    {
+        cancel();
+    }
+
 private:
     UpdateConfiguration m_configuration;
     UpdateService m_service;
     Platform::UpdateServiceStartupCheckPort m_servicePort;
     Platform::SettingsManagerAutomaticUpdatePreferencesPort m_preferences;
     Application::StartupUpdateCheckUseCase m_useCase;
+    bool m_cancelled = false;
 };
 
 }  // namespace

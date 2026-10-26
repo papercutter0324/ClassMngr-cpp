@@ -19,6 +19,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QPointer>
 #include <QLabel>
 #include <QLocale>
 #include <QStyleHints>
@@ -30,6 +31,8 @@
 
 #include <array>
 #include <algorithm>
+#include <functional>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -70,6 +73,7 @@ private slots:
     void startupCoordinatorRejectsInvalidTransitionsWithoutRecordingThem();
     void startupCoordinatorRetainsTypedWarningAndTerminalFailure();
     void closeRequestsShutdownOnceAndRestoresApplicationPolicy();
+    void shutdownRetriesSettingsAndWorkspaceFailuresBeforeReleasingOwners();
     void startupFailureAndShutdownActionAreReportedPrecisely();
     void startupWorkspacePolicyPreservesLegacyCandidateOrder();
     void noWorkspaceRemainsAnExplicitNonFatalWarning();
@@ -103,6 +107,11 @@ struct StartupUpdateDispatcherProbe final
     int destroyed = 0;
     bool visibleAtDispatch = false;
     bool initialPageActiveAtDispatch = false;
+    bool holdCompletionUntilShutdown = false;
+    int cancelCalls = 0;
+    int suppressedCompletions = 0;
+    std::vector<std::string>* shutdownEvents = nullptr;
+    std::function<void()> pendingCompletion;
 };
 
 class RecordingStartupUpdateDispatcher final
@@ -111,7 +120,7 @@ class RecordingStartupUpdateDispatcher final
 public:
     RecordingStartupUpdateDispatcher(
         QApplication& application,
-        Ui::ApplicationShell*& shell,
+        QPointer<Ui::ApplicationShell>& shell,
         std::shared_ptr<StartupUpdateDispatcherProbe> probe
         )
         : m_application(application)
@@ -123,6 +132,11 @@ public:
     ~RecordingStartupUpdateDispatcher() override
     {
         ++m_probe->destroyed;
+        if (m_probe->shutdownEvents)
+        {
+            m_probe->shutdownEvents->push_back("update-destroy");
+        }
+        m_lifetime.reset();
     }
 
     void dispatch() override
@@ -133,6 +147,22 @@ public:
             && m_shell->pageHost().activePageKey()
                 == std::optional<QString>(QStringLiteral("initial"));
 
+        if (m_probe->holdCompletionUntilShutdown)
+        {
+            const std::weak_ptr<int> lifetime(m_lifetime);
+            const QPointer<Ui::ApplicationShell> shell = m_shell;
+            const std::shared_ptr<StartupUpdateDispatcherProbe> probe = m_probe;
+            m_probe->pendingCompletion = [lifetime, shell, probe] {
+                if (lifetime.expired() || !shell)
+                {
+                    ++probe->suppressedCompletions;
+                    return;
+                }
+                ++probe->asynchronousCompletions;
+            };
+            return;
+        }
+
         // Model an asynchronous updater completion without issuing network I/O.
         const std::shared_ptr<StartupUpdateDispatcherProbe> probe = m_probe;
         QTimer::singleShot(0, &m_application, [probe] {
@@ -140,10 +170,21 @@ public:
         });
     }
 
+    void cancel() noexcept override
+    {
+        ++m_probe->cancelCalls;
+        if (m_probe->shutdownEvents)
+        {
+            m_probe->shutdownEvents->push_back("update-cancel");
+        }
+        m_lifetime.reset();
+    }
+
 private:
     QApplication& m_application;
-    Ui::ApplicationShell*& m_shell;
+    QPointer<Ui::ApplicationShell>& m_shell;
     std::shared_ptr<StartupUpdateDispatcherProbe> m_probe;
+    std::shared_ptr<int> m_lifetime = std::make_shared<int>(0);
 };
 
 class InitialPageShowOrderProbe final : public QObject
@@ -238,6 +279,7 @@ struct BootstrapWorkspaceGatewayProbe final
 {
     std::vector<std::string> events;
     std::optional<Domain::OperationError> openError;
+    std::optional<Domain::OperationError> closeError;
     std::optional<Application::WorkspaceSession> openedSession;
     std::optional<Application::WorkspaceSession> closedSession;
     int factoryCalls = 0;
@@ -245,6 +287,7 @@ struct BootstrapWorkspaceGatewayProbe final
     int destroyed = 0;
     int openCalls = 0;
     int closeCalls = 0;
+    std::vector<std::string>* shutdownEvents = nullptr;
 };
 
 class RecordingBootstrapWorkspaceGateway final
@@ -258,12 +301,20 @@ public:
     {
         ++m_probe->constructed;
         m_probe->events.push_back("constructed");
+        if (m_probe->shutdownEvents)
+        {
+            m_probe->shutdownEvents->push_back("workspace-constructed");
+        }
     }
 
     ~RecordingBootstrapWorkspaceGateway() override
     {
         ++m_probe->destroyed;
         m_probe->events.push_back("destroyed");
+        if (m_probe->shutdownEvents)
+        {
+            m_probe->shutdownEvents->push_back("workspace-destroy");
+        }
     }
 
     Domain::Result<Application::WorkspaceSession> createWorkspace(
@@ -301,6 +352,14 @@ public:
         ++m_probe->closeCalls;
         m_probe->events.push_back("close");
         m_probe->closedSession = request.session;
+        if (m_probe->shutdownEvents)
+        {
+            m_probe->shutdownEvents->push_back("workspace-close");
+        }
+        if (m_probe->closeError.has_value())
+        {
+            return Domain::Result<void>::failure(*m_probe->closeError);
+        }
         return Domain::Result<void>::success();
     }
 
@@ -933,7 +992,7 @@ startupUpdateCheckWaitsForVisibleInitialPageAndLivesUntilShutdown()
         ));
 
     const auto probe = std::make_shared<StartupUpdateDispatcherProbe>();
-    Ui::ApplicationShell* shell = nullptr;
+    QPointer<Ui::ApplicationShell> shell;
     bool factoryUnusedAtStartupReady = false;
     bool dispatcherCreatedBeforeStartupReady = false;
     Bootstrap::ApplicationBootstrap bootstrap(
@@ -1000,7 +1059,9 @@ startupUpdateCheckWaitsForVisibleInitialPageAndLivesUntilShutdown()
     QCOMPARE(probe->destroyed, 0);
 
     static_cast<void>(bootstrap.shutdown());
+    QCOMPARE(probe->cancelCalls, 1);
     QCOMPARE(probe->destroyed, 1);
+    QVERIFY(!shell);
     QCoreApplication::processEvents();
     QCOMPARE(probe->factoryCalls, 1);
     QCOMPARE(probe->dispatchCalls, 1);
@@ -2409,10 +2470,12 @@ closeRequestsShutdownOnceAndRestoresApplicationPolicy()
         QVERIFY(!bootstrap.shutdownRequested());
         QVERIFY(!application.quitOnLastWindowClosed());
 
-        QVERIFY(bootstrap.shell()->close());
+        QPointer<Ui::ApplicationShell> shell = bootstrap.shell();
+        QVERIFY(shell);
+        QVERIFY(shell->close());
 
         QTRY_VERIFY(bootstrap.shutdownRequested());
-        QVERIFY(!bootstrap.shell()->isVisible());
+        QTRY_VERIFY(!shell);
 
         const Application::ShutdownResult repeated = bootstrap.shutdown();
         QVERIFY(repeated.shutdownRequested);
@@ -2424,6 +2487,147 @@ closeRequestsShutdownOnceAndRestoresApplicationPolicy()
     }
 
     QCOMPARE(application.quitOnLastWindowClosed(), previousQuitPolicy);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+shutdownRetriesSettingsAndWorkspaceFailuresBeforeReleasingOwners()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    std::vector<std::string> shutdownEvents;
+    auto workspaceProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    workspaceProbe->shutdownEvents = &shutdownEvents;
+    auto updateProbe = std::make_shared<StartupUpdateDispatcherProbe>();
+    updateProbe->shutdownEvents = &shutdownEvents;
+    updateProbe->holdCompletionUntilShutdown = true;
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams workspaceSeams;
+    workspaceSeams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"), QStringLiteral("existing-workspace.tps")
+    };
+    workspaceSeams.recentAutoOpenEnabled = false;
+    workspaceSeams.pathExists = [](const Application::WorkspaceLocation&) {
+        return true;
+    };
+    workspaceSeams.workspaceGatewayFactory = [workspaceProbe] {
+        ++workspaceProbe->factoryCalls;
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(workspaceProbe);
+    };
+
+    bool settingsFlushSucceeds = false;
+    QPointer<Ui::ApplicationShell> shell;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(workspaceSeams),
+        [&application, &shell, updateProbe] {
+            ++updateProbe->factoryCalls;
+            return std::make_unique<RecordingStartupUpdateDispatcher>(
+                application, shell, updateProbe
+                );
+        },
+        Bootstrap::ApplicationBootstrap::ShutdownSeams{
+            [&shutdownEvents, &settingsFlushSucceeds] {
+                shutdownEvents.push_back("settings-flush");
+                return settingsFlushSucceeds;
+            }
+        }
+        );
+
+    const Application::StartupResult startup = bootstrap.start();
+    QVERIFY(startup.succeeded());
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    shell = bootstrap.shell();
+    QVERIFY(shell);
+    QPointer<Ui::Page> initialPage =
+        shell->pageHost().pageInstance(QStringLiteral("initial"));
+    QVERIFY(initialPage);
+    QCoreApplication::processEvents();
+    QCOMPARE(updateProbe->dispatchCalls, 1);
+    QVERIFY(static_cast<bool>(updateProbe->pendingCompletion));
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+
+    // A settings flush failure rejects close before cancelling the pending
+    // updater or attempting to close the workspace.
+    QVERIFY(!shell->close());
+    QVERIFY(shell);
+    QVERIFY(shell->isVisible());
+    QVERIFY(!bootstrap.shutdownRequested());
+    QVERIFY(initialPage);
+    QCOMPARE(updateProbe->cancelCalls, 0);
+    QCOMPARE(workspaceProbe->closeCalls, 0);
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+
+    settingsFlushSucceeds = true;
+    workspaceProbe->closeError = Domain::OperationError{
+        .code = Domain::ErrorCode::Technical,
+        .message = "injected workspace close failure",
+        .recoverable = true
+    };
+
+    // The update is cancelled before workspace close is attempted. A failed
+    // close keeps both shell and runtime/session alive for another attempt.
+    QVERIFY(!shell->close());
+    QVERIFY(shell);
+    QVERIFY(shell->isVisible());
+    QVERIFY(!bootstrap.shutdownRequested());
+    QVERIFY(initialPage);
+    QCOMPARE(updateProbe->cancelCalls, 1);
+    QCOMPARE(updateProbe->destroyed, 1);
+    QCOMPARE(workspaceProbe->closeCalls, 1);
+    QCOMPARE(workspaceProbe->destroyed, 0);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Open);
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+
+    workspaceProbe->closeError.reset();
+    QVERIFY(shell->close());
+    QTRY_VERIFY(bootstrap.shutdownRequested());
+    QTRY_VERIFY(!shell);
+    QTRY_VERIFY(!initialPage);
+    QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
+
+    // The pending completion now runs only its expired-lifetime branch. It
+    // cannot touch a page or any other owner released by shutdown.
+    updateProbe->pendingCompletion();
+    QCOMPARE(updateProbe->asynchronousCompletions, 0);
+    QCOMPARE(updateProbe->suppressedCompletions, 1);
+
+    const auto eventIndex = [&shutdownEvents](const std::string& event) {
+        const auto found = std::find(
+            shutdownEvents.begin(), shutdownEvents.end(), event
+            );
+        return found == shutdownEvents.end()
+            ? shutdownEvents.size()
+            : static_cast<std::size_t>(std::distance(shutdownEvents.begin(), found));
+    };
+    QVERIFY(eventIndex("settings-flush") < eventIndex("update-cancel"));
+    QVERIFY(eventIndex("update-cancel") < eventIndex("update-destroy"));
+    QVERIFY(eventIndex("update-destroy") < eventIndex("workspace-close"));
+    QVERIFY(eventIndex("workspace-close") < eventIndex("workspace-destroy"));
+    QCOMPARE(updateProbe->cancelCalls, 1);
+    QCOMPARE(updateProbe->destroyed, 1);
+    QCOMPARE(workspaceProbe->destroyed, 1);
+
+    const Application::ShutdownResult repeated = bootstrap.shutdown();
+    QVERIFY(repeated.shutdownRequested);
+    QVERIFY(!repeated.newlyRequested);
+    QCOMPARE(updateProbe->cancelCalls, 1);
+    QCOMPARE(workspaceProbe->closeCalls, 2);
     application.setStyleSheet(previousStyleSheet);
 }
 
@@ -2468,20 +2672,39 @@ startupFailureAndShutdownActionAreReportedPrecisely()
     QCOMPARE(*failureState.failure, Application::StartupFailureReason::InitialExperienceUnavailable);
 
     int shutdownActionCount = 0;
-    Application::ShutdownCoordinator shutdownCoordinator([&shutdownActionCount] {
-        ++shutdownActionCount;
-    });
+    Application::ShutdownCoordinator shutdownCoordinator(
+        [&shutdownActionCount]()
+            -> std::optional<Application::ShutdownFailureReason> {
+            ++shutdownActionCount;
+            if (shutdownActionCount == 1)
+            {
+                return std::optional<Application::ShutdownFailureReason>(
+                    Application::ShutdownFailureReason::WorkspaceCloseFailed
+                    );
+            }
+            return std::nullopt;
+        }
+        );
     const Application::ShutdownResult first =
         shutdownCoordinator.requestShutdown();
-    QVERIFY(first.shutdownRequested);
-    QVERIFY(first.newlyRequested);
+    QVERIFY(!first.shutdownRequested);
+    QVERIFY(!first.newlyRequested);
+    QVERIFY(first.failure.has_value());
+    QCOMPARE(*first.failure, Application::ShutdownFailureReason::WorkspaceCloseFailed);
     QCOMPARE(shutdownActionCount, 1);
 
     const Application::ShutdownResult second =
         shutdownCoordinator.requestShutdown();
     QVERIFY(second.shutdownRequested);
-    QVERIFY(!second.newlyRequested);
-    QCOMPARE(shutdownActionCount, 1);
+    QVERIFY(second.newlyRequested);
+    QVERIFY(!second.failure.has_value());
+    QCOMPARE(shutdownActionCount, 2);
+
+    const Application::ShutdownResult repeated =
+        shutdownCoordinator.requestShutdown();
+    QVERIFY(repeated.shutdownRequested);
+    QVERIFY(!repeated.newlyRequested);
+    QCOMPARE(shutdownActionCount, 2);
 }
 
 void ApplicationBootstrapTests::

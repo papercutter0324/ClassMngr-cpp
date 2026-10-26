@@ -8870,3 +8870,23 @@ F1510 keeps the app updater in narrow shared targets, but defers updater and
 network-manager construction until the first queued event-loop turn after
 `StartupReady`, with a visible shell and active initial page. No resource-pack
 update service is composed into startup.
+
+## 2026-10-26 — F1511 shutdown ownership and retry
+
+Shutdown now flushes settings, explicitly cancels the deferred startup update
+request, and closes the workspace before final teardown. `UpdateService`
+aborts its active reply and suppresses the cancellation outcome; the legacy
+manual update path is unchanged. A settings-flush or workspace-close failure
+leaves the bootstrap retryable. The shell vetoes close on failure, preserving
+the runtime, gateway, session, page, and resources. On success, a queued
+finalizer runs after `closeEvent`, releases the shell/page and startup resource
+owners while `QApplication` is still alive, then requests quit. Repeated
+shutdown does not rerun successful cleanup.
+
+The Next composition currently instantiates no worker registry or external
+automation object; the deferred updater is the only asynchronous shutdown job.
+No empty registry or placeholder automation owner was added. Tests verify the
+settings-flush call and ordering through an injected seam because
+`SettingsManager::sync()` returns no QSettings status. Retry depends on the
+bootstrap remaining alive; destruction of the whole bootstrap ends its object
+ownership even if a workspace close still fails.

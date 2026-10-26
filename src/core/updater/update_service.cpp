@@ -121,8 +121,14 @@ bool UpdateService::checkForUpdates(
 
     m_busy =
         true;
+    m_cancelRequested = false;
 
     emit checkStarted();
+    if (!m_busy || m_cancelRequested)
+    {
+        m_cancelRequested = false;
+        return false;
+    }
 
     QNetworkRequest request(
         m_configuration.releasesApiUrl
@@ -149,6 +155,7 @@ bool UpdateService::checkForUpdates(
         m_network.get(
             request
             );
+    m_activeReply = reply;
 
     connect(
         reply,
@@ -156,7 +163,15 @@ bool UpdateService::checkForUpdates(
         this,
         [this, reply]()
         {
+            m_activeReply = nullptr;
             reply->deleteLater();
+
+            if (m_cancelRequested)
+            {
+                m_cancelRequested = false;
+                m_busy = false;
+                return;
+            }
 
             if (reply->error() != QNetworkReply::NoError)
             {
@@ -200,6 +215,40 @@ bool UpdateService::checkForUpdates(
         );
 
     return true;
+}
+
+void UpdateService::cancelActiveCheck() noexcept
+{
+    if (!m_busy)
+    {
+        return;
+    }
+
+    m_cancelRequested = true;
+    QPointer<QNetworkReply> reply = m_activeReply;
+    if (!reply)
+    {
+        // `checkStarted` can be observed synchronously before the request is
+        // created. `checkForUpdates` checks this flag before dispatching it.
+        m_busy = false;
+        return;
+    }
+
+    reply->abort();
+    if (m_activeReply && reply)
+    {
+        // Qt emits `finished` from abort(). Keep the guard for alternate reply
+        // implementations that defer it: cancellation must still suppress the
+        // ordinary network-failure path.
+        disconnect(reply, nullptr, this, nullptr);
+    }
+    m_activeReply = nullptr;
+    m_busy = false;
+    m_cancelRequested = false;
+    if (reply)
+    {
+        reply->deleteLater();
+    }
 }
 
 void UpdateService::completeCheck(

@@ -53,6 +53,13 @@ public:
             recentWorkspaceHistoryPortFactory;
     };
 
+    struct ShutdownSeams final
+    {
+        // Replaces the production SettingsManager sync only in focused
+        // lifecycle checks, where its invocation and order must be observable.
+        std::function<bool()> flushSettings;
+    };
+
     // Sole production process entry. It handles the side-effect-free version
     // probe before creating QApplication, then owns startup and event-loop
     // lifetime through explicit shutdown.
@@ -66,7 +73,8 @@ public:
         ResourcePackagePathsResolver resourcePackagePathsResolver = {},
         std::optional<QStringList> systemUiLanguages = std::nullopt,
         StartupWorkspaceSeams startupWorkspaceSeams = {},
-        StartupUpdateDispatcherFactory startupUpdateDispatcherFactory = {}
+        StartupUpdateDispatcherFactory startupUpdateDispatcherFactory = {},
+        ShutdownSeams shutdownSeams = {}
         );
     ~ApplicationBootstrap();
 
@@ -96,7 +104,11 @@ private:
     [[nodiscard]] std::optional<Application::WorkspaceLocation>
     commandLineStartupWorkspaceLocation() const;
     void ensureWorkspaceComposition();
-    void releaseWorkspace() noexcept;
+    [[nodiscard]] bool releaseWorkspace() noexcept;
+    [[nodiscard]] std::optional<Application::ShutdownFailureReason>
+    runShutdownSequence() noexcept;
+    void scheduleShutdownFinalization();
+    void finalizeShutdown();
     void scheduleStartupUpdateCheck();
     void tryDispatchStartupUpdateCheck();
     [[nodiscard]] Application::StartupResult failStartupStage(
@@ -114,6 +126,7 @@ private:
     std::optional<QStringList> m_systemUiLanguages;
     StartupWorkspaceSeams m_startupWorkspaceSeams;
     StartupUpdateDispatcherFactory m_startupUpdateDispatcherFactory;
+    ShutdownSeams m_shutdownSeams;
     std::shared_ptr<int> m_callbackLifetime = std::make_shared<int>(0);
     std::unique_ptr<StartupDiagnosticsSink> m_startupDiagnosticsSink;
     std::unique_ptr<StartupUpdateDispatcher> m_startupUpdateDispatcher;
@@ -128,6 +141,8 @@ private:
     bool m_quitOnLastWindowClosedChanged = false;
     bool m_startupUpdateCheckScheduled = false;
     bool m_startupUpdateCheckConsumed = false;
+    bool m_shutdownFinalizationScheduled = false;
+    bool m_shutdownFinalized = false;
 };
 
 }  // namespace ClassMngr::Next::Bootstrap

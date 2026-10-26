@@ -4,6 +4,7 @@
 #include "core/updater/update_service.h"
 #include "core/updater/update_signature_verifier.h"
 #include "core/updater/version.h"
+#include "next/platform/update_service_startup_check_port.h"
 #include "next/platform/update_service_manual_check_port.h"
 #include "ui/shared/dialogs/update_dialog.h"
 
@@ -474,6 +475,7 @@ private slots:
     void githubParserAcceptsLegacyLinuxArchiveName();
     void freshnessBoundaryIsExactlySixHours();
     void serviceCachesSuccessfulResultAndSkipsFreshCheck();
+    void serviceCancellationAbortsActiveReplyWithoutUserFacingFailure();
     void dialogShowsDisabledResourcePackSection();
     void dialogOpenWithoutCacheStartsIfStaleCheck();
     void dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale();
@@ -747,6 +749,57 @@ void UpdaterTests::serviceCachesSuccessfulResultAndSkipsFreshCheck()
     QVERIFY(failedSpy.wait(5000));
     QVERIFY(service.hasResult());
     QVERIFY(service.lastResult()->updateAvailable);
+}
+
+void UpdaterTests::
+serviceCancellationAbortsActiveReplyWithoutUserFacingFailure()
+{
+    QTcpServer server;
+    QVERIFY(server.listen(QHostAddress::LocalHost, 0));
+
+    UpdateConfiguration configuration;
+    configuration.releasesApiUrl = QUrl(
+        QStringLiteral("http://127.0.0.1:%1/releases")
+            .arg(server.serverPort())
+        );
+    UpdateService service(configuration);
+    QSignalSpy failedSpy(&service, &UpdateService::checkFailed);
+    QSignalSpy categorizedFailureSpy(
+        &service,
+        &UpdateService::checkFailedWithCategory
+        );
+    int completionCalls = 0;
+    QTcpSocket* peer = nullptr;
+
+    {
+        ClassMngr::Next::Platform::UpdateServiceStartupCheckPort port(&service);
+        const auto dispatch = port.check([&completionCalls](auto) {
+            ++completionCalls;
+        });
+        QCOMPARE(
+            dispatch,
+            ClassMngr::Next::Application::StartupUpdateCheckDispatch::Started
+            );
+        QTRY_VERIFY(server.hasPendingConnections());
+        peer = server.nextPendingConnection();
+        QVERIFY(peer != nullptr);
+        QTRY_VERIFY(peer->bytesAvailable() > 0);
+        peer->readAll();
+
+        // Destroying the startup adapter drops its completion; the service
+        // owner must explicitly abort the network reply before teardown.
+    }
+
+    QVERIFY(peer != nullptr);
+    QSignalSpy disconnectedSpy(peer, &QTcpSocket::disconnected);
+    service.cancelActiveCheck();
+
+    QVERIFY(!service.isBusy());
+    QTRY_VERIFY(peer->state() == QAbstractSocket::UnconnectedState);
+    QCOMPARE(disconnectedSpy.count(), 1);
+    QCOMPARE(failedSpy.count(), 0);
+    QCOMPARE(categorizedFailureSpy.count(), 0);
+    QCOMPARE(completionCalls, 0);
 }
 
 void UpdaterTests::dialogShowsDisabledResourcePackSection()
