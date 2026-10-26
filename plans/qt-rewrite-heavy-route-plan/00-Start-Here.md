@@ -11,8 +11,9 @@
   descriptor-based and lazy, `PageHost` exposes explicit lifecycle state, and
   `NavigationModel` drives guarded placeholder navigation with history. F1517
   added a typed, widget-free CommandBus, and F1518 made Back/Forward action
-  state follow history-target availability. F1519 — semantic prompt service —
-  is next. Phase 5 — Startup and
+  state follow history-target availability. F1519 added typed semantic prompt
+  contracts and a value-only Qt automation boundary. F1520 — file dialog
+  service — is next. Phase 5 — Startup and
   Bootstrap Rewrite — completed at implementation head
   `6bbff54abc524723e23911d65130b1b198dde2b3`; its startup, data-policy,
   deferred-update, shutdown, and splash-removal criteria passed. Focused macOS

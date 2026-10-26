@@ -5,7 +5,7 @@ Phase 5 completed on the mandatory Heavy route at implementation head
 
 ## Phase 6 — Batch 1 (active)
 
-F1514–F1518 are complete. F1519 is current. Continue in order, commit each
+F1514–F1519 are complete. F1520 is current. Continue in order, commit each
 accepted slice, then push the batch. Start Batch 2 discovery when F1526 starts
 because it is the second-to-last candidate.
 
@@ -43,10 +43,14 @@ because it is the second-to-last candidate.
    or access-context changes. Keep a value-only state rule with a thin shell
    presenter; no generic QAction registry or checked state is needed until
    feature actions migrate. CommandBus and navigation remain separate.
-6. **F1519 — Semantic prompt service (current):** message/choice/unsaved-change/named-
-   action contracts with a value-only Qt automation adapter.
-7. **F1520 — File dialog service:** typed request/response adapter and current
-   directory, filter, overwrite, default-action, and platform behavior.
+6. **F1519 — Semantic prompt service (complete):** Qt-free typed contracts for
+   messages, confirmations, unsaved changes, and named actions, with explicit
+   user responses separate from presenter errors. A Next Qt presenter preserves
+   default/Escape mappings; its separate automation API uses stable prompt IDs
+   and value-only snapshots/commands. Legacy callers remain unmigrated.
+7. **F1520 — File dialog service (current):** typed request/response adapter
+   preserving current-directory, filter, overwrite, default-action, and
+   platform behavior.
 8. **F1521 — Notification service:** presentation boundary and lifecycle.
 9. **F1522 — Preferences model:** separate read, apply, persist, and notify
    behavior.

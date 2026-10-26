@@ -38,8 +38,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 is active on the Heavy route. F1514–F1518 are accepted;
-  F1519 — semantic prompt service — is next. Batch 1's ordered candidates are in
+- Current note: Phase 6 is active on the Heavy route. F1514–F1519 are accepted;
+  F1520 — file dialog service — is next. Batch 1's ordered candidates are in
   the shared slice-batch tracker. The existing Staff Directory model/view and
   bounded-widget test are the planned representative-table gate
   evidence; its full feature migration remains in Phase 7C.
@@ -137,6 +137,23 @@ shell navigation controls; feature menu/action migration remains later work.
 Independent incremental macOS Debug build and CTest passed for Navigation,
 PageHost, and Bootstrap (3/3); `git diff --check` passed. No full suite or
 cross-platform build ran.
+
+### F1519 — complete — 2026-10-26
+
+Added a Qt-free `UserPromptPort` with typed message, confirmation,
+unsaved-change, and named-action values. Accepted, declined, dismissed,
+Save/Discard/Cancel, and stable action IDs are semantic responses; presenter
+failures remain separate `Domain::Result` errors. A Next Qt presenter maps the
+contracts to dialogs and preserves default/Escape behavior, while a separate
+automation API exposes stable prompt IDs and value-only snapshots/commands.
+Legacy prompt callers and their workflow adapters remain unchanged.
+
+Independent macOS Debug build covered the prompt contract, presenter, Next
+application, Bootstrap, Navigation, and PageHost targets. Focused CTest passed
+5/5; coverage includes destructive styling independent from semantic outcome,
+Escape mapping, dismissal, unsaved-change choices, named-action IDs, default
+actions, and automation snapshots/capture. `git diff --check` passed. No full
+suite, cross-platform build, or native window-manager presentation test ran.
 
 ## Objective
 

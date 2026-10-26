@@ -199,6 +199,71 @@ add_test(
     COMMAND ClassMngrNextCommandBusTests
 )
 
+# Keep prompt values, cancellation responses, and the fakeable application
+# boundary independently testable without Qt.
+add_executable(ClassMngrNextPromptContractTests
+    tests/next/user_prompt_port_tests.cpp
+)
+target_compile_features(ClassMngrNextPromptContractTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(ClassMngrNextPromptContractTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextPromptContractTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(ClassMngrNextPromptContractTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextPromptContractTests
+    COMMAND ClassMngrNextPromptContractTests
+)
+
+# Verify the Qt prompt mapping and value-only automation adapter at the UI
+# boundary without involving any legacy prompt callers.
+add_executable(ClassMngrNextPromptPresenterTests
+    tests/next/qt_user_prompt_presenter_tests.cpp
+    src/next/ui/qt_user_prompt_presenter.cpp
+)
+target_compile_features(ClassMngrNextPromptPresenterTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextPromptPresenterTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextPromptPresenterTests
+    PRIVATE
+        ClassMngrNext::Application
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextPromptPresenterTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextPromptPresenterTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_test(
+    NAME ClassMngrNextPromptPresenterTests
+    COMMAND ClassMngrNextPromptPresenterTests
+)
+set_tests_properties(ClassMngrNextPromptPresenterTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
 add_executable(ClassMngrNextCalendarResourceKeysTests
     cmake/tests/next_calendar_resource_keys.cpp
 )
