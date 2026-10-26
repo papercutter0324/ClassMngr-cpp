@@ -1,5 +1,46 @@
 include_guard(GLOBAL)
 
+# Exercise the production Phase 5 bootstrap and its minimal Widgets shell
+# without linking the legacy runtime or any feature services.
+add_executable(ClassMngrNextBootstrapTests
+    tests/next/application_bootstrap_tests.cpp
+    ${CLASSMNGR_NEXT_BOOTSTRAP_SOURCES}
+)
+target_compile_features(ClassMngrNextBootstrapTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextBootstrapTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextBootstrapTests
+    PRIVATE
+        CLASSMNGR_NEXT_VERSION="${PROJECT_VERSION}"
+)
+target_link_libraries(ClassMngrNextBootstrapTests
+    PRIVATE
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextBootstrapTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextBootstrapTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_test(
+    NAME ClassMngrNextBootstrapTests
+    COMMAND ClassMngrNextBootstrapTests
+)
+set_tests_properties(ClassMngrNextBootstrapTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
 add_executable(ClassMngrNextCalendarResourceKeysTests
     cmake/tests/next_calendar_resource_keys.cpp
 )

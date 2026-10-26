@@ -423,6 +423,8 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/workspace_coordinator.h
     src/next/application/workspace_state.h
     src/next/application/workspace_use_case.h
+    src/next/application/shutdown_coordinator.h
+    src/next/application/startup_coordinator.h
 )
 
 set(CLASSMNGR_NEXT_PLATFORM_SOURCES
@@ -706,8 +708,17 @@ foreach(_classmngr_next_feature IN LISTS _classmngr_next_feature_targets)
     )
 endforeach()
 
+set(_classmngr_next_bootstrap_sources)
+foreach(_classmngr_next_bootstrap_source IN LISTS
+        CLASSMNGR_NEXT_BOOTSTRAP_SOURCES)
+    list(APPEND _classmngr_next_bootstrap_sources
+        "${PROJECT_SOURCE_DIR}/${_classmngr_next_bootstrap_source}"
+    )
+endforeach()
+
 qt_add_executable(ClassMngrNext
     "${PROJECT_SOURCE_DIR}/${CLASSMNGR_NEXT_MAIN_SOURCE}"
+    ${_classmngr_next_bootstrap_sources}
 )
 
 target_compile_features(ClassMngrNext
@@ -725,9 +736,15 @@ target_compile_definitions(ClassMngrNext
         CLASSMNGR_NEXT_VERSION="${PROJECT_VERSION}"
 )
 
+target_include_directories(ClassMngrNext
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+
 target_link_libraries(ClassMngrNext
     PRIVATE
-        Qt6::Core
+        Qt6::Widgets
+        ClassMngrNext::Application
 )
 
 get_target_property(_classmngr_next_executable_dependencies
@@ -735,9 +752,11 @@ get_target_property(_classmngr_next_executable_dependencies
     LINK_LIBRARIES
 )
 list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
-if(NOT "${_classmngr_next_executable_dependencies}" STREQUAL "Qt6::Core")
+if(NOT "${_classmngr_next_executable_dependencies}"
+   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application")
     message(FATAL_ERROR
-        "ClassMngrNext must link only Qt6::Core; found "
+        "ClassMngrNext must link only Qt6::Core, Qt6::Widgets, and "
+        "ClassMngrNext::Application; found "
         "[${_classmngr_next_executable_dependencies}]"
     )
 endif()
@@ -745,7 +764,7 @@ endif()
 if(BUILD_TESTING)
     add_test(
         NAME ClassMngrNextLaunch
-        COMMAND ClassMngrNext
+        COMMAND ClassMngrNext --version
     )
 
     set_tests_properties(ClassMngrNextLaunch

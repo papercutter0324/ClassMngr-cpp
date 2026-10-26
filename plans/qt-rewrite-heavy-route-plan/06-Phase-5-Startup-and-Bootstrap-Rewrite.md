@@ -32,13 +32,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: Not started
+- Status: In progress
 - Default route: Heavy
 - Depends on: Phases 2, 3, and 4
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
-- Last updated: 2026-09-16
-- Current note: Replace monolithic startup and eliminate the splash screen from every path.
+- Last updated: 2026-10-25
+- Current note: Phase 5 is active on the Heavy route. F1501 is complete: `ClassMngrNext` now uses `ApplicationBootstrap` as its production root, displays a minimal shell/page, reports only `InitialExperienceAvailable`, and coordinates close/shutdown. Independent macOS Debug verification passed 3/3 focused CTests. F1502 is next; complete startup stages and diagnostics remain open. The ordered batch is in `Current-Slice-Batches.md`.
 
 ### Slice batches
 
@@ -52,6 +52,26 @@ Use this section only when a decision, acceptance result, verification
 finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
+
+### F1501 — complete — 2026-10-25
+
+`ClassMngrNext` now enters its real Qt Widgets path through
+`ApplicationBootstrap::run()`, which owns the side-effect-free `--version`
+preflight, `QApplication`, app metadata, startup, event loop, and shutdown
+lifetime. The shell owns a visible minimal initial page; accepted close reaches
+the idempotent `ShutdownCoordinator`. The typed startup result reports only
+`InitialExperienceAvailable`, not the full Phase 5 `StartupReady`. No legacy
+`MainWindow`, `ResourcePackManager`, splash/progress path, legacy application
+services, or network work enters this composition.
+
+Independent macOS Debug verification: `cmake --preset macos-clang-debug` and
+the affected target build passed; focused CTest passed 3/3
+(`ClassMngrNextBootstrapTests`, `ClassMngrNextLaunch`, and
+`ClassMngrNextLaunchFilesystemSideEffectsTests`). The bootstrap test binary
+reported 5/5 QtTest cases. Source ownership validated 1,640 handwritten files.
+The full suite and an external subprocess close of the ordinary GUI path were
+not run; shell readiness and close were tested through the production
+bootstrap API under the offscreen platform. F1502 is next.
 
 ## Objective
 

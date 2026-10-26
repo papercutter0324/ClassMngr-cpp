@@ -1,16 +1,6 @@
-#include <QCoreApplication>
-#include <QString>
-
-#include <cstdio>
+#include "next/bootstrap/application_bootstrap.h"
 
 int main(int argc, char* argv[])
 {
-    QCoreApplication application(argc, argv);
-    QCoreApplication::setApplicationName(QStringLiteral("ClassMngrNext"));
-    QCoreApplication::setApplicationVersion(QStringLiteral(CLASSMNGR_NEXT_VERSION));
-
-    const auto version = QCoreApplication::applicationVersion().toUtf8();
-    std::printf("ClassMngrNext launch version=%s\n", version.constData());
-
-    return 0;
+    return ClassMngr::Next::Bootstrap::ApplicationBootstrap::run(argc, argv);
 }

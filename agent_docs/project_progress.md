@@ -1,15 +1,16 @@
 # Project Progress
 
-Active deployment plan: Qt Rewrite Phase 4 — Resource Loader and Packaging.
-Current deployment: `classmngr-phase4-respack-20261025`. Route: Heavy.
-Phase 4 is Complete. The F1500 retry push is
-`277de9057168e67dc0b9ebc2e39719acc204a60f`; Actions run
+Active deployment plan: Qt Rewrite Phase 5 — Startup and Bootstrap Rewrite.
+Current deployment: `phase5-startup-20261025`. Route: Heavy.
+Phase 4 is Complete at `277de9057168e67dc0b9ebc2e39719acc204a60f`; Actions run
 [40224983452](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40224983452)
-passed on macOS, Windows x64, and Linux x64 at that exact head. Each staged
-resource audit passed (193 files, 187 SHA-256 checks, 5 QM files, 2 QML keys);
-macOS CTest passed 3/3 and Windows/Linux each passed 8/8. The Windows
-resource-loader test confirmed the real symlink escape fixture and `UnsafePath`
-behavior.
+passed on macOS, Windows x64, and Linux x64. Phase 5 is In progress. F1501 is
+complete: `ClassMngrNext` enters through `ApplicationBootstrap`, shows its
+minimal shell/page, and coordinates shutdown without invoking legacy
+`MainWindow`. Independent macOS Debug CTest passed 3/3. F1502 is next.
+Remaining Phase 5 work and its
+acceptance order are in the [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
+and [active batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
 
 The portability fixes are retained: `.gitattributes` preserves exact bytes for
 packaged resources and Calendar QML, the feature-layer 64-bit issue value is
@@ -22,18 +23,19 @@ and [batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.m
 
 ## Goal
 
-Complete the Phase 4 resource-loader and package boundary: preserve the
-baseline resource catalog and bytes, install the `ClassMngrNext` resource
-component at a relocatable platform root, avoid pack/network startup work, and
-load/release document bodies only for an active viewer session. Keep legacy
-resource paths intact as the compatibility oracle for later feature migration.
+Complete Phase 5's startup and bootstrap rewrite: use an explicit Next
+composition root and stage diagnostics, show a usable initial page without a
+splash, keep startup resource and data loading bounded, defer application
+updates until interactive, and coordinate shutdown. Preserve the Phase 4
+resource and document lifecycle contracts.
 
 ## Overall Progress
 
-Phase 4 is Complete. The native F1483/F1486 install-layout matrix passed on
-macOS, Windows x64, and Linux x64 at the F1500 retry head. The phase exit gate
-is recorded in the Phase 4 progress log; Phase 5 remains the next planned
-phase.
+Phases 0–4 are Complete. Phase 5 is In progress on the Heavy route. F1501 is
+complete with focused independent bootstrap and shutdown verification. Phase
+5 is not complete until the startup, data
+policy, update, shutdown, splash-removal, and workflow-isolation exit gates
+pass.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained
@@ -74,7 +76,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-25 (Phase 4 Complete)
+### Current checkpoint — 2026-10-25 (Phase 5 started)
 
 The required native resource-install gates passed on the F1500 retry head.
 macOS, Windows x64, and Linux x64 all passed their staged-root probe and
@@ -83,10 +85,11 @@ each passed all 8 CTests, including the Windows real-symlink containment
 check. Actions run 40224983452 completed successfully at
 `277de9057168e67dc0b9ebc2e39719acc204a60f` on `Qt-Rewrite`.
 
-Phase 4 is accepted Complete under its documented gate. Phase 5 is next.
-Rendering parity remains scheduled for Phases 7/10, and removal of legacy RCC
-inputs remains scheduled for Phase 12; Phase 4 does not claim those future
-gates.
+Phase 4 is accepted Complete under its documented native gate. F1501 now
+provides the actual `ClassMngrNext` shell path through the sole production
+bootstrap; remaining stages will be added by following slices. Rendering
+parity remains scheduled for Phases 7/10, and legacy RCC removal remains
+scheduled for Phase 12.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

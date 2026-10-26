@@ -6,18 +6,16 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-25
-- Current milestone: Phase 4 is Complete on the mandatory Heavy route.
-  F1500 commit `277de9057168e67dc0b9ebc2e39719acc204a60f` passed
-  [Actions run 40224983452](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40224983452)
-  on the exact `Qt-Rewrite` head. macOS, Windows x64, and Linux x64 passed
-  install/probe and the 193-file audit (187 SHA-256 checks, five QM files, two
-  QML keys); macOS CTest passed 3/3 and Windows/Linux each passed 8/8. Phase 5
-  Startup and Bootstrap Rewrite is next and remains Not started. Rendering
-  parity remains a Phase 7/10 gate, and legacy-pack removal remains a Phase 12
-  gate. See the [Phase 4 plan](05-Phase-4-Resource-Loader-and-Packaging.md),
-  [progress log](05-Phase-4-Progress-Log.md), [resource
-  inventory](../../docs/qt-rewrite/phase-4-resource-inventory.md), and
-  [current batch tracker](Current-Slice-Batches.md).
+- Current milestone: Phase 5 — Startup and Bootstrap Rewrite — is In progress
+  on the mandatory Heavy route. F1501 is complete: the production
+  `ClassMngrNext` path now enters through `ApplicationBootstrap`, shows a
+  minimal shell/page, and coordinates shutdown without wrapping legacy
+  `MainWindow`. Independent macOS Debug verification passed its three focused
+  CTests. F1502 will establish the complete typed startup stages and
+  diagnostics. See the [Phase 5 plan](06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
+  and [current batch tracker](Current-Slice-Batches.md). Phase 4 remains
+  Complete at F1500; rendering parity remains a Phase 7/10 gate, and legacy
+  pack removal remains a Phase 12 gate.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted

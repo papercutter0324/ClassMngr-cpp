@@ -78,6 +78,7 @@ int main(int argc, char* argv[])
 
     QProcess process;
     process.setProgram(applicationPath);
+    process.setArguments({QStringLiteral("--version")});
     process.setWorkingDirectory(workingDirectory);
     process.setProcessEnvironment(environment);
     process.start();

@@ -638,6 +638,14 @@ list(APPEND CLASSMNGR_FEATURES_SOURCES ${CLASSMNGR_FEATURE_SOURCE_FRAGMENTS})
 
 set(CLASSMNGR_MAIN_SOURCE "src/main.cpp")
 set(CLASSMNGR_NEXT_MAIN_SOURCE "src/next/main.cpp")
+set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
+    "src/next/bootstrap/application_bootstrap.cpp"
+    "src/next/bootstrap/application_bootstrap.h"
+    "src/next/ui/application_shell.cpp"
+    "src/next/ui/application_shell.h"
+    "src/next/ui/initial_page.cpp"
+    "src/next/ui/initial_page.h"
+)
 
 set(CLASSMNGR_NEXT_RESOURCES_SOURCES
     "src/next/resources/resource_catalog.cpp"

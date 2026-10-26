@@ -1,7 +1,49 @@
 # Current Slice Batches
 
-Phase 4 is Complete on the mandatory Heavy route. F1500 passed the native
-matrix; Phase 5 is next.
+# Current Slice Batches
+
+Phase 5 is active on the mandatory Heavy route. Phase 4 completed at F1500;
+its native matrix passed before this batch began.
+
+## Batch 1 — active
+
+1. **F1501 — Complete:** Make `ClassMngrNext` a real Widgets
+   startup composition with an owned minimal shell/page, typed diagnostics for
+   the implemented stages, and coordinated shutdown. Keep `--version`
+   side-effect-free and keep legacy startup out of the new bootstrap.
+   Independent macOS Debug CTest passed 3/3; see the Phase 5 progress log.
+2. **F1502 — Accepted / next:** Define the complete startup stage model, legal
+   transitions, and typed warning/failure outcomes; emit diagnostics only
+   after real stage completion.
+3. **F1503 — Discovered:** Compose platform services, logging, and diagnostics
+   before resource initialization; attribute startup failures to their stage.
+4. **F1504 — Discovered:** Load the Next resource catalog/loader under an
+   explicit startup scope without acquiring feature resources during bootstrap.
+5. **F1505 — Discovered:** Load settings, apply language/theme, and register
+   only required fonts in the specified order.
+6. **F1506 — Discovered:** Apply an explicit workspace startup policy and
+   retain the session through Next contracts with typed no-workspace/open
+   failure results.
+7. **F1507 — Discovered:** Compose `ApplicationRuntime` from Next use cases and
+   platform adapters without feature-page ownership.
+8. **F1508 — Discovered:** Connect the shell to a factory-only PageHost with
+   create/activate/suspend/release lifecycle and explicit page/resource scopes.
+9. **F1509 — Discovered:** Verify startup constructs only the usable initial
+   page and required metadata; add the document-catalog no-QtPdf startup
+   negative check.
+10. **F1510 — Discovered:** Start app update checks only after the window is
+    interactive and remove resource-update checks from startup.
+11. **F1511 — Discovered:** Complete shutdown coordination for settings, jobs,
+    workspace, resource scopes, external automation, and development diagnostics.
+12. **F1512 — Discovered:** Separate legacy startup/performance workflow
+    automation from production startup and use a semantic prompt seam. Begin
+    next-batch discovery when work on this second-to-last candidate starts.
+13. **F1513 — Discovered:** Remove the legacy splash class/image/progress,
+    leases, minimum duration, resource paths, and startup pack initialization
+    after the workflow compatibility path is isolated.
+
+No other candidates beyond the 20-slice batch limit were identified in the
+initial Phase 5 discovery.
 
 ## Batch 2 — pushed
 
