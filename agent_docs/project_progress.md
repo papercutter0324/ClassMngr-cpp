@@ -12,8 +12,9 @@ shell-owned notification service. F1522 added explicit read/apply/persist/
 notify operations around the validated preferences state. F1523 added the
 theme presenter using existing QSS and preference storage. F1524 added font
 size to the shared preferences state, a complete snapshot adapter, startup
-language/theme/font selection, and page access to the same model. F1525,
-shared model/view primitives, is next. Phase 5
+language/theme/font selection, and page access to the same model. F1525 added a
+shared editable text-row model adopted by Staff Directory. F1526,
+representative-table gate evidence, is next. Phase 5
 platform evidence and broad-suite limitations remain in the
 [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [Start Here](../plans/qt-rewrite-heavy-route-plan/00-Start-Here.md).
@@ -27,8 +28,8 @@ appearance.
 
 ## Overall Progress
 
-Phases 0–5 are Complete. Phase 6 is In progress; F1514–F1524 are accepted and
-F1525 is next. The current batch and ordered candidates are in
+Phases 0–5 are Complete. Phase 6 is In progress; F1514–F1525 are accepted and
+F1526 is next. The current batch and ordered candidates are in
 `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
@@ -70,7 +71,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-26 (Phase 6, F1524 accepted)
+### Current checkpoint — 2026-10-26 (Phase 6, F1525 accepted)
 
 F1514 established descriptor-based lazy registration. F1515 added observable
 page states, release/recreation, and failure cleanup while retaining
@@ -112,8 +113,17 @@ keep the model dirty for full-snapshot retry, and the legacy teacher and
 PowerPoint writers cannot report failures. Window/splitter persistence remains
 deferred because no active callers exist. Independent focused macOS Debug
 build passed and CTest passed 9/9; `git diff --check` passed. No full suite,
-cross-platform build, or screenshots ran. F1525 is next. Phase 7/10 owns
-rendering parity; Phase 12 owns legacy resource-pack removal.
+cross-platform build, or screenshots ran. F1525 adds the shared editable
+text-row model used by Staff Directory. It centralizes standard Qt model
+mechanics while leaving row metadata, persistence, delegate, and refresh state
+in the feature. Focused macOS Debug build passed and CTest passed 7/7; CMake
+validated 1,694 handwritten files and `git diff --check` passed. A broader CTest
+selection hit a macOS `NSBundle initWithURL: nil URL argument` failure in
+`wizardSuccessTranscript`; focused acceptance targets passed. The model retains
+all supplied rows and does not page backing data; boundedness evidence covers
+widget/editor allocation. No full suite, cross-platform build, or screenshots
+ran. F1526 is next. Phase 7/10 owns rendering parity; Phase 12 owns legacy
+resource-pack removal.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

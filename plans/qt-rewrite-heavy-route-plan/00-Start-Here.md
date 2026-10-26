@@ -19,8 +19,10 @@
   operations around the validated preferences state. F1523 added the theme
   presenter using existing QSS and persistence boundaries. F1524 added font
   size to the shared preferences state, composed the complete SettingsManager
-  snapshot adapter, and passed the same model to pages; F1525 — shared
-  model/view primitives — is next. Phase 5 — Startup and
+  snapshot adapter, and passed the same model to pages. F1525 added the shared
+  editable text-row model used by Staff Directory while preserving feature
+  schemas and page refresh rules; F1526 — representative-table gate evidence —
+  is next. Phase 5 — Startup and
   Bootstrap Rewrite — completed at implementation head
   `6bbff54abc524723e23911d65130b1b198dde2b3`; its startup, data-policy,
   deferred-update, shutdown, and splash-removal criteria passed. Focused macOS

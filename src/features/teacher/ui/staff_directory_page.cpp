@@ -12,11 +12,11 @@
 #include "next/platform/application_services_native_english_teacher_directory_read_port.h"
 #include "next/platform/application_services_native_english_teacher_directory_save_port.h"
 #include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/models/editable_text_table_model.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QAbstractItemView>
-#include <QAbstractTableModel>
 #include <QEvent>
 #include <QFont>
 #include <QHeaderView>
@@ -87,200 +87,33 @@ struct StaffDirectoryRow final
     QStringList values;
 };
 
-class StaffDirectoryTableModel final : public QAbstractTableModel
+class StaffDirectoryTableModel final
+    : public ClassMngr::Ui::EditableTextTableModel<StaffDirectoryRow>
 {
+    using Base = ClassMngr::Ui::EditableTextTableModel<StaffDirectoryRow>;
+
 public:
     explicit StaffDirectoryTableModel(
         const int columnCount,
         QObject* parent = nullptr
         )
-        : QAbstractTableModel(parent)
-        , m_columnCount(columnCount)
+        : Base(columnCount, &StaffDirectoryRow::values, Qt::AlignCenter, parent)
     {
-    }
-
-    int rowCount(const QModelIndex& parent = QModelIndex()) const override
-    {
-        return parent.isValid() ? 0 : static_cast<int>(m_rows.size());
-    }
-
-    int columnCount(const QModelIndex& parent = QModelIndex()) const override
-    {
-        return parent.isValid() ? 0 : m_columnCount;
     }
 
     QVariant data(const QModelIndex& index, const int role) const override
     {
-        if (!index.isValid()
-            || index.row() < 0
-            || index.row() >= rowCount()
-            || index.column() < 0
-            || index.column() >= m_columnCount)
+        if (role == IdRole && isValidCell(index) && index.column() == 0)
         {
+            const int persistedId = rowAt(index.row()).persistedId;
+            if (persistedId > 0)
+            {
+                return persistedId;
+            }
             return {};
         }
-
-        const StaffDirectoryRow& row = m_rows.at(
-            static_cast<std::size_t>(index.row()));
-        if (role == Qt::DisplayRole || role == Qt::EditRole)
-        {
-            return row.values.at(index.column());
-        }
-        if (role == Qt::TextAlignmentRole)
-        {
-            return static_cast<int>(Qt::AlignCenter);
-        }
-        if (role == IdRole && index.column() == 0 && row.persistedId > 0)
-        {
-            return row.persistedId;
-        }
-        return {};
+        return Base::data(index, role);
     }
-
-    QVariant headerData(
-        const int section,
-        const Qt::Orientation orientation,
-        const int role
-        ) const override
-    {
-        if (orientation == Qt::Horizontal
-            && role == Qt::DisplayRole
-            && section >= 0
-            && section < m_headers.size())
-        {
-            return m_headers.at(section);
-        }
-        return QAbstractTableModel::headerData(section, orientation, role);
-    }
-
-    Qt::ItemFlags flags(const QModelIndex& index) const override
-    {
-        if (!index.isValid())
-        {
-            return Qt::NoItemFlags;
-        }
-        Qt::ItemFlags result = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-        if (m_editingEnabled)
-        {
-            result |= Qt::ItemIsEditable;
-        }
-        return result;
-    }
-
-    bool setData(
-        const QModelIndex& index,
-        const QVariant& value,
-        const int role
-        ) override
-    {
-        if (!m_editingEnabled
-            || role != Qt::EditRole
-            || !index.isValid()
-            || index.row() < 0
-            || index.row() >= rowCount()
-            || index.column() < 0
-            || index.column() >= m_columnCount)
-        {
-            return false;
-        }
-
-        StaffDirectoryRow& row = m_rows[index.row()];
-        const QString text = value.toString();
-        if (row.values.at(index.column()) == text)
-        {
-            return true;
-        }
-
-        row.values[index.column()] = text;
-        emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-        return true;
-    }
-
-    bool insertRows(
-        const int row,
-        const int count,
-        const QModelIndex& parent = QModelIndex()
-        ) override
-    {
-        if (!m_editingEnabled
-            || parent.isValid()
-            || row < 0
-            || row > rowCount()
-            || count <= 0)
-        {
-            return false;
-        }
-
-        beginInsertRows(QModelIndex(), row, row + count - 1);
-        for (int offset = 0; offset < count; ++offset)
-        {
-            StaffDirectoryRow newRow;
-            newRow.values.fill(QString(), m_columnCount);
-            m_rows.insert(
-                m_rows.begin() + static_cast<std::ptrdiff_t>(row + offset),
-                std::move(newRow));
-        }
-        endInsertRows();
-        return true;
-    }
-
-    bool removeRows(
-        const int row,
-        const int count,
-        const QModelIndex& parent = QModelIndex()
-        ) override
-    {
-        if (!m_editingEnabled
-            || parent.isValid()
-            || row < 0
-            || count <= 0
-            || row + count > rowCount())
-        {
-            return false;
-        }
-
-        beginRemoveRows(QModelIndex(), row, row + count - 1);
-        m_rows.erase(
-            m_rows.begin() + static_cast<std::ptrdiff_t>(row),
-            m_rows.begin() + static_cast<std::ptrdiff_t>(row + count));
-        endRemoveRows();
-        return true;
-    }
-
-    void setRows(QVector<StaffDirectoryRow> rows)
-    {
-        beginResetModel();
-        m_rows = std::move(rows);
-        endResetModel();
-    }
-
-    void setEditingEnabled(const bool enabled)
-    {
-        m_editingEnabled = enabled;
-    }
-
-    void setHeaders(QStringList headers)
-    {
-        m_headers = std::move(headers);
-        if (!m_headers.isEmpty())
-        {
-            emit headerDataChanged(
-                Qt::Horizontal,
-                0,
-                static_cast<int>(m_headers.size()) - 1);
-        }
-    }
-
-    const StaffDirectoryRow& rowAt(const int row) const
-    {
-        return m_rows.at(static_cast<std::size_t>(row));
-    }
-
-private:
-    int m_columnCount = 0;
-    bool m_editingEnabled = true;
-    QVector<StaffDirectoryRow> m_rows;
-    QStringList m_headers;
 };
 
 class NativeTeacherPositionDelegate final : public QStyledItemDelegate

@@ -217,6 +217,7 @@ set(CLASSMNGR_UI_SHARED_SOURCES
     "src/ui/shared/input/hangul_composer.cpp"
     "src/ui/shared/input/hangul_composer.h"
     "src/ui/shared/menus/menu_utils.h"
+    "src/ui/shared/models/editable_text_table_model.h"
     "src/ui/shared/pages/autosave_coordinator.cpp"
     "src/ui/shared/pages/autosave_coordinator.h"
     "src/ui/shared/pages/basepage.cpp"

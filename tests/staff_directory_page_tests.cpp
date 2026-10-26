@@ -6,15 +6,19 @@
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <QApplication>
+#include <QAbstractItemDelegate>
 #include <QFont>
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
 #include <QComboBox>
 #include <QPushButton>
+#include <QPointer>
 #include <QTableWidget>
 #include <QTableView>
 #include <QtTest>
+
+#include <memory>
 
 namespace
 {
@@ -42,6 +46,7 @@ private slots:
     void directoryTablesProvideRoomForCellEditors();
     void directoryHeaderKeyboardOpensUntargeted();
     void largeDirectoriesKeepRowsInTheModelWithoutCellWidgets();
+    void clearAndRecreationReleaseRowsAndActiveEditors();
 };
 
 void StaffDirectoryPageTests::nativeEnglishTeacherColumnsAndEditing()
@@ -238,6 +243,58 @@ largeDirectoriesKeepRowsInTheModelWithoutCellWidgets()
                 QVERIFY(!table->indexWidget(
                     table->model()->index(row, column)));
             }
+        }
+    }
+}
+
+void StaffDirectoryPageTests::clearAndRecreationReleaseRowsAndActiveEditors()
+{
+    for (const auto kind : {
+             StaffDirectoryKind::NativeEnglishTeachers,
+             StaffDirectoryKind::GsTeam})
+    {
+        for (int generation = 0; generation < 2; ++generation)
+        {
+            auto page = std::make_unique<StaffDirectoryPage>(nullptr, kind);
+            page->setSaveMode(SaveMode::Manual);
+            page->resize(1000, 700);
+            page->show();
+            QApplication::processEvents();
+            QPointer<QTableView> table = page->findChild<QTableView*>();
+            QVERIFY(table);
+            QPointer<QAbstractItemModel> model = table->model();
+            QPointer<QAbstractItemDelegate> delegate =
+                kind == StaffDirectoryKind::NativeEnglishTeachers
+                ? table->itemDelegateForColumn(1)
+                : table->itemDelegate();
+            QVERIFY(delegate);
+            QCOMPARE(model->parent(), page.get());
+            QCOMPARE(delegate->parent(), table.data());
+            QCOMPARE(model->rowCount(), 0);
+            const qsizetype idleWidgetCount = page->findChildren<QWidget*>().size();
+
+            for (int refresh = 0; refresh < 2; ++refresh)
+            {
+                QVERIFY(model->insertRows(0, 96));
+                QCOMPARE(model->index(0, 0).data(Qt::EditRole).toString(), QString());
+                QVERIFY(model->setData(model->index(0, 0), QStringLiteral("current generation")));
+                table->setCurrentIndex(model->index(0, 0));
+                table->edit(model->index(0, 0));
+                QTRY_COMPARE(table->findChildren<QLineEdit*>().size(), 1);
+                QPointer<QLineEdit> editor = table->findChild<QLineEdit*>();
+
+                page->clearDatabaseState();
+                QCOMPARE(table->model(), model.data());
+                QCOMPARE(model->rowCount(), 0);
+                QVERIFY(!page->hasUnsavedChanges());
+                QTRY_VERIFY(editor.isNull());
+                QTRY_COMPARE(page->findChildren<QWidget*>().size(), idleWidgetCount);
+            }
+
+            page.reset();
+            QVERIFY(table.isNull());
+            QVERIFY(model.isNull());
+            QVERIFY(delegate.isNull());
         }
     }
 }

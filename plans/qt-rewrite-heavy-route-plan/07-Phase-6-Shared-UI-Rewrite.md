@@ -38,8 +38,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 is active on the Heavy route. F1514–F1524 are accepted;
-  F1525 — shared model/view primitives — is next. Batch 1's ordered candidates are in
+- Current note: Phase 6 is active on the Heavy route. F1514–F1525 are accepted;
+  F1526 — representative-table gate evidence — is next. Batch 1's ordered candidates are in
   the shared slice-batch tracker. The existing Staff Directory model/view and
   bounded-widget test are the planned representative-table gate
   evidence; its full feature migration remains in Phase 7C.
@@ -270,6 +270,36 @@ selection, shared page context, font restoration, theme rollback, observer
 visibility, and stylesheet resource lifetime. `git diff --check` passed. No
 full suite, cross-platform build, or appearance screenshots ran; screenshots
 and shell appearance checks remain F1527.
+
+### F1525 — complete — 2026-10-26
+
+Added the shared header-only `EditableTextTableModel<Row>` for rectangular
+editable text rows. It centralizes Qt model roles, headers, editability,
+checked cell updates, row insertion/removal, and reset notifications while
+leaving feature row metadata and persistence outside the shared primitive.
+Staff Directory now uses this model base for its existing 5/6-column schemas.
+Its persisted IDs, feature queries, save/import rules, native-teacher position
+delegate, and dirty/reload state remain in the feature page. Text and combo
+editors are still created only for the active cell, and table/model/delegate
+ownership remains page-scoped.
+
+The model directly retains supplied row values; it has no paging or backing-
+data memory cap. The boundedness evidence here is Qt widget/editor allocation:
+the 96-row check confirms widget count remains fixed and no index widgets are
+created. Model tests also cover 5/6 columns, display/edit roles, headers,
+invalid requests, edit signals, insertion/removal, reset generations, and row
+release. The page test covers clear/reload, active-editor disposal, and page
+recreation. The existing import refresh-failure test continues to pass.
+
+Independent incremental macOS Debug build covered the new model test, Staff
+Directory page test, teacher-import refresh test, and both directory read/save
+parity suites. Focused CTest passed 7/7. CMake validated ownership of 1,694
+handwritten files, and `git diff --check` passed. A broader CTest selection
+also failed in `wizardSuccessTranscript` with macOS
+`NSBundle initWithURL: nil URL argument`; that test path is outside the changed
+model/view code and is not part of the focused acceptance result. No full suite,
+cross-platform build, or screenshot comparison ran; appearance evidence remains
+F1527.
 
 ## Objective
 

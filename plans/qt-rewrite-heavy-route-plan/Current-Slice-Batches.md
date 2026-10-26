@@ -5,7 +5,7 @@ Phase 5 completed on the mandatory Heavy route at implementation head
 
 ## Phase 6 — Batch 1 (active)
 
-F1514–F1524 are complete. F1525 is current. Continue in order, commit each
+F1514–F1525 are complete. F1526 is current. Continue in order, commit each
 accepted slice, then push the batch. Start Batch 2 discovery when F1526 starts
 because it is the second-to-last candidate.
 
@@ -84,9 +84,14 @@ because it is the second-to-last candidate.
     Global window/splitter persistence remains deferred because it has no active
     behavior to preserve; workspace current-campus data and keyed dialog
     geometry remain separate.
-12. **F1525 — Shared model/view primitives (current):** reusable bounded models,
-    delegates, on-demand editors, and refresh/loading states.
-13. **F1526 — Representative-table gate evidence:** verify the existing Staff
+12. **F1525 — Shared model/view primitives (complete):** add a reusable
+    editable text-row `QAbstractTableModel` base and use it for Staff Directory
+    while keeping its typed row metadata, column schemas, native-teacher
+    delegate, and dirty/reload behavior local. Model/view tests verify row
+    operations, roles, edits, reset release, active-editor lifetime, and fixed
+    widget counts across 96 rows. The primitive retains all supplied rows and
+    does not provide paging or a backing-data memory cap.
+13. **F1526 — Representative-table gate evidence (current):** verify the existing Staff
     Directory model/view consumer demonstrates bounded object creation; keep
     its full feature migration in Phase 7C.
 14. **F1527 — Appearance evidence:** capture shell/shared-UI baselines for

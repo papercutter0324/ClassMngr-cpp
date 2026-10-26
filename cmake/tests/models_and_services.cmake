@@ -1,3 +1,15 @@
+classmngr_add_qt_test(
+    NAME EditableTextTableModel
+    SOURCES
+        tests/editable_text_table_model_tests.cpp
+    LIBRARIES
+        Qt6::Core
+        Qt6::Test
+)
+set_property(TARGET ClassMngrEditableTextTableModelTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+
 qt_add_executable(ClassMngrBasePageTests
         tests/basepage_tests.cpp
         src/core/fontmanager.cpp
