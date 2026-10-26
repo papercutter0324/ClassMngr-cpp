@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
 - Last updated: 2026-10-25
-- Current note: Phase 5 is active on the Heavy route. F1501–F1504 are complete; F1504 composes the app-relative metadata catalog, lazy loader, and retained Startup scope. The six focused macOS Debug bootstrap/resource/launch CTests passed 6/6. F1505 is next to load settings, apply language/theme, and register required fonts in order. The ordered batch is in `Current-Slice-Batches.md`.
+- Current note: Phase 5 is active on the Heavy route. F1501–F1505 are complete; F1506 is next to define the explicit workspace startup policy and retain a typed Next session. F1505 preserves settings compatibility, applies one selected catalog translation and theme, and retains only the required fonts before shell construction. Workspace and `StartupReady` stages remain unimplemented until F1506.
 
 ### Slice batches
 
@@ -128,7 +128,33 @@ payload root; failure cases covered resolver error, missing root, and invalid
 catalog. Source review confirms the bootstrap retains its Startup scope and
 does not call a loader payload method. The full suite and a native install
 matrix were not rerun; Phase 4 retains the package-root matrix evidence.
-F1505 is next.
+
+### F1505 — complete — 2026-10-25
+
+The bootstrap now reads the existing typed language and theme preferences
+before shell construction, preserving the PaperCloud/ClassMngr settings
+identity, settings-root override, canonical keys, and legacy language migration.
+The existing settings implementation is shared with Next through a Qt Core-only
+object target; the executable still links only Qt Core, Widgets, Next
+Application, and Next Resources. Startup resolves and retains at most one
+packaged translation, applies the selected catalog stylesheet, and registers
+exactly Inter and Pretendard under its Startup resource scope. SystemDefault
+uses the first supported system UI locale; no match is a warning and retains
+source-English strings. System theme selection follows the current Qt color
+scheme. The four real stages precede the shell; failures are typed and roll
+back installed presentation resources. WorkspaceOpened and StartupReady remain
+absent.
+
+Independent macOS Debug verification passed: the affected bootstrap and legacy
+runtime targets built; bootstrap QtTest passed 22/22, focused bootstrap and
+preference CTests passed 3/3, and launch/filesystem side-effect CTests passed
+2/2. Tests verify ordered stages, Korean and regional English selection,
+unsupported-locale fallback, selected theme/translation, exactly the required
+fonts, and translation/theme/font failure cleanup before shell creation. The
+Next link commands have no Platform target or Qt Network reference. No full
+suite or other-platform build ran. Settings-read failure has no injectable
+test seam and was not exercised.
+F1506 is next.
 
 ## Objective
 

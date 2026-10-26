@@ -1,22 +1,33 @@
 #include "next/application/shutdown_coordinator.h"
 #include "next/application/startup_coordinator.h"
+#include "next/application/language_preferences_port.h"
+#include "next/application/theme_preferences_port.h"
 #include "next/bootstrap/application_bootstrap.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_descriptor.h"
 #include "next/resources/resource_error.h"
 #include "next/ui/application_shell.h"
 #include "next/ui/initial_page.h"
+#include "core/settingsmanager.h"
+#include "ui/shared/state/option_state_keys.h"
 
 #include <QApplication>
+#include <QEvent>
+#include <QFontDatabase>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QLabel>
+#include <QLocale>
+#include <QStyleHints>
 #include <QTemporaryDir>
+#include <QWidget>
 #include <QtTest/QtTest>
 
 #include <array>
+#include <algorithm>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -27,9 +38,20 @@ class ApplicationBootstrapTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
+    void cleanupTestCase();
     void createsVisibleShellAndReportsOnlyCompletedStartupStage();
+    void loadsOnlySelectedLanguageThemeAndRequiredFontsBeforeShell();
+    void systemDefaultUsesFirstSupportedLocaleFromOrderedList();
+    void systemDefaultFallsBackToSourceEnglishForUnsupportedLocales();
+    void systemDefaultThemeFollowsCurrentStyleColorScheme();
+    void explicitEnglishSelectsCanadianTranslation();
+    void explicitEnglishFallsBackToUsWhenNoEnglishRegionMatches();
+    void translationFailureStopsBeforeThemeAndShell();
+    void themeFailureRollsBackInstalledTranslation();
+    void requiredFontFailureRollsBackTranslationThemeAndFirstFont();
     void diagnosticsSinkConstructionFailureStopsBeforeShellCreation();
-    void generatedCatalogStartsWithAnEmptyPayloadRoot();
+    void generatedCatalogStartsWithOnlySelectedStartupPayloads();
     void packagePathResolutionFailureDoesNotUseCurrentDirectoryFallback();
     void missingResourcePackageFailsCoreServicesBeforeShellCreation();
     void invalidResourceCatalogFailsCoreServicesBeforeShellCreation();
@@ -38,6 +60,9 @@ private slots:
     void startupCoordinatorRetainsTypedWarningAndTerminalFailure();
     void closeRequestsShutdownOnceAndRestoresApplicationPolicy();
     void startupFailureAndShutdownActionAreReportedPrecisely();
+
+private:
+    QTemporaryDir m_settingsRoot;
 };
 
 namespace
@@ -122,6 +147,11 @@ QString configuredResourceCatalogPath()
     return QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG);
 }
 
+QString configuredResourceRoot()
+{
+    return QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_ROOT);
+}
+
 QString configuredResourceRelativeRoot()
 {
     return QStringLiteral(CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT);
@@ -140,6 +170,246 @@ Bootstrap::ApplicationBootstrap::ResourcePackagePathsResolver resolverForEmptyRo
     };
 }
 
+Bootstrap::ApplicationBootstrap::ResourcePackagePathsResolver resolverForRoot(
+    QString resourceRoot
+    )
+{
+    return [resourceRoot = std::move(resourceRoot)]()
+        -> Resources::ResourceResult<Resources::ResourcePackagePaths> {
+        return Resources::ResourcePackagePaths{
+            resourceRoot,
+            configuredResourceCatalogPath()
+        };
+    };
+}
+
+class StartupResourceFixture final
+{
+public:
+    StartupResourceFixture()
+        : m_resourceRoot(QDir(m_directory.path()).filePath(QStringLiteral("resources")))
+    {
+    }
+
+    [[nodiscard]] bool isValid() const noexcept
+    {
+        return m_directory.isValid() && QDir().mkpath(m_resourceRoot);
+    }
+
+    [[nodiscard]] const QString& resourceRoot() const noexcept
+    {
+        return m_resourceRoot;
+    }
+
+    [[nodiscard]] bool addResource(const QString& relativePath) const
+    {
+        const QString sourcePath = QDir(configuredResourceRoot()).filePath(relativePath);
+        const QString destinationPath = QDir(m_resourceRoot).filePath(relativePath);
+        if (!QDir().mkpath(QFileInfo(destinationPath).absolutePath()))
+        {
+            return false;
+        }
+        return QFile::copy(sourcePath, destinationPath);
+    }
+
+    [[nodiscard]] bool addTranslation(const QString& locale) const
+    {
+        const QString relativePath =
+            QStringLiteral("assets/translations/ClassMngr_%1.qm").arg(locale);
+        const QString sourcePath = QDir(
+            QFileInfo(configuredResourceCatalogPath()).absolutePath()
+            ).filePath(relativePath);
+        const QString destinationPath = QDir(m_resourceRoot).filePath(relativePath);
+        if (!QDir().mkpath(QFileInfo(destinationPath).absolutePath()))
+        {
+            return false;
+        }
+        return QFile::copy(sourcePath, destinationPath);
+    }
+
+    [[nodiscard]] bool addTheme(const QString& theme) const
+    {
+        return addResource(QStringLiteral("assets/styles/%1.qss").arg(theme));
+    }
+
+    [[nodiscard]] bool addRequiredFonts() const
+    {
+        return addResource(QStringLiteral("assets/fonts/Inter.ttc"))
+            && addResource(QStringLiteral("assets/fonts/PretendardVariable.ttf"));
+    }
+
+    [[nodiscard]] bool addStartupResources(
+        const QString& locale,
+        const QString& theme
+        ) const
+    {
+        return addTranslation(locale) && addTheme(theme) && addRequiredFonts();
+    }
+
+private:
+    QTemporaryDir m_directory;
+    QString m_resourceRoot;
+};
+
+class StartupPreferencesGuard final
+{
+public:
+    StartupPreferencesGuard(const int language, const int theme)
+        : m_languageKey(QString::fromUtf8(OptionKeys::Language))
+        , m_themeKey(QString::fromUtf8(OptionKeys::Theme))
+        , m_previousLanguage(SettingsManager::instance().get(m_languageKey))
+        , m_previousTheme(SettingsManager::instance().get(m_themeKey))
+    {
+        SettingsManager::instance().set(m_languageKey, language);
+        SettingsManager::instance().set(m_themeKey, theme);
+    }
+
+    ~StartupPreferencesGuard()
+    {
+        restore(m_languageKey, m_previousLanguage);
+        restore(m_themeKey, m_previousTheme);
+    }
+
+private:
+    QString m_languageKey;
+    QString m_themeKey;
+    QVariant m_previousLanguage;
+    QVariant m_previousTheme;
+
+    static void restore(const QString& key, const QVariant& value)
+    {
+        if (value.isValid())
+        {
+            SettingsManager::instance().set(key, value);
+        }
+        else
+        {
+            SettingsManager::instance().remove(key);
+        }
+    }
+};
+
+class LanguageChangeProbe final : public QWidget
+{
+public:
+    [[nodiscard]] int languageChangeCount() const noexcept
+    {
+        return m_languageChangeCount;
+    }
+
+    void resetLanguageChangeCount() noexcept
+    {
+        m_languageChangeCount = 0;
+    }
+
+protected:
+    bool event(QEvent* event) override
+    {
+        if (event->type() == QEvent::LanguageChange)
+        {
+            ++m_languageChangeCount;
+        }
+        return QWidget::event(event);
+    }
+
+private:
+    int m_languageChangeCount = 0;
+};
+
+QString expectedEnglishLocale()
+{
+    for (const QString& language : QLocale::system().uiLanguages())
+    {
+        const QLocale locale(language);
+        if (locale.language() != QLocale::English)
+        {
+            continue;
+        }
+        switch (locale.territory())
+        {
+        case QLocale::UnitedStates: return QStringLiteral("en_US");
+        case QLocale::Canada: return QStringLiteral("en_CA");
+        case QLocale::UnitedKingdom: return QStringLiteral("en_GB");
+        case QLocale::Australia: return QStringLiteral("en_AU");
+        default: break;
+        }
+    }
+    return QStringLiteral("en_US");
+}
+
+QString readTextFile(const QString& path)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        return {};
+    }
+    return QString::fromUtf8(file.readAll());
+}
+
+bool containsStage(
+    const std::vector<Application::StartupEvent>& events,
+    const Application::StartupStage stage
+    )
+{
+    return std::any_of(
+        events.begin(),
+        events.end(),
+        [stage](const Application::StartupEvent& event) {
+            return event.stage == stage;
+        }
+        );
+}
+
+void verifyTypedStageFailure(
+    const Application::StartupResult& result,
+    const Application::StartupStage expectedStage
+    )
+{
+    QCOMPARE(result.status, Application::StartupStatus::Failed);
+    QVERIFY(result.failure.has_value());
+    QCOMPARE(*result.failure, Application::StartupFailureReason::StageFailed);
+    QVERIFY(result.diagnostic.has_value());
+    QCOMPARE(result.diagnostic->code, Application::StartupDiagnosticCode::StageFailed);
+    QVERIFY(result.diagnostic->stage.has_value());
+    QCOMPARE(*result.diagnostic->stage, expectedStage);
+    QVERIFY(result.latestStageResult.has_value());
+    QCOMPARE(result.latestStageResult->stage, expectedStage);
+    QCOMPARE(result.latestStageResult->outcome, Application::StartupStageOutcome::Failed);
+    QVERIFY(result.latestStageResult->diagnostic.has_value());
+    QCOMPARE(
+        result.latestStageResult->diagnostic->code,
+        Application::StartupDiagnosticCode::StageFailed
+        );
+    QVERIFY(result.latestStageResult->diagnostic->stage.has_value());
+    QCOMPARE(*result.latestStageResult->diagnostic->stage, expectedStage);
+}
+
+bool containsFontFamilyLike(const QStringList& families, const QString& name)
+{
+    return std::any_of(
+        families.begin(),
+        families.end(),
+        [&name](const QString& family) {
+            return family.contains(name, Qt::CaseInsensitive);
+        }
+        );
+}
+
+}
+
+void ApplicationBootstrapTests::initTestCase()
+{
+    QVERIFY(m_settingsRoot.isValid());
+    QVERIFY(qputenv("CLASSMNGR_SETTINGS_ROOT", m_settingsRoot.path().toUtf8()));
+    SettingsManager::instance().clear();
+    SettingsManager::instance().sync();
+}
+
+void ApplicationBootstrapTests::cleanupTestCase()
+{
+    SettingsManager::instance().clear();
+    SettingsManager::instance().sync();
 }
 
 void ApplicationBootstrapTests::
@@ -147,12 +417,16 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
 {
     QApplication& application = *qApp;
     std::vector<Application::StartupEvent> observedEvents;
-    QTemporaryDir temporaryDirectory;
-    QVERIFY(temporaryDirectory.isValid());
-    const QString resourceRoot = QDir(temporaryDirectory.path()).filePath(
-        QStringLiteral("resources")
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
         );
-    QVERIFY(QDir().mkpath(resourceRoot));
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    const QString locale = expectedEnglishLocale();
+    QVERIFY2(resources.addStartupResources(locale, QStringLiteral("light")),
+             qPrintable(QStringLiteral("could not stage selected startup resources for %1").arg(locale)));
 
     QTest::ignoreMessage(
         QtInfoMsg,
@@ -180,7 +454,7 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
             observedEvents.push_back(event);
         },
         {},
-        resolverForEmptyRoot(resourceRoot)
+        resolverForRoot(resources.resourceRoot())
         );
 
     const Application::StartupResult result = bootstrap.start();
@@ -188,13 +462,17 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     QCOMPARE(result.status, Application::StartupStatus::InitialExperienceAvailable);
     QVERIFY(result.succeeded());
     QVERIFY(!result.failure.has_value());
-    QCOMPARE(result.stageResults.size(), std::size_t{4});
-    QCOMPARE(result.completedEvents.size(), std::size_t{4});
+    QCOMPARE(result.stageResults.size(), std::size_t{8});
+    QCOMPARE(result.completedEvents.size(), std::size_t{8});
     QVERIFY(!result.diagnostic.has_value());
 
     constexpr std::array expectedStages{
         Application::StartupStage::ProcessCreated,
         Application::StartupStage::CoreServicesCreated,
+        Application::StartupStage::SettingsLoaded,
+        Application::StartupStage::LanguageLoaded,
+        Application::StartupStage::ThemeLoaded,
+        Application::StartupStage::RequiredFontsLoaded,
         Application::StartupStage::ShellCreated,
         Application::StartupStage::InitialPageReady
     };
@@ -244,6 +522,486 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
         description->text(),
         QStringLiteral("The next-generation workspace is under development.")
         );
+
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+loadsOnlySelectedLanguageThemeAndRequiredFontsBeforeShell()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::Dark)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(QStringLiteral("ko_KR"), QStringLiteral("dark")));
+
+    LanguageChangeProbe languageProbe;
+    languageProbe.show();
+    languageProbe.resetLanguageChangeCount();
+
+    std::vector<Application::StartupEvent> observedEvents;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        {},
+        resolverForRoot(resources.resourceRoot())
+        );
+
+    const Application::StartupResult result = bootstrap.start();
+    QCoreApplication::processEvents();
+
+    QVERIFY(result.succeeded());
+    QCOMPARE(result.status, Application::StartupStatus::InitialExperienceAvailable);
+    constexpr std::array expectedStages{
+        Application::StartupStage::ProcessCreated,
+        Application::StartupStage::CoreServicesCreated,
+        Application::StartupStage::SettingsLoaded,
+        Application::StartupStage::LanguageLoaded,
+        Application::StartupStage::ThemeLoaded,
+        Application::StartupStage::RequiredFontsLoaded,
+        Application::StartupStage::ShellCreated,
+        Application::StartupStage::InitialPageReady
+    };
+    QCOMPARE(observedEvents.size(), expectedStages.size());
+    for (std::size_t index = 0; index < expectedStages.size(); ++index)
+    {
+        QCOMPARE(observedEvents[index].stage, expectedStages[index]);
+        QCOMPARE(observedEvents[index].outcome, Application::StartupStageOutcome::Completed);
+    }
+    QCOMPARE(languageProbe.languageChangeCount(), 1);
+    QCOMPARE(
+        QCoreApplication::translate("AboutDialog", "Inter Font License"),
+        QStringLiteral("Inter 폰트 라이선스")
+        );
+    QCOMPARE(
+        application.styleSheet(),
+        readTextFile(QDir(resources.resourceRoot()).filePath(QStringLiteral("assets/styles/dark.qss")))
+        );
+    QVERIFY(bootstrap.shell() != nullptr);
+    QVERIFY(bootstrap.shell()->isVisible());
+    const QStringList registeredFamilies = QFontDatabase::families();
+    QVERIFY(containsFontFamilyLike(registeredFamilies, QStringLiteral("Inter")));
+    QVERIFY(containsFontFamilyLike(registeredFamilies, QStringLiteral("Pretendard")));
+
+    // Only the selected translation, selected theme, and two required fonts
+    // exist in this package root. Startup success proves no other payload was
+    // requested as part of bootstrap.
+    languageProbe.close();
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+systemDefaultUsesFirstSupportedLocaleFromOrderedList()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::SystemDefault),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addTranslation(QStringLiteral("en_CA")));
+    QVERIFY(resources.addTheme(QStringLiteral("light")));
+    QVERIFY(resources.addRequiredFonts());
+
+    LanguageChangeProbe languageProbe;
+    languageProbe.show();
+    languageProbe.resetLanguageChangeCount();
+
+    std::vector<Application::StartupEvent> observedEvents;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        {},
+        resolverForRoot(resources.resourceRoot()),
+        std::optional<QStringList>{QStringList{
+            QStringLiteral("fr-FR"),
+            QStringLiteral("en-CA"),
+            QStringLiteral("ko-KR"),
+            QStringLiteral("en-US")
+        }}
+        );
+    const Application::StartupResult result = bootstrap.start();
+    QCoreApplication::processEvents();
+
+    QVERIFY(result.succeeded());
+    QCOMPARE(result.status, Application::StartupStatus::InitialExperienceAvailable);
+    QCOMPARE(observedEvents.size(), std::size_t{8});
+    QCOMPARE(observedEvents[2].stage, Application::StartupStage::SettingsLoaded);
+    QCOMPARE(observedEvents[3].stage, Application::StartupStage::LanguageLoaded);
+    QCOMPARE(observedEvents[3].outcome, Application::StartupStageOutcome::Completed);
+    QCOMPARE(languageProbe.languageChangeCount(), 1);
+    QCOMPARE(
+        QCoreApplication::translate("AboutDialog", "Inter Font License"),
+        QStringLiteral("Inter Font Licence")
+        );
+    QCOMPARE(observedEvents[4].stage, Application::StartupStage::ThemeLoaded);
+    QCOMPARE(observedEvents[5].stage, Application::StartupStage::RequiredFontsLoaded);
+    QCOMPARE(observedEvents[6].stage, Application::StartupStage::ShellCreated);
+    QCOMPARE(observedEvents[7].stage, Application::StartupStage::InitialPageReady);
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::WorkspaceOpened));
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::StartupReady));
+
+    languageProbe.close();
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+systemDefaultFallsBackToSourceEnglishForUnsupportedLocales()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::SystemDefault),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addTheme(QStringLiteral("light")));
+    QVERIFY(resources.addRequiredFonts());
+
+    LanguageChangeProbe languageProbe;
+    languageProbe.show();
+    languageProbe.resetLanguageChangeCount();
+    std::vector<Application::StartupEvent> observedEvents;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        {},
+        resolverForRoot(resources.resourceRoot()),
+        std::optional<QStringList>{QStringList{}}
+        );
+    const Application::StartupResult result = bootstrap.start();
+    QCoreApplication::processEvents();
+
+    QVERIFY(result.succeeded());
+    QCOMPARE(result.status, Application::StartupStatus::InitialExperienceAvailable);
+    QCOMPARE(result.stageResults.size(), std::size_t{8});
+    QCOMPARE(result.completedEvents.size(), std::size_t{7});
+    QCOMPARE(observedEvents.size(), std::size_t{8});
+    QCOMPARE(observedEvents[3].stage, Application::StartupStage::LanguageLoaded);
+    QCOMPARE(observedEvents[3].outcome, Application::StartupStageOutcome::Warning);
+    QVERIFY(observedEvents[3].diagnostic.has_value());
+    QCOMPARE(observedEvents[3].diagnostic->code, Application::StartupDiagnosticCode::StageWarning);
+    QVERIFY(result.stageResults[3].diagnostic.has_value());
+    QCOMPARE(result.stageResults[3].diagnostic->code, Application::StartupDiagnosticCode::StageWarning);
+    QVERIFY(result.stageResults[3].diagnostic->stage.has_value());
+    QCOMPARE(*result.stageResults[3].diagnostic->stage, Application::StartupStage::LanguageLoaded);
+    QCOMPARE(languageProbe.languageChangeCount(), 0);
+    QCOMPARE(
+        QCoreApplication::translate("AboutDialog", "Inter Font License"),
+        QStringLiteral("Inter Font License")
+        );
+    QVERIFY(bootstrap.shell() != nullptr);
+    QVERIFY(bootstrap.shell()->isVisible());
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::WorkspaceOpened));
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::StartupReady));
+
+    languageProbe.close();
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::systemDefaultThemeFollowsCurrentStyleColorScheme()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::SystemDefault)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addTranslation(QStringLiteral("ko_KR")));
+    const QString theme = application.styleHints()->colorScheme() == Qt::ColorScheme::Dark
+        ? QStringLiteral("dark")
+        : QStringLiteral("light");
+    QVERIFY(resources.addTheme(theme));
+    QVERIFY(resources.addRequiredFonts());
+
+    std::vector<Application::StartupEvent> observedEvents;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        {},
+        resolverForRoot(resources.resourceRoot())
+        );
+    const Application::StartupResult result = bootstrap.start();
+
+    QVERIFY(result.succeeded());
+    QCOMPARE(observedEvents.size(), std::size_t{8});
+    QCOMPARE(observedEvents[4].stage, Application::StartupStage::ThemeLoaded);
+    QCOMPARE(observedEvents[4].outcome, Application::StartupStageOutcome::Completed);
+    QCOMPARE(
+        application.styleSheet(),
+        readTextFile(QDir(resources.resourceRoot()).filePath(
+            QStringLiteral("assets/styles/%1.qss").arg(theme)
+            ))
+        );
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::WorkspaceOpened));
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::StartupReady));
+
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+explicitEnglishSelectsCanadianTranslation()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addTranslation(QStringLiteral("en_CA")));
+    QVERIFY(resources.addTheme(QStringLiteral("light")));
+    QVERIFY(resources.addRequiredFonts());
+
+    LanguageChangeProbe languageProbe;
+    languageProbe.show();
+    languageProbe.resetLanguageChangeCount();
+
+    std::vector<Application::StartupEvent> observedEvents;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        {},
+        resolverForRoot(resources.resourceRoot()),
+        std::optional<QStringList>{QStringList{QStringLiteral("en-CA")}}
+        );
+    const Application::StartupResult result = bootstrap.start();
+    QCoreApplication::processEvents();
+
+    QVERIFY(result.succeeded());
+    QCOMPARE(observedEvents[3].stage, Application::StartupStage::LanguageLoaded);
+    QCOMPARE(observedEvents[3].outcome, Application::StartupStageOutcome::Completed);
+    QCOMPARE(languageProbe.languageChangeCount(), 1);
+    QCOMPARE(
+        QCoreApplication::translate("AboutDialog", "Inter Font License"),
+        QStringLiteral("Inter Font Licence")
+        );
+
+    languageProbe.close();
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+explicitEnglishFallsBackToUsWhenNoEnglishRegionMatches()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addTranslation(QStringLiteral("en_US")));
+    QVERIFY(resources.addTheme(QStringLiteral("light")));
+    QVERIFY(resources.addRequiredFonts());
+
+    LanguageChangeProbe languageProbe;
+    languageProbe.show();
+    languageProbe.resetLanguageChangeCount();
+    std::vector<Application::StartupEvent> observedEvents;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        {},
+        resolverForRoot(resources.resourceRoot()),
+        std::optional<QStringList>{QStringList{QStringLiteral("fr-FR")}}
+        );
+    const Application::StartupResult result = bootstrap.start();
+    QCoreApplication::processEvents();
+
+    QVERIFY(result.succeeded());
+    QCOMPARE(observedEvents[3].stage, Application::StartupStage::LanguageLoaded);
+    QCOMPARE(observedEvents[3].outcome, Application::StartupStageOutcome::Completed);
+    QCOMPARE(languageProbe.languageChangeCount(), 1);
+    // The en_US catalog intentionally has no differing string for this key;
+    // the install event proves the US fallback catalog was still selected.
+    QCOMPARE(
+        QCoreApplication::translate("AboutDialog", "Inter Font License"),
+        QStringLiteral("Inter Font License")
+        );
+
+    languageProbe.close();
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::translationFailureStopsBeforeThemeAndShell()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    const QStringList fontsBefore = QFontDatabase::families();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::Dark)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+
+    LanguageChangeProbe languageProbe;
+    languageProbe.show();
+    languageProbe.resetLanguageChangeCount();
+    std::vector<Application::StartupEvent> observedEvents;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        {},
+        resolverForRoot(resources.resourceRoot())
+        );
+
+    const Application::StartupResult result = bootstrap.start();
+    QCoreApplication::processEvents();
+
+    verifyTypedStageFailure(result, Application::StartupStage::LanguageLoaded);
+    QCOMPARE(observedEvents.size(), std::size_t{4});
+    QCOMPARE(observedEvents.back().stage, Application::StartupStage::LanguageLoaded);
+    QCOMPARE(observedEvents.back().outcome, Application::StartupStageOutcome::Failed);
+    QCOMPARE(languageProbe.languageChangeCount(), 0);
+    QCOMPARE(application.styleSheet(), previousStyleSheet);
+    QVERIFY(bootstrap.shell() == nullptr);
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::ThemeLoaded));
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::RequiredFontsLoaded));
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::WorkspaceOpened));
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::StartupReady));
+    QCOMPARE(
+        containsFontFamilyLike(QFontDatabase::families(), QStringLiteral("Inter")),
+        containsFontFamilyLike(fontsBefore, QStringLiteral("Inter"))
+        );
+    QCOMPARE(
+        containsFontFamilyLike(QFontDatabase::families(), QStringLiteral("Pretendard")),
+        containsFontFamilyLike(fontsBefore, QStringLiteral("Pretendard"))
+        );
+
+    languageProbe.close();
+}
+
+void ApplicationBootstrapTests::themeFailureRollsBackInstalledTranslation()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::Dark)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addTranslation(QStringLiteral("ko_KR")));
+
+    LanguageChangeProbe languageProbe;
+    languageProbe.show();
+    languageProbe.resetLanguageChangeCount();
+    std::vector<Application::StartupEvent> observedEvents;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        {},
+        resolverForRoot(resources.resourceRoot())
+        );
+
+    const Application::StartupResult result = bootstrap.start();
+    QCoreApplication::processEvents();
+
+    verifyTypedStageFailure(result, Application::StartupStage::ThemeLoaded);
+    QCOMPARE(observedEvents.size(), std::size_t{5});
+    QCOMPARE(observedEvents[3].stage, Application::StartupStage::LanguageLoaded);
+    QCOMPARE(observedEvents[3].outcome, Application::StartupStageOutcome::Completed);
+    QCOMPARE(observedEvents.back().stage, Application::StartupStage::ThemeLoaded);
+    QCOMPARE(observedEvents.back().outcome, Application::StartupStageOutcome::Failed);
+    QCOMPARE(languageProbe.languageChangeCount(), 1);
+    QCOMPARE(
+        QCoreApplication::translate("AboutDialog", "Inter Font License"),
+        QStringLiteral("Inter Font License")
+        );
+    QCOMPARE(application.styleSheet(), previousStyleSheet);
+    QVERIFY(bootstrap.shell() == nullptr);
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::RequiredFontsLoaded));
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::WorkspaceOpened));
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::StartupReady));
+
+    languageProbe.close();
+}
+
+void ApplicationBootstrapTests::
+requiredFontFailureRollsBackTranslationThemeAndFirstFont()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    const QStringList fontsBefore = QFontDatabase::families();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::Dark)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addTranslation(QStringLiteral("ko_KR")));
+    QVERIFY(resources.addTheme(QStringLiteral("dark")));
+    QVERIFY(resources.addResource(QStringLiteral("assets/fonts/Inter.ttc")));
+
+    LanguageChangeProbe languageProbe;
+    languageProbe.show();
+    languageProbe.resetLanguageChangeCount();
+    std::vector<Application::StartupEvent> observedEvents;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        {},
+        resolverForRoot(resources.resourceRoot())
+        );
+
+    const Application::StartupResult result = bootstrap.start();
+    QCoreApplication::processEvents();
+
+    verifyTypedStageFailure(result, Application::StartupStage::RequiredFontsLoaded);
+    QCOMPARE(observedEvents.size(), std::size_t{6});
+    QCOMPARE(observedEvents[3].stage, Application::StartupStage::LanguageLoaded);
+    QCOMPARE(observedEvents[4].stage, Application::StartupStage::ThemeLoaded);
+    QCOMPARE(observedEvents.back().stage, Application::StartupStage::RequiredFontsLoaded);
+    QCOMPARE(languageProbe.languageChangeCount(), 1);
+    QCOMPARE(
+        QCoreApplication::translate("AboutDialog", "Inter Font License"),
+        QStringLiteral("Inter Font License")
+        );
+    QCOMPARE(application.styleSheet(), previousStyleSheet);
+    QVERIFY(bootstrap.shell() == nullptr);
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::WorkspaceOpened));
+    QVERIFY(!containsStage(observedEvents, Application::StartupStage::StartupReady));
+    QCOMPARE(
+        containsFontFamilyLike(QFontDatabase::families(), QStringLiteral("Inter")),
+        containsFontFamilyLike(fontsBefore, QStringLiteral("Inter"))
+        );
+    QCOMPARE(
+        containsFontFamilyLike(QFontDatabase::families(), QStringLiteral("Pretendard")),
+        containsFontFamilyLike(fontsBefore, QStringLiteral("Pretendard"))
+        );
+
+    languageProbe.close();
 }
 
 void ApplicationBootstrapTests::
@@ -320,43 +1078,52 @@ diagnosticsSinkConstructionFailureStopsBeforeShellCreation()
     QVERIFY(bootstrap.shell() == nullptr);
 }
 
-void ApplicationBootstrapTests::generatedCatalogStartsWithAnEmptyPayloadRoot()
+void ApplicationBootstrapTests::generatedCatalogStartsWithOnlySelectedStartupPayloads()
 {
     QApplication& application = *qApp;
-    QTemporaryDir temporaryDirectory;
-    QVERIFY(temporaryDirectory.isValid());
-    const QString resourceRoot = QDir(temporaryDirectory.path()).filePath(
-        QStringLiteral("resources")
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::Light)
         );
-    QVERIFY(QDir().mkpath(resourceRoot));
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(QStringLiteral("ko_KR"), QStringLiteral("light")));
 
     auto catalog = Resources::ResourceCatalog::load(
         configuredResourceCatalogPath(),
-        resourceRoot
+        resources.resourceRoot()
         );
     QVERIFY2(catalog.has_value(), catalog ? "" : qPrintable(catalog.error().message));
     QVERIFY(!catalog->records().empty());
-    bool foundAbsentPackagePayload = false;
+    const std::array expectedStartupPayloads{
+        QStringLiteral("assets/translations/ClassMngr_ko_KR.qm"),
+        QStringLiteral("assets/styles/light.qss"),
+        QStringLiteral("assets/fonts/Inter.ttc"),
+        QStringLiteral("assets/fonts/PretendardVariable.ttf")
+    };
+    std::size_t foundStartupPayloads = 0;
     for (const Resources::ResourceDescriptor& record : catalog->records())
     {
         if (record.location() != Resources::ResourceLocation::PackageFile)
         {
             continue;
         }
-        foundAbsentPackagePayload = true;
-        const QString payloadPath = QDir(resourceRoot).filePath(record.packageRelativePath());
-        QVERIFY2(
-            !QFileInfo::exists(payloadPath),
-            qPrintable(QStringLiteral("payload unexpectedly exists: ") + payloadPath)
+        const QString payloadPath = QDir(resources.resourceRoot()).filePath(
+            record.packageRelativePath()
             );
+        const bool expected = std::find(
+            expectedStartupPayloads.begin(),
+            expectedStartupPayloads.end(),
+            record.packageRelativePath()
+            ) != expectedStartupPayloads.end();
+        QCOMPARE(QFileInfo::exists(payloadPath), expected);
+        if (expected)
+        {
+            ++foundStartupPayloads;
+        }
     }
-    QVERIFY(foundAbsentPackagePayload);
-    QCOMPARE(
-        QDir(resourceRoot).entryList(
-            QDir::AllEntries | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot
-            ).size(),
-        0
-        );
+    QCOMPARE(foundStartupPayloads, expectedStartupPayloads.size());
 
     std::vector<Application::StartupEvent> observedEvents;
     int resolverCalls = 0;
@@ -368,6 +1135,26 @@ void ApplicationBootstrapTests::generatedCatalogStartsWithAnEmptyPayloadRoot()
     QTest::ignoreMessage(
         QtInfoMsg,
         "ClassMngrNext startup stage=core-services-created outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=settings-loaded outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=language-loaded outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=theme-loaded outcome=completed "
+        "diagnostic=none diagnostic_stage=none"
+        );
+    QTest::ignoreMessage(
+        QtInfoMsg,
+        "ClassMngrNext startup stage=required-fonts-loaded outcome=completed "
         "diagnostic=none diagnostic_stage=none"
         );
     QTest::ignoreMessage(
@@ -386,7 +1173,8 @@ void ApplicationBootstrapTests::generatedCatalogStartsWithAnEmptyPayloadRoot()
             observedEvents.push_back(event);
         },
         {},
-        [&resolverCalls, resourceRoot]() -> Resources::ResourceResult<Resources::ResourcePackagePaths> {
+        [&resolverCalls, resourceRoot = resources.resourceRoot()]()
+            -> Resources::ResourceResult<Resources::ResourcePackagePaths> {
             ++resolverCalls;
             return Resources::ResourcePackagePaths{
                 resourceRoot,
@@ -402,10 +1190,14 @@ void ApplicationBootstrapTests::generatedCatalogStartsWithAnEmptyPayloadRoot()
     QVERIFY(!result.failure.has_value());
     QVERIFY(!result.diagnostic.has_value());
     QCOMPARE(resolverCalls, 1);
-    QCOMPARE(observedEvents.size(), std::size_t{4});
+    QCOMPARE(observedEvents.size(), std::size_t{8});
     constexpr std::array expectedStages{
         Application::StartupStage::ProcessCreated,
         Application::StartupStage::CoreServicesCreated,
+        Application::StartupStage::SettingsLoaded,
+        Application::StartupStage::LanguageLoaded,
+        Application::StartupStage::ThemeLoaded,
+        Application::StartupStage::RequiredFontsLoaded,
         Application::StartupStage::ShellCreated,
         Application::StartupStage::InitialPageReady
     };
@@ -423,12 +1215,7 @@ void ApplicationBootstrapTests::generatedCatalogStartsWithAnEmptyPayloadRoot()
 
     QVERIFY(bootstrap.shell() != nullptr);
     QVERIFY(bootstrap.shell()->isVisible());
-    QCOMPARE(
-        QDir(resourceRoot).entryList(
-            QDir::AllEntries | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot
-            ).size(),
-        0
-        );
+    application.setStyleSheet(previousStyleSheet);
 }
 
 void ApplicationBootstrapTests::missingResourcePackageFailsCoreServicesBeforeShellCreation()
@@ -859,18 +1646,20 @@ closeRequestsShutdownOnceAndRestoresApplicationPolicy()
 {
     QApplication& application = *qApp;
     const bool previousQuitPolicy = application.quitOnLastWindowClosed();
-    QTemporaryDir temporaryDirectory;
-    QVERIFY(temporaryDirectory.isValid());
-    const QString resourceRoot = QDir(temporaryDirectory.path()).filePath(
-        QStringLiteral("resources")
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::Light)
         );
-    QVERIFY(QDir().mkpath(resourceRoot));
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(QStringLiteral("ko_KR"), QStringLiteral("light")));
     {
         Bootstrap::ApplicationBootstrap bootstrap(
             application,
             {},
             {},
-            resolverForEmptyRoot(resourceRoot)
+            resolverForRoot(resources.resourceRoot())
             );
         const Application::StartupResult startup = bootstrap.start();
         QVERIFY(startup.succeeded());
@@ -892,6 +1681,7 @@ closeRequestsShutdownOnceAndRestoresApplicationPolicy()
     }
 
     QCOMPARE(application.quitOnLastWindowClosed(), previousQuitPolicy);
+    application.setStyleSheet(previousStyleSheet);
 }
 
 void ApplicationBootstrapTests::

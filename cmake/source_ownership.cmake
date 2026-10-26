@@ -42,6 +42,7 @@ endfunction()
 
 function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrCore ${CLASSMNGR_CORE_SOURCES})
+    _classmngr_record_manifest(ClassMngrSettings ${CLASSMNGR_SETTINGS_SOURCES})
     _classmngr_record_manifest(ClassMngrData ${CLASSMNGR_DATA_SOURCES})
     _classmngr_record_manifest(ClassMngrDomain ${CLASSMNGR_DOMAIN_SOURCES})
     _classmngr_record_manifest(ClassMngrUiShared ${CLASSMNGR_UI_SHARED_SOURCES})

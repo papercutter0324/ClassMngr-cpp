@@ -15,7 +15,9 @@
   bootstrap owns a Qt diagnostics sink and logs factual stage results. F1504
   is complete: startup loads catalog metadata and retains a lazy loader and
   startup scope without reading payloads. Its six focused CTests passed. F1505
-  is adding ordered settings, localization, theme, and required fonts. See the
+  is complete: ordered settings, localization, selected theme, and required
+  fonts load before the shell, with focused verification passing. F1506 is next
+  to define workspace startup policy and session retention. See the
   [Phase 5 plan](06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
   and [current batch tracker](Current-Slice-Batches.md). Phase 4 remains
   Complete at F1500; rendering parity remains a Phase 7/10 gate, and legacy
@@ -41,7 +43,7 @@
 | 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | Complete | Heavy | 1 |
 | 3 | 04-Phase-3-Persistence-Rewrite.md | Complete | Heavy | 1, 2 |
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
-| 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Not started | Heavy | 2, 3, 4 |
+| 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | In progress | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Not started | Heavy | 5 |
 | 7 | 08-Phase-7-Feature-Migration.md | Not started | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |

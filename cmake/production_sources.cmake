@@ -28,8 +28,6 @@ set(CLASSMNGR_CORE_SOURCES
     "src/core/resource_packs/resource_pack_update_service.h"
     "src/core/resource_paths.h"
     "src/core/result.h"
-    "src/core/settingsmanager.cpp"
-    "src/core/settingsmanager.h"
     "src/core/startup_profiler.cpp"
     "src/core/startup_profiler.h"
     "src/core/theme_service.cpp"
@@ -60,6 +58,11 @@ set(CLASSMNGR_CORE_SOURCES
     "src/core/utils/student_name_utils.h"
     "src/core/zip_archive_writer.cpp"
     "src/core/zip_archive_writer.h"
+)
+
+set(CLASSMNGR_SETTINGS_SOURCES
+    "src/core/settingsmanager.cpp"
+    "src/core/settingsmanager.h"
 )
 
 set(CLASSMNGR_DATA_SOURCES

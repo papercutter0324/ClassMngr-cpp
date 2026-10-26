@@ -1,7 +1,5 @@
 # Current Slice Batches
 
-# Current Slice Batches
-
 Phase 5 is active on the mandatory Heavy route. Phase 4 completed at F1500;
 its native matrix passed before this batch began.
 
@@ -30,8 +28,21 @@ its native matrix passed before this batch began.
    the shell is built; verify success against the generated catalog with an
    empty payload root and verify the typed failure path. Six focused macOS
    Debug CTests passed 6/6.
-5. **F1505 — Accepted / in progress:** Load settings, apply language/theme,
-   and register only required fonts in the specified order.
+5. **F1505 — Complete:** Preserve the existing settings identity,
+   path override, preference keys, and migration semantics through a narrow
+   Qt Core settings owner shared with the legacy runtime. Before shell creation,
+   read startup preferences, install only the selected Next catalog `.qm`,
+   apply only the selected packaged theme, and register/retain only Inter and
+   Pretendard under the Startup scope. Emit SettingsLoaded → LanguageLoaded →
+   ThemeLoaded → RequiredFontsLoaded only after each real operation. Do not use
+   legacy LanguageService/ThemeService/FontManager RCC paths, optional fonts,
+   or the broad Platform/Network target; do not emit WorkspaceOpened or
+   StartupReady in this slice. Failure must be attributed to its stage and
+   must not leave a partial translator/font/theme registration or shell.
+   Independent macOS Debug verification passed bootstrap QtTest 22/22, focused
+   bootstrap/preference CTest 3/3, and launch/filesystem CTest 2/2. Locale
+   fallback and regional selection were exercised through a deterministic
+   locale-list seam. No full suite ran.
 6. **F1506 — Discovered:** Apply an explicit workspace startup policy and
    retain the session through Next contracts with typed no-workspace/open
    failure results.

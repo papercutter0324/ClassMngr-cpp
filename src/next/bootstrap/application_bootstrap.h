@@ -5,8 +5,11 @@
 #include "next/bootstrap/startup_diagnostics_sink.h"
 #include "next/resources/resource_root_resolver.h"
 
+#include <QStringList>
+
 #include <functional>
 #include <memory>
+#include <optional>
 
 class QApplication;
 
@@ -38,7 +41,8 @@ public:
         QApplication& application,
         StartupEventObserver startupEventObserver = {},
         StartupDiagnosticsSinkFactory startupDiagnosticsSinkFactory = {},
-        ResourcePackagePathsResolver resourcePackagePathsResolver = {}
+        ResourcePackagePathsResolver resourcePackagePathsResolver = {},
+        std::optional<QStringList> systemUiLanguages = std::nullopt
         );
     ~ApplicationBootstrap();
 
@@ -55,12 +59,23 @@ private:
     struct CoreServices;
 
     [[nodiscard]] bool createCoreServices();
+    [[nodiscard]] bool loadStartupPreferences();
+    [[nodiscard]] Application::StartupStageOutcome loadStartupLanguage();
+    [[nodiscard]] bool loadStartupTheme();
+    [[nodiscard]] bool loadRequiredFonts();
+    [[nodiscard]] Application::StartupResult failStartupStage(
+        Application::StartupStage stage,
+        Application::StartupFailureReason reason =
+            Application::StartupFailureReason::StageFailed
+        );
+    void rollbackStartupComposition() noexcept;
     void observeStartupResult(const Application::StartupResult& result) const;
 
     QApplication& m_application;
     StartupEventObserver m_startupEventObserver;
     StartupDiagnosticsSinkFactory m_startupDiagnosticsSinkFactory;
     ResourcePackagePathsResolver m_resourcePackagePathsResolver;
+    std::optional<QStringList> m_systemUiLanguages;
     std::unique_ptr<StartupDiagnosticsSink> m_startupDiagnosticsSink;
     std::unique_ptr<CoreServices> m_coreServices;
     Application::StartupCoordinator m_startupCoordinator;

@@ -5,6 +5,7 @@ include_guard(GLOBAL)
 add_executable(ClassMngrNextBootstrapTests
     tests/next/application_bootstrap_tests.cpp
     ${CLASSMNGR_NEXT_BOOTSTRAP_SOURCES}
+    $<TARGET_OBJECTS:ClassMngrSettings>
 )
 target_compile_features(ClassMngrNextBootstrapTests
     PRIVATE
@@ -18,6 +19,7 @@ target_compile_definitions(ClassMngrNextBootstrapTests
     PRIVATE
         CLASSMNGR_NEXT_VERSION="${PROJECT_VERSION}"
         CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
 )
 target_link_libraries(ClassMngrNextBootstrapTests
     PRIVATE
