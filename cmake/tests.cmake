@@ -131,7 +131,6 @@ function(classmngr_add_qt_test)
 
     target_link_libraries("${target}"
         PRIVATE
-            ClassMngrRuntime
             ${CLASSMNGR_TEST_LIBRARIES}
     )
 
@@ -267,7 +266,10 @@ function(classmngr_finalize_test_targets)
         # interpose the shared definitions without recompiling production.
         if(APPLE AND has_production_overrides)
             if(test_libraries)
-                list(REMOVE_ITEM test_libraries ClassMngrRuntime)
+                list(REMOVE_ITEM test_libraries
+                    ClassMngrRuntime
+                    ClassMngrLegacyRuntimeClosure
+                )
                 set_property(
                     TARGET "${test_name}"
                     PROPERTY LINK_LIBRARIES "${test_libraries}"
@@ -275,7 +277,11 @@ function(classmngr_finalize_test_targets)
             endif()
             target_link_libraries("${test_name}" PRIVATE ClassMngrTestRuntime)
         else()
-            target_link_libraries("${test_name}" PRIVATE ClassMngrRuntime)
+            target_link_libraries(
+                "${test_name}"
+                PRIVATE
+                    ClassMngrLegacyRuntimeClosure
+            )
 
             if(has_production_overrides AND MSVC)
                 target_link_options("${test_name}" PRIVATE /FORCE:MULTIPLE)

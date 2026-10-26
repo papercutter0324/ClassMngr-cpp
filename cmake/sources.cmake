@@ -224,6 +224,30 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrSQLiteSnapshot
 )
 
+# The legacy runtime and workspace repositories reference symbols from each
+# other. Rescan their static archives together on toolchains that support
+# CMake's portable RESCAN link group; other linkers keep their existing
+# Runtime dependency handling.
+add_library(ClassMngrLegacyRuntimeClosure INTERFACE)
+set(_classmngr_legacy_runtime_rescan_supported FALSE)
+if(CMAKE_CXX_LINK_GROUP_USING_RESCAN_SUPPORTED)
+    set(_classmngr_legacy_runtime_rescan_supported TRUE)
+elseif(CMAKE_LINK_GROUP_USING_RESCAN_SUPPORTED)
+    set(_classmngr_legacy_runtime_rescan_supported TRUE)
+endif()
+
+if(_classmngr_legacy_runtime_rescan_supported)
+    target_link_libraries(ClassMngrLegacyRuntimeClosure
+        INTERFACE
+            "$<LINK_GROUP:RESCAN,ClassMngrRuntime,ClassMngrWorkspaceStore>"
+    )
+else()
+    target_link_libraries(ClassMngrLegacyRuntimeClosure
+        INTERFACE
+            ClassMngrRuntime
+    )
+endif()
+
 # macOS test doubles cannot override symbols from a static archive with the
 # current Apple linker. A flat-namespace shared runtime reuses the production
 # object files while allowing the executable's focused test doubles to
@@ -271,5 +295,5 @@ target_sources(ClassMngr
 
 target_link_libraries(ClassMngr
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
 )
