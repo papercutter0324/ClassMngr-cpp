@@ -2,14 +2,10 @@
 
 Active deployment plan: Qt Rewrite Phase 6 — Shared UI Rewrite.
 Current deployment: `phase6-shared-ui-20261026`. Route: Heavy.
-Phases 0–5 are Complete; Phase 6 is In progress. F1514 is accepted:
-`PageDescriptor` now backs lazy Next page registration, and `PageHost` retains
-descriptor metadata without constructing pages. The old string/factory
-registration path is removed. F1515, explicit page lifecycle state, is next.
-The incremental macOS Debug build of `ClassMngrNextPageHostTests` and
-`ClassMngrNextBootstrapTests` passed; focused CTest passed 2/2 and
-`git diff --check` passed. Full-suite and cross-platform verification were not
-run. Phase 5 platform evidence and broad-suite limitations remain in the
+Phases 0–5 are Complete; Phase 6 is In progress. F1514 added descriptor-based
+lazy registration. F1515 added explicit page lifecycle states and passed
+independent focused verification; F1516, NavigationModel, is next. Phase 5
+platform evidence and broad-suite limitations remain in the
 [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [Start Here](../plans/qt-rewrite-heavy-route-plan/00-Start-Here.md).
 
@@ -65,15 +61,16 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-26 (Phase 6, F1514 accepted)
+### Current checkpoint — 2026-10-26 (Phase 6, F1515 accepted)
 
-F1514 adds validated page descriptors, removes the string/factory registration
-path, and keeps registration lazy through the actual Next bootstrap. The
-incremental macOS Debug build of `ClassMngrNextPageHostTests` and
-`ClassMngrNextBootstrapTests` passed; focused CTest passed 2/2 and
-`git diff --check` passed. Full-suite and cross-platform verification were not
-run. F1515 is next. Phase 7/10 still owns rendering parity, and Phase 12 owns
-legacy resource-pack removal.
+F1514 established descriptor-based lazy registration. F1515 added observable
+page states, release/recreation, and failure cleanup while retaining
+activation rollback. A test-owned dangling probe caused an initial PageHost
+`SIGTRAP`; fixture lifetime was corrected. The independent macOS Debug build
+and both focused CTests passed 2/2; PageHost also passed ten consecutive
+Executor runs and one independent run. `git diff --check` passed. No full suite
+or cross-platform build ran. F1516 is next. Phase 7/10 owns rendering parity;
+Phase 12 owns legacy resource-pack removal.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

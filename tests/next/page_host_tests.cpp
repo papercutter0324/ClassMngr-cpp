@@ -222,6 +222,7 @@ private slots:
     void initTestCase();
     void descriptorRegistrationRetainsMetadataWithoutConstructingPages();
     void invalidAndDuplicateDescriptorsAreRejected();
+    void lifecycleStatesAreQueryableObservableAndRejectReentrantMutations();
     void registrationIsLazyAndPagesSuspendReuseReleaseAndRecreate();
     void factoryAndActivationFailuresPreserveTheCurrentPage();
 
@@ -278,6 +279,14 @@ void PageHostTests::descriptorRegistrationRetainsMetadataWithoutConstructingPage
     QCOMPARE(reports.constructed, 0);
     QVERIFY(!host.hasPageInstance(QStringLiteral("reports")));
     QVERIFY(!host.activePageKey().has_value());
+    QCOMPARE(
+        host.pageLifecycleState(*pageId),
+        std::optional<Ui::PageLifecycleState>(Ui::PageLifecycleState::Declared)
+        );
+
+    const auto missingPageId = Ui::PageId::fromString(QStringLiteral("missing"));
+    QVERIFY(missingPageId.has_value());
+    QVERIFY(!host.pageLifecycleState(*missingPageId).has_value());
 
     const auto retained = host.pageDescriptor(*pageId);
     QVERIFY(retained.has_value());
@@ -385,6 +394,124 @@ void PageHostTests::invalidAndDuplicateDescriptorsAreRejected()
     QCOMPARE(first.constructed, 0);
     QCOMPARE(second.factoryCalls, 0);
     QCOMPARE(second.constructed, 0);
+}
+
+void PageHostTests::lifecycleStatesAreQueryableObservableAndRejectReentrantMutations()
+{
+    PageProbe alpha;
+    alpha.key = QStringLiteral("alpha");
+    alpha.name = QStringLiteral("alpha");
+    PageProbe beta;
+    beta.key = QStringLiteral("beta");
+    beta.name = QStringLiteral("beta");
+    // Keep page probes alive until the host has destroyed any retained pages.
+    Ui::PageHost host(*m_loader);
+
+    const Ui::PageId alphaId = *Ui::PageId::fromString(alpha.key);
+    const Ui::PageId betaId = *Ui::PageId::fromString(beta.key);
+    QVERIFY(host.registerPage(descriptorFor(alpha.key, factoryFor(alpha))));
+    QVERIFY(host.registerPage(descriptorFor(beta.key, factoryFor(beta))));
+    QCOMPARE(
+        host.pageLifecycleState(alphaId),
+        std::optional<Ui::PageLifecycleState>(Ui::PageLifecycleState::Declared)
+        );
+    QCOMPARE(
+        host.pageLifecycleState(betaId),
+        std::optional<Ui::PageLifecycleState>(Ui::PageLifecycleState::Declared)
+        );
+
+    QVector<QPair<QString, Ui::PageLifecycleState>> transitions;
+    bool notificationsMatchQueriedState = true;
+    bool reentrantMutationChecked = false;
+    std::optional<Ui::PageHostErrorCode> reentrantError;
+    QObject::connect(
+        &host,
+        &Ui::PageHost::pageLifecycleStateChanged,
+        &host,
+        [&](const QString& pageKey, const Ui::PageLifecycleState state) {
+            transitions.push_back({pageKey, state});
+            const auto pageId = Ui::PageId::fromString(pageKey);
+            const auto currentState = pageId
+                ? host.pageLifecycleState(*pageId)
+                : std::nullopt;
+            notificationsMatchQueriedState = notificationsMatchQueriedState
+                && currentState == std::optional<Ui::PageLifecycleState>(state);
+
+            if (!reentrantMutationChecked
+                && state == Ui::PageLifecycleState::Created)
+            {
+                reentrantMutationChecked = true;
+                const auto result = host.releasePage(pageKey);
+                if (!result)
+                {
+                    reentrantError = result.error().code;
+                }
+            }
+        }
+        );
+
+    QVERIFY(host.activatePage(alpha.key));
+    QCOMPARE(transitions.size(), 2);
+    QCOMPARE(transitions[0].first, alpha.key);
+    QCOMPARE(transitions[0].second, Ui::PageLifecycleState::Created);
+    QCOMPARE(transitions[1].first, alpha.key);
+    QCOMPARE(transitions[1].second, Ui::PageLifecycleState::Activated);
+    QCOMPARE(
+        host.pageLifecycleState(alphaId),
+        std::optional<Ui::PageLifecycleState>(Ui::PageLifecycleState::Activated)
+        );
+    QVERIFY(reentrantMutationChecked);
+    QCOMPARE(reentrantError, std::optional<Ui::PageHostErrorCode>(
+        Ui::PageHostErrorCode::ReentrantOperation
+        ));
+
+    QVERIFY(host.activatePage(beta.key));
+    QCOMPARE(transitions.size(), 5);
+    QCOMPARE(transitions[2].first, beta.key);
+    QCOMPARE(transitions[2].second, Ui::PageLifecycleState::Created);
+    QCOMPARE(transitions[3].first, alpha.key);
+    QCOMPARE(transitions[3].second, Ui::PageLifecycleState::Suspended);
+    QCOMPARE(transitions[4].first, beta.key);
+    QCOMPARE(transitions[4].second, Ui::PageLifecycleState::Activated);
+    QCOMPARE(
+        host.pageLifecycleState(alphaId),
+        std::optional<Ui::PageLifecycleState>(Ui::PageLifecycleState::Suspended)
+        );
+
+    QVERIFY(host.releasePage(alpha.key));
+    QCOMPARE(transitions.size(), 6);
+    QCOMPARE(transitions[5].first, alpha.key);
+    QCOMPARE(transitions[5].second, Ui::PageLifecycleState::Released);
+    QCOMPARE(
+        host.pageLifecycleState(alphaId),
+        std::optional<Ui::PageLifecycleState>(Ui::PageLifecycleState::Released)
+        );
+
+    QVERIFY(host.activatePage(alpha.key));
+    QCOMPARE(transitions.size(), 9);
+    QCOMPARE(transitions[6].first, alpha.key);
+    QCOMPARE(transitions[6].second, Ui::PageLifecycleState::Created);
+    QCOMPARE(transitions[7].first, beta.key);
+    QCOMPARE(transitions[7].second, Ui::PageLifecycleState::Suspended);
+    QCOMPARE(transitions[8].first, alpha.key);
+    QCOMPARE(transitions[8].second, Ui::PageLifecycleState::Activated);
+
+    QVERIFY(host.releasePage(alpha.key));
+    QCOMPARE(transitions.size(), 11);
+    QCOMPARE(transitions[9].first, alpha.key);
+    QCOMPARE(transitions[9].second, Ui::PageLifecycleState::Suspended);
+    QCOMPARE(transitions[10].first, alpha.key);
+    QCOMPARE(transitions[10].second, Ui::PageLifecycleState::Released);
+
+    QVERIFY(host.releasePage(beta.key));
+    QCOMPARE(transitions.size(), 12);
+    QCOMPARE(transitions[11].first, beta.key);
+    QCOMPARE(transitions[11].second, Ui::PageLifecycleState::Released);
+    QCOMPARE(
+        host.pageLifecycleState(betaId),
+        std::optional<Ui::PageLifecycleState>(Ui::PageLifecycleState::Released)
+        );
+    QVERIFY(notificationsMatchQueriedState);
 }
 
 void PageHostTests::registrationIsLazyAndPagesSuspendReuseReleaseAndRecreate()
@@ -626,6 +753,14 @@ void PageHostTests::factoryAndActivationFailuresPreserveTheCurrentPage()
     QCOMPARE(host.pageInstance(QStringLiteral("stable")), stablePage);
     QVERIFY(stablePage->isVisible());
     QVERIFY(!host.hasPageInstance(activationFailure.key));
+    const auto activationFailureId = Ui::PageId::fromString(
+        activationFailure.key
+        );
+    QVERIFY(activationFailureId.has_value());
+    QCOMPARE(
+        host.pageLifecycleState(*activationFailureId),
+        std::optional<Ui::PageLifecycleState>(Ui::PageLifecycleState::Released)
+        );
     QCOMPARE(activationFailure.factoryCalls, 1);
     QCOMPARE(activationFailure.constructed, 1);
     QCOMPARE(activationFailure.destroyed, 1);

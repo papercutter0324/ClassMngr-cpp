@@ -5,16 +5,16 @@ Phase 5 completed on the mandatory Heavy route at implementation head
 
 ## Phase 6 — Batch 1 (active)
 
-F1514 is complete. F1515 is current. Continue in order, commit each accepted
-slice, then push the batch. Start Batch 2 discovery when F1526 starts because
-it is the second-to-last candidate.
+F1514 and F1515 are complete. F1516 is current. Continue in order, commit each
+accepted slice, then push the batch. Start Batch 2 discovery when F1526 starts
+because it is the second-to-last candidate.
 
 1. **F1514 — Page descriptors and lazy registration (complete):** stable page
    identity and descriptor metadata integrated with `PageHost`; registration
    remains construction-free.
-2. **F1515 — Explicit lifecycle state (current):** declared, created, activated,
+2. **F1515 — Explicit lifecycle state (complete):** declared, created, activated,
    suspended, and released states with correct cleanup and recreation.
-3. **F1516 — Navigation model:** current location, hierarchy, history,
+3. **F1516 — Navigation model (current):** current location, hierarchy, history,
    selection, permission filtering, initial page, and placeholder shell
    navigation. Legacy sidebar visibility depends on workspace-open state, not
    admin roles; it has no general back/forward history, and its unsaved-change

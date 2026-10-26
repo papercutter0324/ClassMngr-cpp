@@ -42,8 +42,25 @@ struct PageHostError final
 template <typename Value>
 using PageHostResult = std::expected<Value, PageHostError>;
 
+enum class PageLifecycleState
+{
+    // The descriptor is registered and has no host-managed page instance.
+    Declared,
+    // A valid factory page exists while the activation attempt is in progress.
+    Created,
+    // Activation committed and this page is current in the host.
+    Activated,
+    // Activation completed previously; the page is retained for reuse.
+    Suspended,
+    // The managed page instance was destroyed after release or activation
+    // failure; its descriptor remains registered and may be activated again.
+    Released
+};
+
 class PageHost final : public QWidget
 {
+    Q_OBJECT
+
 public:
     using PageFactory = Ui::PageFactory;
 
@@ -65,6 +82,11 @@ public:
 
     [[nodiscard]] std::optional<QString> activePageKey() const;
     [[nodiscard]] bool isPageRegistered(const QString& pageKey) const;
+    // Returns empty for an unregistered ID. An activation failure after a
+    // valid instance is created leaves the descriptor Released after cleanup.
+    [[nodiscard]] std::optional<PageLifecycleState> pageLifecycleState(
+        const PageId& pageId
+        ) const;
     [[nodiscard]] bool hasPageInstance(const QString& pageKey) const;
     // Returns a borrowed pointer. PageHost remains the widget owner.
     [[nodiscard]] Page* pageInstance(const QString& pageKey) const;
@@ -74,11 +96,21 @@ public:
     // Returns descriptor values in stable, sorted page-ID order.
     [[nodiscard]] std::vector<PageDescriptor> pageDescriptors() const;
 
+Q_SIGNALS:
+    // Emitted for lifecycle state changes while the host rejects reentrant
+    // mutations. Declared is the initial registration state and is available
+    // through pageLifecycleState() without an event.
+    void pageLifecycleStateChanged(
+        QString pageKey,
+        PageLifecycleState state
+        );
+
 private:
     struct PageEntry final
     {
         PageDescriptor descriptor;
         Page* page = nullptr;
+        PageLifecycleState lifecycleState = PageLifecycleState::Declared;
     };
 
     [[nodiscard]] static std::optional<QString> normalizedPageKey(
@@ -88,6 +120,11 @@ private:
         PageHostErrorCode code,
         const QString& pageKey,
         QString message
+        );
+    void setLifecycleState(
+        const QString& pageKey,
+        PageEntry& entry,
+        PageLifecycleState state
         );
     void destroyPage(PageEntry& entry) noexcept;
 

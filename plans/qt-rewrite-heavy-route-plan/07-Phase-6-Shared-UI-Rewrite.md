@@ -38,9 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 is active on the Heavy route. F1514 is accepted;
-  F1515 — explicit page lifecycle state — is next. Batch 1's ordered candidates
-  are in the shared slice-batch tracker. The existing Staff Directory
+- Current note: Phase 6 is active on the Heavy route. F1514 and F1515 are
+  accepted; F1516 — NavigationModel and placeholder navigation — is next.
+  Batch 1's ordered candidates are in the shared slice-batch tracker. The existing Staff Directory
   model/view and bounded-widget test are the planned representative-table gate
   evidence; its full feature migration remains in Phase 7C.
 
@@ -70,6 +70,23 @@ metadata; their enforcement belongs to navigation/application slices.
 The incremental macOS Debug build of `ClassMngrNextPageHostTests` and
 `ClassMngrNextBootstrapTests` passed. Focused CTest passed 2/2, and
 `git diff --check` passed. No full suite or cross-platform build ran.
+
+### F1515 — complete — 2026-10-26
+
+`PageHost` now tracks `Declared`, `Created`, `Activated`, `Suspended`, and
+`Released` states and exposes state queries plus transition notifications.
+Creation remains lazy; `Created` is observed during the activation attempt,
+before `onActivating()`. Reentrant host mutations from transition observers are
+rejected. Failed target activation cleans up the target and records `Released`
+while preserving the previous active page. Released descriptors remain
+registered and can be recreated.
+
+Independent review caught a test-fixture lifetime error that caused a
+`SIGTRAP`: a retained probe page outlived its stack-owned probe. The fixture now
+destroys the host before the probes and explicitly releases the final page.
+The incremental macOS Debug build passed; both focused CTests passed 2/2, the
+PageHost CTest passed ten consecutive Executor runs and one independent run,
+and `git diff --check` passed. No full suite or cross-platform build ran.
 
 ## Objective
 

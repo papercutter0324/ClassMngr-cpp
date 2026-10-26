@@ -268,6 +268,11 @@ PageHostResult<void> PageHost::activatePage(const QString& pageKey)
                 ));
         }
         targetPage = newlyCreatedPage.get();
+        setLifecycleState(
+            *normalizedKey,
+            entry,
+            PageLifecycleState::Created
+            );
     }
 
     PageOperationResult<void> activationResult = std::unexpected(
@@ -293,10 +298,19 @@ PageHostResult<void> PageHost::activatePage(const QString& pageKey)
     if (!activationResult)
     {
         targetPage->onSuspending();
-        if (!newlyCreatedPage)
+        if (newlyCreatedPage)
+        {
+            newlyCreatedPage.reset();
+        }
+        else
         {
             destroyPage(entry);
         }
+        setLifecycleState(
+            *normalizedKey,
+            entry,
+            PageLifecycleState::Released
+            );
         return std::unexpected(error(
             PageHostErrorCode::ActivationFailed,
             *normalizedKey,
@@ -313,17 +327,50 @@ PageHostResult<void> PageHost::activatePage(const QString& pageKey)
         entry.page = newlyCreatedPage.release();
     }
 
+    QString previousPageKey;
+    PageEntry* previousEntry = nullptr;
     if (m_activePageKey.has_value())
     {
-        const auto previous = m_pages.find(*m_activePageKey);
+        previousPageKey = *m_activePageKey;
+        auto previous = m_pages.find(previousPageKey);
         if (previous != m_pages.end() && previous->page)
         {
             previous->page->onSuspending();
+            previousEntry = &previous.value();
         }
     }
 
     m_stack->setCurrentWidget(targetPage);
     m_activePageKey = *normalizedKey;
+
+    // Update both states before notifying observers so a signal handler sees
+    // the complete committed transition when it queries the host.
+    const bool previousStateChanged = previousEntry
+        && previousEntry->lifecycleState != PageLifecycleState::Suspended;
+    if (previousStateChanged)
+    {
+        previousEntry->lifecycleState = PageLifecycleState::Suspended;
+    }
+    const bool targetStateChanged =
+        entry.lifecycleState != PageLifecycleState::Activated;
+    if (targetStateChanged)
+    {
+        entry.lifecycleState = PageLifecycleState::Activated;
+    }
+    if (previousStateChanged)
+    {
+        Q_EMIT pageLifecycleStateChanged(
+            previousPageKey,
+            PageLifecycleState::Suspended
+            );
+    }
+    if (targetStateChanged)
+    {
+        Q_EMIT pageLifecycleStateChanged(
+            *normalizedKey,
+            PageLifecycleState::Activated
+            );
+    }
     return {};
 }
 
@@ -366,8 +413,18 @@ PageHostResult<void> PageHost::releasePage(const QString& pageKey)
         }
         m_activePageKey.reset();
         m_stack->setCurrentWidget(m_emptyPage);
+        setLifecycleState(
+            *normalizedKey,
+            entry.value(),
+            PageLifecycleState::Suspended
+            );
     }
     destroyPage(entry.value());
+    setLifecycleState(
+        *normalizedKey,
+        entry.value(),
+        PageLifecycleState::Released
+        );
     return {};
 }
 
@@ -380,6 +437,19 @@ bool PageHost::isPageRegistered(const QString& pageKey) const
 {
     const auto normalizedKey = normalizedPageKey(pageKey);
     return normalizedKey && m_pages.contains(*normalizedKey);
+}
+
+std::optional<PageLifecycleState> PageHost::pageLifecycleState(
+    const PageId& pageId
+    ) const
+{
+    const auto entry = m_pages.constFind(pageId.value());
+    if (entry == m_pages.cend())
+    {
+        return std::nullopt;
+    }
+
+    return entry->lifecycleState;
 }
 
 bool PageHost::hasPageInstance(const QString& pageKey) const
@@ -440,6 +510,21 @@ PageHostError PageHost::error(
     )
 {
     return {code, pageKey, std::move(message)};
+}
+
+void PageHost::setLifecycleState(
+    const QString& pageKey,
+    PageEntry& entry,
+    const PageLifecycleState state
+    )
+{
+    if (entry.lifecycleState == state)
+    {
+        return;
+    }
+
+    entry.lifecycleState = state;
+    Q_EMIT pageLifecycleStateChanged(pageKey, state);
 }
 
 void PageHost::destroyPage(PageEntry& entry) noexcept
