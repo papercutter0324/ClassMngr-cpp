@@ -52,6 +52,31 @@ set_tests_properties(ClassMngrNextBootstrapTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
+classmngr_add_qt_test(
+    NAME NextThemePresenter
+    OFFSCREEN
+    SOURCES
+        tests/next/theme_presenter_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Resources
+        Qt6::Test
+        Qt6::Widgets
+    DEPENDENCIES
+        ClassMngrNextResourcePackage
+)
+set_property(TARGET ClassMngrNextThemePresenterTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_sources(ClassMngrNextThemePresenterTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src/next/ui/theme_presenter.cpp"
+)
+target_compile_definitions(ClassMngrNextThemePresenterTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+
 # Exercise page-host lifecycle behavior with real page-scoped and feature-scoped
 # file handles while keeping the test independent of the bootstrap fixture.
 add_executable(ClassMngrNextPageHostTests

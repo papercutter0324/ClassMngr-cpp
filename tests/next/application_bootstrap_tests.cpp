@@ -1475,7 +1475,9 @@ void ApplicationBootstrapTests::systemDefaultThemeFollowsCurrentStyleColorScheme
     QCOMPARE(observedEvents[8].stage, Application::StartupStage::InitialPageReady);
     QCOMPARE(observedEvents[9].stage, Application::StartupStage::StartupReady);
 
-    application.setStyleSheet(previousStyleSheet);
+    const Application::ShutdownResult shutdown = bootstrap.shutdown();
+    QVERIFY(shutdown.shutdownRequested);
+    QCOMPARE(application.styleSheet(), previousStyleSheet);
 }
 
 void ApplicationBootstrapTests::

@@ -5,7 +5,7 @@ Phase 5 completed on the mandatory Heavy route at implementation head
 
 ## Phase 6 — Batch 1 (active)
 
-F1514–F1522 are complete. F1523 is current. Continue in order, commit each
+F1514–F1523 are complete. F1524 is current. Continue in order, commit each
 accepted slice, then push the batch. Start Batch 2 discovery when F1526 starts
 because it is the second-to-last candidate.
 
@@ -68,9 +68,14 @@ because it is the second-to-last candidate.
    while dirty. Changed mutations during observer delivery return `Conflict`;
    no-op apply remains a no-op. Existing storage adapters and consumers remain
    unchanged.
-10. **F1523 — Theme presenter (current):** apply and persist theme without changing its
-    appearance.
-11. **F1524 — Other presentation preferences:** language, font, window,
+10. **F1523 — Theme presenter (complete):** Next startup and live theme changes
+    use the existing light/dark QSS through a resource-owning presenter. Stored
+    theme values map explicitly; startup does not rewrite storage, live changes
+    persist before style replacement, and failures keep the current theme.
+    Palette and QSS are unchanged. SystemDefault samples the color scheme when
+    applied; later OS color-scheme changes are not tracked, matching current
+    Next startup behavior.
+11. **F1524 — Other presentation preferences (current):** language, font, window,
     splitter, campus, and feature settings through the preferences boundary.
 12. **F1525 — Shared model/view primitives:** reusable bounded models,
     delegates, on-demand editors, and refresh/loading states.

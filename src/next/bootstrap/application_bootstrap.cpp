@@ -14,6 +14,7 @@
 #include "next/ui/application_shell.h"
 #include "next/ui/page_host.h"
 #include "next/ui/placeholder_page.h"
+#include "next/ui/theme_presenter.h"
 
 #include <QApplication>
 #include <QCoreApplication>
@@ -21,7 +22,6 @@
 #include <QFileInfo>
 #include <QLocale>
 #include <QStringList>
-#include <QStyleHints>
 #include <QTimer>
 
 #include <cstdio>
@@ -280,17 +280,15 @@ struct ApplicationBootstrap::CoreServices final
 
     Resources::ResourceLoader resourceLoader;
     Resources::ResourceScope startupResourceScope;
+    Platform::SettingsManagerThemePreferencesPort themePreferencesPort;
     Application::LanguagePreference languagePreference =
         Application::LanguagePreference::SystemDefault;
     Application::Theme themePreference = Application::Theme::SystemDefault;
-    Application::Theme resolvedTheme = Application::Theme::Light;
     QString loadedLocale;
     std::optional<Resources::ScopedResource<Resources::ResourceTranslation>> translation;
-    std::optional<Resources::ScopedResource<QString>> selectedStylesheet;
     std::optional<Resources::ScopedResource<Resources::RegisteredFont>> interFont;
     std::optional<Resources::ScopedResource<Resources::RegisteredFont>> pretendardFont;
-    QString previousApplicationStylesheet;
-    bool applicationStylesheetChanged = false;
+    std::unique_ptr<Ui::ThemePresenter> themePresenter;
 };
 
 int ApplicationBootstrap::run(int argc, char* argv[])
@@ -357,11 +355,6 @@ ApplicationBootstrap::~ApplicationBootstrap()
         m_startupUpdateDispatcher.reset();
     }
     m_shell.reset();
-    if (m_coreServices && m_coreServices->applicationStylesheetChanged)
-    {
-        m_application.setStyleSheet(m_coreServices->previousApplicationStylesheet);
-        m_coreServices->applicationStylesheetChanged = false;
-    }
     static_cast<void>(releaseWorkspace());
     m_coreServices.reset();
     m_startupDiagnosticsSink.reset();
@@ -741,11 +734,6 @@ Application::StartupResult ApplicationBootstrap::start()
         scheduleStartupUpdateCheck();
     }
 
-    if (m_coreServices)
-    {
-        m_coreServices->previousApplicationStylesheet.clear();
-        m_coreServices->applicationStylesheetChanged = false;
-    }
     return startupReady;
 }
 
@@ -758,8 +746,7 @@ bool ApplicationBootstrap::loadStartupPreferences()
 
     m_coreServices->languagePreference =
         Platform::SettingsManagerLanguagePreferencesPort{}.read();
-    m_coreServices->themePreference =
-        Platform::SettingsManagerThemePreferencesPort{}.read();
+    m_coreServices->themePreference = m_coreServices->themePreferencesPort.read();
     return true;
 }
 
@@ -824,47 +811,21 @@ Application::StartupStageOutcome ApplicationBootstrap::loadStartupLanguage()
 
 bool ApplicationBootstrap::loadStartupTheme()
 {
-    if (!m_coreServices)
+    if (!m_coreServices || !m_coreServices->themePresenter)
     {
         return false;
     }
 
-    Application::Theme resolvedTheme = m_coreServices->themePreference;
-    if (resolvedTheme == Application::Theme::SystemDefault)
+    const Domain::Result<void> applied =
+        m_coreServices->themePresenter->applyStartupPreference(
+            m_coreServices->themePreference
+            );
+    if (!applied)
     {
-        resolvedTheme = m_application.styleHints()->colorScheme()
-                == Qt::ColorScheme::Dark
-            ? Application::Theme::Dark
-            : Application::Theme::Light;
-    }
-
-    const QString themeName = resolvedTheme == Application::Theme::Dark
-        ? QStringLiteral("dark")
-        : QStringLiteral("light");
-    const auto request = startupRequest(
-        m_coreServices->startupResourceScope,
-        QStringLiteral("resource:assets/styles/%1.qss").arg(themeName)
-        );
-    if (!request)
-    {
-        qCritical().noquote() << "ClassMngrNext could not identify the selected stylesheet:"
-                              << request.error().message;
+        qCritical().noquote() << "ClassMngrNext could not apply selected theme:"
+                              << QString::fromStdString(applied.error().message);
         return false;
     }
-
-    auto stylesheet = m_coreServices->resourceLoader.loadStylesheet(*request);
-    if (!stylesheet)
-    {
-        qCritical().noquote() << "ClassMngrNext could not load selected stylesheet"
-                              << themeName << ':' << stylesheet.error().message;
-        return false;
-    }
-
-    m_coreServices->selectedStylesheet.emplace(std::move(*stylesheet));
-    m_coreServices->resolvedTheme = resolvedTheme;
-    m_coreServices->previousApplicationStylesheet = m_application.styleSheet();
-    m_coreServices->applicationStylesheetChanged = true;
-    m_application.setStyleSheet(m_coreServices->selectedStylesheet->get());
     return true;
 }
 
@@ -1292,17 +1253,13 @@ void ApplicationBootstrap::rollbackStartupComposition() noexcept
 
     if (m_coreServices)
     {
-        if (m_coreServices->applicationStylesheetChanged)
+        if (m_coreServices->themePresenter)
         {
-            m_application.setStyleSheet(
-                m_coreServices->previousApplicationStylesheet
-                );
-            m_coreServices->applicationStylesheetChanged = false;
+            m_coreServices->themePresenter->restore();
         }
         m_coreServices->translation.reset();
         m_coreServices->pretendardFont.reset();
         m_coreServices->interFont.reset();
-        m_coreServices->selectedStylesheet.reset();
     }
 
     if (m_quitOnLastWindowClosedChanged)
@@ -1346,6 +1303,12 @@ bool ApplicationBootstrap::createCoreServices()
     m_coreServices = std::make_unique<CoreServices>(
         std::move(*catalog),
         std::move(*startupScope)
+        );
+    m_coreServices->themePresenter = std::make_unique<Ui::ThemePresenter>(
+        m_application,
+        m_coreServices->resourceLoader,
+        m_coreServices->startupResourceScope,
+        m_coreServices->themePreferencesPort
         );
     return true;
 }
@@ -1473,11 +1436,6 @@ void ApplicationBootstrap::finalizeShutdown()
     // shutdown can release it synchronously.
     m_shell.reset();
     static_cast<void>(releaseWorkspace());
-    if (m_coreServices && m_coreServices->applicationStylesheetChanged)
-    {
-        m_application.setStyleSheet(m_coreServices->previousApplicationStylesheet);
-        m_coreServices->applicationStylesheetChanged = false;
-    }
     m_coreServices.reset();
     m_startupDiagnosticsSink.reset();
 

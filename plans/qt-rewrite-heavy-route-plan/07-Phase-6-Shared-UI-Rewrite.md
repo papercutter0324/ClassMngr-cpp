@@ -38,8 +38,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 is active on the Heavy route. F1514–F1522 are accepted;
-  F1523 — theme presenter — is next. Batch 1's ordered candidates are in
+- Current note: Phase 6 is active on the Heavy route. F1514–F1523 are accepted;
+  F1524 — other presentation preferences — is next. Batch 1's ordered candidates are in
   the shared slice-batch tracker. The existing Staff Directory model/view and
   bounded-widget test are the planned representative-table gate
   evidence; its full feature migration remains in Phase 7C.
@@ -215,6 +215,30 @@ load/apply/persist separation, failure atomicity and retry, dirty-state
 handling, observer ordering, reentrancy, subscription lifecycle, and exception
 visibility. The new Application target remains Qt-free. `git diff --check`
 passed. No full suite or cross-platform build ran.
+
+### F1523 — complete — 2026-10-26
+
+Added a Next `ThemePresenter` that applies the existing packaged light/dark
+QSS, explicitly maps semantic and persisted theme enums, and retains the active
+stylesheet resource until the prior application stylesheet is restored. Startup
+applies the stored preference without rewriting it. Live preference changes
+load the candidate style, persist first through the existing one-field theme
+port, and install the style only after persistence succeeds. Failed resource
+loads or writes leave the installed style unchanged. No palette or QSS changes
+were made, and the legacy theme controller/service remains unchanged.
+
+SystemDefault resolves `Dark` to the dark stylesheet and all other/unknown
+schemes to light when applied. It does not track later OS color-scheme changes,
+matching the current Next startup behavior; live legacy parity for this case
+remains a later appearance decision.
+
+Independent incremental macOS Debug build and focused CTest covered the theme
+presenter, Bootstrap, and existing SettingsManager theme preference adapter
+(3/3). Tests cover enum mapping, startup without writes, scheme fallback,
+resource-load/write failures, persistence ordering, no-op behavior, and
+stylesheet restoration. `git diff --check` passed. No full suite,
+cross-platform build, or screenshot comparison ran; appearance evidence remains
+F1527.
 
 ## Objective
 

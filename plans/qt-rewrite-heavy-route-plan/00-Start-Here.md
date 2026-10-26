@@ -16,8 +16,9 @@
   file-dialog port and Qt presenter, preserving UTF-8 paths and directory
   preferences. F1521 added a transient shell-owned notification service with
   an idle-hidden status bar. F1522 added explicit read/apply/persist/notify
-  operations around the validated preferences state. F1523 — theme presenter —
-  is next. Phase 5 — Startup and
+  operations around the validated preferences state. F1523 added the theme
+  presenter using existing QSS and persistence boundaries. F1524 — other
+  presentation preferences — is next. Phase 5 — Startup and
   Bootstrap Rewrite — completed at implementation head
   `6bbff54abc524723e23911d65130b1b198dde2b3`; its startup, data-policy,
   deferred-update, shutdown, and splash-removal criteria passed. Focused macOS
