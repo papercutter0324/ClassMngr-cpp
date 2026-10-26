@@ -6,34 +6,14 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-26
-- Current milestone: Phase 6 — Shared UI Rewrite — is In progress on the
-  mandatory Heavy route. F1514–F1516 are accepted: Next page registration is
-  descriptor-based and lazy, `PageHost` exposes explicit lifecycle state, and
-  `NavigationModel` drives guarded placeholder navigation with history. F1517
-  added a typed, widget-free CommandBus, and F1518 made Back/Forward action
-  state follow history-target availability. F1519 added typed semantic prompt
-  contracts and a value-only Qt automation boundary. F1520 added the typed
-  file-dialog port and Qt presenter, preserving UTF-8 paths and directory
-  preferences. F1521 added a transient shell-owned notification service with
-  an idle-hidden status bar. F1522 added explicit read/apply/persist/notify
-  operations around the validated preferences state. F1523 added the theme
-  presenter using existing QSS and persistence boundaries. F1524 added font
-  size to the shared preferences state, composed the complete SettingsManager
-  snapshot adapter, and passed the same model to pages. F1525 added the shared
-  editable text-row model used by Staff Directory while preserving feature
-  schemas and page refresh rules; F1526 — representative-table gate evidence —
-  is next. Phase 5 — Startup and
-  Bootstrap Rewrite — completed at implementation head
-  `6bbff54abc524723e23911d65130b1b198dde2b3`; its startup, data-policy,
-  deferred-update, shutdown, and splash-removal criteria passed. Focused macOS
-  Debug checks, the Windows packaged startup smoke, and the Phase 4 resource
-  install matrix passed. Linux and Windows Debug full CTest had 11 and 14
-  failures or timeouts, and the Windows startup performance target timed out
-  after emitting metrics; none are reported as passing suites. See the
-  [Phase 5 plan](06-Phase-5-Startup-and-Bootstrap-Rewrite.md),
-  [Phase 6 plan](07-Phase-6-Shared-UI-Rewrite.md), and
-  [current batch tracker](Current-Slice-Batches.md). Rendering parity remains
-  a Phase 7/10 gate, and legacy pack removal remains a Phase 12 gate.
+- Current milestone: Phase 6 F1526 representative-table evidence passed on the
+  Heavy route. Staff Directory demonstrates fixed widget counts across 96
+  model rows, on-demand editors, and page-owned model/delegate cleanup. F1527
+  appearance evidence is current. Paired Batch 2 discovery found F1528 —
+  bounded review-window model — required to satisfy Phase 6 §6.7; it will begin
+  after Batch 1 is accepted and pushed. See the [Phase 6 plan](07-Phase-6-Shared-UI-Rewrite.md)
+  and [current batch tracker](Current-Slice-Batches.md). Rendering parity
+  remains a Phase 7/10 gate, and legacy pack removal remains a Phase 12 gate.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted

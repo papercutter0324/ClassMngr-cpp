@@ -28,8 +28,10 @@ appearance.
 
 ## Overall Progress
 
-Phases 0–5 are Complete. Phase 6 is In progress; F1514–F1525 are accepted and
-F1526 is next. The current batch and ordered candidates are in
+Phases 0–5 are Complete. Phase 6 is In progress; F1514–F1526 are accepted.
+F1527 is current in Batch 1, and F1528 was discovered for
+Batch 2 to provide bounded review-window data support. The current and next
+batch candidates are in
 `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
@@ -122,8 +124,15 @@ selection hit a macOS `NSBundle initWithURL: nil URL argument` failure in
 `wizardSuccessTranscript`; focused acceptance targets passed. The model retains
 all supplied rows and does not page backing data; boundedness evidence covers
 widget/editor allocation. No full suite, cross-platform build, or screenshots
-ran. F1526 is next. Phase 7/10 owns rendering parity; Phase 12 owns legacy
-resource-pack removal.
+ran. F1526 accepts Staff Directory as the representative model/view gate:
+widget counts remain fixed across 96 rows, editors stay on demand, refresh
+failure is covered, and model/delegate release is verified. Paired Batch 2
+discovery found F1528 to provide bounded review-window model support required
+by Phase 6 §6.7 after F1525's complete-row storage was confirmed.
+Window/splitter keys remain intact with lifecycle behavior deferred under
+F1524 because they have no active callers. F1527 is current, followed by
+F1528 after the Batch 1 push. Phase 7/10 owns rendering parity; Phase 12 owns
+legacy resource-pack removal.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

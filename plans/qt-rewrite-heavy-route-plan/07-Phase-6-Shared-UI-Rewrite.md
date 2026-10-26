@@ -38,11 +38,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 is active on the Heavy route. F1514–F1525 are accepted;
-  F1526 — representative-table gate evidence — is next. Batch 1's ordered candidates are in
-  the shared slice-batch tracker. The existing Staff Directory model/view and
-  bounded-widget test are the planned representative-table gate
-  evidence; its full feature migration remains in Phase 7C.
+- Current note: Phase 6 is active on the Heavy route. F1514–F1526 are accepted;
+  F1527 — appearance evidence — is current in Batch 1. Paired Batch 2 discovery found
+  F1528 — bounded review-window model — to address the Phase 6 §6.7 windowing
+  requirement exposed by F1525. Batch 2 begins after Batch 1 is accepted and
+  pushed. The existing Staff Directory model/view and bounded-widget test are
+  the representative-table evidence; full feature migration remains in Phase
+  7C. The dormant window/splitter keys stay intact, with no new lifecycle
+  behavior, per the F1524 deferral decision.
 
 ### Slice batches
 
@@ -300,6 +303,34 @@ also failed in `wizardSuccessTranscript` with macOS
 model/view code and is not part of the focused acceptance result. No full suite,
 cross-platform build, or screenshot comparison ran; appearance evidence remains
 F1527.
+
+### F1526 — complete — 2026-10-26
+
+Accepted the existing Staff Directory as Phase 6's representative model/view
+table. Both directory variants use `QTableView` with 6- and 5-column schemas;
+the 96-row test confirms widget count does not grow with rows/cells and no
+`QTableWidget` or per-cell index widgets are created. Existing editor tests
+show text and native-position combo editors are created only for active cells.
+F1525's clear/recreation test verifies active-editor disposal and page-owned
+model/delegate release. Import refresh failure continues to lock stale rows
+until a successful reload. Sorting remains disabled and headers remain
+non-clickable/non-movable, preserving current behavior.
+
+Independent incremental macOS Debug build covered
+`ClassMngrStaffDirectoryPageTests` and
+`ClassMngrTeacherImportUiApplyParityTests`. Focused CTest passed 2/2 for the
+Staff Directory page suite and isolated
+`TeacherImportUiApplyParityF1285DirectoryReloadFailure` regression. This gate
+proves bounded Qt widget/editor allocation for the representative table; it
+does not prove bounded backing-row memory or complete Staff Directory feature
+migration. The latter remains Phase 7C, and packaged Release memory measurement
+remains Phase 9. No full suite or cross-platform build ran.
+
+Paired Batch 2 discovery found F1528, a bounded review-window model, to satisfy
+the remaining Phase 6 §6.7 shared-primitive requirement. F1528 is inactive
+until Batch 1 is accepted and pushed. Window/splitter keys remain intact and
+their lifecycle behavior remains deferred under the F1524 decision because
+there are no active callers.
 
 ## Objective
 
