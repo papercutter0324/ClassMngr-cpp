@@ -38,8 +38,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 is active on the Heavy route. F1514–F1519 are accepted;
-  F1520 — file dialog service — is next. Batch 1's ordered candidates are in
+- Current note: Phase 6 is active on the Heavy route. F1514–F1520 are accepted;
+  F1521 — notification service — is next. Batch 1's ordered candidates are in
   the shared slice-batch tracker. The existing Staff Directory model/view and
   bounded-widget test are the planned representative-table gate
   evidence; its full feature migration remains in Phase 7C.
@@ -154,6 +154,29 @@ application, Bootstrap, Navigation, and PageHost targets. Focused CTest passed
 Escape mapping, dismissal, unsaved-change choices, named-action IDs, default
 actions, and automation snapshots/capture. `git diff --check` passed. No full
 suite, cross-platform build, or native window-manager presentation test ran.
+
+### F1520 — complete — 2026-10-26
+
+Added a Qt-free `FileDialogPort` for opening one or many files, saving, and
+selecting a directory, plus a Qt presenter that owns widgets, path conversion,
+normalization, platform policy, and per-purpose directory persistence. Requests
+use UTF-8 values and reuse the existing purpose and preferences port. Initial
+directory precedence remains explicit request, remembered directory, then
+Documents (Pictures for signature images), with home fallback. The presenter
+preserves filters, suggested filename, default suffix, overwrite policy,
+optional open-after-save checkbox, and each operation's standard Open/Save/
+Choose Directory accept and platform keyboard behavior. Cancellation is a
+successful empty selection. Preference-write failures accompany accepted
+selections as nonfatal warning values.
+
+Independent macOS Debug build covered the Next application, both file-dialog
+test targets, and the QSettings directory-preferences adapter target. Focused
+CTest passed 3/3; tests cover current-directory precedence/fallbacks, UTF-8,
+filters, selection and cancellation, save options, normalization, persistence
+timing, and warning-plus-selection. The adapter target remains independently
+covered. `git diff --check` passed. Native OS panels and window-manager keyboard
+behavior were not exercised in this offscreen environment; the presenter tests
+verify platform routing and Qt dialog policy flags.
 
 ## Objective
 

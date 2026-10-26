@@ -5,7 +5,7 @@ Phase 5 completed on the mandatory Heavy route at implementation head
 
 ## Phase 6 — Batch 1 (active)
 
-F1514–F1519 are complete. F1520 is current. Continue in order, commit each
+F1514–F1520 are complete. F1521 is current. Continue in order, commit each
 accepted slice, then push the batch. Start Batch 2 discovery when F1526 starts
 because it is the second-to-last candidate.
 
@@ -48,10 +48,16 @@ because it is the second-to-last candidate.
    user responses separate from presenter errors. A Next Qt presenter preserves
    default/Escape mappings; its separate automation API uses stable prompt IDs
    and value-only snapshots/commands. Legacy callers remain unmigrated.
-7. **F1520 — File dialog service (current):** typed request/response adapter
-   preserving current-directory, filter, overwrite, default-action, and
-   platform behavior.
-8. **F1521 — Notification service:** presentation boundary and lifecycle.
+7. **F1520 — File dialog service (complete):** Qt-free typed open-one,
+   open-many, save, and directory requests/responses over UTF-8 paths, with a
+   separate Qt presenter. Preserve explicit/remembered/default directory
+   precedence, filters, suggested save name/suffix, overwrite policy,
+   Open/Save/Choose Directory accept behavior, path normalization, and
+   per-purpose directory memory. Cancellation is a normal empty selection;
+   preference-write failures accompany accepted selections as warnings.
+   PlatformDefault and the optional Qt-only open-after-save accessory remain.
+8. **F1521 — Notification service (current):** presentation boundary and
+   lifecycle.
 9. **F1522 — Preferences model:** separate read, apply, persist, and notify
    behavior.
 10. **F1523 — Theme presenter:** apply and persist theme without changing its

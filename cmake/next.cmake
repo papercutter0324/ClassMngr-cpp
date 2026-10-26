@@ -304,6 +304,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/dialog_geometry_preferences_port.h
     src/next/application/directory_preference_path.h
     src/next/application/file_dialog_directory_preferences.h
+    src/next/application/file_dialog_port.h
     src/next/application/language_preferences_port.h
     src/next/application/upcoming_birthday_dismissal_port.h
     src/next/application/class_day_filter_policy.h

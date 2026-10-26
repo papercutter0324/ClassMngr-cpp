@@ -6,8 +6,9 @@ Phases 0–5 are Complete; Phase 6 is In progress. F1514 added descriptor-based
 lazy registration, F1515 added explicit page lifecycle states, and F1516 added
 guarded placeholder navigation with history. F1517 added the typed CommandBus;
 F1518 made history action state respect target visibility. F1519 added typed
-semantic prompt contracts and a value-only Qt automation boundary. F1520, the
-file dialog service, is next. Phase 5
+semantic prompt contracts and a value-only Qt automation boundary. F1520 added
+the typed file-dialog port and Qt presenter. F1521, the notification service,
+is next. Phase 5
 platform evidence and broad-suite limitations remain in the
 [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
 and [Start Here](../plans/qt-rewrite-heavy-route-plan/00-Start-Here.md).
@@ -21,8 +22,8 @@ appearance.
 
 ## Overall Progress
 
-Phases 0–5 are Complete. Phase 6 is In progress; F1514–F1519 are accepted and
-F1520 is next. The current batch and ordered candidates are in
+Phases 0–5 are Complete. Phase 6 is In progress; F1514–F1520 are accepted and
+F1521 is next. The current batch and ordered candidates are in
 `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
@@ -64,7 +65,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-26 (Phase 6, F1519 accepted)
+### Current checkpoint — 2026-10-26 (Phase 6, F1520 accepted)
 
 F1514 established descriptor-based lazy registration. F1515 added observable
 page states, release/recreation, and failure cleanup while retaining
@@ -79,9 +80,13 @@ bus with separate availability and execution errors; its focused tests passed
 Navigation, PageHost, and Bootstrap tests passed 3/3. F1519 adds a typed
 Qt-free user-prompt port and a Next Qt presenter with value-only automation;
 independent prompt, Bootstrap, Navigation, and PageHost verification passed
-5/5 CTests. Full-suite and cross-platform builds did not run. Dynamic
-teacher/document data and URL actions remain deferred to feature/platform
-migration. F1520 is next. Phase 7/10 owns rendering parity;
+5/5 CTests. F1520 adds a typed Qt-free file-dialog port and Next presenter
+that preserves UTF-8 selections, per-purpose directory memory, operation
+defaults, and warning-plus-selection on preference-write failure. Its contract,
+presenter, and QSettings adapter CTests passed 3/3. Full-suite and
+cross-platform builds did not run; native panels and window-manager behavior
+were not exercised. Dynamic teacher/document data and URL actions remain
+deferred to feature/platform migration. F1521 is next. Phase 7/10 owns rendering parity;
 Phase 12 owns legacy resource-pack removal.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)

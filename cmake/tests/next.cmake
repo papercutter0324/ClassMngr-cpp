@@ -226,6 +226,70 @@ add_test(
     COMMAND ClassMngrNextPromptContractTests
 )
 
+# Keep file-dialog request/response values and cancellation independent of Qt.
+add_executable(ClassMngrNextFileDialogContractTests
+    tests/next/file_dialog_port_tests.cpp
+)
+target_compile_features(ClassMngrNextFileDialogContractTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(ClassMngrNextFileDialogContractTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextFileDialogContractTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(ClassMngrNextFileDialogContractTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextFileDialogContractTests
+    COMMAND ClassMngrNextFileDialogContractTests
+)
+
+# Exercise the forced-Qt file-dialog presenter and preferences behavior under
+# the offscreen platform plugin without migrating any legacy callers.
+add_executable(ClassMngrNextFileDialogPresenterTests
+    tests/next/qt_file_dialog_presenter_tests.cpp
+    src/next/ui/qt_file_dialog_presenter.cpp
+)
+target_compile_features(ClassMngrNextFileDialogPresenterTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextFileDialogPresenterTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextFileDialogPresenterTests
+    PRIVATE
+        ClassMngrNext::Application
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextFileDialogPresenterTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextFileDialogPresenterTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_test(
+    NAME ClassMngrNextFileDialogPresenterTests
+    COMMAND ClassMngrNextFileDialogPresenterTests
+)
+set_tests_properties(ClassMngrNextFileDialogPresenterTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
 # Verify the Qt prompt mapping and value-only automation adapter at the UI
 # boundary without involving any legacy prompt callers.
 add_executable(ClassMngrNextPromptPresenterTests
