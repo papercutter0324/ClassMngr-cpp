@@ -19,7 +19,9 @@
   fonts load before the shell, with focused verification passing. F1506 is
   complete: startup preserves legacy workspace selection order through a
   single Next-owned store with typed no-workspace/open-failure results. F1507
-  is next to compose `ApplicationRuntime` without feature-page ownership. See
+  is complete: a Qt-free `ApplicationRuntime` owns the workspace state and
+  use cases, including on no-workspace startup. F1508 is next to add the
+  factory-only PageHost and explicit page/resource lifetimes. See
   [Phase 5 plan](06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
   and [current batch tracker](Current-Slice-Batches.md). Phase 4 remains
   Complete at F1500; rendering parity remains a Phase 7/10 gate, and legacy

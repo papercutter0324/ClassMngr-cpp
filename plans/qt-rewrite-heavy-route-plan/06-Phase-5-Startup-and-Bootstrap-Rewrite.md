@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
 - Last updated: 2026-10-25
-- Current note: Phase 5 is active on the Heavy route. F1501–F1506 are complete; F1507 is next to compose `ApplicationRuntime` from Next use cases and platform adapters without feature-page ownership. F1506 applies the legacy-compatible workspace selection order through a single Next-owned store and retains a typed session. No candidate or open failure leaves a warning and permits the empty shell; `StartupReady` remains deferred until runtime, PageHost, and startup catalog composition.
+- Current note: Phase 5 is active on the Heavy route. F1501–F1507 are complete; F1508 is next to connect the shell to a factory-only PageHost with explicit page/resource lifetimes. F1507 added a Qt-free `ApplicationRuntime` that owns the workspace application state and use cases. PageHost, startup catalog, and `StartupReady` remain deferred.
 
 ### Slice batches
 

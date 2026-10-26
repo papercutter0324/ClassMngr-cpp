@@ -70,6 +70,8 @@ private slots:
     void recentOpenErrorDoesNotFallThroughToLaterCandidates();
     void missingExplicitWorkspaceDoesNotCreateFileOrParent();
     void successfulStartupRetainsSessionAndReleasesStoreOnShutdown();
+    void runtimeRemainsClosedAfterTypedGatewayOpenFailure();
+    void shutdownClosesThroughTheGatewayUsedForStartupOpen();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -125,6 +127,115 @@ public:
 
 private:
     std::shared_ptr<RecentWorkspaceHistoryProbe> m_probe;
+};
+
+struct BootstrapWorkspaceGatewayProbe final
+{
+    std::vector<std::string> events;
+    std::optional<Domain::OperationError> openError;
+    std::optional<Application::WorkspaceSession> openedSession;
+    std::optional<Application::WorkspaceSession> closedSession;
+    int factoryCalls = 0;
+    int constructed = 0;
+    int destroyed = 0;
+    int openCalls = 0;
+    int closeCalls = 0;
+};
+
+class RecordingBootstrapWorkspaceGateway final
+    : public Application::WorkspaceGateway
+{
+public:
+    explicit RecordingBootstrapWorkspaceGateway(
+        std::shared_ptr<BootstrapWorkspaceGatewayProbe> probe
+        )
+        : m_probe(std::move(probe))
+    {
+        ++m_probe->constructed;
+        m_probe->events.push_back("constructed");
+    }
+
+    ~RecordingBootstrapWorkspaceGateway() override
+    {
+        ++m_probe->destroyed;
+        m_probe->events.push_back("destroyed");
+    }
+
+    Domain::Result<Application::WorkspaceSession> createWorkspace(
+        const Application::CreateWorkspaceRequest& request
+        ) override
+    {
+        return Domain::Result<Application::WorkspaceSession>::success(
+            makeSession(request.location)
+            );
+    }
+
+    Domain::Result<Application::WorkspaceSession> openWorkspace(
+        const Application::OpenWorkspaceRequest& request
+        ) override
+    {
+        ++m_probe->openCalls;
+        m_probe->events.push_back("open");
+        if (m_probe->openError.has_value())
+        {
+            return Domain::Result<Application::WorkspaceSession>::failure(
+                *m_probe->openError
+                );
+        }
+
+        m_probe->openedSession = makeSession(request.location);
+        return Domain::Result<Application::WorkspaceSession>::success(
+            *m_probe->openedSession
+            );
+    }
+
+    Domain::Result<void> closeWorkspace(
+        const Application::CloseWorkspaceRequest& request
+        ) override
+    {
+        ++m_probe->closeCalls;
+        m_probe->events.push_back("close");
+        m_probe->closedSession = request.session;
+        return Domain::Result<void>::success();
+    }
+
+    Domain::Result<void> saveWorkspace(
+        const Application::SaveWorkspaceRequest&
+        ) override
+    {
+        return Domain::Result<void>::success();
+    }
+
+    Domain::Result<Application::WorkspaceLocation> saveWorkspaceAs(
+        const Application::SaveWorkspaceAsRequest& request
+        ) override
+    {
+        return Domain::Result<Application::WorkspaceLocation>::success(
+            request.destination
+            );
+    }
+
+    Domain::Result<Application::WorkspaceLocation> exportWorkspace(
+        const Application::ExportWorkspaceRequest& request
+        ) override
+    {
+        return Domain::Result<Application::WorkspaceLocation>::success(
+            request.destination
+            );
+    }
+
+private:
+    [[nodiscard]] static Application::WorkspaceSession makeSession(
+        const Application::WorkspaceLocation& location
+        )
+    {
+        return Application::WorkspaceSession(
+            Domain::WorkspaceId::fromString("bootstrap-test-session").value(),
+            location
+            );
+    }
+
+    std::shared_ptr<BootstrapWorkspaceGatewayProbe> m_probe;
 };
 
 Bootstrap::ApplicationBootstrap::StartupDiagnosticsSinkFactory
@@ -1950,6 +2061,8 @@ noWorkspaceRemainsAnExplicitNonFatalWarning()
     std::vector<Application::StartupEvent> observedEvents;
     int historyFactoryCalls = 0;
     int gatewayFactoryCalls = 0;
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    const QStringList connectionsBefore = QSqlDatabase::connectionNames();
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
     seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
     seams.recentAutoOpenEnabled = false;
@@ -1957,9 +2070,9 @@ noWorkspaceRemainsAnExplicitNonFatalWarning()
         ++historyFactoryCalls;
         return std::unique_ptr<Application::RecentWorkspaceHistoryPort>{};
     };
-    seams.workspaceGatewayFactory = [&gatewayFactoryCalls] {
+    seams.workspaceGatewayFactory = [&gatewayFactoryCalls, gatewayProbe] {
         ++gatewayFactoryCalls;
-        return std::unique_ptr<Application::WorkspaceGateway>{};
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
     };
 
     Bootstrap::ApplicationBootstrap bootstrap(
@@ -1992,7 +2105,16 @@ noWorkspaceRemainsAnExplicitNonFatalWarning()
     QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
              Application::WorkspaceLifecycleState::Closed);
     QCOMPARE(historyFactoryCalls, 0);
-    QCOMPARE(gatewayFactoryCalls, 0);
+    QCOMPARE(gatewayFactoryCalls, 1);
+    QCOMPARE(gatewayProbe->constructed, 1);
+    QCOMPARE(gatewayProbe->openCalls, 0);
+    QCOMPARE(gatewayProbe->closeCalls, 0);
+    QCOMPARE(QSqlDatabase::connectionNames(), connectionsBefore);
+    const Application::ShutdownResult shutdown = bootstrap.shutdown();
+    QVERIFY(shutdown.shutdownRequested);
+    QCOMPARE(gatewayProbe->destroyed, 1);
+    QCOMPARE(gatewayProbe->events,
+             (std::vector<std::string>{"constructed", "destroyed"}));
 
     application.setStyleSheet(previousStyleSheet);
 }
@@ -2021,6 +2143,7 @@ staleFirstRecentPathIsPrunedWithoutTryingLaterCandidates()
     historyProbe->history.lastPath = lastFile;
 
     int gatewayFactoryCalls = 0;
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
     std::vector<std::string> checkedPaths;
     std::vector<Application::StartupEvent> observedEvents;
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
@@ -2030,9 +2153,9 @@ staleFirstRecentPathIsPrunedWithoutTryingLaterCandidates()
         checkedPaths.push_back(location.value());
         return false;
     };
-    seams.workspaceGatewayFactory = [&gatewayFactoryCalls] {
+    seams.workspaceGatewayFactory = [&gatewayFactoryCalls, gatewayProbe] {
         ++gatewayFactoryCalls;
-        return std::unique_ptr<Application::WorkspaceGateway>{};
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
     };
     seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
         return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
@@ -2077,7 +2200,9 @@ staleFirstRecentPathIsPrunedWithoutTryingLaterCandidates()
         );
     QVERIFY(historyProbe->saves.front().lastPath.has_value());
     QCOMPARE(historyProbe->saves.front().lastPath->value(), lastFile.value());
-    QCOMPARE(gatewayFactoryCalls, 0);
+    QCOMPARE(gatewayFactoryCalls, 1);
+    QCOMPARE(gatewayProbe->constructed, 1);
+    QCOMPARE(gatewayProbe->openCalls, 0);
     QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
              Application::WorkspaceLifecycleState::Closed);
 
@@ -2375,6 +2500,178 @@ successfulStartupRetainsSessionAndReleasesStoreOnShutdown()
     QVERIFY(repeatedShutdown.shutdownRequested);
     QVERIFY(!repeatedShutdown.newlyRequested);
     QCOMPARE(QSqlDatabase::connectionNames(), connectionsBefore);
+
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+runtimeRemainsClosedAfterTypedGatewayOpenFailure()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(QStringLiteral("ko_KR"), QStringLiteral("light")));
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString missingParent = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("typed-error-parent")
+        );
+    const QString missingPath = QDir(missingParent).filePath(
+        QStringLiteral("typed-error-profile.tps")
+        );
+    QVERIFY(!QFileInfo::exists(missingParent));
+
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    gatewayProbe->openError = Domain::OperationError{
+        .code = Domain::ErrorCode::Technical,
+        .message = "injected typed open failure",
+        .recoverable = true
+    };
+    int gatewayFactoryCalls = 0;
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"),
+        missingPath
+    };
+    seams.recentWorkspaceHistoryPortFactory = [] {
+        return std::unique_ptr<Application::RecentWorkspaceHistoryPort>{};
+    };
+    seams.workspaceGatewayFactory = [&gatewayFactoryCalls, gatewayProbe] {
+        ++gatewayFactoryCalls;
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
+    };
+
+    std::vector<Application::StartupEvent> observedEvents;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    const Application::StartupResult result = bootstrap.start();
+
+    verifyWorkspaceStartupOrder(
+        result,
+        observedEvents,
+        bootstrap,
+        Application::StartupStageOutcome::Warning
+        );
+    QVERIFY(bootstrap.startupWorkspaceOutcome().has_value());
+    const auto* const failed = std::get_if<Application::StartupWorkspaceOpenFailed>(
+        &bootstrap.startupWorkspaceOutcome().value()
+        );
+    QVERIFY(failed != nullptr);
+    QCOMPARE(failed->error.code, Domain::ErrorCode::Technical);
+    QCOMPARE(failed->error.message, std::string("injected typed open failure"));
+    QVERIFY(failed->error.recoverable);
+    QCOMPARE(gatewayFactoryCalls, 1);
+    QCOMPARE(gatewayProbe->constructed, 1);
+    QCOMPARE(gatewayProbe->openCalls, 1);
+    QCOMPARE(gatewayProbe->closeCalls, 0);
+    QCOMPARE(gatewayProbe->events,
+             (std::vector<std::string>{"constructed", "open"}));
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Closed);
+    QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
+    QVERIFY(!QFileInfo::exists(missingParent));
+    QVERIFY(!QFileInfo::exists(missingPath));
+
+    const Application::ShutdownResult shutdown = bootstrap.shutdown();
+    QVERIFY(shutdown.shutdownRequested);
+    QCOMPARE(gatewayProbe->destroyed, 1);
+    QCOMPARE(gatewayProbe->events,
+             (std::vector<std::string>{"constructed", "open", "destroyed"}));
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+shutdownClosesThroughTheGatewayUsedForStartupOpen()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        5,
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(QStringLiteral("ko_KR"), QStringLiteral("light")));
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString workspacePath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("gateway-backed-profile.tps")
+        );
+    QVERIFY(!QFileInfo::exists(workspacePath));
+
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    int gatewayFactoryCalls = 0;
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"),
+        workspacePath
+    };
+    seams.recentWorkspaceHistoryPortFactory = [] {
+        return std::unique_ptr<Application::RecentWorkspaceHistoryPort>{};
+    };
+    seams.workspaceGatewayFactory = [&gatewayFactoryCalls, gatewayProbe] {
+        ++gatewayFactoryCalls;
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
+    };
+
+    std::vector<Application::StartupEvent> observedEvents;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        [&observedEvents](const Application::StartupEvent& event) {
+            observedEvents.push_back(event);
+        },
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    const Application::StartupResult result = bootstrap.start();
+
+    verifyWorkspaceStartupOrder(
+        result,
+        observedEvents,
+        bootstrap,
+        Application::StartupStageOutcome::Completed
+        );
+    QVERIFY(bootstrap.startupWorkspaceOutcome().has_value());
+    const auto* const opened = std::get_if<Application::StartupWorkspaceOpened>(
+        &bootstrap.startupWorkspaceOutcome().value()
+        );
+    QVERIFY(opened != nullptr);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Open);
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    QCOMPARE(*bootstrap.workspaceStateSnapshot().session(), opened->session);
+    QCOMPARE(gatewayFactoryCalls, 1);
+    QCOMPARE(gatewayProbe->constructed, 1);
+    QCOMPARE(gatewayProbe->openCalls, 1);
+    QCOMPARE(gatewayProbe->closeCalls, 0);
+    QCOMPARE(gatewayProbe->openedSession, opened->session);
+    QVERIFY(!QFileInfo::exists(workspacePath));
+
+    const Application::ShutdownResult shutdown = bootstrap.shutdown();
+    QVERIFY(shutdown.shutdownRequested);
+    QVERIFY(shutdown.newlyRequested);
+    QCOMPARE(gatewayProbe->closeCalls, 1);
+    QCOMPARE(gatewayProbe->closedSession, gatewayProbe->openedSession);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Closed);
+    QCOMPARE(gatewayProbe->destroyed, 1);
+    QCOMPARE(gatewayProbe->events,
+             (std::vector<std::string>{"constructed", "open", "close", "destroyed"}));
 
     application.setStyleSheet(previousStyleSheet);
 }

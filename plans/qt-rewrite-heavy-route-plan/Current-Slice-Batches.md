@@ -59,8 +59,20 @@ its native matrix passed before this batch began.
    passed six focused QtTest cases (8/8 including setup/cleanup), the bootstrap
    and dependency-boundary CTests (2/2), and builds of ClassMngrNext and
    ClassMngr. Link inspection confirmed no Network or broad legacy target.
-7. **F1507 — Discovered:** Compose `ApplicationRuntime` from Next use cases and
-   platform adapters without feature-page ownership.
+7. **F1507 — Complete:** Add a Qt-free `ApplicationRuntime` that
+   owns long-lived application state and use-case composition: the F1506
+   workspace state/session, selection state, workspace use case, and workspace
+   coordinator. It receives the abstract `WorkspaceGateway` port; the bootstrap
+   remains the sole root that builds the concrete store adapter and runtime.
+   Make the runtime the single session authority rather than keeping a second
+   copy in `ApplicationBootstrap`. Do not add feature-page state, PageHost,
+   document-catalog policy, update work, broad platform dependencies, or an
+   early `StartupReady`. Verify ownership order, startup-session transfer,
+   ordinary workspace operations through the retained coordinator, and
+   bootstrap shutdown integration. Independent macOS Debug verification
+   passed the runtime/bootstrap/dependency CTests 3/3; the runtime tests link
+   without Qt libraries. `ClassMngrNext` and the affected runtime test targets
+   rebuilt. No full suite or other platform ran.
 8. **F1508 — Discovered:** Connect the shell to a factory-only PageHost with
    create/activate/suspend/release lifecycle and explicit page/resource scopes.
 9. **F1509 — Discovered:** Verify startup constructs only the usable initial

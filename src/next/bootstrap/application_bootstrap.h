@@ -4,7 +4,8 @@
 #include "next/application/shutdown_coordinator.h"
 #include "next/application/startup_coordinator.h"
 #include "next/application/startup_workspace_policy.h"
-#include "next/application/workspace_coordinator.h"
+#include "next/application/application_runtime.h"
+#include "next/application/workspace_contracts.h"
 #include "next/application/workspace_state.h"
 #include "next/bootstrap/startup_diagnostics_sink.h"
 #include "next/resources/resource_root_resolver.h"
@@ -108,10 +109,7 @@ private:
     std::unique_ptr<StartupDiagnosticsSink> m_startupDiagnosticsSink;
     std::unique_ptr<CoreServices> m_coreServices;
     std::unique_ptr<Application::WorkspaceGateway> m_workspaceGateway;
-    Application::WorkspaceState m_workspaceState;
-    Application::SelectionState m_workspaceSelectionState;
-    std::unique_ptr<Application::WorkspaceUseCase> m_workspaceUseCase;
-    std::unique_ptr<Application::WorkspaceCoordinator> m_workspaceCoordinator;
+    std::unique_ptr<Application::ApplicationRuntime> m_applicationRuntime;
     std::optional<Application::StartupWorkspaceOutcome> m_startupWorkspaceOutcome;
     Application::StartupCoordinator m_startupCoordinator;
     Application::ShutdownCoordinator m_shutdownCoordinator;

@@ -50,6 +50,32 @@ set_tests_properties(ClassMngrNextBootstrapTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
+# Keep application-runtime ownership and workspace coordination Qt-free.
+add_executable(ClassMngrNextApplicationRuntimeTests
+    tests/next/application_runtime_tests.cpp
+)
+target_compile_features(ClassMngrNextApplicationRuntimeTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(ClassMngrNextApplicationRuntimeTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextApplicationRuntimeTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(ClassMngrNextApplicationRuntimeTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationRuntimeTests
+    COMMAND ClassMngrNextApplicationRuntimeTests
+)
+
 # Preserve the narrow production startup link boundary and keep its
 # WorkspaceStore profiler compatibility object out of the legacy executable.
 get_target_property(_classmngr_next_startup_links

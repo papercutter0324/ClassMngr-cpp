@@ -407,7 +407,11 @@ Application::StartupResult ApplicationBootstrap::start()
     }
     catch (...)
     {
-        releaseWorkspace();
+        if (m_applicationRuntime
+            && m_applicationRuntime->workspaceState().snapshot().session().has_value())
+        {
+            static_cast<void>(m_applicationRuntime->workspaceCoordinator().closeWorkspace());
+        }
         m_startupWorkspaceOutcome = startupWorkspaceException();
     }
     const Application::StartupResult workspaceOpenedResult =
@@ -639,6 +643,11 @@ bool ApplicationBootstrap::loadRequiredFonts()
 
 Application::StartupStageOutcome ApplicationBootstrap::openStartupWorkspace()
 {
+    // The application runtime is available to every successful startup, even
+    // when policy selects no workspace. Constructing the store is side-effect
+    // free; only the selected open operation touches a workspace file.
+    ensureWorkspaceComposition();
+
     const std::optional<Application::WorkspaceLocation> commandLineLocation =
         commandLineStartupWorkspaceLocation();
     const bool recentAutoOpenEnabled =
@@ -735,9 +744,8 @@ Application::StartupStageOutcome ApplicationBootstrap::openStartupWorkspace()
         }
     }
 
-    ensureWorkspaceComposition();
     const Domain::Result<Application::WorkspaceSession> opened =
-        m_workspaceCoordinator->openWorkspace(
+        m_applicationRuntime->workspaceCoordinator().openWorkspace(
             Application::OpenWorkspaceRequest{selectedLocation}
             );
     if (!opened)
@@ -745,7 +753,6 @@ Application::StartupStageOutcome ApplicationBootstrap::openStartupWorkspace()
         m_startupWorkspaceOutcome = Application::StartupWorkspaceOpenFailed{
             opened.error()
         };
-        releaseWorkspace();
         return Application::StartupStageOutcome::Warning;
     }
 
@@ -819,7 +826,7 @@ ApplicationBootstrap::commandLineStartupWorkspaceLocation() const
 
 void ApplicationBootstrap::ensureWorkspaceComposition()
 {
-    if (m_workspaceCoordinator)
+    if (m_applicationRuntime)
     {
         return;
     }
@@ -839,30 +846,21 @@ void ApplicationBootstrap::ensureWorkspaceComposition()
         throw std::runtime_error("Startup workspace gateway unavailable.");
     }
 
-    m_workspaceUseCase = std::make_unique<Application::WorkspaceUseCase>(
+    m_applicationRuntime = std::make_unique<Application::ApplicationRuntime>(
         *m_workspaceGateway
-        );
-    m_workspaceCoordinator = std::make_unique<Application::WorkspaceCoordinator>(
-        *m_workspaceUseCase,
-        m_workspaceState,
-        m_workspaceSelectionState
         );
 }
 
 void ApplicationBootstrap::releaseWorkspace() noexcept
 {
-    if (m_workspaceCoordinator
-        && m_workspaceState.snapshot().session().has_value())
+    if (m_applicationRuntime
+        && m_applicationRuntime->workspaceState().snapshot().session().has_value())
     {
-        static_cast<void>(m_workspaceCoordinator->closeWorkspace());
-    }
-    if (m_workspaceState.snapshot().session().has_value())
-    {
-        static_cast<void>(m_workspaceState.close());
+        static_cast<void>(m_applicationRuntime->workspaceCoordinator().closeWorkspace());
     }
 
-    m_workspaceCoordinator.reset();
-    m_workspaceUseCase.reset();
+    // The runtime borrows the gateway, so release it before the gateway owner.
+    m_applicationRuntime.reset();
     m_workspaceGateway.reset();
 }
 
@@ -979,7 +977,9 @@ ApplicationBootstrap::startupWorkspaceOutcome() const noexcept
 Application::WorkspaceStateSnapshot
 ApplicationBootstrap::workspaceStateSnapshot() const
 {
-    return m_workspaceState.snapshot();
+    return m_applicationRuntime
+        ? m_applicationRuntime->workspaceState().snapshot()
+        : Application::WorkspaceStateSnapshot{};
 }
 
 void ApplicationBootstrap::observeStartupResult(
