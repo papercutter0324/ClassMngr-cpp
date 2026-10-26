@@ -7,8 +7,8 @@
 #include "next/resources/resource_descriptor.h"
 #include "next/resources/resource_error.h"
 #include "next/ui/application_shell.h"
-#include "next/ui/initial_page.h"
 #include "next/ui/page_host.h"
+#include "next/ui/placeholder_page.h"
 #include "core/settingsmanager.h"
 #include "data/database/workspace_store.h"
 #include "ui/shared/state/option_state_keys.h"
@@ -26,6 +26,8 @@
 #include <QSqlDatabase>
 #include <QTemporaryDir>
 #include <QTimer>
+#include <QTreeWidget>
+#include <QTreeWidgetItemIterator>
 #include <QWidget>
 #include <QtTest/QtTest>
 
@@ -143,9 +145,11 @@ public:
     {
         ++m_probe->dispatchCalls;
         m_probe->visibleAtDispatch = m_shell && m_shell->isVisible();
-        m_probe->initialPageActiveAtDispatch = m_shell
-            && m_shell->pageHost().activePageKey()
-                == std::optional<QString>(QStringLiteral("initial"));
+        const Ui::NavigationModel* const model = m_shell
+            ? m_shell->navigationModel()
+            : nullptr;
+        m_probe->initialPageActiveAtDispatch = model
+            && model->currentPageId() == model->initialPageId();
 
         if (m_probe->holdCompletionUntilShutdown)
         {
@@ -215,11 +219,11 @@ public:
 
         shellShowObserved = true;
         const Ui::PageHost& host = shell->pageHost();
-        initialPageRegisteredAtShow = host.isPageRegistered(QStringLiteral("initial"));
+        initialPageRegisteredAtShow = host.isPageRegistered(QStringLiteral("campus_information"));
         activePageAtShow = host.activePageKey()
-            == std::optional<QString>(QStringLiteral("initial"));
-        initialPageInstanceAtShow = dynamic_cast<const Ui::InitialPage*>(
-            host.pageInstance(QStringLiteral("initial"))
+            == std::optional<QString>(QStringLiteral("campus_information"));
+        initialPageInstanceAtShow = dynamic_cast<const Ui::PlaceholderPage*>(
+            host.pageInstance(QStringLiteral("campus_information"))
             ) != nullptr;
         return false;
     }
@@ -943,46 +947,122 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     QCOMPARE(shell->windowTitle(), QStringLiteral("ClassMngr Next"));
 
     Ui::PageHost& pageHost = shell->pageHost();
-    QCOMPARE(shell->centralWidget(), static_cast<QWidget*>(&pageHost));
-    QVERIFY(pageHost.isPageRegistered(QStringLiteral("initial")));
-    QVERIFY(pageHost.hasPageInstance(QStringLiteral("initial")));
-    QCOMPARE(pageHost.activePageKey(), std::optional<QString>(QStringLiteral("initial")));
+    QVERIFY(shell->centralWidget() != static_cast<QWidget*>(&pageHost));
+    QVERIFY(pageHost.isPageRegistered(QStringLiteral("campus_information")));
+    QVERIFY(pageHost.hasPageInstance(QStringLiteral("campus_information")));
+    QCOMPARE(pageHost.activePageKey(),
+             std::optional<QString>(QStringLiteral("campus_information")));
+    QVERIFY(shell->navigationModel() != nullptr);
+    QCOMPARE(shell->navigationModel()->initialPageId()->value(),
+             QStringLiteral("campus_information"));
+    QCOMPARE(shell->navigationModel()->selectedPageId()->value(),
+             QStringLiteral("campus_information"));
+    const std::vector<Ui::NavigationNode>& navigationNodes =
+        shell->navigationModel()->nodes();
+    QCOMPARE(navigationNodes.size(), std::size_t(7));
+    QCOMPARE(navigationNodes[0].pageId->value(), QStringLiteral("my_workspace"));
+    QCOMPARE(navigationNodes[1].pageId->value(), QStringLiteral("classes"));
+    QCOMPARE(navigationNodes[2].pageId->value(), QStringLiteral("sub_prep"));
+    QCOMPARE(navigationNodes[3].label, QStringLiteral("Co-Teachers"));
+    QCOMPARE(navigationNodes[4].label, QStringLiteral("Campus Staff"));
+    QCOMPARE(navigationNodes[5].label, QStringLiteral("Useful Links"));
+    QCOMPARE(navigationNodes[6].label, QStringLiteral("Campus Directory"));
+    QCOMPARE(navigationNodes[4].children.size(), std::size_t(3));
+    QCOMPARE(navigationNodes[4].children[0].label, QStringLiteral("Korean Teachers"));
+    QCOMPARE(navigationNodes[4].children[1].pageId->value(),
+             QStringLiteral("native_english_teachers"));
+    QCOMPARE(navigationNodes[4].children[2].pageId->value(), QStringLiteral("gs_team"));
+    QCOMPARE(navigationNodes[6].children.size(), std::size_t(5));
+    QCOMPARE(navigationNodes[6].children[0].pageId->value(),
+             QStringLiteral("campus_information"));
+    QCOMPARE(navigationNodes[6].children[1].pageId->value(),
+             QStringLiteral("campus_directions"));
+    QCOMPARE(navigationNodes[6].children[4].pageId->value(), QStringLiteral("campus_map"));
+    QCOMPARE(navigationNodes[5].children.size(), std::size_t(7));
+    const QStringList usefulLinkLabels{
+        QStringLiteral("Dropbox"),
+        QStringLiteral("Vacation Calendar"),
+        QStringLiteral("Yearly Calendar"),
+        QStringLiteral("Training Website"),
+        QStringLiteral("NET Website"),
+        QStringLiteral("LMS Website"),
+        QStringLiteral("Highlights Library")
+    };
+    for (std::size_t index = 0; index < usefulLinkLabels.size(); ++index)
+    {
+        const Ui::NavigationNode& link = navigationNodes[5].children[index];
+        QCOMPARE(link.kind, Ui::NavigationNode::Kind::Placeholder);
+        QCOMPARE(link.label, usefulLinkLabels[static_cast<qsizetype>(index)]);
+        QVERIFY(!link.pageId.has_value());
+        QVERIFY(link.children.empty());
+    }
 
-    const auto initialPageId = Ui::PageId::fromString(QStringLiteral("initial"));
+    const auto initialPageId = Ui::PageId::fromString(QStringLiteral("campus_information"));
     QVERIFY(initialPageId.has_value());
     const auto initialDescriptor = pageHost.pageDescriptor(*initialPageId);
     QVERIFY(initialDescriptor.has_value());
-    QCOMPARE(initialDescriptor->id.value(), QStringLiteral("initial"));
-    QCOMPARE(initialDescriptor->label, QStringLiteral("Home"));
+    QCOMPARE(initialDescriptor->id.value(), QStringLiteral("campus_information"));
+    QCOMPARE(initialDescriptor->label, QStringLiteral("Information"));
     QVERIFY(!initialDescriptor->iconResourceId.has_value());
     QVERIFY(initialDescriptor->requiredPermissions.isEmpty());
     QVERIFY(initialDescriptor->resourcePolicy == Ui::PageResourcePolicy::PageScoped);
     QVERIFY(initialDescriptor->initialDataPolicy == Ui::PageInitialDataPolicy::None);
+    for (const Ui::PageDescriptor& descriptor : pageHost.pageDescriptors())
+    {
+        QVERIFY(!descriptor.iconResourceId.has_value());
+    }
 
-    auto* const page = dynamic_cast<Ui::InitialPage*>(
-        pageHost.pageInstance(QStringLiteral("initial"))
+    auto* const page = dynamic_cast<Ui::PlaceholderPage*>(
+        pageHost.pageInstance(QStringLiteral("campus_information"))
         );
     QVERIFY(page != nullptr);
     QVERIFY(page->isVisible());
-    QCOMPARE(page->objectName(), QStringLiteral("classMngrNextInitialPage"));
-    QCOMPARE(page->resourceContext().pageKey(), QStringLiteral("initial"));
+    QCOMPARE(page->objectName(), QStringLiteral("classMngrNextPlaceholderPage"));
+    QCOMPARE(page->resourceContext().pageKey(), QStringLiteral("campus_information"));
     QCOMPARE(page->resourceContext().pageScope().kind(), Resources::ResourceScopeKind::Page);
-    QCOMPARE(page->resourceContext().pageScope().ownerLabel(), QStringLiteral("initial"));
+    QCOMPARE(page->resourceContext().pageScope().ownerLabel(),
+             QStringLiteral("campus_information"));
 
     QLabel* const title = page->findChild<QLabel*>(
-        QStringLiteral("classMngrNextInitialPageTitle")
+        QStringLiteral("classMngrNextPlaceholderPageTitle")
         );
     QVERIFY(title != nullptr);
-    QCOMPARE(title->text(), QStringLiteral("ClassMngr Next"));
+    QCOMPARE(title->text(), QStringLiteral("Information"));
 
     QLabel* const description = page->findChild<QLabel*>(
-        QStringLiteral("classMngrNextInitialPageDescription")
+        QStringLiteral("classMngrNextPlaceholderPageDescription")
         );
     QVERIFY(description != nullptr);
     QCOMPARE(
         description->text(),
-        QStringLiteral("The next-generation workspace is under development.")
+        QStringLiteral("This section is being prepared.")
         );
+
+    QTreeWidget* const navigationTree = shell->findChild<QTreeWidget*>(
+        QStringLiteral("classMngrNextNavigationTree")
+        );
+    QVERIFY(navigationTree != nullptr);
+    QTreeWidgetItemIterator navigationItem(navigationTree);
+    std::size_t usefulPlaceholderCount = 0;
+    while (*navigationItem)
+    {
+        const Ui::NavigationNode::Kind kind = static_cast<Ui::NavigationNode::Kind>(
+            (*navigationItem)->data(0, Qt::UserRole).toInt()
+            );
+        if (kind == Ui::NavigationNode::Kind::Page)
+        {
+            QVERIFY((*navigationItem)->icon(0).isNull());
+        }
+        else if (kind == Ui::NavigationNode::Kind::Placeholder)
+        {
+            ++usefulPlaceholderCount;
+            QVERIFY(usefulLinkLabels.contains((*navigationItem)->text(0)));
+            QVERIFY((*navigationItem)->data(0, Qt::UserRole + 1).toString().isEmpty());
+            QVERIFY((*navigationItem)->icon(0).isNull());
+        }
+        ++navigationItem;
+    }
+    QCOMPARE(usefulPlaceholderCount, std::size_t(7));
 
     application.setStyleSheet(previousStyleSheet);
 }
@@ -1045,11 +1125,11 @@ startupUpdateCheckWaitsForVisibleInitialPageAndLivesUntilShutdown()
     QVERIFY(shell->isVisible());
     QCOMPARE(
         shell->pageHost().activePageKey(),
-        std::optional<QString>(QStringLiteral("initial"))
+        std::optional<QString>(QStringLiteral("campus_information"))
         );
 
     // StartupReady has queued the callback, but it must not run inside start().
-    // The first event-loop turn sees the visible shell and active initial page.
+    // The first event-loop turn sees the visible shell and selected default page.
     QCOMPARE(probe->factoryCalls, 0);
     QCOMPARE(probe->dispatchCalls, 0);
     QCoreApplication::processEvents();
@@ -2564,8 +2644,12 @@ shutdownRetriesSettingsAndWorkspaceFailuresBeforeReleasingOwners()
     QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
     shell = bootstrap.shell();
     QVERIFY(shell);
+    QCOMPARE(shell->navigationModel()->initialPageId()->value(),
+             QStringLiteral("my_workspace"));
+    QCOMPARE(shell->navigationModel()->currentPageId()->value(),
+             QStringLiteral("my_workspace"));
     QPointer<Ui::Page> initialPage =
-        shell->pageHost().pageInstance(QStringLiteral("initial"));
+        shell->pageHost().pageInstance(QStringLiteral("my_workspace"));
     QVERIFY(initialPage);
     QCoreApplication::processEvents();
     QCOMPARE(updateProbe->dispatchCalls, 1);

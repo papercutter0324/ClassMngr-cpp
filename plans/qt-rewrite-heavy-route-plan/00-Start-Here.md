@@ -7,9 +7,10 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-26
 - Current milestone: Phase 6 — Shared UI Rewrite — is In progress on the
-  mandatory Heavy route. F1514 and F1515 are accepted: Next page registration
-  is descriptor-based and lazy, and `PageHost` exposes explicit lifecycle
-  state. F1516 — NavigationModel and placeholder navigation — is next. Phase 5 — Startup and
+  mandatory Heavy route. F1514–F1516 are accepted: Next page registration is
+  descriptor-based and lazy, `PageHost` exposes explicit lifecycle state, and
+  `NavigationModel` drives guarded placeholder navigation with history. F1517
+  — CommandBus — is next. Phase 5 — Startup and
   Bootstrap Rewrite — completed at implementation head
   `6bbff54abc524723e23911d65130b1b198dde2b3`; its startup, data-policy,
   deferred-update, shutdown, and splash-removal criteria passed. Focused macOS

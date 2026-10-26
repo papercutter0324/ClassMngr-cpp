@@ -38,10 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 6 is active on the Heavy route. F1514 and F1515 are
-  accepted; F1516 — NavigationModel and placeholder navigation — is next.
-  Batch 1's ordered candidates are in the shared slice-batch tracker. The existing Staff Directory
-  model/view and bounded-widget test are the planned representative-table gate
+- Current note: Phase 6 is active on the Heavy route. F1514–F1516 are accepted;
+  F1517 — CommandBus — is next. Batch 1's ordered candidates are in the shared
+  slice-batch tracker. The existing Staff Directory model/view and
+  bounded-widget test are the planned representative-table gate
   evidence; its full feature migration remains in Phase 7C.
 
 ### Slice batches
@@ -87,6 +87,28 @@ destroys the host before the probes and explicitly releases the final page.
 The incremental macOS Debug build passed; both focused CTests passed 2/2, the
 PageHost CTest passed ten consecutive Executor runs and one independent run,
 and `git diff --check` passed. No full suite or cross-platform build ran.
+
+### F1516 — complete — 2026-10-26
+
+`NavigationModel` now uses ordered group and page nodes; page leaves reference
+`PageId` and obtain labels, icons, and permission requirements from
+`PageDescriptor`. Workspace visibility and explicit permission grants are
+separate. The initial placeholder route is `campus_information` with a closed
+workspace and `my_workspace` with an open workspace. The shell commits location,
+selection, and page-ID history only after guard approval and successful
+`PageHost` activation. Back/forward, branch truncation, rejected navigation,
+and activation-failure rollback are covered.
+
+The shell loads a descriptor-supplied icon through `ResourceLoader`; current
+legacy routes remain icon-free because the existing sidebar defines no node
+icons. Useful Links retains its seven static labels as inert placeholders; URL
+actions, dynamic document nodes, dynamic teacher rows, and feature loading are
+deferred to later migration slices. Missing icon resources currently render no
+icon; this failure path was reviewed but not separately induced in a test.
+
+The incremental macOS Debug build covered the navigation, PageHost, and
+bootstrap targets. Focused CTest passed 3/3, and `git diff --check` passed.
+No full suite or cross-platform build ran.
 
 ## Objective
 

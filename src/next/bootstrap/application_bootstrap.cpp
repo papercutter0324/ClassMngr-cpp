@@ -12,10 +12,11 @@
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/application_shell.h"
-#include "next/ui/initial_page.h"
 #include "next/ui/page_host.h"
+#include "next/ui/placeholder_page.h"
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QDebug>
 #include <QFileInfo>
 #include <QLocale>
@@ -120,6 +121,147 @@ namespace
             .message = "Startup workspace composition failed.",
             .recoverable = false
         }
+    };
+}
+
+[[nodiscard]] QString navigationLabel(const char* sourceText)
+{
+    return QCoreApplication::translate("NextNavigation", sourceText);
+}
+
+[[nodiscard]] Ui::PageId pageId(const QString& value)
+{
+    return *Ui::PageId::fromString(value);
+}
+
+[[nodiscard]] Ui::PageDescriptor placeholderDescriptor(
+    const QString& id,
+    const QString& label
+    )
+{
+    return Ui::PageDescriptor{
+        .id = pageId(id),
+        .label = label,
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = [label](const Ui::PageContext& context)
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            std::unique_ptr<Ui::Page> page =
+                std::make_unique<Ui::PlaceholderPage>(context, label);
+            return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                std::move(page)
+            };
+        },
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
+    };
+}
+
+[[nodiscard]] std::vector<Ui::PageDescriptor> placeholderPageDescriptors()
+{
+    return {
+        placeholderDescriptor(
+            QStringLiteral("my_workspace"), navigationLabel("My Workspace")
+            ),
+        placeholderDescriptor(QStringLiteral("classes"), navigationLabel("Classes")),
+        placeholderDescriptor(QStringLiteral("sub_prep"), navigationLabel("Sub Prep")),
+        placeholderDescriptor(
+            QStringLiteral("native_english_teachers"),
+            navigationLabel("Native English Teachers")
+            ),
+        placeholderDescriptor(QStringLiteral("gs_team"), navigationLabel("GS Team")),
+        placeholderDescriptor(
+            QStringLiteral("campus_information"), navigationLabel("Information")
+            ),
+        placeholderDescriptor(
+            QStringLiteral("campus_directions"), navigationLabel("Directions")
+            ),
+        placeholderDescriptor(QStringLiteral("campus_address"), navigationLabel("Address")),
+        placeholderDescriptor(QStringLiteral("campus_housing"), navigationLabel("Housing")),
+        placeholderDescriptor(QStringLiteral("campus_map"), navigationLabel("Maps"))
+    };
+}
+
+[[nodiscard]] std::vector<Ui::NavigationNode> placeholderNavigationTree()
+{
+    using Ui::NavigationNode;
+    using Ui::NavigationWorkspaceAvailability;
+    constexpr auto workspace = NavigationWorkspaceAvailability::WorkspaceOpen;
+
+    return {
+        NavigationNode::page(pageId(QStringLiteral("my_workspace")), workspace),
+        NavigationNode::page(pageId(QStringLiteral("classes")), workspace),
+        NavigationNode::page(pageId(QStringLiteral("sub_prep")), workspace),
+        NavigationNode::group(
+            QStringLiteral("co_teachers"),
+            navigationLabel("Co-Teachers"),
+            {},
+            workspace,
+            true
+            ),
+        NavigationNode::group(
+            QStringLiteral("campus_staff"),
+            navigationLabel("Campus Staff"),
+            {
+                NavigationNode::group(
+                    QStringLiteral("teachers_all_korean"),
+                    navigationLabel("Korean Teachers"),
+                    {},
+                    workspace,
+                    true
+                    ),
+                NavigationNode::page(
+                    pageId(QStringLiteral("native_english_teachers")),
+                    workspace
+                    ),
+                NavigationNode::page(pageId(QStringLiteral("gs_team")), workspace)
+            },
+            workspace
+            ),
+        NavigationNode::group(
+            QStringLiteral("useful_links"),
+            navigationLabel("Useful Links"),
+            {
+                NavigationNode::placeholder(
+                    QStringLiteral("useful_dropbox"), navigationLabel("Dropbox")
+                    ),
+                NavigationNode::placeholder(
+                    QStringLiteral("useful_vacation_calendar"),
+                    navigationLabel("Vacation Calendar")
+                    ),
+                NavigationNode::placeholder(
+                    QStringLiteral("useful_yearly_calendar"),
+                    navigationLabel("Yearly Calendar")
+                    ),
+                NavigationNode::placeholder(
+                    QStringLiteral("useful_training_website"),
+                    navigationLabel("Training Website")
+                    ),
+                NavigationNode::placeholder(
+                    QStringLiteral("useful_net_website"), navigationLabel("NET Website")
+                    ),
+                NavigationNode::placeholder(
+                    QStringLiteral("useful_lms_website"), navigationLabel("LMS Website")
+                    ),
+                NavigationNode::placeholder(
+                    QStringLiteral("useful_highlights_library"),
+                    navigationLabel("Highlights Library")
+                    )
+            },
+            NavigationWorkspaceAvailability::Always,
+            false
+            ),
+        NavigationNode::group(
+            QStringLiteral("campus_info"),
+            navigationLabel("Campus Directory"),
+            {
+                NavigationNode::page(pageId(QStringLiteral("campus_information"))),
+                NavigationNode::page(pageId(QStringLiteral("campus_directions"))),
+                NavigationNode::page(pageId(QStringLiteral("campus_address"))),
+                NavigationNode::page(pageId(QStringLiteral("campus_housing"))),
+                NavigationNode::page(pageId(QStringLiteral("campus_map")))
+            }
+            )
     };
 }
 
@@ -514,40 +656,42 @@ Application::StartupResult ApplicationBootstrap::start()
     QString initialPageFailure;
     try
     {
-        const Ui::PageHostResult<void> registration =
-            m_shell->pageHost().registerPage(
-                Ui::PageDescriptor{
-                    .id = *Ui::PageId::fromString(QStringLiteral("initial")),
-                    .label = QStringLiteral("Home"),
-                    .iconResourceId = std::nullopt,
-                    .requiredPermissions = {},
-                    .factory = [](const Ui::PageContext& context)
-                        -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
-                        std::unique_ptr<Ui::Page> page =
-                            std::make_unique<Ui::InitialPage>(context);
-                        return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
-                            std::move(page)
-                        };
-                    },
-                    .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
-                    .initialDataPolicy = Ui::PageInitialDataPolicy::None
-                }
-                );
-        if (!registration)
+        for (Ui::PageDescriptor& descriptor : placeholderPageDescriptors())
         {
-            initialPageFailure = registration.error().message;
-        }
-        else
-        {
-            const Ui::PageHostResult<void> activation =
-                m_shell->pageHost().activatePage(QStringLiteral("initial"));
-            if (activation)
+            const Ui::PageHostResult<void> registration =
+                m_shell->pageHost().registerPage(std::move(descriptor));
+            if (!registration)
             {
-                initialPageActivated = true;
+                initialPageFailure = registration.error().message;
+                break;
+            }
+        }
+
+        if (initialPageFailure.isEmpty())
+        {
+            const auto navigationConfiguration = m_shell->configureNavigation(
+                placeholderNavigationTree(),
+                pageId(QStringLiteral("campus_information")),
+                pageId(QStringLiteral("my_workspace")),
+                m_applicationRuntime->workspaceState().snapshot().lifecycle()
+                );
+            if (!navigationConfiguration)
+            {
+                initialPageFailure = navigationConfiguration.error().message;
             }
             else
             {
-                initialPageFailure = activation.error().message;
+                const std::optional<Ui::PageId> initialPage =
+                    m_shell->navigationModel()->initialPageId();
+                if (!initialPage
+                    || !m_shell->navigateTo(*initialPage, Ui::NavigationCause::Initial))
+                {
+                    initialPageFailure = QStringLiteral("initial navigation failed");
+                }
+                else
+                {
+                    initialPageActivated = true;
+                }
             }
         }
     }
@@ -1088,9 +1232,14 @@ void ApplicationBootstrap::tryDispatchStartupUpdateCheck()
 
     const std::optional<QString> activePageKey =
         m_shell->pageHost().activePageKey();
+    const Ui::NavigationModel* const navigationModel =
+        m_shell->navigationModel();
     if (!m_shell->isVisible()
+        || !navigationModel
+        || !navigationModel->initialPageId()
         || !activePageKey.has_value()
-        || *activePageKey != QStringLiteral("initial"))
+        || *activePageKey
+            != navigationModel->initialPageId()->value())
     {
         return;
     }

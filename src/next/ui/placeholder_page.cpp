@@ -1,0 +1,46 @@
+#include "next/ui/placeholder_page.h"
+
+#include <QFont>
+#include <QLabel>
+#include <QVBoxLayout>
+
+#include <utility>
+
+namespace ClassMngr::Next::Ui
+{
+
+PlaceholderPage::PlaceholderPage(
+    const PageContext& context,
+    QString label,
+    QWidget* parent
+    )
+    : Page(context, parent)
+{
+    setObjectName(QStringLiteral("classMngrNextPlaceholderPage"));
+
+    auto* const title = new QLabel(std::move(label), this);
+    title->setObjectName(QStringLiteral("classMngrNextPlaceholderPageTitle"));
+    QFont titleFont = title->font();
+    titleFont.setPointSize(titleFont.pointSize() + 5);
+    titleFont.setWeight(QFont::DemiBold);
+    title->setFont(titleFont);
+
+    auto* const description = new QLabel(
+        tr("This section is being prepared."),
+        this
+        );
+    description->setObjectName(
+        QStringLiteral("classMngrNextPlaceholderPageDescription")
+        );
+    description->setWordWrap(true);
+
+    auto* const layout = new QVBoxLayout(this);
+    layout->setContentsMargins(40, 36, 40, 36);
+    layout->addStretch(1);
+    layout->addWidget(title, 0, Qt::AlignHCenter);
+    layout->addSpacing(10);
+    layout->addWidget(description, 0, Qt::AlignHCenter);
+    layout->addStretch(1);
+}
+
+}  // namespace ClassMngr::Next::Ui

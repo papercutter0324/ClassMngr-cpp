@@ -665,10 +665,14 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/application_shell.h"
     "src/next/ui/initial_page.cpp"
     "src/next/ui/initial_page.h"
+    "src/next/ui/navigation_model.cpp"
+    "src/next/ui/navigation_model.h"
     "src/next/ui/page.h"
     "src/next/ui/page_descriptor.h"
     "src/next/ui/page_host.cpp"
     "src/next/ui/page_host.h"
+    "src/next/ui/placeholder_page.cpp"
+    "src/next/ui/placeholder_page.h"
 )
 
 set(CLASSMNGR_NEXT_STARTUP_UPDATE_SOURCES

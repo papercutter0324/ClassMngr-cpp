@@ -98,6 +98,54 @@ set_tests_properties(ClassMngrNextPageHostTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
+# Exercise value-only Next navigation policy and its transactional shell
+# integration independently from startup composition.
+add_executable(ClassMngrNextNavigationTests
+    tests/next/navigation_model_tests.cpp
+    src/next/ui/application_shell.cpp
+    src/next/ui/navigation_model.cpp
+    src/next/ui/page_host.cpp
+)
+target_compile_features(ClassMngrNextNavigationTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextNavigationTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextNavigationTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrNextNavigationTests
+    PRIVATE
+        ClassMngrNext::Resources
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextNavigationTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextNavigationTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextNavigationTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextNavigationTests
+    COMMAND ClassMngrNextNavigationTests
+)
+set_tests_properties(ClassMngrNextNavigationTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
 # Keep application-runtime ownership and workspace coordination Qt-free.
 add_executable(ClassMngrNextApplicationRuntimeTests
     tests/next/application_runtime_tests.cpp

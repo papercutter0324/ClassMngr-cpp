@@ -5,7 +5,7 @@ Phase 5 completed on the mandatory Heavy route at implementation head
 
 ## Phase 6 — Batch 1 (active)
 
-F1514 and F1515 are complete. F1516 is current. Continue in order, commit each
+F1514–F1516 are complete. F1517 is current. Continue in order, commit each
 accepted slice, then push the batch. Start Batch 2 discovery when F1526 starts
 because it is the second-to-last candidate.
 
@@ -14,13 +14,23 @@ because it is the second-to-last candidate.
    remains construction-free.
 2. **F1515 — Explicit lifecycle state (complete):** declared, created, activated,
    suspended, and released states with correct cleanup and recreation.
-3. **F1516 — Navigation model (current):** current location, hierarchy, history,
+3. **F1516 — Navigation model (complete):** current location, hierarchy, history,
    selection, permission filtering, initial page, and placeholder shell
-   navigation. Legacy sidebar visibility depends on workspace-open state, not
+   navigation. Keep the ordered group/page tree separate from `PageDescriptor`;
+   page nodes reference descriptor IDs, so labels, icons, and requirements have
+   one source. Model workspace availability separately from explicit permission
+   grants; do not infer permissions from the legacy admin flag. Use workspace
+   state for visibility and the initial route (`campus_information` when closed,
+   `my_workspace` when open). Add page-ID history and a value-only navigation
+   guard; commit location, selection, and history only after successful
+   activation. Legacy sidebar visibility depends on workspace-open state, not
    admin roles; it has no general back/forward history, and its unsaved-change
-   guards are route-specific. Preserve conditional initial selection and
-   sidebar rollback without migrating feature-page loading.
-4. **F1517 — Command bus:** typed command dispatch and results.
+   guards are route-specific. Preserve rollback without migrating feature-page
+   loading. The legacy sidebar assigns no node icons, so keep them absent unless
+   a descriptor supplies a resource ID. Defer dynamic document nodes, teacher
+   rows/IDs, external URL actions, and feature data/loading to their migration
+   slices.
+4. **F1517 — Command bus (current):** typed command dispatch and results.
 5. **F1518 — Action presentation:** derive enabled state from application state
    and permissions.
 6. **F1519 — Semantic prompt service:** message/choice/unsaved-change/named-
