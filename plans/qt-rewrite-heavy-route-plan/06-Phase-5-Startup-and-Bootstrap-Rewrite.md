@@ -32,13 +32,26 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: In progress
+- Status: Complete
 - Default route: Heavy
 - Depends on: Phases 2, 3, and 4
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
 - Last updated: 2026-10-26
-- Current note: Phase 5 is active on the Heavy route. F1501–F1512 are complete; F1513 is locally verified and ready to commit, with the Windows x64 workflow pending the authorized batch push. The eight-target incremental macOS Debug build passed; focused CTest passed 5/5, Next startup dependency boundary 1/1, and all eight direct startup/workflow selectors passed without skips. The generated legacy manifest and resource trace contain no splash pack; the Next catalog has no splash resource. The Phase 4 audit PNG and translation sources remain unchanged. F1513 removes splash UI, progress callback, lease, minimum duration, resource path, splash pack registration, and splash-only eager pack initialization. Preserve legacy feature-owned pack acquisitions under Phase 4's compatibility allowance; the pack-free startup gate applies to `ClassMngrNext`. F1512 isolates Sub Prep, Schedule Import, and Calendar Import dialog automation behind Qt presentation/test adapters with value-only results; its independent build and focused checks passed. `ApplicationBootstrap` and `StartupCoordinator` do not scan top-level widgets to discover or activate prompts; workflow sequencing remains explicit and post-startup. UI presenter inputs such as `QWidget* parent` stay at the UI boundary and never enter `ApplicationRuntime` or domain contracts. Preserve Next's recognized value-bearing performance options and ordinary positional workspace selection. Batch 2 discovery found no further slices beyond F1513. F1511's retryable shutdown and F1510's deferred app-update behavior remain accepted; resource updates remain absent from startup.
+- Current note: Phase 5 completed on the Heavy route at implementation head
+  `6bbff54abc524723e23911d65130b1b198dde2b3`. The documented startup,
+  metadata-only data policy, deferred update, shutdown, splash-removal, and
+  dialog-automation exit criteria passed. macOS Debug verification included
+  the eight-target incremental build, focused CTest 5/5, startup dependency
+  boundary 1/1, resource-pack QtTest 12/12, and eight direct selectors without
+  skips. Windows x64/ARM64 Release builds and the packaged startup smoke passed;
+  the Phase 4 resource-install matrix passed on macOS, Windows x64, and Linux.
+  Linux and Windows Debug full CTest had 11 and 14 failures/timeouts. Linux
+  startup performance passed; the Windows target timed out at 120 seconds after
+  emitting metrics. A failing Windows DocumentCatalog source assertion expects
+  a member renamed in Phase 4 commit `34926f4b`; independent review confirmed it
+  is a stale assertion in legacy navigation source, not the Next startup path.
+  See the Phase 5 exit-gate record below and the three linked Actions runs.
 
 ### Slice batches
 
@@ -276,6 +289,47 @@ settings-write error. If a caller forcibly destroys `ApplicationBootstrap`
 after a failed workspace close, its owned runtime cannot outlive the bootstrap
 for another retry; the normal shell-close path prevents that by keeping the
 bootstrap alive and vetoing close.
+### Phase 5 exit gate — complete — 2026-10-26
+
+F1501–F1513 are complete at implementation head
+`6bbff54abc524723e23911d65130b1b198dde2b3`, pushed on `Qt-Rewrite`. The
+explicit behavior gate passed: `ClassMngrNext` has no splash/progress path,
+resource-pack initialization, PDF body load, rendered page, or active viewer at
+startup; the initial page is usable with the selected language and theme, and
+startup allocation is attributed to named stages. Prompt automation remains
+isolated at the Qt presentation/test boundary. Legacy startup has no splash or
+splash-specific eager pack initialization and retains only permitted lazy
+feature-owned packs. The tracked splash PNG remains a Phase 4 audit input.
+
+Independent macOS Debug verification passed the eight-target incremental
+build, focused CTest 5/5, startup dependency boundary 1/1, resource-pack
+QtTest 12/12, and eight direct startup/workflow selectors without skips.
+Windows x64 and ARM64 Release builds passed; the packaged x64 smoke asserted one
+`startup-complete`, ordered `startup-page-loaded < window-shown < startup-complete`,
+and absence of splash, resource-system, and progress fields.
+The Phase 4 resource-install matrix passed on macOS, Windows x64, and Linux x64.
+See [Refactoring baseline run 40301659920](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40301659920),
+[Windows Release run 40301659949](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40301659949),
+and [Phase 4 resource-install run 40301659977](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40301659977).
+
+The Linux and Windows full Debug CTest suites did not pass: Linux recorded 11
+and Windows 14 failures/timeouts. Linux `ClassMngrStartupPerformanceTests`
+passed in 40.67 seconds; the Windows target timed out at 120 seconds after
+emitting startup metrics. The Windows suite had zero `0xc0000135` loader
+failures after the CTest Qt DLL PATH fix. The Windows
+`ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests` failure is
+a stale source assertion at
+`tests/next_platform_application_services_document_catalog_port_tests.cpp:235`:
+it expects `m_documentContentResourcePort`, while Phase 4 commit `34926f4b`
+renamed the retained legacy navigation adapter to
+`m_legacyDocumentContentResourcePort`. Independent review found this test checks
+the legacy navigation source path, not Next startup. These full-suite results
+remain limitations and are not reported as passes; the documented Phase 5 gate
+is behavior-based and does not require a full-suite pass.
+
+Batch 1 is complete; Batch 2 discovery found no other slices. Phase 6 is the
+next planned phase. Visual parity remains a Phase 7/10 gate and legacy pack
+removal remains a Phase 12 gate.
 
 ## Objective
 

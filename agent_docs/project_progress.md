@@ -1,67 +1,37 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 5 — Startup and Bootstrap Rewrite.
-Current deployment: `phase5-startup-20261025`. Route: Heavy.
-Phase 4 is Complete at `277de9057168e67dc0b9ebc2e39719acc204a60f`; Actions run
-[40224983452](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40224983452)
-passed on macOS, Windows x64, and Linux x64. Phase 5 is In progress. F1501 is
-complete: `ClassMngrNext` enters through `ApplicationBootstrap`, shows its
-minimal shell/page, and coordinates shutdown without invoking legacy
-`MainWindow`. Independent macOS Debug CTest passed 3/3. F1502 is complete:
-the ten-stage model and factual startup observer passed three focused CTests.
-F1503 is complete: the bootstrap-owned Qt diagnostics sink and core-stage
-failure path passed the three focused CTests. F1504 is complete: app-relative
-metadata catalog, lazy loader, and Startup scope passed six focused CTests.
-F1505 is complete: startup reads the compatible preferences, applies one
-selected catalog translation and theme, and retains the two required fonts
-before the shell. Independent macOS Debug verification passed 22 bootstrap
-QtTest cases and focused CTests 3/3 plus 2/2. F1506 is complete: startup
-preserves legacy workspace selection through one Next-owned store, with typed
-no-workspace/open-error warnings and retained sessions. Independent macOS
-Debug verification passed six focused QtTest cases (8/8 including setup and
-cleanup) and the bootstrap/dependency CTests 2/2. F1507 is complete: the
-Qt-free `ApplicationRuntime` owns the workspace application state and use
-cases, including on no-workspace startup. Independent macOS Debug verification
-passed runtime/bootstrap/dependency CTests 3/3; the runtime target links
-without Qt libraries. F1508 is complete: a lazy factory PageHost now owns
-initial-page creation and suspend/release lifecycle with explicit resource
-scopes. Independent incremental macOS Debug verification passed PageHost
-QtTest 4/4, bootstrap QtTest 30/30, and focused CTest 2/2. F1509 is complete:
-startup retains localized catalog metadata and records `StartupReady` only
-after the initial page is active, with no PDF body or QtPdf viewer. Independent
-macOS Debug verification passed bootstrap QtTest 32/32 and six focused CTests
-6/6. F1510 is complete: app-update creation and dispatch wait until the first
-queued event-loop callback after `StartupReady`; resource-update startup calls
-remain absent. The final bootstrap test passed 3/3, focused CTest passed 8/8,
-and the updater/controller loopback suites passed 2/2. F1511 is complete:
-settings flush and deferred-update cancellation precede workspace close;
-failures preserve retry while the bootstrap remains alive, and successful
-shutdown releases the page/resources before quitting. Independent incremental
-macOS Debug builds passed for `ClassMngr`, `ClassMngrNext`, and the affected
-bootstrap/updater tests. Focused bootstrap CTest passed 1/1, the updater CTest
-passed 1/1 using local loopback after sandbox retry, and `git diff --check`
-passed. F1512 is complete: Sub Prep, Schedule Import, and Calendar Import
-dialog automation runs through Qt presentation/test adapters with value-only
-results. The six-target incremental macOS Debug build passed, focused CTest
-passed 4/4, and all direct workflow, CLI, semantic prompt, Sub Prep, Schedule
-Import, and Calendar Import selectors passed without skips. Schedule Import
-assertions remain at 5 users and 96 class candidates. F1513 is ready to commit
-after targeted macOS verification; the Windows x64 workflow is pending the
-authorized batch push. Its removal has no splash pack in the generated legacy
-manifest or Next catalog; the Phase 4 audit source and legacy feature-owned
-pack leases remain.
-Remaining Phase 5 work and its
-acceptance order are in the [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
-and [active batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
+Current deployment: `phase5_startup_bootstrap_rewrite_20261026`. Route: Heavy.
+Phases 0–4 are Complete. Phase 5 passed its documented exit gate at
+implementation head `6bbff54abc524723e23911d65130b1b198dde2b3`; F1501–F1513
+are complete. `ClassMngrNext` now has an explicit staged bootstrap, named
+diagnostics, bounded resource/data loading, preference/localization/theme/font
+setup, workspace/runtime composition, lazy initial-page hosting, deferred app
+updates, coordinated shutdown, and splash-free startup. Dialog automation for
+Sub Prep, Schedule Import, and Calendar Import is isolated behind value-only
+Qt presentation/test adapters. Legacy startup has no splash surface or
+splash-specific eager pack initialization; feature-owned legacy packs remain
+under Phase 4's compatibility allowance.
 
-The portability fixes are retained: `.gitattributes` preserves exact bytes for
-packaged resources and Calendar QML, the feature-layer 64-bit issue value is
-explicitly stored as `qlonglong`, and the Windows path test creates a genuine
-file symlink. Legacy RCC inputs remain the compatibility oracle through
-Phase 12; user-visible rendering parity remains a Phase 7/10 gate. Evidence is
-in the [Phase 4 plan](../plans/qt-rewrite-heavy-route-plan/05-Phase-4-Resource-Loader-and-Packaging.md),
-[progress log](../plans/qt-rewrite-heavy-route-plan/05-Phase-4-Progress-Log.md),
-and [batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
+Phase-specific evidence includes the eight-target incremental macOS Debug
+build, focused CTest 5/5, startup dependency boundary 1/1, resource-pack
+QtTest 12/12, and eight direct startup/workflow selectors without skips. The
+Windows packaged Release smoke passed its ordered startup checkpoint and
+forbidden-field assertions; Windows x64 and ARM64 Release builds passed. The
+Phase 4 resource-install matrix also passed on macOS, Windows x64, and Linux
+x64. Actions runs [40301659949](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40301659949)
+and [40301659977](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40301659977)
+passed their respective workflows.
+
+The full Debug CTest suites did not pass: Linux reported 11 broad failures or
+timeouts and Windows reported 14. Linux `ClassMngrStartupPerformanceTests`
+passed; the Windows target timed out at 120 seconds after emitting startup
+metrics. The Windows run had zero `0xc0000135` loader failures after the CTest
+Qt DLL path fix. Its failing DocumentCatalog source test expects a legacy
+member name removed by Phase 4 commit `34926f4b`; independent review found the
+assertion stale and outside Next startup. These broad-suite results remain
+visible in [run 40301659920](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40301659920)
+and are not reported as passing suites.
 
 ## Goal
 
@@ -73,11 +43,10 @@ resource and document lifecycle contracts.
 
 ## Overall Progress
 
-Phases 0–4 are Complete. Phase 5 is In progress on the Heavy route. F1501–F1512
-are complete with focused independent verification; F1513 has passed targeted
-macOS checks and awaits its Windows x64 workflow result. Phase 5 is
-not complete until the startup, data policy, update, shutdown,
-splash-removal, and workflow-isolation exit gates pass.
+Phases 0–5 are Complete. Phase 5's documented startup, data policy, update,
+shutdown, splash-removal, and workflow-isolation exit gate passed. The full
+Linux and Windows Debug CTest suites remain incomplete as recorded above; the
+exit gate did not require a full-suite pass.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained
@@ -118,20 +87,23 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-25 (Phase 5 started)
+### Current checkpoint — 2026-10-26 (Phase 5 complete)
 
-The required native resource-install gates passed on the F1500 retry head.
-macOS, Windows x64, and Linux x64 all passed their staged-root probe and
-193-file resource audit. The macOS layout tests passed 3/3; Windows and Linux
-each passed all 8 CTests, including the Windows real-symlink containment
-check. Actions run 40224983452 completed successfully at
-`277de9057168e67dc0b9ebc2e39719acc204a60f` on `Qt-Rewrite`.
+Phase 5 completed at implementation head
+`6bbff54abc524723e23911d65130b1b198dde2b3` on `Qt-Rewrite`. The phase-specific
+macOS checks, Windows packaged startup smoke, Windows x64/ARM64 Release builds,
+and Phase 4 resource-install matrix passed. The required behavior is covered:
+no splash/progress startup path, a usable localized/theme-correct initial page,
+stage-attributed startup, metadata-only catalog readiness, isolated prompt
+automation, deferred application updates, and coordinated shutdown.
 
-Phase 4 is accepted Complete under its documented native gate. F1501 now
-provides the actual `ClassMngrNext` shell path through the sole production
-bootstrap; remaining stages will be added by following slices. Rendering
-parity remains scheduled for Phases 7/10, and legacy RCC removal remains
-scheduled for Phase 12.
+The full Linux and Windows Debug CTest suites have recorded failures and
+timeouts; see the current deployment summary above and run 40301659920. The
+Windows performance target emitted metrics before timing out, and a separate
+legacy DocumentCatalog source assertion is stale after the Phase 4 port rename.
+Those results are not a full-suite pass. Phase 6 is next; visual parity remains
+scheduled for Phases 7/10, and legacy resource-pack removal remains scheduled
+for Phase 12.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

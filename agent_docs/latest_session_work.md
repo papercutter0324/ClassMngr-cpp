@@ -1,28 +1,45 @@
 # Latest Session Work
 
-## Current Deployment Handoff — classmngr-phase4-respack-20261025 (complete)
+## Current Deployment Handoff — phase5_startup_bootstrap_rewrite_20261026 (complete)
 
-- Heavy route; branch `Qt-Rewrite`. Phase 4 is Complete. The F1500 retry
-  documentation slice was pushed at
-  `277de9057168e67dc0b9ebc2e39719acc204a60f`. Actions run
+- Heavy route; branch `Qt-Rewrite`. Phase 5 passed its documented exit gate
+  at implementation head `6bbff54abc524723e23911d65130b1b198dde2b3`.
+  F1501–F1513 are complete and pushed. Phase 6 is next.
+- macOS Debug: eight-target incremental build passed; focused CTest 5/5,
+  startup dependency boundary 1/1, resource-pack QtTest 12/12, and eight direct
+  startup/workflow selectors passed without skips. The Next catalog and legacy
+  manifest contain no splash pack; the tracked PNG remains Phase 4 audit input.
+- Windows Release x64/ARM64 passed. The packaged x64 startup smoke checked one
+  completion event, ordered page/window/completion checkpoints, and no splash,
+  resource-system, or progress fields. The Phase 4 resource-install matrix
+  passed on macOS, Windows x64, and Linux x64. See Actions runs
+  [40301659949](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40301659949)
+  and [40301659977](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40301659977).
+- The Linux and Windows Debug full CTest suites did not pass: 11 and 14 broad
+  failures/timeouts, respectively. Linux `ClassMngrStartupPerformanceTests`
+  passed in 40.67 seconds; the Windows target timed out at 120 seconds after
+  emitting startup metrics. Windows had zero `0xc0000135` failures after the
+  CTest Qt DLL path fix. One separate Next DocumentCatalog source test expects
+  a legacy member renamed in Phase 4 commit `34926f4b`; independent review
+  found it stale and outside startup. These results are not described as a
+  full-suite pass. See [run 40301659920](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40301659920).
+- Durable phase evidence is in the [Phase 5 plan](../plans/qt-rewrite-heavy-route-plan/06-Phase-5-Startup-and-Bootstrap-Rewrite.md),
+  [Start Here](../plans/qt-rewrite-heavy-route-plan/00-Start-Here.md), and
+  [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
+
+## Historical Deployment Handoff — classmngr-phase4-respack-20261025 (complete)
+
+- Phase 4 completed at `277de9057168e67dc0b9ebc2e39719acc204a60f`; run
   [40224983452](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40224983452)
-  passed on macOS, Windows x64, and Linux x64 at that exact head.
+  passed on macOS, Windows x64, and Linux x64.
 - Each platform passed the 193-file staged resource audit (187 SHA-256 checks,
   five QM files, two QML keys) and resolved its expected install root. macOS
-  CTest passed 3/3; Windows and Linux each passed 8/8. The Windows loader test
-  created a real symlink, verified its canonical target escapes the package
-  root, and confirmed `UnsafePath` with no skip path.
-- Portability fixes: packaged source files and Calendar QML are protected from
-  text conversion; the feature-layer 64-bit QVariant value is explicitly
-  `qlonglong`; and the Windows containment fixture uses
-  `CreateSymbolicLinkW`. Legacy RCC paths remain the compatibility oracle
-  through Phase 12. User-visible rendering parity remains a Phase 7/10 gate.
-- Durable evidence is in the [Phase 4 plan](../plans/qt-rewrite-heavy-route-plan/05-Phase-4-Resource-Loader-and-Packaging.md),
-  [progress log](../plans/qt-rewrite-heavy-route-plan/05-Phase-4-Progress-Log.md),
-  [resource inventory](../docs/qt-rewrite/phase-4-resource-inventory.md), and
-  [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
-  Phase 5 startup/bootstrap is the next planned phase.
-
+  layout tests passed 3/3; Windows and Linux each passed 8/8, including the
+  Windows real-symlink containment check.
+- Portability fixes protect packaged resource bytes and Calendar QML from text
+  conversion, explicitly box the 64-bit QVariant value as `qlonglong`, and use
+  `CreateSymbolicLinkW` for Windows containment fixtures. Rendering parity
+  remains a Phase 7/10 gate; legacy RCC removal remains a Phase 12 gate.
 
 ## Historical Deployment Handoff — phase3_resume_oct24_followup (complete)
 

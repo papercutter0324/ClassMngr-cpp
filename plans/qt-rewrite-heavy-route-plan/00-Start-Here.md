@@ -6,39 +6,25 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-26
-- Current milestone: Phase 5 — Startup and Bootstrap Rewrite — is In progress
-  on the mandatory Heavy route. F1501 is complete: the production
-  `ClassMngrNext` path now enters through `ApplicationBootstrap`, shows a
-  minimal shell/page, and coordinates shutdown without wrapping legacy
-  `MainWindow`. Independent macOS Debug verification passed its three focused
-  CTests. F1502 established the ten-stage typed model. F1503 is complete: the
-  bootstrap owns a Qt diagnostics sink and logs factual stage results. F1504
-  is complete: startup loads catalog metadata and retains a lazy loader and
-  startup scope without reading payloads. Its six focused CTests passed. F1505
-  is complete: ordered settings, localization, selected theme, and required
-  fonts load before the shell, with focused verification passing. F1506 is
-  complete: startup preserves legacy workspace selection order through a
-  single Next-owned store with typed no-workspace/open-failure results. F1507
-  is complete: a Qt-free `ApplicationRuntime` owns the workspace state and
-  use cases, including on no-workspace startup. F1508 is complete: the shell
-  uses a lazy factory PageHost with explicit page/resource lifetimes. F1509 is
-  complete: startup retains localized catalog metadata, creates no PDF body or
-  QtPdf viewer, and records `StartupReady` only after the initial page is active.
-  F1510 is complete: application update creation and dispatch wait until the
-  first queued event-loop callback after `StartupReady`, with no resource-update
-  call during startup. F1511 is complete: shutdown flushes settings, cancels
-  the active deferred update request, preserves the shell/runtime/session on
-  close failure, and releases the page/resources before quit. F1512 is
-  complete: dialog automation for Sub Prep, Schedule Import, and Calendar
-  Import uses Qt test adapters, with focused build and workflow checks passing.
-  F1513 is ready to commit after focused macOS verification; its Windows x64
-  workflow will run after the authorized batch push. It removes the splash from
-  runtime/package paths while preserving the Phase 4 audit source and legacy
-  feature-owned pack leases. See
-  [Phase 5 plan](06-Phase-5-Startup-and-Bootstrap-Rewrite.md)
-  and [current batch tracker](Current-Slice-Batches.md). Phase 4 remains
-  Complete at F1500; rendering parity remains a Phase 7/10 gate, and legacy
-  pack removal remains a Phase 12 gate.
+- Current milestone: Phase 5 — Startup and Bootstrap Rewrite — is Complete
+  on the mandatory Heavy route. F1501–F1513 completed the Next startup,
+  diagnostics, resource/settings/workspace/runtime composition, lazy initial
+  page, deferred application update, shutdown, dialog-automation isolation,
+  and splash-removal work. The explicit Phase 5 behavior gate passed: startup
+  is splash-free and pack-free in `ClassMngrNext`, the main page is usable with
+  the selected theme and language, startup allocations have named stages, and
+  `StartupReady` contains catalog metadata without document bodies or an active
+  viewer. Independent macOS Debug checks and the Windows packaged startup
+  smoke passed; Phase 4's resource-install matrix passed on macOS, Windows x64,
+  and Linux x64. Linux and Windows full Debug CTest had 11 and 14 failures or
+  timeouts and are not reported as passing suites. The Windows startup
+  performance target timed out after emitting metrics; independent review
+  found the separate DocumentCatalog failure to be a stale assertion in legacy
+  navigation source after the Phase 4 port rename, outside Next startup. See
+  the [Phase 5 plan](06-Phase-5-Startup-and-Bootstrap-Rewrite.md) and
+  [current batch tracker](Current-Slice-Batches.md). Phase 6 — Shared UI Rewrite
+  — is next; rendering parity remains a Phase 7/10 gate, and legacy pack
+  removal remains a Phase 12 gate.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -60,7 +46,7 @@
 | 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | Complete | Heavy | 1 |
 | 3 | 04-Phase-3-Persistence-Rewrite.md | Complete | Heavy | 1, 2 |
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
-| 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | In progress | Heavy | 2, 3, 4 |
+| 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Not started | Heavy | 5 |
 | 7 | 08-Phase-7-Feature-Migration.md | Not started | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |

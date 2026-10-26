@@ -8890,3 +8890,22 @@ settings-flush call and ordering through an injected seam because
 `SettingsManager::sync()` returns no QSettings status. Retry depends on the
 bootstrap remaining alive; destruction of the whole bootstrap ends its object
 ownership even if a workspace close still fails.
+
+
+## 2026-10-26 — Phase 5 startup/bootstrap exit gate passed
+
+Phase 5 is complete at implementation head
+`6bbff54abc524723e23911d65130b1b198dde2b3`. The phase-specific startup,
+workflow-isolation, packaged-smoke, and cross-platform resource-install gates
+passed. `ClassMngrNext` stays splash-free and pack-free at startup, becomes
+ready with catalog metadata only, and defers application updates until its
+initial page is interactive. F1512 keeps dialog automation at the Qt
+presentation/test boundary; shutdown retains retryable workspace close.
+
+The full Linux and Windows Debug CTest suites did not pass (11 and 14 failures
+or timeouts respectively). Linux startup performance passed; the Windows
+120-second target timeout emitted startup metrics first. Windows had no Qt DLL
+load failures after the CTest PATH fix. The separate DocumentCatalog source
+test still expects the old member renamed by Phase 4, so it is a stale test
+assertion rather than a Next startup failure. Keep these broad-suite results
+visible; the Phase 5 behavior gate did not require a full-suite pass.
