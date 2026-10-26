@@ -4203,6 +4203,14 @@ classmngr_add_qt_test(
         Qt6::Test
     OFFSCREEN
 )
+# This test's generated .moc include exceeds Windows MAX_PATH under the
+# default autogen directory, so keep its Qt autogen path target-specific and short.
+set_target_properties(
+    ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherBirthdayDirectoryReadPortTests
+    PROPERTIES
+        AUTOGEN_BUILD_DIR
+            "${CMAKE_CURRENT_BINARY_DIR}/moc_native_english_birthday_directory"
+)
 
 classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPort
