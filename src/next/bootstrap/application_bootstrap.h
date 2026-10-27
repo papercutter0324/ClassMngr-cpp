@@ -87,6 +87,8 @@ public:
             saveAsProfileFileDialogPortFactory;
         std::function<std::unique_ptr<Application::RecentWorkspaceHistoryPort>()>
             saveAsRecentWorkspaceHistoryPortFactory;
+        std::function<std::unique_ptr<Application::FileDialogPort>()>
+            exportProfileFileDialogPortFactory;
         std::function<std::unique_ptr<Application::UserPromptPort>()>
             workspaceLifecycleUserPromptPortFactory;
     };
@@ -151,6 +153,7 @@ private:
     void openExistingTeacherProfile();
     void saveWorkspaceFromMenu();
     void saveWorkspaceAsFromMenu();
+    void exportWorkspaceFromMenu();
     void closeWorkspaceFromMenu();
     [[nodiscard]] bool requestWindowClose();
     [[nodiscard]] bool resolveActivePageChangesBeforeLeaving(

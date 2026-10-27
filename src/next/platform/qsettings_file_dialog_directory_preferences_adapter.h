@@ -89,6 +89,7 @@ private:
         case Application::FileDialogPurpose::GeneratedPdf:
         case Application::FileDialogPurpose::ClassTransfer:
         case Application::FileDialogPurpose::SubPrepPackage:
+        case Application::FileDialogPurpose::ExportTeacherProfile:
             return true;
         default:
             return false;
@@ -172,6 +173,9 @@ private:
             break;
         case Application::FileDialogPurpose::SubPrepPackage:
             purposeSlug = QStringLiteral("sub-prep-package");
+            break;
+        case Application::FileDialogPurpose::ExportTeacherProfile:
+            purposeSlug = QStringLiteral("export-teacher-profile");
             break;
         default:
             purposeSlug = QStringLiteral("general");

@@ -189,7 +189,7 @@ mapsEveryPurposeToItsStableKeyAndRoundTripsUtf8()
         FileDialogPurpose purpose;
         QString key;
     };
-    const std::array<Mapping, 8> mappings{{
+    const std::array<Mapping, 9> mappings{{
         {FileDialogPurpose::General,
          QStringLiteral("file-dialog/directories/general")},
         {FileDialogPurpose::TeacherProfile,
@@ -205,7 +205,9 @@ mapsEveryPurposeToItsStableKeyAndRoundTripsUtf8()
         {FileDialogPurpose::ClassTransfer,
          QStringLiteral("file-dialog/directories/class-transfer")},
         {FileDialogPurpose::SubPrepPackage,
-         QStringLiteral("file-dialog/directories/sub-prep-package")}
+         QStringLiteral("file-dialog/directories/sub-prep-package")},
+        {FileDialogPurpose::ExportTeacherProfile,
+         QStringLiteral("file-dialog/directories/export-teacher-profile")}
     }};
 
     for (std::size_t index = 0; index < mappings.size(); ++index)

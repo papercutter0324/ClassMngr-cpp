@@ -433,6 +433,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/normal_workspace_creation_flow.h
     src/next/application/open_existing_workspace_flow.h
     src/next/application/workspace_save_as_flow.h
+    src/next/application/workspace_export_flow.h
     src/next/application/workspace_open_profile_path_policy.h
     src/next/application/page_changes_port.h
     src/next/application/unsaved_changes_resolution_flow.h

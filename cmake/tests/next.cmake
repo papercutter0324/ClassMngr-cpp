@@ -2496,6 +2496,22 @@ classmngr_add_qt_test(
         Qt6::Test
 )
 
+# Exercise interactive profile export and online database snapshots while the
+# original WorkspaceStore session remains open and unchanged.
+classmngr_add_qt_test(
+    NAME NextWorkspaceExportFlow
+    OFFSCREEN
+    SOURCES
+        tests/next_workspace_export_flow_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNextWorkspace
+        ClassMngrWorkspaceStore
+        ClassMngrNextWorkspaceDomain
+        Qt6::Sql
+        Qt6::Test
+)
+
 # Verify teacher entry persistence and recovery through the v2 store boundary.
 classmngr_add_qt_test(
     NAME NextPlatformWorkspaceStoreInitialSetupTeacherEntryPersistence

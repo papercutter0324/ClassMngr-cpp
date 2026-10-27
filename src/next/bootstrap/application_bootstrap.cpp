@@ -5,6 +5,7 @@
 #include "next/application/normal_workspace_creation_flow.h"
 #include "next/application/open_existing_workspace_flow.h"
 #include "next/application/workspace_save_as_flow.h"
+#include "next/application/workspace_export_flow.h"
 #include "next/application/unsaved_changes_resolution_flow.h"
 #include "next/application/initial_setup_class_details_requirements.h"
 #include "next/application/positive_decimal_id_validation.h"
@@ -674,6 +675,9 @@ Application::StartupResult ApplicationBootstrap::start()
         });
         m_shell->setSaveWorkspaceAsHandler([this] {
             saveWorkspaceAsFromMenu();
+        });
+        m_shell->setExportWorkspaceHandler([this] {
+            exportWorkspaceFromMenu();
         });
         m_shell->setCloseWorkspaceHandler([this] {
             closeWorkspaceFromMenu();
@@ -1939,6 +1943,87 @@ void ApplicationBootstrap::saveWorkspaceAsFromMenu()
             QFileInfo(activePath).absolutePath().toUtf8().toStdString()
             ),
         QFileInfo(activePath).fileName().toUtf8().toStdString(),
+        [this] {
+            if (m_initialSetupLifecycle
+                && m_initialSetupLifecycle->hasPendingSetup())
+            {
+                return true;
+            }
+            const Ui::InitialSetupPageState state = initialSetupPageState();
+            return state.setupPending
+                || state.recoveryAvailable
+                || state.recoveryError;
+        }
+        );
+    static_cast<void>(flow.run());
+}
+
+void ApplicationBootstrap::exportWorkspaceFromMenu()
+{
+    if (!m_shell || !m_applicationRuntime || !m_initialSetupLifecycle
+        || !m_applicationRuntime->workspaceState().snapshot().session().has_value())
+    {
+        return;
+    }
+
+    const bool setupLifecyclePending = m_initialSetupLifecycle->hasPendingSetup();
+    const Ui::InitialSetupPageState setupPageState = initialSetupPageState();
+    if (setupLifecyclePending
+        || setupPageState.setupPending
+        || setupPageState.recoveryAvailable
+        || setupPageState.recoveryError)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "Resolve the pending setup or recovery state before exporting this Teacher Profile. Setup and recovery data were left unchanged.",
+                .severity = Application::NotificationSeverity::Warning
+            }
+            ));
+        return;
+    }
+
+    const Application::WorkspaceSession session =
+        *m_applicationRuntime->workspaceState().snapshot().session();
+    const QString activePath = QString::fromUtf8(
+        session.location().value().data(),
+        static_cast<qsizetype>(session.location().value().size())
+        );
+
+    Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+        directoryPreferences;
+    std::unique_ptr<Application::FileDialogPort> ownedFileDialog;
+    if (m_startupWorkspaceSeams.exportProfileFileDialogPortFactory)
+    {
+        ownedFileDialog =
+            m_startupWorkspaceSeams.exportProfileFileDialogPortFactory();
+    }
+    else
+    {
+        ownedFileDialog = std::make_unique<Ui::QtFileDialogPresenter>(
+            directoryPreferences,
+            m_shell.get()
+            );
+    }
+    if (!ownedFileDialog)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The profile export dialog is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+
+    Platform::WorkspaceProfilePathPolicy pathPolicy;
+    Application::WorkspaceExportFlow flow(
+        *ownedFileDialog,
+        pathPolicy,
+        m_applicationRuntime->workspaceCoordinator(),
+        m_shell->notificationPort(),
+        Application::FileDialogPath(
+            QFileInfo(activePath).absolutePath().toUtf8().toStdString()
+            ),
         [this] {
             if (m_initialSetupLifecycle
                 && m_initialSetupLifecycle->hasPendingSetup())

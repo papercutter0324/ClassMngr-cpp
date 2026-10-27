@@ -15,7 +15,8 @@ enum class FileDialogPurpose
     SignatureImage,
     GeneratedPdf,
     ClassTransfer,
-    SubPrepPackage
+    SubPrepPackage,
+    ExportTeacherProfile
 };
 
 // Directory values cross this Qt-free boundary as UTF-8. An empty read means

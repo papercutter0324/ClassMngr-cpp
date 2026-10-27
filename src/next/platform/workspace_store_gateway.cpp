@@ -340,8 +340,20 @@ WorkspaceStoreGateway::exportWorkspace(
             valid.error()
             );
     }
-    return Domain::Result<Application::WorkspaceLocation>::failure(
-        unsupportedOperationError("Export workspace")
+
+    const RepositoryStatus copied = DatabaseFileOperations::copyDatabaseFile(
+        m_store->databasePath(),
+        fromUtf8(request.destination.value())
+        );
+    if (!copied)
+    {
+        return Domain::Result<Application::WorkspaceLocation>::failure(
+            operationError(copied.error())
+            );
+    }
+
+    return Domain::Result<Application::WorkspaceLocation>::success(
+        request.destination
         );
 }
 
