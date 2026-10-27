@@ -38,12 +38,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
-- Current note: 7A.1–7A.12 are accepted and committed; 7A.12 is `5badb2c8`.
-  Candidate #13, recent-history menu, restore, and clear, is active. The 7A
+- Current note: 7A.1–7A.13 are accepted and committed. Candidate #13 is covered
+  by `b79b98e9` and parity follow-up `4fcab8bf`. Candidate #14, explicit
+  recovery of an interrupted normal-create sibling, is active; next-batch
+  discovery is complete. Candidate #15 remains schema-v6 `.db` input and
+  native `.tps` normalization. Batch 1 remains active and unpushed. The 7A
   screenshot comparison and memory measurement remain open, as do the 7A and
-  Phase 7 exit gates. Batch 1 remains active and unpushed. Next-batch discovery
-  remains gated until candidate #14. See the progress log for 7A.12 evidence
-  and limits.
+  Phase 7 exit gates. See the progress log for 7A.13 evidence and limits.
 
 ### Slice batches
 
@@ -102,8 +103,7 @@ keep current status in this plan and live batches in the shared tracker.
   and light/dark. Resource inventory `--check` and `git diff --check` passed.
 - Limits and next work: Windows, full suite, and package checks remain unrun;
   Phase 7 and 7A exit gates remain open. The screenshot/reference comparison
-  remains an open 7A parity item. At the 7A.2 handoff, 7A.3 teacher entry was
-  next.
+  remains an open 7A parity item.
 
 ### 7A.3 — Teacher-entry setup accepted and functionally verified (2026-10-26)
 
@@ -122,8 +122,8 @@ keep current status in this plan and live batches in the shared tracker.
   stalled, although the executor's configure and production target builds
   succeeded. No full suite, Windows, package, or memory test ran. No matching
   legacy setup/personal-details screenshot exists, so screenshot comparison and
-  memory measurement remain open 7A items. Candidate #4, setup teacher import,
-  is active; 7A and Phase 7 exit gates remain open.
+  memory measurement remain open 7A items. The 7A and Phase 7 exit gates remain
+  open.
 
 ### 7A.4 — Setup teacher import accepted (2026-10-26)
 
@@ -155,8 +155,7 @@ keep current status in this plan and live batches in the shared tracker.
   passed; ownership has one explicit owner for 1,710 handwritten sources.
 - Limits and next work: no full suite, Windows, package, peak-RSS measurement,
   or screenshot parity was verified. 7A and Phase 7 exit gates remain open;
-  screenshot comparison and memory measurement remain open 7A items. Candidate
-  #5, setup class details, is active. Batch 1 remains active and unpushed.
+  screenshot comparison and memory measurement remain open 7A items.
 
 ### 7A.5 — Setup class details accepted (2026-10-27)
 
@@ -187,8 +186,6 @@ keep current status in this plan and live batches in the shared tracker.
 - Limits and next work: full suite, Windows, package, screenshots, QWizard
   parity, and peak-memory were not checked. Screenshot comparison and memory
   measurement remain open 7A items; 7A and Phase 7 exit gates remain open.
-  Candidate #6, setup class times, is active. Batch 1 remains active and
-  unpushed; do not start next-batch discovery before candidate #14.
 
 ### 7A.6 — Setup class times accepted (2026-10-27)
 
@@ -215,9 +212,7 @@ keep current status in this plan and live batches in the shared tracker.
   and `git diff --check` passed.
 - Limits and next work: full suite, Windows, package, screenshots, and
   peak-memory checks were not run. The 7A screenshot comparison and memory
-  measurement, plus the 7A and Phase 7 exit gates, remain open. Candidate #7,
-  setup schedule import, is active. Batch 1 remains active and unpushed; do not
-  start next-batch discovery before candidate #14.
+  measurement, plus the 7A and Phase 7 exit gates, remain open.
 
 ### 7A.7 — Setup schedule import accepted (2026-10-27)
 
@@ -250,9 +245,7 @@ keep current status in this plan and live batches in the shared tracker.
   boundary passed.
 - Limits and next work: no full suite, package, Windows, screenshot, QWizard
   parity, or peak-memory check ran. The 7A screenshot comparison and memory
-  measurement, plus the 7A and Phase 7 exit gates, remain open. Candidate #8,
-  normal `.tps` creation and replacement, followed. Batch 1 remains active and
-  unpushed; do not start next-batch discovery before candidate #14.
+  measurement, plus the 7A and Phase 7 exit gates, remain open.
 
 ### 7A.8 — Normal workspace creation and replacement accepted (2026-10-27)
 
@@ -277,9 +270,7 @@ keep current status in this plan and live batches in the shared tracker.
   move, failed original restoration, and failed prior-workspace reopen remain
   untested; no product defect was reproduced. No full suite, Windows, package,
   screenshot, or peak-memory check ran. The 7A screenshot comparison and memory
-  measurement, plus the 7A and Phase 7 exit gates, remain open. Candidate #9,
-  existing `.tps` open, is active. Batch 1 remains active and unpushed; do not
-  start next-batch discovery before candidate #14.
+  measurement, plus the 7A and Phase 7 exit gates, remain open.
 
 ### 7A.9 — Existing teacher profiles open in Next accepted (2026-10-27)
 
@@ -303,8 +294,7 @@ keep current status in this plan and live batches in the shared tracker.
 - Limits and next work: no separate OS permission-denied fixture, full suite,
   Windows, packaging, screenshot, or memory gate ran. The 7A screenshot
   comparison and memory evidence, plus the 7A and Phase 7 exit gates, remain
-  open. Candidate #10, save, close, and dirty state, is active. Batch 1 remains
-  active and unpushed; do not start next-batch discovery before candidate #14.
+  open.
 
 ### 7A.10 — Save, close, and dirty state accepted (2026-10-27)
 
@@ -330,9 +320,6 @@ keep current status in this plan and live batches in the shared tracker.
   full suite, Windows build, package, screenshot, or memory gate ran; the 7A
   screenshot comparison and memory measurement and the 7A/Phase 7 exit gates
   remain open.
-  At the 7A.10 handoff, candidate #11, Save As, was next; see 7A.11 for its
-  acceptance. Batch 1 remains active and unpushed; do not start next-batch
-  discovery before candidate #14.
 
 ### 7A.11 — Save As accepted (2026-10-27)
 
@@ -360,9 +347,7 @@ keep current status in this plan and live batches in the shared tracker.
   Forced destination-reopen failure and explicit Save As dirty-page or
   recovery-pending cases were not tested. Full suite, Windows, packaging,
   screenshot, and memory gates remain unrun; screenshot comparison and memory
-  evidence and the 7A/Phase 7 exit gates remain open. Candidate #12, Export, is
-  active. Batch 1 remains active and unpushed; do not start next-batch discovery
-  before candidate #14.
+  evidence and the 7A/Phase 7 exit gates remain open.
 
 ### 7A.12 — Export accepted (2026-10-27)
 
@@ -385,9 +370,32 @@ keep current status in this plan and live batches in the shared tracker.
   failure injection were not covered; destination-failure coverage checks
   existing destination bytes, not source-content byte equality. Screenshot
   comparison and memory evidence, plus the 7A and Phase 7 exit gates, remain
-  open. Candidate #13, recent-history menu, restore, and clear, is active.
-  Batch 1 remains active and unpushed; do not start next-batch discovery before
-  candidate #14.
+  open.
+
+### 7A.13 — Recent Files menu, restore, and clear accepted (2026-10-27)
+
+- Commits: `b79b98e9` (`Phase7 - Add Next Recent Files history`) and parity
+  follow-up `4fcab8bf` (`Phase7 - Remember directory after recent restore`).
+  The Next Recent Files submenu refreshes from persisted paths when opened and
+  shows ordered, numbered entries with escaped paths and tooltip/action data,
+  an empty disabled placeholder, and Clear. Selecting an entry uses the shared
+  Next open flow without showing a file picker. Successful open remembers the
+  normalized profile directory as the `TeacherProfile` preference.
+- Clear removes recent-history and last-file values without deleting profiles,
+  changing active state, or clearing that directory preference. Setup or
+  recovery blocks before dirty prompts. Only confirmed missing paths are
+  pruned; corrupt and unsupported profiles remain.
+- Verification: built `ClassMngrNextWorkspaceOpenFlowTests`,
+  `ClassMngrNextBootstrapTests`,
+  `ClassMngrNextPlatformSettingsManagerRecentWorkspaceHistoryPortTests`, and
+  `ClassMngrNextApplicationRecentWorkspaceHistoryUseCaseTests`. Focused CTest
+  passed 5/5, including `NextStartupWorkspaceDependencyBoundary`. After the
+  parity follow-up, selected offscreen restore tests passed, the final five
+  acceptance CTests passed 5/5, Bootstrap CTest passed 1/1, and
+  `git diff --check` passed. No acceptance gate is pending.
+- Limits and remaining gates: no full suite or native-dialog run; injected
+  directory-preference write-warning coverage is absent. Screenshot comparison
+  and memory evidence, plus the 7A and Phase 7 exit gates, remain open.
 
 ## Objective
 

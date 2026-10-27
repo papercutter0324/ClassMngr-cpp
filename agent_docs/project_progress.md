@@ -105,10 +105,25 @@ the source session/path, selection, dirty state, and recent-profile history;
 setup/recovery state blocks before the dialog. Focused CTest passed 4/4,
 including Export flow, bootstrap, preferences, and the Next dependency
 boundary. No full suite or native dialog run occurred; invalid-path and
-dialog-open-failure cases were not injected. Candidate #13, recent-history
-menu, restore, and clear, is active. Batch 1 remains un-pushed; next-batch
-discovery remains gated until candidate #14. The 7A screenshot comparison,
-Phase 7 memory evidence, and 7A/Phase 7 exit gates remain open.
+dialog-open-failure cases were not injected.
+
+Candidate #13, Recent Files menu, restore, and clear, passed independent
+focused verification and was committed as `b79b98e9`; its remembered-directory
+parity fix and combined failure test are in `4fcab8bf`. The Next submenu reads
+history when opened; restore uses the existing open flow without a file
+picker, remembers the opened profile's directory, and clear removes recent
+and last-file settings without deleting profiles, changing the active
+workspace, or clearing the directory. Setup/recovery blocks before dirty
+resolution. Only confirmed missing paths are pruned; corrupt and unsupported
+profiles remain listed. Focused CTest passed 5/5 including the Next boundary;
+after the follow-ups, all five acceptance CTest entries passed again, the
+selected offscreen Qt cases passed, and Bootstrap CTest passed 1/1.
+`git diff --check` passed. No full-suite or native-dialog run occurred; the
+directory-preference write-failure warning was not injected. Candidate #14,
+normal-create interrupted recovery, is active. Next-batch discovery completed
+with five ordered Teacher/Staff proposals. Batch 1 remains un-pushed. The 7A
+screenshot comparison, Phase 7 memory evidence, and 7A/Phase 7 exit gates
+remain open.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained

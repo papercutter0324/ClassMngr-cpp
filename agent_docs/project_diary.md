@@ -41,6 +41,12 @@
   session/path, resolving ordinary dirty state, or recording history. Exclude
   unsaved Page drafts from the snapshot and block export while setup/recovery
   state is pending. Give profile export its own file-dialog preference purpose.
+- Refresh the Next Recent Files menu from persisted history when it opens so all
+  existing creation/open/setup writers stay reflected. Restore selected paths
+  through the shared open flow, remember the selected profile's directory after
+  a successful open, prune only confirmed missing entries, and clear
+  recent/last-file keys without touching profile files or the last-directory
+  preference. Check setup/recovery before prompting about ordinary dirty state.
 - Keep the Next setup workbook flow on one typed path: asynchronous parser
   validation and review mapping feed `TeacherImportUseCaseRequest`, and the
   pending `WorkspaceStore` owns the import transaction. Verify selection,

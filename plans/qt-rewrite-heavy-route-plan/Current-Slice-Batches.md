@@ -54,11 +54,33 @@ Save As, is accepted and committed as `86b09d94`; its focused evidence and
 limits are in the progress log. Candidate #12, Export, is accepted and
 committed as `5badb2c8`; it uses the shared online-backup and
 atomic-destination helper without switching the active profile. Focused
-verification and limits are in the progress log. Current candidate: **#13 —
-Recent-history menu, restore, and clear (active)**. The 7A screenshot
-comparison and memory measurement remain open. Batch 1 remains active and
-unpushed.
-Next-batch discovery has not started; do not begin it before candidate #14.
+verification and limits are in the progress log. Candidate #13, Recent Files
+menu, restore, and clear, is accepted in `b79b98e9` with parity follow-up
+`4fcab8bf`; evidence and limits are in the progress log. The 7A screenshot
+comparison and memory measurement remain open. Candidate #14, explicit
+recovery of an interrupted normal-create sibling, is active. Candidate #8
+already owns live normal replacement and rollback; recovery after a process
+interrupt is the missing behavior. Candidate #15, schema-v6 `.db` input and
+native `.tps` normalization, remains. Batch 1 is active and unpushed.
 
-Import, export, open, and save failure handling belongs to each owning
-candidate, not a separate errors-only slice. No other slices were found.
+Next-batch discovery began when #14 started, the second-to-last Batch 1
+candidate, and is complete under the phase rule. The following ordered
+Teacher/Staff proposals are provisional; implementation starts only after
+Batch 1 completes and is pushed:
+
+1. Teacher profile page and navigation. Typed read/edit contracts exist; the
+   Next shell still has placeholders.
+2. Korean teacher list/navigation with New and Delete. Profile opening depends
+   on #1; keep My Classes and class assignment out of this slice.
+3. Shared Staff Directory page/model-view for Native English and GS Team data
+   kinds. Reuse the page shell, but keep each kind's fields, IDs, validation,
+   and read/write branches distinct and verify both.
+4. Normal teacher workbook import in the Next shell. Initial Setup import is
+   separate; preserve review, transaction, version prompts, and refresh of
+   profile/list/directories.
+5. Upcoming birthdays and daily dismissal in the Next shell. This depends on
+   reads for all three staff groups.
+
+For Batch 1, import, export, open, and save failure handling belongs to each
+owning candidate, not a separate errors-only slice. No other Batch 1 slices
+were found.
