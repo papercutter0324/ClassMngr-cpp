@@ -68,9 +68,16 @@ replacement, passed independent focused verification and was committed as
 adapter to create empty schema-v6 profiles, safely replace existing targets,
 and update recent history only after success. Rare recovery-name collision,
 failed original restoration and failed prior-workspace reopen branches remain
-untested. Candidate #9, existing `.tps` open, is active; Batch 1 remains
-un-pushed. Setup-screen screenshot comparison, Phase 7 memory evidence, and all
-remaining 7A workflows remain open. Active candidates are tracked in
+untested. Candidate #9, interactive existing `.tps` open, passed independent
+focused macOS Debug verification and was committed as `cdbf3ead`. The File
+action opens through the Next coordinator; cancel, dirty rejection,
+setup/recovery gating, and failed opens preserve the active workspace, while
+success refreshes navigation and records recent history once. The fresh
+standard build completed; three focused CTests and one dependency-boundary
+CTest passed. OS permission-denied behavior was not tested. Candidate #10,
+save, close, and dirty state, is active; Batch 1 remains un-pushed.
+Setup-screen screenshot comparison, Phase 7 memory evidence, and all remaining
+7A workflows remain open. Active candidates are tracked in
 `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required

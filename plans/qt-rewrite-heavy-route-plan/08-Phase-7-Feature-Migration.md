@@ -38,11 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
-- Current note: 7A.1–7A.8 are accepted and committed; 7A.8 is `95c1243a`.
-  Candidate #9, existing `.tps` open, is active. The 7A
-  screenshot comparison and memory measurement remain open, as do the 7A and
-  Phase 7 exit gates. Batch 1 remains active and unpushed. See the progress log
-  for 7A.8 evidence and limits.
+- Current note: 7A.1–7A.9 are accepted and committed; 7A.9 is `cdbf3ead`.
+  Candidate #10, save, close, and dirty state, is active. The 7A screenshot
+  comparison and memory measurement remain open, as do the 7A and Phase 7 exit
+  gates. Batch 1 remains active and unpushed. See the progress log for 7A.9
+  evidence and limits.
 
 ### Slice batches
 
@@ -279,6 +279,31 @@ keep current status in this plan and live batches in the shared tracker.
   measurement, plus the 7A and Phase 7 exit gates, remain open. Candidate #9,
   existing `.tps` open, is active. Batch 1 remains active and unpushed; do not
   start next-batch discovery before candidate #14.
+
+### 7A.9 — Existing teacher profiles open in Next accepted (2026-10-27)
+
+- Commit: `cdbf3ead` (`Phase7 - Open existing teacher profiles in Next`). The
+  Next File menu adds Open Teacher Profile… with the platform Open shortcut and
+  `.tps` filter, using the application flow and `WorkspaceStore` candidate-open
+  path. Cancel has no side effects. Pending setup/recovery or unreadable state
+  blocks interactive opening; the dirty-workspace replacement guard remains.
+  Missing, corrupt, and unsupported-schema profiles fail without closing the
+  active workspace and can be retried. Success refreshes navigation and records
+  history once; a history-save failure does not undo the open.
+- Independent verification: fresh `build/macos-clang-debug`; focused CTest
+  passed 3/3 (`ClassMngrNextBootstrapTests`, `ClassMngrNextNavigationTests`,
+  `ClassMngrNextWorkspaceOpenFlowTests`) and
+  `NextStartupWorkspaceDependencyBoundary` passed 1/1. Configure validated one
+  owner for 1,735 handwritten sources; resource bake contained 187 direct and
+  7 generated entries; `git diff --check` passed. Coverage includes success,
+  cancel, missing/corrupt/unsupported-schema failure and retry, session and
+  selection preservation, dirty rejection, setup/recovery blocking,
+  success-only history, history-save failure, and navigation refresh.
+- Limits and next work: no separate OS permission-denied fixture, full suite,
+  Windows, packaging, screenshot, or memory gate ran. The 7A screenshot
+  comparison and memory evidence, plus the 7A and Phase 7 exit gates, remain
+  open. Candidate #10, save, close, and dirty state, is active. Batch 1 remains
+  active and unpushed; do not start next-batch discovery before candidate #14.
 
 ## Objective
 

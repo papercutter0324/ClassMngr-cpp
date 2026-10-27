@@ -44,9 +44,12 @@ in the progress log. Candidate #8, normal `.tps` creation and replacement, is
 accepted and committed as `95c1243a`; it creates empty schema-v6 workspaces
 through a typed lifecycle and direct store adapter, preserves a recovery sibling
 on replacement, and records recent history only after success. Focused
-verification and limits are in the progress log. Current candidate: **#9 —
-existing `.tps` open**. The 7A screenshot comparison and memory measurement
-remain open. Batch 1 remains active and unpushed.
+verification and limits are in the progress log. Candidate #9, existing
+`.tps` open, is accepted and committed as `cdbf3ead`; focused verification and
+limits are in the [Phase 7 progress
+log](08-Phase-7-Feature-Migration.md#progress-log). Current candidate: **#10 —
+save, close, and dirty state**. The 7A screenshot comparison and memory
+measurement remain open. Batch 1 remains active and unpushed.
 Next-batch discovery has not started; do not begin it before candidate #14.
 
 Import, export, open, and save failure handling belongs to each owning

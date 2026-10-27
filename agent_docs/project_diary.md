@@ -21,6 +21,11 @@
   and update recent history only after creation succeeds. If recovery cleanup
   fails after success, retain and report the recovery path without undoing the
   new active profile.
+- Open an existing profile through the coordinator's candidate-open path so a
+  failed selection cannot close the active workspace. Guard the interactive
+  action while setup or recovery is pending, and update recent history only
+  after the new profile opens. Add Save/Discard behavior in its separate
+  dirty-state slice.
 - Keep the Next setup workbook flow on one typed path: asynchronous parser
   validation and review mapping feed `TeacherImportUseCaseRequest`, and the
   pending `WorkspaceStore` owns the import transaction. Verify selection,
