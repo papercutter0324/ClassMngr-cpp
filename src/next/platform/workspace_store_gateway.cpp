@@ -6,9 +6,12 @@
 #include "next/application/personal_details_save_use_case.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
 #include "next/application/teacher_create_use_case.h"
+#include "next/application/class_create_use_case.h"
+#include "next/application/class_details_save_use_case.h"
 #include "next/platform/workspace_store_personal_details_port.h"
 #include "next/platform/workspace_store_initial_setup_teacher_entry_port.h"
 #include "next/platform/workspace_store_custom_color_palette_preferences_port.h"
+#include "next/platform/workspace_store_initial_setup_class_times_ports.h"
 #include "next/platform/teacher_validator_teacher_create_validation_policy.h"
 
 #include <QByteArray>
@@ -138,6 +141,33 @@ WorkspaceStoreGateway::createInitialSetupTeacher(
         validationPolicy,
         port
         );
+}
+
+Application::ClassCreateResult WorkspaceStoreGateway::createInitialSetupClass() const
+{
+    WorkspaceStoreInitialSetupClassCreatePort port(*m_store);
+    return Application::ClassCreateUseCase::execute({}, port);
+}
+
+Application::InitialSetupClassTimesSaveResult
+WorkspaceStoreGateway::saveInitialSetupClassTimes(
+    const Application::InitialSetupClassTimesSaveRequest& request
+    ) const
+{
+    WorkspaceStoreInitialSetupClassDetailsSavePort port(*m_store);
+    const Application::ClassDetailsSaveRequest details{
+        .classId = request.classId,
+        .classGrade = request.classGrade,
+        .classLevel = request.classLevel,
+        .readingBook = request.readingBook,
+        .essayBook = request.essayBook,
+        .classColor = request.classColor,
+        .fontColor = request.fontColor,
+        .regularTimes = request.regularTimes,
+        .intensiveTimes = request.intensiveTimes,
+        .teacherId = request.teacherId
+    };
+    return Application::ClassDetailsSaveUseCase::execute(details, port);
 }
 
 std::expected<

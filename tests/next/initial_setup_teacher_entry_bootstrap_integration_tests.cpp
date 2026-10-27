@@ -7,6 +7,10 @@
 #include "next/ui/initial_page.h"
 #include "next/ui/page_host.h"
 #include "next/application/file_dialog_port.h"
+#include "next/resources/resource_catalog.h"
+#include "next/resources/resource_loader.h"
+#include "next/ui/page_host.h"
+#include "preferences_test_ports.h"
 
 #include <QApplication>
 #include <QCheckBox>
@@ -15,6 +19,7 @@
 #include <QComboBox>
 #include <QDir>
 #include <QDialog>
+#include <QEvent>
 #include <QFile>
 #include <QFileInfo>
 #include <QGroupBox>
@@ -24,11 +29,13 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QMessageBox>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QTimer>
+#include <QTranslator>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -457,6 +464,166 @@ struct TeacherRecord final
     return count;
 }
 
+[[nodiscard]] bool executeWorkspaceSql(
+    const QString& path,
+    const QString& statement
+    )
+{
+    const QString connectionName = QStringLiteral("setup-write-%1").arg(
+        QUuid::createUuid().toString(QUuid::WithoutBraces)
+        );
+    bool succeeded = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName
+            );
+        database.setDatabaseName(path);
+        if (database.open())
+        {
+            QSqlQuery query(database);
+            succeeded = query.exec(statement);
+            database.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return succeeded;
+}
+
+struct ClassRecord final
+{
+    int id = 0;
+    QString name;
+};
+
+[[nodiscard]] std::optional<ClassRecord> readFirstClass(const QString& path)
+{
+    const QString connectionName = QStringLiteral("setup-class-%1").arg(
+        QUuid::createUuid().toString(QUuid::WithoutBraces)
+        );
+    std::optional<ClassRecord> record;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName
+            );
+        database.setDatabaseName(path);
+        if (database.open())
+        {
+            QSqlQuery query(database);
+            if (query.exec(QStringLiteral("SELECT id, name FROM classes ORDER BY id LIMIT 1"))
+                && query.next())
+            {
+                record = ClassRecord{
+                    .id = query.value(0).toInt(),
+                    .name = query.value(1).toString()
+                };
+            }
+            database.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return record;
+}
+
+struct ClassDetailsRecord final
+{
+    int classId = 0;
+    qint64 teacherId = 0;
+    QString grade;
+    QString level;
+    QString readingBook;
+    QString essayBook;
+    QString classColor;
+    QString fontColor;
+};
+
+[[nodiscard]] std::optional<ClassDetailsRecord> readClassDetails(
+    const QString& path
+    )
+{
+    const QString connectionName = QStringLiteral("setup-class-details-%1").arg(
+        QUuid::createUuid().toString(QUuid::WithoutBraces)
+        );
+    std::optional<ClassDetailsRecord> record;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName
+            );
+        database.setDatabaseName(path);
+        if (database.open())
+        {
+            QSqlQuery query(database);
+            if (query.exec(QStringLiteral(
+                    "SELECT class_id, teacher_id, class_grade, class_level, "
+                    "reading_book, essay_book, class_color, font_color "
+                    "FROM class_info ORDER BY class_id LIMIT 1"
+                    ))
+                && query.next())
+            {
+                record = ClassDetailsRecord{
+                    .classId = query.value(0).toInt(),
+                    .teacherId = query.value(1).toLongLong(),
+                    .grade = query.value(2).toString(),
+                    .level = query.value(3).toString(),
+                    .readingBook = query.value(4).toString(),
+                    .essayBook = query.value(5).toString(),
+                    .classColor = query.value(6).toString(),
+                    .fontColor = query.value(7).toString()
+                };
+            }
+            database.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return record;
+}
+
+struct ScheduleRowRecord final
+{
+    int classId = 0;
+    QString day;
+    QString start;
+    QString end;
+};
+
+[[nodiscard]] std::optional<std::vector<ScheduleRowRecord>> readScheduleRows(
+    const QString& path,
+    const QString& tableName
+    )
+{
+    const QString connectionName = QStringLiteral("setup-schedule-%1").arg(
+        QUuid::createUuid().toString(QUuid::WithoutBraces)
+        );
+    std::optional<std::vector<ScheduleRowRecord>> rows;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName
+            );
+        database.setDatabaseName(path);
+        if (database.open())
+        {
+            QSqlQuery query(database);
+            if (query.exec(QStringLiteral(
+                    "SELECT class_id, day, start_time, end_time FROM %1 ORDER BY rowid"
+                    ).arg(tableName)))
+            {
+                rows.emplace();
+                while (query.next())
+                {
+                    rows->push_back({
+                        .classId = query.value(0).toInt(),
+                        .day = query.value(1).toString(),
+                        .start = query.value(2).toString(),
+                        .end = query.value(3).toString()
+                    });
+                }
+            }
+            database.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return rows;
+}
+
 [[nodiscard]] bool executeWorkspaceFixture(
     const QString& profilePath,
     const QString& fixtureName,
@@ -573,7 +740,9 @@ class InitialSetupTeacherEntryBootstrapIntegrationTests final : public QObject
 
 private slots:
     void initialSetupPageCreatesTeacherThroughWorkspaceStore();
-    void importedTeacherCanBeSelectedForDraftBeforeCancelRestoresOriginal();
+    void importedTeacherTimesPersistBeforeCancelRestoresOriginal();
+    void classTimesLabelsAndBehavior_data();
+    void classTimesLabelsAndBehavior();
 };
 
 void InitialSetupTeacherEntryBootstrapIntegrationTests::
@@ -717,6 +886,7 @@ initialSetupPageCreatesTeacherThroughWorkspaceStore()
     QVERIFY(englishName && koreanName && preferredSpelling && room);
     QVERIFY(wifiName && wifiPassword && continueButton && teacherStatus && pageStatus);
     QVERIFY(classDetailsGroup && classTeacher && classColorButton);
+    QVERIFY(readingBook && essayBook);
     QVERIFY(classGrade && classLevel && readingBook && essayBook);
     QVERIFY(continueClassDetails);
 
@@ -815,7 +985,7 @@ initialSetupPageCreatesTeacherThroughWorkspaceStore()
 }
 
 void InitialSetupTeacherEntryBootstrapIntegrationTests::
-importedTeacherCanBeSelectedForDraftBeforeCancelRestoresOriginal()
+importedTeacherTimesPersistBeforeCancelRestoresOriginal()
 {
     QTemporaryDir settingsRoot;
     QVERIFY(settingsRoot.isValid());
@@ -1061,6 +1231,12 @@ importedTeacherCanBeSelectedForDraftBeforeCancelRestoresOriginal()
     auto* const classColorButton = page->findChild<QPushButton*>(
         QStringLiteral("classMngrNextInitialSetupClassColorChoose")
         );
+    auto* const readingBook = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupReadingBook")
+        );
+    auto* const essayBook = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupEssayBook")
+        );
     auto* const continueClassDetails = page->findChild<QPushButton*>(
         QStringLiteral("classMngrNextInitialSetupClassDetailsContinue")
         );
@@ -1071,6 +1247,7 @@ importedTeacherCanBeSelectedForDraftBeforeCancelRestoresOriginal()
         QStringLiteral("classMngrNextInitialSetupStatus")
         );
     QVERIFY(classDetailsGroup && classTeacher && classColorButton);
+    QVERIFY(readingBook && essayBook);
     QVERIFY(continueClassDetails && cancelSetup && setupStatus);
 
     continueTeacherEntry->click();
@@ -1085,6 +1262,15 @@ importedTeacherCanBeSelectedForDraftBeforeCancelRestoresOriginal()
         );
     QVERIFY(selectedKoreanTeacher.has_value());
     QVERIFY(!selectedKoreanTeacher->trimmed().isEmpty());
+
+    const int readingBookIndex = readingBook->findText(
+        QStringLiteral("Reading Explorer 1")
+        );
+    const int essayBookIndex = essayBook->findText(QStringLiteral("4A"));
+    QVERIFY(readingBookIndex >= 0);
+    QVERIFY(essayBookIndex >= 0);
+    readingBook->setCurrentIndex(readingBookIndex);
+    essayBook->setCurrentIndex(essayBookIndex);
 
     bool colorDialogAccepted = false;
     chooseColorInNextModalDialog(QColor(QStringLiteral("#234567")),
@@ -1102,8 +1288,8 @@ importedTeacherCanBeSelectedForDraftBeforeCancelRestoresOriginal()
     QCOMPARE(draft.fontColor, std::u16string(u"#FFFFFF"));
     QCOMPARE(draft.classGrade, std::u16string(u"E4"));
     QCOMPARE(draft.classLevel, std::u16string(u"Theseus"));
-    QVERIFY(draft.readingBook.empty());
-    QVERIFY(draft.essayBook.empty());
+    QCOMPARE(draft.readingBook, std::u16string(u"Reading Explorer 1"));
+    QCOMPARE(draft.essayBook, std::u16string(u"4A"));
     QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
     QCOMPARE(historyProbe->saveCount, 0);
     QVERIFY(historyProbe->savedHistories.empty());
@@ -1130,6 +1316,321 @@ importedTeacherCanBeSelectedForDraftBeforeCancelRestoresOriginal()
     QCOMPARE(*regularTimesCount, 0);
     QCOMPARE(*intensiveTimesCount, 0);
 
+    auto* const classTimesGroup = page->findChild<QGroupBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassTimes")
+        );
+    auto* const addRegular = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupAddRegularTime")
+        );
+    auto* const addIntensive = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupAddIntensiveTime")
+        );
+    auto* const continueClassTimes = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassTimesContinue")
+        );
+    auto* const classTimesStatus = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupClassTimesStatus")
+        );
+    QVERIFY(classTimesGroup && addRegular && addIntensive);
+    QVERIFY(continueClassTimes && classTimesStatus);
+    QVERIFY(!classTimesGroup->isHidden());
+    QVERIFY(classDetailsGroup->isHidden());
+
+    const auto regularRows = [&] {
+        return classTimesGroup->findChildren<QWidget*>(
+            QStringLiteral("classMngrNextInitialSetupRegularScheduleRow")
+            );
+    };
+    const auto intensiveRows = [&] {
+        return classTimesGroup->findChildren<QWidget*>(
+            QStringLiteral("classMngrNextInitialSetupIntensiveScheduleRow")
+            );
+    };
+    const auto rowCombo = [](QWidget* row, const char* objectName) {
+        return row->findChild<QComboBox*>(QString::fromLatin1(objectName));
+    };
+
+    QCOMPARE(regularRows().size(), 1);
+    QWidget* regularDefaultRow = regularRows().front();
+    auto* regularDay = rowCombo(
+        regularDefaultRow, "classMngrNextInitialSetupScheduleDay"
+        );
+    auto* regularHour = rowCombo(
+        regularDefaultRow, "classMngrNextInitialSetupScheduleHour"
+        );
+    auto* regularMinute = rowCombo(
+        regularDefaultRow, "classMngrNextInitialSetupScheduleMinute"
+        );
+    auto* regularPeriod = rowCombo(
+        regularDefaultRow, "classMngrNextInitialSetupSchedulePeriod"
+        );
+    auto* regularEnd = rowCombo(
+        regularDefaultRow, "classMngrNextInitialSetupScheduleEnd"
+        );
+    QVERIFY(regularDay && regularHour && regularMinute && regularPeriod && regularEnd);
+    QCOMPARE(regularDay->count(), 7);
+    QCOMPARE(regularDay->currentData().toString(), QStringLiteral("Monday"));
+    QCOMPARE(regularHour->count(), 7);
+    QCOMPARE(regularHour->itemText(0), QStringLiteral("3"));
+    QCOMPARE(regularHour->itemText(6), QStringLiteral("9"));
+    QCOMPARE(regularHour->currentText(), QStringLiteral("4"));
+    QCOMPARE(regularMinute->count(), 5);
+    QCOMPARE(regularMinute->itemText(0), QStringLiteral(":00"));
+    QCOMPARE(regularMinute->itemText(1), QStringLiteral(":05"));
+    QCOMPARE(regularMinute->itemText(2), QStringLiteral(":25"));
+    QCOMPARE(regularMinute->itemText(3), QStringLiteral(":30"));
+    QCOMPARE(regularMinute->itemText(4), QStringLiteral(":35"));
+    QCOMPARE(regularPeriod->itemText(0), QStringLiteral("PM"));
+    QCOMPARE(regularPeriod->itemText(1), QStringLiteral("AM"));
+    QCOMPARE(regularEnd->currentText(), QStringLiteral("4:55 PM"));
+    QCOMPARE(regularEnd->count(), 5);
+
+    addRegular->click();
+    QCOMPARE(regularRows().size(), 2);
+    QWidget* const addedRegularRow = regularRows().last();
+    auto* regularRemoveButton = addedRegularRow->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleRemove")
+        );
+    QVERIFY(regularRemoveButton);
+    regularRemoveButton->click();
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    QCOMPARE(regularRows().size(), 1);
+
+    addIntensive->click();
+    QCOMPARE(intensiveRows().size(), 1);
+    QWidget* const addedIntensiveRow = intensiveRows().front();
+    auto* intensiveHour = rowCombo(
+        addedIntensiveRow, "classMngrNextInitialSetupScheduleHour"
+        );
+    QVERIFY(intensiveHour);
+    QCOMPARE(intensiveHour->count(), 12);
+    QCOMPARE(intensiveHour->itemText(0), QStringLiteral("1"));
+    QCOMPARE(intensiveHour->itemText(11), QStringLiteral("12"));
+    auto* intensiveRemoveButton = addedIntensiveRow->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleRemove")
+        );
+    QVERIFY(intensiveRemoveButton);
+    intensiveRemoveButton->click();
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    QCOMPARE(intensiveRows().size(), 0);
+
+    auto* regularDefaultRemoveButton = regularDefaultRow->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleRemove")
+        );
+    QVERIFY(regularDefaultRemoveButton);
+    regularDefaultRemoveButton->click();
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    QCOMPARE(regularRows().size(), 0);
+    QTimer::singleShot(0, [] {
+        if (auto* const message = qobject_cast<QMessageBox*>(
+                QApplication::activeModalWidget()))
+        {
+            message->accept();
+        }
+    });
+    continueClassTimes->click();
+    QVERIFY(regularRows().isEmpty());
+    QVERIFY(intensiveRows().isEmpty());
+    const auto noClassAfterZeroRows = tableRowCount(
+        profilePath,
+        QStringLiteral("classes")
+        );
+    QVERIFY(noClassAfterZeroRows.has_value());
+    QCOMPARE(*noClassAfterZeroRows, 0);
+
+    addRegular->click();
+    addRegular->click();
+    addIntensive->click();
+    addIntensive->click();
+    QCOMPARE(regularRows().size(), 2);
+    QCOMPARE(intensiveRows().size(), 2);
+
+    regularDefaultRow = regularRows().front();
+    QWidget* const regularSecondRow = regularRows().back();
+    regularDay = rowCombo(regularSecondRow,
+                          "classMngrNextInitialSetupScheduleDay");
+    regularHour = rowCombo(regularSecondRow,
+                           "classMngrNextInitialSetupScheduleHour");
+    regularMinute = rowCombo(regularSecondRow,
+                             "classMngrNextInitialSetupScheduleMinute");
+    regularPeriod = rowCombo(regularSecondRow,
+                             "classMngrNextInitialSetupSchedulePeriod");
+    regularEnd = rowCombo(regularSecondRow,
+                          "classMngrNextInitialSetupScheduleEnd");
+    QVERIFY(regularDay && regularHour && regularMinute && regularPeriod && regularEnd);
+    regularDay->setCurrentIndex(1);
+    regularHour->setCurrentText(QStringLiteral("5"));
+    regularMinute->setCurrentText(QStringLiteral(":05"));
+    regularEnd->setCurrentText(QStringLiteral("6:30 PM"));
+
+    QWidget* const intensiveFirstRow = intensiveRows().front();
+    auto* intensiveDay = rowCombo(
+        intensiveFirstRow, "classMngrNextInitialSetupScheduleDay"
+        );
+    intensiveHour = rowCombo(
+        intensiveFirstRow, "classMngrNextInitialSetupScheduleHour"
+        );
+    auto* intensiveMinute = rowCombo(
+        intensiveFirstRow, "classMngrNextInitialSetupScheduleMinute"
+        );
+    auto* intensivePeriod = rowCombo(
+        intensiveFirstRow, "classMngrNextInitialSetupSchedulePeriod"
+        );
+    auto* intensiveEnd = rowCombo(
+        intensiveFirstRow, "classMngrNextInitialSetupScheduleEnd"
+        );
+    QVERIFY(intensiveDay && intensiveHour && intensiveMinute
+            && intensivePeriod && intensiveEnd);
+    intensiveDay->setCurrentIndex(3);
+    intensiveHour->setCurrentText(QStringLiteral("1"));
+    intensiveMinute->setCurrentText(QStringLiteral(":25"));
+    intensivePeriod->setCurrentText(QStringLiteral("AM"));
+    intensiveEnd->setCurrentText(QStringLiteral("2:50 AM"));
+
+    QWidget* const intensiveSecondRow = intensiveRows().back();
+    intensiveDay = rowCombo(
+        intensiveSecondRow, "classMngrNextInitialSetupScheduleDay"
+        );
+    intensiveHour = rowCombo(
+        intensiveSecondRow, "classMngrNextInitialSetupScheduleHour"
+        );
+    intensiveMinute = rowCombo(
+        intensiveSecondRow, "classMngrNextInitialSetupScheduleMinute"
+        );
+    intensivePeriod = rowCombo(
+        intensiveSecondRow, "classMngrNextInitialSetupSchedulePeriod"
+        );
+    intensiveEnd = rowCombo(
+        intensiveSecondRow, "classMngrNextInitialSetupScheduleEnd"
+        );
+    QVERIFY(intensiveDay && intensiveHour && intensiveMinute
+            && intensivePeriod && intensiveEnd);
+    intensiveDay->setCurrentIndex(6);
+    intensiveHour->setCurrentText(QStringLiteral("12"));
+    intensiveEnd->setCurrentText(QStringLiteral("3:55 PM"));
+
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral(
+            "CREATE TRIGGER fail_initial_setup_class_create "
+            "BEFORE INSERT ON classes BEGIN "
+            "SELECT RAISE(ABORT, 'injected class creation failure'); END"
+            )
+        ));
+    continueClassTimes->click();
+    QVERIFY(classTimesStatus->text().contains(QStringLiteral("retry")));
+    const auto classesAfterCreateFailure = tableRowCount(
+        profilePath, QStringLiteral("classes")
+        );
+    QVERIFY(classesAfterCreateFailure.has_value());
+    QCOMPARE(*classesAfterCreateFailure, 0);
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("DROP TRIGGER fail_initial_setup_class_create")
+        ));
+
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral(
+            "CREATE TRIGGER fail_initial_setup_intensive_insert "
+            "BEFORE INSERT ON class_intensive_times BEGIN "
+            "SELECT RAISE(ABORT, 'injected intensive schedule write failure'); END"
+            )
+        ));
+    continueClassTimes->click();
+    QVERIFY(classTimesStatus->text().contains(QStringLiteral("retry")));
+    const std::optional<ClassRecord> classAfterDetailsFailure = readFirstClass(profilePath);
+    QVERIFY(classAfterDetailsFailure.has_value());
+    QVERIFY(classAfterDetailsFailure->name.isEmpty());
+    const auto classesAfterSaveFailure = tableRowCount(
+        profilePath, QStringLiteral("classes")
+        );
+    const auto detailsAfterSaveFailure = tableRowCount(
+        profilePath, QStringLiteral("class_info")
+        );
+    const auto regularAfterSaveFailure = tableRowCount(
+        profilePath, QStringLiteral("class_times")
+        );
+    const auto intensiveAfterSaveFailure = tableRowCount(
+        profilePath, QStringLiteral("class_intensive_times")
+        );
+    QVERIFY(classesAfterSaveFailure && detailsAfterSaveFailure
+            && regularAfterSaveFailure && intensiveAfterSaveFailure);
+    QCOMPARE(*classesAfterSaveFailure, 1);
+    QCOMPARE(*detailsAfterSaveFailure, 0);
+    QCOMPARE(*regularAfterSaveFailure, 0);
+    QCOMPARE(*intensiveAfterSaveFailure, 0);
+    QVERIFY(bootstrap.initialSetupClassDetailsDraft().has_value());
+    QCOMPARE(
+        bootstrap.initialSetupClassDetailsDraft()->koreanTeacherId.value(),
+        selectedTeacherId.toStdString()
+        );
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("DROP TRIGGER fail_initial_setup_intensive_insert")
+        ));
+    continueClassTimes->click();
+
+    const auto classesAfterRetry = tableRowCount(
+        profilePath, QStringLiteral("classes")
+        );
+    const auto detailsAfterRetry = tableRowCount(
+        profilePath, QStringLiteral("class_info")
+        );
+    QVERIFY(classesAfterRetry && detailsAfterRetry);
+    QCOMPARE(*classesAfterRetry, 1);
+    QCOMPARE(*detailsAfterRetry, 1);
+    const std::optional<ClassRecord> savedClass = readFirstClass(profilePath);
+    QVERIFY(savedClass.has_value());
+    QCOMPARE(savedClass->id, classAfterDetailsFailure->id);
+    QVERIFY(savedClass->name.isEmpty());
+    const std::optional<ClassDetailsRecord> details = readClassDetails(profilePath);
+    QVERIFY(details.has_value());
+    QCOMPARE(details->classId, savedClass->id);
+    QCOMPARE(details->teacherId, selectedTeacherId.toLongLong());
+    QCOMPARE(details->grade, QStringLiteral("E4"));
+    QCOMPARE(details->level, QStringLiteral("Theseus"));
+    QCOMPARE(details->readingBook, QStringLiteral("Reading Explorer 1"));
+    QCOMPARE(details->essayBook, QStringLiteral("4A"));
+    QCOMPARE(details->classColor, QStringLiteral("#234567"));
+    QCOMPARE(details->fontColor, QStringLiteral("#FFFFFF"));
+
+    const auto savedRegularRows = readScheduleRows(
+        profilePath, QStringLiteral("class_times")
+        );
+    const auto savedIntensiveRows = readScheduleRows(
+        profilePath, QStringLiteral("class_intensive_times")
+        );
+    QVERIFY(savedRegularRows.has_value());
+    QVERIFY(savedIntensiveRows.has_value());
+    QCOMPARE(savedRegularRows->size(), std::size_t(2));
+    QCOMPARE(savedIntensiveRows->size(), std::size_t(2));
+    QCOMPARE(savedRegularRows->at(0).classId, savedClass->id);
+    QCOMPARE(savedRegularRows->at(0).day, QStringLiteral("Monday"));
+    QCOMPARE(savedRegularRows->at(0).start, QStringLiteral("4:00 PM"));
+    QCOMPARE(savedRegularRows->at(0).end, QStringLiteral("4:55 PM"));
+    QCOMPARE(savedRegularRows->at(1).classId, savedClass->id);
+    QCOMPARE(savedRegularRows->at(1).day, QStringLiteral("Tuesday"));
+    QCOMPARE(savedRegularRows->at(1).start, QStringLiteral("5:05 PM"));
+    QCOMPARE(savedRegularRows->at(1).end, QStringLiteral("6:30 PM"));
+    QCOMPARE(savedIntensiveRows->at(0).classId, savedClass->id);
+    QCOMPARE(savedIntensiveRows->at(0).day, QStringLiteral("Thursday"));
+    QCOMPARE(savedIntensiveRows->at(0).start, QStringLiteral("1:25 AM"));
+    QCOMPARE(savedIntensiveRows->at(0).end, QStringLiteral("2:50 AM"));
+    QCOMPARE(savedIntensiveRows->at(1).classId, savedClass->id);
+    QCOMPARE(savedIntensiveRows->at(1).day, QStringLiteral("Sunday"));
+    QCOMPARE(savedIntensiveRows->at(1).start, QStringLiteral("12:00 PM"));
+    QCOMPARE(savedIntensiveRows->at(1).end, QStringLiteral("3:55 PM"));
+
+    QVERIFY(!classTimesGroup->isEnabled());
+    QVERIFY(classTimesStatus->text().contains(QStringLiteral("saved")));
+    QCOMPARE(setupStatus->text(), QStringLiteral("Profile created. Setup is pending."));
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+    QVERIFY(QFileInfo::exists(originalBackup));
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(historyProbe->savedHistories.empty());
+
     cancelSetup->click();
     QCOMPARE(setupStatus->text(), QStringLiteral("Choose where to save your profile."));
     QVERIFY(!bootstrap.initialSetupClassDetailsDraft().has_value());
@@ -1145,6 +1646,430 @@ importedTeacherCanBeSelectedForDraftBeforeCancelRestoresOriginal()
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     QCOMPARE(historyProbe->saveCount, 0);
+}
+
+void InitialSetupTeacherEntryBootstrapIntegrationTests::
+classTimesLabelsAndBehavior_data()
+{
+    QTest::addColumn<QString>("locale");
+    QTest::addColumn<QString>("theme");
+    QTest::addColumn<QString>("classTimesTitle");
+    QTest::addColumn<QString>("zeroRowsMessage");
+    QTest::addColumn<QString>("expectedRegularHeading");
+    QTest::addColumn<QString>("expectedIntensiveHeading");
+    QTest::addColumn<QString>("dayLabel");
+    QTest::addColumn<QString>("removeLabel");
+    QTest::addColumn<QString>("addRegularLabel");
+    QTest::addColumn<QString>("addIntensiveLabel");
+    QTest::addColumn<QString>("continueLabel");
+    QTest::addColumn<QString>("savedStatus");
+
+    const auto add = [](const char* name, const char* locale,
+                        const char* theme, const char* title,
+                        const char* zeroMessage,
+                        const char* regular, const char* intensive,
+                        const char* day, const char* remove,
+                        const char* addRegular, const char* addIntensive,
+                        const char* next, const char* saved) {
+        QTest::newRow(name)
+            << QString::fromLatin1(locale)
+            << QString::fromLatin1(theme)
+            << QString::fromUtf8(title)
+            << QString::fromUtf8(zeroMessage)
+            << QString::fromUtf8(regular)
+            << QString::fromUtf8(intensive)
+            << QString::fromUtf8(day)
+            << QString::fromUtf8(remove)
+            << QString::fromUtf8(addRegular)
+            << QString::fromUtf8(addIntensive)
+            << QString::fromUtf8(next)
+            << QString::fromUtf8(saved);
+    };
+    add("english-light", "en_US", "light", "Class Times",
+        "Enter at least one regular or intensive class time before continuing.",
+        "Regular Schedule", "Intensive Schedule", "Day", "Remove",
+        "+ Add Time", "+ Add Intensive Time", "Continue",
+        "Class details and times saved. Setup remains pending.");
+    add("english-dark", "en_US", "dark", "Class Times",
+        "Enter at least one regular or intensive class time before continuing.",
+        "Regular Schedule", "Intensive Schedule", "Day", "Remove",
+        "+ Add Time", "+ Add Intensive Time", "Continue",
+        "Class details and times saved. Setup remains pending.");
+    add("korean-light", "ko_KR", "light", "수업 시간",
+        "계속하려면 정규 또는 집중 수업 시간을 하나 이상 입력하세요.",
+        "정규 수업 일정", "집중 수업 일정", "요일", "제거",
+        "+ 시간 추가", "+ 집중 수업 시간 추가", "계속",
+        "학급 정보와 수업 시간을 저장했습니다. 초기 설정은 계속 진행 중입니다.");
+    add("korean-dark", "ko_KR", "dark", "수업 시간",
+        "계속하려면 정규 또는 집중 수업 시간을 하나 이상 입력하세요.",
+        "정규 수업 일정", "집중 수업 일정", "요일", "제거",
+        "+ 시간 추가", "+ 집중 수업 시간 추가", "계속",
+        "학급 정보와 수업 시간을 저장했습니다. 초기 설정은 계속 진행 중입니다.");
+}
+
+void InitialSetupTeacherEntryBootstrapIntegrationTests::classTimesLabelsAndBehavior()
+{
+    QFETCH(QString, locale);
+    QFETCH(QString, theme);
+    QFETCH(QString, classTimesTitle);
+    QFETCH(QString, zeroRowsMessage);
+    QFETCH(QString, expectedRegularHeading);
+    QFETCH(QString, expectedIntensiveHeading);
+    QFETCH(QString, dayLabel);
+    QFETCH(QString, removeLabel);
+    QFETCH(QString, addRegularLabel);
+    QFETCH(QString, addIntensiveLabel);
+    QFETCH(QString, continueLabel);
+    QFETCH(QString, savedStatus);
+
+    QApplication& application = *qApp;
+    ApplicationStyleSheetGuard styleSheetGuard(application);
+    QTranslator translator;
+    if (locale == QStringLiteral("ko_KR"))
+    {
+        const QString translationPath = QDir(
+            QFileInfo(builtResourceCatalogPath()).absolutePath()
+            ).filePath(QStringLiteral("assets/translations/ClassMngr_ko_KR.qm"));
+        QVERIFY2(translator.load(translationPath), qPrintable(translationPath));
+        QVERIFY(application.installTranslator(&translator));
+    }
+
+    QFile styleFile(QDir(builtResourceRoot()).filePath(
+        QStringLiteral("assets/styles/%1.qss").arg(theme)
+        ));
+    QVERIFY2(styleFile.open(QIODevice::ReadOnly), qPrintable(styleFile.fileName()));
+    application.setStyleSheet(QString::fromUtf8(styleFile.readAll()));
+
+    auto catalog = Resources::ResourceCatalog::load(
+        builtResourceCatalogPath(), builtResourceRoot()
+        );
+    QVERIFY2(catalog.has_value(),
+             catalog ? "" : qPrintable(catalog.error().message));
+    Resources::ResourceLoader loader(std::move(catalog.value()));
+    Test::MemoryPreferences preferences;
+    Ui::PageHost host(loader, preferences.model);
+
+    Ui::InitialSetupPageState state{
+        .setupPending = true,
+        .classDetailsReady = true
+    };
+    int saveCalls = 0;
+    std::optional<Application::InitialSetupClassTimes> savedTimes;
+    const Ui::InitialSetupPageActions actions{
+        .state = [&state] { return state; },
+        .loadPersonalDetails = [] {
+            return Application::PersonalDetailsReadResult::success(
+                Application::PersonalDetailsSaveRequest{}
+                );
+        },
+        .saveClassTimes = [&] (
+            const Application::InitialSetupClassTimes& times
+            ) {
+            ++saveCalls;
+            savedTimes = times;
+            state.classTimesSaved = true;
+            return Application::InitialSetupClassTimesSaveResult::success();
+        }
+    };
+    const Ui::PageDescriptor descriptor{
+        .id = *Ui::PageId::fromString(QStringLiteral("initial_setup")),
+        .label = QStringLiteral("Initial Setup"),
+        .factory = [actions](const Ui::PageContext& context)
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            return std::unique_ptr<Ui::Page>(
+                std::make_unique<Ui::InitialPage>(context, actions)
+                );
+        }
+    };
+    QVERIFY(host.registerPage(descriptor));
+    QVERIFY(host.activatePage(QStringLiteral("initial_setup")));
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        host.pageInstance(QStringLiteral("initial_setup"))
+        );
+    QVERIFY(page);
+    auto* const group = page->findChild<QGroupBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassTimes")
+        );
+    auto* const regularHeading = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupRegularScheduleHeading")
+        );
+    auto* const intensiveHeading = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupIntensiveScheduleHeading")
+        );
+    auto* const addRegular = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupAddRegularTime")
+        );
+    auto* const addIntensive = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupAddIntensiveTime")
+        );
+    auto* const continueTimes = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassTimesContinue")
+        );
+    QVERIFY(group && regularHeading && intensiveHeading);
+    QVERIFY(addRegular && addIntensive && continueTimes);
+    QCOMPARE(group->title(), classTimesTitle);
+    QCOMPARE(regularHeading->text(), expectedRegularHeading);
+    QCOMPARE(intensiveHeading->text(), expectedIntensiveHeading);
+    QCOMPARE(addRegular->text(), addRegularLabel);
+    QCOMPARE(addIntensive->text(), addIntensiveLabel);
+    QCOMPARE(continueTimes->text(), continueLabel);
+    QVERIFY(!group->isHidden());
+    QVERIFY(group->isEnabled());
+
+    auto rows = [&group](const QString& objectName) {
+        QList<QWidget*> visibleRows;
+        for (QWidget* row : group->findChildren<QWidget*>(objectName))
+        {
+            if (!row->isHidden())
+            {
+                visibleRows.append(row);
+            }
+        }
+        return visibleRows;
+    };
+    const QString regularRowName =
+        QStringLiteral("classMngrNextInitialSetupRegularScheduleRow");
+    const QString intensiveRowName =
+        QStringLiteral("classMngrNextInitialSetupIntensiveScheduleRow");
+    QCOMPARE(rows(regularRowName).size(), 1);
+    QWidget* const defaultRow = rows(regularRowName).front();
+    auto* day = defaultRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleDay")
+        );
+    auto* hour = defaultRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleHour")
+        );
+    auto* minute = defaultRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleMinute")
+        );
+    auto* period = defaultRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupSchedulePeriod")
+        );
+    auto* end = defaultRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleEnd")
+        );
+    auto* remove = defaultRow->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleRemove")
+        );
+    QVERIFY(day && hour && minute && period && end && remove);
+    QCOMPARE(day->itemText(0), dayLabel == QStringLiteral("Day")
+        ? QStringLiteral("Monday") : QStringLiteral("월요일"));
+    QCOMPARE(day->currentData().toString(), QStringLiteral("Monday"));
+    QCOMPARE(hour->currentText(), QStringLiteral("4"));
+    QCOMPARE(minute->currentText(), QStringLiteral(":00"));
+    QCOMPARE(period->currentText(), QStringLiteral("PM"));
+    QCOMPARE(end->currentText(), QStringLiteral("4:55 PM"));
+    QCOMPARE(remove->text(), removeLabel);
+
+    addRegular->click();
+    QCOMPARE(rows(regularRowName).size(), 2);
+    auto* regularToRemove = rows(regularRowName).last()->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleRemove")
+        );
+    QVERIFY(regularToRemove);
+    regularToRemove->click();
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    QCOMPARE(rows(regularRowName).size(), 1);
+
+    addIntensive->click();
+    QCOMPARE(rows(intensiveRowName).size(), 1);
+    auto* intensiveToRemove = rows(intensiveRowName).front()->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleRemove")
+        );
+    QVERIFY(intensiveToRemove);
+    intensiveToRemove->click();
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    QCOMPARE(rows(intensiveRowName).size(), 0);
+
+    remove->click();
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    bool informationShown = false;
+    QString informationText;
+    QTimer::singleShot(0, [&informationShown, &informationText] {
+        QWidget* const modal = QApplication::activeModalWidget();
+        informationShown = modal != nullptr;
+        if (auto* const information = qobject_cast<QMessageBox*>(
+                modal))
+        {
+            informationText = information->text();
+            information->accept();
+        }
+        else if (modal)
+        {
+            modal->close();
+        }
+    });
+    continueTimes->click();
+    QVERIFY(informationShown);
+    QCOMPARE(informationText, zeroRowsMessage);
+    QCOMPARE(saveCalls, 0);
+    QCOMPARE(rows(regularRowName).size(), 0);
+
+    addRegular->click();
+    QWidget* const fullDurationRegularRow = rows(regularRowName).front();
+    auto* regularOptionHour = fullDurationRegularRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleHour")
+        );
+    auto* regularOptionMinute = fullDurationRegularRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleMinute")
+        );
+    auto* regularOptionPeriod = fullDurationRegularRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupSchedulePeriod")
+        );
+    auto* regularOptionEnd = fullDurationRegularRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleEnd")
+        );
+    QVERIFY(regularOptionHour && regularOptionMinute
+            && regularOptionPeriod && regularOptionEnd);
+    regularOptionHour->setCurrentText(QStringLiteral("3"));
+    regularOptionMinute->setCurrentText(QStringLiteral(":00"));
+    regularOptionPeriod->setCurrentText(QStringLiteral("PM"));
+    const QStringList expectedRegularEndLabels{
+        QStringLiteral("3:55 PM"), QStringLiteral("4:25 PM"),
+        QStringLiteral("4:55 PM"), QStringLiteral("5:55 PM"),
+        QStringLiteral("6:55 PM")
+    };
+    const QList<int> expectedRegularEndMinutes{955, 985, 1015, 1075, 1135};
+    QCOMPARE(regularOptionEnd->count(), expectedRegularEndLabels.size());
+    for (qsizetype index = 0; index < expectedRegularEndLabels.size(); ++index)
+    {
+        QCOMPARE(regularOptionEnd->itemText(index),
+                 expectedRegularEndLabels.at(index));
+        QCOMPARE(regularOptionEnd->itemData(index).toInt(),
+                 expectedRegularEndMinutes.at(index));
+        QVERIFY(!regularOptionEnd->itemText(index).contains(
+            QStringLiteral("AM")
+            ));
+    }
+    regularOptionEnd->setCurrentIndex(4);
+
+    addRegular->click();
+    QWidget* const regularCapRow = rows(regularRowName).back();
+    auto* regularCapDay = regularCapRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleDay")
+        );
+    regularOptionHour = regularCapRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleHour")
+        );
+    regularOptionMinute = regularCapRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleMinute")
+        );
+    regularOptionPeriod = regularCapRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupSchedulePeriod")
+        );
+    regularOptionEnd = regularCapRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleEnd")
+        );
+    QVERIFY(regularCapDay && regularOptionHour && regularOptionMinute
+            && regularOptionPeriod && regularOptionEnd);
+    regularCapDay->setCurrentIndex(1);
+    regularOptionHour->setCurrentText(QStringLiteral("9"));
+    regularOptionMinute->setCurrentText(QStringLiteral(":35"));
+    regularOptionPeriod->setCurrentText(QStringLiteral("PM"));
+    QCOMPARE(regularOptionEnd->count(), 0);
+    QVERIFY(regularOptionEnd->findText(QStringLiteral("10:30 PM")) < 0);
+    regularOptionMinute->setCurrentText(QStringLiteral(":00"));
+    QCOMPARE(regularOptionEnd->count(), 1);
+    QCOMPARE(regularOptionEnd->currentText(), QStringLiteral("9:55 PM"));
+    QCOMPARE(regularOptionEnd->currentData().toInt(), 1315);
+
+    addIntensive->click();
+    QWidget* const fullDurationIntensiveRow = rows(intensiveRowName).front();
+    auto* intensiveOptionDay = fullDurationIntensiveRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleDay")
+        );
+    auto* intensiveOptionHour = fullDurationIntensiveRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleHour")
+        );
+    auto* intensiveOptionMinute = fullDurationIntensiveRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleMinute")
+        );
+    auto* intensiveOptionPeriod = fullDurationIntensiveRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupSchedulePeriod")
+        );
+    auto* intensiveOptionEnd = fullDurationIntensiveRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleEnd")
+        );
+    QVERIFY(intensiveOptionDay && intensiveOptionHour && intensiveOptionMinute
+            && intensiveOptionPeriod && intensiveOptionEnd);
+    intensiveOptionDay->setCurrentIndex(1);
+    intensiveOptionHour->setCurrentText(QStringLiteral("1"));
+    intensiveOptionMinute->setCurrentText(QStringLiteral(":00"));
+    intensiveOptionPeriod->setCurrentText(QStringLiteral("AM"));
+    const QStringList expectedIntensiveEndLabels{
+        QStringLiteral("1:55 AM"), QStringLiteral("2:25 AM"),
+        QStringLiteral("2:55 AM"), QStringLiteral("3:55 AM"),
+        QStringLiteral("4:55 AM")
+    };
+    const QList<int> expectedIntensiveEndMinutes{115, 145, 175, 235, 295};
+    QCOMPARE(intensiveOptionEnd->count(), expectedIntensiveEndLabels.size());
+    for (qsizetype index = 0; index < expectedIntensiveEndLabels.size(); ++index)
+    {
+        QCOMPARE(intensiveOptionEnd->itemText(index),
+                 expectedIntensiveEndLabels.at(index));
+        QCOMPARE(intensiveOptionEnd->itemData(index).toInt(),
+                 expectedIntensiveEndMinutes.at(index));
+    }
+    intensiveOptionEnd->setCurrentIndex(2);
+
+    addIntensive->click();
+    QWidget* const intensiveCapRow = rows(intensiveRowName).back();
+    intensiveOptionDay = intensiveCapRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleDay")
+        );
+    intensiveOptionHour = intensiveCapRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleHour")
+        );
+    intensiveOptionMinute = intensiveCapRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleMinute")
+        );
+    intensiveOptionPeriod = intensiveCapRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupSchedulePeriod")
+        );
+    intensiveOptionEnd = intensiveCapRow->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleEnd")
+        );
+    QVERIFY(intensiveOptionDay && intensiveOptionHour && intensiveOptionMinute
+            && intensiveOptionPeriod && intensiveOptionEnd);
+    intensiveOptionDay->setCurrentIndex(2);
+    intensiveOptionHour->setCurrentText(QStringLiteral("9"));
+    intensiveOptionMinute->setCurrentText(QStringLiteral(":35"));
+    intensiveOptionPeriod->setCurrentText(QStringLiteral("PM"));
+    QCOMPARE(intensiveOptionEnd->count(), 0);
+    QVERIFY(intensiveOptionEnd->findText(QStringLiteral("10:30 PM")) < 0);
+    intensiveOptionMinute->setCurrentText(QStringLiteral(":00"));
+    QCOMPARE(intensiveOptionEnd->count(), 1);
+    QCOMPARE(intensiveOptionEnd->currentText(), QStringLiteral("9:55 PM"));
+    QCOMPARE(intensiveOptionEnd->currentData().toInt(), 1315);
+
+    continueTimes->click();
+    QCOMPARE(saveCalls, 1);
+    QVERIFY(savedTimes.has_value());
+    QCOMPARE(savedTimes->regularTimes.size(), std::size_t(2));
+    QCOMPARE(savedTimes->intensiveTimes.size(), std::size_t(2));
+    QVERIFY(savedTimes->regularTimes.at(0).weekday() == Domain::Weekday::Monday);
+    QCOMPARE(savedTimes->regularTimes.at(0).startMinute().rawValue(), 900);
+    QCOMPARE(savedTimes->regularTimes.at(0).endMinute().rawValue(), 1135);
+    QVERIFY(savedTimes->regularTimes.at(1).weekday() == Domain::Weekday::Tuesday);
+    QCOMPARE(savedTimes->regularTimes.at(1).startMinute().rawValue(), 1260);
+    QCOMPARE(savedTimes->regularTimes.at(1).endMinute().rawValue(), 1315);
+    QVERIFY(savedTimes->intensiveTimes.at(0).weekday() == Domain::Weekday::Tuesday);
+    QCOMPARE(savedTimes->intensiveTimes.at(0).startMinute().rawValue(), 60);
+    QCOMPARE(savedTimes->intensiveTimes.at(0).endMinute().rawValue(), 175);
+    QVERIFY(savedTimes->intensiveTimes.at(1).weekday() == Domain::Weekday::Wednesday);
+    QCOMPARE(savedTimes->intensiveTimes.at(1).startMinute().rawValue(), 1260);
+    QCOMPARE(savedTimes->intensiveTimes.at(1).endMinute().rawValue(), 1315);
+    QVERIFY(state.classTimesSaved);
+    QVERIFY(!group->isEnabled());
+    auto* const status = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupClassTimesStatus")
+        );
+    QVERIFY(status);
+    QCOMPARE(status->text(), savedStatus);
+    if (locale == QStringLiteral("ko_KR"))
+    {
+        QVERIFY(application.removeTranslator(&translator));
+    }
 }
 
 QTEST_MAIN(InitialSetupTeacherEntryBootstrapIntegrationTests)

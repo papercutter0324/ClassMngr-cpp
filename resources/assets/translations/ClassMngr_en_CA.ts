@@ -9694,4 +9694,28 @@ Version: %2</source>
         <translation>Your co-teacher assignment could not be saved. Your changes are still here.</translation>
     </message>
 </context>
+<context>
+    <name>InitialSetupClassTimesPage</name>
+    <message><source>Class Times</source><translation>Class Times</translation></message>
+    <message><source>Regular Schedule</source><translation>Regular Schedule</translation></message>
+    <message><source>Intensive Schedule</source><translation>Intensive Schedule</translation></message>
+    <message><source>Day</source><translation>Day</translation></message>
+    <message><source>Start Time</source><translation>Start Time</translation></message>
+    <message><source>End Time</source><translation>End Time</translation></message>
+    <message><source>Remove</source><translation>Remove</translation></message>
+    <message><source>+ Add Time</source><translation>+ Add Time</translation></message>
+    <message><source>+ Add Intensive Time</source><translation>+ Add Intensive Time</translation></message>
+    <message><source>Continue</source><translation>Continue</translation></message>
+    <message><source>Monday</source><translation>Monday</translation></message>
+    <message><source>Tuesday</source><translation>Tuesday</translation></message>
+    <message><source>Wednesday</source><translation>Wednesday</translation></message>
+    <message><source>Thursday</source><translation>Thursday</translation></message>
+    <message><source>Friday</source><translation>Friday</translation></message>
+    <message><source>Saturday</source><translation>Saturday</translation></message>
+    <message><source>Sunday</source><translation>Sunday</translation></message>
+    <message><source>Class details and times saved. Setup remains pending.</source><translation>Class details and times saved. Setup remains pending.</translation></message>
+    <message><source>Enter at least one regular or intensive class time before continuing.</source><translation>Enter at least one regular or intensive class time before continuing.</translation></message>
+    <message><source>Choose a valid start and end time for every row.</source><translation>Choose a valid start and end time for every row.</translation></message>
+    <message><source>The class information could not be saved. Your entries are still here; retry to continue.</source><translation>The class information could not be saved. Your entries are still here; retry to continue.</translation></message>
+</context>
 </TS>

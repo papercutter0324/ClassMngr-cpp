@@ -3,6 +3,8 @@
 #include "next/application/personal_details_save.h"
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
 #include "next/application/custom_color_palette_preferences.h"
+#include "next/application/class_create.h"
+#include "next/application/initial_setup_class_times_requirement.h"
 #include "next/application/teacher_create.h"
 #include "next/application/teacher_import_use_case.h"
 #include "next/application/workspace_contracts.h"
@@ -69,6 +71,11 @@ public:
         ) const;
     [[nodiscard]] Application::TeacherCreateResult createInitialSetupTeacher(
         const Application::TeacherCreateRequest& request
+        ) const;
+    [[nodiscard]] Application::ClassCreateResult createInitialSetupClass() const;
+    [[nodiscard]] Application::InitialSetupClassTimesSaveResult
+    saveInitialSetupClassTimes(
+        const Application::InitialSetupClassTimesSaveRequest& request
         ) const;
     [[nodiscard]] std::expected<
         Application::TeacherImportUseCaseResult,

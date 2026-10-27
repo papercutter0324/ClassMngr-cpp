@@ -3,6 +3,7 @@
 #include "next/application/personal_details_save.h"
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
 #include "next/application/initial_setup_class_details_draft.h"
+#include "next/application/initial_setup_class_times_requirement.h"
 #include "next/application/custom_color_palette_preferences.h"
 #include "next/application/teacher_create.h"
 #include "next/domain/personal_signature_image_save_bytes.h"
@@ -11,6 +12,7 @@
 
 #include <QByteArray>
 #include <QString>
+#include <QList>
 
 #include <functional>
 #include <optional>
@@ -21,6 +23,7 @@ class QLineEdit;
 class QPushButton;
 class QRadioButton;
 class QGroupBox;
+class QVBoxLayout;
 
 namespace ClassMngr::Next::Ui
 {
@@ -34,6 +37,8 @@ struct InitialSetupPageState final
     QString profileLocation;
     QString recoveryProfileLocation;
     QString statusMessage;
+    bool classDetailsReady = false;
+    bool classTimesSaved = false;
 };
 
 struct InitialSetupPageActions final
@@ -61,6 +66,9 @@ struct InitialSetupPageActions final
     std::function<Application::InitialSetupClassDetailsDraftCaptureResult(
         const Application::InitialSetupClassDetailsDraft&
         )> captureClassDetailsDraft;
+    std::function<Application::InitialSetupClassTimesSaveResult(
+        const Application::InitialSetupClassTimes&
+        )> saveClassTimes;
     InitialSetupTeacherImportActions teacherImport;
     std::function<Domain::Result<std::optional<QByteArray>>()> chooseSignatureImage;
 };
@@ -94,6 +102,10 @@ private:
     void updateClassColorPreview();
     void chooseClassColor();
     void continueClassDetails();
+    void continueClassTimes();
+    void appendClassTimesRow(bool intensive);
+    void removeClassTimesRow(bool intensive, QWidget* row);
+    [[nodiscard]] QWidget* createClassTimesRow(bool intensive);
     void clearClassDetails();
     void updatePreferredTeacherNames();
     void updateTeacherEntryControls();
@@ -151,6 +163,16 @@ private:
     QComboBox* m_readingBookCombo = nullptr;
     QComboBox* m_essayBookCombo = nullptr;
     QPushButton* m_continueClassDetailsButton = nullptr;
+    QGroupBox* m_classTimesGroup = nullptr;
+    QVBoxLayout* m_regularScheduleRowsLayout = nullptr;
+    QVBoxLayout* m_intensiveScheduleRowsLayout = nullptr;
+    QLabel* m_classTimesStatusLabel = nullptr;
+    QLabel* m_classTimesValidationLabel = nullptr;
+    QPushButton* m_addRegularScheduleRowButton = nullptr;
+    QPushButton* m_addIntensiveScheduleRowButton = nullptr;
+    QPushButton* m_continueClassTimesButton = nullptr;
+    QList<QWidget*> m_regularScheduleRows;
+    QList<QWidget*> m_intensiveScheduleRows;
     Application::PersonalDetailsSaveRequest m_personalDetails;
     QByteArray m_imageSignature;
     bool m_setupWasPending = false;

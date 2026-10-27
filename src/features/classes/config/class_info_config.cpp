@@ -1,6 +1,7 @@
 #include "class_info_config.h"
 
 #include "domain/config/class_details_catalog.h"
+#include "domain/config/class_schedule_catalog.h"
 
 #include <string_view>
 
@@ -33,23 +34,21 @@ const QStringList Grades = fromDomainNames(
     ClassMngr::Domain::ClassDetailsCatalog::grades()
     );
 
-const QStringList Days{
-    "Monday", "Tuesday", "Wednesday", "Thursday",
-    "Friday", "Saturday", "Sunday"
-};
+const QStringList Days = fromDomainNames(
+    ClassMngr::Domain::ClassScheduleCatalog::days()
+    );
 
-const QStringList RegularHours{
-    "3", "4", "5", "6", "7", "8", "9"
-};
+const QStringList RegularHours = fromDomainNames(
+    ClassMngr::Domain::ClassScheduleCatalog::regularStartHours()
+    );
 
-const QStringList IntensiveHours{
-    "1", "2", "3", "4", "5", "6",
-    "7", "8", "9", "10", "11", "12"
-};
+const QStringList IntensiveHours = fromDomainNames(
+    ClassMngr::Domain::ClassScheduleCatalog::intensiveStartHours()
+    );
 
-const QStringList StartMinutes{
-    ":00", ":05", ":25", ":30", ":35"
-};
+const QStringList StartMinutes = fromDomainNames(
+    ClassMngr::Domain::ClassScheduleCatalog::startMinuteChoices()
+    );
 
 const QStringList EndMinutes{
     ":55", ":50", ":35", ":30", ":25"

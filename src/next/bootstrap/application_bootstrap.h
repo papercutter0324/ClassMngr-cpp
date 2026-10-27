@@ -8,6 +8,7 @@
 #include "next/application/application_runtime.h"
 #include "next/application/initial_setup_lifecycle.h"
 #include "next/application/initial_setup_class_details_draft.h"
+#include "next/application/initial_setup_class_times_requirement.h"
 #include "next/application/custom_color_palette_preferences.h"
 #include "next/application/personal_details_save.h"
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
@@ -144,6 +145,10 @@ private:
     captureInitialSetupClassDetailsDraft(
         const Application::InitialSetupClassDetailsDraft& draft
         );
+    [[nodiscard]] Application::InitialSetupClassTimesSaveResult
+    saveInitialSetupClassTimes(
+        const Application::InitialSetupClassTimes& times
+        );
     [[nodiscard]] Application::TeacherCreateResult
     saveInitialSetupTeacher(
         const Application::TeacherCreateRequest& request
@@ -192,6 +197,8 @@ private:
     std::unique_ptr<Application::InitialSetupLifecycle> m_initialSetupLifecycle;
     std::optional<Application::InitialSetupClassDetailsDraft>
         m_initialSetupClassDetailsDraft;
+    std::optional<Domain::ClassId> m_initialSetupClassId;
+    bool m_initialSetupClassTimesSaved = false;
     QString m_initialSetupStatusMessage;
     std::optional<Application::StartupWorkspaceOutcome> m_startupWorkspaceOutcome;
     Application::StartupCoordinator m_startupCoordinator;

@@ -8,6 +8,7 @@
 #include "next/application/initial_setup_teacher_entry_skip_policy.h"
 #include "next/application/initial_setup_teacher_identity_validation.h"
 #include "domain/config/class_details_catalog.h"
+#include "domain/config/class_schedule_catalog.h"
 
 #include <QColor>
 #include <QColorDialog>
@@ -21,12 +22,15 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QPixmap>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSignalBlocker>
 #include <QScrollArea>
 #include <QVBoxLayout>
+
+#include <algorithm>
 
 #include <cstddef>
 #include <array>
@@ -69,6 +73,48 @@ QString classDetailsText(const char* sourceText)
         "InitialSetupClassDetailsPage",
         sourceText
         );
+}
+
+QString classTimesText(const char* sourceText)
+{
+    return QCoreApplication::translate(
+        "InitialSetupClassTimesPage",
+        sourceText
+        );
+}
+
+QString localizedClassDay(const QString& day)
+{
+    if (day == QStringLiteral("Monday")) return classTimesText("Monday");
+    if (day == QStringLiteral("Tuesday")) return classTimesText("Tuesday");
+    if (day == QStringLiteral("Wednesday")) return classTimesText("Wednesday");
+    if (day == QStringLiteral("Thursday")) return classTimesText("Thursday");
+    if (day == QStringLiteral("Friday")) return classTimesText("Friday");
+    if (day == QStringLiteral("Saturday")) return classTimesText("Saturday");
+    if (day == QStringLiteral("Sunday")) return classTimesText("Sunday");
+    return day;
+}
+
+int clockMinutes(const int hour, const int minute, const QString& period)
+{
+    const int hour24 = period == QStringLiteral("PM")
+        ? (hour % 12) + 12
+        : hour % 12;
+    return hour24 * 60 + minute;
+}
+
+QString formattedClock(const int totalMinutes)
+{
+    const int hour24 = totalMinutes / 60;
+    const int minute = totalMinutes % 60;
+    const int hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+    const QString period = hour24 < 12
+        ? QStringLiteral("AM")
+        : QStringLiteral("PM");
+    return QStringLiteral("%1:%2 %3")
+        .arg(hour12)
+        .arg(minute, 2, 10, QLatin1Char('0'))
+        .arg(period);
 }
 
 QString teacherInfoText(const char* sourceText)
@@ -736,6 +782,110 @@ InitialPage::InitialPage(
     classDetailsLayout->addLayout(classDetailsActions);
 
     setupContentLayout->addWidget(m_classDetailsGroup);
+
+    m_classTimesGroup = new QGroupBox(
+        classTimesText("Class Times"),
+        setupContent
+        );
+    m_classTimesGroup->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassTimes")
+        );
+    auto* classTimesLayout = new QVBoxLayout(m_classTimesGroup);
+
+    auto* regularHeading = new QLabel(
+        classTimesText("Regular Schedule"),
+        m_classTimesGroup
+        );
+    regularHeading->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupRegularScheduleHeading")
+        );
+    classTimesLayout->addWidget(regularHeading);
+    auto* regularHeaders = new QHBoxLayout;
+    for (const char* label : {"Day", "Start Time", "End Time"})
+    {
+        auto* header = new QLabel(classTimesText(label), m_classTimesGroup);
+        header->setMinimumWidth(120);
+        regularHeaders->addWidget(header);
+    }
+    regularHeaders->addStretch(1);
+    classTimesLayout->addLayout(regularHeaders);
+    m_regularScheduleRowsLayout = new QVBoxLayout;
+    classTimesLayout->addLayout(m_regularScheduleRowsLayout);
+    m_addRegularScheduleRowButton = new QPushButton(
+        classTimesText("+ Add Time"),
+        m_classTimesGroup
+        );
+    m_addRegularScheduleRowButton->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupAddRegularTime")
+        );
+    classTimesLayout->addWidget(
+        m_addRegularScheduleRowButton,
+        0,
+        Qt::AlignLeft
+        );
+
+    auto* scheduleSeparator = new QFrame(m_classTimesGroup);
+    scheduleSeparator->setFrameShape(QFrame::HLine);
+    scheduleSeparator->setFrameShadow(QFrame::Sunken);
+    classTimesLayout->addWidget(scheduleSeparator);
+
+    auto* intensiveHeading = new QLabel(
+        classTimesText("Intensive Schedule"),
+        m_classTimesGroup
+        );
+    intensiveHeading->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupIntensiveScheduleHeading")
+        );
+    classTimesLayout->addWidget(intensiveHeading);
+    auto* intensiveHeaders = new QHBoxLayout;
+    for (const char* label : {"Day", "Start Time", "End Time"})
+    {
+        auto* header = new QLabel(classTimesText(label), m_classTimesGroup);
+        header->setMinimumWidth(120);
+        intensiveHeaders->addWidget(header);
+    }
+    intensiveHeaders->addStretch(1);
+    classTimesLayout->addLayout(intensiveHeaders);
+    m_intensiveScheduleRowsLayout = new QVBoxLayout;
+    classTimesLayout->addLayout(m_intensiveScheduleRowsLayout);
+    m_addIntensiveScheduleRowButton = new QPushButton(
+        classTimesText("+ Add Intensive Time"),
+        m_classTimesGroup
+        );
+    m_addIntensiveScheduleRowButton->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupAddIntensiveTime")
+        );
+    classTimesLayout->addWidget(
+        m_addIntensiveScheduleRowButton,
+        0,
+        Qt::AlignLeft
+        );
+
+    m_classTimesStatusLabel = new QLabel(m_classTimesGroup);
+    m_classTimesStatusLabel->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassTimesStatus")
+        );
+    m_classTimesStatusLabel->setWordWrap(true);
+    classTimesLayout->addWidget(m_classTimesStatusLabel);
+    m_classTimesValidationLabel = new QLabel(m_classTimesGroup);
+    m_classTimesValidationLabel->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassTimesValidation")
+        );
+    m_classTimesValidationLabel->setWordWrap(true);
+    classTimesLayout->addWidget(m_classTimesValidationLabel);
+
+    auto* classTimesActions = new QHBoxLayout;
+    classTimesActions->addStretch(1);
+    m_continueClassTimesButton = new QPushButton(
+        classTimesText("Continue"),
+        m_classTimesGroup
+        );
+    m_continueClassTimesButton->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassTimesContinue")
+        );
+    classTimesActions->addWidget(m_continueClassTimesButton);
+    classTimesLayout->addLayout(classTimesActions);
+    setupContentLayout->addWidget(m_classTimesGroup);
     setupContentLayout->addStretch(1);
 
     auto* setupScroll = new QScrollArea(this);
@@ -807,6 +957,12 @@ InitialPage::InitialPage(
             this, &InitialPage::chooseClassColor);
     connect(m_continueClassDetailsButton, &QPushButton::clicked,
             this, &InitialPage::continueClassDetails);
+    connect(m_addRegularScheduleRowButton, &QPushButton::clicked,
+            this, [this] { appendClassTimesRow(false); });
+    connect(m_addIntensiveScheduleRowButton, &QPushButton::clicked,
+            this, [this] { appendClassTimesRow(true); });
+    connect(m_continueClassTimesButton, &QPushButton::clicked,
+            this, &InitialPage::continueClassTimes);
     connect(m_classGradeCombo, qOverload<int>(&QComboBox::currentIndexChanged),
             this, &InitialPage::updateClassDetailsLevels);
     connect(m_classLevelCombo, qOverload<int>(&QComboBox::currentIndexChanged),
@@ -896,6 +1052,8 @@ InitialPage::InitialPage(
     m_personalDetailsGroup->hide();
     m_teacherEntryGroup->hide();
     m_classDetailsGroup->hide();
+    m_classTimesGroup->hide();
+    appendClassTimesRow(false);
     updateClassDetailsLevels();
     updateClassColorPreview();
     refreshSetupState();
@@ -987,8 +1145,18 @@ void InitialPage::refreshSetupState()
     m_personalDetailsGroup->setVisible(state.setupPending);
     m_teacherEntryGroup->setVisible(state.setupPending);
     m_classDetailsGroup->setVisible(
-        state.setupPending && m_teacherEntryComplete
+        state.setupPending && m_teacherEntryComplete && !state.classDetailsReady
         );
+    m_classTimesGroup->setVisible(
+        state.setupPending && state.classDetailsReady
+        );
+    m_classTimesGroup->setEnabled(!state.classTimesSaved);
+    if (state.classTimesSaved)
+    {
+        m_classTimesStatusLabel->setText(classTimesText(
+            "Class details and times saved. Setup remains pending."
+            ));
+    }
 
     if (state.setupPending && !m_setupWasPending)
     {
@@ -1026,8 +1194,12 @@ void InitialPage::refreshSetupState()
     }
 
     m_classDetailsGroup->setVisible(
-        state.setupPending && m_teacherEntryComplete
+        state.setupPending && m_teacherEntryComplete && !state.classDetailsReady
         );
+    m_classTimesGroup->setVisible(
+        state.setupPending && state.classDetailsReady
+        );
+    m_classTimesGroup->setEnabled(!state.classTimesSaved);
     m_setupWasPending = state.setupPending;
 }
 
@@ -1609,6 +1781,273 @@ void InitialPage::continueClassDetails()
     m_classDetailsStatusLabel->setText(classDetailsText(
         "Class details are ready for Class Times. Setup remains pending."
         ));
+    refreshSetupState();
+}
+
+QWidget* InitialPage::createClassTimesRow(const bool intensive)
+{
+    auto* row = new QWidget(m_classTimesGroup);
+    row->setObjectName(intensive
+        ? QStringLiteral("classMngrNextInitialSetupIntensiveScheduleRow")
+        : QStringLiteral("classMngrNextInitialSetupRegularScheduleRow"));
+    auto* layout = new QHBoxLayout(row);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(8);
+
+    auto* day = new QComboBox(row);
+    day->setObjectName(QStringLiteral("classMngrNextInitialSetupScheduleDay"));
+    for (const std::string_view value : ::ClassMngr::Domain::ClassScheduleCatalog::weekdays)
+    {
+        const QByteArray bytes = QByteArray::fromRawData(
+            value.data(), static_cast<qsizetype>(value.size())
+            );
+        const QString canonical = QString::fromUtf8(bytes);
+        day->addItem(localizedClassDay(canonical), canonical);
+    }
+    day->setMinimumWidth(120);
+
+    auto* hour = new QComboBox(row);
+    hour->setObjectName(QStringLiteral("classMngrNextInitialSetupScheduleHour"));
+    const auto hours = intensive
+        ? ::ClassMngr::Domain::ClassScheduleCatalog::intensiveStartHours()
+        : ::ClassMngr::Domain::ClassScheduleCatalog::regularStartHours();
+    for (const std::string_view value : hours)
+    {
+        hour->addItem(QString::fromUtf8(value.data(),
+                                        static_cast<qsizetype>(value.size())));
+    }
+    hour->setCurrentText(QStringLiteral("4"));
+
+    auto* minute = new QComboBox(row);
+    minute->setObjectName(QStringLiteral("classMngrNextInitialSetupScheduleMinute"));
+    for (const std::string_view value : ::ClassMngr::Domain::ClassScheduleCatalog::startMinutes)
+    {
+        minute->addItem(QString::fromUtf8(value.data(),
+                                          static_cast<qsizetype>(value.size())));
+    }
+
+    auto* period = new QComboBox(row);
+    period->setObjectName(QStringLiteral("classMngrNextInitialSetupSchedulePeriod"));
+    for (const std::string_view value : ::ClassMngr::Domain::ClassScheduleCatalog::periods)
+    {
+        period->addItem(QString::fromUtf8(value.data(),
+                                          static_cast<qsizetype>(value.size())));
+    }
+
+    auto* end = new QComboBox(row);
+    end->setObjectName(QStringLiteral("classMngrNextInitialSetupScheduleEnd"));
+    auto* remove = new QPushButton(classTimesText("Remove"), row);
+    remove->setObjectName(QStringLiteral("classMngrNextInitialSetupScheduleRemove"));
+
+    layout->addWidget(day);
+    layout->addWidget(hour);
+    layout->addWidget(minute);
+    layout->addWidget(period);
+    layout->addWidget(end);
+    layout->addWidget(remove);
+    layout->addStretch(1);
+
+    auto updateEndTimes = [row, hour, minute, period, end] {
+        const int oldStart = row->property("classMngrPreviousStartMinutes").toInt();
+        const int oldEnd = end->currentData().toInt();
+        int preferredDuration = ::ClassMngr::Domain::ClassScheduleCatalog::endTimeDurations.front();
+        if (oldStart >= 0 && oldEnd > oldStart)
+        {
+            preferredDuration = oldEnd - oldStart;
+        }
+
+        const int currentStart = clockMinutes(
+            hour->currentText().toInt(),
+            minute->currentText().mid(1).toInt(),
+            period->currentText()
+            );
+        QStringList endLabels;
+        QList<int> endMinutes;
+        for (const int duration : ::ClassMngr::Domain::ClassScheduleCatalog::endTimeDurations)
+        {
+            const int endMinute = currentStart + duration;
+            if (endMinute <= ::ClassMngr::Domain::ClassScheduleCatalog::latestEndTimeMinutes)
+            {
+                endLabels.append(formattedClock(endMinute));
+                endMinutes.append(endMinute);
+            }
+        }
+
+        const QSignalBlocker blocker(end);
+        end->clear();
+        for (qsizetype index = 0; index < endLabels.size(); ++index)
+        {
+            end->addItem(endLabels.at(index), endMinutes.at(index));
+        }
+        const int wanted = std::find_if(
+            ::ClassMngr::Domain::ClassScheduleCatalog::endTimeDurations.begin(),
+            ::ClassMngr::Domain::ClassScheduleCatalog::endTimeDurations.end(),
+            [preferredDuration](const int duration) {
+                return duration == preferredDuration;
+            }
+            ) != ::ClassMngr::Domain::ClassScheduleCatalog::endTimeDurations.end()
+            ? currentStart + preferredDuration
+            : -1;
+        const int matching = end->findData(wanted);
+        if (matching >= 0)
+        {
+            end->setCurrentIndex(matching);
+        }
+        else if (end->count() > 0)
+        {
+            end->setCurrentIndex(0);
+        }
+        row->setProperty("classMngrPreviousStartMinutes", currentStart);
+    };
+
+    connect(hour, qOverload<int>(&QComboBox::currentIndexChanged), row,
+            [updateEndTimes] { updateEndTimes(); });
+    connect(minute, qOverload<int>(&QComboBox::currentIndexChanged), row,
+            [updateEndTimes] { updateEndTimes(); });
+    connect(period, qOverload<int>(&QComboBox::currentIndexChanged), row,
+            [updateEndTimes] { updateEndTimes(); });
+    connect(remove, &QPushButton::clicked, row, [this, intensive, row] {
+        removeClassTimesRow(intensive, row);
+    });
+    updateEndTimes();
+    return row;
+}
+
+void InitialPage::appendClassTimesRow(const bool intensive)
+{
+    QWidget* const row = createClassTimesRow(intensive);
+    if (intensive)
+    {
+        m_intensiveScheduleRows.append(row);
+        m_intensiveScheduleRowsLayout->addWidget(row);
+    }
+    else
+    {
+        m_regularScheduleRows.append(row);
+        m_regularScheduleRowsLayout->addWidget(row);
+    }
+}
+
+void InitialPage::removeClassTimesRow(const bool intensive, QWidget* row)
+{
+    QList<QWidget*>& rows = intensive
+        ? m_intensiveScheduleRows
+        : m_regularScheduleRows;
+    QVBoxLayout* const layout = intensive
+        ? m_intensiveScheduleRowsLayout
+        : m_regularScheduleRowsLayout;
+    if (!rows.removeOne(row))
+    {
+        return;
+    }
+    layout->removeWidget(row);
+    row->hide();
+    row->deleteLater();
+}
+
+void InitialPage::continueClassTimes()
+{
+    if (!m_setupWasPending || !m_actions.state)
+    {
+        return;
+    }
+    const InitialSetupPageState state = m_actions.state();
+    if (!state.setupPending || !state.classDetailsReady || state.classTimesSaved)
+    {
+        return;
+    }
+
+    if (!Application::initialSetupClassTimesRequirementMet(
+            !m_regularScheduleRows.isEmpty(),
+            !m_intensiveScheduleRows.isEmpty()
+            ))
+    {
+        m_classTimesValidationLabel->clear();
+        QMessageBox::information(
+            this,
+            classTimesText("Class Times"),
+            classTimesText(
+                "Enter at least one regular or intensive class time before continuing."
+                )
+            );
+        return;
+    }
+
+    Application::InitialSetupClassTimes times;
+    const auto collect = [](const QList<QWidget*>& rows,
+                            std::vector<Domain::ScheduleTime>& output) {
+        output.reserve(static_cast<std::size_t>(rows.size()));
+        for (QWidget* row : rows)
+        {
+            const auto* day = row->findChild<QComboBox*>(
+                QStringLiteral("classMngrNextInitialSetupScheduleDay")
+                );
+            const auto* hour = row->findChild<QComboBox*>(
+                QStringLiteral("classMngrNextInitialSetupScheduleHour")
+                );
+            const auto* minute = row->findChild<QComboBox*>(
+                QStringLiteral("classMngrNextInitialSetupScheduleMinute")
+                );
+            const auto* period = row->findChild<QComboBox*>(
+                QStringLiteral("classMngrNextInitialSetupSchedulePeriod")
+                );
+            const auto* end = row->findChild<QComboBox*>(
+                QStringLiteral("classMngrNextInitialSetupScheduleEnd")
+                );
+            if (!day || !hour || !minute || !period || !end || end->count() == 0)
+            {
+                return false;
+            }
+            const int weekday = day->currentIndex();
+            if (weekday < 0 || weekday > static_cast<int>(Domain::Weekday::Sunday))
+            {
+                return false;
+            }
+            const int start = clockMinutes(
+                hour->currentText().toInt(),
+                minute->currentText().mid(1).toInt(),
+                period->currentText()
+                );
+            const auto schedule = Domain::ScheduleTime::fromMinutes(
+                static_cast<Domain::Weekday>(weekday),
+                Domain::ScheduleTime::StartMinute{start},
+                Domain::ScheduleTime::EndMinute{end->currentData().toInt()}
+                );
+            if (!schedule)
+            {
+                return false;
+            }
+            output.push_back(*schedule);
+        }
+        return true;
+    };
+
+    if (!collect(m_regularScheduleRows, times.regularTimes)
+        || !collect(m_intensiveScheduleRows, times.intensiveTimes))
+    {
+        m_classTimesValidationLabel->setText(classTimesText(
+            "Choose a valid start and end time for every row."
+            ));
+        return;
+    }
+
+    m_classTimesValidationLabel->clear();
+    const Application::InitialSetupClassTimesSaveResult saved =
+        m_actions.saveClassTimes
+            ? m_actions.saveClassTimes(times)
+            : Application::InitialSetupClassTimesSaveResult::failure({
+                  .code = Domain::ErrorCode::Technical,
+                  .message = "Class details and times could not be saved.",
+                  .recoverable = true
+              });
+    if (!saved)
+    {
+        m_classTimesStatusLabel->setText(classTimesText(
+            "The class information could not be saved. Your entries are still here; retry to continue."
+            ));
+        return;
+    }
+    refreshSetupState();
 }
 
 void InitialPage::clearClassDetails()
@@ -1627,6 +2066,24 @@ void InitialPage::clearClassDetails()
     m_classGradeCombo->setCurrentIndex(0);
     updateClassDetailsLevels();
     updateClassColorPreview();
+    m_classTimesStatusLabel->clear();
+    m_classTimesValidationLabel->clear();
+    m_classTimesGroup->setEnabled(true);
+    for (QWidget* row : std::as_const(m_regularScheduleRows))
+    {
+        m_regularScheduleRowsLayout->removeWidget(row);
+        row->hide();
+        row->deleteLater();
+    }
+    for (QWidget* row : std::as_const(m_intensiveScheduleRows))
+    {
+        m_intensiveScheduleRowsLayout->removeWidget(row);
+        row->hide();
+        row->deleteLater();
+    }
+    m_regularScheduleRows.clear();
+    m_intensiveScheduleRows.clear();
+    appendClassTimesRow(false);
 }
 
 void InitialPage::refreshPersonalDetails()

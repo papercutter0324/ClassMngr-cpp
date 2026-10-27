@@ -734,6 +734,11 @@ Application::StartupResult ApplicationBootstrap::start()
                             ) {
                             return captureInitialSetupClassDetailsDraft(draft);
                         },
+                        .saveClassTimes = [this](
+                            const Application::InitialSetupClassTimes& times
+                            ) {
+                            return saveInitialSetupClassTimes(times);
+                        },
                         .teacherImport = {
                             .chooseWorkbook = [this] {
                                 return chooseInitialSetupTeacherImportWorkbook();
@@ -1270,6 +1275,8 @@ Ui::InitialSetupPageState ApplicationBootstrap::initialSetupPageState() const
             );
         state.recoveryHasOriginalProfile =
             !m_initialSetupLifecycle->pendingOriginalBackup().empty();
+        state.classDetailsReady = m_initialSetupClassDetailsDraft.has_value();
+        state.classTimesSaved = m_initialSetupClassTimesSaved;
         return state;
     }
 
@@ -1398,6 +1405,8 @@ void ApplicationBootstrap::beginInitialSetupProfile()
         return;
     }
     m_initialSetupClassDetailsDraft.reset();
+    m_initialSetupClassId.reset();
+    m_initialSetupClassTimesSaved = false;
     m_initialSetupStatusMessage.clear();
 }
 
@@ -1430,6 +1439,8 @@ void ApplicationBootstrap::resumeInitialSetupProfile()
         return;
     }
     m_initialSetupClassDetailsDraft.reset();
+    m_initialSetupClassId.reset();
+    m_initialSetupClassTimesSaved = false;
     m_initialSetupStatusMessage.clear();
 }
 
@@ -1453,6 +1464,8 @@ void ApplicationBootstrap::restoreInitialSetupProfile()
     if (restored.status == Application::InitialSetupCancelStatus::Canceled)
     {
         m_initialSetupClassDetailsDraft.reset();
+        m_initialSetupClassId.reset();
+        m_initialSetupClassTimesSaved = false;
     }
     m_initialSetupStatusMessage = restored.status
             == Application::InitialSetupCancelStatus::Canceled
@@ -1476,6 +1489,8 @@ void ApplicationBootstrap::cancelInitialSetupProfile()
     if (canceled.status == Application::InitialSetupCancelStatus::Canceled)
     {
         m_initialSetupClassDetailsDraft.reset();
+        m_initialSetupClassId.reset();
+        m_initialSetupClassTimesSaved = false;
     }
     m_initialSetupStatusMessage = canceled.status
             == Application::InitialSetupCancelStatus::Canceled
@@ -1665,8 +1680,95 @@ ApplicationBootstrap::captureInitialSetupClassDetailsDraft(
         });
     }
 
+    if (!m_initialSetupClassDetailsDraft.has_value()
+        || *m_initialSetupClassDetailsDraft != draft)
+    {
+        m_initialSetupClassId.reset();
+        m_initialSetupClassTimesSaved = false;
+    }
     m_initialSetupClassDetailsDraft = draft;
     return Application::InitialSetupClassDetailsDraftCaptureResult::success();
+}
+
+Application::InitialSetupClassTimesSaveResult
+ApplicationBootstrap::saveInitialSetupClassTimes(
+    const Application::InitialSetupClassTimes& times
+    )
+{
+    if (!m_initialSetupLifecycle
+        || !m_initialSetupLifecycle->hasPendingSetup()
+        || !m_initialSetupClassDetailsDraft.has_value())
+    {
+        return Application::InitialSetupClassTimesSaveResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "Class details are not ready for setup.",
+            .recoverable = true
+        });
+    }
+    if (!Application::initialSetupClassTimesRequirementMet(
+            !times.regularTimes.empty(),
+            !times.intensiveTimes.empty()
+            ))
+    {
+        return Application::InitialSetupClassTimesSaveResult::failure({
+            .code = Domain::ErrorCode::Validation,
+            .message = "At least one class time is required.",
+            .recoverable = true
+        });
+    }
+    if (m_initialSetupClassTimesSaved)
+    {
+        return Application::InitialSetupClassTimesSaveResult::success();
+    }
+
+    auto* const storeGateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+        m_workspaceGateway.get()
+        );
+    if (!storeGateway)
+    {
+        return Application::InitialSetupClassTimesSaveResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "The setup profile class store is unavailable.",
+            .recoverable = true
+        });
+    }
+
+    if (!m_initialSetupClassId.has_value())
+    {
+        const Application::ClassCreateResult created =
+            storeGateway->createInitialSetupClass();
+        if (!created)
+        {
+            m_initialSetupClassId.reset();
+            return Application::InitialSetupClassTimesSaveResult::failure(
+                created.error()
+                );
+        }
+        m_initialSetupClassId = created.value();
+    }
+
+    const Application::InitialSetupClassDetailsDraft& draft =
+        *m_initialSetupClassDetailsDraft;
+    const Application::InitialSetupClassTimesSaveRequest request{
+        .classId = *m_initialSetupClassId,
+        .teacherId = draft.koreanTeacherId,
+        .classColor = draft.classColor,
+        .fontColor = draft.fontColor,
+        .classGrade = draft.classGrade,
+        .classLevel = draft.classLevel,
+        .readingBook = draft.readingBook,
+        .essayBook = draft.essayBook,
+        .regularTimes = times.regularTimes,
+        .intensiveTimes = times.intensiveTimes
+    };
+    const Application::InitialSetupClassTimesSaveResult saved =
+        storeGateway->saveInitialSetupClassTimes(request);
+    if (!saved)
+    {
+        return saved;
+    }
+    m_initialSetupClassTimesSaved = true;
+    return Application::InitialSetupClassTimesSaveResult::success();
 }
 
 Application::TeacherCreateResult ApplicationBootstrap::saveInitialSetupTeacher(

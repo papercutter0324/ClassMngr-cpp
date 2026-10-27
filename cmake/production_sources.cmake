@@ -143,6 +143,7 @@ set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
     "src/next/platform/workspace_store_gateway.cpp"
     "src/next/platform/workspace_store_gateway.h"
     "src/next/platform/workspace_store_initial_setup_teacher_entry_port.h"
+    "src/next/platform/workspace_store_initial_setup_class_times_ports.h"
     "src/next/platform/workspace_store_custom_color_palette_preferences_port.cpp"
     "src/next/platform/workspace_store_custom_color_palette_preferences_port.h"
     "src/next/platform/workspace_store_personal_details_port.h"
@@ -168,6 +169,7 @@ set(CLASSMNGR_DATA_SOURCES
 
 set(CLASSMNGR_DOMAIN_SOURCES
     "src/domain/config/class_details_catalog.h"
+    "src/domain/config/class_schedule_catalog.h"
     "src/domain/models/calendar_event.h"
     "src/domain/models/campus.h"
     "src/domain/models/campus_info.h"

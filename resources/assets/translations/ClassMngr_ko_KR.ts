@@ -10013,4 +10013,28 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>Loading the workbook timed out after %1 seconds. Try again or increase the timeout in Preferences.</source><translation>%1초 후 파일 읽기 시간이 초과되었습니다. 다시 시도하거나 환경 설정에서 제한 시간을 늘리세요.</translation></message>
     <message><source>Retry</source><translation>다시 시도</translation></message>
 </context>
+<context>
+    <name>InitialSetupClassTimesPage</name>
+    <message><source>Class Times</source><translation>수업 시간</translation></message>
+    <message><source>Regular Schedule</source><translation>정규 수업 일정</translation></message>
+    <message><source>Intensive Schedule</source><translation>집중 수업 일정</translation></message>
+    <message><source>Day</source><translation>요일</translation></message>
+    <message><source>Start Time</source><translation>시작 시간</translation></message>
+    <message><source>End Time</source><translation>종료 시간</translation></message>
+    <message><source>Remove</source><translation>제거</translation></message>
+    <message><source>+ Add Time</source><translation>+ 시간 추가</translation></message>
+    <message><source>+ Add Intensive Time</source><translation>+ 집중 수업 시간 추가</translation></message>
+    <message><source>Continue</source><translation>계속</translation></message>
+    <message><source>Monday</source><translation>월요일</translation></message>
+    <message><source>Tuesday</source><translation>화요일</translation></message>
+    <message><source>Wednesday</source><translation>수요일</translation></message>
+    <message><source>Thursday</source><translation>목요일</translation></message>
+    <message><source>Friday</source><translation>금요일</translation></message>
+    <message><source>Saturday</source><translation>토요일</translation></message>
+    <message><source>Sunday</source><translation>일요일</translation></message>
+    <message><source>Class details and times saved. Setup remains pending.</source><translation>학급 정보와 수업 시간을 저장했습니다. 초기 설정은 계속 진행 중입니다.</translation></message>
+    <message><source>Enter at least one regular or intensive class time before continuing.</source><translation>계속하려면 정규 또는 집중 수업 시간을 하나 이상 입력하세요.</translation></message>
+    <message><source>Choose a valid start and end time for every row.</source><translation>각 행에서 올바른 시작 시간과 종료 시간을 선택하세요.</translation></message>
+    <message><source>The class information could not be saved. Your entries are still here; retry to continue.</source><translation>학급 정보를 저장하지 못했습니다. 입력한 내용은 그대로 유지됩니다. 다시 시도하세요.</translation></message>
+</context>
 </TS>

@@ -1,6 +1,7 @@
 #include "class_time_row.h"
 
 #include "features/classes/config/class_info_config.h"
+#include "domain/config/class_schedule_catalog.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -17,16 +18,8 @@
 
 namespace
 {
-constexpr int DefaultClassDurationMinutes = 55;
-constexpr int LatestEndTimeMinutes = 21 * 60 + 55;
-
-constexpr std::array<int, 5> EndTimeDurations{
-    DefaultClassDurationMinutes,
-    85,
-    115,
-    175,
-    235
-};
+constexpr int DefaultClassDurationMinutes =
+    ClassMngr::Domain::ClassScheduleCatalog::endTimeDurations.front();
 
 QString translatedDay(
     const QString& day
@@ -79,10 +72,15 @@ QStringList translatedDays()
 
 QStringList periodOptions()
 {
-    return {
-        QStringLiteral("PM"),
-        QStringLiteral("AM")
-    };
+    QStringList result;
+    for (const std::string_view value :
+         ClassMngr::Domain::ClassScheduleCatalog::periods)
+    {
+        result.append(QString::fromUtf8(
+            value.data(), static_cast<qsizetype>(value.size())
+            ));
+    }
+    return result;
 }
 
 QStringList endTimeWidthOptions()
@@ -562,7 +560,7 @@ int ClassTimeRow::durationForEndTime(
     }
 
     return std::ranges::contains(
-        EndTimeDurations,
+        ClassMngr::Domain::ClassScheduleCatalog::endTimeDurations,
         duration
         )
         ? duration
@@ -574,13 +572,17 @@ QStringList ClassTimeRow::endTimeOptions(
     ) const
 {
     QStringList options;
-    options.reserve(static_cast<qsizetype>(EndTimeDurations.size()));
+    options.reserve(static_cast<qsizetype>(
+        ClassMngr::Domain::ClassScheduleCatalog::endTimeDurations.size()
+        ));
 
-    for (const int duration : EndTimeDurations)
+    for (const int duration :
+         ClassMngr::Domain::ClassScheduleCatalog::endTimeDurations)
     {
         const int endMinutes = startMinutes + duration;
 
-        if (endMinutes <= LatestEndTimeMinutes)
+        if (endMinutes <=
+            ClassMngr::Domain::ClassScheduleCatalog::latestEndTimeMinutes)
         {
             options.append(fromTotalMinutes(endMinutes));
         }
