@@ -51,7 +51,7 @@ bool writeBytes(const QString& path, const QByteArray& bytes)
         && file.write(bytes) == bytes.size();
 }
 
-bool writeUnsupportedSchema(const QString& path)
+bool writeUnsupportedSchema(const QString& path, const int version = 1)
 {
     const QString connectionName = QUuid::createUuid().toString(QUuid::WithoutBraces);
     bool succeeded = false;
@@ -64,7 +64,9 @@ bool writeUnsupportedSchema(const QString& path)
         if (database.open())
         {
             QSqlQuery query(database);
-            succeeded = query.exec(QStringLiteral("PRAGMA user_version = 1"));
+            succeeded = query.exec(
+                QStringLiteral("PRAGMA user_version = %1").arg(version)
+                );
             database.close();
         }
     }
@@ -199,13 +201,14 @@ class NextWorkspaceOpenFlowTests final : public QObject
 
 private slots:
     void opensTpsUpdatesHistoryAfterSuccessAndRefreshesStore();
+    void opensSchemaV6DbInPlaceAndSaveUsesActiveDbPath();
     void opensSelectedRecentPathWithoutUsingTheFileDialog();
     void cancelAndPendingSetupLeaveDialogHistoryAndWorkspaceUntouched();
     void corruptAndMissingProfilesPreserveActiveSessionAndSelection();
     void dirtyWorkspaceCannotBeReplaced();
     void workspaceStoreRollbackDropsPendingTransaction();
     void historyFailureDoesNotRollBackOpenedProfile();
-    void openPathPolicyRequiresTpsAndPreservesCase();
+    void openPathPolicyAcceptsTpsAndDbAndRejectsUnknownSuffix();
 };
 
 void NextWorkspaceOpenFlowTests::opensTpsUpdatesHistoryAfterSuccessAndRefreshesStore()
@@ -255,7 +258,7 @@ void NextWorkspaceOpenFlowTests::opensTpsUpdatesHistoryAfterSuccessAndRefreshesS
     QCOMPARE(QString::fromStdString(fileDialog.observedRequest->title),
              QStringLiteral("Open Teacher Profile"));
     QCOMPARE(fileDialog.observedRequest->nameFilters,
-             std::vector<std::string>{"ClassMngr Teacher Profile (*.tps)"});
+             std::vector<std::string>{"ClassMngr Teacher Profile (*.tps *.db)"});
     QCOMPARE(history.loadCalls, 1);
     QCOMPARE(history.saved.size(), std::size_t(1));
     QCOMPARE(history.saved.front().paths.front(), opened.session->location());
@@ -263,6 +266,85 @@ void NextWorkspaceOpenFlowTests::opensTpsUpdatesHistoryAfterSuccessAndRefreshesS
              std::optional<Application::RecentWorkspacePath>(opened.session->location()));
     QCOMPARE(notifications.requests.back().severity,
              Application::NotificationSeverity::Information);
+}
+
+void NextWorkspaceOpenFlowTests::opensSchemaV6DbInPlaceAndSaveUsesActiveDbPath()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString currentPath = directory.filePath(QStringLiteral("current.tps"));
+    const QString selectedPath = directory.filePath(QStringLiteral("legacy.DB"));
+    const QString siblingTpsPath = directory.filePath(QStringLiteral("legacy.tps"));
+    QVERIFY(createProfile(currentPath));
+    QVERIFY(createProfile(selectedPath));
+
+    Platform::WorkspaceStoreGateway gateway;
+    Application::ApplicationRuntime runtime(gateway);
+    const auto current = runtime.workspaceCoordinator().openWorkspace(
+        Application::OpenWorkspaceRequest{location(currentPath)}
+        );
+    QVERIFY(current);
+    const QStringList connectionNamesBeforeDbOpen = QSqlDatabase::connectionNames();
+    const auto selectedClass = Domain::ClassId::fromString("prior-selection");
+    QVERIFY(selectedClass.has_value());
+    runtime.selectionState().setSelection(*selectedClass);
+
+    RecordingFileDialog fileDialog;
+    fileDialog.response.selection = Application::FileDialogPath(
+        selectedPath.toUtf8().toStdString()
+        );
+    RecordingHistory history;
+    RecordingNotifications notifications;
+    Platform::WorkspaceProfilePathPolicy pathPolicy;
+    Application::OpenExistingWorkspaceFlow flow(
+        fileDialog,
+        pathPolicy,
+        runtime.workspaceCoordinator(),
+        history,
+        notifications,
+        [] { return false; }
+        );
+
+    const auto opened = flow.run();
+
+    QCOMPARE(opened.status, Application::OpenExistingWorkspaceStatus::Opened);
+    QVERIFY(opened.session.has_value());
+    const QString canonicalPath = QFileInfo(selectedPath).canonicalFilePath();
+    QCOMPARE(pathFor(opened.session->location()), canonicalPath);
+    QCOMPARE(QFileInfo(canonicalPath).fileName(), QStringLiteral("legacy.DB"));
+    QCOMPARE(runtime.workspaceState().snapshot().session(), opened.session);
+    QVERIFY(!runtime.selectionState().snapshot().hasSelection());
+    QCOMPARE(history.saved.size(), std::size_t(1));
+    QCOMPARE(history.saved.front().paths.front(), opened.session->location());
+    QCOMPARE(history.saved.front().lastPath,
+             std::optional<Application::RecentWorkspacePath>(opened.session->location()));
+    QVERIFY(QFileInfo::exists(selectedPath));
+    QVERIFY(!QFileInfo::exists(siblingTpsPath));
+
+    QString activeConnectionName;
+    for (const QString& connectionName : QSqlDatabase::connectionNames())
+    {
+        if (!connectionNamesBeforeDbOpen.contains(connectionName))
+        {
+            activeConnectionName = connectionName;
+            break;
+        }
+    }
+    QVERIFY(!activeConnectionName.isEmpty());
+    {
+        QSqlDatabase activeDatabase = QSqlDatabase::database(activeConnectionName);
+        QVERIFY(activeDatabase.isOpen());
+        QVERIFY(activeDatabase.transaction());
+        QVERIFY(runtime.workspaceState().markDirty());
+        QVERIFY(runtime.workspaceCoordinator().saveWorkspace());
+    }
+    QCOMPARE(runtime.workspaceState().snapshot().session()->location(),
+             opened.session->location());
+    QCOMPARE(runtime.workspaceState().snapshot().unsavedState(),
+             Application::WorkspaceUnsavedState::Clean);
+    QVERIFY(QFileInfo::exists(selectedPath));
+    QVERIFY(!QFileInfo::exists(siblingTpsPath));
+    QVERIFY(runtime.workspaceCoordinator().closeWorkspace());
 }
 
 void NextWorkspaceOpenFlowTests::
@@ -321,12 +403,34 @@ corruptAndMissingProfilesPreserveActiveSessionAndSelection()
     const QString unsupportedPath = directory.filePath(
         QStringLiteral("unsupported-schema.tps")
         );
+    const QString versionFiveDbPath = directory.filePath(
+        QStringLiteral("unsupported-v5.db")
+        );
+    const QString futureDbPath = directory.filePath(
+        QStringLiteral("unsupported-v7.DB")
+        );
+    const QString versionFiveTpsPath = directory.filePath(
+        QStringLiteral("unsupported-v5.tps")
+        );
+    const QString futureTpsPath = directory.filePath(
+        QStringLiteral("unsupported-v7.tps")
+        );
     const QString missingPath = directory.filePath(QStringLiteral("missing.tps"));
     const QString retryPath = directory.filePath(QStringLiteral("retry.tps"));
     QVERIFY(createProfile(currentPath));
     QVERIFY(writeBytes(corruptPath, QByteArrayLiteral("not a SQLite profile")));
     QVERIFY(writeUnsupportedSchema(unsupportedPath));
+    QVERIFY(writeUnsupportedSchema(versionFiveDbPath, 5));
+    QVERIFY(writeUnsupportedSchema(futureDbPath, 7));
     QVERIFY(createProfile(retryPath));
+    const auto readBytes = [](const QString& path) {
+        QFile file(path);
+        return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray{};
+    };
+    const QByteArray versionFiveBytesBefore = readBytes(versionFiveDbPath);
+    const QByteArray futureBytesBefore = readBytes(futureDbPath);
+    QVERIFY(!versionFiveBytesBefore.isEmpty());
+    QVERIFY(!futureBytesBefore.isEmpty());
 
     Platform::WorkspaceStoreGateway gateway;
     Application::ApplicationRuntime runtime(gateway);
@@ -334,6 +438,7 @@ corruptAndMissingProfilesPreserveActiveSessionAndSelection()
         Application::OpenWorkspaceRequest{location(currentPath)}
         );
     QVERIFY(current);
+    const QByteArray activeProfileBytesBeforeSchemaFailures = readBytes(currentPath);
     const auto selectedClass = Domain::ClassId::fromString("preserved-selection");
     QVERIFY(selectedClass.has_value());
     runtime.selectionState().setSelection(*selectedClass);
@@ -359,6 +464,8 @@ corruptAndMissingProfilesPreserveActiveSessionAndSelection()
         unrelatedHistoryPath
     };
     history.history.lastPath = missingHistoryPath;
+    const Application::RecentWorkspaceHistory historyBeforeSchemaFailures =
+        history.history;
     RecordingNotifications notifications;
     Platform::WorkspaceProfilePathPolicy pathPolicy;
     Application::OpenExistingWorkspaceFlow flow(
@@ -394,6 +501,29 @@ corruptAndMissingProfilesPreserveActiveSessionAndSelection()
              selectedClass->value());
     QCOMPARE(history.loadCalls, 0);
     QVERIFY(history.saved.empty());
+
+    for (const QString& unsupportedDbPath : {versionFiveDbPath, futureDbPath})
+    {
+        fileDialog.response.selection = Application::FileDialogPath(
+            unsupportedDbPath.toUtf8().toStdString()
+            );
+        const auto schemaRejected = flow.run();
+        QCOMPARE(schemaRejected.status, Application::OpenExistingWorkspaceStatus::Failed);
+        QVERIFY(schemaRejected.message.find("schema version") != std::string::npos);
+        QCOMPARE(runtime.workspaceState().snapshot().session().value(), current.value());
+        QVERIFY(runtime.selectionState().snapshot().classId());
+        QCOMPARE(runtime.selectionState().snapshot().classId()->value(),
+                 selectedClass->value());
+        QCOMPARE(history.loadCalls, 0);
+        QVERIFY(history.saved.empty());
+        QVERIFY(QFileInfo::exists(unsupportedDbPath));
+    }
+    QCOMPARE(readBytes(versionFiveDbPath), versionFiveBytesBefore);
+    QCOMPARE(readBytes(futureDbPath), futureBytesBefore);
+    QVERIFY(!QFileInfo::exists(versionFiveTpsPath));
+    QVERIFY(!QFileInfo::exists(futureTpsPath));
+    QCOMPARE(history.history, historyBeforeSchemaFailures);
+    QCOMPARE(readBytes(currentPath), activeProfileBytesBeforeSchemaFailures);
 
     fileDialog.response.selection = Application::FileDialogPath(
         missingPath.toUtf8().toStdString()
@@ -435,7 +565,7 @@ void NextWorkspaceOpenFlowTests::opensSelectedRecentPathWithoutUsingTheFileDialo
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
-    const QString targetPath = directory.filePath(QStringLiteral("recent.tps"));
+    const QString targetPath = directory.filePath(QStringLiteral("recent.DB"));
     QVERIFY(createProfile(targetPath));
 
     Platform::WorkspaceStoreGateway gateway;
@@ -458,6 +588,9 @@ void NextWorkspaceOpenFlowTests::opensSelectedRecentPathWithoutUsingTheFileDialo
     QCOMPARE(opened.status, Application::OpenExistingWorkspaceStatus::Opened);
     QVERIFY(opened.session.has_value());
     QCOMPARE(runtime.workspaceState().snapshot().session(), opened.session);
+    QCOMPARE(QFileInfo(pathFor(opened.session->location())).fileName(),
+             QStringLiteral("recent.DB"));
+    QVERIFY(!QFileInfo::exists(directory.filePath(QStringLiteral("recent.tps"))));
     QCOMPARE(fileDialog.openCalls, 0);
     QCOMPARE(history.loadCalls, 1);
     QCOMPARE(history.saved.size(), std::size_t(1));
@@ -578,13 +711,18 @@ void NextWorkspaceOpenFlowTests::historyFailureDoesNotRollBackOpenedProfile()
              Application::NotificationSeverity::Warning);
 }
 
-void NextWorkspaceOpenFlowTests::openPathPolicyRequiresTpsAndPreservesCase()
+void NextWorkspaceOpenFlowTests::
+openPathPolicyAcceptsTpsAndDbAndRejectsUnknownSuffix()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
     Platform::WorkspaceProfilePathPolicy pathPolicy;
     const QString targetPath = directory.filePath(QStringLiteral("Case.TPS"));
+    const QString lowerDbPath = directory.filePath(QStringLiteral("legacy.db"));
+    const QString upperDbPath = directory.filePath(QStringLiteral("UPPER.DB"));
     QVERIFY(writeBytes(targetPath, QByteArrayLiteral("placeholder")));
+    QVERIFY(writeBytes(lowerDbPath, QByteArrayLiteral("placeholder")));
+    QVERIFY(writeBytes(upperDbPath, QByteArrayLiteral("placeholder")));
 
     const auto normalized = pathPolicy.normalizeOpenProfilePath(
         Application::FileDialogPath(targetPath.toUtf8().toStdString())
@@ -593,13 +731,23 @@ void NextWorkspaceOpenFlowTests::openPathPolicyRequiresTpsAndPreservesCase()
     QCOMPARE(QFileInfo(pathFor(normalized.value())).fileName(),
              QStringLiteral("Case.TPS"));
 
+    for (const QString& acceptedPath : {lowerDbPath, upperDbPath})
+    {
+        const auto accepted = pathPolicy.normalizeOpenProfilePath(
+            Application::FileDialogPath(acceptedPath.toUtf8().toStdString())
+            );
+        QVERIFY(accepted);
+        QCOMPARE(QFileInfo(pathFor(accepted.value())).fileName(),
+                 QFileInfo(acceptedPath).fileName());
+    }
+
     const auto rejected = pathPolicy.normalizeOpenProfilePath(
         Application::FileDialogPath(
-            directory.filePath(QStringLiteral("profile.db")).toUtf8().toStdString()
+            directory.filePath(QStringLiteral("profile.sqlite")).toUtf8().toStdString()
             )
         );
     QVERIFY(!rejected);
-    QVERIFY(rejected.error().message.find("Only .tps") != std::string::npos);
+    QVERIFY(rejected.error().message.find("Only .tps or .db") != std::string::npos);
 }
 
 QTEST_MAIN(NextWorkspaceOpenFlowTests)

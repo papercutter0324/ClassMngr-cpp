@@ -4931,7 +4931,7 @@ openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess()
     QCOMPARE(fileDialogProbe->lastOpenRequest->title,
              std::string("Open Teacher Profile"));
     QCOMPARE(fileDialogProbe->lastOpenRequest->nameFilters,
-             std::vector<std::string>{"ClassMngr Teacher Profile (*.tps)"});
+             std::vector<std::string>{"ClassMngr Teacher Profile (*.tps *.db)"});
     QCOMPARE(gatewayProbe->openCalls, 1);
     QCOMPARE(historyProbe->saveCount, 1);
     QCOMPARE(QString::fromUtf8(
@@ -7683,6 +7683,9 @@ successfulStartupRetainsSessionAndReleasesStoreOnShutdown()
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
     const QString workspacePath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("startup-profile.DB")
+        );
+    const QString siblingTpsPath = QDir(temporaryDirectory.path()).filePath(
         QStringLiteral("startup-profile.tps")
         );
     const QString performanceOutputPath =
@@ -7699,6 +7702,7 @@ successfulStartupRetainsSessionAndReleasesStoreOnShutdown()
 
     const QStringList connectionsBefore = QSqlDatabase::connectionNames();
     std::vector<Application::StartupEvent> observedEvents;
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
     seams.commandLineArguments = QStringList{
         QStringLiteral("test-app"),
@@ -7708,6 +7712,9 @@ successfulStartupRetainsSessionAndReleasesStoreOnShutdown()
         workspacePath
     };
     seams.recentAutoOpenEnabled = false;
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
     Bootstrap::ApplicationBootstrap bootstrap(
         application,
         [&observedEvents](const Application::StartupEvent& event) {
@@ -7748,6 +7755,11 @@ successfulStartupRetainsSessionAndReleasesStoreOnShutdown()
         opened->session.location().value()
         );
     QVERIFY(QFileInfo::exists(workspacePath));
+    QVERIFY(!QFileInfo::exists(siblingTpsPath));
+    QCOMPARE(historyProbe->saveCount, 1);
+    QCOMPARE(historyProbe->saves.back().paths.front(), opened->session.location());
+    QCOMPARE(historyProbe->saves.back().lastPath,
+             std::optional<Application::RecentWorkspacePath>(opened->session.location()));
     QCOMPARE(QSqlDatabase::connectionNames().size(), connectionsBefore.size() + 1);
 
     const Application::ShutdownResult shutdown = bootstrap.shutdown();

@@ -14,8 +14,8 @@ namespace ClassMngr::Next::Platform
 {
 
 // Shared native path rules for profile creation, opening, and Initial Setup.
-// The callers retain their own suffix policies while sharing path validation,
-// absolute-path handling, and case-insensitive .tps recognition.
+// The callers retain their own suffix policies while sharing path validation
+// and absolute-path handling.
 class WorkspaceProfilePathPolicy final
     : public Application::WorkspaceProfilePathPolicyPort
     , public Application::WorkspaceOpenProfilePathPolicyPort
@@ -49,10 +49,10 @@ public:
                 invalidPath("The selected profile must name a file.")
                 );
         }
-        if (!hasNativeProfileSuffix(selected))
+        if (!hasSupportedOpenProfileSuffix(selected))
         {
             return Domain::Result<Application::WorkspaceLocation>::failure(
-                invalidPath("Only .tps Teacher Profiles can be opened here.")
+                invalidPath("Only .tps or .db Teacher Profiles can be opened here.")
                 );
         }
 
@@ -110,6 +110,13 @@ public:
             QStringLiteral("tps"),
             Qt::CaseInsensitive
             ) == 0;
+    }
+
+    [[nodiscard]] static bool hasSupportedOpenProfileSuffix(const QString& path)
+    {
+        const QString suffix = QFileInfo(path).suffix();
+        return suffix.compare(QStringLiteral("tps"), Qt::CaseInsensitive) == 0
+            || suffix.compare(QStringLiteral("db"), Qt::CaseInsensitive) == 0;
     }
 
 private:

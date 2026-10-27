@@ -96,7 +96,7 @@ public:
             m_fileDialog->openOneFile(OpenFileDialogRequest{
                 .purpose = FileDialogPurpose::TeacherProfile,
                 .title = "Open Teacher Profile",
-                .nameFilters = {"ClassMngr Teacher Profile (*.tps)"}
+                .nameFilters = {"ClassMngr Teacher Profile (*.tps *.db)"}
             });
         if (!selected)
         {
