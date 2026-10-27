@@ -38,10 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
-- Current note: 7A.1–7A.10 are accepted and committed; 7A.10 is `283871fa`.
-  Candidate #11, Save As, is active. The 7A screenshot comparison and memory
+- Current note: 7A.1–7A.11 are accepted and committed; 7A.11 is `86b09d94`.
+  Candidate #12, Export, is active. The 7A screenshot comparison and memory
   measurement remain open, as do the 7A and Phase 7 exit gates. Batch 1 remains
-  active and unpushed. See the progress log for 7A.10 evidence and limits.
+  active and unpushed. Next-batch discovery remains gated until candidate #14.
+  See the progress log for 7A.11 evidence and limits.
 
 ### Slice batches
 
@@ -328,8 +329,39 @@ keep current status in this plan and live batches in the shared tracker.
   full suite, Windows build, package, screenshot, or memory gate ran; the 7A
   screenshot comparison and memory measurement and the 7A/Phase 7 exit gates
   remain open.
-  Candidate #11, Save As, is active. Batch 1 remains active and unpushed; do not
-  start next-batch discovery before candidate #14.
+  At the 7A.10 handoff, candidate #11, Save As, was next; see 7A.11 for its
+  acceptance. Batch 1 remains active and unpushed; do not start next-batch
+  discovery before candidate #14.
+
+### 7A.11 — Save As accepted (2026-10-27)
+
+- Commit: `86b09d94` (`Phase7 - Add Save As for existing profiles`). File >
+  Save As… uses the platform shortcut and Teacher Profile dialog with `.tps`
+  default suffix, overwrite confirmation, current profile directory, and
+  suggested filename. The shared path policy normalizes extensionless and
+  `.db` target names to `.tps`; `.db` input remains candidate #15.
+- Save As creates a SQLite online-backup snapshot and atomically replaces its
+  target. The active store switches only after copy succeeds; the session ID
+  is preserved, the source remains, and recent history is recorded after
+  success. It shares dirty-resolution and pending setup/recovery guards with
+  7A.10. The online-backup implementation and file operation have one explicit
+  owner in `CLASSMNGR_WORKSPACE_STORE_SOURCES`, without a Next-to-ClassMngrData
+  link. A borrowed Qt settings adapter lifetime bug in the default dialog
+  presenter was fixed.
+- Verification: standard `build/macos-clang-debug`; CMake configure validated
+  one explicit owner for 1,741 handwritten sources; focused CTest passed 7/7:
+  Save As flow, bootstrap, DataService lifecycle, Next boundary, workspace
+  creation/open/coordinator. `git diff --check` passed. Coverage includes
+  persisted marker data, location/session preservation, close/reopen, retained
+  source, alias no-op, cancel, pending setup guard, source/target preservation
+  on copy failure, `.db` output normalization, and history success/failure.
+- Limits: bootstrap coverage uses a dialog seam, not the production Qt modal.
+  Forced destination-reopen failure and explicit Save As dirty-page or
+  recovery-pending cases were not tested. Full suite, Windows, packaging,
+  screenshot, and memory gates remain unrun; screenshot comparison and memory
+  evidence and the 7A/Phase 7 exit gates remain open. Candidate #12, Export, is
+  active. Batch 1 remains active and unpushed; do not start next-batch discovery
+  before candidate #14.
 
 ## Objective
 

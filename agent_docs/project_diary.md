@@ -30,6 +30,12 @@
   still depends on the open store; application shutdown may close it while
   preserving the journal for restart. Future active-profile editors must use
   the Page dirty hook before they expose edits.
+- For Save As from an open SQLite profile, use an online-backup snapshot and
+  atomic destination write; reopen the destination before switching the active
+  store or recording history. Preserve the session ID across that path change
+  and keep its validation tied to the active store. Put shared file/backup
+  operations in the WorkspaceStore target rather than linking Next to legacy
+  Data. Keep borrowed dialog preferences alive through the dialog flow.
 - Keep the Next setup workbook flow on one typed path: asynchronous parser
   validation and review mapping feed `TeacherImportUseCaseRequest`, and the
   pending `WorkspaceStore` owns the import transaction. Verify selection,

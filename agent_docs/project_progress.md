@@ -83,7 +83,17 @@ store work. Pending setup blocks profile close without changing its journal.
 The focused standard-tree CTest set passed 7/7, including the workspace
 dependency boundary; configure validated 1,739 source owners. No active-profile
 editor currently produces dirty state, so 7B editors must use the new Page hook.
-Candidate #11, Save As, is active; Batch 1 remains un-pushed. Setup-screen
+Candidate #11, Save As, passed independent focused verification and was
+committed as `86b09d94`. It uses SQLite online backup and atomic file
+replacement, then switches the active store only after destination reopen;
+the current session ID is preserved and history updates only after success.
+The file-operation and online-backup sources moved into the shared
+`ClassMngrWorkspaceStore` target, keeping one source owner and no Next-to-legacy
+Data link. Candidate #12, Export, is active; Batch 1 remains un-pushed.
+Verification used the standard macOS tree, validated 1,741 source owners, and
+passed seven focused CTests including the Next boundary and legacy DataService
+lifecycle. No production Qt dialog was displayed, no forced destination-reopen
+failure was injected, and no Save As dirty-page/recovery fixture ran. The 7A
 screenshot comparison, Phase 7 memory evidence, and all remaining 7A workflows
 remain open. Active candidates are tracked in
 `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.

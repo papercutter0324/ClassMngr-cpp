@@ -49,9 +49,11 @@ verification and limits are in the progress log. Candidate #9, existing
 limits are in the [Phase 7 progress
 log](08-Phase-7-Feature-Migration.md#progress-log). Candidate #10, save, close,
 and dirty state, is accepted and committed as `283871fa`; its focused evidence
-and bounded Page dirty-hook limitation are in the progress log. Current
-candidate: **#11 — Save As**. The 7A screenshot comparison and memory
-measurement remain open. Batch 1 remains active and unpushed.
+and bounded Page dirty-hook limitation are in the progress log. Candidate #11,
+Save As, is accepted and committed as `86b09d94`; its focused evidence and
+limits are in the progress log. Current candidate: **#12 — Export**. The 7A
+screenshot comparison and memory measurement remain open. Batch 1 remains
+active and unpushed.
 Next-batch discovery has not started; do not begin it before candidate #14.
 
 Import, export, open, and save failure handling belongs to each owning
