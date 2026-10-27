@@ -39,4 +39,29 @@ private:
     const PersonalDetailsSavePort& m_port;
 };
 
+// Normal workspace My Details preserves the legacy allowance for an empty
+// personal name. Initial Setup keeps its stricter PersonalDetailsSaveUseCase
+// validation above, while both flows still persist through the same typed
+// complete-bundle port.
+class WorkspacePersonalDetailsSaveUseCase final
+{
+public:
+    explicit WorkspacePersonalDetailsSaveUseCase(
+        const PersonalDetailsSavePort& port
+        ) noexcept
+        : m_port(port)
+    {
+    }
+
+    [[nodiscard]] PersonalDetailsSaveResult execute(
+        const PersonalDetailsSaveRequest& request
+        ) const
+    {
+        return m_port.save(request);
+    }
+
+private:
+    const PersonalDetailsSavePort& m_port;
+};
+
 } // namespace ClassMngr::Next::Application

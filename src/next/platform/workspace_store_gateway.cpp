@@ -133,6 +133,16 @@ WorkspaceStoreGateway::savePersonalDetails(
     return useCase.execute(request);
 }
 
+Application::PersonalDetailsSaveResult
+WorkspaceStoreGateway::saveWorkspacePersonalDetails(
+    const Application::PersonalDetailsSaveRequest& request
+    ) const
+{
+    WorkspaceStorePersonalDetailsPort port(*m_store);
+    const Application::WorkspacePersonalDetailsSaveUseCase useCase(port);
+    return useCase.execute(request);
+}
+
 Application::InitialSetupTeacherChoicesResult
 WorkspaceStoreGateway::loadInitialSetupTeacherChoices() const
 {

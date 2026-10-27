@@ -77,6 +77,8 @@ public:
         std::function<std::unique_ptr<Application::FileDialogPort>()>
             initialSetupFileDialogPortFactory;
         std::function<std::unique_ptr<Application::FileDialogPort>()>
+            normalWorkspaceSignatureImageFileDialogPortFactory;
+        std::function<std::unique_ptr<Application::FileDialogPort>()>
             normalTeacherImportFileDialogPortFactory;
         std::function<std::unique_ptr<Application::FileDialogPort>()>
             newProfileFileDialogPortFactory;
@@ -239,6 +241,10 @@ private:
             ) const;
     [[nodiscard]] Domain::Result<std::optional<QByteArray>>
     chooseInitialSetupSignatureImage();
+    [[nodiscard]] Domain::Result<std::optional<QByteArray>>
+    chooseWorkspaceSignatureImage();
+    void refreshMyWorkspacePage();
+    void clearMyWorkspacePageForClosedWorkspace();
     [[nodiscard]] bool releaseWorkspace() noexcept;
     [[nodiscard]] std::optional<Application::ShutdownFailureReason>
     runShutdownSequence() noexcept;

@@ -720,6 +720,8 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/navigation_font_policy.h"
     "src/next/ui/initial_page.cpp"
     "src/next/ui/initial_page.h"
+    "src/next/ui/my_workspace_page.cpp"
+    "src/next/ui/my_workspace_page.h"
     "src/next/ui/initial_setup_schedule_import_dialog.cpp"
     "src/next/ui/initial_setup_schedule_import_dialog.h"
     "src/next/ui/initial_setup_teacher_import_dialog.cpp"

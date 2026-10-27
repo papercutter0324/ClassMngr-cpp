@@ -2,7 +2,10 @@
 #include "data/data_service.h"
 #include "data/database/workspace_store.h"
 #include "features/my_info/data/signature_image_processor.h"
+#include "features/my_info/data/typed_signature_renderer.h"
+#include "next/application/personal_details_save_use_case.h"
 #include "next/platform/application_services_personal_signature_image_port.h"
+#include "next/platform/workspace_store_personal_details_port.h"
 
 #include <QBuffer>
 #include <QImage>
@@ -91,6 +94,7 @@ class NextPlatformApplicationServicesPersonalSignatureImagePortTests final
 private slots:
     void initTestCase();
     void validBase64ImageIsPreparedOnceForTheExactKey();
+    void directWorkspaceStoreTypedSignatureIsReadableByTheReportAdapter();
     void portReturnsTypedPreparedBytes();
     void missingAndUnavailableSettingsReturnEmpty();
     void corruptBase64ReturnsEmpty();
@@ -146,6 +150,47 @@ validBase64ImageIsPreparedOnceForTheExactKey()
         );
     QVERIFY(wrongKey);
     QVERIFY(!wrongKey->isValid());
+}
+
+void NextPlatformApplicationServicesPersonalSignatureImagePortTests::
+directWorkspaceStoreTypedSignatureIsReadableByTheReportAdapter()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+
+    const QByteArray source = TypedSignature::renderForEmbedding(
+        QStringLiteral("Alex Morgan"),
+        TypedSignatureFont::DancingScript);
+    QVERIFY(!source.isEmpty());
+    const ClassMngr::Next::Application::PersonalDetailsSaveRequest request{
+        .name = "Alex Morgan",
+        .campus = ClassMngr::Next::Application::CurrentCampusPreferenceValue{},
+        .zoomLoginId = {},
+        .zoomPassword = {},
+        .zoomNotAvailable = true,
+        .signatureImage = ClassMngr::Next::Domain::PersonalSignatureImageSaveBytes(
+            source.toStdString()),
+        .signatureMode = ClassMngr::Next::Application::PersonalSignatureMode::Type,
+        .typedSignatureText = "Alex Morgan",
+        .typedSignatureFont =
+            ClassMngr::Next::Application::PersonalSignatureFontChoice::DancingScript
+    };
+    WorkspaceStorePersonalDetailsPort detailsPort(*store);
+    const auto saved =
+        ClassMngr::Next::Application::WorkspacePersonalDetailsSaveUseCase(
+            detailsPort).execute(request);
+    QVERIFY(saved);
+
+    ApplicationServicesPersonalSignatureImagePort reportPort(services);
+    const auto loaded = reportPort.read();
+    QVERIFY(loaded);
+    QVERIFY(!loaded.value().empty());
+    const QByteArray actual = preparedBytes(loaded.value());
+    const QByteArray expected = SignatureImage::prepareForEmbedding(source);
+    QCOMPARE(actual, expected);
+    QVERIFY(!QImage::fromData(actual, "PNG").isNull());
 }
 
 void NextPlatformApplicationServicesPersonalSignatureImagePortTests::

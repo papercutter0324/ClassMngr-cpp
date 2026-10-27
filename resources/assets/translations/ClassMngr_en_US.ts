@@ -9735,6 +9735,11 @@ Version: %2</source>
 <context>
     <name>NextNavigation</name>
     <message><source>Initial Setup</source><translation>Initial Setup</translation></message>
+    <message><source>My Details</source><translation>My Details</translation></message>
+    <message><source>My Schedule</source><translation>My Schedule</translation></message>
+    <message><source>Calendar</source><translation>Calendar</translation></message>
+    <message><source>Manage your personal details, schedule, and calendar.</source><translation>Manage your personal details, schedule, and calendar.</translation></message>
+    <message><source>Calendar will load when you open this tab.</source><translation>Calendar will load when you open this tab.</translation></message>
 </context>
 <context>
     <name>InitialSetupTeacherEntryPage</name>
@@ -9904,5 +9909,22 @@ GS Team members: %8 created, %9 updated, %10 unchanged.</translation></message>
     <message><source>Korean Teacher</source><translation>Korean Teacher</translation></message>
     <message><source>Native English Teacher</source><translation>Native English Teacher</translation></message>
     <message><source>GS Team</source><translation>GS Team</translation></message>
+</context>
+<context>
+    <name>NextMyWorkspacePage</name>
+    <message><source>All changes saved.</source><translation>All changes saved.</translation></message>
+    <message><source>Unsaved changes.</source><translation>Unsaved changes.</translation></message>
+    <message><source>Saving changes...</source><translation>Saving changes...</translation></message>
+    <message><source>Loading personal details...</source><translation>Loading personal details...</translation></message>
+    <message><source>No Teacher Profile is open.</source><translation>No Teacher Profile is open.</translation></message>
+    <message><source>Reload My Details</source><translation>Reload My Details</translation></message>
+    <message><source>Reload My Details successfully before saving.</source><translation>Reload My Details successfully before saving.</translation></message>
+    <message><source>Your personal details could not be loaded. The displayed controls are preserved; reload before saving.</source><translation>Your personal details could not be loaded. The displayed controls are preserved; reload before saving.</translation></message>
+    <message><source>Your personal details could not be saved. Your changes are still here.</source><translation>Your personal details could not be saved. Your changes are still here.</translation></message>
+    <message><source>Your personal details could not be reloaded. Your current form is preserved.</source><translation>Your personal details could not be reloaded. Your current form is preserved.</translation></message>
+    <message><source>My Schedule will be available in a later update.</source><translation>My Schedule will be available in a later update.</translation></message>
+    <message><source>The signature image could not be selected.</source><translation>The signature image could not be selected.</translation></message>
+    <message><source>The signature image could not be prepared.</source><translation>The signature image could not be prepared.</translation></message>
+    <message><source>The signature image could not be displayed.</source><translation>The signature image could not be displayed.</translation></message>
 </context>
 </TS>

@@ -108,6 +108,67 @@ set_tests_properties(ClassMngrTeacherProfileVisualCapture
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
+# Capture the real legacy and Next My Details surfaces in both signature modes.
+add_executable(ClassMngrMyDetailsSignatureVisualCapture
+    tests/next/my_details_signature_visual_capture.cpp
+    src/next/ui/my_workspace_page.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrMyDetailsSignatureVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrMyDetailsSignatureVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrMyDetailsSignatureVisualCapture
+    PRIVATE
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrMyDetailsSignatureVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Resources
+        ClassMngrSignature
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrMyDetailsSignatureVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrMyDetailsSignatureVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrMyDetailsSignatureVisualCapture
+    ClassMngrNextResourcePackage
+)
+qt_add_resources(ClassMngrMyDetailsSignatureVisualCapture
+    my_details_signature_capture_icons
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_light.svg
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/combo_arrow_light.svg
+        resources/assets/icons/combo_arrow_dark.svg
+)
+add_test(
+    NAME ClassMngrMyDetailsSignatureVisualCapture
+    COMMAND ClassMngrMyDetailsSignatureVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/my-details-signature-visual-capture"
+)
+set_tests_properties(ClassMngrMyDetailsSignatureVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 # Keep the UI-to-WorkspaceStore teacher-entry acceptance check in its own
 # process so unrelated QApplication test state cannot affect the bootstrap.
 add_executable(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
@@ -2993,6 +3054,63 @@ classmngr_add_qt_test(
     COMPILE_DEFINITIONS
         CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
     OFFSCREEN
+)
+
+# Exercise the normal Next My Workspace page against the typed WorkspaceStore
+# personal-details bundle, including failure/retry and identity replacement.
+add_executable(ClassMngrNextMyWorkspacePageTests
+    tests/next/my_workspace_page_tests.cpp
+    src/next/ui/my_workspace_page.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextMyWorkspacePageTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextMyWorkspacePageTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextMyWorkspacePageTests
+    PRIVATE
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrNextMyWorkspacePageTests
+    PRIVATE
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspace
+        ClassMngrTeacherImportParser
+        ClassMngrScheduleImportParser
+        ClassMngrSignature
+        Qt6::Concurrent
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextMyWorkspacePageTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextMyWorkspacePageTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextMyWorkspacePageTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextMyWorkspacePageTests
+    COMMAND ClassMngrNextMyWorkspacePageTests
+)
+set_tests_properties(ClassMngrNextMyWorkspacePageTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
 classmngr_add_qt_test(

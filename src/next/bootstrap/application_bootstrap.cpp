@@ -33,6 +33,7 @@
 #include "next/ui/page_host.h"
 #include "next/ui/page_host_active_page_changes_adapter.h"
 #include "next/ui/placeholder_page.h"
+#include "next/ui/my_workspace_page.h"
 #include "next/ui/qt_file_dialog_presenter.h"
 #include "next/ui/qt_user_prompt_presenter.h"
 #include "next/ui/theme_presenter.h"
@@ -49,12 +50,14 @@
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonObject>
 #include <QLocale>
 #include <QStringList>
 #include <QTimer>
 
 #include <cstdio>
 #include <cstring>
+#include <algorithm>
 #include <exception>
 #include <optional>
 #include <stdexcept>
@@ -168,6 +171,76 @@ namespace
     return *Ui::PageId::fromString(value);
 }
 
+[[nodiscard]] std::vector<Application::MyInfoCampusMetadata>
+loadWorkspaceCampusChoices(
+    const Ui::PageContext& context
+    )
+{
+    constexpr auto campusResourcePrefix = "assets/campuses/";
+    const QString prefix = QString::fromLatin1(campusResourcePrefix);
+    std::vector<Application::MyInfoCampusMetadata> campuses;
+
+    for (const Resources::ResourceDescriptor& descriptor :
+         context.resourceLoader().catalog().records())
+    {
+        const QString path = descriptor.packageRelativePath();
+        if (descriptor.expectedType() != Resources::ResourceType::Json
+            || !path.startsWith(prefix)
+            || path.indexOf(QLatin1Char('/'), prefix.size()) >= 0
+            || !path.endsWith(QStringLiteral(".json"), Qt::CaseInsensitive))
+        {
+            continue;
+        }
+
+        const auto request = Resources::ResourceRequest::create(
+            descriptor.id(),
+            context.pageScope()
+            );
+        if (!request)
+        {
+            continue;
+        }
+        const auto resource = context.resourceLoader().loadJson(*request);
+        if (!resource)
+        {
+            continue;
+        }
+
+        const QJsonObject object = resource->get().object();
+        const QString id = object.value(QStringLiteral("id")).toString().trimmed();
+        const QString displayName =
+            object.value(QStringLiteral("campus_name")).toString().trimmed();
+        if (id.isEmpty() || displayName.isEmpty()
+            || id.compare(QStringLiteral("default"), Qt::CaseInsensitive) == 0
+            || displayName.compare(QStringLiteral("Default"), Qt::CaseInsensitive) == 0)
+        {
+            continue;
+        }
+
+        const auto campusId = Domain::CampusId::fromString(id.toUtf8().toStdString());
+        if (campusId)
+        {
+            campuses.push_back({*campusId, displayName.toUtf8().toStdString()});
+        }
+    }
+
+    std::stable_sort(
+        campuses.begin(),
+        campuses.end(),
+        [](const Application::MyInfoCampusMetadata& left,
+           const Application::MyInfoCampusMetadata& right) {
+            const QString leftName = QString::fromUtf8(
+                left.displayName.data(),
+                static_cast<qsizetype>(left.displayName.size()));
+            const QString rightName = QString::fromUtf8(
+                right.displayName.data(),
+                static_cast<qsizetype>(right.displayName.size()));
+            return QString::compare(leftName, rightName, Qt::CaseInsensitive) < 0;
+        }
+        );
+    return campuses;
+}
+
 [[nodiscard]] Ui::PageDescriptor placeholderDescriptor(
     const QString& id,
     const QString& label
@@ -194,9 +267,6 @@ namespace
 [[nodiscard]] std::vector<Ui::PageDescriptor> placeholderPageDescriptors()
 {
     return {
-        placeholderDescriptor(
-            QStringLiteral("my_workspace"), navigationLabel("My Workspace")
-            ),
         placeholderDescriptor(QStringLiteral("classes"), navigationLabel("Classes")),
         placeholderDescriptor(QStringLiteral("sub_prep"), navigationLabel("Sub Prep")),
         placeholderDescriptor(
@@ -208,6 +278,32 @@ namespace
         placeholderDescriptor(QStringLiteral("campus_address"), navigationLabel("Address")),
         placeholderDescriptor(QStringLiteral("campus_housing"), navigationLabel("Housing")),
         placeholderDescriptor(QStringLiteral("campus_map"), navigationLabel("Maps"))
+    };
+}
+
+[[nodiscard]] Ui::PageDescriptor myWorkspacePageDescriptor(
+    std::function<Ui::MyWorkspacePageActions(const Ui::PageContext&)> actionsFactory
+    )
+{
+    return Ui::PageDescriptor{
+        .id = pageId(QStringLiteral("my_workspace")),
+        .label = navigationLabel("My Workspace"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = [actionsFactory = std::move(actionsFactory)](
+                       const Ui::PageContext& context
+                       ) mutable
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            std::unique_ptr<Ui::Page> page =
+                std::make_unique<Ui::MyWorkspacePage>(
+                    context,
+                    actionsFactory(context));
+            return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                std::move(page)
+            };
+        },
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
     };
 }
 
@@ -838,6 +934,92 @@ Application::StartupResult ApplicationBootstrap::start()
             {
                 initialPageFailure = registration.error().message;
                 break;
+            }
+        }
+
+        if (initialPageFailure.isEmpty())
+        {
+            const Ui::PageHostResult<void> registration =
+                m_shell->pageHost().registerPage(myWorkspacePageDescriptor(
+                    [this](const Ui::PageContext&) {
+                    Ui::MyWorkspacePageActions actions;
+                    actions.saveMode =
+                        Platform::SettingsManagerSaveModePreferencesPort().read();
+                    actions.readDetails = [this] {
+                        if (auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                                m_workspaceGateway.get()))
+                        {
+                            return gateway->readPersonalDetails();
+                        }
+                        return Application::PersonalDetailsReadResult::failure({
+                            .code = Domain::ErrorCode::NotFound,
+                            .message = "The active workspace store is unavailable.",
+                            .recoverable = true
+                        });
+                    };
+                    actions.saveDetails = [this](
+                        const Application::PersonalDetailsSaveRequest& request
+                        ) {
+                        if (auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                                m_workspaceGateway.get()))
+                        {
+                            return gateway->saveWorkspacePersonalDetails(request);
+                        }
+                        return Application::PersonalDetailsSaveResult::failure({
+                            .code = Domain::ErrorCode::NotFound,
+                            .message = "The active workspace store is unavailable.",
+                            .recoverable = true
+                        });
+                    };
+                    actions.loadCampuses = [](
+                        const Ui::PageContext& context
+                        ) {
+                        return loadWorkspaceCampusChoices(context);
+                    };
+                    actions.chooseSignatureImage = [this] {
+                        return chooseWorkspaceSignatureImage();
+                    };
+                    actions.workspaceIdentity = [this] {
+                        if (!m_applicationRuntime)
+                        {
+                            return QString{};
+                        }
+                        const auto session =
+                            m_applicationRuntime->workspaceState().snapshot().session();
+                        if (!session)
+                        {
+                            return QString{};
+                        }
+                        return QString::fromUtf8(
+                            session->workspaceId().value().data(),
+                            static_cast<qsizetype>(
+                                session->workspaceId().value().size())
+                            ) + QLatin1Char('|') + QString::fromUtf8(
+                                session->location().value().data(),
+                                static_cast<qsizetype>(session->location().value().size())
+                            );
+                    };
+                    actions.reportWarning = [this](
+                        const QString& title,
+                        const QString& message
+                        ) {
+                        if (!m_shell)
+                        {
+                            return;
+                        }
+                        static_cast<void>(m_shell->notificationPort().show(
+                            Application::NotificationRequest{
+                                .message = (title + QStringLiteral(": ") + message)
+                                    .toUtf8().toStdString(),
+                                .severity = Application::NotificationSeverity::Warning
+                            }
+                            ));
+                    };
+                    return actions;
+                }));
+            if (!registration)
+            {
+                initialPageFailure = registration.error().message;
             }
         }
 
@@ -1958,6 +2140,7 @@ void ApplicationBootstrap::createNewTeacherProfile()
     const Application::NormalWorkspaceCreationOutcome outcome = flow.run();
     if (outcome.status == Application::NormalWorkspaceCreationStatus::Created)
     {
+        refreshMyWorkspacePage();
         m_shell->updateNavigationAccessContext(
             m_applicationRuntime->workspaceState().snapshot().lifecycle(),
             std::nullopt
@@ -2095,6 +2278,8 @@ void ApplicationBootstrap::openTeacherProfile(
     {
         return;
     }
+
+    refreshMyWorkspacePage();
 
     if (selectedPath.has_value() && outcome.session.has_value())
     {
@@ -2292,6 +2477,8 @@ void ApplicationBootstrap::recoverInterruptedTeacherProfile()
     {
         return;
     }
+
+    refreshMyWorkspacePage();
 
     const QString destination = QString::fromUtf8(
         outcome.session->location().value().data(),
@@ -2518,7 +2705,11 @@ void ApplicationBootstrap::saveWorkspaceAsFromMenu()
                 || state.recoveryError;
         }
         );
-    static_cast<void>(flow.run());
+    const Application::WorkspaceSaveAsOutcome outcome = flow.run();
+    if (outcome.status == Application::WorkspaceSaveAsStatus::Saved)
+    {
+        refreshMyWorkspacePage();
+    }
 }
 
 void ApplicationBootstrap::exportWorkspaceFromMenu()
@@ -3004,6 +3195,8 @@ void ApplicationBootstrap::closeWorkspaceFromMenu()
             ));
         return;
     }
+
+    clearMyWorkspacePageForClosedWorkspace();
 
     m_shell->updateNavigationAccessContext(
         Application::WorkspaceLifecycleState::Closed,
@@ -3818,6 +4011,116 @@ ApplicationBootstrap::chooseInitialSetupSignatureImage()
     }
 
     return Domain::Result<std::optional<QByteArray>>::success(file.readAll());
+}
+
+Domain::Result<std::optional<QByteArray>>
+ApplicationBootstrap::chooseWorkspaceSignatureImage()
+{
+    if (!m_shell || !m_applicationRuntime
+        || !m_applicationRuntime->workspaceState().snapshot().session().has_value())
+    {
+        return Domain::Result<std::optional<QByteArray>>::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "No Teacher Profile is open.",
+            .recoverable = true
+        });
+    }
+
+    const QByteArray title = QCoreApplication::translate(
+        "PersonalDetailsPage",
+        "Choose Signature Image"
+        ).toUtf8();
+    const QByteArray supportedImages = QCoreApplication::translate(
+        "PersonalDetailsPage",
+        "Supported Images (%1)"
+        ).arg(QStringLiteral("*.png *.jpg *.jpeg *.bmp *.gif *.webp")).toUtf8();
+    const Application::OpenFileDialogRequest request{
+        .purpose = Application::FileDialogPurpose::SignatureImage,
+        .title = std::string(title.constData(),
+                             static_cast<std::size_t>(title.size())),
+        .nameFilters = {std::string(
+            supportedImages.constData(),
+            static_cast<std::size_t>(supportedImages.size()))}
+    };
+
+    using Response = Application::FileDialogResponse<Application::FileDialogPath>;
+    Domain::Result<Response> selected = [&]() -> Domain::Result<Response> {
+        if (m_startupWorkspaceSeams.normalWorkspaceSignatureImageFileDialogPortFactory)
+        {
+            std::unique_ptr<Application::FileDialogPort> fileDialog =
+                m_startupWorkspaceSeams.normalWorkspaceSignatureImageFileDialogPortFactory();
+            if (!fileDialog)
+            {
+                return Domain::Result<Response>::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = "The signature image file dialog is unavailable.",
+                    .recoverable = true
+                });
+            }
+            return fileDialog->openOneFile(request);
+        }
+
+        Platform::QSettingsFileDialogDirectoryPreferencesAdapter directoryPreferences;
+        Ui::QtFileDialogPresenter fileDialog(directoryPreferences, m_shell.get());
+        return fileDialog.openOneFile(request);
+    }();
+    if (!selected)
+    {
+        return Domain::Result<std::optional<QByteArray>>::failure(
+            selected.error());
+    }
+    if (!selected.value().selection.has_value())
+    {
+        return Domain::Result<std::optional<QByteArray>>::success(std::nullopt);
+    }
+
+    const std::string& pathBytes = selected.value().selection->value();
+    const QString path = QString::fromUtf8(
+        pathBytes.data(), static_cast<qsizetype>(pathBytes.size()));
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        const QByteArray diagnostic = file.errorString().toUtf8();
+        std::string message = "The selected signature image could not be opened.";
+        if (!diagnostic.isEmpty())
+        {
+            message.append(" ");
+            message.append(diagnostic.constData(),
+                           static_cast<std::size_t>(diagnostic.size()));
+        }
+        return Domain::Result<std::optional<QByteArray>>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = std::move(message),
+            .recoverable = true
+        });
+    }
+    return Domain::Result<std::optional<QByteArray>>::success(file.readAll());
+}
+
+void ApplicationBootstrap::refreshMyWorkspacePage()
+{
+    if (!m_shell)
+    {
+        return;
+    }
+    if (auto* const page = dynamic_cast<Ui::MyWorkspacePage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("my_workspace"))))
+    {
+        page->refreshForWorkspaceIdentity();
+    }
+}
+
+void ApplicationBootstrap::clearMyWorkspacePageForClosedWorkspace()
+{
+    if (!m_shell)
+    {
+        return;
+    }
+    if (auto* const page = dynamic_cast<Ui::MyWorkspacePage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("my_workspace"))))
+    {
+        page->clearForClosedWorkspace();
+    }
 }
 
 bool ApplicationBootstrap::releaseWorkspace() noexcept

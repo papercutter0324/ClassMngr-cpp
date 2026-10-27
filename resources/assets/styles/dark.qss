@@ -60,12 +60,15 @@ QLabel#sectionSubtitle {
 QLabel#sectionTitle,
 QLabel[role="header"],
 QLabel[role="section_header"],
-QLabel[role="section_header_center"] {
+QLabel[role="section_header_center"],
+QLabel#nextMyWorkspaceInformationHeading,
+QLabel#nextMyWorkspaceSignatureHeading {
     color: #f5f5f5;
     font-weight: 700;
 }
 
-QLabel#signatureImagePreview {
+QLabel#signatureImagePreview,
+QLabel#nextMyWorkspaceSignaturePreview {
     background-color: #ffffff;
     color: #66727a;
     border: 1px dashed #606770;

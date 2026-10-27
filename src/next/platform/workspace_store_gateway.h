@@ -84,6 +84,10 @@ public:
     savePersonalDetails(
         const Application::PersonalDetailsSaveRequest& request
         ) const;
+    [[nodiscard]] Application::PersonalDetailsSaveResult
+    saveWorkspacePersonalDetails(
+        const Application::PersonalDetailsSaveRequest& request
+        ) const;
     [[nodiscard]] Application::InitialSetupTeacherChoicesResult
     loadInitialSetupTeacherChoices() const;
     [[nodiscard]] Domain::Result<Application::CustomColorPalette>

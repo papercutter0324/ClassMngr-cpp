@@ -3070,6 +3070,14 @@ Use Open Teacher Profile to reopen it.</source>
     <message><source>Type your signature</source><translation>서명을 입력하세요</translation></message>
     <message><source>Choose a style</source><translation>스타일 선택</translation></message>
     <message><source>Type your signature to see a preview.</source><translation>미리 보기를 보려면 서명을 입력하세요.</translation></message>
+    <message><source>Replace Signature...</source><translation>서명 바꾸기...</translation></message>
+    <message><source>Your Signature</source><translation>서명 미리 보기</translation></message>
+    <message><source>Selected</source><translation>선택됨</translation></message>
+    <message><source>Use this font</source><translation>이 글꼴 사용</translation></message>
+    <message><source>Save Changes</source><translation>변경 사항 저장</translation></message>
+    <message><source>Save Changes *</source><translation>변경 사항 저장 *</translation></message>
+    <message><source>The signature image could not be prepared.</source><translation>서명 이미지를 준비하지 못했습니다.</translation></message>
+    <message><source>The signature image could not be displayed.</source><translation>서명 이미지를 표시하지 못했습니다.</translation></message>
 </context>
 <context>
     <name>QObject</name>
@@ -9923,6 +9931,11 @@ Version: %2</source>
     <message><source>Housing</source><translation>숙소</translation></message>
     <message><source>Maps</source><translation>지도</translation></message>
     <message><source>Initial Setup</source><translation>초기 설정</translation></message>
+    <message><source>My Details</source><translation>내 정보</translation></message>
+    <message><source>My Schedule</source><translation>내 일정</translation></message>
+    <message><source>Calendar</source><translation>캘린더</translation></message>
+    <message><source>Manage your personal details, schedule, and calendar.</source><translation>개인 정보, 일정 및 캘린더를 관리합니다.</translation></message>
+    <message><source>Calendar will load when you open this tab.</source><translation>이 탭을 열면 캘린더를 불러옵니다.</translation></message>
 </context>
 <context>
     <name>NextShell</name>
@@ -10573,5 +10586,22 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>Korean Teacher</source><translation>한국인 교사</translation></message>
     <message><source>Native English Teacher</source><translation>원어민 교사</translation></message>
     <message><source>GS Team</source><translation>GS 팀</translation></message>
+</context>
+<context>
+    <name>NextMyWorkspacePage</name>
+    <message><source>All changes saved.</source><translation>모든 변경 사항이 저장되었습니다.</translation></message>
+    <message><source>Unsaved changes.</source><translation>저장되지 않은 변경 사항이 있습니다.</translation></message>
+    <message><source>Saving changes...</source><translation>변경 사항을 저장하는 중...</translation></message>
+    <message><source>Loading personal details...</source><translation>개인 정보를 불러오는 중...</translation></message>
+    <message><source>No Teacher Profile is open.</source><translation>열린 교사 프로필이 없습니다.</translation></message>
+    <message><source>Reload My Details</source><translation>내 정보 다시 불러오기</translation></message>
+    <message><source>Reload My Details successfully before saving.</source><translation>저장하기 전에 내 정보를 다시 불러오세요.</translation></message>
+    <message><source>Your personal details could not be loaded. The displayed controls are preserved; reload before saving.</source><translation>개인 정보를 불러오지 못했습니다. 현재 화면의 입력 내용은 유지되며, 저장하기 전에 다시 불러오세요.</translation></message>
+    <message><source>Your personal details could not be saved. Your changes are still here.</source><translation>개인 정보를 저장하지 못했습니다. 변경 내용은 그대로 유지됩니다.</translation></message>
+    <message><source>Your personal details could not be reloaded. Your current form is preserved.</source><translation>개인 정보를 다시 불러오지 못했습니다. 현재 입력 내용은 유지됩니다.</translation></message>
+    <message><source>My Schedule will be available in a later update.</source><translation>내 일정은 이후 업데이트에서 사용할 수 있습니다.</translation></message>
+    <message><source>The signature image could not be selected.</source><translation>서명 이미지를 선택하지 못했습니다.</translation></message>
+    <message><source>The signature image could not be prepared.</source><translation>서명 이미지를 준비하지 못했습니다.</translation></message>
+    <message><source>The signature image could not be displayed.</source><translation>서명 이미지를 표시하지 못했습니다.</translation></message>
 </context>
 </TS>

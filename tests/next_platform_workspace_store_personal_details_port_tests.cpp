@@ -2,6 +2,7 @@
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/my_info/data/typed_signature_renderer.h"
 #include "next/application/personal_details_save_use_case.h"
+#include "next/platform/workspace_store_gateway.h"
 #include "next/platform/workspace_store_personal_details_port.h"
 
 #include <QFile>
@@ -105,6 +106,9 @@ private slots:
     void initTestCase();
     void fixtureRoundTripRollsBackAndRetriesThroughTheTypedUseCase();
     void unavailableStoreReturnsRecoverableReadAndWriteFailures();
+    void normalWorkspaceGatewayAllowsEmptyNameWhileSetupValidationRemainsStrict();
+    void legacyZoomSettingsLoadAndMigrateIntoTheCurrentBundle();
+    void missingValuesUseTheLegacyPersonalDetailsDefaults();
 
 private:
     QTemporaryDir m_directory;
@@ -274,6 +278,113 @@ unavailableStoreReturnsRecoverableReadAndWriteFailures()
     const auto saved = save.execute(request);
     QVERIFY(!saved);
     QVERIFY(saved.error().recoverable);
+}
+
+void NextPlatformWorkspaceStorePersonalDetailsPortTests::
+normalWorkspaceGatewayAllowsEmptyNameWhileSetupValidationRemainsStrict()
+{
+    const QString path = databasePath(m_directory);
+    {
+        WorkspaceStore seed;
+        QVERIFY(seed.open(path));
+        QVERIFY(applyFixture(seed));
+    }
+
+    Platform::WorkspaceStoreGateway gateway;
+    const auto opened = gateway.openWorkspace({
+        Application::WorkspaceLocation(utf8(path))
+    });
+    QVERIFY(opened);
+
+    const auto setupSave = gateway.savePersonalDetails({});
+    QVERIFY(!setupSave);
+    QCOMPARE(setupSave.error().code, Domain::ErrorCode::Validation);
+
+    const auto normalSave = gateway.saveWorkspacePersonalDetails({});
+    QVERIFY(normalSave);
+    const auto readBack = gateway.readPersonalDetails();
+    QVERIFY(readBack);
+    QVERIFY(readBack.value().name.empty());
+
+    QVERIFY(gateway.closeWorkspace({opened.value()}));
+}
+
+void NextPlatformWorkspaceStorePersonalDetailsPortTests::
+legacyZoomSettingsLoadAndMigrateIntoTheCurrentBundle()
+{
+    const QString path = databasePath(m_directory);
+    WorkspaceStore store;
+    QVERIFY(store.open(path));
+    QVERIFY(applyFixture(store));
+    SettingsRepository* const settings = store.settingsRepository();
+    QVERIFY(settings);
+
+    QVERIFY(settings->saveSetting(
+        QStringLiteral("subPrep/personalZoomEmail"),
+        QStringLiteral("legacy.zoom@example.test")));
+    QVERIFY(settings->saveSetting(
+        QStringLiteral("subPrep/personalZoomPassword"),
+        QStringLiteral("legacy-only-secret")));
+    QVERIFY(settings->saveSetting(
+        QStringLiteral("subPrep/personalZoomNotAvailable"), false));
+    QVERIFY(executeSql(
+        store,
+        QStringLiteral(R"(
+            DELETE FROM app_settings
+            WHERE key IN (
+                'myInfo/zoomLoginId',
+                'myInfo/zoomPassword',
+                'myInfo/zoomNotAvailable'
+            )
+        )")
+        ));
+
+    Platform::WorkspaceStorePersonalDetailsPort port(store);
+    const Application::PersonalDetailsReadQuery read(port);
+    const auto details = read.execute();
+    QVERIFY(details);
+    QCOMPARE(details.value().zoomLoginId,
+             std::string("legacy.zoom@example.test"));
+    QCOMPARE(details.value().zoomPassword,
+             std::string("legacy-only-secret"));
+    QVERIFY(!details.value().zoomNotAvailable);
+
+    const auto migratedLogin = settings->loadSetting(
+        QStringLiteral("myInfo/zoomLoginId"));
+    const auto migratedPassword = settings->loadSetting(
+        QStringLiteral("myInfo/zoomPassword"));
+    const auto migratedAvailability = settings->loadSetting(
+        QStringLiteral("myInfo/zoomNotAvailable"));
+    QVERIFY(migratedLogin);
+    QVERIFY(migratedPassword);
+    QVERIFY(migratedAvailability);
+    QCOMPARE(migratedLogin->toString(),
+             QStringLiteral("legacy.zoom@example.test"));
+    QCOMPARE(migratedPassword->toString(),
+             QStringLiteral("legacy-only-secret"));
+    QVERIFY(!migratedAvailability->toBool());
+}
+
+void NextPlatformWorkspaceStorePersonalDetailsPortTests::
+missingValuesUseTheLegacyPersonalDetailsDefaults()
+{
+    WorkspaceStore store;
+    QVERIFY(store.open(databasePath(m_directory)));
+    Platform::WorkspaceStorePersonalDetailsPort port(store);
+    const Application::PersonalDetailsReadQuery read(port);
+    const auto details = read.execute();
+    QVERIFY(details);
+    QVERIFY(details.value().name.empty());
+    QVERIFY(details.value().campus.value().empty());
+    QCOMPARE(details.value().zoomLoginId, std::string("N/A"));
+    QCOMPARE(details.value().zoomPassword, std::string("N/A"));
+    QVERIFY(details.value().zoomNotAvailable);
+    QVERIFY(details.value().signatureImage.empty());
+    QCOMPARE(details.value().signatureMode,
+             Application::PersonalSignatureMode::Image);
+    QVERIFY(details.value().typedSignatureText.empty());
+    QCOMPARE(details.value().typedSignatureFont,
+             Application::PersonalSignatureFontChoice::JustAnotherHand);
 }
 
 QTEST_MAIN(NextPlatformWorkspaceStorePersonalDetailsPortTests)
