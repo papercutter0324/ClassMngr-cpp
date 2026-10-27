@@ -76,7 +76,8 @@ NavigationNode NavigationNode::group(
 
 NavigationNode NavigationNode::page(
     PageId pageId,
-    const NavigationWorkspaceAvailability availability
+    const NavigationWorkspaceAvailability availability,
+    const bool displayInSidebar
     )
 {
     return NavigationNode{
@@ -86,7 +87,8 @@ NavigationNode NavigationNode::page(
         .pageId = std::move(pageId),
         .children = {},
         .availability = availability,
-        .retainWhenEmpty = false
+        .retainWhenEmpty = false,
+        .displayInSidebar = displayInSidebar
     };
 }
 

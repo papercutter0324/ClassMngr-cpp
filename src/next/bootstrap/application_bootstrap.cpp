@@ -9,6 +9,7 @@
 #include "next/application/unsaved_changes_resolution_flow.h"
 #include "next/application/initial_setup_class_details_requirements.h"
 #include "next/application/positive_decimal_id_validation.h"
+#include "next/domain/teacher_display_name.h"
 #include "core/settingsmanager.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
@@ -281,7 +282,8 @@ namespace
                     {
                         NavigationNode::page(
                             pageId(QStringLiteral("teacher_profile")),
-                            workspace
+                            workspace,
+                            false
                             )
                     },
                     workspace,
@@ -741,6 +743,19 @@ Application::StartupResult ApplicationBootstrap::start()
         m_shell->setCloseWorkspaceHandler([this] {
             closeWorkspaceFromMenu();
         });
+        m_shell->setKoreanTeacherNavigationActions({
+            .openTeacherProfile = [this](const Domain::TeacherId& teacherId) {
+                return openTeacherProfileImpl(teacherId, false);
+            },
+            .createTeacher = [this] {
+                createKoreanTeacherFromSidebar();
+            },
+            .deleteTeacher = [this](
+                const std::optional<Domain::TeacherId> teacherId
+                ) {
+                deleteKoreanTeacherFromSidebar(teacherId);
+            }
+        });
         m_shell->setNavigationGuard([this](
             const Ui::NavigationGuardRequest& request
             ) {
@@ -981,6 +996,7 @@ Application::StartupResult ApplicationBootstrap::start()
                 else
                 {
                     initialPageActivated = true;
+                    static_cast<void>(refreshKoreanTeacherNavigationRows());
                 }
             }
         }
@@ -1802,6 +1818,7 @@ void ApplicationBootstrap::createNewTeacherProfile()
             m_applicationRuntime->workspaceState().snapshot().lifecycle(),
             std::nullopt
             );
+        static_cast<void>(refreshKoreanTeacherNavigationRows());
     }
 }
 
@@ -1966,6 +1983,7 @@ void ApplicationBootstrap::openTeacherProfile(
         m_applicationRuntime->workspaceState().snapshot().lifecycle(),
         std::nullopt
         );
+    static_cast<void>(refreshKoreanTeacherNavigationRows());
     if (!m_shell->navigateTo(
             pageId(QStringLiteral("my_workspace")),
             Ui::NavigationCause::Selection
@@ -2159,6 +2177,7 @@ void ApplicationBootstrap::recoverInterruptedTeacherProfile()
         m_applicationRuntime->workspaceState().snapshot().lifecycle(),
         std::nullopt
         );
+    static_cast<void>(refreshKoreanTeacherNavigationRows());
     if (!m_shell->navigateTo(
             pageId(QStringLiteral("my_workspace")),
             Ui::NavigationCause::Selection
@@ -2489,6 +2508,7 @@ void ApplicationBootstrap::closeWorkspaceFromMenu()
         Application::WorkspaceLifecycleState::Closed,
         std::nullopt
         );
+    static_cast<void>(refreshKoreanTeacherNavigationRows());
     if (!m_shell->navigateTo(
             pageId(QStringLiteral("initial_setup")),
             Ui::NavigationCause::Selection
@@ -3658,6 +3678,14 @@ bool ApplicationBootstrap::openTeacherProfile(
     const Domain::TeacherId& teacherId
     )
 {
+    return openTeacherProfileImpl(teacherId, true);
+}
+
+bool ApplicationBootstrap::openTeacherProfileImpl(
+    const Domain::TeacherId& teacherId,
+    const bool notifyReadFailure
+    )
+{
     if (!m_shell)
     {
         return false;
@@ -3683,12 +3711,15 @@ bool ApplicationBootstrap::openTeacherProfile(
         gateway->readTeacherProfile(teacherId);
     if (!loaded)
     {
-        static_cast<void>(m_shell->notificationPort().show(
-            Application::NotificationRequest{
-                .message = loaded.error().message,
-                .severity = Application::NotificationSeverity::Error
-            }
-            ));
+        if (notifyReadFailure)
+        {
+            static_cast<void>(m_shell->notificationPort().show(
+                Application::NotificationRequest{
+                    .message = loaded.error().message,
+                    .severity = Application::NotificationSeverity::Error
+                }
+                ));
+        }
         return false;
     }
 
@@ -3712,6 +3743,7 @@ bool ApplicationBootstrap::openTeacherProfile(
         if (profilePage->selectedTeacherId()
             == std::optional<Domain::TeacherId>(teacherId))
         {
+            m_shell->selectKoreanTeacherNavigationRow(teacherId);
             return true;
         }
 
@@ -3722,7 +3754,12 @@ bool ApplicationBootstrap::openTeacherProfile(
         {
             return false;
         }
-        return profilePage->displayProfile(loaded.value());
+        if (!profilePage->displayProfile(loaded.value()))
+        {
+            return false;
+        }
+        m_shell->selectKoreanTeacherNavigationRow(teacherId);
+        return true;
     }
 
     // For a different active page, the normal shell guard owns Save/Discard/
@@ -3748,6 +3785,183 @@ bool ApplicationBootstrap::openTeacherProfile(
             ));
         return false;
     }
+    m_shell->selectKoreanTeacherNavigationRow(teacherId);
+    return true;
+}
+
+void ApplicationBootstrap::createKoreanTeacherFromSidebar()
+{
+    if (!m_shell)
+    {
+        return;
+    }
+    Ui::KoreanTeacherDirectoryActions actions(
+        m_shell.get(),
+        koreanTeacherDirectoryActionPorts()
+        );
+    actions.createTeacher();
+}
+
+void ApplicationBootstrap::deleteKoreanTeacherFromSidebar(
+    std::optional<Domain::TeacherId> teacherId
+    )
+{
+    if (!m_shell)
+    {
+        return;
+    }
+    Ui::KoreanTeacherDirectoryActions actions(
+        m_shell.get(),
+        koreanTeacherDirectoryActionPorts()
+        );
+    actions.deleteTeacher(std::move(teacherId));
+}
+
+Ui::KoreanTeacherDirectoryActionPorts
+ApplicationBootstrap::koreanTeacherDirectoryActionPorts()
+{
+    Ui::KoreanTeacherDirectoryActionPorts ports;
+    ports.readTeachers = [this] {
+        if (auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                m_workspaceGateway.get()))
+        {
+            return gateway->readTeacherDirectory();
+        }
+        return Application::TeacherDirectoryReadResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store for teachers is unavailable.",
+            .recoverable = true
+        });
+    };
+    ports.createTeacher = [this](
+        const Application::TeacherCreateRequest& request
+        ) {
+        if (auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                m_workspaceGateway.get()))
+        {
+            return gateway->createTeacher(request);
+        }
+        return Application::TeacherCreateResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store for teachers is unavailable.",
+            .recoverable = true
+        });
+    };
+    ports.readTeacherProfile = [this](const Domain::TeacherId& teacherId) {
+        if (auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                m_workspaceGateway.get()))
+        {
+            return gateway->readTeacherProfile(teacherId);
+        }
+        return Application::TeacherProfileReadResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store for teachers is unavailable.",
+            .recoverable = true
+        });
+    };
+    ports.deleteTeacher = [this](
+        const Application::TeacherDeleteRequest& request
+        ) {
+        if (auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                m_workspaceGateway.get()))
+        {
+            return gateway->deleteTeacher(request);
+        }
+        return Application::TeacherDeleteResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store for teachers is unavailable.",
+            .recoverable = true
+        });
+    };
+    ports.refreshTeacherRows = [this] {
+        return refreshKoreanTeacherNavigationRows();
+    };
+    ports.openCreatedTeacherProfile = [this](
+        const Domain::TeacherId& teacherId
+        ) {
+        return openTeacherProfile(teacherId);
+    };
+    ports.reportError = [this](const QString& title, const QString& message) {
+        if (!m_shell)
+        {
+            return;
+        }
+        const QByteArray encoded = (title + QStringLiteral(": ") + message).toUtf8();
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = std::string(
+                    encoded.constData(),
+                    static_cast<std::size_t>(encoded.size())
+                    ),
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+    };
+    return ports;
+}
+
+bool ApplicationBootstrap::refreshKoreanTeacherNavigationRows()
+{
+    if (!m_shell || !m_applicationRuntime)
+    {
+        return false;
+    }
+    if (m_applicationRuntime->workspaceState().snapshot().lifecycle()
+        != Application::WorkspaceLifecycleState::Open)
+    {
+        m_shell->setKoreanTeacherNavigationRows({});
+        return true;
+    }
+
+    auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+        m_workspaceGateway.get()
+        );
+    if (!gateway)
+    {
+        return false;
+    }
+    const Application::TeacherDirectoryReadResult loaded =
+        gateway->readTeacherDirectory();
+    if (!loaded)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = std::string(
+                    loaded.error().message.data(),
+                    loaded.error().message.size()
+                    ),
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return false;
+    }
+
+    std::vector<Ui::KoreanTeacherNavigationRow> rows;
+    rows.reserve(loaded.value().teachers.size());
+    for (const Application::TeacherDirectoryEntry& teacher :
+         loaded.value().teachers)
+    {
+        const Domain::TeacherDisplayName displayName =
+            Domain::TeacherDisplayName::select(
+                teacher.preferredName,
+                teacher.teacherEn,
+                teacher.preferredRomanization,
+                teacher.teacherKr
+                );
+        QString label = QString::fromStdU16String(displayName.value());
+        if (label.isEmpty())
+        {
+            label = QCoreApplication::translate(
+                "KoreanTeacherListPage",
+                "New Teacher"
+                );
+        }
+        rows.push_back({
+            .teacherId = teacher.teacherId,
+            .label = std::move(label)
+        });
+    }
+    m_shell->setKoreanTeacherNavigationRows(std::move(rows));
     return true;
 }
 

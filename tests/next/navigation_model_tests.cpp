@@ -2,11 +2,14 @@
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/application_shell.h"
+#include "next/ui/navigation_font_policy.h"
 #include "next/ui/navigation_model.h"
 #include "next/ui/page_host.h"
 
 #include <QPushButton>
 #include <QAction>
+#include <QContextMenuEvent>
+#include <QFontDatabase>
 #include <QKeySequence>
 #include <QMenu>
 #include <QPointer>
@@ -225,6 +228,8 @@ private slots:
     void shellExposesNewTeacherProfileAction();
     void shellExposesOpenTeacherProfileAction();
     void shellExposesInterruptedProfileRecoveryAction();
+    void navigationFontPolicyMatchesStandardAndPreferenceOffsets();
+    void shellTeacherRowsStayOnStaticRouteAndOfferContextActions();
     void shellOwnsTransientNotificationPortAndKeepsIdleStatusBarHidden();
 
 private:
@@ -875,6 +880,277 @@ void NavigationModelTests::shellExposesInterruptedProfileRecoveryAction()
     });
     action->trigger();
     QCOMPARE(invocationCount, 1);
+}
+
+void NavigationModelTests::navigationFontPolicyMatchesStandardAndPreferenceOffsets()
+{
+    QFont inheritedFont;
+    inheritedFont.setFamily(QStringLiteral("Inherited Family"));
+    inheritedFont.setPointSize(9);
+    inheritedFont.setWeight(QFont::Bold);
+    inheritedFont.setItalic(true);
+    const bool interRegistered = QFontDatabase::families().contains(
+        QStringLiteral("Inter"),
+        Qt::CaseInsensitive
+        );
+
+    const auto verifyPreference = [&inheritedFont, interRegistered](
+        const Application::FontSize preference,
+        const int expectedPointSize
+        ) {
+        const QFont font = Ui::NavigationFontPolicy::standardFont(
+            inheritedFont,
+            preference
+            );
+        QCOMPARE(font.pointSize(), expectedPointSize);
+        QCOMPARE(
+            font.family(),
+            interRegistered
+                ? QStringLiteral("Inter")
+                : QStringLiteral("Inherited Family")
+            );
+        QVERIFY(font.families().contains(
+            QStringLiteral("Inherited Family"),
+            Qt::CaseInsensitive
+            ));
+        QCOMPARE(font.weight(), QFont::Normal);
+        QVERIFY(!font.italic());
+    };
+
+    verifyPreference(Application::FontSize::Small, 12);
+    verifyPreference(Application::FontSize::Normal, 14);
+    verifyPreference(Application::FontSize::Large, 16);
+    verifyPreference(Application::FontSize::ExtraLarge, 18);
+}
+
+void NavigationModelTests::
+shellTeacherRowsStayOnStaticRouteAndOfferContextActions()
+{
+    const Ui::PageId workspacePage = pageId(QStringLiteral("my_workspace"));
+    const Ui::PageId profilePage = pageId(QStringLiteral("teacher_profile"));
+    PageProbe workspaceProbe{QStringLiteral("my_workspace")};
+    PageProbe profileProbe{QStringLiteral("teacher_profile")};
+    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    QVERIFY(shell.pageHost().registerPage(descriptorFor(
+        QStringLiteral("my_workspace"), QStringLiteral("My Workspace"),
+        {}, {}, &workspaceProbe
+        )));
+    QVERIFY(shell.pageHost().registerPage(descriptorFor(
+        QStringLiteral("teacher_profile"), QStringLiteral("Teacher Profile"),
+        {}, {}, &profileProbe
+        )));
+    QVERIFY(shell.configureNavigation(
+        {
+            Ui::NavigationNode::page(workspacePage),
+            Ui::NavigationNode::group(
+                QStringLiteral("campus_staff"),
+                QStringLiteral("Campus Staff"),
+                {
+                    Ui::NavigationNode::group(
+                        QStringLiteral("teachers_all_korean"),
+                        QStringLiteral("Korean Teachers"),
+                        {
+                            Ui::NavigationNode::page(
+                                profilePage,
+                                Ui::NavigationWorkspaceAvailability::WorkspaceOpen,
+                                false
+                                )
+                        },
+                        Ui::NavigationWorkspaceAvailability::WorkspaceOpen,
+                        true
+                        )
+                },
+                Ui::NavigationWorkspaceAvailability::WorkspaceOpen
+                )
+        },
+        workspacePage,
+        workspacePage,
+        Application::WorkspaceLifecycleState::Open
+        ));
+    QVERIFY(shell.navigateTo(workspacePage, Ui::NavigationCause::Initial));
+    shell.resize(860, 620);
+    shell.show();
+    QApplication::processEvents();
+
+    int newCalls = 0;
+    std::vector<std::optional<Domain::TeacherId>> deleteRequests;
+    std::vector<Domain::TeacherId> openedTeachers;
+    shell.setKoreanTeacherNavigationActions({
+        .openTeacherProfile = [&shell, &openedTeachers, &profilePage](
+            const Domain::TeacherId& teacherId
+            ) {
+            openedTeachers.push_back(teacherId);
+            return shell.navigateTo(profilePage, Ui::NavigationCause::Selection);
+        },
+        .createTeacher = [&newCalls] { ++newCalls; },
+        .deleteTeacher = [&deleteRequests](
+            const std::optional<Domain::TeacherId> teacherId
+            ) {
+            deleteRequests.push_back(teacherId);
+        }
+    });
+
+    auto* const tree = shell.findChild<QTreeWidget*>(
+        QStringLiteral("classMngrNextNavigationTree")
+        );
+    QVERIFY(tree);
+    const auto findTeacherGroup = [tree] {
+        return itemByDataRole(
+            tree,
+            Qt::UserRole + 2,
+            QStringLiteral("teachers_all_korean")
+            );
+    };
+    QTreeWidgetItem* teacherGroup = findTeacherGroup();
+    QVERIFY(teacherGroup);
+    teacherGroup->parent()->setExpanded(true);
+    teacherGroup->setExpanded(true);
+
+    const auto invokeGroupContextAction = [this, tree, &shell,
+                                            &findTeacherGroup](
+        const QString& actionObjectName,
+        bool* enabled
+        ) {
+        bool triggered = false;
+        QTreeWidgetItem* const teacherGroup = findTeacherGroup();
+        if (!teacherGroup)
+        {
+            return false;
+        }
+        const QRect rowRect = tree->visualItemRect(teacherGroup);
+        QTimer::singleShot(0, &shell, [&] {
+            auto* const menu = qobject_cast<QMenu*>(
+                QApplication::activePopupWidget()
+                );
+            if (!menu)
+            {
+                return;
+            }
+            QAction* const action = menu->findChild<QAction*>(actionObjectName);
+            if (!action)
+            {
+                menu->close();
+                return;
+            }
+            *enabled = action->isEnabled();
+            if (action->isEnabled())
+            {
+                QObject::connect(
+                    action,
+                    &QAction::triggered,
+                    &shell,
+                    [&triggered] { triggered = true; }
+                    );
+                QTest::mouseClick(
+                    menu,
+                    Qt::LeftButton,
+                    Qt::NoModifier,
+                    menu->actionGeometry(action).center()
+                    );
+            }
+            else
+            {
+                menu->close();
+            }
+        });
+        const QPoint rowPosition = rowRect.center();
+        QContextMenuEvent contextMenuEvent(
+            QContextMenuEvent::Mouse,
+            rowPosition,
+            tree->viewport()->mapToGlobal(rowPosition)
+            );
+        QApplication::sendEvent(tree->viewport(), &contextMenuEvent);
+        return triggered;
+    };
+
+    bool newEnabled = false;
+    QVERIFY(invokeGroupContextAction(
+        QStringLiteral("koreanTeacherNewContextAction"),
+        &newEnabled
+        ));
+    QVERIFY(newEnabled);
+    QCOMPARE(newCalls, 1);
+    bool emptyDeleteEnabled = true;
+    QVERIFY(!invokeGroupContextAction(
+        QStringLiteral("koreanTeacherDeleteContextAction"),
+        &emptyDeleteEnabled
+        ));
+    QVERIFY(!emptyDeleteEnabled);
+    QVERIFY(deleteRequests.empty());
+
+    const Domain::TeacherId firstTeacher = *Domain::TeacherId::fromString("7");
+    const Domain::TeacherId secondTeacher = *Domain::TeacherId::fromString("2147483650");
+    shell.setKoreanTeacherNavigationRows({
+        {.teacherId = firstTeacher, .label = QStringLiteral("First Teacher")},
+        {.teacherId = secondTeacher, .label = QStringLiteral("Second Teacher")}
+    });
+    const auto findTeacherRow = [tree](const QString& id) {
+        return itemByDataRole(tree, Qt::UserRole + 3, id);
+    };
+    QTreeWidgetItem* const firstRow = findTeacherRow(QStringLiteral("7"));
+    QTreeWidgetItem* const secondRow = findTeacherRow(QStringLiteral("2147483650"));
+    QVERIFY(firstRow);
+    QVERIFY(secondRow);
+
+    tree->setCurrentItem(firstRow);
+    tree->setCurrentItem(secondRow);
+    QCOMPARE(openedTeachers.size(), std::size_t(2));
+    QCOMPARE(openedTeachers[0], firstTeacher);
+    QCOMPARE(openedTeachers[1], secondTeacher);
+    QCOMPARE(shell.navigationModel()->currentPageId(),
+        std::optional<Ui::PageId>(profilePage));
+    QCOMPARE(shell.navigationModel()->history().size(), std::size_t(2));
+    QCOMPARE(profileProbe.factoryCalls, 1);
+
+    QVERIFY(shell.navigateBack());
+    QCOMPARE(shell.navigationModel()->currentPageId(),
+        std::optional<Ui::PageId>(workspacePage));
+    bool groupDeleteEnabled = false;
+    QVERIFY(invokeGroupContextAction(
+        QStringLiteral("koreanTeacherDeleteContextAction"),
+        &groupDeleteEnabled
+        ));
+    QVERIFY(groupDeleteEnabled);
+    QCOMPARE(deleteRequests.size(), std::size_t(1));
+    QVERIFY(!deleteRequests.back());
+
+    QTreeWidgetItem* const secondRowAfterRebuild =
+        findTeacherRow(QStringLiteral("2147483650"));
+    QVERIFY(secondRowAfterRebuild);
+    const QRect rowRect = tree->visualItemRect(secondRowAfterRebuild);
+    bool rowDeleteEnabled = false;
+    QTimer::singleShot(0, &shell, [&] {
+        auto* const menu = qobject_cast<QMenu*>(
+            QApplication::activePopupWidget()
+            );
+        if (!menu)
+        {
+            return;
+        }
+        QAction* const action = menu->findChild<QAction*>(
+            QStringLiteral("koreanTeacherDeleteContextAction")
+            );
+        rowDeleteEnabled = action && action->isEnabled();
+        if (action && action->isEnabled())
+        {
+            QTest::mouseClick(
+                menu,
+                Qt::LeftButton,
+                Qt::NoModifier,
+                menu->actionGeometry(action).center()
+                );
+        }
+    });
+    QContextMenuEvent rowContextMenuEvent(
+        QContextMenuEvent::Mouse,
+        rowRect.center(),
+        tree->viewport()->mapToGlobal(rowRect.center())
+        );
+    QApplication::sendEvent(tree->viewport(), &rowContextMenuEvent);
+    QVERIFY(rowDeleteEnabled);
+    QCOMPARE(deleteRequests.size(), std::size_t(2));
+    QCOMPARE(deleteRequests.back(), std::optional{secondTeacher});
+    QCOMPARE(shell.navigationModel()->history().size(), std::size_t(2));
 }
 
 void NavigationModelTests::shellOwnsTransientNotificationPortAndKeepsIdleStatusBarHidden()

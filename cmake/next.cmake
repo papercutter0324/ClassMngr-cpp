@@ -137,6 +137,8 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/teacher_delete_use_case.h
     src/next/application/teacher_create.h
     src/next/application/teacher_create_use_case.h
+    src/next/application/teacher_directory_read_port.h
+    src/next/application/teacher_directory_read_query.h
     src/next/application/classes_navigation_snapshot.h
     src/next/application/class_details_save_use_case.h
     src/next/application/class_create.h

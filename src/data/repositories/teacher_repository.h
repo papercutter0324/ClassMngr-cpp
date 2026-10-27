@@ -24,6 +24,15 @@ struct InitialSetupTeacherChoiceReadRecord final
     QString preferredName;
 };
 
+struct TeacherDirectoryReadRecord final
+{
+    qint64 teacherId = -1;
+    QString teacherKr;
+    QString teacherEn;
+    QString preferredRomanization;
+    QString preferredName;
+};
+
 struct TestingTeacherChoiceReadRecord final
 {
     qint64 teacherId = -1;
@@ -301,6 +310,8 @@ public:
         myClassesTeacherProfileBatchReadMetrics() const noexcept;
 
     [[nodiscard]] RepositoryResult<QList<Teacher>> getAllTeachers();
+    [[nodiscard]] RepositoryResult<QList<TeacherDirectoryReadRecord>>
+        loadTeacherDirectoryRecords();
     [[nodiscard]] RepositoryResult<QList<ScheduleImportTeacherReadRecord>>
         loadScheduleImportTeacherRecords();
     [[nodiscard]] const ScheduleImportTeacherReadMetrics&

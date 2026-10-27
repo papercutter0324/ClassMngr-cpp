@@ -10498,4 +10498,25 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
         <translation>초기 설정이 진행 중이지 않습니다.</translation>
     </message>
 </context>
+<context>
+    <name>KoreanTeacherListPage</name>
+    <message><source>Directory</source><translation>목록</translation></message>
+    <message><source>Korean Teachers</source><translation>한국인 교사</translation></message>
+    <message><source>Select a teacher to view or edit their profile.</source><translation>교사를 선택해 프로필을 보거나 수정하세요.</translation></message>
+    <message><source>New</source><translation>새 교사</translation></message>
+    <message><source>Delete</source><translation>삭제</translation></message>
+    <message><source>No Korean teachers are available yet. Add a teacher to get started.</source><translation>등록된 한국인 교사가 없습니다. 새 교사를 추가하세요.</translation></message>
+    <message><source>The Korean teacher list is unavailable.</source><translation>한국인 교사 목록을 사용할 수 없습니다.</translation></message>
+    <message><source>Add Korean Teacher</source><translation>한국인 교사 추가</translation></message>
+    <message><source>Enter a Korean name, English name, or preferred spelling.</source><translation>한국어 이름, 영어 이름 또는 선호 표기를 입력하세요.</translation></message>
+    <message><source>Korean Name</source><translation>한국어 이름</translation></message>
+    <message><source>English Name</source><translation>영어 이름</translation></message>
+    <message><source>Preferred Spelling</source><translation>선호 표기</translation></message>
+    <message><source>Create</source><translation>추가</translation></message>
+    <message><source>Cancel</source><translation>취소</translation></message>
+    <message><source>The selected teacher could not be verified.</source><translation>선택한 교사를 확인할 수 없습니다.</translation></message>
+    <message><source>Delete Teacher</source><translation>교사 삭제</translation></message>
+    <message><source>Delete %1?</source><translation>%1 교사를 삭제할까요?</translation></message>
+    <message><source>New Teacher</source><translation>새 교사</translation></message>
+</context>
 </TS>

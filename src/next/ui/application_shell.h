@@ -3,6 +3,7 @@
 #include "next/application/workspace_state.h"
 #include "next/application/recent_workspace_history.h"
 #include "next/application/preferences_model.h"
+#include "next/domain/domain_types.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/navigation_model.h"
 #include "next/ui/qt_notification_presenter.h"
@@ -31,6 +32,24 @@ namespace ClassMngr::Next::Ui
 {
 
 class PageHost;
+
+struct KoreanTeacherNavigationRow final
+{
+    Domain::TeacherId teacherId;
+    QString label;
+
+    friend bool operator==(
+        const KoreanTeacherNavigationRow&,
+        const KoreanTeacherNavigationRow&
+        ) = default;
+};
+
+struct KoreanTeacherNavigationActions final
+{
+    std::function<bool(const Domain::TeacherId&)> openTeacherProfile;
+    std::function<void()> createTeacher;
+    std::function<void(std::optional<Domain::TeacherId>)> deleteTeacher;
+};
 
 class ApplicationShell final : public QMainWindow
 {
@@ -91,6 +110,15 @@ public:
         Application::WorkspaceLifecycleState workspaceState,
         std::optional<QStringList> grantedPermissionIds
         );
+    void setKoreanTeacherNavigationActions(
+        KoreanTeacherNavigationActions actions
+        );
+    void setKoreanTeacherNavigationRows(
+        std::vector<KoreanTeacherNavigationRow> rows
+        );
+    void selectKoreanTeacherNavigationRow(
+        const Domain::TeacherId& teacherId
+        );
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -100,6 +128,7 @@ private:
         Application::WorkspaceLifecycleState workspaceState
         ) noexcept;
     void rebuildNavigationTree();
+    void showKoreanTeacherContextMenu(const QPoint& position);
     void synchronizeNavigationSelection();
     void synchronizeHistoryControls();
     void refreshRecentWorkspaceMenu();
@@ -122,6 +151,9 @@ private:
     QAction* m_closeWorkspaceAction = nullptr;
     QMenu* m_recentWorkspaceMenu = nullptr;
     std::optional<NavigationModel> m_navigationModel;
+    std::vector<KoreanTeacherNavigationRow> m_koreanTeacherNavigationRows;
+    std::optional<Domain::TeacherId> m_lastOpenedKoreanTeacherId;
+    KoreanTeacherNavigationActions m_koreanTeacherNavigationActions;
     QHash<QString, QIcon> m_navigationIcons;
     std::vector<Resources::ScopedResource<QImage>> m_navigationIconImages;
     NavigationGuard m_navigationGuard;

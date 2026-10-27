@@ -9827,4 +9827,25 @@ GS Team members: %8 created, %9 updated, %10 unchanged.</translation></message>
     <message><source>Choose a valid start and end time for every row.</source><translation>Choose a valid start and end time for every row.</translation></message>
     <message><source>The class information could not be saved. Your entries are still here; retry to continue.</source><translation>The class information could not be saved. Your entries are still here; retry to continue.</translation></message>
 </context>
+<context>
+    <name>KoreanTeacherListPage</name>
+    <message><source>Directory</source><translation>Directory</translation></message>
+    <message><source>Korean Teachers</source><translation>Korean Teachers</translation></message>
+    <message><source>Select a teacher to view or edit their profile.</source><translation>Select a teacher to view or edit their profile.</translation></message>
+    <message><source>New</source><translation>New</translation></message>
+    <message><source>Delete</source><translation>Delete</translation></message>
+    <message><source>No Korean teachers are available yet. Add a teacher to get started.</source><translation>No Korean teachers are available yet. Add a teacher to get started.</translation></message>
+    <message><source>The Korean teacher list is unavailable.</source><translation>The Korean teacher list is unavailable.</translation></message>
+    <message><source>Add Korean Teacher</source><translation>Add Korean Teacher</translation></message>
+    <message><source>Enter a Korean name, English name, or preferred spelling.</source><translation>Enter a Korean name, English name, or preferred spelling.</translation></message>
+    <message><source>Korean Name</source><translation>Korean Name</translation></message>
+    <message><source>English Name</source><translation>English Name</translation></message>
+    <message><source>Preferred Spelling</source><translation>Preferred Spelling</translation></message>
+    <message><source>Create</source><translation>Create</translation></message>
+    <message><source>Cancel</source><translation>Cancel</translation></message>
+    <message><source>The selected teacher could not be verified.</source><translation>The selected teacher could not be verified.</translation></message>
+    <message><source>Delete Teacher</source><translation>Delete Teacher</translation></message>
+    <message><source>Delete %1?</source><translation>Delete %1?</translation></message>
+    <message><source>New Teacher</source><translation>New Teacher</translation></message>
+</context>
 </TS>

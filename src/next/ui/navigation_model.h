@@ -40,6 +40,7 @@ struct NavigationNode final
     NavigationWorkspaceAvailability availability =
         NavigationWorkspaceAvailability::Always;
     bool retainWhenEmpty = false;
+    bool displayInSidebar = true;
 
     [[nodiscard]] static NavigationNode group(
         QString id,
@@ -53,7 +54,8 @@ struct NavigationNode final
     [[nodiscard]] static NavigationNode page(
         PageId pageId,
         NavigationWorkspaceAvailability availability =
-            NavigationWorkspaceAvailability::Always
+            NavigationWorkspaceAvailability::Always,
+        bool displayInSidebar = true
         );
 
     [[nodiscard]] static NavigationNode placeholder(

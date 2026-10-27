@@ -1963,6 +1963,63 @@ RepositoryResult<QList<Teacher>> TeacherRepository::getAllTeachers()
     return teachers;
 }
 
+RepositoryResult<QList<TeacherDirectoryReadRecord>>
+TeacherRepository::loadTeacherDirectoryRecords()
+{
+    QList<TeacherDirectoryReadRecord> teachers;
+    QSqlQuery query(m_database);
+
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
+            SELECT id, teacher_kr, teacher_en,
+                   preferred_romanization, preferred_name
+            FROM teachers
+        )"),
+        QObject::tr("Loading Korean teachers")
+        );
+    if (!executed)
+    {
+        return repositoryUnexpected(executed.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        bool teacherIdOk = false;
+        const qint64 teacherId =
+            query.value(QStringLiteral("id")).toLongLong(&teacherIdOk);
+        if (!teacherIdOk || teacherId <= 0)
+        {
+            return repositoryUnexpected(
+                QObject::tr(
+                    "Loading Korean teachers found an invalid teacher identifier %1."
+                    ).arg(query.value(QStringLiteral("id")).toString()),
+                RepositoryErrorCode::Validation
+                );
+        }
+
+        teachers.append({
+            .teacherId = teacherId,
+            .teacherKr = query.value(QStringLiteral("teacher_kr")).toString(),
+            .teacherEn = query.value(QStringLiteral("teacher_en")).toString(),
+            .preferredRomanization = query.value(
+                QStringLiteral("preferred_romanization")
+                ).toString(),
+            .preferredName = query.value(QStringLiteral("preferred_name")).toString()
+        });
+    }
+
+    if (query.lastError().isValid())
+    {
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading Korean teachers")
+            ).userMessage());
+    }
+
+    return teachers;
+}
+
 RepositoryResult<QList<ScheduleImportTeacherReadRecord>>
 TeacherRepository::loadScheduleImportTeacherRecords()
 {

@@ -9,6 +9,9 @@
 #include "next/application/teacher_import_use_case.h"
 #include "next/application/teacher_profile_edit_use_case.h"
 #include "next/application/teacher_profile_read_port.h"
+#include "next/application/teacher_create.h"
+#include "next/application/teacher_delete.h"
+#include "next/application/teacher_directory_read_port.h"
 #include "next/application/workspace_contracts.h"
 
 #include <memory>
@@ -78,6 +81,14 @@ public:
         ) const;
     [[nodiscard]] Application::TeacherCreateResult createInitialSetupTeacher(
         const Application::TeacherCreateRequest& request
+        ) const;
+    [[nodiscard]] Application::TeacherDirectoryReadResult
+    readTeacherDirectory() const;
+    [[nodiscard]] Application::TeacherCreateResult createTeacher(
+        const Application::TeacherCreateRequest& request
+        ) const;
+    [[nodiscard]] Application::TeacherDeleteResult deleteTeacher(
+        const Application::TeacherDeleteRequest& request
         ) const;
     [[nodiscard]] Application::TeacherProfileReadResult readTeacherProfile(
         const Domain::TeacherId& id

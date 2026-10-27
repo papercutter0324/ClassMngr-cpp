@@ -22,6 +22,7 @@
 #include "next/bootstrap/startup_diagnostics_sink.h"
 #include "next/bootstrap/startup_update_dispatcher.h"
 #include "next/resources/resource_root_resolver.h"
+#include "next/ui/korean_teacher_directory_actions.h"
 
 #include <QStringList>
 #include <QByteArray>
@@ -169,6 +170,17 @@ private:
     void openTeacherProfile(
         std::optional<Application::FileDialogPath> selectedPath
         );
+    [[nodiscard]] bool openTeacherProfileImpl(
+        const Domain::TeacherId& teacherId,
+        bool notifyReadFailure
+        );
+    void createKoreanTeacherFromSidebar();
+    void deleteKoreanTeacherFromSidebar(
+        std::optional<Domain::TeacherId> teacherId
+        );
+    [[nodiscard]] Ui::KoreanTeacherDirectoryActionPorts
+    koreanTeacherDirectoryActionPorts();
+    [[nodiscard]] bool refreshKoreanTeacherNavigationRows();
     void clearRecentWorkspaceHistory();
     void saveWorkspaceFromMenu();
     void saveWorkspaceAsFromMenu();

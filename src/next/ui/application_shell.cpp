@@ -1,7 +1,9 @@
 #include "next/ui/application_shell.h"
 
 #include "next/ui/page_host.h"
+#include "next/ui/navigation_font_policy.h"
 
+#include <algorithm>
 #include <QDir>
 #include <QCloseEvent>
 #include <QCoreApplication>
@@ -13,6 +15,7 @@
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QStatusBar>
+#include <QStyledItemDelegate>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QTreeWidgetItemIterator>
@@ -29,6 +32,51 @@ namespace
 constexpr int NodeKindRole = Qt::UserRole;
 constexpr int PageIdRole = Qt::UserRole + 1;
 constexpr int NodeIdRole = Qt::UserRole + 2;
+constexpr int TeacherIdRole = Qt::UserRole + 3;
+constexpr auto KoreanTeacherGroupId = "teachers_all_korean";
+
+class NavigationTreeItemDelegate final : public QStyledItemDelegate
+{
+public:
+    explicit NavigationTreeItemDelegate(QObject* parent)
+        : QStyledItemDelegate(parent)
+    {
+    }
+
+    [[nodiscard]] QSize sizeHint(
+        const QStyleOptionViewItem& option,
+        const QModelIndex& index
+        ) const override
+    {
+        QSize result = QStyledItemDelegate::sizeHint(option, index);
+        result.setHeight(std::max(
+            result.height(),
+            NavigationFontPolicy::MinimumRowHeightPixels
+            ));
+        return result;
+    }
+};
+
+class KoreanTeacherNavigationItem final : public QTreeWidgetItem
+{
+public:
+    KoreanTeacherNavigationItem(
+        QString label,
+        Domain::TeacherId teacherId
+        )
+        : QTreeWidgetItem(QStringList{std::move(label)})
+        , m_teacherId(std::move(teacherId))
+    {
+    }
+
+    [[nodiscard]] const Domain::TeacherId& teacherId() const noexcept
+    {
+        return m_teacherId;
+    }
+
+private:
+    Domain::TeacherId m_teacherId;
+};
 
 [[nodiscard]] NavigationModelError shellError(
     const NavigationModelErrorCode code,
@@ -89,6 +137,17 @@ ApplicationShell::ApplicationShell(
     m_navigationTree->setObjectName(QStringLiteral("classMngrNextNavigationTree"));
     m_navigationTree->setHeaderHidden(true);
     m_navigationTree->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_navigationTree->setFont(
+        NavigationFontPolicy::standardFont(
+            m_navigationTree->font(),
+            preferences.snapshot().fontSize()
+            )
+        );
+    m_navigationTree->setIndentation(12);
+    m_navigationTree->setUniformRowHeights(true);
+    m_navigationTree->setItemDelegate(
+        new NavigationTreeItemDelegate(m_navigationTree)
+        );
     navigationLayout->addWidget(m_navigationTree, 1);
 
     contentLayout->addWidget(navigationPanel);
@@ -218,6 +277,21 @@ ApplicationShell::ApplicationShell(
     });
     connect(m_navigationTree, &QTreeWidget::currentItemChanged, this,
             [this](QTreeWidgetItem* current, QTreeWidgetItem*) {
+        if (auto* const teacherItem =
+                dynamic_cast<KoreanTeacherNavigationItem*>(current))
+        {
+            const auto previousTeacherId = m_lastOpenedKoreanTeacherId;
+            m_lastOpenedKoreanTeacherId = teacherItem->teacherId();
+            if (!m_koreanTeacherNavigationActions.openTeacherProfile
+                || !m_koreanTeacherNavigationActions.openTeacherProfile(
+                    teacherItem->teacherId()
+                    ))
+            {
+                m_lastOpenedKoreanTeacherId = previousTeacherId;
+                synchronizeNavigationSelection();
+            }
+            return;
+        }
         if (!current
             || current->data(0, NodeKindRole).toInt()
                 != static_cast<int>(NavigationNode::Kind::Page))
@@ -233,6 +307,9 @@ ApplicationShell::ApplicationShell(
             synchronizeNavigationSelection();
         }
     });
+    m_navigationTree->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_navigationTree, &QWidget::customContextMenuRequested, this,
+            &ApplicationShell::showKoreanTeacherContextMenu);
 }
 
 void ApplicationShell::setCloseHandler(CloseHandler handler)
@@ -445,6 +522,44 @@ void ApplicationShell::updateNavigationAccessContext(
     synchronizeWorkspaceActions(workspaceState);
 }
 
+void ApplicationShell::setKoreanTeacherNavigationActions(
+    KoreanTeacherNavigationActions actions
+    )
+{
+    m_koreanTeacherNavigationActions = std::move(actions);
+}
+
+void ApplicationShell::setKoreanTeacherNavigationRows(
+    std::vector<KoreanTeacherNavigationRow> rows
+    )
+{
+    if (m_koreanTeacherNavigationRows == rows)
+    {
+        return;
+    }
+    m_koreanTeacherNavigationRows = std::move(rows);
+    if (m_lastOpenedKoreanTeacherId
+        && std::none_of(
+            m_koreanTeacherNavigationRows.begin(),
+            m_koreanTeacherNavigationRows.end(),
+            [this](const KoreanTeacherNavigationRow& row) {
+                return row.teacherId == *m_lastOpenedKoreanTeacherId;
+            }
+            ))
+    {
+        m_lastOpenedKoreanTeacherId.reset();
+    }
+    rebuildNavigationTree();
+}
+
+void ApplicationShell::selectKoreanTeacherNavigationRow(
+    const Domain::TeacherId& teacherId
+    )
+{
+    m_lastOpenedKoreanTeacherId = teacherId;
+    synchronizeNavigationSelection();
+}
+
 void ApplicationShell::synchronizeWorkspaceActions(
     const Application::WorkspaceLifecycleState workspaceState
     ) noexcept
@@ -481,6 +596,10 @@ void ApplicationShell::rebuildNavigationTree()
     appendNode = [this, &appendNode](const NavigationNode& node,
                                      QTreeWidgetItem* parent) {
         const bool isPage = node.kind == NavigationNode::Kind::Page;
+        if (isPage && !node.displayInSidebar)
+        {
+            return;
+        }
         const QString label = isPage
             ? m_navigationModel->pageMetadata(*node.pageId)->label
             : node.label;
@@ -508,6 +627,23 @@ void ApplicationShell::rebuildNavigationTree()
             for (const NavigationNode& child : node.children)
             {
                 appendNode(child, item);
+            }
+            if (node.id == QString::fromLatin1(KoreanTeacherGroupId))
+            {
+                for (const KoreanTeacherNavigationRow& teacher :
+                     m_koreanTeacherNavigationRows)
+                {
+                    auto* const teacherItem = new KoreanTeacherNavigationItem(
+                        teacher.label,
+                        teacher.teacherId
+                        );
+                    teacherItem->setData(
+                        0,
+                        TeacherIdRole,
+                        QString::fromStdString(teacher.teacherId.value())
+                        );
+                    item->addChild(teacherItem);
+                }
             }
         }
     };
@@ -551,7 +687,78 @@ void ApplicationShell::synchronizeNavigationSelection()
         }
         ++iterator;
     }
+    if (m_lastOpenedKoreanTeacherId)
+    {
+        QTreeWidgetItemIterator teacherIterator(m_navigationTree);
+        while (*teacherIterator)
+        {
+            auto* const teacherItem =
+                dynamic_cast<KoreanTeacherNavigationItem*>(*teacherIterator);
+            if (teacherItem
+                && teacherItem->teacherId() == *m_lastOpenedKoreanTeacherId)
+            {
+                m_navigationTree->setCurrentItem(teacherItem);
+                return;
+            }
+            ++teacherIterator;
+        }
+    }
     m_navigationTree->setCurrentItem(nullptr);
+}
+
+void ApplicationShell::showKoreanTeacherContextMenu(
+    const QPoint& position
+    )
+{
+    QTreeWidgetItem* const contextItem = m_navigationTree->itemAt(position);
+    auto* const contextTeacher =
+        dynamic_cast<KoreanTeacherNavigationItem*>(contextItem);
+    const bool koreanTeacherGroup = contextItem
+        && contextItem->data(0, NodeIdRole).toString()
+            == QString::fromLatin1(KoreanTeacherGroupId);
+    if (!contextTeacher && !koreanTeacherGroup)
+    {
+        return;
+    }
+
+    std::optional<Domain::TeacherId> teacherToDelete;
+    if (contextTeacher)
+    {
+        teacherToDelete = contextTeacher->teacherId();
+    }
+    else if (auto* const selectedTeacher =
+                 dynamic_cast<KoreanTeacherNavigationItem*>(
+                     m_navigationTree->currentItem()
+                     ))
+    {
+        teacherToDelete = selectedTeacher->teacherId();
+    }
+
+    QMenu menu(this);
+    QAction* const createAction = menu.addAction(
+        QCoreApplication::translate("KoreanTeacherListPage", "New Teacher")
+        );
+    createAction->setObjectName(QStringLiteral("koreanTeacherNewContextAction"));
+    QAction* const deleteAction = menu.addAction(
+        QCoreApplication::translate("KoreanTeacherListPage", "Delete Teacher")
+        );
+    deleteAction->setObjectName(QStringLiteral("koreanTeacherDeleteContextAction"));
+    deleteAction->setEnabled(
+        teacherToDelete.has_value() || !m_koreanTeacherNavigationRows.empty()
+        );
+
+    QAction* const chosen = menu.exec(
+        m_navigationTree->viewport()->mapToGlobal(position)
+        );
+    if (chosen == createAction && m_koreanTeacherNavigationActions.createTeacher)
+    {
+        m_koreanTeacherNavigationActions.createTeacher();
+    }
+    else if (chosen == deleteAction
+             && m_koreanTeacherNavigationActions.deleteTeacher)
+    {
+        m_koreanTeacherNavigationActions.deleteTeacher(teacherToDelete);
+    }
 }
 
 std::optional<QIcon> ApplicationShell::navigationIconFor(

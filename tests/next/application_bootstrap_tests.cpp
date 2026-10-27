@@ -25,8 +25,10 @@
 #include "ui/shared/state/option_state_keys.h"
 
 #include <QApplication>
+#include <QAbstractButton>
 #include <QCalendarWidget>
 #include <QCheckBox>
+#include <QContextMenuEvent>
 #include <QCryptographicHash>
 #include <QComboBox>
 #include <QEvent>
@@ -42,8 +44,10 @@
 #include <QPixmap>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QMenu>
 #include <QMenuBar>
+#include <QMessageBox>
 #include <QPalette>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -8105,6 +8109,46 @@ void ApplicationBootstrapTests::teacherProfileUsesTypedOpenAndStaticPageHistory(
         );
     QVERIFY(navigation->isPageVisible(profilePageId));
     QVERIFY(shell->pageHost().isPageRegistered(QStringLiteral("teacher_profile")));
+    auto* const nextSidebarTree = shell->findChild<QTreeWidget*>(
+        QStringLiteral("classMngrNextNavigationTree")
+        );
+    QVERIFY(nextSidebarTree);
+    const auto findNodeById = [nextSidebarTree](const QString& id) {
+        QTreeWidgetItemIterator iterator(nextSidebarTree);
+        while (*iterator)
+        {
+            if ((*iterator)->data(0, Qt::UserRole + 2).toString() == id)
+            {
+                return *iterator;
+            }
+            ++iterator;
+        }
+        return static_cast<QTreeWidgetItem*>(nullptr);
+    };
+    QTreeWidgetItem* const koreanTeachers = findNodeById(
+        QStringLiteral("teachers_all_korean")
+        );
+    QVERIFY(koreanTeachers);
+    QCOMPARE(koreanTeachers->childCount(), 5);
+    const auto findTeacherRow = [koreanTeachers](const QString& id) {
+        for (int index = 0; index < koreanTeachers->childCount(); ++index)
+        {
+            QTreeWidgetItem* const item = koreanTeachers->child(index);
+            if (item->data(0, Qt::UserRole + 3).toString() == id)
+            {
+                return item;
+            }
+        }
+        return static_cast<QTreeWidgetItem*>(nullptr);
+    };
+    QTreeWidgetItem* const firstTeacherRow = findTeacherRow(QStringLiteral("1"));
+    QTreeWidgetItem* const secondTeacherRow = findTeacherRow(QStringLiteral("2"));
+    QTreeWidgetItem* const unreadableTeacherRow = findTeacherRow(
+        QStringLiteral("4")
+        );
+    QVERIFY(firstTeacherRow);
+    QVERIFY(secondTeacherRow);
+    QVERIFY(unreadableTeacherRow);
 
     // A direct route selection has a defined empty state and no feature ID.
     QVERIFY(shell->navigateTo(profilePageId));
@@ -8120,6 +8164,197 @@ void ApplicationBootstrapTests::teacherProfileUsesTypedOpenAndStaticPageHistory(
     QVERIFY(noSelection->isVisible());
     QVERIFY(shell->navigateBack());
     QCOMPARE(navigation->currentPageId()->value(), QStringLiteral("my_workspace"));
+
+    // A single sidebar row click reads and opens the static profile route.
+    nextSidebarTree->setCurrentItem(firstTeacherRow);
+    QCOMPARE(navigation->currentPageId()->value(), QStringLiteral("teacher_profile"));
+    page = dynamic_cast<Ui::TeacherProfilePage*>(
+        shell->pageHost().pageInstance(QStringLiteral("teacher_profile"))
+        );
+    QVERIFY(page);
+    QCOMPARE(
+        page->selectedTeacherId(),
+        std::optional{Domain::TeacherId::fromString("1").value()}
+        );
+    QCOMPARE(navigation->history().size(), std::size_t(2));
+
+    // A dirty profile canceled from a second sidebar row keeps the original
+    // profile draft, selected row, and route history.
+    QLineEdit* const rowGuardEnglishName = page->findChild<QLineEdit*>(
+        QStringLiteral("teacherEnEdit")
+        );
+    QVERIFY(rowGuardEnglishName);
+    rowGuardEnglishName->setText(QStringLiteral("Dirty row switch draft"));
+    QVERIFY(page->hasUnsavedChanges());
+    const std::vector<Ui::PageId> historyBeforeCanceledRowSwitch =
+        navigation->history();
+    const std::size_t promptsBeforeCanceledRowSwitch =
+        promptProbe->requests.size();
+    promptProbe->action = Application::UnsavedChangesAction::Cancel;
+    nextSidebarTree->setCurrentItem(secondTeacherRow);
+    QCOMPARE(
+        promptProbe->requests.size(),
+        promptsBeforeCanceledRowSwitch + std::size_t(1)
+        );
+    QCOMPARE(page->selectedTeacherId(),
+        std::optional{Domain::TeacherId::fromString("1").value()});
+    QCOMPARE(rowGuardEnglishName->text(),
+        QStringLiteral("Dirty row switch draft"));
+    QCOMPARE(navigation->history(), historyBeforeCanceledRowSwitch);
+    QCOMPARE(
+        nextSidebarTree->currentItem()->data(0, Qt::UserRole + 3).toString(),
+        QStringLiteral("1")
+        );
+    QVERIFY(page->discardChanges());
+    promptProbe->requests.clear();
+
+    // Switching IDs changes page state without adding a teacher-specific route.
+    const std::vector<Ui::PageId> historyBeforeSecondTeacher =
+        navigation->history();
+    nextSidebarTree->setCurrentItem(secondTeacherRow);
+    QCOMPARE(navigation->history(), historyBeforeSecondTeacher);
+    QCOMPARE(
+        page->selectedTeacherId(),
+        std::optional{Domain::TeacherId::fromString("2").value()}
+        );
+
+    QVERIFY(shell->navigateBack());
+    QCOMPARE(navigation->currentPageId()->value(), QStringLiteral("my_workspace"));
+    nextSidebarTree->setCurrentItem(secondTeacherRow);
+    QCOMPARE(navigation->currentPageId()->value(), QStringLiteral("teacher_profile"));
+    QCOMPARE(navigation->history().size(), std::size_t(2));
+
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral(
+            "CREATE TRIGGER reject_teacher_delete "
+            "BEFORE DELETE ON teachers WHEN OLD.id=2 "
+            "BEGIN SELECT RAISE(ABORT, 'injected teacher delete failure'); END"
+            )
+        ));
+    bool deleteActionTriggered = false;
+    bool deleteConfirmationAccepted = false;
+    QTimer confirmationTimer;
+    confirmationTimer.setInterval(10);
+    QObject::connect(
+        &confirmationTimer,
+        &QTimer::timeout,
+        shell,
+        [&] {
+            auto* const confirmation = qobject_cast<QMessageBox*>(
+                QApplication::activeModalWidget()
+                );
+            if (!confirmation)
+            {
+                return;
+            }
+            QAbstractButton* const yesButton = confirmation->button(QMessageBox::Yes);
+            if (!yesButton)
+            {
+                return;
+            }
+            deleteConfirmationAccepted = true;
+            confirmationTimer.stop();
+            yesButton->click();
+        }
+        );
+    confirmationTimer.start();
+    const QRect selectedTeacherRect =
+        nextSidebarTree->visualItemRect(secondTeacherRow);
+    QTimer::singleShot(0, shell, [&] {
+        auto* const menu = qobject_cast<QMenu*>(
+            QApplication::activePopupWidget()
+            );
+        if (!menu)
+        {
+            return;
+        }
+        QAction* const deleteAction = menu->findChild<QAction*>(
+            QStringLiteral("koreanTeacherDeleteContextAction")
+            );
+        if (!deleteAction || !deleteAction->isEnabled())
+        {
+            menu->close();
+            return;
+        }
+        QObject::connect(
+            deleteAction,
+            &QAction::triggered,
+            shell,
+            [&] { deleteActionTriggered = true; }
+            );
+        QTest::mouseClick(
+            menu,
+            Qt::LeftButton,
+            Qt::NoModifier,
+            menu->actionGeometry(deleteAction).center()
+            );
+    });
+    const QPoint selectedTeacherPosition = selectedTeacherRect.center();
+    QContextMenuEvent deleteContextEvent(
+        QContextMenuEvent::Mouse,
+        selectedTeacherPosition,
+        nextSidebarTree->viewport()->mapToGlobal(selectedTeacherPosition)
+        );
+    QApplication::sendEvent(nextSidebarTree->viewport(), &deleteContextEvent);
+    QVERIFY(deleteActionTriggered);
+    QVERIFY(deleteConfirmationAccepted);
+    QCOMPARE(navigation->currentPageId()->value(), QStringLiteral("teacher_profile"));
+    QCOMPARE(nextSidebarTree->currentItem(), secondTeacherRow);
+    QCOMPARE(nextSidebarTree->selectedItems().size(), 1);
+    QCOMPARE(nextSidebarTree->selectedItems().front(), secondTeacherRow);
+    QCOMPARE(
+        secondTeacherRow->data(0, Qt::UserRole + 3).toString(),
+        QStringLiteral("2")
+        );
+    QCOMPARE(
+        page->selectedTeacherId(),
+        std::optional{Domain::TeacherId::fromString("2").value()}
+        );
+    QVERIFY(shell->statusBar()->currentMessage().contains(QStringLiteral("Error:")));
+    QVERIFY(shell->notificationPort().clear());
+
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("UPDATE class_info SET teacher_id=NULL WHERE teacher_id=4")
+        ));
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("DELETE FROM teachers WHERE id=4")
+        ));
+    QLineEdit* const failedRowDraftField = page->findChild<QLineEdit*>(
+        QStringLiteral("teacherEnEdit")
+        );
+    QVERIFY(failedRowDraftField);
+    failedRowDraftField->setText(
+        QStringLiteral("Unsaved draft after failed row read")
+        );
+    QVERIFY(page->hasUnsavedChanges());
+    const std::vector<Ui::PageId> historyBeforeFailedRow = navigation->history();
+    const std::size_t promptsBeforeFailedRow = promptProbe->requests.size();
+    QVERIFY(shell->notificationPort().clear());
+    QVERIFY(shell->statusBar()->currentMessage().isEmpty());
+    nextSidebarTree->setCurrentItem(unreadableTeacherRow);
+    QCOMPARE(
+        navigation->currentPageId()->value(),
+        QStringLiteral("teacher_profile")
+        );
+    QCOMPARE(navigation->history(), historyBeforeFailedRow);
+    QCOMPARE(
+        nextSidebarTree->currentItem()->data(0, Qt::UserRole + 3).toString(),
+        QStringLiteral("2")
+        );
+    QCOMPARE(
+        page->selectedTeacherId(),
+        std::optional{Domain::TeacherId::fromString("2").value()}
+        );
+    QCOMPARE(failedRowDraftField->text(),
+        QStringLiteral("Unsaved draft after failed row read"));
+    QVERIFY(page->hasUnsavedChanges());
+    QCOMPARE(promptProbe->requests.size(), promptsBeforeFailedRow);
+    QVERIFY(shell->statusBar()->currentMessage().isEmpty());
+    QVERIFY(!findNodeById(QStringLiteral("teacher_profile")));
+    QVERIFY(page->discardChanges());
 
     const Domain::TeacherId firstTeacher =
         Domain::TeacherId::fromString("1").value();
@@ -8238,6 +8473,8 @@ void ApplicationBootstrapTests::teacherProfileUsesTypedOpenAndStaticPageHistory(
     QVERIFY(!bootstrap.openTeacherProfile(
         Domain::TeacherId::fromString("999").value()
         ));
+    QVERIFY(shell->statusBar()->currentMessage().contains(QStringLiteral("Error:")));
+    QVERIFY(shell->notificationPort().clear());
     QVERIFY(page->hasUnsavedChanges());
     QCOMPARE(page->selectedTeacherId(), std::optional{firstTeacher});
     QCOMPARE(englishName->text(), QStringLiteral("Unsaved draft kept on cancel"));

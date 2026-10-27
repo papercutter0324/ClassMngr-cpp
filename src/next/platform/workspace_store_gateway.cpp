@@ -7,6 +7,8 @@
 #include "next/application/personal_details_save_use_case.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
 #include "next/application/teacher_create_use_case.h"
+#include "next/application/teacher_delete_use_case.h"
+#include "next/application/teacher_directory_read_query.h"
 #include "next/application/teacher_profile_edit_use_case.h"
 #include "next/application/teacher_profile_read_query.h"
 #include "next/application/class_create_use_case.h"
@@ -18,6 +20,7 @@
 #include "next/platform/teacher_validator_teacher_create_validation_policy.h"
 #include "next/platform/teacher_validator_teacher_profile_validation_policy.h"
 #include "next/platform/workspace_store_teacher_profile_port.h"
+#include "next/platform/workspace_store_teacher_directory_port.h"
 
 #include <QByteArray>
 #include <QString>
@@ -146,6 +149,35 @@ WorkspaceStoreGateway::createInitialSetupTeacher(
         validationPolicy,
         port
         );
+}
+
+Application::TeacherDirectoryReadResult
+WorkspaceStoreGateway::readTeacherDirectory() const
+{
+    WorkspaceStoreTeacherDirectoryPort port(*m_store);
+    const Application::TeacherDirectoryReadQuery query(port);
+    return query.execute();
+}
+
+Application::TeacherCreateResult WorkspaceStoreGateway::createTeacher(
+    const Application::TeacherCreateRequest& request
+    ) const
+{
+    WorkspaceStoreTeacherDirectoryPort port(*m_store);
+    TeacherValidatorTeacherCreateValidationPolicy validationPolicy;
+    return Application::TeacherCreateUseCase::execute(
+        request,
+        validationPolicy,
+        port
+        );
+}
+
+Application::TeacherDeleteResult WorkspaceStoreGateway::deleteTeacher(
+    const Application::TeacherDeleteRequest& request
+    ) const
+{
+    WorkspaceStoreTeacherDirectoryPort port(*m_store);
+    return Application::TeacherDeleteUseCase::execute(request, port);
 }
 
 Application::TeacherProfileReadResult

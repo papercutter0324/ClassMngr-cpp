@@ -244,6 +244,123 @@ set_tests_properties(ClassMngrNextPageHostTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
+add_executable(ClassMngrNextKoreanTeacherDirectoryActionsTests
+    tests/next/korean_teacher_directory_actions_tests.cpp
+    src/next/ui/korean_teacher_directory_actions.cpp
+)
+target_compile_features(ClassMngrNextKoreanTeacherDirectoryActionsTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextKoreanTeacherDirectoryActionsTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextKoreanTeacherDirectoryActionsTests
+    PRIVATE
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextKoreanTeacherDirectoryActionsTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextKoreanTeacherDirectoryActionsTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_test(
+    NAME ClassMngrNextKoreanTeacherDirectoryActionsTests
+    COMMAND ClassMngrNextKoreanTeacherDirectoryActionsTests
+)
+set_tests_properties(ClassMngrNextKoreanTeacherDirectoryActionsTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+# Temporary feature-slice parity harness for the legacy Korean teacher sidebar
+# and the Next Korean teacher sidebar tree. Captures only on explicit run.
+add_executable(ClassMngrNextTeacherDirectoryVisualCapture
+    tests/next/korean_teacher_directory_visual_capture.cpp
+    src/next/ui/application_shell.cpp
+    src/next/ui/navigation_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/placeholder_page.cpp
+    src/next/ui/qt_notification_presenter.cpp
+    src/core/fontmanager.cpp
+    src/core/process_memory_snapshot.cpp
+    src/core/utils/sidebar_node_naming.cpp
+    src/ui/shared/widgets/sidebar/sidebar.cpp
+    src/ui/shared/widgets/sidebar/sidebar_context_menu.cpp
+    src/ui/shared/widgets/sidebar/sidebar_definitions.cpp
+    src/ui/shared/widgets/sidebar/sidebar_marquee_delegate.cpp
+    src/ui/shared/widgets/sidebar/sidebar_overflow.cpp
+    src/ui/shared/widgets/sidebar/sidebar_selection.cpp
+    src/ui/shared/widgets/sidebar/sidebar_teachers.cpp
+    src/ui/shared/widgets/sidebar/sidebar_tree.cpp
+    src/ui/shared/widgets/sidebar/sidebar.h
+)
+target_compile_features(ClassMngrNextTeacherDirectoryVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextTeacherDirectoryVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextTeacherDirectoryVisualCapture
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+)
+target_link_libraries(ClassMngrNextTeacherDirectoryVisualCapture
+    PRIVATE
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspace
+        ClassMngrNextWorkspaceDomain
+        ClassMngrScheduleImportParser
+        ClassMngrScheduleImportRules
+        ClassMngrWorkspaceStore
+        Qt6::Gui
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextTeacherDirectoryVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextTeacherDirectoryVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextTeacherDirectoryVisualCapture
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextTeacherDirectoryVisualCapture
+    COMMAND ClassMngrNextTeacherDirectoryVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/korean-teacher-directory-visual-capture"
+        en_US light
+)
+set_tests_properties(ClassMngrNextTeacherDirectoryVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+add_test(
+    NAME ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark
+    COMMAND ClassMngrNextTeacherDirectoryVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/korean-teacher-directory-visual-capture-ko"
+        ko_KR dark
+)
+set_tests_properties(ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 add_executable(ClassMngrNextTeacherImportWorkflowTests
     tests/next/teacher_import_workflow_tests.cpp
     src/next/ui/initial_setup_teacher_import_dialog.cpp
@@ -2587,6 +2704,21 @@ classmngr_add_qt_test(
         ClassMngrNextWorkspace
         ClassMngrWorkspaceStore
         ClassMngrNextWorkspaceDomain
+        Qt6::Sql
+        Qt6::Test
+    COMPILE_DEFINITIONS
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformWorkspaceStoreTeacherDirectory
+    SOURCES
+        tests/next/workspace_store_teacher_directory_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNextWorkspace
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
         Qt6::Sql
         Qt6::Test
     COMPILE_DEFINITIONS
