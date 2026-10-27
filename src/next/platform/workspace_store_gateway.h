@@ -2,6 +2,7 @@
 
 #include "next/application/personal_details_save.h"
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
+#include "next/application/custom_color_palette_preferences.h"
 #include "next/application/teacher_create.h"
 #include "next/application/teacher_import_use_case.h"
 #include "next/application/workspace_contracts.h"
@@ -61,6 +62,11 @@ public:
         ) const;
     [[nodiscard]] Application::InitialSetupTeacherChoicesResult
     loadInitialSetupTeacherChoices() const;
+    [[nodiscard]] Domain::Result<Application::CustomColorPalette>
+    readInitialSetupClassColorPalette() const;
+    [[nodiscard]] Domain::Result<void> saveInitialSetupClassColorPalette(
+        const Application::CustomColorPalette& palette
+        ) const;
     [[nodiscard]] Application::TeacherCreateResult createInitialSetupTeacher(
         const Application::TeacherCreateRequest& request
         ) const;

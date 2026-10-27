@@ -121,6 +121,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/initial_setup_teacher_identity_validation.h
     src/next/application/initial_setup_personal_name_requirement.h
     src/next/application/initial_setup_class_details_requirements.h
+    src/next/application/initial_setup_class_details_draft.h
     src/next/application/initial_setup_class_times_requirement.h
     src/next/application/class_teacher_assignments_read_snapshot.h
     src/next/application/class_teacher_assignments_read_port.h
@@ -472,6 +473,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_calendar_event_display_preferences_port.h
     src/next/platform/application_services_calendar_event_type_color_preferences_port.h
     src/next/platform/application_services_custom_color_palette_preferences_port.h
+    src/next/platform/custom_color_palette_preference_codec.h
     src/next/platform/application_services_calendar_first_day_of_week_preferences_port.h
     src/next/platform/document_content_resource_port.h
     src/next/platform/document_export_resource_port.h

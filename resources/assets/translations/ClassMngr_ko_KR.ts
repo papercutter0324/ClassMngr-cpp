@@ -9951,6 +9951,27 @@ Version: %2</source>
     <message><source>Import Teachers from Workbook</source><translation>엑셀 파일에서 교사 가져오기</translation></message>
 </context>
 <context>
+    <name>InitialSetupClassDetailsPage</name>
+    <message><source>Class Details</source><translation>학급 정보</translation></message>
+    <message><source>Korean Teacher</source><translation>한국인 교사</translation></message>
+    <message><source>Class Color</source><translation>수업 색상</translation></message>
+    <message><source>Choose Color</source><translation>색상 선택</translation></message>
+    <message><source>Choose Class Color</source><translation>수업 색상 선택</translation></message>
+    <message><source>Grade</source><translation>학년</translation></message>
+    <message><source>Level</source><translation>레벨</translation></message>
+    <message><source>Reading Book</source><translation>읽기 교재</translation></message>
+    <message><source>Essay Book</source><translation>에세이 교재</translation></message>
+    <message><source>Retry Teacher Choices</source><translation>교사 목록 다시 불러오기</translation></message>
+    <message><source>Continue</source><translation>계속</translation></message>
+    <message><source>Select a teacher...</source><translation>교사를 선택하세요...</translation></message>
+    <message><source>Teacher choices could not be loaded. Retry to continue.</source><translation>교사 선택 항목을 불러오지 못했습니다. 다시 시도한 뒤 계속하세요.</translation></message>
+    <message><source>No Korean teachers are available. Add or import a teacher before continuing.</source><translation>사용 가능한 한국인 교사가 없습니다. 계속하려면 교사를 추가하거나 가져오세요.</translation></message>
+    <message><source>Unable to save color preference: %1</source><translation>색상 설정을 저장할 수 없습니다: %1</translation></message>
+    <message><source>%1 is required.</source><translation>%1 항목은 필수입니다.</translation></message>
+    <message><source>Class details could not be kept in setup memory. Retry to continue.</source><translation>학급 정보를 설정 메모리에 보관하지 못했습니다. 계속하려면 다시 시도하세요.</translation></message>
+    <message><source>Class details are ready for Class Times. Setup remains pending.</source><translation>학급 정보가 준비되었습니다. 수업 시간 단계로 진행할 수 있습니다. 초기 설정은 계속 진행 중입니다.</translation></message>
+</context>
+<context>
     <name>InitialSetupTeacherImportDialog</name>
     <message><source>Import Teachers from Workbook</source><translation>엑셀 파일에서 교사 가져오기</translation></message>
     <message><source>File to import from:</source><translation>가져올 파일:</translation></message>

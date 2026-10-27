@@ -2,6 +2,7 @@
 
 #include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
+#include "next/platform/custom_color_palette_preference_codec.h"
 
 #include <QByteArray>
 #include <QDebug>
@@ -57,7 +58,7 @@ ApplicationServicesCustomColorPalettePreferencesPort::read() const
     {
         qWarning()
             << "Failed to load setting"
-            << key()
+            << CustomColorPalettePreferenceCodec::key()
             << ':'
             << "No settings repository is available.";
         return Domain::Result<Application::CustomColorPalette>::failure(
@@ -68,12 +69,14 @@ ApplicationServicesCustomColorPalettePreferencesPort::read() const
             );
     }
 
-    const auto stored = repository->loadSetting(key());
+    const auto stored = repository->loadSetting(
+        CustomColorPalettePreferenceCodec::key()
+        );
     if (!stored)
     {
         qWarning()
             << "Failed to load setting"
-            << key()
+            << CustomColorPalettePreferenceCodec::key()
             << ':'
             << toLegacyDiagnostic(stored.error());
         return Domain::Result<Application::CustomColorPalette>::failure(
@@ -92,7 +95,7 @@ ApplicationServicesCustomColorPalettePreferencesPort::read() const
     }
 
     return Domain::Result<Application::CustomColorPalette>::success(
-        normalizeStoredValue(*stored)
+        CustomColorPalettePreferenceCodec::normalizeStoredValue(*stored)
         );
 }
 
@@ -120,10 +123,9 @@ ApplicationServicesCustomColorPalettePreferencesPort::write(
             );
     }
 
-    const QStringList colors = toQStringList(palette);
     if (const RepositoryStatus saved = repository->saveSetting(
-            key(),
-            serializeCustomColors(colors)
+            CustomColorPalettePreferenceCodec::key(),
+            CustomColorPalettePreferenceCodec::serialize(palette)
             ); !saved)
     {
         qWarning() << "Failed to save custom colors:"

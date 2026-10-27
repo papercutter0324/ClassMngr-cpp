@@ -2082,8 +2082,15 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
     auto* const continueTeacherEntry = page->findChild<QPushButton*>(
         QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
         );
+    auto* const teacherKoreanName = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherKoreanName")
+        );
+    auto* const teacherPreferredSpelling = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherPreferredSpelling")
+        );
     QVERIFY(teacherEntryGroup && teacherEnglishName);
     QVERIFY(addAnotherTeacher && continueTeacherEntry);
+    QVERIFY(teacherKoreanName && teacherPreferredSpelling);
     QCOMPARE(
         teacherEntryGroup->title(),
         korean ? QStringLiteral("교사 정보") : QStringLiteral("Teacher Information")
@@ -2128,11 +2135,68 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
     QVERIFY(teacherLabels.contains(
         korean ? QStringLiteral("교실 번호") : QStringLiteral("Room Number")
         ));
+
+    auto* const classDetailsGroup = page->findChild<QGroupBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassDetails")
+        );
+    QVERIFY(classDetailsGroup);
+    QVERIFY(classDetailsGroup->isHidden());
     QCOMPARE(
         teacherEnglishName->palette().color(QPalette::Text).name(),
         theme == QStringLiteral("dark") ? QStringLiteral("#f0f0f0")
                                           : QStringLiteral("#27313a")
         );
+    teacherEnglishName->setText(QStringLiteral("Alex Kim"));
+    teacherKoreanName->setText(QString::fromUtf8("김선생님"));
+    teacherPreferredSpelling->setText(QStringLiteral("Kim Seonsaeng"));
+    continueTeacherEntry->click();
+    QVERIFY(!classDetailsGroup->isHidden());
+    QCOMPARE(
+        classDetailsGroup->title(),
+        korean ? QStringLiteral("학급 정보") : QStringLiteral("Class Details")
+        );
+    auto* const classTeacher = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassTeacher")
+        );
+    auto* const chooseClassColor = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassColorChoose")
+        );
+    auto* const classGrade = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassGrade")
+        );
+    auto* const classLevel = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassLevel")
+        );
+    auto* const colorPreview = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupClassColorPreview")
+        );
+    QVERIFY(classTeacher && chooseClassColor && classGrade && classLevel);
+    QVERIFY(colorPreview);
+    QCOMPARE(classTeacher->count(), 1);
+    QCOMPARE(classTeacher->currentData().toString(), QStringLiteral("1"));
+    QCOMPARE(chooseClassColor->text(),
+             korean ? QStringLiteral("색상 선택") : QStringLiteral("Choose Color"));
+    QCOMPARE(classGrade->currentText(), QStringLiteral("E4"));
+    QCOMPARE(classLevel->currentText(), QStringLiteral("Theseus"));
+    QVERIFY(colorPreview->styleSheet().contains(
+        QStringLiteral("background-color:#FFFFFF;color:#000000")
+        ));
+    QStringList classDetailsLabels;
+    for (const QLabel* label : classDetailsGroup->findChildren<QLabel*>())
+    {
+        classDetailsLabels.append(label->text());
+    }
+    QVERIFY(classDetailsLabels.contains(
+        korean ? QStringLiteral("한국인 교사 *")
+               : QStringLiteral("Korean Teacher *")
+        ));
+    QVERIFY(classDetailsLabels.contains(
+        korean ? QStringLiteral("수업 색상 *")
+               : QStringLiteral("Class Color *")
+        ));
+    QVERIFY(classDetailsLabels.contains(
+        korean ? QStringLiteral("읽기 교재") : QStringLiteral("Reading Book")
+        ));
     QCOMPARE(
         application.styleSheet(),
         readTextFile(QDir(resources.resourceRoot()).filePath(

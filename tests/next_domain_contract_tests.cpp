@@ -1,5 +1,6 @@
 #include "next/domain/birthday_month_day.h"
 #include "next/domain/calendar_event_timing.h"
+#include "domain/config/class_details_catalog.h"
 #include "next/domain/course.h"
 #include "next/domain/course_catalog_identity.h"
 #include "next/domain/document_content_reference.h"
@@ -125,6 +126,7 @@ private slots:
     void calendarEventTimingsEnforceTimeAndStatusPolicy();
     void scheduleEntriesKeepTypedClassAndValidatedTime();
     void coursesExposeOrderedSupportedPairs();
+    void classDetailsCatalogSharesCourseOrderingAndLegacyBooks();
     void coursesHaveValueAndAccessorSemantics();
     void coursesRejectInvalidNamesAndCrossGradePairs();
     void courseGradeBandsClassifyGradeWithoutLevelValidation();
@@ -936,6 +938,58 @@ void NextDomainContractTests::coursesExposeOrderedSupportedPairs()
         observedIdentities.push_back(course->catalogIdentity());
     }
     QCOMPARE(static_cast<int>(observedIdentities.size()), 25);
+}
+
+void NextDomainContractTests::
+    classDetailsCatalogSharesCourseOrderingAndLegacyBooks()
+{
+    using ClassMngr::Domain::ClassDetailsCatalog;
+
+    QVERIFY(ClassDetailsCatalog::grades() == Course::grades());
+    QVERIFY(
+        ClassDetailsCatalog::levelsForGrade("M2")
+        == Course::levelsForGrade("M2")
+        );
+    QVERIFY((
+        ClassDetailsCatalog::readingBooks("E4", "Theseus")
+        == std::vector<std::string_view>{
+            "", "Reading Explorer 1", "Reading Explorer 2"
+        }
+        ));
+    QVERIFY((
+        ClassDetailsCatalog::essayBooks("E5", "Athena")
+        == std::vector<std::string_view>{"", "N/A"}
+        ));
+    QVERIFY((
+        ClassDetailsCatalog::readingBooks("M1", "Elephantus")
+        == std::vector<std::string_view>{
+            "", "GraVoca 1A", "GraVoca 1B", "GraVoca 1C"
+        }
+        ));
+
+    const auto readingFallback = ClassDetailsCatalog::readingBooks(
+        "M3",
+        "Song's"
+        );
+    QCOMPARE(static_cast<int>(readingFallback.size()), 15);
+    QVERIFY(readingFallback.front().empty());
+    QVERIFY(readingFallback.back() == "Reading Smart Step 2 Book 7");
+    QVERIFY((
+        ClassDetailsCatalog::essayBooks("M3", "Song's")
+        == std::vector<std::string_view>{"N/A"}
+        ));
+    const auto invalidLevelReadingFallback = ClassDetailsCatalog::readingBooks(
+        "M1", "not-a-level"
+        );
+    QCOMPARE(static_cast<int>(invalidLevelReadingFallback.size()), 15);
+    QVERIFY(invalidLevelReadingFallback.front().empty());
+    QVERIFY(
+        invalidLevelReadingFallback.back() == "Reading Smart Step 2 Book 7"
+        );
+    QVERIFY((
+        ClassDetailsCatalog::essayBooks("M1", "not-a-level")
+        == std::vector<std::string_view>{"N/A"}
+        ));
 }
 
 void NextDomainContractTests::coursesHaveValueAndAccessorSemantics()

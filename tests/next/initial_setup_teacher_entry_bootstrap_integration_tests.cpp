@@ -1,4 +1,5 @@
 #include "core/settingsmanager.h"
+#include "data/database/workspace_store.h"
 #include "next/bootstrap/application_bootstrap.h"
 #include "next/bootstrap/startup_update_dispatcher.h"
 #include "next/resources/resource_root_resolver.h"
@@ -8,16 +9,26 @@
 #include "next/application/file_dialog_port.h"
 
 #include <QApplication>
+#include <QCheckBox>
+#include <QColor>
+#include <QColorDialog>
+#include <QComboBox>
 #include <QDir>
+#include <QDialog>
 #include <QFile>
 #include <QFileInfo>
+#include <QGroupBox>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -40,10 +51,19 @@ public:
 class SelectedProfileFileDialog final : public Application::FileDialogPort
 {
 public:
-    explicit SelectedProfileFileDialog(QString selectedPath)
+    explicit SelectedProfileFileDialog(
+        QString selectedPath,
+        QString openPath = {}
+        )
         : m_selectedPath(Application::FileDialogPath(
               selectedPath.toUtf8().toStdString()
               ))
+        , m_openPath(openPath.isEmpty()
+              ? std::nullopt
+              : std::optional<Application::FileDialogPath>{
+                    Application::FileDialogPath(
+                        openPath.toUtf8().toStdString())
+                })
     {
     }
 
@@ -51,6 +71,13 @@ public:
         Application::FileDialogResponse<Application::FileDialogPath>>
     openOneFile(const Application::OpenFileDialogRequest&) override
     {
+        if (m_openPath.has_value())
+        {
+            return Domain::Result<
+                Application::FileDialogResponse<Application::FileDialogPath>>::success({
+                    .selection = m_openPath
+                });
+        }
         return unexpectedCall<
             Application::FileDialogResponse<Application::FileDialogPath>>();
     }
@@ -97,6 +124,7 @@ private:
     }
 
     Application::FileDialogPath m_selectedPath;
+    std::optional<Application::FileDialogPath> m_openPath;
 };
 
 class SettingsRootEnvironmentGuard final
@@ -369,6 +397,174 @@ struct TeacherRecord final
     return record;
 }
 
+[[nodiscard]] std::optional<QString> readTeacherKoreanName(
+    const QString& path,
+    const QString& teacherId
+    )
+{
+    const QString connectionName = QStringLiteral("setup-imported-teacher-%1")
+        .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+    std::optional<QString> koreanName;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName
+            );
+        database.setDatabaseName(path);
+        if (database.open())
+        {
+            QSqlQuery query(database);
+            query.prepare(QStringLiteral(
+                "SELECT teacher_kr FROM teachers WHERE id=?"
+                ));
+            query.addBindValue(teacherId.toLongLong());
+            if (query.exec() && query.next())
+            {
+                koreanName = query.value(0).toString();
+            }
+            database.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return koreanName;
+}
+
+[[nodiscard]] std::optional<int> tableRowCount(
+    const QString& path,
+    const QString& tableName
+    )
+{
+    const QString connectionName = QStringLiteral("setup-count-%1").arg(
+        QUuid::createUuid().toString(QUuid::WithoutBraces)
+        );
+    std::optional<int> count;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName
+            );
+        database.setDatabaseName(path);
+        if (database.open())
+        {
+            QSqlQuery query(database);
+            if (query.exec(QStringLiteral("SELECT COUNT(*) FROM %1").arg(tableName))
+                && query.next())
+            {
+                count = query.value(0).toInt();
+            }
+            database.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return count;
+}
+
+[[nodiscard]] bool executeWorkspaceFixture(
+    const QString& profilePath,
+    const QString& fixtureName,
+    QString* errorMessage
+    )
+{
+    const QString fixturePath = QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR))
+        .filePath(QStringLiteral("tests/fixtures/workspaces/") + fixtureName);
+    QFile fixture(fixturePath);
+    if (!fixture.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        if (errorMessage)
+        {
+            *errorMessage = fixture.errorString();
+        }
+        return false;
+    }
+    const QStringList statements = QString::fromUtf8(fixture.readAll())
+        .split(QLatin1Char(';'), Qt::SkipEmptyParts);
+
+    const QString connectionName = QStringLiteral("setup-original-fixture-%1")
+        .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+    bool executed = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName
+            );
+        database.setDatabaseName(profilePath);
+        if (!database.open())
+        {
+            if (errorMessage)
+            {
+                *errorMessage = database.lastError().text();
+            }
+        }
+        else
+        {
+            executed = true;
+            {
+                QSqlQuery query(database);
+                for (const QString& rawStatement : statements)
+                {
+                    const QString statement = rawStatement.trimmed();
+                    if (statement.isEmpty())
+                    {
+                        continue;
+                    }
+                    if (!query.exec(statement))
+                    {
+                        if (errorMessage)
+                        {
+                            *errorMessage = QStringLiteral("%1: %2")
+                                .arg(statement.simplified().left(160),
+                                     query.lastError().text());
+                        }
+                        executed = false;
+                        break;
+                    }
+                }
+            }
+            database.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return executed;
+}
+
+[[nodiscard]] bool createWorkspaceWithFixture(
+    const QString& profilePath,
+    const QString& fixtureName,
+    QString* errorMessage
+    )
+{
+    {
+        WorkspaceStore store;
+        const RepositoryStatus opened = store.open(profilePath);
+        if (!opened)
+        {
+            if (errorMessage)
+            {
+                *errorMessage = opened.error().diagnostic;
+            }
+            return false;
+        }
+        store.close();
+    }
+    return executeWorkspaceFixture(profilePath, fixtureName, errorMessage);
+}
+
+void chooseColorInNextModalDialog(const QColor& color, bool* didChoose)
+{
+    QTimer::singleShot(0, [color, didChoose] {
+        auto* const dialog = qobject_cast<QColorDialog*>(
+            QApplication::activeModalWidget()
+            );
+        if (!dialog)
+        {
+            return;
+        }
+        dialog->setCurrentColor(color);
+        dialog->accept();
+        if (didChoose)
+        {
+            *didChoose = true;
+        }
+    });
+}
+
 } // namespace
 
 class InitialSetupTeacherEntryBootstrapIntegrationTests final : public QObject
@@ -377,6 +573,7 @@ class InitialSetupTeacherEntryBootstrapIntegrationTests final : public QObject
 
 private slots:
     void initialSetupPageCreatesTeacherThroughWorkspaceStore();
+    void importedTeacherCanBeSelectedForDraftBeforeCancelRestoresOriginal();
 };
 
 void InitialSetupTeacherEntryBootstrapIntegrationTests::
@@ -400,6 +597,13 @@ initialSetupPageCreatesTeacherThroughWorkspaceStore()
     const QString recoveryJournalPath = workspaceRoot.filePath(
         QStringLiteral("initial-setup-recovery.json")
         );
+    const QByteArray previousProfileBytes("preserved original profile bytes");
+    {
+        QFile previousProfile(profilePath);
+        QVERIFY(previousProfile.open(QIODevice::WriteOnly));
+        QCOMPARE(previousProfile.write(previousProfileBytes),
+                 previousProfileBytes.size());
+    }
 
     QApplication& application = *qApp;
     ApplicationStyleSheetGuard styleSheetGuard(application);
@@ -443,6 +647,22 @@ initialSetupPageCreatesTeacherThroughWorkspaceStore()
     QVERIFY(QFileInfo::exists(recoveryJournalPath));
     QCOMPARE(recentHistoryProbe->saveCount, 0);
 
+    QFile recoveryJournal(recoveryJournalPath);
+    QVERIFY(recoveryJournal.open(QIODevice::ReadOnly));
+    const QJsonDocument recoveryRecord = QJsonDocument::fromJson(
+        recoveryJournal.readAll()
+        );
+    recoveryJournal.close();
+    QVERIFY(recoveryRecord.isObject());
+    const QString originalBackup = recoveryRecord.object().value(
+        QStringLiteral("originalBackup")
+        ).toString();
+    QVERIFY(!originalBackup.isEmpty());
+    QFile preservedProfile(originalBackup);
+    QVERIFY(preservedProfile.open(QIODevice::ReadOnly));
+    QCOMPARE(preservedProfile.readAll(), previousProfileBytes);
+    preservedProfile.close();
+
     auto* const englishName = page->findChild<QLineEdit*>(
         QStringLiteral("classMngrNextInitialSetupTeacherEnglishName")
         );
@@ -470,8 +690,35 @@ initialSetupPageCreatesTeacherThroughWorkspaceStore()
     auto* const pageStatus = page->findChild<QLabel*>(
         QStringLiteral("classMngrNextInitialSetupStatus")
         );
+    auto* const classDetailsGroup = page->findChild<QGroupBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassDetails")
+        );
+    auto* const classTeacher = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassTeacher")
+        );
+    auto* const classColorButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassColorChoose")
+        );
+    auto* const classGrade = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassGrade")
+        );
+    auto* const classLevel = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassLevel")
+        );
+    auto* const readingBook = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupReadingBook")
+        );
+    auto* const essayBook = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupEssayBook")
+        );
+    auto* const continueClassDetails = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassDetailsContinue")
+        );
     QVERIFY(englishName && koreanName && preferredSpelling && room);
     QVERIFY(wifiName && wifiPassword && continueButton && teacherStatus && pageStatus);
+    QVERIFY(classDetailsGroup && classTeacher && classColorButton);
+    QVERIFY(classGrade && classLevel && readingBook && essayBook);
+    QVERIFY(continueClassDetails);
 
     englishName->setText(QStringLiteral("Alex Kim"));
     koreanName->setText(QString::fromUtf8("김선생님"));
@@ -486,8 +733,41 @@ initialSetupPageCreatesTeacherThroughWorkspaceStore()
         QStringLiteral("Teacher saved. Setup remains pending.")
         );
     QVERIFY(!continueButton->isEnabled());
+    QVERIFY(!classDetailsGroup->isHidden());
+    QCOMPARE(classTeacher->count(), 1);
+    QCOMPARE(classTeacher->currentData().toString(), QStringLiteral("1"));
+    QCOMPARE(classGrade->currentText(), QStringLiteral("E4"));
+    QCOMPARE(classLevel->currentText(), QStringLiteral("Theseus"));
+    QVERIFY(readingBook->currentText().isEmpty());
+    QVERIFY(essayBook->currentText().isEmpty());
+
+    bool colorDialogAccepted = false;
+    chooseColorInNextModalDialog(QColor(QStringLiteral("#123456")),
+                                 &colorDialogAccepted);
+    classColorButton->click();
+    QVERIFY(colorDialogAccepted);
+    continueClassDetails->click();
+
+    QVERIFY(bootstrap.initialSetupClassDetailsDraft().has_value());
+    const Application::InitialSetupClassDetailsDraft& draft =
+        *bootstrap.initialSetupClassDetailsDraft();
+    QCOMPARE(draft.koreanTeacherId.value(), std::string("1"));
+    QVERIFY(draft.classColorChosen);
+    QCOMPARE(draft.classColor, std::u16string(u"#123456"));
+    QCOMPARE(draft.fontColor, std::u16string(u"#FFFFFF"));
+    QCOMPARE(draft.classGrade, std::u16string(u"E4"));
+    QCOMPARE(draft.classLevel, std::u16string(u"Theseus"));
+    QVERIFY(draft.readingBook.empty());
+    QVERIFY(draft.essayBook.empty());
+    auto* const cancelSetup = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCancel")
+        );
+    QVERIFY(cancelSetup);
+    QVERIFY(!cancelSetup->isHidden());
     QVERIFY(pageStatus->text().contains(QStringLiteral("Setup is pending")));
     QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+    QVERIFY(QFileInfo::exists(originalBackup));
     QVERIFY(!bootstrap.shutdownRequested());
     QVERIFY(QFileInfo::exists(recoveryJournalPath));
     QCOMPARE(recentHistoryProbe->saveCount, 0);
@@ -496,7 +776,30 @@ initialSetupPageCreatesTeacherThroughWorkspaceStore()
     const Application::ShutdownResult stopped = bootstrap.shutdown();
     QVERIFY(stopped.shutdownRequested);
     QVERIFY(QFileInfo::exists(recoveryJournalPath));
+    QVERIFY(QFileInfo::exists(originalBackup));
     QCOMPARE(recentHistoryProbe->saveCount, 0);
+    const auto teachersCount = tableRowCount(
+        profilePath, QStringLiteral("teachers")
+        );
+    const auto classesCount = tableRowCount(
+        profilePath, QStringLiteral("classes")
+        );
+    const auto classDetailsCount = tableRowCount(
+        profilePath, QStringLiteral("class_info")
+        );
+    const auto regularTimesCount = tableRowCount(
+        profilePath, QStringLiteral("class_times")
+        );
+    const auto intensiveTimesCount = tableRowCount(
+        profilePath, QStringLiteral("class_intensive_times")
+        );
+    QVERIFY(teachersCount && classesCount && classDetailsCount);
+    QVERIFY(regularTimesCount && intensiveTimesCount);
+    QCOMPARE(*teachersCount, 1);
+    QCOMPARE(*classesCount, 0);
+    QCOMPARE(*classDetailsCount, 0);
+    QCOMPARE(*regularTimesCount, 0);
+    QCOMPARE(*intensiveTimesCount, 0);
     const std::optional<TeacherRecord> persisted = readTeacherRecord(profilePath);
     QVERIFY2(persisted.has_value(), "The teacher row was not stored in the .tps file.");
     QCOMPARE(persisted->englishName, QStringLiteral("Alex Kim"));
@@ -509,6 +812,339 @@ initialSetupPageCreatesTeacherThroughWorkspaceStore()
     QCOMPARE(persisted->internetType, QStringLiteral("WiFi"));
     QCOMPARE(persisted->projectionType, QStringLiteral("HDMI"));
 
+}
+
+void InitialSetupTeacherEntryBootstrapIntegrationTests::
+importedTeacherCanBeSelectedForDraftBeforeCancelRestoresOriginal()
+{
+    QTemporaryDir settingsRoot;
+    QVERIFY(settingsRoot.isValid());
+    SettingsRootEnvironmentGuard settingsRootGuard;
+    qputenv("CLASSMNGR_SETTINGS_ROOT", settingsRoot.path().toUtf8());
+    SettingsPreferenceGuard preferences;
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        QStringLiteral("en_US"), QStringLiteral("light")
+        ));
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString profilePath = workspaceRoot.filePath(
+        QStringLiteral("imported-teacher-setup.tps")
+        );
+    const QString workbookPath = QDir(
+        QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        ).filePath(QStringLiteral("tests/fixtures/teacher_import/sectioned_review.xlsx"));
+    const QString recoveryJournalPath = workspaceRoot.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    QString fixtureError;
+    QVERIFY2(
+        createWorkspaceWithFixture(
+            profilePath,
+            QStringLiteral("representative_startup.sql"),
+            &fixtureError
+            ),
+        qPrintable(fixtureError)
+        );
+    QByteArray originalProfileBytes;
+    {
+        QFile originalProfile(profilePath);
+        QVERIFY(originalProfile.open(QIODevice::ReadOnly));
+        originalProfileBytes = originalProfile.readAll();
+        QVERIFY(!originalProfileBytes.isEmpty());
+    }
+
+    QApplication& application = *qApp;
+    ApplicationStyleSheetGuard styleSheetGuard(application);
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("imported-teacher-setup-test")
+    };
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+    seams.initialSetupFileDialogPortFactory = [profilePath, workbookPath] {
+        return std::make_unique<SelectedProfileFileDialog>(
+            profilePath,
+            workbookPath
+            );
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        {},
+        resolverForRoot(resources.root()),
+        QStringList{QStringLiteral("en-US")},
+        std::move(seams),
+        [] { return std::make_unique<SilentUpdateDispatcher>(); }
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        bootstrap.shell()->pageHost().pageInstance(QStringLiteral("initial_setup"))
+        );
+    QVERIFY(page);
+    auto* const createProfile = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCreateProfile")
+        );
+    QVERIFY(createProfile);
+    createProfile->click();
+    QVERIFY(QFileInfo::exists(profilePath));
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+
+    QFile journalFile(recoveryJournalPath);
+    QVERIFY(journalFile.open(QIODevice::ReadOnly));
+    const QJsonDocument journalDocument = QJsonDocument::fromJson(
+        journalFile.readAll()
+        );
+    journalFile.close();
+    QVERIFY(journalDocument.isObject());
+    const QString originalBackup = journalDocument.object().value(
+        QStringLiteral("originalBackup")
+        ).toString();
+    QVERIFY(!originalBackup.isEmpty());
+    QFile preservedOriginal(originalBackup);
+    QVERIFY(preservedOriginal.open(QIODevice::ReadOnly));
+    QCOMPARE(preservedOriginal.readAll(), originalProfileBytes);
+    preservedOriginal.close();
+
+    auto* const importTeachers = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupImportTeachers")
+        );
+    auto* const teacherStatus = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEntryStatus")
+        );
+    auto* const continueTeacherEntry = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
+        );
+    QVERIFY(importTeachers && teacherStatus && continueTeacherEntry);
+    const auto teachersBeforeImport = tableRowCount(
+        profilePath,
+        QStringLiteral("teachers")
+        );
+    QVERIFY(teachersBeforeImport.has_value());
+    QCOMPARE(*teachersBeforeImport, 0);
+
+    QString importInteractionError;
+    int importInteractionPhase = 0;
+    QTimer importInteractionTimer;
+    importInteractionTimer.setInterval(10);
+    QObject::connect(
+        &importInteractionTimer,
+        &QTimer::timeout,
+        &importInteractionTimer,
+        [&] {
+            auto* const dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                return;
+            }
+
+            if (importInteractionPhase == 0)
+            {
+                auto* const browse = dialog->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextTeacherImportBrowse")
+                    );
+                if (!browse)
+                {
+                    importInteractionError = QStringLiteral(
+                        "The setup teacher-import dialog did not expose Browse."
+                        );
+                    return;
+                }
+                importInteractionPhase = 1;
+                browse->click();
+                return;
+            }
+
+            auto* const status = dialog->findChild<QLabel*>(
+                QStringLiteral("classMngrNextTeacherImportStatus")
+                );
+            if (importInteractionPhase != 1 || !status
+                || !status->text().contains(QStringLiteral("Review the workbook")))
+            {
+                return;
+            }
+
+            auto* const selectM1 = dialog->findChild<QRadioButton*>(
+                QStringLiteral("classMngrNextTeacherImportSelect_0")
+                );
+            auto* const noneM2 = dialog->findChild<QRadioButton*>(
+                QStringLiteral("classMngrNextTeacherImportNone_1")
+                );
+            auto* const noneH1 = dialog->findChild<QRadioButton*>(
+                QStringLiteral("classMngrNextTeacherImportNone_2")
+                );
+            auto* const firstM1 = dialog->findChild<QCheckBox*>(
+                QStringLiteral("classMngrNextTeacherImportCandidate_0_0")
+                );
+            auto* const secondM1 = dialog->findChild<QCheckBox*>(
+                QStringLiteral("classMngrNextTeacherImportCandidate_0_1")
+                );
+            auto* const apply = dialog->findChild<QPushButton*>(
+                QStringLiteral("classMngrNextTeacherImportApply")
+                );
+            if (!selectM1 || !noneM2 || !noneH1
+                || !firstM1 || !secondM1 || !apply
+                || !firstM1->isChecked() || secondM1->isChecked())
+            {
+                importInteractionError = QStringLiteral(
+                    "The fixture's Korean teacher review choices were unexpected."
+                    );
+                return;
+            }
+
+            firstM1->setChecked(true);
+            secondM1->setChecked(true);
+            selectM1->setChecked(true);
+            noneM2->setChecked(true);
+            noneH1->setChecked(true);
+            importInteractionPhase = 2;
+            apply->click();
+        }
+        );
+    QTimer importInteractionTimeout;
+    importInteractionTimeout.setSingleShot(true);
+    QObject::connect(
+        &importInteractionTimeout,
+        &QTimer::timeout,
+        &importInteractionTimeout,
+        [&] {
+            if (importInteractionPhase >= 2)
+            {
+                return;
+            }
+            importInteractionError = QStringLiteral(
+                "The pending-profile teacher import did not reach Apply."
+                );
+            if (QWidget* const modal = QApplication::activeModalWidget())
+            {
+                if (auto* const cancel = modal->findChild<QPushButton*>(
+                        QStringLiteral("classMngrNextTeacherImportCancel")))
+                {
+                    cancel->click();
+                }
+            }
+        }
+        );
+    importInteractionTimer.start();
+    importInteractionTimeout.start(10000);
+    importTeachers->click();
+    importInteractionTimer.stop();
+    importInteractionTimeout.stop();
+    QVERIFY2(importInteractionError.isEmpty(),
+             qPrintable(importInteractionError));
+    QCOMPARE(importInteractionPhase, 2);
+    QVERIFY(teacherStatus->text().contains(
+        QStringLiteral("Korean teachers: 2 created")
+        ));
+    const auto importedTeachersCount = tableRowCount(
+        profilePath,
+        QStringLiteral("teachers")
+        );
+    QVERIFY(importedTeachersCount.has_value());
+    QCOMPARE(*importedTeachersCount, 2);
+
+    auto* const classDetailsGroup = page->findChild<QGroupBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassDetails")
+        );
+    auto* const classTeacher = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassTeacher")
+        );
+    auto* const classColorButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassColorChoose")
+        );
+    auto* const continueClassDetails = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassDetailsContinue")
+        );
+    auto* const cancelSetup = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCancel")
+        );
+    auto* const setupStatus = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupStatus")
+        );
+    QVERIFY(classDetailsGroup && classTeacher && classColorButton);
+    QVERIFY(continueClassDetails && cancelSetup && setupStatus);
+
+    continueTeacherEntry->click();
+    QVERIFY(!classDetailsGroup->isHidden());
+    QCOMPARE(classTeacher->count(), 3);
+    classTeacher->setCurrentIndex(2);
+    const QString selectedTeacherId = classTeacher->currentData().toString();
+    QVERIFY(!selectedTeacherId.isEmpty());
+    const std::optional<QString> selectedKoreanTeacher = readTeacherKoreanName(
+        profilePath,
+        selectedTeacherId
+        );
+    QVERIFY(selectedKoreanTeacher.has_value());
+    QVERIFY(!selectedKoreanTeacher->trimmed().isEmpty());
+
+    bool colorDialogAccepted = false;
+    chooseColorInNextModalDialog(QColor(QStringLiteral("#234567")),
+                                 &colorDialogAccepted);
+    classColorButton->click();
+    QVERIFY(colorDialogAccepted);
+    continueClassDetails->click();
+
+    QVERIFY(bootstrap.initialSetupClassDetailsDraft().has_value());
+    const Application::InitialSetupClassDetailsDraft draft =
+        *bootstrap.initialSetupClassDetailsDraft();
+    QCOMPARE(draft.koreanTeacherId.value(), selectedTeacherId.toStdString());
+    QVERIFY(draft.classColorChosen);
+    QCOMPARE(draft.classColor, std::u16string(u"#234567"));
+    QCOMPARE(draft.fontColor, std::u16string(u"#FFFFFF"));
+    QCOMPARE(draft.classGrade, std::u16string(u"E4"));
+    QCOMPARE(draft.classLevel, std::u16string(u"Theseus"));
+    QVERIFY(draft.readingBook.empty());
+    QVERIFY(draft.essayBook.empty());
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(historyProbe->savedHistories.empty());
+    const auto classesCount = tableRowCount(
+        profilePath,
+        QStringLiteral("classes")
+        );
+    const auto classDetailsCount = tableRowCount(
+        profilePath,
+        QStringLiteral("class_info")
+        );
+    const auto regularTimesCount = tableRowCount(
+        profilePath,
+        QStringLiteral("class_times")
+        );
+    const auto intensiveTimesCount = tableRowCount(
+        profilePath,
+        QStringLiteral("class_intensive_times")
+        );
+    QVERIFY(classesCount && classDetailsCount
+        && regularTimesCount && intensiveTimesCount);
+    QCOMPARE(*classesCount, 0);
+    QCOMPARE(*classDetailsCount, 0);
+    QCOMPARE(*regularTimesCount, 0);
+    QCOMPARE(*intensiveTimesCount, 0);
+
+    cancelSetup->click();
+    QCOMPARE(setupStatus->text(), QStringLiteral("Choose where to save your profile."));
+    QVERIFY(!bootstrap.initialSetupClassDetailsDraft().has_value());
+    QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
+    QFile restoredOriginal(profilePath);
+    QVERIFY(restoredOriginal.open(QIODevice::ReadOnly));
+    QCOMPARE(restoredOriginal.readAll(), originalProfileBytes);
+    restoredOriginal.close();
+    QVERIFY(!QFileInfo::exists(originalBackup));
+    QVERIFY(!QFileInfo::exists(recoveryJournalPath));
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(historyProbe->savedHistories.empty());
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    QCOMPARE(historyProbe->saveCount, 0);
 }
 
 QTEST_MAIN(InitialSetupTeacherEntryBootstrapIntegrationTests)

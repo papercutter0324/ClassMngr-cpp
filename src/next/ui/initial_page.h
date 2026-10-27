@@ -2,6 +2,8 @@
 
 #include "next/application/personal_details_save.h"
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
+#include "next/application/initial_setup_class_details_draft.h"
+#include "next/application/custom_color_palette_preferences.h"
 #include "next/application/teacher_create.h"
 #include "next/domain/personal_signature_image_save_bytes.h"
 #include "next/ui/initial_setup_teacher_import_dialog.h"
@@ -51,6 +53,14 @@ struct InitialSetupPageActions final
     std::function<Application::TeacherCreateResult(
         const Application::TeacherCreateRequest&
         )> createTeacher;
+    std::function<Domain::Result<Application::CustomColorPalette>()>
+        readClassColorPalette;
+    std::function<Domain::Result<void>(
+        const Application::CustomColorPalette&
+        )> saveClassColorPalette;
+    std::function<Application::InitialSetupClassDetailsDraftCaptureResult(
+        const Application::InitialSetupClassDetailsDraft&
+        )> captureClassDetailsDraft;
     InitialSetupTeacherImportActions teacherImport;
     std::function<Domain::Result<std::optional<QByteArray>>()> chooseSignatureImage;
 };
@@ -75,6 +85,16 @@ private:
     void saveTeacher(bool addAnother);
     void importTeachersFromWorkbook();
     void clearTeacherFields();
+    void refreshClassDetailsTeacherChoices();
+    void populateClassDetailsTeacherChoices(
+        const Application::InitialSetupTeacherChoicesResult& choices
+        );
+    void updateClassDetailsLevels();
+    void updateClassDetailsBooks();
+    void updateClassColorPreview();
+    void chooseClassColor();
+    void continueClassDetails();
+    void clearClassDetails();
     void updatePreferredTeacherNames();
     void updateTeacherEntryControls();
     void syncPersonalDetailsFromForm();
@@ -119,6 +139,18 @@ private:
     QPushButton* m_addAnotherTeacherButton = nullptr;
     QPushButton* m_continueTeacherEntryButton = nullptr;
     QPushButton* m_importTeachersButton = nullptr;
+    QGroupBox* m_classDetailsGroup = nullptr;
+    QComboBox* m_classDetailsTeacherCombo = nullptr;
+    QPushButton* m_retryClassDetailsTeachersButton = nullptr;
+    QLabel* m_classDetailsStatusLabel = nullptr;
+    QLabel* m_classDetailsValidationLabel = nullptr;
+    QLabel* m_classColorPreview = nullptr;
+    QPushButton* m_chooseClassColorButton = nullptr;
+    QComboBox* m_classGradeCombo = nullptr;
+    QComboBox* m_classLevelCombo = nullptr;
+    QComboBox* m_readingBookCombo = nullptr;
+    QComboBox* m_essayBookCombo = nullptr;
+    QPushButton* m_continueClassDetailsButton = nullptr;
     Application::PersonalDetailsSaveRequest m_personalDetails;
     QByteArray m_imageSignature;
     bool m_setupWasPending = false;
@@ -126,6 +158,8 @@ private:
     bool m_personalDetailsEdited = false;
     bool m_updatingPersonalDetails = false;
     bool m_teacherEntryComplete = false;
+    bool m_classColorChosen = false;
+    QString m_classColor = QStringLiteral("#FFFFFF");
 };
 
 }  // namespace ClassMngr::Next::Ui

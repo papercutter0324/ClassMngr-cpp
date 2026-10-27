@@ -1,10 +1,12 @@
 #pragma once
 
+#include "domain/config/class_details_catalog.h"
 #include "next/domain/course_catalog_identity.h"
 #include "next/domain/schedule_time.h"
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -179,30 +181,14 @@ public:
 
     [[nodiscard]] static std::vector<std::string_view> grades()
     {
-        std::vector<std::string_view> result;
-        for (const CatalogEntry& entry : catalog)
-        {
-            if (result.empty() || result.back() != entry.grade)
-            {
-                result.push_back(entry.grade);
-            }
-        }
-        return result;
+        return ::ClassMngr::Domain::ClassDetailsCatalog::grades();
     }
 
     [[nodiscard]] static std::vector<std::string_view> levelsForGrade(
         std::string_view grade
         )
     {
-        std::vector<std::string_view> result;
-        for (const CatalogEntry& entry : catalog)
-        {
-            if (entry.grade == grade)
-            {
-                result.push_back(entry.level);
-            }
-        }
-        return result;
+        return ::ClassMngr::Domain::ClassDetailsCatalog::levelsForGrade(grade);
     }
 
     [[nodiscard]] std::string_view grade() const noexcept
@@ -378,33 +364,54 @@ private:
         std::string_view level;
     };
 
-    inline static constexpr std::array<CatalogEntry, 25> catalog{{
-        {CourseCatalogIdentity::E4Theseus, "E4", "Theseus"},
-        {CourseCatalogIdentity::E4Perseus, "E4", "Perseus"},
-        {CourseCatalogIdentity::E4Odysseus, "E4", "Odysseus"},
-        {CourseCatalogIdentity::E4Hercules, "E4", "Hercules"},
-        {CourseCatalogIdentity::E5Artemis, "E5", "Artemis"},
-        {CourseCatalogIdentity::E5Hermes, "E5", "Hermes"},
-        {CourseCatalogIdentity::E5Apollo, "E5", "Apollo"},
-        {CourseCatalogIdentity::E5Zeus, "E5", "Zeus"},
-        {CourseCatalogIdentity::E5Athena, "E5", "Athena"},
-        {CourseCatalogIdentity::E6Helios, "E6", "Helios"},
-        {CourseCatalogIdentity::E6Poseidon, "E6", "Poseidon"},
-        {CourseCatalogIdentity::E6Gaia, "E6", "Gaia"},
-        {CourseCatalogIdentity::E6Hera, "E6", "Hera"},
-        {CourseCatalogIdentity::E6Songs, "E6", "Song's"},
-        {CourseCatalogIdentity::M1Elephantus, "M1", "Elephantus"},
-        {CourseCatalogIdentity::M1Galaxia, "M1", "Galaxia"},
-        {CourseCatalogIdentity::M1Solis, "M1", "Solis"},
-        {CourseCatalogIdentity::M1Major, "M1", "Major"},
-        {CourseCatalogIdentity::M1Songs, "M1", "Song's"},
-        {CourseCatalogIdentity::M2Ursa, "M2", "Ursa"},
-        {CourseCatalogIdentity::M2Leo, "M2", "Leo"},
-        {CourseCatalogIdentity::M2Tigris, "M2", "Tigris"},
-        {CourseCatalogIdentity::M2Major, "M2", "Major"},
-        {CourseCatalogIdentity::M2Songs, "M2", "Song's"},
-        {CourseCatalogIdentity::M3Songs, "M3", "Song's"}
+    inline static constexpr std::array<CourseCatalogIdentity, 25>
+        catalogIdentities{{
+            CourseCatalogIdentity::E4Theseus,
+            CourseCatalogIdentity::E4Perseus,
+            CourseCatalogIdentity::E4Odysseus,
+            CourseCatalogIdentity::E4Hercules,
+            CourseCatalogIdentity::E5Artemis,
+            CourseCatalogIdentity::E5Hermes,
+            CourseCatalogIdentity::E5Apollo,
+            CourseCatalogIdentity::E5Zeus,
+            CourseCatalogIdentity::E5Athena,
+            CourseCatalogIdentity::E6Helios,
+            CourseCatalogIdentity::E6Poseidon,
+            CourseCatalogIdentity::E6Gaia,
+            CourseCatalogIdentity::E6Hera,
+            CourseCatalogIdentity::E6Songs,
+            CourseCatalogIdentity::M1Elephantus,
+            CourseCatalogIdentity::M1Galaxia,
+            CourseCatalogIdentity::M1Solis,
+            CourseCatalogIdentity::M1Major,
+            CourseCatalogIdentity::M1Songs,
+            CourseCatalogIdentity::M2Ursa,
+            CourseCatalogIdentity::M2Leo,
+            CourseCatalogIdentity::M2Tigris,
+            CourseCatalogIdentity::M2Major,
+            CourseCatalogIdentity::M2Songs,
+            CourseCatalogIdentity::M3Songs
     }};
+
+    [[nodiscard]] static constexpr std::array<CatalogEntry, 25>
+    makeCatalog() noexcept
+    {
+        std::array<CatalogEntry, 25> result{};
+        const auto& gradeLevels =
+            ::ClassMngr::Domain::ClassDetailsCatalog::gradeLevels;
+        for (std::size_t index = 0; index < result.size(); ++index)
+        {
+            result[index] = CatalogEntry{
+                .identity = catalogIdentities[index],
+                .grade = gradeLevels[index].grade,
+                .level = gradeLevels[index].level
+            };
+        }
+        return result;
+    }
+
+    inline static const std::array<CatalogEntry, 25> catalog =
+        makeCatalog();
 
     [[nodiscard]] static const CatalogEntry* catalogEntryForIdentity(
         CourseCatalogIdentity identity

@@ -2,6 +2,8 @@
 
 #include "next/bootstrap/qt_startup_diagnostics_sink.h"
 #include "next/application/recent_workspace_history_use_case.h"
+#include "next/application/initial_setup_class_details_requirements.h"
+#include "next/application/positive_decimal_id_validation.h"
 #include "core/settingsmanager.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
@@ -719,6 +721,19 @@ Application::StartupResult ApplicationBootstrap::start()
                             ) {
                             return saveInitialSetupTeacher(request);
                         },
+                        .readClassColorPalette = [this] {
+                            return readInitialSetupClassColorPalette();
+                        },
+                        .saveClassColorPalette = [this](
+                            const Application::CustomColorPalette& palette
+                            ) {
+                            return saveInitialSetupClassColorPalette(palette);
+                        },
+                        .captureClassDetailsDraft = [this](
+                            const Application::InitialSetupClassDetailsDraft& draft
+                            ) {
+                            return captureInitialSetupClassDetailsDraft(draft);
+                        },
                         .teacherImport = {
                             .chooseWorkbook = [this] {
                                 return chooseInitialSetupTeacherImportWorkbook();
@@ -1382,6 +1397,7 @@ void ApplicationBootstrap::beginInitialSetupProfile()
                 ));
         return;
     }
+    m_initialSetupClassDetailsDraft.reset();
     m_initialSetupStatusMessage.clear();
 }
 
@@ -1413,6 +1429,7 @@ void ApplicationBootstrap::resumeInitialSetupProfile()
                 ));
         return;
     }
+    m_initialSetupClassDetailsDraft.reset();
     m_initialSetupStatusMessage.clear();
 }
 
@@ -1433,6 +1450,10 @@ void ApplicationBootstrap::restoreInitialSetupProfile()
     }
 
     const auto restored = m_initialSetupLifecycle->restore(*recovery.value());
+    if (restored.status == Application::InitialSetupCancelStatus::Canceled)
+    {
+        m_initialSetupClassDetailsDraft.reset();
+    }
     m_initialSetupStatusMessage = restored.status
             == Application::InitialSetupCancelStatus::Canceled
         ? QCoreApplication::translate(
@@ -1452,6 +1473,10 @@ void ApplicationBootstrap::cancelInitialSetupProfile()
         return;
     }
     const auto canceled = m_initialSetupLifecycle->cancel();
+    if (canceled.status == Application::InitialSetupCancelStatus::Canceled)
+    {
+        m_initialSetupClassDetailsDraft.reset();
+    }
     m_initialSetupStatusMessage = canceled.status
             == Application::InitialSetupCancelStatus::Canceled
         ? QCoreApplication::translate(
@@ -1548,6 +1573,100 @@ ApplicationBootstrap::loadInitialSetupTeacherChoices() const
     }
 
     return storeGateway->loadInitialSetupTeacherChoices();
+}
+
+Domain::Result<Application::CustomColorPalette>
+ApplicationBootstrap::readInitialSetupClassColorPalette() const
+{
+    if (!m_initialSetupLifecycle
+        || !m_initialSetupLifecycle->hasPendingSetup())
+    {
+        return Domain::Result<Application::CustomColorPalette>::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "No setup profile is active.",
+            .recoverable = true
+        });
+    }
+
+    auto* const storeGateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+        m_workspaceGateway.get()
+        );
+    if (!storeGateway)
+    {
+        return Domain::Result<Application::CustomColorPalette>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "The setup profile settings store is unavailable.",
+            .recoverable = true
+        });
+    }
+
+    return storeGateway->readInitialSetupClassColorPalette();
+}
+
+Domain::Result<void> ApplicationBootstrap::saveInitialSetupClassColorPalette(
+    const Application::CustomColorPalette& palette
+    ) const
+{
+    if (!m_initialSetupLifecycle
+        || !m_initialSetupLifecycle->hasPendingSetup())
+    {
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "No setup profile is active.",
+            .recoverable = true
+        });
+    }
+
+    auto* const storeGateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+        m_workspaceGateway.get()
+        );
+    if (!storeGateway)
+    {
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "The setup profile settings store is unavailable.",
+            .recoverable = true
+        });
+    }
+
+    return storeGateway->saveInitialSetupClassColorPalette(palette);
+}
+
+Application::InitialSetupClassDetailsDraftCaptureResult
+ApplicationBootstrap::captureInitialSetupClassDetailsDraft(
+    const Application::InitialSetupClassDetailsDraft& draft
+    )
+{
+    if (!m_initialSetupLifecycle
+        || !m_initialSetupLifecycle->hasPendingSetup())
+    {
+        return Application::InitialSetupClassDetailsDraftCaptureResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "No setup profile is active.",
+            .recoverable = true
+        });
+    }
+
+    const Application::InitialSetupClassDetailsRequirements requirements =
+        Application::initialSetupClassDetailsRequirements(
+            Application::isCanonicalPositiveDecimalId64(
+                draft.koreanTeacherId.value()
+                ),
+            draft.classColorChosen && !draft.classColor.empty(),
+            !draft.classGrade.empty(),
+            !draft.classLevel.empty()
+            );
+    if (!requirements.complete())
+    {
+        return Application::InitialSetupClassDetailsDraftCaptureResult::failure({
+            .code = Domain::ErrorCode::Validation,
+            .message = "Korean teacher, chosen color, Grade, and Level are required.",
+            .recoverable = true
+        });
+    }
+
+    m_initialSetupClassDetailsDraft = draft;
+    return Application::InitialSetupClassDetailsDraftCaptureResult::success();
 }
 
 Application::TeacherCreateResult ApplicationBootstrap::saveInitialSetupTeacher(
@@ -2158,6 +2277,12 @@ ApplicationBootstrap::workspaceStateSnapshot() const
     return m_applicationRuntime
         ? m_applicationRuntime->workspaceState().snapshot()
         : Application::WorkspaceStateSnapshot{};
+}
+
+const std::optional<Application::InitialSetupClassDetailsDraft>&
+ApplicationBootstrap::initialSetupClassDetailsDraft() const noexcept
+{
+    return m_initialSetupClassDetailsDraft;
 }
 
 void ApplicationBootstrap::observeStartupResult(

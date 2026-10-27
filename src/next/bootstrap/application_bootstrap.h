@@ -7,6 +7,8 @@
 #include "next/application/startup_workspace_policy.h"
 #include "next/application/application_runtime.h"
 #include "next/application/initial_setup_lifecycle.h"
+#include "next/application/initial_setup_class_details_draft.h"
+#include "next/application/custom_color_palette_preferences.h"
 #include "next/application/personal_details_save.h"
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
 #include "next/application/teacher_import_use_case.h"
@@ -103,6 +105,9 @@ public:
     startupWorkspaceOutcome() const noexcept;
     [[nodiscard]] Application::WorkspaceStateSnapshot
     workspaceStateSnapshot() const;
+    [[nodiscard]] const std::optional<
+        Application::InitialSetupClassDetailsDraft>&
+    initialSetupClassDetailsDraft() const noexcept;
 
 private:
     struct CoreServices;
@@ -130,6 +135,15 @@ private:
         ) const;
     [[nodiscard]] Application::InitialSetupTeacherChoicesResult
     loadInitialSetupTeacherChoices() const;
+    [[nodiscard]] Domain::Result<Application::CustomColorPalette>
+    readInitialSetupClassColorPalette() const;
+    [[nodiscard]] Domain::Result<void> saveInitialSetupClassColorPalette(
+        const Application::CustomColorPalette& palette
+        ) const;
+    [[nodiscard]] Application::InitialSetupClassDetailsDraftCaptureResult
+    captureInitialSetupClassDetailsDraft(
+        const Application::InitialSetupClassDetailsDraft& draft
+        );
     [[nodiscard]] Application::TeacherCreateResult
     saveInitialSetupTeacher(
         const Application::TeacherCreateRequest& request
@@ -176,6 +190,8 @@ private:
     std::unique_ptr<Application::InitialSetupLifecyclePort>
         m_initialSetupLifecyclePort;
     std::unique_ptr<Application::InitialSetupLifecycle> m_initialSetupLifecycle;
+    std::optional<Application::InitialSetupClassDetailsDraft>
+        m_initialSetupClassDetailsDraft;
     QString m_initialSetupStatusMessage;
     std::optional<Application::StartupWorkspaceOutcome> m_startupWorkspaceOutcome;
     Application::StartupCoordinator m_startupCoordinator;

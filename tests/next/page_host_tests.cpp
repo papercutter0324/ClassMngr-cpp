@@ -6,10 +6,14 @@
 #include "next/ui/page_host.h"
 
 #include <QComboBox>
+#include <QColorDialog>
+#include <QDialog>
+#include <QGroupBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPointer>
 #include <QPushButton>
+#include <QTimer>
 #include <QTest>
 #include <QVector>
 
@@ -239,11 +243,61 @@ private slots:
     void initialSetupTeacherEntryOptionalOnlyDataIsNotSkipped();
     void initialSetupTeacherEntryChoiceLoadFailureIsVisible();
     void initialSetupTeacherEntryAddAnotherThenContinueSavesBoth();
+    void initialSetupClassDetailsChoicesValidationColorAndDraft();
+    void initialSetupClassDetailsAutoSelectsOnlyOneTeacher();
 
 private:
     Test::MemoryPreferences m_preferences;
     std::unique_ptr<Resources::ResourceLoader> m_loader;
 };
+
+namespace
+{
+
+void completeNextColorDialog(const QColor& color, const bool accept)
+{
+    QTimer::singleShot(0, [color, accept] {
+        auto* const dialog = qobject_cast<QColorDialog*>(
+            QApplication::activeModalWidget()
+            );
+        if (!dialog)
+        {
+            return;
+        }
+        dialog->setCurrentColor(color);
+        if (accept)
+        {
+            dialog->accept();
+        }
+        else
+        {
+            dialog->reject();
+        }
+    });
+}
+
+Application::InitialSetupTeacherChoicesSnapshot twoTeachers()
+{
+    const auto first = Domain::TeacherId::fromString("11");
+    const auto second = Domain::TeacherId::fromString("12");
+    Q_ASSERT(first && second);
+    return {
+        .teachers = {
+            {
+                .teacherId = *first,
+                .teacherEn = u"Alex Kim",
+                .preferredName = u"Alex"
+            },
+            {
+                .teacherId = *second,
+                .teacherEn = u"Sam Lee",
+                .preferredName = u"Sam"
+            }
+        }
+    };
+}
+
+} // namespace
 
 void PageHostTests::initTestCase()
 {
@@ -935,8 +989,14 @@ void PageHostTests::initialSetupTeacherEntryValidatesAndRetainsFailedForm()
                 personalDetails
                 );
         },
-        .loadTeacherChoices = [&choiceReads] {
+        .loadTeacherChoices = [&choiceReads, teacherId, &createCalls] {
             ++choiceReads;
+            if (createCalls > 1)
+            {
+                return Application::InitialSetupTeacherChoicesResult::success({
+                    .teachers = {{.teacherId = *teacherId}}
+                });
+            }
             return Application::InitialSetupTeacherChoicesResult::success({});
         },
         .createTeacher = [&createCalls, &lastRequest, teacherId](
@@ -1044,7 +1104,12 @@ void PageHostTests::initialSetupTeacherEntryValidatesAndRetainsFailedForm()
     QCOMPARE(status->text(), QStringLiteral("Teacher saved. Setup remains pending."));
     QVERIFY(state.setupPending);
     QVERIFY(!continueButton->isEnabled());
-    QCOMPARE(choiceReads, 1);
+    auto* const classTeacher = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassTeacher")
+        );
+    QVERIFY(classTeacher);
+    QCOMPARE(classTeacher->currentData().toString(), QStringLiteral("73"));
+    QCOMPARE(choiceReads, 2);
 }
 
 void PageHostTests::initialSetupTeacherEntrySkipsWhenAChoiceExists()
@@ -1413,6 +1478,288 @@ void PageHostTests::initialSetupTeacherEntryAddAnotherThenContinueSavesBoth()
     QVERIFY(state.setupPending);
     QVERIFY(!addAnotherButton->isEnabled());
     QVERIFY(!continueButton->isEnabled());
+}
+
+void PageHostTests::initialSetupClassDetailsChoicesValidationColorAndDraft()
+{
+    Ui::PageHost host(*m_loader, m_preferences.model);
+    Ui::InitialSetupPageState state;
+    state.setupPending = true;
+    int teacherChoiceReads = 0;
+    int paletteReads = 0;
+    QVector<Application::CustomColorPalette> savedPalettes;
+    std::optional<Application::InitialSetupClassDetailsDraft> capturedDraft;
+    bool paletteWriteFails = true;
+    const auto teacherChoices = twoTeachers();
+    const auto defaults = Application::defaultCustomColorPalette();
+    const Ui::InitialSetupPageActions actions{
+        .state = [&state] { return state; },
+        .loadPersonalDetails = [] {
+            Application::PersonalDetailsSaveRequest details;
+            details.name = "Setup Owner";
+            return Application::PersonalDetailsReadResult::success(details);
+        },
+        .loadTeacherChoices = [&teacherChoiceReads, teacherChoices] {
+            ++teacherChoiceReads;
+            if (teacherChoiceReads == 1)
+            {
+                return Application::InitialSetupTeacherChoicesResult::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = "class-details teacher read failed",
+                    .recoverable = true
+                });
+            }
+            return Application::InitialSetupTeacherChoicesResult::success(
+                teacherChoices
+                );
+        },
+        .createTeacher = [](const Application::TeacherCreateRequest&) {
+            const auto teacherId = Domain::TeacherId::fromString("25");
+            Q_ASSERT(teacherId.has_value());
+            return Application::TeacherCreateResult::success(*teacherId);
+        },
+        .readClassColorPalette = [&paletteReads, defaults] {
+            ++paletteReads;
+            if (paletteReads == 1)
+            {
+                return Domain::Result<Application::CustomColorPalette>::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = "palette read failed",
+                    .recoverable = true
+                });
+            }
+            return Domain::Result<Application::CustomColorPalette>::success(
+                defaults
+                );
+        },
+        .saveClassColorPalette = [&savedPalettes, &paletteWriteFails](
+            const Application::CustomColorPalette& palette
+            ) {
+            savedPalettes.push_back(palette);
+            if (paletteWriteFails)
+            {
+                return Domain::Result<void>::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = "palette write failed",
+                    .recoverable = true
+                });
+            }
+            return Domain::Result<void>::success();
+        },
+        .captureClassDetailsDraft = [&capturedDraft](
+            const Application::InitialSetupClassDetailsDraft& draft
+            ) {
+            capturedDraft = draft;
+            return Application::InitialSetupClassDetailsDraftCaptureResult::success();
+        }
+    };
+    const Ui::PageDescriptor descriptor{
+        .id = *Ui::PageId::fromString(QStringLiteral("class-details-flow")),
+        .label = QStringLiteral("Class Details"),
+        .factory = [actions](const Ui::PageContext& context)
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            return std::unique_ptr<Ui::Page>(
+                std::make_unique<Ui::InitialPage>(context, actions)
+                );
+        }
+    };
+    QVERIFY(host.registerPage(descriptor));
+    QVERIFY(host.activatePage(QStringLiteral("class-details-flow")));
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        host.pageInstance(QStringLiteral("class-details-flow"))
+        );
+    QVERIFY(page);
+
+    auto* const continueTeacherEntry = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
+        );
+    auto* const classDetailsGroup = page->findChild<QGroupBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassDetails")
+        );
+    auto* const classTeacher = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassTeacher")
+        );
+    auto* const retryTeachers = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassTeacherRetry")
+        );
+    auto* const classDetailsStatus = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupClassDetailsStatus")
+        );
+    auto* const validation = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupClassDetailsValidation")
+        );
+    auto* const grade = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassGrade")
+        );
+    auto* const level = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassLevel")
+        );
+    auto* const readingBook = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupReadingBook")
+        );
+    auto* const essayBook = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupEssayBook")
+        );
+    auto* const chooseColor = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassColorChoose")
+        );
+    auto* const colorPreview = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupClassColorPreview")
+        );
+    auto* const continueClassDetails = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassDetailsContinue")
+        );
+    QVERIFY(continueTeacherEntry && classDetailsGroup && classTeacher);
+    QVERIFY(retryTeachers && classDetailsStatus && validation && grade && level);
+    QVERIFY(readingBook && essayBook && chooseColor && colorPreview);
+    QVERIFY(continueClassDetails);
+    QVERIFY(classDetailsGroup->isHidden());
+
+    QCOMPARE(grade->currentText(), QStringLiteral("E4"));
+    QCOMPARE(level->currentText(), QStringLiteral("Theseus"));
+    QVERIFY(readingBook->currentText().isEmpty());
+    QVERIFY(essayBook->currentText().isEmpty());
+    QVERIFY(essayBook->findText(QStringLiteral("4A")) >= 0);
+    QVERIFY(readingBook->findText(QStringLiteral("Reading Explorer 1")) >= 0);
+
+    page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEnglishName")
+        )->setText(QStringLiteral("Alex Kim"));
+    page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherKoreanName")
+        )->setText(QString::fromUtf8("김선생님"));
+    page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherPreferredSpelling")
+        )->setText(QStringLiteral("Alex"));
+    continueTeacherEntry->click();
+    QCOMPARE(teacherChoiceReads, 1);
+    QVERIFY(!classDetailsGroup->isHidden());
+    QVERIFY(!classTeacher->isEnabled());
+    QVERIFY(!retryTeachers->isHidden());
+    QVERIFY(classDetailsStatus->text().contains(
+        QStringLiteral("Teacher choices could not be loaded. Retry to continue.")
+        ));
+    QVERIFY(classDetailsStatus->text().contains(
+        QStringLiteral("class-details teacher read failed")
+        ));
+    QCOMPARE(classTeacher->currentData().toString(), QString{});
+
+    retryTeachers->click();
+    QCOMPARE(teacherChoiceReads, 2);
+    QCOMPARE(classTeacher->count(), 3);
+    QCOMPARE(classTeacher->currentIndex(), 0);
+    QVERIFY(classTeacher->isEnabled());
+    QVERIFY(retryTeachers->isHidden());
+    QVERIFY(classDetailsStatus->text().isEmpty());
+
+    continueClassDetails->click();
+    QVERIFY(validation->text().contains(QStringLiteral("Korean Teacher is required.")));
+    QVERIFY(validation->text().contains(QStringLiteral("Class Color is required.")));
+    QVERIFY(!validation->text().contains(QStringLiteral("Grade is required.")));
+    QVERIFY(!validation->text().contains(QStringLiteral("Level is required.")));
+
+    classTeacher->setCurrentIndex(2);
+    completeNextColorDialog(QColor(QStringLiteral("#123456")), true);
+    chooseColor->click();
+    QCOMPARE(paletteReads, 1);
+    QVERIFY(savedPalettes.isEmpty());
+    QVERIFY(colorPreview->styleSheet().contains(
+        QStringLiteral("background-color:#123456;color:#FFFFFF")
+        ));
+
+    completeNextColorDialog(QColor(QStringLiteral("#223344")), true);
+    chooseColor->click();
+    QCOMPARE(paletteReads, 2);
+    QCOMPARE(savedPalettes.size(), 1);
+    QCOMPARE(savedPalettes.front().hexColors.size(), std::size_t(16));
+    QVERIFY(classDetailsStatus->text().contains(
+        QStringLiteral("Unable to save color preference: palette write failed")
+        ));
+    QVERIFY(colorPreview->styleSheet().contains(
+        QStringLiteral("background-color:#223344;color:#FFFFFF")
+        ));
+
+    paletteWriteFails = false;
+    completeNextColorDialog(QColor(QStringLiteral("#FFFFFF")), false);
+    chooseColor->click();
+    QCOMPARE(paletteReads, 3);
+    QCOMPARE(savedPalettes.size(), 2);
+    QCOMPARE(savedPalettes.back().hexColors.size(), std::size_t(16));
+    QCOMPARE(classDetailsStatus->text(), QStringLiteral(
+        "Unable to save color preference: palette write failed"
+        ));
+    QVERIFY(colorPreview->styleSheet().contains(
+        QStringLiteral("background-color:#223344;color:#FFFFFF")
+        ));
+
+    continueClassDetails->click();
+    QVERIFY(capturedDraft.has_value());
+    QCOMPARE(capturedDraft->koreanTeacherId.value(), std::string("12"));
+    QVERIFY(capturedDraft->classColorChosen);
+    QCOMPARE(capturedDraft->classColor, std::u16string(u"#223344"));
+    QCOMPARE(capturedDraft->fontColor, std::u16string(u"#FFFFFF"));
+    QCOMPARE(capturedDraft->classGrade, std::u16string(u"E4"));
+    QCOMPARE(capturedDraft->classLevel, std::u16string(u"Theseus"));
+    QVERIFY(capturedDraft->readingBook.empty());
+    QVERIFY(capturedDraft->essayBook.empty());
+    QVERIFY(classDetailsStatus->text().contains(
+        QStringLiteral("Class details are ready for Class Times. Setup remains pending.")
+        ));
+    QVERIFY(state.setupPending);
+}
+
+void PageHostTests::initialSetupClassDetailsAutoSelectsOnlyOneTeacher()
+{
+    Ui::PageHost host(*m_loader, m_preferences.model);
+    Ui::InitialSetupPageState state;
+    state.setupPending = true;
+    int choiceReads = 0;
+    const auto teacherId = Domain::TeacherId::fromString("73");
+    QVERIFY(teacherId);
+    const Ui::InitialSetupPageActions actions{
+        .state = [&state] { return state; },
+        .loadPersonalDetails = [] {
+            return Application::PersonalDetailsReadResult::success({});
+        },
+        .loadTeacherChoices = [&choiceReads, teacherId] {
+            ++choiceReads;
+            return Application::InitialSetupTeacherChoicesResult::success({
+                .teachers = {{
+                    .teacherId = *teacherId,
+                    .teacherEn = u"One Teacher",
+                    .preferredName = u"One"
+                }}
+            });
+        }
+    };
+    const Ui::PageDescriptor descriptor{
+        .id = *Ui::PageId::fromString(QStringLiteral("class-details-one-teacher")),
+        .label = QStringLiteral("Class Details"),
+        .factory = [actions](const Ui::PageContext& context)
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            return std::unique_ptr<Ui::Page>(
+                std::make_unique<Ui::InitialPage>(context, actions)
+                );
+        }
+    };
+    QVERIFY(host.registerPage(descriptor));
+    QVERIFY(host.activatePage(QStringLiteral("class-details-one-teacher")));
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        host.pageInstance(QStringLiteral("class-details-one-teacher"))
+        );
+    QVERIFY(page);
+    auto* const continueTeacherEntry = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
+        );
+    auto* const classTeacher = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassTeacher")
+        );
+    QVERIFY(continueTeacherEntry && classTeacher);
+
+    continueTeacherEntry->click();
+    QCOMPARE(choiceReads, 1);
+    QCOMPARE(classTeacher->count(), 1);
+    QCOMPARE(classTeacher->currentData().toString(), QStringLiteral("73"));
 }
 
 QTEST_MAIN(PageHostTests)

@@ -2387,6 +2387,19 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformWorkspaceStoreCustomColorPalettePreferencesPort
+    SOURCES
+        tests/next_platform_workspace_store_custom_color_palette_preferences_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNextWorkspace
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformWorkspaceStorePersonalDetailsPort
     SOURCES
         tests/next_platform_workspace_store_personal_details_port_tests.cpp

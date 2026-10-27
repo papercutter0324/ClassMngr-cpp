@@ -3,7 +3,7 @@
   "title": "Phase 4 effective resource inventory",
   "source_snapshot": {
     "tracked_source_tree_ids": {
-      "resources": "708e40201fd31c9cd8a1673247eb1acb7405991c",
+      "resources": "471f7291e9681f68b68df116ca081e0961fe40ea",
       "calendar_qml": "b75d01f27817b205ad63deca347be0506e3b9796"
     },
     "tracked_input_worktree_changes": [
@@ -17,8 +17,8 @@
     "tracked_files_under_resources_assets": 226,
     "tracked_files_under_resources_windows": 3,
     "tracked_calendar_qml_sources_outside_resources": 2,
-    "resource_asset_source_bytes_exact": 65732780,
-    "all_tracked_resources_source_bytes_exact": 65733966,
+    "resource_asset_source_bytes_exact": 65737440,
+    "all_tracked_resources_source_bytes_exact": 65738626,
     "calendar_qml_source_bytes_exact": 35154,
     "disposition_record_counts": {
       "build_only_excluded": 31,
@@ -65,7 +65,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 1757709
+        "source_bytes": 1762369
       }
     },
     "resource_categories": {
@@ -115,7 +115,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 1757709
+        "source_bytes": 1762369
       }
     }
   },
@@ -6255,8 +6255,8 @@
       "package_disposition": "runtime_packaged_generated",
       "disposition_reason": "Qt Linguist produces the runtime .qm from this tracked TS source; only the selected locale is loaded.",
       "source_file": {
-        "bytes": 351234,
-        "sha256": "128935764331ff7863a6c93eb1b2866770841dd636e35de622cdc80e0d28d139"
+        "bytes": 353443,
+        "sha256": "e864ec145b6de0f4e7cfe1871573a3c7c6c5617d9732cbb3c9fd338a81140ebb"
       },
       "installed_size": {
         "bytes": null,
@@ -6287,8 +6287,8 @@
       "package_disposition": "runtime_packaged_generated",
       "disposition_reason": "Qt Linguist produces the runtime .qm from this tracked TS source; only the selected locale is loaded.",
       "source_file": {
-        "bytes": 388540,
-        "sha256": "cd54ce61d8f686c23db10378efd3944ba4efa4fb0a02499abfb11b3a2fd3e28d"
+        "bytes": 390991,
+        "sha256": "5f7b92def2c2d87cddabd9559bee698971896b95ec5c820be0aede74954911e1"
       },
       "installed_size": {
         "bytes": null,

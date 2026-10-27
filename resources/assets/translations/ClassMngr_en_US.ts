@@ -9741,6 +9741,27 @@ Version: %2</source>
     <message><source>Import Teachers from Workbook</source><translation>Import Teachers from Workbook</translation></message>
 </context>
 <context>
+    <name>InitialSetupClassDetailsPage</name>
+    <message><source>Class Details</source><translation>Class Details</translation></message>
+    <message><source>Korean Teacher</source><translation>Korean Teacher</translation></message>
+    <message><source>Class Color</source><translation>Class Color</translation></message>
+    <message><source>Choose Color</source><translation>Choose Color</translation></message>
+    <message><source>Choose Class Color</source><translation>Choose Class Color</translation></message>
+    <message><source>Grade</source><translation>Grade</translation></message>
+    <message><source>Level</source><translation>Level</translation></message>
+    <message><source>Reading Book</source><translation>Reading Book</translation></message>
+    <message><source>Essay Book</source><translation>Essay Book</translation></message>
+    <message><source>Retry Teacher Choices</source><translation>Retry Teacher Choices</translation></message>
+    <message><source>Continue</source><translation>Continue</translation></message>
+    <message><source>Select a teacher...</source><translation>Select a teacher...</translation></message>
+    <message><source>Teacher choices could not be loaded. Retry to continue.</source><translation>Teacher choices could not be loaded. Retry to continue.</translation></message>
+    <message><source>No Korean teachers are available. Add or import a teacher before continuing.</source><translation>No Korean teachers are available. Add or import a teacher before continuing.</translation></message>
+    <message><source>Unable to save color preference: %1</source><translation>Unable to save color preference: %1</translation></message>
+    <message><source>%1 is required.</source><translation>%1 is required.</translation></message>
+    <message><source>Class details could not be kept in setup memory. Retry to continue.</source><translation>Class details could not be kept in setup memory. Retry to continue.</translation></message>
+    <message><source>Class details are ready for Class Times. Setup remains pending.</source><translation>Class details are ready for Class Times. Setup remains pending.</translation></message>
+</context>
+<context>
     <name>InitialSetupTeacherImportDialog</name>
     <message><source>Import Teachers from Workbook</source><translation>Import Teachers from Workbook</translation></message>
     <message><source>File to import from:</source><translation>File to import from:</translation></message>

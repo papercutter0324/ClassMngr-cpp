@@ -8,6 +8,7 @@
 #include "next/application/teacher_create_use_case.h"
 #include "next/platform/workspace_store_personal_details_port.h"
 #include "next/platform/workspace_store_initial_setup_teacher_entry_port.h"
+#include "next/platform/workspace_store_custom_color_palette_preferences_port.h"
 #include "next/platform/teacher_validator_teacher_create_validation_policy.h"
 
 #include <QByteArray>
@@ -108,6 +109,21 @@ WorkspaceStoreGateway::loadInitialSetupTeacherChoices() const
     WorkspaceStoreInitialSetupTeacherEntryPort port(*m_store);
     const Application::InitialSetupTeacherChoicesReadQuery query(port);
     return query.execute();
+}
+
+Domain::Result<Application::CustomColorPalette>
+WorkspaceStoreGateway::readInitialSetupClassColorPalette() const
+{
+    WorkspaceStoreCustomColorPalettePreferencesPort port(*m_store);
+    return port.read();
+}
+
+Domain::Result<void> WorkspaceStoreGateway::saveInitialSetupClassColorPalette(
+    const Application::CustomColorPalette& palette
+    ) const
+{
+    WorkspaceStoreCustomColorPalettePreferencesPort port(*m_store);
+    return port.write(palette);
 }
 
 Application::TeacherCreateResult

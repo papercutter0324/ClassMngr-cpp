@@ -1,30 +1,17 @@
 #pragma once
 
 #include "data/database/workspace_store_fwd.h"
-
 #include "core/application_services.h"
 #include "next/application/custom_color_palette_preferences.h"
+#include "next/platform/custom_color_palette_preference_codec.h"
 
-#include <QColor>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonParseError>
-#include <QJsonValue>
-#include <QString>
-#include <QStringList>
 #include <QVariant>
-
-#include <algorithm>
-#include <cstddef>
-#include <string>
-
 
 namespace ClassMngr::Next::Platform
 {
 
-// Qt-boundary adapter for the shared custom-color palette. It owns the exact
-// legacy key, all supported stored payload formats, QColor canonicalization,
-// fixed-size normalization, and the existing save warning.
+// Compatibility adapter retained for feature code that still owns
+// ApplicationServices. The Next startup path uses the direct store adapter.
 class ApplicationServicesCustomColorPalettePreferencesPort final
     : public Application::CustomColorPalettePreferencesPort
 {
@@ -44,17 +31,13 @@ public:
     }
 
     ApplicationServicesCustomColorPalettePreferencesPort(
-        const ApplicationServicesCustomColorPalettePreferencesPort&
-        ) = delete;
+        const ApplicationServicesCustomColorPalettePreferencesPort& ) = delete;
     ApplicationServicesCustomColorPalettePreferencesPort& operator=(
-        const ApplicationServicesCustomColorPalettePreferencesPort&
-        ) = delete;
+        const ApplicationServicesCustomColorPalettePreferencesPort& ) = delete;
     ApplicationServicesCustomColorPalettePreferencesPort(
-        ApplicationServicesCustomColorPalettePreferencesPort&&
-        ) = delete;
+        ApplicationServicesCustomColorPalettePreferencesPort&& ) = delete;
     ApplicationServicesCustomColorPalettePreferencesPort& operator=(
-        ApplicationServicesCustomColorPalettePreferencesPort&&
-        ) = delete;
+        ApplicationServicesCustomColorPalettePreferencesPort&& ) = delete;
 
     [[nodiscard]] Domain::Result<Application::CustomColorPalette> read()
         const override;
@@ -63,170 +46,14 @@ public:
         const Application::CustomColorPalette& palette
         ) const override;
 
-    // Kept on the Qt-bound adapter so the legacy QVariant payload conversion
-    // can be verified independently of the database driver's TEXT coercion.
     [[nodiscard]] static Application::CustomColorPalette normalizeStoredValue(
         const QVariant& value
         )
     {
-        return toPalette(
-            normalizeCustomColors(colorsFromSetting(value))
-            );
+        return CustomColorPalettePreferenceCodec::normalizeStoredValue(value);
     }
 
 private:
-    [[nodiscard]] static QStringList defaultCustomColors()
-    {
-        const auto defaults = Application::defaultCustomColorPalette();
-        QStringList colors;
-        for (const Application::CustomColorPaletteEntry& color
-             : defaults.hexColors)
-        {
-            const std::string& value = color.value();
-            colors.append(QString::fromUtf8(
-                value.data(),
-                static_cast<qsizetype>(value.size())
-                ));
-        }
-        return colors;
-    }
-
-    [[nodiscard]] static QStringList colorsFromJson(
-        const QString& text
-        )
-    {
-        QJsonParseError error;
-        const QJsonDocument document = QJsonDocument::fromJson(
-            text.toUtf8(),
-            &error
-            );
-
-        if (error.error != QJsonParseError::NoError
-            || !document.isArray())
-        {
-            return {};
-        }
-
-        QStringList colors;
-        for (const QJsonValue& value : document.array())
-        {
-            colors.append(value.toString());
-        }
-        return colors;
-    }
-
-    [[nodiscard]] static QStringList colorsFromSetting(
-        const QVariant& value
-        )
-    {
-        const QStringList listValue = value.toStringList();
-        if (listValue.size() > 1
-            || (listValue.size() == 1
-                && QColor(listValue.first()).isValid()))
-        {
-            return listValue;
-        }
-
-        const QString text = value.toString().trimmed();
-        if (text.isEmpty())
-        {
-            return {};
-        }
-
-        const QStringList jsonColors = colorsFromJson(text);
-        if (!jsonColors.isEmpty())
-        {
-            return jsonColors;
-        }
-
-        const QChar separator = text.contains('\n')
-            ? QChar('\n')
-            : (text.contains(';') ? QChar(';') : QChar(','));
-        return text.split(separator, Qt::SkipEmptyParts);
-    }
-
-    [[nodiscard]] static QStringList normalizeCustomColors(
-        const QStringList& source
-        )
-    {
-        QStringList colors = defaultCustomColors();
-        for (int index = 0;
-             index < std::min(
-                 source.size(),
-                 static_cast<qsizetype>(
-                     Application::CustomColorPalette::EntryCount
-                     )
-                 );
-             ++index)
-        {
-            const QColor color(source.at(index).trimmed());
-            if (color.isValid())
-            {
-                colors[index] = color.name(QColor::HexRgb);
-            }
-        }
-        return colors;
-    }
-
-    [[nodiscard]] static QStringList toQStringList(
-        const Application::CustomColorPalette& palette
-        )
-    {
-        QStringList colors;
-        for (const Application::CustomColorPaletteEntry& color
-             : palette.hexColors)
-        {
-            const std::string& value = color.value();
-            colors.append(QString::fromUtf8(
-                value.data(),
-                static_cast<qsizetype>(value.size())
-                ));
-        }
-        return colors;
-    }
-
-    [[nodiscard]] static Application::CustomColorPalette toPalette(
-        const QStringList& colors
-        )
-    {
-        Application::CustomColorPalette palette =
-            Application::defaultCustomColorPalette();
-        for (std::size_t index = 0;
-             index < Application::CustomColorPalette::EntryCount;
-             ++index)
-        {
-            const QByteArray encoded = colors.at(
-                static_cast<qsizetype>(index)
-                ).toUtf8();
-            palette.hexColors[index] =
-                Application::CustomColorPaletteEntry(std::string(
-                    encoded.constData(),
-                    static_cast<std::size_t>(encoded.size())
-                    )
-                );
-        }
-        return palette;
-    }
-
-    [[nodiscard]] static QString serializeCustomColors(
-        const QStringList& colors
-        )
-    {
-        QJsonArray array;
-        for (const QString& color : colors)
-        {
-            array.append(color);
-        }
-        return QString::fromUtf8(
-            QJsonDocument(array).toJson(QJsonDocument::Compact)
-            );
-    }
-
-    [[nodiscard]] static QString key()
-    {
-        return QStringLiteral("custom_colors");
-    }
-
     WorkspaceStore* m_store = nullptr;
 };
 

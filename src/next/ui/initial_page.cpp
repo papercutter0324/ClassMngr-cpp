@@ -2,12 +2,18 @@
 
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/my_info/data/typed_signature_renderer.h"
+#include "next/application/initial_setup_class_details_requirements.h"
 #include "next/application/initial_setup_personal_name_requirement.h"
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/application/initial_setup_teacher_entry_skip_policy.h"
 #include "next/application/initial_setup_teacher_identity_validation.h"
+#include "domain/config/class_details_catalog.h"
 
+#include <QColor>
+#include <QColorDialog>
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QDialog>
 #include <QFormLayout>
 #include <QFont>
 #include <QFrame>
@@ -24,6 +30,7 @@
 
 #include <cstddef>
 #include <array>
+#include <cmath>
 #include <string>
 #include <utility>
 
@@ -52,6 +59,14 @@ QString teacherEntryText(const char* sourceText)
 {
     return QCoreApplication::translate(
         "InitialSetupTeacherEntryPage",
+        sourceText
+        );
+}
+
+QString classDetailsText(const char* sourceText)
+{
+    return QCoreApplication::translate(
+        "InitialSetupClassDetailsPage",
         sourceText
         );
 }
@@ -129,6 +144,48 @@ ClassMngr::Next::Application::PersonalSignatureFontChoice applicationFont(
     default:
         return Choice::JustAnotherHand;
     }
+}
+
+double linearizedSrgbChannel(const int channel)
+{
+    const double srgb = channel / 255.0;
+    return srgb <= 0.04045
+        ? srgb / 12.92
+        : std::pow((srgb + 0.055) / 1.055, 2.4);
+}
+
+QString contrastingFontColor(const QColor& color)
+{
+    if (!color.isValid())
+    {
+        return QStringLiteral("#000000");
+    }
+
+    const double luminance =
+        (0.2126 * linearizedSrgbChannel(color.red()))
+        + (0.7152 * linearizedSrgbChannel(color.green()))
+        + (0.0722 * linearizedSrgbChannel(color.blue()));
+    const double blackContrast = (luminance + 0.05) / 0.05;
+    const double whiteContrast = 1.05 / (luminance + 0.05);
+    return blackContrast >= whiteContrast
+        ? QStringLiteral("#000000")
+        : QStringLiteral("#FFFFFF");
+}
+
+QStringList catalogChoices(
+    const std::vector<std::string_view>& values
+    )
+{
+    QStringList choices;
+    choices.reserve(static_cast<qsizetype>(values.size()));
+    for (const std::string_view value : values)
+    {
+        choices.append(QString::fromUtf8(
+            value.data(),
+            static_cast<qsizetype>(value.size())
+            ));
+    }
+    return choices;
 }
 
 } // namespace
@@ -556,6 +613,129 @@ InitialPage::InitialPage(
     teacherActions->addWidget(m_continueTeacherEntryButton);
     teacherLayout->addLayout(teacherActions);
     setupContentLayout->addWidget(m_teacherEntryGroup);
+
+    m_classDetailsGroup = new QGroupBox(
+        classDetailsText("Class Details"),
+        setupContent
+        );
+    m_classDetailsGroup->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassDetails")
+        );
+    auto* classDetailsLayout = new QVBoxLayout(m_classDetailsGroup);
+    auto* classDetailsForm = new QFormLayout;
+    classDetailsForm->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
+    classDetailsForm->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+
+    m_classDetailsTeacherCombo = new QComboBox(m_classDetailsGroup);
+    m_classDetailsTeacherCombo->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassTeacher")
+        );
+    classDetailsForm->addRow(
+        classDetailsText("Korean Teacher") + QStringLiteral(" *"),
+        m_classDetailsTeacherCombo
+        );
+
+    auto* classColorRow = new QWidget(m_classDetailsGroup);
+    auto* classColorLayout = new QHBoxLayout(classColorRow);
+    classColorLayout->setContentsMargins(0, 0, 0, 0);
+    m_classColorPreview = new QLabel(classColorRow);
+    m_classColorPreview->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassColorPreview")
+        );
+    m_classColorPreview->setAlignment(Qt::AlignCenter);
+    m_classColorPreview->setText(QStringLiteral("Aa"));
+    m_classColorPreview->setFixedSize(108, 38);
+    m_classColorPreview->setFrameShape(QFrame::StyledPanel);
+    m_chooseClassColorButton = new QPushButton(
+        classDetailsText("Choose Color"),
+        classColorRow
+        );
+    m_chooseClassColorButton->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassColorChoose")
+        );
+    classColorLayout->addWidget(m_classColorPreview);
+    classColorLayout->addWidget(m_chooseClassColorButton);
+    classColorLayout->addStretch(1);
+    classDetailsForm->addRow(
+        classDetailsText("Class Color") + QStringLiteral(" *"),
+        classColorRow
+        );
+
+    m_classGradeCombo = new QComboBox(m_classDetailsGroup);
+    m_classGradeCombo->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassGrade")
+        );
+    m_classGradeCombo->addItems(catalogChoices(
+        ::ClassMngr::Domain::ClassDetailsCatalog::grades()
+        ));
+    classDetailsForm->addRow(
+        classDetailsText("Grade") + QStringLiteral(" *"),
+        m_classGradeCombo
+        );
+
+    m_classLevelCombo = new QComboBox(m_classDetailsGroup);
+    m_classLevelCombo->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassLevel")
+        );
+    classDetailsForm->addRow(
+        classDetailsText("Level") + QStringLiteral(" *"),
+        m_classLevelCombo
+        );
+
+    m_readingBookCombo = new QComboBox(m_classDetailsGroup);
+    m_readingBookCombo->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupReadingBook")
+        );
+    classDetailsForm->addRow(
+        classDetailsText("Reading Book"),
+        m_readingBookCombo
+        );
+
+    m_essayBookCombo = new QComboBox(m_classDetailsGroup);
+    m_essayBookCombo->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupEssayBook")
+        );
+    classDetailsForm->addRow(
+        classDetailsText("Essay Book"),
+        m_essayBookCombo
+        );
+    classDetailsLayout->addLayout(classDetailsForm);
+
+    m_classDetailsStatusLabel = new QLabel(m_classDetailsGroup);
+    m_classDetailsStatusLabel->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassDetailsStatus")
+        );
+    m_classDetailsStatusLabel->setWordWrap(true);
+    classDetailsLayout->addWidget(m_classDetailsStatusLabel);
+
+    m_classDetailsValidationLabel = new QLabel(m_classDetailsGroup);
+    m_classDetailsValidationLabel->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassDetailsValidation")
+        );
+    m_classDetailsValidationLabel->setWordWrap(true);
+    classDetailsLayout->addWidget(m_classDetailsValidationLabel);
+
+    auto* classDetailsActions = new QHBoxLayout;
+    m_retryClassDetailsTeachersButton = new QPushButton(
+        classDetailsText("Retry Teacher Choices"),
+        m_classDetailsGroup
+        );
+    m_retryClassDetailsTeachersButton->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassTeacherRetry")
+        );
+    m_continueClassDetailsButton = new QPushButton(
+        classDetailsText("Continue"),
+        m_classDetailsGroup
+        );
+    m_continueClassDetailsButton->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupClassDetailsContinue")
+        );
+    classDetailsActions->addWidget(m_retryClassDetailsTeachersButton);
+    classDetailsActions->addStretch(1);
+    classDetailsActions->addWidget(m_continueClassDetailsButton);
+    classDetailsLayout->addLayout(classDetailsActions);
+
+    setupContentLayout->addWidget(m_classDetailsGroup);
     setupContentLayout->addStretch(1);
 
     auto* setupScroll = new QScrollArea(this);
@@ -621,6 +801,16 @@ InitialPage::InitialPage(
             this, [this] { saveTeacher(false); });
     connect(m_importTeachersButton, &QPushButton::clicked,
             this, &InitialPage::importTeachersFromWorkbook);
+    connect(m_retryClassDetailsTeachersButton, &QPushButton::clicked,
+            this, &InitialPage::refreshClassDetailsTeacherChoices);
+    connect(m_chooseClassColorButton, &QPushButton::clicked,
+            this, &InitialPage::chooseClassColor);
+    connect(m_continueClassDetailsButton, &QPushButton::clicked,
+            this, &InitialPage::continueClassDetails);
+    connect(m_classGradeCombo, qOverload<int>(&QComboBox::currentIndexChanged),
+            this, &InitialPage::updateClassDetailsLevels);
+    connect(m_classLevelCombo, qOverload<int>(&QComboBox::currentIndexChanged),
+            this, &InitialPage::updateClassDetailsBooks);
     connect(m_teacherEnglishNameEdit, &QLineEdit::textChanged,
             this, &InitialPage::updatePreferredTeacherNames);
     connect(m_teacherPreferredSpellingEdit, &QLineEdit::textChanged,
@@ -705,6 +895,9 @@ InitialPage::InitialPage(
 
     m_personalDetailsGroup->hide();
     m_teacherEntryGroup->hide();
+    m_classDetailsGroup->hide();
+    updateClassDetailsLevels();
+    updateClassColorPreview();
     refreshSetupState();
 }
 
@@ -793,10 +986,14 @@ void InitialPage::refreshSetupState()
     m_cancelButton->setVisible(state.setupPending);
     m_personalDetailsGroup->setVisible(state.setupPending);
     m_teacherEntryGroup->setVisible(state.setupPending);
+    m_classDetailsGroup->setVisible(
+        state.setupPending && m_teacherEntryComplete
+        );
 
     if (state.setupPending && !m_setupWasPending)
     {
         m_teacherEntryComplete = false;
+        clearClassDetails();
         clearTeacherFields();
         m_teacherEntryStatusLabel->clear();
         updateTeacherEntryControls();
@@ -809,6 +1006,7 @@ void InitialPage::refreshSetupState()
     else if (!state.setupPending && m_setupWasPending)
     {
         m_teacherEntryComplete = false;
+        clearClassDetails();
         clearTeacherFields();
         m_teacherEntryStatusLabel->clear();
         updateTeacherEntryControls();
@@ -827,6 +1025,9 @@ void InitialPage::refreshSetupState()
         updateSignaturePreview();
     }
 
+    m_classDetailsGroup->setVisible(
+        state.setupPending && m_teacherEntryComplete
+        );
     m_setupWasPending = state.setupPending;
 }
 
@@ -891,6 +1092,8 @@ void InitialPage::saveTeacher(const bool addAnother)
                 "Continuing with the teachers already in this profile. Setup remains pending."
                 ));
             updateTeacherEntryControls();
+            m_classDetailsGroup->show();
+            populateClassDetailsTeacherChoices(choices);
             return;
         }
     }
@@ -987,6 +1190,8 @@ void InitialPage::saveTeacher(const bool addAnother)
         "Teacher saved. Setup remains pending."
         ));
     updateTeacherEntryControls();
+    m_classDetailsGroup->show();
+    refreshClassDetailsTeacherChoices();
 }
 
 void InitialPage::importTeachersFromWorkbook()
@@ -1081,6 +1286,347 @@ void InitialPage::updateTeacherEntryControls()
     {
         control->setEnabled(enabled);
     }
+}
+
+void InitialPage::refreshClassDetailsTeacherChoices()
+{
+    if (!m_setupWasPending || !m_teacherEntryComplete)
+    {
+        return;
+    }
+
+    m_classDetailsTeacherCombo->clear();
+    m_classDetailsTeacherCombo->addItem(
+        classDetailsText("Select a teacher..."),
+        QString{}
+        );
+    m_classDetailsTeacherCombo->setEnabled(false);
+    m_retryClassDetailsTeachersButton->show();
+
+    const Application::InitialSetupTeacherChoicesResult choices =
+        m_actions.loadTeacherChoices
+            ? m_actions.loadTeacherChoices()
+            : Application::InitialSetupTeacherChoicesResult::failure({
+                  .code = Domain::ErrorCode::Technical,
+                  .message = "Teacher choices could not be loaded.",
+                  .recoverable = true
+              });
+    populateClassDetailsTeacherChoices(choices);
+}
+
+void InitialPage::populateClassDetailsTeacherChoices(
+    const Application::InitialSetupTeacherChoicesResult& choices
+    )
+{
+    if (!choices)
+    {
+        QString message = classDetailsText(
+            "Teacher choices could not be loaded. Retry to continue."
+            );
+        if (!choices.error().message.empty())
+        {
+            message += QLatin1Char('\n') + qString(choices.error().message);
+        }
+        m_classDetailsStatusLabel->setText(message);
+        return;
+    }
+
+    if (choices.value().teachers.empty())
+    {
+        m_classDetailsStatusLabel->setText(classDetailsText(
+            "No Korean teachers are available. Add or import a teacher before continuing."
+            ));
+        return;
+    }
+
+    m_classDetailsTeacherCombo->clear();
+    if (choices.value().teachers.size() > 1)
+    {
+        m_classDetailsTeacherCombo->addItem(
+            classDetailsText("Select a teacher..."),
+            QString{}
+            );
+    }
+    for (const Application::InitialSetupTeacherChoice& teacher
+         : choices.value().teachers)
+    {
+        QString displayName = QString::fromStdU16String(teacher.preferredName);
+        if (displayName.trimmed().isEmpty())
+        {
+            displayName = QString::fromStdU16String(
+                teacher.preferredRomanization
+                );
+        }
+        if (displayName.trimmed().isEmpty())
+        {
+            displayName = QString::fromStdU16String(teacher.teacherEn);
+        }
+        if (displayName.trimmed().isEmpty())
+        {
+            displayName = QString::fromStdU16String(teacher.teacherKr);
+        }
+        m_classDetailsTeacherCombo->addItem(
+            displayName,
+            QString::fromStdString(teacher.teacherId.value())
+            );
+    }
+    if (choices.value().teachers.size() == 1)
+    {
+        m_classDetailsTeacherCombo->setCurrentIndex(0);
+    }
+    else
+    {
+        m_classDetailsTeacherCombo->setCurrentIndex(0);
+    }
+    m_classDetailsTeacherCombo->setEnabled(true);
+    m_retryClassDetailsTeachersButton->hide();
+    m_classDetailsStatusLabel->clear();
+}
+
+void InitialPage::updateClassDetailsLevels()
+{
+    if (!m_classLevelCombo || !m_classGradeCombo)
+    {
+        return;
+    }
+    const QSignalBlocker blocker(m_classLevelCombo);
+    m_classLevelCombo->clear();
+    m_classLevelCombo->addItems(catalogChoices(
+        ::ClassMngr::Domain::ClassDetailsCatalog::levelsForGrade(
+            m_classGradeCombo->currentText().toStdString()
+            )
+        ));
+    updateClassDetailsBooks();
+}
+
+void InitialPage::updateClassDetailsBooks()
+{
+    if (!m_classGradeCombo || !m_classLevelCombo
+        || !m_readingBookCombo || !m_essayBookCombo)
+    {
+        return;
+    }
+
+    const std::string grade = m_classGradeCombo->currentText().toStdString();
+    const std::string level = m_classLevelCombo->currentText().toStdString();
+    QStringList readingChoices = catalogChoices(
+        ::ClassMngr::Domain::ClassDetailsCatalog::readingBooks(grade, level)
+        );
+    QStringList essayChoices = catalogChoices(
+        ::ClassMngr::Domain::ClassDetailsCatalog::essayBooks(grade, level)
+        );
+    if (!readingChoices.contains(QString{}))
+    {
+        readingChoices.prepend(QString{});
+    }
+    if (!essayChoices.contains(QString{}))
+    {
+        essayChoices.prepend(QString{});
+    }
+
+    const QSignalBlocker readingBlocker(m_readingBookCombo);
+    const QSignalBlocker essayBlocker(m_essayBookCombo);
+    m_readingBookCombo->clear();
+    m_readingBookCombo->addItems(readingChoices);
+    m_essayBookCombo->clear();
+    m_essayBookCombo->addItems(essayChoices);
+}
+
+void InitialPage::updateClassColorPreview()
+{
+    if (!m_classColorPreview)
+    {
+        return;
+    }
+    const QColor color(m_classColor);
+    m_classColorPreview->setStyleSheet(
+        QStringLiteral(
+            "background-color:%1;color:%2;border:1px solid gray;border-radius:4px;"
+            )
+            .arg(m_classColor, contrastingFontColor(color))
+        );
+}
+
+void InitialPage::chooseClassColor()
+{
+    const Domain::Result<Application::CustomColorPalette> storedPalette =
+        m_actions.readClassColorPalette
+            ? m_actions.readClassColorPalette()
+            : Domain::Result<Application::CustomColorPalette>::failure({
+                  .code = Domain::ErrorCode::Technical,
+                  .message = "The class color palette could not be loaded.",
+                  .recoverable = true
+              });
+    const bool paletteReadSucceeded = storedPalette.hasValue();
+    const Application::CustomColorPalette palette = storedPalette
+        ? storedPalette.value()
+        : Application::defaultCustomColorPalette();
+    for (std::size_t index = 0;
+         index < Application::CustomColorPalette::EntryCount;
+         ++index)
+    {
+        QColorDialog::setCustomColor(
+            static_cast<int>(index),
+            QColor(QString::fromStdString(palette.hexColors[index].value()))
+            );
+    }
+
+    QColorDialog dialog(this);
+    dialog.setWindowTitle(classDetailsText("Choose Class Color"));
+    dialog.setCurrentColor(QColor(m_classColor));
+    dialog.setOption(QColorDialog::DontUseNativeDialog, true);
+    const int result = dialog.exec();
+
+    if (paletteReadSucceeded)
+    {
+        Application::CustomColorPalette editedPalette =
+            Application::defaultCustomColorPalette();
+        for (std::size_t index = 0;
+             index < Application::CustomColorPalette::EntryCount;
+             ++index)
+        {
+            const QColor customColor = QColorDialog::customColor(
+                static_cast<int>(index)
+                );
+            if (customColor.isValid())
+            {
+                editedPalette.hexColors[index] =
+                    Application::CustomColorPaletteEntry(
+                        customColor.name(QColor::HexRgb).toUpper().toStdString()
+                        );
+            }
+        }
+        const Domain::Result<void> saved = m_actions.saveClassColorPalette
+            ? m_actions.saveClassColorPalette(editedPalette)
+            : Domain::Result<void>::failure({
+                  .code = Domain::ErrorCode::Technical,
+                  .message = "The class color palette could not be saved.",
+                  .recoverable = true
+              });
+        if (!saved)
+        {
+            m_classDetailsStatusLabel->setText(
+                classDetailsText("Unable to save color preference: %1")
+                    .arg(qString(saved.error().message))
+                );
+        }
+    }
+
+    if (result != QDialog::Accepted || !dialog.selectedColor().isValid())
+    {
+        return;
+    }
+
+    m_classColor = dialog.selectedColor().name(QColor::HexRgb).toUpper();
+    m_classColorChosen = true;
+    updateClassColorPreview();
+}
+
+void InitialPage::continueClassDetails()
+{
+    if (!m_setupWasPending || !m_teacherEntryComplete)
+    {
+        return;
+    }
+
+    const std::string selectedTeacherId =
+        m_classDetailsTeacherCombo->currentData().toString().toStdString();
+    const bool teacherPresent =
+        Application::isCanonicalPositiveDecimalId64(selectedTeacherId);
+    const Application::InitialSetupClassDetailsRequirements requirements =
+        Application::initialSetupClassDetailsRequirements(
+            teacherPresent,
+            m_classColorChosen,
+            !m_classGradeCombo->currentText().isEmpty(),
+            !m_classLevelCombo->currentText().isEmpty()
+            );
+    if (!requirements.complete())
+    {
+        QStringList missingFields;
+        if (requirements.koreanTeacherMissing())
+        {
+            missingFields.append(classDetailsText("Korean Teacher"));
+        }
+        if (requirements.classColorMissing())
+        {
+            missingFields.append(classDetailsText("Class Color"));
+        }
+        if (requirements.gradeMissing())
+        {
+            missingFields.append(classDetailsText("Grade"));
+        }
+        if (requirements.levelMissing())
+        {
+            missingFields.append(classDetailsText("Level"));
+        }
+        QStringList messages;
+        for (const QString& field : missingFields)
+        {
+            messages.append(classDetailsText("%1 is required.").arg(field));
+        }
+        m_classDetailsValidationLabel->setText(messages.join(QLatin1Char('\n')));
+        return;
+    }
+
+    m_classDetailsValidationLabel->clear();
+    const auto teacherId = Domain::TeacherId::fromString(selectedTeacherId);
+    if (!teacherId)
+    {
+        m_classDetailsValidationLabel->setText(classDetailsText(
+            "Korean Teacher is required."
+            ));
+        return;
+    }
+
+    const QColor selectedColor(m_classColor);
+    const Application::InitialSetupClassDetailsDraft draft{
+        .koreanTeacherId = *teacherId,
+        .classColorChosen = m_classColorChosen,
+        .classColor = utf16(m_classColor),
+        .fontColor = utf16(contrastingFontColor(selectedColor)),
+        .classGrade = utf16(m_classGradeCombo->currentText()),
+        .classLevel = utf16(m_classLevelCombo->currentText()),
+        .readingBook = utf16(m_readingBookCombo->currentText()),
+        .essayBook = utf16(m_essayBookCombo->currentText())
+    };
+    const Application::InitialSetupClassDetailsDraftCaptureResult captured =
+        m_actions.captureClassDetailsDraft
+            ? m_actions.captureClassDetailsDraft(draft)
+            : Application::InitialSetupClassDetailsDraftCaptureResult::failure({
+                  .code = Domain::ErrorCode::Technical,
+                  .message = "The class details draft could not be captured.",
+                  .recoverable = true
+              });
+    if (!captured)
+    {
+        m_classDetailsStatusLabel->setText(
+            classDetailsText("Class details could not be kept in setup memory. Retry to continue.")
+                + QLatin1Char('\n') + qString(captured.error().message)
+            );
+        return;
+    }
+
+    m_classDetailsStatusLabel->setText(classDetailsText(
+        "Class details are ready for Class Times. Setup remains pending."
+        ));
+}
+
+void InitialPage::clearClassDetails()
+{
+    if (!m_classDetailsTeacherCombo)
+    {
+        return;
+    }
+    m_classDetailsTeacherCombo->clear();
+    m_classDetailsTeacherCombo->setEnabled(false);
+    m_retryClassDetailsTeachersButton->hide();
+    m_classDetailsStatusLabel->clear();
+    m_classDetailsValidationLabel->clear();
+    m_classColor = QStringLiteral("#FFFFFF");
+    m_classColorChosen = false;
+    m_classGradeCombo->setCurrentIndex(0);
+    updateClassDetailsLevels();
+    updateClassColorPreview();
 }
 
 void InitialPage::refreshPersonalDetails()

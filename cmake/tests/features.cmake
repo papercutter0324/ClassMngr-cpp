@@ -1,4 +1,14 @@
 classmngr_add_qt_test(
+    NAME ClassInfoConfigCatalogParity
+    SOURCES tests/class_info_config_catalog_tests.cpp
+    LIBRARIES Qt6::Core Qt6::Test
+)
+target_sources(ClassMngrClassInfoConfigCatalogParityTests
+    PRIVATE
+        src/features/classes/config/class_info_config.cpp
+)
+
+classmngr_add_qt_test(
     NAME PersonalDetailsRepository
     SOURCES
         tests/personal_details_repository_tests.cpp
