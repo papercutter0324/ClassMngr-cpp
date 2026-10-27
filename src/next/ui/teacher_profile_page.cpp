@@ -356,6 +356,65 @@ bool TeacherProfilePage::displayProfile(
     return true;
 }
 
+bool TeacherProfilePage::refreshFromStore(QString* error)
+{
+    if (error)
+    {
+        error->clear();
+    }
+    if (!m_teacherId)
+    {
+        return true;
+    }
+
+    const Application::TeacherProfileReadResult loaded = m_actions.read
+        ? m_actions.read(*m_teacherId)
+        : Application::TeacherProfileReadResult::failure({
+              .code = Domain::ErrorCode::NotFound,
+              .message = "The teacher profile read action is unavailable.",
+              .recoverable = true
+          });
+    if (!loaded)
+    {
+        m_reloadRequired = true;
+        m_dirty = false;
+        setHasUnsavedChanges(false);
+        const QString message = QString::fromUtf8(
+            loaded.error().message.data(),
+            static_cast<qsizetype>(loaded.error().message.size())
+            );
+        if (error)
+        {
+            *error = message;
+        }
+        setPersistenceStatus(
+            pageText("The latest teacher profile could not be loaded. Reload this teacher before editing or saving again."),
+            true,
+            true
+            );
+        updatePageState();
+        return false;
+    }
+    if (!displayProfile(loaded.value()))
+    {
+        m_reloadRequired = true;
+        m_dirty = false;
+        setHasUnsavedChanges(false);
+        if (error)
+        {
+            *error = pageText("The refreshed teacher profile is invalid.");
+        }
+        setPersistenceStatus(
+            pageText("The refreshed teacher profile is invalid. Reload this teacher before editing or saving again."),
+            true,
+            true
+            );
+        updatePageState();
+        return false;
+    }
+    return true;
+}
+
 std::optional<Domain::TeacherId> TeacherProfilePage::selectedTeacherId() const
 {
     return m_teacherId;

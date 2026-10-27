@@ -219,6 +219,17 @@ ApplicationShell::ApplicationShell(
     m_closeWorkspaceAction->setShortcut(QKeySequence::Close);
     m_closeWorkspaceAction->setEnabled(false);
 
+    QMenu* const teachersMenu = menuBar()->addMenu(
+        QCoreApplication::translate("NextShell", "Teachers")
+        );
+    m_importTeachersAction = teachersMenu->addAction(
+        QCoreApplication::translate("NextShell", "Import Teachers…")
+        );
+    m_importTeachersAction->setObjectName(
+        QStringLiteral("classMngrNextImportTeachers")
+        );
+    m_importTeachersAction->setEnabled(false);
+
     connect(m_backButton, &QPushButton::clicked, this, [this] {
         static_cast<void>(navigateBack());
     });
@@ -273,6 +284,12 @@ ApplicationShell::ApplicationShell(
         if (m_closeWorkspaceHandler)
         {
             m_closeWorkspaceHandler();
+        }
+    });
+    connect(m_importTeachersAction, &QAction::triggered, this, [this] {
+        if (m_importTeachersHandler)
+        {
+            m_importTeachersHandler();
         }
     });
     connect(m_navigationTree, &QTreeWidget::currentItemChanged, this,
@@ -347,6 +364,12 @@ void ApplicationShell::setSaveWorkspaceAsHandler(std::function<void()> handler)
 void ApplicationShell::setExportWorkspaceHandler(std::function<void()> handler)
 {
     m_exportWorkspaceHandler = std::move(handler);
+}
+
+void ApplicationShell::setImportTeachersHandler(std::function<void()> handler)
+{
+    m_importTeachersHandler = std::move(handler);
+    synchronizeTeacherImportAction();
 }
 
 void ApplicationShell::setCloseWorkspaceHandler(std::function<void()> handler)
@@ -481,6 +504,7 @@ bool ApplicationShell::navigateTo(
     m_navigationModel->commit(pageId, cause);
     synchronizeNavigationSelection();
     synchronizeHistoryControls();
+    synchronizeTeacherImportAction();
     return true;
 }
 
@@ -565,6 +589,7 @@ void ApplicationShell::synchronizeWorkspaceActions(
     ) noexcept
 {
     const bool open = workspaceState == Application::WorkspaceLifecycleState::Open;
+    m_workspaceIsOpen = open;
     if (m_saveWorkspaceAction)
     {
         m_saveWorkspaceAction->setEnabled(open);
@@ -581,6 +606,21 @@ void ApplicationShell::synchronizeWorkspaceActions(
     {
         m_closeWorkspaceAction->setEnabled(open);
     }
+    synchronizeTeacherImportAction();
+}
+
+void ApplicationShell::synchronizeTeacherImportAction() noexcept
+{
+    if (!m_importTeachersAction)
+    {
+        return;
+    }
+    const bool setupPageActive = m_pageHost
+        && m_pageHost->activePageKey()
+            == std::optional<QString>(QStringLiteral("initial_setup"));
+    m_importTeachersAction->setEnabled(
+        m_workspaceIsOpen && !setupPageActive
+        );
 }
 
 void ApplicationShell::rebuildNavigationTree()

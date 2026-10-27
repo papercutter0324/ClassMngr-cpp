@@ -159,6 +159,7 @@ class TeacherImportWorkflowTests final : public QObject
 
 private slots:
     void fixtureBuildsTypedRequestWithReviewChoices();
+    void normalReviewReturnsRequestWithoutApplyingOrSetupCancellation();
     void dialogKeepsReviewOnApplyFailureAndRetries();
     void timeoutRetryAndStaleValidationResultAreSafe();
     void englishAndKoreanLabelsLoadAcrossLightAndDarkThemes_data();
@@ -217,6 +218,100 @@ void TeacherImportWorkflowTests::fixtureBuildsTypedRequestWithReviewChoices()
     QCOMPARE(request->validation.gsTeamMemberKeys.size(), std::size_t(1));
 }
 
+void TeacherImportWorkflowTests::
+normalReviewReturnsRequestWithoutApplyingOrSetupCancellation()
+{
+    const QString path = fixturePath();
+    int applyCalls = 0;
+    int cancelSetupCalls = 0;
+    Ui::InitialSetupTeacherImportActions actions;
+    actions.returnReviewRequestOnly = true;
+    actions.chooseWorkbook = [path] {
+        return Domain::Result<std::optional<QString>>::success(path);
+    };
+    actions.validationTimeoutMilliseconds = [] { return 2000; };
+    actions.apply = [&applyCalls](
+        const Application::TeacherImportUseCaseRequest&
+        ) -> Ui::TeacherImportApplyResult {
+        ++applyCalls;
+        return Application::TeacherImportUseCaseResult{};
+    };
+    actions.cancelSetup = [&cancelSetupCalls] { ++cancelSetupCalls; };
+
+    Ui::InitialSetupTeacherImportDialog dialog(actions);
+    dialog.show();
+    dialog.setFilePath(path);
+    QTRY_VERIFY_WITH_TIMEOUT(importStatus(dialog).contains(QStringLiteral("Review")),
+                             3000);
+    auto* const allM1 = dialog.findChild<QRadioButton*>(
+        QStringLiteral("classMngrNextTeacherImportAll_0"));
+    auto* const noneM2 = dialog.findChild<QRadioButton*>(
+        QStringLiteral("classMngrNextTeacherImportNone_1"));
+    auto* const allH1 = dialog.findChild<QRadioButton*>(
+        QStringLiteral("classMngrNextTeacherImportAll_2"));
+    QVERIFY(allM1 && noneM2 && allH1);
+    QVERIFY(allM1->isChecked());
+    noneM2->setChecked(true);
+    allH1->setChecked(true);
+
+    auto* const apply = dialog.findChild<QPushButton*>(
+        QStringLiteral("classMngrNextTeacherImportApply"));
+    auto* const cancel = dialog.findChild<QPushButton*>(
+        QStringLiteral("classMngrNextTeacherImportCancel"));
+    QVERIFY(apply && cancel);
+    QCOMPARE(cancel->text(), QStringLiteral("Cancel"));
+    QVERIFY(apply->isEnabled());
+    apply->click();
+
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
+    QVERIFY(dialog.reviewedRequest().has_value());
+    QCOMPARE(applyCalls, 0);
+    QCOMPARE(cancelSetupCalls, 0);
+    QCOMPARE(dialog.reviewedRequest()->koreanTeachers.size(), std::size_t(3));
+    QCOMPARE(dialog.reviewedRequest()->nativeEnglishTeachers.size(), std::size_t(1));
+    QCOMPARE(dialog.reviewedRequest()->gsTeamMembers.size(), std::size_t(1));
+    QCOMPARE(dialog.reviewedRequest()->review->decisions.at(1).mode,
+             Application::TeacherImportGroupMode::None);
+
+    Ui::InitialSetupTeacherImportActions canceledActions;
+    canceledActions.returnReviewRequestOnly = true;
+    canceledActions.cancelSetup = [&cancelSetupCalls] { ++cancelSetupCalls; };
+    Ui::InitialSetupTeacherImportDialog canceled(canceledActions);
+    canceled.show();
+    canceled.reject();
+    QCOMPARE(canceled.result(), static_cast<int>(QDialog::Rejected));
+    QVERIFY(!canceled.reviewedRequest().has_value());
+    QCOMPARE(cancelSetupCalls, 0);
+
+    Ui::InitialSetupTeacherImportActions pickerCanceledActions;
+    pickerCanceledActions.returnReviewRequestOnly = true;
+    pickerCanceledActions.chooseWorkbook = [] {
+        return Domain::Result<std::optional<QString>>::success(std::nullopt);
+    };
+    pickerCanceledActions.apply = [&applyCalls](
+        const Application::TeacherImportUseCaseRequest& request
+        ) -> Ui::TeacherImportApplyResult {
+        Q_UNUSED(request);
+        ++applyCalls;
+        return Application::TeacherImportUseCaseResult{};
+    };
+    pickerCanceledActions.cancelSetup = [&cancelSetupCalls] { ++cancelSetupCalls; };
+    Ui::InitialSetupTeacherImportDialog pickerCanceled(pickerCanceledActions);
+    pickerCanceled.show();
+    auto* const pickerBrowse = pickerCanceled.findChild<QPushButton*>(
+        QStringLiteral("classMngrNextTeacherImportBrowse"));
+    auto* const pickerApply = pickerCanceled.findChild<QPushButton*>(
+        QStringLiteral("classMngrNextTeacherImportApply"));
+    QVERIFY(pickerBrowse && pickerApply);
+    pickerBrowse->click();
+    QVERIFY(!pickerCanceled.reviewedRequest().has_value());
+    QVERIFY(!pickerApply->isEnabled());
+    QCOMPARE(applyCalls, 0);
+    QCOMPARE(cancelSetupCalls, 0);
+    pickerCanceled.reject();
+    QCOMPARE(cancelSetupCalls, 0);
+}
+
 void TeacherImportWorkflowTests::dialogKeepsReviewOnApplyFailureAndRetries()
 {
     const QString path = fixturePath();
@@ -267,6 +362,11 @@ void TeacherImportWorkflowTests::dialogKeepsReviewOnApplyFailureAndRetries()
     dialog.setFilePath(invalidPath);
     QTRY_VERIFY_WITH_TIMEOUT(importStatus(dialog).contains(QStringLiteral("invalid")),
                              3000);
+    const TeacherImportFileValidation invalidValidation =
+        validateTeacherImportFile(invalidPath);
+    QVERIFY(!invalidValidation.diagnostics.isEmpty());
+    QVERIFY(importStatus(dialog).contains(
+        invalidValidation.diagnostics.join(QLatin1Char('\n'))));
     QVERIFY(!dialog.findChild<QPushButton*>(
                  QStringLiteral("classMngrNextTeacherImportApply"))->isEnabled());
 

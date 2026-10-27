@@ -359,6 +359,9 @@ bool SharedStaffDirectoryPage::refreshFromStore(QString* error)
         if (!loaded)
         {
             m_loading = false;
+            m_reloadRequired = true;
+            m_dirty = false;
+            setHasUnsavedChanges(false);
             const QString detail = errorText(loaded.error().message);
             if (error)
             {
@@ -382,6 +385,9 @@ bool SharedStaffDirectoryPage::refreshFromStore(QString* error)
         if (!loaded)
         {
             m_loading = false;
+            m_reloadRequired = true;
+            m_dirty = false;
+            setHasUnsavedChanges(false);
             const QString detail = errorText(loaded.error().message);
             if (error)
             {
@@ -405,6 +411,22 @@ bool SharedStaffDirectoryPage::refreshFromStore(QString* error)
     setHasUnsavedChanges(false);
     updateActions();
     return true;
+}
+
+void SharedStaffDirectoryPage::requireReloadBeforeEditing(
+    const QString& reason
+    )
+{
+    m_reloadRequired = true;
+    m_autosaveTimer->stop();
+    showStatus(
+        reason.isEmpty()
+            ? text("Reload the directory before editing or saving again.")
+            : text("The directory could not be refreshed. Reload before editing or saving again: %1")
+                  .arg(reason),
+        true
+        );
+    updateActions();
 }
 
 PageOperationResult<void> SharedStaffDirectoryPage::onActivating()

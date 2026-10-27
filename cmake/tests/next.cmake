@@ -557,6 +557,81 @@ set_tests_properties(ClassMngrNextTeacherImportWorkflowTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
+# Compare the actual legacy picker/review dialog with the normal Next review
+# surface and retain process-memory observations for parse/review/apply cleanup.
+add_executable(ClassMngrNextTeacherImportVisualCapture
+    tests/next/teacher_import_visual_capture.cpp
+    src/next/platform/workspace_store_gateway.cpp
+    src/next/platform/workspace_store_custom_color_palette_preferences_port.cpp
+    src/next/ui/initial_setup_teacher_import_dialog.cpp
+    src/next/ui/teacher_import_request_mapper.cpp
+    src/next/ui/qt_user_prompt_presenter.cpp
+)
+target_compile_features(ClassMngrNextTeacherImportVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextTeacherImportVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextTeacherImportVisualCapture
+    PRIVATE
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextTeacherImportVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        ClassMngrTeacherImportParser
+        Qt6::Concurrent
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextTeacherImportVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextTeacherImportVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextTeacherImportVisualCapture
+    ClassMngrNextResourcePackage
+    ClassMngrNextTranslationOutputs
+)
+foreach(_teacher_import_capture IN ITEMS
+        "en_US_light;en_US;light"
+        "ko_KR_dark;ko_KR;dark")
+    list(GET _teacher_import_capture 0 _capture_name)
+    list(GET _teacher_import_capture 1 _capture_locale)
+    list(GET _teacher_import_capture 2 _capture_theme)
+    if(_capture_name STREQUAL "en_US_light")
+        set(_capture_test_target ClassMngrNextTeacherImportVisualCapture)
+    else()
+        set(_capture_test_target
+            "ClassMngrNextTeacherImportVisualCapture_${_capture_name}")
+    endif()
+    add_test(
+        NAME ${_capture_test_target}
+        COMMAND ClassMngrNextTeacherImportVisualCapture
+            "${CMAKE_CURRENT_BINARY_DIR}/teacher-import-visual-captures/${_capture_name}"
+            "${_capture_locale}" "${_capture_theme}"
+    )
+    set_tests_properties(
+        ${_capture_test_target}
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+    )
+endforeach()
+
 add_executable(ClassMngrNextScheduleImportWorkflowTests
     tests/next/schedule_import_workflow_tests.cpp
     src/next/ui/initial_setup_schedule_import_dialog.cpp

@@ -30,6 +30,8 @@ class TeacherBirthdayDateEdit;
 
 struct TeacherProfilePageActions final
 {
+    std::function<Application::TeacherProfileReadResult(
+        const Domain::TeacherId&)> read;
     std::function<Application::TeacherProfileValidationResult(
         const Domain::TeacherProfile&)> validate;
     std::function<Application::TeacherProfileEditResult(
@@ -52,6 +54,7 @@ public:
     [[nodiscard]] bool displayProfile(
         const Application::TeacherProfileReadSnapshot& profile
         );
+    [[nodiscard]] bool refreshFromStore(QString* error = nullptr);
     [[nodiscard]] std::optional<Domain::TeacherId> selectedTeacherId() const;
 
     [[nodiscard]] bool hasUnsavedChanges() const noexcept override;

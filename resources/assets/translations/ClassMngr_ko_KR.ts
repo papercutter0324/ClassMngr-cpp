@@ -9929,6 +9929,8 @@ Version: %2</source>
     <message><source>Back</source><translation>뒤로</translation></message>
     <message><source>Forward</source><translation>앞으로</translation></message>
     <message><source>ClassMngr Next</source><translation>ClassMngr Next</translation></message>
+    <message><source>Teachers</source><translation>교사</translation></message>
+    <message><source>Import Teachers…</source><translation>교사 가져오기…</translation></message>
 </context>
 <context>
     <name>NextPlaceholder</name>
@@ -10042,6 +10044,7 @@ Source date: %2</source><translation>양식: %1
     <message><source>Room</source><translation>교실</translation></message>
     <message><source>Apply Import</source><translation>가져오기 적용</translation></message>
     <message><source>Cancel Setup</source><translation>초기 설정 취소</translation></message>
+    <message><source>Cancel</source><translation>취소</translation></message>
     <message><source>The workbook selection service is unavailable.</source><translation>파일 선택 기능을 사용할 수 없습니다.</translation></message>
     <message><source>Unable to choose a workbook: %1</source><translation>파일을 선택할 수 없습니다: %1</translation></message>
     <message><source>The selected workbook could not be opened: %1</source><translation>선택한 파일을 열 수 없습니다: %1</translation></message>
@@ -10518,5 +10521,21 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>Delete Teacher</source><translation>교사 삭제</translation></message>
     <message><source>Delete %1?</source><translation>%1 교사를 삭제할까요?</translation></message>
     <message><source>New Teacher</source><translation>새 교사</translation></message>
+</context>
+<context>
+    <name>TeacherImportWorkflow</name>
+    <message><source>Open a Teacher Profile before importing teachers.</source><translation>가져오기 전에 교사 프로필을 여세요.</translation></message>
+    <message><source>Resolve the pending setup or recovery state before importing teachers.</source><translation>교사를 가져오기 전에 대기 중인 설정 또는 복구 상태를 해결하세요.</translation></message>
+    <message><source>The workbook directory could not be remembered: %1</source><translation>워크북 폴더를 기억하지 못했습니다: %1</translation></message>
+    <message><source>The active workspace store is unavailable.</source><translation>활성 작업 공간 저장소를 사용할 수 없습니다.</translation></message>
+    <message><source>The previous teacher import date could not be read: %1</source><translation>이전 교사 가져오기 날짜를 읽지 못했습니다: %1</translation></message>
+    <message><source>The teacher import source date is invalid.</source><translation>교사 가져오기 원본 날짜가 올바르지 않습니다.</translation></message>
+    <message><source>The teacher import version prompt is unavailable.</source><translation>교사 가져오기 버전 확인 창을 사용할 수 없습니다.</translation></message>
+    <message><source>The teacher import version could not be confirmed: %1</source><translation>교사 가져오기 버전을 확인하지 못했습니다: %1</translation></message>
+    <message><source>The teacher import could not be completed.</source><translation>교사 가져오기를 완료하지 못했습니다.</translation></message>
+    <message><source>Korean Teachers list</source><translation>한국인 교사 목록</translation></message>
+    <message><source>active Teacher Profile</source><translation>현재 교사 프로필</translation></message>
+    <message><source>Native English Teachers directory</source><translation>원어민 교사 목록</translation></message>
+    <message><source>GS Team directory</source><translation>GS 팀 목록</translation></message>
 </context>
 </TS>

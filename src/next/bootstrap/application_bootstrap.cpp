@@ -6,6 +6,7 @@
 #include "next/application/open_existing_workspace_flow.h"
 #include "next/application/workspace_save_as_flow.h"
 #include "next/application/workspace_export_flow.h"
+#include "next/application/teacher_import_latest_source_date_read_query.h"
 #include "next/application/unsaved_changes_resolution_flow.h"
 #include "next/application/initial_setup_class_details_requirements.h"
 #include "next/application/positive_decimal_id_validation.h"
@@ -35,6 +36,7 @@
 #include "next/ui/qt_user_prompt_presenter.h"
 #include "next/ui/theme_presenter.h"
 #include "next/ui/teacher_profile_page.h"
+#include "next/ui/initial_setup_teacher_import_dialog.h"
 #include "next/ui/shared_staff_directory_page.h"
 #include "next/platform/teacher_validator_teacher_profile_validation_policy.h"
 
@@ -73,6 +75,11 @@ namespace
         });
     }
     return Resources::ResourceRequest::create(*id, scope);
+}
+
+[[nodiscard]] QString teacherImportText(const char* sourceText)
+{
+    return QCoreApplication::translate("TeacherImportWorkflow", sourceText);
 }
 
 [[nodiscard]] QString englishLocaleFor(const QStringList& uiLanguages)
@@ -766,6 +773,9 @@ Application::StartupResult ApplicationBootstrap::start()
         m_shell->setExportWorkspaceHandler([this] {
             exportWorkspaceFromMenu();
         });
+        m_shell->setImportTeachersHandler([this] {
+            importTeachersFromWorkspace();
+        });
         m_shell->setCloseWorkspaceHandler([this] {
             closeWorkspaceFromMenu();
         });
@@ -843,6 +853,19 @@ Application::StartupResult ApplicationBootstrap::start()
                         Platform::TeacherValidatorTeacherProfileValidationPolicy
                             validation;
                         return validation.validate(profile);
+                    };
+                    actions.read = [this](const Domain::TeacherId& teacherId) {
+                        if (auto* const gateway =
+                                dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                                    m_workspaceGateway.get()))
+                        {
+                            return gateway->readTeacherProfile(teacherId);
+                        }
+                        return Application::TeacherProfileReadResult::failure({
+                            .code = Domain::ErrorCode::NotFound,
+                            .message = "The active workspace store is unavailable.",
+                            .recoverable = true
+                        });
                     };
                     actions.edit = [this](
                         const Application::TeacherProfileEditRequest& request
@@ -2572,6 +2595,321 @@ void ApplicationBootstrap::exportWorkspaceFromMenu()
     static_cast<void>(flow.run());
 }
 
+void ApplicationBootstrap::importTeachersFromWorkspace()
+{
+    if (!m_shell || !m_applicationRuntime
+        || m_applicationRuntime->workspaceState().snapshot().lifecycle()
+            != Application::WorkspaceLifecycleState::Open)
+    {
+        if (m_shell)
+        {
+            static_cast<void>(m_shell->notificationPort().show(
+                Application::NotificationRequest{
+                    .message = teacherImportText(
+                        "Open a Teacher Profile before importing teachers.")
+                        .toUtf8().toStdString(),
+                    .severity = Application::NotificationSeverity::Warning
+                }
+                ));
+        }
+        return;
+    }
+
+    const Ui::InitialSetupPageState setupPageState = initialSetupPageState();
+    if ((m_initialSetupLifecycle
+         && m_initialSetupLifecycle->hasPendingSetup())
+        || setupPageState.setupPending
+        || setupPageState.recoveryAvailable
+        || setupPageState.recoveryError
+        || m_shell->pageHost().activePageKey()
+            == std::optional<QString>(QStringLiteral("initial_setup")))
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = teacherImportText(
+                    "Resolve the pending setup or recovery state before importing teachers.")
+                    .toUtf8().toStdString(),
+                .severity = Application::NotificationSeverity::Warning
+            }
+            ));
+        return;
+    }
+
+    if (!resolveActivePageChangesBeforeLeaving("importing teachers"))
+    {
+        return;
+    }
+
+    auto report = [this](
+        const QString& message,
+        const Application::NotificationSeverity severity
+        ) {
+        const QByteArray encoded = message.toUtf8();
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = std::string(
+                    encoded.constData(),
+                    static_cast<std::size_t>(encoded.size())
+                    ),
+                .severity = severity
+            }
+            ));
+    };
+
+    Ui::InitialSetupTeacherImportActions actions;
+    actions.returnReviewRequestOnly = true;
+    actions.chooseWorkbook = [this, report]()
+        -> Domain::Result<std::optional<QString>> {
+        Application::OpenFileDialogRequest request{
+            .purpose = Application::FileDialogPurpose::ImportWorkbook,
+            .title = QCoreApplication::translate(
+                "TeacherImportDialog", "Select Teacher Import File")
+                .toUtf8().toStdString(),
+            .nameFilters = {"Excel Workbooks (*.xlsx)"}
+        };
+
+        std::unique_ptr<Application::FileDialogPort> fileDialog;
+        if (m_startupWorkspaceSeams.normalTeacherImportFileDialogPortFactory)
+        {
+            fileDialog =
+                m_startupWorkspaceSeams.normalTeacherImportFileDialogPortFactory();
+        }
+        else
+        {
+            Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+                directoryPreferences;
+            fileDialog = std::make_unique<Ui::QtFileDialogPresenter>(
+                directoryPreferences,
+                m_shell.get()
+                );
+        }
+        if (!fileDialog)
+        {
+            return Domain::Result<std::optional<QString>>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "The teacher import file dialog is unavailable.",
+                .recoverable = false
+            });
+        }
+
+        const auto selected = fileDialog->openOneFile(request);
+        if (!selected)
+        {
+            return Domain::Result<std::optional<QString>>::failure(
+                selected.error());
+        }
+        if (selected.value().preferenceWarning)
+        {
+            report(
+                teacherImportText(
+                    "The workbook directory could not be remembered: %1")
+                    .arg(QString::fromUtf8(
+                        selected.value().preferenceWarning->message.data(),
+                        static_cast<qsizetype>(selected.value()
+                                                   .preferenceWarning->message.size())
+                        )),
+                Application::NotificationSeverity::Warning
+                );
+        }
+        if (!selected.value().selection)
+        {
+            return Domain::Result<std::optional<QString>>::success(std::nullopt);
+        }
+        const std::string& path = selected.value().selection->value();
+        return Domain::Result<std::optional<QString>>::success(
+            QString::fromUtf8(path.data(), static_cast<qsizetype>(path.size())));
+    };
+    actions.validateWorkbook = [](const QString& path) {
+        return validateTeacherImportFile(path);
+    };
+    actions.validationTimeoutMilliseconds = [] {
+        const Platform::SettingsManagerExcelImportTimeoutPort timeoutPreferences;
+        return timeoutPreferences.read().normalizedSeconds() * 1000;
+    };
+
+    Ui::InitialSetupTeacherImportDialog dialog(std::move(actions), m_shell.get());
+    if (dialog.exec() != QDialog::Accepted || !dialog.reviewedRequest())
+    {
+        return;
+    }
+    const Application::TeacherImportUseCaseRequest request =
+        *dialog.reviewedRequest();
+
+    auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+        m_workspaceGateway.get());
+    if (!gateway)
+    {
+        report(teacherImportText("The active workspace store is unavailable."),
+               Application::NotificationSeverity::Warning);
+        return;
+    }
+
+    const Application::TeacherImportLatestSourceDateReadResult previousDateResult =
+        gateway->readLatestTeacherImportSourceDate();
+    if (!previousDateResult)
+    {
+        report(teacherImportText(
+                   "The previous teacher import date could not be read: %1")
+                   .arg(QString::fromUtf8(
+                       previousDateResult.error().message.data(),
+                       static_cast<qsizetype>(
+                           previousDateResult.error().message.size())
+                       )),
+               Application::NotificationSeverity::Warning);
+        return;
+    }
+
+    const std::optional<Domain::GregorianDate> sourceDate =
+        Domain::GregorianDate::fromIsoString(request.sourceDateIso);
+    if (!sourceDate)
+    {
+        report(teacherImportText("The teacher import source date is invalid."),
+               Application::NotificationSeverity::Warning);
+        return;
+    }
+    if (previousDateResult.value()
+        && sourceDate->dayNumber()
+            <= previousDateResult.value()->dayNumber())
+    {
+        const Domain::GregorianDate& previousDate = *previousDateResult.value();
+        const bool sameDate = *sourceDate == previousDate;
+        const QString messageSource = sameDate
+            ? QStringLiteral(
+                  "The selected file's version appears to match the current data. Do you wish to continue?\n"
+                  "    File Version: %1\n"
+                  "    Current Version: %2")
+            : QStringLiteral(
+                  "The selected file appears to be older version than the current data. Do you wish to continue?\n"
+                  "    File Version: %1\n"
+                  "    Current Version: %2");
+        const QString message = QCoreApplication::translate(
+            "SidebarController", messageSource.toUtf8().constData());
+        std::unique_ptr<Application::UserPromptPort> userPrompt =
+            createWorkspaceLifecycleUserPromptPort();
+        if (!userPrompt)
+        {
+            report(teacherImportText("The teacher import version prompt is unavailable."),
+                   Application::NotificationSeverity::Warning);
+            return;
+        }
+        const Domain::Result<Application::ConfirmationResponse>
+            confirmation = userPrompt->confirm({
+                .title = QCoreApplication::translate(
+                    "SidebarController", "Import Teachers").toUtf8().toStdString(),
+                .message = message.arg(
+                    QString::fromStdString(sourceDate->toIsoString()),
+                    QString::fromStdString(previousDate.toIsoString())
+                    ).toUtf8().toStdString(),
+                .severity = Application::PromptSeverity::Warning,
+                .acceptText = QCoreApplication::translate(
+                    "QtUserPromptPresenter", "Continue").toUtf8().toStdString(),
+                .declineText = QCoreApplication::translate(
+                    "QtUserPromptPresenter", "Cancel").toUtf8().toStdString(),
+                .defaultAction = Application::ConfirmationAction::Decline,
+                .escapeAction = Application::ConfirmationAction::Decline
+            });
+        if (!confirmation)
+        {
+            report(teacherImportText(
+                       "The teacher import version could not be confirmed: %1")
+                       .arg(QString::fromUtf8(
+                           confirmation.error().message.data(),
+                           static_cast<qsizetype>(
+                               confirmation.error().message.size())
+                           )),
+                   Application::NotificationSeverity::Warning);
+            return;
+        }
+        if (confirmation.value() != Application::ConfirmationResponse::Accepted)
+        {
+            return;
+        }
+    }
+
+    const auto imported = gateway->applyTeacherImportUseCase(request);
+    if (!imported)
+    {
+        QString detail = teacherImportText(
+            "The teacher import could not be completed.");
+        if (!imported.error().persistenceFailure.message.empty())
+        {
+            detail = QString::fromStdU16String(
+                imported.error().persistenceFailure.message);
+        }
+        report(detail, Application::NotificationSeverity::Warning);
+        return;
+    }
+
+    const Application::TeacherImportUseCaseResult& summary = *imported;
+    QStringList refreshFailures;
+    const bool teacherRowsRefreshed = refreshKoreanTeacherNavigationRows(false);
+    if (!teacherRowsRefreshed)
+    {
+        m_shell->setKoreanTeacherNavigationRows({});
+        refreshFailures.append(teacherImportText("Korean Teachers list"));
+    }
+
+    if (summary.koreanTeachers.updated.rawValue() > 0
+        && m_shell->pageHost().activePageKey()
+            == std::optional<QString>(QStringLiteral("teacher_profile")))
+    {
+        auto* const page = dynamic_cast<Ui::TeacherProfilePage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("teacher_profile")));
+        if (!page || !page->refreshFromStore())
+        {
+            refreshFailures.append(teacherImportText("active Teacher Profile"));
+        }
+    }
+
+    const auto refreshDirectory = [this, &refreshFailures](
+        const QString& pageKey,
+        const QString& label
+        ) {
+        auto* const page = dynamic_cast<Ui::SharedStaffDirectoryPage*>(
+            m_shell->pageHost().pageInstance(pageKey));
+        if (!page)
+        {
+            return;
+        }
+        QString error;
+        if (!page->refreshFromStore(&error))
+        {
+            page->requireReloadBeforeEditing(error);
+            refreshFailures.append(label);
+        }
+    };
+    refreshDirectory(QStringLiteral("native_english_teachers"),
+                     teacherImportText("Native English Teachers directory"));
+    refreshDirectory(QStringLiteral("gs_team"),
+                     teacherImportText("GS Team directory"));
+
+    const QString summarySource = QStringLiteral(
+        "Import complete.\n\n"
+        "Korean Teachers: %1 created, %2 updated, %3 unchanged\n"
+        "Native English Teachers: %4 created, %5 updated, %6 unchanged\n"
+        "GS Team: %7 created, %8 updated, %9 unchanged");
+    const QString summaryText = QCoreApplication::translate(
+        "SidebarController", summarySource.toUtf8().constData())
+        .arg(summary.koreanTeachers.created.rawValue())
+        .arg(summary.koreanTeachers.updated.rawValue())
+        .arg(summary.koreanTeachers.unchanged.rawValue())
+        .arg(summary.nativeEnglishTeachers.created.rawValue())
+        .arg(summary.nativeEnglishTeachers.updated.rawValue())
+        .arg(summary.nativeEnglishTeachers.unchanged.rawValue())
+        .arg(summary.gsTeamMembers.created.rawValue())
+        .arg(summary.gsTeamMembers.updated.rawValue())
+        .arg(summary.gsTeamMembers.unchanged.rawValue());
+    report(summaryText, Application::NotificationSeverity::Information);
+    if (!refreshFailures.isEmpty())
+    {
+        report(QCoreApplication::translate(
+                   "SidebarController",
+                   "The teacher import committed its changes, but a staff directory refresh failed. Reload the affected directory before editing or saving.\n\n%1")
+                   .arg(refreshFailures.join(QStringLiteral(", "))),
+               Application::NotificationSeverity::Warning);
+    }
+}
+
 void ApplicationBootstrap::closeWorkspaceFromMenu()
 {
     if (!m_shell || !m_applicationRuntime
@@ -4014,7 +4352,9 @@ ApplicationBootstrap::koreanTeacherDirectoryActionPorts()
     return ports;
 }
 
-bool ApplicationBootstrap::refreshKoreanTeacherNavigationRows()
+bool ApplicationBootstrap::refreshKoreanTeacherNavigationRows(
+    const bool notifyFailure
+    )
 {
     if (!m_shell || !m_applicationRuntime)
     {
@@ -4038,15 +4378,18 @@ bool ApplicationBootstrap::refreshKoreanTeacherNavigationRows()
         gateway->readTeacherDirectory();
     if (!loaded)
     {
-        static_cast<void>(m_shell->notificationPort().show(
-            Application::NotificationRequest{
-                .message = std::string(
-                    loaded.error().message.data(),
-                    loaded.error().message.size()
-                    ),
-                .severity = Application::NotificationSeverity::Error
-            }
-            ));
+        if (notifyFailure)
+        {
+            static_cast<void>(m_shell->notificationPort().show(
+                Application::NotificationRequest{
+                    .message = std::string(
+                        loaded.error().message.data(),
+                        loaded.error().message.size()
+                        ),
+                    .severity = Application::NotificationSeverity::Error
+                }
+                ));
+        }
         return false;
     }
 

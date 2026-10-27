@@ -77,6 +77,8 @@ public:
         std::function<std::unique_ptr<Application::FileDialogPort>()>
             initialSetupFileDialogPortFactory;
         std::function<std::unique_ptr<Application::FileDialogPort>()>
+            normalTeacherImportFileDialogPortFactory;
+        std::function<std::unique_ptr<Application::FileDialogPort>()>
             newProfileFileDialogPortFactory;
         std::function<std::unique_ptr<Application::UserPromptPort>()>
             newProfileUserPromptPortFactory;
@@ -180,11 +182,14 @@ private:
         );
     [[nodiscard]] Ui::KoreanTeacherDirectoryActionPorts
     koreanTeacherDirectoryActionPorts();
-    [[nodiscard]] bool refreshKoreanTeacherNavigationRows();
+    [[nodiscard]] bool refreshKoreanTeacherNavigationRows(
+        bool notifyFailure = true
+        );
     void clearRecentWorkspaceHistory();
     void saveWorkspaceFromMenu();
     void saveWorkspaceAsFromMenu();
     void exportWorkspaceFromMenu();
+    void importTeachersFromWorkspace();
     void closeWorkspaceFromMenu();
     [[nodiscard]] bool requestWindowClose();
     [[nodiscard]] bool resolveActivePageChangesBeforeLeaving(

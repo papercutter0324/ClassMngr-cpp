@@ -7,6 +7,7 @@
 #include "next/application/initial_setup_class_times_requirement.h"
 #include "next/application/teacher_create.h"
 #include "next/application/teacher_import_use_case.h"
+#include "next/application/teacher_import_latest_source_date_read_query.h"
 #include "next/application/teacher_profile_edit_use_case.h"
 #include "next/application/teacher_profile_read_port.h"
 #include "next/application/teacher_create.h"
@@ -115,6 +116,8 @@ public:
         > applyTeacherImportUseCase(
             const Application::TeacherImportUseCaseRequest& request
             ) const;
+    [[nodiscard]] Application::TeacherImportLatestSourceDateReadResult
+    readLatestTeacherImportSourceDate() const;
     [[nodiscard]] Application::NativeEnglishTeacherDirectoryReadResult
     readNativeEnglishTeacherDirectory() const;
     [[nodiscard]] Application::NativeEnglishTeacherDirectorySaveOutcome

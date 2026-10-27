@@ -40,6 +40,10 @@ struct InitialSetupTeacherImportActions final
         const Application::TeacherImportUseCaseRequest&
         )> apply;
     std::function<void()> cancelSetup;
+    // Normal workspace imports return the reviewed request to the caller so
+    // version confirmation and persistence happen after the review dialog
+    // closes. Initial Setup keeps its in-dialog apply and retry behavior.
+    bool returnReviewRequestOnly = false;
 };
 
 class InitialSetupTeacherImportDialog final : public QDialog
@@ -54,6 +58,8 @@ public:
 
     void setFilePath(const QString& filePath);
     [[nodiscard]] QString successSummary() const;
+    [[nodiscard]] const std::optional<Application::TeacherImportUseCaseRequest>&
+    reviewedRequest() const noexcept;
 
 public slots:
     void reject() override;
@@ -82,6 +88,7 @@ private:
     void setStatus(const QString& text);
 
     InitialSetupTeacherImportActions m_actions;
+    QVBoxLayout* m_mainLayout = nullptr;
     QLineEdit* m_filePathEdit = nullptr;
     QPushButton* m_browseButton = nullptr;
     QLabel* m_statusLabel = nullptr;
@@ -97,6 +104,7 @@ private:
     QPushButton* m_applyButton = nullptr;
     QList<GroupControls> m_groupControls;
     std::optional<TeacherImportPreview> m_preview;
+    std::optional<Application::TeacherImportUseCaseRequest> m_reviewedRequest;
     QString m_successSummary;
     quint64 m_validationRequestId = 0;
     bool m_loading = false;

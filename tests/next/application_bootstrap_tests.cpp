@@ -146,6 +146,9 @@ private slots:
     void saveAndCloseProfileActionsUseNextGateway();
     void dirtyPageBlocksNavigationOpenNewAndWindowClose();
     void teacherImportUsesPendingStoreTransactionAndCancelRecoversBackup();
+    void normalTeacherImportUsesWorkspaceStoreAndKeepsRoute();
+    void normalTeacherImportNativeDirectoryRefreshFailure();
+    void normalTeacherImportGsDirectoryRefreshFailure();
     void imageSignatureSaveReopensAndResumesFromFixture();
     void failedPersonalDetailsSavePreservesReplacementBackup();
     void recentOpenErrorDoesNotFallThroughToLaterCandidates();
@@ -155,6 +158,7 @@ private slots:
     void shutdownClosesThroughTheGatewayUsedForStartupOpen();
 
 private:
+    void verifyNormalTeacherImportDirectoryRefreshFailure(bool nativeDirectory);
     QTemporaryDir m_settingsRoot;
     QJsonArray m_appearanceCaptures;
 };
@@ -767,6 +771,9 @@ struct UnsavedChangesPromptProbe final
         Application::UnsavedChangesAction::Cancel;
     std::optional<Domain::OperationError> error;
     std::vector<Application::UnsavedChangesPromptRequest> requests;
+    Application::ConfirmationResponse confirmationResponse =
+        Application::ConfirmationResponse::Accepted;
+    std::vector<Application::ConfirmationPromptRequest> confirmationRequests;
 };
 
 class RecordingWorkspaceLifecycleUserPrompt final
@@ -792,9 +799,9 @@ public:
         const Application::ConfirmationPromptRequest& request
         ) override
     {
-        static_cast<void>(request);
+        m_probe->confirmationRequests.push_back(request);
         return Domain::Result<Application::ConfirmationResponse>::success(
-            Application::ConfirmationResponse::Accepted
+            m_probe->confirmationResponse
             );
     }
 
@@ -1529,6 +1536,11 @@ struct TeacherImportPersistedRecords final
     QStringList nativeEnglishTeachers;
     QStringList gsTeamMembers;
     std::optional<QString> latestSourceDate;
+
+    friend bool operator==(
+        const TeacherImportPersistedRecords&,
+        const TeacherImportPersistedRecords&
+        ) = default;
 };
 
 std::optional<TeacherImportPersistedRecords> readTeacherImportPersistedRecords(
@@ -1600,6 +1612,52 @@ std::optional<TeacherImportPersistedRecords> readTeacherImportPersistedRecords(
     }
     store.close();
     return result;
+}
+
+std::optional<TeacherImportPersistedRecords>
+readTeacherImportNamesWithoutSettings(const QString& profilePath)
+{
+    const QString connectionName = QStringLiteral("teacher-import-name-read-%1")
+        .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+    QSqlDatabase database = QSqlDatabase::addDatabase(
+        QStringLiteral("QSQLITE"), connectionName);
+    database.setDatabaseName(profilePath);
+    if (!database.open())
+    {
+        QSqlDatabase::removeDatabase(connectionName);
+        return std::nullopt;
+    }
+
+    TeacherImportPersistedRecords result;
+    const auto readNames = [&database](
+                               const QString& statement,
+                               QStringList& values) {
+        QSqlQuery query(database);
+        if (!query.exec(statement))
+        {
+            return false;
+        }
+        while (query.next())
+        {
+            values.append(query.value(0).toString());
+        }
+        return true;
+    };
+    const bool readSucceeded = readNames(
+            QStringLiteral("SELECT teacher_kr FROM teachers ORDER BY id"),
+            result.koreanTeachers)
+        && readNames(
+            QStringLiteral("SELECT name FROM native_english_teachers ORDER BY id"),
+            result.nativeEnglishTeachers)
+        && readNames(
+            QStringLiteral("SELECT name FROM gs_team ORDER BY id"),
+            result.gsTeamMembers);
+    database.close();
+    database = {};
+    QSqlDatabase::removeDatabase(connectionName);
+    return readSucceeded
+        ? std::optional<TeacherImportPersistedRecords>(std::move(result))
+        : std::nullopt;
 }
 
 }
@@ -6555,6 +6613,7 @@ dirtyPageBlocksNavigationOpenNewAndWindowClose()
     auto promptProbe = std::make_shared<UnsavedChangesPromptProbe>();
     int openDialogFactoryCalls = 0;
     int newDialogFactoryCalls = 0;
+    int importDialogFactoryCalls = 0;
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
     seams.commandLineArguments = QStringList{
         QStringLiteral("test-app"), profilePath
@@ -6575,6 +6634,10 @@ dirtyPageBlocksNavigationOpenNewAndWindowClose()
     };
     seams.newProfileFileDialogPortFactory = [&newDialogFactoryCalls] {
         ++newDialogFactoryCalls;
+        return std::unique_ptr<Application::FileDialogPort>{};
+    };
+    seams.normalTeacherImportFileDialogPortFactory = [&importDialogFactoryCalls] {
+        ++importDialogFactoryCalls;
         return std::unique_ptr<Application::FileDialogPort>{};
     };
 
@@ -6601,8 +6664,22 @@ dirtyPageBlocksNavigationOpenNewAndWindowClose()
     QAction* const newAction = shell->findChild<QAction*>(
         QStringLiteral("classMngrNextNewTeacherProfile")
         );
+    QAction* const importAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextImportTeachers")
+        );
     QVERIFY(openAction);
     QVERIFY(newAction);
+    QVERIFY(importAction);
+    QVERIFY(importAction->isEnabled());
+
+    promptProbe->action = Application::UnsavedChangesAction::Cancel;
+    importAction->trigger();
+    QCOMPARE(promptProbe->requests.size(), std::size_t(1));
+    QCOMPARE(importDialogFactoryCalls, 0);
+    QVERIFY(page->hasUnsavedChanges());
+    QCOMPARE(shell->navigationModel()->currentPageId()->value(),
+             QStringLiteral("my_workspace"));
+    promptProbe->requests.clear();
 
     openAction->trigger();
     QCOMPARE(promptProbe->requests.size(), std::size_t(1));
@@ -6723,6 +6800,10 @@ teacherImportUsesPendingStoreTransactionAndCancelRecoversBackup()
         std::move(seams)
         );
     QVERIFY(bootstrap.start().succeeded());
+    QAction* const normalImportAction = bootstrap.shell()->findChild<QAction*>(
+        QStringLiteral("classMngrNextImportTeachers"));
+    QVERIFY(normalImportAction);
+    QVERIFY(!normalImportAction->isEnabled());
     auto* const page = dynamic_cast<Ui::InitialPage*>(
         bootstrap.shell()->pageHost().pageInstance(QStringLiteral("initial_setup"))
         );
@@ -6733,6 +6814,7 @@ teacherImportUsesPendingStoreTransactionAndCancelRecoversBackup()
     QVERIFY(createButton);
     createButton->click();
     QCOMPARE(fileDialogProbe->saveCount, 1);
+    QVERIFY(!normalImportAction->isEnabled());
     QVERIFY(QFileInfo::exists(profilePath));
     QVERIFY(QFileInfo::exists(recoveryJournalPath));
 
@@ -7081,6 +7163,595 @@ teacherImportUsesPendingStoreTransactionAndCancelRecoversBackup()
     QCOMPARE(historyProbe->saveCount, 0);
     QVERIFY(historyProbe->saves.empty());
     QCOMPARE(setupStatus->text(), QStringLiteral("Choose where to save your profile."));
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::normalTeacherImportUsesWorkspaceStoreAndKeepsRoute()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("normal-teacher-import.tps"));
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    const QString workbookPath = QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+        QStringLiteral(
+            "tests/fixtures/teacher_import/sectioned_review_matching_profile.xlsx"));
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+                 profilePath,
+                 QStringLiteral("representative_startup.sql"),
+                 &fixtureError),
+             qPrintable(fixtureError));
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_normal_teacher_import_gs_insert
+            BEFORE INSERT ON gs_team
+            BEGIN
+                SELECT RAISE(ABORT, 'forced normal teacher import failure');
+            END
+        )")));
+    const auto beforeImport = readTeacherImportPersistedRecords(
+        profilePath, &fixtureError);
+    QVERIFY2(beforeImport.has_value(), qPrintable(fixtureError));
+
+    auto workbookDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    workbookDialogProbe->openPath = Application::FileDialogPath(
+        workbookPath.toUtf8().toStdString());
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app"), profilePath};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.normalTeacherImportFileDialogPortFactory = [workbookDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(
+            workbookDialogProbe);
+    };
+    auto promptProbe = std::make_shared<UnsavedChangesPromptProbe>();
+    seams.workspaceLifecycleUserPromptPortFactory = [promptProbe] {
+        return std::make_unique<RecordingWorkspaceLifecycleUserPrompt>(promptProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    const auto selectedTeacherId = Domain::TeacherId::fromString("3");
+    QVERIFY(selectedTeacherId.has_value());
+    QVERIFY(bootstrap.openTeacherProfile(*selectedTeacherId));
+    const auto nativeDirectoryId = Ui::PageId::fromString(
+        QStringLiteral("native_english_teachers"));
+    const auto gsDirectoryId = Ui::PageId::fromString(QStringLiteral("gs_team"));
+    const auto teacherProfilePageId = Ui::PageId::fromString(
+        QStringLiteral("teacher_profile"));
+    QVERIFY(nativeDirectoryId && gsDirectoryId && teacherProfilePageId);
+    QVERIFY(bootstrap.shell()->navigateTo(*nativeDirectoryId));
+    QVERIFY(bootstrap.shell()->navigateTo(*gsDirectoryId));
+    QVERIFY(bootstrap.shell()->navigateTo(*teacherProfilePageId));
+    auto* const activeTeacherPage = dynamic_cast<Ui::TeacherProfilePage*>(
+        bootstrap.shell()->pageHost().pageInstance(
+            QStringLiteral("teacher_profile")));
+    auto* const cachedNativeDirectory = dynamic_cast<Ui::SharedStaffDirectoryPage*>(
+        bootstrap.shell()->pageHost().pageInstance(
+            QStringLiteral("native_english_teachers")));
+    auto* const cachedGsDirectory = dynamic_cast<Ui::SharedStaffDirectoryPage*>(
+        bootstrap.shell()->pageHost().pageInstance(QStringLiteral("gs_team")));
+    QVERIFY(activeTeacherPage && cachedNativeDirectory && cachedGsDirectory);
+    QCOMPARE(activeTeacherPage->findChild<QLineEdit*>(
+                 QStringLiteral("phoneNumberEdit"))->text(),
+             QStringLiteral("010-1000-0003"));
+    QCOMPARE(cachedNativeDirectory->directoryModel()->rowCount(), 0);
+    QCOMPARE(cachedGsDirectory->directoryModel()->rowCount(), 0);
+    const auto routeBefore = bootstrap.shell()->navigationModel()->currentPageId();
+    QVERIFY(routeBefore.has_value());
+    QVERIFY(routeBefore->value() != QStringLiteral("initial_setup"));
+    QAction* const importAction = bootstrap.shell()->findChild<QAction*>(
+        QStringLiteral("classMngrNextImportTeachers"));
+    QVERIFY(importAction);
+    QVERIFY(importAction->isEnabled());
+
+    QString interactionError;
+    const auto runImportReview = [&]() {
+        int phase = 0;
+        QTimer interactionTimer;
+        interactionTimer.setInterval(10);
+        QObject::connect(
+            &interactionTimer,
+            &QTimer::timeout,
+            &interactionTimer,
+            [&] {
+                auto* const dialog = qobject_cast<QDialog*>(
+                    QApplication::activeModalWidget());
+                if (!dialog)
+                {
+                    return;
+                }
+                if (phase == 0)
+                {
+                    auto* const browse = dialog->findChild<QPushButton*>(
+                        QStringLiteral("classMngrNextTeacherImportBrowse"));
+                    if (!browse)
+                    {
+                        interactionError = QStringLiteral(
+                            "The normal import dialog did not expose Browse.");
+                        return;
+                    }
+                    phase = 1;
+                    browse->click();
+                    return;
+                }
+                auto* const status = dialog->findChild<QLabel*>(
+                    QStringLiteral("classMngrNextTeacherImportStatus"));
+                if (status && status->text().contains(QStringLiteral("Review")))
+                {
+                    auto* const apply = dialog->findChild<QPushButton*>(
+                        QStringLiteral("classMngrNextTeacherImportApply"));
+                    if (!apply || !apply->isEnabled())
+                    {
+                        interactionError = QStringLiteral(
+                            "The normal import review was not ready to apply.");
+                        return;
+                    }
+                    phase = 2;
+                    apply->click();
+                }
+            });
+        QTimer::singleShot(10000, &interactionTimer, [&] {
+            if (phase >= 2)
+            {
+                return;
+            }
+            interactionError = QStringLiteral(
+                "The normal import dialog did not reach review.");
+            if (QWidget* const modal = QApplication::activeModalWidget())
+            {
+                if (auto* const cancel = modal->findChild<QPushButton*>(
+                        QStringLiteral("classMngrNextTeacherImportCancel")))
+                {
+                    cancel->click();
+                }
+            }
+        });
+        interactionTimer.start();
+        importAction->trigger();
+        interactionTimer.stop();
+        return phase == 2 && interactionError.isEmpty();
+    };
+
+    const auto cancelBeforeWorkbookSelection = [&]() {
+        bool canceled = false;
+        QTimer interactionTimer;
+        interactionTimer.setInterval(10);
+        QObject::connect(
+            &interactionTimer,
+            &QTimer::timeout,
+            &interactionTimer,
+            [&] {
+                QWidget* const modal = QApplication::activeModalWidget();
+                auto* const cancel = modal
+                    ? modal->findChild<QPushButton*>(
+                          QStringLiteral("classMngrNextTeacherImportCancel"))
+                    : nullptr;
+                if (cancel)
+                {
+                    canceled = true;
+                    cancel->click();
+                }
+            });
+        QTimer::singleShot(10000, &interactionTimer, [&] {
+            if (QWidget* const modal = QApplication::activeModalWidget())
+            {
+                modal->close();
+            }
+        });
+        interactionTimer.start();
+        importAction->trigger();
+        interactionTimer.stop();
+        return canceled;
+    };
+
+    // Export-like read-only workflows still resolve page drafts before they
+    // show the workbook selector. Save persists the draft; Discard restores
+    // that saved profile; both can then cancel the review without choosing a
+    // workbook.
+    auto* const profilePhone = activeTeacherPage->findChild<QLineEdit*>(
+        QStringLiteral("phoneNumberEdit"));
+    QVERIFY(profilePhone);
+    profilePhone->setText(QStringLiteral("010-0000-0000"));
+    QVERIFY(activeTeacherPage->hasUnsavedChanges());
+    promptProbe->action = Application::UnsavedChangesAction::Save;
+    QVERIFY(cancelBeforeWorkbookSelection());
+    QCOMPARE(promptProbe->requests.size(), std::size_t(1));
+    QVERIFY(!activeTeacherPage->hasUnsavedChanges());
+    QCOMPARE(profilePhone->text(), QStringLiteral("010-0000-0000"));
+    QCOMPARE(workbookDialogProbe->openCount, 0);
+
+    profilePhone->setText(QStringLiteral("010-9999-9999"));
+    QVERIFY(activeTeacherPage->hasUnsavedChanges());
+    promptProbe->action = Application::UnsavedChangesAction::Discard;
+    QVERIFY(cancelBeforeWorkbookSelection());
+    QCOMPARE(promptProbe->requests.size(), std::size_t(2));
+    QVERIFY(!activeTeacherPage->hasUnsavedChanges());
+    QCOMPARE(profilePhone->text(), QStringLiteral("010-0000-0000"));
+    QCOMPARE(workbookDialogProbe->openCount, 0);
+    QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId(), routeBefore);
+
+    // A transaction failure closes this normal review. A second menu action
+    // must open a fresh review and pick the workbook again.
+    const std::size_t confirmationsBeforeMissingSourceDate =
+        promptProbe->confirmationRequests.size();
+    QCOMPARE(confirmationsBeforeMissingSourceDate, std::size_t(0));
+    QVERIFY(runImportReview());
+    QCOMPARE(promptProbe->confirmationRequests.size(),
+             confirmationsBeforeMissingSourceDate);
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+    QVERIFY(interactionError.isEmpty());
+    QCOMPARE(workbookDialogProbe->openCount, 1);
+    QVERIFY(workbookDialogProbe->lastOpenRequest.has_value());
+    QCOMPARE(workbookDialogProbe->lastOpenRequest->purpose,
+             Application::FileDialogPurpose::ImportWorkbook);
+    const auto afterFailedImport = readTeacherImportPersistedRecords(
+        profilePath, &fixtureError);
+    QVERIFY2(afterFailedImport.has_value(), qPrintable(fixtureError));
+    QCOMPARE(*afterFailedImport, *beforeImport);
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("DROP TRIGGER fail_normal_teacher_import_gs_insert")));
+
+    interactionError.clear();
+    QVERIFY(runImportReview());
+    QCOMPARE(promptProbe->confirmationRequests.size(),
+             confirmationsBeforeMissingSourceDate);
+    QCOMPARE(workbookDialogProbe->openCount, 2);
+    QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId(), routeBefore);
+    auto importedRecords = readTeacherImportPersistedRecords(profilePath, &fixtureError);
+    QVERIFY2(importedRecords.has_value(), qPrintable(fixtureError));
+    QVERIFY(importedRecords->koreanTeachers.contains(QString::fromUtf8("박민서")));
+    QVERIFY(importedRecords->koreanTeachers.contains(QString::fromUtf8("김하늘")));
+    QVERIFY(importedRecords->koreanTeachers.contains(QString::fromUtf8("이서연")));
+    QVERIFY(importedRecords->koreanTeachers.contains(QString::fromUtf8("박민준")));
+    QVERIFY(importedRecords->nativeEnglishTeachers.contains(QStringLiteral("Alex")));
+    QVERIFY(importedRecords->gsTeamMembers.contains(QStringLiteral("Taylor")));
+    QCOMPARE(importedRecords->latestSourceDate,
+             std::optional<QString>(QStringLiteral("2026-09-01")));
+    QCOMPARE(activeTeacherPage->findChild<QLineEdit*>(
+                 QStringLiteral("phoneNumberEdit"))->text(),
+             QStringLiteral("010-1111-1111"));
+    QCOMPARE(cachedNativeDirectory->directoryModel()->rowCount(), 1);
+    QCOMPARE(cachedGsDirectory->directoryModel()->rowCount(), 1);
+    const QString importSummary = bootstrap.shell()->statusBar()->currentMessage();
+    QVERIFY(importSummary.contains(
+        QStringLiteral("Korean Teachers: 3 created, 1 updated, 0 unchanged")));
+    QVERIFY(importSummary.contains(
+        QStringLiteral("Native English Teachers: 1 created, 0 updated, 0 unchanged")));
+    QVERIFY(importSummary.contains(
+        QStringLiteral("GS Team: 1 created, 0 updated, 0 unchanged")));
+    auto* const navigationTree = bootstrap.shell()->findChild<QTreeWidget*>(
+        QStringLiteral("classMngrNextNavigationTree"));
+    QVERIFY(navigationTree);
+    QVERIFY(!navigationTree->findItems(
+                 QString::fromUtf8("김하늘"),
+                 Qt::MatchExactly | Qt::MatchRecursive).isEmpty());
+
+    // A newer source date applies without a version prompt and advances the
+    // stored date after the transaction succeeds.
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("INSERT OR REPLACE INTO app_settings(key,value) "
+                       "VALUES('teacher_import/latest_source_date','2026-08-01')")));
+    const auto promptCountBeforeNewer = promptProbe->confirmationRequests.size();
+    interactionError.clear();
+    QVERIFY(runImportReview());
+    QCOMPARE(promptProbe->confirmationRequests.size(), promptCountBeforeNewer);
+    importedRecords = readTeacherImportPersistedRecords(profilePath, &fixtureError);
+    QVERIFY2(importedRecords.has_value(), qPrintable(fixtureError));
+    QCOMPARE(importedRecords->latestSourceDate,
+             std::optional<QString>(QStringLiteral("2026-09-01")));
+
+    // Equal versions prompt after review and decline without writes.
+    const auto afterSuccessfulImport = *importedRecords;
+    promptProbe->confirmationResponse = Application::ConfirmationResponse::Declined;
+    interactionError.clear();
+    QVERIFY(runImportReview());
+    QCOMPARE(promptProbe->confirmationRequests.size(), promptCountBeforeNewer + 1);
+    QVERIFY(promptProbe->confirmationRequests.front().message.find("2026-09-01")
+            != std::string::npos);
+    importedRecords = readTeacherImportPersistedRecords(profilePath, &fixtureError);
+    QVERIFY2(importedRecords.has_value(), qPrintable(fixtureError));
+    QCOMPARE(*importedRecords, afterSuccessfulImport);
+
+    // An older file can be accepted, but the transaction keeps the newer
+    // stored source date.
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("INSERT OR REPLACE INTO app_settings(key,value) "
+                       "VALUES('teacher_import/latest_source_date','2026-10-01')")));
+    promptProbe->confirmationResponse = Application::ConfirmationResponse::Accepted;
+    interactionError.clear();
+    QVERIFY(runImportReview());
+    QCOMPARE(promptProbe->confirmationRequests.size(), promptCountBeforeNewer + 2);
+    QVERIFY(promptProbe->confirmationRequests.back().message.find("2026-10-01")
+            != std::string::npos);
+    importedRecords = readTeacherImportPersistedRecords(profilePath, &fixtureError);
+    QVERIFY2(importedRecords.has_value(), qPrintable(fixtureError));
+    QCOMPARE(importedRecords->latestSourceDate,
+             std::optional<QString>(QStringLiteral("2026-10-01")));
+    QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId(), routeBefore);
+
+    // A settings read failure stops after review and before any transaction.
+    const TeacherImportPersistedRecords dataBeforeReadFailure = *importedRecords;
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("DROP TABLE app_settings")));
+    interactionError.clear();
+    QVERIFY(runImportReview());
+    QCOMPARE(promptProbe->confirmationRequests.size(), promptCountBeforeNewer + 2);
+    const auto namesAfterReadFailure = readTeacherImportNamesWithoutSettings(
+        profilePath);
+    QVERIFY(namesAfterReadFailure.has_value());
+    QCOMPARE(namesAfterReadFailure->koreanTeachers,
+             dataBeforeReadFailure.koreanTeachers);
+    QCOMPARE(namesAfterReadFailure->nativeEnglishTeachers,
+             dataBeforeReadFailure.nativeEnglishTeachers);
+    QCOMPARE(namesAfterReadFailure->gsTeamMembers,
+             dataBeforeReadFailure.gsTeamMembers);
+    QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId(), routeBefore);
+
+    // A post-commit profile read failure must surface a warning and lock the
+    // cached profile form so stale values cannot be saved over the store.
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("CREATE TABLE app_settings(key TEXT PRIMARY KEY, value TEXT NOT NULL)")));
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("INSERT INTO app_settings(key,value) "
+                       "VALUES('teacher_import/latest_source_date','2026-10-01')")));
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("UPDATE teachers SET phone_number='010-0000-9999' WHERE id=3")));
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("CREATE TRIGGER remove_imported_profile_after_update "
+                       "AFTER UPDATE ON teachers BEGIN "
+                       "DELETE FROM teachers WHERE id=NEW.id; END")));
+    const std::size_t promptCountBeforeRefreshFailure =
+        promptProbe->confirmationRequests.size();
+    interactionError.clear();
+    QVERIFY(runImportReview());
+    QCOMPARE(promptProbe->confirmationRequests.size(),
+             promptCountBeforeRefreshFailure + 1);
+    importedRecords = readTeacherImportPersistedRecords(profilePath, &fixtureError);
+    QVERIFY2(importedRecords.has_value(), qPrintable(fixtureError));
+    QVERIFY(!importedRecords->koreanTeachers.contains(QString::fromUtf8("박민서")));
+    QVERIFY(!profilePhone->isEnabled());
+    QVERIFY(bootstrap.shell()->statusBar()->currentMessage().contains(
+        QStringLiteral("refresh failed")));
+    QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId(), routeBefore);
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("DROP TRIGGER remove_imported_profile_after_update")));
+
+    QVERIFY(QFileInfo::exists(profilePath));
+    QVERIFY(!QFileInfo::exists(recoveryJournalPath));
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::normalTeacherImportNativeDirectoryRefreshFailure()
+{
+    verifyNormalTeacherImportDirectoryRefreshFailure(true);
+}
+
+void ApplicationBootstrapTests::normalTeacherImportGsDirectoryRefreshFailure()
+{
+    verifyNormalTeacherImportDirectoryRefreshFailure(false);
+}
+
+void ApplicationBootstrapTests::verifyNormalTeacherImportDirectoryRefreshFailure(
+    const bool nativeDirectory
+    )
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        nativeDirectory
+            ? QStringLiteral("native-refresh-failure.tps")
+            : QStringLiteral("gs-refresh-failure.tps"));
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+                 profilePath,
+                 QStringLiteral("representative_startup.sql"),
+                 &fixtureError),
+             qPrintable(fixtureError));
+    const QString targetTable = nativeDirectory
+        ? QStringLiteral("native_english_teachers")
+        : QStringLiteral("gs_team");
+    const QString idColumn = QStringLiteral("id");
+    const QString triggerName = nativeDirectory
+        ? QStringLiteral("invalidate_imported_native_teacher_id")
+        : QStringLiteral("invalidate_imported_gs_member_id");
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("CREATE TRIGGER %1 AFTER INSERT ON %2 BEGIN "
+                       "UPDATE %2 SET %3=-NEW.%3 WHERE %3=NEW.%3; END")
+            .arg(triggerName, targetTable, idColumn)));
+
+    auto workbookDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    const QString workbookPath = QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+        QStringLiteral(
+            "tests/fixtures/teacher_import/sectioned_review_matching_profile.xlsx"));
+    workbookDialogProbe->openPath = Application::FileDialogPath(
+        workbookPath.toUtf8().toStdString());
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app"), profilePath};
+    seams.recentAutoOpenEnabled = false;
+    seams.normalTeacherImportFileDialogPortFactory = [workbookDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(
+            workbookDialogProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    const auto targetPageId = Ui::PageId::fromString(targetTable);
+    const auto otherPageId = Ui::PageId::fromString(
+        nativeDirectory
+            ? QStringLiteral("gs_team")
+            : QStringLiteral("native_english_teachers"));
+    const auto homePageId = Ui::PageId::fromString(QStringLiteral("my_workspace"));
+    QVERIFY(targetPageId && otherPageId && homePageId);
+    QVERIFY(shell->navigateTo(*targetPageId));
+    QVERIFY(shell->navigateTo(*otherPageId));
+    QVERIFY(shell->navigateTo(*homePageId));
+    auto* const targetPage = dynamic_cast<Ui::SharedStaffDirectoryPage*>(
+        shell->pageHost().pageInstance(targetTable));
+    auto* const otherPage = dynamic_cast<Ui::SharedStaffDirectoryPage*>(
+        shell->pageHost().pageInstance(
+            nativeDirectory
+                ? QStringLiteral("gs_team")
+                : QStringLiteral("native_english_teachers")));
+    QVERIFY(targetPage && otherPage);
+    QCOMPARE(targetPage->directoryModel()->rowCount(), 0);
+    QCOMPARE(otherPage->directoryModel()->rowCount(), 0);
+
+    QAction* const importAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextImportTeachers"));
+    QVERIFY(importAction && importAction->isEnabled());
+    QString interactionError;
+    int phase = 0;
+    QTimer interactionTimer;
+    interactionTimer.setInterval(10);
+    QObject::connect(
+        &interactionTimer,
+        &QTimer::timeout,
+        &interactionTimer,
+        [&] {
+            auto* const dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget());
+            if (!dialog)
+            {
+                return;
+            }
+            if (phase == 0)
+            {
+                auto* const browse = dialog->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextTeacherImportBrowse"));
+                if (!browse)
+                {
+                    interactionError = QStringLiteral(
+                        "Normal import dialog did not expose Browse.");
+                    return;
+                }
+                phase = 1;
+                browse->click();
+                return;
+            }
+            auto* const status = dialog->findChild<QLabel*>(
+                QStringLiteral("classMngrNextTeacherImportStatus"));
+            if (status && status->text().contains(QStringLiteral("Review")))
+            {
+                auto* const apply = dialog->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextTeacherImportApply"));
+                if (!apply || !apply->isEnabled())
+                {
+                    interactionError = QStringLiteral(
+                        "Normal import review did not enable Apply.");
+                    return;
+                }
+                phase = 2;
+                apply->click();
+            }
+        });
+    QTimer::singleShot(15000, &interactionTimer, [&] {
+        if (phase >= 2)
+        {
+            return;
+        }
+        interactionError = QStringLiteral(
+            "Normal import did not reach and apply its review.");
+        if (QWidget* const modal = QApplication::activeModalWidget())
+        {
+            modal->close();
+        }
+    });
+    interactionTimer.start();
+    importAction->trigger();
+    interactionTimer.stop();
+    QVERIFY2(phase == 2, qPrintable(interactionError));
+    QVERIFY(interactionError.isEmpty());
+    QCOMPARE(workbookDialogProbe->openCount, 1);
+    QCOMPARE(shell->navigationModel()->currentPageId(),
+             std::optional<Ui::PageId>(*homePageId));
+
+    const auto persisted = readTeacherImportPersistedRecords(profilePath, &fixtureError);
+    QVERIFY2(persisted.has_value(), qPrintable(fixtureError));
+    QVERIFY(persisted->nativeEnglishTeachers.contains(QStringLiteral("Alex")));
+    QVERIFY(persisted->gsTeamMembers.contains(QStringLiteral("Taylor")));
+    QVERIFY(shell->statusBar()->currentMessage().contains(
+        QStringLiteral("refresh failed")));
+    QVERIFY(shell->statusBar()->currentMessage().contains(
+        nativeDirectory
+            ? QStringLiteral("Native English Teachers directory")
+            : QStringLiteral("GS Team directory")));
+
+    const QString addButtonName = QStringLiteral("staffDirectoryAddButton");
+    auto* const addButton = targetPage->findChild<QPushButton*>(addButtonName);
+    QVERIFY(addButton);
+    QCOMPARE(targetPage->directoryModel()->rowCount(), 0);
+    QVERIFY(!addButton->isEnabled());
+    QCOMPARE(targetPage->tableView()->editTriggers(), QAbstractItemView::NoEditTriggers);
+    QVERIFY(!targetPage->saveChanges());
+    QCOMPARE(otherPage->directoryModel()->rowCount(), 1);
+    QVERIFY(otherPage->findChild<QPushButton*>(addButtonName)->isEnabled());
+
+    // Repair the committed synthetic invalid ID and activate the cached route.
+    // Normal activation reloads the directory in place and unlocks editing.
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral("UPDATE %1 SET id=abs(id) WHERE id<0").arg(targetTable)));
+    QVERIFY(shell->navigateTo(*targetPageId));
+    QCOMPARE(targetPage->directoryModel()->rowCount(), 1);
+    QVERIFY(addButton->isEnabled());
+    QVERIFY(targetPage->tableView()->editTriggers() != QAbstractItemView::NoEditTriggers);
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);
 }

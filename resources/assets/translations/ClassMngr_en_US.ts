@@ -9848,4 +9848,25 @@ GS Team members: %8 created, %9 updated, %10 unchanged.</translation></message>
     <message><source>Delete %1?</source><translation>Delete %1?</translation></message>
     <message><source>New Teacher</source><translation>New Teacher</translation></message>
 </context>
+<context>
+    <name>NextShell</name>
+    <message><source>Teachers</source><translation>Teachers</translation></message>
+    <message><source>Import Teachers…</source><translation>Import Teachers…</translation></message>
+</context>
+<context>
+    <name>TeacherImportWorkflow</name>
+    <message><source>Open a Teacher Profile before importing teachers.</source><translation>Open a Teacher Profile before importing teachers.</translation></message>
+    <message><source>Resolve the pending setup or recovery state before importing teachers.</source><translation>Resolve the pending setup or recovery state before importing teachers.</translation></message>
+    <message><source>The workbook directory could not be remembered: %1</source><translation>The workbook directory could not be remembered: %1</translation></message>
+    <message><source>The active workspace store is unavailable.</source><translation>The active workspace store is unavailable.</translation></message>
+    <message><source>The previous teacher import date could not be read: %1</source><translation>The previous teacher import date could not be read: %1</translation></message>
+    <message><source>The teacher import source date is invalid.</source><translation>The teacher import source date is invalid.</translation></message>
+    <message><source>The teacher import version prompt is unavailable.</source><translation>The teacher import version prompt is unavailable.</translation></message>
+    <message><source>The teacher import version could not be confirmed: %1</source><translation>The teacher import version could not be confirmed: %1</translation></message>
+    <message><source>The teacher import could not be completed.</source><translation>The teacher import could not be completed.</translation></message>
+    <message><source>Korean Teachers list</source><translation>Korean Teachers list</translation></message>
+    <message><source>active Teacher Profile</source><translation>active Teacher Profile</translation></message>
+    <message><source>Native English Teachers directory</source><translation>Native English Teachers directory</translation></message>
+    <message><source>GS Team directory</source><translation>GS Team directory</translation></message>
+</context>
 </TS>

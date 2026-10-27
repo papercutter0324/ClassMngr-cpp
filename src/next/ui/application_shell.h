@@ -80,6 +80,7 @@ public:
     void setSaveWorkspaceHandler(std::function<void()> handler);
     void setSaveWorkspaceAsHandler(std::function<void()> handler);
     void setExportWorkspaceHandler(std::function<void()> handler);
+    void setImportTeachersHandler(std::function<void()> handler);
     void setCloseWorkspaceHandler(std::function<void()> handler);
     void setRecentWorkspaceMenuHandlers(
         RecentWorkspaceHistoryLoader historyLoader,
@@ -127,6 +128,7 @@ private:
     void synchronizeWorkspaceActions(
         Application::WorkspaceLifecycleState workspaceState
         ) noexcept;
+    void synchronizeTeacherImportAction() noexcept;
     void rebuildNavigationTree();
     void showKoreanTeacherContextMenu(const QPoint& position);
     void synchronizeNavigationSelection();
@@ -148,6 +150,7 @@ private:
     QAction* m_saveWorkspaceAction = nullptr;
     QAction* m_saveWorkspaceAsAction = nullptr;
     QAction* m_exportWorkspaceAction = nullptr;
+    QAction* m_importTeachersAction = nullptr;
     QAction* m_closeWorkspaceAction = nullptr;
     QMenu* m_recentWorkspaceMenu = nullptr;
     std::optional<NavigationModel> m_navigationModel;
@@ -164,10 +167,12 @@ private:
     std::function<void()> m_saveWorkspaceHandler;
     std::function<void()> m_saveWorkspaceAsHandler;
     std::function<void()> m_exportWorkspaceHandler;
+    std::function<void()> m_importTeachersHandler;
     std::function<void()> m_closeWorkspaceHandler;
     RecentWorkspaceHistoryLoader m_recentWorkspaceHistoryLoader;
     RecentWorkspaceOpenHandler m_recentWorkspaceOpenHandler;
     std::function<void()> m_clearRecentWorkspaceHistoryHandler;
+    bool m_workspaceIsOpen = false;
     QtNotificationPresenter m_notificationPresenter;
 };
 

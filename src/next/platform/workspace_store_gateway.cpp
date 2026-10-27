@@ -3,6 +3,7 @@
 #include "data/database/database_file_operations.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/teacher_import_repository.h"
+#include "data/repositories/settings_repository.h"
 #include "next/platform/repository_error_code.h"
 #include "next/application/personal_details_save_use_case.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
@@ -25,7 +26,9 @@
 #include "next/platform/workspace_store_gs_team_directory_port.h"
 
 #include <QByteArray>
+#include <QDate>
 #include <QString>
+#include <QVariant>
 
 #include <string>
 #include <utility>
@@ -267,6 +270,85 @@ std::expected<
     }
 
     return repository->applyUseCase(request);
+}
+
+Application::TeacherImportLatestSourceDateReadResult
+WorkspaceStoreGateway::readLatestTeacherImportSourceDate() const
+{
+    if (!m_store->isOpen())
+    {
+        return Application::TeacherImportLatestSourceDateReadResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "No workspace is open in the workspace store.",
+            .recoverable = true
+        });
+    }
+
+    SettingsRepository* const repository = m_store->settingsRepository();
+    if (!repository)
+    {
+        return Application::TeacherImportLatestSourceDateReadResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The workspace settings repository is unavailable.",
+            .recoverable = true
+        });
+    }
+
+    try
+    {
+        const RepositoryResult<QVariant> setting = repository->loadSetting(
+            QString::fromLatin1(TeacherImportRepository::LatestSourceDateSetting));
+        if (!setting)
+        {
+            const QByteArray detail = setting.error().diagnostic.toUtf8();
+            return Application::TeacherImportLatestSourceDateReadResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = detail.isEmpty()
+                    ? "The latest teacher import source date could not be read."
+                    : std::string(detail.constData(),
+                                  static_cast<std::size_t>(detail.size())),
+                .recoverable = false
+            });
+        }
+
+        if (!setting->isValid() || setting->isNull())
+        {
+            return Application::TeacherImportLatestSourceDateReadResult::success(
+                std::nullopt);
+        }
+
+        const QString sourceDateText = setting->toString();
+        const QDate sourceDate = QDate::fromString(sourceDateText, Qt::ISODate);
+        if (sourceDateText.isEmpty() || !sourceDate.isValid()
+            || sourceDate.toString(Qt::ISODate) != sourceDateText)
+        {
+            return Application::TeacherImportLatestSourceDateReadResult::success(
+                std::nullopt);
+        }
+
+        const QByteArray canonicalDate = sourceDate.toString(Qt::ISODate).toUtf8();
+        return Application::TeacherImportLatestSourceDateReadResult::success(
+            Domain::GregorianDate::fromIsoString(std::string(
+                canonicalDate.constData(),
+                static_cast<std::size_t>(canonicalDate.size())
+                )));
+    }
+    catch (const std::exception&)
+    {
+        return Application::TeacherImportLatestSourceDateReadResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "The latest teacher import source date could not be read.",
+            .recoverable = false
+        });
+    }
+    catch (...)
+    {
+        return Application::TeacherImportLatestSourceDateReadResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "The latest teacher import source date could not be read.",
+            .recoverable = false
+        });
+    }
 }
 
 Application::NativeEnglishTeacherDirectoryReadResult

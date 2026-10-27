@@ -19,10 +19,12 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QLocale>
 #include <QPushButton>
 #include <QProgressBar>
 #include <QRadioButton>
 #include <QScrollArea>
+#include <QSizePolicy>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QtConcurrentRun>
@@ -60,16 +62,32 @@ InitialSetupTeacherImportDialog::InitialSetupTeacherImportDialog(
     , m_actions(std::move(actions))
 {
     setObjectName(QStringLiteral("classMngrNextTeacherImportDialog"));
-    setWindowTitle(importText("Import Teachers from Workbook"));
+    setWindowTitle(m_actions.returnReviewRequestOnly
+        ? QCoreApplication::translate("TeacherImportDialog", "Import Teachers")
+        : importText("Import Teachers from Workbook"));
     setModal(true);
-    resize(560, 700);
+    if (!m_actions.returnReviewRequestOnly)
+    {
+        resize(560, 700);
+    }
 
     auto* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(24, 20, 24, 20);
-    layout->setSpacing(12);
+    m_mainLayout = layout;
+    layout->setContentsMargins(
+        m_actions.returnReviewRequestOnly ? 18 : 24,
+        m_actions.returnReviewRequestOnly ? 18 : 20,
+        m_actions.returnReviewRequestOnly ? 18 : 24,
+        m_actions.returnReviewRequestOnly ? 18 : 20);
+    layout->setSpacing(m_actions.returnReviewRequestOnly ? 10 : 12);
 
     auto* fileLabel = new QLabel(importText("File to import from:"), this);
     fileLabel->setObjectName(QStringLiteral("classMngrNextTeacherImportFileLabel"));
+    if (m_actions.returnReviewRequestOnly)
+    {
+        fileLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+        fileLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        fileLabel->setFixedHeight(fileLabel->sizeHint().height());
+    }
     m_filePathEdit = new QLineEdit(this);
     m_filePathEdit->setObjectName(
         QStringLiteral("classMngrNextTeacherImportFilePath"));
@@ -82,12 +100,22 @@ InitialSetupTeacherImportDialog::InitialSetupTeacherImportDialog(
     fileRow->addWidget(m_browseButton);
     layout->addWidget(fileLabel);
     layout->addLayout(fileRow);
+    if (m_actions.returnReviewRequestOnly)
+    {
+        layout->setAlignment(fileRow, Qt::AlignTop);
+    }
 
     m_statusLabel = new QLabel(
         importText("Choose an XLSX teacher workbook to preview."), this);
     m_statusLabel->setObjectName(
         QStringLiteral("classMngrNextTeacherImportStatus"));
     m_statusLabel->setWordWrap(true);
+    if (m_actions.returnReviewRequestOnly)
+    {
+        m_statusLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+        m_statusLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        m_statusLabel->setFixedHeight(m_statusLabel->sizeHint().height());
+    }
     layout->addWidget(m_statusLabel);
 
     auto* validationActions = new QHBoxLayout;
@@ -139,6 +167,10 @@ InitialSetupTeacherImportDialog::InitialSetupTeacherImportDialog(
         QStringLiteral("classMngrNextTeacherImportCandidateScrollArea"));
     m_candidateScrollArea->setWidgetResizable(true);
     m_candidateScrollArea->setFrameShape(QFrame::NoFrame);
+    if (m_actions.returnReviewRequestOnly)
+    {
+        m_candidateScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    }
     m_candidateScrollArea->setWidget(reviewContent);
     m_candidateScrollArea->hide();
     layout->addWidget(m_candidateScrollArea, 1);
@@ -146,10 +178,15 @@ InitialSetupTeacherImportDialog::InitialSetupTeacherImportDialog(
     m_buttons = new QDialogButtonBox(this);
     m_buttons->setObjectName(QStringLiteral("classMngrNextTeacherImportButtons"));
     m_applyButton = m_buttons->addButton(
-        importText("Apply Import"), QDialogButtonBox::AcceptRole);
+        m_actions.returnReviewRequestOnly
+            ? QCoreApplication::translate("TeacherImportDialog", "Import")
+            : importText("Apply Import"),
+        QDialogButtonBox::AcceptRole);
     m_applyButton->setObjectName(
         QStringLiteral("classMngrNextTeacherImportApply"));
-    m_buttons->addButton(importText("Cancel Setup"), QDialogButtonBox::RejectRole)
+    m_buttons->addButton(
+            importText(m_actions.returnReviewRequestOnly ? "Cancel" : "Cancel Setup"),
+            QDialogButtonBox::RejectRole)
         ->setObjectName(QStringLiteral("classMngrNextTeacherImportCancel"));
     layout->addWidget(m_buttons);
 
@@ -161,6 +198,13 @@ InitialSetupTeacherImportDialog::InitialSetupTeacherImportDialog(
             this, &InitialSetupTeacherImportDialog::applyImport);
     connect(m_buttons, &QDialogButtonBox::rejected,
             this, &InitialSetupTeacherImportDialog::reject);
+    if (m_actions.returnReviewRequestOnly)
+    {
+        layout->activate();
+        const int selectionHeight =
+            QLocale().language() == QLocale::Korean ? 212 : 218;
+        setFixedSize(460, selectionHeight);
+    }
     updateApplyEnabled();
 }
 
@@ -175,9 +219,15 @@ QString InitialSetupTeacherImportDialog::successSummary() const
     return m_successSummary;
 }
 
+const std::optional<Application::TeacherImportUseCaseRequest>&
+InitialSetupTeacherImportDialog::reviewedRequest() const noexcept
+{
+    return m_reviewedRequest;
+}
+
 void InitialSetupTeacherImportDialog::reject()
 {
-    if (!m_cancelSetupCalled)
+    if (!m_actions.returnReviewRequestOnly && !m_cancelSetupCalled)
     {
         m_cancelSetupCalled = true;
         if (m_actions.cancelSetup)
@@ -317,6 +367,14 @@ void InitialSetupTeacherImportDialog::showValidation(
     buildReviewControls(validation.preview);
     setStatus(importText("Review the workbook, then apply the import."));
     updateApplyEnabled();
+    if (m_actions.returnReviewRequestOnly)
+    {
+        m_mainLayout->setContentsMargins(18, 18, 18, 18);
+        m_mainLayout->setSpacing(10);
+        m_mainLayout->activate();
+        const int height = QLocale().language() == QLocale::Korean ? 477 : 501;
+        setFixedSize(460, height);
+    }
 }
 
 void InitialSetupTeacherImportDialog::clearReviewControls()
@@ -506,7 +564,8 @@ InitialSetupTeacherImportDialog::groupDecisions() const
 
 void InitialSetupTeacherImportDialog::applyImport()
 {
-    if (!m_preview || !m_actions.apply)
+    if (!m_preview
+        || (!m_actions.apply && !m_actions.returnReviewRequestOnly))
     {
         setStatus(importText("The import workflow is unavailable."));
         updateApplyEnabled();
@@ -521,6 +580,13 @@ void InitialSetupTeacherImportDialog::applyImport()
     {
         setStatus(importText("Review choices are invalid. Check the group selections."));
         updateApplyEnabled();
+        return;
+    }
+
+    if (m_actions.returnReviewRequestOnly)
+    {
+        m_reviewedRequest = *request;
+        accept();
         return;
     }
 
@@ -557,7 +623,8 @@ void InitialSetupTeacherImportDialog::updateApplyEnabled()
     {
         return;
     }
-    if (m_loading || !m_preview || !m_actions.apply)
+    if (m_loading || !m_preview
+        || (!m_actions.apply && !m_actions.returnReviewRequestOnly))
     {
         m_applyButton->setEnabled(false);
         return;
@@ -589,6 +656,11 @@ void InitialSetupTeacherImportDialog::setLoading(const bool loading)
 
 void InitialSetupTeacherImportDialog::setStatus(const QString& text)
 {
+    if (m_actions.returnReviewRequestOnly)
+    {
+        m_statusLabel->setSizePolicy(
+            QSizePolicy::Preferred, QSizePolicy::Preferred);
+    }
     m_statusLabel->setText(text);
 }
 

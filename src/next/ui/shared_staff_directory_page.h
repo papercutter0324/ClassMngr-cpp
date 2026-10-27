@@ -53,6 +53,7 @@ public:
     [[nodiscard]] SharedStaffDirectoryTableModel* directoryModel() const noexcept;
     [[nodiscard]] QTableView* tableView() const noexcept;
     [[nodiscard]] bool refreshFromStore(QString* error = nullptr);
+    void requireReloadBeforeEditing(const QString& reason);
 
     [[nodiscard]] PageOperationResult<void> onActivating() override;
     [[nodiscard]] bool hasUnsavedChanges() const noexcept override;
