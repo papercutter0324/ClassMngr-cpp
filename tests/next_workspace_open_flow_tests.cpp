@@ -199,6 +199,7 @@ class NextWorkspaceOpenFlowTests final : public QObject
 
 private slots:
     void opensTpsUpdatesHistoryAfterSuccessAndRefreshesStore();
+    void opensSelectedRecentPathWithoutUsingTheFileDialog();
     void cancelAndPendingSetupLeaveDialogHistoryAndWorkspaceUntouched();
     void corruptAndMissingProfilesPreserveActiveSessionAndSelection();
     void dirtyWorkspaceCannotBeReplaced();
@@ -339,6 +340,25 @@ corruptAndMissingProfilesPreserveActiveSessionAndSelection()
 
     RecordingFileDialog fileDialog;
     RecordingHistory history;
+    const Application::RecentWorkspacePath corruptHistoryPath(
+        corruptPath.toUtf8().toStdString()
+        );
+    const Application::RecentWorkspacePath unsupportedHistoryPath(
+        unsupportedPath.toUtf8().toStdString()
+        );
+    const Application::RecentWorkspacePath missingHistoryPath(
+        missingPath.toUtf8().toStdString()
+        );
+    const Application::RecentWorkspacePath unrelatedHistoryPath(
+        directory.filePath(QStringLiteral("unrelated.tps")).toUtf8().toStdString()
+        );
+    history.history.paths = {
+        corruptHistoryPath,
+        unsupportedHistoryPath,
+        missingHistoryPath,
+        unrelatedHistoryPath
+    };
+    history.history.lastPath = missingHistoryPath;
     RecordingNotifications notifications;
     Platform::WorkspaceProfilePathPolicy pathPolicy;
     Application::OpenExistingWorkspaceFlow flow(
@@ -384,10 +404,19 @@ corruptAndMissingProfilesPreserveActiveSessionAndSelection()
     QVERIFY(runtime.selectionState().snapshot().classId());
     QCOMPARE(runtime.selectionState().snapshot().classId()->value(),
              selectedClass->value());
-    QCOMPARE(history.loadCalls, 0);
-    QVERIFY(history.saved.empty());
+    QCOMPARE(history.loadCalls, 1);
+    QCOMPARE(history.saved.size(), std::size_t(1));
+    QCOMPARE(
+        history.history.paths,
+        Application::RecentWorkspacePaths({
+            corruptHistoryPath,
+            unsupportedHistoryPath,
+            unrelatedHistoryPath
+        })
+        );
+    QVERIFY(!history.history.lastPath.has_value());
     QVERIFY(!QFileInfo::exists(missingPath));
-    QVERIFY(notifications.requests.back().message.find("could not be opened")
+    QVERIFY(notifications.requests.back().message.find("could not be found")
             != std::string::npos);
 
     fileDialog.response.selection = Application::FileDialogPath(
@@ -398,8 +427,43 @@ corruptAndMissingProfilesPreserveActiveSessionAndSelection()
     QCOMPARE(runtime.workspaceState().snapshot().session()->location(),
              location(QFileInfo(retryPath).canonicalFilePath()));
     QVERIFY(!runtime.selectionState().snapshot().hasSelection());
+    QCOMPARE(history.loadCalls, 2);
+    QCOMPARE(history.saved.size(), std::size_t(2));
+}
+
+void NextWorkspaceOpenFlowTests::opensSelectedRecentPathWithoutUsingTheFileDialog()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString targetPath = directory.filePath(QStringLiteral("recent.tps"));
+    QVERIFY(createProfile(targetPath));
+
+    Platform::WorkspaceStoreGateway gateway;
+    Application::ApplicationRuntime runtime(gateway);
+    RecordingFileDialog fileDialog;
+    RecordingHistory history;
+    RecordingNotifications notifications;
+    Platform::WorkspaceProfilePathPolicy pathPolicy;
+    Application::OpenExistingWorkspaceFlow flow(
+        pathPolicy,
+        runtime.workspaceCoordinator(),
+        history,
+        notifications,
+        [] { return false; }
+        );
+
+    const Application::FileDialogPath selected(targetPath.toUtf8().toStdString());
+    const auto opened = flow.openPath(selected);
+
+    QCOMPARE(opened.status, Application::OpenExistingWorkspaceStatus::Opened);
+    QVERIFY(opened.session.has_value());
+    QCOMPARE(runtime.workspaceState().snapshot().session(), opened.session);
+    QCOMPARE(fileDialog.openCalls, 0);
     QCOMPARE(history.loadCalls, 1);
     QCOMPARE(history.saved.size(), std::size_t(1));
+    QCOMPARE(history.saved.front().paths.front(), opened.session->location());
+    QCOMPARE(history.saved.front().lastPath,
+             std::optional<Application::RecentWorkspacePath>(opened.session->location()));
 }
 
 void NextWorkspaceOpenFlowTests::dirtyWorkspaceCannotBeReplaced()

@@ -151,6 +151,13 @@ private:
     void beginInitialSetupProfile();
     void createNewTeacherProfile();
     void openExistingTeacherProfile();
+    void openRecentTeacherProfile(
+        const Application::RecentWorkspacePath& path
+        );
+    void openTeacherProfile(
+        std::optional<Application::FileDialogPath> selectedPath
+        );
+    void clearRecentWorkspaceHistory();
     void saveWorkspaceFromMenu();
     void saveWorkspaceAsFromMenu();
     void exportWorkspaceFromMenu();

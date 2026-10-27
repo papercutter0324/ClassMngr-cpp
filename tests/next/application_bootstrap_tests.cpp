@@ -33,6 +33,8 @@
 #include <QPixmap>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
+#include <QMenuBar>
 #include <QPalette>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -115,6 +117,10 @@ private slots:
     void createActionUsesSelectedPathAndDoesNotRecordPendingProfile();
     void openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess();
     void openActionDoesNotBypassPendingOrUnreadableSetupRecovery();
+    void recentFilesMenuRefreshesOrderedEscapedPathsAndEmptyState();
+    void recentRestoreUsesOpenFlowAndResolvesDirtyPageBeforeReplacement();
+    void recentRestoreSavesDirtyWorkspaceBeforeReplacement();
+    void clearRecentHistoryPreservesClosedAndOpenWorkspaceState();
     void saveAsActionUsesNextGatewayAndPreservesActiveSessionIdentity();
     void exportActionUsesNextGatewayWithoutResolvingDirtyPage();
     void saveAndCloseProfileActionsUseNextGateway();
@@ -295,6 +301,9 @@ struct RecentWorkspaceHistoryProbe final
     std::vector<Application::RecentWorkspaceHistory> saves;
     int loadCount = 0;
     int saveCount = 0;
+    int clearCount = 0;
+    bool mutateOnSave = false;
+    bool failClear = false;
 };
 
 class RecordingRecentWorkspaceHistoryPort final
@@ -320,11 +329,25 @@ public:
     {
         ++m_probe->saveCount;
         m_probe->saves.push_back(history);
+        if (m_probe->mutateOnSave)
+        {
+            m_probe->history = history;
+        }
         return Domain::Result<void>::success();
     }
 
     [[nodiscard]] Domain::Result<void> clear() const override
     {
+        ++m_probe->clearCount;
+        if (m_probe->failClear)
+        {
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "injected history clear failure",
+                .recoverable = true
+            });
+        }
+        m_probe->history = {};
         return Domain::Result<void>::success();
     }
 
@@ -433,6 +456,8 @@ struct BootstrapWorkspaceGatewayProbe final
     int saveCalls = 0;
     int discardCalls = 0;
     int exportCalls = 0;
+    std::vector<std::string> workspaceOperationOrder;
+    std::optional<Application::WorkspaceSession> savedSession;
     std::optional<Application::WorkspaceSession> exportedSession;
     std::optional<Application::WorkspaceLocation> exportDestination;
     std::vector<std::string>* shutdownEvents = nullptr;
@@ -479,6 +504,7 @@ public:
         ) override
     {
         ++m_probe->openCalls;
+        m_probe->workspaceOperationOrder.push_back("open");
         m_probe->events.push_back("open");
         if (m_probe->openError.has_value())
         {
@@ -515,8 +541,9 @@ public:
         const Application::SaveWorkspaceRequest& request
         ) override
     {
-        static_cast<void>(request);
         ++m_probe->saveCalls;
+        m_probe->workspaceOperationOrder.push_back("save");
+        m_probe->savedSession = request.session;
         if (m_probe->saveError.has_value())
         {
             return Domain::Result<void>::failure(*m_probe->saveError);
@@ -4802,6 +4829,10 @@ openActionDoesNotBypassPendingOrUnreadableSetupRecovery()
         profilePath.toUtf8().toStdString()
         );
     auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    historyProbe->history.paths = {
+        Application::RecentWorkspacePath(profilePath.toUtf8().toStdString())
+    };
+    auto promptProbe = std::make_shared<UnsavedChangesPromptProbe>();
     int openHistoryFactoryCalls = 0;
     auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
@@ -4818,6 +4849,12 @@ openActionDoesNotBypassPendingOrUnreadableSetupRecovery()
         ++openHistoryFactoryCalls;
         return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
     };
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+    seams.workspaceLifecycleUserPromptPortFactory = [promptProbe] {
+        return std::make_unique<RecordingWorkspaceLifecycleUserPrompt>(promptProbe);
+    };
 
     Bootstrap::ApplicationBootstrap bootstrap(
         application,
@@ -4828,6 +4865,11 @@ openActionDoesNotBypassPendingOrUnreadableSetupRecovery()
         std::move(seams)
         );
     QVERIFY(bootstrap.start().succeeded());
+    Ui::Page* const initialPage = bootstrap.shell()->pageHost().pageInstance(
+        QStringLiteral("initial_setup")
+        );
+    QVERIFY(initialPage);
+    initialPage->markUnsavedChanges();
     QAction* const openAction = bootstrap.shell()->findChild<QAction*>(
         QStringLiteral("classMngrNextOpenTeacherProfile")
         );
@@ -4836,7 +4878,25 @@ openActionDoesNotBypassPendingOrUnreadableSetupRecovery()
     QCOMPARE(fileDialogProbe->openCount, 0);
     QCOMPARE(openHistoryFactoryCalls, 0);
     QCOMPARE(gatewayProbe->openCalls, 0);
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(promptProbe->requests.empty());
+    QVERIFY(initialPage->hasUnsavedChanges());
     QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
+
+    QMenu* const recentMenu = bootstrap.shell()->recentWorkspaceMenu();
+    QVERIFY(recentMenu);
+    QVERIFY(QMetaObject::invokeMethod(
+        recentMenu,
+        "aboutToShow",
+        Qt::DirectConnection
+        ));
+    QVERIFY(!recentMenu->actions().empty());
+    recentMenu->actions().front()->trigger();
+    QCOMPARE(openHistoryFactoryCalls, 0);
+    QCOMPARE(gatewayProbe->openCalls, 0);
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(promptProbe->requests.empty());
+    QVERIFY(initialPage->hasUnsavedChanges());
     QFile journalBefore(journalPath);
     QVERIFY(journalBefore.open(QIODevice::ReadOnly));
     QCOMPARE(journalBefore.readAll(), journalPayload);
@@ -4847,10 +4907,541 @@ openActionDoesNotBypassPendingOrUnreadableSetupRecovery()
     QCOMPARE(fileDialogProbe->openCount, 0);
     QCOMPARE(openHistoryFactoryCalls, 0);
     QCOMPARE(gatewayProbe->openCalls, 0);
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(promptProbe->requests.empty());
     QFile journalAfter(journalPath);
     QVERIFY(journalAfter.open(QIODevice::ReadOnly));
     QCOMPARE(journalAfter.readAll(), QByteArrayLiteral("{ unreadable recovery journal"));
 
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+recentFilesMenuRefreshesOrderedEscapedPathsAndEmptyState()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    const QString firstPath = temporaryDirectory.filePath(
+        QStringLiteral("Teacher & One.tps")
+        );
+    const QString secondPath = temporaryDirectory.filePath(
+        QStringLiteral("Second.tps")
+        );
+    const QString fallbackPath = temporaryDirectory.filePath(
+        QStringLiteral("legacy-fallback.tps")
+        );
+    const auto workspacePath = [](const QString& path) {
+        return Application::RecentWorkspacePath(path.toUtf8().toStdString());
+    };
+    historyProbe->history.paths = {
+        workspacePath(firstPath),
+        workspacePath(secondPath)
+    };
+    historyProbe->history.lastPath = workspacePath(fallbackPath);
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    seams.recentAutoOpenEnabled = false;
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+
+    QMenu* const menu = bootstrap.shell()->recentWorkspaceMenu();
+    QVERIFY(menu);
+    QVERIFY(QMetaObject::invokeMethod(
+        menu,
+        "aboutToShow",
+        Qt::DirectConnection
+        ));
+    QCOMPARE(historyProbe->loadCount, 1);
+    QCOMPARE(menu->actions().size(), 4);
+    const QString nativeFirstPath = QDir::toNativeSeparators(firstPath);
+    QString escapedFirstPath = nativeFirstPath;
+    escapedFirstPath.replace(QLatin1Char('&'), QStringLiteral("&&"));
+    QCOMPARE(menu->actions().at(0)->text(),
+             QStringLiteral("&1 %1").arg(escapedFirstPath));
+    QCOMPARE(menu->actions().at(0)->data().toString(), firstPath);
+    QCOMPARE(menu->actions().at(0)->toolTip(), nativeFirstPath);
+    QCOMPARE(menu->actions().at(1)->data().toString(), secondPath);
+    QVERIFY(menu->actions().at(2)->isSeparator());
+    QCOMPARE(menu->actions().at(3)->text(), QStringLiteral("Clear Recent Files"));
+    QCOMPARE(
+        bootstrap.shell()->menuBar()->actions().front()->menu()->actions().at(2),
+        menu->menuAction()
+        );
+
+    const QString refreshedPath = temporaryDirectory.filePath(
+        QStringLiteral("Refreshed.tps")
+        );
+    historyProbe->history.paths = {workspacePath(refreshedPath)};
+    QVERIFY(QMetaObject::invokeMethod(
+        menu,
+        "aboutToShow",
+        Qt::DirectConnection
+        ));
+    QCOMPARE(historyProbe->loadCount, 2);
+    QCOMPARE(menu->actions().size(), 3);
+    QCOMPARE(menu->actions().at(0)->data().toString(), refreshedPath);
+    QVERIFY(menu->actions().at(1)->isSeparator());
+    QCOMPARE(menu->actions().at(2)->text(), QStringLiteral("Clear Recent Files"));
+
+    historyProbe->history.paths.clear();
+    QVERIFY(QMetaObject::invokeMethod(
+        menu,
+        "aboutToShow",
+        Qt::DirectConnection
+        ));
+    QCOMPARE(historyProbe->loadCount, 3);
+    QCOMPARE(menu->actions().size(), 1);
+    QCOMPARE(menu->actions().front()->text(), QStringLiteral("(No Recent Files)"));
+    QVERIFY(!menu->actions().front()->isEnabled());
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+recentRestoreUsesOpenFlowAndResolvesDirtyPageBeforeReplacement()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString firstPath = temporaryDirectory.filePath(
+        QStringLiteral("first-recent.tps")
+        );
+    const QString secondPath = temporaryDirectory.filePath(
+        QStringLiteral("second-recent.tps")
+        );
+    const auto touch = [](const QString& path) {
+        QFile file(path);
+        return file.open(QIODevice::WriteOnly | QIODevice::Truncate)
+            && file.write(QByteArrayLiteral("profile remains on disk")) > 0;
+    };
+    QVERIFY(touch(firstPath));
+    QVERIFY(touch(secondPath));
+    const Application::WorkspaceLocation normalizedFirst(
+        QFileInfo(firstPath).canonicalFilePath().toUtf8().toStdString()
+        );
+    const Application::WorkspaceLocation normalizedSecond(
+        QFileInfo(secondPath).canonicalFilePath().toUtf8().toStdString()
+        );
+
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    historyProbe->history.paths = {
+        Application::RecentWorkspacePath(firstPath.toUtf8().toStdString())
+    };
+    historyProbe->mutateOnSave = true;
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        firstPath.toUtf8().toStdString()
+        );
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    auto promptProbe = std::make_shared<UnsavedChangesPromptProbe>();
+    int dialogFactoryCalls = 0;
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    seams.recentAutoOpenEnabled = false;
+    seams.workspaceGatewayFactory = [gatewayProbe] {
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
+    };
+    seams.openProfileFileDialogPortFactory = [&, fileDialogProbe] {
+        ++dialogFactoryCalls;
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(fileDialogProbe);
+    };
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+    seams.workspaceLifecycleUserPromptPortFactory = [promptProbe] {
+        return std::make_unique<RecordingWorkspaceLifecycleUserPrompt>(promptProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    QMenu* const menu = bootstrap.shell()->recentWorkspaceMenu();
+    QVERIFY(menu);
+    QVERIFY(QMetaObject::invokeMethod(
+        menu,
+        "aboutToShow",
+        Qt::DirectConnection
+        ));
+    QCOMPARE(menu->actions().at(0)->data().toString(), firstPath);
+    menu->actions().at(0)->trigger();
+
+    QCOMPARE(dialogFactoryCalls, 0);
+    QCOMPARE(fileDialogProbe->openCount, 0);
+    QCOMPARE(gatewayProbe->openCalls, 1);
+    QCOMPARE(historyProbe->saveCount, 1);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+             normalizedFirst);
+    QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId()->value(),
+             QStringLiteral("my_workspace"));
+
+    Ui::Page* const page = bootstrap.shell()->pageHost().pageInstance(
+        QStringLiteral("my_workspace")
+        );
+    QVERIFY(page);
+    page->markUnsavedChanges();
+    historyProbe->history.paths = {
+        Application::RecentWorkspacePath(secondPath.toUtf8().toStdString())
+    };
+    promptProbe->action = Application::UnsavedChangesAction::Cancel;
+    QVERIFY(QMetaObject::invokeMethod(
+        menu,
+        "aboutToShow",
+        Qt::DirectConnection
+        ));
+    menu->actions().at(0)->trigger();
+    QCOMPARE(promptProbe->requests.size(), std::size_t(1));
+    QCOMPARE(dialogFactoryCalls, 0);
+    QCOMPARE(gatewayProbe->openCalls, 1);
+    QCOMPARE(historyProbe->saveCount, 1);
+    QCOMPARE(historyProbe->history.paths.front().value(),
+             secondPath.toUtf8().toStdString());
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+             normalizedFirst);
+    QVERIFY(page->hasUnsavedChanges());
+
+    promptProbe->action = Application::UnsavedChangesAction::Discard;
+    QVERIFY(QMetaObject::invokeMethod(
+        menu,
+        "aboutToShow",
+        Qt::DirectConnection
+        ));
+    menu->actions().at(0)->trigger();
+    QCOMPARE(promptProbe->requests.size(), std::size_t(2));
+    QCOMPARE(gatewayProbe->openCalls, 2);
+    QCOMPARE(historyProbe->saveCount, 2);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+             normalizedSecond);
+    QVERIFY(!page->hasUnsavedChanges());
+    QCOMPARE(fileDialogProbe->openCount, 0);
+    QVERIFY(QFileInfo::exists(firstPath));
+    QVERIFY(QFileInfo::exists(secondPath));
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+recentRestoreSavesDirtyWorkspaceBeforeReplacement()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString activePath = temporaryDirectory.filePath(
+        QStringLiteral("active.tps")
+        );
+    const QString selectedPath = temporaryDirectory.filePath(
+        QStringLiteral("selected.tps")
+        );
+    const auto touch = [](const QString& path) {
+        QFile file(path);
+        return file.open(QIODevice::WriteOnly | QIODevice::Truncate)
+            && file.write(QByteArrayLiteral("profile data")) > 0;
+    };
+    QVERIFY(touch(activePath));
+    QVERIFY(touch(selectedPath));
+    const Application::WorkspaceLocation normalizedActive(
+        QFileInfo(activePath).absoluteFilePath().toUtf8().toStdString()
+        );
+    const Application::WorkspaceLocation normalizedSelected(
+        QFileInfo(selectedPath).canonicalFilePath().toUtf8().toStdString()
+        );
+
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    historyProbe->history.paths = {
+        Application::RecentWorkspacePath(selectedPath.toUtf8().toStdString())
+    };
+    historyProbe->mutateOnSave = true;
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        selectedPath.toUtf8().toStdString()
+        );
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    auto promptProbe = std::make_shared<UnsavedChangesPromptProbe>();
+    int dialogFactoryCalls = 0;
+    Application::WorkspaceState* startupWorkspaceState = nullptr;
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"),
+        activePath
+    };
+    seams.recentAutoOpenEnabled = false;
+    seams.workspaceGatewayFactory = [gatewayProbe] {
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
+    };
+    seams.afterStartupWorkspaceOpenedForTesting = [&startupWorkspaceState](
+        Application::WorkspaceState& state
+        ) {
+        startupWorkspaceState = &state;
+    };
+    seams.openProfileFileDialogPortFactory = [&, fileDialogProbe] {
+        ++dialogFactoryCalls;
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(fileDialogProbe);
+    };
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+    seams.workspaceLifecycleUserPromptPortFactory = [promptProbe] {
+        return std::make_unique<RecordingWorkspaceLifecycleUserPrompt>(promptProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    QVERIFY(startupWorkspaceState);
+    QVERIFY(QMetaObject::invokeMethod(
+        &application,
+        [startupWorkspaceState] {
+            static_cast<void>(startupWorkspaceState->markDirty());
+        },
+        Qt::QueuedConnection
+        ));
+    QCoreApplication::processEvents();
+    QCOMPARE(
+        bootstrap.workspaceStateSnapshot().unsavedState(),
+        Application::WorkspaceUnsavedState::Dirty
+        );
+    const Application::WorkspaceSession activeSession =
+        *bootstrap.workspaceStateSnapshot().session();
+    QCOMPARE(activeSession.location(), normalizedActive);
+    QCOMPARE(gatewayProbe->workspaceOperationOrder,
+             std::vector<std::string>{"open"});
+
+    // Command-line startup records its profile, so select the second recent
+    // path explicitly to isolate this restore operation's history update.
+    historyProbe->history.paths = {
+        Application::RecentWorkspacePath(selectedPath.toUtf8().toStdString())
+    };
+    QMenu* const menu = bootstrap.shell()->recentWorkspaceMenu();
+    QVERIFY(menu);
+    QVERIFY(QMetaObject::invokeMethod(
+        menu,
+        "aboutToShow",
+        Qt::DirectConnection
+        ));
+    QCOMPARE(menu->actions().at(0)->data().toString(), selectedPath);
+
+    promptProbe->action = Application::UnsavedChangesAction::Save;
+    menu->actions().at(0)->trigger();
+
+    QCOMPARE(promptProbe->requests.size(), std::size_t(1));
+    QCOMPARE(gatewayProbe->saveCalls, 1);
+    QCOMPARE(gatewayProbe->savedSession,
+             std::optional<Application::WorkspaceSession>(activeSession));
+    QCOMPARE(gatewayProbe->openCalls, 2);
+    QCOMPARE(gatewayProbe->workspaceOperationOrder,
+             (std::vector<std::string>{"open", "save", "open"}));
+    QCOMPARE(gatewayProbe->openedSession->location(), normalizedSelected);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+             normalizedSelected);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().unsavedState(),
+             Application::WorkspaceUnsavedState::Clean);
+    QCOMPARE(dialogFactoryCalls, 0);
+    QCOMPARE(fileDialogProbe->openCount, 0);
+    QCOMPARE(historyProbe->saveCount, 2);
+    QCOMPARE(historyProbe->saves.back().paths.front(), normalizedSelected);
+    QCOMPARE(historyProbe->saves.back().lastPath,
+             std::optional<Application::RecentWorkspacePath>(normalizedSelected));
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+clearRecentHistoryPreservesClosedAndOpenWorkspaceState()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("profile.tps")
+        );
+    const QByteArray profileBytes = QByteArrayLiteral("profile file remains intact");
+    auto writeProfile = [&] {
+        QFile file(profilePath);
+        return file.open(QIODevice::WriteOnly | QIODevice::Truncate)
+            && file.write(profileBytes) == profileBytes.size();
+    };
+    auto profileContents = [&] {
+        QFile file(profilePath);
+        return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray{};
+    };
+    QVERIFY(writeProfile());
+
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    const Application::RecentWorkspacePath recentPath(
+        profilePath.toUtf8().toStdString()
+        );
+    historyProbe->history.paths = {recentPath};
+    historyProbe->history.lastPath = recentPath;
+    historyProbe->mutateOnSave = true;
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        profilePath.toUtf8().toStdString()
+        );
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    auto promptProbe = std::make_shared<UnsavedChangesPromptProbe>();
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    seams.recentAutoOpenEnabled = false;
+    seams.workspaceGatewayFactory = [gatewayProbe] {
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
+    };
+    seams.openProfileFileDialogPortFactory = [fileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(fileDialogProbe);
+    };
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+    seams.workspaceLifecycleUserPromptPortFactory = [promptProbe] {
+        return std::make_unique<RecordingWorkspaceLifecycleUserPrompt>(promptProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    QMenu* const menu = shell->recentWorkspaceMenu();
+    QVERIFY(menu);
+
+    QVERIFY(QMetaObject::invokeMethod(menu, "aboutToShow", Qt::DirectConnection));
+    QCOMPARE(menu->actions().size(), 3);
+    menu->actions().constLast()->trigger();
+    QCOMPARE(historyProbe->clearCount, 1);
+    QVERIFY(historyProbe->history.paths.empty());
+    QVERIFY(!historyProbe->history.lastPath.has_value());
+    QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
+    QCOMPARE(profileContents(), profileBytes);
+
+    historyProbe->history.paths = {recentPath};
+    historyProbe->history.lastPath = recentPath;
+    historyProbe->failClear = true;
+    QVERIFY(QMetaObject::invokeMethod(menu, "aboutToShow", Qt::DirectConnection));
+    menu->actions().constLast()->trigger();
+    QCOMPARE(historyProbe->clearCount, 2);
+    QVERIFY(historyProbe->history.paths == Application::RecentWorkspacePaths({recentPath}));
+    QVERIFY(shell->statusBar()->currentMessage().contains(
+        QStringLiteral("history could not be cleared")
+        ));
+    QVERIFY(QMetaObject::invokeMethod(menu, "aboutToShow", Qt::DirectConnection));
+    QCOMPARE(menu->actions().at(0)->data().toString(), profilePath);
+    QCOMPARE(menu->actions().constLast()->text(), QStringLiteral("Clear Recent Files"));
+    QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
+    QCOMPARE(profileContents(), profileBytes);
+
+    QAction* const openAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextOpenTeacherProfile")
+        );
+    QVERIFY(openAction);
+    openAction->trigger();
+    QCOMPARE(fileDialogProbe->openCount, 1);
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    const Application::WorkspaceSession openSession =
+        *bootstrap.workspaceStateSnapshot().session();
+    const int closeCallsBeforeClear = gatewayProbe->closeCalls;
+    const auto currentPage = shell->navigationModel()->currentPageId();
+    QVERIFY(currentPage.has_value());
+    Ui::Page* const activePage = shell->pageHost().pageInstance(
+        QStringLiteral("my_workspace")
+        );
+    QVERIFY(activePage);
+    activePage->markUnsavedChanges();
+
+    historyProbe->failClear = false;
+    QVERIFY(QMetaObject::invokeMethod(menu, "aboutToShow", Qt::DirectConnection));
+    menu->actions().constLast()->trigger();
+    QCOMPARE(historyProbe->clearCount, 3);
+    QVERIFY(historyProbe->history.paths.empty());
+    QVERIFY(!historyProbe->history.lastPath.has_value());
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session(),
+             std::optional<Application::WorkspaceSession>(openSession));
+    QCOMPARE(gatewayProbe->closeCalls, closeCallsBeforeClear);
+    QCOMPARE(shell->navigationModel()->currentPageId(), currentPage);
+    QVERIFY(activePage->hasUnsavedChanges());
+    QVERIFY(promptProbe->requests.empty());
+    QCOMPARE(profileContents(), profileBytes);
+
+    QVERIFY(QMetaObject::invokeMethod(menu, "aboutToShow", Qt::DirectConnection));
+    QCOMPARE(menu->actions().size(), 1);
+    QCOMPARE(menu->actions().front()->text(), QStringLiteral("(No Recent Files)"));
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);
 }

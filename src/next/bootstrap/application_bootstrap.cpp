@@ -670,6 +670,26 @@ Application::StartupResult ApplicationBootstrap::start()
         m_shell->setOpenTeacherProfileHandler([this] {
             openExistingTeacherProfile();
         });
+        m_shell->setRecentWorkspaceMenuHandlers(
+            [this] {
+                std::unique_ptr<Application::RecentWorkspaceHistoryPort> historyPort =
+                    m_startupWorkspaceSeams.recentWorkspaceHistoryPortFactory
+                        ? m_startupWorkspaceSeams
+                              .recentWorkspaceHistoryPortFactory()
+                        : std::make_unique<
+                              Platform::SettingsManagerRecentWorkspaceHistoryPort
+                              >();
+                return historyPort
+                    ? historyPort->load()
+                    : Application::RecentWorkspaceHistory{};
+            },
+            [this](const Application::RecentWorkspacePath& path) {
+                openRecentTeacherProfile(path);
+            },
+            [this] {
+                clearRecentWorkspaceHistory();
+            }
+            );
         m_shell->setSaveWorkspaceHandler([this] {
             saveWorkspaceFromMenu();
         });
@@ -1700,13 +1720,21 @@ void ApplicationBootstrap::createNewTeacherProfile()
 
 void ApplicationBootstrap::openExistingTeacherProfile()
 {
+    openTeacherProfile(std::nullopt);
+}
+
+void ApplicationBootstrap::openRecentTeacherProfile(
+    const Application::RecentWorkspacePath& path
+    )
+{
+    openTeacherProfile(Application::FileDialogPath(path.value()));
+}
+
+void ApplicationBootstrap::openTeacherProfile(
+    std::optional<Application::FileDialogPath> selectedPath
+    )
+{
     if (!m_shell || !m_applicationRuntime || !m_initialSetupLifecycle)
-    {
-        return;
-    }
-    if (!resolveActivePageChangesBeforeLeaving(
-            "opening another Teacher Profile"
-            ))
     {
         return;
     }
@@ -1721,6 +1749,10 @@ void ApplicationBootstrap::openExistingTeacherProfile()
             || setupState.recoveryAvailable
             || setupState.recoveryError;
     };
+
+    // Setup and recovery state must be resolved before prompting to save or
+    // discard workspace edits. In particular, an unreadable recovery journal
+    // blocks replacement so its recovery data and history remain available.
     if (setupPending())
     {
         static_cast<void>(m_shell->notificationPort().show(
@@ -1732,21 +1764,28 @@ void ApplicationBootstrap::openExistingTeacherProfile()
         return;
     }
 
+    if (!resolveActivePageChangesBeforeLeaving(
+            "opening another Teacher Profile"
+            ))
+    {
+        return;
+    }
+
     Platform::QSettingsFileDialogDirectoryPreferencesAdapter directoryPreferences;
     std::unique_ptr<Application::FileDialogPort> ownedFileDialog;
-    if (m_startupWorkspaceSeams.openProfileFileDialogPortFactory)
+    if (!selectedPath && m_startupWorkspaceSeams.openProfileFileDialogPortFactory)
     {
         ownedFileDialog =
             m_startupWorkspaceSeams.openProfileFileDialogPortFactory();
     }
-    else
+    else if (!selectedPath)
     {
         ownedFileDialog = std::make_unique<Ui::QtFileDialogPresenter>(
             directoryPreferences,
             m_shell.get()
             );
     }
-    if (!ownedFileDialog)
+    if (!selectedPath && !ownedFileDialog)
     {
         static_cast<void>(m_shell->notificationPort().show(
             Application::NotificationRequest{
@@ -1762,6 +1801,11 @@ void ApplicationBootstrap::openExistingTeacherProfile()
     {
         ownedRecentHistory =
             m_startupWorkspaceSeams.openProfileRecentWorkspaceHistoryPortFactory();
+    }
+    else if (m_startupWorkspaceSeams.recentWorkspaceHistoryPortFactory)
+    {
+        ownedRecentHistory =
+            m_startupWorkspaceSeams.recentWorkspaceHistoryPortFactory();
     }
     else
     {
@@ -1780,15 +1824,25 @@ void ApplicationBootstrap::openExistingTeacherProfile()
     }
 
     Platform::WorkspaceProfilePathPolicy pathPolicy;
-    Application::OpenExistingWorkspaceFlow flow(
-        *ownedFileDialog,
-        pathPolicy,
-        m_applicationRuntime->workspaceCoordinator(),
-        *ownedRecentHistory,
-        m_shell->notificationPort(),
-        setupPending
-        );
-    const Application::OpenExistingWorkspaceOutcome outcome = flow.run();
+    Application::OpenExistingWorkspaceFlow flow = selectedPath.has_value()
+        ? Application::OpenExistingWorkspaceFlow(
+              pathPolicy,
+              m_applicationRuntime->workspaceCoordinator(),
+              *ownedRecentHistory,
+              m_shell->notificationPort(),
+              setupPending
+              )
+        : Application::OpenExistingWorkspaceFlow(
+              *ownedFileDialog,
+              pathPolicy,
+              m_applicationRuntime->workspaceCoordinator(),
+              *ownedRecentHistory,
+              m_shell->notificationPort(),
+              setupPending
+              );
+    const Application::OpenExistingWorkspaceOutcome outcome = selectedPath
+        ? flow.openPath(*selectedPath)
+        : flow.run();
     if (outcome.status != Application::OpenExistingWorkspaceStatus::Opened)
     {
         return;
@@ -1806,6 +1860,45 @@ void ApplicationBootstrap::openExistingTeacherProfile()
         static_cast<void>(m_shell->notificationPort().show(
             Application::NotificationRequest{
                 .message = "The profile opened, but the workspace page could not be selected.",
+                .severity = Application::NotificationSeverity::Warning
+            }
+            ));
+    }
+}
+
+void ApplicationBootstrap::clearRecentWorkspaceHistory()
+{
+    if (!m_shell)
+    {
+        return;
+    }
+
+    std::unique_ptr<Application::RecentWorkspaceHistoryPort> historyPort =
+        m_startupWorkspaceSeams.recentWorkspaceHistoryPortFactory
+            ? m_startupWorkspaceSeams.recentWorkspaceHistoryPortFactory()
+            : std::make_unique<Platform::SettingsManagerRecentWorkspaceHistoryPort>();
+    if (!historyPort)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "Recent profile history could not be cleared because history storage is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+
+    const Domain::Result<void> cleared = historyPort->clear();
+    if (!cleared)
+    {
+        const QString errorMessage = QString::fromUtf8(
+            cleared.error().message.data(),
+            static_cast<qsizetype>(cleared.error().message.size())
+            );
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "Recent profile history could not be cleared: "
+                    + errorMessage.toStdString(),
                 .severity = Application::NotificationSeverity::Warning
             }
             ));

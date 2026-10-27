@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/workspace_state.h"
+#include "next/application/recent_workspace_history.h"
 #include "next/application/preferences_model.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/navigation_model.h"
@@ -19,6 +20,7 @@
 class QCloseEvent;
 class QTreeWidget;
 class QPushButton;
+class QMenu;
 
 namespace ClassMngr::Next::Resources
 {
@@ -38,6 +40,10 @@ public:
     using CloseHandler = std::function<bool()>;
     using NavigationGuard = std::function<NavigationGuardDecision(
         const NavigationGuardRequest&)>;
+    using RecentWorkspaceHistoryLoader =
+        std::function<Application::RecentWorkspaceHistory()>;
+    using RecentWorkspaceOpenHandler =
+        std::function<void(const Application::RecentWorkspacePath&)>;
 
     // The resource loader and preferences model are borrowed and must outlive this shell.
     explicit ApplicationShell(
@@ -53,10 +59,16 @@ public:
     void setSaveWorkspaceAsHandler(std::function<void()> handler);
     void setExportWorkspaceHandler(std::function<void()> handler);
     void setCloseWorkspaceHandler(std::function<void()> handler);
+    void setRecentWorkspaceMenuHandlers(
+        RecentWorkspaceHistoryLoader historyLoader,
+        RecentWorkspaceOpenHandler openHandler,
+        std::function<void()> clearHandler
+        );
     void setNavigationGuard(NavigationGuard guard);
     [[nodiscard]] PageHost& pageHost() noexcept;
     [[nodiscard]] const PageHost& pageHost() const noexcept;
     [[nodiscard]] Application::NotificationPort& notificationPort() noexcept;
+    [[nodiscard]] QMenu* recentWorkspaceMenu() noexcept;
     [[nodiscard]] NavigationModel* navigationModel() noexcept;
     [[nodiscard]] const NavigationModel* navigationModel() const noexcept;
     [[nodiscard]] NavigationModelResult<void> configureNavigation(
@@ -87,6 +99,7 @@ private:
     void rebuildNavigationTree();
     void synchronizeNavigationSelection();
     void synchronizeHistoryControls();
+    void refreshRecentWorkspaceMenu();
     [[nodiscard]] std::optional<QIcon> navigationIconFor(
         const NavigationPageMetadata& metadata
         );
@@ -103,6 +116,7 @@ private:
     QAction* m_saveWorkspaceAsAction = nullptr;
     QAction* m_exportWorkspaceAction = nullptr;
     QAction* m_closeWorkspaceAction = nullptr;
+    QMenu* m_recentWorkspaceMenu = nullptr;
     std::optional<NavigationModel> m_navigationModel;
     QHash<QString, QIcon> m_navigationIcons;
     std::vector<Resources::ScopedResource<QImage>> m_navigationIconImages;
@@ -114,6 +128,9 @@ private:
     std::function<void()> m_saveWorkspaceAsHandler;
     std::function<void()> m_exportWorkspaceHandler;
     std::function<void()> m_closeWorkspaceHandler;
+    RecentWorkspaceHistoryLoader m_recentWorkspaceHistoryLoader;
+    RecentWorkspaceOpenHandler m_recentWorkspaceOpenHandler;
+    std::function<void()> m_clearRecentWorkspaceHistoryHandler;
     QtNotificationPresenter m_notificationPresenter;
 };
 

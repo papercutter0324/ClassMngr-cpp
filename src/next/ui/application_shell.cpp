@@ -2,6 +2,7 @@
 
 #include "next/ui/page_host.h"
 
+#include <QDir>
 #include <QCloseEvent>
 #include <QCoreApplication>
 #include <QHBoxLayout>
@@ -111,6 +112,12 @@ ApplicationShell::ApplicationShell(
         QStringLiteral("classMngrNextOpenTeacherProfile")
         );
     m_openTeacherProfileAction->setShortcut(QKeySequence::Open);
+    m_recentWorkspaceMenu = fileMenu->addMenu(
+        QCoreApplication::translate("NextShell", "Recent Files")
+        );
+    m_recentWorkspaceMenu->setObjectName(
+        QStringLiteral("classMngrNextRecentWorkspaceMenu")
+        );
     fileMenu->addSeparator();
     m_saveWorkspaceAction = fileMenu->addAction(
         QCoreApplication::translate("NextShell", "Save")
@@ -161,6 +168,9 @@ ApplicationShell::ApplicationShell(
         {
             m_openTeacherProfileHandler();
         }
+    });
+    connect(m_recentWorkspaceMenu, &QMenu::aboutToShow, this, [this] {
+        refreshRecentWorkspaceMenu();
     });
     connect(m_saveWorkspaceAction, &QAction::triggered, this, [this] {
         if (m_saveWorkspaceHandler)
@@ -240,6 +250,17 @@ void ApplicationShell::setCloseWorkspaceHandler(std::function<void()> handler)
     m_closeWorkspaceHandler = std::move(handler);
 }
 
+void ApplicationShell::setRecentWorkspaceMenuHandlers(
+    RecentWorkspaceHistoryLoader historyLoader,
+    RecentWorkspaceOpenHandler openHandler,
+    std::function<void()> clearHandler
+    )
+{
+    m_recentWorkspaceHistoryLoader = std::move(historyLoader);
+    m_recentWorkspaceOpenHandler = std::move(openHandler);
+    m_clearRecentWorkspaceHistoryHandler = std::move(clearHandler);
+}
+
 void ApplicationShell::setNavigationGuard(NavigationGuard guard)
 {
     m_navigationGuard = std::move(guard);
@@ -258,6 +279,11 @@ const PageHost& ApplicationShell::pageHost() const noexcept
 Application::NotificationPort& ApplicationShell::notificationPort() noexcept
 {
     return m_notificationPresenter;
+}
+
+QMenu* ApplicationShell::recentWorkspaceMenu() noexcept
+{
+    return m_recentWorkspaceMenu;
 }
 
 NavigationModel* ApplicationShell::navigationModel() noexcept
@@ -552,6 +578,76 @@ void ApplicationShell::synchronizeHistoryControls()
         : NavigationHistoryActionState{};
     m_backButton->setEnabled(state.backEnabled);
     m_forwardButton->setEnabled(state.forwardEnabled);
+}
+
+void ApplicationShell::refreshRecentWorkspaceMenu()
+{
+    if (!m_recentWorkspaceMenu)
+    {
+        return;
+    }
+
+    m_recentWorkspaceMenu->clear();
+    const Application::RecentWorkspaceHistory history =
+        m_recentWorkspaceHistoryLoader
+            ? m_recentWorkspaceHistoryLoader()
+            : Application::RecentWorkspaceHistory{};
+
+    if (history.paths.empty())
+    {
+        QAction* const emptyAction = m_recentWorkspaceMenu->addAction(
+            QCoreApplication::translate("NextShell", "(No Recent Files)")
+            );
+        emptyAction->setEnabled(false);
+        return;
+    }
+
+    for (std::size_t index = 0; index < history.paths.size(); ++index)
+    {
+        const Application::RecentWorkspacePath path = history.paths[index];
+        const QString storedPath = QString::fromUtf8(
+            path.value().data(),
+            static_cast<qsizetype>(path.value().size())
+            );
+        const QString nativePath = QDir::toNativeSeparators(storedPath);
+        QString displayPath = nativePath;
+        displayPath.replace(QLatin1Char('&'), QStringLiteral("&&"));
+
+        QAction* const pathAction = m_recentWorkspaceMenu->addAction(
+            QCoreApplication::translate("NextShell", "&%1 %2")
+                .arg(static_cast<qulonglong>(index + 1))
+                .arg(displayPath)
+            );
+        pathAction->setToolTip(nativePath);
+        pathAction->setData(storedPath);
+        connect(
+            pathAction,
+            &QAction::triggered,
+            this,
+            [this, path] {
+                if (m_recentWorkspaceOpenHandler)
+                {
+                    m_recentWorkspaceOpenHandler(path);
+                }
+            }
+            );
+    }
+
+    m_recentWorkspaceMenu->addSeparator();
+    QAction* const clearAction = m_recentWorkspaceMenu->addAction(
+        QCoreApplication::translate("NextShell", "Clear Recent Files")
+        );
+    connect(
+        clearAction,
+        &QAction::triggered,
+        this,
+        [this] {
+            if (m_clearRecentWorkspaceHistoryHandler)
+            {
+                m_clearRecentWorkspaceHistoryHandler();
+            }
+        }
+        );
 }
 
 void ApplicationShell::closeEvent(QCloseEvent* event)

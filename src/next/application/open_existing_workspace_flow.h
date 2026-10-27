@@ -45,8 +45,25 @@ public:
         NotificationPort& notifications,
         SetupPendingCheck setupPending
         ) noexcept
-        : m_fileDialog(fileDialog),
+        : m_fileDialog(&fileDialog),
           m_pathPolicy(pathPolicy),
+          m_workspaceCoordinator(workspaceCoordinator),
+          m_recentHistory(recentHistory),
+          m_notifications(notifications),
+          m_setupPending(std::move(setupPending))
+    {
+    }
+
+    // A selected recent path uses the same normalization, open, and history
+    // policy as the dialog flow without constructing or showing a dialog.
+    OpenExistingWorkspaceFlow(
+        WorkspaceOpenProfilePathPolicyPort& pathPolicy,
+        WorkspaceCoordinator& workspaceCoordinator,
+        RecentWorkspaceHistoryPort& recentHistory,
+        NotificationPort& notifications,
+        SetupPendingCheck setupPending
+        ) noexcept
+        : m_pathPolicy(pathPolicy),
           m_workspaceCoordinator(workspaceCoordinator),
           m_recentHistory(recentHistory),
           m_notifications(notifications),
@@ -56,17 +73,21 @@ public:
 
     [[nodiscard]] OpenExistingWorkspaceOutcome run()
     {
-        if (m_setupPending && m_setupPending())
+        if (blockedBySetupPending())
+        {
+            return blockedOutcome();
+        }
+
+        if (!m_fileDialog)
         {
             return fail(
-                OpenExistingWorkspaceStatus::Blocked,
-                "A profile setup or recovery is in progress. Finish or resolve it before opening another profile.",
-                NotificationSeverity::Warning
+                OpenExistingWorkspaceStatus::Failed,
+                "The profile open dialog is unavailable."
                 );
         }
 
         const Domain::Result<FileDialogResponse<FileDialogPath>> selected =
-            m_fileDialog.openOneFile(OpenFileDialogRequest{
+            m_fileDialog->openOneFile(OpenFileDialogRequest{
                 .purpose = FileDialogPurpose::TeacherProfile,
                 .title = "Open Teacher Profile",
                 .nameFilters = {"ClassMngr Teacher Profile (*.tps)"}
@@ -94,10 +115,31 @@ public:
                 );
         }
 
+        return openPathAfterSetup(
+            *selected.value().selection,
+            std::move(warnings)
+            );
+    }
+
+    [[nodiscard]] OpenExistingWorkspaceOutcome openPath(
+        const FileDialogPath& path
+        )
+    {
+        if (blockedBySetupPending())
+        {
+            return blockedOutcome();
+        }
+        return openPathAfterSetup(path, {});
+    }
+
+private:
+    [[nodiscard]] OpenExistingWorkspaceOutcome openPathAfterSetup(
+        const FileDialogPath& path,
+        std::string warnings
+        )
+    {
         const Domain::Result<WorkspaceLocation> normalized =
-            m_pathPolicy.normalizeOpenProfilePath(
-                *selected.value().selection
-                );
+            m_pathPolicy.normalizeOpenProfilePath(path);
         if (!normalized)
         {
             return fail(
@@ -115,6 +157,36 @@ public:
                 );
         if (!opened)
         {
+            if (opened.error().code == Domain::ErrorCode::NotFound)
+            {
+                const RecentWorkspaceHistory pruned =
+                    RecentWorkspaceHistoryUseCase::prune(
+                        m_recentHistory.load(),
+                        RecentWorkspacePath(path.value()),
+                        RecentWorkspacePath(normalized.value().value())
+                        );
+                std::string message =
+                    "The selected Teacher Profile could not be found and was removed from Recent Files: "
+                    + opened.error().message;
+                const Domain::Result<void> historySaved =
+                    m_recentHistory.save(pruned);
+                if (!historySaved)
+                {
+                    append(
+                        message,
+                        "Recent profile history could not be saved: "
+                            + historySaved.error().message
+                        );
+                }
+                append(message, std::move(warnings));
+                notify(message, NotificationSeverity::Warning);
+                return {
+                    OpenExistingWorkspaceStatus::Failed,
+                    std::nullopt,
+                    std::move(message)
+                };
+            }
+
             return fail(
                 OpenExistingWorkspaceStatus::Failed,
                 "The selected Teacher Profile could not be opened: "
@@ -126,7 +198,7 @@ public:
 
         const RecentWorkspaceHistory updated = RecentWorkspaceHistoryUseCase::record(
             m_recentHistory.load(),
-            RecentWorkspacePath(selected.value().selection->value()),
+            RecentWorkspacePath(path.value()),
             opened.value().location()
             );
         const Domain::Result<void> historySaved = m_recentHistory.save(updated);
@@ -155,7 +227,20 @@ public:
         };
     }
 
-private:
+    [[nodiscard]] bool blockedBySetupPending() const
+    {
+        return m_setupPending && m_setupPending();
+    }
+
+    [[nodiscard]] OpenExistingWorkspaceOutcome blockedOutcome()
+    {
+        return fail(
+            OpenExistingWorkspaceStatus::Blocked,
+            "A profile setup or recovery is in progress. Finish or resolve it before opening another profile.",
+            NotificationSeverity::Warning
+            );
+    }
+
     [[nodiscard]] OpenExistingWorkspaceOutcome fail(
         const OpenExistingWorkspaceStatus status,
         std::string message,
@@ -197,7 +282,7 @@ private:
         target += std::move(addition);
     }
 
-    FileDialogPort& m_fileDialog;
+    FileDialogPort* m_fileDialog = nullptr;
     WorkspaceOpenProfilePathPolicyPort& m_pathPolicy;
     WorkspaceCoordinator& m_workspaceCoordinator;
     RecentWorkspaceHistoryPort& m_recentHistory;
