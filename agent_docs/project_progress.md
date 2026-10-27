@@ -98,6 +98,18 @@ screenshot comparison, Phase 7 memory evidence, and all remaining 7A workflows
 remain open. Active candidates are tracked in
 `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
+Candidate #12, Export, passed independent focused verification and was
+committed as `5badb2c8`. The Next File action exports a normalized `.tps`
+snapshot through the shared online-backup and atomic-copy helper. It preserves
+the source session/path, selection, dirty state, and recent-profile history;
+setup/recovery state blocks before the dialog. Focused CTest passed 4/4,
+including Export flow, bootstrap, preferences, and the Next dependency
+boundary. No full suite or native dialog run occurred; invalid-path and
+dialog-open-failure cases were not injected. Candidate #13, recent-history
+menu, restore, and clear, is active. Batch 1 remains un-pushed; next-batch
+discovery remains gated until candidate #14. The 7A screenshot comparison,
+Phase 7 memory evidence, and 7A/Phase 7 exit gates remain open.
+
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained
 visual references. The Phase 0 plan update in commit f8bb5954 records this

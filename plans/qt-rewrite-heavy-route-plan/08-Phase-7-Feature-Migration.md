@@ -38,11 +38,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
-- Current note: 7A.1–7A.11 are accepted and committed; 7A.11 is `86b09d94`.
-  Candidate #12, Export, is active. The 7A screenshot comparison and memory
-  measurement remain open, as do the 7A and Phase 7 exit gates. Batch 1 remains
-  active and unpushed. Next-batch discovery remains gated until candidate #14.
-  See the progress log for 7A.11 evidence and limits.
+- Current note: 7A.1–7A.12 are accepted and committed; 7A.12 is `5badb2c8`.
+  Candidate #13, recent-history menu, restore, and clear, is active. The 7A
+  screenshot comparison and memory measurement remain open, as do the 7A and
+  Phase 7 exit gates. Batch 1 remains active and unpushed. Next-batch discovery
+  remains gated until candidate #14. See the progress log for 7A.12 evidence
+  and limits.
 
 ### Slice batches
 
@@ -362,6 +363,31 @@ keep current status in this plan and live batches in the shared tracker.
   evidence and the 7A/Phase 7 exit gates remain open. Candidate #12, Export, is
   active. Batch 1 remains active and unpushed; do not start next-batch discovery
   before candidate #14.
+
+### 7A.12 — Export accepted (2026-10-27)
+
+- Commit: `5badb2c8` (`Phase7 - Add Next Teacher Profile Export`). Next File >
+  Export is a distinct action enabled for an open profile, with a separate
+  `ExportTeacherProfile` save-dialog preference and normalized `.tps` target.
+  It uses the shared `DatabaseFileOperations::copyDatabaseFile` online-backup
+  and atomic-destination helper without reopening or switching the active
+  store. Export preserves the source session/path, selection, dirty Page and
+  workspace state, and recent-profile history; it does not resolve ordinary
+  dirty state or include page-only drafts. Pending setup or any available or
+  unreadable recovery blocks before the dialog. Cancel is a no-op, same-file
+  aliases are safe, and copy failure preserves an existing destination.
+- Verification: standard `build/macos-clang-debug`; focused builds of
+  `ClassMngrNextWorkspaceExportFlowTests`, `ClassMngrNextBootstrapTests`, and
+  `ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests`
+  passed. Focused CTest passed 4/4, including
+  `NextStartupWorkspaceDependencyBoundary`; `git diff --check` passed.
+- Limits: no full suite or native-dialog run. Invalid-path and dialog-open
+  failure injection were not covered; destination-failure coverage checks
+  existing destination bytes, not source-content byte equality. Screenshot
+  comparison and memory evidence, plus the 7A and Phase 7 exit gates, remain
+  open. Candidate #13, recent-history menu, restore, and clear, is active.
+  Batch 1 remains active and unpushed; do not start next-batch discovery before
+  candidate #14.
 
 ## Objective
 

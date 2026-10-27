@@ -6,11 +6,13 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-27
-- Current milestone: Phase 7 remains in progress. 7A.1–7A.11 are accepted and
-  committed; 7A.11 is `86b09d94`. Candidate #12, Export, is active. The 7A
-  screenshot comparison and memory measurement remain open, as do the 7A and
-  Phase 7 exit gates. See the [Phase 7 plan](08-Phase-7-Feature-Migration.md)
-  and [current batch tracker](Current-Slice-Batches.md).
+- Current milestone: Phase 7 remains in progress. 7A.1–7A.12 are accepted and
+  committed; 7A.12 is `5badb2c8`. Candidate #13, recent-history menu, restore,
+  and clear, is active. The 7A screenshot comparison and memory measurement
+  remain open, as do the 7A and Phase 7 exit gates. Batch 1 remains active and
+  unpushed; next-batch discovery is gated until candidate #14. See the [Phase 7
+  plan](08-Phase-7-Feature-Migration.md) and [current batch
+  tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
@@ -34,7 +36,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — 7A.1–7A.11 committed; candidate #12 active | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — 7A.1–7A.12 committed; candidate #13 active | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |

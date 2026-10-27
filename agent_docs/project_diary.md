@@ -36,6 +36,11 @@
   and keep its validation tied to the active store. Put shared file/backup
   operations in the WorkspaceStore target rather than linking Next to legacy
   Data. Keep borrowed dialog preferences alive through the dialog flow.
+- Keep profile Export separate from Save As: copy a committed SQLite snapshot
+  through the shared file helper without reopening it, changing the active
+  session/path, resolving ordinary dirty state, or recording history. Exclude
+  unsaved Page drafts from the snapshot and block export while setup/recovery
+  state is pending. Give profile export its own file-dialog preference purpose.
 - Keep the Next setup workbook flow on one typed path: asynchronous parser
   validation and review mapping feed `TeacherImportUseCaseRequest`, and the
   pending `WorkspaceStore` owns the import transaction. Verify selection,
