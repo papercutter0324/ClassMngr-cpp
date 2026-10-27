@@ -159,6 +159,8 @@ set(CLASSMNGR_SCHEDULE_IMPORT_PARSER_SOURCES
 set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
     "src/next/platform/workspace_store_gateway.cpp"
     "src/next/platform/workspace_store_gateway.h"
+    "src/next/platform/workspace_store_creation_lifecycle_adapter.cpp"
+    "src/next/platform/workspace_store_creation_lifecycle_adapter.h"
     "src/next/platform/workspace_store_initial_setup_teacher_entry_port.h"
     "src/next/platform/workspace_store_initial_setup_class_times_ports.h"
     "src/next/platform/workspace_store_schedule_import_state_snapshot_port.h"

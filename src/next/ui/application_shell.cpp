@@ -5,6 +5,9 @@
 #include <QCloseEvent>
 #include <QCoreApplication>
 #include <QHBoxLayout>
+#include <QKeySequence>
+#include <QMenu>
+#include <QMenuBar>
 #include <QPixmap>
 #include <QPushButton>
 #include <QSignalBlocker>
@@ -91,11 +94,28 @@ ApplicationShell::ApplicationShell(
     contentLayout->addWidget(m_pageHost, 1);
     setCentralWidget(m_contentWidget);
 
+    QMenu* const fileMenu = menuBar()->addMenu(
+        QCoreApplication::translate("NextShell", "File")
+        );
+    m_newTeacherProfileAction = fileMenu->addAction(
+        QCoreApplication::translate("NextShell", "New Teacher Profile…")
+        );
+    m_newTeacherProfileAction->setObjectName(
+        QStringLiteral("classMngrNextNewTeacherProfile")
+        );
+    m_newTeacherProfileAction->setShortcut(QKeySequence::New);
+
     connect(m_backButton, &QPushButton::clicked, this, [this] {
         static_cast<void>(navigateBack());
     });
     connect(m_forwardButton, &QPushButton::clicked, this, [this] {
         static_cast<void>(navigateForward());
+    });
+    connect(m_newTeacherProfileAction, &QAction::triggered, this, [this] {
+        if (m_newTeacherProfileHandler)
+        {
+            m_newTeacherProfileHandler();
+        }
     });
     connect(m_navigationTree, &QTreeWidget::currentItemChanged, this,
             [this](QTreeWidgetItem* current, QTreeWidgetItem*) {
@@ -119,6 +139,11 @@ ApplicationShell::ApplicationShell(
 void ApplicationShell::setCloseHandler(CloseHandler handler)
 {
     m_closeHandler = std::move(handler);
+}
+
+void ApplicationShell::setNewTeacherProfileHandler(std::function<void()> handler)
+{
+    m_newTeacherProfileHandler = std::move(handler);
 }
 
 void ApplicationShell::setNavigationGuard(NavigationGuard guard)

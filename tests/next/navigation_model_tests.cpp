@@ -6,6 +6,9 @@
 #include "next/ui/page_host.h"
 
 #include <QPushButton>
+#include <QAction>
+#include <QKeySequence>
+#include <QMenu>
 #include <QPointer>
 #include <QStatusBar>
 #include <QTreeWidget>
@@ -219,6 +222,7 @@ private slots:
     void historyActionStateRequiresAvailableAdjacentRoutes();
     void shellCommitsHistoryOnlyAfterGuardAndActivationSuccess();
     void shellHistoryControlsTrackAccessRevocation();
+    void shellExposesNewTeacherProfileAction();
     void shellOwnsTransientNotificationPortAndKeepsIdleStatusBarHidden();
 
 private:
@@ -807,6 +811,27 @@ void NavigationModelTests::shellHistoryControlsTrackAccessRevocation()
     QCOMPARE(shell.navigationModel()->currentPageId(), currentBeforePermissionRejectedForward);
     QCOMPARE(shell.navigationModel()->selectedPageId(), selectedBeforePermissionRejectedForward);
     QCOMPARE(shell.pageHost().activePageKey(), activeBeforePermissionRejectedForward);
+}
+
+void NavigationModelTests::shellExposesNewTeacherProfileAction()
+{
+    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    QAction* const action = shell.findChild<QAction*>(
+        QStringLiteral("classMngrNextNewTeacherProfile")
+        );
+    QVERIFY(action != nullptr);
+    QCOMPARE(action->text(), QStringLiteral("New Teacher Profile…"));
+    QCOMPARE(action->shortcut(), QKeySequence::New);
+    auto* const fileMenu = qobject_cast<QMenu*>(action->parent());
+    QVERIFY(fileMenu != nullptr);
+    QCOMPARE(fileMenu->title(), QStringLiteral("File"));
+
+    int invocationCount = 0;
+    shell.setNewTeacherProfileHandler([&invocationCount] {
+        ++invocationCount;
+    });
+    action->trigger();
+    QCOMPARE(invocationCount, 1);
 }
 
 void NavigationModelTests::shellOwnsTransientNotificationPortAndKeepsIdleStatusBarHidden()

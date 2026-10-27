@@ -1,4 +1,5 @@
 #include "next/platform/workspace_store_initial_setup_lifecycle_adapter.h"
+#include "next/platform/workspace_profile_path_policy.h"
 
 #include <QDir>
 #include <QFile>
@@ -61,14 +62,6 @@ namespace
         .message = toUtf8(message),
         .recoverable = false
     };
-}
-
-[[nodiscard]] bool isNativeProfilePath(const QString& path)
-{
-    return QFileInfo(path).suffix().compare(
-        QStringLiteral("tps"),
-        Qt::CaseInsensitive
-        ) == 0;
 }
 
 [[nodiscard]] bool isAbsolutePath(const QString& path)
@@ -234,7 +227,7 @@ WorkspaceStoreInitialSetupLifecycleAdapter::pendingRecovery() const
     if (object.value(QStringLiteral("version")).toInt() != 1
         || profile.trimmed().isEmpty()
         || !isAbsolutePath(profile)
-        || !isNativeProfilePath(profile)
+        || !WorkspaceProfilePathPolicy::hasNativeProfileSuffix(profile)
         || (!backup.isEmpty() && !isAbsolutePath(backup)))
     {
         return Domain::Result<
@@ -307,52 +300,7 @@ WorkspaceStoreInitialSetupLifecycleAdapter::profileLocationForSetupPath(
     const Application::FileDialogPath& path
     )
 {
-    QString selected = toQString(path.value()).trimmed();
-    if (selected.isEmpty())
-    {
-        return Domain::Result<Application::WorkspaceLocation>::failure(
-            invalidInputError(
-                QStringLiteral("Choose a destination for the profile." )
-                )
-            );
-    }
-
-    QFileInfo selectedInfo(selected);
-    QString fileName = selectedInfo.fileName();
-    if (fileName.isEmpty())
-    {
-        return Domain::Result<Application::WorkspaceLocation>::failure(
-            invalidInputError(
-                QStringLiteral("The profile destination must name a file." )
-                )
-            );
-    }
-
-    if (selected.endsWith(QLatin1Char('.')))
-    {
-        selected.chop(1);
-        selectedInfo.setFile(selected);
-    }
-
-    if (selectedInfo.suffix().isEmpty())
-    {
-        selected += QStringLiteral(".tps");
-    }
-    else if (!isNativeProfilePath(selected))
-    {
-        return Domain::Result<Application::WorkspaceLocation>::failure(
-            invalidInputError(
-                QStringLiteral("ClassMngr profiles must use the .tps extension." )
-                )
-            );
-    }
-
-    const QString normalized = QDir::cleanPath(
-        QFileInfo(selected).absoluteFilePath()
-        );
-    return Domain::Result<Application::WorkspaceLocation>::success(
-        Application::WorkspaceLocation(toUtf8(normalized))
-        );
+    return WorkspaceProfilePathPolicy::profileLocationForInitialSetupPath(path);
 }
 
 const QString&
@@ -370,7 +318,7 @@ WorkspaceStoreInitialSetupLifecycleAdapter::writeRecoveryRecord(
     const QString backup = toQString(record.originalBackup);
     if (profile.trimmed().isEmpty()
         || !isAbsolutePath(profile)
-        || !isNativeProfilePath(profile)
+        || !WorkspaceProfilePathPolicy::hasNativeProfileSuffix(profile)
         || (!backup.isEmpty() && !isAbsolutePath(backup)))
     {
         return Domain::Result<void>::failure(

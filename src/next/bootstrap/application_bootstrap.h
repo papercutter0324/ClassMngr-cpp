@@ -9,6 +9,7 @@
 #include "next/application/initial_setup_lifecycle.h"
 #include "next/application/initial_setup_class_details_draft.h"
 #include "next/application/initial_setup_class_times_requirement.h"
+#include "next/application/user_prompt_port.h"
 #include "next/application/custom_color_palette_preferences.h"
 #include "next/application/personal_details_save.h"
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
@@ -67,6 +68,12 @@ public:
         // opening a native operating-system dialog.
         std::function<std::unique_ptr<Application::FileDialogPort>()>
             initialSetupFileDialogPortFactory;
+        std::function<std::unique_ptr<Application::FileDialogPort>()>
+            newProfileFileDialogPortFactory;
+        std::function<std::unique_ptr<Application::UserPromptPort>()>
+            newProfileUserPromptPortFactory;
+        std::function<std::unique_ptr<Application::RecentWorkspaceHistoryPort>()>
+            newProfileRecentWorkspaceHistoryPortFactory;
     };
 
     struct ShutdownSeams final
@@ -125,9 +132,11 @@ private:
     void ensureWorkspaceComposition();
     [[nodiscard]] Ui::InitialSetupPageState initialSetupPageState() const;
     void beginInitialSetupProfile();
+    void createNewTeacherProfile();
     void resumeInitialSetupProfile();
     void restoreInitialSetupProfile();
     void cancelInitialSetupProfile();
+    void finishInitialSetupProfile();
     [[nodiscard]] Application::PersonalDetailsReadResult
     loadInitialSetupPersonalDetails() const;
     [[nodiscard]] Application::PersonalDetailsSaveResult
@@ -155,6 +164,8 @@ private:
         ) const;
     [[nodiscard]] Domain::Result<std::optional<QString>>
     chooseInitialSetupTeacherImportWorkbook();
+    [[nodiscard]] Domain::Result<std::optional<QString>>
+    chooseInitialSetupScheduleImportWorkbook();
     [[nodiscard]] std::expected<
         Application::TeacherImportUseCaseResult,
         Application::TeacherImportUseCaseError

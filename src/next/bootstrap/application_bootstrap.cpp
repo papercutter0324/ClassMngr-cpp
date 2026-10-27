@@ -2,6 +2,7 @@
 
 #include "next/bootstrap/qt_startup_diagnostics_sink.h"
 #include "next/application/recent_workspace_history_use_case.h"
+#include "next/application/normal_workspace_creation_flow.h"
 #include "next/application/initial_setup_class_details_requirements.h"
 #include "next/application/positive_decimal_id_validation.h"
 #include "core/settingsmanager.h"
@@ -10,6 +11,8 @@
 #include "next/platform/settings_manager_preferences_port.h"
 #include "next/platform/resource_document_catalog_port.h"
 #include "next/platform/workspace_store_gateway.h"
+#include "next/platform/workspace_store_creation_lifecycle_adapter.h"
+#include "next/platform/workspace_profile_path_policy.h"
 #include "next/platform/workspace_store_initial_setup_lifecycle_adapter.h"
 #include "next/platform/qsettings_file_dialog_directory_preferences_adapter.h"
 #include "next/resources/resource_catalog.h"
@@ -21,6 +24,7 @@
 #include "next/ui/page_host.h"
 #include "next/ui/placeholder_page.h"
 #include "next/ui/qt_file_dialog_presenter.h"
+#include "next/ui/qt_user_prompt_presenter.h"
 #include "next/ui/theme_presenter.h"
 
 #include <QApplication>
@@ -661,6 +665,9 @@ Application::StartupResult ApplicationBootstrap::start()
             }
             return result.shutdownRequested;
         });
+        m_shell->setNewTeacherProfileHandler([this] {
+            createNewTeacherProfile();
+        });
     }
     catch (const std::exception&)
     {
@@ -739,6 +746,57 @@ Application::StartupResult ApplicationBootstrap::start()
                             ) {
                             return saveInitialSetupClassTimes(times);
                         },
+                        .scheduleImport = {
+                            .chooseWorkbook = [this] {
+                                return chooseInitialSetupScheduleImportWorkbook();
+                            },
+                            .readState = [this] {
+                                auto* const storeGateway =
+                                    dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                                        m_workspaceGateway.get()
+                                        );
+                                return storeGateway
+                                    ? storeGateway->loadScheduleImportState()
+                                    : Application::ScheduleImportStateSnapshotOutcome{
+                                          Application::ScheduleImportStateSnapshotFailure{
+                                              Application::ScheduleImportStateSnapshotFailureKind::ActiveSessionUnavailable,
+                                              Application::ScheduleImportStateSnapshotFailureSource::Session,
+                                              "The setup profile schedule store is unavailable."
+                                          }
+                                      };
+                            },
+                            .apply = [this](
+                                const Application::ScheduleImportApplyRequest& request
+                                ) {
+                                auto* const storeGateway =
+                                    dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                                        m_workspaceGateway.get()
+                                        );
+                                if (!storeGateway)
+                                {
+                                    return Application::ScheduleImportApplyResult{
+                                        std::unexpected(
+                                            Application::ScheduleImportApplyFailure{
+                                                u"The setup profile schedule store is unavailable.",
+                                                std::nullopt,
+                                                std::nullopt,
+                                                std::nullopt,
+                                                Domain::ErrorCode::Technical
+                                            }
+                                            )
+                                    };
+                                }
+                                return storeGateway->applyScheduleImport(request);
+                            },
+                            .validationTimeoutMilliseconds = [] {
+                                const Platform::SettingsManagerExcelImportTimeoutPort
+                                    timeoutPreferences;
+                                return timeoutPreferences.read().normalizedSeconds()
+                                    * 1000;
+                            },
+                            .cancelSetup = [this] { cancelInitialSetupProfile(); }
+                        },
+                        .finishSetup = [this] { finishInitialSetupProfile(); },
                         .teacherImport = {
                             .chooseWorkbook = [this] {
                                 return chooseInitialSetupTeacherImportWorkbook();
@@ -1263,6 +1321,7 @@ void ApplicationBootstrap::ensureWorkspaceComposition()
 Ui::InitialSetupPageState ApplicationBootstrap::initialSetupPageState() const
 {
     Ui::InitialSetupPageState state;
+    state.statusMessage = m_initialSetupStatusMessage;
     if (m_initialSetupLifecycle
         && m_initialSetupLifecycle->hasPendingSetup())
     {
@@ -1410,6 +1469,115 @@ void ApplicationBootstrap::beginInitialSetupProfile()
     m_initialSetupStatusMessage.clear();
 }
 
+void ApplicationBootstrap::createNewTeacherProfile()
+{
+    if (!m_shell || !m_applicationRuntime || !m_initialSetupLifecycle)
+    {
+        return;
+    }
+
+    Platform::QSettingsFileDialogDirectoryPreferencesAdapter directoryPreferences;
+    std::unique_ptr<Application::FileDialogPort> ownedFileDialog;
+    if (m_startupWorkspaceSeams.newProfileFileDialogPortFactory)
+    {
+        ownedFileDialog =
+            m_startupWorkspaceSeams.newProfileFileDialogPortFactory();
+    }
+    else
+    {
+        ownedFileDialog = std::make_unique<Ui::QtFileDialogPresenter>(
+            directoryPreferences,
+            m_shell.get()
+            );
+    }
+    if (!ownedFileDialog)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The profile save dialog is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+
+    std::unique_ptr<Application::UserPromptPort> ownedUserPrompt;
+    if (m_startupWorkspaceSeams.newProfileUserPromptPortFactory)
+    {
+        ownedUserPrompt =
+            m_startupWorkspaceSeams.newProfileUserPromptPortFactory();
+    }
+    else
+    {
+        ownedUserPrompt = std::make_unique<Ui::QtUserPromptPresenter>(
+            m_shell.get()
+            );
+    }
+    if (!ownedUserPrompt)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The current page confirmation is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+
+    std::unique_ptr<Application::RecentWorkspaceHistoryPort> ownedRecentHistory;
+    if (m_startupWorkspaceSeams.newProfileRecentWorkspaceHistoryPortFactory)
+    {
+        ownedRecentHistory =
+            m_startupWorkspaceSeams.newProfileRecentWorkspaceHistoryPortFactory();
+    }
+    else
+    {
+        ownedRecentHistory =
+            std::make_unique<Platform::SettingsManagerRecentWorkspaceHistoryPort>();
+    }
+    if (!ownedRecentHistory)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "Recent profile history is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+
+    Platform::WorkspaceProfilePathPolicy pathPolicy;
+    Platform::QtWorkspaceCreationFileOperationsPort fileOperations;
+    Platform::WorkspaceStoreCreationLifecycleAdapter lifecyclePort(
+        m_applicationRuntime->workspaceCoordinator(),
+        m_applicationRuntime->workspaceState(),
+        fileOperations
+        );
+    Application::WorkspaceCreationLifecycle lifecycle(lifecyclePort);
+    Application::NormalWorkspaceCreationFlow flow(
+        *ownedFileDialog,
+        *ownedUserPrompt,
+        pathPolicy,
+        lifecyclePort,
+        lifecycle,
+        m_applicationRuntime->workspaceCoordinator(),
+        m_applicationRuntime->workspaceState(),
+        *ownedRecentHistory,
+        m_shell->notificationPort(),
+        [this] {
+            if (m_initialSetupLifecycle->hasPendingSetup())
+            {
+                return true;
+            }
+            const Ui::InitialSetupPageState setupState = initialSetupPageState();
+            return setupState.setupPending
+                || setupState.recoveryAvailable
+                || setupState.recoveryError;
+        }
+        );
+    static_cast<void>(flow.run());
+}
+
 void ApplicationBootstrap::resumeInitialSetupProfile()
 {
     if (!m_initialSetupLifecyclePort || !m_initialSetupLifecycle)
@@ -1494,14 +1662,78 @@ void ApplicationBootstrap::cancelInitialSetupProfile()
     }
     m_initialSetupStatusMessage = canceled.status
             == Application::InitialSetupCancelStatus::Canceled
-        ? QCoreApplication::translate(
-              "InitialPage",
-              "Setup was canceled."
-              )
+        ? QString{}
         : QCoreApplication::translate(
               "InitialPage",
               "The setup could not be canceled. The recovery files are still available."
               );
+}
+
+void ApplicationBootstrap::finishInitialSetupProfile()
+{
+    if (!m_initialSetupLifecycle
+        || !m_initialSetupLifecycle->hasPendingSetup())
+    {
+        return;
+    }
+
+    const Application::WorkspaceLocation profile =
+        m_initialSetupLifecycle->pendingProfile();
+    const auto finished = m_initialSetupLifecycle->finish();
+    m_initialSetupClassDetailsDraft.reset();
+    m_initialSetupClassId.reset();
+    m_initialSetupClassTimesSaved = false;
+
+    if (!finished.wasActive)
+    {
+        m_initialSetupStatusMessage = QCoreApplication::translate(
+            "InitialPage", "Setup was not active."
+            );
+        return;
+    }
+    if (finished.originalBackupRemovalFailed)
+    {
+        m_initialSetupStatusMessage = QCoreApplication::translate(
+            "InitialPage",
+            "Setup data was saved, but the previous profile backup could not be removed. Recovery files were kept."
+            );
+        return;
+    }
+
+    std::unique_ptr<Application::RecentWorkspaceHistoryPort> historyPort =
+        m_startupWorkspaceSeams.recentWorkspaceHistoryPortFactory
+        ? m_startupWorkspaceSeams.recentWorkspaceHistoryPortFactory()
+        : std::make_unique<Platform::SettingsManagerRecentWorkspaceHistoryPort>();
+    if (!historyPort)
+    {
+        m_initialSetupStatusMessage = QCoreApplication::translate(
+            "InitialPage",
+            "Setup is complete, but recent profile history could not be updated."
+            );
+        return;
+    }
+
+    const QString rawProfilePath = QString::fromUtf8(
+        profile.value().data(),
+        static_cast<qsizetype>(profile.value().size())
+        );
+    const QString normalizedPath = normalizedStartupWorkspacePath(rawProfilePath);
+    const Application::RecentWorkspaceHistory history =
+        Application::RecentWorkspaceHistoryUseCase::record(
+            historyPort->load(),
+            Application::RecentWorkspacePath(profile.value()),
+            Application::RecentWorkspacePath(normalizedPath.toUtf8().toStdString())
+            );
+    const Domain::Result<void> saved = historyPort->save(history);
+    m_initialSetupStatusMessage = saved
+        ? QCoreApplication::translate("InitialPage", "Setup is complete.")
+        : QCoreApplication::translate(
+              "InitialPage",
+              "Setup is complete, but recent profile history could not be updated: %1"
+              ).arg(QString::fromUtf8(
+                  saved.error().message.data(),
+                  static_cast<qsizetype>(saved.error().message.size())
+                  ));
 }
 
 Application::PersonalDetailsReadResult
@@ -1868,6 +2100,84 @@ ApplicationBootstrap::chooseInitialSetupTeacherImportWorkbook()
     {
         return Domain::Result<std::optional<QString>>::failure(
             selected.error());
+    }
+    if (!selected.value().selection.has_value())
+    {
+        return Domain::Result<std::optional<QString>>::success(std::nullopt);
+    }
+
+    const std::string& pathBytes = selected.value().selection->value();
+    return Domain::Result<std::optional<QString>>::success(QString::fromUtf8(
+        pathBytes.data(), static_cast<qsizetype>(pathBytes.size())));
+}
+
+Domain::Result<std::optional<QString>>
+ApplicationBootstrap::chooseInitialSetupScheduleImportWorkbook()
+{
+    if (!m_initialSetupLifecycle
+        || !m_initialSetupLifecycle->hasPendingSetup())
+    {
+        return Domain::Result<std::optional<QString>>::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "No setup profile is active.",
+            .recoverable = true
+        });
+    }
+
+    const QByteArray title = QCoreApplication::translate(
+        "InitialSetupScheduleImportDialog",
+        "Select Schedule Import File"
+        ).toUtf8();
+    const QByteArray filter = QCoreApplication::translate(
+        "InitialSetupScheduleImportDialog",
+        "Excel Workbooks (*.xlsx)"
+        ).toUtf8();
+    const Application::OpenFileDialogRequest request{
+        .purpose = Application::FileDialogPurpose::ImportWorkbook,
+        .title = std::string(title.constData(),
+                             static_cast<std::size_t>(title.size())),
+        .nameFilters = {
+            std::string(filter.constData(),
+                        static_cast<std::size_t>(filter.size()))
+        }
+    };
+
+    using Response = Application::FileDialogResponse<
+        Application::FileDialogPath>;
+    const Domain::Result<Response> selected = [&]() -> Domain::Result<Response> {
+        if (m_startupWorkspaceSeams.initialSetupFileDialogPortFactory)
+        {
+            std::unique_ptr<Application::FileDialogPort> fileDialog =
+                m_startupWorkspaceSeams.initialSetupFileDialogPortFactory();
+            if (!fileDialog)
+            {
+                return Domain::Result<Response>::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = "The schedule import file dialog is unavailable.",
+                    .recoverable = true
+                });
+            }
+            return fileDialog->openOneFile(request);
+        }
+
+        if (!m_shell)
+        {
+            return Domain::Result<Response>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "The schedule import file dialog is unavailable.",
+                .recoverable = true
+            });
+        }
+
+        Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+            directoryPreferences;
+        Ui::QtFileDialogPresenter fileDialog(directoryPreferences, m_shell.get());
+        return fileDialog.openOneFile(request);
+    }();
+
+    if (!selected)
+    {
+        return Domain::Result<std::optional<QString>>::failure(selected.error());
     }
     if (!selected.value().selection.has_value())
     {

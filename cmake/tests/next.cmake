@@ -2422,6 +2422,22 @@ classmngr_add_qt_test(
         CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
 )
 
+# Exercise the normal New Teacher Profile action through its dialog and direct
+# WorkspaceStore lifecycle boundary, including replacement rollback.
+classmngr_add_qt_test(
+    NAME NextWorkspaceCreationFlow
+    OFFSCREEN
+    SOURCES
+        tests/next_workspace_creation_flow_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNextWorkspace
+        ClassMngrWorkspaceStore
+        ClassMngrNextWorkspaceDomain
+        Qt6::Sql
+        Qt6::Test
+)
+
 # Verify teacher entry persistence and recovery through the v2 store boundary.
 classmngr_add_qt_test(
     NAME NextPlatformWorkspaceStoreInitialSetupTeacherEntryPersistence
