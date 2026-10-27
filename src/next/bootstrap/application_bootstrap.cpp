@@ -1848,6 +1848,33 @@ void ApplicationBootstrap::openTeacherProfile(
         return;
     }
 
+    if (selectedPath.has_value() && outcome.session.has_value())
+    {
+        const std::string& openedPath = outcome.session->location().value();
+        const QString openedPathText = QString::fromUtf8(
+            openedPath.data(),
+            static_cast<qsizetype>(openedPath.size())
+            );
+        const QString openedDirectory = QFileInfo(openedPathText).absolutePath();
+        const Domain::Result<void> directoryPreferenceSaved =
+            directoryPreferences.writeDirectory(
+                Application::FileDialogPurpose::TeacherProfile,
+                Application::DirectoryPreferencePath(
+                    openedDirectory.toUtf8().toStdString()
+                    )
+                );
+        if (!directoryPreferenceSaved)
+        {
+            static_cast<void>(m_shell->notificationPort().show(
+                Application::NotificationRequest{
+                    .message = "The profile was opened, but its directory could not be remembered: "
+                        + directoryPreferenceSaved.error().message,
+                    .severity = Application::NotificationSeverity::Warning
+                }
+                ));
+        }
+    }
+
     m_shell->updateNavigationAccessContext(
         m_applicationRuntime->workspaceState().snapshot().lifecycle(),
         std::nullopt

@@ -16,6 +16,7 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/platform/workspace_store_personal_details_port.h"
+#include "next/platform/qsettings_file_dialog_directory_preferences_adapter.h"
 #include "ui/shared/state/option_state_keys.h"
 
 #include <QApplication>
@@ -50,6 +51,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QSaveFile>
+#include <QSettings>
 #include <QStatusBar>
 #include <QTemporaryDir>
 #include <QTimer>
@@ -120,6 +122,7 @@ private slots:
     void recentFilesMenuRefreshesOrderedEscapedPathsAndEmptyState();
     void recentRestoreUsesOpenFlowAndResolvesDirtyPageBeforeReplacement();
     void recentRestoreSavesDirtyWorkspaceBeforeReplacement();
+    void recentRestoreRemembersDirectoryWhenHistorySaveFails();
     void clearRecentHistoryPreservesClosedAndOpenWorkspaceState();
     void saveAsActionUsesNextGatewayAndPreservesActiveSessionIdentity();
     void exportActionUsesNextGatewayWithoutResolvingDirtyPage();
@@ -303,6 +306,7 @@ struct RecentWorkspaceHistoryProbe final
     int saveCount = 0;
     int clearCount = 0;
     bool mutateOnSave = false;
+    bool failSave = false;
     bool failClear = false;
 };
 
@@ -329,6 +333,14 @@ public:
     {
         ++m_probe->saveCount;
         m_probe->saves.push_back(history);
+        if (m_probe->failSave)
+        {
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "injected recent history save failure",
+                .recoverable = true
+            });
+        }
         if (m_probe->mutateOnSave)
         {
             m_probe->history = history;
@@ -968,6 +980,61 @@ private:
             SettingsManager::instance().remove(key);
         }
     }
+};
+
+class TeacherProfileDirectoryPreferenceGuard final
+{
+public:
+    explicit TeacherProfileDirectoryPreferenceGuard(
+        const QString& settingsPath
+        )
+        : m_previousFormat(QSettings::defaultFormat())
+        , m_previousOrganization(qApp->organizationName())
+    {
+        qApp->setOrganizationName(QStringLiteral("ClassMngrDirectoryPreferenceTests"));
+        QSettings::setPath(
+            QSettings::IniFormat,
+            QSettings::UserScope,
+            settingsPath
+            );
+        QSettings::setDefaultFormat(QSettings::IniFormat);
+        m_previous = m_preferences.readDirectory(
+            Application::FileDialogPurpose::TeacherProfile
+            );
+    }
+
+    ~TeacherProfileDirectoryPreferenceGuard()
+    {
+        static_cast<void>(m_preferences.writeDirectory(
+            Application::FileDialogPurpose::TeacherProfile,
+            m_previous
+            ));
+        QSettings::setDefaultFormat(m_previousFormat);
+        qApp->setOrganizationName(m_previousOrganization);
+    }
+
+    [[nodiscard]] Application::DirectoryPreferencePath read() const
+    {
+        return m_preferences.readDirectory(
+            Application::FileDialogPurpose::TeacherProfile
+            );
+    }
+
+    [[nodiscard]] Domain::Result<void> write(
+        const QString& path
+        ) const
+    {
+        return m_preferences.writeDirectory(
+            Application::FileDialogPurpose::TeacherProfile,
+            Application::DirectoryPreferencePath(path.toUtf8().toStdString())
+            );
+    }
+
+private:
+    QSettings::Format m_previousFormat;
+    QString m_previousOrganization;
+    Platform::QSettingsFileDialogDirectoryPreferencesAdapter m_preferences;
+    Application::DirectoryPreferencePath m_previous;
 };
 
 class LanguageChangeProbe final : public QWidget
@@ -5044,10 +5111,14 @@ recentRestoreUsesOpenFlowAndResolvesDirtyPageBeforeReplacement()
     const QString firstPath = temporaryDirectory.filePath(
         QStringLiteral("first-recent.tps")
         );
-    const QString secondPath = temporaryDirectory.filePath(
-        QStringLiteral("second-recent.tps")
+    const QString secondPath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("second/second-recent.tps")
         );
     const auto touch = [](const QString& path) {
+        if (!QDir().mkpath(QFileInfo(path).absolutePath()))
+        {
+            return false;
+        }
         QFile file(path);
         return file.open(QIODevice::WriteOnly | QIODevice::Truncate)
             && file.write(QByteArrayLiteral("profile remains on disk")) > 0;
@@ -5059,6 +5130,34 @@ recentRestoreUsesOpenFlowAndResolvesDirtyPageBeforeReplacement()
         );
     const Application::WorkspaceLocation normalizedSecond(
         QFileInfo(secondPath).canonicalFilePath().toUtf8().toStdString()
+        );
+    const auto parentDirectoryOf = [](
+        const Application::WorkspaceLocation& location
+        ) {
+        const QString normalizedPath = QString::fromUtf8(
+            location.value().data(),
+            static_cast<qsizetype>(location.value().size())
+            );
+        return QFileInfo(normalizedPath).absolutePath();
+    };
+    const QString failedPath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("failed/failed-recent.tps")
+        );
+    QVERIFY(touch(failedPath));
+
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("settings")
+        );
+    QVERIFY(QDir().mkpath(settingsPath));
+    TeacherProfileDirectoryPreferenceGuard directoryPreference(settingsPath);
+    const Domain::Result<void> initialDirectoryWrite = directoryPreference.write(
+        temporaryDirectory.filePath(QStringLiteral("remembered-before-open"))
+        );
+    QVERIFY2(
+        initialDirectoryWrite,
+        initialDirectoryWrite
+            ? ""
+            : initialDirectoryWrite.error().message.c_str()
         );
 
     auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
@@ -5115,6 +5214,8 @@ recentRestoreUsesOpenFlowAndResolvesDirtyPageBeforeReplacement()
     QCOMPARE(historyProbe->saveCount, 1);
     QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
              normalizedFirst);
+    QCOMPARE(directoryPreference.read().value(),
+             parentDirectoryOf(normalizedFirst).toUtf8().toStdString());
     QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId()->value(),
              QStringLiteral("my_workspace"));
 
@@ -5127,6 +5228,10 @@ recentRestoreUsesOpenFlowAndResolvesDirtyPageBeforeReplacement()
         Application::RecentWorkspacePath(secondPath.toUtf8().toStdString())
     };
     promptProbe->action = Application::UnsavedChangesAction::Cancel;
+    const QString directoryBeforeCancel = temporaryDirectory.filePath(
+        QStringLiteral("remembered-before-cancel")
+        );
+    QVERIFY(directoryPreference.write(directoryBeforeCancel));
     QVERIFY(QMetaObject::invokeMethod(
         menu,
         "aboutToShow",
@@ -5142,6 +5247,8 @@ recentRestoreUsesOpenFlowAndResolvesDirtyPageBeforeReplacement()
     QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
              normalizedFirst);
     QVERIFY(page->hasUnsavedChanges());
+    QCOMPARE(directoryPreference.read().value(),
+             directoryBeforeCancel.toUtf8().toStdString());
 
     promptProbe->action = Application::UnsavedChangesAction::Discard;
     QVERIFY(QMetaObject::invokeMethod(
@@ -5155,10 +5262,39 @@ recentRestoreUsesOpenFlowAndResolvesDirtyPageBeforeReplacement()
     QCOMPARE(historyProbe->saveCount, 2);
     QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
              normalizedSecond);
+    QCOMPARE(directoryPreference.read().value(),
+             parentDirectoryOf(normalizedSecond).toUtf8().toStdString());
     QVERIFY(!page->hasUnsavedChanges());
     QCOMPARE(fileDialogProbe->openCount, 0);
     QVERIFY(QFileInfo::exists(firstPath));
     QVERIFY(QFileInfo::exists(secondPath));
+
+    historyProbe->history.paths = {
+        Application::RecentWorkspacePath(failedPath.toUtf8().toStdString())
+    };
+    gatewayProbe->openError = Domain::OperationError{
+        .code = Domain::ErrorCode::Technical,
+        .message = "injected profile open failure",
+        .recoverable = true
+    };
+    const std::size_t historySaveCount = historyProbe->saves.size();
+    QVERIFY(QMetaObject::invokeMethod(
+        menu,
+        "aboutToShow",
+        Qt::DirectConnection
+        ));
+    QCOMPARE(menu->actions().at(0)->data().toString(), failedPath);
+    menu->actions().at(0)->trigger();
+    QCOMPARE(gatewayProbe->openCalls, 3);
+    QCOMPARE(historyProbe->saves.size(), historySaveCount);
+    QCOMPARE(historyProbe->history.paths.front().value(),
+             failedPath.toUtf8().toStdString());
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+             normalizedSecond);
+    QCOMPARE(directoryPreference.read().value(),
+             parentDirectoryOf(normalizedSecond).toUtf8().toStdString());
+    QCOMPARE(dialogFactoryCalls, 0);
+    QCOMPARE(fileDialogProbe->openCount, 0);
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);
@@ -5302,6 +5438,104 @@ recentRestoreSavesDirtyWorkspaceBeforeReplacement()
     QCOMPARE(historyProbe->saves.back().paths.front(), normalizedSelected);
     QCOMPARE(historyProbe->saves.back().lastPath,
              std::optional<Application::RecentWorkspacePath>(normalizedSelected));
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+recentRestoreRemembersDirectoryWhenHistorySaveFails()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString selectedPath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("selected/selected.tps")
+        );
+    QVERIFY(QDir().mkpath(QFileInfo(selectedPath).absolutePath()));
+    QFile selectedFile(selectedPath);
+    QVERIFY(selectedFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QCOMPARE(selectedFile.write(QByteArrayLiteral("profile data")), qint64{12});
+    selectedFile.close();
+    const Application::WorkspaceLocation normalizedSelected(
+        QFileInfo(selectedPath).canonicalFilePath().toUtf8().toStdString()
+        );
+    const QString normalizedDirectory = QFileInfo(
+        QString::fromUtf8(
+            normalizedSelected.value().data(),
+            static_cast<qsizetype>(normalizedSelected.value().size())
+            )
+        ).absolutePath();
+
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("settings")
+        );
+    QVERIFY(QDir().mkpath(settingsPath));
+    TeacherProfileDirectoryPreferenceGuard directoryPreference(settingsPath);
+    const QString directoryBeforeRestore = temporaryDirectory.filePath(
+        QStringLiteral("remembered-before-restore")
+        );
+    QVERIFY(directoryPreference.write(directoryBeforeRestore));
+
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    const Application::RecentWorkspacePath recentPath(
+        selectedPath.toUtf8().toStdString()
+        );
+    historyProbe->history.paths = {recentPath};
+    historyProbe->history.lastPath = recentPath;
+    historyProbe->failSave = true;
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    seams.recentAutoOpenEnabled = false;
+    seams.workspaceGatewayFactory = [gatewayProbe] {
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
+    };
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    QMenu* const menu = bootstrap.shell()->recentWorkspaceMenu();
+    QVERIFY(menu);
+    QVERIFY(QMetaObject::invokeMethod(
+        menu,
+        "aboutToShow",
+        Qt::DirectConnection
+        ));
+    QCOMPARE(menu->actions().at(0)->data().toString(), selectedPath);
+    menu->actions().at(0)->trigger();
+
+    QCOMPARE(gatewayProbe->openCalls, 1);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+             normalizedSelected);
+    QCOMPARE(historyProbe->saveCount, 1);
+    QCOMPARE(historyProbe->saves.size(), std::size_t(1));
+    QCOMPARE(historyProbe->history.paths.front(), recentPath);
+    QCOMPARE(directoryPreference.read().value(),
+             normalizedDirectory.toUtf8().toStdString());
+    QVERIFY(bootstrap.shell()->statusBar()->currentMessage().contains(
+        QStringLiteral("recent profile history could not be saved")
+        ));
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);
