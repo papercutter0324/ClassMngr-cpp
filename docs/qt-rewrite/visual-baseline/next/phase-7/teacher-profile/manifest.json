@@ -1,0 +1,59 @@
+{
+    "captures": [
+        {
+            "file": "legacy_en_US-light.png",
+            "height": 768,
+            "locale": "en_US",
+            "page": "legacy",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "file": "next_en_US-light.png",
+            "height": 768,
+            "locale": "en_US",
+            "page": "next",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "file": "legacy_ko_KR-dark.png",
+            "height": 768,
+            "locale": "ko_KR",
+            "page": "legacy",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "file": "next_ko_KR-dark.png",
+            "height": 768,
+            "locale": "ko_KR",
+            "page": "next",
+            "theme": "dark",
+            "width": 1024
+        }
+    ],
+    "profile": {
+        "birthday": "03-14",
+        "internetType": "WiFi",
+        "notes": "Available after lunch. Bring the HDMI adapter.",
+        "phoneNumber": "010-1234-5678",
+        "preferredName": "Dana Kim",
+        "preferredRomanization": "Dana Kim",
+        "projectionType": "HDMI",
+        "roomNumber": "204",
+        "teacherEn": "Dana Kim",
+        "teacherKr": "김선생",
+        "wifiName": "Teachers",
+        "wifiPassword": "classroom-wifi",
+        "zoomId": "dana.kim",
+        "zoomPassword": "zoom-secret"
+    },
+    "purpose": "Matched legacy and Next Teacher Profile page captures",
+    "qtPlatform": "offscreen",
+    "style": "Fusion",
+    "viewport": {
+        "height": 768,
+        "width": 1024
+    }
+}

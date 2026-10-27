@@ -39,10 +39,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
 - Current note: 7A.1–7A.15 are accepted; Batch 1 is pushed at `c5af6755`.
-  Batch 2 is active at candidate #16, Teacher profile page and navigation.
-  The 7A screenshot comparison and memory measurement remain open, as do the
-  7A and Phase 7 exit gates. See the progress log for acceptance evidence and
-  limits.
+  Candidate #16, Teacher profile page and navigation, is accepted at
+  `24c14f5e`; Batch 2 is active at candidate #17, Korean teacher
+  list/navigation with New and Delete. The 7A screenshot comparison and memory
+  measurement remain open, as do the 7A and Phase 7 exit gates. See the
+  progress log for slice evidence and limits.
 
 ### Slice batches
 
@@ -442,6 +443,28 @@ keep current status in this plan and live batches in the shared tracker.
   populated historic schema, and no real-world legacy `.db` fixture is
   available. Screenshot comparison and memory evidence, plus the 7A and Phase 7
   exit gates, remain open.
+
+### Candidate #16 — Teacher profile page and navigation accepted (2026-10-27)
+
+- Commit: `24c14f5e` (`Phase7 - Add teacher profile page and interactions`).
+  Next now has a static typed Teacher Profile route with open-by-ID navigation,
+  direct `WorkspaceStore` reads and edits, validation, dirty/save handling,
+  Korean/English on-screen keyboard input, and a calendar-backed birthday field
+  that displays a localized month/day and stores `MM-dd`.
+- Visual evidence: matched 1024×768 Fusion/offscreen captures cover English/light
+  and Korean/dark. The page restores the legacy header, two-row details and
+  connectivity cards, and Notes card. Remaining deltas accepted in review are
+  roughly 2–6 px in card vertical positions, a few pixels at field edges, and
+  idle visibility of the birthday clear affordance. See the [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/teacher-profile/README.md).
+- Focused verification in `build/macos-clang-debug`: `ClassMngr`,
+  `ClassMngrNext`, `ClassMngrNextBootstrapTests`,
+  `ClassMngrOnScreenKeyboardTests`, and `ClassMngrTeacherProfileVisualCapture`
+  built; focused CTest passed 4/4. `NextStartupWorkspaceDependencyBoundary`
+  passed 1/1; source ownership passed for 1,751 handwritten sources; resource
+  inventory `--check` and `git diff --check` passed. Build freshness (fresh vs.
+  incremental) was not stated in the verification handoff.
+- Limits: these profile captures do not close the 7A screenshot comparison or
+  memory evidence; the 7A and Phase 7 exit gates remain open.
 
 ## Objective
 

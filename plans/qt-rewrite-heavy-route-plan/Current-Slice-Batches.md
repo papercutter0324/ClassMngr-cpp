@@ -10,10 +10,9 @@ evidence and limits. Screenshot comparison and memory evidence, along with the
 The two independent discovery maps found no other eligible Teacher/Staff
 slices. Work through these ordered candidates:
 
-16. **Active — Teacher profile page and navigation.** Typed read/edit contracts
-    exist; the Next shell still has placeholders.
-17. Korean teacher list/navigation with New and Delete. Profile opening depends
-    on #16; keep My Classes and class assignment out of this slice.
+17. **Active — Korean teacher list/navigation with New and Delete.** Profile
+    opening depends on accepted slice #16; keep My Classes and class assignment
+    out of this slice.
 18. Shared Staff Directory page/model-view for Native English and GS Team.
     Preserve each data kind's fields, IDs, validation, and read/write branches.
 19. Normal teacher workbook import in the Next shell, separate from Initial
