@@ -12,6 +12,10 @@
 #include "next/application/teacher_create.h"
 #include "next/application/teacher_delete.h"
 #include "next/application/teacher_directory_read_port.h"
+#include "next/application/native_english_teacher_directory_read_query.h"
+#include "next/application/native_english_teacher_directory_save_use_case.h"
+#include "next/application/gs_team_directory_read_query.h"
+#include "next/application/gs_team_directory_save_use_case.h"
 #include "next/application/workspace_contracts.h"
 
 #include <memory>
@@ -111,6 +115,17 @@ public:
         > applyTeacherImportUseCase(
             const Application::TeacherImportUseCaseRequest& request
             ) const;
+    [[nodiscard]] Application::NativeEnglishTeacherDirectoryReadResult
+    readNativeEnglishTeacherDirectory() const;
+    [[nodiscard]] Application::NativeEnglishTeacherDirectorySaveOutcome
+    saveNativeEnglishTeacherDirectory(
+        const Application::NativeEnglishTeacherDirectorySaveRequest& request
+        ) const;
+    [[nodiscard]] Application::GsTeamDirectoryReadResult
+    readGsTeamDirectory() const;
+    [[nodiscard]] Application::GsTeamDirectorySaveOutcome saveGsTeamDirectory(
+        const Application::GsTeamDirectorySaveRequest& request
+        ) const;
 
 private:
     [[nodiscard]] Domain::Result<Application::WorkspaceSession> sessionForOpenStore() const;

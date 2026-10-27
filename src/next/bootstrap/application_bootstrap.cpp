@@ -35,6 +35,7 @@
 #include "next/ui/qt_user_prompt_presenter.h"
 #include "next/ui/theme_presenter.h"
 #include "next/ui/teacher_profile_page.h"
+#include "next/ui/shared_staff_directory_page.h"
 #include "next/platform/teacher_validator_teacher_profile_validation_policy.h"
 
 #include <QApplication>
@@ -188,11 +189,6 @@ namespace
         placeholderDescriptor(QStringLiteral("classes"), navigationLabel("Classes")),
         placeholderDescriptor(QStringLiteral("sub_prep"), navigationLabel("Sub Prep")),
         placeholderDescriptor(
-            QStringLiteral("native_english_teachers"),
-            navigationLabel("Native English Teachers")
-            ),
-        placeholderDescriptor(QStringLiteral("gs_team"), navigationLabel("GS Team")),
-        placeholderDescriptor(
             QStringLiteral("campus_information"), navigationLabel("Information")
             ),
         placeholderDescriptor(
@@ -201,6 +197,36 @@ namespace
         placeholderDescriptor(QStringLiteral("campus_address"), navigationLabel("Address")),
         placeholderDescriptor(QStringLiteral("campus_housing"), navigationLabel("Housing")),
         placeholderDescriptor(QStringLiteral("campus_map"), navigationLabel("Maps"))
+    };
+}
+
+[[nodiscard]] Ui::PageDescriptor sharedStaffDirectoryPageDescriptor(
+    const QString& id,
+    const QString& label,
+    const Ui::StaffDirectoryKind kind,
+    std::function<Ui::SharedStaffDirectoryPageActions()> actionsFactory
+    )
+{
+    return Ui::PageDescriptor{
+        .id = pageId(id),
+        .label = label,
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = [kind, actionsFactory = std::move(actionsFactory)](
+                       const Ui::PageContext& context
+                       ) mutable
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            std::unique_ptr<Ui::Page> page =
+                std::make_unique<Ui::SharedStaffDirectoryPage>(
+                    context,
+                    kind,
+                    actionsFactory());
+            return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                std::move(page)
+            };
+        },
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
     };
 }
 
@@ -843,6 +869,94 @@ Application::StartupResult ApplicationBootstrap::start()
             if (!registration)
             {
                 initialPageFailure = registration.error().message;
+            }
+        }
+
+        if (initialPageFailure.isEmpty())
+        {
+            const auto staffActions = [this] {
+                Ui::SharedStaffDirectoryPageActions actions;
+                actions.saveMode =
+                    Platform::SettingsManagerSaveModePreferencesPort().read();
+                actions.readNativeEnglishTeachers = [this] {
+                    if (auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                            m_workspaceGateway.get()))
+                    {
+                        return gateway->readNativeEnglishTeacherDirectory();
+                    }
+                    return Application::NativeEnglishTeacherDirectoryReadResult::failure({
+                        .code = Domain::ErrorCode::NotFound,
+                        .message = "The active workspace store is unavailable.",
+                        .recoverable = true
+                    });
+                };
+                actions.saveNativeEnglishTeachers = [this](
+                    const Application::NativeEnglishTeacherDirectorySaveRequest& request
+                    ) {
+                    if (auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                            m_workspaceGateway.get()))
+                    {
+                        return gateway->saveNativeEnglishTeacherDirectory(request);
+                    }
+                    return Application::NativeEnglishTeacherDirectorySaveOutcome::failure({
+                        .code = Domain::ErrorCode::NotFound,
+                        .message = "The active workspace store is unavailable.",
+                        .recoverable = true
+                    });
+                };
+                actions.readGsTeam = [this] {
+                    if (auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                            m_workspaceGateway.get()))
+                    {
+                        return gateway->readGsTeamDirectory();
+                    }
+                    return Application::GsTeamDirectoryReadResult::failure({
+                        .code = Domain::ErrorCode::NotFound,
+                        .message = "The active workspace store is unavailable.",
+                        .recoverable = true
+                    });
+                };
+                actions.saveGsTeam = [this](
+                    const Application::GsTeamDirectorySaveRequest& request
+                    ) {
+                    if (auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                            m_workspaceGateway.get()))
+                    {
+                        return gateway->saveGsTeamDirectory(request);
+                    }
+                    return Application::GsTeamDirectorySaveOutcome::failure({
+                        .code = Domain::ErrorCode::NotFound,
+                        .message = "The active workspace store is unavailable.",
+                        .recoverable = true
+                    });
+                };
+                return actions;
+            };
+
+            const Ui::PageHostResult<void> nativeRegistration =
+                m_shell->pageHost().registerPage(
+                    sharedStaffDirectoryPageDescriptor(
+                        QStringLiteral("native_english_teachers"),
+                        navigationLabel("Native English Teachers"),
+                        Ui::StaffDirectoryKind::NativeEnglishTeachers,
+                        staffActions));
+            if (!nativeRegistration)
+            {
+                initialPageFailure = nativeRegistration.error().message;
+            }
+            if (initialPageFailure.isEmpty())
+            {
+                const Ui::PageHostResult<void> gsRegistration =
+                    m_shell->pageHost().registerPage(
+                        sharedStaffDirectoryPageDescriptor(
+                            QStringLiteral("gs_team"),
+                            navigationLabel("GS Team"),
+                            Ui::StaffDirectoryKind::GsTeam,
+                            staffActions));
+                if (!gsRegistration)
+                {
+                    initialPageFailure = gsRegistration.error().message;
+                }
             }
         }
 

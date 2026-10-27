@@ -21,6 +21,8 @@
 #include "next/platform/teacher_validator_teacher_profile_validation_policy.h"
 #include "next/platform/workspace_store_teacher_profile_port.h"
 #include "next/platform/workspace_store_teacher_directory_port.h"
+#include "next/platform/workspace_store_native_english_teacher_directory_port.h"
+#include "next/platform/workspace_store_gs_team_directory_port.h"
 
 #include <QByteArray>
 #include <QString>
@@ -85,6 +87,16 @@ namespace
             + " is not available through the startup workspace adapter.",
         .recoverable = false
     };
+}
+
+[[nodiscard]] std::u16string directoryNameKey(
+    const std::u16string_view value
+    )
+{
+    return QString::fromStdU16String(std::u16string(value))
+        .simplified()
+        .toCaseFolded()
+        .toStdU16String();
 }
 
 } // namespace
@@ -255,6 +267,46 @@ std::expected<
     }
 
     return repository->applyUseCase(request);
+}
+
+Application::NativeEnglishTeacherDirectoryReadResult
+WorkspaceStoreGateway::readNativeEnglishTeacherDirectory() const
+{
+    WorkspaceStoreNativeEnglishTeacherDirectoryPort port(*m_store);
+    return Application::NativeEnglishTeacherDirectoryReadQuery(port).execute();
+}
+
+Application::NativeEnglishTeacherDirectorySaveOutcome
+WorkspaceStoreGateway::saveNativeEnglishTeacherDirectory(
+    const Application::NativeEnglishTeacherDirectorySaveRequest& request
+    ) const
+{
+    WorkspaceStoreNativeEnglishTeacherDirectoryPort port(*m_store);
+    return Application::NativeEnglishTeacherDirectorySaveUseCase::execute(
+        request,
+        port,
+        directoryNameKey
+        );
+}
+
+Application::GsTeamDirectoryReadResult
+WorkspaceStoreGateway::readGsTeamDirectory() const
+{
+    WorkspaceStoreGsTeamDirectoryPort port(*m_store);
+    return Application::GsTeamDirectoryReadQuery(port).execute();
+}
+
+Application::GsTeamDirectorySaveOutcome
+WorkspaceStoreGateway::saveGsTeamDirectory(
+    const Application::GsTeamDirectorySaveRequest& request
+    ) const
+{
+    WorkspaceStoreGsTeamDirectoryPort port(*m_store);
+    return Application::GsTeamDirectorySaveUseCase::execute(
+        request,
+        port,
+        directoryNameKey
+        );
 }
 
 Domain::Result<Application::WorkspaceSession>

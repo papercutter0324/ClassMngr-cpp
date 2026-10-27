@@ -279,6 +279,154 @@ set_tests_properties(ClassMngrNextKoreanTeacherDirectoryActionsTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
+add_executable(ClassMngrNextSharedStaffDirectoryTests
+    tests/next/shared_staff_directory_tests.cpp
+    src/next/ui/application_shell.cpp
+    src/next/ui/navigation_model.cpp
+    src/next/ui/shared_staff_directory_page.cpp
+    src/next/ui/shared_staff_directory_table_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/qt_notification_presenter.cpp
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
+)
+target_compile_features(ClassMngrNextSharedStaffDirectoryTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextSharedStaffDirectoryTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextSharedStaffDirectoryTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrNextSharedStaffDirectoryTests
+    PRIVATE
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextSharedStaffDirectoryTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextSharedStaffDirectoryTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+qt_add_resources(ClassMngrNextSharedStaffDirectoryTests
+    shared_staff_directory_test_icons
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_light.svg
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/combo_arrow_light.svg
+        resources/assets/icons/combo_arrow_dark.svg
+)
+add_dependencies(ClassMngrNextSharedStaffDirectoryTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextSharedStaffDirectoryTests
+    COMMAND ClassMngrNextSharedStaffDirectoryTests
+)
+set_tests_properties(ClassMngrNextSharedStaffDirectoryTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+add_executable(ClassMngrNextSharedStaffDirectoryVisualCapture
+    tests/next/shared_staff_directory_visual_capture.cpp
+    src/next/platform/workspace_store_gateway.cpp
+    src/next/platform/workspace_store_custom_color_palette_preferences_port.cpp
+    src/next/ui/shared_staff_directory_page.cpp
+    src/next/ui/shared_staff_directory_table_model.cpp
+    src/next/ui/page_host.cpp
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
+)
+target_compile_features(ClassMngrNextSharedStaffDirectoryVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextSharedStaffDirectoryVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextSharedStaffDirectoryVisualCapture
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrNextSharedStaffDirectoryVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextSharedStaffDirectoryVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextSharedStaffDirectoryVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextSharedStaffDirectoryVisualCapture
+    ClassMngrNextResourcePackage
+)
+qt_add_resources(ClassMngrNextSharedStaffDirectoryVisualCapture
+    shared_staff_directory_capture_icons
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_light.svg
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/combo_arrow_light.svg
+        resources/assets/icons/combo_arrow_dark.svg
+)
+add_test(
+    NAME ClassMngrNextSharedStaffDirectoryVisualCapture
+    COMMAND ClassMngrNextSharedStaffDirectoryVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/shared-staff-directory-capture/native_en_US_light"
+        en_US light native
+)
+set_tests_properties(ClassMngrNextSharedStaffDirectoryVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+foreach(_shared_staff_capture IN ITEMS
+        "native_en_US_light;en_US;light;native"
+        "native_ko_KR_dark;ko_KR;dark;native"
+        "gs_en_US_light;en_US;light;gs"
+        "gs_ko_KR_dark;ko_KR;dark;gs")
+    list(GET _shared_staff_capture 0 _capture_test_name)
+    list(GET _shared_staff_capture 1 _capture_locale)
+    list(GET _shared_staff_capture 2 _capture_theme)
+    list(GET _shared_staff_capture 3 _capture_kind)
+    add_test(
+        NAME ClassMngrNextSharedStaffDirectoryVisualCapture_${_capture_test_name}
+        COMMAND ClassMngrNextSharedStaffDirectoryVisualCapture
+            "${CMAKE_CURRENT_BINARY_DIR}/shared-staff-directory-capture/${_capture_test_name}"
+            "${_capture_locale}" "${_capture_theme}" "${_capture_kind}"
+    )
+    set_tests_properties(
+        ClassMngrNextSharedStaffDirectoryVisualCapture_${_capture_test_name}
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+    )
+endforeach()
+
 # Temporary feature-slice parity harness for the legacy Korean teacher sidebar
 # and the Next Korean teacher sidebar tree. Captures only on explicit run.
 add_executable(ClassMngrNextTeacherDirectoryVisualCapture
@@ -2723,6 +2871,22 @@ classmngr_add_qt_test(
         Qt6::Test
     COMPILE_DEFINITIONS
         CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+)
+
+# Verify both typed staff-directory branches use the active WorkspaceStore and
+# keep validation, transactional writes, and repository ordering isolated.
+classmngr_add_qt_test(
+    NAME NextPlatformWorkspaceStoreStaffDirectory
+    SOURCES
+        tests/next/workspace_store_staff_directory_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNextWorkspace
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Test
+    OFFSCREEN
 )
 
 classmngr_add_qt_test(

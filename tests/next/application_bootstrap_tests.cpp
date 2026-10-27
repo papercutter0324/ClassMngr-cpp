@@ -14,6 +14,7 @@
 #include "next/ui/page_host.h"
 #include "next/ui/placeholder_page.h"
 #include "next/ui/teacher_profile_page.h"
+#include "next/ui/shared_staff_directory_page.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "core/settingsmanager.h"
 #include "features/my_info/data/signature_image_processor.h"
@@ -8109,6 +8110,23 @@ void ApplicationBootstrapTests::teacherProfileUsesTypedOpenAndStaticPageHistory(
         );
     QVERIFY(navigation->isPageVisible(profilePageId));
     QVERIFY(shell->pageHost().isPageRegistered(QStringLiteral("teacher_profile")));
+    QVERIFY(shell->pageHost().isPageRegistered(
+        QStringLiteral("native_english_teachers")));
+    QVERIFY(shell->pageHost().isPageRegistered(QStringLiteral("gs_team")));
+    QVERIFY(shell->pageHost().activatePage(
+        QStringLiteral("native_english_teachers")));
+    auto* const nativeStaffPage = dynamic_cast<Ui::SharedStaffDirectoryPage*>(
+        shell->pageHost().pageInstance(QStringLiteral("native_english_teachers")));
+    QVERIFY(nativeStaffPage);
+    QCOMPARE(nativeStaffPage->kind(), Ui::StaffDirectoryKind::NativeEnglishTeachers);
+    QCOMPARE(nativeStaffPage->directoryModel()->columnCount(), 6);
+    QVERIFY(shell->pageHost().activatePage(QStringLiteral("gs_team")));
+    auto* const gsStaffPage = dynamic_cast<Ui::SharedStaffDirectoryPage*>(
+        shell->pageHost().pageInstance(QStringLiteral("gs_team")));
+    QVERIFY(gsStaffPage);
+    QCOMPARE(gsStaffPage->kind(), Ui::StaffDirectoryKind::GsTeam);
+    QCOMPARE(gsStaffPage->directoryModel()->columnCount(), 5);
+    QVERIFY(shell->pageHost().activatePage(QStringLiteral("my_workspace")));
     auto* const nextSidebarTree = shell->findChild<QTreeWidget*>(
         QStringLiteral("classMngrNextNavigationTree")
         );
