@@ -55,6 +55,9 @@ public:
     void setCloseHandler(CloseHandler handler);
     void setNewTeacherProfileHandler(std::function<void()> handler);
     void setOpenTeacherProfileHandler(std::function<void()> handler);
+    void setRecoverInterruptedTeacherProfileHandler(
+        std::function<void()> handler
+        );
     void setSaveWorkspaceHandler(std::function<void()> handler);
     void setSaveWorkspaceAsHandler(std::function<void()> handler);
     void setExportWorkspaceHandler(std::function<void()> handler);
@@ -112,6 +115,7 @@ private:
     QPushButton* m_forwardButton = nullptr;
     QAction* m_newTeacherProfileAction = nullptr;
     QAction* m_openTeacherProfileAction = nullptr;
+    QAction* m_recoverInterruptedTeacherProfileAction = nullptr;
     QAction* m_saveWorkspaceAction = nullptr;
     QAction* m_saveWorkspaceAsAction = nullptr;
     QAction* m_exportWorkspaceAction = nullptr;
@@ -124,6 +128,7 @@ private:
     CloseHandler m_closeHandler;
     std::function<void()> m_newTeacherProfileHandler;
     std::function<void()> m_openTeacherProfileHandler;
+    std::function<void()> m_recoverInterruptedTeacherProfileHandler;
     std::function<void()> m_saveWorkspaceHandler;
     std::function<void()> m_saveWorkspaceAsHandler;
     std::function<void()> m_exportWorkspaceHandler;

@@ -22,6 +22,12 @@ enum class OpenExistingWorkspaceStatus
     Failed
 };
 
+enum class OpenExistingWorkspaceMissingPathPolicy
+{
+    PruneHistory,
+    PreserveHistory
+};
+
 struct OpenExistingWorkspaceOutcome final
 {
     OpenExistingWorkspaceStatus status = OpenExistingWorkspaceStatus::Failed;
@@ -122,20 +128,24 @@ public:
     }
 
     [[nodiscard]] OpenExistingWorkspaceOutcome openPath(
-        const FileDialogPath& path
+        const FileDialogPath& path,
+        const OpenExistingWorkspaceMissingPathPolicy missingPathPolicy =
+            OpenExistingWorkspaceMissingPathPolicy::PruneHistory
         )
     {
         if (blockedBySetupPending())
         {
             return blockedOutcome();
         }
-        return openPathAfterSetup(path, {});
+        return openPathAfterSetup(path, {}, missingPathPolicy);
     }
 
 private:
     [[nodiscard]] OpenExistingWorkspaceOutcome openPathAfterSetup(
         const FileDialogPath& path,
-        std::string warnings
+        std::string warnings,
+        const OpenExistingWorkspaceMissingPathPolicy missingPathPolicy =
+            OpenExistingWorkspaceMissingPathPolicy::PruneHistory
         )
     {
         const Domain::Result<WorkspaceLocation> normalized =
@@ -159,6 +169,17 @@ private:
         {
             if (opened.error().code == Domain::ErrorCode::NotFound)
             {
+                if (missingPathPolicy
+                    == OpenExistingWorkspaceMissingPathPolicy::PreserveHistory)
+                {
+                    return fail(
+                        OpenExistingWorkspaceStatus::Failed,
+                        "The selected Teacher Profile could not be found: "
+                            + opened.error().message,
+                        NotificationSeverity::Warning,
+                        std::move(warnings)
+                        );
+                }
                 const RecentWorkspaceHistory pruned =
                     RecentWorkspaceHistoryUseCase::prune(
                         m_recentHistory.load(),

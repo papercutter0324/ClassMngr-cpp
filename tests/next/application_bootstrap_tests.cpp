@@ -16,6 +16,7 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/platform/workspace_store_personal_details_port.h"
+#include "next/platform/workspace_interrupted_recovery_port.h"
 #include "next/platform/qsettings_file_dialog_directory_preferences_adapter.h"
 #include "ui/shared/state/option_state_keys.h"
 
@@ -119,6 +120,7 @@ private slots:
     void createActionUsesSelectedPathAndDoesNotRecordPendingProfile();
     void openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess();
     void openActionDoesNotBypassPendingOrUnreadableSetupRecovery();
+    void interruptedProfileRecoveryMenuActionOpensCopyOnlyAfterSuccessfulOpen();
     void recentFilesMenuRefreshesOrderedEscapedPathsAndEmptyState();
     void recentRestoreUsesOpenFlowAndResolvesDirtyPageBeforeReplacement();
     void recentRestoreSavesDirtyWorkspaceBeforeReplacement();
@@ -449,6 +451,139 @@ private:
     }
 
     std::shared_ptr<InitialSetupFileDialogProbe> m_probe;
+};
+
+struct InterruptedWorkspaceRecoveryProbe final
+{
+    Application::FileDialogPath directory;
+    Application::InterruptedWorkspaceRecoveryCandidate candidate;
+    Application::FileDialogPath lastScannedDirectory;
+    std::optional<Application::WorkspaceLocation> lastDestination;
+    int scanCalls = 0;
+    int copyCalls = 0;
+};
+
+class RecordingInterruptedWorkspaceRecoveryPort final
+    : public Application::InterruptedWorkspaceRecoveryPort
+{
+public:
+    explicit RecordingInterruptedWorkspaceRecoveryPort(
+        std::shared_ptr<InterruptedWorkspaceRecoveryProbe> probe
+        )
+        : m_probe(std::move(probe))
+    {
+    }
+
+    Application::FileDialogPath defaultTeacherProfileDirectory()
+        const override
+    {
+        return m_probe->directory;
+    }
+
+    Application::FileDialogPath profileDirectoryFor(
+        const Application::WorkspaceLocation& profile
+        ) const override
+    {
+        const QString path = QString::fromUtf8(
+            profile.value().data(),
+            static_cast<qsizetype>(profile.value().size())
+            );
+        return Application::FileDialogPath(
+            QFileInfo(path).absolutePath().toUtf8().toStdString()
+            );
+    }
+
+    Domain::Result<std::vector<
+        Application::InterruptedWorkspaceRecoveryCandidate>>
+    candidatesIn(const Application::FileDialogPath& directory) const override
+    {
+        ++m_probe->scanCalls;
+        m_probe->lastScannedDirectory = directory;
+        return Domain::Result<std::vector<
+            Application::InterruptedWorkspaceRecoveryCandidate>>::success({
+                m_probe->candidate
+            });
+    }
+
+    bool pathExists(const Application::FileDialogPath& path) const override
+    {
+        return m_fileOperations.pathExists(path);
+    }
+
+    Domain::Result<void> copyCandidateNoReplace(
+        const Application::InterruptedWorkspaceRecoveryCandidate& candidate,
+        const Application::WorkspaceLocation& destination
+        ) const override
+    {
+        ++m_probe->copyCalls;
+        m_probe->lastDestination = destination;
+        return m_fileOperations.copyCandidateNoReplace(candidate, destination);
+    }
+
+private:
+    std::shared_ptr<InterruptedWorkspaceRecoveryProbe> m_probe;
+    Platform::QtWorkspaceInterruptedRecoveryPort m_fileOperations;
+};
+
+struct InterruptedRecoveryUserPromptProbe final
+{
+    std::optional<Application::PromptActionId> selectedAction;
+    std::vector<Application::NamedActionPromptRequest> candidateRequests;
+    int unsavedPromptCalls = 0;
+};
+
+class RecordingInterruptedRecoveryUserPrompt final
+    : public Application::UserPromptPort
+{
+public:
+    explicit RecordingInterruptedRecoveryUserPrompt(
+        std::shared_ptr<InterruptedRecoveryUserPromptProbe> probe
+        )
+        : m_probe(std::move(probe))
+    {
+    }
+
+    Domain::Result<void> showMessage(
+        const Application::MessagePromptRequest& request
+        ) override
+    {
+        static_cast<void>(request);
+        return Domain::Result<void>::success();
+    }
+
+    Domain::Result<Application::ConfirmationResponse> confirm(
+        const Application::ConfirmationPromptRequest& request
+        ) override
+    {
+        static_cast<void>(request);
+        return Domain::Result<Application::ConfirmationResponse>::success(
+            Application::ConfirmationResponse::Declined
+            );
+    }
+
+    Domain::Result<Application::UnsavedChangesAction> confirmUnsavedChanges(
+        const Application::UnsavedChangesPromptRequest& request
+        ) override
+    {
+        static_cast<void>(request);
+        ++m_probe->unsavedPromptCalls;
+        return Domain::Result<Application::UnsavedChangesAction>::success(
+            Application::UnsavedChangesAction::Cancel
+            );
+    }
+
+    Domain::Result<std::optional<Application::PromptActionId>> chooseAction(
+        const Application::NamedActionPromptRequest& request
+        ) override
+    {
+        m_probe->candidateRequests.push_back(request);
+        return Domain::Result<std::optional<Application::PromptActionId>>::success(
+            m_probe->selectedAction
+            );
+    }
+
+private:
+    std::shared_ptr<InterruptedRecoveryUserPromptProbe> m_probe;
 };
 
 struct BootstrapWorkspaceGatewayProbe final
@@ -4852,6 +4987,237 @@ openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess()
 }
 
 void ApplicationBootstrapTests::
+interruptedProfileRecoveryMenuActionOpensCopyOnlyAfterSuccessfulOpen()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString journalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    const QString sourcePath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral(
+            ".Original.tps.workspace-create-12345678-1234-1234-1234-123456789abc.recovery"
+            )
+        );
+    const QString targetPath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("Original.tps")
+        );
+    const QString failedDestination = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("failed-recovery.tps")
+        );
+    const QString successfulDestination =
+        QDir(temporaryDirectory.path()).filePath(
+            QStringLiteral("Recovered-Original.tps")
+            );
+    const QByteArray recoveryBytes("recovery profile bytes");
+    const auto writeFile = [](const QString& path, const QByteArray& bytes) {
+        QFile file(path);
+        return file.open(QIODevice::WriteOnly | QIODevice::Truncate)
+            && file.write(bytes) == bytes.size();
+    };
+    const auto readFile = [](const QString& path) {
+        QFile file(path);
+        return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray{};
+    };
+    QVERIFY(writeFile(sourcePath, recoveryBytes));
+
+    const QString preferencePath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("settings")
+        );
+    QVERIFY(QDir().mkpath(preferencePath));
+    TeacherProfileDirectoryPreferenceGuard directoryPreference(preferencePath);
+    QVERIFY(directoryPreference.write(temporaryDirectory.path()));
+
+    auto recoveryProbe =
+        std::make_shared<InterruptedWorkspaceRecoveryProbe>();
+    recoveryProbe->directory = Application::FileDialogPath(
+        temporaryDirectory.path().toUtf8().toStdString()
+        );
+    recoveryProbe->candidate = Application::InterruptedWorkspaceRecoveryCandidate{
+        .sourcePath = Application::FileDialogPath(
+            sourcePath.toUtf8().toStdString()
+            ),
+        .targetPath = Application::FileDialogPath(
+            targetPath.toUtf8().toStdString()
+            ),
+        .targetFileName = "Original.tps"
+    };
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->selectedPath = Application::FileDialogPath(
+        failedDestination.toUtf8().toStdString()
+        );
+    auto promptProbe =
+        std::make_shared<InterruptedRecoveryUserPromptProbe>();
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    historyProbe->mutateOnSave = true;
+    historyProbe->history.paths = {
+        Application::RecentWorkspacePath("older-profile.tps")
+    };
+    const Application::RecentWorkspaceHistory historyBefore =
+        historyProbe->history;
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = journalPath;
+    seams.workspaceGatewayFactory = [gatewayProbe] {
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(
+            gatewayProbe
+            );
+    };
+    seams.interruptedProfileRecoveryFileDialogPortFactory = [fileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(
+            fileDialogProbe
+            );
+    };
+    seams.interruptedProfileRecoveryRecentWorkspaceHistoryPortFactory =
+        [historyProbe] {
+            return std::make_unique<RecordingRecentWorkspaceHistoryPort>(
+                historyProbe
+                );
+        };
+    seams.interruptedWorkspaceRecoveryPortFactory = [recoveryProbe] {
+        return std::make_unique<RecordingInterruptedWorkspaceRecoveryPort>(
+            recoveryProbe
+            );
+    };
+    seams.workspaceLifecycleUserPromptPortFactory = [promptProbe] {
+        return std::make_unique<RecordingInterruptedRecoveryUserPrompt>(
+            promptProbe
+            );
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    QAction* const recoveryAction = bootstrap.shell()->findChild<QAction*>(
+        QStringLiteral("classMngrNextRecoverInterruptedTeacherProfile")
+        );
+    QVERIFY(recoveryAction);
+    QCOMPARE(recoveryAction->text(),
+             QStringLiteral("Recover Interrupted Teacher Profile…"));
+    const QString pageBeforeRecovery =
+        bootstrap.shell()->navigationModel()->currentPageId()->value();
+    QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
+    QVERIFY(!QFileInfo::exists(failedDestination));
+    QVERIFY(!QFileInfo::exists(successfulDestination));
+
+    // Cancel the candidate chooser. Nothing is copied, opened, recorded, or
+    // navigated away from the initial page.
+    recoveryAction->trigger();
+    QCOMPARE(recoveryProbe->scanCalls, 1);
+    QCOMPARE(recoveryProbe->lastScannedDirectory.value(),
+             temporaryDirectory.path().toUtf8().toStdString());
+    QCOMPARE(promptProbe->candidateRequests.size(), std::size_t(1));
+    QVERIFY(promptProbe->candidateRequests.front().defaultActionId.has_value());
+    QCOMPARE(promptProbe->candidateRequests.front().defaultActionId->value(),
+             std::string("cancel"));
+    QVERIFY(promptProbe->candidateRequests.front().informativeText.find(
+                sourcePath.toUtf8().toStdString()
+                ) != std::string::npos);
+    QVERIFY(promptProbe->candidateRequests.front().informativeText.find(
+                targetPath.toUtf8().toStdString()
+                ) != std::string::npos);
+    QCOMPARE(fileDialogProbe->saveCount, 0);
+    QCOMPARE(recoveryProbe->copyCalls, 0);
+    QCOMPARE(gatewayProbe->openCalls, 0);
+    QCOMPARE(historyProbe->saveCount, 0);
+    QCOMPARE(historyProbe->history, historyBefore);
+    QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
+    QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId()->value(),
+             pageBeforeRecovery);
+
+    // A failed open leaves the source and copied artifact in place while the
+    // active workspace, navigation, and history remain unchanged.
+    promptProbe->selectedAction = *Application::PromptActionId::create(
+        "candidate-0"
+        );
+    auto gatewayOpenError = Domain::OperationError{
+        .code = Domain::ErrorCode::Technical,
+        .message = "injected recovered-profile open failure",
+        .recoverable = true
+    };
+    gatewayProbe->openError = gatewayOpenError;
+    recoveryAction->trigger();
+    QCOMPARE(recoveryProbe->scanCalls, 2);
+    QCOMPARE(fileDialogProbe->saveCount, 1);
+    QVERIFY(fileDialogProbe->lastSaveRequest.has_value());
+    QCOMPARE(fileDialogProbe->lastSaveRequest->initialDirectory.value(),
+             temporaryDirectory.path().toUtf8().toStdString());
+    QCOMPARE(fileDialogProbe->lastSaveRequest->suggestedFileName,
+             std::string("Original.tps"));
+    QCOMPARE(fileDialogProbe->lastSaveRequest->defaultSuffix,
+             std::string("tps"));
+    QVERIFY(!fileDialogProbe->lastSaveRequest->confirmOverwrite);
+    QCOMPARE(recoveryProbe->copyCalls, 1);
+    QCOMPARE(gatewayProbe->openCalls, 1);
+    QVERIFY(QFileInfo::exists(sourcePath));
+    QVERIFY(QFileInfo::exists(failedDestination));
+    QCOMPARE(readFile(sourcePath), recoveryBytes);
+    QCOMPARE(readFile(failedDestination), recoveryBytes);
+    QCOMPARE(historyProbe->saveCount, 0);
+    QCOMPARE(historyProbe->history, historyBefore);
+    QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
+    QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId()->value(),
+             pageBeforeRecovery);
+    QCOMPARE(directoryPreference.read().value(),
+             temporaryDirectory.path().toUtf8().toStdString());
+
+    // The same action records and navigates only after the copied profile opens.
+    gatewayProbe->openError.reset();
+    fileDialogProbe->selectedPath = Application::FileDialogPath(
+        successfulDestination.toUtf8().toStdString()
+        );
+    recoveryAction->trigger();
+    QCOMPARE(recoveryProbe->scanCalls, 3);
+    QCOMPARE(recoveryProbe->copyCalls, 2);
+    QCOMPARE(gatewayProbe->openCalls, 2);
+    QCOMPARE(historyProbe->saveCount, 1);
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    const Application::WorkspaceLocation expectedLocation(
+        QFileInfo(successfulDestination).canonicalFilePath()
+            .toUtf8().toStdString()
+        );
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+             expectedLocation);
+    QCOMPARE(historyProbe->history.paths.front(), expectedLocation);
+    QCOMPARE(bootstrap.shell()->navigationModel()->workspaceState(),
+             Application::WorkspaceLifecycleState::Open);
+    QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId()->value(),
+             QStringLiteral("my_workspace"));
+    QVERIFY(QFileInfo::exists(sourcePath));
+    QVERIFY(QFileInfo::exists(failedDestination));
+    QVERIFY(QFileInfo::exists(successfulDestination));
+    QCOMPARE(readFile(sourcePath), recoveryBytes);
+    QCOMPARE(readFile(successfulDestination), recoveryBytes);
+    QCOMPARE(directoryPreference.read().value(),
+             QFileInfo(successfulDestination).canonicalPath()
+                 .toUtf8().toStdString());
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
 openActionDoesNotBypassPendingOrUnreadableSetupRecovery()
 {
     QApplication& application = *qApp;
@@ -5057,7 +5423,7 @@ recentFilesMenuRefreshesOrderedEscapedPathsAndEmptyState()
     QVERIFY(menu->actions().at(2)->isSeparator());
     QCOMPARE(menu->actions().at(3)->text(), QStringLiteral("Clear Recent Files"));
     QCOMPARE(
-        bootstrap.shell()->menuBar()->actions().front()->menu()->actions().at(2),
+        bootstrap.shell()->menuBar()->actions().front()->menu()->actions().at(3),
         menu->menuAction()
         );
 

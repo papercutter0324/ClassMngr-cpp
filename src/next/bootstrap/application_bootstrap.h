@@ -13,6 +13,7 @@
 #include "next/application/custom_color_palette_preferences.h"
 #include "next/application/personal_details_save.h"
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
+#include "next/application/interrupted_workspace_recovery_flow.h"
 #include "next/application/teacher_import_use_case.h"
 #include "next/application/teacher_create.h"
 #include "next/application/workspace_contracts.h"
@@ -84,6 +85,12 @@ public:
         std::function<std::unique_ptr<Application::RecentWorkspaceHistoryPort>()>
             openProfileRecentWorkspaceHistoryPortFactory;
         std::function<std::unique_ptr<Application::FileDialogPort>()>
+            interruptedProfileRecoveryFileDialogPortFactory;
+        std::function<std::unique_ptr<Application::RecentWorkspaceHistoryPort>()>
+            interruptedProfileRecoveryRecentWorkspaceHistoryPortFactory;
+        std::function<std::unique_ptr<Application::InterruptedWorkspaceRecoveryPort>()>
+            interruptedWorkspaceRecoveryPortFactory;
+        std::function<std::unique_ptr<Application::FileDialogPort>()>
             saveAsProfileFileDialogPortFactory;
         std::function<std::unique_ptr<Application::RecentWorkspaceHistoryPort>()>
             saveAsRecentWorkspaceHistoryPortFactory;
@@ -154,6 +161,7 @@ private:
     void openRecentTeacherProfile(
         const Application::RecentWorkspacePath& path
         );
+    void recoverInterruptedTeacherProfile();
     void openTeacherProfile(
         std::optional<Application::FileDialogPath> selectedPath
         );

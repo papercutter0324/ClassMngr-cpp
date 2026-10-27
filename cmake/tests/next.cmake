@@ -2480,6 +2480,18 @@ classmngr_add_qt_test(
         Qt6::Test
 )
 
+# Exercise the explicit recovery flow for a normal profile create interrupted
+# by process termination, including strict candidate scanning and no-replace copy.
+classmngr_add_qt_test(
+    NAME NextWorkspaceInterruptedRecoveryFlow
+    SOURCES
+        tests/next_workspace_interrupted_recovery_flow_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
 # Exercise interactive Save As, online database copying, and active-session
 # identity preservation through the direct WorkspaceStore boundary.
 classmngr_add_qt_test(

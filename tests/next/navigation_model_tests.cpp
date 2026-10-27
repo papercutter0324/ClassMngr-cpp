@@ -224,6 +224,7 @@ private slots:
     void shellHistoryControlsTrackAccessRevocation();
     void shellExposesNewTeacherProfileAction();
     void shellExposesOpenTeacherProfileAction();
+    void shellExposesInterruptedProfileRecoveryAction();
     void shellOwnsTransientNotificationPortAndKeepsIdleStatusBarHidden();
 
 private:
@@ -850,6 +851,26 @@ void NavigationModelTests::shellExposesOpenTeacherProfileAction()
 
     int invocationCount = 0;
     shell.setOpenTeacherProfileHandler([&invocationCount] {
+        ++invocationCount;
+    });
+    action->trigger();
+    QCOMPARE(invocationCount, 1);
+}
+
+void NavigationModelTests::shellExposesInterruptedProfileRecoveryAction()
+{
+    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    QAction* const action = shell.findChild<QAction*>(
+        QStringLiteral("classMngrNextRecoverInterruptedTeacherProfile")
+        );
+    QVERIFY(action != nullptr);
+    QCOMPARE(action->text(), QStringLiteral("Recover Interrupted Teacher Profile…"));
+    auto* const fileMenu = qobject_cast<QMenu*>(action->parent());
+    QVERIFY(fileMenu != nullptr);
+    QCOMPARE(fileMenu->title(), QStringLiteral("File"));
+
+    int invocationCount = 0;
+    shell.setRecoverInterruptedTeacherProfileHandler([&invocationCount] {
         ++invocationCount;
     });
     action->trigger();

@@ -17,6 +17,7 @@
 #include "next/platform/workspace_store_gateway.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
+#include "next/platform/workspace_interrupted_recovery_port.h"
 #include "next/platform/workspace_store_initial_setup_lifecycle_adapter.h"
 #include "next/platform/qsettings_file_dialog_directory_preferences_adapter.h"
 #include "next/resources/resource_catalog.h"
@@ -669,6 +670,9 @@ Application::StartupResult ApplicationBootstrap::start()
         });
         m_shell->setOpenTeacherProfileHandler([this] {
             openExistingTeacherProfile();
+        });
+        m_shell->setRecoverInterruptedTeacherProfileHandler([this] {
+            recoverInterruptedTeacherProfile();
         });
         m_shell->setRecentWorkspaceMenuHandlers(
             [this] {
@@ -1887,6 +1891,199 @@ void ApplicationBootstrap::openTeacherProfile(
         static_cast<void>(m_shell->notificationPort().show(
             Application::NotificationRequest{
                 .message = "The profile opened, but the workspace page could not be selected.",
+                .severity = Application::NotificationSeverity::Warning
+            }
+            ));
+    }
+}
+
+void ApplicationBootstrap::recoverInterruptedTeacherProfile()
+{
+    if (!m_shell || !m_applicationRuntime || !m_initialSetupLifecycle)
+    {
+        return;
+    }
+
+    const auto setupPending = [this] {
+        if (m_initialSetupLifecycle->hasPendingSetup())
+        {
+            return true;
+        }
+        const Ui::InitialSetupPageState setupState = initialSetupPageState();
+        return setupState.setupPending
+            || setupState.recoveryAvailable
+            || setupState.recoveryError;
+    };
+
+    // Resolve Initial Setup's durable state before constructing dialog and
+    // history adapters. The application flow checks again before scanning to
+    // cover a state change while the command is being prepared.
+    if (setupPending())
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "A profile setup or recovery is in progress. Finish or resolve it before recovering another profile.",
+                .severity = Application::NotificationSeverity::Warning
+            }
+            ));
+        return;
+    }
+
+    Platform::QSettingsFileDialogDirectoryPreferencesAdapter directoryPreferences;
+    std::unique_ptr<Application::FileDialogPort> ownedFileDialog;
+    if (m_startupWorkspaceSeams
+            .interruptedProfileRecoveryFileDialogPortFactory)
+    {
+        ownedFileDialog = m_startupWorkspaceSeams
+                              .interruptedProfileRecoveryFileDialogPortFactory();
+    }
+    else
+    {
+        ownedFileDialog = std::make_unique<Ui::QtFileDialogPresenter>(
+            directoryPreferences,
+            m_shell.get()
+            );
+    }
+    if (!ownedFileDialog)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The recovered profile save dialog is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+
+    std::unique_ptr<Application::UserPromptPort> ownedUserPrompt =
+        createWorkspaceLifecycleUserPromptPort();
+    if (!ownedUserPrompt)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The interrupted profile recovery prompt is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+
+    std::unique_ptr<Application::RecentWorkspaceHistoryPort> ownedRecentHistory;
+    if (m_startupWorkspaceSeams
+            .interruptedProfileRecoveryRecentWorkspaceHistoryPortFactory)
+    {
+        ownedRecentHistory = m_startupWorkspaceSeams
+                                 .interruptedProfileRecoveryRecentWorkspaceHistoryPortFactory();
+    }
+    else if (m_startupWorkspaceSeams.recentWorkspaceHistoryPortFactory)
+    {
+        ownedRecentHistory =
+            m_startupWorkspaceSeams.recentWorkspaceHistoryPortFactory();
+    }
+    else
+    {
+        ownedRecentHistory =
+            std::make_unique<Platform::SettingsManagerRecentWorkspaceHistoryPort>();
+    }
+    if (!ownedRecentHistory)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "Recent profile history is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+
+    std::unique_ptr<Application::InterruptedWorkspaceRecoveryPort>
+        ownedRecoveryPort;
+    if (m_startupWorkspaceSeams.interruptedWorkspaceRecoveryPortFactory)
+    {
+        ownedRecoveryPort =
+            m_startupWorkspaceSeams.interruptedWorkspaceRecoveryPortFactory();
+    }
+    else
+    {
+        ownedRecoveryPort = std::make_unique<
+            Platform::QtWorkspaceInterruptedRecoveryPort>();
+    }
+    if (!ownedRecoveryPort)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "Interrupted profile recovery is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+
+    Platform::WorkspaceProfilePathPolicy pathPolicy;
+    Application::OpenExistingWorkspaceFlow openFlow(
+        pathPolicy,
+        m_applicationRuntime->workspaceCoordinator(),
+        *ownedRecentHistory,
+        m_shell->notificationPort(),
+        setupPending
+        );
+    Ui::PageHostActivePageChangesAdapter activePageChanges(m_shell->pageHost());
+    Application::InterruptedWorkspaceRecoveryFlow flow(
+        *ownedFileDialog,
+        *ownedUserPrompt,
+        directoryPreferences,
+        *ownedRecoveryPort,
+        pathPolicy,
+        activePageChanges,
+        m_applicationRuntime->workspaceCoordinator(),
+        m_applicationRuntime->workspaceState(),
+        openFlow,
+        m_shell->notificationPort(),
+        setupPending
+        );
+    const Application::InterruptedWorkspaceRecoveryOutcome outcome = flow.run();
+    if (outcome.status != Application::InterruptedWorkspaceRecoveryStatus::Recovered
+        || !outcome.session.has_value())
+    {
+        return;
+    }
+
+    const QString destination = QString::fromUtf8(
+        outcome.session->location().value().data(),
+        static_cast<qsizetype>(outcome.session->location().value().size())
+        );
+    const QString destinationDirectory =
+        QFileInfo(destination).absolutePath();
+    const Domain::Result<void> directoryPreferenceSaved =
+        directoryPreferences.writeDirectory(
+            Application::FileDialogPurpose::TeacherProfile,
+            Application::DirectoryPreferencePath(
+                destinationDirectory.toUtf8().toStdString()
+                )
+            );
+    if (!directoryPreferenceSaved)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The recovered profile opened, but its directory could not be remembered: "
+                    + directoryPreferenceSaved.error().message,
+                .severity = Application::NotificationSeverity::Warning
+            }
+            ));
+    }
+
+    m_shell->updateNavigationAccessContext(
+        m_applicationRuntime->workspaceState().snapshot().lifecycle(),
+        std::nullopt
+        );
+    if (!m_shell->navigateTo(
+            pageId(QStringLiteral("my_workspace")),
+            Ui::NavigationCause::Selection
+            ))
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The recovered profile opened, but the workspace page could not be selected.",
                 .severity = Application::NotificationSeverity::Warning
             }
             ));

@@ -431,6 +431,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/initial_setup_lifecycle.h
     src/next/application/workspace_creation_lifecycle.h
     src/next/application/normal_workspace_creation_flow.h
+    src/next/application/interrupted_workspace_recovery_flow.h
     src/next/application/open_existing_workspace_flow.h
     src/next/application/workspace_save_as_flow.h
     src/next/application/workspace_export_flow.h
@@ -454,6 +455,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/legacy_workspace_gateway.h
     src/next/platform/initial_setup_lifecycle_adapter.h
     src/next/platform/workspace_creation_lifecycle_adapter.h
+    src/next/platform/workspace_interrupted_recovery_port.h
     src/next/platform/workspace_profile_path_policy.h
     src/next/platform/application_services_academic_calendar_schedule_preferences_port.h
     src/next/platform/application_services_document_catalog_port.h

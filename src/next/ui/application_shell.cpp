@@ -112,6 +112,15 @@ ApplicationShell::ApplicationShell(
         QStringLiteral("classMngrNextOpenTeacherProfile")
         );
     m_openTeacherProfileAction->setShortcut(QKeySequence::Open);
+    m_recoverInterruptedTeacherProfileAction = fileMenu->addAction(
+        QCoreApplication::translate(
+            "NextShell",
+            "Recover Interrupted Teacher Profile…"
+            )
+        );
+    m_recoverInterruptedTeacherProfileAction->setObjectName(
+        QStringLiteral("classMngrNextRecoverInterruptedTeacherProfile")
+        );
     m_recentWorkspaceMenu = fileMenu->addMenu(
         QCoreApplication::translate("NextShell", "Recent Files")
         );
@@ -169,6 +178,17 @@ ApplicationShell::ApplicationShell(
             m_openTeacherProfileHandler();
         }
     });
+    connect(
+        m_recoverInterruptedTeacherProfileAction,
+        &QAction::triggered,
+        this,
+        [this] {
+            if (m_recoverInterruptedTeacherProfileHandler)
+            {
+                m_recoverInterruptedTeacherProfileHandler();
+            }
+        }
+        );
     connect(m_recentWorkspaceMenu, &QMenu::aboutToShow, this, [this] {
         refreshRecentWorkspaceMenu();
     });
@@ -228,6 +248,13 @@ void ApplicationShell::setNewTeacherProfileHandler(std::function<void()> handler
 void ApplicationShell::setOpenTeacherProfileHandler(std::function<void()> handler)
 {
     m_openTeacherProfileHandler = std::move(handler);
+}
+
+void ApplicationShell::setRecoverInterruptedTeacherProfileHandler(
+    std::function<void()> handler
+    )
+{
+    m_recoverInterruptedTeacherProfileHandler = std::move(handler);
 }
 
 void ApplicationShell::setSaveWorkspaceHandler(std::function<void()> handler)
