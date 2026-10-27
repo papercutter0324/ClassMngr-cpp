@@ -34,10 +34,13 @@ preservation, and cancel restoration. Candidate #5, setup class details, is
 accepted and committed as `932fdfb2`; it captures a typed in-memory draft and
 does not persist class, class-details, or schedule rows. Its focused
 verification and limits are in the [Phase 7 progress
-log](08-Phase-7-Feature-Migration.md#progress-log). Current candidate:
-**#6 — setup class times**. The 7A screenshot comparison and memory measurement
-remain open. Batch 1 remains active and unpushed. Next-batch discovery has not
-started; do not begin it before candidate #14.
+log](08-Phase-7-Feature-Migration.md#progress-log). Candidate #6, setup class
+times, is accepted and committed as `97d45d3d`; its details and regular/
+intensive schedule writes are transactional and retry preserves legacy
+behavior. Focused verification and limits are in the progress log. Current
+candidate: **#7 — setup schedule import**. The 7A screenshot comparison and
+memory measurement remain open. Batch 1 remains active and unpushed.
+Next-batch discovery has not started; do not begin it before candidate #14.
 
 Import, export, open, and save failure handling belongs to each owning
 candidate, not a separate errors-only slice. No other slices were found.

@@ -38,10 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
-- Current note: 7A.1–7A.5 are accepted and committed; 7A.5 is `932fdfb2`.
-  Candidate #6, setup class times, is active. The 7A screenshot comparison
+- Current note: 7A.1–7A.6 are accepted and committed; 7A.6 is `97d45d3d`.
+  Candidate #7, setup schedule import, is active. The 7A screenshot comparison
   and memory measurement remain open, as do the 7A and Phase 7 exit gates.
-  Batch 1 remains active and unpushed. See the progress log for 7A.5 evidence
+  Batch 1 remains active and unpushed. See the progress log for 7A.6 evidence
   and limits.
 
 ### Slice batches
@@ -188,6 +188,35 @@ keep current status in this plan and live batches in the shared tracker.
   measurement remain open 7A items; 7A and Phase 7 exit gates remain open.
   Candidate #6, setup class times, is active. Batch 1 remains active and
   unpushed; do not start next-batch discovery before candidate #14.
+
+### 7A.6 — Setup class times accepted (2026-10-27)
+
+- Commit: `97d45d3d` (`Phase7 - Add setup class times`). The screen consumes
+  the typed 7A.5 draft, creates a blank class, and adds order-preserving
+  regular/intensive schedule rows using the shared catalog. It starts with one
+  regular Monday 4:00–4:55 PM row and validates that both modes have rows
+  before writing. Class details and both schedule tables save transactionally
+  through direct `WorkspaceStore` adapters. Setup remains pending and recent
+  history is not saved. Create failure leaves no class ID; details-save failure
+  rolls back details and schedule rows while retaining the blank class ID for
+  retry, matching legacy behavior.
+- The real pending-`.tps` integration imports a Korean teacher and checks the
+  draft, details, books, color, ordered regular/intensive rows, create and
+  intensive-insert failures, successful retry, backup/journal preservation,
+  no recent-history write, and cancel restoration of the original profile.
+  It directly checks all five end-duration values at representative starts in
+  both modes, the 9:55 PM cap, absence of over-cap options, and typed weekday
+  and time values.
+- Verification: independent Tester passed six focused CTests, including the
+  setup class-times requirement and Next dependency boundary. Integration
+  passed 8/8 with no skips or failures. CMake ownership validated 1,719 files;
+  the resource-baked build contained 194 runtime resources. Resource inventory
+  and `git diff --check` passed.
+- Limits and next work: full suite, Windows, package, screenshots, and
+  peak-memory checks were not run. The 7A screenshot comparison and memory
+  measurement, plus the 7A and Phase 7 exit gates, remain open. Candidate #7,
+  setup schedule import, is active. Batch 1 remains active and unpushed; do not
+  start next-batch discovery before candidate #14.
 
 ## Objective
 

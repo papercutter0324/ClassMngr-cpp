@@ -7,6 +7,11 @@
   step's required inputs are present. Reuse one neutral catalog source across
   old and new paths, and compare fallback behavior against committed legacy
   code instead of inferring it from canonical choices.
+- Preserve existing persistence failure boundaries when the UI saves a new
+  object in stages: class creation can leave a blank row for retry, while the
+  later details-and-schedule write must roll back its related tables together.
+  Keep the created ID after the second step fails so retry does not duplicate
+  the object.
 - Keep the Next setup workbook flow on one typed path: asynchronous parser
   validation and review mapping feed `TeacherImportUseCaseRequest`, and the
   pending `WorkspaceStore` owns the import transaction. Verify selection,
