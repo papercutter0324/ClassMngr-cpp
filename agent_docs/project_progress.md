@@ -144,9 +144,11 @@ Save As, Export, and the Next dependency boundary; `git diff --check` passed.
 No full suite or native dialog run occurred. The v6 fixture is test-created,
 and the v5 rejection fixture exercises the version gate without a populated
 historical v5 schema; no real-world legacy `.db` fixture was available. Batch 1
-is complete and awaiting its push. The five ordered Teacher/Staff proposals
-are ready for implementation after that push. The 7A screenshot comparison,
-Phase 7 memory evidence, and 7A/Phase 7 exit gates remain open.
+is complete and pushed to `origin/Qt-Rewrite` at `c5af6755`; local and remote
+tips match. Batch 2 starts with candidate #16, Teacher profile page and
+navigation, from the five discovered Teacher/Staff proposals. The 7A
+screenshot comparison, Phase 7 memory evidence, and 7A/Phase 7 exit gates
+remain open.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained

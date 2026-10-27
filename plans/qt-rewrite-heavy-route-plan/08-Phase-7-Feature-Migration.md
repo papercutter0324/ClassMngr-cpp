@@ -38,11 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
-- Current note: 7A.1–7A.15 are accepted and committed. Batch 1 is complete and
-  awaiting push. The next Teacher/Staff batch is discovered; implementation is
-  pending the Batch 1 push. The 7A screenshot comparison and memory measurement
-  remain open, as do the 7A and Phase 7 exit gates. See the progress log for
-  acceptance evidence and limits.
+- Current note: 7A.1–7A.15 are accepted; Batch 1 is pushed at `c5af6755`.
+  Batch 2 is active at candidate #16, Teacher profile page and navigation.
+  The 7A screenshot comparison and memory measurement remain open, as do the
+  7A and Phase 7 exit gates. See the progress log for acceptance evidence and
+  limits.
 
 ### Slice batches
 
