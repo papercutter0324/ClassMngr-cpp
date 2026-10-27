@@ -47,10 +47,15 @@ and applies through the pending `WorkspaceStore` transaction. The unchanged
 fixture verifies Korean group selection, automatic NET/GS inclusion, source
 date persistence, rollback and retry, pending setup state, no recent-history
 write, retained backup/journal, and cancellation recovery. Candidate #5,
-setup class details, is active; Batch 1 remains unpushed. Setup-screen
-screenshot comparison, Phase 7 memory evidence, and all remaining 7A workflows
-remain open. Active candidates are tracked in
-`plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
+setup class details, passed independent focused verification and was committed
+as `932fdfb2`. It captures a typed in-memory draft after teacher entry without
+creating class, class-details, or schedule rows. Required fields preserve the
+legacy four-field rule; books remain optional. A real `.tps` integration
+imports Korean teachers, selects one for the draft, then cancels and verifies
+original-profile restoration. Candidate #6, setup class times, is active; Batch
+1 remains unpushed. Setup-screen screenshot comparison, Phase 7 memory
+evidence, and all remaining 7A workflows remain open. Active candidates are
+tracked in `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained
@@ -91,33 +96,30 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-26 (7A.4 committed; 7A.5 active)
+### Current checkpoint — 2026-10-27 (7A.5 committed; 7A.6 active)
 
-Phase 7 is in progress on the Heavy route. Slices 7A.1 through 7A.4 are
-committed at `d49f34fe`, `1f9b30bf`, `01aaf3d7`, and `8bee6dbb`. Slice 7A.4
-adds the Next-owned setup teacher-import workflow. It validates asynchronously
-with the Next timeout preference, supports retry and stale-result suppression,
-maps review selections into the typed request, and applies through
-`WorkspaceStore` without the legacy import dialog or ApplicationServices apply
-port. Rejecting the import returns through setup cancellation and recovery.
+Phase 7 is in progress on the Heavy route. Slices 7A.1 through 7A.5 are
+committed at `d49f34fe`, `1f9b30bf`, `01aaf3d7`, `8bee6dbb`, and `932fdfb2`.
+Slice 7A.5 adds the Next setup class-details form after teacher entry. It
+requires a Korean teacher, chosen color, Grade, and Level; books remain
+optional. The selected color and fields are captured in an explicit typed
+in-memory draft for 7A.6; no class, detail, or schedule row is written yet.
+The canonical catalog is shared from neutral `src/domain/config`, and
+invalid grade/level pairs preserve the committed legacy fallbacks: 15 Reading
+Smart choices and essay `N/A` for E4/E5/E6/M1/M2/M3. Color palette settings
+use a direct `WorkspaceStore` adapter.
 
-The checked-in workbook parses to five section markers: M1 (two Korean
-teachers), M2 (one), H1 (one), Ntr (Alex), and GS (Taylor), dated 2026-09-01.
-The integration test selects one M1 candidate, skips M2, imports H1, and
-includes Alex and Taylor automatically. A forced GS insertion failure rolls
-back Korean/NET writes and the source date; retry succeeds. Tests also verify
-pending setup, zero recent-history saves, retained backup/journal, and
-cancellation recovery after an invalid workbook. The parser has a narrow Qt
-Core+ZLIB target; `Qt6::Concurrent` is explicit in Next.
-
-Independent focused verification passed 6/6 CTest entries (107 QtTest cases
-passed, none failed, one optional external-workbook case skipped). The tested
-targets covered teacher import, bootstrap, setup integration, page host, the
-new workflow, and the Next workspace dependency boundary. Resource inventory,
-`git diff --check`, and one-owner source checks passed (1,710 handwritten
-files). No full suite, Windows build, package, peak-memory measurement, or
-screenshot comparison ran. Those gates remain open. Candidate #5, setup class
-details, is active; Batch 1 remains unpushed.
+The real `.tps` integration imports Korean teachers, selects an imported
+teacher, captures the draft, then cancels. It verifies zero class/details/
+schedule rows, no recent-history saves, and original-profile restoration with
+backup and journal cleanup. Independent focused verification passed 12/12
+CTest checks; nine QtTest executables reported 151 passed, 0 failed, 0 skipped,
+plus three standalone checks. The resource-baked build produced 194 runtime
+records; CMake ownership validated 1,717 files, and resource inventory,
+dependency-boundary, and `git diff --check` passed. No full suite, Windows
+build, package, peak-memory measurement, or screenshot comparison ran. Those
+gates remain open. Candidate #6, setup class times, is active; Batch 1 remains
+unpushed.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

@@ -37,11 +37,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 2 through 6
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
-- Last updated: 2026-10-26
-- Current note: 7A.1–7A.4 are accepted and committed; 7A.4 is `8bee6dbb`.
-  Candidate #5, setup class details, is active. The 7A screenshot comparison
+- Last updated: 2026-10-27
+- Current note: 7A.1–7A.5 are accepted and committed; 7A.5 is `932fdfb2`.
+  Candidate #6, setup class times, is active. The 7A screenshot comparison
   and memory measurement remain open, as do the 7A and Phase 7 exit gates.
-  Batch 1 remains active and unpushed. See the progress log for 7A.4 evidence
+  Batch 1 remains active and unpushed. See the progress log for 7A.5 evidence
   and limits.
 
 ### Slice batches
@@ -156,6 +156,38 @@ keep current status in this plan and live batches in the shared tracker.
   or screenshot parity was verified. 7A and Phase 7 exit gates remain open;
   screenshot comparison and memory measurement remain open 7A items. Candidate
   #5, setup class details, is active. Batch 1 remains active and unpushed.
+
+### 7A.5 — Setup class details accepted (2026-10-27)
+
+- Commit: `932fdfb2` (`Phase7 - Add setup class details`). After teacher entry,
+  setup captures a typed in-memory class-details draft in `ApplicationBootstrap`;
+  it creates no class, class-details, or schedule rows. Candidate #6 owns
+  persistence once schedule rows are ready.
+- Requirements: a Korean teacher, chosen color, Grade, and Level are required;
+  Reading and Essay Books are optional. A single teacher is selected
+  automatically; multiple choices require explicit selection, and teacher-read
+  failures remain visible and retryable. Color selection preserves the 16-slot
+  palette through a direct `WorkspaceStore` adapter. The shared catalog now
+  lives in `src/domain/config/class_details_catalog.h` and serves both legacy
+  Course/ClassInfoConfig and Next. Invalid grade/level fallback matches
+  committed legacy behavior (15 Reading Smart choices; N/A essay choices for
+  E4/E5/E6/M1/M2/M3); valid M1/M2 GraVoca choices remain.
+- The real `.tps` integration imports Korean teachers through
+  `WorkspaceStore`, selects an imported teacher, captures the draft, then
+  cancels. It verifies no class/details/schedule writes, zero recent-history
+  saves, original-profile restoration, and backup/journal cleanup. An
+  independent Tester verified exact fallback parity and the combined
+  import/draft/cancel path.
+- Verification: focused CTest passed 12/12. Nine QtTest executables reported
+  151 passed, 0 failed, 0 skipped, plus three standalone checks. The
+  resource-baked build produced 194 runtime resource records; source ownership
+  validated 1,717 files. Dependency-boundary, resource-inventory, and
+  `git diff --check` checks passed.
+- Limits and next work: full suite, Windows, package, screenshots, QWizard
+  parity, and peak-memory were not checked. Screenshot comparison and memory
+  measurement remain open 7A items; 7A and Phase 7 exit gates remain open.
+  Candidate #6, setup class times, is active. Batch 1 remains active and
+  unpushed; do not start next-batch discovery before candidate #14.
 
 ## Objective
 

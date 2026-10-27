@@ -2,6 +2,11 @@
 
 ## Decisions and Lessons
 
+- When splitting a wizard across feature slices, keep the first step's valid
+  state as an explicit typed draft and delay persistence until the next
+  step's required inputs are present. Reuse one neutral catalog source across
+  old and new paths, and compare fallback behavior against committed legacy
+  code instead of inferring it from canonical choices.
 - Keep the Next setup workbook flow on one typed path: asynchronous parser
   validation and review mapping feed `TeacherImportUseCaseRequest`, and the
   pending `WorkspaceStore` owns the import transaction. Verify selection,
