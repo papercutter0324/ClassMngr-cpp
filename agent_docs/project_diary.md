@@ -2,6 +2,12 @@
 
 ## Decisions and Lessons
 
+- Keep the Next setup workbook flow on one typed path: asynchronous parser
+  validation and review mapping feed `TeacherImportUseCaseRequest`, and the
+  pending `WorkspaceStore` owns the import transaction. Verify selection,
+  transaction rollback/retry, retained setup recovery state, and cancellation
+  through the real fixture. Base fixture expectations on its checked-in parsed
+  contents rather than an assumed larger sample.
 - During persistence discovery, distinguish an active v2 caller from a legacy
   compatibility facade or incidental session guard. A `DataService` fallback
   in source is not a new slice when normal composition binds `WorkspaceStore`

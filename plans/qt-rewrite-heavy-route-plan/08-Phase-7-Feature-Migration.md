@@ -38,11 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-26
-- Current note: 7A.1–7A.3 are functionally verified and committed; 7A.3 is
-  `01aaf3d7`. Candidate #4, setup teacher import, is active. The 7A screenshot
-  comparison and memory measurement remain open, as do the 7A and Phase 7 exit
-  gates. Batch 1 remains active and unpushed. See the progress log for 7A.3
-  evidence and limits.
+- Current note: 7A.1–7A.4 are accepted and committed; 7A.4 is `8bee6dbb`.
+  Candidate #5, setup class details, is active. The 7A screenshot comparison
+  and memory measurement remain open, as do the 7A and Phase 7 exit gates.
+  Batch 1 remains active and unpushed. See the progress log for 7A.4 evidence
+  and limits.
 
 ### Slice batches
 
@@ -123,6 +123,39 @@ keep current status in this plan and live batches in the shared tracker.
   legacy setup/personal-details screenshot exists, so screenshot comparison and
   memory measurement remain open 7A items. Candidate #4, setup teacher import,
   is active; 7A and Phase 7 exit gates remain open.
+
+### 7A.4 — Setup teacher import accepted (2026-10-26)
+
+- Commit: `8bee6dbb` (`Phase7 - Add setup teacher import`). The Next-owned
+  workflow validates workbooks asynchronously using the Next Excel import
+  timeout preference, handles retry and stale results, and maps review
+  directly to the typed `TeacherImportUseCaseRequest` applied through the
+  pending `WorkspaceStore` transaction. It does not use the legacy
+  teacher-import UI or `ApplicationServices` apply port. Setup rejection and
+  cancellation use existing recovery.
+- The unchanged fixture
+  `tests/fixtures/teacher_import/sectioned_review.xlsx` parses five section
+  markers: M1 (two Korean teachers), M2 (one), H1 (one), NET Alex, and GS
+  Taylor; its source date is 2026-09-01. Integration selects one M1 teacher,
+  skips M2, imports H1, and includes Alex and Taylor automatically. A forced GS
+  insertion failure rolls back Korean and NET writes and the source date;
+  retry succeeds. Tests verify setup stays pending, recent history is not
+  written, backup and journal survive import, and cancel after an invalid
+  workbook restores the original profile.
+- Workbook parser sources now use a narrow Qt Core+ZLIB target shared with
+  legacy consumers; `Qt6::Concurrent` is an explicit Next dependency. The
+  resource inventory was regenerated and its check passed. An independent
+  Tester built focused targets and ran CTest 6/6. QtTest totals were 107
+  passed, 0 failed, 1 skipped (the optional external sample path was unset),
+  across legacy import (30), Bootstrap (50), setup integration (3), page host
+  (15), and workflow (9), plus the dependency boundary. Coverage includes
+  English/Korean × Light/Dark and asynchronous timeout, retry, and stale-result
+  behavior. Resource check, `git diff --check`, and source ownership check
+  passed; ownership has one explicit owner for 1,710 handwritten sources.
+- Limits and next work: no full suite, Windows, package, peak-RSS measurement,
+  or screenshot parity was verified. 7A and Phase 7 exit gates remain open;
+  screenshot comparison and memory measurement remain open 7A items. Candidate
+  #5, setup class details, is active. Batch 1 remains active and unpushed.
 
 ## Objective
 

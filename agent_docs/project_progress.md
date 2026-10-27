@@ -40,9 +40,16 @@ creation through the typed teacher-create use case and a dedicated
 WorkspaceStore adapter, keeps setup pending with the recovery journal and
 original-profile backup intact, and does not add a pending profile to recent
 history. Optional-only input is not silently skipped when another teacher is
-already available. Candidate #4, setup teacher import, is active; Batch 1
-remains unpushed. Setup-screen screenshot comparison, Phase 7 memory evidence,
-and all remaining 7A workflows remain open. Active candidates are tracked in
+already available. Slice 7A.4, setup teacher import, passed independent focused
+verification and was committed as `8bee6dbb`. Its Next-owned asynchronous
+workflow maps review choices directly into the typed teacher-import use case
+and applies through the pending `WorkspaceStore` transaction. The unchanged
+fixture verifies Korean group selection, automatic NET/GS inclusion, source
+date persistence, rollback and retry, pending setup state, no recent-history
+write, retained backup/journal, and cancellation recovery. Candidate #5,
+setup class details, is active; Batch 1 remains unpushed. Setup-screen
+screenshot comparison, Phase 7 memory evidence, and all remaining 7A workflows
+remain open. Active candidates are tracked in
 `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
@@ -84,27 +91,33 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-26 (7A.3 committed; 7A.4 active)
+### Current checkpoint — 2026-10-26 (7A.4 committed; 7A.5 active)
 
-Phase 7 is in progress on the Heavy route. Slices 7A.1 through 7A.3 are
-committed at `d49f34fe`, `1f9b30bf`, and `01aaf3d7`. The 7A.3 manual
-teacher-entry path uses the typed Application contract and persists through
-`WorkspaceStoreGateway`; its UI integration test exercises a real `.tps`,
-retained setup journal, pending-state behavior, and zero recent-history saves.
-The separate store test covers failed create, retry, close/reopen, resume, and
-unchanged original backup/journal. Optional-only teacher data is retained for
-correction instead of being discarded when a teacher choice already exists.
+Phase 7 is in progress on the Heavy route. Slices 7A.1 through 7A.4 are
+committed at `d49f34fe`, `1f9b30bf`, `01aaf3d7`, and `8bee6dbb`. Slice 7A.4
+adds the Next-owned setup teacher-import workflow. It validates asynchronously
+with the Next timeout preference, supports retry and stale-result suppression,
+maps review selections into the typed request, and applies through
+`WorkspaceStore` without the legacy import dialog or ApplicationServices apply
+port. Rejecting the import returns through setup cancellation and recovery.
 
-Independent focused verification passed 15/15 CTests, the Bootstrap CTest
-passed 1/1, the restored 7A.2 failed-personal-details backup test passed 3/3,
-teacher-entry integration and store tests passed 3/3 each, and the English/
-Korean × light/dark appearance rows passed 6/6. The Next app target linked;
-the shared name-validation boundary passed its dependency check, CMake source
-ownership validated 1,705 files, and resource-inventory and diff checks passed.
-The macOS `QWizard` parity test aborts in `NSBundle initWithURL:nil` before
-assertions. No full suite, Windows build, package, or memory measurement ran.
-Setup screenshot/reference comparison and the Phase 7 exit gate remain open.
-Candidate #4, setup teacher import, is active; Batch 1 remains unpushed.
+The checked-in workbook parses to five section markers: M1 (two Korean
+teachers), M2 (one), H1 (one), Ntr (Alex), and GS (Taylor), dated 2026-09-01.
+The integration test selects one M1 candidate, skips M2, imports H1, and
+includes Alex and Taylor automatically. A forced GS insertion failure rolls
+back Korean/NET writes and the source date; retry succeeds. Tests also verify
+pending setup, zero recent-history saves, retained backup/journal, and
+cancellation recovery after an invalid workbook. The parser has a narrow Qt
+Core+ZLIB target; `Qt6::Concurrent` is explicit in Next.
+
+Independent focused verification passed 6/6 CTest entries (107 QtTest cases
+passed, none failed, one optional external-workbook case skipped). The tested
+targets covered teacher import, bootstrap, setup integration, page host, the
+new workflow, and the Next workspace dependency boundary. Resource inventory,
+`git diff --check`, and one-owner source checks passed (1,710 handwritten
+files). No full suite, Windows build, package, peak-memory measurement, or
+screenshot comparison ran. Those gates remain open. Candidate #5, setup class
+details, is active; Batch 1 remains unpushed.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

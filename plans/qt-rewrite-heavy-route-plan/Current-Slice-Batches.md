@@ -27,10 +27,14 @@ comparison remains an open 7A parity item because no matching Phase 0/7
 screenshot exists. See the [Phase 7 progress
 log](08-Phase-7-Feature-Migration.md#progress-log) for evidence and limits.
 Candidate #3, teacher-entry setup, is functionally verified and committed as
-`01aaf3d7`. Current candidate: **#4 — setup teacher import**. The 7A screenshot
-comparison and memory measurement remain open; see the [Phase 7 progress
-log](08-Phase-7-Feature-Migration.md#progress-log). Batch 1 remains active and
-unpushed. Next-batch discovery has not started.
+`01aaf3d7`. Candidate #4, setup teacher import, is accepted and committed as
+`8bee6dbb`. Its focused tests passed, including fixture-backed selection,
+automatic NET/GS imports, rollback and retry, pending setup state, recovery
+preservation, and cancel restoration. Current candidate: **#5 — setup class
+details**. The 7A screenshot comparison and memory measurement remain open;
+see the [Phase 7 progress log](08-Phase-7-Feature-Migration.md#progress-log)
+for verification limits. Batch 1 remains active and unpushed. Next-batch
+discovery has not started; do not begin it before candidate #14.
 
 Import, export, open, and save failure handling belongs to each owning
 candidate, not a separate errors-only slice. No other slices were found.
