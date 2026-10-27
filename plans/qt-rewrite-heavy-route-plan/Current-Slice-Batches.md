@@ -7,9 +7,11 @@ Two independent discovery maps agree that post-#20 work covers the remaining
 migrated UI. Main selected the granular 20-slice sequence below to bound page
 ownership, dependencies, lifecycle, and verification.
 
-21. **Active — My Details and Signature.**
-22. My Classes with compact summaries and one selected detail; use model/view
-    and compact resident state.
+21. **Accepted — My Details and Signature** (`060aca5c`). See the [Phase 7
+    progress log](08-Phase-7-Feature-Migration.md#progress-log) and [capture
+    package](../../docs/qt-rewrite/visual-baseline/next/phase-7/my-details-signature/README.md).
+22. **Active — My Classes** with compact summaries and one selected detail; use
+    model/view and compact resident state.
 23. My Schedule and workspace event summary; exclude #20 birthdays and daily
     dismissal.
 24. Classes list/navigation.

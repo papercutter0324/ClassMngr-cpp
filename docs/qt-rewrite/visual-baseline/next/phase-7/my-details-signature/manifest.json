@@ -1,0 +1,404 @@
+{
+    "captures": [
+        {
+            "file": "legacy_en_US-light_image.png",
+            "footerHiddenWhileClean": false,
+            "footerHiddenWhileDirty": false,
+            "height": 768,
+            "locale": "en_US",
+            "manualSaveButtonAbsent": false,
+            "memory": {
+                "afterCleanup": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:53.653",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 92094464,
+                    "platform": "macos",
+                    "privateUsageBytes": 32900008,
+                    "privateWorkingSetBytes": 32243712,
+                    "threadCount": 8,
+                    "workingSetBytes": 92094464
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:53.379",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 70942720,
+                    "platform": "macos",
+                    "privateUsageBytes": 23364400,
+                    "privateWorkingSetBytes": 22790144,
+                    "threadCount": 8,
+                    "workingSetBytes": 70860800
+                },
+                "rendered": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:53.632",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 91848704,
+                    "platform": "macos",
+                    "privateUsageBytes": 32719784,
+                    "privateWorkingSetBytes": 32063488,
+                    "threadCount": 8,
+                    "workingSetBytes": 91848704
+                }
+            },
+            "previewHasVisibleSignature": true,
+            "signatureMode": "image",
+            "theme": "light",
+            "variant": "legacy",
+            "width": 1024
+        },
+        {
+            "file": "next_en_US-light_image.png",
+            "footerHiddenWhileClean": true,
+            "footerHiddenWhileDirty": true,
+            "height": 768,
+            "locale": "en_US",
+            "manualSaveButtonAbsent": true,
+            "memory": {
+                "afterCleanup": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:53.736",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 95993856,
+                    "platform": "macos",
+                    "privateUsageBytes": 36357032,
+                    "privateWorkingSetBytes": 35700736,
+                    "threadCount": 8,
+                    "workingSetBytes": 95993856
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:53.653",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 92110848,
+                    "platform": "macos",
+                    "privateUsageBytes": 32900008,
+                    "privateWorkingSetBytes": 32243712,
+                    "threadCount": 8,
+                    "workingSetBytes": 92094464
+                },
+                "rendered": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:53.714",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 95830016,
+                    "platform": "macos",
+                    "privateUsageBytes": 36193192,
+                    "privateWorkingSetBytes": 35536896,
+                    "threadCount": 8,
+                    "workingSetBytes": 95830016
+                }
+            },
+            "previewHasVisibleSignature": true,
+            "signatureMode": "image",
+            "theme": "light",
+            "variant": "next",
+            "width": 1024
+        },
+        {
+            "file": "legacy_en_US-light_type.png",
+            "footerHiddenWhileClean": false,
+            "footerHiddenWhileDirty": false,
+            "height": 768,
+            "locale": "en_US",
+            "manualSaveButtonAbsent": false,
+            "memory": {
+                "afterCleanup": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:53.835",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 97599488,
+                    "platform": "macos",
+                    "privateUsageBytes": 37946280,
+                    "privateWorkingSetBytes": 37289984,
+                    "threadCount": 9,
+                    "workingSetBytes": 97583104
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:53.736",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 96010240,
+                    "platform": "macos",
+                    "privateUsageBytes": 36357032,
+                    "privateWorkingSetBytes": 35700736,
+                    "threadCount": 8,
+                    "workingSetBytes": 95993856
+                },
+                "rendered": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:53.816",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 97583104,
+                    "platform": "macos",
+                    "privateUsageBytes": 37946280,
+                    "privateWorkingSetBytes": 37289984,
+                    "threadCount": 9,
+                    "workingSetBytes": 97583104
+                }
+            },
+            "previewHasVisibleSignature": true,
+            "signatureMode": "type",
+            "theme": "light",
+            "variant": "legacy",
+            "width": 1024
+        },
+        {
+            "file": "next_en_US-light_type.png",
+            "footerHiddenWhileClean": true,
+            "footerHiddenWhileDirty": true,
+            "height": 768,
+            "locale": "en_US",
+            "manualSaveButtonAbsent": true,
+            "memory": {
+                "afterCleanup": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:53.935",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 101498880,
+                    "platform": "macos",
+                    "privateUsageBytes": 41845672,
+                    "privateWorkingSetBytes": 41189376,
+                    "threadCount": 9,
+                    "workingSetBytes": 101482496
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:53.835",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 97599488,
+                    "platform": "macos",
+                    "privateUsageBytes": 37946280,
+                    "privateWorkingSetBytes": 37289984,
+                    "threadCount": 9,
+                    "workingSetBytes": 97583104
+                },
+                "rendered": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:53.914",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 101482496,
+                    "platform": "macos",
+                    "privateUsageBytes": 41845672,
+                    "privateWorkingSetBytes": 41189376,
+                    "threadCount": 9,
+                    "workingSetBytes": 101482496
+                }
+            },
+            "previewHasVisibleSignature": true,
+            "signatureMode": "type",
+            "theme": "light",
+            "variant": "next",
+            "width": 1024
+        },
+        {
+            "file": "legacy_ko_KR-dark_image.png",
+            "footerHiddenWhileClean": false,
+            "footerHiddenWhileDirty": false,
+            "height": 768,
+            "locale": "ko_KR",
+            "manualSaveButtonAbsent": false,
+            "memory": {
+                "afterCleanup": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:54.049",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 107642880,
+                    "platform": "macos",
+                    "privateUsageBytes": 44483520,
+                    "privateWorkingSetBytes": 43810816,
+                    "threadCount": 9,
+                    "workingSetBytes": 107642880
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:53.936",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 101498880,
+                    "platform": "macos",
+                    "privateUsageBytes": 41845672,
+                    "privateWorkingSetBytes": 41189376,
+                    "threadCount": 9,
+                    "workingSetBytes": 101498880
+                },
+                "rendered": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:54.027",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 106512384,
+                    "platform": "macos",
+                    "privateUsageBytes": 43713472,
+                    "privateWorkingSetBytes": 43040768,
+                    "threadCount": 9,
+                    "workingSetBytes": 106512384
+                }
+            },
+            "previewHasVisibleSignature": true,
+            "signatureMode": "image",
+            "theme": "dark",
+            "variant": "legacy",
+            "width": 1024
+        },
+        {
+            "file": "next_ko_KR-dark_image.png",
+            "footerHiddenWhileClean": true,
+            "footerHiddenWhileDirty": true,
+            "height": 768,
+            "locale": "ko_KR",
+            "manualSaveButtonAbsent": true,
+            "memory": {
+                "afterCleanup": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:54.117",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 107986944,
+                    "platform": "macos",
+                    "privateUsageBytes": 44811200,
+                    "privateWorkingSetBytes": 44138496,
+                    "threadCount": 9,
+                    "workingSetBytes": 107970560
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:54.049",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 107659264,
+                    "platform": "macos",
+                    "privateUsageBytes": 44483520,
+                    "privateWorkingSetBytes": 43810816,
+                    "threadCount": 9,
+                    "workingSetBytes": 107642880
+                },
+                "rendered": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:54.095",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 107970560,
+                    "platform": "macos",
+                    "privateUsageBytes": 44811200,
+                    "privateWorkingSetBytes": 44138496,
+                    "threadCount": 9,
+                    "workingSetBytes": 107970560
+                }
+            },
+            "previewHasVisibleSignature": true,
+            "signatureMode": "image",
+            "theme": "dark",
+            "variant": "next",
+            "width": 1024
+        },
+        {
+            "file": "legacy_ko_KR-dark_type.png",
+            "footerHiddenWhileClean": false,
+            "footerHiddenWhileDirty": false,
+            "height": 768,
+            "locale": "ko_KR",
+            "manualSaveButtonAbsent": false,
+            "memory": {
+                "afterCleanup": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:54.215",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 109150208,
+                    "platform": "macos",
+                    "privateUsageBytes": 45974464,
+                    "privateWorkingSetBytes": 45301760,
+                    "threadCount": 9,
+                    "workingSetBytes": 109133824
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:54.117",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 107986944,
+                    "platform": "macos",
+                    "privateUsageBytes": 44811200,
+                    "privateWorkingSetBytes": 44138496,
+                    "threadCount": 9,
+                    "workingSetBytes": 107970560
+                },
+                "rendered": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:54.196",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 109133824,
+                    "platform": "macos",
+                    "privateUsageBytes": 45974464,
+                    "privateWorkingSetBytes": 45301760,
+                    "threadCount": 9,
+                    "workingSetBytes": 109133824
+                }
+            },
+            "previewHasVisibleSignature": true,
+            "signatureMode": "type",
+            "theme": "dark",
+            "variant": "legacy",
+            "width": 1024
+        },
+        {
+            "file": "next_ko_KR-dark_type.png",
+            "footerHiddenWhileClean": true,
+            "footerHiddenWhileDirty": true,
+            "height": 768,
+            "locale": "ko_KR",
+            "manualSaveButtonAbsent": true,
+            "memory": {
+                "afterCleanup": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:54.316",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 109789184,
+                    "platform": "macos",
+                    "privateUsageBytes": 46613440,
+                    "privateWorkingSetBytes": 45940736,
+                    "threadCount": 9,
+                    "workingSetBytes": 109772800
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:54.215",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 109150208,
+                    "platform": "macos",
+                    "privateUsageBytes": 45974464,
+                    "privateWorkingSetBytes": 45301760,
+                    "threadCount": 9,
+                    "workingSetBytes": 109133824
+                },
+                "rendered": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T20:51:54.294",
+                    "handleCount": 0,
+                    "peakWorkingSetBytes": 109772800,
+                    "platform": "macos",
+                    "privateUsageBytes": 46613440,
+                    "privateWorkingSetBytes": 45940736,
+                    "threadCount": 9,
+                    "workingSetBytes": 109772800
+                }
+            },
+            "previewHasVisibleSignature": true,
+            "signatureMode": "type",
+            "theme": "dark",
+            "variant": "next",
+            "width": 1024
+        }
+    ],
+    "memoryMetricLimit": "Platform process snapshots measure the whole process and include Qt, legacy runtime, and loaded resources; they are comparative lifecycle observations, not a page-specific allocation budget.",
+    "purpose": "Matched legacy and Next My Details and Signature captures",
+    "qtPlatform": "offscreen",
+    "style": "Fusion",
+    "viewport": {
+        "height": 768,
+        "width": 1024
+    },
+    "workspace": {
+        "campus": "Bundang",
+        "name": "Alex Morgan",
+        "signatureModes": [
+            "image",
+            "type"
+        ]
+    }
+}

@@ -38,16 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
-- Current note: 7A.1–7A.15 are accepted; Batch 1 is pushed at `c5af6755`.
-  Candidate #16, Teacher profile page and navigation, is accepted at
-  `24c14f5e`; candidate #17, Korean teacher sidebar directory, is accepted at
-  `d6574628`; candidate #18, Shared Staff Directory for Native English and GS
-  Team, is accepted at `aab11f67`; candidate #19, normal teacher workbook
-  import, is accepted at `6dedd431`; candidate #20, upcoming birthdays and
-  daily dismissal, is accepted at `a36a1fb5`. Batch 3 is active at candidate
-  #21, My Details and Signature. The 7A screenshot comparison and memory
-  measurement remain open, as do the 7A and Phase 7 exit gates. See the
-  progress log for slice evidence and limits.
+- Current note: 7A.1–7A.15 remain accepted. Candidate #21, My Details and
+  Signature, is accepted at `060aca5c`; Batch 3 candidate #22, My Classes with
+  compact summaries and one selected detail, is active. The 7A screenshot
+  comparison and memory measurement remain open, as do the 7A and Phase 7 exit
+  gates. See the progress log for slice evidence and limits.
 
 ### Slice batches
 
@@ -572,6 +567,35 @@ keep current status in this plan and live batches in the shared tracker.
   phase exit gate was verified. The 7A screenshot comparison and memory
   evidence and 7A/Phase 7 exit gates remain open. Candidate #21, My Details and
   Signature, is active.
+
+### Candidate #21 — My Details and Signature accepted (2026-10-27)
+
+- Commit: `060aca5c`. The normal-workspace page supports My Details and saved
+  Signature modes (Image and Type), separate from Initial Setup. Normal-workspace
+  empty-name behavior matches legacy; Initial Setup validation is unchanged.
+  Image and typed previews render, and saved signatures remain compatible
+  through roundtrip and removal. Dirty navigation, automatic/manual save,
+  full-bundle save, failure/retry, report readback, and workspace replacement
+  are covered.
+- Visual review: Main and Tester reviewed eight matched 1024×768
+  Fusion/offscreen captures across English/light and Korean/dark in both
+  signature modes. Next has no persistent footer or page Save button in normal
+  states. Accepted deltas are controls becoming visible about 10–20 px earlier
+  and additional Korean shell/tab localization. See the [capture
+  package](../../docs/qt-rewrite/visual-baseline/next/phase-7/my-details-signature/README.md).
+- Verification: after the footer repair, focused CTest passed 5/5, page tests
+  14/14, and two targeted Bootstrap scenarios 4/4. Source ownership validated
+  1,782 handwritten sources; resource inventory and `git diff --check` passed.
+  Earlier focused functional recheck passed CTest 8/8, page tests 13/13, and
+  selected Bootstrap cases 7/7, including full-bundle save, failures/retry,
+  dirty navigation, replacement, and signature roundtrips.
+- Memory and limits: whole-process macOS snapshots across captures span
+  70.9–109.8 MB working set (67.6–104.7 MiB) and reach 46.6 MB private usage
+  (44.5 MiB), including Qt, legacy runtime, resources, and both surfaces. They
+  are not page-specific allocations or a budget. No EXIF-orientation fixture,
+  exact debounce timing assertion, full suite, or Windows run was verified.
+  The 7A screenshot comparison and memory evidence and 7A/Phase 7 exit gates
+  remain open. Candidate #22, My Classes, is active.
 
 ## Objective
 
