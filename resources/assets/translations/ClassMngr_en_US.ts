@@ -9852,6 +9852,7 @@ GS Team members: %8 created, %9 updated, %10 unchanged.</translation></message>
     <name>NextShell</name>
     <message><source>Teachers</source><translation>Teachers</translation></message>
     <message><source>Import Teachers…</source><translation>Import Teachers…</translation></message>
+    <message><source>Upcoming Birthdays…</source><translation>Upcoming Birthdays…</translation></message>
 </context>
 <context>
     <name>TeacherImportWorkflow</name>
@@ -9868,5 +9869,40 @@ GS Team members: %8 created, %9 updated, %10 unchanged.</translation></message>
     <message><source>active Teacher Profile</source><translation>active Teacher Profile</translation></message>
     <message><source>Native English Teachers directory</source><translation>Native English Teachers directory</translation></message>
     <message><source>GS Team directory</source><translation>GS Team directory</translation></message>
+</context>
+<context>
+    <name>NextUpcomingBirthdaysDialog</name>
+    <message><source>Upcoming Birthdays</source><translation>Upcoming Birthdays</translation></message>
+    <message><source>Birthdays today and over the next two weeks.</source><translation>Birthdays today and over the next two weeks.</translation></message>
+    <message><source>Today's Birthdays</source><translation>Today's Birthdays</translation></message>
+    <message><source>This Week</source><translation>This Week</translation></message>
+    <message><source>Next Week</source><translation>Next Week</translation></message>
+    <message><source>No birthdays this week.</source><translation>No birthdays this week.</translation></message>
+    <message><source>No birthdays next week.</source><translation>No birthdays next week.</translation></message>
+    <message><source>Don't show again today</source><translation>Don't show again today</translation></message>
+    <message><source>Close</source><translation>Close</translation></message>
+    <message><source>Korean Teacher</source><translation>Korean Teacher</translation></message>
+    <message><source>Native English Teacher</source><translation>Native English Teacher</translation></message>
+    <message><source>GS Team</source><translation>GS Team</translation></message>
+</context>
+<context>
+    <name>NextUpcomingBirthdaysFlow</name>
+    <message><source>Birthdays could not be loaded.</source><translation>Birthdays could not be loaded.</translation></message>
+    <message><source>The dismissal preference could not be saved.</source><translation>The dismissal preference could not be saved.</translation></message>
+</context>
+<context>
+    <name>UpcomingBirthdaysDialog</name>
+    <message><source>Upcoming Birthdays</source><translation>Upcoming Birthdays</translation></message>
+    <message><source>Birthdays today and over the next two weeks.</source><translation>Birthdays today and over the next two weeks.</translation></message>
+    <message><source>Today's Birthdays</source><translation>Today's Birthdays</translation></message>
+    <message><source>This Week</source><translation>This Week</translation></message>
+    <message><source>Next Week</source><translation>Next Week</translation></message>
+    <message><source>No birthdays this week.</source><translation>No birthdays this week.</translation></message>
+    <message><source>No birthdays next week.</source><translation>No birthdays next week.</translation></message>
+    <message><source>Don't show again today</source><translation>Don't show again today</translation></message>
+    <message><source>Close</source><translation>Close</translation></message>
+    <message><source>Korean Teacher</source><translation>Korean Teacher</translation></message>
+    <message><source>Native English Teacher</source><translation>Native English Teacher</translation></message>
+    <message><source>GS Team</source><translation>GS Team</translation></message>
 </context>
 </TS>

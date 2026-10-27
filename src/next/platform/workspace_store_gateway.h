@@ -13,6 +13,9 @@
 #include "next/application/teacher_create.h"
 #include "next/application/teacher_delete.h"
 #include "next/application/teacher_directory_read_port.h"
+#include "next/application/korean_teacher_birthday_directory_read_port.h"
+#include "next/application/native_english_teacher_birthday_directory_read_port.h"
+#include "next/application/gs_team_birthday_directory_read_port.h"
 #include "next/application/native_english_teacher_directory_read_query.h"
 #include "next/application/native_english_teacher_directory_save_use_case.h"
 #include "next/application/gs_team_directory_read_query.h"
@@ -29,7 +32,11 @@ namespace ClassMngr::Next::Platform
 
 // Store-backed persistence boundary for the Next startup workspace. The
 // adapter borrows the single WorkspaceStore owned by the composition root.
-class WorkspaceStoreGateway final : public Application::WorkspaceGateway
+class WorkspaceStoreGateway final
+    : public Application::WorkspaceGateway,
+      public Application::KoreanTeacherBirthdayDirectoryReadPort,
+      public Application::NativeEnglishTeacherBirthdayDirectoryReadPort,
+      public Application::GsTeamBirthdayDirectoryReadPort
 {
 public:
     WorkspaceStoreGateway();
@@ -118,6 +125,12 @@ public:
             ) const;
     [[nodiscard]] Application::TeacherImportLatestSourceDateReadResult
     readLatestTeacherImportSourceDate() const;
+    [[nodiscard]] Application::KoreanTeacherBirthdayDirectoryReadResult
+    readKoreanTeacherBirthdayDirectory() const override;
+    [[nodiscard]] Application::NativeEnglishTeacherBirthdayDirectoryReadResult
+    readNativeEnglishTeacherBirthdayDirectory() const override;
+    [[nodiscard]] Application::GsTeamBirthdayDirectoryReadResult
+    readGsTeamBirthdayDirectory() const override;
     [[nodiscard]] Application::NativeEnglishTeacherDirectoryReadResult
     readNativeEnglishTeacherDirectory() const;
     [[nodiscard]] Application::NativeEnglishTeacherDirectorySaveOutcome

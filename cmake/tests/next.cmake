@@ -3071,6 +3071,104 @@ classmngr_add_qt_test(
         Qt6::Test
 )
 
+add_executable(ClassMngrNextUpcomingBirthdaysFlowTests
+    tests/next/upcoming_birthdays_flow_tests.cpp
+    src/next/ui/upcoming_birthdays_flow.cpp
+)
+target_compile_features(ClassMngrNextUpcomingBirthdaysFlowTests PRIVATE cxx_std_23)
+target_include_directories(ClassMngrNextUpcomingBirthdaysFlowTests
+    PRIVATE "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextUpcomingBirthdaysFlowTests
+    PRIVATE ClassMngrNext::Application Qt6::Test Qt6::Widgets
+)
+set_target_properties(ClassMngrNextUpcomingBirthdaysFlowTests
+    PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextUpcomingBirthdaysFlowTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+set_property(GLOBAL APPEND PROPERTY CLASSMNGR_TEST_SUPPORT_TARGETS
+    ClassMngrNextUpcomingBirthdaysFlowTests
+)
+add_test(
+    NAME ClassMngrNextUpcomingBirthdaysFlowTests
+    COMMAND ClassMngrNextUpcomingBirthdaysFlowTests
+)
+set_tests_properties(ClassMngrNextUpcomingBirthdaysFlowTests
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformWorkspaceStoreUpcomingBirthdayDirectories
+    SOURCES
+        tests/next/workspace_store_upcoming_birthday_directory_read_ports_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNextWorkspace
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Test
+)
+
+add_executable(ClassMngrNextUpcomingBirthdaysVisualCapture
+    tests/next/upcoming_birthdays_visual_capture.cpp
+    src/next/ui/upcoming_birthdays_dialog.cpp
+)
+target_compile_features(ClassMngrNextUpcomingBirthdaysVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextUpcomingBirthdaysVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextUpcomingBirthdaysVisualCapture
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrNextUpcomingBirthdaysVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextUpcomingBirthdaysVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextUpcomingBirthdaysVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+set_property(GLOBAL APPEND PROPERTY CLASSMNGR_TEST_SUPPORT_TARGETS
+    ClassMngrNextUpcomingBirthdaysVisualCapture
+)
+add_dependencies(ClassMngrNextUpcomingBirthdaysVisualCapture
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextUpcomingBirthdaysVisualCaptureEnLight
+    COMMAND ClassMngrNextUpcomingBirthdaysVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/upcoming-birthdays-visual-capture/en_US_light"
+        en_US light
+)
+add_test(
+    NAME ClassMngrNextUpcomingBirthdaysVisualCaptureKoDark
+    COMMAND ClassMngrNextUpcomingBirthdaysVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/upcoming-birthdays-visual-capture/ko_KR_dark"
+        ko_KR dark
+)
+set_tests_properties(
+    ClassMngrNextUpcomingBirthdaysVisualCaptureEnLight
+    ClassMngrNextUpcomingBirthdaysVisualCaptureKoDark
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 add_test(
     NAME NextApplicationUpcomingBirthdayScheduleUseCaseOrdering
     COMMAND ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests

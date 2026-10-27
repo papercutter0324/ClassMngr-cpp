@@ -9931,6 +9931,7 @@ Version: %2</source>
     <message><source>ClassMngr Next</source><translation>ClassMngr Next</translation></message>
     <message><source>Teachers</source><translation>교사</translation></message>
     <message><source>Import Teachers…</source><translation>교사 가져오기…</translation></message>
+    <message><source>Upcoming Birthdays…</source><translation>다가오는 생일…</translation></message>
 </context>
 <context>
     <name>NextPlaceholder</name>
@@ -10537,5 +10538,40 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>active Teacher Profile</source><translation>현재 교사 프로필</translation></message>
     <message><source>Native English Teachers directory</source><translation>원어민 교사 목록</translation></message>
     <message><source>GS Team directory</source><translation>GS 팀 목록</translation></message>
+</context>
+<context>
+    <name>NextUpcomingBirthdaysDialog</name>
+    <message><source>Upcoming Birthdays</source><translation>다가오는 생일</translation></message>
+    <message><source>Birthdays today and over the next two weeks.</source><translation>오늘과 앞으로 2주 동안의 생일입니다.</translation></message>
+    <message><source>Today's Birthdays</source><translation>오늘 생일</translation></message>
+    <message><source>This Week</source><translation>이번 주</translation></message>
+    <message><source>Next Week</source><translation>다음 주</translation></message>
+    <message><source>No birthdays this week.</source><translation>이번 주에 생일인 사람이 없습니다.</translation></message>
+    <message><source>No birthdays next week.</source><translation>다음 주에 생일인 사람이 없습니다.</translation></message>
+    <message><source>Don't show again today</source><translation>오늘 다시 보지 않기</translation></message>
+    <message><source>Close</source><translation>닫기</translation></message>
+    <message><source>Korean Teacher</source><translation>한국인 교사</translation></message>
+    <message><source>Native English Teacher</source><translation>원어민 교사</translation></message>
+    <message><source>GS Team</source><translation>GS 팀</translation></message>
+</context>
+<context>
+    <name>NextUpcomingBirthdaysFlow</name>
+    <message><source>Birthdays could not be loaded.</source><translation>생일 정보를 불러오지 못했습니다.</translation></message>
+    <message><source>The dismissal preference could not be saved.</source><translation>오늘 숨김 설정을 저장하지 못했습니다.</translation></message>
+</context>
+<context>
+    <name>UpcomingBirthdaysDialog</name>
+    <message><source>Upcoming Birthdays</source><translation>다가오는 생일</translation></message>
+    <message><source>Birthdays today and over the next two weeks.</source><translation>오늘과 앞으로 2주 동안의 생일입니다.</translation></message>
+    <message><source>Today's Birthdays</source><translation>오늘 생일</translation></message>
+    <message><source>This Week</source><translation>이번 주</translation></message>
+    <message><source>Next Week</source><translation>다음 주</translation></message>
+    <message><source>No birthdays this week.</source><translation>이번 주에 생일인 사람이 없습니다.</translation></message>
+    <message><source>No birthdays next week.</source><translation>다음 주에 생일인 사람이 없습니다.</translation></message>
+    <message><source>Don't show again today</source><translation>오늘 다시 보지 않기</translation></message>
+    <message><source>Close</source><translation>닫기</translation></message>
+    <message><source>Korean Teacher</source><translation>한국인 교사</translation></message>
+    <message><source>Native English Teacher</source><translation>원어민 교사</translation></message>
+    <message><source>GS Team</source><translation>GS 팀</translation></message>
 </context>
 </TS>

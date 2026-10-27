@@ -24,6 +24,10 @@
 #include "next/platform/workspace_store_teacher_directory_port.h"
 #include "next/platform/workspace_store_native_english_teacher_directory_port.h"
 #include "next/platform/workspace_store_gs_team_directory_port.h"
+#include "next/platform/workspace_store_upcoming_birthday_directory_read_ports.h"
+#include "next/application/korean_teacher_birthday_directory_read_query.h"
+#include "next/application/native_english_teacher_birthday_directory_read_query.h"
+#include "next/application/gs_team_birthday_directory_read_query.h"
 
 #include <QByteArray>
 #include <QDate>
@@ -349,6 +353,30 @@ WorkspaceStoreGateway::readLatestTeacherImportSourceDate() const
             .recoverable = false
         });
     }
+}
+
+Application::KoreanTeacherBirthdayDirectoryReadResult
+WorkspaceStoreGateway::readKoreanTeacherBirthdayDirectory() const
+{
+    WorkspaceStoreUpcomingBirthdayDirectoryReadPorts port(*m_store);
+    const Application::KoreanTeacherBirthdayDirectoryReadQuery query(port);
+    return query.execute();
+}
+
+Application::NativeEnglishTeacherBirthdayDirectoryReadResult
+WorkspaceStoreGateway::readNativeEnglishTeacherBirthdayDirectory() const
+{
+    WorkspaceStoreUpcomingBirthdayDirectoryReadPorts port(*m_store);
+    const Application::NativeEnglishTeacherBirthdayDirectoryReadQuery query(port);
+    return query.execute();
+}
+
+Application::GsTeamBirthdayDirectoryReadResult
+WorkspaceStoreGateway::readGsTeamBirthdayDirectory() const
+{
+    WorkspaceStoreUpcomingBirthdayDirectoryReadPorts port(*m_store);
+    const Application::GsTeamBirthdayDirectoryReadQuery query(port);
+    return query.execute();
 }
 
 Application::NativeEnglishTeacherDirectoryReadResult

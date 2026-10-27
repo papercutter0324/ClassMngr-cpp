@@ -3,6 +3,9 @@
 #include "next/application/file_dialog_port.h"
 #include "next/application/language_preferences_port.h"
 #include "next/application/theme_preferences_port.h"
+#include "next/application/gs_team_birthday_directory_read_port.h"
+#include "next/application/korean_teacher_birthday_directory_read_port.h"
+#include "next/application/native_english_teacher_birthday_directory_read_port.h"
 #include "next/bootstrap/application_bootstrap.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_descriptor.h"
@@ -27,6 +30,7 @@
 
 #include <QApplication>
 #include <QAbstractButton>
+#include <QDialog>
 #include <QCalendarWidget>
 #include <QCheckBox>
 #include <QContextMenuEvent>
@@ -629,7 +633,7 @@ struct BootstrapWorkspaceGatewayProbe final
     std::vector<std::string>* shutdownEvents = nullptr;
 };
 
-class RecordingBootstrapWorkspaceGateway final
+class RecordingBootstrapWorkspaceGateway
     : public Application::WorkspaceGateway
 {
 public:
@@ -763,6 +767,41 @@ private:
     }
 
     std::shared_ptr<BootstrapWorkspaceGatewayProbe> m_probe;
+};
+
+class RecordingBirthdayBootstrapWorkspaceGateway final
+    : public RecordingBootstrapWorkspaceGateway,
+      public Application::KoreanTeacherBirthdayDirectoryReadPort,
+      public Application::NativeEnglishTeacherBirthdayDirectoryReadPort,
+      public Application::GsTeamBirthdayDirectoryReadPort
+{
+public:
+    using RecordingBootstrapWorkspaceGateway::RecordingBootstrapWorkspaceGateway;
+
+    Application::KoreanTeacherBirthdayDirectoryReadResult
+    readKoreanTeacherBirthdayDirectory() const override
+    {
+        ++koreanReads;
+        return Application::KoreanTeacherBirthdayDirectoryReadResult::success({});
+    }
+
+    Application::NativeEnglishTeacherBirthdayDirectoryReadResult
+    readNativeEnglishTeacherBirthdayDirectory() const override
+    {
+        ++nativeEnglishReads;
+        return Application::NativeEnglishTeacherBirthdayDirectoryReadResult::success({});
+    }
+
+    Application::GsTeamBirthdayDirectoryReadResult
+    readGsTeamBirthdayDirectory() const override
+    {
+        ++gsTeamReads;
+        return Application::GsTeamBirthdayDirectoryReadResult::success({});
+    }
+
+    mutable int koreanReads = 0;
+    mutable int nativeEnglishReads = 0;
+    mutable int gsTeamReads = 0;
 };
 
 struct UnsavedChangesPromptProbe final
@@ -1766,6 +1805,11 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     QCOMPARE(result.stageResults.size(), std::size_t{10});
     QCOMPARE(result.completedEvents.size(), std::size_t{9});
     QVERIFY(!result.diagnostic.has_value());
+    QAction* const upcomingBirthdaysAction = bootstrap.shell()->findChild<QAction*>(
+        QStringLiteral("classMngrNextUpcomingBirthdays")
+        );
+    QVERIFY(upcomingBirthdaysAction);
+    QVERIFY(!upcomingBirthdaysAction->isEnabled());
 
     constexpr std::array expectedStages{
         Application::StartupStage::ProcessCreated,
@@ -4997,12 +5041,16 @@ openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess()
         firstPath.toUtf8().toStdString()
         );
     auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    RecordingBirthdayBootstrapWorkspaceGateway* birthdayGateway = nullptr;
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
     seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
     seams.recentAutoOpenEnabled = false;
     seams.initialSetupRecoveryJournalPath = journalPath;
-    seams.workspaceGatewayFactory = [gatewayProbe] {
-        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
+    seams.workspaceGatewayFactory = [gatewayProbe, &birthdayGateway] {
+        auto result = std::make_unique<RecordingBirthdayBootstrapWorkspaceGateway>(
+            gatewayProbe);
+        birthdayGateway = result.get();
+        return result;
     };
     seams.openProfileFileDialogPortFactory = [fileDialogProbe] {
         return std::make_unique<RecordingInitialSetupFileDialogPort>(fileDialogProbe);
@@ -5023,7 +5071,12 @@ openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess()
     QAction* const openAction = bootstrap.shell()->findChild<QAction*>(
         QStringLiteral("classMngrNextOpenTeacherProfile")
         );
+    QAction* const upcomingBirthdaysAction = bootstrap.shell()->findChild<QAction*>(
+        QStringLiteral("classMngrNextUpcomingBirthdays")
+        );
     QVERIFY(openAction);
+    QVERIFY(upcomingBirthdaysAction);
+    QVERIFY(!upcomingBirthdaysAction->isEnabled());
 
     openAction->trigger();
     QCOMPARE(fileDialogProbe->openCount, 1);
@@ -5042,6 +5095,7 @@ openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess()
              QFileInfo(firstPath).canonicalFilePath());
     QCOMPARE(bootstrap.shell()->navigationModel()->workspaceState(),
              Application::WorkspaceLifecycleState::Open);
+    QVERIFY(upcomingBirthdaysAction->isEnabled());
     QVERIFY(bootstrap.shell()->navigationModel()->currentPageId().has_value());
     QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId()->value(),
              QStringLiteral("my_workspace"));
@@ -5051,6 +5105,40 @@ openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess()
 
     const Application::WorkspaceSession firstSession =
         *bootstrap.workspaceStateSnapshot().session();
+    int birthdayDialogCount = 0;
+    bool birthdayDismissalStartedUnchecked = false;
+    QTimer::singleShot(0, &application, [&] {
+        QDialog* const dialog = qobject_cast<QDialog*>(
+            application.activeModalWidget());
+        if (!dialog
+            || dialog->objectName() != QStringLiteral("nextUpcomingBirthdaysDialog"))
+        {
+            return;
+        }
+        ++birthdayDialogCount;
+        if (auto* const check = dialog->findChild<QCheckBox*>(
+                QStringLiteral("nextUpcomingBirthdaysDismissForTodayCheck")))
+        {
+            birthdayDismissalStartedUnchecked = !check->isChecked();
+        }
+        dialog->reject();
+    });
+    upcomingBirthdaysAction->trigger();
+    QCOMPARE(birthdayDialogCount, 1);
+    QVERIFY(birthdayDismissalStartedUnchecked);
+    QVERIFY(birthdayGateway);
+    QCOMPARE(birthdayGateway->koreanReads, 1);
+    QCOMPARE(birthdayGateway->nativeEnglishReads, 1);
+    QCOMPARE(birthdayGateway->gsTeamReads, 1);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session(),
+             std::optional<Application::WorkspaceSession>(firstSession));
+    QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId()->value(),
+             QStringLiteral("my_workspace"));
+    QCOMPARE(historyProbe->saveCount, 1);
+    QCOMPARE(gatewayProbe->saveCalls, 0);
+    QCOMPARE(gatewayProbe->discardCalls, 0);
+    QCOMPARE(gatewayProbe->closeCalls, 0);
+
     fileDialogProbe->openPath.reset();
     openAction->trigger();
     QCOMPARE(fileDialogProbe->openCount, 2);

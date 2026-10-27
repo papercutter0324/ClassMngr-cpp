@@ -81,6 +81,7 @@ public:
     void setSaveWorkspaceAsHandler(std::function<void()> handler);
     void setExportWorkspaceHandler(std::function<void()> handler);
     void setImportTeachersHandler(std::function<void()> handler);
+    void setUpcomingBirthdaysHandler(std::function<void()> handler);
     void setCloseWorkspaceHandler(std::function<void()> handler);
     void setRecentWorkspaceMenuHandlers(
         RecentWorkspaceHistoryLoader historyLoader,
@@ -151,6 +152,7 @@ private:
     QAction* m_saveWorkspaceAsAction = nullptr;
     QAction* m_exportWorkspaceAction = nullptr;
     QAction* m_importTeachersAction = nullptr;
+    QAction* m_upcomingBirthdaysAction = nullptr;
     QAction* m_closeWorkspaceAction = nullptr;
     QMenu* m_recentWorkspaceMenu = nullptr;
     std::optional<NavigationModel> m_navigationModel;
@@ -168,6 +170,7 @@ private:
     std::function<void()> m_saveWorkspaceAsHandler;
     std::function<void()> m_exportWorkspaceHandler;
     std::function<void()> m_importTeachersHandler;
+    std::function<void()> m_upcomingBirthdaysHandler;
     std::function<void()> m_closeWorkspaceHandler;
     RecentWorkspaceHistoryLoader m_recentWorkspaceHistoryLoader;
     RecentWorkspaceOpenHandler m_recentWorkspaceOpenHandler;

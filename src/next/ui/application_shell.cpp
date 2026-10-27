@@ -229,6 +229,13 @@ ApplicationShell::ApplicationShell(
         QStringLiteral("classMngrNextImportTeachers")
         );
     m_importTeachersAction->setEnabled(false);
+    m_upcomingBirthdaysAction = teachersMenu->addAction(
+        QCoreApplication::translate("NextShell", "Upcoming Birthdays…")
+        );
+    m_upcomingBirthdaysAction->setObjectName(
+        QStringLiteral("classMngrNextUpcomingBirthdays")
+        );
+    m_upcomingBirthdaysAction->setEnabled(false);
 
     connect(m_backButton, &QPushButton::clicked, this, [this] {
         static_cast<void>(navigateBack());
@@ -290,6 +297,12 @@ ApplicationShell::ApplicationShell(
         if (m_importTeachersHandler)
         {
             m_importTeachersHandler();
+        }
+    });
+    connect(m_upcomingBirthdaysAction, &QAction::triggered, this, [this] {
+        if (m_upcomingBirthdaysHandler)
+        {
+            m_upcomingBirthdaysHandler();
         }
     });
     connect(m_navigationTree, &QTreeWidget::currentItemChanged, this,
@@ -370,6 +383,17 @@ void ApplicationShell::setImportTeachersHandler(std::function<void()> handler)
 {
     m_importTeachersHandler = std::move(handler);
     synchronizeTeacherImportAction();
+}
+
+void ApplicationShell::setUpcomingBirthdaysHandler(
+    std::function<void()> handler
+    )
+{
+    m_upcomingBirthdaysHandler = std::move(handler);
+    if (m_upcomingBirthdaysAction)
+    {
+        m_upcomingBirthdaysAction->setEnabled(m_workspaceIsOpen);
+    }
 }
 
 void ApplicationShell::setCloseWorkspaceHandler(std::function<void()> handler)
@@ -605,6 +629,10 @@ void ApplicationShell::synchronizeWorkspaceActions(
     if (m_closeWorkspaceAction)
     {
         m_closeWorkspaceAction->setEnabled(open);
+    }
+    if (m_upcomingBirthdaysAction)
+    {
+        m_upcomingBirthdaysAction->setEnabled(open);
     }
     synchronizeTeacherImportAction();
 }

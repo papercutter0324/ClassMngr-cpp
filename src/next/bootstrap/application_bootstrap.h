@@ -190,6 +190,7 @@ private:
     void saveWorkspaceAsFromMenu();
     void exportWorkspaceFromMenu();
     void importTeachersFromWorkspace();
+    void showUpcomingBirthdays();
     void closeWorkspaceFromMenu();
     [[nodiscard]] bool requestWindowClose();
     [[nodiscard]] bool resolveActivePageChangesBeforeLeaving(

@@ -16,6 +16,7 @@
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "next/platform/settings_manager_preferences_port.h"
 #include "next/platform/settings_manager_save_mode_preferences_port.h"
+#include "next/platform/settings_manager_upcoming_birthday_dismissal_port.h"
 #include "next/platform/resource_document_catalog_port.h"
 #include "next/platform/workspace_store_gateway.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
@@ -36,12 +37,15 @@
 #include "next/ui/qt_user_prompt_presenter.h"
 #include "next/ui/theme_presenter.h"
 #include "next/ui/teacher_profile_page.h"
+#include "next/ui/upcoming_birthdays_dialog.h"
+#include "next/ui/upcoming_birthdays_flow.h"
 #include "next/ui/initial_setup_teacher_import_dialog.h"
 #include "next/ui/shared_staff_directory_page.h"
 #include "next/platform/teacher_validator_teacher_profile_validation_policy.h"
 
 #include <QApplication>
 #include <QCoreApplication>
+#include <QDate>
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
@@ -775,6 +779,9 @@ Application::StartupResult ApplicationBootstrap::start()
         });
         m_shell->setImportTeachersHandler([this] {
             importTeachersFromWorkspace();
+        });
+        m_shell->setUpcomingBirthdaysHandler([this] {
+            showUpcomingBirthdays();
         });
         m_shell->setCloseWorkspaceHandler([this] {
             closeWorkspaceFromMenu();
@@ -2908,6 +2915,48 @@ void ApplicationBootstrap::importTeachersFromWorkspace()
                    .arg(refreshFailures.join(QStringLiteral(", "))),
                Application::NotificationSeverity::Warning);
     }
+}
+
+void ApplicationBootstrap::showUpcomingBirthdays()
+{
+    if (!m_shell || !m_applicationRuntime
+        || m_applicationRuntime->workspaceState().snapshot().lifecycle()
+            != Application::WorkspaceLifecycleState::Open)
+    {
+        return;
+    }
+
+    auto* const koreanTeachers =
+        dynamic_cast<Application::KoreanTeacherBirthdayDirectoryReadPort*>(
+            m_workspaceGateway.get()
+            );
+    auto* const nativeEnglishTeachers =
+        dynamic_cast<Application::NativeEnglishTeacherBirthdayDirectoryReadPort*>(
+            m_workspaceGateway.get()
+            );
+    auto* const gsTeam =
+        dynamic_cast<Application::GsTeamBirthdayDirectoryReadPort*>(
+            m_workspaceGateway.get()
+            );
+    if (!koreanTeachers || !nativeEnglishTeachers || !gsTeam)
+    {
+        return;
+    }
+
+    Platform::SettingsManagerUpcomingBirthdayDismissalPort dismissalPort;
+    Ui::UpcomingBirthdaysFlow flow(
+        *koreanTeachers,
+        *nativeEnglishTeachers,
+        *gsTeam,
+        dismissalPort,
+        m_shell->notificationPort(),
+        [this](const Application::UpcomingBirthdaySchedule& schedule) {
+            Ui::UpcomingBirthdaysDialog dialog(schedule, m_shell.get());
+            static_cast<void>(dialog.exec());
+            return dialog.dismissForToday();
+        }
+        );
+    flow.run(QDate::currentDate());
 }
 
 void ApplicationBootstrap::closeWorkspaceFromMenu()
