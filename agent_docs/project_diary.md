@@ -8920,3 +8920,25 @@ separate from a resident window when its save path expects `rowCount()` and
 replacing bounded windows in place, and verify invalid replacements preserve
 the current generation and indexes. The shared model bounds the supplied rows;
 feature code still owns fetching each window and persisting the full source.
+
+## 2026-10-26 — Phase 7A.3 teacher-entry acceptance
+
+The v2 manual teacher-entry stage now calls the typed teacher-create use case
+and writes through `WorkspaceStoreGateway`. It keeps initial setup pending,
+preserves the recovery journal and original-profile backup, and leaves recent
+history untouched until the full setup workflow completes. If an existing
+teacher allows the entry stage to be skipped, only a genuinely blank form may
+be skipped; optional-only user input stays visible and actionable.
+
+The legacy `shared_validation.cpp` translation unit combined name checks with
+color, filename, and schedule helpers. Reusing the existing teacher validator
+in Next pulled those unrelated implementations into the Next link closure.
+Isolate the name checks in their own Domain translation unit and move
+`StudentNameUtils` into a small shared QtCore target so both legacy and Next
+reuse the same implementation without adding broad Core dependencies. Keep
+the source-owner and link-boundary assertions alongside this split.
+
+The slice passed focused behavioral, persistence, localization/theme, and
+dependency checks. The Phase 7 screenshot/reference and memory evidence remain
+open, and the legacy wizard parity test still aborts in the macOS Qt bundle
+setup before reaching an assertion; do not describe those gates as passed.

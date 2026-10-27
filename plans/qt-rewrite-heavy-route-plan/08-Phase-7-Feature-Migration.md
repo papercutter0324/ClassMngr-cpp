@@ -38,12 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-26
-- Current note: 7A.1 is accepted and committed as `d49f34fe`; 7A.2, personal
-  details and signature, is functionally verified. 7A.3 teacher entry is next.
-  No retained Phase 0/7 screenshot matches the legacy wizard or the new screen;
-  screenshot/reference comparison remains an open 7A parity item. 7A and Phase
-  7 exit gates remain open. The 7A.2 source commit is next. See the progress log
-  for verification details and limits.
+- Current note: 7A.1–7A.3 are functionally verified and committed; 7A.3 is
+  `01aaf3d7`. Candidate #4, setup teacher import, is active. The 7A screenshot
+  comparison and memory measurement remain open, as do the 7A and Phase 7 exit
+  gates. Batch 1 remains active and unpushed. See the progress log for 7A.3
+  evidence and limits.
 
 ### Slice batches
 
@@ -85,6 +84,8 @@ keep current status in this plan and live batches in the shared tracker.
 
 ### 7A.2 — Personal details and signature functionally verified (2026-10-26)
 
+- Commit: `1f9b30bf` (`Phase7 - Add setup personal details and signature`). At
+  handoff the worktree is clean and the branch is two commits ahead of origin.
 - Result: independent Tester recheck found no production defect. The personal
   details/signature screen is functionally verified. The Phase 7 screenshot
   comparison requirement remains open for 7A: no retained Phase 0/7 screenshot
@@ -100,8 +101,28 @@ keep current status in this plan and live batches in the shared tracker.
   and light/dark. Resource inventory `--check` and `git diff --check` passed.
 - Limits and next work: Windows, full suite, and package checks remain unrun;
   Phase 7 and 7A exit gates remain open. The screenshot/reference comparison
-  remains an open 7A parity item. 7A.3 teacher entry is next; the 7A.2 source
-  commit is next.
+  remains an open 7A parity item. At the 7A.2 handoff, 7A.3 teacher entry was
+  next.
+
+### 7A.3 — Teacher-entry setup accepted and functionally verified (2026-10-26)
+
+- Commit: `01aaf3d7`.
+- Verification: independent focused suite passed 15/15; Bootstrap CTest passed
+  1/1. The restored 7A.2 personal-details backup test passed directly 3/3 and
+  was unchanged from HEAD. UI-to-WorkspaceStore integration passed 3/3,
+  covering `.tps`, pending journal/state, and zero recent-history saves. Store
+  failure/retry/reopen/resume passed 3/3 with backup hash and journal unchanged.
+  English/Korean × light/dark appearance passed 6/6. Next startup dependency
+  boundary passed; `ClassMngrSpeakingAnalyticsTests` passed 2/2. The
+  `ClassMngrNext` target linked successfully; source ownership validated 1,705
+  sources. Resource inventory `--check` and `git diff --check` passed.
+- Limits and next work: the legacy QWizard parity test aborts on macOS at
+  `NSBundle initWithURL:nil` before assertions. Tester-forced CMake regeneration
+  stalled, although the executor's configure and production target builds
+  succeeded. No full suite, Windows, package, or memory test ran. No matching
+  legacy setup/personal-details screenshot exists, so screenshot comparison and
+  memory measurement remain open 7A items. Candidate #4, setup teacher import,
+  is active; 7A and Phase 7 exit gates remain open.
 
 ## Objective
 

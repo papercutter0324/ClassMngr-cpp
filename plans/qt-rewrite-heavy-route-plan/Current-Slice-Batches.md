@@ -22,11 +22,15 @@ Discovery is complete from two independent Explorer maps. Ordered candidates:
 
 Candidate #1, the user-visible v2 profile-bootstrap stage, is accepted and
 committed as `d49f34fe`. Candidate #2, setup personal details and signature, is
-functionally verified; its screenshot/reference comparison remains an open 7A
-parity item because no matching Phase 0/7 screenshot exists. See the [Phase 7
-progress log](08-Phase-7-Feature-Migration.md#progress-log) for evidence and
-limits. Current candidate: **#3 — setup teacher entry**. Batch 1 remains active
-and unpushed. Next-batch discovery has not started.
+functionally verified and committed as `1f9b30bf`; its screenshot/reference
+comparison remains an open 7A parity item because no matching Phase 0/7
+screenshot exists. See the [Phase 7 progress
+log](08-Phase-7-Feature-Migration.md#progress-log) for evidence and limits.
+Candidate #3, teacher-entry setup, is functionally verified and committed as
+`01aaf3d7`. Current candidate: **#4 — setup teacher import**. The 7A screenshot
+comparison and memory measurement remain open; see the [Phase 7 progress
+log](08-Phase-7-Feature-Migration.md#progress-log). Batch 1 remains active and
+unpushed. Next-batch discovery has not started.
 
 Import, export, open, and save failure handling belongs to each owning
 candidate, not a separate errors-only slice. No other slices were found.
