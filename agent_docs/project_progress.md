@@ -135,8 +135,18 @@ terminated mid-create. Bootstrap open-failure integration starts with no
 active session; active-session preservation is verified separately in the
 recovery-flow test. Next-batch discovery completed with five ordered
 Teacher/Staff proposals. Candidate #15, schema-v6 `.db` input and native `.tps`
-normalization, is active. Batch 1 remains un-pushed. The 7A screenshot
-comparison, Phase 7 memory evidence, and 7A/Phase 7 exit gates remain open.
+normalization, passed independent focused verification and was committed as
+`c9cdd421`. The Next open path accepts case-insensitive `.db` inputs and keeps
+the selected database active at its original `.db` path; schema validation
+still requires v6. Create, Save As, and Export continue to normalize outputs to
+`.tps`. Focused CTest passed 5/5, including interactive open, bootstrap/startup,
+Save As, Export, and the Next dependency boundary; `git diff --check` passed.
+No full suite or native dialog run occurred. The v6 fixture is test-created,
+and the v5 rejection fixture exercises the version gate without a populated
+historical v5 schema; no real-world legacy `.db` fixture was available. Batch 1
+is complete and awaiting its push. The five ordered Teacher/Staff proposals
+are ready for implementation after that push. The 7A screenshot comparison,
+Phase 7 memory evidence, and 7A/Phase 7 exit gates remain open.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained

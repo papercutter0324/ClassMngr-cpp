@@ -52,6 +52,10 @@
   hidden normal-create siblings; recover one by copying to a new unused profile
   and opening the copy while retaining the source. Leave Initial Setup journal
   recovery and UI separate, with no second journal or startup prompt.
+- Treat `.db` as a schema-v6 input, not a conversion signal: open it in place and
+  preserve its active path/history; native create, Save As, and Export outputs
+  use `.tps`. Reject unsupported schemas without switching the active profile
+  or adding copy artifacts. Do not imply older-schema migration.
 - Keep the Next setup workbook flow on one typed path: asynchronous parser
   validation and review mapping feed `TeacherImportUseCaseRequest`, and the
   pending `WorkspaceStore` owns the import transaction. Verify selection,
