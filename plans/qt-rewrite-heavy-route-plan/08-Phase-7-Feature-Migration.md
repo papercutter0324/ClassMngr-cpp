@@ -38,11 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
-- Current note: 7A.1–7A.6 are accepted and committed; 7A.6 is `97d45d3d`.
-  Candidate #7, setup schedule import, is active. The 7A screenshot comparison
-  and memory measurement remain open, as do the 7A and Phase 7 exit gates.
-  Batch 1 remains active and unpushed. See the progress log for 7A.6 evidence
-  and limits.
+- Current note: 7A.1–7A.7 are accepted and committed; 7A.7 is `a83b7280`.
+  Candidate #8, normal `.tps` creation and replacement, is active. The 7A
+  screenshot comparison and memory measurement remain open, as do the 7A and
+  Phase 7 exit gates. Batch 1 remains active and unpushed. See the progress log
+  for 7A.7 evidence and limits.
 
 ### Slice batches
 
@@ -217,6 +217,41 @@ keep current status in this plan and live batches in the shared tracker.
   measurement, plus the 7A and Phase 7 exit gates, remain open. Candidate #7,
   setup schedule import, is active. Batch 1 remains active and unpushed; do not
   start next-batch discovery before candidate #14.
+
+### 7A.7 — Setup schedule import accepted (2026-10-27)
+
+- Commit: `a83b7280` (`Phase7 - Add setup schedule import`). The optional
+  Import Schedule and Skip/Finish choices follow setup class times. Next owns
+  the source/review flow, typed review/apply use cases, and direct
+  `WorkspaceStore` apply adapter. Import uses a coherent store read snapshot
+  and transactional repository; the shared workbook-reader/schedule-parser
+  CMake boundary stays narrow. Next does not use the legacy
+  `ScheduleImportDialog`/Review UI or `ApplicationServices`.
+- Normal import may replace regular schedules. Intensive `UpdateExisting`
+  preserves absent classes; `ReplaceWithNew` clears them. Review and applied
+  status show clear counts, including an integration case that reports one
+  cleared schedule after omitting a 7A.6 manual class and a zero-clear case.
+  Teacher/class resolutions, room/color data, diagnostic acknowledgement, and
+  profile-name choices map into the typed request.
+- Import apply leaves setup pending. Source-dialog cancel performs setup
+  recovery; review cancel returns to the source. Explicit Finish or Skip and
+  Finish finalizes setup; that explicit finish action records recent history
+  and cleans the backup/journal.
+- Verification: independent Tester passed focused CTest 19/19; QtTests passed
+  legacy schedule dialog 60/60, Next schedule workflow 16/16, and `.tps` setup
+  integration 9/9. The legacy parser passed 99 tests with one optional
+  external-workbook check skipped because `CLASSMNGR_SCHEDULE_IMPORT_SAMPLE`
+  was unset. Coverage included cancellation, rollback/retry, normal replacement,
+  intensive preserve/replace, profile-name consent, clear counts, finish/skip,
+  and control-to-request mapping. `git diff --check`, resource inventory
+  (194 runtime records: 187 direct, 7 generated; 5 translations, 2 QML), CMake
+  ownership (1,727), 1,889 compiled Korean translations, and the dependency
+  boundary passed.
+- Limits and next work: no full suite, package, Windows, screenshot, QWizard
+  parity, or peak-memory check ran. The 7A screenshot comparison and memory
+  measurement, plus the 7A and Phase 7 exit gates, remain open. Candidate #8,
+  normal `.tps` creation and replacement, is active. Batch 1 remains active and
+  unpushed; do not start next-batch discovery before candidate #14.
 
 ## Objective
 

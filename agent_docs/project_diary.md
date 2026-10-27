@@ -12,6 +12,10 @@
   later details-and-schedule write must roll back its related tables together.
   Keep the created ID after the second step fails so retry does not duplicate
   the object.
+- For schedule imports that replace a snapshot, show how many saved schedules
+  will be cleared and report the applied count. Keep source-dialog cancellation
+  distinct from review cancellation, and retain typed transaction validation
+  and retry behavior in setup flows.
 - Keep the Next setup workbook flow on one typed path: asynchronous parser
   validation and review mapping feed `TeacherImportUseCaseRequest`, and the
   pending `WorkspaceStore` owns the import transaction. Verify selection,

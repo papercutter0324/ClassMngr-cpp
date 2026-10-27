@@ -52,15 +52,21 @@ as `932fdfb2`. It captures a typed in-memory draft after teacher entry without
 creating class, class-details, or schedule rows. Required fields preserve the
 legacy four-field rule; books remain optional. A real `.tps` integration
 imports Korean teachers, selects one for the draft, then cancels and verifies
-original-profile restoration. Candidate #6, setup class times, is active; Batch
-1 remains unpushed. Candidate #6, setup class times, passed independent focused
-verification and was committed as `97d45d3d`. It consumes the typed draft,
+original-profile restoration. Candidate #6, setup class times, passed
+independent focused verification and was committed as `97d45d3d`. It consumes the typed draft,
 creates the blank class, then transactionally saves class details and ordered
 regular/intensive schedules through direct WorkspaceStore adapters. Failure
-and retry preserve the legacy separate create/save states. Candidate #7,
-setup schedule import, is active. Setup-screen screenshot comparison, Phase 7
-memory evidence, and all remaining 7A workflows remain open. Active candidates
-are tracked in `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
+and retry preserve the legacy separate create/save states. Candidate #7, setup
+schedule import, passed independent focused verification and was committed as
+`a83b7280`. Its optional Next-owned source/review flow uses typed decisions and
+direct WorkspaceStore snapshot/apply adapters. The review exposes destructive
+clear counts; import leaves setup pending, and only explicit Finish or Skip and
+Finish writes recents. Source cancel restores the original profile; review
+cancel returns to source selection. Candidate #8, normal `.tps` creation and
+replacement, is active; Batch 1 remains unpushed. Setup-screen screenshot
+comparison, Phase 7 memory evidence, and all remaining 7A workflows remain
+open. Active candidates are tracked in
+`plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained
@@ -101,27 +107,30 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-27 (7A.6 committed; 7A.7 active)
+### Current checkpoint — 2026-10-27 (7A.7 committed; 7A.8 active)
 
-Phase 7 is in progress on the Heavy route. Slices 7A.1 through 7A.6 are
-committed at `d49f34fe`, `1f9b30bf`, `01aaf3d7`, `8bee6dbb`, `932fdfb2`, and
-`97d45d3d`. Slice 7A.6 adds regular/intensive schedule controls consuming the
-7A.5 typed class-details draft. It starts with Monday 4:00–4:55 PM in Regular,
-supports order-preserving add/remove, and blocks zero rows before class
-creation. Saving creates a blank class, then transactionally saves details and
-both schedule tables through `WorkspaceStore`; setup remains pending.
+Phase 7 is in progress on the Heavy route. Slices 7A.1 through 7A.7 are
+committed at `d49f34fe`, `1f9b30bf`, `01aaf3d7`, `8bee6dbb`, `932fdfb2`,
+`97d45d3d`, and `a83b7280`. Slice 7A.7 adds optional Next schedule import
+after class times. It uses a Next-owned source/review flow, a narrow shared
+workbook-parser boundary, coherent WorkspaceStore snapshot reads, typed review
+decisions, and transactional direct-store apply. Normal replacement and
+intensive update/replace effects are visible before apply. Import leaves setup
+pending; source cancel invokes recovery, review cancel returns to source, and
+only explicit Finish or Skip and Finish completes setup.
 
-The real pending-`.tps` integration uses an imported Korean teacher and the
-saved draft, persists ordered regular and intensive rows, injects create and
-intensive-insert failures, retries successfully, and verifies no recent
-history, retained backup/journal, and cancellation recovery. Independent
-focused verification passed 6/6 CTests; the integration executable passed
-8/8. Tests cover every end-duration choice, 9:55 PM cap, typed day/time data,
-and English/Korean × Light/Dark. Resource inventory and `git diff --check`
-passed; CMake ownership validated 1,719 files and 194 runtime resource records.
-No full suite, Windows build, package, peak-memory measurement, or screenshot
-comparison ran. Those gates remain open. Candidate #7, setup schedule import,
-is active; Batch 1 remains unpushed.
+Independent focused verification passed 19/19 CTests. The full legacy schedule
+dialog binary passed 60/60; Next workflow passed 16/16; setup integration
+passed 9/9; the parser passed 99 with one optional external-workbook test
+skipped. Coverage includes rollback/retry, regular replacement, intensive
+preserve/replace, profile-name confirmation, source/review cancel behavior,
+control-to-request mapping, zero and nonzero clear counts, and explicit finish.
+CMake ownership validated 1,727 sources; resource inventory had 194 runtime
+records with 1,889 Korean translations compiled; dependency-boundary and
+`git diff --check` passed. No full suite, package, Windows, screenshot,
+QWizard-parity, or peak-memory check ran. Those gates remain open. Candidate
+#8, normal `.tps` creation and replacement, is active; Batch 1 remains
+un-pushed.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 

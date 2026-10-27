@@ -37,9 +37,12 @@ verification and limits are in the [Phase 7 progress
 log](08-Phase-7-Feature-Migration.md#progress-log). Candidate #6, setup class
 times, is accepted and committed as `97d45d3d`; its details and regular/
 intensive schedule writes are transactional and retry preserves legacy
-behavior. Focused verification and limits are in the progress log. Current
-candidate: **#7 — setup schedule import**. The 7A screenshot comparison and
-memory measurement remain open. Batch 1 remains active and unpushed.
+behavior. Candidate #7, setup schedule import, is accepted and committed as
+`a83b7280`; it uses a Next-owned source/review flow and typed transactional
+apply, and reports schedule clear counts. Focused verification and limits are
+in the progress log. Current candidate: **#8 — normal `.tps` creation and
+replacement**. The 7A screenshot comparison and memory measurement remain
+open. Batch 1 remains active and unpushed.
 Next-batch discovery has not started; do not begin it before candidate #14.
 
 Import, export, open, and save failure handling belongs to each owning
