@@ -68,6 +68,7 @@
 #include <QtTest>
 
 #include <algorithm>
+#include <memory>
 #include <string>
 
 #include <zlib.h>
@@ -89,6 +90,7 @@ void setClassRegularHoursEmpty(int classId, bool empty);
 void setDuplicateKoreanTeacherNames(bool duplicate);
 void setDatabaseSessionOpen(bool open);
 void setScheduleClassInfoReadFailure(bool fail);
+bool seedScheduleImportWorkspace(WorkspaceStore& store);
 extern int legacyClassInfoReadCount;
 extern int scheduleImportPreviewCallCount;
 }
@@ -163,6 +165,39 @@ void saveSettingOrFail(
 {
     QVERIFY(dataService);
     QVERIFY(dataService->saveSetting(key, value).has_value());
+}
+
+std::unique_ptr<QTemporaryDir> openScheduleImportReviewProfile(
+    ApplicationServices& services
+    )
+{
+    auto directory = std::make_unique<QTemporaryDir>();
+    if (!directory->isValid()
+        || !services.openDatabase(directory->filePath(
+                QStringLiteral("schedule-import-review.tps")
+                )).has_value()
+        || !ScheduleWidgetTestStubs::seedScheduleImportWorkspace(
+            *services.workspaceStore()
+            ))
+    {
+        return {};
+    }
+    return directory;
+}
+
+std::unique_ptr<QTemporaryDir> openEmptyScheduleImportReviewProfile(
+    ApplicationServices& services
+    )
+{
+    auto directory = std::make_unique<QTemporaryDir>();
+    if (!directory->isValid()
+        || !services.openDatabase(directory->filePath(
+                QStringLiteral("empty-schedule-import-review.tps")
+                )).has_value())
+    {
+        return {};
+    }
+    return directory;
 }
 
 constexpr int ExpectedSourceDialogWidth = 436;
@@ -967,6 +1002,9 @@ void ScheduleImportDialogTests
     QVERIFY(!path.isEmpty());
 
     ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("mismatched-profile.tps"))
+        ).has_value());
     saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/name"),
         QStringLiteral("A Name That Is Not In The Workbook")
@@ -1259,6 +1297,9 @@ void ScheduleImportDialogTests
     QVERIFY(!path.isEmpty());
 
     ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("accepted-review-profile.tps"))
+        ).has_value());
     saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/name"),
         QStringLiteral("Alice")
@@ -1302,6 +1343,46 @@ void ScheduleImportDialogTests
     QVERIFY(!path.isEmpty());
 
     ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("compact-review-profile.tps"))
+        ).has_value());
+    QSqlQuery seed(services.workspaceStore()->database());
+    const auto executeSeed = [&seed](const QString& sql)
+    {
+        if (seed.exec(sql)) return true;
+        qWarning().noquote() << seed.lastError().text();
+        return false;
+    };
+    QVERIFY(executeSeed(QStringLiteral(
+        "INSERT INTO teachers(id, teacher_kr, teacher_en, room_number) "
+        "VALUES (7, '김선생', 'Susan', '413')"
+        )));
+    QVERIFY(executeSeed(QStringLiteral(
+        "INSERT INTO teachers(id, teacher_kr, teacher_en, room_number) "
+        "VALUES (8, '이선생', 'Thomas', '512')"
+        )));
+    QVERIFY(executeSeed(QStringLiteral(
+        "INSERT INTO classes(id, name) VALUES (42, 'Hercules')"
+        )));
+    QVERIFY(executeSeed(QStringLiteral(
+        "INSERT INTO classes(id, name) VALUES (43, 'Athena')"
+        )));
+    QVERIFY(executeSeed(QStringLiteral(
+        "INSERT INTO class_info(class_id, teacher_id, class_grade, class_level, "
+        "class_color, font_color) VALUES (42, 7, 'E4', 'Hercules', '#ffffff', '#000000')"
+        )));
+    QVERIFY(executeSeed(QStringLiteral(
+        "INSERT INTO class_info(class_id, teacher_id, class_grade, class_level, "
+        "class_color, font_color) VALUES (43, 8, 'E5', 'Athena', '#ffffff', '#000000')"
+        )));
+    QVERIFY(executeSeed(QStringLiteral(
+        "INSERT INTO class_times(class_id, day, start_time, end_time) "
+        "VALUES (42, 'Tuesday', '4:00 PM', '4:50 PM')"
+        )));
+    QVERIFY(executeSeed(QStringLiteral(
+        "INSERT INTO class_times(class_id, day, start_time, end_time) "
+        "VALUES (43, 'Thursday', '5:00 PM', '5:50 PM')"
+        )));
     saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/name"),
         QStringLiteral("Alice")
@@ -2405,7 +2486,12 @@ void ScheduleImportDialogTests
 void ScheduleImportDialogTests
     ::reviewWarningsUseDedicatedTab()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("review-warnings-profile.tps"))
+        ).has_value());
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -2461,7 +2547,12 @@ void ScheduleImportDialogTests
 void ScheduleImportDialogTests
     ::intensiveModeChoiceReflectsExistingSchedule()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("intensive-review-profile.tps"))
+        ).has_value());
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Intensive;
     request.user.name = QStringLiteral("Alice");
@@ -2481,6 +2572,22 @@ void ScheduleImportDialogTests
     }
 
     ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+    QSqlQuery seed(services.workspaceStore()->database());
+    QVERIFY2(seed.exec(QStringLiteral(
+        "INSERT INTO teachers(id, teacher_kr, teacher_en, room_number) "
+        "VALUES (7, '김선생', 'Susan', '413')"
+        )), qPrintable(seed.lastError().text()));
+    QVERIFY2(seed.exec(QStringLiteral(
+        "INSERT INTO classes(id, name) VALUES (42, 'Hercules')"
+        )), qPrintable(seed.lastError().text()));
+    QVERIFY2(seed.exec(QStringLiteral(
+        "INSERT INTO class_info(class_id, teacher_id, class_grade, class_level) "
+        "VALUES (42, 7, 'E4', 'Hercules')"
+        )), qPrintable(seed.lastError().text()));
+    QVERIFY2(seed.exec(QStringLiteral(
+        "INSERT INTO class_intensive_times(class_id, day, start_time, end_time) "
+        "VALUES (42, 'Monday', '9:00 AM', '9:50 AM')"
+        )), qPrintable(seed.lastError().text()));
     ScheduleImportReviewDialog review(
         &services,
         request
@@ -2542,7 +2649,12 @@ void ScheduleImportDialogTests
 
 void ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("regular-preview-profile.tps"))
+        ).has_value());
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -2613,7 +2725,28 @@ void ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid()
 
 void ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("possible-match-profile.tps"))
+        ).has_value());
+    QSqlQuery seed(services.workspaceStore()->database());
+    QVERIFY2(seed.exec(QStringLiteral(
+        "INSERT INTO teachers(id, teacher_kr, teacher_en, room_number) "
+        "VALUES (7, '김선생', 'Susan', '413')"
+        )), qPrintable(seed.lastError().text()));
+    QVERIFY2(seed.exec(QStringLiteral(
+        "INSERT INTO classes(id, name) VALUES (42, 'Hercules')"
+        )), qPrintable(seed.lastError().text()));
+    QVERIFY2(seed.exec(QStringLiteral(
+        "INSERT INTO class_info(class_id, teacher_id, class_grade, class_level) "
+        "VALUES (42, 7, 'E4', 'Hercules')"
+        )), qPrintable(seed.lastError().text()));
+    QVERIFY2(seed.exec(QStringLiteral(
+        "INSERT INTO class_times(class_id, day, start_time, end_time) "
+        "VALUES (42, 'Tuesday', '4:00 PM', '4:50 PM')"
+        )), qPrintable(seed.lastError().text()));
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -2658,6 +2791,8 @@ resolutionChoicesUseTypedSnapshotAndPreserveOrdering()
     ScheduleWidgetTestStubs::setDuplicateKoreanTeacherNames(true);
 
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -2789,6 +2924,8 @@ resolutionChoicesUseTypedSnapshotAndPreserveOrdering()
 void ScheduleImportDialogTests::reviewDisplaysProjectedAffectedClassCount()
 {
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -2853,6 +2990,8 @@ void ScheduleImportDialogTests::reviewMatchingUsesNormalizedSnapshotFields()
         );
 
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     const Result<Teacher> teacher = services.teacherService()->teacher(7);
     QVERIFY(teacher);
 
@@ -2900,6 +3039,8 @@ void ScheduleImportDialogTests::reviewSummaryUsesApplicationProjection()
     ScheduleWidgetTestStubs::setDuplicateKoreanTeacherNames(true);
 
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -3084,6 +3225,8 @@ reviewPreviewUsesProjectedRowsInControlOrder()
     ScheduleWidgetTestStubs::setPossibleImportedClasses(true);
 
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -3267,6 +3410,8 @@ intensivePreviewKeepsProjectedPreservationOrder()
     ScheduleWidgetTestStubs::setClassLevel(44, QStringLiteral("Orion"));
 
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Intensive;
     request.user.name = QStringLiteral("Alice");
@@ -3837,6 +3982,8 @@ reviewPrepareSnapshotFailureDoesNotBuildControlsOrFallback()
     ScheduleWidgetTestStubs::setScheduleClassInfoReadFailure(true);
 
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -3947,6 +4094,8 @@ reviewPrepareClosedSessionUsesSnapshotWarning()
 void ScheduleImportDialogTests::reviewRefreshUsesFreshTypedStateSnapshot()
 {
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -3993,6 +4142,9 @@ void ScheduleImportDialogTests::reviewRefreshUsesFreshTypedStateSnapshot()
         42,
         QStringLiteral("M1")
         );
+    QVERIFY(ScheduleWidgetTestStubs::seedScheduleImportWorkspace(
+        *services.workspaceStore()
+        ));
     action->setCurrentIndex(createIndex);
     action->setCurrentIndex(updateIndex);
 
@@ -4007,6 +4159,8 @@ reviewSnapshotFailureStaysInvalidWithoutLegacyFallback()
     ScheduleWidgetTestStubs::setPossibleImportedClasses(true);
 
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -4258,6 +4412,8 @@ void ScheduleImportDialogTests::ambiguousTargetedClassSkipIsRejected()
     ScheduleWidgetTestStubs::setIncludeAlternativeMatchingClass(true);
 
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     const Result<Teacher> teacher = services.teacherService()->teacher(7);
     QVERIFY(teacher);
     ScheduleImportReviewDialog review(
@@ -4304,6 +4460,8 @@ void ScheduleImportDialogTests::ambiguousTargetedClassSkipIsRejected()
 void ScheduleImportDialogTests::uniqueExactTargetedClassSkipIsAllowed()
 {
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     const Result<Teacher> teacher = services.teacherService()->teacher(7);
     QVERIFY(teacher);
     ScheduleImportReviewDialog review(
@@ -4343,6 +4501,8 @@ void ScheduleImportDialogTests::uniqueExactTargetedClassSkipIsAllowed()
 void ScheduleImportDialogTests::targetlessClassSkipIsAllowed()
 {
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     const Result<Teacher> teacher = services.teacherService()->teacher(7);
     QVERIFY(teacher);
     ScheduleImportReviewDialog review(
@@ -4388,6 +4548,8 @@ void ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets()
     ScheduleWidgetTestStubs::setClassRegularHoursEmpty(43, true);
 
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -4557,6 +4719,8 @@ void ScheduleImportDialogTests::invalidExistingClassTargetMessageIsClear()
 void ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes()
 {
     ApplicationServices services;
+    const auto profile = openEmptyScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -4643,6 +4807,8 @@ void ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes()
 void ScheduleImportDialogTests::reviewRejectsMalformedProjectedTime()
 {
     ApplicationServices services;
+    const auto profile = openEmptyScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -4737,6 +4903,8 @@ void ScheduleImportDialogTests
     ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
 
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Intensive;
     request.user.name = QStringLiteral("Alice");
@@ -4816,6 +4984,8 @@ checkedInOverlapWorkbookPresentsReviewConflict()
     QCOMPARE(workbook->sheets.first().users.size(), 1);
 
     ApplicationServices services;
+    const auto profile = openEmptyScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user = workbook->sheets.first().users.first();
@@ -4851,6 +5021,8 @@ void ScheduleImportDialogTests
     ::reviewPreviewUsesSavedScheduleDisplaySettings()
 {
     ApplicationServices services;
+    const auto profile = openEmptyScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
@@ -5004,6 +5176,8 @@ void ScheduleImportDialogTests
     ::intensivePreviewPreservesEssayAndLunchBlocks()
 {
     ApplicationServices services;
+    const auto profile = openEmptyScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Intensive;
     request.user.name = QStringLiteral("Alice");
@@ -5165,6 +5339,8 @@ void ScheduleImportDialogTests
     }
 
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/name"),
         QString()
@@ -5401,6 +5577,8 @@ void ScheduleImportDialogTests
 
     ScheduleWidgetTestStubs::setClassRegularHoursEmpty(42, true);
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
     saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/name"),
         QStringLiteral("Alice")

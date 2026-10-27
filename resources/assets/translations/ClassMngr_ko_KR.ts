@@ -9918,6 +9918,11 @@ Version: %2</source>
     <message><source>Setup was canceled.</source><translation>설정을 취소했습니다.</translation></message>
     <message><source>The setup could not be canceled. The recovery files are still available.</source><translation>설정을 취소할 수 없습니다. 복구 파일은 그대로 보관되어 있습니다.</translation></message>
     <message><source>The setup recovery record could not be read. Keep the recovery files in place and restart after resolving the issue.</source><translation>설정 복구 기록을 읽을 수 없습니다. 복구 파일을 그대로 두고 문제를 해결한 뒤 다시 시작하세요.</translation></message>
+    <message><source>Setup was not active.</source><translation>초기 설정이 진행 중이지 않습니다.</translation></message>
+    <message><source>Setup data was saved, but the previous profile backup could not be removed. Recovery files were kept.</source><translation>설정 데이터를 저장했지만 이전 프로필 백업을 삭제하지 못했습니다. 복구 파일을 보존했습니다.</translation></message>
+    <message><source>Setup is complete.</source><translation>초기 설정을 완료했습니다.</translation></message>
+    <message><source>Setup is complete, but recent profile history could not be updated.</source><translation>초기 설정을 완료했지만 최근 프로필 기록을 업데이트하지 못했습니다.</translation></message>
+    <message><source>Setup is complete, but recent profile history could not be updated: %1</source><translation>초기 설정을 완료했지만 최근 프로필 기록을 업데이트하지 못했습니다: %1</translation></message>
 </context>
 <context>
     <name>InitialSetupPersonalDetailsPage</name>
@@ -10036,5 +10041,415 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>Enter at least one regular or intensive class time before continuing.</source><translation>계속하려면 정규 또는 집중 수업 시간을 하나 이상 입력하세요.</translation></message>
     <message><source>Choose a valid start and end time for every row.</source><translation>각 행에서 올바른 시작 시간과 종료 시간을 선택하세요.</translation></message>
     <message><source>The class information could not be saved. Your entries are still here; retry to continue.</source><translation>학급 정보를 저장하지 못했습니다. 입력한 내용은 그대로 유지됩니다. 다시 시도하세요.</translation></message>
+</context>
+
+<context>
+    <name>InitialSetupScheduleImportDialog</name>
+    <message>
+        <source>Import Schedule</source>
+        <translation>일정 가져오기</translation>
+    </message>
+    <message>
+        <source>Choose Workbook…</source>
+        <translation>통합 문서 선택…</translation>
+    </message>
+    <message>
+        <source>Choose an .xlsx schedule workbook.</source>
+        <translation>.xlsx 일정 통합 문서를 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Schedule type:</source>
+        <translation>일정 유형:</translation>
+    </message>
+    <message>
+        <source>Regular</source>
+        <translation>정규</translation>
+    </message>
+    <message>
+        <source>Intensives</source>
+        <translation>집중 수업</translation>
+    </message>
+    <message>
+        <source>Load Workbook</source>
+        <translation>통합 문서 불러오기</translation>
+    </message>
+    <message>
+        <source>Select a schedule workbook to begin.</source>
+        <translation>가져올 일정 통합 문서를 선택하세요.</translation>
+    </message>
+    <message>
+        <source>The import type changed. Load the workbook again.</source>
+        <translation>가져오기 유형이 변경되었습니다. 통합 문서를 다시 불러오세요.</translation>
+    </message>
+    <message>
+        <source>Schedule Source</source>
+        <translation>일정 원본</translation>
+    </message>
+    <message>
+        <source>Visible worksheet</source>
+        <translation>표시된 워크시트</translation>
+    </message>
+    <message>
+        <source>Detected user block</source>
+        <translation>감지된 사용자 블록</translation>
+    </message>
+    <message>
+        <source>Review Import</source>
+        <translation>가져오기 검토</translation>
+    </message>
+    <message>
+        <source>Cancel Setup</source>
+        <translation>초기 설정 취소</translation>
+    </message>
+    <message>
+        <source>The schedule workbook picker is unavailable.</source>
+        <translation>일정 통합 문서 선택기를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The schedule workbook could not be selected: %1</source>
+        <translation>일정 통합 문서를 선택하지 못했습니다: %1</translation>
+    </message>
+    <message>
+        <source>Schedule import accepts .xlsx workbooks only.</source>
+        <translation>일정 가져오기는 .xlsx 통합 문서만 지원합니다.</translation>
+    </message>
+    <message>
+        <source>The selected workbook could not be found.</source>
+        <translation>선택한 통합 문서를 찾을 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Reading and validating the workbook…</source>
+        <translation>통합 문서를 읽고 확인하는 중…</translation>
+    </message>
+    <message>
+        <source>Workbook parsing timed out. Retry the import or choose another file.</source>
+        <translation>통합 문서 읽기 시간이 초과되었습니다. 다시 시도하거나 다른 파일을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>The workbook could not be read: %1</source>
+        <translation>통합 문서를 읽지 못했습니다: %1</translation>
+    </message>
+    <message>
+        <source>The workbook has no visible worksheets to import.</source>
+        <translation>가져올 수 있는 표시된 워크시트가 없습니다.</translation>
+    </message>
+    <message>
+        <source>Workbook loaded. Choose a visible worksheet and detected user block.</source>
+        <translation>통합 문서를 불러왔습니다. 표시된 워크시트와 감지된 사용자 블록을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Select a worksheet...</source>
+        <translation>워크시트 선택...</translation>
+    </message>
+    <message>
+        <source>Select a detected name...</source>
+        <translation>감지된 이름 선택...</translation>
+    </message>
+    <message>
+        <source>My Information has no name. You may save the selected workbook name after a successful import.</source>
+        <translation>내 정보에 이름이 없습니다. 가져오기가 성공하면 선택한 통합 문서의 이름을 저장할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>The selected name differs from My Information (%1). You may confirm a profile name update.</source>
+        <translation>선택한 이름이 내 정보의 이름(%1)과 다릅니다. 프로필 이름 업데이트를 확인할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>Save the selected workbook name as the profile name after import.</source>
+        <translation>가져오기가 끝나면 선택한 통합 문서 이름을 프로필 이름으로 저장합니다.</translation>
+    </message>
+    <message>
+        <source>Confirm updating the profile name to %1 after import.</source>
+        <translation>가져오기가 끝나면 프로필 이름을 %1(으)로 업데이트하는 것을 확인합니다.</translation>
+    </message>
+    <message>
+        <source>No workbook diagnostics for this selection.</source>
+        <translation>선택한 항목에 진단 내용이 없습니다.</translation>
+    </message>
+    <message>
+        <source>Workbook diagnostics to review: %1. Acknowledge them before applying.</source>
+        <translation>검토할 통합 문서 진단 내용: %1개. 적용하기 전에 확인해야 합니다.</translation>
+    </message>
+    <message>
+        <source>The workbook changed after it was loaded. Load it again before reviewing.</source>
+        <translation>불러온 후 통합 문서가 변경되었습니다. 검토하기 전에 다시 불러오세요.</translation>
+    </message>
+    <message>
+        <source>Choose a visible worksheet.</source>
+        <translation>표시된 워크시트를 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Choose a detected user block.</source>
+        <translation>감지된 사용자 블록을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Confirm Profile Name Update</source>
+        <translation>프로필 이름 업데이트 확인</translation>
+    </message>
+    <message>
+        <source>Update My Information from %1 to %2 after the import succeeds?</source>
+        <translation>가져오기에 성공하면 내 정보의 이름을 %1에서 %2(으)로 업데이트할까요?</translation>
+    </message>
+    <message>
+        <source>Schedule import state is unavailable. Retry after reopening the profile.</source>
+        <translation>일정 가져오기 상태를 사용할 수 없습니다. 프로필을 다시 연 후 시도하세요.</translation>
+    </message>
+    <message>
+        <source>Current profile data could not be read: %1</source>
+        <translation>현재 프로필 데이터를 읽지 못했습니다: %1</translation>
+    </message>
+</context>
+<context>
+    <name>InitialSetupScheduleImportReviewDialog</name>
+    <message>
+        <source>Review Schedule Import</source>
+        <translation>일정 가져오기 검토</translation>
+    </message>
+    <message>
+        <source>Review all teacher, class, room, color, and schedule decisions before applying.</source>
+        <translation>적용하기 전에 교사, 학급, 교실, 색상 및 일정 선택을 모두 검토하세요.</translation>
+    </message>
+    <message>
+        <source>Intensive import mode:</source>
+        <translation>집중 수업 가져오기 방식:</translation>
+    </message>
+    <message>
+        <source>Update Existing (preserve absent classes)</source>
+        <translation>기존 내용 업데이트 (없는 학급 보존)</translation>
+    </message>
+    <message>
+        <source>Replace With New (clear absent classes)</source>
+        <translation>새 내용으로 교체 (없는 학급 삭제)</translation>
+    </message>
+    <message>
+        <source>No workbook diagnostics were found.</source>
+        <translation>통합 문서 진단 내용이 없습니다.</translation>
+    </message>
+    <message>
+        <source>I reviewed and acknowledge every workbook diagnostic.</source>
+        <translation>모든 통합 문서 진단 내용을 검토하고 확인했습니다.</translation>
+    </message>
+    <message>
+        <source>Apply Schedule Import</source>
+        <translation>일정 가져오기 적용</translation>
+    </message>
+    <message>
+        <source>Back to Source</source>
+        <translation>원본 선택으로 돌아가기</translation>
+    </message>
+    <message>
+        <source>Korean Teacher Resolutions</source>
+        <translation>한국인 교사 처리</translation>
+    </message>
+    <message>
+        <source>Select action...</source>
+        <translation>작업 선택...</translation>
+    </message>
+    <message>
+        <source>Reuse</source>
+        <translation>재사용</translation>
+    </message>
+    <message>
+        <source>Update Room</source>
+        <translation>교실 업데이트</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>추가</translation>
+    </message>
+    <message>
+        <source>Skip</source>
+        <translation>건너뛰기</translation>
+    </message>
+    <message>
+        <source>Choose existing teacher...</source>
+        <translation>기존 교사 선택...</translation>
+    </message>
+    <message>
+        <source>Choose imported room...</source>
+        <translation>가져온 교실 선택...</translation>
+    </message>
+    <message>
+        <source>No room</source>
+        <translation>교실 없음</translation>
+    </message>
+    <message>
+        <source>Action</source>
+        <translation>작업</translation>
+    </message>
+    <message>
+        <source>Existing teacher</source>
+        <translation>기존 교사</translation>
+    </message>
+    <message>
+        <source>Imported room</source>
+        <translation>가져온 교실</translation>
+    </message>
+    <message>
+        <source>Matching existing classes: %1; imported rooms: %2</source>
+        <translation>일치하는 기존 학급: %1개, 가져온 교실: %2개</translation>
+    </message>
+    <message>
+        <source>Class Resolutions</source>
+        <translation>학급 처리</translation>
+    </message>
+    <message>
+        <source>Imported rooms: %1</source>
+        <translation>가져온 교실: %1</translation>
+    </message>
+    <message>
+        <source>Meeting pattern: %1</source>
+        <translation>수업 요일 패턴: %1</translation>
+    </message>
+    <message>
+        <source>The workbook has multiple colors for this class. Confirm a color below.</source>
+        <translation>통합 문서에 이 학급의 색상이 여러 개 있습니다. 아래에서 색상을 확인하세요.</translation>
+    </message>
+    <message>
+        <source>Update Existing</source>
+        <translation>기존 내용 업데이트</translation>
+    </message>
+    <message>
+        <source>Create New</source>
+        <translation>새로 추가</translation>
+    </message>
+    <message>
+        <source>Choose existing class...</source>
+        <translation>기존 학급 선택...</translation>
+    </message>
+    <message>
+        <source>Choose Class Color…</source>
+        <translation>학급 색상 선택…</translation>
+    </message>
+    <message>
+        <source>Existing class</source>
+        <translation>기존 학급</translation>
+    </message>
+    <message>
+        <source>Class color</source>
+        <translation>학급 색상</translation>
+    </message>
+    <message>
+        <source>Choose Class Color</source>
+        <translation>학급 색상 선택</translation>
+    </message>
+    <message>
+        <source>Choose a valid action and target for each teacher and class.</source>
+        <translation>각 교사와 학급의 올바른 작업 및 대상을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Projected schedules overlap: %1 conflicts with %2 at %3 %4–%5.</source>
+        <translation>예상 일정이 겹칩니다: %3 %4–%5에 %1과(와) %2이(가) 충돌합니다.</translation>
+    </message>
+    <message>
+        <source>A projected time is invalid: %1 %2 %3–%4.</source>
+        <translation>예상 시간이 올바르지 않습니다: %1 %2 %3–%4.</translation>
+    </message>
+    <message>
+        <source>The selected targets are no longer valid.</source>
+        <translation>선택한 대상이 더 이상 유효하지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Teachers created: %1; rooms updated: %2; classes created: %3; classes updated: %4; classes skipped: %5; schedules cleared: %6; workbook diagnostics: %7.</source>
+        <translation>추가한 교사: %1명, 업데이트한 교실: %2개, 추가한 학급: %3개, 업데이트한 학급: %4개, 건너뛴 학급: %5개, 비운 일정: %6개, 통합 문서 진단: %7개.</translation>
+    </message>
+    <message>
+        <source>Acknowledge every workbook diagnostic before applying.</source>
+        <translation>적용하기 전에 모든 통합 문서 진단 내용을 확인하세요.</translation>
+    </message>
+    <message>
+        <source>A class has an invalid meeting pattern. Skip it or correct the workbook.</source>
+        <translation>수업 요일 패턴이 올바르지 않은 학급이 있습니다. 건너뛰거나 통합 문서를 수정하세요.</translation>
+    </message>
+    <message>
+        <source>A class has an unsupported grade and level.</source>
+        <translation>지원하지 않는 학년 또는 레벨의 학급이 있습니다.</translation>
+    </message>
+    <message>
+        <source>Choose every required teacher, room, and class target.</source>
+        <translation>필요한 교사, 교실 및 학급 대상을 모두 선택하세요.</translation>
+    </message>
+    <message>
+        <source>All import decisions are valid and ready to apply.</source>
+        <translation>모든 가져오기 선택이 유효하며 적용할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>Teachers created: %1; teacher rooms updated: %2; teachers skipped: %3; classes created: %4; classes updated: %5; classes skipped: %6.</source>
+        <translation>추가한 교사: %1명, 업데이트한 교사 교실: %2개, 건너뛴 교사: %3명, 추가한 학급: %4개, 업데이트한 학급: %5개, 건너뛴 학급: %6개.</translation>
+    </message>
+    <message>
+        <source>Existing schedule rows replaced: %1; preserved: %2; schedule rows written: %3.</source>
+        <translation>교체할 기존 일정 행: %1개, 보존할 기존 일정 행: %2개, 기록할 일정 행: %3개.</translation>
+    </message>
+    <message>
+        <source>Workbook diagnostics requiring acknowledgement: %1.</source>
+        <translation>확인이 필요한 통합 문서 진단: %1개.</translation>
+    </message>
+    <message>
+        <source>The confirmed workbook name updates My Information after a successful apply.</source>
+        <translation>적용에 성공하면 확인한 통합 문서 이름으로 내 정보를 업데이트합니다.</translation>
+    </message>
+    <message>
+        <source>The workbook name fills the blank profile name after a successful apply.</source>
+        <translation>적용에 성공하면 비어 있는 프로필 이름을 통합 문서 이름으로 채웁니다.</translation>
+    </message>
+    <message>
+        <source>The profile name remains unchanged.</source>
+        <translation>프로필 이름을 변경하지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Schedule import is unavailable.</source>
+        <translation>일정 가져오기를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Schedule import failed: %1</source>
+        <translation>일정을 가져오지 못했습니다: %1</translation>
+    </message>
+    <message>
+        <source>%1 — Room %2</source>
+        <translation>%1 — 교실 %2</translation>
+    </message>
+</context>
+<context>
+    <name>InitialSetupClassTimesPage</name>
+    <message>
+        <source>Optional Schedule Import</source>
+        <translation>선택 사항: 일정 가져오기</translation>
+    </message>
+    <message>
+        <source>Import Schedule</source>
+        <translation>일정 가져오기</translation>
+    </message>
+    <message>
+        <source>Skip Schedule Import and Finish Setup</source>
+        <translation>일정 가져오기를 건너뛰고 초기 설정 완료</translation>
+    </message>
+    <message>
+        <source>Finish Setup</source>
+        <translation>초기 설정 완료</translation>
+    </message>
+    <message>
+        <source>Schedule import applied. Setup remains pending.</source>
+        <translation>일정을 가져왔습니다. 초기 설정은 계속 진행 중입니다.</translation>
+    </message>
+    <message>
+        <source>Setup is complete.</source>
+        <translation>초기 설정을 완료했습니다.</translation>
+    </message>
+    <message>
+        <source>Setup is complete, but recent profile history could not be updated.</source>
+        <translation>초기 설정을 완료했지만 최근 프로필 기록을 업데이트하지 못했습니다.</translation>
+    </message>
+    <message>
+        <source>Setup is complete, but recent profile history could not be updated: %1</source>
+        <translation>초기 설정을 완료했지만 최근 프로필 기록을 업데이트하지 못했습니다: %1</translation>
+    </message>
+    <message>
+        <source>Setup data was saved, but the previous profile backup could not be removed. Recovery files were kept.</source>
+        <translation>설정 데이터를 저장했지만 이전 프로필 백업을 삭제하지 못했습니다. 복구 파일을 보존했습니다.</translation>
+    </message>
+    <message>
+        <source>Setup was not active.</source>
+        <translation>초기 설정이 진행 중이지 않습니다.</translation>
+    </message>
 </context>
 </TS>

@@ -885,7 +885,48 @@ InitialPage::InitialPage(
         );
     classTimesActions->addWidget(m_continueClassTimesButton);
     classTimesLayout->addLayout(classTimesActions);
+
     setupContentLayout->addWidget(m_classTimesGroup);
+
+    m_scheduleImportGroup = new QGroupBox(
+        classTimesText("Optional Schedule Import"), setupContent
+        );
+    m_scheduleImportGroup->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupScheduleImport")
+        );
+    auto* scheduleImportLayout = new QVBoxLayout(m_scheduleImportGroup);
+    m_scheduleImportStatusLabel = new QLabel(m_scheduleImportGroup);
+    m_scheduleImportStatusLabel->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupScheduleImportStatus")
+        );
+    m_scheduleImportStatusLabel->setWordWrap(true);
+    scheduleImportLayout->addWidget(m_scheduleImportStatusLabel);
+    auto* scheduleImportActions = new QHBoxLayout;
+    scheduleImportActions->addStretch(1);
+    m_importScheduleButton = new QPushButton(
+        classTimesText("Import Schedule"), m_scheduleImportGroup
+        );
+    m_importScheduleButton->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupImportSchedule")
+        );
+    m_skipScheduleAndFinishButton = new QPushButton(
+        classTimesText("Skip Schedule Import and Finish Setup"), m_scheduleImportGroup
+        );
+    m_skipScheduleAndFinishButton->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupSkipScheduleAndFinish")
+        );
+    m_finishSetupButton = new QPushButton(
+        classTimesText("Finish Setup"), m_scheduleImportGroup
+        );
+    m_finishSetupButton->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupFinish")
+        );
+    m_finishSetupButton->hide();
+    scheduleImportActions->addWidget(m_importScheduleButton);
+    scheduleImportActions->addWidget(m_skipScheduleAndFinishButton);
+    scheduleImportActions->addWidget(m_finishSetupButton);
+    scheduleImportLayout->addLayout(scheduleImportActions);
+    setupContentLayout->addWidget(m_scheduleImportGroup);
     setupContentLayout->addStretch(1);
 
     auto* setupScroll = new QScrollArea(this);
@@ -963,6 +1004,12 @@ InitialPage::InitialPage(
             this, [this] { appendClassTimesRow(true); });
     connect(m_continueClassTimesButton, &QPushButton::clicked,
             this, &InitialPage::continueClassTimes);
+    connect(m_importScheduleButton, &QPushButton::clicked,
+            this, &InitialPage::importScheduleFromWorkbook);
+    connect(m_skipScheduleAndFinishButton, &QPushButton::clicked,
+            this, &InitialPage::finishSetup);
+    connect(m_finishSetupButton, &QPushButton::clicked,
+            this, &InitialPage::finishSetup);
     connect(m_classGradeCombo, qOverload<int>(&QComboBox::currentIndexChanged),
             this, &InitialPage::updateClassDetailsLevels);
     connect(m_classLevelCombo, qOverload<int>(&QComboBox::currentIndexChanged),
@@ -1053,6 +1100,7 @@ InitialPage::InitialPage(
     m_teacherEntryGroup->hide();
     m_classDetailsGroup->hide();
     m_classTimesGroup->hide();
+    m_scheduleImportGroup->hide();
     appendClassTimesRow(false);
     updateClassDetailsLevels();
     updateClassColorPreview();
@@ -1173,6 +1221,8 @@ void InitialPage::refreshSetupState()
     }
     else if (!state.setupPending && m_setupWasPending)
     {
+        m_scheduleImportApplied = false;
+        m_scheduleImportStatusLabel->clear();
         m_teacherEntryComplete = false;
         clearClassDetails();
         clearTeacherFields();
@@ -1199,7 +1249,30 @@ void InitialPage::refreshSetupState()
     m_classTimesGroup->setVisible(
         state.setupPending && state.classDetailsReady
         );
+    // Saving class times completes the required data, then exposes the
+    // optional import and explicit finish/skip actions in their own group.
     m_classTimesGroup->setEnabled(!state.classTimesSaved);
+    m_scheduleImportGroup->setVisible(
+        state.setupPending && state.classTimesSaved
+        );
+    m_continueClassTimesButton->setVisible(!state.classTimesSaved);
+    m_addRegularScheduleRowButton->setEnabled(!state.classTimesSaved);
+    m_addIntensiveScheduleRowButton->setEnabled(!state.classTimesSaved);
+    for (QWidget* row : m_regularScheduleRows)
+    {
+        row->setEnabled(!state.classTimesSaved);
+    }
+    for (QWidget* row : m_intensiveScheduleRows)
+    {
+        row->setEnabled(!state.classTimesSaved);
+    }
+    m_importScheduleButton->setVisible(state.setupPending && state.classTimesSaved);
+    m_skipScheduleAndFinishButton->setVisible(
+        state.setupPending && state.classTimesSaved && !m_scheduleImportApplied
+        );
+    m_finishSetupButton->setVisible(
+        state.setupPending && state.classTimesSaved && m_scheduleImportApplied
+        );
     m_setupWasPending = state.setupPending;
 }
 
@@ -2047,6 +2120,54 @@ void InitialPage::continueClassTimes()
             ));
         return;
     }
+    refreshSetupState();
+}
+
+void InitialPage::importScheduleFromWorkbook()
+{
+    const InitialSetupPageState state = m_actions.state
+        ? m_actions.state()
+        : InitialSetupPageState{};
+    if (!state.setupPending || !state.classTimesSaved)
+    {
+        return;
+    }
+
+    InitialSetupScheduleImportDialog dialog(
+        m_actions.scheduleImport,
+        QString::fromUtf8(
+            m_personalDetails.name.data(),
+            static_cast<qsizetype>(m_personalDetails.name.size())
+            ),
+        this
+        );
+    if (dialog.exec() == QDialog::Accepted
+        && !dialog.successSummary().isEmpty())
+    {
+        m_scheduleImportApplied = true;
+        m_scheduleImportStatusLabel->setText(
+            classTimesText("Schedule import applied. Setup remains pending.")
+                + QLatin1Char('\n') + dialog.successSummary()
+            );
+    }
+    refreshSetupState();
+}
+
+void InitialPage::finishSetup()
+{
+    const InitialSetupPageState state = m_actions.state
+        ? m_actions.state()
+        : InitialSetupPageState{};
+    if (!state.setupPending || !state.classTimesSaved)
+    {
+        return;
+    }
+    if (m_actions.finishSetup)
+    {
+        m_actions.finishSetup();
+    }
+    m_scheduleImportApplied = false;
+    m_scheduleImportStatusLabel->clear();
     refreshSetupState();
 }
 

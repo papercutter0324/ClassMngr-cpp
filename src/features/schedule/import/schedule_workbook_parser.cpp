@@ -1,8 +1,8 @@
 #include "schedule_workbook_parser.h"
 
+#include "domain/config/class_details_catalog.h"
 #include "domain/rules/schedule_import_rules.h"
 #include "features/calendar/calendar_workbook_reader.h"
-#include "features/classes/config/class_info_config.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 
 #include <QHash>
@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <functional>
 #include <limits>
+#include <string_view>
 
 namespace
 {
@@ -376,11 +377,16 @@ QString canonicalGrade(
     const QString& value
     )
 {
-    for (const QString& grade : ClassInfoConfig::Grades)
+    for (const std::string_view grade :
+         ClassMngr::Domain::ClassDetailsCatalog::grades())
     {
-        if (grade.compare(value, Qt::CaseInsensitive) == 0)
+        const QString canonical = QString::fromUtf8(
+            grade.data(),
+            static_cast<qsizetype>(grade.size())
+            );
+        if (canonical.compare(value, Qt::CaseInsensitive) == 0)
         {
-            return grade;
+            return canonical;
         }
     }
 
@@ -392,11 +398,21 @@ QString canonicalLevel(
     const QString& value
     )
 {
-    for (const QString& level : ClassInfoConfig::levelsForGrade(grade))
+    const QByteArray gradeBytes = grade.toUtf8();
+    const std::string_view gradeView(
+        gradeBytes.constData(),
+        static_cast<std::size_t>(gradeBytes.size())
+        );
+    for (const std::string_view level :
+         ClassMngr::Domain::ClassDetailsCatalog::levelsForGrade(gradeView))
     {
-        if (level.compare(value, Qt::CaseInsensitive) == 0)
+        const QString canonical = QString::fromUtf8(
+            level.data(),
+            static_cast<qsizetype>(level.size())
+            );
+        if (canonical.compare(value, Qt::CaseInsensitive) == 0)
         {
-            return level;
+            return canonical;
         }
     }
 

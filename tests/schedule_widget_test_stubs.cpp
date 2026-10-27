@@ -4,6 +4,7 @@
 #include "core/theme_service.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "data/repositories/campus_record_repository.h"
 #include "data/repositories/class_info_repository.h"
@@ -31,10 +32,14 @@
 
 #include <QHash>
 #include <QLabel>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QSet>
 #include <QTime>
 #include <QTimer>
 
+#include <algorithm>
 #include <limits>
 #include <utility>
 
@@ -169,6 +174,191 @@ QList<Classroom> classList()
     }
 
     return classrooms;
+}
+
+bool seedScheduleImportWorkspace(WorkspaceStore& store)
+{
+    if (!store.isOpen())
+    {
+        return false;
+    }
+
+    QSqlQuery query(store.database());
+    const auto execute = [&query](const QString& sql)
+    {
+        if (query.exec(sql))
+        {
+            return true;
+        }
+        qWarning().noquote() << query.lastError().text();
+        return false;
+    };
+    for (const QString& table : {
+             QStringLiteral("class_times"),
+             QStringLiteral("class_intensive_times"),
+             QStringLiteral("class_info"),
+             QStringLiteral("classes"),
+             QStringLiteral("teachers")
+         })
+    {
+        if (!execute(QStringLiteral("DELETE FROM %1").arg(table)))
+        {
+            return false;
+        }
+    }
+
+    // This review fixture intentionally models two retained classes at the
+    // same intensive slot so the projected preview can exercise overlap and
+    // preservation ordering. The production schema's UNIQUE(day,start_time)
+    // constraint prevents that state, so use a test-local table shape for
+    // this review-only snapshot.
+    if (existingIntensiveHours
+        && distinctIntensiveDays
+        && includeAlternativeMatchingClass)
+    {
+        if (!execute(QStringLiteral("DROP TABLE class_intensive_times"))
+            || !execute(QStringLiteral(
+                "CREATE TABLE class_intensive_times ("
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                "class_id INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE, "
+                "day TEXT, start_time TEXT, end_time TEXT)"
+                )))
+        {
+            return false;
+        }
+    }
+
+    const Result<QList<Teacher>> loadedTeachers = DataService().getAllTeachers();
+    if (!loadedTeachers)
+    {
+        return false;
+    }
+    const QList<Classroom> classrooms = classList();
+    for (const Teacher& teacher : *loadedTeachers)
+    {
+        QString room = teacher.roomNumber;
+        const auto classRoom = std::find_if(
+            classrooms.cbegin(),
+            classrooms.cend(),
+            [&teacher](const Classroom& classroom)
+            {
+                const int teacherId = classroom.id == 43 ? 8 : 7;
+                return teacherId == teacher.id
+                    && ScheduleWidgetTestStubs::classRooms.contains(classroom.id);
+            }
+            );
+        if (classRoom != classrooms.cend())
+        {
+            room = ScheduleWidgetTestStubs::classRooms.value(classRoom->id);
+        }
+
+        query.prepare(QStringLiteral(
+            "INSERT INTO teachers(id, teacher_kr, teacher_en, room_number) "
+            "VALUES (?, ?, ?, ?)"
+            ));
+        query.addBindValue(teacher.id);
+        query.addBindValue(teacher.teacherKr);
+        query.addBindValue(teacher.teacherEn);
+        query.addBindValue(room);
+        if (!query.exec())
+        {
+            qWarning().noquote() << query.lastError().text();
+            return false;
+        }
+    }
+
+    for (const Classroom& classroom : classrooms)
+    {
+        const int teacherId = classroom.id == 43 ? 8 : 7;
+        const QString grade = ScheduleWidgetTestStubs::classGrades.value(
+            classroom.id,
+            classroom.id == 43
+                ? QStringLiteral("E5")
+                : QStringLiteral("E4")
+            );
+        const QString level = ScheduleWidgetTestStubs::classLevels.value(
+            classroom.id,
+            classroom.id == 43
+                ? QStringLiteral("Athena")
+                : QStringLiteral("Hercules")
+            );
+        query.prepare(QStringLiteral("INSERT INTO classes(id, name) VALUES (?, ?)"));
+        query.addBindValue(classroom.id);
+        query.addBindValue(classroom.name);
+        if (!query.exec())
+        {
+            qWarning().noquote() << query.lastError().text();
+            return false;
+        }
+
+        query.prepare(QStringLiteral(
+            "INSERT INTO class_info(class_id, teacher_id, class_grade, class_level, "
+            "class_color, font_color) VALUES (?, ?, ?, ?, '#ffffff', '#000000')"
+            ));
+        query.addBindValue(classroom.id);
+        query.addBindValue(teacherId);
+        query.addBindValue(grade);
+        query.addBindValue(level);
+        if (!query.exec())
+        {
+            qWarning().noquote() << query.lastError().text();
+            return false;
+        }
+
+        if (!ScheduleWidgetTestStubs::classesWithEmptyRegularHours.contains(
+                classroom.id
+                ))
+        {
+            const QString day = classroom.id == 44
+                ? QStringLiteral("Monday")
+                : classroom.id == 43
+                    ? QStringLiteral("Thursday")
+                    : QStringLiteral("Tuesday");
+            const bool laterSlot = classroom.id == 44 || classroom.id == 43;
+            query.prepare(QStringLiteral(
+                "INSERT INTO class_times(class_id, day, start_time, end_time) "
+                "VALUES (?, ?, ?, ?)"
+                ));
+            query.addBindValue(classroom.id);
+            query.addBindValue(day);
+            query.addBindValue(laterSlot
+                ? QStringLiteral("5:00 PM")
+                : QStringLiteral("4:00 PM"));
+            query.addBindValue(laterSlot
+                ? QStringLiteral("5:50 PM")
+                : QStringLiteral("4:50 PM"));
+            if (!query.exec())
+            {
+                qWarning().noquote() << query.lastError().text();
+                return false;
+            }
+        }
+
+        if (ScheduleWidgetTestStubs::existingIntensiveHours)
+        {
+            const QString day = ScheduleWidgetTestStubs::distinctIntensiveDays
+                ? classroom.id == 43
+                    ? QStringLiteral("Monday")
+                    : QStringLiteral("Friday")
+                : classroom.id == 44
+                    ? QStringLiteral("Monday")
+                    : classroom.id == 43
+                        ? QStringLiteral("Thursday")
+                        : QStringLiteral("Tuesday");
+            query.prepare(QStringLiteral(
+                "INSERT INTO class_intensive_times(class_id, day, start_time, end_time) "
+                "VALUES (?, ?, '9:00 AM', '9:50 AM')"
+                ));
+            query.addBindValue(classroom.id);
+            query.addBindValue(day);
+            if (!query.exec())
+            {
+                qWarning().noquote() << query.lastError().text();
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 void reset()

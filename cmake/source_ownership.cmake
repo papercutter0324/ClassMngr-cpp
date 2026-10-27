@@ -50,8 +50,17 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrWorkspaceStore
         ${CLASSMNGR_WORKSPACE_STORE_SOURCES}
     )
+    _classmngr_record_manifest(ClassMngrWorkbookReader
+        ${CLASSMNGR_WORKBOOK_READER_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrTeacherImportParser
         ${CLASSMNGR_TEACHER_IMPORT_PARSER_SOURCES}
+    )
+    _classmngr_record_manifest(ClassMngrScheduleImportRules
+        ${CLASSMNGR_SCHEDULE_IMPORT_RULES_SOURCES}
+    )
+    _classmngr_record_manifest(ClassMngrScheduleImportParser
+        ${CLASSMNGR_SCHEDULE_IMPORT_PARSER_SOURCES}
     )
     _classmngr_record_manifest(ClassMngrData ${CLASSMNGR_DATA_SOURCES})
     _classmngr_record_manifest(ClassMngrDomain ${CLASSMNGR_DOMAIN_SOURCES})

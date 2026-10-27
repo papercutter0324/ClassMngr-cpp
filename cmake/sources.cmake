@@ -138,16 +138,58 @@ set_target_properties(ClassMngrWorkspaceStore
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
 )
+add_library(ClassMngrWorkbookReader STATIC
+    ${CLASSMNGR_WORKBOOK_READER_SOURCES}
+)
+target_link_libraries(ClassMngrWorkbookReader
+    PUBLIC
+        ClassMngrBuildSettings
+        Qt6::Core
+        ZLIB::ZLIB
+)
+set_target_properties(ClassMngrWorkbookReader
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 add_library(ClassMngrTeacherImportParser STATIC
     ${CLASSMNGR_TEACHER_IMPORT_PARSER_SOURCES}
 )
 target_link_libraries(ClassMngrTeacherImportParser
     PUBLIC
         ClassMngrBuildSettings
+        ClassMngrWorkbookReader
         Qt6::Core
-        ZLIB::ZLIB
 )
 set_target_properties(ClassMngrTeacherImportParser
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+add_library(ClassMngrScheduleImportRules STATIC
+    ${CLASSMNGR_SCHEDULE_IMPORT_RULES_SOURCES}
+)
+target_link_libraries(ClassMngrScheduleImportRules
+    PUBLIC
+        ClassMngrBuildSettings
+        Qt6::Core
+)
+set_target_properties(ClassMngrScheduleImportRules
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+add_library(ClassMngrScheduleImportParser STATIC
+    ${CLASSMNGR_SCHEDULE_IMPORT_PARSER_SOURCES}
+)
+target_link_libraries(ClassMngrScheduleImportParser
+    PUBLIC
+        ClassMngrBuildSettings
+        ClassMngrScheduleImportRules
+        ClassMngrWorkbookReader
+        Qt6::Core
+)
+set_target_properties(ClassMngrScheduleImportParser
     PROPERTIES
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
@@ -264,6 +306,7 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrSignature
         ClassMngrWorkspaceStore
         ClassMngrTeacherImportParser
+        ClassMngrScheduleImportParser
         ${_classmngr_legacy_runtime_dependencies}
     PRIVATE
         ClassMngrSQLiteSnapshot
@@ -316,6 +359,7 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrSignature
             ClassMngrWorkspaceStore
             ClassMngrTeacherImportParser
+            ClassMngrScheduleImportParser
             ${_classmngr_legacy_runtime_dependencies}
         PRIVATE
             ClassMngrSQLiteSnapshot

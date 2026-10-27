@@ -3,14 +3,10 @@
   "title": "Phase 4 effective resource inventory",
   "source_snapshot": {
     "tracked_source_tree_ids": {
-      "resources": "ef610f4f55ac60d99e9238f3fac896100c10770a",
+      "resources": "c50fe7e9d53697cbcad56d73e847a4bdbbce1f1a",
       "calendar_qml": "b75d01f27817b205ad63deca347be0506e3b9796"
     },
     "tracked_input_worktree_changes": [
-      "resources/assets/translations/ClassMngr_en_AU.ts",
-      "resources/assets/translations/ClassMngr_en_CA.ts",
-      "resources/assets/translations/ClassMngr_en_GB.ts",
-      "resources/assets/translations/ClassMngr_en_US.ts",
       "resources/assets/translations/ClassMngr_ko_KR.ts"
     ],
     "effective_baseline": "Tracked source content at the recorded Git tree IDs plus the exact working-tree bytes recorded below. No installed resource-pack overrides were available in the checked application-owned resource-pack directory."
@@ -20,8 +16,8 @@
     "tracked_files_under_resources_assets": 226,
     "tracked_files_under_resources_windows": 3,
     "tracked_calendar_qml_sources_outside_resources": 2,
-    "resource_asset_source_bytes_exact": 65749253,
-    "all_tracked_resources_source_bytes_exact": 65750439,
+    "resource_asset_source_bytes_exact": 65768589,
+    "all_tracked_resources_source_bytes_exact": 65769775,
     "calendar_qml_source_bytes_exact": 35154,
     "disposition_record_counts": {
       "build_only_excluded": 31,
@@ -68,7 +64,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 1774182
+        "source_bytes": 1793518
       }
     },
     "resource_categories": {
@@ -118,7 +114,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 1774182
+        "source_bytes": 1793518
       }
     }
   },
@@ -6290,8 +6286,8 @@
       "package_disposition": "runtime_packaged_generated",
       "disposition_reason": "Qt Linguist produces the runtime .qm from this tracked TS source; only the selected locale is loaded.",
       "source_file": {
-        "bytes": 393480,
-        "sha256": "64e7cf791ef1d2f745b66f78b9512b3298cfcb9bc652f00d78fb5e8c00a8cce7"
+        "bytes": 412816,
+        "sha256": "f51fa8d3a38a87ff0ad876269d6b2a5e2c3a2b1f3d27e0aea204574712135125"
       },
       "installed_size": {
         "bytes": null,

@@ -8,6 +8,7 @@
 #include "next/application/teacher_create.h"
 #include "next/domain/personal_signature_image_save_bytes.h"
 #include "next/ui/initial_setup_teacher_import_dialog.h"
+#include "next/ui/initial_setup_schedule_import_dialog.h"
 #include "next/ui/page.h"
 
 #include <QByteArray>
@@ -69,6 +70,8 @@ struct InitialSetupPageActions final
     std::function<Application::InitialSetupClassTimesSaveResult(
         const Application::InitialSetupClassTimes&
         )> saveClassTimes;
+    InitialSetupScheduleImportActions scheduleImport;
+    std::function<void()> finishSetup;
     InitialSetupTeacherImportActions teacherImport;
     std::function<Domain::Result<std::optional<QByteArray>>()> chooseSignatureImage;
 };
@@ -103,6 +106,8 @@ private:
     void chooseClassColor();
     void continueClassDetails();
     void continueClassTimes();
+    void importScheduleFromWorkbook();
+    void finishSetup();
     void appendClassTimesRow(bool intensive);
     void removeClassTimesRow(bool intensive, QWidget* row);
     [[nodiscard]] QWidget* createClassTimesRow(bool intensive);
@@ -164,6 +169,7 @@ private:
     QComboBox* m_essayBookCombo = nullptr;
     QPushButton* m_continueClassDetailsButton = nullptr;
     QGroupBox* m_classTimesGroup = nullptr;
+    QGroupBox* m_scheduleImportGroup = nullptr;
     QVBoxLayout* m_regularScheduleRowsLayout = nullptr;
     QVBoxLayout* m_intensiveScheduleRowsLayout = nullptr;
     QLabel* m_classTimesStatusLabel = nullptr;
@@ -171,6 +177,10 @@ private:
     QPushButton* m_addRegularScheduleRowButton = nullptr;
     QPushButton* m_addIntensiveScheduleRowButton = nullptr;
     QPushButton* m_continueClassTimesButton = nullptr;
+    QPushButton* m_importScheduleButton = nullptr;
+    QPushButton* m_skipScheduleAndFinishButton = nullptr;
+    QPushButton* m_finishSetupButton = nullptr;
+    QLabel* m_scheduleImportStatusLabel = nullptr;
     QList<QWidget*> m_regularScheduleRows;
     QList<QWidget*> m_intensiveScheduleRows;
     Application::PersonalDetailsSaveRequest m_personalDetails;
@@ -180,6 +190,7 @@ private:
     bool m_personalDetailsEdited = false;
     bool m_updatingPersonalDetails = false;
     bool m_teacherEntryComplete = false;
+    bool m_scheduleImportApplied = false;
     bool m_classColorChosen = false;
     QString m_classColor = QStringLiteral("#FFFFFF");
 };

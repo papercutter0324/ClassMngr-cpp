@@ -39,6 +39,8 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <algorithm>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -55,34 +57,49 @@ public:
     void dispatch() override {}
 };
 
+struct SelectedOpenPathQueue final
+{
+    QStringList paths;
+    qsizetype next = 0;
+};
+
 class SelectedProfileFileDialog final : public Application::FileDialogPort
 {
 public:
     explicit SelectedProfileFileDialog(
         QString selectedPath,
-        QString openPath = {}
+        QString openPath = {},
+        QStringList additionalOpenPaths = {},
+        std::shared_ptr<SelectedOpenPathQueue> openPaths = {}
         )
         : m_selectedPath(Application::FileDialogPath(
               selectedPath.toUtf8().toStdString()
               ))
-        , m_openPath(openPath.isEmpty()
-              ? std::nullopt
-              : std::optional<Application::FileDialogPath>{
-                    Application::FileDialogPath(
-                        openPath.toUtf8().toStdString())
-                })
+        , m_openPaths(std::move(openPaths))
     {
+        if (!m_openPaths)
+        {
+            m_openPaths = std::make_shared<SelectedOpenPathQueue>();
+            if (!openPath.isEmpty())
+            {
+                m_openPaths->paths.append(std::move(openPath));
+            }
+            m_openPaths->paths.append(std::move(additionalOpenPaths));
+        }
     }
 
     [[nodiscard]] Domain::Result<
         Application::FileDialogResponse<Application::FileDialogPath>>
     openOneFile(const Application::OpenFileDialogRequest&) override
     {
-        if (m_openPath.has_value())
+        if (m_openPaths->next < m_openPaths->paths.size())
         {
+            const QString path = m_openPaths->paths.at(m_openPaths->next++);
             return Domain::Result<
                 Application::FileDialogResponse<Application::FileDialogPath>>::success({
-                    .selection = m_openPath
+                    .selection = Application::FileDialogPath(
+                        path.toUtf8().toStdString()
+                        )
                 });
         }
         return unexpectedCall<
@@ -131,7 +148,7 @@ private:
     }
 
     Application::FileDialogPath m_selectedPath;
-    std::optional<Application::FileDialogPath> m_openPath;
+    std::shared_ptr<SelectedOpenPathQueue> m_openPaths;
 };
 
 class SettingsRootEnvironmentGuard final
@@ -464,6 +481,38 @@ struct TeacherRecord final
     return count;
 }
 
+[[nodiscard]] std::optional<QString> readAppSetting(
+    const QString& path,
+    const QString& key
+    )
+{
+    const QString connectionName = QStringLiteral("setup-setting-%1").arg(
+        QUuid::createUuid().toString(QUuid::WithoutBraces)
+        );
+    std::optional<QString> value;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName
+            );
+        database.setDatabaseName(path);
+        if (database.open())
+        {
+            QSqlQuery query(database);
+            query.prepare(QStringLiteral(
+                "SELECT value FROM app_settings WHERE key=?"
+                ));
+            query.addBindValue(key);
+            if (query.exec() && query.next())
+            {
+                value = query.value(0).toString();
+            }
+            database.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return value;
+}
+
 [[nodiscard]] bool executeWorkspaceSql(
     const QString& path,
     const QString& statement
@@ -522,6 +571,87 @@ struct ClassRecord final
     }
     QSqlDatabase::removeDatabase(connectionName);
     return record;
+}
+
+[[nodiscard]] std::optional<int> readClassId(
+    const QString& path,
+    const QString& grade,
+    const QString& level,
+    const int excludedClassId = -1
+    )
+{
+    const QString connectionName = QStringLiteral("setup-class-id-%1").arg(
+        QUuid::createUuid().toString(QUuid::WithoutBraces)
+        );
+    std::optional<int> id;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName
+            );
+        database.setDatabaseName(path);
+        if (database.open())
+        {
+            QSqlQuery query(database);
+            query.prepare(excludedClassId > 0
+                ? QStringLiteral(
+                      "SELECT class_id FROM class_info "
+                      "WHERE class_grade=? AND class_level=? AND class_id<>? "
+                      "ORDER BY class_id"
+                      )
+                : QStringLiteral(
+                      "SELECT class_id FROM class_info "
+                      "WHERE class_grade=? AND class_level=? ORDER BY class_id"
+                      ));
+            query.addBindValue(grade);
+            query.addBindValue(level);
+            if (excludedClassId > 0)
+            {
+                query.addBindValue(excludedClassId);
+            }
+            if (query.exec() && query.next())
+            {
+                id = query.value(0).toInt();
+            }
+            database.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return id;
+}
+
+[[nodiscard]] std::optional<QString> readIntensiveSlotState(
+    const QString& path,
+    const QString& day,
+    const QString& startTime
+    )
+{
+    const QString connectionName = QStringLiteral("setup-intensive-state-%1").arg(
+        QUuid::createUuid().toString(QUuid::WithoutBraces)
+        );
+    std::optional<QString> state;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName
+            );
+        database.setDatabaseName(path);
+        if (database.open())
+        {
+            QSqlQuery query(database);
+            query.prepare(QStringLiteral(
+                "SELECT state FROM intensive_slot_states "
+                "WHERE day=? AND start_time=?"
+                ));
+            query.addBindValue(day);
+            query.addBindValue(startTime);
+            if (query.exec() && query.next())
+            {
+                state = query.value(0).toString();
+            }
+            database.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return state;
 }
 
 struct ClassDetailsRecord final
@@ -741,6 +871,7 @@ class InitialSetupTeacherEntryBootstrapIntegrationTests final : public QObject
 private slots:
     void initialSetupPageCreatesTeacherThroughWorkspaceStore();
     void importedTeacherTimesPersistBeforeCancelRestoresOriginal();
+    void scheduleImportIsTransactionalAndFinishIsExplicit();
     void classTimesLabelsAndBehavior_data();
     void classTimesLabelsAndBehavior();
 };
@@ -1631,7 +1762,39 @@ importedTeacherTimesPersistBeforeCancelRestoresOriginal()
     QCOMPARE(historyProbe->saveCount, 0);
     QVERIFY(historyProbe->savedHistories.empty());
 
-    cancelSetup->click();
+    auto* const importSchedule = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupImportSchedule")
+        );
+    QVERIFY(importSchedule);
+    bool sourceCancelClicked = false;
+    auto cancelScheduleSource = std::make_shared<std::function<void()>>();
+    *cancelScheduleSource = [
+        &sourceCancelClicked,
+        cancelScheduleSource
+        ] {
+        auto* const sourceDialog = qobject_cast<QDialog*>(
+            QApplication::activeModalWidget()
+            );
+        if (!sourceDialog
+            || sourceDialog->objectName()
+                != QStringLiteral("classMngrNextScheduleImportSourceDialog"))
+        {
+            QTimer::singleShot(10, qApp, *cancelScheduleSource);
+            return;
+        }
+        auto* const cancel = sourceDialog->findChild<QPushButton*>(
+            QStringLiteral("classMngrNextScheduleImportCancel")
+            );
+        if (!cancel)
+        {
+            return;
+        }
+        sourceCancelClicked = true;
+        cancel->click();
+    };
+    QTimer::singleShot(0, qApp, *cancelScheduleSource);
+    importSchedule->click();
+    QVERIFY(sourceCancelClicked);
     QCOMPARE(setupStatus->text(), QStringLiteral("Choose where to save your profile."));
     QVERIFY(!bootstrap.initialSetupClassDetailsDraft().has_value());
     QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
@@ -1646,6 +1809,994 @@ importedTeacherTimesPersistBeforeCancelRestoresOriginal()
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     QCOMPARE(historyProbe->saveCount, 0);
+}
+
+void InitialSetupTeacherEntryBootstrapIntegrationTests::
+scheduleImportIsTransactionalAndFinishIsExplicit()
+{
+    QTemporaryDir settingsRoot;
+    QVERIFY(settingsRoot.isValid());
+    SettingsRootEnvironmentGuard settingsRootGuard;
+    qputenv("CLASSMNGR_SETTINGS_ROOT", settingsRoot.path().toUtf8());
+    SettingsPreferenceGuard preferences;
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        QStringLiteral("en_US"), QStringLiteral("light")
+        ));
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString profilePath = workspaceRoot.filePath(
+        QStringLiteral("schedule-import-setup.tps")
+        );
+    const QString workbookPath = QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+        QStringLiteral("tests/fixtures/imports/schedule_review.xlsx")
+        );
+    const QString intensiveWorkbookPath = QDir(
+        QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        ).filePath(QStringLiteral(
+            "tests/fixtures/imports/schedule_intensive_synthetic.xlsx"
+            ));
+    const QString recoveryJournalPath = workspaceRoot.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    const QByteArray originalProfileBytes("pre-setup profile contents");
+    {
+        QFile originalProfile(profilePath);
+        QVERIFY(originalProfile.open(QIODevice::WriteOnly));
+        QCOMPARE(originalProfile.write(originalProfileBytes),
+                 originalProfileBytes.size());
+    }
+
+    QApplication& application = *qApp;
+    ApplicationStyleSheetGuard styleSheetGuard(application);
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("schedule-import-setup-test")
+    };
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+    auto scheduleWorkbookQueue = std::make_shared<SelectedOpenPathQueue>();
+    scheduleWorkbookQueue->paths = {
+        workbookPath,
+        workbookPath,
+        intensiveWorkbookPath,
+        intensiveWorkbookPath,
+        workbookPath
+    };
+    seams.initialSetupFileDialogPortFactory = [
+        profilePath,
+        scheduleWorkbookQueue
+        ] {
+        return std::make_unique<SelectedProfileFileDialog>(
+            profilePath,
+            QString{},
+            QStringList{},
+            scheduleWorkbookQueue
+            );
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        {},
+        resolverForRoot(resources.root()),
+        QStringList{QStringLiteral("en-US")},
+        std::move(seams),
+        [] { return std::make_unique<SilentUpdateDispatcher>(); }
+        );
+    QVERIFY2(bootstrap.start().succeeded(), "ApplicationBootstrap failed to start.");
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        bootstrap.shell()->pageHost().pageInstance(QStringLiteral("initial_setup"))
+        );
+    QVERIFY(page);
+
+    page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCreateProfile")
+        )->click();
+    QVERIFY(QFileInfo::exists(profilePath));
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+    QCOMPARE(historyProbe->saveCount, 0);
+    QFile recoveryJournal(recoveryJournalPath);
+    QVERIFY(recoveryJournal.open(QIODevice::ReadOnly));
+    const QJsonDocument recoveryRecord = QJsonDocument::fromJson(
+        recoveryJournal.readAll()
+        );
+    recoveryJournal.close();
+    QVERIFY(recoveryRecord.isObject());
+    const QString originalBackup = recoveryRecord.object().value(
+        QStringLiteral("originalBackup")
+        ).toString();
+    QVERIFY(!originalBackup.isEmpty());
+    QVERIFY(QFileInfo::exists(originalBackup));
+
+    auto* const personalName = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalName")
+        );
+    auto* const savePersonalDetails = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalDetailsSave")
+        );
+    QVERIFY(personalName && savePersonalDetails);
+    personalName->setText(QStringLiteral("Bob"));
+    savePersonalDetails->click();
+    QCOMPARE(readAppSetting(profilePath, QStringLiteral("myInfo/name")),
+             std::optional<QString>{QStringLiteral("Bob")});
+
+    auto* const englishName = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEnglishName")
+        );
+    auto* const koreanName = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherKoreanName")
+        );
+    auto* const preferredSpelling = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherPreferredSpelling")
+        );
+    auto* const teacherRoom = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherRoom")
+        );
+    auto* const continueTeacher = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
+        );
+    QVERIFY(englishName && koreanName && preferredSpelling
+            && teacherRoom && continueTeacher);
+    englishName->setText(QStringLiteral("Choi Teacher"));
+    koreanName->setText(QString::fromUtf8("최선생"));
+    preferredSpelling->setText(QStringLiteral("Choi"));
+    teacherRoom->setText(QStringLiteral("416"));
+    continueTeacher->click();
+
+    auto* const classTeacher = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassTeacher")
+        );
+    auto* const classColor = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassColorChoose")
+        );
+    auto* const classGrade = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassGrade")
+        );
+    auto* const classLevel = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassLevel")
+        );
+    auto* const continueClassDetails = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassDetailsContinue")
+        );
+    QVERIFY(classTeacher && classColor && classGrade && classLevel
+            && continueClassDetails);
+    QCOMPARE(classTeacher->currentData().toString(), QStringLiteral("1"));
+    classGrade->setCurrentText(QStringLiteral("E4"));
+    classLevel->setCurrentText(QStringLiteral("Hercules"));
+    bool colorDialogAccepted = false;
+    chooseColorInNextModalDialog(
+        QColor(QStringLiteral("#234567")), &colorDialogAccepted
+        );
+    classColor->click();
+    QVERIFY(colorDialogAccepted);
+    continueClassDetails->click();
+
+    auto* const classTimesGroup = page->findChild<QGroupBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassTimes")
+        );
+    auto* const addRegular = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupAddRegularTime")
+        );
+    auto* const continueClassTimes = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassTimesContinue")
+        );
+    QVERIFY(classTimesGroup && addRegular && continueClassTimes);
+    addRegular->click();
+    const auto regularRows = [&] {
+        return classTimesGroup->findChildren<QWidget*>(
+            QStringLiteral("classMngrNextInitialSetupRegularScheduleRow")
+            );
+    };
+    QCOMPARE(regularRows().size(), 2);
+    const auto setRegularTime = [](QWidget* row, const QString& dayName) {
+        auto* day = row->findChild<QComboBox*>(
+            QStringLiteral("classMngrNextInitialSetupScheduleDay")
+            );
+        auto* hour = row->findChild<QComboBox*>(
+            QStringLiteral("classMngrNextInitialSetupScheduleHour")
+            );
+        auto* minute = row->findChild<QComboBox*>(
+            QStringLiteral("classMngrNextInitialSetupScheduleMinute")
+            );
+        auto* period = row->findChild<QComboBox*>(
+            QStringLiteral("classMngrNextInitialSetupSchedulePeriod")
+            );
+        auto* end = row->findChild<QComboBox*>(
+            QStringLiteral("classMngrNextInitialSetupScheduleEnd")
+            );
+        if (!day || !hour || !minute || !period || !end) return false;
+        day->setCurrentIndex(day->findData(dayName));
+        hour->setCurrentText(QStringLiteral("5"));
+        minute->setCurrentText(QStringLiteral(":00"));
+        period->setCurrentText(QStringLiteral("PM"));
+        end->setCurrentText(QStringLiteral("5:55 PM"));
+        return day->currentData().toString() == dayName
+            && end->currentText() == QStringLiteral("5:55 PM");
+    };
+    QVERIFY(setRegularTime(regularRows().front(), QStringLiteral("Tuesday")));
+    QVERIFY(setRegularTime(regularRows().back(), QStringLiteral("Thursday")));
+    continueClassTimes->click();
+
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("teachers")),
+             std::optional<int>{1});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("classes")),
+             std::optional<int>{1});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_info")),
+             std::optional<int>{1});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_times")),
+             std::optional<int>{2});
+    const auto initialClass = readFirstClass(profilePath);
+    QVERIFY(initialClass.has_value());
+    const auto initialRows = readScheduleRows(
+        profilePath, QStringLiteral("class_times")
+        );
+    QVERIFY(initialRows.has_value());
+    QCOMPARE(initialRows->size(), std::size_t(2));
+
+    bool omissionBrowseStarted = false;
+    bool omissionReviewStarted = false;
+    bool omissionReviewEffectsVerified = false;
+    bool omissionImportApplied = false;
+    auto driveOmissionImport = std::make_shared<std::function<void()>>();
+    *driveOmissionImport = [
+        &page,
+        &omissionBrowseStarted,
+        &omissionReviewStarted,
+        &omissionReviewEffectsVerified,
+        &omissionImportApplied,
+        driveOmissionImport
+        ] {
+        if (omissionImportApplied)
+        {
+            return;
+        }
+        QWidget* const modal = QApplication::activeModalWidget();
+        if (!modal)
+        {
+            QTimer::singleShot(10, qApp, *driveOmissionImport);
+            return;
+        }
+        if (modal->objectName()
+            == QStringLiteral("classMngrNextScheduleImportSourceDialog"))
+        {
+            auto* const status = modal->findChild<QLabel*>(
+                QStringLiteral("classMngrNextScheduleImportSourceStatus")
+                );
+            auto* const browse = modal->findChild<QPushButton*>(
+                QStringLiteral("classMngrNextScheduleImportBrowse")
+                );
+            auto* const sheet = modal->findChild<QComboBox*>(
+                QStringLiteral("classMngrNextScheduleImportSheet")
+                );
+            auto* const user = modal->findChild<QComboBox*>(
+                QStringLiteral("classMngrNextScheduleImportUser")
+                );
+            auto* const nameConfirmation = modal->findChild<QCheckBox*>(
+                QStringLiteral(
+                    "classMngrNextScheduleImportProfileNameConfirmation"
+                    )
+                );
+            auto* const review = modal->findChild<QPushButton*>(
+                QStringLiteral("classMngrNextScheduleImportReview")
+                );
+            QVERIFY(status && browse && sheet && user
+                    && nameConfirmation && review);
+            if (!omissionBrowseStarted)
+            {
+                omissionBrowseStarted = true;
+                browse->click();
+            }
+            if (!status->text().contains(QStringLiteral("Workbook loaded")))
+            {
+                QTimer::singleShot(10, qApp, *driveOmissionImport);
+                return;
+            }
+            sheet->setCurrentIndex(1);
+            user->setCurrentIndex(1);
+            QCOMPARE(user->currentText(), QStringLiteral("Alice"));
+            QVERIFY(nameConfirmation->isVisible());
+            QVERIFY(!nameConfirmation->isChecked());
+            if (!omissionReviewStarted)
+            {
+                omissionReviewStarted = true;
+                QTimer::singleShot(0, qApp, *driveOmissionImport);
+                review->click();
+            }
+            return;
+        }
+        if (modal->objectName()
+            != QStringLiteral("classMngrNextScheduleImportReviewDialog"))
+        {
+            return;
+        }
+
+        const auto* const effects = modal->findChild<QLabel*>(
+            QStringLiteral("classMngrNextScheduleImportEffects")
+            );
+        const auto classActions = modal->findChildren<QComboBox*>(
+            QStringLiteral("classMngrNextScheduleImportClassAction")
+            );
+        auto* const apply = modal->findChild<QPushButton*>(
+            QStringLiteral("classMngrNextScheduleImportApply")
+            );
+        QVERIFY(effects && apply);
+        QCOMPARE(classActions.size(), 3);
+        for (QComboBox* const action : classActions)
+        {
+            action->setCurrentIndex(action->findData(static_cast<int>(
+                Application::ScheduleImportReviewClassAction::CreateNew
+                )));
+            QCOMPARE(action->currentData().toInt(), static_cast<int>(
+                Application::ScheduleImportReviewClassAction::CreateNew
+                ));
+        }
+        QVERIFY2(effects->text().contains(QStringLiteral("schedules cleared: 1;")),
+                 qPrintable(effects->text()));
+        QVERIFY(effects->text().contains(
+            QStringLiteral(
+                "Existing schedule rows replaced: 2; preserved: 0; schedule rows written: 6."
+                )
+            ));
+        QVERIFY(apply->isEnabled());
+        apply->click();
+        omissionReviewEffectsVerified = true;
+        omissionImportApplied = true;
+    };
+    QTimer::singleShot(0, qApp, *driveOmissionImport);
+    page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupImportSchedule")
+        )->click();
+    QVERIFY(omissionImportApplied);
+    QVERIFY(omissionReviewEffectsVerified);
+    const auto* const omissionStatus = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleImportStatus")
+        );
+    QVERIFY(omissionStatus);
+    QVERIFY(omissionStatus->text().contains(QStringLiteral("Setup remains pending")));
+    QVERIFY(omissionStatus->text().contains(QStringLiteral("Teachers created: 2")));
+    QVERIFY(omissionStatus->text().contains(QStringLiteral("classes created: 3")));
+    QVERIFY2(omissionStatus->text().contains(QStringLiteral("schedules cleared: 1")),
+             qPrintable(omissionStatus->text()));
+    QCOMPARE(readAppSetting(profilePath, QStringLiteral("myInfo/name")),
+             std::optional<QString>{QStringLiteral("Bob")});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("teachers")),
+             std::optional<int>{3});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("classes")),
+             std::optional<int>{4});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_info")),
+             std::optional<int>{4});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_times")),
+             std::optional<int>{6});
+    const auto importedRowsAfterOmission = readScheduleRows(
+        profilePath,
+        QStringLiteral("class_times")
+        );
+    QVERIFY(importedRowsAfterOmission.has_value());
+    QCOMPARE(importedRowsAfterOmission->size(), std::size_t(6));
+    QVERIFY(std::none_of(
+        importedRowsAfterOmission->begin(),
+        importedRowsAfterOmission->end(),
+        [&initialClass](const ScheduleRowRecord& row)
+        {
+            return row.classId == initialClass->id;
+        }
+        ));
+    QVERIFY(std::any_of(
+        importedRowsAfterOmission->begin(),
+        importedRowsAfterOmission->end(),
+        [&initialClass](const ScheduleRowRecord& row)
+        {
+            return row.classId != initialClass->id
+                && row.day == QStringLiteral("Tuesday");
+        }
+        ));
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+    QVERIFY(QFileInfo::exists(originalBackup));
+
+    const auto originalTeachers = tableRowCount(
+        profilePath, QStringLiteral("teachers")
+        );
+    const auto originalClasses = tableRowCount(
+        profilePath, QStringLiteral("classes")
+        );
+    const auto originalClassInfo = tableRowCount(
+        profilePath, QStringLiteral("class_info")
+        );
+    const auto originalTimes = tableRowCount(
+        profilePath, QStringLiteral("class_times")
+        );
+    QVERIFY(originalTeachers && originalClasses && originalClassInfo
+            && originalTimes);
+    const auto importedHerculesClassId = readClassId(
+        profilePath,
+        QStringLiteral("E4"),
+        QStringLiteral("Hercules"),
+        initialClass->id
+        );
+    QVERIFY(importedHerculesClassId.has_value());
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral(
+            "INSERT INTO class_intensive_times "
+            "(class_id, day, start_time, end_time) "
+            "VALUES (%1, 'Tuesday', '9:00 AM', '9:55 AM')"
+            ).arg(initialClass->id)
+        ));
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral(
+            "INSERT INTO intensive_slot_states (day, start_time, state) "
+            "VALUES ('Friday', '09:00', 'essay')"
+            )
+        ));
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral(
+            "CREATE TRIGGER fail_schedule_import_test "
+            "BEFORE INSERT ON class_times BEGIN "
+            "SELECT RAISE(ABORT, 'injected schedule import failure'); END"
+            )
+        ));
+
+    bool sourceBrowseStarted = false;
+    bool reviewStarted = false;
+    bool transactionFailureShown = false;
+    bool reviewChoicesRetained = false;
+    bool importApplied = false;
+    auto driveImport = std::make_shared<std::function<void()>>();
+    *driveImport = [&, driveImport] {
+        if (importApplied)
+        {
+            return;
+        }
+        QWidget* const modal = QApplication::activeModalWidget();
+        if (!modal)
+        {
+            QTimer::singleShot(10, qApp, *driveImport);
+            return;
+        }
+        if (modal->objectName()
+            == QStringLiteral("classMngrNextScheduleImportSourceDialog"))
+        {
+            auto* const status = modal->findChild<QLabel*>(
+                QStringLiteral("classMngrNextScheduleImportSourceStatus")
+                );
+            auto* const browse = modal->findChild<QPushButton*>(
+                QStringLiteral("classMngrNextScheduleImportBrowse")
+                );
+            auto* const sheet = modal->findChild<QComboBox*>(
+                QStringLiteral("classMngrNextScheduleImportSheet")
+                );
+            auto* const user = modal->findChild<QComboBox*>(
+                QStringLiteral("classMngrNextScheduleImportUser")
+                );
+            auto* const profileNameConfirmation = modal->findChild<QCheckBox*>(
+                QStringLiteral("classMngrNextScheduleImportProfileNameConfirmation")
+                );
+            auto* const review = modal->findChild<QPushButton*>(
+                QStringLiteral("classMngrNextScheduleImportReview")
+                );
+            if (!status || !browse || !sheet || !user
+                || !profileNameConfirmation || !review)
+            {
+                return;
+            }
+            if (!sourceBrowseStarted)
+            {
+                sourceBrowseStarted = true;
+                browse->click();
+            }
+            if (!status->text().contains(QStringLiteral("Workbook loaded")))
+            {
+                QTimer::singleShot(10, qApp, *driveImport);
+                return;
+            }
+            sheet->setCurrentIndex(1);
+            user->setCurrentIndex(1);
+            QCOMPARE(user->currentText(), QStringLiteral("Alice"));
+            QVERIFY(profileNameConfirmation->isVisible());
+            QVERIFY(!profileNameConfirmation->isChecked());
+            if (!reviewStarted)
+            {
+                reviewStarted = true;
+                QTimer::singleShot(0, qApp, *driveImport);
+                review->click();
+            }
+            return;
+        }
+        if (modal->objectName()
+            != QStringLiteral("classMngrNextScheduleImportReviewDialog"))
+        {
+            return;
+        }
+
+        auto* const apply = modal->findChild<QPushButton*>(
+            QStringLiteral("classMngrNextScheduleImportApply")
+            );
+        auto* const status = modal->findChild<QLabel*>(
+            QStringLiteral("classMngrNextScheduleImportReviewStatus")
+            );
+        QVERIFY(apply && status);
+        if (transactionFailureShown)
+        {
+            return;
+        }
+
+        const auto* const effects = modal->findChild<QLabel*>(
+            QStringLiteral("classMngrNextScheduleImportEffects")
+            );
+        QVERIFY(effects);
+        QVERIFY2(effects->text().contains(
+            QStringLiteral("schedules cleared: 0;")
+            ), qPrintable(effects->text()));
+        QVERIFY(effects->text().contains(
+            QStringLiteral("Existing schedule rows replaced: 6; preserved: 0; schedule rows written: 6.")
+            ));
+
+        const QList<QGroupBox*> classRows = modal->findChildren<QGroupBox*>(
+            QStringLiteral("classMngrNextScheduleImportClassRow")
+            );
+        QGroupBox* matchingClass = nullptr;
+        for (QGroupBox* row : classRows)
+        {
+            if (row->title().contains(QStringLiteral("E4 Hercules")))
+            {
+                matchingClass = row;
+                break;
+            }
+        }
+        QVERIFY(matchingClass);
+        auto* const classAction = matchingClass->findChild<QComboBox*>(
+            QStringLiteral("classMngrNextScheduleImportClassAction")
+            );
+        auto* const classTarget = matchingClass->findChild<QComboBox*>(
+            QStringLiteral("classMngrNextScheduleImportClassTarget")
+            );
+        QVERIFY(classAction && classTarget);
+        classAction->setCurrentIndex(classAction->findData(static_cast<int>(
+            Application::ScheduleImportReviewClassAction::UpdateExisting
+            )));
+        classTarget->setCurrentIndex(classTarget->findData(
+            QString::number(*importedHerculesClassId)
+            ));
+        QVERIFY(classTarget->currentData().toString()
+                == QString::number(*importedHerculesClassId));
+        QVERIFY(apply->isEnabled());
+
+        apply->click();
+        QVERIFY(status->text().contains(QStringLiteral("failed")));
+        transactionFailureShown = true;
+        reviewChoicesRetained = classAction->currentData().toInt()
+                == static_cast<int>(Application::ScheduleImportReviewClassAction::UpdateExisting)
+            && classTarget->currentData().toString()
+                == QString::number(*importedHerculesClassId);
+        QCOMPARE(tableRowCount(profilePath, QStringLiteral("teachers")), originalTeachers);
+        QCOMPARE(tableRowCount(profilePath, QStringLiteral("classes")), originalClasses);
+        QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_info")), originalClassInfo);
+        QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_times")), originalTimes);
+        QVERIFY(executeWorkspaceSql(
+            profilePath,
+            QStringLiteral("DROP TRIGGER fail_schedule_import_test")
+            ));
+
+        apply->click();
+        importApplied = true;
+    };
+    QTimer::singleShot(0, qApp, *driveImport);
+    page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupImportSchedule")
+        )->click();
+    QVERIFY(importApplied);
+    QVERIFY(transactionFailureShown);
+    QVERIFY(reviewChoicesRetained);
+    const auto* importStatus = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleImportStatus")
+        );
+    QVERIFY(importStatus);
+    QVERIFY(importStatus->text().contains(QStringLiteral("Setup remains pending")));
+    QVERIFY(importStatus->text().contains(QStringLiteral("Teachers created: 0")));
+    QVERIFY(importStatus->text().contains(QStringLiteral("classes updated: 3")));
+    // Existing imported classes retain their schedule targets, and the
+    // previously cleared manual class has no rows to clear again.
+    QVERIFY2(importStatus->text().contains(QStringLiteral("schedules cleared: 0")),
+             qPrintable(importStatus->text()));
+    QCOMPARE(readAppSetting(profilePath, QStringLiteral("myInfo/name")),
+             std::optional<QString>{QStringLiteral("Bob")});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("teachers")),
+             std::optional<int>{3});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("classes")),
+             std::optional<int>{4});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_info")),
+             std::optional<int>{4});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_times")),
+             std::optional<int>{6});
+    const auto normalRowsAfterUpdate = readScheduleRows(
+        profilePath,
+        QStringLiteral("class_times")
+        );
+    QVERIFY(normalRowsAfterUpdate.has_value());
+    QCOMPARE(normalRowsAfterUpdate->size(), std::size_t(6));
+    QVERIFY(std::none_of(
+        normalRowsAfterUpdate->begin(),
+        normalRowsAfterUpdate->end(),
+        [&initialClass](const ScheduleRowRecord& row)
+        {
+            return row.classId == initialClass->id;
+        }
+        ));
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(historyProbe->savedHistories.empty());
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+    QVERIFY(QFileInfo::exists(originalBackup));
+
+    const auto runIntensiveImport = [
+        &page,
+        &profilePath
+        ](const int intensiveMode, const QString& expectedEffects) {
+        bool browseStarted = false;
+        bool reviewStarted = false;
+        bool importApplied = false;
+        bool effectsVerified = false;
+        auto driveImport = std::make_shared<std::function<void()>>();
+        *driveImport = [
+            &page,
+            &profilePath,
+            intensiveMode,
+            expectedEffects,
+            &browseStarted,
+            &reviewStarted,
+            &importApplied,
+            &effectsVerified,
+            driveImport
+            ] {
+            if (importApplied)
+            {
+                return;
+            }
+            QWidget* const modal = QApplication::activeModalWidget();
+            if (!modal)
+            {
+                QTimer::singleShot(10, qApp, *driveImport);
+                return;
+            }
+            if (modal->objectName()
+                == QStringLiteral("classMngrNextScheduleImportSourceDialog"))
+            {
+                auto* const status = modal->findChild<QLabel*>(
+                    QStringLiteral("classMngrNextScheduleImportSourceStatus")
+                    );
+                auto* const browse = modal->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextScheduleImportBrowse")
+                    );
+                auto* const kind = modal->findChild<QComboBox*>(
+                    QStringLiteral("classMngrNextScheduleImportKind")
+                    );
+                auto* const sheet = modal->findChild<QComboBox*>(
+                    QStringLiteral("classMngrNextScheduleImportSheet")
+                    );
+                auto* const user = modal->findChild<QComboBox*>(
+                    QStringLiteral("classMngrNextScheduleImportUser")
+                    );
+                auto* const review = modal->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextScheduleImportReview")
+                    );
+                QVERIFY(status && browse && kind && sheet && user && review);
+                if (!browseStarted)
+                {
+                    browseStarted = true;
+                    kind->setCurrentIndex(1);
+                    browse->click();
+                }
+                if (!status->text().contains(QStringLiteral("Workbook loaded")))
+                {
+                    QTimer::singleShot(10, qApp, *driveImport);
+                    return;
+                }
+                QCOMPARE(sheet->count(), 1);
+                QCOMPARE(sheet->currentIndex(), 0);
+                user->setCurrentIndex(1);
+                QCOMPARE(user->currentText(), QStringLiteral("Alice"));
+                if (!reviewStarted)
+                {
+                    reviewStarted = true;
+                    QTimer::singleShot(0, qApp, *driveImport);
+                    review->click();
+                }
+                return;
+            }
+            if (modal->objectName()
+                != QStringLiteral("classMngrNextScheduleImportReviewDialog"))
+            {
+                return;
+            }
+
+            auto* const mode = modal->findChild<QComboBox*>(
+                QStringLiteral("classMngrNextScheduleImportIntensiveMode")
+                );
+            auto* const effects = modal->findChild<QLabel*>(
+                QStringLiteral("classMngrNextScheduleImportEffects")
+                );
+            auto* const apply = modal->findChild<QPushButton*>(
+                QStringLiteral("classMngrNextScheduleImportApply")
+                );
+            QVERIFY(mode && effects && apply);
+            mode->setCurrentIndex(intensiveMode);
+            QVERIFY(effects->text().contains(expectedEffects));
+
+            if (intensiveMode == 1)
+            {
+                const auto existingClassId = readClassId(
+                    profilePath,
+                    QStringLiteral("E5"),
+                    QStringLiteral("Zeus")
+                    );
+                QVERIFY(existingClassId.has_value());
+                const QList<QGroupBox*> classRows = modal->findChildren<QGroupBox*>(
+                    QStringLiteral("classMngrNextScheduleImportClassRow")
+                    );
+                QGroupBox* matchingClass = nullptr;
+                for (QGroupBox* row : classRows)
+                {
+                    if (row->title().contains(QStringLiteral("E5 Zeus")))
+                    {
+                        matchingClass = row;
+                        break;
+                    }
+                }
+                QVERIFY(matchingClass);
+                auto* const action = matchingClass->findChild<QComboBox*>(
+                    QStringLiteral("classMngrNextScheduleImportClassAction")
+                    );
+                auto* const target = matchingClass->findChild<QComboBox*>(
+                    QStringLiteral("classMngrNextScheduleImportClassTarget")
+                    );
+                QVERIFY(action && target);
+                action->setCurrentIndex(action->findData(static_cast<int>(
+                    Application::ScheduleImportReviewClassAction::UpdateExisting
+                    )));
+                target->setCurrentIndex(target->findData(
+                    QString::number(*existingClassId)
+                    ));
+            }
+
+            QVERIFY(apply->isEnabled());
+            apply->click();
+            effectsVerified = true;
+            importApplied = true;
+        };
+        QTimer::singleShot(0, qApp, *driveImport);
+        page->findChild<QPushButton*>(
+            QStringLiteral("classMngrNextInitialSetupImportSchedule")
+            )->click();
+        QVERIFY(importApplied);
+        QVERIFY(effectsVerified);
+    };
+
+    runIntensiveImport(
+        0,
+        QStringLiteral("Existing schedule rows replaced: 0; preserved: 1; schedule rows written: 2.")
+        );
+    const auto preservedIntensiveRows = readScheduleRows(
+        profilePath,
+        QStringLiteral("class_intensive_times")
+        );
+    QVERIFY(preservedIntensiveRows.has_value());
+    QCOMPARE(preservedIntensiveRows->size(), std::size_t(3));
+    QVERIFY(std::any_of(
+        preservedIntensiveRows->begin(),
+        preservedIntensiveRows->end(),
+        [&initialClass](const ScheduleRowRecord& row)
+        {
+            return row.classId == initialClass->id
+                && row.day == QStringLiteral("Tuesday")
+                && row.start == QStringLiteral("9:00 AM")
+                && row.end == QStringLiteral("9:55 AM");
+        }
+        ));
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("intensive_slot_states")),
+             std::optional<int>{65});
+    QCOMPARE(readIntensiveSlotState(
+                 profilePath,
+                 QStringLiteral("Friday"),
+                 QStringLiteral("09:00")
+                 ),
+             std::optional<QString>{QStringLiteral("empty")});
+    QCOMPARE(readIntensiveSlotState(
+                 profilePath,
+                 QStringLiteral("Monday"),
+                 QStringLiteral("10:00")
+                 ),
+             std::optional<QString>{QStringLiteral("essay")});
+    QCOMPARE(readAppSetting(profilePath, QStringLiteral("myInfo/name")),
+             std::optional<QString>{QStringLiteral("Bob")});
+
+    runIntensiveImport(
+        1,
+        QStringLiteral("Existing schedule rows replaced: 3; preserved: 0; schedule rows written: 2.")
+        );
+    const auto replacedIntensiveRows = readScheduleRows(
+        profilePath,
+        QStringLiteral("class_intensive_times")
+        );
+    QVERIFY(replacedIntensiveRows.has_value());
+    QCOMPARE(replacedIntensiveRows->size(), std::size_t(2));
+    QVERIFY(std::none_of(
+        replacedIntensiveRows->begin(),
+        replacedIntensiveRows->end(),
+        [&initialClass](const ScheduleRowRecord& row)
+        {
+            return row.classId == initialClass->id;
+        }
+        ));
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_times")),
+             std::optional<int>{6});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("intensive_slot_states")),
+             std::optional<int>{65});
+    QCOMPARE(readIntensiveSlotState(
+                 profilePath,
+                 QStringLiteral("Friday"),
+                 QStringLiteral("09:00")
+                 ),
+             std::optional<QString>{QStringLiteral("empty")});
+    QCOMPARE(readIntensiveSlotState(
+                 profilePath,
+                 QStringLiteral("Monday"),
+                 QStringLiteral("10:00")
+                 ),
+             std::optional<QString>{QStringLiteral("essay")});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("classes")),
+             std::optional<int>{5});
+    QCOMPARE(readAppSetting(profilePath, QStringLiteral("myInfo/name")),
+             std::optional<QString>{QStringLiteral("Bob")});
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+    QVERIFY(QFileInfo::exists(originalBackup));
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(historyProbe->savedHistories.empty());
+
+    bool profileUpdateBrowseStarted = false;
+    bool profileUpdateReviewStarted = false;
+    bool profileUpdateConfirmationAccepted = false;
+    bool profileUpdateApplied = false;
+    auto driveProfileUpdate = std::make_shared<std::function<void()>>();
+    *driveProfileUpdate = [
+        &page,
+        &profilePath,
+        &profileUpdateBrowseStarted,
+        &profileUpdateReviewStarted,
+        &profileUpdateConfirmationAccepted,
+        &profileUpdateApplied,
+        driveProfileUpdate
+        ] {
+        if (profileUpdateApplied)
+        {
+            return;
+        }
+        QWidget* const modal = QApplication::activeModalWidget();
+        if (!modal)
+        {
+            QTimer::singleShot(10, qApp, *driveProfileUpdate);
+            return;
+        }
+        if (auto* const confirmation = qobject_cast<QMessageBox*>(modal))
+        {
+            QTimer::singleShot(0, qApp, *driveProfileUpdate);
+            confirmation->button(QMessageBox::Yes)->click();
+            profileUpdateConfirmationAccepted = true;
+            return;
+        }
+        if (modal->objectName()
+            == QStringLiteral("classMngrNextScheduleImportSourceDialog"))
+        {
+            auto* const status = modal->findChild<QLabel*>(
+                QStringLiteral("classMngrNextScheduleImportSourceStatus")
+                );
+            auto* const browse = modal->findChild<QPushButton*>(
+                QStringLiteral("classMngrNextScheduleImportBrowse")
+                );
+            auto* const sheet = modal->findChild<QComboBox*>(
+                QStringLiteral("classMngrNextScheduleImportSheet")
+                );
+            auto* const user = modal->findChild<QComboBox*>(
+                QStringLiteral("classMngrNextScheduleImportUser")
+                );
+            auto* const profileNameConfirmation = modal->findChild<QCheckBox*>(
+                QStringLiteral("classMngrNextScheduleImportProfileNameConfirmation")
+                );
+            auto* const review = modal->findChild<QPushButton*>(
+                QStringLiteral("classMngrNextScheduleImportReview")
+                );
+            QVERIFY(status && browse && sheet && user
+                    && profileNameConfirmation && review);
+            if (!profileUpdateBrowseStarted)
+            {
+                profileUpdateBrowseStarted = true;
+                browse->click();
+            }
+            if (!status->text().contains(QStringLiteral("Workbook loaded")))
+            {
+                QTimer::singleShot(10, qApp, *driveProfileUpdate);
+                return;
+            }
+            sheet->setCurrentIndex(1);
+            user->setCurrentIndex(1);
+            QCOMPARE(user->currentText(), QStringLiteral("Alice"));
+            QVERIFY(profileNameConfirmation->isVisible());
+            profileNameConfirmation->setChecked(true);
+            if (!profileUpdateReviewStarted)
+            {
+                profileUpdateReviewStarted = true;
+                QTimer::singleShot(0, qApp, *driveProfileUpdate);
+                review->click();
+            }
+            return;
+        }
+        if (modal->objectName()
+            != QStringLiteral("classMngrNextScheduleImportReviewDialog"))
+        {
+            return;
+        }
+        const auto* const effects = modal->findChild<QLabel*>(
+            QStringLiteral("classMngrNextScheduleImportEffects")
+            );
+        auto* const apply = modal->findChild<QPushButton*>(
+            QStringLiteral("classMngrNextScheduleImportApply")
+            );
+        QVERIFY(effects && apply);
+        QVERIFY(effects->text().contains(
+            QStringLiteral("The confirmed workbook name updates My Information after a successful apply.")
+            ));
+        QVERIFY(apply->isEnabled());
+        apply->click();
+        profileUpdateApplied = true;
+    };
+    QTimer::singleShot(0, qApp, *driveProfileUpdate);
+    page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupImportSchedule")
+        )->click();
+    QVERIFY(profileUpdateConfirmationAccepted);
+    QVERIFY(profileUpdateApplied);
+    QCOMPARE(readAppSetting(profilePath, QStringLiteral("myInfo/name")),
+             std::optional<QString>{QStringLiteral("Alice")});
+    QVERIFY(page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupScheduleImportStatus")
+        )->text().contains(QStringLiteral("Setup remains pending")));
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+    QVERIFY(QFileInfo::exists(originalBackup));
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(historyProbe->savedHistories.empty());
+
+    auto* const finish = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupFinish")
+        );
+    auto* const skip = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupSkipScheduleAndFinish")
+        );
+    QVERIFY(finish && skip);
+    QVERIFY(!finish->isHidden());
+    QVERIFY(skip->isHidden());
+
+    finish->click();
+    QCOMPARE(historyProbe->loadCount, 1);
+    QCOMPARE(historyProbe->saveCount, 1);
+    QCOMPARE(historyProbe->savedHistories.size(), std::size_t(1));
+    QCOMPARE(historyProbe->savedHistories.front().paths.size(), std::size_t(1));
+    QCOMPARE(
+        QString::fromUtf8(historyProbe->savedHistories.front().paths.front().value()),
+        QFileInfo(profilePath).absoluteFilePath()
+        );
+    QVERIFY(!QFileInfo::exists(recoveryJournalPath));
+    QVERIFY(!QFileInfo::exists(originalBackup));
+    QVERIFY(QFileInfo::exists(profilePath));
+    QVERIFY(finish->isHidden());
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
 }
 
 void InitialSetupTeacherEntryBootstrapIntegrationTests::
@@ -1754,6 +2905,7 @@ void InitialSetupTeacherEntryBootstrapIntegrationTests::classTimesLabelsAndBehav
         .classDetailsReady = true
     };
     int saveCalls = 0;
+    int finishCalls = 0;
     std::optional<Application::InitialSetupClassTimes> savedTimes;
     const Ui::InitialSetupPageActions actions{
         .state = [&state] { return state; },
@@ -1769,6 +2921,10 @@ void InitialSetupTeacherEntryBootstrapIntegrationTests::classTimesLabelsAndBehav
             savedTimes = times;
             state.classTimesSaved = true;
             return Application::InitialSetupClassTimesSaveResult::success();
+        },
+        .finishSetup = [&] {
+            ++finishCalls;
+            state.setupPending = false;
         }
     };
     const Ui::PageDescriptor descriptor{
@@ -1787,6 +2943,11 @@ void InitialSetupTeacherEntryBootstrapIntegrationTests::classTimesLabelsAndBehav
         host.pageInstance(QStringLiteral("initial_setup"))
         );
     QVERIFY(page);
+    auto* const skipScheduleAndFinish = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupSkipScheduleAndFinish")
+        );
+    QVERIFY(skipScheduleAndFinish);
+    QVERIFY(skipScheduleAndFinish->isHidden());
     auto* const group = page->findChild<QGroupBox*>(
         QStringLiteral("classMngrNextInitialSetupClassTimes")
         );
@@ -2061,11 +3222,16 @@ void InitialSetupTeacherEntryBootstrapIntegrationTests::classTimesLabelsAndBehav
     QCOMPARE(savedTimes->intensiveTimes.at(1).endMinute().rawValue(), 1315);
     QVERIFY(state.classTimesSaved);
     QVERIFY(!group->isEnabled());
+    QVERIFY(!skipScheduleAndFinish->isHidden());
     auto* const status = page->findChild<QLabel*>(
         QStringLiteral("classMngrNextInitialSetupClassTimesStatus")
         );
     QVERIFY(status);
     QCOMPARE(status->text(), savedStatus);
+    skipScheduleAndFinish->click();
+    QCOMPARE(finishCalls, 1);
+    QVERIFY(!state.setupPending);
+    QVERIFY(skipScheduleAndFinish->isHidden());
     if (locale == QStringLiteral("ko_KR"))
     {
         QVERIFY(application.removeTranslator(&translator));

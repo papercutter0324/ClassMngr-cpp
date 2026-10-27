@@ -123,12 +123,14 @@ set(CLASSMNGR_WORKSPACE_STORE_SOURCES
     "src/features/schedule/services/schedule_import_plan_validator.cpp"
 )
 
-# The XLSX reader and sectioned teacher importer are a shared QtCore+ZLIB
-# production component. Legacy teacher import and the Next setup workflow use
-# this one compiled implementation.
-set(CLASSMNGR_TEACHER_IMPORT_PARSER_SOURCES
+# The common XLSX reader is kept independent from importer-specific parsers.
+set(CLASSMNGR_WORKBOOK_READER_SOURCES
     "src/features/calendar/calendar_workbook_reader.cpp"
     "src/features/calendar/calendar_workbook_reader.h"
+)
+
+# Legacy teacher import and the Next setup workflow share this parser target.
+set(CLASSMNGR_TEACHER_IMPORT_PARSER_SOURCES
     "src/features/teacher/import/sectioned_contact_list_template.cpp"
     "src/features/teacher/import/sectioned_contact_list_template.h"
     "src/features/teacher/import/teacher_import_file_validator.cpp"
@@ -139,11 +141,29 @@ set(CLASSMNGR_TEACHER_IMPORT_PARSER_SOURCES
     "src/features/teacher/import/teacher_import_template_registry.h"
 )
 
+# Keep schedule workbook parsing and its domain rules in narrow shared
+# components. Next setup can consume the same parser as the legacy schedule
+# importer without linking the broad Features or Domain object targets.
+set(CLASSMNGR_SCHEDULE_IMPORT_RULES_SOURCES
+    "src/domain/rules/schedule_import_rules.cpp"
+    "src/domain/rules/schedule_import_rules.h"
+    "src/domain/rules/schedule_value_parser.cpp"
+    "src/domain/rules/schedule_value_parser.h"
+)
+
+set(CLASSMNGR_SCHEDULE_IMPORT_PARSER_SOURCES
+    "src/features/schedule/import/schedule_workbook_parser.cpp"
+    "src/features/schedule/import/schedule_workbook_parser.h"
+)
+
 set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
     "src/next/platform/workspace_store_gateway.cpp"
     "src/next/platform/workspace_store_gateway.h"
     "src/next/platform/workspace_store_initial_setup_teacher_entry_port.h"
     "src/next/platform/workspace_store_initial_setup_class_times_ports.h"
+    "src/next/platform/workspace_store_schedule_import_state_snapshot_port.h"
+    "src/next/platform/workspace_store_schedule_import_apply_port.h"
+    "src/next/platform/schedule_import_apply_port_mapping.h"
     "src/next/platform/workspace_store_custom_color_palette_preferences_port.cpp"
     "src/next/platform/workspace_store_custom_color_palette_preferences_port.h"
     "src/next/platform/workspace_store_personal_details_port.h"
@@ -194,11 +214,7 @@ set(CLASSMNGR_DOMAIN_SOURCES
     "src/domain/models/teacher_import.h"
     "src/domain/models/testing_block.h"
     "src/domain/models/testing_class.h"
-    "src/domain/rules/schedule_import_rules.cpp"
-    "src/domain/rules/schedule_import_rules.h"
     "src/domain/rules/schedule_key_rules.h"
-    "src/domain/rules/schedule_value_parser.cpp"
-    "src/domain/rules/schedule_value_parser.h"
     "src/domain/validation/calendar_event_validator.cpp"
     "src/domain/validation/calendar_event_validator.h"
     "src/domain/validation/class_info_validator.cpp"
@@ -465,8 +481,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/roster/ui/roster_print_dialog.h"
     "src/features/roster/ui/roster_table_view.cpp"
     "src/features/roster/ui/roster_table_view.h"
-    "src/features/schedule/import/schedule_workbook_parser.cpp"
-    "src/features/schedule/import/schedule_workbook_parser.h"
     "src/features/schedule/schedule_settings_preferences.cpp"
     "src/features/schedule/schedule_settings_preferences.h"
     "src/features/schedule/services/schedule_import_plan_validator.h"
@@ -694,10 +708,14 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/application_shell.h"
     "src/next/ui/initial_page.cpp"
     "src/next/ui/initial_page.h"
+    "src/next/ui/initial_setup_schedule_import_dialog.cpp"
+    "src/next/ui/initial_setup_schedule_import_dialog.h"
     "src/next/ui/initial_setup_teacher_import_dialog.cpp"
     "src/next/ui/initial_setup_teacher_import_dialog.h"
     "src/next/ui/teacher_import_request_mapper.cpp"
     "src/next/ui/teacher_import_request_mapper.h"
+    "src/next/ui/schedule_import_request_mapper.cpp"
+    "src/next/ui/schedule_import_request_mapper.h"
     "src/next/ui/navigation_model.cpp"
     "src/next/ui/navigation_model.h"
     "src/next/ui/prompt_automation.h"

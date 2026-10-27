@@ -39,7 +39,7 @@ foreach(_line IN LISTS _report_lines)
 endforeach()
 
 set(_expected_next_links
-    "Qt6::Core|Qt6::Widgets|ClassMngrNext::Application|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextDocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|Qt6::Concurrent|Qt6::Network"
+    "Qt6::Core|Qt6::Widgets|ClassMngrNext::Application|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextDocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
 )
 if(NOT _next_links STREQUAL _expected_next_links)
     message(FATAL_ERROR
@@ -74,7 +74,7 @@ if(NOT _document_catalog_test_links STREQUAL "ClassMngrNext::DocumentCatalog")
 endif()
 
 set(_expected_bootstrap_test_links
-    "ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::Widgets"
+    "ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::Widgets"
 )
 if(NOT _bootstrap_test_links STREQUAL _expected_bootstrap_test_links)
     message(FATAL_ERROR
