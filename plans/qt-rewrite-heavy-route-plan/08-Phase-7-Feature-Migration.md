@@ -38,11 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
-- Current note: 7A.1–7A.7 are accepted and committed; 7A.7 is `a83b7280`.
-  Candidate #8, normal `.tps` creation and replacement, is active. The 7A
+- Current note: 7A.1–7A.8 are accepted and committed; 7A.8 is `95c1243a`.
+  Candidate #9, existing `.tps` open, is active. The 7A
   screenshot comparison and memory measurement remain open, as do the 7A and
   Phase 7 exit gates. Batch 1 remains active and unpushed. See the progress log
-  for 7A.7 evidence and limits.
+  for 7A.8 evidence and limits.
 
 ### Slice batches
 
@@ -250,8 +250,35 @@ keep current status in this plan and live batches in the shared tracker.
 - Limits and next work: no full suite, package, Windows, screenshot, QWizard
   parity, or peak-memory check ran. The 7A screenshot comparison and memory
   measurement, plus the 7A and Phase 7 exit gates, remain open. Candidate #8,
-  normal `.tps` creation and replacement, is active. Batch 1 remains active and
+  normal `.tps` creation and replacement, followed. Batch 1 remains active and
   unpushed; do not start next-batch discovery before candidate #14.
+
+### 7A.8 — Normal workspace creation and replacement accepted (2026-10-27)
+
+- Commit: `95c1243a` (`Phase7 - Add normal workspace creation`). The File menu
+  action and New shortcut create an empty schema-v6 `.tps` with no setup-pending
+  state. A typed `WorkspaceCreationLifecycle` policy uses a direct
+  `WorkspaceStore` adapter; this flow does not use `ApplicationServices`,
+  `FileController`, or `InitialSetupLifecycle`. It guards pending setup/recovery
+  and confirms page leave before opening the dialog.
+- Path policy preserves `.tps` case, normalizes trailing `.db` to `.tps`, and
+  appends `.tps` to other suffixes. Existing targets move to a recovery sibling
+  before replacement; failures restore originals when safe. Recent history is
+  written once, only after success.
+- Independent Tester: CTest passed 7/7 and the new-flow QtTest passed 14/14.
+  Coverage includes same-path replacement, failed-create restore/reopen,
+  partial-workspace close, close and cleanup failures, retained recovery warning,
+  recent-history write failure, cancellation, and suffix behavior. Source
+  ownership validated 1,732 files; `git diff --check` passed. Resource inventory
+  `--check` passed after a metadata-only regeneration; manifest matches the tree
+  and all 187/187 direct content hashes.
+- Limits and next work: recovery-name collision, failed partial-file cleanup or
+  move, failed original restoration, and failed prior-workspace reopen remain
+  untested; no product defect was reproduced. No full suite, Windows, package,
+  screenshot, or peak-memory check ran. The 7A screenshot comparison and memory
+  measurement, plus the 7A and Phase 7 exit gates, remain open. Candidate #9,
+  existing `.tps` open, is active. Batch 1 remains active and unpushed; do not
+  start next-batch discovery before candidate #14.
 
 ## Objective
 

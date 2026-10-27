@@ -63,9 +63,14 @@ direct WorkspaceStore snapshot/apply adapters. The review exposes destructive
 clear counts; import leaves setup pending, and only explicit Finish or Skip and
 Finish writes recents. Source cancel restores the original profile; review
 cancel returns to source selection. Candidate #8, normal `.tps` creation and
-replacement, is active; Batch 1 remains unpushed. Setup-screen screenshot
-comparison, Phase 7 memory evidence, and all remaining 7A workflows remain
-open. Active candidates are tracked in
+replacement, passed independent focused verification and was committed as
+`95c1243a`. It uses the typed replacement lifecycle and direct WorkspaceStore
+adapter to create empty schema-v6 profiles, safely replace existing targets,
+and update recent history only after success. Rare recovery-name collision,
+failed original restoration and failed prior-workspace reopen branches remain
+untested. Candidate #9, existing `.tps` open, is active; Batch 1 remains
+un-pushed. Setup-screen screenshot comparison, Phase 7 memory evidence, and all
+remaining 7A workflows remain open. Active candidates are tracked in
 `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
@@ -107,29 +112,31 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-27 (7A.7 committed; 7A.8 active)
+### Current checkpoint — 2026-10-27 (7A.8 committed; 7A.9 active)
 
-Phase 7 is in progress on the Heavy route. Slices 7A.1 through 7A.7 are
+### Current checkpoint — 2026-10-27 (7A.8 committed; 7A.9 active)
+
+Phase 7 is in progress on the Heavy route. Slices 7A.1 through 7A.8 are
 committed at `d49f34fe`, `1f9b30bf`, `01aaf3d7`, `8bee6dbb`, `932fdfb2`,
-`97d45d3d`, and `a83b7280`. Slice 7A.7 adds optional Next schedule import
-after class times. It uses a Next-owned source/review flow, a narrow shared
-workbook-parser boundary, coherent WorkspaceStore snapshot reads, typed review
-decisions, and transactional direct-store apply. Normal replacement and
-intensive update/replace effects are visible before apply. Import leaves setup
-pending; source cancel invokes recovery, review cancel returns to source, and
-only explicit Finish or Skip and Finish completes setup.
+`97d45d3d`, `a83b7280`, and `95c1243a`. Slice 7A.8 adds normal Next profile
+creation/replacement separate from Initial Setup. The File menu action and New
+shortcut use `WorkspaceCreationLifecycle` with a direct WorkspaceStore
+adapter, preserve `.tps` path normalization, create an empty schema-v6
+workspace, and write recent history only after success. Failed replacement
+preserves/restores the prior workspace when safe; recovery-copy cleanup failure
+leaves the new profile active and exposes the retained recovery path.
 
-Independent focused verification passed 19/19 CTests. The full legacy schedule
-dialog binary passed 60/60; Next workflow passed 16/16; setup integration
-passed 9/9; the parser passed 99 with one optional external-workbook test
-skipped. Coverage includes rollback/retry, regular replacement, intensive
-preserve/replace, profile-name confirmation, source/review cancel behavior,
-control-to-request mapping, zero and nonzero clear counts, and explicit finish.
-CMake ownership validated 1,727 sources; resource inventory had 194 runtime
-records with 1,889 Korean translations compiled; dependency-boundary and
-`git diff --check` passed. No full suite, package, Windows, screenshot,
-QWizard-parity, or peak-memory check ran. Those gates remain open. Candidate
-#8, normal `.tps` creation and replacement, is active; Batch 1 remains
+Independent focused verification passed 7/7 CTests; the new-flow QtTest passed
+14/14. Tests cover dialog cancel/path policy, same-path replacement, failed
+create restoration, active close failure, failed partial-workspace close,
+cleanup failure, history-write failure, and setup/recovery guards. CMake
+ownership validated 1,732 files. Resource inventory check passed after a
+metadata-only refresh; all 187 direct resource hashes match the generated
+manifest. `git diff --check` and the dependency-boundary test passed. Recovery
+name collision, failed partial-file cleanup/move, failed original restoration,
+and failed prior-workspace reopen remain untested. No full suite, Windows,
+package, screenshot, QWizard-parity, or peak-memory check ran. Those gates
+remain open. Candidate #9, existing `.tps` open, is active; Batch 1 remains
 un-pushed.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)

@@ -16,6 +16,11 @@
   will be cleared and report the applied count. Keep source-dialog cancellation
   distinct from review cancellation, and retain typed transaction validation
   and retry behavior in setup flows.
+- Keep normal profile creation separate from Initial Setup: use one neutral
+  path policy, preserve the current workspace until the new target is ready,
+  and update recent history only after creation succeeds. If recovery cleanup
+  fails after success, retain and report the recovery path without undoing the
+  new active profile.
 - Keep the Next setup workbook flow on one typed path: asynchronous parser
   validation and review mapping feed `TeacherImportUseCaseRequest`, and the
   pending `WorkspaceStore` owns the import transaction. Verify selection,
