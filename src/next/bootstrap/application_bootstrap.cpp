@@ -3,6 +3,7 @@
 #include "next/bootstrap/qt_startup_diagnostics_sink.h"
 #include "next/application/recent_workspace_history_use_case.h"
 #include "next/application/normal_workspace_creation_flow.h"
+#include "next/application/open_existing_workspace_flow.h"
 #include "next/application/initial_setup_class_details_requirements.h"
 #include "next/application/positive_decimal_id_validation.h"
 #include "core/settingsmanager.h"
@@ -667,6 +668,9 @@ Application::StartupResult ApplicationBootstrap::start()
         });
         m_shell->setNewTeacherProfileHandler([this] {
             createNewTeacherProfile();
+        });
+        m_shell->setOpenTeacherProfileHandler([this] {
+            openExistingTeacherProfile();
         });
     }
     catch (const std::exception&)
@@ -1576,6 +1580,114 @@ void ApplicationBootstrap::createNewTeacherProfile()
         }
         );
     static_cast<void>(flow.run());
+}
+
+void ApplicationBootstrap::openExistingTeacherProfile()
+{
+    if (!m_shell || !m_applicationRuntime || !m_initialSetupLifecycle)
+    {
+        return;
+    }
+
+    const auto setupPending = [this] {
+        if (m_initialSetupLifecycle->hasPendingSetup())
+        {
+            return true;
+        }
+        const Ui::InitialSetupPageState setupState = initialSetupPageState();
+        return setupState.setupPending
+            || setupState.recoveryAvailable
+            || setupState.recoveryError;
+    };
+    if (setupPending())
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "A profile setup or recovery is in progress. Finish or resolve it before opening another profile.",
+                .severity = Application::NotificationSeverity::Warning
+            }
+            ));
+        return;
+    }
+
+    Platform::QSettingsFileDialogDirectoryPreferencesAdapter directoryPreferences;
+    std::unique_ptr<Application::FileDialogPort> ownedFileDialog;
+    if (m_startupWorkspaceSeams.openProfileFileDialogPortFactory)
+    {
+        ownedFileDialog =
+            m_startupWorkspaceSeams.openProfileFileDialogPortFactory();
+    }
+    else
+    {
+        ownedFileDialog = std::make_unique<Ui::QtFileDialogPresenter>(
+            directoryPreferences,
+            m_shell.get()
+            );
+    }
+    if (!ownedFileDialog)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The profile open dialog is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+
+    std::unique_ptr<Application::RecentWorkspaceHistoryPort> ownedRecentHistory;
+    if (m_startupWorkspaceSeams.openProfileRecentWorkspaceHistoryPortFactory)
+    {
+        ownedRecentHistory =
+            m_startupWorkspaceSeams.openProfileRecentWorkspaceHistoryPortFactory();
+    }
+    else
+    {
+        ownedRecentHistory =
+            std::make_unique<Platform::SettingsManagerRecentWorkspaceHistoryPort>();
+    }
+    if (!ownedRecentHistory)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "Recent profile history is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+
+    Platform::WorkspaceProfilePathPolicy pathPolicy;
+    Application::OpenExistingWorkspaceFlow flow(
+        *ownedFileDialog,
+        pathPolicy,
+        m_applicationRuntime->workspaceCoordinator(),
+        *ownedRecentHistory,
+        m_shell->notificationPort(),
+        setupPending
+        );
+    const Application::OpenExistingWorkspaceOutcome outcome = flow.run();
+    if (outcome.status != Application::OpenExistingWorkspaceStatus::Opened)
+    {
+        return;
+    }
+
+    m_shell->updateNavigationAccessContext(
+        m_applicationRuntime->workspaceState().snapshot().lifecycle(),
+        std::nullopt
+        );
+    if (!m_shell->navigateTo(
+            pageId(QStringLiteral("my_workspace")),
+            Ui::NavigationCause::Selection
+            ))
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The profile opened, but the workspace page could not be selected.",
+                .severity = Application::NotificationSeverity::Warning
+            }
+            ));
+    }
 }
 
 void ApplicationBootstrap::resumeInitialSetupProfile()

@@ -48,6 +48,7 @@ public:
 
     void setCloseHandler(CloseHandler handler);
     void setNewTeacherProfileHandler(std::function<void()> handler);
+    void setOpenTeacherProfileHandler(std::function<void()> handler);
     void setNavigationGuard(NavigationGuard guard);
     [[nodiscard]] PageHost& pageHost() noexcept;
     [[nodiscard]] const PageHost& pageHost() const noexcept;
@@ -90,12 +91,14 @@ private:
     QPushButton* m_backButton = nullptr;
     QPushButton* m_forwardButton = nullptr;
     QAction* m_newTeacherProfileAction = nullptr;
+    QAction* m_openTeacherProfileAction = nullptr;
     std::optional<NavigationModel> m_navigationModel;
     QHash<QString, QIcon> m_navigationIcons;
     std::vector<Resources::ScopedResource<QImage>> m_navigationIconImages;
     NavigationGuard m_navigationGuard;
     CloseHandler m_closeHandler;
     std::function<void()> m_newTeacherProfileHandler;
+    std::function<void()> m_openTeacherProfileHandler;
     QtNotificationPresenter m_notificationPresenter;
 };
 

@@ -431,6 +431,8 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/initial_setup_lifecycle.h
     src/next/application/workspace_creation_lifecycle.h
     src/next/application/normal_workspace_creation_flow.h
+    src/next/application/open_existing_workspace_flow.h
+    src/next/application/workspace_open_profile_path_policy.h
     src/next/application/workspace_coordinator.h
     src/next/application/workspace_state.h
     src/next/application/workspace_use_case.h

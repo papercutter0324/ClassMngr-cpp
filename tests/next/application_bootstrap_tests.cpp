@@ -112,6 +112,8 @@ private slots:
     void staleFirstRecentPathIsPrunedWithoutTryingLaterCandidates();
     void interruptedSetupOffersRecoveryBeforeAutoOpenOrRecentHistory();
     void createActionUsesSelectedPathAndDoesNotRecordPendingProfile();
+    void openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess();
+    void openActionDoesNotBypassPendingOrUnreadableSetupRecovery();
     void teacherImportUsesPendingStoreTransactionAndCancelRecoversBackup();
     void imageSignatureSaveReopensAndResumesFromFixture();
     void failedPersonalDetailsSavePreservesReplacementBackup();
@@ -4479,6 +4481,242 @@ createActionUsesSelectedPathAndDoesNotRecordPendingProfile()
     QVERIFY(resumedMode->isChecked());
     QVERIFY(!resumedCancel->isHidden());
     QVERIFY(resumedBootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString journalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    const QString firstPath = temporaryDirectory.filePath(
+        QStringLiteral("first.tps")
+        );
+    const QString failedPath = temporaryDirectory.filePath(
+        QStringLiteral("failed.tps")
+        );
+    const auto touch = [](const QString& path) {
+        QFile file(path);
+        return file.open(QIODevice::WriteOnly)
+            && file.write(QByteArrayLiteral("selected profile")) > 0;
+    };
+    QVERIFY(touch(firstPath));
+    QVERIFY(touch(failedPath));
+    const Application::WorkspaceLocation firstNormalized(
+        QFileInfo(firstPath).canonicalFilePath().toUtf8().toStdString()
+        );
+    const Application::WorkspaceLocation failedNormalized(
+        QFileInfo(failedPath).canonicalFilePath().toUtf8().toStdString()
+        );
+
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    historyProbe->history.paths = {workspaceLocation(
+        temporaryDirectory.filePath(QStringLiteral("older.tps"))
+        )};
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        firstPath.toUtf8().toStdString()
+        );
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = journalPath;
+    seams.workspaceGatewayFactory = [gatewayProbe] {
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
+    };
+    seams.openProfileFileDialogPortFactory = [fileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(fileDialogProbe);
+    };
+    seams.openProfileRecentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    QAction* const openAction = bootstrap.shell()->findChild<QAction*>(
+        QStringLiteral("classMngrNextOpenTeacherProfile")
+        );
+    QVERIFY(openAction);
+
+    openAction->trigger();
+    QCOMPARE(fileDialogProbe->openCount, 1);
+    QVERIFY(fileDialogProbe->lastOpenRequest.has_value());
+    QCOMPARE(fileDialogProbe->lastOpenRequest->title,
+             std::string("Open Teacher Profile"));
+    QCOMPARE(fileDialogProbe->lastOpenRequest->nameFilters,
+             std::vector<std::string>{"ClassMngr Teacher Profile (*.tps)"});
+    QCOMPARE(gatewayProbe->openCalls, 1);
+    QCOMPARE(historyProbe->saveCount, 1);
+    QCOMPARE(QString::fromUtf8(
+                 bootstrap.workspaceStateSnapshot().session()->location().value().data(),
+                 static_cast<qsizetype>(bootstrap.workspaceStateSnapshot().session()
+                     ->location().value().size())
+                 ),
+             QFileInfo(firstPath).canonicalFilePath());
+    QCOMPARE(bootstrap.shell()->navigationModel()->workspaceState(),
+             Application::WorkspaceLifecycleState::Open);
+    QVERIFY(bootstrap.shell()->navigationModel()->currentPageId().has_value());
+    QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId()->value(),
+             QStringLiteral("my_workspace"));
+    QCOMPARE(historyProbe->saves.back().paths.front(), firstNormalized);
+    QCOMPARE(historyProbe->saves.back().paths.at(1),
+             historyProbe->history.paths.front());
+
+    const Application::WorkspaceSession firstSession =
+        *bootstrap.workspaceStateSnapshot().session();
+    fileDialogProbe->openPath.reset();
+    openAction->trigger();
+    QCOMPARE(fileDialogProbe->openCount, 2);
+    QCOMPARE(gatewayProbe->openCalls, 1);
+    QCOMPARE(historyProbe->saveCount, 1);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session(),
+             std::optional<Application::WorkspaceSession>(firstSession));
+
+    gatewayProbe->openError = Domain::OperationError{
+        .code = Domain::ErrorCode::Technical,
+        .message = "injected invalid/corrupt profile failure",
+        .recoverable = true
+    };
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        failedPath.toUtf8().toStdString()
+        );
+    openAction->trigger();
+    QCOMPARE(fileDialogProbe->openCount, 3);
+    QCOMPARE(gatewayProbe->openCalls, 2);
+    QCOMPARE(historyProbe->saveCount, 1);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session(),
+             std::optional<Application::WorkspaceSession>(firstSession));
+
+    gatewayProbe->openError.reset();
+    openAction->trigger();
+    QCOMPARE(gatewayProbe->openCalls, 3);
+    QCOMPARE(historyProbe->saveCount, 2);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+             failedNormalized);
+    QCOMPARE(historyProbe->saves.back().paths.front(), failedNormalized);
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+openActionDoesNotBypassPendingOrUnreadableSetupRecovery()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("pending.tps")
+        );
+    const QString backupPath = temporaryDirectory.filePath(
+        QStringLiteral(".pending.initial-setup-backup")
+        );
+    const QString journalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    const auto writeFile = [](const QString& path, const QByteArray& contents) {
+        QFile file(path);
+        return file.open(QIODevice::WriteOnly | QIODevice::Truncate)
+            && file.write(contents) == contents.size();
+    };
+    QVERIFY(writeFile(profilePath, QByteArrayLiteral("pending profile")));
+    QVERIFY(writeFile(backupPath, QByteArrayLiteral("original profile")));
+    const QByteArray journalPayload = QJsonDocument(QJsonObject{
+        {QStringLiteral("version"), 1},
+        {QStringLiteral("profile"), QFileInfo(profilePath).absoluteFilePath()},
+        {QStringLiteral("originalBackup"), QFileInfo(backupPath).absoluteFilePath()}
+    }).toJson(QJsonDocument::Compact);
+    QVERIFY(writeFile(journalPath, journalPayload));
+
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        profilePath.toUtf8().toStdString()
+        );
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    int openHistoryFactoryCalls = 0;
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    seams.recentAutoOpenEnabled = true;
+    seams.initialSetupRecoveryJournalPath = journalPath;
+    seams.workspaceGatewayFactory = [gatewayProbe] {
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
+    };
+    seams.openProfileFileDialogPortFactory = [fileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(fileDialogProbe);
+    };
+    seams.openProfileRecentWorkspaceHistoryPortFactory = [&] {
+        ++openHistoryFactoryCalls;
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    QAction* const openAction = bootstrap.shell()->findChild<QAction*>(
+        QStringLiteral("classMngrNextOpenTeacherProfile")
+        );
+    QVERIFY(openAction);
+    openAction->trigger();
+    QCOMPARE(fileDialogProbe->openCount, 0);
+    QCOMPARE(openHistoryFactoryCalls, 0);
+    QCOMPARE(gatewayProbe->openCalls, 0);
+    QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
+    QFile journalBefore(journalPath);
+    QVERIFY(journalBefore.open(QIODevice::ReadOnly));
+    QCOMPARE(journalBefore.readAll(), journalPayload);
+    journalBefore.close();
+
+    QVERIFY(writeFile(journalPath, QByteArrayLiteral("{ unreadable recovery journal")));
+    openAction->trigger();
+    QCOMPARE(fileDialogProbe->openCount, 0);
+    QCOMPARE(openHistoryFactoryCalls, 0);
+    QCOMPARE(gatewayProbe->openCalls, 0);
+    QFile journalAfter(journalPath);
+    QVERIFY(journalAfter.open(QIODevice::ReadOnly));
+    QCOMPARE(journalAfter.readAll(), QByteArrayLiteral("{ unreadable recovery journal"));
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);
 }
 

@@ -104,6 +104,13 @@ ApplicationShell::ApplicationShell(
         QStringLiteral("classMngrNextNewTeacherProfile")
         );
     m_newTeacherProfileAction->setShortcut(QKeySequence::New);
+    m_openTeacherProfileAction = fileMenu->addAction(
+        QCoreApplication::translate("NextShell", "Open Teacher Profile…")
+        );
+    m_openTeacherProfileAction->setObjectName(
+        QStringLiteral("classMngrNextOpenTeacherProfile")
+        );
+    m_openTeacherProfileAction->setShortcut(QKeySequence::Open);
 
     connect(m_backButton, &QPushButton::clicked, this, [this] {
         static_cast<void>(navigateBack());
@@ -115,6 +122,12 @@ ApplicationShell::ApplicationShell(
         if (m_newTeacherProfileHandler)
         {
             m_newTeacherProfileHandler();
+        }
+    });
+    connect(m_openTeacherProfileAction, &QAction::triggered, this, [this] {
+        if (m_openTeacherProfileHandler)
+        {
+            m_openTeacherProfileHandler();
         }
     });
     connect(m_navigationTree, &QTreeWidget::currentItemChanged, this,
@@ -144,6 +157,11 @@ void ApplicationShell::setCloseHandler(CloseHandler handler)
 void ApplicationShell::setNewTeacherProfileHandler(std::function<void()> handler)
 {
     m_newTeacherProfileHandler = std::move(handler);
+}
+
+void ApplicationShell::setOpenTeacherProfileHandler(std::function<void()> handler)
+{
+    m_openTeacherProfileHandler = std::move(handler);
 }
 
 void ApplicationShell::setNavigationGuard(NavigationGuard guard)

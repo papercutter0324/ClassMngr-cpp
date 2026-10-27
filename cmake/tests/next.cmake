@@ -2438,6 +2438,22 @@ classmngr_add_qt_test(
         Qt6::Test
 )
 
+# Exercise interactive profile opening, failed-open preservation, and recovery
+# gating through the direct WorkspaceStore boundary.
+classmngr_add_qt_test(
+    NAME NextWorkspaceOpenFlow
+    OFFSCREEN
+    SOURCES
+        tests/next_workspace_open_flow_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNextWorkspace
+        ClassMngrWorkspaceStore
+        ClassMngrNextWorkspaceDomain
+        Qt6::Sql
+        Qt6::Test
+)
+
 # Verify teacher entry persistence and recovery through the v2 store boundary.
 classmngr_add_qt_test(
     NAME NextPlatformWorkspaceStoreInitialSetupTeacherEntryPersistence

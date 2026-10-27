@@ -223,6 +223,7 @@ private slots:
     void shellCommitsHistoryOnlyAfterGuardAndActivationSuccess();
     void shellHistoryControlsTrackAccessRevocation();
     void shellExposesNewTeacherProfileAction();
+    void shellExposesOpenTeacherProfileAction();
     void shellOwnsTransientNotificationPortAndKeepsIdleStatusBarHidden();
 
 private:
@@ -828,6 +829,27 @@ void NavigationModelTests::shellExposesNewTeacherProfileAction()
 
     int invocationCount = 0;
     shell.setNewTeacherProfileHandler([&invocationCount] {
+        ++invocationCount;
+    });
+    action->trigger();
+    QCOMPARE(invocationCount, 1);
+}
+
+void NavigationModelTests::shellExposesOpenTeacherProfileAction()
+{
+    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    QAction* const action = shell.findChild<QAction*>(
+        QStringLiteral("classMngrNextOpenTeacherProfile")
+        );
+    QVERIFY(action != nullptr);
+    QCOMPARE(action->text(), QStringLiteral("Open Teacher Profile…"));
+    QCOMPARE(action->shortcut(), QKeySequence::Open);
+    auto* const fileMenu = qobject_cast<QMenu*>(action->parent());
+    QVERIFY(fileMenu != nullptr);
+    QCOMPARE(fileMenu->title(), QStringLiteral("File"));
+
+    int invocationCount = 0;
+    shell.setOpenTeacherProfileHandler([&invocationCount] {
         ++invocationCount;
     });
     action->trigger();

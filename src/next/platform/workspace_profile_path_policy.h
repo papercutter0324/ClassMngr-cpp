@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/normal_workspace_creation_flow.h"
+#include "next/application/workspace_open_profile_path_policy.h"
 
 #include <QDir>
 #include <QByteArray>
@@ -12,11 +13,12 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Shared native path rules for normal profile creation and Initial Setup. The
-// two callers retain their historical suffix policies while sharing path
-// validation, absolute-path handling, and case-insensitive .tps recognition.
+// Shared native path rules for profile creation, opening, and Initial Setup.
+// The callers retain their own suffix policies while sharing path validation,
+// absolute-path handling, and case-insensitive .tps recognition.
 class WorkspaceProfilePathPolicy final
     : public Application::WorkspaceProfilePathPolicyPort
+    , public Application::WorkspaceOpenProfilePathPolicyPort
 {
 public:
     [[nodiscard]] Domain::Result<Application::WorkspaceLocation>
@@ -25,6 +27,49 @@ public:
         ) const override
     {
         return normalize(path, SuffixPolicy::NormalCreate);
+    }
+
+    [[nodiscard]] Domain::Result<Application::WorkspaceLocation>
+    normalizeOpenProfilePath(
+        const Application::FileDialogPath& path
+        ) const override
+    {
+        QString selected = toQString(path.value()).trimmed();
+        if (selected.isEmpty())
+        {
+            return Domain::Result<Application::WorkspaceLocation>::failure(
+                invalidPath("Choose an existing Teacher Profile to open.")
+                );
+        }
+
+        const QFileInfo selectedInfo(selected);
+        if (selectedInfo.fileName().isEmpty())
+        {
+            return Domain::Result<Application::WorkspaceLocation>::failure(
+                invalidPath("The selected profile must name a file.")
+                );
+        }
+        if (!hasNativeProfileSuffix(selected))
+        {
+            return Domain::Result<Application::WorkspaceLocation>::failure(
+                invalidPath("Only .tps Teacher Profiles can be opened here.")
+                );
+        }
+
+        const QString canonical = selectedInfo.canonicalFilePath();
+        const QString normalized = canonical.isEmpty()
+            ? absolutePath(selected)
+            : QDir::cleanPath(canonical);
+        if (normalized.trimmed().isEmpty())
+        {
+            return Domain::Result<Application::WorkspaceLocation>::failure(
+                invalidPath("The selected profile path could not be resolved.")
+                );
+        }
+
+        return Domain::Result<Application::WorkspaceLocation>::success(
+            Application::WorkspaceLocation(toUtf8(normalized))
+            );
     }
 
     [[nodiscard]] bool sameLocation(

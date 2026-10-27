@@ -74,6 +74,10 @@ public:
             newProfileUserPromptPortFactory;
         std::function<std::unique_ptr<Application::RecentWorkspaceHistoryPort>()>
             newProfileRecentWorkspaceHistoryPortFactory;
+        std::function<std::unique_ptr<Application::FileDialogPort>()>
+            openProfileFileDialogPortFactory;
+        std::function<std::unique_ptr<Application::RecentWorkspaceHistoryPort>()>
+            openProfileRecentWorkspaceHistoryPortFactory;
     };
 
     struct ShutdownSeams final
@@ -133,6 +137,7 @@ private:
     [[nodiscard]] Ui::InitialSetupPageState initialSetupPageState() const;
     void beginInitialSetupProfile();
     void createNewTeacherProfile();
+    void openExistingTeacherProfile();
     void resumeInitialSetupProfile();
     void restoreInitialSetupProfile();
     void cancelInitialSetupProfile();
