@@ -14,6 +14,7 @@
 #include "core/settingsmanager.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "data/database/workspace_store.h"
+#include "data/repositories/teacher_repository.h"
 #include "next/platform/workspace_store_personal_details_port.h"
 #include "ui/shared/state/option_state_keys.h"
 
@@ -31,6 +32,7 @@
 #include <QPixmap>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPalette>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -1038,6 +1040,7 @@ bool executeWorkspaceFixture(
     return executed;
 }
 
+
 bool createWorkspaceWithFixture(
     const QString& profilePath,
     const QString& fixtureName,
@@ -1984,6 +1987,70 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
     QCOMPARE(
         saveDetails->text(),
         korean ? QStringLiteral("변경 사항 저장") : QStringLiteral("Save Changes")
+        );
+
+    auto* const teacherEntryGroup = page->findChild<QGroupBox*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEntry")
+        );
+    auto* const teacherEnglishName = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEnglishName")
+        );
+    auto* const addAnotherTeacher = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupAddAnotherTeacher")
+        );
+    auto* const continueTeacherEntry = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
+        );
+    QVERIFY(teacherEntryGroup && teacherEnglishName);
+    QVERIFY(addAnotherTeacher && continueTeacherEntry);
+    QCOMPARE(
+        teacherEntryGroup->title(),
+        korean ? QStringLiteral("교사 정보") : QStringLiteral("Teacher Information")
+        );
+    QCOMPARE(
+        addAnotherTeacher->text(),
+        korean ? QStringLiteral("다른 교사 추가") : QStringLiteral("Add Another Teacher")
+        );
+    QCOMPARE(
+        continueTeacherEntry->text(),
+        korean ? QStringLiteral("계속") : QStringLiteral("Continue")
+        );
+    const QList<QGroupBox*> teacherGroups = page->findChildren<QGroupBox*>();
+    const bool hasRequiredTeacherGroup = std::any_of(
+        teacherGroups.cbegin(), teacherGroups.cend(), [korean](const QGroupBox* group) {
+            return group->title() == (korean
+                ? QStringLiteral("필수 정보")
+                : QStringLiteral("Required Information"));
+        });
+    const bool hasOptionalTeacherGroup = std::any_of(
+        teacherGroups.cbegin(), teacherGroups.cend(), [korean](const QGroupBox* group) {
+            return group->title() == (korean
+                ? QStringLiteral("선택 정보")
+                : QStringLiteral("Optional Details"));
+        });
+    QVERIFY(hasRequiredTeacherGroup);
+    QVERIFY(hasOptionalTeacherGroup);
+    QStringList teacherLabels;
+    for (const QLabel* label : teacherEntryGroup->findChildren<QLabel*>())
+    {
+        teacherLabels.append(label->text());
+    }
+    QVERIFY(teacherLabels.contains(
+        korean ? QStringLiteral("영어 이름 *") : QStringLiteral("English Name *")
+        ));
+    QVERIFY(teacherLabels.contains(
+        korean ? QStringLiteral("한국어 이름 *") : QStringLiteral("Korean Name *")
+        ));
+    QVERIFY(teacherLabels.contains(
+        korean ? QStringLiteral("선호 표기 *") : QStringLiteral("Preferred Spelling *")
+        ));
+    QVERIFY(teacherLabels.contains(
+        korean ? QStringLiteral("교실 번호") : QStringLiteral("Room Number")
+        ));
+    QCOMPARE(
+        teacherEnglishName->palette().color(QPalette::Text).name(),
+        theme == QStringLiteral("dark") ? QStringLiteral("#f0f0f0")
+                                          : QStringLiteral("#27313a")
         );
     QCOMPARE(
         application.styleSheet(),

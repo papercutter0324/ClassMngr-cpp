@@ -9931,4 +9931,22 @@ Version: %2</source>
     <message><source>Personal details could not be saved. Setup remains pending; retry to save.</source><translation>개인 정보를 저장하지 못했습니다. 초기 설정은 계속 진행 중입니다. 다시 시도하여 저장하세요.</translation></message>
     <message><source>Personal details saved. Setup is still pending.</source><translation>개인 정보를 저장했습니다. 초기 설정은 계속 진행 중입니다.</translation></message>
 </context>
+<context>
+    <name>InitialSetupTeacherEntryPage</name>
+    <message><source>Required Information</source><translation>필수 정보</translation></message>
+    <message><source>Enter values for at least 2 of the 3 starred identity fields.</source><translation>별표가 표시된 신원 정보 3개 항목 중 2개 이상을 입력하세요.</translation></message>
+    <message><source>Optional Details</source><translation>선택 정보</translation></message>
+    <message><source>Add Another Teacher</source><translation>다른 교사 추가</translation></message>
+    <message><source>Continue</source><translation>계속</translation></message>
+    <message><source>Teacher choices could not be loaded. Retry to continue.</source><translation>교사 선택 항목을 불러오지 못했습니다. 다시 시도한 뒤 계속하세요.</translation></message>
+    <message><source>Complete at least %1 of these fields before continuing:
+
+- %2</source><translation>계속하려면 다음 항목 중 %1개 이상을 입력하세요:
+
+- %2</translation></message>
+    <message><source>Continuing with the teachers already in this profile. Setup remains pending.</source><translation>이 프로필에 있는 교사 정보를 사용해 계속합니다. 초기 설정은 아직 진행 중입니다.</translation></message>
+    <message><source>The teacher could not be saved. Your entries are still here; retry to save.</source><translation>교사를 저장하지 못했습니다. 입력한 내용은 그대로 유지됩니다. 다시 시도하세요.</translation></message>
+    <message><source>Teacher saved. Enter another teacher or continue to the next step.</source><translation>교사를 저장했습니다. 다른 교사를 입력하거나 다음 단계로 계속할 수 있습니다.</translation></message>
+    <message><source>Teacher saved. Setup remains pending.</source><translation>교사를 저장했습니다. 초기 설정은 계속 진행 중입니다.</translation></message>
+</context>
 </TS>

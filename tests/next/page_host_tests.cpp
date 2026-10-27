@@ -5,7 +5,9 @@
 #include "next/ui/initial_page.h"
 #include "next/ui/page_host.h"
 
+#include <QComboBox>
 #include <QLabel>
+#include <QLineEdit>
 #include <QPointer>
 #include <QPushButton>
 #include <QTest>
@@ -231,6 +233,12 @@ private slots:
     void registrationIsLazyAndPagesSuspendReuseReleaseAndRecreate();
     void factoryAndActivationFailuresPreserveTheCurrentPage();
     void initialSetupPageShowsPendingAndRecoveryActions();
+    void initialSetupTeacherEntryValidatesAndRetainsFailedForm();
+    void initialSetupTeacherEntrySkipsWhenAChoiceExists();
+    void initialSetupTeacherEntryOptionalOnlyDataIsNotSkipped_data();
+    void initialSetupTeacherEntryOptionalOnlyDataIsNotSkipped();
+    void initialSetupTeacherEntryChoiceLoadFailureIsVisible();
+    void initialSetupTeacherEntryAddAnotherThenContinueSavesBoth();
 
 private:
     Test::MemoryPreferences m_preferences;
@@ -905,6 +913,506 @@ void PageHostTests::initialSetupPageShowsPendingAndRecoveryActions()
     state.recoveryHasOriginalProfile = false;
     page->refreshSetupState();
     QCOMPARE(restoreButton->text(), QStringLiteral("Discard Incomplete Profile"));
+}
+
+void PageHostTests::initialSetupTeacherEntryValidatesAndRetainsFailedForm()
+{
+    Ui::PageHost host(*m_loader, m_preferences.model);
+    Ui::InitialSetupPageState state;
+    state.setupPending = true;
+    int choiceReads = 0;
+    int createCalls = 0;
+    std::optional<Application::TeacherCreateRequest> lastRequest;
+    const auto teacherId = Domain::TeacherId::fromString("73");
+    QVERIFY(teacherId.has_value());
+
+    Application::PersonalDetailsSaveRequest personalDetails;
+    personalDetails.name = "Setup Owner";
+    const Ui::InitialSetupPageActions actions{
+        .state = [&state] { return state; },
+        .loadPersonalDetails = [personalDetails] {
+            return Application::PersonalDetailsReadResult::success(
+                personalDetails
+                );
+        },
+        .loadTeacherChoices = [&choiceReads] {
+            ++choiceReads;
+            return Application::InitialSetupTeacherChoicesResult::success({});
+        },
+        .createTeacher = [&createCalls, &lastRequest, teacherId](
+            const Application::TeacherCreateRequest& request
+            ) {
+            ++createCalls;
+            lastRequest = request;
+            if (createCalls == 1)
+            {
+                return Application::TeacherCreateResult::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = "fixture insert failure",
+                    .recoverable = true
+                });
+            }
+            return Application::TeacherCreateResult::success(*teacherId);
+        }
+    };
+    const Ui::PageDescriptor descriptor{
+        .id = *Ui::PageId::fromString(QStringLiteral("teacher-entry")),
+        .label = QStringLiteral("Teacher Entry"),
+        .factory = [actions](const Ui::PageContext& context)
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            return std::unique_ptr<Ui::Page>(
+                std::make_unique<Ui::InitialPage>(context, actions)
+                );
+        }
+    };
+    QVERIFY(host.registerPage(descriptor));
+    QVERIFY(host.activatePage(QStringLiteral("teacher-entry")));
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        host.pageInstance(QStringLiteral("teacher-entry"))
+        );
+    QVERIFY(page);
+
+    auto* const englishName = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEnglishName")
+        );
+    auto* const koreanName = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherKoreanName")
+        );
+    auto* const preferredSpelling = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherPreferredSpelling")
+        );
+    auto* const room = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherRoom")
+        );
+    auto* const wifiPassword = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherWifiPassword")
+        );
+    auto* const status = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEntryStatus")
+        );
+    auto* const continueButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
+        );
+    QVERIFY(englishName);
+    QVERIFY(koreanName);
+    QVERIFY(preferredSpelling);
+    QVERIFY(room);
+    QVERIFY(wifiPassword);
+    QVERIFY(status);
+    QVERIFY(continueButton);
+
+    continueButton->click();
+    QCOMPARE(choiceReads, 1);
+    QCOMPARE(createCalls, 0);
+    QVERIFY(status->text().startsWith(
+        QStringLiteral("Complete at least 2 of these fields")
+        ));
+    QVERIFY(status->text().contains(QStringLiteral("English Name")));
+    QVERIFY(status->text().contains(QStringLiteral("Korean Name")));
+    QVERIFY(status->text().contains(QStringLiteral("Preferred Spelling")));
+
+    const QString savedKoreanName = QString::fromUtf8("김선생님");
+    koreanName->setText(savedKoreanName);
+    preferredSpelling->setText(QStringLiteral("Kim Seonsaeng"));
+    room->setText(QStringLiteral("Room 7"));
+    wifiPassword->setText(QStringLiteral("  wifi secret  "));
+    continueButton->click();
+
+    QCOMPARE(createCalls, 1);
+    QVERIFY(lastRequest.has_value());
+    QCOMPARE(lastRequest->fields.teacherKr, std::u16string(u"김선생님"));
+    QCOMPARE(lastRequest->fields.teacherEn, std::u16string{});
+    QCOMPARE(
+        lastRequest->fields.preferredRomanization,
+        std::u16string(u"Kim Seonsaeng")
+        );
+    QCOMPARE(lastRequest->fields.preferredName, std::u16string(u"Kim Seonsaeng"));
+    QCOMPARE(lastRequest->fields.roomNumber, std::u16string(u"Room 7"));
+    QCOMPARE(lastRequest->fields.wifiPassword, std::u16string(u"  wifi secret  "));
+    QCOMPARE(koreanName->text(), savedKoreanName);
+    QCOMPARE(room->text(), QStringLiteral("Room 7"));
+    QVERIFY(status->text().startsWith(
+        QStringLiteral("The teacher could not be saved. Your entries are still here")
+        ));
+    QVERIFY(status->text().contains(QStringLiteral("fixture insert failure")));
+    QVERIFY(state.setupPending);
+
+    continueButton->click();
+    QCOMPARE(createCalls, 2);
+    QCOMPARE(koreanName->text(), savedKoreanName);
+    QCOMPARE(room->text(), QStringLiteral("Room 7"));
+    QCOMPARE(status->text(), QStringLiteral("Teacher saved. Setup remains pending."));
+    QVERIFY(state.setupPending);
+    QVERIFY(!continueButton->isEnabled());
+    QCOMPARE(choiceReads, 1);
+}
+
+void PageHostTests::initialSetupTeacherEntrySkipsWhenAChoiceExists()
+{
+    Ui::PageHost host(*m_loader, m_preferences.model);
+    Ui::InitialSetupPageState state;
+    state.setupPending = true;
+    int choiceReads = 0;
+    int createCalls = 0;
+    const auto teacherId = Domain::TeacherId::fromString("11");
+    QVERIFY(teacherId.has_value());
+    const Ui::InitialSetupPageActions actions{
+        .state = [&state] { return state; },
+        .loadPersonalDetails = [] {
+            Application::PersonalDetailsSaveRequest details;
+            details.name = "Setup Owner";
+            return Application::PersonalDetailsReadResult::success(details);
+        },
+        .loadTeacherChoices = [&choiceReads, teacherId] {
+            ++choiceReads;
+            return Application::InitialSetupTeacherChoicesResult::success({
+                .teachers = {{.teacherId = *teacherId}}
+            });
+        },
+        .createTeacher = [&createCalls](
+            const Application::TeacherCreateRequest&
+            ) {
+            ++createCalls;
+            return Application::TeacherCreateResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "creation should not run",
+                .recoverable = false
+            });
+        }
+    };
+    const Ui::PageDescriptor descriptor{
+        .id = *Ui::PageId::fromString(QStringLiteral("teacher-entry-skip")),
+        .label = QStringLiteral("Teacher Entry"),
+        .factory = [actions](const Ui::PageContext& context)
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            return std::unique_ptr<Ui::Page>(
+                std::make_unique<Ui::InitialPage>(context, actions)
+                );
+        }
+    };
+    QVERIFY(host.registerPage(descriptor));
+    QVERIFY(host.activatePage(QStringLiteral("teacher-entry-skip")));
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        host.pageInstance(QStringLiteral("teacher-entry-skip"))
+        );
+    QVERIFY(page);
+    auto* const status = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEntryStatus")
+        );
+    auto* const continueButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
+        );
+    QVERIFY(status);
+    QVERIFY(continueButton);
+
+    continueButton->click();
+
+    QCOMPARE(choiceReads, 1);
+    QCOMPARE(createCalls, 0);
+    QCOMPARE(
+        status->text(),
+        QStringLiteral(
+            "Continuing with the teachers already in this profile. Setup remains pending."
+            )
+        );
+    QVERIFY(!continueButton->isEnabled());
+    QVERIFY(state.setupPending);
+}
+
+void PageHostTests::initialSetupTeacherEntryOptionalOnlyDataIsNotSkipped_data()
+{
+    QTest::addColumn<QString>("field");
+    QTest::newRow("optional-text") << QStringLiteral("wifi");
+    QTest::newRow("non-default-combos") << QStringLiteral("combos");
+}
+
+void PageHostTests::initialSetupTeacherEntryOptionalOnlyDataIsNotSkipped()
+{
+    QFETCH(QString, field);
+    Ui::PageHost host(*m_loader, m_preferences.model);
+    Ui::InitialSetupPageState state;
+    state.setupPending = true;
+    int choiceReads = 0;
+    int createCalls = 0;
+    const auto teacherId = Domain::TeacherId::fromString("11");
+    QVERIFY(teacherId.has_value());
+    const Ui::InitialSetupPageActions actions{
+        .state = [&state] { return state; },
+        .loadPersonalDetails = [] {
+            Application::PersonalDetailsSaveRequest details;
+            details.name = "Setup Owner";
+            return Application::PersonalDetailsReadResult::success(details);
+        },
+        .loadTeacherChoices = [&choiceReads, teacherId] {
+            ++choiceReads;
+            return Application::InitialSetupTeacherChoicesResult::success({
+                .teachers = {{.teacherId = *teacherId}}
+            });
+        },
+        .createTeacher = [&createCalls](const Application::TeacherCreateRequest&) {
+            ++createCalls;
+            return Application::TeacherCreateResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "identity validation should run first",
+                .recoverable = false
+            });
+        }
+    };
+    const Ui::PageDescriptor descriptor{
+        .id = *Ui::PageId::fromString(QStringLiteral("teacher-entry-optional")),
+        .label = QStringLiteral("Teacher Entry"),
+        .factory = [actions](const Ui::PageContext& context)
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            return std::unique_ptr<Ui::Page>(
+                std::make_unique<Ui::InitialPage>(context, actions)
+                );
+        }
+    };
+    QVERIFY(host.registerPage(descriptor));
+    QVERIFY(host.activatePage(QStringLiteral("teacher-entry-optional")));
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        host.pageInstance(QStringLiteral("teacher-entry-optional"))
+        );
+    QVERIFY(page);
+    auto* const wifiName = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherWifiName")
+        );
+    auto* const internetType = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherInternetType")
+        );
+    auto* const projectionType = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherProjectionType")
+        );
+    auto* const status = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEntryStatus")
+        );
+    auto* const continueButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
+        );
+    QVERIFY(wifiName && internetType && projectionType && status && continueButton);
+
+    if (field == QStringLiteral("wifi"))
+    {
+        wifiName->setText(QStringLiteral("Classroom WiFi"));
+    }
+    else
+    {
+        internetType->setCurrentIndex(1);
+        projectionType->setCurrentIndex(1);
+    }
+    continueButton->click();
+
+    QCOMPARE(choiceReads, 0);
+    QCOMPARE(createCalls, 0);
+    QVERIFY(status->text().startsWith(
+        QStringLiteral("Complete at least 2 of these fields")
+        ));
+    QVERIFY(continueButton->isEnabled());
+    QVERIFY(state.setupPending);
+    if (field == QStringLiteral("wifi"))
+    {
+        QCOMPARE(wifiName->text(), QStringLiteral("Classroom WiFi"));
+    }
+    else
+    {
+        QCOMPARE(internetType->currentData().toString(), QStringLiteral("LAN"));
+        QCOMPARE(projectionType->currentData().toString(), QStringLiteral("Zoom"));
+    }
+}
+
+void PageHostTests::initialSetupTeacherEntryChoiceLoadFailureIsVisible()
+{
+    Ui::PageHost host(*m_loader, m_preferences.model);
+    Ui::InitialSetupPageState state;
+    state.setupPending = true;
+    int choiceReads = 0;
+    int createCalls = 0;
+    const Ui::InitialSetupPageActions actions{
+        .state = [&state] { return state; },
+        .loadPersonalDetails = [] {
+            Application::PersonalDetailsSaveRequest details;
+            details.name = "Setup Owner";
+            return Application::PersonalDetailsReadResult::success(details);
+        },
+        .loadTeacherChoices = [&choiceReads] {
+            ++choiceReads;
+            return Application::InitialSetupTeacherChoicesResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "teacher choices fixture read failure",
+                .recoverable = true
+            });
+        },
+        .createTeacher = [&createCalls](const Application::TeacherCreateRequest&) {
+            ++createCalls;
+            return Application::TeacherCreateResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "creation should not run",
+                .recoverable = false
+            });
+        }
+    };
+    const Ui::PageDescriptor descriptor{
+        .id = *Ui::PageId::fromString(QStringLiteral("teacher-entry-choice-error")),
+        .label = QStringLiteral("Teacher Entry"),
+        .factory = [actions](const Ui::PageContext& context)
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            return std::unique_ptr<Ui::Page>(
+                std::make_unique<Ui::InitialPage>(context, actions)
+                );
+        }
+    };
+    QVERIFY(host.registerPage(descriptor));
+    QVERIFY(host.activatePage(QStringLiteral("teacher-entry-choice-error")));
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        host.pageInstance(QStringLiteral("teacher-entry-choice-error"))
+        );
+    QVERIFY(page);
+    auto* const status = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEntryStatus")
+        );
+    auto* const continueButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
+        );
+    QVERIFY(status && continueButton);
+
+    continueButton->click();
+
+    QCOMPARE(choiceReads, 1);
+    QCOMPARE(createCalls, 0);
+    QVERIFY(status->text().startsWith(
+        QStringLiteral("Teacher choices could not be loaded. Retry to continue.")
+        ));
+    QVERIFY(status->text().contains(QStringLiteral("teacher choices fixture read failure")));
+    QVERIFY(!status->text().startsWith(QStringLiteral("Complete at least")));
+    QVERIFY(continueButton->isEnabled());
+    QVERIFY(state.setupPending);
+}
+
+void PageHostTests::initialSetupTeacherEntryAddAnotherThenContinueSavesBoth()
+{
+    Ui::PageHost host(*m_loader, m_preferences.model);
+    Ui::InitialSetupPageState state;
+    state.setupPending = true;
+    int createCalls = 0;
+    QVector<Application::TeacherCreateRequest> requests;
+    const auto firstTeacherId = Domain::TeacherId::fromString("80");
+    const auto secondTeacherId = Domain::TeacherId::fromString("81");
+    QVERIFY(firstTeacherId && secondTeacherId);
+    const Ui::InitialSetupPageActions actions{
+        .state = [&state] { return state; },
+        .loadPersonalDetails = [] {
+            Application::PersonalDetailsSaveRequest details;
+            details.name = "Setup Owner";
+            return Application::PersonalDetailsReadResult::success(details);
+        },
+        .loadTeacherChoices = [] {
+            return Application::InitialSetupTeacherChoicesResult::success({});
+        },
+        .createTeacher = [&createCalls, &requests, firstTeacherId, secondTeacherId](
+            const Application::TeacherCreateRequest& request
+            ) {
+            ++createCalls;
+            requests.push_back(request);
+            return Application::TeacherCreateResult::success(
+                createCalls == 1 ? *firstTeacherId : *secondTeacherId
+                );
+        }
+    };
+    const Ui::PageDescriptor descriptor{
+        .id = *Ui::PageId::fromString(QStringLiteral("teacher-entry-add-another")),
+        .label = QStringLiteral("Teacher Entry"),
+        .factory = [actions](const Ui::PageContext& context)
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            return std::unique_ptr<Ui::Page>(
+                std::make_unique<Ui::InitialPage>(context, actions)
+                );
+        }
+    };
+    QVERIFY(host.registerPage(descriptor));
+    QVERIFY(host.activatePage(QStringLiteral("teacher-entry-add-another")));
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        host.pageInstance(QStringLiteral("teacher-entry-add-another"))
+        );
+    QVERIFY(page);
+    auto* const englishName = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEnglishName")
+        );
+    auto* const koreanName = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherKoreanName")
+        );
+    auto* const preferredSpelling = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherPreferredSpelling")
+        );
+    auto* const room = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherRoom")
+        );
+    auto* const wifiName = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherWifiName")
+        );
+    auto* const internetType = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherInternetType")
+        );
+    auto* const projectionType = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherProjectionType")
+        );
+    auto* const status = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEntryStatus")
+        );
+    auto* const addAnotherButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupAddAnotherTeacher")
+        );
+    auto* const continueButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
+        );
+    QVERIFY(englishName && koreanName && preferredSpelling && room && wifiName);
+    QVERIFY(internetType && projectionType && status && addAnotherButton && continueButton);
+
+    englishName->setText(QStringLiteral("First Teacher"));
+    koreanName->setText(QString::fromUtf8("첫 번째 교사"));
+    preferredSpelling->setText(QStringLiteral("First"));
+    room->setText(QStringLiteral("Room A"));
+    wifiName->setText(QStringLiteral("First WiFi"));
+    internetType->setCurrentIndex(1);
+    projectionType->setCurrentIndex(1);
+    addAnotherButton->click();
+
+    QCOMPARE(createCalls, 1);
+    QCOMPARE(requests.size(), 1);
+    QCOMPARE(requests[0].fields.teacherEn, std::u16string(u"First Teacher"));
+    QCOMPARE(requests[0].fields.teacherKr, std::u16string(u"첫 번째 교사"));
+    QCOMPARE(requests[0].fields.roomNumber, std::u16string(u"Room A"));
+    QCOMPARE(requests[0].fields.wifiName, std::u16string(u"First WiFi"));
+    QCOMPARE(requests[0].fields.internetType, std::u16string(u"LAN"));
+    QCOMPARE(requests[0].fields.projectionType, std::u16string(u"Zoom"));
+    QCOMPARE(englishName->text(), QString{});
+    QCOMPARE(koreanName->text(), QString{});
+    QCOMPARE(preferredSpelling->text(), QString{});
+    QCOMPARE(room->text(), QString{});
+    QCOMPARE(wifiName->text(), QString{});
+    QCOMPARE(internetType->currentIndex(), 0);
+    QCOMPARE(projectionType->currentIndex(), 0);
+    QVERIFY(addAnotherButton->isEnabled());
+    QVERIFY(continueButton->isEnabled());
+    QCOMPARE(
+        status->text(),
+        QStringLiteral("Teacher saved. Enter another teacher or continue to the next step.")
+        );
+    QVERIFY(state.setupPending);
+
+    koreanName->setText(QString::fromUtf8("두 번째 교사"));
+    preferredSpelling->setText(QStringLiteral("Second"));
+    continueButton->click();
+
+    QCOMPARE(createCalls, 2);
+    QCOMPARE(requests.size(), 2);
+    QCOMPARE(requests[1].fields.teacherEn, std::u16string{});
+    QCOMPARE(requests[1].fields.teacherKr, std::u16string(u"두 번째 교사"));
+    QCOMPARE(requests[1].fields.preferredRomanization, std::u16string(u"Second"));
+    QCOMPARE(requests[1].fields.preferredName, std::u16string(u"Second"));
+    QCOMPARE(status->text(), QStringLiteral("Teacher saved. Setup remains pending."));
+    QVERIFY(state.setupPending);
+    QVERIFY(!addAnotherButton->isEnabled());
+    QVERIFY(!continueButton->isEnabled());
 }
 
 QTEST_MAIN(PageHostTests)

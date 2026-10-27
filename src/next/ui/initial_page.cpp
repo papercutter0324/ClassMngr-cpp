@@ -3,6 +3,8 @@
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/my_info/data/typed_signature_renderer.h"
 #include "next/application/initial_setup_personal_name_requirement.h"
+#include "next/application/initial_setup_teacher_entry_skip_policy.h"
+#include "next/application/initial_setup_teacher_identity_validation.h"
 
 #include <QComboBox>
 #include <QCoreApplication>
@@ -16,9 +18,12 @@
 #include <QPixmap>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QSignalBlocker>
+#include <QScrollArea>
 #include <QVBoxLayout>
 
 #include <cstddef>
+#include <array>
 #include <string>
 #include <utility>
 
@@ -43,6 +48,19 @@ QString setupDetailsText(const char* sourceText)
         );
 }
 
+QString teacherEntryText(const char* sourceText)
+{
+    return QCoreApplication::translate(
+        "InitialSetupTeacherEntryPage",
+        sourceText
+        );
+}
+
+QString teacherInfoText(const char* sourceText)
+{
+    return QCoreApplication::translate("TeacherInfoPage", sourceText);
+}
+
 QString qString(const std::string& value)
 {
     return QString::fromUtf8(
@@ -58,6 +76,11 @@ std::string utf8(const QString& value)
         bytes.constData(),
         static_cast<std::size_t>(bytes.size())
         );
+}
+
+std::u16string utf16(const QString& value)
+{
+    return value.toStdU16String();
 }
 
 std::string bytes(const QByteArray& value)
@@ -180,9 +203,14 @@ InitialPage::InitialPage(
         QStringLiteral("classMngrNextInitialSetupCancel")
         );
 
+    auto* setupContent = new QWidget(this);
+    auto* setupContentLayout = new QVBoxLayout(setupContent);
+    setupContentLayout->setContentsMargins(0, 0, 0, 0);
+    setupContentLayout->setSpacing(12);
+
     m_personalDetailsGroup = new QGroupBox(
         setupDetailsText("Add Your Information"),
-        this
+        setupContent
         );
     m_personalDetailsGroup->setObjectName(
         QStringLiteral("classMngrNextInitialSetupPersonalDetails")
@@ -333,6 +361,203 @@ InitialPage::InitialPage(
     detailsActions->addWidget(m_savePersonalDetailsButton);
     detailsLayout->addLayout(detailsActions);
 
+    setupContentLayout->addWidget(m_personalDetailsGroup);
+
+    m_teacherEntryGroup = new QGroupBox(
+        teacherInfoText("Teacher Information"),
+        setupContent
+        );
+    m_teacherEntryGroup->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherEntry")
+        );
+    auto* teacherLayout = new QVBoxLayout(m_teacherEntryGroup);
+
+    auto* requiredTeacherGroup = new QGroupBox(
+        teacherEntryText("Required Information"),
+        m_teacherEntryGroup
+        );
+    auto* requiredTeacherForm = new QFormLayout(requiredTeacherGroup);
+    requiredTeacherForm->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
+    requiredTeacherForm->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+
+    m_teacherEnglishNameEdit = new QLineEdit(requiredTeacherGroup);
+    m_teacherEnglishNameEdit->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherEnglishName")
+        );
+    requiredTeacherForm->addRow(
+        teacherInfoText("English Name") + QStringLiteral(" *"),
+        m_teacherEnglishNameEdit
+        );
+
+    m_teacherKoreanNameEdit = new QLineEdit(requiredTeacherGroup);
+    m_teacherKoreanNameEdit->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherKoreanName")
+        );
+    requiredTeacherForm->addRow(
+        teacherInfoText("Korean Name") + QStringLiteral(" *"),
+        m_teacherKoreanNameEdit
+        );
+
+    m_teacherPreferredSpellingEdit = new QLineEdit(requiredTeacherGroup);
+    m_teacherPreferredSpellingEdit->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherPreferredSpelling")
+        );
+    requiredTeacherForm->addRow(
+        teacherInfoText("Preferred Spelling") + QStringLiteral(" *"),
+        m_teacherPreferredSpellingEdit
+        );
+
+    m_teacherRoomEdit = new QLineEdit(requiredTeacherGroup);
+    m_teacherRoomEdit->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherRoom")
+        );
+    requiredTeacherForm->addRow(
+        teacherInfoText("Room Number"),
+        m_teacherRoomEdit
+        );
+    teacherLayout->addWidget(requiredTeacherGroup);
+
+    auto* teacherRequirement = new QLabel(
+        teacherEntryText(
+            "Enter values for at least 2 of the 3 starred identity fields."
+            ),
+        m_teacherEntryGroup
+        );
+    teacherRequirement->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherRequirement")
+        );
+    teacherRequirement->setWordWrap(true);
+    teacherLayout->addWidget(teacherRequirement);
+
+    auto* optionalTeacherGroup = new QGroupBox(
+        teacherEntryText("Optional Details"),
+        m_teacherEntryGroup
+        );
+    auto* optionalTeacherForm = new QFormLayout(optionalTeacherGroup);
+    optionalTeacherForm->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
+    optionalTeacherForm->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+
+    m_teacherPreferredNameCombo = new QComboBox(optionalTeacherGroup);
+    m_teacherPreferredNameCombo->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherPreferredName")
+        );
+    optionalTeacherForm->addRow(
+        teacherInfoText("Preferred Name"),
+        m_teacherPreferredNameCombo
+        );
+
+    m_teacherInternetTypeCombo = new QComboBox(optionalTeacherGroup);
+    m_teacherInternetTypeCombo->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherInternetType")
+        );
+    m_teacherInternetTypeCombo->addItem(QStringLiteral("WiFi"), QStringLiteral("WiFi"));
+    m_teacherInternetTypeCombo->addItem(QStringLiteral("LAN"), QStringLiteral("LAN"));
+    m_teacherInternetTypeCombo->addItem(
+        teacherInfoText("Both"), QStringLiteral("Both")
+        );
+    m_teacherInternetTypeCombo->addItem(
+        teacherInfoText("N/A"), QStringLiteral("N/A")
+        );
+    optionalTeacherForm->addRow(
+        teacherInfoText("Internet Type"),
+        m_teacherInternetTypeCombo
+        );
+
+    m_teacherWifiNameEdit = new QLineEdit(optionalTeacherGroup);
+    m_teacherWifiNameEdit->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherWifiName")
+        );
+    optionalTeacherForm->addRow(
+        teacherInfoText("WiFi Name"),
+        m_teacherWifiNameEdit
+        );
+    m_teacherWifiPasswordEdit = new QLineEdit(optionalTeacherGroup);
+    m_teacherWifiPasswordEdit->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherWifiPassword")
+        );
+    m_teacherWifiPasswordEdit->setEchoMode(QLineEdit::Password);
+    optionalTeacherForm->addRow(
+        teacherInfoText("WiFi Password"),
+        m_teacherWifiPasswordEdit
+        );
+
+    m_teacherProjectionTypeCombo = new QComboBox(optionalTeacherGroup);
+    m_teacherProjectionTypeCombo->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherProjectionType")
+        );
+    m_teacherProjectionTypeCombo->addItem(
+        QStringLiteral("HDMI"), QStringLiteral("HDMI")
+        );
+    m_teacherProjectionTypeCombo->addItem(
+        QStringLiteral("Zoom"), QStringLiteral("Zoom")
+        );
+    m_teacherProjectionTypeCombo->addItem(
+        teacherInfoText("Any"), QStringLiteral("Any")
+        );
+    m_teacherProjectionTypeCombo->addItem(
+        teacherInfoText("N/A"), QStringLiteral("N/A")
+        );
+    optionalTeacherForm->addRow(
+        teacherInfoText("Projection Type"),
+        m_teacherProjectionTypeCombo
+        );
+
+    m_teacherZoomIdEdit = new QLineEdit(optionalTeacherGroup);
+    m_teacherZoomIdEdit->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherZoomId")
+        );
+    optionalTeacherForm->addRow(
+        teacherInfoText("Zoom ID"),
+        m_teacherZoomIdEdit
+        );
+    m_teacherZoomPasswordEdit = new QLineEdit(optionalTeacherGroup);
+    m_teacherZoomPasswordEdit->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherZoomPassword")
+        );
+    m_teacherZoomPasswordEdit->setEchoMode(QLineEdit::Password);
+    optionalTeacherForm->addRow(
+        teacherInfoText("Zoom Password"),
+        m_teacherZoomPasswordEdit
+        );
+    teacherLayout->addWidget(optionalTeacherGroup);
+
+    m_teacherEntryStatusLabel = new QLabel(m_teacherEntryGroup);
+    m_teacherEntryStatusLabel->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupTeacherEntryStatus")
+        );
+    m_teacherEntryStatusLabel->setWordWrap(true);
+    teacherLayout->addWidget(m_teacherEntryStatusLabel);
+
+    auto* teacherActions = new QHBoxLayout;
+    teacherActions->addStretch(1);
+    m_addAnotherTeacherButton = new QPushButton(
+        teacherEntryText("Add Another Teacher"),
+        m_teacherEntryGroup
+        );
+    m_addAnotherTeacherButton->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupAddAnotherTeacher")
+        );
+    m_continueTeacherEntryButton = new QPushButton(
+        teacherEntryText("Continue"),
+        m_teacherEntryGroup
+        );
+    m_continueTeacherEntryButton->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
+        );
+    teacherActions->addWidget(m_addAnotherTeacherButton);
+    teacherActions->addWidget(m_continueTeacherEntryButton);
+    teacherLayout->addLayout(teacherActions);
+    setupContentLayout->addWidget(m_teacherEntryGroup);
+    setupContentLayout->addStretch(1);
+
+    auto* setupScroll = new QScrollArea(this);
+    setupScroll->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupDetailsScroll")
+        );
+    setupScroll->setWidgetResizable(true);
+    setupScroll->setFrameShape(QFrame::NoFrame);
+    setupScroll->setWidget(setupContent);
+
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(48, 32, 48, 32);
     layout->setSpacing(10);
@@ -343,7 +568,7 @@ InitialPage::InitialPage(
     layout->addWidget(m_statusLabel);
     layout->addWidget(m_profileLabel);
     layout->addWidget(m_recoveryLabel);
-    layout->addWidget(m_personalDetailsGroup);
+    layout->addWidget(setupScroll, 1);
     layout->addWidget(m_createButton, 0, Qt::AlignHCenter);
     layout->addWidget(m_resumeButton, 0, Qt::AlignHCenter);
     layout->addWidget(m_restoreButton, 0, Qt::AlignHCenter);
@@ -382,6 +607,14 @@ InitialPage::InitialPage(
             this, &InitialPage::refreshPersonalDetails);
     connect(m_savePersonalDetailsButton, &QPushButton::clicked,
             this, &InitialPage::savePersonalDetails);
+    connect(m_addAnotherTeacherButton, &QPushButton::clicked,
+            this, [this] { saveTeacher(true); });
+    connect(m_continueTeacherEntryButton, &QPushButton::clicked,
+            this, [this] { saveTeacher(false); });
+    connect(m_teacherEnglishNameEdit, &QLineEdit::textChanged,
+            this, &InitialPage::updatePreferredTeacherNames);
+    connect(m_teacherPreferredSpellingEdit, &QLineEdit::textChanged,
+            this, &InitialPage::updatePreferredTeacherNames);
     connect(m_chooseSignatureButton, &QPushButton::clicked, this, [this] {
         if (!m_actions.chooseSignatureImage)
         {
@@ -461,6 +694,7 @@ InitialPage::InitialPage(
             });
 
     m_personalDetailsGroup->hide();
+    m_teacherEntryGroup->hide();
     refreshSetupState();
 }
 
@@ -548,9 +782,14 @@ void InitialPage::refreshSetupState()
         );
     m_cancelButton->setVisible(state.setupPending);
     m_personalDetailsGroup->setVisible(state.setupPending);
+    m_teacherEntryGroup->setVisible(state.setupPending);
 
     if (state.setupPending && !m_setupWasPending)
     {
+        m_teacherEntryComplete = false;
+        clearTeacherFields();
+        m_teacherEntryStatusLabel->clear();
+        updateTeacherEntryControls();
         m_personalDetailsLoaded = false;
         m_personalDetailsEdited = false;
         m_personalDetails = Application::PersonalDetailsSaveRequest{};
@@ -559,6 +798,10 @@ void InitialPage::refreshSetupState()
     }
     else if (!state.setupPending && m_setupWasPending)
     {
+        m_teacherEntryComplete = false;
+        clearTeacherFields();
+        m_teacherEntryStatusLabel->clear();
+        updateTeacherEntryControls();
         m_personalDetailsLoaded = false;
         m_personalDetailsEdited = false;
         m_personalDetails = Application::PersonalDetailsSaveRequest{};
@@ -575,6 +818,234 @@ void InitialPage::refreshSetupState()
     }
 
     m_setupWasPending = state.setupPending;
+}
+
+void InitialPage::saveTeacher(const bool addAnother)
+{
+    if (!m_setupWasPending || m_teacherEntryComplete)
+    {
+        return;
+    }
+
+    const QString englishName = m_teacherEnglishNameEdit->text().trimmed();
+    const QString koreanName = m_teacherKoreanNameEdit->text().trimmed();
+    const QString preferredSpelling =
+        m_teacherPreferredSpellingEdit->text().trimmed();
+    const QString room = m_teacherRoomEdit->text().trimmed();
+    const bool allRequiredAndRoomFieldsEmpty =
+        englishName.isEmpty()
+        && koreanName.isEmpty()
+        && preferredSpelling.isEmpty()
+        && room.isEmpty();
+    const bool allTeacherFieldsEmpty =
+        allRequiredAndRoomFieldsEmpty
+        && m_teacherPreferredNameCombo->currentIndex() < 0
+        && m_teacherInternetTypeCombo->currentIndex() == 0
+        && m_teacherWifiNameEdit->text().trimmed().isEmpty()
+        && m_teacherWifiPasswordEdit->text().isEmpty()
+        && m_teacherProjectionTypeCombo->currentIndex() == 0
+        && m_teacherZoomIdEdit->text().trimmed().isEmpty()
+        && m_teacherZoomPasswordEdit->text().isEmpty();
+
+    if (allTeacherFieldsEmpty && !addAnother)
+    {
+        const Application::InitialSetupTeacherChoicesResult choices =
+            m_actions.loadTeacherChoices
+                ? m_actions.loadTeacherChoices()
+                : Application::InitialSetupTeacherChoicesResult::failure({
+                      .code = Domain::ErrorCode::Technical,
+                      .message = "Teachers could not be loaded.",
+                      .recoverable = true
+                  });
+        if (!choices)
+        {
+            QString message = teacherEntryText(
+                "Teacher choices could not be loaded. Retry to continue."
+                );
+            if (!choices.error().message.empty())
+            {
+                message += QLatin1Char('\n') + qString(choices.error().message);
+            }
+            m_teacherEntryStatusLabel->setText(message);
+            return;
+        }
+        const bool availableTeacherExists = choices
+            && !choices.value().teachers.empty();
+        if (Application::initialSetupTeacherEntryShouldBeSkipped(
+                allTeacherFieldsEmpty,
+                availableTeacherExists
+                ))
+        {
+            m_teacherEntryComplete = true;
+            m_teacherEntryStatusLabel->setText(teacherEntryText(
+                "Continuing with the teachers already in this profile. Setup remains pending."
+                ));
+            updateTeacherEntryControls();
+            return;
+        }
+    }
+
+    const Application::InitialSetupTeacherIdentityRequirements requirements =
+        Application::initialSetupTeacherIdentityRequirements(
+            !englishName.isEmpty(),
+            !koreanName.isEmpty(),
+            !preferredSpelling.isEmpty()
+            );
+    if (!requirements.complete())
+    {
+        QStringList missingFields;
+        if (requirements.englishNameMissing())
+        {
+            missingFields.append(teacherInfoText("English Name"));
+        }
+        if (requirements.koreanNameMissing())
+        {
+            missingFields.append(teacherInfoText("Korean Name"));
+        }
+        if (requirements.preferredSpellingMissing())
+        {
+            missingFields.append(teacherInfoText("Preferred Spelling"));
+        }
+        m_teacherEntryStatusLabel->setText(
+            teacherEntryText(
+                "Complete at least %1 of these fields before continuing:\n\n- %2"
+                )
+                .arg(static_cast<int>(requirements.additionalFieldsRequired()))
+                .arg(missingFields.join(QStringLiteral("\n- ")))
+            );
+        return;
+    }
+
+    QString preferredName = m_teacherPreferredNameCombo->currentText().trimmed();
+    if (preferredName.isEmpty())
+    {
+        preferredName = !englishName.isEmpty()
+            ? englishName
+            : (!preferredSpelling.isEmpty() ? preferredSpelling : koreanName);
+    }
+
+    const Application::TeacherCreateRequest request{
+        .fields = Domain::TeacherProfileFields{
+            .teacherKr = utf16(koreanName),
+            .teacherEn = utf16(englishName),
+            .preferredRomanization = utf16(preferredSpelling),
+            .preferredName = utf16(preferredName),
+            .roomNumber = utf16(room),
+            .wifiName = utf16(m_teacherWifiNameEdit->text().trimmed()),
+            .wifiPassword = utf16(m_teacherWifiPasswordEdit->text()),
+            .internetType = utf16(
+                m_teacherInternetTypeCombo->currentData().toString()
+                ),
+            .zoomId = utf16(m_teacherZoomIdEdit->text().trimmed()),
+            .zoomPassword = utf16(m_teacherZoomPasswordEdit->text()),
+            .projectionType = utf16(
+                m_teacherProjectionTypeCombo->currentData().toString()
+                )
+        }
+    };
+    const Application::TeacherCreateResult saved = m_actions.createTeacher
+        ? m_actions.createTeacher(request)
+        : Application::TeacherCreateResult::failure({
+              .code = Domain::ErrorCode::Technical,
+              .message = "The teacher could not be saved.",
+              .recoverable = true
+          });
+    if (!saved)
+    {
+        QString message = teacherEntryText(
+            "The teacher could not be saved. Your entries are still here; retry to save."
+            );
+        if (!saved.error().message.empty())
+        {
+            message += QLatin1Char('\n') + qString(saved.error().message);
+        }
+        m_teacherEntryStatusLabel->setText(message);
+        return;
+    }
+
+    if (addAnother)
+    {
+        clearTeacherFields();
+        m_teacherEntryStatusLabel->setText(teacherEntryText(
+            "Teacher saved. Enter another teacher or continue to the next step."
+            ));
+        return;
+    }
+
+    m_teacherEntryComplete = true;
+    m_teacherEntryStatusLabel->setText(teacherEntryText(
+        "Teacher saved. Setup remains pending."
+        ));
+    updateTeacherEntryControls();
+}
+
+void InitialPage::clearTeacherFields()
+{
+    for (QLineEdit* edit : {
+             m_teacherEnglishNameEdit,
+             m_teacherKoreanNameEdit,
+             m_teacherPreferredSpellingEdit,
+             m_teacherRoomEdit,
+             m_teacherWifiNameEdit,
+             m_teacherWifiPasswordEdit,
+             m_teacherZoomIdEdit,
+             m_teacherZoomPasswordEdit
+         })
+    {
+        edit->clear();
+    }
+    m_teacherInternetTypeCombo->setCurrentIndex(0);
+    m_teacherProjectionTypeCombo->setCurrentIndex(0);
+    updatePreferredTeacherNames();
+}
+
+void InitialPage::updatePreferredTeacherNames()
+{
+    QStringList choices;
+    for (const QString& choice : {
+             m_teacherEnglishNameEdit->text().trimmed(),
+             m_teacherPreferredSpellingEdit->text().trimmed()
+         })
+    {
+        if (!choice.isEmpty() && !choices.contains(choice))
+        {
+            choices.append(choice);
+        }
+    }
+
+    const QString previous = m_teacherPreferredNameCombo->currentText();
+    const QSignalBlocker blocker(m_teacherPreferredNameCombo);
+    m_teacherPreferredNameCombo->clear();
+    m_teacherPreferredNameCombo->addItems(choices);
+    m_teacherPreferredNameCombo->setEnabled(!choices.isEmpty());
+    const int selected = choices.indexOf(previous);
+    m_teacherPreferredNameCombo->setCurrentIndex(
+        selected >= 0 ? selected : (choices.isEmpty() ? -1 : 0)
+        );
+}
+
+void InitialPage::updateTeacherEntryControls()
+{
+    const bool enabled = !m_teacherEntryComplete;
+    const std::array<QWidget*, 13> controls{
+        m_teacherEnglishNameEdit,
+        m_teacherKoreanNameEdit,
+        m_teacherPreferredSpellingEdit,
+        m_teacherRoomEdit,
+        m_teacherPreferredNameCombo,
+        m_teacherInternetTypeCombo,
+        m_teacherWifiNameEdit,
+        m_teacherWifiPasswordEdit,
+        m_teacherProjectionTypeCombo,
+        m_teacherZoomIdEdit,
+        m_teacherZoomPasswordEdit,
+        m_addAnotherTeacherButton,
+        m_continueTeacherEntryButton
+    };
+    for (QWidget* control : controls)
+    {
+        control->setEnabled(enabled);
+    }
 }
 
 void InitialPage::refreshPersonalDetails()

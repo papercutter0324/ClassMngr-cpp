@@ -665,9 +665,13 @@ foreach(_classmngr_next_feature IN LISTS _classmngr_next_feature_targets)
     )
 endforeach()
 
-# Reuse the Domain objects without linking unused validation implementations
-# into Next. This archive must follow WorkspaceStore in the adapter's closure.
-add_library(ClassMngrNextWorkspaceDomain STATIC)
+# Reuse Domain implementations through an archive so Next pulls only referenced
+# object files. Name validation is isolated to avoid pulling unrelated core
+# utilities into the teacher-creation closure. Keep this archive after
+# WorkspaceStore in the adapter's link closure.
+add_library(ClassMngrNextWorkspaceDomain STATIC
+    $<TARGET_OBJECTS:ClassMngrStudentName>
+)
 target_link_libraries(ClassMngrNextWorkspaceDomain
     PRIVATE
         ClassMngrDomain

@@ -3,7 +3,11 @@
 #include "data/database/workspace_store.h"
 #include "next/platform/repository_error_code.h"
 #include "next/application/personal_details_save_use_case.h"
+#include "next/application/initial_setup_teacher_choices_read_query.h"
+#include "next/application/teacher_create_use_case.h"
 #include "next/platform/workspace_store_personal_details_port.h"
+#include "next/platform/workspace_store_initial_setup_teacher_entry_port.h"
+#include "next/platform/teacher_validator_teacher_create_validation_policy.h"
 
 #include <QByteArray>
 #include <QString>
@@ -95,6 +99,28 @@ WorkspaceStoreGateway::savePersonalDetails(
     WorkspaceStorePersonalDetailsPort port(*m_store);
     const Application::PersonalDetailsSaveUseCase useCase(port);
     return useCase.execute(request);
+}
+
+Application::InitialSetupTeacherChoicesResult
+WorkspaceStoreGateway::loadInitialSetupTeacherChoices() const
+{
+    WorkspaceStoreInitialSetupTeacherEntryPort port(*m_store);
+    const Application::InitialSetupTeacherChoicesReadQuery query(port);
+    return query.execute();
+}
+
+Application::TeacherCreateResult
+WorkspaceStoreGateway::createInitialSetupTeacher(
+    const Application::TeacherCreateRequest& request
+    ) const
+{
+    WorkspaceStoreInitialSetupTeacherEntryPort port(*m_store);
+    TeacherValidatorTeacherCreateValidationPolicy validationPolicy;
+    return Application::TeacherCreateUseCase::execute(
+        request,
+        validationPolicy,
+        port
+        );
 }
 
 Domain::Result<Application::WorkspaceSession>

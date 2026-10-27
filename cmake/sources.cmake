@@ -95,6 +95,12 @@ function(classmngr_add_production_objects)
 endfunction()
 
 classmngr_add_production_objects(
+    TARGET ClassMngrStudentName
+    SOURCES ${CLASSMNGR_STUDENT_NAME_SOURCES}
+    LIBRARIES
+        Qt6::Core
+)
+classmngr_add_production_objects(
     TARGET ClassMngrCore
     SOURCES ${CLASSMNGR_CORE_SOURCES}
     LIBRARIES
@@ -227,6 +233,7 @@ set(_classmngr_legacy_runtime_dependencies
 )
 
 add_library(ClassMngrRuntime STATIC
+    $<TARGET_OBJECTS:ClassMngrStudentName>
     $<TARGET_OBJECTS:ClassMngrCore>
     $<TARGET_OBJECTS:ClassMngrUpdater>
     $<TARGET_OBJECTS:ClassMngrSettings>
@@ -277,6 +284,7 @@ endif()
 # interpose those definitions at load time.
 if(APPLE AND BUILD_TESTING)
     add_library(ClassMngrTestRuntime SHARED
+        $<TARGET_OBJECTS:ClassMngrStudentName>
         $<TARGET_OBJECTS:ClassMngrCore>
         $<TARGET_OBJECTS:ClassMngrUpdater>
         $<TARGET_OBJECTS:ClassMngrSettings>

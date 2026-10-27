@@ -8,6 +8,8 @@
 #include "next/application/application_runtime.h"
 #include "next/application/initial_setup_lifecycle.h"
 #include "next/application/personal_details_save.h"
+#include "next/application/initial_setup_teacher_choices_read_snapshot.h"
+#include "next/application/teacher_create.h"
 #include "next/application/workspace_contracts.h"
 #include "next/application/workspace_state.h"
 #include "next/bootstrap/startup_diagnostics_sink.h"
@@ -124,6 +126,12 @@ private:
     [[nodiscard]] Application::PersonalDetailsSaveResult
     saveInitialSetupPersonalDetails(
         const Application::PersonalDetailsSaveRequest& request
+        ) const;
+    [[nodiscard]] Application::InitialSetupTeacherChoicesResult
+    loadInitialSetupTeacherChoices() const;
+    [[nodiscard]] Application::TeacherCreateResult
+    saveInitialSetupTeacher(
+        const Application::TeacherCreateRequest& request
         ) const;
     [[nodiscard]] Domain::Result<std::optional<QByteArray>>
     chooseInitialSetupSignatureImage();

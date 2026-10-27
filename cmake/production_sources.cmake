@@ -44,10 +44,16 @@ set(CLASSMNGR_CORE_SOURCES
     "src/core/utils/platform.h"
     "src/core/utils/sidebar_node_naming.cpp"
     "src/core/utils/sidebar_node_naming.h"
-    "src/core/utils/student_name_utils.cpp"
-    "src/core/utils/student_name_utils.h"
     "src/core/zip_archive_writer.cpp"
     "src/core/zip_archive_writer.h"
+)
+
+# Shared name normalization and validation used by Core and Domain features.
+# Keep this small QtCore component separate so Next can reuse name rules
+# without pulling the rest of ClassMngrCore into its startup closure.
+set(CLASSMNGR_STUDENT_NAME_SOURCES
+    "src/core/utils/student_name_utils.cpp"
+    "src/core/utils/student_name_utils.h"
 )
 
 # The application update-check closure is shared by the legacy runtime and
@@ -120,7 +126,9 @@ set(CLASSMNGR_WORKSPACE_STORE_SOURCES
 set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
     "src/next/platform/workspace_store_gateway.cpp"
     "src/next/platform/workspace_store_gateway.h"
+    "src/next/platform/workspace_store_initial_setup_teacher_entry_port.h"
     "src/next/platform/workspace_store_personal_details_port.h"
+    "src/next/platform/teacher_validator_teacher_create_validation_policy.h"
     "src/next/platform/workspace_store_initial_setup_lifecycle_adapter.cpp"
     "src/next/platform/workspace_store_initial_setup_lifecycle_adapter.h"
     "src/next/platform/next_startup_profiler_inactive_workspace_compat.cpp"
@@ -182,6 +190,7 @@ set(CLASSMNGR_DOMAIN_SOURCES
     "src/domain/validation/roster_validator.h"
     "src/domain/validation/shared_validation.cpp"
     "src/domain/validation/shared_validation.h"
+    "src/domain/validation/shared_validation_names.cpp"
     "src/domain/validation/speaking_eval_validator.cpp"
     "src/domain/validation/speaking_eval_validator.h"
     "src/domain/validation/teacher_validator.cpp"

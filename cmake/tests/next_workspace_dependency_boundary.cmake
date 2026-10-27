@@ -21,6 +21,8 @@ foreach(_line IN LISTS _report_lines)
         set(_next_workspace_type "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_DOMAIN_LINKS=(.*)$")
         set(_next_workspace_domain_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_WORKSPACE_DOMAIN_SOURCES=(.*)$")
+        set(_next_workspace_domain_sources "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_DOMAIN_TYPE=(.*)$")
         set(_next_workspace_domain_type "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^DOCUMENT_CATALOG_TEST_LINKS=(.*)$")
@@ -92,7 +94,7 @@ if(NOT _document_catalog_library_links STREQUAL _expected_document_catalog_libra
 endif()
 
 set(_expected_workspace_links
-    "ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrWorkspaceStore|ClassMngrNextWorkspaceDomain|Qt6::Sql"
+    "ClassMngrSignature|ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrWorkspaceStore|ClassMngrNextWorkspaceDomain|Qt6::Sql"
 )
 if(NOT _next_workspace_links STREQUAL _expected_workspace_links)
     message(FATAL_ERROR
@@ -109,8 +111,15 @@ endif()
 if(NOT _next_workspace_domain_type STREQUAL "STATIC_LIBRARY"
    OR NOT _next_workspace_domain_links STREQUAL "ClassMngrDomain")
     message(FATAL_ERROR
-        "ClassMngrNextWorkspaceDomain must archive only the shared Domain objects: "
+        "ClassMngrNextWorkspaceDomain must be a static archive with only the Domain target link: "
         "type=${_next_workspace_domain_type}, links=[${_next_workspace_domain_links}]"
+    )
+endif()
+string(FIND "${_next_workspace_domain_sources}" "ClassMngrStudentName" _student_name_object_index)
+if(_student_name_object_index EQUAL -1)
+    message(FATAL_ERROR
+        "ClassMngrNextWorkspaceDomain must include the shared StudentNameUtils object: "
+        "[${_next_workspace_domain_sources}]"
     )
 endif()
 

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "next/application/personal_details_save.h"
+#include "next/application/initial_setup_teacher_choices_read_snapshot.h"
+#include "next/application/teacher_create.h"
 #include "next/application/workspace_contracts.h"
 
 #include <memory>
@@ -55,6 +57,11 @@ public:
     [[nodiscard]] Application::PersonalDetailsSaveResult
     savePersonalDetails(
         const Application::PersonalDetailsSaveRequest& request
+        ) const;
+    [[nodiscard]] Application::InitialSetupTeacherChoicesResult
+    loadInitialSetupTeacherChoices() const;
+    [[nodiscard]] Application::TeacherCreateResult createInitialSetupTeacher(
+        const Application::TeacherCreateRequest& request
         ) const;
 
 private:

@@ -52,6 +52,58 @@ set_tests_properties(ClassMngrNextBootstrapTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
+# Keep the UI-to-WorkspaceStore teacher-entry acceptance check in its own
+# process so unrelated QApplication test state cannot affect the bootstrap.
+add_executable(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
+    tests/next/initial_setup_teacher_entry_bootstrap_integration_tests.cpp
+    ${CLASSMNGR_NEXT_BOOTSTRAP_SOURCES}
+    $<TARGET_OBJECTS:ClassMngrSettings>
+)
+target_compile_features(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
+    PRIVATE
+        CLASSMNGR_NEXT_VERSION="${PROJECT_VERSION}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
+    PRIVATE
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspace
+        ClassMngrNext::DocumentCatalog
+        ClassMngrNextStartupUpdates
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
+    COMMAND ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
+)
+set_tests_properties(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
 classmngr_add_qt_test(
     NAME NextThemePresenter
     OFFSCREEN
@@ -100,6 +152,7 @@ target_compile_definitions(ClassMngrNextPageHostTests
 )
 target_link_libraries(ClassMngrNextPageHostTests
     PRIVATE
+        ClassMngrSignature
         ClassMngrNext::Resources
         Qt6::Test
         Qt6::Widgets
@@ -574,6 +627,10 @@ get_target_property(_classmngr_next_workspace_domain_links
     ClassMngrNextWorkspaceDomain
     LINK_LIBRARIES
 )
+get_target_property(_classmngr_next_workspace_domain_sources
+    ClassMngrNextWorkspaceDomain
+    SOURCES
+)
 get_target_property(_classmngr_next_workspace_domain_type
     ClassMngrNextWorkspaceDomain
     TYPE
@@ -607,6 +664,7 @@ foreach(_classmngr_next_boundary_value IN ITEMS
         _classmngr_next_workspace_sources
         _classmngr_next_workspace_type
         _classmngr_next_workspace_domain_links
+        _classmngr_next_workspace_domain_sources
         _classmngr_next_workspace_domain_type
         _classmngr_document_catalog_test_links
         _classmngr_bootstrap_test_links
@@ -629,6 +687,7 @@ file(WRITE "${_classmngr_next_boundary_report}"
     "NEXT_WORKSPACE_SOURCES=${_classmngr_next_workspace_sources}\n"
     "NEXT_WORKSPACE_TYPE=${_classmngr_next_workspace_type}\n"
     "NEXT_WORKSPACE_DOMAIN_LINKS=${_classmngr_next_workspace_domain_links}\n"
+    "NEXT_WORKSPACE_DOMAIN_SOURCES=${_classmngr_next_workspace_domain_sources}\n"
     "NEXT_WORKSPACE_DOMAIN_TYPE=${_classmngr_next_workspace_domain_type}\n"
     "DOCUMENT_CATALOG_TEST_LINKS=${_classmngr_document_catalog_test_links}\n"
     "BOOTSTRAP_TEST_LINKS=${_classmngr_bootstrap_test_links}\n"
@@ -2244,6 +2303,22 @@ classmngr_add_qt_test(
     NAME NextPlatformWorkspaceStoreInitialSetupLifecycleAdapter
     SOURCES
         tests/next_platform_workspace_store_initial_setup_lifecycle_adapter_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNextWorkspace
+        ClassMngrWorkspaceStore
+        ClassMngrNextWorkspaceDomain
+        Qt6::Sql
+        Qt6::Test
+    COMPILE_DEFINITIONS
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+)
+
+# Verify teacher entry persistence and recovery through the v2 store boundary.
+classmngr_add_qt_test(
+    NAME NextPlatformWorkspaceStoreInitialSetupTeacherEntryPersistence
+    SOURCES
+        tests/next_platform_workspace_store_initial_setup_teacher_entry_persistence_tests.cpp
     LIBRARIES
         ClassMngrNext::Application
         ClassMngrNextWorkspace

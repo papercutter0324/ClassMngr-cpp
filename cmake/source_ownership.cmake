@@ -41,6 +41,9 @@ function(_classmngr_record_manifest target)
 endfunction()
 
 function(classmngr_check_source_ownership)
+    _classmngr_record_manifest(ClassMngrStudentName
+        ${CLASSMNGR_STUDENT_NAME_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrCore ${CLASSMNGR_CORE_SOURCES})
     _classmngr_record_manifest(ClassMngrUpdater ${CLASSMNGR_UPDATER_SOURCES})
     _classmngr_record_manifest(ClassMngrSettings ${CLASSMNGR_SETTINGS_SOURCES})

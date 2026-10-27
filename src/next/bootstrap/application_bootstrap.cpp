@@ -710,6 +710,14 @@ Application::StartupResult ApplicationBootstrap::start()
                             ) {
                             return saveInitialSetupPersonalDetails(request);
                         },
+                        .loadTeacherChoices = [this] {
+                            return loadInitialSetupTeacherChoices();
+                        },
+                        .createTeacher = [this](
+                            const Application::TeacherCreateRequest& request
+                            ) {
+                            return saveInitialSetupTeacher(request);
+                        },
                         .chooseSignatureImage = [this] {
                             return chooseInitialSetupSignatureImage();
                         }
@@ -1491,6 +1499,63 @@ ApplicationBootstrap::saveInitialSetupPersonalDetails(
     }
 
     return storeGateway->savePersonalDetails(request);
+}
+
+Application::InitialSetupTeacherChoicesResult
+ApplicationBootstrap::loadInitialSetupTeacherChoices() const
+{
+    if (!m_initialSetupLifecycle
+        || !m_initialSetupLifecycle->hasPendingSetup())
+    {
+        return Application::InitialSetupTeacherChoicesResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "No setup profile is active.",
+            .recoverable = true
+        });
+    }
+
+    auto* const storeGateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+        m_workspaceGateway.get()
+        );
+    if (!storeGateway)
+    {
+        return Application::InitialSetupTeacherChoicesResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "The setup profile teacher store is unavailable.",
+            .recoverable = true
+        });
+    }
+
+    return storeGateway->loadInitialSetupTeacherChoices();
+}
+
+Application::TeacherCreateResult ApplicationBootstrap::saveInitialSetupTeacher(
+    const Application::TeacherCreateRequest& request
+    ) const
+{
+    if (!m_initialSetupLifecycle
+        || !m_initialSetupLifecycle->hasPendingSetup())
+    {
+        return Application::TeacherCreateResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "No setup profile is active.",
+            .recoverable = true
+        });
+    }
+
+    auto* const storeGateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+        m_workspaceGateway.get()
+        );
+    if (!storeGateway)
+    {
+        return Application::TeacherCreateResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "The setup profile teacher store is unavailable.",
+            .recoverable = true
+        });
+    }
+
+    return storeGateway->createInitialSetupTeacher(request);
 }
 
 Domain::Result<std::optional<QByteArray>>
