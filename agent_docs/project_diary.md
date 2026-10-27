@@ -47,6 +47,11 @@
   a successful open, prune only confirmed missing entries, and clear
   recent/last-file keys without touching profile files or the last-directory
   preference. Check setup/recovery before prompting about ordinary dirty state.
+- Keep live replacement rollback separate from recovery after process
+  interruption. Scan only the active or remembered profile directory for exact
+  hidden normal-create siblings; recover one by copying to a new unused profile
+  and opening the copy while retaining the source. Leave Initial Setup journal
+  recovery and UI separate, with no second journal or startup prompt.
 - Keep the Next setup workbook flow on one typed path: asynchronous parser
   validation and review mapping feed `TeacherImportUseCaseRequest`, and the
   pending `WorkspaceStore` owns the import transaction. Verify selection,

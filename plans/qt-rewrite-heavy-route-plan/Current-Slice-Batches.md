@@ -58,10 +58,10 @@ verification and limits are in the progress log. Candidate #13, Recent Files
 menu, restore, and clear, is accepted in `b79b98e9` with parity follow-up
 `4fcab8bf`; evidence and limits are in the progress log. The 7A screenshot
 comparison and memory measurement remain open. Candidate #14, explicit
-recovery of an interrupted normal-create sibling, is active. Candidate #8
-already owns live normal replacement and rollback; recovery after a process
-interrupt is the missing behavior. Candidate #15, schema-v6 `.db` input and
-native `.tps` normalization, remains. Batch 1 is active and unpushed.
+recovery of an interrupted normal-create sibling, is accepted and committed as
+`0b5c1d6c`; Candidate #8 already owns live normal replacement and rollback.
+Candidate #15, schema-v6 `.db` input and native `.tps` normalization, is active.
+Batch 1 remains active and unpushed.
 
 Next-batch discovery began when #14 started, the second-to-last Batch 1
 candidate, and is complete under the phase rule. The following ordered

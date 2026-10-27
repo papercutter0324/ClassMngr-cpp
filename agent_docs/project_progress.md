@@ -120,10 +120,23 @@ after the follow-ups, all five acceptance CTest entries passed again, the
 selected offscreen Qt cases passed, and Bootstrap CTest passed 1/1.
 `git diff --check` passed. No full-suite or native-dialog run occurred; the
 directory-preference write-failure warning was not injected. Candidate #14,
-normal-create interrupted recovery, is active. Next-batch discovery completed
-with five ordered Teacher/Staff proposals. Batch 1 remains un-pushed. The 7A
-screenshot comparison, Phase 7 memory evidence, and 7A/Phase 7 exit gates
-remain open.
+normal-create interrupted recovery, passed independent focused verification
+and was committed as `0b5c1d6c`. It adds an explicit Next File-menu action that
+scans one directory for matching hidden recovery siblings, copies a selected
+source to a new non-overwriting `.tps` destination, retains the source, and
+opens the copy through the shared open flow. Initial Setup backups remain
+separate, and no normal-create journal or startup prompt was added. The
+focused build covered Next, Bootstrap, Navigation, and recovery/open/create
+flow targets; focused CTest passed 6/6 including the dependency boundary. The
+follow-up added three-candidate ordering and a real menu-to-bootstrap test;
+these plus the boundary passed 3/3. No full-suite or manual-dialog run
+occurred, and recovery used seeded sibling artifacts rather than a process
+terminated mid-create. Bootstrap open-failure integration starts with no
+active session; active-session preservation is verified separately in the
+recovery-flow test. Next-batch discovery completed with five ordered
+Teacher/Staff proposals. Candidate #15, schema-v6 `.db` input and native `.tps`
+normalization, is active. Batch 1 remains un-pushed. The 7A screenshot
+comparison, Phase 7 memory evidence, and 7A/Phase 7 exit gates remain open.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
 routes on Windows x64 and macOS universal, and the user confirmed the retained

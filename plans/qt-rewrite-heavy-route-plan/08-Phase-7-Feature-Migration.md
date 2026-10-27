@@ -38,13 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
-- Current note: 7A.1–7A.13 are accepted and committed. Candidate #13 is covered
-  by `b79b98e9` and parity follow-up `4fcab8bf`. Candidate #14, explicit
-  recovery of an interrupted normal-create sibling, is active; next-batch
-  discovery is complete. Candidate #15 remains schema-v6 `.db` input and
-  native `.tps` normalization. Batch 1 remains active and unpushed. The 7A
-  screenshot comparison and memory measurement remain open, as do the 7A and
-  Phase 7 exit gates. See the progress log for 7A.13 evidence and limits.
+- Current note: 7A.1–7A.14 are accepted and committed. Candidate #15, schema-v6
+  `.db` input and native `.tps` normalization, is active. Batch 1 remains
+  active and unpushed; next-batch discovery is complete. The 7A screenshot
+  comparison and memory measurement remain open, as do the 7A and Phase 7 exit
+  gates. See the progress log for acceptance evidence and limits.
 
 ### Slice batches
 
@@ -396,6 +394,31 @@ keep current status in this plan and live batches in the shared tracker.
 - Limits and remaining gates: no full suite or native-dialog run; injected
   directory-preference write-warning coverage is absent. Screenshot comparison
   and memory evidence, plus the 7A and Phase 7 exit gates, remain open.
+
+### 7A.14 — Interrupted normal-create recovery accepted (2026-10-27)
+
+- Commit: `0b5c1d6c`. The manual Next File-menu recovery action scans one
+  active, remembered, or default directory nonrecursively for exact hidden
+  `.<target>.workspace-create-UUID.recovery` regular files. It rejects
+  lookalikes and symlinks and excludes Initial Setup backups. After the user
+  selects a candidate, the flow resolves dirty state, copies it with
+  no-replace semantics to a newly selected unused `.tps` destination, retains
+  the source, and opens the copy through the shared Next open flow. Setup or
+  recovery blocks before scanning or prompting. No normal-create journal or
+  startup prompt was added.
+- Copy/open failure preserves the source and recovery artifacts and existing
+  active state/history; successful open updates history/navigation. Verification
+  used standard `build/macos-clang-debug` and built `ClassMngrNext`, Bootstrap,
+  Navigation, InterruptedRecoveryFlow, OpenFlow, and CreationFlow targets.
+  Focused CTest passed 6/6, including the Next dependency boundary. Follow-up
+  sort/order assertions and real File-menu-to-bootstrap cancel, failure, and
+  success coverage passed Bootstrap, recovery, and boundary CTest 3/3.
+  `git diff --check` passed. No acceptance gate remains.
+- Limits: no full suite or native-dialog run; recovery artifacts were seeded
+  rather than created by terminating a process mid-create. The Bootstrap
+  failed-open test starts closed; the flow test separately verifies preservation
+  of an existing active session. The 7A screenshot comparison, memory evidence,
+  and 7A/Phase 7 exit gates remain open.
 
 ## Objective
 

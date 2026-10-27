@@ -6,12 +6,11 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-27
-- Current milestone: Phase 7 remains in progress. 7A.1–7A.13 are accepted and
-  committed; #13 is covered by `b79b98e9` and parity follow-up `4fcab8bf`.
-  Candidate #14, explicit interrupted normal-create sibling recovery, is
-  active, and next-batch discovery is complete. Batch 1 remains active and
-  unpushed. The 7A screenshot comparison and memory measurement remain open,
-  as do the 7A and Phase 7 exit gates. See the [Phase 7
+- Current milestone: Phase 7 remains in progress. 7A.1–7A.14 are accepted and
+  committed; Candidate #15, schema-v6 `.db` input and native `.tps`
+  normalization, is active. Batch 1 remains active and unpushed, and next-batch
+  discovery is complete. The 7A screenshot comparison and memory measurement
+  remain open, as do the 7A and Phase 7 exit gates. See the [Phase 7
   plan](08-Phase-7-Feature-Migration.md) and [current batch
   tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
@@ -37,7 +36,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — 7A.1–7A.13 accepted; candidate #14 active | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — 7A.1–7A.14 accepted; candidate #15 active | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |
