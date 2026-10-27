@@ -40,8 +40,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-27
 - Current note: 7A.1–7A.15 are accepted; Batch 1 is pushed at `c5af6755`.
   Candidate #16, Teacher profile page and navigation, is accepted at
-  `24c14f5e`; Batch 2 is active at candidate #17, Korean teacher
-  list/navigation with New and Delete. The 7A screenshot comparison and memory
+  `24c14f5e`; candidate #17, Korean teacher sidebar directory, is accepted at
+  `d6574628`. Batch 2 is active at candidate #18, Shared Staff Directory for
+  Native English and GS Team. The 7A screenshot comparison and memory
   measurement remain open, as do the 7A and Phase 7 exit gates. See the
   progress log for slice evidence and limits.
 
@@ -465,6 +466,29 @@ keep current status in this plan and live batches in the shared tracker.
   incremental) was not stated in the verification handoff.
 - Limits: these profile captures do not close the 7A screenshot comparison or
   memory evidence; the 7A and Phase 7 exit gates remain open.
+
+### Candidate #17 — Korean teacher sidebar directory accepted (2026-10-27)
+
+- Commit: `d6574628` (`Phase7 - Add Korean teacher sidebar directory`). The
+  sidebar shows 24 Korean teachers under Campus Staff. Matched legacy/Next
+  captures show 28 items and 12 widgets in that subtree. Both use Inter 14 pt,
+  12 px indentation, and 30 px rows, aligned with legacy.
+- Visual review: English/light and Korean/dark pairs use Fusion/offscreen at
+  1024×768. Main reviewed all four captures; the only expected difference is
+  localized “My Workspace” text. The [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/korean-teacher-directory/README.md)
+  includes both manifests.
+- Verification: focused CTest passed 13/13 and visual captures 2/2. Required
+  targets built; `NextStartupWorkspaceDependencyBoundary`, ownership count
+  (1,760), resource inventory `--check`, and `git diff --check` passed.
+  Independent Tester verification covered #17; #16 was not independently
+  re-verified.
+- Memory: with both surfaces alive, whole-process snapshots were English/light:
+  resident 74.11 MiB, peak 74.16 MiB, physical footprint 30.38 MiB, internal
+  resident 29.75 MiB; Korean/dark: resident 79.38 MiB, peak 79.42 MiB,
+  physical footprint 32.45 MiB, internal resident 31.83 MiB. These are not
+  per-list deltas and do not
+  establish a budget or close the 7A or Phase 9 memory gates. The 7A screenshot
+  comparison and 7A/Phase 7 exit gates also remain open.
 
 ## Objective
 

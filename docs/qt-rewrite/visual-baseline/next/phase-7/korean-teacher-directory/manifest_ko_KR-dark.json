@@ -1,0 +1,70 @@
+{
+    "fixture": "tests/fixtures/workspaces/large_startup.sql",
+    "fixtureTeacherRows": 24,
+    "locale": "ko_KR",
+    "memory": {
+        "available": true,
+        "compressedBytesRendered": 0,
+        "internalResidentBytesRendered": 33374208,
+        "metricNotes": "macOS resident and peak resident are available. physicalFootprintBytes is the provider's phys_footprint value; internalResidentBytes is TASK_VM_INFO.internal. The provider has no process commit metric. compressedBytes is compressed memory, not commit. No separate private-bytes counter is reported by this capture.",
+        "peakResidentBytesAfterRelease": 83279872,
+        "peakResidentBytesAtRenderedSnapshot": 83230720,
+        "peakResidentBytesProcessAfterRelease": 83279872,
+        "physicalFootprintBytesRendered": 34030504,
+        "platform": "macos",
+        "provider": "PlatformProcessMemorySnapshotProvider using macOS TASK_VM_INFO",
+        "residentBytesAfterRelease": 83279872,
+        "residentBytesBeforeWidgets": 44630016,
+        "residentBytesRendered": 83230720
+    },
+    "navigationTypographyParity": {
+        "legacyAndNextFontPointSize": 14,
+        "legacyAndNextIndentationPixels": 12,
+        "legacyAndNextPrimaryFamily": "Inter",
+        "legacyAndNextTeacherRowHeightPixels": 30,
+        "legacyAndNextTopLevelRowHeightPixels": 30,
+        "matchesLegacyStandard": true
+    },
+    "ownerTeardown": {
+        "legacySidebarDestroyed": true,
+        "nextApplicationShellDestroyed": true
+    },
+    "purpose": "Matched legacy and Next Korean teacher sidebar tree captures for #17",
+    "qtPlatform": "offscreen",
+    "style": "Fusion",
+    "surfaceComparability": "Both captures are the actual application QTreeWidget sidebar surfaces at the same fixed size, locale, theme, and fixture. The Korean teacher rows are under Campus Staff in each tree. Next uses the legacy Inter primary family, 12 px indentation, 14 pt font, and 30 px row metrics. The Next profile route is present in navigation history but hidden from the visible tree. This compares sidebar tree presentation, not full application windows.",
+    "surfaces": {
+        "legacySidebarTree": {
+            "capture": "legacy_ko_KR-dark.png",
+            "itemsInCampusStaffSubtree": 28,
+            "teacherRowHeightPixels": 30,
+            "teacherRows": 24,
+            "topLevelRowHeightPixels": 30,
+            "treeFontFamily": "Inter",
+            "treeFontPointSize": 14,
+            "treeIndentationPixels": 12,
+            "widgetsInTreeSubtree": 12
+        },
+        "nextSidebarTree": {
+            "capture": "next_ko_KR-dark.png",
+            "itemsInCampusStaffSubtree": 28,
+            "teacherRowHeightPixels": 30,
+            "teacherRows": 24,
+            "topLevelRowHeightPixels": 30,
+            "treeFontFamily": "Inter",
+            "treeFontPointSize": 14,
+            "treeIndentationPixels": 12,
+            "widgetsInTreeSubtree": 12
+        }
+    },
+    "taskId": "P7B17-KOREAN-TEACHER-LIST-VERIFICATION",
+    "theme": "dark",
+    "viewport": {
+        "height": 768,
+        "width": 1024
+    },
+    "widgetCountsBeforeAndAfter": {
+        "afterRelease": 0,
+        "before": 0
+    }
+}
