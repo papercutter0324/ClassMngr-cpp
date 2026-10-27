@@ -98,6 +98,11 @@ struct SaveWorkspaceRequest final
     WorkspaceSession session;
 };
 
+struct DiscardWorkspaceChangesRequest final
+{
+    WorkspaceSession session;
+};
+
 struct SaveWorkspaceAsRequest final
 {
     WorkspaceSession session;
@@ -136,6 +141,18 @@ public:
     [[nodiscard]] virtual Domain::Result<void> saveWorkspace(
         const SaveWorkspaceRequest& request
         ) = 0;
+
+    [[nodiscard]] virtual Domain::Result<void> discardWorkspaceChanges(
+        const DiscardWorkspaceChangesRequest& request
+        )
+    {
+        static_cast<void>(request);
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Workspace changes cannot be discarded by this gateway.",
+            .recoverable = false
+        });
+    }
 
     [[nodiscard]] virtual Domain::Result<WorkspaceLocation> saveWorkspaceAs(
         const SaveWorkspaceAsRequest& request

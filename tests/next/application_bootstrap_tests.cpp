@@ -48,6 +48,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QSaveFile>
+#include <QStatusBar>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTreeWidget>
@@ -114,6 +115,8 @@ private slots:
     void createActionUsesSelectedPathAndDoesNotRecordPendingProfile();
     void openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess();
     void openActionDoesNotBypassPendingOrUnreadableSetupRecovery();
+    void saveAndCloseProfileActionsUseNextGateway();
+    void dirtyPageBlocksNavigationOpenNewAndWindowClose();
     void teacherImportUsesPendingStoreTransactionAndCancelRecoversBackup();
     void imageSignatureSaveReopensAndResumesFromFixture();
     void failedPersonalDetailsSavePreservesReplacementBackup();
@@ -416,6 +419,8 @@ struct BootstrapWorkspaceGatewayProbe final
     std::vector<std::string> events;
     std::optional<Domain::OperationError> openError;
     std::optional<Domain::OperationError> closeError;
+    std::optional<Domain::OperationError> saveError;
+    std::optional<Domain::OperationError> discardError;
     std::optional<Application::WorkspaceSession> openedSession;
     std::optional<Application::WorkspaceSession> closedSession;
     int factoryCalls = 0;
@@ -423,6 +428,8 @@ struct BootstrapWorkspaceGatewayProbe final
     int destroyed = 0;
     int openCalls = 0;
     int closeCalls = 0;
+    int saveCalls = 0;
+    int discardCalls = 0;
     std::vector<std::string>* shutdownEvents = nullptr;
 };
 
@@ -500,9 +507,28 @@ public:
     }
 
     Domain::Result<void> saveWorkspace(
-        const Application::SaveWorkspaceRequest&
+        const Application::SaveWorkspaceRequest& request
         ) override
     {
+        static_cast<void>(request);
+        ++m_probe->saveCalls;
+        if (m_probe->saveError.has_value())
+        {
+            return Domain::Result<void>::failure(*m_probe->saveError);
+        }
+        return Domain::Result<void>::success();
+    }
+
+    Domain::Result<void> discardWorkspaceChanges(
+        const Application::DiscardWorkspaceChangesRequest& request
+        ) override
+    {
+        static_cast<void>(request);
+        ++m_probe->discardCalls;
+        if (m_probe->discardError.has_value())
+        {
+            return Domain::Result<void>::failure(*m_probe->discardError);
+        }
         return Domain::Result<void>::success();
     }
 
@@ -536,6 +562,73 @@ private:
     }
 
     std::shared_ptr<BootstrapWorkspaceGatewayProbe> m_probe;
+};
+
+struct UnsavedChangesPromptProbe final
+{
+    Application::UnsavedChangesAction action =
+        Application::UnsavedChangesAction::Cancel;
+    std::optional<Domain::OperationError> error;
+    std::vector<Application::UnsavedChangesPromptRequest> requests;
+};
+
+class RecordingWorkspaceLifecycleUserPrompt final
+    : public Application::UserPromptPort
+{
+public:
+    explicit RecordingWorkspaceLifecycleUserPrompt(
+        std::shared_ptr<UnsavedChangesPromptProbe> probe
+        )
+        : m_probe(std::move(probe))
+    {
+    }
+
+    Domain::Result<void> showMessage(
+        const Application::MessagePromptRequest& request
+        ) override
+    {
+        static_cast<void>(request);
+        return Domain::Result<void>::success();
+    }
+
+    Domain::Result<Application::ConfirmationResponse> confirm(
+        const Application::ConfirmationPromptRequest& request
+        ) override
+    {
+        static_cast<void>(request);
+        return Domain::Result<Application::ConfirmationResponse>::success(
+            Application::ConfirmationResponse::Accepted
+            );
+    }
+
+    Domain::Result<Application::UnsavedChangesAction> confirmUnsavedChanges(
+        const Application::UnsavedChangesPromptRequest& request
+        ) override
+    {
+        m_probe->requests.push_back(request);
+        if (m_probe->error.has_value())
+        {
+            return Domain::Result<Application::UnsavedChangesAction>::failure(
+                *m_probe->error
+                );
+        }
+        return Domain::Result<Application::UnsavedChangesAction>::success(
+            m_probe->action
+            );
+    }
+
+    Domain::Result<std::optional<Application::PromptActionId>> chooseAction(
+        const Application::NamedActionPromptRequest& request
+        ) override
+    {
+        static_cast<void>(request);
+        return Domain::Result<std::optional<Application::PromptActionId>>::success(
+            std::nullopt
+            );
+    }
+
+private:
+    std::shared_ptr<UnsavedChangesPromptProbe> m_probe;
 };
 
 Bootstrap::ApplicationBootstrap::StartupDiagnosticsSinkFactory
@@ -4194,9 +4287,10 @@ createActionUsesSelectedPathAndDoesNotRecordPendingProfile()
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
     seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
     seams.recentAutoOpenEnabled = true;
-    seams.initialSetupRecoveryJournalPath = temporaryDirectory.filePath(
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
         QStringLiteral("initial-setup-recovery.json")
         );
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
     seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
         return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
     };
@@ -4261,6 +4355,39 @@ createActionUsesSelectedPathAndDoesNotRecordPendingProfile()
         profileLabel->text(),
         QStringLiteral("Profile: %1").arg(QFileInfo(selectedProfilePath).absoluteFilePath())
         );
+
+    QAction* const closeProfileAction = bootstrap.shell()->findChild<QAction*>(
+        QStringLiteral("classMngrNextCloseWorkspace")
+        );
+    QVERIFY(closeProfileAction);
+    QFile journalBeforeClose(recoveryJournalPath);
+    QVERIFY(journalBeforeClose.open(QIODevice::ReadOnly));
+    const QByteArray pendingRecoveryJournal = journalBeforeClose.readAll();
+    QVERIFY(!pendingRecoveryJournal.isEmpty());
+    const Application::WorkspaceStateSnapshot activeSetupWorkspace =
+        bootstrap.workspaceStateSnapshot();
+    QVERIFY(activeSetupWorkspace.session().has_value());
+    QCOMPARE(activeSetupWorkspace.lifecycle(),
+             Application::WorkspaceLifecycleState::Open);
+
+    // Exercise the handler guard independently of action enablement policy.
+    closeProfileAction->setEnabled(true);
+    closeProfileAction->trigger();
+
+    const Application::WorkspaceStateSnapshot afterRejectedClose =
+        bootstrap.workspaceStateSnapshot();
+    QVERIFY(afterRejectedClose.session().has_value());
+    QCOMPARE(afterRejectedClose.lifecycle(),
+             Application::WorkspaceLifecycleState::Open);
+    QCOMPARE(afterRejectedClose.session()->location(),
+             activeSetupWorkspace.session()->location());
+    QCOMPARE(statusLabel->text(), QStringLiteral("Profile created. Setup is pending."));
+    QFile journalAfterClose(recoveryJournalPath);
+    QVERIFY(journalAfterClose.open(QIODevice::ReadOnly));
+    QCOMPARE(journalAfterClose.readAll(), pendingRecoveryJournal);
+    QVERIFY(bootstrap.shell()->statusBar()->currentMessage().contains(
+        QStringLiteral("Resolve the pending setup or recovery state")
+        ));
 
     auto* const personalName = setupPage->findChild<QLineEdit*>(
         QStringLiteral("classMngrNextInitialSetupPersonalName")
@@ -4717,6 +4844,272 @@ openActionDoesNotBypassPendingOrUnreadableSetupRecovery()
     QCOMPARE(journalAfter.readAll(), QByteArrayLiteral("{ unreadable recovery journal"));
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::saveAndCloseProfileActionsUseNextGateway()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("workspace-actions.tps")
+        );
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    auto promptProbe = std::make_shared<UnsavedChangesPromptProbe>();
+    Application::WorkspaceState* workspaceStateForTest = nullptr;
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"), profilePath
+    };
+    seams.recentAutoOpenEnabled = false;
+    seams.pathExists = [](const Application::WorkspaceLocation&) {
+        return true;
+    };
+    seams.workspaceGatewayFactory = [gatewayProbe] {
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
+    };
+    seams.afterStartupWorkspaceOpenedForTesting = [&workspaceStateForTest](
+        Application::WorkspaceState& workspaceState
+        ) {
+        workspaceStateForTest = &workspaceState;
+    };
+    seams.workspaceLifecycleUserPromptPortFactory = [promptProbe] {
+        return std::make_unique<RecordingWorkspaceLifecycleUserPrompt>(promptProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    QCOMPARE(shell->navigationModel()->currentPageId()->value(),
+             QStringLiteral("my_workspace"));
+
+    QAction* const saveAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextSaveWorkspace")
+        );
+    QAction* const closeAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextCloseWorkspace")
+        );
+    QVERIFY(saveAction);
+    QVERIFY(closeAction);
+    QVERIFY(saveAction->isEnabled());
+    QVERIFY(closeAction->isEnabled());
+
+    auto* const page = shell->pageHost().pageInstance(
+        QStringLiteral("my_workspace")
+        );
+    QVERIFY(page);
+
+    saveAction->trigger();
+    QCOMPARE(gatewayProbe->saveCalls, 0);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Open);
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+             workspaceLocation(profilePath));
+
+    QVERIFY(workspaceStateForTest);
+    QVERIFY(workspaceStateForTest->markDirty());
+    saveAction->trigger();
+    QCOMPARE(gatewayProbe->saveCalls, 1);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Open);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().unsavedState(),
+             Application::WorkspaceUnsavedState::Clean);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+             workspaceLocation(profilePath));
+
+    gatewayProbe->saveError = Domain::OperationError{
+        .code = Domain::ErrorCode::Technical,
+        .message = "injected menu save failure",
+        .recoverable = true
+    };
+    QVERIFY(workspaceStateForTest->markDirty());
+    saveAction->trigger();
+    QCOMPARE(gatewayProbe->saveCalls, 2);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Open);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().unsavedState(),
+             Application::WorkspaceUnsavedState::Dirty);
+    QVERIFY(shell->statusBar()->currentMessage().contains(
+        QStringLiteral("could not be saved")
+        ));
+
+    gatewayProbe->saveError.reset();
+    saveAction->trigger();
+    QCOMPARE(gatewayProbe->saveCalls, 3);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().unsavedState(),
+             Application::WorkspaceUnsavedState::Clean);
+
+    gatewayProbe->closeError = Domain::OperationError{
+        .code = Domain::ErrorCode::Technical,
+        .message = "injected close failure",
+        .recoverable = true
+    };
+    page->markUnsavedChanges();
+    promptProbe->action = Application::UnsavedChangesAction::Save;
+    closeAction->trigger();
+    QCOMPARE(gatewayProbe->closeCalls, 1);
+    QCOMPARE(promptProbe->requests.size(), std::size_t(1));
+    QVERIFY(!page->hasUnsavedChanges());
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    QCOMPARE(shell->navigationModel()->currentPageId()->value(),
+             QStringLiteral("my_workspace"));
+    QVERIFY(closeAction->isEnabled());
+
+    gatewayProbe->closeError.reset();
+    closeAction->trigger();
+    QCOMPARE(gatewayProbe->closeCalls, 2);
+    QCOMPARE(promptProbe->requests.size(), std::size_t(1));
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Closed);
+    QCOMPARE(shell->navigationModel()->currentPageId()->value(),
+             QStringLiteral("initial_setup"));
+    QVERIFY(!saveAction->isEnabled());
+    QVERIFY(!closeAction->isEnabled());
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+dirtyPageBlocksNavigationOpenNewAndWindowClose()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("dirty-navigation.tps")
+        );
+    auto gatewayProbe = std::make_shared<BootstrapWorkspaceGatewayProbe>();
+    auto promptProbe = std::make_shared<UnsavedChangesPromptProbe>();
+    int openDialogFactoryCalls = 0;
+    int newDialogFactoryCalls = 0;
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"), profilePath
+    };
+    seams.recentAutoOpenEnabled = false;
+    seams.pathExists = [](const Application::WorkspaceLocation&) {
+        return true;
+    };
+    seams.workspaceGatewayFactory = [gatewayProbe] {
+        return std::make_unique<RecordingBootstrapWorkspaceGateway>(gatewayProbe);
+    };
+    seams.workspaceLifecycleUserPromptPortFactory = [promptProbe] {
+        return std::make_unique<RecordingWorkspaceLifecycleUserPrompt>(promptProbe);
+    };
+    seams.openProfileFileDialogPortFactory = [&openDialogFactoryCalls] {
+        ++openDialogFactoryCalls;
+        return std::unique_ptr<Application::FileDialogPort>{};
+    };
+    seams.newProfileFileDialogPortFactory = [&newDialogFactoryCalls] {
+        ++newDialogFactoryCalls;
+        return std::unique_ptr<Application::FileDialogPort>{};
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    auto* const page = shell->pageHost().pageInstance(
+        QStringLiteral("my_workspace")
+        );
+    QVERIFY(page);
+    page->markUnsavedChanges();
+
+    QAction* const openAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextOpenTeacherProfile")
+        );
+    QAction* const newAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextNewTeacherProfile")
+        );
+    QVERIFY(openAction);
+    QVERIFY(newAction);
+
+    openAction->trigger();
+    QCOMPARE(promptProbe->requests.size(), std::size_t(1));
+    QCOMPARE(openDialogFactoryCalls, 0);
+    QCOMPARE(gatewayProbe->openCalls, 1);
+    QVERIFY(page->hasUnsavedChanges());
+
+    newAction->trigger();
+    QCOMPARE(promptProbe->requests.size(), std::size_t(2));
+    QCOMPARE(newDialogFactoryCalls, 0);
+    QVERIFY(page->hasUnsavedChanges());
+
+    const auto campusPage = Ui::PageId::fromString(
+        QStringLiteral("campus_information")
+        );
+    QVERIFY(campusPage.has_value());
+    QVERIFY(!shell->navigateTo(*campusPage, Ui::NavigationCause::Selection));
+    QCOMPARE(promptProbe->requests.size(), std::size_t(3));
+    QCOMPARE(shell->navigationModel()->currentPageId()->value(),
+             QStringLiteral("my_workspace"));
+    QVERIFY(page->hasUnsavedChanges());
+
+    QVERIFY(!shell->close());
+    QCOMPARE(promptProbe->requests.size(), std::size_t(4));
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    QVERIFY(!bootstrap.shutdownRequested());
+    QCOMPARE(gatewayProbe->closeCalls, 0);
+
+    promptProbe->action = Application::UnsavedChangesAction::Discard;
+    gatewayProbe->closeError = Domain::OperationError{
+        .code = Domain::ErrorCode::Technical,
+        .message = "injected shutdown close failure",
+        .recoverable = true
+    };
+    QVERIFY(!shell->close());
+    QCOMPARE(promptProbe->requests.size(), std::size_t(5));
+    QVERIFY(!page->hasUnsavedChanges());
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    QVERIFY(!bootstrap.shutdownRequested());
+    QCOMPARE(gatewayProbe->closeCalls, 1);
+
+    gatewayProbe->closeError.reset();
+    QVERIFY(shell->close());
+    QCOMPARE(promptProbe->requests.size(), std::size_t(5));
+    QVERIFY(bootstrap.shutdownRequested());
+    QCOMPARE(gatewayProbe->closeCalls, 2);
     application.setStyleSheet(previousStyleSheet);
 }
 

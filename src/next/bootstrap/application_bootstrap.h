@@ -27,6 +27,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string>
 
 class QApplication;
 
@@ -60,6 +61,10 @@ public:
         std::optional<bool> recentAutoOpenEnabled;
         std::optional<QString> initialSetupRecoveryJournalPath;
         std::function<bool(const Application::WorkspaceLocation&)> pathExists;
+        // Allows focused startup tests to observe or seed state after the
+        // startup profile has been opened.
+        std::function<void(Application::WorkspaceState&)>
+            afterStartupWorkspaceOpenedForTesting;
         std::function<std::unique_ptr<Application::WorkspaceGateway>()>
             workspaceGatewayFactory;
         std::function<std::unique_ptr<Application::RecentWorkspaceHistoryPort>()>
@@ -78,6 +83,8 @@ public:
             openProfileFileDialogPortFactory;
         std::function<std::unique_ptr<Application::RecentWorkspaceHistoryPort>()>
             openProfileRecentWorkspaceHistoryPortFactory;
+        std::function<std::unique_ptr<Application::UserPromptPort>()>
+            workspaceLifecycleUserPromptPortFactory;
     };
 
     struct ShutdownSeams final
@@ -138,6 +145,14 @@ private:
     void beginInitialSetupProfile();
     void createNewTeacherProfile();
     void openExistingTeacherProfile();
+    void saveWorkspaceFromMenu();
+    void closeWorkspaceFromMenu();
+    [[nodiscard]] bool requestWindowClose();
+    [[nodiscard]] bool resolveActivePageChangesBeforeLeaving(
+        const std::string& destination
+        );
+    [[nodiscard]] std::unique_ptr<Application::UserPromptPort>
+    createWorkspaceLifecycleUserPromptPort();
     void resumeInitialSetupProfile();
     void restoreInitialSetupProfile();
     void cancelInitialSetupProfile();

@@ -45,6 +45,10 @@ public:
         const Application::SaveWorkspaceRequest& request
         ) override;
 
+    [[nodiscard]] Domain::Result<void> discardWorkspaceChanges(
+        const Application::DiscardWorkspaceChangesRequest& request
+        ) override;
+
     [[nodiscard]] Domain::Result<Application::WorkspaceLocation>
     saveWorkspaceAs(
         const Application::SaveWorkspaceAsRequest& request

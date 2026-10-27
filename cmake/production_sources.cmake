@@ -731,6 +731,7 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/page_descriptor.h"
     "src/next/ui/page_host.cpp"
     "src/next/ui/page_host.h"
+    "src/next/ui/page_host_active_page_changes_adapter.h"
     "src/next/ui/placeholder_page.cpp"
     "src/next/ui/placeholder_page.h"
     "src/next/ui/theme_presenter.cpp"

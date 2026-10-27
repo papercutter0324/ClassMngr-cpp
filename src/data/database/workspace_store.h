@@ -57,6 +57,7 @@ public:
     [[nodiscard]] QString databasePath() const;
     [[nodiscard]] QSqlDatabase database() const;
     [[nodiscard]] RepositoryStatus commit();
+    [[nodiscard]] RepositoryStatus rollback();
 
     // Runs the callback synchronously in a transaction owned by this store.
     // A failed RepositoryStatus rolls back; callback exceptions propagate

@@ -202,6 +202,7 @@ private slots:
     void cancelAndPendingSetupLeaveDialogHistoryAndWorkspaceUntouched();
     void corruptAndMissingProfilesPreserveActiveSessionAndSelection();
     void dirtyWorkspaceCannotBeReplaced();
+    void workspaceStoreRollbackDropsPendingTransaction();
     void historyFailureDoesNotRollBackOpenedProfile();
     void openPathPolicyRequiresTpsAndPreservesCase();
 };
@@ -447,6 +448,32 @@ void NextWorkspaceOpenFlowTests::dirtyWorkspaceCannotBeReplaced()
     QVERIFY(history.saved.empty());
     QVERIFY(notifications.requests.back().message.find("unsaved changes")
             != std::string::npos);
+}
+
+void NextWorkspaceOpenFlowTests::workspaceStoreRollbackDropsPendingTransaction()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString profilePath = directory.filePath(QStringLiteral("rollback.tps"));
+
+    WorkspaceStore store;
+    QVERIFY(store.open(profilePath));
+    QSqlDatabase database = store.database();
+    QVERIFY(database.isOpen());
+    QVERIFY(database.transaction());
+    QSqlQuery createProbeTable(database);
+    QVERIFY(createProbeTable.exec(
+        QStringLiteral("CREATE TABLE rollback_probe (value TEXT NOT NULL)")
+        ));
+
+    QVERIFY(store.rollback());
+    QSqlQuery checkProbeTable(store.database());
+    QVERIFY(checkProbeTable.exec(QStringLiteral(
+        "SELECT name FROM sqlite_master WHERE type = 'table' "
+        "AND name = 'rollback_probe'"
+        )));
+    QVERIFY(!checkProbeTable.next());
+    store.close();
 }
 
 void NextWorkspaceOpenFlowTests::historyFailureDoesNotRollBackOpenedProfile()

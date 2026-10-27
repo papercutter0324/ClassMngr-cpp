@@ -46,4 +46,18 @@ PlaceholderPage::PlaceholderPage(
     layout->addStretch(1);
 }
 
+PageOperationResult<void> PlaceholderPage::saveChanges()
+{
+    // Placeholder pages have no persisted data of their own.
+    setHasUnsavedChanges(false);
+    return {};
+}
+
+PageOperationResult<void> PlaceholderPage::discardChanges()
+{
+    // Placeholder pages have no pending fields to restore.
+    setHasUnsavedChanges(false);
+    return {};
+}
+
 }  // namespace ClassMngr::Next::Ui

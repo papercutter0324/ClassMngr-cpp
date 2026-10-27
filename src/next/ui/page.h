@@ -91,6 +91,43 @@ public:
         return {};
     }
 
+    // Editable pages override these methods to expose and resolve their
+    // in-memory draft. The default page is clean; a dirty page without an
+    // explicit save/discard implementation is rejected safely.
+    [[nodiscard]] virtual bool hasUnsavedChanges() const noexcept
+    {
+        return m_hasUnsavedChanges;
+    }
+
+    // Editable page handlers call this when their in-memory draft diverges
+    // from the page's last saved representation.
+    void markUnsavedChanges() noexcept
+    {
+        setHasUnsavedChanges(true);
+    }
+
+    [[nodiscard]] virtual PageOperationResult<void> saveChanges()
+    {
+        if (hasUnsavedChanges())
+        {
+            return std::unexpected(PageOperationError{
+                QStringLiteral("This page does not provide a save operation.")
+            });
+        }
+        return {};
+    }
+
+    [[nodiscard]] virtual PageOperationResult<void> discardChanges()
+    {
+        if (hasUnsavedChanges())
+        {
+            return std::unexpected(PageOperationError{
+                QStringLiteral("This page does not provide a discard operation.")
+            });
+        }
+        return {};
+    }
+
     // Resource scopes label requests only. Pages own their scoped handles;
     // clear feature-scoped handles here while retaining page-scoped handles
     // until this page is released.
@@ -98,8 +135,15 @@ public:
     {
     }
 
+protected:
+    void setHasUnsavedChanges(const bool unsaved) noexcept
+    {
+        m_hasUnsavedChanges = unsaved;
+    }
+
 private:
     PageContext m_resourceContext;
+    bool m_hasUnsavedChanges = false;
 };
 
 }  // namespace ClassMngr::Next::Ui

@@ -140,6 +140,28 @@ public:
         return m_workspaceState.markSaved();
     }
 
+    [[nodiscard]] Domain::Result<void> discardWorkspaceChanges()
+    {
+        const WorkspaceStateSnapshot beforeDiscard = m_workspaceState.snapshot();
+        if (!beforeDiscard.session().has_value())
+        {
+            return Domain::Result<void>::failure(notFound());
+        }
+        if (!isDirty())
+        {
+            return Domain::Result<void>::success();
+        }
+
+        const auto result = m_workspaceUseCase.discardWorkspaceChanges(
+            DiscardWorkspaceChangesRequest{*beforeDiscard.session()}
+            );
+        if (!result)
+        {
+            return result;
+        }
+        return m_workspaceState.markDiscarded();
+    }
+
     [[nodiscard]] Domain::Result<WorkspaceLocation> saveWorkspaceAs(
         WorkspaceLocation destination
         )
@@ -192,6 +214,11 @@ public:
                 std::move(destination)
             }
             );
+    }
+
+    [[nodiscard]] bool hasUnsavedChanges() const
+    {
+        return isDirty();
     }
 
 private:

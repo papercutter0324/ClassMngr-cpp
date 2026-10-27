@@ -361,6 +361,32 @@ add_test(
     COMMAND ClassMngrNextApplicationRuntimeTests
 )
 
+# Exercise dirty page/workspace resolution without Qt widgets or legacy UI.
+add_executable(ClassMngrNextUnsavedChangesResolutionTests
+    tests/next/unsaved_changes_resolution_flow_tests.cpp
+)
+target_compile_features(ClassMngrNextUnsavedChangesResolutionTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(ClassMngrNextUnsavedChangesResolutionTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextUnsavedChangesResolutionTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(ClassMngrNextUnsavedChangesResolutionTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextUnsavedChangesResolutionTests
+    COMMAND ClassMngrNextUnsavedChangesResolutionTests
+)
+
 # Keep typed preference state coordination independent of Qt and legacy ports.
 add_executable(ClassMngrNextPreferencesModelTests
     tests/next/preferences_model_tests.cpp

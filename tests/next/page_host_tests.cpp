@@ -4,6 +4,7 @@
 #include "next/resources/resource_scope.h"
 #include "next/ui/initial_page.h"
 #include "next/ui/page_host.h"
+#include "next/ui/page_host_active_page_changes_adapter.h"
 
 #include <QComboBox>
 #include <QColorDialog>
@@ -185,6 +186,51 @@ private:
     std::optional<Resources::ScopedResource<Resources::ResourceFileStream>> m_featureResource;
 };
 
+class DirtyPage final : public Ui::Page
+{
+public:
+    explicit DirtyPage(const Ui::PageContext& context)
+        : Ui::Page(context)
+    {
+    }
+
+    void editDraft()
+    {
+        setHasUnsavedChanges(true);
+    }
+
+    [[nodiscard]] Ui::PageOperationResult<void> saveChanges() override
+    {
+        ++saveCount;
+        if (saveFailure)
+        {
+            return std::unexpected(Ui::PageOperationError{
+                QStringLiteral("injected page save failure")
+            });
+        }
+        setHasUnsavedChanges(false);
+        return {};
+    }
+
+    [[nodiscard]] Ui::PageOperationResult<void> discardChanges() override
+    {
+        ++discardCount;
+        if (discardFailure)
+        {
+            return std::unexpected(Ui::PageOperationError{
+                QStringLiteral("injected page discard failure")
+            });
+        }
+        setHasUnsavedChanges(false);
+        return {};
+    }
+
+    bool saveFailure = false;
+    bool discardFailure = false;
+    int saveCount = 0;
+    int discardCount = 0;
+};
+
 Ui::PageHost::PageFactory factoryFor(PageProbe& probe)
 {
     return [&probe](const Ui::PageContext& context)
@@ -231,6 +277,7 @@ class PageHostTests final : public QObject
 private slots:
     void initTestCase();
     void preferencesModelIsSharedThroughPageContext();
+    void activePageChangesAdapterPreservesDirtyDraftUntilResolved();
     void descriptorRegistrationRetainsMetadataWithoutConstructingPages();
     void invalidAndDuplicateDescriptorsAreRejected();
     void lifecycleStatesAreQueryableObservableAndRejectReentrantMutations();
@@ -336,6 +383,49 @@ void PageHostTests::preferencesModelIsSharedThroughPageContext()
     QVERIFY(candidate.setFontSize(Application::FontSize::Large));
     QVERIFY(m_preferences.model.apply(candidate));
     QCOMPARE(page->resourceContext().preferences().snapshot().fontSize(), Application::FontSize::Large);
+}
+
+void PageHostTests::activePageChangesAdapterPreservesDirtyDraftUntilResolved()
+{
+    Ui::PageHost host(*m_loader, m_preferences.model);
+    QVERIFY(host.registerPage(Ui::PageDescriptor{
+        .id = *Ui::PageId::fromString(QStringLiteral("dirty-page")),
+        .label = QStringLiteral("Dirty page"),
+        .factory = [](const Ui::PageContext& context)
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            return std::make_unique<DirtyPage>(context);
+        }
+    }));
+    QVERIFY(host.activatePage(QStringLiteral("dirty-page")));
+
+    Ui::PageHostActivePageChangesAdapter changes(host);
+    auto* const page = dynamic_cast<DirtyPage*>(
+        host.pageInstance(QStringLiteral("dirty-page"))
+        );
+    QVERIFY(page);
+    page->editDraft();
+    QVERIFY(changes.hasUnsavedChanges());
+
+    page->saveFailure = true;
+    const auto failedSave = changes.saveChanges();
+    QVERIFY(!failedSave);
+    QVERIFY(changes.hasUnsavedChanges());
+
+    page->saveFailure = false;
+    QVERIFY(changes.saveChanges());
+    QCOMPARE(page->saveCount, 2);
+    QVERIFY(!changes.hasUnsavedChanges());
+
+    page->editDraft();
+    page->discardFailure = true;
+    const auto failedDiscard = changes.discardChanges();
+    QVERIFY(!failedDiscard);
+    QVERIFY(changes.hasUnsavedChanges());
+
+    page->discardFailure = false;
+    QVERIFY(changes.discardChanges());
+    QCOMPARE(page->discardCount, 2);
+    QVERIFY(!changes.hasUnsavedChanges());
 }
 
 void PageHostTests::descriptorRegistrationRetainsMetadataWithoutConstructingPages()

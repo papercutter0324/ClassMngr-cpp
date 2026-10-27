@@ -314,6 +314,34 @@ RepositoryStatus WorkspaceStore::commit()
     return {};
 }
 
+RepositoryStatus WorkspaceStore::rollback()
+{
+    if (!m_database || !m_database->isOpen())
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            QStringLiteral("No Teacher Profile is open.")
+        });
+    }
+
+    if (!m_database->rollback())
+    {
+        QString diagnostic = m_database->lastError().text();
+        if (diagnostic.isEmpty())
+        {
+            diagnostic = QStringLiteral(
+                "Unable to discard Teacher Profile changes."
+                );
+        }
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            std::move(diagnostic)
+        });
+    }
+
+    return {};
+}
+
 std::optional<WorkspaceStore::ReadTransactionFailure>
 WorkspaceStore::withReadTransaction(
     const std::function<RepositoryStatus()>& operation

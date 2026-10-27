@@ -78,6 +78,20 @@ public:
         return m_gateway.saveWorkspace(request);
     }
 
+    [[nodiscard]] Domain::Result<void> discardWorkspaceChanges(
+        const DiscardWorkspaceChangesRequest& request
+        ) const
+    {
+        if (!isValid(request.session))
+        {
+            return Domain::Result<void>::failure(
+                invalidInput("Workspace session must contain an id and location.")
+                );
+        }
+
+        return m_gateway.discardWorkspaceChanges(request);
+    }
+
     [[nodiscard]] Domain::Result<WorkspaceLocation> saveWorkspaceAs(
         const SaveWorkspaceAsRequest& request
         ) const

@@ -132,6 +132,21 @@ public:
         return Domain::Result<void>::success();
     }
 
+    // Call only after the owner of the unsaved in-memory draft has restored or
+    // dropped that draft. This is a state transition, not a persistence write.
+    [[nodiscard]] Domain::Result<void> markDiscarded()
+    {
+        if (!m_snapshot.session().has_value())
+        {
+            return Domain::Result<void>::failure(
+                notFound("No workspace session is open.")
+                );
+        }
+
+        m_snapshot.m_unsavedState = WorkspaceUnsavedState::Clean;
+        return Domain::Result<void>::success();
+    }
+
     [[nodiscard]] Domain::Result<void> markSavedAs(
         WorkspaceLocation location
         )

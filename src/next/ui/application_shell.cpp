@@ -111,6 +111,23 @@ ApplicationShell::ApplicationShell(
         QStringLiteral("classMngrNextOpenTeacherProfile")
         );
     m_openTeacherProfileAction->setShortcut(QKeySequence::Open);
+    fileMenu->addSeparator();
+    m_saveWorkspaceAction = fileMenu->addAction(
+        QCoreApplication::translate("NextShell", "Save")
+        );
+    m_saveWorkspaceAction->setObjectName(
+        QStringLiteral("classMngrNextSaveWorkspace")
+        );
+    m_saveWorkspaceAction->setShortcut(QKeySequence::Save);
+    m_saveWorkspaceAction->setEnabled(false);
+    m_closeWorkspaceAction = fileMenu->addAction(
+        QCoreApplication::translate("NextShell", "Close Teacher Profile")
+        );
+    m_closeWorkspaceAction->setObjectName(
+        QStringLiteral("classMngrNextCloseWorkspace")
+        );
+    m_closeWorkspaceAction->setShortcut(QKeySequence::Close);
+    m_closeWorkspaceAction->setEnabled(false);
 
     connect(m_backButton, &QPushButton::clicked, this, [this] {
         static_cast<void>(navigateBack());
@@ -128,6 +145,18 @@ ApplicationShell::ApplicationShell(
         if (m_openTeacherProfileHandler)
         {
             m_openTeacherProfileHandler();
+        }
+    });
+    connect(m_saveWorkspaceAction, &QAction::triggered, this, [this] {
+        if (m_saveWorkspaceHandler)
+        {
+            m_saveWorkspaceHandler();
+        }
+    });
+    connect(m_closeWorkspaceAction, &QAction::triggered, this, [this] {
+        if (m_closeWorkspaceHandler)
+        {
+            m_closeWorkspaceHandler();
         }
     });
     connect(m_navigationTree, &QTreeWidget::currentItemChanged, this,
@@ -162,6 +191,16 @@ void ApplicationShell::setNewTeacherProfileHandler(std::function<void()> handler
 void ApplicationShell::setOpenTeacherProfileHandler(std::function<void()> handler)
 {
     m_openTeacherProfileHandler = std::move(handler);
+}
+
+void ApplicationShell::setSaveWorkspaceHandler(std::function<void()> handler)
+{
+    m_saveWorkspaceHandler = std::move(handler);
+}
+
+void ApplicationShell::setCloseWorkspaceHandler(std::function<void()> handler)
+{
+    m_closeWorkspaceHandler = std::move(handler);
 }
 
 void ApplicationShell::setNavigationGuard(NavigationGuard guard)
@@ -226,6 +265,7 @@ NavigationModelResult<void> ApplicationShell::configureNavigation(
     m_navigationModel.emplace(std::move(*model));
     rebuildNavigationTree();
     synchronizeHistoryControls();
+    synchronizeWorkspaceActions(workspaceState);
     return {};
 }
 
@@ -312,6 +352,22 @@ void ApplicationShell::updateNavigationAccessContext(
         );
     rebuildNavigationTree();
     synchronizeHistoryControls();
+    synchronizeWorkspaceActions(workspaceState);
+}
+
+void ApplicationShell::synchronizeWorkspaceActions(
+    const Application::WorkspaceLifecycleState workspaceState
+    ) noexcept
+{
+    const bool open = workspaceState == Application::WorkspaceLifecycleState::Open;
+    if (m_saveWorkspaceAction)
+    {
+        m_saveWorkspaceAction->setEnabled(open);
+    }
+    if (m_closeWorkspaceAction)
+    {
+        m_closeWorkspaceAction->setEnabled(open);
+    }
 }
 
 void ApplicationShell::rebuildNavigationTree()

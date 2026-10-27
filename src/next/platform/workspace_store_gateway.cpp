@@ -260,6 +260,24 @@ Domain::Result<void> WorkspaceStoreGateway::saveWorkspace(
     return Domain::Result<void>::success();
 }
 
+Domain::Result<void> WorkspaceStoreGateway::discardWorkspaceChanges(
+    const Application::DiscardWorkspaceChangesRequest& request
+    )
+{
+    const Domain::Result<void> valid = validateSession(request.session);
+    if (!valid)
+    {
+        return valid;
+    }
+
+    const RepositoryStatus status = m_store->rollback();
+    if (!status)
+    {
+        return Domain::Result<void>::failure(operationError(status.error()));
+    }
+    return Domain::Result<void>::success();
+}
+
 Domain::Result<Application::WorkspaceLocation>
 WorkspaceStoreGateway::saveWorkspaceAs(
     const Application::SaveWorkspaceAsRequest& request

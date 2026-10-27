@@ -4,6 +4,7 @@
 #include "next/application/recent_workspace_history_use_case.h"
 #include "next/application/normal_workspace_creation_flow.h"
 #include "next/application/open_existing_workspace_flow.h"
+#include "next/application/unsaved_changes_resolution_flow.h"
 #include "next/application/initial_setup_class_details_requirements.h"
 #include "next/application/positive_decimal_id_validation.h"
 #include "core/settingsmanager.h"
@@ -23,6 +24,7 @@
 #include "next/ui/font_size_presenter.h"
 #include "next/ui/initial_page.h"
 #include "next/ui/page_host.h"
+#include "next/ui/page_host_active_page_changes_adapter.h"
 #include "next/ui/placeholder_page.h"
 #include "next/ui/qt_file_dialog_presenter.h"
 #include "next/ui/qt_user_prompt_presenter.h"
@@ -658,19 +660,27 @@ Application::StartupResult ApplicationBootstrap::start()
             m_coreServices->preferences
             );
         m_shell->setCloseHandler([this] {
-            const Application::ShutdownResult result =
-                m_shutdownCoordinator.requestShutdown();
-            if (result.shutdownRequested)
-            {
-                scheduleShutdownFinalization();
-            }
-            return result.shutdownRequested;
+            return requestWindowClose();
         });
         m_shell->setNewTeacherProfileHandler([this] {
             createNewTeacherProfile();
         });
         m_shell->setOpenTeacherProfileHandler([this] {
             openExistingTeacherProfile();
+        });
+        m_shell->setSaveWorkspaceHandler([this] {
+            saveWorkspaceFromMenu();
+        });
+        m_shell->setCloseWorkspaceHandler([this] {
+            closeWorkspaceFromMenu();
+        });
+        m_shell->setNavigationGuard([this](
+            const Ui::NavigationGuardRequest& request
+            ) {
+            static_cast<void>(request);
+            return resolveActivePageChangesBeforeLeaving("leaving this page")
+                ? Ui::NavigationGuardDecision::Allow
+                : Ui::NavigationGuardDecision::Reject;
         });
     }
     catch (const std::exception&)
@@ -1215,6 +1225,13 @@ Application::StartupStageOutcome ApplicationBootstrap::openStartupWorkspace()
         return Application::StartupStageOutcome::Warning;
     }
 
+    if (m_startupWorkspaceSeams.afterStartupWorkspaceOpenedForTesting)
+    {
+        m_startupWorkspaceSeams.afterStartupWorkspaceOpenedForTesting(
+            m_applicationRuntime->workspaceState()
+            );
+    }
+
     std::optional<Domain::OperationError> historyError;
     if (historyPort)
     {
@@ -1473,9 +1490,93 @@ void ApplicationBootstrap::beginInitialSetupProfile()
     m_initialSetupStatusMessage.clear();
 }
 
+std::unique_ptr<Application::UserPromptPort>
+ApplicationBootstrap::createWorkspaceLifecycleUserPromptPort()
+{
+    if (m_startupWorkspaceSeams.workspaceLifecycleUserPromptPortFactory)
+    {
+        return m_startupWorkspaceSeams.workspaceLifecycleUserPromptPortFactory();
+    }
+    if (!m_shell)
+    {
+        return {};
+    }
+    return std::make_unique<Ui::QtUserPromptPresenter>(m_shell.get());
+}
+
+bool ApplicationBootstrap::resolveActivePageChangesBeforeLeaving(
+    const std::string& destination
+    )
+{
+    if (!m_shell || !m_applicationRuntime)
+    {
+        return true;
+    }
+
+    Ui::PageHostActivePageChangesAdapter activePageChanges(m_shell->pageHost());
+    Application::WorkspaceCoordinator& workspaceCoordinator =
+        m_applicationRuntime->workspaceCoordinator();
+    if (!activePageChanges.hasUnsavedChanges()
+        && !workspaceCoordinator.hasUnsavedChanges())
+    {
+        return true;
+    }
+
+    std::unique_ptr<Application::UserPromptPort> userPrompt =
+        createWorkspaceLifecycleUserPromptPort();
+    if (!userPrompt)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The unsaved-changes prompt is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return false;
+    }
+
+    Application::UnsavedChangesResolutionFlow flow(
+        activePageChanges,
+        workspaceCoordinator,
+        *userPrompt
+        );
+    const Application::UnsavedChangesResolution resolution = flow.resolve(
+        Application::UnsavedChangesPromptRequest{
+            .title = "Unsaved Changes",
+            .message = "The current page or profile has unsaved changes.",
+            .question = "Save changes before " + destination + "?",
+            .saveText = "Save",
+            .discardText = "Discard",
+            .cancelText = "Cancel"
+        }
+        );
+    switch (resolution.status)
+    {
+    case Application::UnsavedChangesResolutionStatus::Ready:
+        return true;
+    case Application::UnsavedChangesResolutionStatus::Canceled:
+        return false;
+    case Application::UnsavedChangesResolutionStatus::Failed:
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = resolution.message,
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return false;
+    }
+    return false;
+}
+
 void ApplicationBootstrap::createNewTeacherProfile()
 {
     if (!m_shell || !m_applicationRuntime || !m_initialSetupLifecycle)
+    {
+        return;
+    }
+    if (!resolveActivePageChangesBeforeLeaving(
+            "creating a new Teacher Profile"
+            ))
     {
         return;
     }
@@ -1579,12 +1680,25 @@ void ApplicationBootstrap::createNewTeacherProfile()
                 || setupState.recoveryError;
         }
         );
-    static_cast<void>(flow.run());
+    const Application::NormalWorkspaceCreationOutcome outcome = flow.run();
+    if (outcome.status == Application::NormalWorkspaceCreationStatus::Created)
+    {
+        m_shell->updateNavigationAccessContext(
+            m_applicationRuntime->workspaceState().snapshot().lifecycle(),
+            std::nullopt
+            );
+    }
 }
 
 void ApplicationBootstrap::openExistingTeacherProfile()
 {
     if (!m_shell || !m_applicationRuntime || !m_initialSetupLifecycle)
+    {
+        return;
+    }
+    if (!resolveActivePageChangesBeforeLeaving(
+            "opening another Teacher Profile"
+            ))
     {
         return;
     }
@@ -1688,6 +1802,165 @@ void ApplicationBootstrap::openExistingTeacherProfile()
             }
             ));
     }
+}
+
+void ApplicationBootstrap::saveWorkspaceFromMenu()
+{
+    if (!m_shell || !m_applicationRuntime)
+    {
+        return;
+    }
+    if (!m_applicationRuntime->workspaceState().snapshot().session().has_value())
+    {
+        return;
+    }
+
+    if (!m_applicationRuntime->workspaceCoordinator().hasUnsavedChanges())
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "Teacher Profile has no unsaved workspace changes.",
+                .severity = Application::NotificationSeverity::Information
+            }
+            ));
+        return;
+    }
+
+    const Domain::Result<void> saved =
+        m_applicationRuntime->workspaceCoordinator().saveWorkspace();
+    if (!saved)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The Teacher Profile could not be saved: "
+                    + saved.error().message,
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+    static_cast<void>(m_shell->notificationPort().show(
+        Application::NotificationRequest{
+            .message = "Teacher Profile saved.",
+            .severity = Application::NotificationSeverity::Information
+        }
+        ));
+}
+
+void ApplicationBootstrap::closeWorkspaceFromMenu()
+{
+    if (!m_shell || !m_applicationRuntime
+        || !m_applicationRuntime->workspaceState().snapshot().session().has_value())
+    {
+        return;
+    }
+
+    const bool setupLifecyclePending = m_initialSetupLifecycle
+        && m_initialSetupLifecycle->hasPendingSetup();
+    const Ui::InitialSetupPageState setupPageState = initialSetupPageState();
+    if (setupLifecyclePending
+        || setupPageState.setupPending
+        || setupPageState.recoveryAvailable
+        || setupPageState.recoveryError)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "Resolve the pending setup or recovery state before closing this Teacher Profile. Setup and recovery data were left unchanged.",
+                .severity = Application::NotificationSeverity::Warning
+            }
+            ));
+        return;
+    }
+
+    if (!resolveActivePageChangesBeforeLeaving(
+            "closing this Teacher Profile"
+            ))
+    {
+        return;
+    }
+
+    const Domain::Result<void> closed =
+        m_applicationRuntime->workspaceCoordinator().closeWorkspace();
+    if (!closed)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The Teacher Profile could not be closed: "
+                    + closed.error().message,
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+
+    m_shell->updateNavigationAccessContext(
+        Application::WorkspaceLifecycleState::Closed,
+        std::nullopt
+        );
+    if (!m_shell->navigateTo(
+            pageId(QStringLiteral("initial_setup")),
+            Ui::NavigationCause::Selection
+            ))
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The Teacher Profile closed, but the initial page could not be selected.",
+                .severity = Application::NotificationSeverity::Warning
+            }
+            ));
+        return;
+    }
+
+    static_cast<void>(m_shell->notificationPort().show(
+        Application::NotificationRequest{
+            .message = "Teacher Profile closed.",
+            .severity = Application::NotificationSeverity::Information
+        }
+        ));
+}
+
+bool ApplicationBootstrap::requestWindowClose()
+{
+    if (!m_shell)
+    {
+        return false;
+    }
+    if (!resolveActivePageChangesBeforeLeaving("closing ClassMngr"))
+    {
+        return false;
+    }
+
+    const Application::ShutdownResult result =
+        m_shutdownCoordinator.requestShutdown();
+    if (!result.shutdownRequested)
+    {
+        QString message = "ClassMngr could not close safely.";
+        if (result.failure == Application::ShutdownFailureReason::SettingsFlushFailed)
+        {
+            message = "Settings could not be saved. ClassMngr remains open.";
+        }
+        else if (result.failure == Application::ShutdownFailureReason::WorkspaceCloseFailed)
+        {
+            message = "The Teacher Profile could not be closed. ClassMngr remains open.";
+        }
+        else if (result.failure == Application::ShutdownFailureReason::AlreadyInProgress)
+        {
+            message = "ClassMngr is already closing.";
+        }
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = message.toStdString(),
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return false;
+    }
+
+    if (result.newlyRequested)
+    {
+        scheduleShutdownFinalization();
+    }
+    return true;
 }
 
 void ApplicationBootstrap::resumeInitialSetupProfile()
