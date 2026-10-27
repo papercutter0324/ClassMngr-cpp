@@ -42,10 +42,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Candidate #16, Teacher profile page and navigation, is accepted at
   `24c14f5e`; candidate #17, Korean teacher sidebar directory, is accepted at
   `d6574628`; candidate #18, Shared Staff Directory for Native English and GS
-  Team, is accepted at `aab11f67`. Batch 2 is active at candidate #19, normal
-  teacher workbook import in Next, separate from Initial Setup. The 7A
-  screenshot comparison and memory measurement remain open, as do the 7A and
-  Phase 7 exit gates. See the progress log for slice evidence and limits.
+  Team, is accepted at `aab11f67`; candidate #19, normal teacher workbook
+  import, is accepted at `6dedd431`. Batch 2 is active at candidate #20,
+  upcoming birthdays and daily dismissal in Next. The 7A screenshot comparison
+  and memory measurement remain open, as do the 7A and Phase 7 exit gates. See
+  the progress log for slice evidence and limits.
 
 ### Slice batches
 
@@ -517,6 +518,36 @@ keep current status in this plan and live batches in the shared tracker.
   verified. The 7A screenshot comparison and memory evidence and the 7A/Phase 7
   exit gates remain open. Candidate #19, normal teacher workbook import in
   Next separate from Initial Setup, is active.
+
+### Candidate #19 — Normal teacher workbook import accepted (2026-10-27)
+
+- Commit: `6dedd431` (`Phase7 - Add normal teacher workbook import`). The Next
+  normal-workspace action is separate from Initial Setup. It opens an Excel
+  picker, validates asynchronously, builds a typed review request with Korean
+  M1/M2/H1 choices, and imports Native English and GS counts automatically.
+  Before apply it reads the latest imported source date and asks for
+  confirmation when the selected date is same or older (Cancel is default).
+  Successful apply uses the `WorkspaceStoreGateway`, refreshes the Korean list
+  and loaded staff pages, and reports import counts; a refresh failure leaves
+  the committed import intact and requires the affected directory to reload.
+- Fixture and visuals: `sectioned_review_large.xlsx` has source date
+  `2026-09-01` (current version `2026-10-01`), 122 Korean candidates with 120
+  checked, plus 40 automatic Native English and 40 GS Team rows in the review.
+  English/light and Korean/dark legacy/Next selection, review, and version
+  prompt captures verify nonblank dates in both locales. Accepted text and
+  visible-row deltas are documented in the [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/normal-teacher-import/README.md).
+- Verification: the independent Tester used the standard
+  `build/macos-clang-debug` build and passed the focused Next CTest suite 16/16;
+  earlier direct Bootstrap cases passed. Resource inventory and
+  `git diff --check` passed. The Tester recommended acceptance.
+- Memory and limits: manifest snapshots show whole-process resident memory near
+  35 MiB before parse, 37 MiB after parse, and 75–76 MiB after review/apply;
+  recorded peaks were 75.73 MiB English/light and 75.56 MiB Korean/dark. They
+  include Qt, SQLite, parser, and fixture state, so they are not per-import
+  allocation deltas or a budget. No full suite, Windows run, or native-dialog
+  verification was recorded. The 7A screenshot comparison and memory evidence
+  and 7A/Phase 7 exit gates remain open. Candidate #20, upcoming birthdays and
+  daily dismissal in Next, is active.
 
 ## Objective
 
