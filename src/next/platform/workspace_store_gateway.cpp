@@ -1,5 +1,6 @@
 #include "next/platform/workspace_store_gateway.h"
 
+#include "data/database/database_file_operations.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/teacher_import_repository.h"
 #include "next/platform/repository_error_code.h"
@@ -201,7 +202,12 @@ WorkspaceStoreGateway::createWorkspace(
             operationError(status.error())
             );
     }
-    return sessionForOpenStore();
+    const auto session = sessionForOpenStore();
+    if (session)
+    {
+        m_activeWorkspaceId = session.value().workspaceId();
+    }
+    return session;
 }
 
 Domain::Result<Application::WorkspaceSession>
@@ -217,7 +223,12 @@ WorkspaceStoreGateway::openWorkspace(
             operationError(status.error())
             );
     }
-    return sessionForOpenStore();
+    const auto session = sessionForOpenStore();
+    if (session)
+    {
+        m_activeWorkspaceId = session.value().workspaceId();
+    }
+    return session;
 }
 
 Domain::Result<void> WorkspaceStoreGateway::closeWorkspace(
@@ -239,6 +250,7 @@ Domain::Result<void> WorkspaceStoreGateway::closeWorkspace(
             .recoverable = false
         });
     }
+    m_activeWorkspaceId.reset();
     return Domain::Result<void>::success();
 }
 
@@ -290,8 +302,29 @@ WorkspaceStoreGateway::saveWorkspaceAs(
             valid.error()
             );
     }
-    return Domain::Result<Application::WorkspaceLocation>::failure(
-        unsupportedOperationError("Save workspace as")
+
+    const QString destinationPath = fromUtf8(request.destination.value());
+    const RepositoryStatus copied = DatabaseFileOperations::copyDatabaseFile(
+        m_store->databasePath(),
+        destinationPath
+        );
+    if (!copied)
+    {
+        return Domain::Result<Application::WorkspaceLocation>::failure(
+            operationError(copied.error())
+            );
+    }
+
+    const RepositoryStatus reopened = m_store->openExisting(destinationPath);
+    if (!reopened)
+    {
+        return Domain::Result<Application::WorkspaceLocation>::failure(
+            operationError(reopened.error())
+            );
+    }
+
+    return Domain::Result<Application::WorkspaceLocation>::success(
+        Application::WorkspaceLocation(toUtf8(m_store->databasePath()))
         );
 }
 
@@ -354,7 +387,8 @@ Domain::Result<void> WorkspaceStoreGateway::validateSession(
 
     const std::string openLocation = toUtf8(m_store->databasePath());
     if (session.location().value() != openLocation
-        || session.workspaceId().value() != openLocation)
+        || !m_activeWorkspaceId.has_value()
+        || session.workspaceId() != *m_activeWorkspaceId)
     {
         return Domain::Result<void>::failure({
             .code = Domain::ErrorCode::Conflict,

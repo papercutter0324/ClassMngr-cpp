@@ -2480,6 +2480,22 @@ classmngr_add_qt_test(
         Qt6::Test
 )
 
+# Exercise interactive Save As, online database copying, and active-session
+# identity preservation through the direct WorkspaceStore boundary.
+classmngr_add_qt_test(
+    NAME NextWorkspaceSaveAsFlow
+    OFFSCREEN
+    SOURCES
+        tests/next_workspace_save_as_flow_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNextWorkspace
+        ClassMngrWorkspaceStore
+        ClassMngrNextWorkspaceDomain
+        Qt6::Sql
+        Qt6::Test
+)
+
 # Verify teacher entry persistence and recovery through the v2 store boundary.
 classmngr_add_qt_test(
     NAME NextPlatformWorkspaceStoreInitialSetupTeacherEntryPersistence

@@ -120,6 +120,14 @@ ApplicationShell::ApplicationShell(
         );
     m_saveWorkspaceAction->setShortcut(QKeySequence::Save);
     m_saveWorkspaceAction->setEnabled(false);
+    m_saveWorkspaceAsAction = fileMenu->addAction(
+        QCoreApplication::translate("NextShell", "Save As…")
+        );
+    m_saveWorkspaceAsAction->setObjectName(
+        QStringLiteral("classMngrNextSaveWorkspaceAs")
+        );
+    m_saveWorkspaceAsAction->setShortcut(QKeySequence::SaveAs);
+    m_saveWorkspaceAsAction->setEnabled(false);
     m_closeWorkspaceAction = fileMenu->addAction(
         QCoreApplication::translate("NextShell", "Close Teacher Profile")
         );
@@ -151,6 +159,12 @@ ApplicationShell::ApplicationShell(
         if (m_saveWorkspaceHandler)
         {
             m_saveWorkspaceHandler();
+        }
+    });
+    connect(m_saveWorkspaceAsAction, &QAction::triggered, this, [this] {
+        if (m_saveWorkspaceAsHandler)
+        {
+            m_saveWorkspaceAsHandler();
         }
     });
     connect(m_closeWorkspaceAction, &QAction::triggered, this, [this] {
@@ -196,6 +210,11 @@ void ApplicationShell::setOpenTeacherProfileHandler(std::function<void()> handle
 void ApplicationShell::setSaveWorkspaceHandler(std::function<void()> handler)
 {
     m_saveWorkspaceHandler = std::move(handler);
+}
+
+void ApplicationShell::setSaveWorkspaceAsHandler(std::function<void()> handler)
+{
+    m_saveWorkspaceAsHandler = std::move(handler);
 }
 
 void ApplicationShell::setCloseWorkspaceHandler(std::function<void()> handler)
@@ -363,6 +382,10 @@ void ApplicationShell::synchronizeWorkspaceActions(
     if (m_saveWorkspaceAction)
     {
         m_saveWorkspaceAction->setEnabled(open);
+    }
+    if (m_saveWorkspaceAsAction)
+    {
+        m_saveWorkspaceAsAction->setEnabled(open);
     }
     if (m_closeWorkspaceAction)
     {

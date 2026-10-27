@@ -77,6 +77,9 @@ set(CLASSMNGR_SETTINGS_SOURCES
 )
 
 set(CLASSMNGR_WORKSPACE_STORE_SOURCES
+    "src/data/database/database_file_operations.cpp"
+    "src/data/database/database_file_operations.h"
+    "src/data/database/database_file_operations_internal.h"
     "src/data/database/database_schema_manager.cpp"
     "src/data/database/database_schema_manager.h"
     "src/data/database/workspace_store.cpp"
@@ -84,6 +87,8 @@ set(CLASSMNGR_WORKSPACE_STORE_SOURCES
     "src/data/database/workspace_store_fwd.h"
     "src/data/database/database_transaction.cpp"
     "src/data/database/database_transaction.h"
+    "src/data/database/sqlite_online_backup.cpp"
+    "src/data/database/sqlite_online_backup.h"
     "src/data/database/sql_query_utils.cpp"
     "src/data/database/sql_query_utils.h"
     "src/data/repositories/teacher_import_sql_persistence_adapter.cpp"
@@ -178,12 +183,7 @@ set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
 set(CLASSMNGR_DATA_SOURCES
     "src/data/data_service.cpp"
     "src/data/data_service.h"
-    "src/data/database/database_file_operations.cpp"
-    "src/data/database/database_file_operations.h"
-    "src/data/database/database_file_operations_internal.h"
     "src/data/database/database_session.h"
-    "src/data/database/sqlite_online_backup.cpp"
-    "src/data/database/sqlite_online_backup.h"
     "src/data/repositories/class_transfer_legacy_package_adapter.h"
     "src/data/repositories/repository_error.h"
     "src/data/repositories/teacher_import_legacy_plan_adapter.h"

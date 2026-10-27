@@ -50,6 +50,7 @@ public:
     void setNewTeacherProfileHandler(std::function<void()> handler);
     void setOpenTeacherProfileHandler(std::function<void()> handler);
     void setSaveWorkspaceHandler(std::function<void()> handler);
+    void setSaveWorkspaceAsHandler(std::function<void()> handler);
     void setCloseWorkspaceHandler(std::function<void()> handler);
     void setNavigationGuard(NavigationGuard guard);
     [[nodiscard]] PageHost& pageHost() noexcept;
@@ -98,6 +99,7 @@ private:
     QAction* m_newTeacherProfileAction = nullptr;
     QAction* m_openTeacherProfileAction = nullptr;
     QAction* m_saveWorkspaceAction = nullptr;
+    QAction* m_saveWorkspaceAsAction = nullptr;
     QAction* m_closeWorkspaceAction = nullptr;
     std::optional<NavigationModel> m_navigationModel;
     QHash<QString, QIcon> m_navigationIcons;
@@ -107,6 +109,7 @@ private:
     std::function<void()> m_newTeacherProfileHandler;
     std::function<void()> m_openTeacherProfileHandler;
     std::function<void()> m_saveWorkspaceHandler;
+    std::function<void()> m_saveWorkspaceAsHandler;
     std::function<void()> m_closeWorkspaceHandler;
     QtNotificationPresenter m_notificationPresenter;
 };

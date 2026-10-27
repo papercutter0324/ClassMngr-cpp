@@ -115,6 +115,7 @@ private slots:
     void createActionUsesSelectedPathAndDoesNotRecordPendingProfile();
     void openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess();
     void openActionDoesNotBypassPendingOrUnreadableSetupRecovery();
+    void saveAsActionUsesNextGatewayAndPreservesActiveSessionIdentity();
     void saveAndCloseProfileActionsUseNextGateway();
     void dirtyPageBlocksNavigationOpenNewAndWindowClose();
     void teacherImportUsesPendingStoreTransactionAndCancelRecoversBackup();
@@ -4842,6 +4843,127 @@ openActionDoesNotBypassPendingOrUnreadableSetupRecovery()
     QFile journalAfter(journalPath);
     QVERIFY(journalAfter.open(QIODevice::ReadOnly));
     QCOMPARE(journalAfter.readAll(), QByteArrayLiteral("{ unreadable recovery journal"));
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+saveAsActionUsesNextGatewayAndPreservesActiveSessionIdentity()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString sourcePath = temporaryDirectory.filePath(
+        QStringLiteral("source.tps")
+        );
+    const QString destinationPath = temporaryDirectory.filePath(
+        QStringLiteral("saved-as.tps")
+        );
+    {
+        WorkspaceStore store;
+        QVERIFY(store.open(sourcePath));
+        store.close();
+    }
+
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->selectedPath = Application::FileDialogPath(
+        destinationPath.toUtf8().toStdString()
+        );
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"), sourcePath
+    };
+    seams.recentAutoOpenEnabled = false;
+    seams.saveAsProfileFileDialogPortFactory = [fileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(
+            fileDialogProbe
+            );
+    };
+    seams.saveAsRecentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(
+            historyProbe
+            );
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    QCOMPARE(shell->navigationModel()->currentPageId()->value(),
+             QStringLiteral("my_workspace"));
+
+    QAction* const saveAsAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextSaveWorkspaceAs")
+        );
+    QAction* const closeAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextCloseWorkspace")
+        );
+    QVERIFY(saveAsAction);
+    QVERIFY(closeAction);
+    QVERIFY(saveAsAction->isEnabled());
+    QCOMPARE(saveAsAction->shortcut(), QKeySequence::SaveAs);
+
+    const Application::WorkspaceSession originalSession =
+        *bootstrap.workspaceStateSnapshot().session();
+    saveAsAction->trigger();
+
+    QCOMPARE(fileDialogProbe->saveCount, 1);
+    QVERIFY(fileDialogProbe->lastSaveRequest.has_value());
+    QCOMPARE(fileDialogProbe->lastSaveRequest->title,
+             std::string("Save Teacher Profile"));
+    QCOMPARE(fileDialogProbe->lastSaveRequest->nameFilters,
+             std::vector<std::string>{"ClassMngr Teacher Profile (*.tps)"});
+    QCOMPARE(fileDialogProbe->lastSaveRequest->defaultSuffix, std::string("tps"));
+    QVERIFY(fileDialogProbe->lastSaveRequest->confirmOverwrite);
+    QCOMPARE(
+        QString::fromUtf8(
+            fileDialogProbe->lastSaveRequest->initialDirectory.value().data(),
+            static_cast<qsizetype>(
+                fileDialogProbe->lastSaveRequest->initialDirectory.value().size()
+                )
+            ),
+        QFileInfo(sourcePath).absolutePath()
+        );
+    QVERIFY(QFileInfo::exists(sourcePath));
+    QVERIFY(QFileInfo::exists(destinationPath));
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    const Application::WorkspaceSession savedSession =
+        *bootstrap.workspaceStateSnapshot().session();
+    QCOMPARE(savedSession.workspaceId(), originalSession.workspaceId());
+    QCOMPARE(
+        savedSession.location(),
+        workspaceLocation(QFileInfo(destinationPath).canonicalFilePath())
+        );
+    QCOMPARE(shell->navigationModel()->currentPageId()->value(),
+             QStringLiteral("my_workspace"));
+    QCOMPARE(historyProbe->loadCount, 1);
+    QCOMPARE(historyProbe->saveCount, 1);
+    QCOMPARE(historyProbe->saves.back().paths.front(), savedSession.location());
+
+    closeAction->trigger();
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Closed);
+    QVERIFY(!saveAsAction->isEnabled());
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);

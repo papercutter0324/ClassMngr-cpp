@@ -10,6 +10,7 @@
 #include "next/application/workspace_contracts.h"
 
 #include <memory>
+#include <optional>
 
 class WorkspaceStore;
 
@@ -95,6 +96,7 @@ private:
         ) const;
 
     std::unique_ptr<WorkspaceStore> m_store;
+    std::optional<Domain::WorkspaceId> m_activeWorkspaceId;
 };
 
 } // namespace ClassMngr::Next::Platform

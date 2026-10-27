@@ -4,6 +4,7 @@
 #include "next/application/recent_workspace_history_use_case.h"
 #include "next/application/normal_workspace_creation_flow.h"
 #include "next/application/open_existing_workspace_flow.h"
+#include "next/application/workspace_save_as_flow.h"
 #include "next/application/unsaved_changes_resolution_flow.h"
 #include "next/application/initial_setup_class_details_requirements.h"
 #include "next/application/positive_decimal_id_validation.h"
@@ -670,6 +671,9 @@ Application::StartupResult ApplicationBootstrap::start()
         });
         m_shell->setSaveWorkspaceHandler([this] {
             saveWorkspaceFromMenu();
+        });
+        m_shell->setSaveWorkspaceAsHandler([this] {
+            saveWorkspaceAsFromMenu();
         });
         m_shell->setCloseWorkspaceHandler([this] {
             closeWorkspaceFromMenu();
@@ -1845,6 +1849,109 @@ void ApplicationBootstrap::saveWorkspaceFromMenu()
             .severity = Application::NotificationSeverity::Information
         }
         ));
+}
+
+void ApplicationBootstrap::saveWorkspaceAsFromMenu()
+{
+    if (!m_shell || !m_applicationRuntime
+        || !m_applicationRuntime->workspaceState().snapshot().session().has_value())
+    {
+        return;
+    }
+
+    const bool setupLifecyclePending = m_initialSetupLifecycle
+        && m_initialSetupLifecycle->hasPendingSetup();
+    const Ui::InitialSetupPageState setupPageState = initialSetupPageState();
+    if (setupLifecyclePending
+        || setupPageState.setupPending
+        || setupPageState.recoveryAvailable
+        || setupPageState.recoveryError)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "Resolve the pending setup or recovery state before using Save As. Setup and recovery data were left unchanged.",
+                .severity = Application::NotificationSeverity::Warning
+            }
+            ));
+        return;
+    }
+
+    if (!resolveActivePageChangesBeforeLeaving(
+            "saving a copy of this Teacher Profile"
+            ))
+    {
+        return;
+    }
+
+    const Application::WorkspaceSession session =
+        *m_applicationRuntime->workspaceState().snapshot().session();
+    const QString activePath = QString::fromUtf8(
+        session.location().value().data(),
+        static_cast<qsizetype>(session.location().value().size())
+        );
+
+    Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+        directoryPreferences;
+    std::unique_ptr<Application::FileDialogPort> ownedFileDialog;
+    if (m_startupWorkspaceSeams.saveAsProfileFileDialogPortFactory)
+    {
+        ownedFileDialog =
+            m_startupWorkspaceSeams.saveAsProfileFileDialogPortFactory();
+    }
+    else
+    {
+        ownedFileDialog = std::make_unique<Ui::QtFileDialogPresenter>(
+            directoryPreferences,
+            m_shell.get()
+            );
+    }
+    if (!ownedFileDialog)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The profile save dialog is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return;
+    }
+
+    std::unique_ptr<Application::RecentWorkspaceHistoryPort> ownedRecentHistory;
+    if (m_startupWorkspaceSeams.saveAsRecentWorkspaceHistoryPortFactory)
+    {
+        ownedRecentHistory =
+            m_startupWorkspaceSeams.saveAsRecentWorkspaceHistoryPortFactory();
+    }
+    else
+    {
+        ownedRecentHistory = std::make_unique<
+            Platform::SettingsManagerRecentWorkspaceHistoryPort>();
+    }
+
+    Platform::WorkspaceProfilePathPolicy pathPolicy;
+    Application::WorkspaceSaveAsFlow flow(
+        *ownedFileDialog,
+        pathPolicy,
+        m_applicationRuntime->workspaceCoordinator(),
+        ownedRecentHistory.get(),
+        m_shell->notificationPort(),
+        Application::FileDialogPath(
+            QFileInfo(activePath).absolutePath().toUtf8().toStdString()
+            ),
+        QFileInfo(activePath).fileName().toUtf8().toStdString(),
+        [this] {
+            if (m_initialSetupLifecycle
+                && m_initialSetupLifecycle->hasPendingSetup())
+            {
+                return true;
+            }
+            const Ui::InitialSetupPageState state = initialSetupPageState();
+            return state.setupPending
+                || state.recoveryAvailable
+                || state.recoveryError;
+        }
+        );
+    static_cast<void>(flow.run());
 }
 
 void ApplicationBootstrap::closeWorkspaceFromMenu()
