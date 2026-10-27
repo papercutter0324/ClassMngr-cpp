@@ -47,8 +47,10 @@ on replacement, and records recent history only after success. Focused
 verification and limits are in the progress log. Candidate #9, existing
 `.tps` open, is accepted and committed as `cdbf3ead`; focused verification and
 limits are in the [Phase 7 progress
-log](08-Phase-7-Feature-Migration.md#progress-log). Current candidate: **#10 —
-save, close, and dirty state**. The 7A screenshot comparison and memory
+log](08-Phase-7-Feature-Migration.md#progress-log). Candidate #10, save, close,
+and dirty state, is accepted and committed as `283871fa`; its focused evidence
+and bounded Page dirty-hook limitation are in the progress log. Current
+candidate: **#11 — Save As**. The 7A screenshot comparison and memory
 measurement remain open. Batch 1 remains active and unpushed.
 Next-batch discovery has not started; do not begin it before candidate #14.
 

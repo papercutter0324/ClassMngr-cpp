@@ -24,8 +24,12 @@
 - Open an existing profile through the coordinator's candidate-open path so a
   failed selection cannot close the active workspace. Guard the interactive
   action while setup or recovery is pending, and update recent history only
-  after the new profile opens. Add Save/Discard behavior in its separate
-  dirty-state slice.
+  after the new profile opens. Resolve in-memory page drafts separately from
+  WorkspaceState/database dirtiness; the coordinator owns commit and rollback.
+  Block File > Close while setup is pending, because the recovery lifecycle
+  still depends on the open store; application shutdown may close it while
+  preserving the journal for restart. Future active-profile editors must use
+  the Page dirty hook before they expose edits.
 - Keep the Next setup workbook flow on one typed path: asynchronous parser
   validation and review mapping feed `TeacherImportUseCaseRequest`, and the
   pending `WorkspaceStore` owns the import transaction. Verify selection,

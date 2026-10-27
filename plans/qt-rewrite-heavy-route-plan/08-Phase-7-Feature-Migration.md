@@ -38,11 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
-- Current note: 7A.1–7A.9 are accepted and committed; 7A.9 is `cdbf3ead`.
-  Candidate #10, save, close, and dirty state, is active. The 7A screenshot
-  comparison and memory measurement remain open, as do the 7A and Phase 7 exit
-  gates. Batch 1 remains active and unpushed. See the progress log for 7A.9
-  evidence and limits.
+- Current note: 7A.1–7A.10 are accepted and committed; 7A.10 is `283871fa`.
+  Candidate #11, Save As, is active. The 7A screenshot comparison and memory
+  measurement remain open, as do the 7A and Phase 7 exit gates. Batch 1 remains
+  active and unpushed. See the progress log for 7A.10 evidence and limits.
 
 ### Slice batches
 
@@ -304,6 +303,33 @@ keep current status in this plan and live batches in the shared tracker.
   comparison and memory evidence, plus the 7A and Phase 7 exit gates, remain
   open. Candidate #10, save, close, and dirty state, is active. Batch 1 remains
   active and unpushed; do not start next-batch discovery before candidate #14.
+
+### 7A.10 — Save, close, and dirty state accepted (2026-10-27)
+
+- Commit: `283871fa` (`Phase7 - Add workspace save close and dirty handling`).
+  File > Save and Save and Close Teacher Profile use Next workspace contracts;
+  clean Save is a no-op. Typed Save/Discard/Cancel handles Page drafts
+  separately from workspace/database dirtiness and guards navigation, Open,
+  New/replacement, File Close, and shutdown. Failed save/discard/close retains
+  the active profile safely; successful Close returns to no-profile setup.
+  File Close is blocked if setup is pending or recovery is present/unreadable;
+  the active session and journal remain unchanged. Window shutdown may close
+  the store and preserve recovery for restart.
+- Verification: standard `build/macos-clang-debug`; configure found one owner
+  for 1,739 handwritten sources; focused CTest passed 7/7, including
+  `NextStartupWorkspaceDependencyBoundary`. The Save QAction test covers dirty
+  commit success, injected failure with open/dirty state retained, and retry.
+  `git diff --check` passed. Unrelated pre-existing schedule-import edits are
+  uncommitted and excluded from this commit.
+- Limits and next work: clean Save is tested as a no-op because an empty
+  `WorkspaceStore` commit reports failure. Page dirty tracking is an extension
+  point; active-profile feature pages are placeholders and no production editor
+  marks a draft dirty. 7B editors must wire the hook before exposing edits. No
+  full suite, Windows build, package, screenshot, or memory gate ran; the 7A
+  screenshot comparison and memory measurement and the 7A/Phase 7 exit gates
+  remain open.
+  Candidate #11, Save As, is active. Batch 1 remains active and unpushed; do not
+  start next-batch discovery before candidate #14.
 
 ## Objective
 

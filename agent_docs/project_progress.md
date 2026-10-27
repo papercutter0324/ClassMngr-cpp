@@ -75,9 +75,17 @@ setup/recovery gating, and failed opens preserve the active workspace, while
 success refreshes navigation and records recent history once. The fresh
 standard build completed; three focused CTests and one dependency-boundary
 CTest passed. OS permission-denied behavior was not tested. Candidate #10,
-save, close, and dirty state, is active; Batch 1 remains un-pushed.
-Setup-screen screenshot comparison, Phase 7 memory evidence, and all remaining
-7A workflows remain open. Active candidates are tracked in
+save, close, and dirty state, passed independent verification and was committed
+as `283871fa`. File Save/Close use the Next coordinator; one shared typed flow
+resolves page drafts and WorkspaceState dirtiness with Save/Discard/Cancel for
+navigation, Open/New, profile close, and shutdown. Discard rolls back pending
+store work. Pending setup blocks profile close without changing its journal.
+The focused standard-tree CTest set passed 7/7, including the workspace
+dependency boundary; configure validated 1,739 source owners. No active-profile
+editor currently produces dirty state, so 7B editors must use the new Page hook.
+Candidate #11, Save As, is active; Batch 1 remains un-pushed. Setup-screen
+screenshot comparison, Phase 7 memory evidence, and all remaining 7A workflows
+remain open. Active candidates are tracked in
 `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`.
 
 Phase 0 completed on 2026-09-18. The combined route gate passed all 24 required
